@@ -576,36 +576,6 @@ algorithm
 end createMatchcontinueResultVars;
 */
 
-//Added by simbj
-//Creates a type for an union type
-public function createUnionType "function: createUnionType
-  Takes a Class and an original Type as input. If the Class is a uniontype,
-  the type is changed to the corresponding T_UNIONTYPE. Else, the original
-  in type is used.
-"
-  input SCode.Class cl;
-  input DAE.Type inType;
-  output DAE.Type outType;
-algorithm
- outType := matchcontinue(cl,inType)
-  local
-    list<SCode.Element> els;
-    list<String> slst;
-    list<Absyn.Path> pathLst;
-    DAE.Type t;
-    Absyn.Path p;
-    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = els), restriction = SCode.R_UNIONTYPE),(_,SOME(p)))
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        slst = getListOfStrings(els);
-        pathLst = Util.listMap1r(slst, Absyn.pathReplaceIdent, p);
-        t = (DAE.T_UNIONTYPE(pathLst),SOME(p));
-      then t;
-    case (_,t) then t;
-  end matchcontinue;
-end createUnionType;
-
-
 public function getListOfStrings
 input list<SCode.Element> els;
 output list<String> outStrings;

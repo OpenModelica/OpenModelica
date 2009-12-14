@@ -43,6 +43,7 @@ void *type_desc_to_value(type_description *desc);
 static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
                                          type_description *));
+int parse_array(type_description *desc, void *arrdata);
 
 void DynLoad_5finit(void)
 {
@@ -52,7 +53,7 @@ RML_BEGIN_LABEL(DynLoad__executeFunction)
 {
   modelica_integer funcIndex = RML_UNTAGFIXNUM(rmlA0);
   modelica_ptr_t func = NULL;
-  modelica_ptr_t lib = NULL;
+  /* modelica_ptr_t lib = NULL; */
   int retval = -1;
   void *retarg = NULL;
   func = lookup_ptr(funcIndex);
@@ -370,7 +371,6 @@ void *value_to_mmc(void* value)
     int i=0;
     void *tmp = names;
     void **data_mmc;
-    struct rml_struct *p;
     struct record_description* desc = malloc(sizeof(struct record_description));
     if (desc == NULL) {
       fprintf(stderr, "value_to_mmc: malloc failed\n");

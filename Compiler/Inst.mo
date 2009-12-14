@@ -477,7 +477,7 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
       local String s;
-      equation 
+      equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
@@ -1010,56 +1010,26 @@ algorithm
       ConnectionGraph.ConnectionGraph graph; 
       InstanceHierarchy ih;
       DAE.EqualityConstraint equalityConstraint;
-
-      /* MetaModelica Partial Function. sjoelund */
-    case (cache,env,ih,store,mod,pre,csets,
-          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r as SCode.R_FUNCTION(), partialPrefix = true)),
-          inst_dims,impl,callscope,graph)
-      equation
-        //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
-        
-        env_1 = Env.openScope(env, encflag, SOME(n));
-        ci_state = ClassInf.start(r, n);
-        (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
-        			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
-        (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
-        
-        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
-        callscope_1 = isTopCall(callscope);              
-        
-        checkMissingInnerDecl(dae1_1,callscope_1);
-        
-        (csets_1,_) = retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
-        
-        dae2 = Connect.equations(csets_1,pre);
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
-        dae = Util.listFlatten({dae1_1,dae2,dae3});
-        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ;
-        // A single special set of function pointers makes everything a lot simpler
-        ty = Types.makeFunctionPolymorphicReference(ty);
-        
-        dae = renameUniqueVarsInTopScope(callscope_1,dae);
-      then
-        (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
-        
-      /*  Classes with the keyword partial can not be instantiated. They can only be inherited */ 
-    case (cache,env,ih,store,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = (partialPrefix as true)),_,(impl as false),_,graph)
-      equation 
-        Error.addMessage(Error.INST_PARTIAL_CLASS, {n});        
-      then
-        fail();
-        
+      
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
      */
     case (cache,env,ih,store,mod,pre,csets,
-          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = false)),
+          (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = partialPrefix)),
           inst_dims,impl,callscope,graph)
-      local 
+      local
+        Boolean partialPrefix, isFn, notIsPartial, isPartialFn;
         DAE.EqualityConstraint equalityConstraint;
       equation 
         //print("---- CLASS: "); print(n);print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
         //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
+        
+        // First check if the class is non-partial or a partial function
+        isFn = SCode.isFunctionOrExtFunction(r);
+        notIsPartial = not partialPrefix;
+        isPartialFn = isFn and partialPrefix;
+        true = notIsPartial or isPartialFn;
+        
         env_1 = Env.openScope(env, encflag, SOME(n));
         ci_state = ClassInf.start(r, n);
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
@@ -1084,19 +1054,53 @@ algorithm
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
         dae = updateDeducedUnits(callscope_1,store,dae);
         
-        /* Fix the problems with fixing MetaModelica Uniontypes right by the source. sjoelund */
-        ty = MetaUtil.createUnionType(c,ty);
-        /* ---------------------------------------------------------------------------------- */
+        // Fix the problems with fixing MetaModelica Uniontypes right by the source.
+        // Also fixes partial functions.
+        ty = fixInstClassType(c,ty,isPartialFn);
       then 
         (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
 
+      /*  Classes with the keyword partial can not be instantiated. They can only be inherited */ 
+    case (cache,env,ih,store,mod,pre,csets,SCode.CLASS(name = n,partialPrefix = (partialPrefix as true)),_,(impl as false),_,graph)
+      equation
+        Error.addMessage(Error.INST_PARTIAL_CLASS, {n});        
+      then
+        fail();
+        
     case (_,_,ih,_,_,_,_,SCode.CLASS(name = n),_,impl,_,graph)
       equation 
-        Debug.fprintln("failtrace", "- Inst.instClass: " +& n +& " failed\n");
+        Debug.fprintln("failtrace", "- Inst.instClass: " +& n +& " failed");
       then
         fail();
   end matchcontinue; 
 end instClass;
+
+protected function fixInstClassType
+"Fixes the type of a class if it is uniontype or function reference.
+These are MetaModelica extensions."
+  input SCode.Class cl;
+  input DAE.Type ty;
+  input Boolean isPartialFn;
+  output DAE.Type outType;
+algorithm
+  outType := matchcontinue (cl,ty,isPartialFn)
+    local
+      list<SCode.Element> els;
+      list<Absyn.Path> pathLst;
+      list<String> slst;
+      Absyn.Path p;
+      DAE.Type t;
+    case (_,ty,true) then Types.makeFunctionPolymorphicReference(ty);
+    case (SCode.CLASS(classDef = SCode.PARTS(elementLst = els), restriction = SCode.R_UNIONTYPE),(_,SOME(p)),false)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        slst = MetaUtil.getListOfStrings(els);
+        pathLst = Util.listMap1r(slst, Absyn.pathReplaceIdent, p);
+        t = (DAE.T_UNIONTYPE(pathLst),SOME(p));
+      then t;
+    case (_,ty,false) then ty;
+  end matchcontinue;
+end fixInstClassType;
 
 protected function updateEnumerationEnvironment
 	input Env.Cache inCache;
@@ -2839,6 +2843,7 @@ algorithm
         Debug.traceln("- Inst.instClassdef failed");
         s = Env.printEnvPathStr(env);
         Debug.traceln("  class :" +& s);
+        Debug.traceln("  Env :" +& Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;
@@ -3952,7 +3957,7 @@ algorithm
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inBoolean,inInstDims,inClassName)
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
-      list<SCode.Element> cdefelts,extendselts,els,allEls,cdefelts2,classextendselts;
+      list<SCode.Element> cdefelts,extendselts,els,allEls,cdefelts2,classextendselts,compelts;
       list<Env.Frame> env1,env2,env,cenv,cenv_2,env_2,env3;
       DAE.Mod emods,mods,m,mod_1,mods_1,mods_2;
       list<tuple<SCode.Element, Mod>> extcomps,allEls2,lst_constantEls;
@@ -3979,14 +3984,14 @@ algorithm
                       normalEquationLst = eqs, initialEquationLst = initeqs,
       		            normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
       	  re,prot,inst_dims,className)
-      equation 
+      equation
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
-		    lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";		
+		    lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";
 	      /* 
 	       Since partial instantiation is done in lookup, we need to add inherited classes here.
 	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
@@ -3994,7 +3999,7 @@ algorithm
 	       to the environment here.
 	      */	      
         cdefelts2 = classdefElts2(extcomps);
-        (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env              
+        (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
                                              lst_constantEls, lst_constantEls, {}, 
                                              inst_dims, false);
@@ -4003,52 +4008,6 @@ algorithm
                           inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
       then
         (cache,env3,ih,ci_state2);
-        
-    /* adrpo: 2008-11-30 handle also the case 
-     *   model extends X(modifications) 
-     *     newParts; 
-     *   end X;
-     * This rule describes how to instantiate an extended class definition
-     *  
-     * See instExtendsList for new CLASS_EXTENDS implementation.
-    case (cache,env,ih,mods,pre,csets,ci_state,
-          SCode.CLASS_EXTENDS(baseClassName = baseClassName, modifications = mod,
-                              elementLst = els,
-                              normalEquationLst = eqs, initialEquationLst = initeqs, 
-                              normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-          re,prot,inst_dims,className)
-      equation
-        // adrpo 2008-11-30: 
-        //   MAKE SURE WE GET BACK A CLASS(... PARTS(...))
-        //   IF WE GET BACK A CLASS(... CLASS_EXTENDS(...)) THAT IS A PROBLEM!!! 
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,SCode.PARTS(elementLst = _))),cenv) = 
-           Lookup.lookupClass(cache, env, Absyn.IDENT(baseClassName), true);        
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
-        (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, false) "FIXME: impl" ;
-        new_ci_state = ClassInf.start(r, cn2);
-        mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
-        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache,cenv_2,ih, mods_1, pre, csets, new_ci_state, c, prot, inst_dims);
-        // adrpo: FIXME! TODO! WHAT DO WE STILL NEED TO DO HERE??!
-      then
-        (cache,env_2,ih,new_ci_state_1);
-        
-     * adrpo: 2008-11-30 handle also the case model extends X end X;
-     * If the class is derived from a class that can not be found in the environment,
-     * this rule prints an error message. 
-     *
-    case (cache,env,ih,mods,pre,csets,ci_state,
-          SCode.CLASS_EXTENDS(baseClassName = baseClassName, modifications = mod,
-                              elementLst = els,
-                              normalEquationLst = eqs, initialEquationLst = initeqs, 
-                              normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-          re,prot,inst_dims,className)
-      equation
-        failure((_,_,_) = Lookup.lookupClass(cache, env, Absyn.IDENT(baseClassName), false));
-        scope_str = Env.printEnvPathStr(env);
-        Error.addMessage(Error.LOOKUP_ERROR, {baseClassName,scope_str});
-      then
-        fail();
-    */
     
     /* Short class definition */
     /* This rule describes how to instantiate a derived class definition */ 
@@ -4497,7 +4456,7 @@ algorithm
         elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef);
-        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath2, cc1);
+        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath1, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
       then (emod,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
     case (emod,name1,classExtendsElt,(compelt,mod)::rest)
@@ -6080,7 +6039,8 @@ algorithm
     case (cache,env,ih,store,omod,_,_,_,(el,mod),_,_,_) 
       equation         
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- Inst.instElement failed: " +& SCode.printElementStr(el));
+        Debug.traceln("- Inst.instElement failed: " +& SCode.printElementStr(el));
+        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -9025,6 +8985,7 @@ algorithm
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1);
+        env_1 = Env.extendFrameC(env_1, c); // Otherwise this class gets associated with another environment !
         dae = {DAE.FUNCTION(fpath,DAE.DAE(dae),ty1,partialPrefix)};
       then
         (cache,env_1,ih,dae);
@@ -9053,7 +9014,12 @@ algorithm
         (cache,env_1,ih,daefuncs) = instOverloadedFunctions(cache,env,ih, n, funcnames) "Overloaded functions" ;
       then
         (cache,env_1,ih,daefuncs);
-    case (_,_,_,_,_,_,_,_) equation /*print("implicit_function_instantiation failed\n");*/ then fail(); 
+    case (_,env,_,_,_,_,SCode.CLASS(name=n),_)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
+        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+      then fail();
   end matchcontinue;
 end implicitFunctionInstantiation;
 
@@ -9135,6 +9101,10 @@ algorithm
         env_1 = Env.extendFrameT(env_1, id, ty1);
       then
         (cache,env_1,ih);
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- Inst.implicitFunctionTypeInstantiation failed");
+      then fail();
   end matchcontinue;
 end implicitFunctionTypeInstantiation; 
 
