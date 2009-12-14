@@ -698,6 +698,15 @@ algorithm
       then
         (cache,Values.ARRAY(arr),st_3);
 
+    case (cache,env,DAE.RANGE(ty = DAE.ET_ENUMERATION(_,_,_,_),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */ 
+      local Option<Integer> dim;
+      equation 
+        (cache,Values.ENUM(start_1,_,_),st_1) = ceval(cache,env, start, impl, st, dim, msg);
+        (cache,Values.ENUM(stop_1,_,_),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
+        arr = cevalRange(start_1, 1, stop_1);
+      then
+        (cache,Values.ARRAY(arr),st_1);
+
     case (cache,env,DAE.RANGE(ty = DAE.ET_REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
       local
         Real start_1,stop_1,step;

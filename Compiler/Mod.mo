@@ -191,7 +191,15 @@ algorithm
 	     modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
 	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
 	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt)),bc,cc),emod)::modElts;
-
+   // replaceable type E=enumeration(e1,...,en), E=enumeration(:)	      
+	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment)),bc,cc)::elts,impl)
+	    local 
+	      list<SCode.Enum> enumLst;
+        Option<SCode.Comment> comment;
+	      Option<Absyn.ConstrainClass> cc; 
+	    equation
+	     modElts = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	 then (SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment)),bc,cc),DAE.NOMOD())::modElts;
 		// redeclare of component declaration		 
 	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt,cond,info,cc)::elts,impl) equation
 	    (cache,emod) = elabMod(cache,env,pre,mod,impl); 

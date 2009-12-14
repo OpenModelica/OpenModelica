@@ -1670,8 +1670,18 @@ algorithm
     local
       DAE.Exp e1,e3,e2,e1_1,e3_1,e2_1;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t3,t2;
+      DAE.ExpType et;
+      list<String> ns,ne; 
     case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),NONE,(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,NONE,e3,DAE.ET_INT()); 
-    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,DAE.ET_INT()); 
+    case ((e1,(DAE.T_INTEGER(varLstInt = _),_)),SOME((e2,(DAE.T_INTEGER(_),_))),(e3,(DAE.T_INTEGER(varLstInt = _),_))) then (e1,SOME(e2),e3,DAE.ET_INT());
+    // enumeration has no step value 
+    case ((e1,t1 as (DAE.T_ENUMERATION(names = ns),_)),NONE,(e3,(DAE.T_ENUMERATION(names = ne),_)))
+      equation
+        // check if enumtyp start and end are equal
+        true = Util.isListEqual(ns,ne,true);
+        // convert vars
+          et = Types.elabType(t1);
+         then (e1,NONE,e3,et); 
     case ((e1,t1),NONE,(e3,t3))
       equation 
         ({e1_1,e3_1},_) = elabArglist({(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)}, 
@@ -1736,6 +1746,17 @@ algorithm
       then
         (cache,(
           DAE.T_ARRAY(DAE.DIM(SOME(n_2)),(DAE.T_INTEGER({}),NONE)),NONE));
+    /* enumeration has no step value */
+    case (cache,env,start,NONE,stop,const,_,impl) /* impl as false */
+      local list<String> names; Absyn.Path p; 
+      equation 
+        (cache,Values.ENUM(startv,p,names),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.ENUM(stopv,_,_),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        n = stopv - startv;
+        n_1 = n + 1;
+      then
+        (cache,(
+          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),(DAE.T_ENUMERATION(NONE(),p,names,{}),NONE)),NONE));
     case (cache,env,start,NONE,stop,const,_,impl) /* as false */ 
       local Real startv,stopv,n,n_2;
       equation 
@@ -10978,7 +10999,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
       Absyn.Exp e;
     case ((DAE.T_INTEGER(varLstInt = _),_),_,sub) then DAE.INDEX(sub); 
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),_,sub) then DAE.INDEX(sub);
+    case ((DAE.T_ENUMERATION(_,_,_,_),_),_,sub) then DAE.INDEX(sub);
 //    case ((DAE.T_ENUM(),_),_,sub) then DAE.INDEX(sub);
     case ((DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(varLstInt = _),_)),_),_,sub) then DAE.SLICE(sub); 
     case (t,e,_)
