@@ -15,6 +15,19 @@ package SimCode
     output Integer len;
   end listLengthSimVar;
   
+  uniontype Context
+    record SIMULATION end SIMULATION;
+    record OTHER end OTHER;
+  end Context;
+
+  function createSimulationContext
+    output Context context;
+  end createSimulationContext;
+  
+  function createOtherContext
+    output Context context;
+  end createOtherContext;
+
   type Path = Absyn.Path;
   type Ident = String;
   type Type = DAE.ExpType;
@@ -76,6 +89,9 @@ package SimCode
       DAE.ComponentRef componentRef;
       DAE.Exp exp;
     end SES_ARRAY_CALL_ASSIGN;
+    record SES_ALGORITHM
+      list<DAE.Statement> statements;
+    end SES_ALGORITHM;
     record SES_NOT_IMPLEMENTED
       String msg;
     end SES_NOT_IMPLEMENTED;

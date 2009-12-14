@@ -486,8 +486,8 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 functionDaeOutput(list<SimEqSystem> nonStateContEquations,
                   list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
-# body = (nonStateContEquations of eq: '<equation_(eq, varDecls)>' "\n")
-# body2 = (removedEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# body = (nonStateContEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
@@ -509,8 +509,8 @@ int functionDAE_output()
 functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
                    list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
-# body = (nonStateDiscEquations of eq: '<equation_(eq, varDecls)>' "\n")
-# body2 = (removedEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# body = (nonStateDiscEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
 <<
 /* for discrete time variables */
 int functionDAE_output2()
@@ -653,13 +653,13 @@ functionUpdateDependents(list<SimEqSystem> stateEquations,
                          list<SimEqSystem> nonStateDiscEquations,
                          list<HelpVarInfo> helpVarInfo) ::=
 # varDecls = ""
-# eq1 = (stateEquations of eq: '<equation_(eq, varDecls)>' "\n")
-# eq2 = (nonStateContEquations of eq: '<equation_(eq, varDecls)>' "\n")
-# eq3 = (nonStateDiscEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# eq1 = (stateEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
+# eq2 = (nonStateContEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
+# eq3 = (nonStateDiscEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
 # hvars = (
   helpVarInfo of (in1, exp, _):
     # preExp = ""
-    # expPart = daeExp(exp, preExp, varDecls)
+    # expPart = daeExp(exp, createOtherContext(), preExp, varDecls)
     '<preExp>localData->helpVars[<in1>] = <expPart>;'
   "\n"
 )
@@ -740,7 +740,7 @@ int function_when(int i)
 
 functionOde(list<SimEqSystem> stateEquations) ::=
 # varDecls = ""
-# body = (stateEquations of eq: '<equation_(eq, varDecls)>' "\n")
+# body = (stateEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
 <<
 int functionODE()
 {
@@ -759,7 +759,7 @@ int functionODE()
 
 functionInitial(list<SimEqSystem> initialEquations) ::=
 # varDecls = ""
-# body = (initialEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, varDecls)>' "\n")
+# body = (initialEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
 <<
 int initial_function()
 {
@@ -782,7 +782,7 @@ functionInitialResidual(list<SimEqSystem> residualEquations) ::=
       'localData-\>initialResiduals[i++] = 0;'
     else
       # preExp = ""
-      # expPart = daeExp(exp, preExp, varDecls)
+      # expPart = daeExp(exp, createOtherContext(), preExp, varDecls)
       '<preExp>localData-\>initialResiduals[i++] = <expPart>;'
   "\n"
 )
@@ -805,7 +805,7 @@ int initial_residual()
 
 functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
 # varDecls = ""
-# body = (parameterEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, varDecls)>' "\n")
+# body = (parameterEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
 <<
 int bound_parameters()
 {
@@ -872,7 +872,7 @@ int checkForDiscreteVarChanges()
 
 reinit(ReinitStatement, Text preExp, Text varDecls) ::=
   case REINIT then
-    # val = daeExp(value, preExp, varDecls)
+    # val = daeExp(value, createOtherContext(), preExp, varDecls)
     <<
     <cref(stateVar)> = <val>;
     >>
@@ -888,17 +888,17 @@ zeroCrossingTpl(Integer index, Exp relation, Text varDecls) ::=
   match relation
   case RELATION then
     # preExp = ""
-    # e1 = daeExp(exp1, preExp, varDecls)
+    # e1 = daeExp(exp1, createOtherContext(), preExp, varDecls)
     # op = zeroCrossingOpFunc(operator)
-    # e2 = daeExp(exp2, preExp, varDecls)
+    # e2 = daeExp(exp2, createOtherContext(), preExp, varDecls)
     <<
     <preExp>
     ZEROCROSSING(<index>, <op>(<e1>, <e2>));
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     # preExp = ""
-    # e1 = daeExp(start, preExp, varDecls)
-    # e2 = daeExp(interval, preExp, varDecls)
+    # e1 = daeExp(start, createOtherContext(), preExp, varDecls)
+    # e2 = daeExp(interval, createOtherContext(), preExp, varDecls)
     <<
     <preExp>
     ZEROCROSSING(<index>, Samle(*t, <e1>, <e2>));
@@ -937,20 +937,25 @@ char* <name>[1] = {""};
 >>
 
 // Residual equations are not handled here
-equation_(SimEqSystem eq, Text varDecls) ::=
+equation_(SimEqSystem eq, Context context, Text varDecls) ::=
 case SES_SIMPLE_ASSIGN then
 # preExp = ""
-# expPart = daeExp(exp, preExp, varDecls)
+# expPart = daeExp(exp, context, preExp, varDecls)
 <<
 <preExp>
 <cref(componentRef)> = <expPart>;
 >>
 case SES_ARRAY_CALL_ASSIGN then // cref_array = call(...)
 # preExp = ""
-# expPart = daeExp(exp, preExp, varDecls)
+# expPart = daeExp(exp, context, preExp, varDecls)
 <<
 <preExp>
 copy_real_array_data_mem(&<expPart>, &<cref(componentRef)>);
+>>
+case SES_ALGORITHM then
+# stmt = (statements : algStatement(it, context, varDecls) \n) 
+<<
+<stmt>
 >>
 case SES_NOT_IMPLEMENTED then
 <<
@@ -964,7 +969,7 @@ notimplemented = notimplemented;
 whenEqTpl(Option<WhenEquation>, Text varDecls) ::=
 case SOME(weq as WHEN_EQ) then
 # preExp = ""
-# expPart = daeExp(weq.right, preExp, varDecls)
+# expPart = daeExp(weq.right, createOtherContext(), preExp, varDecls)
 <<
 save(<cref(weq.left)>);
 
@@ -1164,7 +1169,7 @@ case var as VARIABLE then
 varInit(Variable, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
   # varDecls += varDeclaration(var)
-  # instDimsInit = (instDims of exp: daeExp(exp, varInits, varDecls) ", ")
+  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
     # varInits += 'alloc_<expShortType(var.ty)>_array(&<cref(var.name)>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
     ()
@@ -1173,7 +1178,7 @@ case var as VARIABLE then
 
 varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
-  # instDimsInit = (instDims of exp: daeExp(exp, varInits, varDecls) ", ")
+  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
     # varInits += 'alloc_<expShortType(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
     <<
@@ -1224,49 +1229,49 @@ funBody(list<Statement> body) ::=
 
 
 funStatement(Statement, Text varDecls) ::=
-  case ALGORITHM then (statementLst : algStatement(it, varDecls) \n) 
+  case ALGORITHM then (statementLst : algStatement(it, createOtherContext(), varDecls) \n) 
   case BLOCK then "/* not implemented fun statement */"
 
 // Codegen.generateAlgorithmStatement
-algStatement(DAE.Statement, Text varDecls) ::=
+algStatement(DAE.Statement, Context context, Text varDecls) ::=
   case STMT_ASSIGN(exp1 = CREF(componentRef = WILD), exp = e) then
     # preExp = "" 
-    # expPart = daeExp(e, preExp, varDecls)
+    # expPart = daeExp(e, context, preExp, varDecls)
     <<
     <preExp>
     <expPart>
     >>
   case STMT_ASSIGN(exp1 = CREF) then
     # preExp = ""
-    # expPart = daeExp(exp, preExp, varDecls)
+    # expPart = daeExp(exp, context, preExp, varDecls)
     <<
     <preExp>
     <scalarLhsCref(exp1.componentRef)> = <expPart>;
     >>
   case STMT_ASSIGN then
     # preExp = ""
-    # expPart1 = daeExp(exp1, preExp, varDecls)
-    # expPart2 = daeExp(exp, preExp, varDecls)
+    # expPart1 = daeExp(exp1, context, preExp, varDecls)
+    # expPart2 = daeExp(exp, context, preExp, varDecls)
     <<
     <preExp>
     <expPart1> = <expPart2>;
     >>
   case STMT_ASSIGN_ARR then // TODO: this is different depending on context
     # preExp = ""
-    # expPart = daeExp(exp, preExp, varDecls)
+    # expPart = daeExp(exp, context, preExp, varDecls)
     <<
     <preExp>
     copy_<expShortType(type_)>_array_data(&<expPart>, &<cref(componentRef)>);
     >>
   case STMT_IF then
     # preExp = ""
-    # condExp = daeExp(exp, preExp, varDecls)
+    # condExp = daeExp(exp, context, preExp, varDecls)
     <<
     <preExp>
-    if(<condExp>) {
-      <statementLst : algStatement(it, varDecls) \n>
+    if (<condExp>) {
+      <statementLst : algStatement(it, context, varDecls) \n>
     }
-    <elseExpr(else_, varDecls)>
+    <elseExpr(else_, context, varDecls)>
     >>
   case STMT_FOR(exp = rng as RANGE) then
     # stateVar = tempDecl("state", varDecls)
@@ -1276,11 +1281,11 @@ algStatement(DAE.Statement, Text varDecls) ::=
     # r2 = tempDecl(identType, varDecls)
     # r3 = tempDecl(identType, varDecls)
     # preExp = ""
-    # er1 = daeExp(rng.exp, preExp, varDecls)
+    # er1 = daeExp(rng.exp, context, preExp, varDecls)
     # er2 = if rng.expOption is SOME(eo) 
-            then daeExp(eo, preExp, varDecls)
+            then daeExp(eo, context, preExp, varDecls)
             else "(1)"
-    # er3 = daeExp(rng.range, preExp, varDecls) 
+    # er3 = daeExp(rng.range, context, preExp, varDecls) 
     <<
     <preExp>
     <r1> = <er1>; <r2> = <er2>; <r3> = <er3>;
@@ -1289,7 +1294,7 @@ algStatement(DAE.Statement, Text varDecls) ::=
 
       for (<ident> = <r1>; in_range_<expShortType(type_)>(<ident>, <r1>, <r3>); <ident> += <r2>) {
         <stateVar> = get_memory_state();
-        <statementLst : algStatement(it, varDecls) \n /* ??CONTEXT(codeContext,expContext,IN_FOR_LOOP(loopContext)*/ >
+        <statementLst : algStatement(it, context, varDecls) \n /* ??CONTEXT(codeContext,expContext,IN_FOR_LOOP(loopContext)*/ >
         restore_memory_state(<stateVar>);
       }
     } /*end for*/
@@ -1297,24 +1302,24 @@ algStatement(DAE.Statement, Text varDecls) ::=
   case _ then "/* not implemented alg statement*/"
 
     
-elseExpr(DAE.Else, Text varDecls) ::= 
+elseExpr(DAE.Else, Context context, Text varDecls) ::= 
   case NOELSE then ()
   case ELSEIF then
     # preExp = ""
-    # condExp = daeExp(exp, preExp, varDecls)
+    # condExp = daeExp(exp, context, preExp, varDecls)
     <<
     else {
     <preExp>
-    if(<condExp>)) {
-      <statementLst : algStatement(it, varDecls) \n>
+    if (<condExp>)) {
+      <statementLst : algStatement(it, context, varDecls) \n>
     }
-    <elseExpr(else_, varDecls)>
+    <elseExpr(else_, context, varDecls)>
     }
     >>
   case ELSE then
     <<
     else {
-      <statementLst : algStatement(it, varDecls) \n>
+      <statementLst : algStatement(it, context, varDecls) \n>
     }
     >>
 
@@ -1331,7 +1336,7 @@ rhsCrefType(ExpType) ::=
   case ET_INT then "(modelica_integer)"
   case _      then ""
   
-daeExp(Exp exp, Text preExp, Text varDecls) ::=
+daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case ICONST     then integer
   case RCONST     then real
   case SCONST     then daeExpSconst(string, preExp, varDecls)
@@ -1341,7 +1346,7 @@ daeExp(Exp exp, Text preExp, Text varDecls) ::=
   case UNARY      then daeExpUnary(operator, exp, preExp, varDecls)
   case LBINARY    then daeExpBinary(exp1, operator, exp2, preExp, varDecls)
   case LUNARY     then "LUNARY_NOT_IMPLEMENTED"
-  case RELATION   then daeExpRelation(exp1, operator, exp2, preExp, varDecls)
+  case RELATION   then daeExpRelation(exp, context, preExp, varDecls)
   case IFEXP      then daeExpIf(expCond, expThen, expElse, preExp, varDecls)
   case CALL       then daeExpCall(exp, preExp, varDecls)
   // PARTEVALFUNCTION
@@ -1349,7 +1354,7 @@ daeExp(Exp exp, Text preExp, Text varDecls) ::=
   case MATRIX     then "MATRIX_NOT_IMPLEMENTED"
   case RANGE      then "RANGE_NOT_IMPLEMENTED"
   case TUPLE      then "TUPLE_NOT_IMPLEMENTED"
-  case CAST       then "CAST_NOT_IMPLEMENTED"
+  case CAST       then '((<expType(ty)>)<daeExp(exp, context, preExp, varDecls)>)'
   case ASUB       then "ASUB_NOT_IMPLEMENTED"
   case SIZE       then daeExpSize(it, preExp, varDecls)
   case CODE       then "CODE_NOT_IMPLEMENTED"
@@ -1368,8 +1373,8 @@ daeExpSconst(String string, Text preExp, Text varDecls) ::=
   strVar  
 
 daeExpBinary(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
-  # e1 = daeExp(exp1, preExp, varDecls)
-  # e2 = daeExp(exp2, preExp, varDecls)
+  # e1 = daeExp(exp1, createOtherContext(), preExp, varDecls)
+  # e2 = daeExp(exp2, createOtherContext(), preExp, varDecls)
   match op
   case ADD(ty = ET_STRING) then
     # tmpStr = tempDecl("modelica_string", varDecls)
@@ -1390,7 +1395,7 @@ daeExpBinary(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
   case _   then "daeExpBinary:ERR"
 
 daeExpUnary(Operator op, Exp exp, Text preExp, Text varDecls) ::=
-  # e = daeExp(exp, preExp, varDecls)
+  # e = daeExp(exp, createOtherContext(), preExp, varDecls)
   match op
   case UMINUS     then '(-<e>)'
   case UPLUS      then '(<e>)'
@@ -1398,43 +1403,57 @@ daeExpUnary(Operator op, Exp exp, Text preExp, Text varDecls) ::=
   case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
   case _          then "daeExpUnary:ERR"
 
-daeExpRelation(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
-  # e1 = daeExp(exp1, preExp, varDecls)
-  # e2 = daeExp(exp2, preExp, varDecls)
-  match op
-  case LESS(ty = BOOL)        then '(!<e1> && <e2>)'
-  case LESS(ty = STRING)      then "# string comparison not supported\n"
-  case LESS(ty = INT)         then '(<e1> \< <e2>)'
-  case LESS(ty = REAL)        then '(<e1> \< <e2>)'
-  case GREATER(ty = BOOL)     then '(<e1> && !<e2>)'
-  case GREATER(ty = STRING)   then "# string comparison not supported\n"
-  case GREATER(ty = INT)      then '(<e1> > <e2>)'
-  case GREATER(ty = REAL)     then '(<e1> > <e2>)'
-  case LESSEQ(ty = BOOL)      then '(!<e1> || <e2>)'
-  case LESSEQ(ty = STRING)    then "# string comparison not supported\n"
-  case LESSEQ(ty = INT)       then '(<e1> \<= <e2>)'
-  case LESSEQ(ty = REAL)      then '(<e1> \<= <e2>)'
-  case GREATEREQ(ty = BOOL)   then '(<e1> || !<e2>)'
-  case GREATEREQ(ty = STRING) then "# string comparison not supported\n"
-  case GREATEREQ(ty = INT)    then '(<e1> >= <e2>)'
-  case GREATEREQ(ty = REAL)   then '(<e1> >= <e2>)'
-  case EQUAL(ty = BOOL)       then '((!<e1> && !<e2>) || (<e1> && <e2>))'
-  case EQUAL(ty = STRING)     then '(!strcmp(<e1>, <e2>))'
-  case EQUAL(ty = INT)        then '(<e1> == <e2>)'
-  case EQUAL(ty = REAL)       then '(<e1> == <e2>)'
-  case NEQUAL(ty = BOOL)      then '((!<e1> && <e2>) || (<e1> && !<e2>))'
-  case NEQUAL(ty = STRING)    then '(strcmp(<e1>, <e2>))'
-  case NEQUAL(ty = INT)       then '(<e1> != <e2>)'
-  case NEQUAL(ty = REAL)      then '(<e1> != <e2>)'
-  case _                      then "daeExpRelation:ERR"
+daeExpRelation(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case rel as RELATION then
+  # e1 = daeExp(exp1, context, preExp, varDecls)
+  # e2 = daeExp(exp2, context, preExp, varDecls)
+  match context
+  case SIMULATION then (
+    # res = tempDecl("modelica_boolean", varDecls)
+    match rel.operator
+    case LESS      then # preExp += 'RELATIONLESS(<res>, <e2>, <e2>);' res
+    case LESSEQ    then # preExp += 'RELATIONLESSEQ(<res>, <e1>, <e2>);' res
+    case GREATER   then # preExp += 'RELATIONGREATER(<res>, <e1>, <e2>);' res
+    case GREATEREQ then # preExp += 'RELATIONGREATEREQ(<res>, <e1>, <e2>);' res
+    case _         then "daeExpRelation:SIMULATION:ERR"
+  )
+  case OTHER then (
+    match rel.operator
+    case LESS(ty = ET_BOOL)        then '(!<e1> && <e2>)'
+    case LESS(ty = ET_STRING)      then "# string comparison not supported\n"
+    case LESS(ty = ET_INT)         then '(<e1> \< <e2>)'
+    case LESS(ty = ET_REAL)        then '(<e1> \< <e2>)'
+    case GREATER(ty = ET_BOOL)     then '(<e1> && !<e2>)'
+    case GREATER(ty = ET_STRING)   then "# string comparison not supported\n"
+    case GREATER(ty = ET_INT)      then '(<e1> > <e2>)'
+    case GREATER(ty = ET_REAL)     then '(<e1> > <e2>)'
+    case LESSEQ(ty = ET_BOOL)      then '(!<e1> || <e2>)'
+    case LESSEQ(ty = ET_STRING)    then "# string comparison not supported\n"
+    case LESSEQ(ty = ET_INT)       then '(<e1> \<= <e2>)'
+    case LESSEQ(ty = ET_REAL)      then '(<e1> \<= <e2>)'
+    case GREATEREQ(ty = ET_BOOL)   then '(<e1> || !<e2>)'
+    case GREATEREQ(ty = ET_STRING) then "# string comparison not supported\n"
+    case GREATEREQ(ty = ET_INT)    then '(<e1> >= <e2>)'
+    case GREATEREQ(ty = ET_REAL)   then '(<e1> >= <e2>)'
+    case EQUAL(ty = ET_BOOL)       then '((!<e1> && !<e2>) || (<e1> && <e2>))'
+    case EQUAL(ty = ET_STRING)     then '(!strcmp(<e1>, <e2>))'
+    case EQUAL(ty = ET_INT)        then '(<e1> == <e2>)'
+    case EQUAL(ty = ET_REAL)       then '(<e1> == <e2>)'
+    case NEQUAL(ty = ET_BOOL)      then '((!<e1> && <e2>) || (<e1> && !<e2>))'
+    case NEQUAL(ty = ET_STRING)    then '(strcmp(<e1>, <e2>))'
+    case NEQUAL(ty = ET_INT)       then '(<e1> != <e2>)'
+    case NEQUAL(ty = ET_REAL)      then '(<e1> != <e2>)'
+    case _                         then "daeExpRelation:OTHER:ERR"
+  )
+  case _ then "daeExpRelation:ERR"
 
 daeExpIf(Exp cond, Exp then_, Exp else_, Text preExp, Text varDecls) ::=
-  # condExp = daeExp(cond, preExp, varDecls)
+  # condExp = daeExp(cond, createOtherContext(), preExp, varDecls)
   # condVar = tempDecl("modelica_boolean", varDecls)
   # preExpThen = ""
-  # eThen = daeExp(then_, preExpThen, varDecls)
+  # eThen = daeExp(then_, createOtherContext(), preExpThen, varDecls)
   # preExpElse = ""
-  # eElse = daeExp(else_, preExpElse, varDecls)
+  # eElse = daeExp(else_, createOtherContext(), preExpElse, varDecls)
   # preExp +=  
   <<
   <condVar> = <condExp>;
@@ -1460,13 +1479,13 @@ daeExpCall(Exp call, Text preExp, Text varDecls) ::=
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
   case CALL(tuple_=false, ty=ET_NORETCALL) then
-    # argStr = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+    # argStr = (expLst of exp: '<daeExp(exp, createOtherContext(), preExp, varDecls)>' ", ")
     # funName = '<underscorePath(path)>'
     # preExp += '<underscorePrefix(builtin)><funName>(<argStr>);<\n>'
     '/* NORETCALL */'
   // non tuple calls (single return value)
   case CALL(tuple_=false) then
-    # argStr = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+    # argStr = (expLst of exp: '<daeExp(exp, createOtherContext(), preExp, varDecls)>' ", ")
     # funName = '<underscorePath(path)>'
     # retType = '<funName>_rettype'
     # retVar = tempDecl(retType, varDecls)
@@ -1474,7 +1493,7 @@ daeExpCall(Exp call, Text preExp, Text varDecls) ::=
     if builtin then '<retVar>' else '<retVar>.<retType>_1'
   // tuple calls (multiple return values)
   case CALL(tuple_=true) then
-    # argStr = (expLst of exp: '<daeExp(exp, preExp, varDecls)>' ", ")
+    # argStr = (expLst of exp: '<daeExp(exp, createOtherContext(), preExp, varDecls)>' ", ")
     # funName = '<underscorePath(path)>'
     # retType = '<funName>_rettype'
     # retVar = tempDecl(retType, varDecls)
@@ -1486,14 +1505,14 @@ daeExpArray(ExpType ty, Boolean scalar, list<Exp> array, Text preExp, Text varDe
 # arrayVar = tempDecl(arrayTypeStr, varDecls)
 # scalarPrefix = if scalar then "scalar_" else ""
 # scalarRef = if scalar then "&" else ""
-# params = '<array of e: daeExp(e, preExp, varDecls) ", ">'
+# params = '<array of e: daeExp(e, createOtherContext(), preExp, varDecls) ", ">'
 # preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLengthExp(array)>, <params>);<\n>'
 '<arrayVar>'
 
 daeExpSize(Exp exp, Text preExp, Text varDecls) ::=
 case SIZE(exp=CREF, sz=SOME(dim)) then
-  # expPart = daeExp(exp, preExp, varDecls)
-  # dimPart = daeExp(dim, preExp, varDecls)
+  # expPart = daeExp(exp, createOtherContext(), preExp, varDecls)
+  # dimPart = daeExp(dim, createOtherContext(), preExp, varDecls)
   # resVar = tempDecl("size_t", varDecls)
   # typeStr = '<expShortType(exp.ty)>_array'
   # preExp += '<resVar> = size_of_dimension_<typeStr>(<expPart>, <dimPart>);<\n>'

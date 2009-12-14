@@ -302,10 +302,30 @@ uniontype SimEqSystem
     DAE.ComponentRef componentRef;
     DAE.Exp exp;
   end SES_ARRAY_CALL_ASSIGN;
+  record SES_ALGORITHM
+    list<DAE.Statement> statements;
+  end SES_ALGORITHM;
   record SES_NOT_IMPLEMENTED
     String msg;
   end SES_NOT_IMPLEMENTED;
 end SimEqSystem;
+
+uniontype Context
+  record SIMULATION end SIMULATION;
+  record OTHER end OTHER;
+end Context;
+
+function createSimulationContext
+  output Context context;
+algorithm
+  context := SIMULATION();
+end createSimulationContext;
+
+function createOtherContext
+  output Context context;
+algorithm
+  context := OTHER();
+end createOtherContext;
 
 uniontype SimWhenClause
   record SIM_WHEN_CLAUSE
@@ -1608,14 +1628,13 @@ algorithm
         equation_ = createSingleArrayEqnCode(dae, jac);
       then
         equation_;
-    //    /* A single algorithm section for several variables. */
-    //case (mixedEvent,genDiscrete,dae,jac,jac_tp)
-    //  equation
-    //    singleAlgorithmSection(dae);
-    //    (s1,cg_id_1,f1) = generateSingleAlgorithmCode(genDiscrete, dae, jac, cg_id);
-    //  then
-    //    (s1,cg_id_1,f1);
-
+    /* A single algorithm section for several variables. */
+    case (mixedEvent,genDiscrete,dae,jac,jac_tp)
+      equation
+        singleAlgorithmSection(dae);
+        equation_ = createSingleAlgorithmCode(dae, jac);
+      then
+        equation_;
     //    /* constant jacobians. Linear system of equations (A x = b) where
     //     A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as
     //     for next case */
@@ -1719,6 +1738,68 @@ algorithm
         fail();
   end matchcontinue;
 end createSingleArrayEqnCode;
+
+public function createSingleAlgorithmCode 
+  input DAELow.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  output SimEqSystem equation_;
+algorithm
+  equation_ :=
+  matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption)
+    local
+      Integer indx,cg_id_1,cg_id;
+      list<Integer> ds;
+      Exp.Exp e1,e2;
+      Exp.ComponentRef cr,origname,cr_1;
+      Codegen.CFunction s1;
+      list<CFunction> f1;
+      DAELow.Variables vars,knvars;
+      DAELow.EquationArray eqns,se,ie;
+      DAELow.MultiDimEquation[:] ae;
+      Algorithm.Algorithm[:] al;
+      Algorithm.Algorithm alg;
+      DAELow.EventInfo ev;
+      list<Exp.ComponentRef> solvedVars,algOutVars;
+      list<Exp.Exp> algOutExpVars;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      String message,algStr;
+      list<DAE.Statement> algStatements;
+    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
+      equation
+        (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
+        alg = al[indx + 1];
+        solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
+        algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
+        // The variables solved for and the output variables of the algorithm must be the same.
+        true = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
+        DAE.ALGORITHM_STMTS(algStatements) = alg;
+        equation_ = SES_ALGORITHM(algStatements);
+      then equation_;
+    /* Error message, inverse algorithms not supported yet */
+    case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
+      equation
+        (DAELow.ALGORITHM(indx,_,algOutExpVars) :: _) = DAELow.equationList(eqns);
+        alg = al[indx + 1];
+        solvedVars = Util.listMap(DAELow.varList(vars),DAELow.varCref);
+        algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
+
+        // The variables solved for and the output variables of the algorithm must be the same.
+        false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
+        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});
+        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
+          ". This is not implemented yet.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {message});
+      then fail();
+    case (_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR,
+          {
+          "array equations currently only supported on form v = functioncall(...)"});
+      then
+        fail();
+  end matchcontinue;
+end createSingleAlgorithmCode;
 
 // TODO: are the cases really correct?
 public function createSingleArrayEqnCode2 
