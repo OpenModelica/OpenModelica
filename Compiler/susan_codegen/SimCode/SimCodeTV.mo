@@ -28,9 +28,10 @@ package SimCode
   
   uniontype Variable
     record VARIABLE
-      String name;
+      DAE.ComponentRef name;
       Type ty;
       Option<DAE.Exp> value;
+      list<DAE.Exp> instDims;
     end VARIABLE;  
   end Variable;
   
@@ -136,6 +137,7 @@ package SimCode
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
+      Option<DAE.ComponentRef> arrayCref;
     end SIMVAR;
   end SimVar;
   
@@ -549,6 +551,11 @@ package DAE
       Exp exp1;
       Exp exp;
     end STMT_ASSIGN;
+    record STMT_ASSIGN_ARR
+      ExpType type_;
+      ComponentRef componentRef;
+      Exp exp;
+    end STMT_ASSIGN_ARR;
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;

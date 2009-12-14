@@ -115,11 +115,12 @@ uniontype Variable
   record VARIABLE
     //the name should become a Path because templates will take responsibility for ident encodings
     //an alternative is to expect names with dot notation inside the string; an encoding function sholud be then imported
-    String       name   "variable name";
+    DAE.ComponentRef       name   "variable name";
     Type          ty    "variable type";
     Option<Exp.Exp> value "variable default value";
     //list<Exp.Exp> instDims "for array allocation, DAE.ICONST() or DAE.CREF()"; //only on input vars (dimensions) dependens
 //??st missing    VariableAttributes attributes "Based on DAE.VariableAttributes, but possibly extended"; 
+    list<DAE.Exp> instDims;
   end VARIABLE;  
 end Variable;
 
@@ -362,6 +363,7 @@ uniontype SimVar
     Boolean isFixed;
     Exp.Type type_;
     Boolean isDiscrete;
+    Option<DAE.ComponentRef> arrayCref; // if this var is the first in an array
   end SIMVAR;
 end SimVar;
 
@@ -471,19 +473,18 @@ algorithm
   end matchcontinue;
 end translateModel;
 
+/* Finds the called functions in DAELow and transforms them to a list of
+   libraries and a list of Function uniontypes. */
 public function createFunctions 
-  "function createFunctions
-  Finds the called functions in daelow and generates code for them from 
-  the given DAE. Hence, the functions must exist in the DAE.Element list."
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input DAELow.DAELow inDAELow;
   input Absyn.Path inPath;
   input String inString;
-  output list<String> outStringLst;
+  output list<String> libs;
   output list<Function> functions;
 algorithm
-  (outStringLst, functions) :=
+  (libs, functions) :=
   matchcontinue (inProgram,inDAElist,inDAELow,inPath,inString)
     local
       list<Absyn.Path> funcpaths;
@@ -496,53 +497,18 @@ algorithm
       Absyn.Path path;
       list<Function> fns;
       SimCode sc;
-    
-    /*
-    case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filename) / * Needed to instantiate functions libs * /
-      equation
-        funcpaths = getCalledFunctions(dae, dlow);
-        Debug.fprint("info", "Found called functions: ") "debug" ;
-        debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
-        debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-        Debug.fprintln("info", debugpathstr) "debug" ;
-        funcelems = generateFunctions2(p, funcpaths);
-        debugstr = Print.getString();
-        Print.clearBuf();
-        Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-				(_,libs1) = generateExternalObjectIncludes(dlow);
-        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems));
-        Print.writeBuf(filename);
-      then
-        Util.listUnion(libs1,libs2);
-    */
-    
-    ////+d=tplmode,tpl1
-    //case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filename) 
-    //  local
-    //    Exp.Exp exp;       
-    //  equation
-    //    true = RTOpts.debugFlag("tpl1");
-    //    exp = DAE.BINARY(DAE.ICONST(10), DAE.ADD(DAE.ET_INT), DAE.ICONST(11));
-    //    str = Tpl.tplString(SimCodeC.expExp, exp);
-    //    System.writeFile(filename, str);
-    //    //Print.writeBuf(filename);
-    //  then
-    //    {};
-    
-    //+d=tplmode,tpl2
     case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filenameprefix) 
       equation
-        true = RTOpts.debugFlag("tpl2");
         funcpaths = SimCodegen.getCalledFunctions(dae, dlow);
-        Debug.fprint("info", "Found called functions: ") "debug" ;
-        debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
-        debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-        Debug.fprintln("info", debugpathstr) "debug" ;
+        //Debug.fprint("info", "Found called functions: ") "debug" ;
+        //debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
+        //debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
+        //Debug.fprintln("info", debugpathstr) "debug" ;
         funcelems = SimCodegen.generateFunctions2(p, funcpaths);
-        debugstr = Print.getString();
-        Print.clearBuf();
-        Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-				//(_,libs1) = SimCodegen.generateExternalObjectIncludes(dlow);
+        //debugstr = Print.getString();
+        //Print.clearBuf();
+        //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
+        //(_,libs1) = SimCodegen.generateExternalObjectIncludes(dlow);
         libs1 = {};
         //usless filter, all are already functions from generateFunctions2
         //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
@@ -551,7 +517,6 @@ algorithm
         libs2 = {};
       then
         (Util.listUnion(libs1,libs2), fns);
-        
     case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Code generation of Modelica functions failed. "});
@@ -560,40 +525,32 @@ algorithm
   end matchcontinue;
 end createFunctions;
 
-
 protected function elaborateFunctions 
-"function: elaborateFunctions
-  ."
-  input list<DAE.Element> inDAEElementLst;
-  output list<Function> outFunctionLst;
+  input list<DAE.Element> daeElements;
+  output list<Function> functions;
 protected
   list<Function> fns;  
 algorithm
-  (fns, _) := elaborateFunctions2(inDAEElementLst, {},{});
-  outFunctionLst := listReverse(fns);  
+  (fns, _) := elaborateFunctions2(daeElements, {},{});
+  functions := listReverse(fns);  
 end elaborateFunctions;
 
-
 protected function elaborateFunctions2 
-"function: elaborateFunctions2
-  Helper function to elaborateFunctions."
-  input list<DAE.Element> inDAEElementLst;
-  input list<Function> inAccFunctionLst;
+  input list<DAE.Element> daeElements;
+  input list<Function> inFunctions;
   input list<String> inRecordTypes;
-  output list<Function> outFunctionLst;
+  output list<Function> outFunctions;
   output list<String> outRecordTypes;
 algorithm
-  (outCFunctionLst,outRecordTypes):=
-  matchcontinue (inDAEElementLst,inAccFunctionLst,inRecordTypes)
+  (outFunctions, outRecordTypes):=
+  matchcontinue (daeElements, inFunctions, inRecordTypes)
     local
       list<Function> accfns, fns;
       Function fn;
       list<String> rt, rt_1, rt_2;
       DAE.Element fel;
       list<DAE.Element> rest;
-      
     case ({},accfns,rt) then (accfns,rt);
-        
     case ((fel :: rest),accfns,rt)
       equation
         (fn,rt_1) = elaborateFunction(fel, rt);
@@ -603,10 +560,8 @@ algorithm
   end matchcontinue;
 end elaborateFunctions2;
 
-
+/* Does the actual work of transforming a DAE.FUNCTION to a Function. */
 protected function elaborateFunction 
-"function: elaborateFunction
-  ."
   input DAE.Element inElement;
   input list<String> inRecordTypes;
   output Function outFunction;
@@ -841,16 +796,17 @@ algorithm
       DAE.Type daeType;
       Exp.ComponentRef id;
       list<Exp.Subscript> inst_dims;
+      list<DAE.Exp> inst_dims_exp;
     //TODO: componentRef ?? can it be something other than CREF_IDENT here ?     
-    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident = name),
+    case (DAE.VAR(componentRef = id,
                   kind = DAE.VARIABLE(),
                   ty = daeType,
-    //TODO: treat the non {} dims
-                  dims = {}
+                  dims = inst_dims
                  ))
       equation
         expType = Types.elabType(daeType);
-      then VARIABLE(name,expType,NONE);
+        inst_dims_exp = Util.listMap(inst_dims, indexSubscriptToExp);
+      then VARIABLE(id,expType,NONE,inst_dims_exp);
     case (_)
       equation
         // TODO: ArrayEqn fails here
@@ -860,6 +816,16 @@ algorithm
   end matchcontinue;
 end daeInOutSimVar;
 
+protected function indexSubscriptToExp
+  input DAE.Subscript subscript;
+  output DAE.Exp exp_;
+algorithm
+  exp_ :=
+  matchcontinue (subscript)
+    case (DAE.INDEX(exp_)) then exp_;
+    case (_) then DAE.ICONST(99); // TODO: Why do we end up here?
+  end matchcontinue;
+end indexSubscriptToExp;
 
 protected function typesSimFunctionArg 
 "function: generateFunctionArgs
@@ -877,7 +843,7 @@ algorithm
       equation
         expType = typesExpType(tty);        
       then
-        VARIABLE(name,expType,NONE);
+        VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
   end matchcontinue;
 end typesSimFunctionArg;
 
@@ -990,7 +956,7 @@ algorithm
     case (DAE.TYPES_VAR(name = name, type_ = typesType))
       equation
         expType = typesExpType(typesType);
-      then VARIABLE(name,expType,NONE);
+      then VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
   end matchcontinue;
 end typesVar;
 
@@ -2513,10 +2479,11 @@ algorithm
       DAE.ComponentRef newOrigName;
       DAE.Ident newNameIdent;
       DAE.Ident newOrigNameIdent;
+      Option<DAE.ComponentRef> arrayCref;
     case (SIMVAR(DAE.CREF_IDENT(nameIdent, nameIdentType, nameSubscriptLst),
                  DAE.CREF_IDENT(origNameIdent, origNameIdentType,
                                 origNameSubscriptLst),
-                 comment, index, isFixed, type_, isDiscrete))
+                 comment, index, isFixed, type_, isDiscrete, arrayCref))
       equation
         newNameIdent = DAELow.derivativeNamePrefix +& nameIdent;
         newName = DAE.CREF_IDENT(newNameIdent, nameIdentType,
@@ -2524,11 +2491,37 @@ algorithm
         newOrigNameIdent = changeNameForDerivative(origNameIdent);
         newOrigName = DAE.CREF_IDENT(newOrigNameIdent, origNameIdentType,
                                      origNameSubscriptLst);
+        //TODO: transform arraycref?
+        //arrayCref = getArrayCref(...);
       then
         SIMVAR(newName, newOrigName, comment, index, isFixed, type_,
-               isDiscrete);
+               isDiscrete, arrayCref);
   end matchcontinue;
 end derVarFromStateVar;
+
+protected function getArrayCref
+  input DAELow.Var var;
+  output Option<DAE.ComponentRef> arrayCref;
+algorithm
+  arrayCref :=
+  matchcontinue (var)
+    local
+      DAE.ComponentRef origname;
+      DAE.ComponentRef arrayCrefInner;
+      String flattenedName;
+    case (DAELow.VAR(origVarName=origname))
+      equation
+        true = Exp.crefIsFirstArrayElt(origname);
+        arrayCrefInner = Exp.crefStripLastSubs(origname);
+        flattenedName = Exp.printComponentRefStr(arrayCrefInner);
+        flattenedName = Util.modelicaStringToCStr(flattenedName, true);
+        // TODO: is last step really ok?
+        arrayCrefInner = DAE.CREF_IDENT(flattenedName, DAE.ET_OTHER(), {});
+      then SOME(arrayCrefInner);
+    case (_)
+      then NONE();
+  end matchcontinue;
+end getArrayCref;
 
 protected function dlowvarToSimvar
   input DAELow.Var dlowVar;
@@ -2551,7 +2544,7 @@ algorithm
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
-      
+      Option<DAE.ComponentRef> arrayCref;
     case ((dlowVar as DAELow.VAR(varName = cr,
                                  varKind = kind,
                                  varDirection = dir,
@@ -2570,8 +2563,10 @@ algorithm
       isFixed = DAELow.varFixed(dlowVar);
       type_ = DAELow.makeExpType(tp);
       isDiscrete = isVarDiscrete(tp, kind);
+      arrayCref = getArrayCref(dlowVar);
     then
-      SIMVAR(cr, origname, commentStr, indx, isFixed, type_, isDiscrete);
+      SIMVAR(cr, origname, commentStr, indx, isFixed, type_, isDiscrete,
+             arrayCref);
   end matchcontinue;
 end dlowvarToSimvar;
 

@@ -137,16 +137,11 @@ extern "C" { /* adrpo: this is needed for Visual C++ compilation to work! */
 <utilStaticStringArrayComment("string_alg_comments", vars.stringAlgVars)>
 <utilStaticStringArrayComment("string_param_comments", vars.stringParamVars)>
 
-<vars.stateVars of var as SIMVAR:
-  '#define <cref(name)> localData-\>states[<var.index>]' "\n">
-<vars.derivativeVars of var as SIMVAR:
-  '#define <cref(name)> localData-\>statesDerivatives[<var.index>]' "\n">
-<vars.algVars of var as SIMVAR:
-  '#define <cref(name)> localData-\>algebraics[<var.index>]' "\n">
-<vars.paramVars of var as SIMVAR:
-  '#define <cref(name)> localData-\>parameters[<var.index>]' "\n">
-<vars.extObjVars of var as SIMVAR:
-  '#define <cref(name)> localData-\>extObjs[<var.index>]' "\n">
+<vars.stateVars of var as SIMVAR: define(it, "states") "\n">
+<vars.derivativeVars of var as SIMVAR: define(it, "statesDerivatives") "\n">
+<vars.algVars of var as SIMVAR: define(it, "algebraics") "\n">
+<vars.paramVars of var as SIMVAR: define(it, "parameters") "\n">
+<vars.extObjVars of var as SIMVAR: define(it, "extObjs") "\n">
 
 static char init_fixed[NX+NX+NY+NP] = {
   <[(vars.stateVars of var as SIMVAR:
@@ -185,6 +180,17 @@ char* getName(double* ptr)
   return "";
 }
 >>
+
+define(SimVar, String arrayName) ::=
+case SIMVAR(arrayCref=SOME(c)) then
+  <<
+  #define <cref(c)> localData-\><arrayName>[<index>]
+  #define <cref(name)> localData-\><arrayName>[<index>]
+  >>
+case SIMVAR then
+  <<
+  #define <cref(name)> localData-\><arrayName>[<index>]
+  >>
 
 functionDivisionError() ::=
 <<
@@ -1052,13 +1058,13 @@ recordDeclaration(RecordDeclaration) ::=
 <<
 struct <name> {
   <variables of var as VARIABLE :
-      if expType(ty) then '<it> <var.name>;'
-      else '/* <var.name> is an odd member. */'
+      if expType(ty) then '<it> <cref(var.name)>;'
+      else '/* <cref(var.name)> is an odd member. */'
   \n>
 };
 <recordDefinition( dotPath(defPath),
                    underscorePath(defPath),
-                   (variables of VARIABLE : '"<name>"' ",") )>
+                   (variables of VARIABLE : '"<cref(name)>"' ",") )>
 >> 
   case RECORD_DECL_DEF then 
     recordDefinition( dotPath(path),
@@ -1087,12 +1093,12 @@ functionHeader(String fname, Variables fargs, Variables outVars) ::=
 typedef struct <fname>_rettype_s 
 {
   <outVars of VARIABLE :
-  '<expType(ty)> targ<i1>; /* <name><if ty is ET_ARRAY then '[<arrayDimensions : if it is SOME(d) then d else ":" ", ">]'> */'
+  '<varType(it)> targ<i1>; /* <cref(name)><if ty is ET_ARRAY then '[<arrayDimensions : if it is SOME(d) then d else ":" ", ">]'> */'
   \n>
 } <fname>_rettype;
 
 DLLExport 
-<fname>_rettype _<fname>(<fargs of VARIABLE : '<expType(ty)> <name>' ", ">);
+<fname>_rettype _<fname>(<fargs of VARIABLE : '<varType(it)> <cref(name)>' ", ">);
 
 DLLExport 
 int in_<fname>(type_description * inArgs, type_description * outVar);
@@ -1107,7 +1113,7 @@ extern "C" {
 /* header part */
 <functions of FUNCTION : 
   <<
-  <recordDecls : recordDeclaration() \n>
+  /*recordDecls : recordDeclaration() \n*/
   <functionHeader(underscorePath(name), functionArguments, outVars)>
   >> 
 \n> 
@@ -1123,27 +1129,85 @@ extern "C" {
 
 >>
 
+varDeclaration(Variable) ::=
+case VARIABLE then '<varType(it)> <cref(name)>;<\n>'
+
+varType(Variable) ::=
+case var as VARIABLE then
+  if instDims then
+    match var.ty
+    case ET_INT    then "integer_array"
+    case ET_REAL   then "real_array"
+    case ET_STRING then "string_array"
+    case ET_BOOL   then "boolean_array"
+    case _         then "unknown array"
+  else
+    match var.ty
+    case ET_INT    then "modelica_integer"
+    case ET_REAL   then "modelica_real"
+    case ET_BOOL   then "modelica_boolean"
+    case ET_STRING then "modelica_string"
+    case ET_COMPLEX(complexClassType = EXTERNAL_OBJ)  then "void *" 
+    case ET_OTHER  then "modelica_complex"
+    case ET_LIST
+    case ET_METATUPLE
+    case ET_METAOPTION
+    case ET_UNIONTYPE
+    case ET_POLYMORPHIC then "metamodelica_type"
+    case ET_ARRAY then 
+      match ty
+      case ET_INT    then "integer_array"
+      case ET_REAL   then "real_array"
+      case ET_STRING then "string_array"
+      case ET_BOOL   then "boolean_array"
+
+varInit(Variable, Text varDecls, Text varInits) ::=
+case var as VARIABLE then
+  # varDecls += varDeclaration(var)
+  # instDimsInit = (instDims of exp: daeExp(exp, varInits, varDecls) ", ")
+  if instDims then
+    # varInits += 'alloc_<expShortType(var.ty)>_array(&<cref(var.name)>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    ()
+  else
+    ()
+
+varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits) ::=
+case var as VARIABLE then
+  # instDimsInit = (instDims of exp: daeExp(exp, varInits, varDecls) ", ")
+  if instDims then
+    # varInits += 'alloc_<expShortType(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    <<
+    copy_<expShortType(var.ty)>_array_data(&<cref(var.name)>, &<dest>.targ<i>);
+    >>
+  else
+    <<
+    <dest>.targ<i> = <cref(var.name)>;
+    >>
+
 functionDef(Function) ::=
   case FUNCTION then
     # System.tmpTickReset(1)
     # fname = underscorePath(name)
     # retType = '<fname>_rettype'
     # varDecls = ""
+    # varInits = ""
     # retVar   = tempDecl(retType, varDecls)
     # stateVar = tempDecl("state", varDecls)
-    # varDecls += variableDeclarations of VARIABLE : '<expType(ty)> <name>;<\n>'
+    # foo = (variableDeclarations: varInit(it, varDecls, varInits))
     # bodyPart = (body of stmt : funStatement(stmt, varDecls) \n)
+    # outVarsStr = (outVars: varOutput(it, retVar, i1, varDecls, varInits))
     <<
-    <retType> _<fname>(<functionArguments of VARIABLE : '<expType(ty)> <name>' ", ">)
+    <retType> _<fname>(<functionArguments of VARIABLE: '<expType(ty)> <cref(name)>' ", ">)
     {
       <varDecls>
       <stateVar> = get_memory_state();
+
+      <varInits>
+
       <bodyPart>
       
       _return:
-      <outVars of VARIABLE :  
-        '<retVar>.targ<i1> = <name>;'  
-      \n>  
+      <outVarsStr>
       restore_memory_state(<stateVar>);
       return <retVar>;
     }
@@ -1161,9 +1225,9 @@ funBody(list<Statement> body) ::=
 
 funStatement(Statement, Text varDecls) ::=
   case ALGORITHM then (statementLst : algStatement(it, varDecls) \n) 
-  case BLOCK then ""
+  case BLOCK then "/* not implemented fun statement */"
 
-// Codegen.generateStatement
+// Codegen.generateAlgorithmStatement
 algStatement(DAE.Statement, Text varDecls) ::=
   case STMT_ASSIGN(exp1 = CREF(componentRef = WILD), exp = e) then
     # preExp = "" 
@@ -1172,12 +1236,27 @@ algStatement(DAE.Statement, Text varDecls) ::=
     <preExp>
     <expPart>
     >>
-  case STMT_ASSIGN(exp1 = CREF) then     
+  case STMT_ASSIGN(exp1 = CREF) then
     # preExp = ""
     # expPart = daeExp(exp, preExp, varDecls)
     <<
     <preExp>
     <scalarLhsCref(exp1.componentRef)> = <expPart>;
+    >>
+  case STMT_ASSIGN then
+    # preExp = ""
+    # expPart1 = daeExp(exp1, preExp, varDecls)
+    # expPart2 = daeExp(exp, preExp, varDecls)
+    <<
+    <preExp>
+    <expPart1> = <expPart2>;
+    >>
+  case STMT_ASSIGN_ARR then // TODO: this is different depending on context
+    # preExp = ""
+    # expPart = daeExp(exp, preExp, varDecls)
+    <<
+    <preExp>
+    copy_<expShortType(type_)>_array_data(&<expPart>, &<cref(componentRef)>);
     >>
   case STMT_IF then
     # preExp = ""
@@ -1215,6 +1294,7 @@ algStatement(DAE.Statement, Text varDecls) ::=
       }
     } /*end for*/
     >>
+  case _ then "/* not implemented alg statement*/"
 
     
 elseExpr(DAE.Else, Text varDecls) ::= 
@@ -1271,7 +1351,7 @@ daeExp(Exp exp, Text preExp, Text varDecls) ::=
   case TUPLE      then "TUPLE_NOT_IMPLEMENTED"
   case CAST       then "CAST_NOT_IMPLEMENTED"
   case ASUB       then "ASUB_NOT_IMPLEMENTED"
-  case SIZE       then "SIZE_NOT_IMPLEMENTED"
+  case SIZE       then daeExpSize(it, preExp, varDecls)
   case CODE       then "CODE_NOT_IMPLEMENTED"
   case REDUCTION  then "REDUCTION_NOT_IMPLEMENTED"
   case END        then "END_NOT_IMPLEMENTED"
@@ -1302,6 +1382,11 @@ daeExpBinary(Exp exp1, Operator op, Exp exp2, Text preExp, Text varDecls) ::=
   case POW then 'pow((modelica_real)<e1>, (modelica_real)<e2>)'
   case AND then '(<e1> && <e2>)'
   case OR  then '(<e1> || <e2>)'
+  case MUL_ARRAY_SCALAR then
+    # type = if ty is ET_ARRAY(ty=ET_INT) then "integer_array" else "real_array"
+    # var = tempDecl(type, varDecls)
+    # preExp += 'mul_alloc_<type>_scalar(&<e1>, <e2>, &<var>);'
+    '<var>'
   case _   then "daeExpBinary:ERR"
 
 daeExpUnary(Operator op, Exp exp, Text preExp, Text varDecls) ::=
@@ -1397,13 +1482,23 @@ daeExpCall(Exp call, Text preExp, Text varDecls) ::=
     '<retVar>'
 
 daeExpArray(ExpType ty, Boolean scalar, list<Exp> array, Text preExp, Text varDecls) ::=
-# arrayTypeStr = expType(ty)
+# arrayTypeStr = '<expShortType(ty)>_array'
 # arrayVar = tempDecl(arrayTypeStr, varDecls)
 # scalarPrefix = if scalar then "scalar_" else ""
 # scalarRef = if scalar then "&" else ""
 # params = '<array of e: daeExp(e, preExp, varDecls) ", ">'
 # preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLengthExp(array)>, <params>);<\n>'
 '<arrayVar>'
+
+daeExpSize(Exp exp, Text preExp, Text varDecls) ::=
+case SIZE(exp=CREF, sz=SOME(dim)) then
+  # expPart = daeExp(exp, preExp, varDecls)
+  # dimPart = daeExp(dim, preExp, varDecls)
+  # resVar = tempDecl("size_t", varDecls)
+  # typeStr = '<expShortType(exp.ty)>_array'
+  # preExp += '<resVar> = size_of_dimension_<typeStr>(<expPart>, <dimPart>);<\n>'
+  resVar
+case _ then "size(X) not implemented"
 
 underscorePrefix(Boolean builtin) ::=
   case true then ""
