@@ -1182,6 +1182,8 @@ algorithm
         // we need this as we get the arguments in reverse from RTOpts.args 
         args_1 = listReverse(args_1); 
         
+        System.addToRoots("instantiationCache", Inst.emptyInstHashTable());
+        
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
         ismode = RTOpts.debugFlag("interactive");

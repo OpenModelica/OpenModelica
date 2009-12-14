@@ -72,6 +72,7 @@ package Inst
      future.
   4. Fu"
 
+// public imports
 public import Absyn;
 public import ClassInf;
 public import Connect;
@@ -84,49 +85,54 @@ public import Mod;
 public import Prefix;
 public import RTOpts;
 public import SCode;
+public import UnitAbsyn;
 
-public type Prefix = Prefix.Prefix "
-  These type aliases are introduced to make the code a little more
-  readable.
-" ;
-
-public type Mod = DAE.Mod;
-
-public type Ident = DAE.Ident;
-
-public type Env = Env.Env;
-public type InstanceHierarchy = InstanceHierarchy.InstanceHierarchy;
-
-public uniontype CallingScope "Calling scope is used to determine when unconnected flow variables 
-    should be set to zero."
-  record TOP_CALL end TOP_CALL;
-
-  record INNER_CALL end INNER_CALL;
-
-end CallingScope;
-
-public type InstDims = list<list<DAE.Subscript>>; 
-/* 
-Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
-This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
-E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes 
-*/
-
-/* adrpo: note that uniontype Initial moved to SCode! */
+// **
+// These type aliases are introduced to make the code a little more readable.
+// **
 
 public 
-uniontype DimExp
-  record DIMINT
-    Integer integer;
+type Prefix = Prefix.Prefix "a prefix";
+
+public 
+type Mod = DAE.Mod "a modification";
+
+public 
+type Ident = DAE.Ident "an identifier";
+
+public 
+type Env = Env.Env "an environment";
+  
+public 
+type InstanceHierarchy = InstanceHierarchy.InstanceHierarchy "an instance hierarchy";
+
+public uniontype CallingScope "
+Calling scope is used to determine when unconnected flow variables should be set to zero."
+  record TOP_CALL "this is a top call" end TOP_CALL;
+  record INNER_CALL "this is an inner call" end INNER_CALL;
+end CallingScope;
+
+public type InstDims = list<list<DAE.Subscript>> 
+"Changed from list<Subscript> to list<list<Subscript>>. One list for each scope.
+ This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
+ E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
+
+public 
+uniontype DimExp "a dimension expresion"
+  record DIMINT "the dimension is given by an integer"
+    Integer integer "the dimension";
   end DIMINT;
 
-  record DIMEXP
-    DAE.Subscript subscript;
-    Option<DAE.Exp> expExpOption;
+  record DIMEXP "the dimension is given by a subscript or an optional expresion"
+    DAE.Subscript subscript "the subscript";
+    Option<DAE.Exp> expExpOption "the optional expresion";
   end DIMEXP;
-
 end DimExp;
 
+public 
+constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
+
+// protected imports
 protected import Algorithm;
 protected import Builtin;
 protected import Ceval;
@@ -155,9 +161,6 @@ protected import ValuesUtil;
 protected import VarTransform;
 protected import System;
 
-public import UnitAbsyn;
-
-public constant String forScopeName="$for loop scope$";
 
 protected function printDimsStr 
 "function: printDims
@@ -246,21 +249,21 @@ algorithm
       InstanceHierarchy oIH1, oIH2, iIH;
     case (cache,iIH,p)
       equation 
-        //Debug.fprintln("insttr", "instantiate");
+        // Debug.fprintln("insttr", "instantiate");
         pnofunc = Util.listSelect(p, isNotFunction);
         pfunc = Util.listSelect(p, SCode.isFunction);
         (cache,env) = Builtin.initialEnv(cache);
-        //Debug.fprintln("insttr", "Instantiating functions");
+        // Debug.fprintln("insttr", "Instantiating functions");
         pfuncnames = Util.listMap(pfunc, SCode.className);
         str1 = Util.stringDelimitList(pfuncnames, ", ");
-        //Debug.fprint("insttr", "Instantiating functions: ");
-        //Debug.fprintln("insttr", str1);
+        // Debug.fprint("insttr", "Instantiating functions: ");
+        // Debug.fprintln("insttr", str1);
         envimpl = Env.extendFrameClasses(env, p) "pfunc" ;
         (cache,envimpl_1,oIH1,lfunc) = instProgramImplicit(cache, envimpl, iIH, pfunc);
-        //Debug.fprint("insttr", "Instantiating other classes: ");
+        // Debug.fprint("insttr", "Instantiating other classes: ");
         pnofuncnames = Util.listMap(pnofunc, SCode.className);
         str2 = Util.stringDelimitList(pnofuncnames, ", ");
-        //Debug.fprintln("insttr", str2);
+        // Debug.fprintln("insttr", str2);
         (cache, oIH2, lnofunc) = instProgram(cache, envimpl_1, oIH1, pnofunc);
         l = listAppend(lfunc, lnofunc);
         // p_1 = addElaboratedFuncsToProgram(cache,env,p); // stefan
@@ -294,7 +297,7 @@ algorithm
       Env.Cache cache;
     case (cache,inIH,p)
       equation 
-        //Debug.fprintln("insttr", "instantiate_implicit");
+        // Debug.fprintln("insttr", "instantiate_implicit");
         (cache,env) = Builtin.initialEnv(cache);
         env_1 = Env.extendFrameClasses(env, p);
         (cache,_,outIH,l) = instProgramImplicit(cache,env_1,inIH, p);
@@ -463,6 +466,7 @@ algorithm
         Error.addMessage(Error.NO_CLASSES_LOADED, {});
       then
         fail();
+
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.IDENT(name = name2))) /* top level class */ 
       equation 
         (cache,env) = Builtin.initialEnv(cache); 
@@ -470,6 +474,7 @@ algorithm
         (cache,env_2,ih,dae) = instClassInProgramImplicit(cache, env_1, ih, cdecls, path);
       then
         (cache,env_2,ih,DAE.DAE(dae));
+
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
       local String s;
       equation 
@@ -480,6 +485,7 @@ algorithm
         (cache, env, ih, dae) = implicitInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
       then
         (cache,env,ih,DAE.DAE(dae));
+
     case (_,_,_,_)
       equation 
         print("-Inst.instantiateClassImplicit failed\n");
@@ -686,12 +692,14 @@ algorithm
         (cache,env_1,ih,dae) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
       then
         (cache,env_1,ih,dae);
+
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
       equation 
         failure(equality(name = name2));
         (cache,env,ih,dae) = instFunctionInProgramImplicit(cache,env,ih, cs, path);
       then
         (cache,env,ih,dae);
+
     case (cache,env,ih,{},_) then (cache,env,ih,{}); 
     case (cache,env,ih,_,_)  then fail(); 
   end matchcontinue;
@@ -731,12 +739,14 @@ algorithm
         dae = listAppend(dae1, dae2);
       then
         (cache,env_2,ih,dae);
+
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(ref as Absyn.IDENT(name = name2)))
       equation 
         equality(name = name2);
         (cache,env_1,ih,dae2) = instClassDecls(cache,env,ih, cs, ref);
       then
         (cache,env_1,ih,dae2);
+
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
       equation 
         equality(name = name2);
@@ -745,6 +755,7 @@ algorithm
         dae = listAppend(dae1, dae2);
       then
         (cache,env_2,ih,dae);
+
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(ref as Absyn.QUALIFIED(name = name2)))
       equation 
         failure(equality(name = name2));
@@ -753,6 +764,7 @@ algorithm
         dae = listAppend(dae1, dae2);
       then
         (cache,env_2,ih,dae);
+
     case (cache,env,ih,{},_) then (cache,env,ih,{}); 
     case (_,_,ih,_,ref)
       equation 
@@ -851,14 +863,14 @@ algorithm
     case (cache,env,ih,{(c as SCode.CLASS(name = n))})
       equation 
         Debug.fcall("execstat",print, "*** Inst -> enter at time: " +& realString(clock()) +& "\n" );
-        //Debug.fprint("insttr", "inst_program1: ");
-        //Debug.fprint("insttr", n);
-        //Debug.fprintln("insttr", "");
+        // Debug.fprint("insttr", "inst_program1: ");
+        // Debug.fprint("insttr", n);
+        // Debug.fprintln("insttr", "");
         containedInOpt = Env.getEnvPath(env);
         //i = InstanceHierarchy.createInstance(c, "TOP_INSTANCE", containedInOpt, Absyn.IDENT(n), cache, env);
         //ih = i::ih;
-        Debug.fcall2("instance", InstanceHierarchy.dumpInstanceHierarchy, ih, 1);
-        Debug.fcall("instance", print, "\n");
+        // Debug.fcall2("instance", InstanceHierarchy.dumpInstanceHierarchy, ih, 1);
+        // Debug.fcall("instance", print, "\n");
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) ;
         Debug.fcall("execstat",print, "*** Inst -> instClass finished at time: " +& realString(clock()) +& "\n" );
         (roots,dae2) = ConnectionGraph.findResultGraph(graph);
@@ -872,7 +884,7 @@ algorithm
     case (cache,env,ih,(c :: (cs as (_ :: _))))
          local String str;
       equation  
-        //Debug.fprintln("insttr", "inst_program2");
+        // Debug.fprintln("insttr", "inst_program2");
         (cache,env_1,ih,dae1) = instClassDecl(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}) ;
         //str = SCode.printClassStr(c); print("------------------- CLASS instProgram-----------------\n");print(str);print("\n===============================================\n");
         //str = Env.printEnvStr(env_1);print("------------------- env instProgram 1-----------------\n");print(str);print("\n===============================================\n");
@@ -917,9 +929,9 @@ algorithm
     case (cache,env,ih,((c as SCode.CLASS(name = n,restriction = restr)) :: cs))
       local String s;
       equation 
-        //Debug.fprint("insttr", "inst_program_implicit: ");
-        //Debug.fprint("insttr", n);
-        //Debug.fprintln("insttr", "");
+        // Debug.fprint("insttr", "inst_program_implicit: ");
+        // Debug.fprint("insttr", n);
+        // Debug.fprintln("insttr", "");
         env = Env.extendFrameC(env, c);
         (cache,env_1,ih,dae1) = implicitInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {});
         (cache,env_2,ih,dae2) = instProgramImplicit(cache,env_1,ih, cs);
@@ -929,7 +941,7 @@ algorithm
         
     case (cache,env,ih,{})
       equation 
-        //Debug.fprintln("insttr", "Inst.instProgramImplicit (end)");
+        // Debug.fprintln("insttr", "Inst.instProgramImplicit (end)");
       then
         (cache,env,ih,{});
   end matchcontinue;
@@ -1016,6 +1028,7 @@ algorithm
         callscope_1 = isTopCall(callscope);              
         
         checkMissingInnerDecl(dae1_1,callscope_1);
+        
         (csets_1,_) = retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
         
         dae2 = Connect.equations(csets_1,pre);
@@ -1069,11 +1082,11 @@ algorithm
 //        (cache,env_4) = updateEnumerationEnvironment(cache,env_3,ty,c,ci_state_1);      
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
         dae = renameUniqueVarsInTopScope(callscope_1,dae);
-         dae = updateDeducedUnits(callscope_1,store,dae);
-         
-         /* Fix the problems with fixing MetaModelica Uniontypes right by the source. sjoelund */
-         ty = MetaUtil.createUnionType(c,ty);
-         /* ---------------------------------------------------------------------------------- */
+        dae = updateDeducedUnits(callscope_1,store,dae);
+        
+        /* Fix the problems with fixing MetaModelica Uniontypes right by the source. sjoelund */
+        ty = MetaUtil.createUnionType(c,ty);
+        /* ---------------------------------------------------------------------------------- */
       then 
         (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,ci_state_1,oDA,graph);
 
@@ -1441,27 +1454,27 @@ end instClassBasictype;
 
 public function instClassIn 
 "function: instClassIn 
-  This rule instantiates the contents of a class definition, with a
-  new environment already setup.
-  The next last boolean indicates if the class should be instantiated 
-  implicit, i.e. without generating DAE.
-  The last boolean is a even stronger indication of implicit instantiation,
+  This rule instantiates the contents of a class definition, with a new 
+  environment already setup.
+  The *implicitInstantiation* boolean indicates if the class should be 
+  instantiated implicit, i.e. without generating DAE.
+  The last option is a even stronger indication of implicit instantiation, 
   used when looking up variables in packages. This must be used because 
-  generation of functions in implicit instanitation (according to next last 
-  boolean) can cause circular dependencies (e.g. if a function uses a
-  constant in its body)"
+  generation of functions in implicit instanitation (according to 
+  *implicitInstantiation* boolean) can cause circular dependencies 
+  (e.g. if a function uses a constant in its body)"
   input Env.Cache inCache;
-  input Env inEnv1;
+  input Env inEnv;
   input InstanceHierarchy inIH;
   input UnitAbsyn.InstStore store;
-  input Mod inMod2;
-  input Prefix inPrefix3;
-  input Connect.Sets inSets4;
-  input ClassInf.State inState5;
-  input SCode.Class inClass6;
-  input Boolean inBoolean7;
-  input InstDims inInstDims8;
-  input Boolean inBoolean9;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.Class inClass;
+  input Boolean isProtected;
+  input InstDims inInstDims;
+  input Boolean implicitInstantiation;
   input ConnectionGraph.ConnectionGraph inGraph;
   input Option<DAE.ComponentRef> instSingleCref;
 	output Env.Cache outCache;
@@ -1478,7 +1491,7 @@ public function instClassIn
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
-  matchcontinue (inCache,inEnv1,inIH,store,inMod2,inPrefix3,inSets4,inState5,inClass6,inBoolean7,inInstDims8,inBoolean9,inGraph,instSingleCref)
+  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref)
     local
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       list<Env.Frame> env,env_1;
@@ -1490,6 +1503,144 @@ algorithm
       InstDims inst_dims;
       Boolean impl,prot;
       String clsname,implstr,n;
+      list<DAE.Element> dae;
+      Connect.Sets csets_1,csets;
+      list<DAE.Var> tys;
+      SCode.Restriction r;
+      SCode.ClassDef d;
+      Env.Cache cache;
+      list<DAE.ComponentRef> dc;
+      Real t1,t2,time; Boolean b;
+      list<Connect.OuterConnect> oc;
+      Option<Absyn.ElementAttributes> oDA;
+      DAE.EqualityConstraint equalityConstraint;
+      ConnectionGraph.ConnectionGraph graph;
+      InstanceHierarchy ih;
+      InstHashTable instHash;
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix, 
+            Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean, 
+            ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, list<DAE.Element>, 
+            Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>, 
+            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint, 
+            ConnectionGraph.ConnectionGraph> outputs;
+      Absyn.Path fullEnvPathPlusClass;
+      Option<Absyn.Path> envPathOpt;
+      String className;
+      
+      Mod aa_1; 
+      Prefix aa_2; 
+      Connect.Sets aa_3; 
+      ClassInf.State aa_4;
+      SCode.Class aa_5; 
+      Boolean aa_6; 
+      InstDims aa_7;
+      Boolean aa_8; 
+      Option<DAE.ComponentRef> aa_9;
+      replaceable type Type_a subtypeof Any;
+      Type_a bbx, bby;
+      
+    /*  see if we have it in the cache */ 
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c,prot,inst_dims,impl,graph,instSingleCref) 
+      equation 
+        false = RTOpts.debugFlag("noCache");
+        instHash = System.getFromRoots("instantiationCache");
+        envPathOpt = Env.getEnvPath(inEnv);
+        className = SCode.className(c);
+        fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));        
+        {FUNC_instClassIn(inputs, outputs)} = get(fullEnvPathPlusClass, instHash);
+        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7, aa_8, _, aa_9) = inputs;
+        // are the important inputs the same??
+        bbx = (aa_1, aa_2, aa_3, aa_4, aa_5, aa_7, aa_8, aa_9);
+        bby = (mods,pre,csets, ci_state,c,inst_dims,impl,instSingleCref);
+        equality(bbx = bby);
+        (cache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph) = outputs;
+        Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+      then
+        (inCache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph);
+        
+    /* call the function and then add it in the cache */
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c,prot,inst_dims,impl,graph,instSingleCref) 
+      equation 
+        instHash = System.getFromRoots("instantiationCache");        
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = 
+           instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
+
+        envPathOpt = Env.getEnvPath(inEnv);
+        className = SCode.className(c);
+        fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));
+        
+        inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
+        outputs = (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph); 
+        
+        instHash = add((fullEnvPathPlusClass, {FUNC_instClassIn(inputs,outputs)}), instHash);
+        System.addToRoots("instantiationCache", instHash);
+
+      then
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);        
+    
+    // failure
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,_)
+      equation 
+        //print("instClassIn(");print(n);print(") failed\n");
+        Debug.fprintln("insttr", "- Inst.instClassIn failed on class:" +& 
+           n +& " in environment: " +& Env.printEnvPathStr(env));
+      then
+        fail();
+  end matchcontinue;
+end instClassIn;
+
+public function instClassIn_dispatch 
+"function: instClassIn 
+  This rule instantiates the contents of a class definition, with a new 
+  environment already setup.
+  The *implicitInstantiation* boolean indicates if the class should be 
+  instantiated implicit, i.e. without generating DAE.
+  The last option is a even stronger indication of implicit instantiation, 
+  used when looking up variables in packages. This must be used because 
+  generation of functions in implicit instanitation (according to 
+  *implicitInstantiation* boolean) can cause circular dependencies 
+  (e.g. if a function uses a constant in its body)"
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input UnitAbsyn.InstStore store;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.Class inClass;
+  input Boolean isProtected;
+  input InstDims inInstDims;
+  input Boolean implicitInstantiation;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Option<DAE.ComponentRef> instSingleCref;
+	output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output UnitAbsyn.InstStore outStore;  
+  output list<DAE.Element> outDAEElementLst;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output list<DAE.Var> outTypesVarLst;
+  output Option<DAE.Type> outTypesTypeOption;
+  output Option<Absyn.ElementAttributes> optDerAttr;
+  output DAE.EqualityConstraint outEqualityConstraint;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm 
+  (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
+  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref)
+    local
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
+      list<Env.Frame> env,env_1;
+      DAE.Mod mods;
+      Prefix.Prefix pre;
+      list<DAE.ComponentRef> crs;
+      ClassInf.State ci_state,ci_state_1;
+      SCode.Class c,cls;
+      InstDims inst_dims;
+      Boolean impl,prot;
+      String clsname,implstr,n,s;
       list<DAE.Element> l;
       Connect.Sets csets_1,csets;
       list<DAE.Var> tys;
@@ -1504,7 +1655,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
-      /*  Real class */ 
+    /*  Real class */ 
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
           ci_state,(c as SCode.CLASS(name = "Real",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation 
@@ -1513,7 +1664,7 @@ algorithm
       then
         (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);       
         
-        /* Integer class */
+    /* Integer class */
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
           ci_state,(c as SCode.CLASS(name = "Integer",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
@@ -1521,7 +1672,7 @@ algorithm
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_INTEGER(tys),NONE));
       then (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);   
 
-        /* String class */
+    /* String class */
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
           ci_state,(c as SCode.CLASS(name = "String",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
@@ -1529,7 +1680,7 @@ algorithm
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_STRING(tys),NONE));        
       then (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);   
 
-        /* Boolean class */
+    /* Boolean class */
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
           ci_state,(c as SCode.CLASS(name = "Boolean",restriction = r,classDef = d)),prot,inst_dims,impl,graph,_) 
       equation
@@ -1537,7 +1688,7 @@ algorithm
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE));        
       then (cache,env,ih,store,{},Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);           
 
-        /* Enumeration class */
+    /* Enumeration class */
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
           ci_state,(c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst = els))),prot,inst_dims,impl,graph,_)
           local
@@ -1580,33 +1731,24 @@ algorithm
          
     /* Instantiate a class definition made of parts */
     case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,instSingleCref)
-      local String s; Absyn.Path fullPath;
-        Boolean b;
       equation 
-        //clsname = SCode.className(c); 
-        //print("instClassIn ");print(n);print("\n");
-        //Debug.fprint("insttr", "Instantiating class: ");
-        implstr = Util.if_(impl, " (implicit) ", " (explicit) ");
-        //Debug.fprint("insttr", implstr);
-        //Debug.fprint("insttr", clsname);
-        //Debug.fprint("insttr", "\n");
-
-				//t1 = clock();
-				false = isBuiltInClass(n) "If failed above, no need to try again";
-				//print(" (instClassIn calling)instClass " +& n +& " mods: " +& Mod.printModStr(mods) +& "\n");
+        false = isBuiltInClass(n) "If failed above, no need to try again";
+        // Debug.fprint("insttr", "ICLASS ["); 
+        implstr = Util.if_(impl, "impl] ", "expl] ");
+        // Debug.fprint("insttr", implstr);
+        // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& n +& " mods: " +& Mod.printModStr(mods));
+        // t1 = clock();
         (cache,env_1,ih,store,l,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph) = instClassdef(cache,env,ih,store, mods, pre, csets, ci_state, n,d, r, prot, inst_dims, impl,graph,instSingleCref);
-
-        /*t2 = clock();
-        time = t2 -. t1;
-        b=realGt(time,0.05);
-        s = realString(time);
-        s=Util.stringAppendList({"instClassIn ",n," ",s," s\n"});
-        print(Util.if_(b,s,""));*/
-        cache = addCachedEnv(cache,n,env_1);
-
+        // t2 = clock();
+        // time = t2 -. t1;
+        // b=realGt(time,0.05);
+        // s = realString(time);
+        // Debug.fprintln("insttr", " -> ICLASS " +& n +& " inst time: " +& s +& " in env: " +& Env.printEnvPathStr(env) +& " mods: " +& Mod.printModStr(mods)); 
+        cache = Env.addCachedEnv(cache,n,env_1);
       then
         (cache,env_1,ih,store,l,csets_1,ci_state_1,tys,bc,oDA,equalityConstraint,graph);
     
+    // failure
     case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,_)
       equation 
         //print("instClassIn(");print(n);print(") failed\n");
@@ -1614,7 +1756,7 @@ algorithm
       then
         fail();
   end matchcontinue;
-end instClassIn;
+end instClassIn_dispatch;
 
 public function isBuiltInClass "
 Author: BZ, this function identifies built in classes.
@@ -2059,6 +2201,108 @@ algorithm
       Absyn.Path fullPath;
       Real t1,t2,time; String s,s2; Boolean b;
       InstanceHierarchy ih;
+      InstHashTable instHash;
+      
+      tuple<Env.Cache, Env, InstanceHierarchy, Mod, Prefix, Connect.Sets, 
+            ClassInf.State, SCode.Class, Boolean, InstDims> inputs;
+      tuple<Env.Cache, Env, InstanceHierarchy, ClassInf.State> outputs;
+      Absyn.Path fullEnvPathPlusClass;
+      Option<Absyn.Path> envPathOpt;
+      String className;
+      
+      Mod aa_1; 
+      Prefix aa_2; 
+      Connect.Sets aa_3; 
+      ClassInf.State aa_4;
+      SCode.Class aa_5; 
+      Boolean aa_6; 
+      InstDims aa_7;
+      replaceable type Type_a subtypeof Any;
+      Type_a bbx, bby;      
+      
+    case (cache,env,ih,mods,pre,csets,ci_state,c,prot,inst_dims)
+      equation
+        false = RTOpts.debugFlag("noCache");
+        instHash = System.getFromRoots("instantiationCache");
+        envPathOpt = Env.getEnvPath(inEnv);
+        className = SCode.className(c);
+        fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));        
+        {FUNC_partialInstClassIn(inputs, outputs)} = get(fullEnvPathPlusClass, instHash);
+        (_, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7) = inputs;
+        // are the important inputs the same??
+        bbx = (aa_1, aa_2, aa_3, aa_4, aa_5, aa_7);
+        bby = (mods,pre,csets,ci_state,c,inst_dims);
+        equality(bbx = bby);
+        (cache,env,ih,ci_state_1) = outputs;
+        Debug.fprintln("cache", "IIIIPARTIAL->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+      then
+        (inCache,env,ih,ci_state_1);
+        
+    /* call the function and then add it in the cache */
+    case (cache,env,ih,mods,pre,csets,ci_state,c,prot,inst_dims) 
+      equation 
+        instHash = System.getFromRoots("instantiationCache");        
+        (cache,env,ih,ci_state) = 
+           partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
+
+        envPathOpt = Env.getEnvPath(inEnv);
+        className = SCode.className(c);
+        fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));
+        
+        inputs = (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
+        outputs = (cache,env,ih,ci_state); 
+        
+        instHash = add((fullEnvPathPlusClass, {FUNC_partialInstClassIn(inputs,outputs)}), instHash);
+        System.addToRoots("instantiationCache", instHash);        
+      then
+        (cache,env,ih,ci_state);
+        
+    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims)
+      equation 
+        Debug.fprintln("insttr", "- Inst.partialInstClassIn failed on class:" +& 
+           n +& " in environment: " +& Env.printEnvPathStr(env));
+      then
+        fail();
+  end matchcontinue;
+end partialInstClassIn;
+
+public function partialInstClassIn_dispatch 
+"function: partialInstClassIn
+  This function is used when instantiating classes in lookup of other classes.
+  The only work performed by this function is to instantiate local classes and
+  inherited classes."
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.Class inClass;
+  input Boolean inBoolean;
+  input InstDims inInstDims;
+  output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output ClassInf.State outState;
+algorithm 
+  (outCache,outEnv,outIH,outState) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims)
+    local
+      list<Env.Frame> env,env_1;
+      DAE.Mod mods;
+      Prefix.Prefix pre;
+      Connect.Sets csets;
+      ClassInf.State ci_state,ci_state_1;
+      SCode.Class c;
+      String n;
+      SCode.Restriction r;
+      SCode.ClassDef d;
+      Boolean prot;
+      InstDims inst_dims;
+      Env.Cache cache;
+      Absyn.Path fullPath;
+      Real t1,t2,time; String s,s2; Boolean b;
+      InstanceHierarchy ih;
       
     case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "Real")),_,_) 
       then (cache,env,ih,ci_state);
@@ -2074,53 +2318,23 @@ algorithm
          
     case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims)
       equation 
-       	//t1 = clock();
+        // t1 = clock();
         (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, csets, ci_state, d, r, prot, inst_dims, n);
-        //t2 = clock();
-        //time = t2 -. t1;
+        // t2 = clock();
+        // time = t2 -. t1;
         //b=realGt(time,0.05);
-        //s = realString(time);
-        //s2 = Env.printEnvPathStr(env);
-        //s=Util.stringAppendList({"PARTIAL instClassIn ",n," in scope ",s2," ",s," s\n"});
+        // s = realString(time);
+        // s2 = Env.printEnvPathStr(env);
+        // Debug.fprintln("insttr", "ICLASSPARTIAL " +& n +& " inst time: " +& s +& " in env " +& s2 +& " mods: " +& Mod.printModStr(mods));
         //print(Util.if_(b,s,""));
         //print("inCache:");print(Env.printCacheStr(cache));print("\n");
-				cache = addCachedEnv(cache,n,env_1);
-        //print("outCache:");print(Env.printCacheStr(cache));print("\n");
-        //print("partialInstClassDef, outenv:");print(Env.printEnvStr(env_1));
+        cache = Env.addCachedEnv(cache,n,env_1);
+        // print("outCache:");print(Env.printCacheStr(cache));print("\n");
+        // print("partialInstClassDef, outenv:");print(Env.printEnvStr(env_1));
       then
-        (cache,env_1,ih,ci_state_1);
-        
-       /* Commented this out duo to testsuit.*/  
-      /*   case (_,_,_,_,_,_,_,_,_)
-         equation
-      	 print("partialInstClassIn FAILED !!! !!! \n\n");
-         then fail();
-      */ 
+        (cache,env_1,ih,ci_state_1);        
   end matchcontinue;
-end partialInstClassIn;
-
-protected function addCachedEnv
-"function: addCachedEnv
-  add a new class in the environment obtaining a new environment"
-  input Env.Cache inCache;
-  input Ident id;
-  input Env.Env env;
-  output Env.Cache outCache;
-algorithm
-  outCache := matchcontinue(inCache,id,env)
-  local
-    Absyn.Path path,newPath;
-    
-    case(inCache,id,env) 
-      equation
-      SOME(path) = Env.getEnvPath(env);
-      outCache = Env.cacheAdd(path,inCache,env);
-    then outCache;
-
-      case(inCache,id,env) then inCache;
-
-  end matchcontinue;
-end addCachedEnv;
+end partialInstClassIn_dispatch;
 
 protected function equalityConstraintOutputDimension
   input list<SCode.Element> inElements;
@@ -2322,7 +2536,7 @@ algorithm
         //Debug.traceln(" Instclassdef for: " +& Prefix.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)); 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = extractConstantPlusDeps(els,instSingleCref,{},className);
-        (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);                          
+        (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);
         
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, impl, SOME(mods)) 
         "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
@@ -2410,7 +2624,7 @@ algorithm
         
         //Change outer references to corresponding inner reference
         (dae,csets5) = changeOuterReferences(dae,csets5);
-      
+        
         // Perform unit checking/dimensional analysis	               
         daetemp = Connect.equations(csets5,pre); // ToDO. calculation of connect eqns done twice. remove in future.          
         // equations from components (dae1) not considered, they are checked in resp recursive call
@@ -2620,7 +2834,8 @@ algorithm
         
     case (_,env,ih,_,_,_,_,_,_,_,_,_,_,_,_,instSingleCref)
       equation 
-				true = RTOpts.debugFlag("failtrace");
+        // System.enableTrace();
+        true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.instClassdef failed");
         s = Env.printEnvPathStr(env);
         Debug.traceln("  class :" +& s);
@@ -2885,11 +3100,9 @@ algorithm
 end removeSelfReference;
 
 protected function changeOuterReferences "
-
 Changes the outer references in a dae to the corresponding
 inner reference, given that an inner reference exist in the DAE.
-Update connection sets incase of Absyn.INNEROUTER()  
-"
+Update connection sets incase of Absyn.INNEROUTER()"
   input list<DAE.Element> inDae;
   input Connect.Sets csets;
   output list<DAE.Element> outDae;
@@ -2898,23 +3111,30 @@ Update connection sets incase of Absyn.INNEROUTER()
   list<DAE.Element> innerVars,outerVars,allVars;
   VarTransform.VariableReplacements repl;
   list<DAE.ComponentRef> srcs,targets;
-algorithm (ocsets,outDae) := matchcontinue(inDae,csets)
-  local
-  case(inDae,csets)
-    equation
-      innerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isInnerVar);
-      outerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isOuterVar);  
-      repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
+algorithm 
+  (ocsets,outDae) := matchcontinue(inDae,csets)
+    // general case
+    case(inDae,csets)
+      equation
+        (innerVars,outerVars) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);  
+        repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
 
-      srcs = VarTransform.replacementSources(repl);
-      targets = VarTransform.replacementTargets(repl);
-      inDae = DAEUtil.removeVariables(inDae,srcs);
-      inDae = DAEUtil.removeInnerAttrs(inDae,targets); 
-      outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE);
-      ocsets = changeOuterReferences2(repl,csets);
-    then
-      (outDae,ocsets);
-end matchcontinue;
+        srcs = VarTransform.replacementSources(repl);
+        targets = VarTransform.replacementTargets(repl);
+        inDae = DAEUtil.removeVariables(inDae,srcs);
+        inDae = DAEUtil.removeInnerAttrs(inDae,targets); 
+        outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE);
+        ocsets = changeOuterReferences2(repl,csets);
+      then
+        (outDae,ocsets);
+    // failtrace
+    case(inDae,csets)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- Inst.changeOuterReferences failed!");
+      then 
+        fail();        
+  end matchcontinue;
 end changeOuterReferences;
 
 protected function changeOuterReferences2 "
@@ -3115,15 +3335,26 @@ the outer reference should be translated to the inner reference"
   output Boolean res;
 algorithm
   res := matchcontinue(outerCr,innerCr)
-local
-  DAE.ComponentRef innerCr1,outerCr1;
+    local
+      DAE.ComponentRef innerCr1,outerCr1;
+      DAE.Ident id1, id2;
+    // try a simple comparison first.
+    // adrpo: this case is just to speed up the checking! 
     case(outerCr,innerCr)
-    equation
-      // Strip the common part of inner outer cr. 
-      // For instance, innerCr = e.f.T1, outerCr = e.f.g.h.a.b.c.d.T1 results in
-      // innerCr1 = T1, outerCr = g.h.a.b.c.d.T1
-      (outerCr1,innerCr1) = stripCommonCrefPart(outerCr,innerCr);
-      res = Exp.crefContainedIn(outerCr1,innerCr1);
+      equation
+        // try to compare last ident first!
+        id1 = Exp.crefLastIdent(outerCr);
+        id2 = Exp.crefLastIdent(innerCr);
+        false = stringEqual(id1, id2);
+      then false;
+    // try the hard and expensive case.
+    case(outerCr,innerCr)
+      equation
+        // Strip the common part of inner outer cr. 
+        // For instance, innerCr = e.f.T1, outerCr = e.f.g.h.a.b.c.d.T1 results in
+        // innerCr1 = T1, outerCr = g.h.a.b.c.d.T1
+        (outerCr1,innerCr1) = stripCommonCrefPart(outerCr,innerCr);
+        res = Exp.crefContainedIn(outerCr1,innerCr1);
       then res;
   end matchcontinue;
 end isInnerOuterMatch;
@@ -3751,7 +3982,7 @@ algorithm
       equation 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
-        (env1,ih) = addClassdefsToEnv(env,ih, cdefelts, true,NONE) " CLASSDEF & IMPORT nodes are added to env" ;
+        (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
@@ -3825,12 +4056,12 @@ algorithm
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
           re,prot,inst_dims,className) 
       equation 
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache, env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         (cache,mod_1) = Mod.elabMod(cache,env, pre, mod, false);
         new_ci_state = ClassInf.start(r, cn2);
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
-        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache,cenv_2,ih, mods_1, pre, csets, new_ci_state, c, prot, inst_dims);
+        (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, csets, new_ci_state, c, prot, inst_dims);
       then
         (cache,env_2,ih,new_ci_state_1);
 
@@ -5568,10 +5799,10 @@ algorithm
         classmod = Types.removeMod(classmod,n);
         (cache,env_1,ih,dae) = instClassDecl(cache,env,ih, classmod, pre, csets, cls2, inst_dims);
         //print(" instClassDecl Call finished \n");
-        //Debug.fprintln (\"insttr\", \"--Classdef mods\") &
-			  //Debug.fcall (\"insttr\", Mod.print_mod, classmod) &
-			  //Debug.fprintln (\"insttr\", \"--All mods\") &
-				//Debug.fcall (\"insttr\", Mod.print_mod, mods) &" ;
+        // Debug.fprintln("insttr", "--Classdef mods");
+        // Debug.fcall ("insttr", Mod.printMod, classmod);
+        // Debug.fprintln ("insttr", "--All mods");
+        // Debug.fcall ("insttr", Mod.printMod, mods);
       then
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
         
@@ -5620,9 +5851,7 @@ algorithm
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT());
         vn = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{})); 
-        //Debug.fprint(\"insttr\", \"Instantiating component \") &
-				//Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &" 
-				
+        // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& Prefix.printPrefixStr(pre) +& "." +& n);
 				//The class definition is fetched from the environment. Then the set of modifications 
 				//is calculated. The modificions is the result of merging the modifications from 
 				//several sources. The modification stored with the class definition is put in the 
@@ -5746,9 +5975,8 @@ algorithm
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         //checkRecursiveDefinition(env,t);
         vn = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
-        // Debug.fprint(\"insttr\", \"Instantiating component \") &
-        // Debug.fprint(\"insttr\", n) & //Debug.fprint(\"insttr\", \"\\n\") &"
-
+        // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& Prefix.printPrefixStr(pre) +& "." +& n);
+        
         // The class definition is fetched from the environment. Then the set of modifications
         // is calculated. The modificions is the result of merging the modifications from
         // several sources. The modification stored with the class definition is put in the
@@ -5843,7 +6071,7 @@ algorithm
         scope_str = Env.printEnvPathStr(env);
         pre_1 = Prefix.prefixAdd(n, {}, pre,vt);
         ns = Prefix.printPrefixStr(pre_1);
-        //Debug.fcall (\"instdb\", Env.print_env, env)
+        // Debug.fcall (\"instdb\", Env.print_env, env)
         Error.addMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns});
         Debug.fprint("failtrace", "Lookup class failed\n");
       then
@@ -6688,7 +6916,7 @@ algorithm
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre,vt);
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) = instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
-        dae1_1 = propagateAttributes(dae1, dir,io,SCode.CONST());
+        dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST());
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));        
@@ -6737,8 +6965,10 @@ algorithm
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre,vt);
         prefix_str = Prefix.printPrefixStr(pre_1);
-        //Debug.fprintl("insttr", {"instantiating var class: ",n," prefix ",prefix_str,"\n"});
-        (mod2) = extractEnumerationClassModifier(inMod,cl) "remove Enumeration class modifier handled in instDaeVariableAttributes call";
+        // Debug.fprint("insttr", "ICLASS " +& ss1 +& " prefix: " +& prefix_str +& " ");
+        // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& ss1 +& " mods: " +& Mod.printModStr(mod));        
+        (mod2) = extractEnumerationClassModifier(inMod,cl) 
+        "remove Enumeration class modifier handled in instDaeVariableAttributes call";
         //print("\n Inst class: " +& ss1 +& " for var : " +& n +& ", mods: " +& Mod.printModStr(mod2)+& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) = instClass(cache,env,ih,store, mod2, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir,io,vt);
@@ -6751,7 +6981,7 @@ algorithm
         //Debug.fprint("insttrind", "\n index_string ");
         //Debug.fprintl("insttr", index_string);
         //Debug.fprint("insttrind", "\n component ref ");
-        Debug.fcall("insttr", Exp.printComponentRef, cr);
+        //Debug.fcall("insttr", Exp.printComponentRef, cr);
         //Debug.fprint("insttrind", "\n ******************\n ");
         //Debug.fprint("insttrind", "\n ");
         start = instStartBindingExp(mod, ty, idxs_1);
@@ -7469,10 +7699,38 @@ protected function propagateAttributes
   output list<DAE.Element> outDae;
   protected list<DAE.Element> dae;
 algorithm 
-  dae := propagateDirection(inDae,inDirection);
-  dae := propagateVariability(dae,vt);
-  outDae := propagateInnerOuter(dae,io);
+  outDae := propagateAllAttributes(inDae, inDirection, io, vt);
+  // adrpo changed the implementation below to the one above
+  // dae := propagateDirection(inDae,inDirection);
+  // dae := propagateVariability(dae,vt);
+  // outDae := propagateInnerOuter(dae,io);
 end propagateAttributes;
+
+protected function propagateAllAttributes  
+"Propagages ALL Attributes, to variables of a component."
+  input list<DAE.Element> inDae;  
+  input Absyn.Direction dir;
+  input Absyn.InnerOuter io;
+  input SCode.Variability vt;  
+  output list<DAE.Element> outDae;
+algorithm
+  outDae := matchcontinue (inDae,dir,io,vt)
+    local
+      DAE.Element e;
+      list<DAE.Element> rest, propagated;
+    // empty case
+    case ({},_,_,_) then {}; 
+    // normal case
+    case (e::rest,dir,io,vt)
+      equation 
+        {e} = propagateDirection({e},dir);
+        {e} = propagateVariability({e},vt);
+        {e} = propagateInnerOuter({e},io);
+        propagated = propagateAllAttributes(rest, dir, io, vt);
+      then
+        e::propagated;
+  end matchcontinue;
+end propagateAllAttributes;
 
 protected function propagateDirection 
 "Help function to propagateAttributes, propagtes 
@@ -7579,6 +7837,77 @@ algorithm
         (x :: r_1);
   end matchcontinue;
 end propagateDirection;
+
+protected function propagateVariability " help function to propagateAttributes, propagtes 
+ the variability attribute (parameter or constant) to variables of a component.
+"
+  input list<DAE.Element> inDae;
+  input SCode.Variability vt;
+  output list<DAE.Element> outDae;
+ algorithm
+  outDae :=
+  matchcontinue (inDae,vt)
+    local
+      list<DAE.Element> lst,r_1,r,lst_1;
+      DAE.Element v,x;
+      DAE.VarDirection dir_1;
+      DAE.ComponentRef cr;
+      DAE.VarKind vk;
+      DAE.Type t;
+      Option<DAE.Exp> e;
+      list<DAE.Subscript> id;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      list<Absyn.Path> class_;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      DAE.VarDirection dir;
+      String s1,s2;
+      Absyn.InnerOuter io;
+      DAE.VarProtection prot;
+      /* Component that is VAR does not change variablity of subcomponents */ 
+    case (lst,SCode.VAR()) then lst;  
+      
+    case ({},_) then {}; 
+      
+      /* the most restrictive variability is preserved (a const may not become PARAM) */
+    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io)) :: r,SCode.PARAM()) 
+      equation
+        r_1 = propagateVariability(r, vt);
+      then
+        x :: r_1;
+
+      /* parameter */
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.PARAM()) 
+      equation 
+        r_1 = propagateVariability(r, vt);
+      then
+        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
+
+      /* constant */
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.CONST()) 
+      equation 
+        r_1 = propagateVariability(r, vt);
+      then
+        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
+
+
+			/* Traverse components */
+    case ((DAE.COMP(ident = id,dAElist = DAE.DAE(elementLst = lst)) :: r),vt)
+      local String id;
+      equation 
+        lst_1 = propagateVariability(lst, vt);
+        r_1 = propagateVariability(r, vt);
+      then
+        (DAE.COMP(id,DAE.DAE(lst_1)) :: r_1);
+
+    case ((x :: r),vt)
+      equation 
+        r_1 = propagateVariability(r, vt);
+      then
+        (x :: r_1);
+  end matchcontinue;
+end propagateVariability;
 
 protected function propagateInnerOuter 
 "function propagateInnerOuter 
@@ -8228,7 +8557,7 @@ algorithm
     // Non-constant dimension creates DIMEXP 
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as true),st,doVect)
       equation 
-        //Debug.fprintln("insttr", "elab_arraydim_decl6");
+        // Debug.fprintln("insttr", "elab_arraydim_decl6");
         (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),cnst),_) = Static.elabExp(cache,env, d, impl, st,doVect);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
@@ -8783,7 +9112,7 @@ algorithm
       then
         (cache,env_1,ih);
 
-    /* The function type can be determined without the body. */
+    /* The function type canNOT be determined without the body. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad), 
                                                             modifications = mod1)))  
@@ -8797,8 +9126,8 @@ algorithm
         SCode.Class c;
         tuple<DAE.TType, Option<Absyn.Path>> ty1,ty;
       equation 
-        (cache,(c as SCode.CLASS(cn2,_,_,r,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
-        (cache,mod2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod1, false); 
+        (cache,(c as SCode.CLASS(cn2,_,_,r,_)),cenv) = Lookup.lookupClass(cache, env, cn, true);
+        (cache,mod2) = Mod.elabMod(cache, env, Prefix.NOPRE(), mod1, false); 
         (cache,_,ih,_,_,_,ty,_,_,_) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), mod2, Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(id));
@@ -8845,7 +9174,7 @@ algorithm
     /* Instantiate each function, add its FQ name to the type, needed when deoverloading */ 
     case (cache,env,ih,overloadname,(fn :: fns))  
       equation 
-        (cache,(c as SCode.CLASS(id,partialPrefix,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache,env, fn, true);
+        (cache,(c as SCode.CLASS(id,partialPrefix,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache, env, fn, true);
         (cache,_,ih,_,dae,_,(DAE.T_FUNCTION(args,tp),_),st,_,_) = 
            instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         (cache,fpath) = makeFullyQualified(cache,env, Absyn.IDENT(overloadname));
@@ -10340,7 +10669,29 @@ algorithm
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
         (cache,env,ih,{},csets,ci_state,graph);             
-            
+
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+              Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.REAL(priority)}, {}),_),initial_,impl,graph)
+      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
+      equation 
+        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
+        cr_ = Prefix.prefixCref(pre, cr_);
+        graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
+      then
+        (cache,env,ih,{},csets,ci_state,graph);
+
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
+              Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("potentialRoot", {})),
+              Absyn.FUNCTIONARGS({Absyn.CREF(cr),Absyn.INTEGER(priority)}, {}),_),initial_,impl,graph)
+      local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Integer priority;
+      equation 
+        (cache,DAE.CREF(cr_,t),_,_) = Static.elabCref(cache,env, cr, false /* ??? */,false);
+        cr_ = Prefix.prefixCref(pre, cr_);
+        graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(priority));
+      then
+        (cache,env,ih,{},csets,ci_state,graph);
+
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(
               Absyn.CREF_QUAL("Connections", {}, Absyn.CREF_IDENT("branch", {})),
               Absyn.FUNCTIONARGS({Absyn.CREF(cr1), Absyn.CREF(cr2)}, {}),_),initial_,impl,graph)
@@ -14626,9 +14977,9 @@ algorithm
   _ := matchcontinue(inDae,callScope)  
     case(inDae,true) 
       equation
-        innerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isInnerVar);
-        outerVars = DAEUtil.getAllMatchingElements(inDae,DAEUtil.isOuterVar);
-        checkMissingInnerDecl1(innerVars,outerVars);  
+        //print("DAE has :" +& intString(listLength(inDae)) +& " elements\n");
+        (innerVars,outerVars) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
+        checkMissingInnerDecl1(innerVars,outerVars);
       then ();
     case(inDae,false) 
       then ();
@@ -14658,15 +15009,15 @@ algorithm
       
     case(DAE.VAR(componentRef=cr),innerVars) 
       equation
-        crs = Util.listMap(innerVars,DAEUtil.varCref);
-        {_} = Util.listSelect1(crs, cr,isInnerOuterMatch);
+        crs = Util.listMap(innerVars, DAEUtil.varCref);
+        {_} = Util.listSelect1(crs, cr, isInnerOuterMatch);
       then ();
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars)  
       equation
-        str2 = Dump.unparseInnerouterStr(io);
+        // ?? adrpo: NOT USED! TODO! FIXME! str2 = Dump.unparseInnerouterStr(io);
         crs = Util.listMap(innerVars,DAEUtil.varCref);
         {} = Util.listSelect1(crs, cr,isInnerOuterMatch);
-        str = Exp.printComponentRefStr(cr);
+        // ?? adrpo: NOT USED! TODO! FIXME! str = Exp.printComponentRefStr(cr);
         failExceptForCheck();
       then (); 
     case(DAE.VAR(componentRef=cr, innerOuter = io),innerVars) 
@@ -14995,11 +15346,13 @@ protected function handleInnerOuterEquations
 algorithm 
   odae := matchcontinue(io,dae)
     local list<DAE.Element> dae1,dae2;
+
     case(Absyn.OUTER(),dae) 
       equation
         (odae,_) = DAEUtil.removeEquations(dae);
       then
         odae;
+
     case(Absyn.INNEROUTER(),dae)
       equation
         (dae1,dae2) = DAEUtil.removeEquations(dae);
@@ -15007,6 +15360,7 @@ algorithm
         dae = listAppend(dae1,dae2);
       then
         dae;
+
     case(Absyn.INNER(),dae) then dae;
     case(Absyn.UNSPECIFIED (),dae) then dae;
     case(_,dae) 
@@ -15719,77 +16073,6 @@ algorithm
   end matchcontinue;
 end getCrefFromCond;
 
-protected function propagateVariability " help function to propagateAttributes, propagtes 
- the variability attribute (parameter or constant) to variables of a component.
-"
-  input list<DAE.Element> inDae;
-  input SCode.Variability vt;
-  output list<DAE.Element> outDae;
- algorithm
-  outDae :=
-  matchcontinue (inDae,vt)
-    local
-      list<DAE.Element> lst,r_1,r,lst_1;
-      DAE.Element v,x;
-      DAE.VarDirection dir_1;
-      DAE.ComponentRef cr;
-      DAE.VarKind vk;
-      DAE.Type t;
-      Option<DAE.Exp> e;
-      list<DAE.Subscript> id;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      DAE.VarDirection dir;
-      String s1,s2;
-      Absyn.InnerOuter io;
-      DAE.VarProtection prot;
-      /* Component that is VAR does not change variablity of subcomponents */ 
-    case (lst,SCode.VAR()) then lst;  
-      
-    case ({},_) then {}; 
-      
-      /* the most restrictive variability is preserved (a const may not become PARAM) */
-    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io)) :: r,SCode.PARAM()) 
-      equation
-        r_1 = propagateVariability(r, vt);
-      then
-        x :: r_1;
-
-      /* parameter */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.PARAM()) 
-      equation 
-        r_1 = propagateVariability(r, vt);
-      then
-        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
-
-      /* constant */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.CONST()) 
-      equation 
-        r_1 = propagateVariability(r, vt);
-      then
-        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
-
-
-			/* Traverse components */
-    case ((DAE.COMP(ident = id,dAElist = DAE.DAE(elementLst = lst)) :: r),vt)
-      local String id;
-      equation 
-        lst_1 = propagateVariability(lst, vt);
-        r_1 = propagateVariability(r, vt);
-      then
-        (DAE.COMP(id,DAE.DAE(lst_1)) :: r_1);
-
-    case ((x :: r),vt)
-      equation 
-        r_1 = propagateVariability(r, vt);
-      then
-        (x :: r_1);
-  end matchcontinue;
-end propagateVariability;
-
 protected function updateComponentsInEnv2 
 "function updateComponentsInEnv2
   author: PA
@@ -15975,6 +16258,557 @@ algorithm
       then findCorrespondingBinding(cref,equations);    
   end matchcontinue;
 end findCorrespondingBinding;
+
+
+
+// *********************************************************************
+//    hash table implementation for cashing instantiation results
+// *********************************************************************
+public 
+uniontype CachedInstItem
+
+  // *important* inputs/outputs for instClassIn 
+  record FUNC_instClassIn
+    tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore,
+          Mod, Prefix, Connect.Sets, ClassInf.State, SCode.Class,
+          Boolean, InstDims, Boolean,ConnectionGraph.ConnectionGraph,
+          Option<DAE.ComponentRef>> inputs;
+    tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore,  
+          list<DAE.Element>, Connect.Sets, ClassInf.State, list<DAE.Var>, 
+          Option<DAE.Type>, Option<Absyn.ElementAttributes>, DAE.EqualityConstraint,
+          ConnectionGraph.ConnectionGraph> outputs;
+  end FUNC_instClassIn;
+  
+  // *important* inputs/outputs for partialInstClassIn
+  record FUNC_partialInstClassIn
+    tuple<Env.Cache, Env, InstanceHierarchy, Mod, Prefix, 
+          Connect.Sets, ClassInf.State, SCode.Class, Boolean, 
+          InstDims> inputs;
+    tuple<Env.Cache, Env, InstanceHierarchy, ClassInf.State> outputs;
+  end FUNC_partialInstClassIn;
+  
+end CachedInstItem;
+
+public
+type CachedInstItems = list<CachedInstItem>;
+constant Option<InstHashTable> instHashTable = NONE();
+
+public
+type Key = Absyn.Path "the env path + '.' + the class name";
+type Value = CachedInstItems "the inputs of the instantiation function and the results";
+
+public function hashFunc 
+"author: PA
+  Calculates a hash value for Absyn.Path"
+  input Absyn.Path p;
+  output Integer res;
+algorithm 
+  res := System.hash(Absyn.pathString(p));
+end hashFunc;
+
+public function keyEqual
+  input Key key1;
+  input Key key2;
+  output Boolean res;
+algorithm
+     res := stringEqual(Absyn.pathString(key1),Absyn.pathString(key2));
+end keyEqual;
+
+public function dumpInstHashTable ""
+  input InstHashTable t;
+algorithm
+  print("InstHashTable:\n");
+  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print("\n");
+end dumpInstHashTable;
+
+public function dumpTuple
+  input tuple<Key,Value> tpl;
+  output String str;
+algorithm
+  str := matchcontinue(tpl)
+    local 
+      Absyn.Path p; CachedInstItems i;
+    case((p,i)) equation
+      str = "{" +& Absyn.pathString(p) +& ", OPAQUE_VALUE}";
+    then str;
+  end matchcontinue;
+end dumpTuple;
+
+/* end of InstHashTable instance specific code */
+
+/* Generic hashtable code below!! */
+public  
+uniontype InstHashTable
+  record HASHTABLE
+    list<tuple<Key,Integer>>[:] hashTable " hashtable to translate Key to array indx" ;
+    ValueArray valueArr "Array of values" ;
+    Integer bucketSize "bucket size" ;
+    Integer numberOfEntries "number of entries in hashtable" ;   
+  end HASHTABLE;
+end InstHashTable; 
+
+uniontype ValueArray 
+"array of values are expandable, to amortize the 
+ cost of adding elements in a more efficient manner"
+  record VALUE_ARRAY
+    Integer numberOfElements "number of elements in hashtable" ;
+    Integer arrSize "size of crefArray" ;
+    Option<tuple<Key,Value>>[:] valueArray "array of values";
+  end VALUE_ARRAY;
+end ValueArray;
+
+public function cloneInstHashTable 
+"Author BZ 2008-06
+ Make a stand-alone-copy of hashtable."
+input InstHashTable inHash;
+output InstHashTable outHash;
+algorithm outHash := matchcontinue(inHash)
+  local 
+    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
+    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
+    equation
+      arg1_2 = arrayCopy(arg1);
+      arg21_2 = arg21;
+      arg22_2 = arg22;
+      arg23_2 = arrayCopy(arg23);
+      arg3_2 = arg3;
+      arg4_2 = arg4;
+      then
+        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
+end matchcontinue;
+end cloneInstHashTable;
+
+public function emptyInstHashTable 
+"author: PA
+  Returns an empty InstHashTable.
+  Using the bucketsize 100 and array size 10."
+  output InstHashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+algorithm 
+  arr := fill({}, 1000);
+  emptyarr := fill(NONE(), 100);
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
+end emptyInstHashTable;
+
+public function isEmpty "Returns true if hashtable is empty"
+  input InstHashTable hashTable;
+  output Boolean res;
+algorithm
+  res := matchcontinue(hashTable)
+    case(HASHTABLE(_,_,_,0)) then true;
+    case(_) then false;  
+  end matchcontinue;
+end isEmpty;
+
+public function add 
+"author: PA
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple already exists, the function updates the Value."
+  input tuple<Key,Value> entry;
+  input InstHashTable hashTable;
+  output InstHashTable outHahsTable;
+algorithm 
+  outVariables:=
+  matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+      /* Adding when not existing previously */
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        failure((_) = get(key, hashTable));
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+      
+      /* adding when already present => Updating value */
+    case ((newv as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        (_,indx) = get1(key, hashTable);
+        //print("adding when present, indx =" );print(intString(indx));print("\n");
+        indx_1 = indx - 1;
+        varr_1 = valueArraySetnth(varr, indx, newv);
+      then HASHTABLE(hashvec,varr_1,bsize,n);
+    case (_,_)
+      equation 
+        print("-InstHashTable.add failed\n");
+      then
+        fail();
+  end matchcontinue;
+end add;
+
+public function addNoUpdCheck 
+"author: PA
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple already exists, the function updates the Value."
+  input tuple<Key,Value> entry;
+  input InstHashTable hashTable;
+  output InstHashTable outHahsTable;
+algorithm 
+  outVariables := matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+    // Adding when not existing previously
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+    case (_,_)
+      equation 
+        print("-InstHashTable.addNoUpdCheck failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addNoUpdCheck;
+
+public function delete 
+"author: PA
+  delete the Value associatied with Key from the InstHashTable.
+  Note: This function does not delete from the index table, only from the ValueArray.
+  This means that a lot of deletions will not make the InstHashTable more compact, it 
+  will still contain a lot of incices information."
+  input Key key;
+  input InstHashTable hashTable;
+  output InstHashTable outHahsTable;
+algorithm 
+  outVariables := matchcontinue (key,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;     
+    // adding when already present => Updating value
+    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        (_,indx) = get1(key, hashTable);
+        indx_1 = indx - 1;
+        varr_1 = valueArrayClearnth(varr, indx);
+      then HASHTABLE(hashvec,varr_1,bsize,n);
+    case (_,hashTable)
+      equation 
+        print("-InstHashTable.delete failed\n");
+        print("content:"); dumpInstHashTable(hashTable);
+      then
+        fail();
+  end matchcontinue;
+end delete;
+
+public function get 
+"author: PA 
+  Returns a Value given a Key and a InstHashTable."
+  input Key key;
+  input InstHashTable hashTable;
+  output Value value;
+algorithm 
+  (value,_):= get1(key,hashTable);
+end get;
+
+public function get1 "help function to get"
+  input Key key;
+  input InstHashTable hashTable;
+  output Value value;
+  output Integer indx;
+algorithm 
+  (value,indx):= matchcontinue (key,hashTable)
+    local
+      Integer hval,hashindx,indx,indx_1,bsize,n;
+      list<tuple<Key,Integer>> indexes;
+      Value v;      
+      list<tuple<Key,Integer>>[:] hashvec;     
+      ValueArray varr;
+      Key key2;
+    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = get2(key, indexes);
+        v = valueArrayNth(varr, indx);
+      then
+        (v,indx);
+  end matchcontinue;
+end get1;
+
+public function get2 
+"author: PA 
+  Helper function to get"
+  input Key key;
+  input list<tuple<Key,Integer>> keyIndices;
+  output Integer index;
+algorithm 
+  index := matchcontinue (key,keyIndices)
+    local
+      Key key2;
+      Value res;
+      list<tuple<Key,Integer>> xs;
+    case (key,((key2,index) :: _))
+      equation 
+        true = keyEqual(key, key2);
+      then
+        index;
+    case (key,(_ :: xs))      
+      equation 
+        index = get2(key, xs);
+      then
+        index;
+  end matchcontinue;
+end get2;
+
+public function hashTableValueList "return the Value entries as a list of Values"
+  input InstHashTable hashTable;
+  output list<Value> valLst;
+algorithm
+   valLst := Util.listMap(hashTableList(hashTable),Util.tuple22);
+end hashTableValueList;
+
+public function hashTableKeyList "return the Key entries as a list of Keys"
+  input InstHashTable hashTable;
+  output list<Key> valLst;
+algorithm
+   valLst := Util.listMap(hashTableList(hashTable),Util.tuple21);
+end hashTableKeyList;
+
+public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
+  input InstHashTable hashTable;
+  output list<tuple<Key,Value>> tplLst;
+algorithm
+  tplLst := matchcontinue(hashTable)
+  local ValueArray varr;
+    case(HASHTABLE(valueArr = varr)) equation
+      tplLst = valueArrayList(varr);
+    then tplLst; 
+  end matchcontinue;
+end hashTableList;
+
+public function valueArrayList 
+"author: PA
+  Transforms a ValueArray to a tuple<Key,Value> list"
+  input ValueArray valueArray;
+  output list<tuple<Key,Value>> tplLst;
+algorithm 
+  tplLst := matchcontinue (valueArray)
+    local
+      Option<tuple<Key,Value>>[:] arr;
+      tuple<Key,Value> elt;
+      Integer lastpos,n,size;
+      list<tuple<Key,Value>> lst;
+    case (VALUE_ARRAY(numberOfElements = 0,valueArray = arr)) then {}; 
+    case (VALUE_ARRAY(numberOfElements = 1,valueArray = arr))
+      equation 
+        SOME(elt) = arr[0 + 1];
+      then
+        {elt};
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr))
+      equation 
+        lastpos = n - 1;
+        lst = valueArrayList2(arr, 0, lastpos);
+      then
+        lst;
+  end matchcontinue;
+end valueArrayList;
+
+public function valueArrayList2 "Helper function to valueArrayList"
+  input Option<tuple<Key,Value>>[:] inVarOptionArray1;
+  input Integer inInteger2;
+  input Integer inInteger3;
+  output list<tuple<Key,Value>> outVarLst;
+algorithm 
+  outVarLst := matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
+    local
+      tuple<Key,Value> v;
+      Option<tuple<Key,Value>>[:] arr;
+      Integer pos,lastpos,pos_1;
+      list<tuple<Key,Value>> res;
+    case (arr,pos,lastpos)
+      equation 
+        (pos == lastpos) = true;
+        SOME(v) = arr[pos + 1];
+      then
+        {v};
+    case (arr,pos,lastpos)
+      equation 
+        pos_1 = pos + 1;
+        SOME(v) = arr[pos + 1];
+        res = valueArrayList2(arr, pos_1, lastpos);
+      then
+        (v :: res);
+    case (arr,pos,lastpos)
+      equation 
+        pos_1 = pos + 1;
+        NONE = arr[pos + 1];
+        res = valueArrayList2(arr, pos_1, lastpos);
+      then
+        (res);
+  end matchcontinue;
+end valueArrayList2;
+
+public function valueArrayLength 
+"author: PA
+  Returns the number of elements in the ValueArray"
+  input ValueArray valueArray;
+  output Integer size;
+algorithm 
+  size := matchcontinue (valueArray)
+    case (VALUE_ARRAY(numberOfElements = size)) then size; 
+  end matchcontinue;
+end valueArrayLength;
+
+public function valueArrayAdd 
+"function: valueArrayAdd
+  author: PA 
+  Adds an entry last to the ValueArray, increasing 
+  array size if no space left by factor 1.4"
+  input ValueArray valueArray;
+  input tuple<Key,Value> entry;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,entry)
+    local
+      Integer n_1,n,size,expandsize,expandsize_1,newsize;
+      Option<tuple<Key,Value>>[:] arr_1,arr,arr_2;
+      Real rsize,rexpandsize;
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
+      equation 
+        (n < size) = true "Have space to add array elt." ;
+        n_1 = n + 1;
+        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n_1,size,arr_1);
+        
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
+      equation 
+        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
+        rsize = intReal(size);
+        rexpandsize = rsize*.0.4;
+        expandsize = realInt(rexpandsize);
+        expandsize_1 = intMax(expandsize, 1);
+        newsize = expandsize_1 + size;
+        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE);
+        n_1 = n + 1;
+        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n_1,newsize,arr_2);
+    case (_,_)
+      equation 
+        print("-InstHashTable.valueArrayAdd failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArrayAdd;
+
+public function valueArraySetnth 
+"function: valueArraySetnth
+  author: PA 
+  Set the n:th variable in the ValueArray to value."
+  input ValueArray valueArray;
+  input Integer pos;
+  input tuple<Key,Value> entry;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,pos,entry)
+    local
+      Option<tuple<Key,Value>>[:] arr_1,arr;
+      Integer n,size,pos;      
+    case (VALUE_ARRAY(n,size,arr),pos,entry)
+      equation 
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n,size,arr_1);
+    case (_,_,_)
+      equation 
+        print("-InstHashTable.valueArraySetnth failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArraySetnth;
+
+public function valueArrayClearnth 
+"author: PA
+  Clears the n:th variable in the ValueArray (set to NONE)."
+  input ValueArray valueArray;
+  input Integer pos;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,pos)
+    local
+      Option<tuple<Key,Value>>[:] arr_1,arr;
+      Integer n,size,pos;      
+    case (VALUE_ARRAY(n,size,arr),pos)
+      equation 
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, NONE);
+      then
+        VALUE_ARRAY(n,size,arr_1);
+    case (_,_)
+      equation 
+        print("-InstHashTable.valueArrayClearnth failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArrayClearnth;
+
+public function valueArrayNth 
+"function: valueArrayNth
+  author: PA 
+  Retrieve the n:th Vale from ValueArray, index from 0..n-1."
+  input ValueArray valueArray;
+  input Integer pos;
+  output Value value;
+algorithm 
+  value := matchcontinue (valueArray,pos)
+    local
+      Value v;
+      Integer n,pos,len;
+      Option<tuple<Key,Value>>[:] arr;
+      String ps,lens,ns;
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
+      equation 
+        (pos < n) = true;
+        SOME((_,v)) = arr[pos + 1];
+      then
+        v;
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
+      equation 
+        (pos < n) = true;
+        NONE = arr[pos + 1];
+      then
+        fail();
+  end matchcontinue;
+end valueArrayNth;
                 
 end Inst;
 

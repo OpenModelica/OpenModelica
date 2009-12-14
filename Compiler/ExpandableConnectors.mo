@@ -77,7 +77,7 @@ algorithm
      InstanceHierarchy.InstanceHierarchy ih;
      SCode.Program programWithPatchedExpandableConnectors;
      
-   case (inProgram, false) 
+   case (inProgram, /* false */_) 
      then (InstanceHierarchy.emptyInstanceHierarchy, inProgram);
        
    case (inProgram, true) 

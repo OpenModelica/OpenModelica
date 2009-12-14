@@ -1822,7 +1822,7 @@ algorithm
     case DAE.ET_STRING() then "string";
     case DAE.ET_BOOL() then "boolean";
     case DAE.ET_OTHER() then "complex"; // Only use is currently for external objects. Perhaps in future also records.
-    case DAE.ET_ENUMERATION(_,_,_,_) then "enumeration";
+    case DAE.ET_ENUMERATION(_,_,_,_) then "integer";
 //    case Exp.ENUM() then "ENUM_NOT_IMPLEMENTED";
     case DAE.ET_FUNCTION_REFERENCE_VAR() then "fnptr";
     case DAE.ET_FUNCTION_REFERENCE_FUNC() then "fnptr";
@@ -2032,10 +2032,11 @@ algorithm
       String t_str,name;
       DAE.Type t_1,t,ty;
     
-    case ((DAE.T_INTEGER(varLstInt = _),_)) then "modelica_integer";
+    case ((DAE.T_INTEGER(varLstInt = _),_)) then "modelica_integer";      
     case ((DAE.T_REAL(varLstReal = _),_)) then "modelica_real";
     case ((DAE.T_STRING(varLstString = _),_)) then "modelica_string";
     case ((DAE.T_BOOL(varLstBool = _),_)) then "modelica_boolean";
+    case ((DAE.T_ENUMERATION(varLst=_),_)) then "modelica_integer";      
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
       equation
         t_str = stringAppend("struct ", name);

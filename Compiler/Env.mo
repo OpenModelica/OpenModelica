@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2009, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -112,19 +112,19 @@ public uniontype CacheTree
 end CacheTree;
 
 type CSetsType = tuple<list<DAE.ComponentRef>,DAE.ComponentRef>;
+
 public 
 uniontype Frame
   record FRAME 
-    Option<Ident> optName        "Optional class name" ;
-    AvlTree       clsAndVars     "List of uniquely named classes and variables" ;
-    AvlTree       types          "List of types, which DOES NOT be uniquely named, eg. size have several types" ;
-    list<Item>    imports        "list of unnamed items (imports)" ;
-    list<Frame>   inherited      "list of frames for inherited elements" ;
-    CSetsType     connectionSet  "current connection set crefs" ;
-    Boolean       isEncapsulated "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
+    Option<Ident> optName           "Optional class name";
+    AvlTree       clsAndVars        "List of uniquely named classes and variables";
+    AvlTree       types             "List of types, which DOES NOT be uniquely named, eg. size have several types";
+    list<Item>    imports           "list of unnamed items (imports)";
+    list<Frame>   inherited         "list of frames for inherited elements";
+    CSetsType     connectionSet     "current connection set crefs";
+    Boolean       isEncapsulated    "encapsulated bool=true means that FRAME is created due to encapsulated class";
     list<SCode.Element> defineUnits "list of units defined in the frame";
   end FRAME;
-
 end Frame;
 
 public uniontype InstStatus
@@ -147,11 +147,9 @@ public
 uniontype Item
   record VAR
     DAE.Var instantiated "instantiated component" ;
-    Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated." ;
-    InstStatus instStatus "if it untyped, typed or fully instantiated (dae)" ;
-    Env env "The environment of the instantiated component
-			       Contains e.g. all sub components 
-			" ;
+    Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
+    InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
+    Env env "The environment of the instantiated component. Contains e.g. all sub components";
   end VAR;
 
   record CLASS
@@ -170,7 +168,8 @@ uniontype Item
 end Item;
 
 public 
-type Env = list<Frame>;
+type Env = list<Frame> 
+  "an environment is a list of frames";
 
 protected import Dump;
 protected import Exp;
@@ -179,27 +178,26 @@ protected import Util;
 protected import System;
 protected import Types;
 protected import Inst;
+protected import Debug;
 
 public constant Env emptyEnv={} "- Values" ;
 
-//public constant Cache emptyCache = CACHE(NONE,NONE);
-
 public function emptyCache
+"returns an empty cache"
   output Cache cache;
-
-protected Option<EnvCache>[:] arr;
+ protected 
+  Option<EnvCache>[:] arr;
 algorithm
   //print("EMPTYCACHE\n");
   arr := listArray({NONE});
   cache := CACHE(arr,NONE);
 end emptyCache;
 
-public function newFrame "- Relations
-  function: newFrame
- 
+// functions for dealing with the environment
+
+public function newFrame "function: newFrame
   This function creates a new frame, which includes setting up the 
-  hashtable for the frame.
-"
+  hashtable for the frame."
   input Boolean enc;
   output Frame outFrame;
   AvlTree httypes;
@@ -1185,6 +1183,36 @@ algorithm
   end matchcontinue;
 end cacheAdd;
 
+// moved from Inst as is more natural to be here!
+public function addCachedEnv
+"function: addCachedEnv
+  add a new environment in the cache obtaining a new cache"
+  input Cache inCache;
+  input String id;
+  input Env env;
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache,id,env)
+    local
+      Absyn.Path path,newPath;
+    
+    case(inCache,id,env) 
+      equation
+        SOME(path) = getEnvPath(env);
+        outCache = cacheAdd(path,inCache,env);
+      then outCache;
+      
+    case(inCache,id,env)
+      equation
+        // this should be placed in the global environment
+        // how do we do that??
+        Debug.fprintln("env", "<<<< Env.addCachedEnv - failed to add env to cache for: " +&  
+            printEnvPathStr(env) +& " [" +& id +& "]");
+      then inCache;
+
+  end matchcontinue;
+end addCachedEnv;
+
 protected function cacheGetEnv "get an environment from the tree cache."
 	input Absyn.Path scope;
 	input Absyn.Path path;
@@ -1290,29 +1318,38 @@ algorithm
       Env globalEnv,oldEnv;
       list<CacheTree> children,children2;
       CacheTree child;
-      // simple names already added
-      case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env) 
-        equation
-          //print(id);print(" already added\n");
-          equality(id=id2);
-          then tree;
+
+    // simple names already added
+    case (Absyn.IDENT(id),(tree as CACHETREE(globalID,globalEnv,CACHETREE(id2,oldEnv,children)::children2)),env) 
+      equation
+        //print(id);print(" already added\n");
+        equality(id=id2);
+        // shouldn't we replace it?
+        // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
+      then tree;
             
-       // simple names try next
-      case (Absyn.IDENT(id),tree as CACHETREE(globalID,globalEnv,child::children),env) 
-        equation
-          CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id),CACHETREE(globalID,globalEnv,children),env);
-          then CACHETREE(globalID,globalEnv,child::children);
-                        
-      // Simple names, not found
-    case (Absyn.IDENT(id),CACHETREE(globalID,globalEnv,{}),env) 
-    then CACHETREE(globalID,globalEnv,{CACHETREE(id,env,{})});
+    // simple names try next
+    case (Absyn.IDENT(id),tree as CACHETREE(globalID,globalEnv,child::children),env) 
+      equation
+        CACHETREE(globalID,globalEnv,children) = cacheAddEnv(Absyn.IDENT(id),CACHETREE(globalID,globalEnv,children),env);
+      then CACHETREE(globalID,globalEnv,child::children);
+        
+    // Simple names, not found
+    case (Absyn.IDENT(id),CACHETREE(globalID,globalEnv,{}),env)
+      equation
+        // Debug.fprintln("env", ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
+      then CACHETREE(globalID,globalEnv,{CACHETREE(id,env,{})});
       
-      // Qualified names.
+    // Qualified names.
     case (path as Absyn.QUALIFIED(_,_),CACHETREE(globalID,globalEnv,children),env)
       equation
         children=cacheAddEnv2(path,children,env);
       then CACHETREE(globalID,globalEnv,children);
-    case (path,_,_) equation print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
+        
+    // failure
+    case (path,_,_) 
+      equation 
+        print("cacheAddEnv path=");print(Absyn.pathString(path));print(" failed\n");
       then fail();
   end matchcontinue;
 end cacheAddEnv;
@@ -1331,7 +1368,7 @@ algorithm
       CacheTree child;
       Env env2;
       
-      // qualified name, found matching    
+    // qualified name, found matching    
     case(Absyn.QUALIFIED(id,path),CACHETREE(id2,env2,children2)::children,env)
       equation
         equality(id=id2);
@@ -1342,10 +1379,11 @@ algorithm
     case (Absyn.IDENT(id),CACHETREE(id2,env2,children2)::children,env) 
       equation
         equality(id=id2);
+        // Debug.fprintln("env", ">>>> Env.cacheAdd - already in cache: " +& printEnvPathStr(env));
         //print("single name, found matching\n");
       then CACHETREE(id2,env2,children2)::children;
         
-        // try next
+    // try next
     case(path,child::children,env)
       equation
         //print("try next\n");
@@ -1356,13 +1394,15 @@ algorithm
     case (Absyn.QUALIFIED(id,path),{},env) 
       equation        
         children = cacheAddEnv2(path,{},env);
+        // Debug.fprintln("env", ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
         //print("qualified name no child found, create one.\n");
       then {CACHETREE(id,emptyEnv,children)};   
 
     // simple name no child found, create one.
     case (Absyn.IDENT(id),{},env) 
       equation
-        //print("simple name no child found, create one.\n");
+        // print("simple name no child found, create one.\n");
+        // Debug.fprintln("env", ">>>> Env.cacheAdd - add to cache: " +& printEnvPathStr(env));
       then {CACHETREE(id,env,{})};
         
     case (_,_,_) equation print("cacheAddEnv2 failed\n"); then fail();
@@ -2283,9 +2323,6 @@ algorithm
     case(SOME(AVLTREENODE(height = height))) then height;
   end matchcontinue;
 end getHeight;
-
-
-
 
 end Env;
 

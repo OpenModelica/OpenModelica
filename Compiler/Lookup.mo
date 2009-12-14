@@ -153,8 +153,7 @@ check if it is function, record, metarecord, etc.
   output DAE.Type outType "the found type";
   output Env.Env outEnv "The environment the type was found in";
 algorithm 
-  (outCache,outType,outEnv):=
-  matchcontinue (inCache,inEnv,inPath,inClass)
+  (outCache,outType,outEnv) := matchcontinue (inCache,inEnv,inPath,inClass)
     local
       DAE.Type t;
       list<Env.Frame> env_1,env_2,env_3;
@@ -164,8 +163,57 @@ algorithm
       SCode.Restriction restr;
       Env.Cache cache;
       list<DAE.Var> varlst;
-      
-      // Classes that are external objects. Implicityly instantiate to get type
+        
+    // Record constructors        
+    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
+      equation
+        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
+        (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
+        t = Types.makeFunctionType(path, varlst);
+      then 
+        (cache,t,env_1);
+        
+    // lookup of an enumeration type 
+    case (cache,env_1,path,c as SCode.CLASS(id,_,encflag,r as SCode.R_ENUMERATION(),_))
+      local
+        SCode.Restriction r; 
+        list<Types.Var> types;
+        list<String> names;
+        ClassInf.State ci_state;
+        Boolean encflag;
+      equation
+        env_2 = Env.openScope(env_1, encflag, SOME(id));
+        ci_state = ClassInf.start(r, id);
+        (cache,env_3,_,_,_,_,_,types,_,_,_,_) = 
+        Inst.instClassIn(
+          cache,env_2,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
+        // build names
+        (_,names) = SCode.getClassComponents(c);
+        // generate the enumeration type        
+        t = (DAE.T_ENUMERATION(NONE(), path, names, types), SOME(path));
+        env_3 = Env.extendFrameT(env_3, id, t);
+      then
+        (cache,t,env_3);        
+
+    // Metamodelica extension, Uniontypes
+    case (cache,env_1,path,c as SCode.CLASS(id,_,_,SCode.R_METARECORD(_,index),SCode.PARTS(elementLst = els))) 
+      local
+        Integer index;
+        list<SCode.Element> els;
+        list<tuple<SCode.Element,DAE.Mod>> elsModList;
+      equation 
+        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
+        elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
+        (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
+            cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
+        t = (DAE.T_METARECORD(index,varlst),SOME(path));
+      then
+        (cache,t,env_2);
+        
+    // Classes that are external objects. Implicitly instantiate to get type
     case (cache,env_1,path,c)
       local
       equation
@@ -179,69 +227,16 @@ algorithm
         (cache,t,env_2) = lookupTypeInEnv(cache,env_1,Absyn.IDENT(id));
       then
         (cache,t,env_2);
-
-      // Metamodelica extension, Uniontypes
-    case (cache,env_1,path,c) 
-      local
-        Integer index;
-        list<SCode.Element> els;
-        list<tuple<SCode.Element,DAE.Mod>> elsModList;
-      equation 
-        SCode.CLASS(id,_,_,SCode.R_METARECORD(_,index),SCode.PARTS(elementLst = els)) = c;
-        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
-        elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
-        (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
-            cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
-            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
-        t = (DAE.T_METARECORD(index,varlst),SOME(path));
-      then
-        (cache,t,env_2);
         
-     // If we find a class definition that is a function or external function
-     // with the same name then we implicitly instantiate that function, look
-     // up the type.
-    case (cache,env_1,path,c)
+    // If we find a class definition that is a function or external function
+    // with the same name then we implicitly instantiate that function, look
+    // up the type.
+    case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=restr))
       equation 
-        SCode.CLASS(name = id,restriction=restr) = c;
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2,_) = 
         Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
-      then
-        (cache,t,env_3);
-
-      // Record constructors        
-    case (cache,env_1,path,c)
-      equation
-        SCode.CLASS(name=id,restriction=SCode.R_RECORD()) = c;
-        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
-        (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
-        t = Types.makeFunctionType(path, varlst);
-      then 
-        (cache,t,env_1);
-        
-    // lookup of an enumeration type 
-    case (cache,env_1,path,c)
-      local
-        SCode.Restriction r; 
-        list<Types.Var> types;
-        list<String> names;
-        ClassInf.State ci_state;
-        Boolean encflag;
-      equation 
-        SCode.CLASS(id,_,encflag,r as SCode.R_ENUMERATION(),_) = c;
-        env_2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(r, id);
-        (cache,env_3,_,_,_,_,_,types,_,_,_,_) = 
-        Inst.instClassIn(
-          cache,env_2,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-        // build names
-        (_,names) = SCode.getClassComponents(c);
-        // generate the enumeration type        
-        t = (DAE.T_ENUMERATION(NONE(), path, names, types), SOME(path));
-        env_3 = Env.extendFrameT(env_3, id, t);
       then
         (cache,t,env_3);        
   end matchcontinue;
@@ -369,8 +364,7 @@ public function lookupClass2 "help function to lookupClass, does all the work."
   output SCode.Class outClass;
   output Env.Env outEnv;
 algorithm 
-  (inCache,outClass,outEnv):=
-  matchcontinue (inCache,inEnv,inPath,inBoolean)
+  (inCache,outClass,outEnv) := matchcontinue (inCache,inEnv,inPath,inBoolean)
     local
       Env.Frame f;
       Env.Cache cache;
@@ -381,7 +375,6 @@ algorithm
       Boolean msg,encflag,msgflag;
       SCode.Restriction restr;
       ClassInf.State ci_state,cistate1;
-    
     
     /* First look in cache for environment. If found look up class in that environment */
     case (cache,env,path,msg)
@@ -421,7 +414,7 @@ algorithm
       then
         (cache,c,env_1);       
         
-        // Qualified names
+    // Qualified names
                        
     // If we search for A1.A2....An.x while in scope A1.A2...An, 
     // just search for x. Must do like this to ensure finite recursion (x can be both qualified or simple)  
@@ -567,7 +560,7 @@ algorithm
         assertPackage(c2,Absyn.pathString(strippath));
         
         cref = Exp.pathToCref(Absyn.pathTwoLastIdents(path));        
-        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,cenv, cref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache, cenv, cref);
       then
         (cache,p_env,attr,ty,bind);
 
@@ -1134,7 +1127,7 @@ public function lookupVarInternal "function: lookupVarInternal
   output DAE.Binding outBinding;
   output Option<DAE.Exp> outOptExp;
 algorithm 
-  (outCache,outAttributes,outType,outBinding):=
+  (outCache,outAttributes,outType,outBinding) :=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Attributes attr;
@@ -1236,19 +1229,19 @@ algorithm
         then
         (cache,f::fs,attr,ty,bind);
         
-        /* If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
-        Must do like this to ensure finite recursion */
-         case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref))
-           local Absyn.Path ep,p,packp;
-           equation 
-             p = Exp.crefToPath(cr);
-             SOME(ep) = Env.getEnvPath(env);
-             packp = Absyn.stripLast(p);
-             true = ModUtil.pathEqual(ep, packp);
-             id = Absyn.pathLastIdent(p);
-             (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-           then
-             (cache,p_env,attr,ty,bind);
+    /* If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
+       Must do like this to ensure finite recursion */
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref))
+      local Absyn.Path ep,p,packp;
+      equation 
+        p = Exp.crefToPath(cr);
+        SOME(ep) = Env.getEnvPath(env);
+        packp = Absyn.stripLast(p);
+        true = ModUtil.pathEqual(ep, packp);
+        id = Absyn.pathLastIdent(p);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+      then
+        (cache,p_env,attr,ty,bind);
 
       // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */
@@ -1262,8 +1255,8 @@ algorithm
         Inst.instClassIn(
           cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY,filterCref);
-        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, cref);
+          ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY, filterCref);
+        (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache, env5, cref);
       then
         (cache,p_env,attr,ty,bind);
         
@@ -1272,7 +1265,7 @@ algorithm
        */ 
     case (cache,env,(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb))) local String str;
       equation 
-        (cache,attr,ty,bind) = lookupVarLocal(cache,env, cr);
+        (cache,attr,ty,bind) = lookupVarLocal(cache, env, cr);
       then
         (cache,env,attr,ty,bind);
         
@@ -1284,6 +1277,7 @@ algorithm
         (cache,attr,ty,bind,_,dbgEnv) = lookupVar(cache,bcframes, cref);
       then
         (cache,dbgEnv,attr,ty,bind);
+
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation 
@@ -1575,10 +1569,10 @@ algorithm
         //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+          cache, env2, InstanceHierarchy.emptyInstanceHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
-        (cache,reslist) = lookupFunctionsInEnv(cache,env_2, path);
+        (cache,reslist) = lookupFunctionsInEnv(cache, env_2, path);
       then 
         (cache,reslist);
 
