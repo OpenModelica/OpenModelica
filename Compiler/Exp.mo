@@ -3967,16 +3967,20 @@ algorithm
     case (DAE.SUB_ARR(ty = t)) then t; 
     case (DAE.MUL_ARR(ty = t)) then t; 
     case (DAE.DIV_ARR(ty = t)) then t; 
-    case (DAE.POW_ARR2(ty = t)) then t; 
-    case (DAE.MUL_SCALAR_ARRAY(ty = t)) then t;  //Why no MUL_ARRAY_SCALAR? -- AlLeb
-    case (DAE.DIV_SCALAR_ARRAY(ty = t)) then t;  
-    case (DAE.ADD_SCALAR_ARRAY(ty = t)) then t;  
+    case (DAE.MUL_SCALAR_ARRAY(ty = t)) then t;
+    case (DAE.MUL_ARRAY_SCALAR(ty = t)) then t;
+    case (DAE.ADD_SCALAR_ARRAY(ty = t)) then t;
+    case (DAE.ADD_ARRAY_SCALAR(ty = t)) then t;
     case (DAE.SUB_SCALAR_ARRAY(ty = t)) then t;  
-    case (DAE.POW_SCALAR_ARRAY(ty = t)) then t;  
+    case (DAE.SUB_ARRAY_SCALAR(ty = t)) then t;
     case (DAE.MUL_SCALAR_PRODUCT(ty = t)) then t; 
     case (DAE.MUL_MATRIX_PRODUCT(ty = t)) then t; 
     case (DAE.DIV_ARRAY_SCALAR(ty = t)) then t;
+    case (DAE.DIV_SCALAR_ARRAY(ty = t)) then t;
+    case (DAE.POW_ARRAY_SCALAR(ty = t)) then t;
+    case (DAE.POW_SCALAR_ARRAY(ty = t)) then t;  
     case (DAE.POW_ARR(ty = t)) then t; 
+    case (DAE.POW_ARR2(ty = t)) then t; 
     case (DAE.AND()) then DAE.ET_BOOL(); 
     case (DAE.OR()) then DAE.ET_BOOL(); 
     case (DAE.NOT()) then DAE.ET_BOOL(); 
