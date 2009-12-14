@@ -7706,6 +7706,66 @@ algorithm
   end matchcontinue;
 end transformModificationsToNamedArguments;
 
+protected function addComponentFunctionsToCurrentEnvironment
+"author: adrpo
+  This function will copy the SCode.Class N given as input and the 
+  derived dependency into the current scope with name componentName.N"
+ input Env.Cache inCache;
+ input Env.Env inEnv;
+ input SCode.Class scodeClass;
+ input Env.Env inClassEnv;
+ input String componentName;
+ output Env.Cache outCache;
+ output Env.Env outEnv; 
+algorithm
+  (outCache, outEnv) := matchcontinue(inCache, inEnv, scodeClass, inClassEnv, componentName)
+    local 
+      Env.Cache cache;
+      Env.Env env, classEnv;
+      SCode.Class sc, extendedClass;
+      String cn, extendsCn;
+      SCode.Ident name "the name of the class" ;
+      Boolean partialPrefix "the partial prefix" ;
+      Boolean encapsulatedPrefix "the encapsulated prefix" ;
+      SCode.Restriction restriction "the restriction of the class" ;
+      SCode.ClassDef classDef "the class specification" ;
+      Absyn.TypeSpec typeSpec "typeSpec: type specification" ;
+      Absyn.Path extendsPath, newExtendsPath;
+      SCode.Mod modifications ;
+      Absyn.ElementAttributes attributes ;
+      Option<SCode.Comment> comment "the translated comment from the Absyn" ;
+      Option<Absyn.ArrayDim> arrayDim;           
+    
+    case(cache, env, sc as SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef as 
+         SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes, comment)), 
+         classEnv, cn)
+      equation
+        // System.enableTrace();
+        // change the class name from gravityAcceleration to be world.gravityAcceleration
+        name = componentName +& "." +& name;
+        // remove modifications as they are added via transformModificationsToNamedArguments
+        // also change extendsPath to world.gravityAccelerationTypes
+        extendsCn = Absyn.pathString(Absyn.QUALIFIED(componentName, extendsPath));
+        newExtendsPath = Absyn.IDENT(extendsCn);
+        sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, 
+               SCode.DERIVED(Absyn.TPATH(newExtendsPath, arrayDim), SCode.NOMOD(), attributes, comment));
+        // add the class function to the environment
+        env = Env.extendFrameC(env, sc);
+        // lookup the derived class
+        (_, extendedClass, _) = Lookup.lookupClass(cache, classEnv, extendsPath, true);
+        // construct the extended class gravityAccelerationType 
+        // with a different name: world.gravityAccelerationType
+        SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef) = extendedClass;
+        // change the class name from gravityAccelerationTypes to be world.gravityAccelerationTypes        
+        name = componentName +& "." +& name;
+        // construct the extended class world.gravityAccelerationType
+        sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef);
+        // add the extended class function to the environment
+        env = Env.extendFrameC(env, sc);
+      then (cache, env);
+  end matchcontinue;
+end addComponentFunctionsToCurrentEnvironment;
+  
 protected function elabCallArgs 
 "function: elabCallArgs 
   Given the name of a function and two lists of expression and 
@@ -7790,10 +7850,10 @@ algorithm
     case (cache, env, fn, args, nargs, impl, st)
       local 
         DAE.ExpType tp;
-        String str2;
+        String str2, stringifiedInstanceFunctionName;
         list<DAE.Type> ltypes;
         list<String> lstr;
-        Absyn.Path fnPrefix, componentType, correctFunctionPath;
+        Absyn.Path fnPrefix, componentType, correctFunctionPath, functionClassPath;
         DAE.ComponentRef cr;
         Absyn.InnerOuter innerOuter;
         SCode.Ident componentName, fnIdent;
@@ -7809,12 +7869,12 @@ algorithm
         (_, _, SOME((SCode.COMPONENT(innerOuter=innerOuter, typeSpec = Absyn.TPATH(componentType, _)),_)), _) = 
           Lookup.lookupIdent(cache, env, componentName); // search for the component
         // join the type with the function name: Modelica.Mechanics.MultiBody.World.gravityAcceleration
-        correctFunctionPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
+        functionClassPath = Absyn.joinPaths(componentType, Absyn.IDENT(fnIdent));
         
         Debug.fprintln("static", "Looking for function: " +& Absyn.pathString(fn));
         // lookup the function using the correct typeOf(world).functionName
-        Debug.fprintln("static", "Looking up class: " +& Absyn.pathString(correctFunctionPath));
-        (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, correctFunctionPath, true);
+        Debug.fprintln("static", "Looking up class: " +& Absyn.pathString(functionClassPath));
+        (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, functionClassPath, true);
         // see if class scodeClass is derived and then
         // take the applied modifications and transform 
         // them into function arguments by prefixing them 
@@ -7834,11 +7894,15 @@ algorithm
         //                  mue = world.mue));
         // if the class is derived translate modifications to named arguments
         translatedNArgs = transformModificationsToNamedArguments(scodeClass, componentName);
+        (cache, env) = addComponentFunctionsToCurrentEnvironment(cache, env, scodeClass, classEnv, componentName);
+        // transform Absyn.QUALIFIED("world", Absyn.IDENT("gravityAcceleration")) to
+        // Absyn.IDENT("world.gravityAcceleration").
+        stringifiedInstanceFunctionName = Absyn.pathString(fn);
+        correctFunctionPath = Absyn.IDENT(stringifiedInstanceFunctionName);
         // use the extra arguments if any
         nargs = listAppend(nargs, translatedNArgs);
         // call the class normally
-        (cache,call_exp,prop_1) = 
-           elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st);
+        (cache,call_exp,prop_1) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st);
       then
         (cache,call_exp,prop_1);
 
