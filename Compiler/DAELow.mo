@@ -54,14 +54,10 @@ public import Values;
 
 public uniontype Type "
 Once we are in DAELow, the Type can be only basic types or enumeration.
-We cannot do this in DAE because functions may contain many more types.
-"
+We cannot do this in DAE because functions may contain many more types."
   record REAL end REAL;
-
   record INT end INT;
-
   record BOOL end BOOL;
-
   record STRING end STRING;
     
   record ENUMERATION
@@ -135,6 +131,11 @@ uniontype Equation "- Equation"
   record WHEN_EQUATION
     WhenEquation whenEquation "whenEquation" ;
   end WHEN_EQUATION;
+
+  record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
+    DAE.Exp lhs "left ; lhs" ;
+    DAE.Exp rhs "right ; rhs" ;
+  end COMPLEX_EQUATION;
 
 end Equation;
 
@@ -245,7 +246,6 @@ uniontype MultiDimEquation "- Multi Dimensional Equation"
     DAE.Exp left "left ; lhs" ;
     DAE.Exp right "right ; rhs" ;
   end MULTIDIM_EQUATION;
-
 end MultiDimEquation;
 
 public
@@ -4642,6 +4642,24 @@ algorithm
       then
         (vars,knvars,extVars,e_1 :: eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
+    // complex equations!!
+    case (DAE.DAE(elementLst = ((e as DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+      equation
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
+        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        e_1 = lowerComplexEqn(e);
+      then
+        (vars,knvars,extVars,e_1::eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
+    
+    // complex initial equations!!    
+    case (DAE.DAE(elementLst = ((e as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+      equation
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
+        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        e_1 = lowerComplexEqn(e);
+      then
+        (vars,knvars,extVars,eqns,reqns,e_1::ieqns,aeqns,algs,whenclauses_1,extObjCls);    
+
     /* array equations */
     case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
       local MultiDimEquation e_1;
@@ -4756,7 +4774,6 @@ algorithm
         print(s3 +& "\n");
       then
         fail();
-        
   end matchcontinue;
 end lower2;
 
@@ -5568,8 +5585,7 @@ end lowerEqn;
 protected function lowerArrEqn "function: lowerArrEqn
 
   Helper function to lower2.
-  Transforma a DAE.Element to MultiDimEquation.
-"
+  Transform a DAE.Element to MultiDimEquation."
   input DAE.Element inElement;
   output MultiDimEquation outMultiDimEquation;
 algorithm
@@ -5588,6 +5604,37 @@ algorithm
         MULTIDIM_EQUATION(ds,e1_2,e2_2);
   end matchcontinue;
 end lowerArrEqn;
+
+protected function lowerComplexEqn 
+"function: lowerComplexEqn
+  Helper function to lower2.
+  Transform a DAE.Element to ComplexEquation."
+  input DAE.Element inElement;
+  output Equation outComplexEquation;
+algorithm
+  outComplexEquation := matchcontinue (inElement)
+    local
+      DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
+    // normal
+    case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2))
+      equation
+        e1_1 = Exp.simplify(e1);
+        e2_1 = Exp.simplify(e2);
+        e1_2 = Exp.stringifyCrefs(e1_1);
+        e2_2 = Exp.stringifyCrefs(e2_1);
+      then
+        COMPLEX_EQUATION(e1_2,e2_2);
+    // initial
+    case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2))
+      equation
+        e1_1 = Exp.simplify(e1);
+        e2_1 = Exp.simplify(e2);
+        e1_2 = Exp.stringifyCrefs(e1_1);
+        e2_2 = Exp.stringifyCrefs(e2_1);
+      then
+        COMPLEX_EQUATION(e1_2,e2_2);        
+  end matchcontinue;
+end lowerComplexEqn;
 
 protected function lowerVar 
 "function: lowerVar
@@ -5877,7 +5924,8 @@ algorithm
         {_,_} = Util.stringSplitAtChar(name, ".");
       then
         ();
-    case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.INPUT(),DAE.FLOW()) then ();  /* For crefs that are not yet stringified, e.g. lower_known_var */
+    /* For crefs that are not yet stringified, e.g. lower_known_var */
+    case (DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _)),DAE.INPUT(),DAE.FLOW()) then ();
     case ((cr as DAE.CREF_QUAL(ident = name,componentRef = DAE.CREF_IDENT(ident = _))),DAE.INPUT(),DAE.NON_FLOW()) then ();
   end matchcontinue;
 end topLevelInput;
