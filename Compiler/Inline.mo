@@ -101,8 +101,8 @@ algorithm
   end matchcontinue;
 end inlineCalls;
 
-protected function inlineEquationArray
-"function: inlineEquationArray
+protected function inlineEquationArray "
+function: inlineEquationArray
 	inlines function calls in an equation array"
 	input DAELow.EquationArray inEquationArray;
 	input list<DAE.Element> inElementList;
@@ -124,8 +124,8 @@ algorithm
   end matchcontinue;
 end inlineEquationArray;
 
-protected function inlineEqOpt
-"function: inlineEqOpt
+protected function inlineEqOpt "
+function: inlineEqOpt
 	inlines function calls in equations"
 	input Option<DAELow.Equation> inEquationOption;
 	input list<DAE.Element> inElementList;
@@ -394,8 +394,8 @@ algorithm
   end matchcontinue;
 end inlineExtObjClasses;
 
-public function inlineCallsInFunctions
-"function: inlineCallsInFunctions
+public function inlineCallsInFunctions "
+function: inlineCallsInFunctions
 	inlines function calls within functions"
 	input list<DAE.Element> inElementList;
 	output list<DAE.Element> outElementList;
@@ -435,6 +435,8 @@ algorithm
       Boolean partialPrefix;
       DAE.ExternalDecl ext;
       list<DAE.Exp> explst,explst_1;
+      DAE.InlineType inlineType;
+      list<DAE.FunctionDefinition> funcDefs; 
     case({},_) then {};
     case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
       equation
@@ -553,17 +555,18 @@ algorithm
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.FUNCTION(p,DAE.DAE(elist),t,partialPrefix) :: cdr,fns)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = DAE.DAE(elist))::funcDefs,t,partialPrefix,inlineType) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.DAE(elist_1),t,partialPrefix);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(DAE.DAE(elist_1))::funcDefs,t,partialPrefix,inlineType);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.EXTFUNCTION(p,DAE.DAE(elist),t,ext) :: cdr,fns)
+    //case(DAE.EXTFUNCTION(p,DAE.DAE(elist),t,ext) :: cdr,fns)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist),ext)::funcDefs,t,partialPrefix,inlineType) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.EXTFUNCTION(p,DAE.DAE(elist_1),t,ext);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist_1),ext)::funcDefs,t,partialPrefix,inlineType);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
@@ -770,8 +773,8 @@ algorithm
   end matchcontinue;
 end inlineElse;
 
-protected function inlineExp
-"function: inlineExp
+protected function inlineExp "
+function: inlineExp
 	inlines calls in an DAE.Exp"
 	input DAE.Exp inExp;
 	input list<DAE.Element> inElementList;
@@ -805,10 +808,12 @@ algorithm
       DAE.ExpType t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      DAE.Exp newExp;
-    case((DAE.CALL(p,args,tup,built,t,true),fns))
+      DAE.Exp newExp; 
+      DAE.InlineType inlineType;
+    case((DAE.CALL(p,args,tup,built,t,inlineType),fns))
       equation
-        DAE.FUNCTION(_,DAE.DAE(fn),_,_) :: _ = DAEUtil.getNamedFunction(p,fns);
+        true = DAE.convertInlineTypeToBool(inlineType);
+        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = DAE.DAE(fn))::_) :: _ = DAEUtil.getNamedFunction(p,fns);
         crefs = Util.listMap(fn,getInputCrefs);
         crefs = Util.listSelect(crefs,removeWilds);
         argmap = Util.listThreadTuple(crefs,args);

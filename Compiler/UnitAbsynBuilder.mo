@@ -1375,11 +1375,6 @@ algorithm
       (store,ht) = buildStoreExp(e2,store,ht,parentOp);
     then (store,ht); 
       
-/*    case(DAE.CALL(path=Absyn.IDENT("der"),expLst = {DAE.CREF(_,cr)}),store,ht,parentOp) equation
-      indx = HashTable.get(cr,ht);
-      unit = find(index,st);
-      derUnit = unitMultiply(unit,str2unit("1/s"));
-    then (store,ht);*/
     case(_,store,ht,parentOp) then (store,ht);   
   end matchcontinue;  
 end buildStoreExp;

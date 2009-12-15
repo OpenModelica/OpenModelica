@@ -572,7 +572,6 @@ algorithm b := matchcontinue(inType)
       lb2 = subtype(ty, (DAE.T_REAL({}),NONE));
       lb3 = subtype((DAE.T_REAL({}),NONE),ty);
       lb1 = boolOr(lb1,boolAnd(lb2,lb3));
-      //lb1 = boolOr(lb1,lb2);  
     then lb1;
   case(_) then false;
 end matchcontinue; 
@@ -2646,7 +2645,7 @@ public function makeFunctionType "function: makeFunctionType
 "
   input Absyn.Path p;
   input list<Var> vl;
-  input Boolean isInline;
+  input DAE.InlineType isInline;
   output Type outType;
   list<Var> invl,outvl;
   list<FuncArg> fargs;
@@ -4113,28 +4112,28 @@ algorithm
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,false),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
       
     case (e, t1 as (DAE.T_BOOL({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,false),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
 
     case (e, t1 as (DAE.T_REAL({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,false),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
 
     case (e, t1 as (DAE.T_STRING({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,false),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
 
     case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       local Absyn.Path path1,path2;
@@ -4181,32 +4180,32 @@ algorithm
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT,false),t2,polymorphicBindings);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT,DAE.NO_INLINE),t2,polymorphicBindings);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_REAL(_),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL,false),t2,polymorphicBindings);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL,DAE.NO_INLINE),t2,polymorphicBindings);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL,false),t2,polymorphicBindings);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL,DAE.NO_INLINE),t2,polymorphicBindings);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING,false),t2,polymorphicBindings);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING,DAE.NO_INLINE),t2,polymorphicBindings);
     case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         (e_1,t2,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
         t = elabType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,false),t2,polymorphicBindings);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
     
     // MM Function Reference. sjoelund
     case (e as DAE.CREF(_,_),(DAE.T_FUNCTION(farg1,t1,_),p1),(DAE.T_FUNCTION(farg2,t2,_),_),polymorphicBindings,matchFunc,printFailtrace)
@@ -4223,7 +4222,7 @@ algorithm
         (_,tys1,polymorphicBindings) = matchTypeTuple(exps,tList1,tList2,polymorphicBindings,matchFunc,printFailtrace);
         (_,ty1,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
         farg = Util.listThreadMap(fargId1,tys1,Util.makeTuple2);
-        ty2 = (DAE.T_FUNCTION(farg,ty1,false),p1);
+        ty2 = (DAE.T_FUNCTION(farg,ty1,DAE.NO_INLINE),p1);
       then (e,ty2,polymorphicBindings);
     
       /* See printFailure()
@@ -5456,7 +5455,7 @@ algorithm
         (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular, false);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
-        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,false);
+        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,DAE.NO_INLINE);
         ty2 = (tty2,SOME(path));
       then ty2;
       /* Maybe add this case when standard Modelica gets function references?

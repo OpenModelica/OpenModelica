@@ -62,7 +62,7 @@ protected import InstanceHierarchy;
 protected import Mod;
 protected import ModUtil;
 protected import Prefix;
-protected import SCodeUtil;
+//protected import SCodeUtil;
 protected import Static;
 protected import Types;
 protected import UnitAbsyn;
@@ -104,14 +104,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation 
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE), false), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE), DAE.NO_INLINE), NONE);
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation 
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE), false), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE), DAE.NO_INLINE), NONE);
       then
         (cache, t, env);
       
@@ -170,7 +170,7 @@ algorithm
       equation
         (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
         (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
-        t = Types.makeFunctionType(path, varlst, SCodeUtil.isInlineFunc(c));
+        t = Types.makeFunctionType(path, varlst, Inst.isInlineFunc2(c));
       then 
         (cache,t,env_1);
         
@@ -1611,9 +1611,9 @@ algorithm
     /* function_name cardinality */
     case (env,"cardinality") 
       then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",false),{},NONE,NONE),NONE))},
-                              (DAE.T_INTEGER({}),NONE),false),NONE),
+                              (DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE),
             (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",true),{},NONE,NONE),NONE))},
-                              (DAE.T_INTEGER({}),NONE),false),NONE)};
+                              (DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE)};
                              
   end matchcontinue;
 end createGenericBuiltinFunctions; 
@@ -1724,7 +1724,7 @@ algorithm
         /*Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function.*/
         (cache,fpath) = Inst.makeFullyQualified(cache,env, Absyn.IDENT(n));
         (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
-        ftype = Types.makeFunctionType(fpath, varlst, SCodeUtil.isInlineFunc(cdef));
+        ftype = Types.makeFunctionType(fpath, varlst, Inst.isInlineFunc2(cdef));
       then
         (cache,ftype,env);
 
@@ -1795,7 +1795,7 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.avlTreeGet(ht, id);
         (cache,varlst) = buildRecordConstructorVarlst(cache, cdef, env);
         (cache,fpath) = Inst.makeFullyQualified(cache, cenv, Absyn.IDENT(n));
-        ftype = Types.makeFunctionType(fpath, varlst, SCodeUtil.isInlineFunc(cdef));
+        ftype = Types.makeFunctionType(fpath, varlst, Inst.isInlineFunc2(cdef));
       then
         (cache,{ftype});
         

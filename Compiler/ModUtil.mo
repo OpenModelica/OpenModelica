@@ -116,7 +116,8 @@ algorithm
       DAE.Operator op;
       list<DAE.Exp> el_1,el;
       Absyn.Path p;
-      Boolean b,bi,a,inl;
+      Boolean b,bi,a;
+      DAE.InlineType inl;
       list<list<Boolean>> bl;
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
       Integer i;
@@ -166,7 +167,7 @@ algorithm
         e3_1 = stringPrefixComponentRef(str, r, rarg, e3);
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
-    case (str,r,rarg,DAE.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inline = inl))
+    case (str,r,rarg,DAE.CALL(path = p,expLst = el,tuple_ = b,builtin = bi,ty = tp,inlineType = inl))
       local DAE.ExpType tp;
       equation 
         el_1 = stringPrefixComponentRefs(str, r, rarg, el);
@@ -327,6 +328,8 @@ algorithm
       Absyn.InnerOuter io;
       DAE.Type ftp;
       DAE.VarProtection prot;
+      list<DAE.FunctionDefinition> funcDer;
+      Boolean partialPrefix;
     case (str,dae,DAE.VAR(componentRef = cr,
                           kind = vk,
                           direction = vd,
@@ -364,23 +367,26 @@ algorithm
         dae_1 = stringPrefixElements(str, dae, dae);
       then
         DAE.COMP(n,DAE.DAE(dae_1));
-    case (str,dae1,DAE.FUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,partialPrefix = partialPrefix))
+    case (str,dae1,
+      DAE.FUNCTION(path = n,
+      functions = (DAE.FUNCTION_DEF(body = DAE.DAE(dae))::funcDer)
+      ,type_ = ty,partialPrefix = partialPrefix,inlineType=inlineType))
       local
         Absyn.Path n;
         tuple<DAE.TType, Option<Absyn.Path>> ty;
-        Boolean partialPrefix;
+        DAE.InlineType inlineType;
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
-        DAE.FUNCTION(n,DAE.DAE(dae_1),ty,partialPrefix);
-    case (str,dae1,DAE.EXTFUNCTION(path = n,dAElist = DAE.DAE(elementLst = dae),type_ = ty,externalDecl = decl))
+        DAE.FUNCTION(n,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::funcDer,ty,partialPrefix,inlineType);
+    case (str,dae1,DAE.FUNCTION(path = n,partialPrefix = partialPrefix,functions = (DAE.FUNCTION_EXT(DAE.DAE(elementLst = dae),decl)::funcDer),type_ = ty))
       local
         Absyn.Path n;
         tuple<DAE.TType, Option<Absyn.Path>> ty;
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
-        DAE.EXTFUNCTION(n,DAE.DAE(dae_1),ty,decl);
+         DAE.FUNCTION(n,DAE.FUNCTION_EXT(DAE.DAE(dae_1),decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE);
     case (str,dae,e) then e; 
   end matchcontinue;
 end stringPrefixElement;

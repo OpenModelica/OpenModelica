@@ -227,7 +227,7 @@ algorithm
         t = getPropExpType(lhprop);
       then
         DAE.STMT_ASSIGN(t,DAE.CREF(c,crt),rhs_1);
-        /* TODO: Use this when we have fixed states in DAELow.lower(...)
+        /* TODO: Use this when we have fixed states in DAELow .lower(...)
         case (e1 as DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(_,_)},_,_,_),lhprop,rhs,rhprop)
       equation 
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop);

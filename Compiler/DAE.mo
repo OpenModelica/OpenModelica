@@ -45,6 +45,7 @@ public import Absyn;
 public import ClassInf;
 public import SCode;
 public import Values;
+//protected import Exp;
 
 public type Ident = String;
 
@@ -195,17 +196,11 @@ public uniontype Element
 
   record FUNCTION " A Modelica function"
     Absyn.Path path;
-    DAElist dAElist;
+    list<FunctionDefinition> functions;
     Type type_;
     Boolean partialPrefix "MetaModelica extension";
+    InlineType inlineType;
   end FUNCTION;
-
-  record EXTFUNCTION "An external function"
-    Absyn.Path path;
-    DAElist dAElist;
-    Type type_;
-    ExternalDecl externalDecl;
-  end EXTFUNCTION;
   
   record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
     Absyn.Path path;
@@ -238,6 +233,58 @@ public uniontype Element
      list<Exp> functionArgs;
    end NORETCALL;
 end Element;
+
+public uniontype InlineType
+  record NORM_INLINE "Normal inline, inline as soon as possible"     
+  end NORM_INLINE;
+  
+  record NO_INLINE "Avoid inline, this is default behaviour but is also possible to set with Inline=false"
+  end NO_INLINE;
+  
+  record AFTER_INDEX_RED_INLINE "Try to inline after index reduction"
+  end AFTER_INDEX_RED_INLINE;
+end InlineType;
+
+public function convertInlineTypeToBool "
+Author: BZ, 2009-12
+Function for converting a InlineType to a bool. 
+Whether the inline takes place before or after index reduction does not mather.
+Any kind of inline will result in true.
+"
+input InlineType it;
+output Boolean b;
+algorithm b := matchcontinue(it)
+  case(NO_INLINE) then false;
+  case(_) then true;
+  end matchcontinue;
+end convertInlineTypeToBool;
+
+public uniontype FunctionDefinition
+
+   record FUNCTION_DEF "Normal function body"
+     DAElist body;
+   end FUNCTION_DEF;
+
+   record FUNCTION_EXT "Normal external function declaration"
+    DAElist body;
+    ExternalDecl externalDecl;
+   end FUNCTION_EXT;
+
+  record FUNCTION_DER_MAPPER "Contains derivatives for function"
+    Absyn.Path derivedFunction "Function that is derived";
+    Absyn.Path derivativeFunction "Path to derivative function";
+    Integer derivativeOrder "in case a function have multiple derivatives, include all";
+    list<tuple<Integer,derivativeCond>> conditionRefs;
+    Option<Absyn.Path> defaultDerivative "if conditions fails, use default derivative if exists";
+    list<Absyn.Path> lowerOrderDerivatives;
+  end FUNCTION_DER_MAPPER;
+end FunctionDefinition;
+
+public 
+uniontype derivativeCond "Different conditions on derivatives"
+  record ZERO_DERIVATIVE end ZERO_DERIVATIVE;
+  record NO_DERIVATIVE Exp binding; end NO_DERIVATIVE;
+end derivativeCond;
 
 public 
 uniontype VariableAttributes
@@ -599,7 +646,7 @@ uniontype TType "-TType contains the actual type"
   record T_FUNCTION
     list<FuncArg> funcArg "funcArg" ;
     Type funcResultType "funcResultType ; Only single-result" ;
-    Boolean inline;
+    InlineType inline;
   end T_FUNCTION;
 
   record T_TUPLE
@@ -886,7 +933,7 @@ uniontype Exp "Expressions
     Boolean tuple_ "tuple" ;
     Boolean builtin "builtin Function call" ;
     ExpType ty "The type of the return value, if several return values this is undefined";
-    Boolean inline;
+    InlineType inlineType;
   end CALL;
   
   record PARTEVALFUNCTION

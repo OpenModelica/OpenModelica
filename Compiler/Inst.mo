@@ -358,7 +358,7 @@ algorithm
       equation 
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
-        (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache, env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, true);
         (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
         pathstr = Absyn.pathString(path);
       then
@@ -417,7 +417,7 @@ algorithm
       equation 
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
-        (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         cdef = SCode.classSetPartial(cdef, false);
         (cache,env_2,ih,_,dae,_,_,_,_,_) = 
           instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), 
@@ -480,7 +480,7 @@ algorithm
       equation
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
-        (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (cache, env, ih, dae) = implicitInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
       then
@@ -545,7 +545,7 @@ algorithm
       equation 
         (cache,env) = Builtin.initialEnv(cache);        
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
-        (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         env_2 = Env.extendFrameC(env_2, cdef);
         (cache,env,ih,dae) = implicitFunctionInstantiation(cache, env_2, ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
       then
@@ -867,8 +867,6 @@ algorithm
         // Debug.fprint("insttr", n);
         // Debug.fprintln("insttr", "");
         containedInOpt = Env.getEnvPath(env);
-        //i = InstanceHierarchy.createInstance(c, "TOP_INSTANCE", containedInOpt, Absyn.IDENT(n), cache, env);
-        //ih = i::ih;
         // Debug.fcall2("instance", InstanceHierarchy.dumpInstanceHierarchy, ih, 1);
         // Debug.fcall("instance", print, "\n");
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) ;
@@ -877,7 +875,6 @@ algorithm
         dae = ConnectionGraph.evalIsRoot(roots, dae);
         dae = listAppend(dae, dae2);
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
-        //UnitAbsynBuilder.printInstStore(store);
       then
         (cache,ih,{DAE.COMP(n,DAE.DAE(dae))});
         
@@ -947,8 +944,7 @@ algorithm
   end matchcontinue;
 end instProgramImplicit;
 
-public function instClass 
-"function: instClass
+public function instClass " function: instClass
   Instantiation of a class can be either implicit or normal. 
   This function is used in both cases. When implicit instantiation 
   is performed, the last argument is true, otherwise it is false.
@@ -3425,7 +3421,7 @@ algorithm
 
     case (cache,env,ih, Absyn.TPATH(cn,_) :: restTypeSpecs,pre,dims,impl,localAccTypes,csets)
       equation
-        (cache,(c as SCode.CLASS(_,_,_,_,_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,(c as SCode.CLASS(name = _)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         (cache,cenv,ih,_,_,csets,ty,_,oDA,_)=instClass(cache,cenv,ih,UnitAbsyn.noStore,DAE.NOMOD(),pre,csets,c,dims,impl,INNER_CALL(), ConnectionGraph.EMPTY);
         localAccTypes = listAppend(localAccTypes,{ty});
         (cache,env,ih,localAccTypes,csets,_) = 
@@ -3557,7 +3553,7 @@ algorithm
       
   	case (cache,env,ih,cl) 
   		equation
-  		  (cache,env1,ih,{daeElt as DAE.EXTFUNCTION(type_ = funcTp )}) 
+  		  (cache,env1,ih,{daeElt as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))})
   		     	= implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
   	then
   	  (cache,ih,daeElt,funcTp);
@@ -3979,6 +3975,7 @@ algorithm
       InstanceHierarchy ih;
 
       /* long class definition */  /* the normal case, a class with parts */
+      /*
     case (cache,env,ih,mods,pre,csets,ci_state,
           SCode.PARTS(elementLst = els,
                       normalEquationLst = eqs, initialEquationLst = initeqs,
@@ -3992,12 +3989,12 @@ algorithm
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
 		    lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
-	      /* 
+	      *//* 
 	       Since partial instantiation is done in lookup, we need to add inherited classes here.
 	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
 	       base class context (since we do not have any element to find it in), the class must be added 
 	       to the environment here.
-	      */
+	      *//*
         cdefelts2 = classdefElts2(extcomps);
         (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
@@ -4005,7 +4002,36 @@ algorithm
                                              inst_dims, false);
       then
         (cache,env3,ih,ci_state1);
-    
+    */
+        case (cache,env,ih,mods,pre,csets,ci_state,
+          SCode.PARTS(elementLst = els,
+                      normalEquationLst = eqs, initialEquationLst = initeqs,
+      		            normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
+      	  re,prot,inst_dims,className)
+      equation
+        ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
+        (cdefelts,classextendselts,extendselts,_) = splitElts(els);
+        (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
+        (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
+        partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
+        "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
+		    lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";
+	      /* 
+	       Since partial instantiation is done in lookup, we need to add inherited classes here.
+	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
+	       base class context (since we do not have any element to find it in), the class must be added 
+	       to the environment here.
+	      */	      
+        cdefelts2 = classdefElts2(extcomps); 
+        //(env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
+        (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
+                                             lst_constantEls, lst_constantEls, {}, 
+                                             inst_dims, false);
+        (cache,env3,ih,_,_,_,ci_state2,_,_) = 
+           instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls, 
+                          inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
+      then
+        (cache,env3,ih,ci_state2);
     /* Short class definition */
     /* This rule describes how to instantiate a derived class definition */ 
     case (cache,env,ih,mods,pre,csets,ci_state,
@@ -4976,7 +5002,8 @@ algorithm
         mm = Mod.lookupCompModification(mods, n);
         */
         // A frequent used debugging line 
-        //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +& " \n");// +& "\t mods: " +& Mod.printModStr(mod) +&  "\n");
+        //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +& " \n");
+        // +& "\t mods: " +& Mod.printModStr(mod) +&  "\n");
         
         (cache,env_1,ih,store,dae1,csets_1,ci_state_1,tys1,graph) = instElement(cache,env,ih,store, mod, pre, csets, ci_state, el, inst_dims, impl,graph);
         /*s1 = Util.if_(stringEqual("n", str),DAE.dumpElementsStr(dae1),"");
@@ -8980,27 +9007,34 @@ algorithm
 
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims) 
       equation
-        //print(" lookup record: " +& n +& "\n");
         (c,cenv) = Lookup.lookupRecordConstructorClass(env,Absyn.IDENT(n));
-        //print(" modifications: " +&  Mod.printModStr(mod) +& "\n");
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false)}) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_)}) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
       then (cache,env,ih,{DAE.RECORD_CONSTRUCTOR(fpath,ty1)});
       
     /* normal functions */
-    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n, partialPrefix = partialPrefix, restriction = SCode.R_FUNCTION())),inst_dims)
-      equation 
+    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION())),inst_dims)
+      local 
+        Option<SCode.Mod> ocp;
+        Absyn.Path fq_func;
+        list<DAE.FunctionDefinition> derFuncs;
+        Boolean finline;
+        DAE.InlineType inlineType; 
+        SCode.ClassDef cd;
+      equation
+        (cache,fq_func) = makeFullyQualified(cache,env, Absyn.IDENT(n));
+//print("Normal function: " +& Absyn.pathString(fq_func)+& " inline: ");
+        inlineType = isInlineFunc2(c);
+        derFuncs = getDeriveAnnotation(cd,fq_func,cache,env,pre);
         (cache,cenv,ih,_,dae,csets_1,ty,st,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
-        env_1 = Env.extendFrameT(env_1, n, ty1);
-        env_1 = Env.extendFrameC(env_1, c); // Otherwise this class gets associated with another environment !
-        dae = {DAE.FUNCTION(fpath,DAE.DAE(dae),ty1,partialPrefix)};
+        env_1 = Env.extendFrameT(env_1, n, ty1); 
       then
-        (cache,env_1,ih,dae);
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae))::derFuncs,ty1,partialPrefix,inlineType)});
 
     /* External functions should also have their type in env, but no dae. */ 
-    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
+    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
           classDef = (parts as SCode.PARTS(elementLst = els)))),inst_dims)
       equation 
         (cache,cenv,ih,_,dae,csets_1,ty,st,_,_) = instClass(cache,env,ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
@@ -9014,7 +9048,7 @@ algorithm
           instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1, ClassInf.FUNCTION(n), n,parts, restr, prot, inst_dims, true,ConnectionGraph.EMPTY,NONE) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true) "impl" ;
       then
-        (cache,env_1,ih,{DAE.EXTFUNCTION(fpath,DAE.DAE(dae),ty1,extdecl)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(DAE.DAE(dae),extdecl)},ty1,partialPrefix,DAE.NO_INLINE)});
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
@@ -9032,6 +9066,249 @@ algorithm
   end matchcontinue;
 end implicitFunctionInstantiation;
 
+protected function getDeriveAnnotation "
+Authot BZ
+helper function for implicitFunctionInstantiation, returns derivative of function, if any.
+"
+  input SCode.ClassDef cd;
+  input Absyn.Path baseFunc;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  output list<DAE.FunctionDefinition> element;
+algorithm 
+  (element) := matchcontinue(cd,baseFunc,inCache,inEnv,inPrefix)
+  local
+    list<SCode.Annotation> anns;
+    list<SCode.Element> elemDecl;
+  case(SCode.PARTS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inPrefix)
+     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inPrefix);
+  case(SCode.CLASS_EXTENDS(annotationLst = anns, elementLst = elemDecl),baseFunc,inCache,inEnv,inPrefix)
+     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inPrefix);
+  case(_,_,_,_,_) then {};
+end matchcontinue;
+end getDeriveAnnotation;
+
+protected function getDeriveAnnotation2 "
+helper function for getDeriveAnnotation
+"
+  input list<SCode.Annotation> anns;
+  input list<SCode.Element> elemDecl;
+  input Absyn.Path baseFunc;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  output list<DAE.FunctionDefinition> element;
+algorithm 
+  (element) := matchcontinue(anns,elemDecl,baseFunc,inCache,inEnv,inPrefix)
+  local
+    list<SCode.SubMod> smlst;
+    SCode.Mod mod;
+  case({},_,_,_,_,_) then {}; 
+  case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: anns,elemDecl,baseFunc,inCache,inEnv,inPrefix)
+     then getDeriveAnnotation3(smlst,elemDecl,baseFunc,inCache,inEnv,inPrefix);
+  case(_::anns,elemDecl,baseFunc,inCache,inEnv,inPrefix) 
+     then getDeriveAnnotation2(anns,elemDecl,baseFunc,inCache,inEnv,inPrefix);
+end matchcontinue;
+end getDeriveAnnotation2; 
+
+protected function getDeriveAnnotation3 "
+Author: bjozac
+	helper function to getDeriveAnnotation2"
+  input list<SCode.SubMod> subs;
+  input list<SCode.Element> elemDecl;
+  input Absyn.Path baseFunc;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  output list<DAE.FunctionDefinition> element;
+algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix)
+  local
+    Absyn.Exp ae;
+    Exp.Exp exp;
+    Absyn.ComponentRef acr;
+    Absyn.Path deriveFunc;
+    Option<Absyn.Path> defaultDerivative;
+    SCode.Mod m;
+    list<SCode.SubMod> subs2;
+    Integer order;
+    list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
+    String dbgString;
+    DAE.FunctionDefinition mapper;
+      list<DAE.Type> deriveTypes;
+  case({},_,_,_,_,_) then fail();
+  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = (subs2 as _::_),absynExpOption=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,elemDecl,baseFunc,inCache,inEnv,inPrefix)
+    equation
+      deriveFunc = Absyn.crefToPath(acr);
+
+      order = getDerivativeOrder(subs2);
+
+      ErrorExt.setCheckpoint() "don't report errors on modifers in functions";
+      conditionRefs = getDeriveCondition(subs2,elemDecl,inCache,inEnv,inPrefix);
+      ErrorExt.rollBack();
+
+      conditionRefs = Util.sort(conditionRefs,DAEUtil.derivativeOrder); 
+      defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
+      
+      /*
+      print(" adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
+      dbgString = Absyn.optPathString(defaultDerivative);
+      dbgString = Util.if_(stringEqual(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
+      print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");        
+      print("**** Deriving function: " +& Absyn.pathString(deriveFunc) +& "\n"); 
+      print("**** Conditions: " +& Util.stringDelimitList(DAEUtil.dumpDerivativeCond(conditionRefs),", ") +& "\n");
+      print("**** Order: " +& intString(order) +& "\n");
+      print(dbgString);
+      */
+      mapper = DAE.FUNCTION_DER_MAPPER(baseFunc,deriveFunc,order,conditionRefs,defaultDerivative,{});
+    then 
+      {mapper};
+  case(_ :: subs,elemDecl,baseFunc,inCache,inEnv,inPrefix) 
+  then getDeriveAnnotation3(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix);
+end matchcontinue;
+end getDeriveAnnotation3;
+
+protected function getDeriveCondition "
+helper function for getDeriveAnnotation
+Extracts conditions for derivative.
+"
+  input list<SCode.SubMod> subs;
+    input list<SCode.Element> elemDecl;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  output list<tuple<Integer,DAE.derivativeCond>> outconds;
+algorithm outconds := matchcontinue(subs,elemDecl,inCache,inEnv,inPrefix)
+  local
+    Absyn.Exp ae;
+    SCode.Mod m;
+    DAE.Mod elabedMod;
+    DAE.SubMod sub;
+    String name;
+    DAE.derivativeCond cond;
+    DAE.Exp e;
+    Absyn.ComponentRef acr;
+    Integer varPos;
+  case({},_,_,_,_) then {};
+  case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(absynExpOption = SOME(((Absyn.CREF(acr)),_)))))::subs,elemDecl,inCache,inEnv,inPrefix)
+    equation
+      name = Absyn.printComponentRefStr(acr);
+      outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
+      varPos = setFunctionInputIndex(elemDecl,name,0);
+    then 
+      (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(1)))::outconds;
+
+  case(SCode.NAMEMOD("zeroDerivative",(m as SCode.MOD(absynExpOption =  SOME(((Absyn.CREF(acr)),_)) )))::subs,elemDecl,inCache,inEnv,inPrefix)
+    equation      
+      name = Absyn.printComponentRefStr(acr);
+      outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
+      varPos = setFunctionInputIndex(elemDecl,name,0);
+    then 
+      (varPos,DAE.ZERO_DERIVATIVE)::outconds;
+  case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(absynExpOption=_)))::subs,elemDecl,inCache,inEnv,inPrefix)
+    equation
+      (inCache,(elabedMod as DAE.MOD(subModLst={sub}))) = Mod.elabMod(inCache,inEnv, inPrefix, m, false);
+      (name,cond) = extractNameAndExp(sub);
+      outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
+      varPos = setFunctionInputIndex(elemDecl,name,0);
+    then 
+      (varPos,cond)::outconds;
+      
+  case(_::subs,elemDecl,inCache,inEnv,inPrefix) then getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
+end matchcontinue;
+end getDeriveCondition;
+
+protected function setFunctionInputIndex "
+Author BZ
+"
+input list<SCode.Element> elemDecl;
+input String str;
+input Integer currPos;
+output Integer index;
+algorithm
+  index := matchcontinue(elemDecl,str,currPos)
+  local
+    String str2;
+  case({},str,currPos) 
+    equation
+      print(" failure in setFunctionInputIndex, didn't find any index for: " +& str +& "\n"); 
+      then fail();
+      case(SCode.COMPONENT(component=str2)::elemDecl,str,currPos)
+        equation
+          true = stringEqual(str2, str);
+          then
+            currPos; 
+      case(_::elemDecl,str,currPos) then setFunctionInputIndex(elemDecl,str,currPos+1);
+  end matchcontinue;
+end setFunctionInputIndex;
+
+protected function extractNameAndExp "
+Author BZ
+could be used by getDeriveCondition, depending on interpretation of spec compared to constructed libraries.
+helper function for getDeriveAnnotation
+"
+input DAE.SubMod m;
+output String inputVar;
+output DAE.derivativeCond cond;
+algorithm (cr,cond) := matchcontinue(m)
+  local
+    DAE.EqMod eq;
+    DAE.Exp e;
+    Option<tuple<Absyn.Exp,Boolean>> aoe;
+  case(DAE.NAMEMOD(inputVar,(mod = DAE.MOD(eqModOption = SOME(eq as DAE.TYPED(modifierAsExp=e))))))
+    equation
+      then (inputVar,DAE.NO_DERIVATIVE(e));
+  case(DAE.NAMEMOD(inputVar,(mod = DAE.MOD(eqModOption = NONE))))
+    equation 
+    then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
+  case(DAE.NAMEMOD(inputVar,(mod = DAE.MOD(eqModOption = NONE)))) // zeroderivative
+  then (inputVar,DAE.ZERO_DERIVATIVE);
+    
+  case(_) then ("",DAE.ZERO_DERIVATIVE);
+  end matchcontinue;
+end extractNameAndExp;
+
+protected function getDerivativeSubModsOptDefault "
+helper function for getDeriveAnnotation"
+input list<SCode.SubMod> subs;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+output Option<Absyn.Path> defaultDerivative;
+algorithm defaultDerivative := matchcontinue(subs,inCache,inEnv,inPrefix)
+  local
+    Absyn.ComponentRef acr;
+    Absyn.Path p;
+    Absyn.Exp ae;
+    SCode.Mod m;
+  case({},inCache,inEnv,inPrefix) then NONE;
+  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(absynExpOption =SOME(((ae as Absyn.CREF(acr)),_)))))::subs,inCache,inEnv,inPrefix)
+    equation
+      p = Absyn.crefToPath(acr);
+      (_,p) = makeFullyQualified(inCache,inEnv, p);
+    then
+      SOME(p);
+  case(_::subs,inCache,inEnv,inPrefix) then getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
+  end matchcontinue;
+end getDerivativeSubModsOptDefault;
+
+protected function getDerivativeOrder "
+helper function for getDeriveAnnotation
+Get current derive order
+"
+input list<SCode.SubMod> subs;
+output Integer order;
+algorithm order := matchcontinue(subs)
+  local
+    Absyn.Exp ae;
+    SCode.Mod m;
+  case({}) then 1;
+  case(SCode.NAMEMOD("order",(m as SCode.MOD(absynExpOption= SOME(((ae as Absyn.INTEGER(order)),_)))))::subs)
+  then order;
+  case(_::subs) then getDerivativeOrder(subs);  
+  end matchcontinue;
+end getDerivativeOrder;
+
 protected function setFullyQualifiedTypename 
 "This function sets the FQ path given as argument in types that have optional path set. 
  (The optional path points to the class the type is built from)"
@@ -9048,6 +9325,101 @@ algorithm
   end matchcontinue;
 end setFullyQualifiedTypename; 
   
+public function isInlineFunc "
+Author: stefan 
+function: isInlineFunc
+	looks up a function and returns whether or not it is an inline function"
+	input Absyn.Path inPath;
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	output DAE.InlineType outBoolean;
+algorithm 
+  outBoolean := matchcontinue(inPath,inCache,inEnv)
+    local
+      Absyn.Path p;
+      Env.Cache c;
+      Env.Env env;
+      SCode.Class cl;
+    case(p,c,env)
+      equation
+        (c,cl,env) = Lookup.lookupClass(c,env,p,true);
+      then
+        isInlineFunc2(cl);
+    case(_,_,_) then DAE.NO_INLINE;
+  end matchcontinue;
+end isInlineFunc;
+
+public function isInlineFunc2 "
+Author: bjozac 2009-12 
+	helper function to isInlineFunc"
+	input SCode.Class inClass;
+	output DAE.InlineType outInlineType;
+algorithm
+  outInlineType := matchcontinue(inClass)
+    local
+      list<SCode.Annotation> anns;
+      
+    case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns))) 
+      then isInlineFunc3(anns);
+
+    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)))
+      then isInlineFunc3(anns);
+    case(_) then DAE.NO_INLINE;
+  end matchcontinue;
+end isInlineFunc2;
+
+protected function isInlineFunc3 "
+Author Stefan
+	helper function to isInlineFunc2"
+	input list<SCode.Annotation> inAnnotationList;
+	output DAE.InlineType outBoolean;
+algorithm
+  outBoolean := matchcontinue(inAnnotationList)
+    local
+      list<SCode.Annotation> cdr;
+      list<SCode.SubMod> smlst;
+      DAE.InlineType res;
+    case({}) then DAE.NO_INLINE;
+    case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
+      equation
+        res = isInlineFunc4(smlst);
+        true = DAE.convertInlineTypeToBool(res);
+      then
+        res;
+    case(_ :: cdr)
+      equation
+        res = isInlineFunc3(cdr);
+      then
+        res;
+  end matchcontinue;
+end isInlineFunc3;
+
+protected function isInlineFunc4 "
+Author: stefan
+function: isInlineFunc4
+	helper function to isInlineFunc3"
+  input list<SCode.SubMod> inSubModList;
+  output DAE.InlineType res;
+algorithm
+  outBoolean := matchcontinue(inSubModList)
+    local
+      list<SCode.SubMod> cdr;
+      Boolean res;
+    case({}) then DAE.NO_INLINE;
+      
+    case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    then DAE.NORM_INLINE;
+      
+    case(SCode.NAMEMOD("__MathCore_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    then DAE.AFTER_INDEX_RED_INLINE;
+      
+    case(SCode.NAMEMOD("__Dymola_InlineAfterIndexReduction",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+    then DAE.AFTER_INDEX_RED_INLINE;  
+      
+    case(_ :: cdr) then isInlineFunc4(cdr);
+  end matchcontinue;
+end isInlineFunc4;
+
 public function implicitFunctionTypeInstantiation 
 "function implicitFunctionTypeInstantiation
   author: PA
@@ -9102,8 +9474,8 @@ algorithm
         SCode.Class c;
         tuple<DAE.TType, Option<Absyn.Path>> ty1,ty;
       equation 
-        (cache,(c as SCode.CLASS(cn2,_,_,r,_)),cenv) = Lookup.lookupClass(cache, env, cn, true);
-        (cache,mod2) = Mod.elabMod(cache, env, Prefix.NOPRE(), mod1, false); 
+        (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache,env, cn, true);
+        (cache,mod2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod1, false); 
         (cache,_,ih,_,_,_,ty,_,_,_) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), mod2, Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(id));
@@ -9147,7 +9519,8 @@ algorithm
       list<Absyn.Path> fns;
       Env.Cache cache;
       InstanceHierarchy ih;
-      Boolean partialPrefix,isInline;
+      Boolean partialPrefix;
+      DAE.InlineType isInline;
       
     case (cache,env,ih,_,{}) then (cache,env,ih,{});
 
@@ -9162,9 +9535,10 @@ algorithm
         ty = (DAE.T_FUNCTION(args,tp,isInline),SOME(ovlfpath));
         env_1 = Env.extendFrameT(env, overloadname, ty);
         (cache,env_2,ih,dae1) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
+        // TODO: Fix inline here 
+        print(" DAE.InlineType FIX HERE \n");
       then
-        (cache,env_2,ih,(DAE.FUNCTION(fpath,DAE.DAE(dae),ty,partialPrefix) :: dae1));
-
+        (cache,env_2,ih,(DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(DAE.DAE(dae))},ty,partialPrefix,DAE.NO_INLINE) :: dae1));
     case (_,env,ih,_,_)
       equation 
         Debug.fprint("failtrace", "-Inst.instOverloaded_functions failed\n");
@@ -10110,7 +10484,7 @@ algorithm
       equation 
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc) "Equation inherited from base class" ;
         (cache,_,ih,dae,csets_1,ci_state_1,graph) = 
-        instEquationCommon(cache,env_1,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl,graph);
+                   instEquationCommon(cache,env_1,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl,graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
@@ -10523,7 +10897,7 @@ algorithm
         
         typePath = Absyn.crefToPath(cr);
         /* make sure is an enumeration! */
-        (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
+        (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
         env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
@@ -11655,7 +12029,7 @@ algorithm
         DAE.Exp e2_2,e2_2_2; 
       equation 
         (cache,_,cprop,acc) = Static.elabCref(cache,env, cr, impl,false);
-        (cache,(e2_2 as DAE.CALL(_,_,_,_,_,_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
+        (cache,(e2_2 as DAE.CALL(path=_)),_,_) = Static.elabExp(cache,env, e2, impl, NONE,true);
          (cache,e2_2_2) = Prefix.prefixExp(cache,env, e2_2, pre);
         (cache,e_1,eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);                
@@ -11676,7 +12050,7 @@ algorithm
     // (v1,v2,..,vn) := func(...)
     case (cache,env,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl)
       equation 
-        (cache,(e_1 as DAE.CALL(_,_,_,_,_,_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
+        (cache,(e_1 as DAE.CALL(path=_)),eprop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
          (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         (cache,expl_1,cprops,_) = Static.elabExpList(cache,env, expl, impl, NONE,false);
         (cache,expl_2) = Prefix.prefixExpList(cache,env,expl_1,pre);        
@@ -11812,7 +12186,8 @@ algorithm
         Absyn.Exp aea;
         list<DAE.Exp> eexpl;
         Absyn.Path ap;
-        Boolean tuple_, builtin,inline;
+        Boolean tuple_, builtin;
+        DAE.InlineType inline;
         DAE.ExpType tp;
       equation 
         (cache,DAE.CALL(ap,eexpl,tuple_,builtin,tp,inline),varprop,_) = Static.elabExp(cache,env, Absyn.CALL(callFunc,callArgs), impl, NONE,true);
@@ -12778,7 +13153,7 @@ algorithm
           zeroVector, 
           DAE.CALL(fpath1, 
           {DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())}, 
-          false, false, DAE.ET_REAL,false)
+          false, false, DAE.ET_REAL,DAE.NO_INLINE)
           )});
       then
         (cache,env,ih,sets,{},graph);        
@@ -13019,7 +13394,7 @@ algorithm
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */        
     case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,_,cl)
       equation
-        functype = Types.makeFunctionType(p, vl, SCodeUtil.isInlineFunc(cl));
+        functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
     case (p,ClassInf.ENUMERATION(string = name),v1,_,_,_)
@@ -13104,7 +13479,7 @@ algorithm
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */ 
     case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,cl)
       equation 
-        functype = Types.makeFunctionType(p, vl, SCodeUtil.isInlineFunc(cl));
+        functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
     case (p,ClassInf.ENUMERATION(string = name),v1,_,_)
@@ -13947,7 +14322,10 @@ algorithm
       Absyn.Path fpath;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
-      
+      tuple<Types.TType, Option<Absyn.Path>> ty; 
+      list<DAE.FunctionDefinition> derFuncs; 
+      Boolean partialPrefix;      
+      DAE.InlineType inlineType;
     case (done,{}) then done; 
     case (done,((v as DAE.VAR(componentRef = cr,
                               kind = vk,
@@ -13978,11 +14356,10 @@ algorithm
       then
         done_2;
         
-    case (done,(DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = ty,partialPrefix = partialPrefix) :: rest))
-      local tuple<DAE.TType, Option<Absyn.Path>> ty; Boolean partialPrefix;
+ case (done,(DAE.FUNCTION(path = fpath, partialPrefix = partialPrefix, functions = (DAE.FUNCTION_DEF(body=DAE.DAE(elementLst = dae))::derFuncs),type_ = ty, inlineType = inlineType) :: rest))
       equation 
         dae_1 = initVarsModelicaOutput(dae);
-        done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.DAE(dae_1),ty,partialPrefix)});
+        done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::derFuncs,ty,partialPrefix,inlineType)});
         done_2 = initVarsModelicaOutput1(done_1, rest);
       then
         done_2;
@@ -14549,7 +14926,7 @@ algorithm
       equation 
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,_) = instClassDecls(cache,env,ih, cdecls, path);
-        (cache,(cdef as SCode.CLASS(n,_,_,_,_)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
+        (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache,env_1, path, true);
         (cache,env_2,ih,_,dae,_,_,_,_,_) = 
           instClass(cache,env_2,ih,UnitAbsyn.noStore, DAE.NOMOD(), Prefix.NOPRE(), 
                     Connect.emptySet, cdef, {}, false, INNER_CALL(), ConnectionGraph.EMPTY) "impl" ;
@@ -16818,4 +17195,3 @@ algorithm
 end valueArrayNth;
                 
 end Inst;
-

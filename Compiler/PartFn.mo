@@ -540,6 +540,7 @@ algorithm
       list<DAE.Exp> elst,elst_1;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       DAE.Algorithm alg,alg_1;
+      DAE.InlineType inlineType;
     case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae)
       equation
@@ -643,11 +644,11 @@ algorithm
         (cdr_1,dae) = elabElements(cdr,dae);
       then
         (DAE.COMP(i,DAE.DAE(elts_1)) :: cdr_1,dae);
-    case(DAE.FUNCTION(p,DAE.DAE(elts),fullType,pp) :: cdr,dae)
+    case(DAE.FUNCTION(p,DAE.DAE(elts),fullType,pp,inlineType) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
-        el = DAE.FUNCTION(p,DAE.DAE(elts_1),fullType,pp);
+        el = DAE.FUNCTION(p,DAE.DAE(elts_1),fullType,pp,inlineType);
         dae = replaceFnInFnLst(el,dae);
       then
         (el :: cdr_1,dae);
@@ -982,7 +983,8 @@ algorithm
       Absyn.Path p,p1,p_1;
       list<DAE.Exp> args,args1,args_1;
       DAE.ExpType ty;
-      Boolean tu,bi,inl;
+      Boolean tu,bi;
+      DAE.InlineType inl;
       Integer i,numArgs;
     case((DAE.CALL(p,args,tu,bi,ty,inl),dae))
       equation
@@ -1061,11 +1063,12 @@ algorithm
       Boolean pp;
       Integer numArgs;
       list<DAE.Var> vars;
-    case(bigfn as DAE.FUNCTION(current,DAE.DAE(fnparts),ty,pp),smallfn,p,dae,numArgs)
+      DAE.InlineType inlineType;
+    case(bigfn as DAE.FUNCTION(current,DAE.DAE(fnparts),ty,pp,inlineType),smallfn,p,dae,numArgs)
       equation
         (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs,current);
         ty = buildNewFunctionType(ty,vars);
-        res = DAE.FUNCTION(p,DAE.DAE(fnparts_1),ty,pp);
+        res = DAE.FUNCTION(p,DAE.DAE(fnparts_1),ty,pp,inlineType);
       then
         res;
     case(_,_,_,_,_)
@@ -1136,7 +1139,7 @@ algorithm
       String s;
       Integer numArgs;
       list<DAE.Var> vars;
-    case(parts,smallfn as DAE.FUNCTION(p,DAE.DAE(smallparts),_,_),dae,numArgs,current)
+    case(parts,smallfn as DAE.FUNCTION(p,DAE.DAE(smallparts),_,_,_),dae,numArgs,current)
       equation
         inputs = Util.listSelect(smallparts,isInput);
         s = Absyn.pathString(p);
@@ -1611,7 +1614,8 @@ algorithm
       Absyn.Path p,orig_p,new_p,current;
       list<DAE.Element> inputs,dae,tmp;
       DAE.ExpType ty,ty_1;
-      Boolean tup,bui,inl;
+      Boolean tup,bui;
+      DAE.InlineType inl;
       list<DAE.Exp> args,args2,args_1;
       list<DAE.ComponentRef> crefs;
       DAE.ComponentRef cref1,cref2;

@@ -341,7 +341,8 @@ algorithm
       DAE.Operator o;
       list<DAE.Exp> es_1,es,el,el_1;
       Absyn.Path f,fcn;
-      Boolean b,bi,a,inl;
+      Boolean b,bi,a;
+      DAE.InlineType inl;
       list<Boolean> bl;
       list<tuple<DAE.Exp, Boolean>> x_1,x;
       list<list<tuple<DAE.Exp, Boolean>>> xs_1,xs;
@@ -436,7 +437,7 @@ algorithm
         (cache,cref_1) = prefixExp(cache,env, cref, p);
       then
         (cache,DAE.SIZE(cref_1,NONE));
-    case (cache,env,DAE.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp,inline = inl),p)
+    case (cache,env,DAE.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp,inlineType = inl),p)
       local Prefix p; DAE.ExpType tp;
       equation 
         (cache,es_1) = prefixExpList(cache,env, es, p);
@@ -447,7 +448,7 @@ algorithm
       then
         (cache,DAE.ARRAY(t,a,{}));
     /*case (cache,env,Exp.ARRAY(ty = t,scalar = a,array = es),p as PREFIX(PRE(_,{i},_),_))
-      local Prefix p; Integer i; Exp.Exp e;
+      local Prefix p; Integer i; DAE.Exp e;
       equation        
         e = listNth(es, i-1);
         Debug.fprint("prefix", "{v1,v2,v3}[" +& intString(i) +& "] => "  +& Exp.printExp2Str(e) +& "\n");

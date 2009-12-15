@@ -1270,7 +1270,10 @@ algorithm
       
       /* noEvent propagated to relations */
     case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
-      local Boolean tpl,builtin,inline; Type tp;      
+      local 
+        Boolean tpl,builtin; 
+        DAE.InlineType inline; 
+        Type tp;      
        equation
          e1 = simplify1(stripNoEvent(e));
          e2 = addNoEventToRelations(e1);
@@ -1328,7 +1331,7 @@ algorithm
         e1;
 
     case DAE.CALL( path, exps_1, b,b2, t,b3)
-    local Boolean b2,b3; Absyn.Path path;
+    local Boolean b2;DAE.InlineType b3; Absyn.Path path;
       equation
         exps_1 = Util.listMap(exps_1,simplify1);
       then
@@ -1527,7 +1530,7 @@ traversal function for addNoEventToRelations"
 algorithm
   outTpl := matchcontinue(inTpl)
   local Exp e; Integer i;
-    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),false),i));
+    case((e as DAE.RELATION(exp1=_),i)) then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),i));
     case((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToRelationExp;
@@ -3782,6 +3785,44 @@ algorithm
   end matchcontinue;
 end arrayTypeDimensions;
 
+public function equalTypes ""
+input Type t1,t2;
+output Boolean b;
+algorithm b := matchcontinue(t1,t2)
+  local
+    list<DAE.ExpVar> vars1,vars2; 
+  case(DAE.ET_INT(),DAE.ET_INT()) then true;
+  case(DAE.ET_REAL(),DAE.ET_REAL()) then true;
+  case(DAE.ET_STRING(),DAE.ET_STRING()) then true;
+  case(DAE.ET_BOOL(),DAE.ET_BOOL()) then true;
+    
+  case(DAE.ET_COMPLEX(_,vars1,_),
+       DAE.ET_COMPLEX(_,vars2,_)) 
+       then 
+         equalTypesComplexVars(vars1,vars2);
+  case(t1,t2) then false;
+  end matchcontinue;
+end equalTypes;
+
+protected function equalTypesComplexVars ""
+input list<DAE.ExpVar> vars1,vars2; 
+output Boolean b;
+algorithm 
+  b := matchcontinue(vars1,vars2)
+  local
+    DAE.ExpType t1,t2;
+    String s1,s2;
+    case({},{}) then true;
+    case(DAE.COMPLEX_VAR(s1,t1)::vars1,DAE.COMPLEX_VAR(s2,t2)::vars2)
+      equation
+        true = stringEqual(s1,s2);
+        true = equalTypes(t1,t2);
+        then
+          equalTypesComplexVars(vars1,vars2);
+    case(_,_) then false;
+  end matchcontinue;
+end equalTypesComplexVars; 
+
 public function typeBuiltin 
 "function: typeBuiltin 
   Returns true if type is one of the builtin types."
@@ -3812,30 +3853,6 @@ algorithm
   end matchcontinue;
 end arrayEltType;
 
-/* Not used anymore, replaced by liftArrayR, I belive it was wrong from the start 
-   but will keep it here if I'm wrong.
-public function liftArray 
-"Converts a type into an array type with dimension n"
-  input Type tp;
-  input Option<Integer> n; 
-  output Type outTp;
-algorithm
-  outTp := matchcontinue(tp,n)
-    local 
-      Type elt_tp,tp;
-      list<Option<Integer>> dims;
-      
-    case(DAE.ET_ARRAY(elt_tp,dims),n) 
-      equation
-      dims = listAppend(dims,{n});
-      then DAE.ET_ARRAY(elt_tp,dims);
-      
-    case(tp,n) then DAE.ET_ARRAY(tp,{n});
-      
-  end matchcontinue;
-end liftArray;
-*/
-
 public function unliftArray 
 "function: unliftArray 
   Converts an array type into its element type."
@@ -3856,8 +3873,37 @@ algorithm
   end matchcontinue;
 end unliftArray;
 
-public function typeof 
-"function typeof  
+public function isReal ""
+  input Type it;
+  output Boolean re;
+algorithm
+  re := matchcontinue(it)
+    local
+      Type t1,t2;
+    case(DAE.ET_ARRAY(ty=t2))
+      then 
+        isReal(t2);
+    case(DAE.ET_REAL) then true;
+    case(_) then false;
+  end matchcontinue;
+end isReal;
+
+public function isExpReal ""
+  input Exp e;
+  output Boolean re;
+algorithm
+  re := matchcontinue(e)
+    local Type t;
+    case(e)
+      equation
+        t = typeof(e);
+        then
+          isReal(t);
+  end matchcontinue;
+end isExpReal;
+
+public function typeof "
+function typeof  
   Retrieves the Type of the Expression"
   input Exp inExp;
   output Type outType;
@@ -7185,8 +7231,8 @@ algorithm
         c = Util.listReduce({c1,c2,c3}, int_add);
       then
         (DAE.IFEXP(e1_1,e2_1,e3_1),c);
-    case (DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inline=i),source,target)
-      local Boolean c,i; Type tp;
+    case (DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inlineType=i),source,target)
+      local Boolean c;DAE.InlineType i; Type tp;
       equation 
         (expl_1,cnt) = Util.listMap22(expl, replaceExp, source, target);
         cnt_1 = Util.listReduce(cnt, int_add);
@@ -7471,8 +7517,8 @@ algorithm
         e3_1 = stringifyCrefs(e3);
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
-    case (DAE.CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp,inline=i))
-      local Boolean t,i; Type tp;
+    case (DAE.CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType=i))
+      local Boolean t;DAE.InlineType i; Type tp;
       equation 
         expl_1 = Util.listMap(expl, stringifyCrefs);
       then
@@ -8409,7 +8455,7 @@ algorithm
       list<Exp> farg,expl,expl_2;
       list<tuple<Exp, Boolean>> expl_1;
     case (DAE.ICONST(integer = _)) then {}; 
-    case (DAE.RCONST(real = _)) then {}; 
+    case (DAE.RCONST(real = _)) then {};  
     case (DAE.SCONST(string = _)) then {}; 
     case (DAE.BCONST(bool = _)) then {}; 
     case (DAE.CREF(componentRef = cr)) then {cr}; 
@@ -8715,8 +8761,8 @@ algorithm
         ((e,ext_arg_4)) = rel((DAE.IFEXP(e1_1,e2_1,e3_1),ext_arg_3));
       then
         ((e,ext_arg_4));
-    case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inline = i)),rel,ext_arg)
-      local Type tp,tp_1; Boolean i;
+    case ((e as DAE.CALL(path = fn,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType = i)),rel,ext_arg)
+      local Type tp,tp_1; DAE.InlineType  i;
       equation 
         ((expl_1,ext_arg_1)) = traverseExpList(expl, rel, ext_arg);
         ((e,ext_arg_2)) = rel((DAE.CALL(fn,expl_1,t,b,tp,i),ext_arg_1));
@@ -9681,7 +9727,7 @@ public function makeNoEvent " adds a noEvent call around an expression"
 input Exp e1;
 output Exp res;
 algorithm
-  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},false,true,DAE.ET_BOOL(),false);
+  res := DAE.CALL(Absyn.IDENT("noEvent"),{e1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE);
 end makeNoEvent;
 
 public function makeNestedIf "creates a nested if expression given a list of conditions and 
@@ -10254,7 +10300,7 @@ public function expLn
   Type tp;
 algorithm 
   tp := typeof(e1);
-  outExp := DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,false);
+  outExp := DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE);
 end expLn;
 
 public function extractCrefsFromExp "

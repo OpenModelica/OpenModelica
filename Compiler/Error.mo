@@ -227,6 +227,7 @@ public constant ErrorID MULTIPLE_MODIFIER=516;
 public constant ErrorID INCONSISTENT_UNITS=517;
 public constant ErrorID CONSISTENT_UNITS=518;
 public constant ErrorID INCOMPLETE_UNITS=519;
+public constant ErrorID INCOMPATIBLE_TYPES_FUNC=520;
 
 public constant ErrorID INDEX_REDUCTION_NOTIFICATION=1000;
 public constant ErrorID SELECTED_STATE_DUE_TO_START_NOTIFICATION = 1001;
@@ -506,6 +507,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
+          
+          
+          (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
+          "While deriving %s to %s, types of inputs: %s and type of %s: %s did not match"),
           
           (MULTIPLE_MODIFIER,TRANSLATION(),ERROR(),
           "Multiple modifers in same scope for element %s, %s"),

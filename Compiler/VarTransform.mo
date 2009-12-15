@@ -265,17 +265,14 @@ algorithm
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
       then DAE.COMP(id,DAE.DAE(elist))::dae2;
         
-    case(DAE.FUNCTION(path,DAE.DAE(elist),ftp,partialPrefix)::dae,repl,condExpFunc) 
+     case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(DAE.DAE(elist))::derFuncs,ftp,partialPrefix,inlineType)::dae,repl,condExpFunc)
+       local list<DAE.FunctionDefinition> derFuncs;
+         DAE.InlineType inlineType;
       equation
         elist2 = applyReplacementsDAE(elist,repl,condExpFunc);
         dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
-      then DAE.FUNCTION(path,DAE.DAE(elist2),ftp,partialPrefix)::dae2;
-        
-    case(DAE.EXTFUNCTION(path,DAE.DAE(elist),ftp,extDecl)::dae,repl,condExpFunc) 
-      equation
-        elist2 = applyReplacementsDAE(elist,repl,condExpFunc);
-        dae2 = applyReplacementsDAE(dae,repl,condExpFunc);
-      then DAE.EXTFUNCTION(path,DAE.DAE(elist2),ftp,extDecl)::dae2;
+        then 
+          DAE.FUNCTION(path,DAE.FUNCTION_DEF(DAE.DAE(elist2))::derFuncs,ftp,partialPrefix,inlineType)::dae2;
         
     case(DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae,repl,condExpFunc) 
       equation
@@ -1281,8 +1278,9 @@ algorithm
         e3_1 = replaceExp(e3, repl, cond);
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
-    case ((e as DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inline=inl)),repl,cond)
-      local Boolean t,inl; DAE.ExpType tp;
+    case ((e as DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inlineType=inl)),repl,cond)
+      local Boolean t;
+      DAE.InlineType inl; DAE.ExpType tp;
       equation 
         true = replaceExpCond(cond, e);
         expl_1 = Util.listMap2(expl, replaceExp, repl, cond);

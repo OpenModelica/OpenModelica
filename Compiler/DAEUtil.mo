@@ -45,6 +45,20 @@ public import Env;
 public import SCode;
 public import Values;
 
+public function derivativeOrder "
+Function to sort derivatives.
+Used for Util.sort
+"
+input tuple<Integer,DAE.derivativeCond> e1,e2; //greaterThanFunc
+output Boolean b;
+Integer i1,i2;
+algorithm 
+  b := matchcontinue(e1,e2)
+    case((i1,_),(i2,_))
+      then Util.isIntGreater(i1,i2);
+  end matchcontinue;
+end derivativeOrder;
+
 public function addEquationBoundString "" 
   input DAE.Exp bindExp;
   input Option<DAE.VariableAttributes> attr;
@@ -182,9 +196,6 @@ algorithm
 	  case((e as DAE.FUNCTION(path=_))::elts2) equation
 	    (elts22,elts3) = removeEquations(elts2);
     then (e::elts22,elts3);
-	  case((e as DAE.EXTFUNCTION(path=_))::elts2) equation
-	    (elts22,elts3) = removeEquations(elts2);
-    then (e::elts22,elts3);  
 	  case((e as DAE.RECORD_CONSTRUCTOR(path=_))::elts2) equation
 	    (elts22,elts3) = removeEquations(elts2);
     then (e::elts22,elts3);
@@ -590,8 +601,8 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    case (DAE.DAE(elementLst = (DAE.EXTFUNCTION(path = path,dAElist = dae,type_ = tp,externalDecl = extdecl) :: xs)))
-      equation 
+    case (DAE.DAE(elementLst = DAE.FUNCTION(path = path,(functions = (DAE.FUNCTION_EXT(body = dae,externalDecl=extdecl))::_) ,type_ = tp) :: xs))
+        equation 
         Print.printBuf("EXTFUNCTION(\n");
         str = Absyn.pathString(path);
         Print.printBuf(str);
@@ -2290,6 +2301,53 @@ algorithm
   end matchcontinue;
 end dumpExtObjectClass;
 
+public function printInlineTypeStr ""
+input DAE.InlineType it;
+output String str;
+algorithm 
+  str := matchcontinue(it)
+    case(DAE.NO_INLINE) then "No inline";
+      case(DAE.AFTER_INDEX_RED_INLINE) then "Inline after index reduction";
+        case(DAE.NORM_INLINE) then "Inline before index reduction";
+  end matchcontinue;
+end printInlineTypeStr;
+
+public function derivativeCondStr "
+Author BZ 
+Function for prinding conditions
+"
+input DAE.derivativeCond dc;
+output String str;
+algorithm str := matchcontinue(dc)
+  case(DAE.NO_DERIVATIVE(e))
+    local DAE.Exp e;
+      equation
+        str  = "noDerivative(" +& Exp.printExpStr(e) +& ")";
+      then
+        str;
+  case(DAE.ZERO_DERIVATIVE) then "zeroDerivative";
+  end matchcontinue;
+end derivativeCondStr;
+
+public function dumpDerivativeCond "debug function "
+input list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
+output list<String> oStrings;
+algorithm oStrings := matchcontinue( conditionRefs)
+  local
+    DAE.derivativeCond derCond;
+    String s1;
+    Integer name;
+  case({}) then {};    
+  case((name,derCond)::conditionRefs) 
+    equation
+    oStrings = dumpDerivativeCond(conditionRefs);
+    s1 = derivativeCondStr(derCond);
+    s1 = intString(name) +& " = " +& s1;
+    then
+      s1::oStrings;
+  end matchcontinue;
+end dumpDerivativeCond;
+
 protected function dumpFunction 
 "function: dumpFunction 
   Dump function"
@@ -2301,7 +2359,7 @@ algorithm
       Absyn.Path fpath;
       list<DAE.Element> dae;
       DAE.Type t;
-    case DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = t)
+    case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(DAE.DAE(elementLst = dae))::_),type_ = t)
       equation 
         Print.printBuf("function ");
         fstr = Absyn.pathString(fpath);
@@ -2313,7 +2371,7 @@ algorithm
         Print.printBuf(";\n\n");
       then
         ();
-     case DAE.EXTFUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = t)
+      case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = dae))::_),type_ = t)
        local String fstr,daestr,str;
       equation 
         fstr = Absyn.pathString(fpath);
@@ -2351,26 +2409,16 @@ algorithm
       Absyn.Path fpath;
       list<DAE.Element> dae;
       DAE.Type t;
-    case DAE.FUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = t)
-      equation 
-        fstr = Absyn.pathString(fpath);
-        daestr = dumpElementsStr(dae);
-        str = Util.stringAppendList({"function ",fstr,"\n",daestr,"end ",fstr,";\n\n"});
-      then
-        str;
-    case DAE.EXTFUNCTION(path = fpath,dAElist = DAE.DAE(elementLst = dae),type_ = t)
-      equation 
-        fstr = Absyn.pathString(fpath);
-        daestr = dumpElementsStr(dae);
-        str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
-      then
-        str;
-    case DAE.RECORD_CONSTRUCTOR(path = fpath)
-      equation 
-        fstr = Absyn.pathString(fpath);
-        str = Util.stringAppendList({"record ",fstr,"\n...\nend ",fstr,";\n\n"});
-      then
-        str;
+      String s1,s2;
+      case(inElement)
+        equation
+          s1 = Print.getString();
+          Print.clearBuf();
+          dumpFunction(inElement);
+          s2 = Print.getString();
+          Print.printBuf(s1);
+          then
+            s2;
     case _ then ""; 
   end matchcontinue;
 end dumpFunctionStr;
@@ -2980,6 +3028,17 @@ algorithm
   end matchcontinue;
 end getAllMatchingElements;
 
+public function isNormalInlineFunc "
+Author BZ
+"
+input DAE.Element inElem;
+output Boolean b;
+algorithm 
+  b := matchcontinue(inElem)
+    case(DAE.FUNCTION(inlineType=DAE.NORM_INLINE)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isNormalInlineFunc;
 public function findAllMatchingElements "function findAllMatchingElements
   author:  adrpo 
  
@@ -3035,6 +3094,32 @@ algorithm
       then (elist1,elist2);
   end matchcontinue;
 end findAllMatchingElements;
+
+public function isAfterIndexInlineFunc "
+Author BZ
+"
+input DAE.Element inElem;
+output Boolean b;
+algorithm 
+  b := matchcontinue(inElem)
+    case(DAE.FUNCTION(inlineType=DAE.AFTER_INDEX_RED_INLINE)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isAfterIndexInlineFunc;
+
+public function isEqualInlineType "
+Author BZ
+"
+input DAE.InlineType a1,a2;
+output Boolean b;
+algorithm 
+  b := matchcontinue(a1,a2)
+    case(DAE.NO_INLINE,DAE.NO_INLINE) then true;
+    case(DAE.NORM_INLINE,DAE.NORM_INLINE) then true;
+    case(DAE.AFTER_INDEX_RED_INLINE,DAE.AFTER_INDEX_RED_INLINE) then true;
+    case(_,_) then false;
+  end matchcontinue;
+end isEqualInlineType;
 
 public function isParameter "function isParameter
   author: LS 
@@ -3332,7 +3417,6 @@ algorithm
   _:=
   matchcontinue (inElement)
     case DAE.FUNCTION(path = _) then (); 
-    case DAE.EXTFUNCTION(path = _) then (); 
     case DAE.RECORD_CONSTRUCTOR(path = _) then (); 
   end matchcontinue;
 end isFunction;
@@ -3520,7 +3604,7 @@ algorithm
         Print.printBuf(")");
       then
         ();
-    case DAE.FUNCTION(path = fpath,dAElist = l,type_ = t)
+     case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(body = l)::_),type_ = t)
       equation 
         Print.printBuf("FUNCTION(");
         fstr = Absyn.pathString(fpath);
@@ -3774,6 +3858,7 @@ algorithm
       DAE.VarDirection vd;
       DAE.Exp exp,e1,e2;
       Graphviz.Node node;
+      DAE.Type ty;
       DAE.DAElist dae;
       Absyn.Path fpath;
     case DAE.VAR(componentRef = cr,kind = vk,direction = vd,binding = NONE)
@@ -3829,7 +3914,7 @@ algorithm
         node = buildGraphviz(dae);
       then
         Graphviz.LNODE("COMP",{n},{},{node});
-    case DAE.FUNCTION(path = fpath,dAElist = dae)
+    case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(body = dae)::_),type_ = ty)
       equation 
         node = buildGraphviz(dae);
         fstr = Absyn.pathString(fpath);
@@ -4213,6 +4298,8 @@ algorithm
       list<list<DAE.Element>> trueBranches, trueBranches_1;
       list<DAE.Element> eelts;
       Boolean partialPrefix;
+      list<DAE.FunctionDefinition> derFuncs;
+      DAE.InlineType inlineType;
     case ({}) then {}; 
     case ((DAE.VAR(componentRef = cr,
                kind = a,
@@ -4332,20 +4419,20 @@ algorithm
         elts_1 = toModelicaFormElts(elts);
       then
         (DAE.COMP(id,dae_1) :: elts_1);
-    case ((DAE.FUNCTION(path = p,dAElist = dae,type_ = t,partialPrefix = partialPrefix) :: elts))
+    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_DEF(dae)::derFuncs),type_ = t,partialPrefix=partialPrefix,inlineType = inlineType) :: elts))
       equation 
         dae_1 = toModelicaForm(dae);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.FUNCTION(p,dae_1,t,partialPrefix) :: elts_1);
-    case ((DAE.EXTFUNCTION(path = p,dAElist = dae,type_ = t,externalDecl = d) :: elts))
-      local
-        DAE.ExternalDecl d;
+        (DAE.FUNCTION(p,(DAE.FUNCTION_DEF(dae_1)::derFuncs),t,partialPrefix,inlineType) :: elts_1);
+    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_EXT(dae, d)::derFuncs),type_ = t,partialPrefix=partialPrefix,inlineType = inlineType) :: elts))
+      local DAE.ExternalDecl d;
       equation 
         elts_1 = toModelicaFormElts(elts);
         dae_1 = toModelicaForm(dae);
       then
-        (DAE.EXTFUNCTION(p,dae,t,d) :: elts_1);
+        (DAE.FUNCTION(p,(DAE.FUNCTION_EXT(dae, d)::derFuncs),t,partialPrefix,inlineType) :: elts_1);
+ 
     case ((DAE.RECORD_CONSTRUCTOR(path = p,type_ = t) :: elts))
       equation 
         elts_1 = toModelicaFormElts(elts);
@@ -4436,14 +4523,15 @@ algorithm
   matchcontinue (inExp)
     local
       DAE.ComponentRef cr_1,cr;
-      DAE.ExpType t;
+      DAE.ExpType t,tp;
       DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e3_1,e3;
       DAE.Operator op;
       list<DAE.Exp> expl_1,expl;
       Absyn.Path f;
-      Boolean b;
+      Boolean b,bt;
       Integer i;
       Option<DAE.Exp> eopt_1,eopt;
+      DAE.InlineType il; 
     case (DAE.CREF(componentRef = cr,ty = t))
       equation 
         cr_1 = toModelicaFormCref(cr);
@@ -4484,12 +4572,11 @@ algorithm
         e3_1 = toModelicaFormExp(e3);
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
-    case (DAE.CALL(path = f,expLst = expl,tuple_ = t,builtin = b,ty=tp,inline=i))
-      local Boolean t,i; DAE.ExpType tp;
+    case (DAE.CALL(path = f,expLst = expl,tuple_ = bt,builtin = b,ty=tp,inlineType=il))
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);
       then
-        DAE.CALL(f,expl_1,t,b,tp,i);
+        DAE.CALL(f,expl_1,bt,b,tp,il);
     case (DAE.ARRAY(ty = t,scalar = b,array = expl))
       equation 
         expl_1 = Util.listMap(expl, toModelicaFormExp);
@@ -4539,11 +4626,6 @@ algorithm
       list<DAE.Element> rest,res;
     case (_,{}) then {}; 
     case (path,((el as DAE.FUNCTION(path = elpath)) :: rest))
-      equation 
-        true = ModUtil.pathEqual(path, elpath);
-      then
-        {el};
-    case (path,((el as DAE.EXTFUNCTION(path = elpath)) :: rest))
       equation 
         true = ModUtil.pathEqual(path, elpath);
       then
@@ -4762,11 +4844,6 @@ algorithm
         print("FUNCTION not allowed inside when equation\n");
       then 
         fail();  
-    case(DAE.EXTFUNCTION(path = path)::rest)
-      equation
-        print("EXTFUNCTION not allowed inside when equation\n");
-      then 
-        fail();  
     case(DAE.RECORD_CONSTRUCTOR(path = path)::rest)
       equation
         print("RECORD_CONSTRUCTOR not allowed inside when equation\n");
@@ -4941,15 +5018,15 @@ algorithm
         exps = getAllExps(elements);
       then
         exps;
-    case DAE.FUNCTION(path = path,dAElist = DAE.DAE(elementLst = elements),type_ = ty)
-      local tuple<DAE.TType, Option<Absyn.Path>> ty;
+    case DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_DEF(body = DAE.DAE(elementLst = elements))::_),type_ = ty)
+     local tuple<DAE.TType, Option<Absyn.Path>> ty;
       equation 
         exps1 = getAllExps(elements);
         exps2 = Types.getAllExps(ty);
         exps = listAppend(exps1, exps2);
       then
         exps;
-    case DAE.EXTFUNCTION(path = path,dAElist = DAE.DAE(elementLst = elements),type_ = ty,externalDecl = DAE.EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,returnType = lang,language = ann))
+    case DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_EXT(DAE.DAE(elementLst = elements),externalDecl = DAE.EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,returnType = lang,language = ann))::_),type_ = ty)
       local tuple<DAE.TType, Option<Absyn.Path>> ty;
       equation 
         exps1 = getAllExps(elements);
@@ -4966,7 +5043,7 @@ algorithm
       local
         Absyn.Path fname;
         list<DAE.Exp> fargs;
-      then {DAE.CALL(fname,fargs,false,false,DAE.ET_OTHER(),false)};      
+      then {DAE.CALL(fname,fargs,false,false,DAE.ET_OTHER(),DAE.NO_INLINE)};      
       
     case _
       equation 
@@ -5399,7 +5476,7 @@ Helper function for traverseDAE, traverses a list of dae element list.
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
 algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
-  local 
+  local
     list<DAE.Element> branch,branch2;
     list<list<DAE.Element>> recRes; 
   case({},func,extraArg) then ({},extraArg);
@@ -5431,7 +5508,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     DAE.Element elt,elt2,elt22,elt1,elt11;
     DAE.VarKind kind;
     DAE.VarDirection dir;
-    DAE.Type tp;
+    DAE.Type tp,ftp;
     DAE.InstDims dims;
     DAE.StartValue start;
     DAE.Flow fl;
@@ -5453,6 +5530,8 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     Boolean partialPrefix;
     Absyn.Path path; 
     list<DAE.Exp> expl;
+    list<DAE.FunctionDefinition> derFuncs;
+    DAE.InlineType inlineType;
   case({},_,extraArg) then ({},extraArg);
   case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io)::dae,func,extraArg) 
     equation
@@ -5539,17 +5618,17 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
     then (DAE.COMP(id,DAE.DAE(elist))::dae2,extraArg);
       
-  case(DAE.FUNCTION(path,DAE.DAE(elist),tp,partialPrefix)::dae,func,extraArg) 
+  case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(DAE.DAE(elementLst = elist))::derFuncs),ftp,partialPrefix,inlineType)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.FUNCTION(path,DAE.DAE(elist2),tp,partialPrefix)::dae2,extraArg);
-      
-  case(DAE.EXTFUNCTION(path,DAE.DAE(elist),tp,extDecl)::dae,func,extraArg) 
+    then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(DAE.DAE(elist2))::derFuncs,ftp,partialPrefix,inlineType)::dae2,extraArg);
+    
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = elist),externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.EXTFUNCTION(path,DAE.DAE(elist2),tp,extDecl)::dae2,extraArg);
+     then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(DAE.DAE(elist2),extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE)::dae2,extraArg);
       
   case(DAE.RECORD_CONSTRUCTOR(path,tp)::dae,func,extraArg) 
     equation
