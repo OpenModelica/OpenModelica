@@ -14,6 +14,11 @@ package SimCode
     input list<SimVar> lst;
     output Integer len;
   end listLengthSimVar;
+
+  function listLengthOptionInt
+    input list<Option<Integer>> lst;
+    output Integer len;
+  end listLengthOptionInt;
   
   uniontype Context
     record SIMULATION end SIMULATION;
@@ -62,7 +67,8 @@ package SimCode
     record SIMCODE
       ModelInfo modelInfo;
       list<Function> functions;
-      list<SimEqSystem> stateEquations;
+      list<SimEqSystem> allEquations;
+      list<SimEqSystem> stateContEquations;
       list<SimEqSystem> nonStateContEquations;
       list<SimEqSystem> nonStateDiscEquations;
       list<SimEqSystem> residualEquations;

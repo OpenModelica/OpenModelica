@@ -82,6 +82,14 @@ algorithm
   len := listLength(lst);
 end listLengthSimVar;
 
+public
+function listLengthOptionInt
+  input list<Option<Integer>> lst;
+  output Integer len;
+algorithm
+  len := listLength(lst);
+end listLengthOptionInt;
+
 
 /************** FUNCTIONS ***********/
 /* a type to use for function return, parameters and variable declarations is based on Exp.Type */
@@ -275,7 +283,8 @@ uniontype SimCode
 //    Includes includes "include files";
 //    GlobalVariables globalVars ;
     list<Function> functions;
-    list<SimEqSystem> stateEquations;
+    list<SimEqSystem> allEquations;
+    list<SimEqSystem> stateContEquations;
     list<SimEqSystem> nonStateContEquations;
     list<SimEqSystem> nonStateDiscEquations;
     list<SimEqSystem> residualEquations;
@@ -867,7 +876,7 @@ algorithm
   end matchcontinue;
 end typesSimFunctionArg;
 
-protected function typesExpType 
+protected function typesExpType  // TODO: change to Types.elabType
 "function: generateType
   Generates code for a Type."
   input Types.Type inType;
@@ -1165,7 +1174,8 @@ algorithm
       // new variables
       SimCode simCode;
       ModelInfo modelInfo;
-      list<SimEqSystem> stateEquations;
+      list<SimEqSystem> allEquations;
+      list<SimEqSystem> stateContEquations;
       list<SimEqSystem> nonStateContEquations;
       list<SimEqSystem> nonStateDiscEquations;
       list<SimEqSystem> residualEquations;
@@ -1204,11 +1214,12 @@ algorithm
         //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, n_o, n_i, n_h, nres, fileDir);
-        stateEquations = createEquations(dae, dlow2, ass1, ass2, blt_states);
+        allEquations = createEquations(true, dae, dlow2, ass1, ass2, comps);
+        stateContEquations = createEquations(false, dae, dlow2, ass1, ass2, blt_states);
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
-        nonStateContEquations = createEquations(dae, dlow2, ass1, ass2,
+        nonStateContEquations = createEquations(true, dae, dlow2, ass1, ass2,
                                                 contBlocks);
-        nonStateDiscEquations = createEquations(dae, dlow2, ass1, ass2,
+        nonStateDiscEquations = createEquations(true, dae, dlow2, ass1, ass2,
                                                 discBlocks);
         initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
@@ -1217,7 +1228,7 @@ algorithm
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         whenClauses = createSimWhenClauses(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
-        simCode = SIMCODE(modelInfo, functions, stateEquations,
+        simCode = SIMCODE(modelInfo, functions, allEquations, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
                           parameterEquations, removedEquations, zeroCrossings,
@@ -1389,6 +1400,7 @@ algorithm
 end whenClauseToSimWhenClause;
 
 public function createEquations
+  input Boolean genDiscrete;
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
@@ -1397,21 +1409,50 @@ public function createEquations
   output list<SimEqSystem> equations;
 algorithm
   equations :=
-  matchcontinue (dae, dlow, ass1, ass2, comps)
+  matchcontinue (genDiscrete, dae, dlow, ass1, ass2, comps)
     local
       list<Integer> comp;
       list<list<Integer>> restComps;
       list<DAELow.Equation> equations_2;
       SimEqSystem equation_;
-    case (dae, dlow, ass1, ass2, {})
+      Integer index;
+      DAELow.Variables vars;
+      DAELow.EquationArray eqns;
+      DAELow.Var v;
+    case (genDiscrete, dae, dlow, ass1, ass2, {})
       then {};
-    case (dae, dlow, ass1, ass2, comp :: restComps)
+    /* ignore when equations: they are handled elsewhere */
+    case (genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
       equation
-        equation_ = createEquation(dae, dlow, ass1, ass2, comp);
-        equations = createEquations(dae, dlow, ass1, ass2, restComps);
+        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
+        (DAELow.WHEN_EQUATION(_),_) = getEquationAndSolvedVar(index, eqns, vars, ass2);
+        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+      then
+        equations;
+    /* ignore discrete if we should not generate them */
+    case (false, dae, dlow, ass1, ass2, {index} :: restComps)
+      equation
+        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
+        (DAELow.EQUATION(_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
+        true = hasDiscreteVar({v});
+        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+      then
+        equations;
+    /* single equation */
+    case (genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
+      equation
+        equation_ = createEquation(dae, dlow, ass1, ass2, index);
+        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
       then
         equation_ :: equations;
-    case (_,_,_,_,_)
+    /* multiple equations that must be solved together (algebraic loop) */
+    case (genDiscrete, dae, dlow, ass1, ass2, comp :: restComps)
+      equation
+        equation_ = createOdeSystem(genDiscrete, dlow, ass1, ass2, comp);
+        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+      then
+        equation_ :: equations;
+    case (_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
@@ -1424,13 +1465,12 @@ public function createEquation
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
   input Integer[:] ass2;
-  input list<Integer> comp;
+  input Integer eqNum;
   output SimEqSystem equation_;
 algorithm
   equation_ :=
-  matchcontinue (dae, dlow, ass1, ass2, comp)
+  matchcontinue (dae, dlow, ass1, ass2, eqNum)
     local
-      Integer eqNum;
       list<Integer> restEqNums;
       Exp.ComponentRef cr,origname, cr_1;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -1450,7 +1490,7 @@ algorithm
       Integer indx;
     /* single equation: non-state */
     case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, {eqNum})
+          ass1, ass2, eqNum)
       equation
         (DAELow.EQUATION(e1, e2),
          v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,
@@ -1464,7 +1504,7 @@ algorithm
         SES_SIMPLE_ASSIGN(cr, exp_);
     /* single equation: state */
     case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, {eqNum})
+          ass1, ass2, eqNum)
       equation
         (DAELow.EQUATION(e1, e2),
          v as DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,
@@ -1477,12 +1517,6 @@ algorithm
         exp_ = Exp.solve(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr_1, exp_);
-    /* multiple equations that must be solved together (algebraic loop) */
-    case (dae, dlow, ass1, ass2, eqNum :: restEqNums)
-      equation
-        equation_ = createOdeSystem(false, dlow, ass1, ass2, eqNum :: restEqNums);
-      then
-        equation_;
     case (_,_,_,_,_)
       then
         SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");
