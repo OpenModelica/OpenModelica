@@ -850,6 +850,7 @@ algorithm
   end matchcontinue;
 end joinCrefs;
 
+
 public function crefEqual 
 "function: crefEqual 
   Returns true if two component references are equal"
@@ -863,10 +864,35 @@ algorithm
       list<Subscript> idx1,idx2;
       ComponentRef cr1,cr2;
     // simple identifiers
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
+    case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
+      equation 
+        true = stringEqual(n1, n2);
+      then
+        true;
+    case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx1 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation 
         true = stringEqual(n1, n2);
         true = subscriptEqual(idx1, idx2);
+      then
+        true;
+        // BZ 2009-12
+        // For some reason in some examples we get crefs on different forms.
+        // the compare can be crefEqual(CREF_IDENT("mycref",_,{1,2,3}),CREF_IDENT("mycref[1,2,3]",_,{}))
+        // I do belive this has something to do with variable replacement and DAELow. 
+        // TODO: investigate reason, until then keep as is. 
+        // I do believe that this is the same bug as adrians qual-ident bug below.
+    case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
+      equation 
+        0 = System.stringFind(n1, n2); // n2 should be first in n1!
+        s1 = n2 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
+        true = stringEqual(s1,n1);
+      then
+        true;
+    case (DAE.CREF_IDENT(ident = n1,subscriptLst = (idx2 as _::_)),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
+      equation 
+        0 = System.stringFind(n2, n1); // n1 should be first in n2!
+        s1 = n1 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
+        true = stringEqual(s1,n2);
       then
         true;
     // enumerations
@@ -927,7 +953,7 @@ algorithm
       then
         true;        
     // the crefs are not equal!
-    case (_,_) then false; 
+     case (_,_) then false; 
   end matchcontinue;
 end crefEqual;
 
@@ -10405,7 +10431,10 @@ algorithm
       Type ty;
     case DAE.CREF_IDENT(ident = s,identType=ty,subscriptLst = subs)
       equation 
-        str = printComponentRef2Str(s, subs);
+        str_1 = printListStr(subs, printSubscriptStr, ",");
+        str = s +& Util.if_(stringLength(str_1) > 0, "["+& str_1 +& "}" , "");
+        // this printing way will be useful when adressin the  'crefEqual' bug. 
+        //str = printComponentRef2Str(s, subs);
         str2 = typeString(ty);
         str = Util.stringAppendList({str," [",str2,"]\n"});
       then

@@ -56,6 +56,7 @@ protected import Util;
 protected import Error;
 protected import System;
 protected import ExpandableConnectors;
+protected import Inst;
 
 public function translateAbsyn2SCode 
 "function: translateAbsyn2SCode
@@ -76,6 +77,7 @@ algorithm
 
     case (inProgram)
       equation
+        System.addToRoots("instantiationCache", Inst.emptyInstHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
         
 
