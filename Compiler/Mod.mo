@@ -1341,6 +1341,7 @@ algorithm outMod:= matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
     DAE.Mod m;
     case (DAE.NOMOD(),DAE.NOMOD(),_,_) then DAE.NOMOD(); 
     case (DAE.NOMOD(),m,_,_) then m; 
+    case (m,DAE.NOMOD(),_,_) then m; 
 
     case(inMod1,inMod2,inEnv3,inPrefix4)
       equation

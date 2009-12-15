@@ -8493,7 +8493,19 @@ algorithm
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
       then
         (cache,SOME(DIMINT(i)) :: l);
-
+    // Frenkel TUD try next enum
+    case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect)
+      local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Enum> enumLst;
+      equation 
+        typePath = Absyn.crefToPath(cr);
+        // make sure is an enumeration! 
+        (_, SCode.CLASS(_, _, _, SCode.R_TYPE(), 
+                        SCode.ENUMERATION(enumLst=enumLst)), _) = 
+             Lookup.lookupClass(cache, env, typePath, false);
+        i = listLength(enumLst);
+        (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
+      then
+        (cache,SOME(DIMINT(i)) :: l);
     // Constant dimension creates DIMINT 
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect) 
       equation 
@@ -10516,6 +10528,29 @@ algorithm
         (_, SCode.CLASS(_, _, _, SCode.R_ENUMERATION(), SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
+        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        vals = Ceval.cevalRange(1,1,len);
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+      then
+        (cache,env,ih,dae,csets_1,ci_state_1,graph);
+    // Frenkel TUD: enumeration again 
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.CREF(cr),eEquationLst = el),initial_,impl,graph)
+      local 
+        Absyn.ComponentRef cr;
+        Absyn.Path typePath;
+        Integer len;
+        list<SCode.Enum> enumLst;
+        list<Values.Value> vals;
+      equation 
+        
+        typePath = Absyn.crefToPath(cr);
+        /* make sure is an enumeration! */
+        (_, SCode.CLASS(_, _, _, SCode.R_TYPE(), SCode.ENUMERATION(enumLst = enumLst)), _) = 
+             Lookup.lookupClass(cache, env, typePath, false);
+        len = listLength(enumLst);        
         env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
