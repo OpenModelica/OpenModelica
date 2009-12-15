@@ -2555,12 +2555,14 @@ algorithm
   matchcontinue (inDAEElementLst1,inString2,inString3,i,inInteger4,inContext5)
     local
       Lib rv,rd;
+			String var_str;
       Integer tnr,tnr1,tnr2;
       Context context;
       CFunction cfn,cfn1,cfn2;
       DAE.Element var;
       DAE.ComponentRef cr;
       DAE.VarKind vk;
+			DAE.Type typ;
       DAE.VarDirection vd;
       Option<DAE.Exp> e;
       list<DAE.Subscript> id;
@@ -2582,6 +2584,7 @@ algorithm
     case (((var as DAE.VAR(componentRef = cr,
                            kind = vk,
                            direction = vd,
+													 ty = typ,
                            binding = e,
                            dims = id,
                            flowPrefix = flowPrefix,
@@ -2590,7 +2593,8 @@ algorithm
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
       equation
-        (cfn1,tnr1) = generateAllocOutvar(var, rv, i,tnr, context);
+				(var_str, _) = compRefCstr(cr);
+				(cfn1, tnr1) = generateAllocOutvar(var_str, id, typ, rv, i, tnr, context);
         (cfn2,tnr2) = generateAllocOutvars(r, rd, rv, i+1,tnr1, context);
         cfn = cMergeFn(cfn1, cfn2);
       then
@@ -2604,79 +2608,104 @@ algorithm
   end matchcontinue;
 end generateAllocOutvars;
 
-protected function generateAllocOutvar 
-"function: generateAllocOutvar
-  Helper function to generateAllocOutvars."
-  input DAE.Element inElement;
-  input String inString;
-  input Integer i "nth tuple elt";
-  input Integer inInteger;
-  input Context inContext;
-  output CFunction outCFunction;
-  output Integer outInteger;
+protected function generateAllocOutvar
+	input String varRefStr;
+	input list<DAE.Subscript> varDims;
+	input DAE.Type varType;
+	input String prefix;
+	input Integer argNum;
+	input Integer nextTempVarNum;
+	input Context context;
+	output CFunction cFunc;
+	output Integer newNextTempVarNum;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inElement,inString,i,inInteger,inContext)
-    local
-      Boolean is_a,emptypre;
-      Lib typ_str,cref_str1,cref_str2,cref_str,ndims_str,dims_str,alloc_str,prefix;
-      CFunction cfn1,cfn1_1,cfn_1,cfn;
-      list<Lib> dim_strs;
-      Integer tnr1,ndims,tnr;
-      DAE.Element var;
-      DAE.ComponentRef id;
-      DAE.VarKind vk;
-      DAE.VarDirection vd;
-      DAE.Type typ;
-      Option<DAE.Exp> e;
-      list<DAE.Subscript> inst_dims;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Context context;
-      String iStr;
-      
-    case ((var as DAE.VAR(componentRef = id,
-                          kind = vk,
-                          direction = vd,
-                          ty = typ,
-                          binding = e,
-                          dims = inst_dims,
-                          flowPrefix = flowPrefix,
-                          streamPrefix = streamPrefix,
-                          pathLst = class_,
-                          variableAttributesOption = dae_var_attr,
-                          absynCommentOption = comment)),prefix,i,tnr,context)
-      equation
-        is_a = isArray(var);
-        iStr = intString(i);
-        typ_str = generateType(typ,is_a);
-        (cref_str1,_) = compRefCstr(id);
-        cref_str2 = Util.stringAppendList({prefix,".","targ",iStr});
-        emptypre = Util.isEmptyString(prefix);
-        cref_str = Util.if_(emptypre, cref_str1, cref_str2);
-        (cfn1,dim_strs,tnr1) = generateSizeSubscripts(cref_str, inst_dims, tnr, context);
-        cfn1_1 = cMoveStatementsToInits(cfn1);
-        ndims = listLength(dim_strs);
-        ndims_str = intString(ndims);
-        dims_str = Util.stringDelimitList(dim_strs, ", ");
-        alloc_str = Util.stringAppendList({"alloc_", typ_str, "(&", cref_str, ", ", ndims_str, ", ", dims_str,");"});
-        cfn_1 = cAddInits(cfn1_1, {alloc_str});
-        cfn = Util.if_(is_a, cfn_1, cfn1_1);
-      then
-        (cfn,tnr1);
-        
-    case (e,_,_,tnr,context)
-      local DAE.Element e;
-      equation
-        failure(DAEUtil.isVar(e));
-      then
-        (cEmptyFunction,tnr);
-        
-  end matchcontinue;
+	(cFunc, newNextTempVarNum) :=
+	matchcontinue(varRefStr, varDims, varType, prefix, argNum, nextTempVarNum, context)
+		local
+			Boolean empty_prefix;
+			String arg_num_str, type_str, ndims_str, dims_str, var_str, targ_str, alloc_str;
+			list<String> dim_strs;
+			Integer ndims;
+			CFunction cfn1, cfn2, cfn3;
+			list<DAE.Var> record_vars;
+		case (_, _, (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),
+				complexVarLst = record_vars), _), _, _, _, _)
+			equation
+				(cfn1, newNextTempVarNum) = generateAllocRecord(record_vars, varRefStr, 
+					argNum, nextTempVarNum, context); 
+			then
+				(cfn1, newNextTempVarNum);
+
+		case (_, {}, _, "", _, _, _) 
+			equation
+				(cfn1, _, newNextTempVarNum) = generateSizeSubscripts(varRefStr, {}, nextTempVarNum, context);
+		then
+			(cfn1, newNextTempVarNum);
+
+		case (_, {}, _, _, _, _, _)
+			equation
+				arg_num_str = intString(argNum);
+				var_str = Util.stringAppendList({prefix, ".", "targ", arg_num_str});
+				(cfn1, _, newNextTempVarNum) = generateSizeSubscripts(var_str, {}, nextTempVarNum, context);
+		then
+			(cfn1, newNextTempVarNum);
+
+		case (_, _, _, _, _, _, _)
+			equation
+				type_str = generateType(varType, true);
+				arg_num_str = intString(argNum);
+				targ_str = Util.stringAppendList({prefix, ".", "targ", arg_num_str});
+				empty_prefix = Util.isEmptyString(prefix);
+				var_str = Util.if_(empty_prefix, varRefStr, targ_str);
+				(cfn1, dim_strs, newNextTempVarNum) = 
+					generateSizeSubscripts(var_str, varDims, nextTempVarNum, context);
+				cfn2 = cMoveStatementsToInits(cfn1);
+				ndims = listLength(dim_strs);
+				ndims_str = intString(ndims);
+				dims_str = Util.stringDelimitList(dim_strs, ", ");
+				alloc_str = Util.stringAppendList({"alloc_", type_str, "(&", var_str, 
+					", ", ndims_str, ", ", dims_str, ");"});
+				cfn3 = cAddInits(cfn2, {alloc_str});
+		then
+			(cfn3, newNextTempVarNum);
+	end matchcontinue;
 end generateAllocOutvar;
+
+protected function generateAllocRecord
+	input list<DAE.Var> recordVars;
+	input String recordRefStr;
+	input Integer argNum;
+	input Integer nextTempVarNum;
+	input Context context;
+	output CFunction cFunc;
+	output Integer newNextTempVarNum;
+algorithm
+	(cFunc, newNextTempVarNum) :=
+	matchcontinue(recordVars, recordRefStr, argNum, nextTempVarNum, context)
+		local
+			String var_name, qual_name;
+			DAE.Type var_type;
+			list<DAE.Var> rest_vars;
+			CFunction cfn, cfn1, cfn2;
+			Integer next_var, next_var2;
+			list<Integer> dimensions;
+			list<DAE.Subscript> subscripts;
+		case ({}, _, _, _, _)
+			then (cEmptyFunction, nextTempVarNum);
+
+		case ((DAE.TYPES_VAR(name = var_name, type_ = var_type) :: rest_vars), _, _, _, _)
+			equation
+				dimensions = Types.getDimensionSizes(var_type);
+				subscripts = Exp.intSubscripts(dimensions);
+				qual_name = recordRefStr +& "." +& var_name;  
+				(cfn1, next_var) = generateAllocOutvar(qual_name, subscripts, var_type, "",
+					argNum, nextTempVarNum, context);
+				(cfn2, next_var2) = generateAllocRecord(rest_vars, recordRefStr, argNum, next_var, context);
+				cfn = cMergeFn(cfn1, cfn2);
+			then
+				(cfn, next_var2);
+	end matchcontinue;
+end generateAllocRecord;
 
 protected function generateAllocOutvarsExt 
 "function: generateAllocOutvarExt
@@ -2693,6 +2722,7 @@ algorithm
   matchcontinue (inDAEElementLst,inString,i,inInteger,inExternalDecl)
     local
       Lib rv,rett;
+			String var_str;
       Integer tnr,tnr1,tnr2;
       DAE.ExternalDecl extdecl;
       CFunction cfn1,cfn2,cfn;
@@ -2700,6 +2730,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.VarKind vk;
       DAE.VarDirection vd;
+			DAE.Type typ;
       Option<DAE.Exp> e;
       list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
@@ -2714,6 +2745,7 @@ algorithm
     case (((var as DAE.VAR(componentRef = cr,
                            kind = vk,
                            direction = vd,
+													 ty = typ,
                            binding = e,
                            dims = id,
                            flowPrefix = flowPrefix,
@@ -2724,7 +2756,8 @@ algorithm
       equation
         DAE.EXTERNALDECL(returnType = rett) = extdecl;
         true = (rett ==& "C" or rett ==& "Java");
-        (cfn1,tnr1) = generateAllocOutvar(var, rv, i,tnr, funContext);
+				(var_str, _) = compRefCstr(cr);
+				(cfn1, tnr1) = generateAllocOutvar(var_str, id, typ, rv, i, tnr, funContext);
         (cfn2,tnr2) = generateAllocOutvarsExt(r, rv,i+1,tnr1, extdecl);
         cfn = cMergeFn(cfn1, cfn2);
       then
