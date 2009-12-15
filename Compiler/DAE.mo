@@ -599,6 +599,7 @@ uniontype TType "-TType contains the actual type"
   record T_FUNCTION
     list<FuncArg> funcArg "funcArg" ;
     Type funcResultType "funcResultType ; Only single-result" ;
+    Boolean inline;
   end T_FUNCTION;
 
   record T_TUPLE

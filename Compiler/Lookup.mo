@@ -48,24 +48,25 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import Env;
-public import SCode;
 public import RTOpts;
+public import SCode;
 
-protected import Debug;
-protected import Inst;
-protected import Exp;
-protected import Mod;
-protected import Prefix;
 protected import Builtin;
-protected import ModUtil;
-protected import Static;
 protected import Connect;
-protected import Error;
-protected import Util;
-protected import Types;
 protected import ConnectionGraph;
-protected import UnitAbsyn;
+protected import Debug;
+protected import Error;
+protected import Exp;
+protected import Inst;
 protected import InstanceHierarchy;
+protected import Mod;
+protected import ModUtil;
+protected import Prefix;
+protected import SCodeUtil;
+protected import Static;
+protected import Types;
+protected import UnitAbsyn;
+protected import Util;
 
 /*   - Lookup functions
  
@@ -103,14 +104,14 @@ algorithm
     // Special handling for Connections.isRoot
     case (cache,env,Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),msg)
       equation 
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE)), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE), false), NONE);
       then
         (cache, t, env);
 
     // Special handling for MultiBody 3.x rooted() operator
     case (cache,env,Absyn.IDENT("rooted"),msg)
       equation 
-        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE)), NONE);
+        t = (DAE.T_FUNCTION({("x", (DAE.T_ANYTYPE(NONE), NONE))}, (DAE.T_BOOL({}), NONE), false), NONE);
       then
         (cache, t, env);
       
@@ -169,7 +170,7 @@ algorithm
       equation
         (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
         (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
-        t = Types.makeFunctionType(path, varlst);
+        t = Types.makeFunctionType(path, varlst, SCodeUtil.isInlineFunc(c));
       then 
         (cache,t,env_1);
         
@@ -1548,7 +1549,7 @@ algorithm
         // adrpo: do not search in the entire environment as we anyway recurse with the fs argument!
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop! 
-        //           Did not investigate this further then that it can crasch the kernel. 
+        //           Did not investigate this further then that it can crasch the kernel.
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_) 
@@ -1610,9 +1611,9 @@ algorithm
     /* function_name cardinality */
     case (env,"cardinality") 
       then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",false),{},NONE,NONE),NONE))},
-                              (DAE.T_INTEGER({}),NONE)),NONE),
+                              (DAE.T_INTEGER({}),NONE),false),NONE),
             (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",true),{},NONE,NONE),NONE))},
-                              (DAE.T_INTEGER({}),NONE)),NONE)};  
+                              (DAE.T_INTEGER({}),NONE),false),NONE)};
                              
   end matchcontinue;
 end createGenericBuiltinFunctions; 
@@ -1723,7 +1724,7 @@ algorithm
         /*Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function.*/
         (cache,fpath) = Inst.makeFullyQualified(cache,env, Absyn.IDENT(n));
         (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
-        ftype = Types.makeFunctionType(fpath, varlst);
+        ftype = Types.makeFunctionType(fpath, varlst, SCodeUtil.isInlineFunc(cdef));
       then
         (cache,ftype,env);
 
@@ -1777,7 +1778,7 @@ algorithm
         
     case (cache,ht,httypes,env,id) /* MetaModelica Partial Function. sjoelund */
       equation
-        Env.VAR(instantiated = DAE.TYPES_VAR(type_ = (tty as DAE.T_FUNCTION(_,_),_))) = Env.avlTreeGet(ht, id);
+        Env.VAR(instantiated = DAE.TYPES_VAR(type_ = (tty as DAE.T_FUNCTION(_,_,_),_))) = Env.avlTreeGet(ht, id);
       then
         (cache,{(tty, SOME(Absyn.IDENT(id)))});
         
@@ -1794,7 +1795,7 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.avlTreeGet(ht, id);
         (cache,varlst) = buildRecordConstructorVarlst(cache, cdef, env);
         (cache,fpath) = Inst.makeFullyQualified(cache, cenv, Absyn.IDENT(n));
-        ftype = Types.makeFunctionType(fpath, varlst);
+        ftype = Types.makeFunctionType(fpath, varlst, SCodeUtil.isInlineFunc(cdef));
       then
         (cache,{ftype});
         

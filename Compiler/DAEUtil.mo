@@ -3304,7 +3304,7 @@ public function isFunctionRefVar "
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inElem)
-    case DAE.VAR(ty = (DAE.T_FUNCTION(_,_),_)) then true;
+    case DAE.VAR(ty = (DAE.T_FUNCTION(_,_,_),_)) then true;
     case _ then false;
   end matchcontinue;
 end isFunctionRefVar;

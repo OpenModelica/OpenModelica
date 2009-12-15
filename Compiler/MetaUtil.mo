@@ -233,7 +233,7 @@ algorithm
   outList :=
   matchcontinue(inElem)
     case ({}) then {};
-    case ((DAE.T_FUNCTION(typeList,_),_) :: {})
+    case ((DAE.T_FUNCTION(typeList,_,_),_) :: {})
       local
         list<DAE.FuncArg> typeList;
       equation
@@ -1299,7 +1299,7 @@ algorithm
         names = Util.listMap(fields, Types.getVarName);
         types = Util.listMap(fields, Types.getVarType);
       then (names,types);
-    case ((DAE.T_FUNCTION(fargs, (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_)),_))
+    case ((DAE.T_FUNCTION(fargs,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),_),_))
       equation
         names = Util.listMap(fargs, Util.tuple21);
         types = Util.listMap(fargs, Util.tuple22);

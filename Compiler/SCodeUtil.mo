@@ -1647,4 +1647,69 @@ algorithm
   end matchcontinue;
 end prefixUnqualifiedCrefsFromExp;
 
+// stefan
+public function isInlineFunc
+"Checks if a function has the Inline annotation"
+  input SCode.Class inClass;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inClass)
+    local
+      list<SCode.Annotation> anns;
+    case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns)))
+      equation
+        true = isInlineFunc2(anns);
+      then
+        true;
+    case(_) then false;
+  end matchcontinue;
+end isInlineFunc;
+
+// stefan
+protected function isInlineFunc2
+  input list<SCode.Annotation> inAnnotationList;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inAnnotationList)
+    local
+      list<SCode.Annotation> cdr;
+      list<SCode.SubMod> smlst;
+      Boolean res;
+    case({}) then false;
+    case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
+      equation
+        true = isInlineFunc3(smlst);
+      then
+        true;
+    case(_ :: cdr)
+      equation
+        res = isInlineFunc2(cdr);
+      then
+        res;
+  end matchcontinue;
+end isInlineFunc2;
+
+// stefan
+protected function isInlineFunc3
+  input list<SCode.SubMod> inSubModList;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inSubModList)
+    local
+      list<SCode.SubMod> cdr;
+      Boolean res;
+    case({}) then false;
+    case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
+      equation
+        res = true;
+      then
+        res;
+    case(_ :: cdr)
+      equation
+        res = isInlineFunc3(cdr);
+      then
+        res;
+  end matchcontinue;
+end isInlineFunc3;
+
 end SCodeUtil;

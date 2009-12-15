@@ -1505,7 +1505,7 @@ algorithm
     case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_)) then true;
       
     // MM Function Reference. sjoelund
-    case ((DAE.T_FUNCTION(farg1,t1),_),(DAE.T_FUNCTION(farg2,t2),_))
+    case ((DAE.T_FUNCTION(farg1,t1,_),_),(DAE.T_FUNCTION(farg2,t2,_),_))
       local list<FuncArg> farg1,farg2; list<Type> tList1,tList2;
       equation
         tList1 = Util.listMap(farg1, Util.tuple22);
@@ -1946,7 +1946,7 @@ algorithm
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = ty),_)) then ty; 
     case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
     /* adrpo: handle also functions returning arrays! */
-    case ((DAE.T_FUNCTION(_,ty),_)) then unliftArray(ty);      
+    case ((DAE.T_FUNCTION(_,ty,_),_)) then unliftArray(ty);
   end matchcontinue;
 end unliftArray;
 
@@ -2646,6 +2646,7 @@ public function makeFunctionType "function: makeFunctionType
 "
   input Absyn.Path p;
   input list<Var> vl;
+  input Boolean isInline;
   output Type outType;
   list<Var> invl,outvl;
   list<FuncArg> fargs;
@@ -2662,7 +2663,7 @@ algorithm
 	Debug.fcall (\"ft\", print_type, rettype) &
 	Debug.fprint (\"ft\", \" >\")
 " ;
-  outType := (DAE.T_FUNCTION(fargs,rettype),SOME(p));
+  outType := (DAE.T_FUNCTION(fargs,rettype,isInline),SOME(p));
 end makeFunctionType;
 
 public function makeEnumerationType "function: makeEnumerationType
@@ -3554,7 +3555,7 @@ algorithm
         t_1 = elabType(t);
       then DAE.ET_LIST(t_1);
     
-    case ((DAE.T_FUNCTION(_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
+    case ((DAE.T_FUNCTION(_,_,_),_)) "Ceval.ceval might need more info? Don't know how that part of the compiler works. sjoelund"
       then DAE.ET_FUNCTION_REFERENCE_VAR();
 
     case ((DAE.T_METAOPTION(t),_))
@@ -4208,7 +4209,7 @@ algorithm
         (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,false),t2,polymorphicBindings);
     
     // MM Function Reference. sjoelund
-    case (e as DAE.CREF(_,_),(DAE.T_FUNCTION(farg1,t1),p1),(DAE.T_FUNCTION(farg2,t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e as DAE.CREF(_,_),(DAE.T_FUNCTION(farg1,t1,_),p1),(DAE.T_FUNCTION(farg2,t2,_),_),polymorphicBindings,matchFunc,printFailtrace)
       local
         list<FuncArg> farg,farg1,farg2;
         list<Type> tList1,tList2;
@@ -4222,7 +4223,7 @@ algorithm
         (_,tys1,polymorphicBindings) = matchTypeTuple(exps,tList1,tList2,polymorphicBindings,matchFunc,printFailtrace);
         (_,ty1,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
         farg = Util.listThreadMap(fargId1,tys1,Util.makeTuple2);
-        ty2 = (DAE.T_FUNCTION(farg,ty1),p1);
+        ty2 = (DAE.T_FUNCTION(farg,ty1,false),p1);
       then (e,ty2,polymorphicBindings);
     
       /* See printFailure()
@@ -4987,7 +4988,7 @@ algorithm
     case ((DAE.T_UNIONTYPE(_),_)) then true;
     case ((DAE.T_POLYMORPHIC(_),_)) then true;
     case ((DAE.T_META_ARRAY(_),_)) then true;
-    case ((DAE.T_FUNCTION(_,_),_)) then true;
+    case ((DAE.T_FUNCTION(_,_,_),_)) then true;
     case ((DAE.T_BOXED(_),_)) then true;
     case _ then false;
   end matchcontinue;
@@ -5390,7 +5391,7 @@ algorithm
         res = inType::res;
       then res;
     
-    case ((DAE.T_FUNCTION(funcArgs, ty),_))
+    case ((DAE.T_FUNCTION(funcArgs,ty,_),_))
       equation
         tys = Util.listMap(funcArgs, Util.tuple22);
         resMap = Util.listMap(tys, getAllInnerTypes);
@@ -5447,7 +5448,7 @@ algorithm
       Type ty1,ty2,resType1,resType2;
       TType tty1,tty2;
       Absyn.Path path;
-    case (((tty1 as DAE.T_FUNCTION(funcArgs1,resType1)),SOME(path)))
+    case (((tty1 as DAE.T_FUNCTION(funcArgs1,resType1,_)),SOME(path)))
       equation
         funcArgNames = Util.listMap(funcArgs1, Util.tuple21);
         funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
@@ -5455,7 +5456,7 @@ algorithm
         (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular, false);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
-        tty2 = DAE.T_FUNCTION(funcArgs2,resType2);
+        tty2 = DAE.T_FUNCTION(funcArgs2,resType2,false);
         ty2 = (tty2,SOME(path));
       then ty2;
       /* Maybe add this case when standard Modelica gets function references?

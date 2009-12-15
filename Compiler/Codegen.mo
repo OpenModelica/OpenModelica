@@ -1236,14 +1236,14 @@ algorithm
       Absyn.Path path,fullPath;
       DAE.Type ty;
       list<DAE.FuncArg> args;
-    case (DAE.VAR(ty = (DAE.T_FUNCTION(args, (DAE.T_TUPLE(tys),_)),SOME(path))))
+    case (DAE.VAR(ty = (DAE.T_FUNCTION(args,(DAE.T_TUPLE(tys),_),_),SOME(path))))
       equation
         fn_name = generateReturnType(path);
         str = generateFunctionRefFnPtr(args, path);
         out = generateFunctionRefReturnStruct1(tys,fn_name);
       then listAppend(out,{str});
       // Function reference with no output -  stefan
-    case (DAE.VAR(ty = (DAE.T_FUNCTION(args, (DAE.T_NORETCALL(),_)),SOME(path))))
+    case (DAE.VAR(ty = (DAE.T_FUNCTION(args,(DAE.T_NORETCALL(),_),_),SOME(path))))
       local String tmpstr;
       equation
         fn_name = generateReturnType(path);
@@ -1251,7 +1251,7 @@ algorithm
         tmpstr = "typedef void " +& fn_name +& ";";
         out = {tmpstr};
       then listAppend(out,{str});
-    case (DAE.VAR(ty = (DAE.T_FUNCTION(args, ty),SOME(path))))
+    case (DAE.VAR(ty = (DAE.T_FUNCTION(args,ty,_),SOME(path))))
       equation
         fn_name = generateReturnType(path);
         str = generateFunctionRefFnPtr(args, path);
@@ -2046,7 +2046,7 @@ algorithm
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "modelica_complex";
     case ((DAE.T_COMPLEX(ClassInf.TYPE(_),{},SOME(ty),_),_)) then generateSimpleType(ty);
 
-    case ((DAE.T_FUNCTION(_,_),_)) then "modelica_fnptr";
+    case ((DAE.T_FUNCTION(_,_,_),_)) then "modelica_fnptr";
       // Any MetaModelica type
     case ty
       equation
@@ -2466,8 +2466,8 @@ algorithm
       then {};
     case (fpath,ty1)
       equation
-        (DAE.T_FUNCTION(funcArgs1,retType1),_) = ty1;
-        (ty2 as (DAE.T_FUNCTION(funcArgs2,retType2),_)) = Types.makeFunctionPolymorphicReference(ty1);
+        (DAE.T_FUNCTION(funcArgs1,retType1,_),_) = ty1;
+        (ty2 as (DAE.T_FUNCTION(funcArgs2,retType2,_),_)) = Types.makeFunctionPolymorphicReference(ty1);
         tnr = 1;
         ret_type_str = generateReturnType(fpath);
         ret_type_str_box = ret_type_str +& "boxed";
@@ -8832,6 +8832,7 @@ algorithm
         /* Not records */
     case (DAE.TYPES_VAR(name = name, type_ = ty),inRecordBase)
       equation
+        failure((DAE.T_COMPLEX(complexVarLst = complexVarLst, complexClassType = ClassInf.RECORD(_)),_) = ty);
         type_arg = generateVarType(inVar);
         ref_arg = makeRecordRef(name,inRecordBase);
         outArgs = Util.stringDelimitList({type_arg,ref_arg}, ",");

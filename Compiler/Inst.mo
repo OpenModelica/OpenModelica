@@ -1046,8 +1046,8 @@ algorithm
         dae2 = Connect.equations(csets_1,pre);
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
         dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
-        dae = Util.listFlatten({dae1_1,dae2,dae3});          
-        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint) ; 
+        dae = Util.listFlatten({dae1_1,dae2,dae3});
+        ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c); 
         // update Enumerationtypes in environment
 //        (cache,env_4) = updateEnumerationEnvironment(cache,env_3,ty,c,ci_state_1);      
         //print("\n---- DAE ----\n"); DAE.printDAE(DAE.DAE(dae));  //Print out flat modelica
@@ -1444,7 +1444,7 @@ algorithm
         (cache,typename) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         ty = mktypeWithArrays(typename, ci_state_1, tys, bc_ty);
         */
-        ty = mktypeWithArrays(fq_class, ci_state_1, tys, bc_ty);
+        ty = mktypeWithArrays(fq_class, ci_state_1, tys, bc_ty, c);
       then
         (cache,env_3,ih,store,dae,Connect.SETS({},crs,dc,oc),ty,tys,ci_state_1);
         
@@ -1716,7 +1716,7 @@ algorithm
         dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys1),NONE));
-        ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint) ; 
+        ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c); 
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);  
         tys2 = listAppend(tys,tys1);       
@@ -2843,7 +2843,7 @@ algorithm
         Debug.traceln("- Inst.instClassdef failed");
         s = Env.printEnvPathStr(env);
         Debug.traceln("  class :" +& s);
-        Debug.traceln("  Env :" +& Env.printEnvStr(env));
+        // Debug.traceln("  Env :" +& Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;
@@ -3966,7 +3966,7 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Restriction re,r;
-      Boolean prot,enc2;
+      Boolean prot,enc2,isPackage;
       InstDims inst_dims;
       SCode.Class c;
       String cn2,cns,scope_str,className,baseClassName;
@@ -3991,23 +3991,20 @@ algorithm
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
-		    lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";
+		    lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
 	      /* 
 	       Since partial instantiation is done in lookup, we need to add inherited classes here.
 	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
 	       base class context (since we do not have any element to find it in), the class must be added 
 	       to the environment here.
-	      */	      
+	      */
         cdefelts2 = classdefElts2(extcomps);
         (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
                                              lst_constantEls, lst_constantEls, {}, 
                                              inst_dims, false);
-        (cache,env3,ih,_,_,_,ci_state2,_,_) = 
-           instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls, 
-                          inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
       then
-        (cache,env3,ih,ci_state2);
+        (cache,env3,ih,ci_state1);
     
     /* Short class definition */
     /* This rule describes how to instantiate a derived class definition */ 
@@ -6703,7 +6700,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGr
 				// Collect dimensions
         p1 = Absyn.IDENT(n);
         p1 = Prefix.prefixPath(p1,pre);
-        str = Absyn.pathString(p1);         
+        str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
         (cache,(dims_1 as (_ :: _)),cl) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
         attr = propagateClassPrefix(attr,pre);
@@ -6872,7 +6869,7 @@ algorithm
           SCode.ATTR(flowPrefix = flowPrefix,streamPrefix=streamPrefix,
                      accesibility = acc,variability = (vt as SCode.CONST()),direction = dir),
           prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,graph) 
-      equation 
+      equation
         idxs_1 = listReverse(idxs);
         pre_1 = Prefix.prefixAdd(n, idxs_1, pre,vt);
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) = instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
@@ -7223,7 +7220,7 @@ algorithm
       equation
 				true = RTOpts.debugFlag("failtrace");
         id = SCode.printClassStr(inClass);
-        Debug.fprintl("failtrace", {"Inst.getUsertypeDimensions failed: ", id, "\n"});
+        Debug.traceln("Inst.getUsertypeDimensions failed: " +& id);
       then fail();
   end matchcontinue;
 end getUsertypeDimensions;
@@ -9080,12 +9077,13 @@ algorithm
       list<SCode.Element> elts;
       Env.Cache cache;
       InstanceHierarchy ih;
+      list<SCode.Annotation> annotationLst;
 
-    /* The function type can be determined without the body. */
+    /* The function type can be determined without the body. Annotations need to be preserved though. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
-                                   classDef = SCode.PARTS(elementLst = elts,externalDecl=extDecl))) 
+                                   classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl))) 
       equation 
-        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,{},NONE()));
+        stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()));
         (cache,env_1,ih,_) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
         (cache,env_1,ih);
@@ -9149,7 +9147,7 @@ algorithm
       list<Absyn.Path> fns;
       Env.Cache cache;
       InstanceHierarchy ih;
-      Boolean partialPrefix;
+      Boolean partialPrefix,isInline;
       
     case (cache,env,ih,_,{}) then (cache,env,ih,{});
 
@@ -9157,11 +9155,11 @@ algorithm
     case (cache,env,ih,overloadname,(fn :: fns))  
       equation 
         (cache,(c as SCode.CLASS(id,partialPrefix,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache, env, fn, true);
-        (cache,_,ih,_,dae,_,(DAE.T_FUNCTION(args,tp),_),st,_,_) = 
+        (cache,_,ih,_,dae,_,(DAE.T_FUNCTION(args,tp,isInline),_),st,_,_) = 
            instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         (cache,fpath) = makeFullyQualified(cache,env, Absyn.IDENT(overloadname));
         (cache,ovlfpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(id));
-        ty = (DAE.T_FUNCTION(args,tp),SOME(ovlfpath));
+        ty = (DAE.T_FUNCTION(args,tp,isInline),SOME(ovlfpath));
         env_1 = Env.extendFrameT(env, overloadname, ty);
         (cache,env_2,ih,dae1) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
       then
@@ -10044,7 +10042,7 @@ algorithm
       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
      
     /* MetaModelica extensions */
-    case (vn,(tty as DAE.T_FUNCTION(_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,(tty as DAE.T_FUNCTION(_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
       local
         DAE.TType tty;
         Absyn.Path path;
@@ -12976,9 +12974,10 @@ public function mktype
   input list<DAE.Var> inTypesVarLst;
   input Option<DAE.Type> inTypesTypeOption;
   input DAE.EqualityConstraint inEqualityConstraint;
+  input SCode.Class inClass;
   output DAE.Type outType;
 algorithm 
-  outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inEqualityConstraint)
+  outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inEqualityConstraint,inClass)
     local
       Option<Absyn.Path> somep;
       Absyn.Path p;
@@ -12987,27 +12986,28 @@ algorithm
       ClassInf.State st;
       String name;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
-    case (p,ClassInf.TYPE_INTEGER(string = _),v,_,_) 
+      SCode.Class cl;
+    case (p,ClassInf.TYPE_INTEGER(string = _),v,_,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_INTEGER(v),somep));
-    case (p,ClassInf.TYPE_REAL(string = _),v,_,_)
+    case (p,ClassInf.TYPE_REAL(string = _),v,_,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_REAL(v),somep));
-    case (p,ClassInf.TYPE_STRING(string = _),v,_,_)
-      equation 
+    case (p,ClassInf.TYPE_STRING(string = _),v,_,_,_)
+      equation
         somep = getOptPath(p);
       then
         ((DAE.T_STRING(v),somep));
-    case (p,ClassInf.TYPE_BOOL(string = _),v,_,_)
-      equation 
+    case (p,ClassInf.TYPE_BOOL(string = _),v,_,_,_)
+      equation
         somep = getOptPath(p);
       then
         ((DAE.T_BOOL(v),somep));
-    case (p,ClassInf.TYPE_ENUM(string = _),_,_,_)
+    case (p,ClassInf.TYPE_ENUM(string = _),_,_,_,_)
 //        local SCode.Class sclass; list<SCode.Element> eLst; list<String> names;
       equation 
         
@@ -13017,25 +13017,25 @@ algorithm
         ((DAE.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),somep));
 //        ((DAE.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */        
-    case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,_) 
-      equation 
-        functype = Types.makeFunctionType(p, vl);
+    case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,_,cl)
+      equation
+        functype = Types.makeFunctionType(p, vl, SCodeUtil.isInlineFunc(cl));
       then
         functype;
-    case (p,ClassInf.ENUMERATION(string = name),v1,_,_)
+    case (p,ClassInf.ENUMERATION(string = name),v1,_,_,_)
       equation 
         enumtype = Types.makeEnumerationType(p, v1);
       then
         enumtype;
     /* MetaModelica extension */
-    case (p,ClassInf.META_TUPLE(_),_,SOME(bc2),_)local DAE.Type bc2; equation then bc2;
-    case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
-    case (p,ClassInf.META_LIST(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
-    case (p,ClassInf.META_POLYMORPHIC(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
-    case (p,ClassInf.META_ARRAY(_),_,SOME(bc2),_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_TUPLE(_),_,SOME(bc2),_,_)local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_,_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_LIST(_),_,SOME(bc2),_,_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_POLYMORPHIC(_),_,SOME(bc2),_,_) local DAE.Type bc2; equation then bc2;
+    case (p,ClassInf.META_ARRAY(_),_,SOME(bc2),_,_) local DAE.Type bc2; equation then bc2;
     /*------------------------*/
 
-    case (p,st,l,bc,equalityConstraint)
+    case (p,st,l,bc,equalityConstraint,_)
       local
         DAE.EqualityConstraint equalityConstraint;
       equation 
@@ -13056,9 +13056,10 @@ protected function mktypeWithArrays
   input ClassInf.State inState;
   input list<DAE.Var> inTypesVarLst;
   input Option<DAE.Type> inTypesTypeOption;
+  input SCode.Class inClass;
   output DAE.Type outType;
 algorithm 
-  outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption)
+  outType := matchcontinue (inPath,inState,inTypesVarLst,inTypesTypeOption,inClass)
     local
       Absyn.Path p;
       ClassInf.State ci,st;
@@ -13066,57 +13067,58 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> tp,functype,enumtype;
       Option<Absyn.Path> somep;
       String name;
+      SCode.Class cl;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
-    case (p,ci,vs,SOME(tp))
+    case (p,ci,vs,SOME(tp),_)
       equation 
         true = Types.isArray(tp);
         failure(ClassInf.isConnector(ci));
       then
         tp;
-    case (p,ClassInf.TYPE_INTEGER(string = _),v,_)
+    case (p,ClassInf.TYPE_INTEGER(string = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_INTEGER(v),somep));
-    case (p,ClassInf.TYPE_REAL(string = _),v,_)
+    case (p,ClassInf.TYPE_REAL(string = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_REAL(v),somep));
-    case (p,ClassInf.TYPE_STRING(string = _),v,_)
+    case (p,ClassInf.TYPE_STRING(string = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_STRING(v),somep));
-    case (p,ClassInf.TYPE_BOOL(string = _),v,_)
+    case (p,ClassInf.TYPE_BOOL(string = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_BOOL(v),somep));
-    case (p,ClassInf.TYPE_ENUM(string = _),_,_)
+    case (p,ClassInf.TYPE_ENUM(string = _),_,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_ENUMERATION(SOME(0),p,{},{}),somep));
 //        ((DAE.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */ 
-    case (p,(st as ClassInf.FUNCTION(string = name)),vl,_)
+    case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,cl)
       equation 
-        functype = Types.makeFunctionType(p, vl);
+        functype = Types.makeFunctionType(p, vl, SCodeUtil.isInlineFunc(cl));
       then
         functype;
-    case (p,ClassInf.ENUMERATION(string = name),v1,_)
+    case (p,ClassInf.ENUMERATION(string = name),v1,_,_)
       equation 
         enumtype = Types.makeEnumerationType(p, v1);
       then
         enumtype;
-    case (p,st,l,bc)
+    case (p,st,l,bc,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_COMPLEX(st,l,bc,NONE /* HN ??? */),somep));
 
-    case (p,st,l,bc)
+    case (p,st,l,bc,_)
       equation 
         print("Inst.mktypeWithArrays failed\n");
       then fail();

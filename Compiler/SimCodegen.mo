@@ -9073,7 +9073,7 @@ algorithm
   outPath:=
   matchcontinue (inElem)
     local Absyn.Path path;
-    case DAE.VAR(ty = ((DAE.T_FUNCTION(_,_)),SOME(path))) then path;
+    case DAE.VAR(ty = ((DAE.T_FUNCTION(_,_,_)),SOME(path))) then path;
   end matchcontinue;
 end getFunctionRefVarPath;
 

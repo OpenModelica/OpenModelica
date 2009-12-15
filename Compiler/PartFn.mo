@@ -1089,13 +1089,14 @@ algorithm
       list<DAE.FuncArg> args,args_1,args_2,new_args;
       DAE.Type retType;
       Option<Absyn.Path> po;
-    case((DAE.T_FUNCTION(args,retType),po),vars)
+      Boolean isInline;
+    case((DAE.T_FUNCTION(args,retType,isInline),po),vars)
       equation
         new_args = Types.makeFargsList(vars);
         args_1 = Util.listSelect(args,isNotFunctionType);
         args_2 = listAppend(args_1,new_args);
       then
-        ((DAE.T_FUNCTION(args_2,retType),po));
+        ((DAE.T_FUNCTION(args_2,retType,isInline),po));
     case(_,_)
       equation
         Debug.fprintln("failtrace","- PartFn.buildNewFunctionType failed");

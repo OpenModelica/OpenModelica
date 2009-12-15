@@ -1102,7 +1102,7 @@ algorithm
   local String unitStr; UnitAbsyn.Unit unit; Integer indx,indx2; Boolean unspec;
     list<DAE.Type> typeLst;
     /* Real */
-    case((DAE.T_FUNCTION(_,functp),_),funcInstId,funcCallExp,store) equation
+    case((DAE.T_FUNCTION(_,functp,_),_),funcInstId,funcCallExp,store) equation
       unitStr = getUnitStr(functp);
       //print("Got unit='"+&unitStr+&"'\n");
       unspec = 0 == System.strcmp(unitStr,"");
@@ -1114,7 +1114,7 @@ algorithm
       then ({UnitAbsyn.LOC(indx2,funcCallExp)},{UnitAbsyn.EQN(UnitAbsyn.LOC(indx2,funcCallExp),UnitAbsyn.LOC(indx,funcCallExp),funcCallExp)},store);
       
     /* Tuple */
-    case((DAE.T_FUNCTION(_,(DAE.T_TUPLE(typeLst),_)),_),funcInstId,funcCallExp,store) equation
+    case((DAE.T_FUNCTION(_,(DAE.T_TUPLE(typeLst),_),_),_),funcInstId,funcCallExp,store) equation
       (terms,extraTerms,store) = buildTupleResultTerms(typeLst,funcInstId,funcCallExp,store);
      then (terms,extraTerms,store);
     case(_,_,_,_) equation
@@ -1178,7 +1178,7 @@ protected function buildFuncTypeStores "help function to buildTermCall"
 algorithm
   (outStore,indxs) := matchcontinue(funcType,funcInstId,store)
   local list<DAE.FuncArg>  args; DAE.Type tp;
-    case((DAE.T_FUNCTION(args,_),_),funcInstId,store) equation
+    case((DAE.T_FUNCTION(args,_,_),_),funcInstId,store) equation
       (store,indxs) = buildFuncTypeStores2(args,funcInstId,store);
     then (store,indxs);
     case(tp,_,_) equation

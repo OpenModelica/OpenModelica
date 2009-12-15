@@ -745,9 +745,9 @@ algorithm
         Debug.traceln(Dump.printExpStr(e));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
         
-        Debug.traceln("\n env : ");        
-        Debug.traceln(Env.printEnvStr(env));
-        Debug.traceln("\n----------------------- FINISHED ENV ------------------------\n");
+        //Debug.traceln("\n env : ");        
+        //Debug.traceln(Env.printEnvStr(env));
+        //Debug.traceln("\n----------------------- FINISHED ENV ------------------------\n");
         */
       then
         fail();
@@ -1908,11 +1908,12 @@ algorithm
       DAE.Type resType,tty,tty_1;
       list<DAE.FuncArg> args,args_1;
       Option<Absyn.Path> po;
+      Boolean isInline;
     case(0,tty) then tty;
-    case(n,(DAE.T_FUNCTION(args,resType),po))
+    case(n,(DAE.T_FUNCTION(args,resType,isInline),po))
       equation
         args_1 = Util.listRemoveNth(args,listLength(args) - 1);
-        tty = (DAE.T_FUNCTION(args_1,resType),po);
+        tty = (DAE.T_FUNCTION(args_1,resType,isInline),po);
         tty_1 = stripExtraArgsFromType(n-1,tty);
       then
         tty_1;
@@ -7933,7 +7934,7 @@ algorithm
         String lastId;
         list<Env.Frame> recordEnv;
       equation 
-        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1) 
+        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_)),false),_)),env_1) 
         	= Lookup.lookupType(cache,env, fn, true);
         
         (_,cl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
@@ -7992,7 +7993,7 @@ algorithm
         String str2;
         list<DAE.Type> ltypes;
         list<String> lstr;
-      equation 
+      equation
         (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache, env, fn) 
         "PR. A function can have several types. Taking an array with
          different dimensions as parameter for example. Because of this we
@@ -8001,13 +8002,12 @@ algorithm
          functiontype of several possibilites. The solution is to send
          in the function type of the user function and check both the
          function name and the function\'s type." ;
-        (cache,args_1,constlist,restype,functype,vect_dims,slots) = 
+        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots) = 
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl) 
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
-        inline = isInlineFunc(fn_1,cache,env);
         /* const = Util.listReduce(constlist, Types.constAnd); */
         const = calculateConstantness(constlist);
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
@@ -8084,108 +8084,6 @@ algorithm
         fail();
   end matchcontinue;
 end elabCallArgs;
-
-// stefan
-protected function isInlineFunc
-"function: isInlineFunc
-  looks up a function and returns whether or not it is an inline function"
-  input Absyn.Path inPath;
-  input Env.Cache inCache;
-  input Env.Env inEnv;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue(inPath,inCache,inEnv)
-    local
-      Absyn.Path p;
-      Env.Cache c;
-      Env.Env env;
-      SCode.Class cl;
-    case(p,c,env)
-      equation
-        (c,cl,env) = Lookup.lookupClass(c,env,p,true);
-        true = isInlineFunc2(cl);
-      then
-        true;
-    case(_,_,_) then false;
-  end matchcontinue;
-end isInlineFunc;
-
-// stefan
-protected function isInlineFunc2
-"function: isInlineFunc2
-  helper function to isInlineFunc"
-  input SCode.Class inClass;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue(inClass)
-    local
-      list<SCode.Annotation> anns;
-      Boolean res;
-      
-    case(SCode.CLASS(classDef = SCode.PARTS(annotationLst = anns)))
-      equation
-        res = isInlineFunc3(anns);
-      then
-        res;
-    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(annotationLst = anns)))
-      equation
-        res = isInlineFunc3(anns);
-      then
-        res;
-    case(_) then false;
-  end matchcontinue;
-end isInlineFunc2;
-
-// stefan
-protected function isInlineFunc3
-"function: isInlineFunc3
-  helper function to isInlineFunc2"
-  input list<SCode.Annotation> inAnnotationList;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue(inAnnotationList)
-    local
-      list<SCode.Annotation> cdr;
-      list<SCode.SubMod> smlst;
-      Boolean res;
-    case({}) then false;
-    case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
-      equation
-        true = isInlineFunc4(smlst);
-      then
-        true;
-    case(_ :: cdr)
-      equation
-        res = isInlineFunc3(cdr);
-      then
-        res;
-  end matchcontinue;
-end isInlineFunc3;
-
-// stefan
-protected function isInlineFunc4
-"function: isInlineFunc4
-  helper function to isInlineFunc3"
-  input list<SCode.SubMod> inSubModList;
-  output Boolean outBoolean;
-algorithm
-  outBoolean := matchcontinue(inSubModList)
-    local
-      list<SCode.SubMod> cdr;
-      Boolean res;
-    case({}) then false;
-    case(SCode.NAMEMOD("Inline",SCode.MOD(_,_,_,SOME((Absyn.BOOL(true),_)))) :: _)
-      equation
-        res = true;
-      then
-        res;
-    case(_ :: cdr)
-      equation
-        res = isInlineFunc4(cdr);
-      then
-        res;
-  end matchcontinue;
-end isInlineFunc4;
 
 protected function addDefaultArgs "adds default values (from slots) to argument list of function call.
 This is needed because when generating C-code all arguments must be present in the function call. 
@@ -8588,19 +8486,19 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t,restype;
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> params;
       list<tuple<DAE.TType, Option<Absyn.Path>>> trest;
-      Boolean impl;
+      Boolean impl, isInline;
       Env.Cache cache;
       Types.PolymorphicBindings polymorphicBindings;
       Option<Absyn.Path> p;
 
     // We found a match. 
-    case (cache,env,args,nargs,((t as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype),p)) :: trest),checkTypes,impl) 
+    case (cache,env,args,nargs,((t as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype, inline = isInline),p)) :: trest),checkTypes,impl) 
       equation 
         slots = makeEmptySlots(params);
         (cache,args_1,newslots,clist,polymorphicBindings) = elabInputArgs(cache, env, args, nargs, slots, checkTypes, impl, {});
         dims = slotsVectorizable(newslots);
         restype = Types.fixPolymorphicRestype(restype, polymorphicBindings);
-        t = (DAE.T_FUNCTION(params,restype),p);
+        t = (DAE.T_FUNCTION(params,restype,isInline),p);
         t = createActualFunctype(t,newslots,checkTypes) "only created when not checking types for error msg";
       then
         (cache,args_1,clist,restype,t,dims,newslots);
@@ -8630,13 +8528,15 @@ protected function createActualFunctype
   output DAE.Type outTp;
 algorithm
   outTp := matchcontinue(tp,slots,checkTypes)
-    local Option<Absyn.Path> optPath;
+    local
+      Option<Absyn.Path> optPath;
       list<DAE.FuncArg> slotParams,params; DAE.Type restype;
+      Boolean isInline;
     case(tp,_,true) then tp;
       /* When not checking types, create function type by looking at the filled slots */
-    case(tp as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype),optPath),slots,false) equation
+    case(tp as (DAE.T_FUNCTION(funcArg = params,funcResultType = restype,inline = isInline),optPath),slots,false) equation
       slotParams = funcargLstFromSlots(slots);
-    then ((DAE.T_FUNCTION(slotParams,restype),optPath));      
+    then ((DAE.T_FUNCTION(slotParams,restype,isInline),optPath));
   end matchcontinue;  
 end createActualFunctype;
 

@@ -930,7 +930,7 @@ algorithm
         DAE.ET_METAOPTION(ety);
     
     //?? loss of information
-    case ((DAE.T_FUNCTION(_,_),_)) then DAE.ET_FUNCTION_REFERENCE_FUNC;
+    case ((DAE.T_FUNCTION(_,_,_),_)) then DAE.ET_FUNCTION_REFERENCE_FUNC;
     case ((DAE.T_UNIONTYPE(_),_)) then DAE.ET_UNIONTYPE;
     case ((DAE.T_POLYMORPHIC(_),_)) then DAE.ET_POLYMORPHIC;
     case ((DAE.T_BOXED(ty),_))
@@ -10573,7 +10573,7 @@ algorithm
   outPath:=
   matchcontinue (inElem)
     local Absyn.Path path;
-    case DAE.VAR(ty = ((DAE.T_FUNCTION(_,_)),SOME(path))) then path;
+    case DAE.VAR(ty = ((DAE.T_FUNCTION(_,_,_)),SOME(path))) then path;
   end matchcontinue;
 end getFunctionRefVarPath;
 
