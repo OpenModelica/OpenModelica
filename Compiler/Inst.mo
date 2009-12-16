@@ -9255,13 +9255,13 @@ algorithm (cr,cond) := matchcontinue(m)
     DAE.EqMod eq;
     DAE.Exp e;
     Option<tuple<Absyn.Exp,Boolean>> aoe;
-  case(DAE.NAMEMOD(inputVar,(mod = DAE.MOD(eqModOption = SOME(eq as DAE.TYPED(modifierAsExp=e))))))
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = SOME(eq as DAE.TYPED(modifierAsExp=e)))))
     equation
       then (inputVar,DAE.NO_DERIVATIVE(e));
-  case(DAE.NAMEMOD(inputVar,(mod = DAE.MOD(eqModOption = NONE))))
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE)))
     equation 
     then (inputVar,DAE.NO_DERIVATIVE(DAE.ICONST(1)));
-  case(DAE.NAMEMOD(inputVar,(mod = DAE.MOD(eqModOption = NONE)))) // zeroderivative
+  case(DAE.NAMEMOD(inputVar,mod = DAE.MOD(eqModOption = NONE))) // zeroderivative
   then (inputVar,DAE.ZERO_DERIVATIVE);
     
   case(_) then ("",DAE.ZERO_DERIVATIVE);
