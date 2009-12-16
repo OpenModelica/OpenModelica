@@ -90,6 +90,22 @@ algorithm
   len := listLength(lst);
 end listLengthOptionInt;
 
+public
+function listLengthMatrix1
+  input list<list<tuple<DAE.Exp,Boolean>>> lst;
+  output Integer len;
+algorithm
+  len := listLength(lst);
+end listLengthMatrix1;
+
+public
+function listLengthMatrix2
+  input list<tuple<DAE.Exp,Boolean>> lst;
+  output Integer len;
+algorithm
+  len := listLength(lst);
+end listLengthMatrix2;
+
 
 /************** FUNCTIONS ***********/
 /* a type to use for function return, parameters and variable declarations is based on Exp.Type */

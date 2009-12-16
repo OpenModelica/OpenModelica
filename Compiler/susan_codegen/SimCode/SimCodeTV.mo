@@ -19,6 +19,16 @@ package SimCode
     input list<Option<Integer>> lst;
     output Integer len;
   end listLengthOptionInt;
+
+  function listLengthMatrix1
+    input list<list<tuple<DAE.Exp,Boolean>>> lst;
+    output Integer len;
+  end listLengthMatrix1;
+
+  function listLengthMatrix2
+    input list<tuple<DAE.Exp,Boolean>> lst;
+    output Integer len;
+  end listLengthMatrix2;
   
   uniontype Context
     record SIMULATION end SIMULATION;
@@ -590,6 +600,20 @@ package DAE
       Exp exp;
       list<Statement> statementLst;
     end STMT_FOR;
+    record STMT_WHILE
+      Exp exp;
+      list<Statement> statementLst;
+    end STMT_WHILE;
+    record STMT_WHEN
+      Exp exp;
+      list<Statement> statementLst;
+      Option<Statement> elseWhen;
+      list<Integer> helpVarIndices;
+    end STMT_WHEN;
+    record STMT_ASSERT
+      Exp cond;
+      Exp msg;
+    end STMT_ASSERT;
   end Statement;
 
   uniontype Else

@@ -815,6 +815,7 @@ int bound_parameters()
 }
 >>
 
+// TODO: Is the -1 thing really correct? It seems to work.
 functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
                                    list<ComponentRef> discreteModelVars) ::=
 <<
@@ -823,7 +824,9 @@ int checkForDiscreteVarChanges()
   int needToIterate = 0;
 
   <helpVarInfo of (id1, exp, id2):
-    'if (edge(localData-\>helpVars[<id1>])) AddEvent(<id2> + localData-\>nZeroCrossing);' "\n">
+    if id2 is not -1 then
+    'if (edge(localData-\>helpVars[<id1>])) AddEvent(<id2> + localData-\>nZeroCrossing);'
+  "\n">
 
   <discreteModelVars of var:
     'if (change(<cref(var)>)) { needToIterate = 1; }' "\n">
@@ -1325,9 +1328,90 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
       }
     } /* end for*/
     >>
+  case STMT_WHILE then
+    # preExp = ""
+    # var = daeExp(exp, context, preExp, varDecls)
+    <<
+    while (1) {
+      <preExp>
+      if (!<var>) break;
+      <statementLst: algStatement(it, context, varDecls) \n>
+    }
+    >>
+  case STMT_ASSERT then
+    # preExp = ""
+    # condVar = daeExp(cond, context, preExp, varDecls)
+    # msgVar = daeExp(msg, context, preExp, varDecls)
+    <<
+    <preExp>
+    MODELICA_ASSERT(<condVar>, <msgVar>);
+    >>
+  case when as STMT_WHEN then if context is SIMULATION
+                         then algStatementWhen(when, context, varDecls)
+                         else ""
   case _ then "/* not implemented alg statement*/"
 
-    
+// TODO: This and all help templates it calls is really ugly. It is largely due
+// to the STMT_WHEN structure. It is not really suited for susan.
+algStatementWhen(DAE.Statement, Context context, Text varDecls) ::=
+case STMT_WHEN then
+  # preIf = algStatementWhenPre(it, varDecls)
+  # statements = (statementLst: '<algStatement(it, createSimulationContext(), varDecls)>' "\n")
+  # else = algStatementWhenElse(elseWhen, varDecls)
+  <<
+  <preIf>
+  if (<helpVarIndices: 'edge(localData-\>helpVars[<it>])' " || ">) {
+    <statements>
+  }
+  <else>
+  >>
+
+algStatementWhenPre(DAE.Statement, Text varDecls) ::=
+case STMT_WHEN(exp=ARRAY(array=el)) then
+  # restPre = if elseWhen is SOME(ew)
+              then algStatementWhenPre(ew, varDecls) else ""
+  # preExp = ""
+  # fooRes = foo(el, helpVarIndices, preExp, varDecls)
+  <<
+  <preExp>
+  <fooRes>
+  <restPre>
+  >>
+case when as STMT_WHEN then
+  match helpVarIndices
+  case {i} then
+    # restPre = if when.elseWhen is SOME(ew)
+                then algStatementWhenPre(ew, varDecls) else ""
+    # preExp = ""
+    # res = daeExp(when.exp, createSimulationContext(), preExp, varDecls)
+    <<
+    <preExp>
+    localData-\>helpVars[<i>] = <res>;
+    <restPre>
+    >>
+
+algStatementWhenElse(Option<DAE.Statement>, Text varDecls) ::=
+case SOME(when as STMT_WHEN) then
+  # statements = (when.statementLst: '<algStatement(it, createSimulationContext(), varDecls)>' "\n")
+  # else = algStatementWhenElse(when.elseWhen, varDecls)
+  <<
+  else if (<when.helpVarIndices: 'edge(localData-\>helpVars[<it>])' " || ">) {
+    <statements>
+  }
+  <else>
+  >>
+
+foo(list<Exp> exps, list<Integer> ints, Text preExp, Text varDecls) ::=
+case {} then ""
+case (firstExp :: restExps) then
+  match ints
+  case (firstInt :: restInts) then
+    # rest = foo(restExps, restInts, preExp, varDecls)
+    <<
+    localData-\>helpVars[<firstInt>] = <daeExp(firstExp, createSimulationContext(), preExp, varDecls)>;
+    <rest>
+    >>
+
 elseExpr(DAE.Else, Context context, Text varDecls) ::= 
   case NOELSE then ()
   case ELSEIF then
@@ -1372,13 +1456,13 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case BINARY     then daeExpBinary(it, context, preExp, varDecls)
   case UNARY      then daeExpUnary(it, context, preExp, varDecls)
   case LBINARY    then daeExpLbinary(it, context, preExp, varDecls)
-  case LUNARY     then "LUNARY_NOT_IMPLEMENTED"
+  case LUNARY     then daeExpLunary(it, context, preExp, varDecls)
   case RELATION   then daeExpRelation(it, context, preExp, varDecls)
   case IFEXP      then daeExpIf(it, context, preExp, varDecls)
   case CALL       then daeExpCall(it, context, preExp, varDecls)
   // PARTEVALFUNCTION
   case ARRAY      then daeExpArray(it, context, preExp, varDecls)
-  case MATRIX     then "MATRIX_NOT_IMPLEMENTED"
+  case MATRIX     then daeExpMatrix(it, context, preExp, varDecls)
   case RANGE      then "RANGE_NOT_IMPLEMENTED"
   case TUPLE      then "TUPLE_NOT_IMPLEMENTED"
   case CAST       then '((<expType(ty)>)<daeExp(exp, context, preExp, varDecls)>)'
@@ -1429,6 +1513,12 @@ case LBINARY then
   case AND then '(<e1> && <e2>)'
   case OR  then '(<e1> || <e2>)'
   case _   then "daeExpLbinary:ERR"
+
+daeExpLunary(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case LUNARY then
+  # e = daeExp(exp, context, preExp, varDecls)
+  match operator
+  case NOT then '(!<e>)'
 
 daeExpUnary(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case UNARY then
@@ -1579,6 +1669,21 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # cast = if arg.ty is ET_INT then "(modelica_integer)" else ""
     # preExp += '<retVar> = <cast>pre(<cref(arg.componentRef)>);<\n>'
     '<retVar>'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="promote"), expLst={A, n}) then
+    # var1 = daeExp(A, context, preExp, varDecls)
+    # var2 = daeExp(n, context, preExp, varDecls)
+    # retType = '<typeStrFromExp(A)>'
+    # tvar = tempDecl(retType, varDecls)
+    # preExp += 'promote_alloc_<retType>(&<var1>, &<var2>, &<tvar>);<\n>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="transpose"), expLst={A}) then
+    # var1 = daeExp(A, context, preExp, varDecls)
+    # retType = '<typeStrFromExp(A)>'
+    # tvar = tempDecl(retType, varDecls)
+    # preExp += 'transpose_alloc_<retType>(&<var1>, &<tvar>);<\n>'
+    tvar
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
   case CALL(tuple_=false, ty=ET_NORETCALL) then
@@ -1612,6 +1717,51 @@ case ARRAY then
 # params = '<array of e: daeExp(e, context, preExp, varDecls) ", ">'
 # preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLengthExp(array)>, <params>);<\n>'
 '<arrayVar>'
+
+daeExpMatrix(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case MATRIX(scalar={{}}) then
+  // special case for empty matrix: create dimensional array Real[0,1]
+  # arrayTypeStr = expTypeArray(ty)
+  # tmp = tempDecl(arrayTypeStr, varDecls)
+  # preExp += 'alloc_<arrayTypeStr>(&<tmp>, 2, 0, 1);<\n>'
+  tmp
+case MATRIX(scalar={}) then
+  // special case for empty array: create dimensional array Real[0,1]
+  # arrayTypeStr = expTypeArray(ty)
+  # tmp = tempDecl(arrayTypeStr, varDecls)
+  # preExp += 'alloc_<arrayTypeStr>(&<tmp>, 2, 0, 1);<\n>'
+  tmp
+case m as MATRIX then
+  # arrayTypeStr = expType(m.ty)
+  # vars2 = ""
+  # promote = ""
+  # catAlloc = (m.scalar of row:
+                 # tmp = tempDecl(arrayTypeStr, varDecls)
+                 # vars = daeExpMatrixRow(row, arrayTypeStr, context, promote, varDecls)
+                 # vars2 += ', <tmp>'
+                 'cat_alloc_<arrayTypeStr>(2, &<tmp>, <listLengthMatrix2(row)><vars>);'
+               "\n")
+  # preExp += promote
+  # preExp += catAlloc
+  # preExp += "\n"
+  # tmp = tempDecl(arrayTypeStr, varDecls)
+  # preExp += 'cat_alloc_<arrayTypeStr>(2, &<tmp>, <listLengthMatrix1(m.scalar)><vars2>);<\n>'
+  tmp
+
+daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
+                Context context, Text preExp, Text varDecls) ::=
+# varLstStr = ""
+# preExp2 = (row of col as (e, b):
+               # scalarStr = if b then "scalar_" else ""
+               # scalarRefStr = if b then "" else "&"
+               # expVar = daeExp(e, context, preExp, varDecls)
+               # tmp = tempDecl(arrayTypeStr, varDecls)
+               # varLstStr += ', &<tmp>'
+               'promote_<scalarStr><arrayTypeStr>(<scalarRefStr><expVar>, 2, &<tmp>);'
+             "\n")
+# preExp2 += "\n"
+# preExp += preExp2
+varLstStr
 
 daeExpAsub(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case ASUB(exp=RANGE(ty=t), sub={idx}) then
