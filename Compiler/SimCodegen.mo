@@ -632,7 +632,7 @@ protected function generateExternalObjectDestructorCall2 "Help funciton to gener
   output Integer cg_out;
 algorithm
   (cg_out,outCFunction) := matchcontinue(cg_in,varName,destructor)
-    case (cg_in,varName,destructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)))
+    case (cg_in,varName,destructor as DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(ident=funcStr))}))
       local String vStr,funcStr,str;
         Codegen.CFunction cfunc;
       equation
@@ -806,7 +806,8 @@ protected function generateExternalObjectConstructorCall2 "Help funciton to gene
   output Integer cg_out;
 algorithm
   (outCFunction,cg_out) := matchcontinue(cg_in,varName,constructor,constrCallExp)
-    case (cg_in,varName,constructor as DAE.EXTFUNCTION(externalDecl = DAE.EXTERNALDECL(ident=funcStr)),DAE.CALL(expLst = args))
+    case (cg_in,varName,constructor as 
+          DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl = DAE.EXTERNALDECL(ident=funcStr))}),DAE.CALL(expLst = args))
       local
         String vStr,funcStr,argsStr,str;
         list<DAE.Exp> args;
@@ -6205,8 +6206,8 @@ protected function generateExternalObjectInclude
   output list<String> libs;
 algorithm
   (includes,libs) := matchcontinue(extObjCls)
-    case (DAELow.EXTOBJCLASS(constructor=DAE.EXTFUNCTION(externalDecl=DAE.EXTERNALDECL(language=ann1)),
-      											destructor=DAE.EXTFUNCTION(externalDecl=DAE.EXTERNALDECL(language=ann2))))
+    case (DAELow.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
+      											destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann2))})))
       local Option<Absyn.Annotation> ann1,ann2;
         list<String> includes1,libs1,includes2,libs2;
       equation
@@ -6247,35 +6248,39 @@ algorithm
       list<SCode.Class> p;
       Absyn.Path path;
       DAE.ExternalDecl extdecl;
+      DAE.InlineType inl;
+      Boolean partialPrefix;
+      String s;      
       
     case (_,{},allpaths) then {};  /* iterated over complete list */
       
-    case (p,(path :: paths),allpaths)  local String s; Boolean partialPrefix;
+    case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.FUNCTION(dAElist = dae,type_ = t,partialPrefix = partialPrefix)}) = fdae;
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,dae,t,partialPrefix)});
+        DAE.DAE(elementLst = {DAE.FUNCTION(functions = 
+          DAE.FUNCTION_DEF(dae)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl)}) = fdae;        
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl)});
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,dae,t,partialPrefix)});
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl)});
       then
         res;
         
     case (p,(path :: paths),allpaths)
-      local String s;
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.EXTFUNCTION(dAElist = dae,type_ = t,externalDecl = extdecl)}) = fdae;
-        patched_dae = DAE.DAE({DAE.EXTFUNCTION(path,dae,t,extdecl)});
+        DAE.DAE(elementLst = {DAE.FUNCTION(functions=
+          DAE.FUNCTION_EXT(dae,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl)}) = fdae;
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl)});
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.EXTFUNCTION(path,dae,t,extdecl)});
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl)});
       then
         res;
         
-    case (p,(path :: paths),allpaths)  local String s; Boolean partialPrefix;
+    case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstanceHierarchy, p, path);
         DAE.DAE(elementLst = {DAE.RECORD_CONSTRUCTOR(type_ = t)}) = fdae;
@@ -6288,7 +6293,6 @@ algorithm
         res;
         
     case (_,(path :: paths),_)
-      local String s;
       equation
         s = Absyn.pathString(path);
         s = "SimCodegen.generateFunctions3 failed: " +& s +& "\n";
@@ -9086,8 +9090,8 @@ algorithm
   outPath:=
   matchcontinue (inElem)
     local Absyn.Path path;
-    case DAE.FUNCTION(dAElist = DAE.DAE(out)) then out;
-    case DAE.EXTFUNCTION(dAElist = DAE.DAE(out)) then out;
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = DAE.DAE(out))}) then out;
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body = DAE.DAE(out))}) then out;
     case DAE.RECORD_CONSTRUCTOR(path = _) then {};
   end matchcontinue;
 end getFunctionElementsList;

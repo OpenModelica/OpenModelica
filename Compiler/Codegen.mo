@@ -1050,7 +1050,7 @@ algorithm
       
     /* Modelica functions External functions */
     case (DAE.FUNCTION(path = fpath,
-                       dAElist = DAE.DAE(elementLst = dae),
+                       functions = {DAE.FUNCTION_DEF(body = DAE.DAE(elementLst = dae))},
                        type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = false),rt) 
       equation
@@ -1122,17 +1122,16 @@ algorithm
     
     /* MetaModelica Partial Function. sjoelund */    
     case (DAE.FUNCTION(path = fpath,
-                       dAElist = DAE.DAE(elementLst = dae),
+                       functions = {DAE.FUNCTION_DEF(body = DAE.DAE(elementLst = dae))},
                        type_ = (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = true),rt) 
       then
         ({},{});
         
     /* Builtin functions - stefan */
-    case (DAE.EXTFUNCTION(path = fpath,
-                          dAElist = DAE.DAE(elementLst = orgdae),
-                          type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
-                          externalDecl = extdecl),rt)
+    case (DAE.FUNCTION(path = fpath,
+                       functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
       equation
         true = isBuiltinFunction(fpath);
         fn_name_str = generateFunctionName(fpath);
@@ -1156,10 +1155,9 @@ algorithm
       then (cfns, rt_1);
     
     /* External functions */
-    case (DAE.EXTFUNCTION(path = fpath,
-                          dAElist = DAE.DAE(elementLst = orgdae),
-                          type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
-                          externalDecl = extdecl),rt) 
+    case (DAE.FUNCTION(path = fpath,
+                       functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt) 
       equation
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
@@ -2486,7 +2484,7 @@ algorithm
         (funcArgExps2,_,_) = Types.matchTypeTuple(funcArgExps1, funcArgTypes2, funcArgTypes1, {}, Types.matchTypeRegular, true);
         isTuple = Types.isTuple(retType1);
         // Call the regular function
-        (callCfn,callVar,tnr) = generateExpression(DAE.CALL(fpath,funcArgExps2,isTuple,false,DAE.ET_OTHER,false),tnr,funContext);
+        (callCfn,callVar,tnr) = generateExpression(DAE.CALL(fpath,funcArgExps2,isTuple,false,DAE.ET_OTHER,DAE.NO_INLINE),tnr,funContext);
         resCref = DAE.CREF_IDENT(callVar,DAE.ET_OTHER,{});
         // Fix crefs for regular struct
         retTypeList1 = Types.resTypeToListTypes(retType1);
@@ -9951,7 +9949,7 @@ algorithm
       list<DAE.Type> tys;
       DAE.Type ft;
     case {} then {};
-    case DAE.FUNCTION(dAElist = DAE.DAE(els))::rest
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = DAE.DAE(els))})::rest
       equation
         paths1 = getUniontypePaths2(els);
         paths2 = getUniontypePaths2(rest);

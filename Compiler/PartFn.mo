@@ -466,7 +466,6 @@ protected function isFunctionElement
 algorithm
   outBoolean := matchcontinue(inElement)
     case(DAE.FUNCTION(path = _)) then true;
-    case(DAE.EXTFUNCTION(path = _)) then true;
     case(DAE.RECORD_CONSTRUCTOR(path = _)) then true;
     case(_) then false;
   end matchcontinue;
@@ -644,20 +643,20 @@ algorithm
         (cdr_1,dae) = elabElements(cdr,dae);
       then
         (DAE.COMP(i,DAE.DAE(elts_1)) :: cdr_1,dae);
-    case(DAE.FUNCTION(p,DAE.DAE(elts),fullType,pp,inlineType) :: cdr,dae)
+    case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(DAE.DAE(elts))},fullType,pp,inlineType) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
-        el = DAE.FUNCTION(p,DAE.DAE(elts_1),fullType,pp,inlineType);
+        el = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(DAE.DAE(elts_1))},fullType,pp,inlineType);
         dae = replaceFnInFnLst(el,dae);
       then
         (el :: cdr_1,dae);
-    case(DAE.EXTFUNCTION(p,DAE.DAE(elts),fullType,ed) :: cdr,dae)
+    case(DAE.FUNCTION(p,{DAE.FUNCTION_EXT(DAE.DAE(elts),ed)},fullType,pp,inlineType) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.EXTFUNCTION(p,DAE.DAE(elts),fullType,ed) :: cdr_1,dae);
+        (DAE.FUNCTION(p,{DAE.FUNCTION_EXT(DAE.DAE(elts_1 /* TODO! FIXME! was elts before */),ed)},fullType,pp,inlineType) :: cdr_1,dae);
     case(DAE.EXTOBJECTCLASS(p,el1,el2) :: cdr,dae)
       equation
         ({el1_1},dae) = elabElements({el1},dae);
@@ -1064,11 +1063,12 @@ algorithm
       Integer numArgs;
       list<DAE.Var> vars;
       DAE.InlineType inlineType;
-    case(bigfn as DAE.FUNCTION(current,DAE.DAE(fnparts),ty,pp,inlineType),smallfn,p,dae,numArgs)
+
+    case(bigfn as DAE.FUNCTION(current,{DAE.FUNCTION_DEF(DAE.DAE(fnparts))},ty,pp,inlineType),smallfn,p,dae,numArgs)
       equation
         (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs,current);
         ty = buildNewFunctionType(ty,vars);
-        res = DAE.FUNCTION(p,DAE.DAE(fnparts_1),ty,pp,inlineType);
+        res = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(DAE.DAE(fnparts_1))},ty,pp,inlineType);
       then
         res;
     case(_,_,_,_,_)
@@ -1092,7 +1092,7 @@ algorithm
       list<DAE.FuncArg> args,args_1,args_2,new_args;
       DAE.Type retType;
       Option<Absyn.Path> po;
-      Boolean isInline;
+      DAE.InlineType isInline;
     case((DAE.T_FUNCTION(args,retType,isInline),po),vars)
       equation
         new_args = Types.makeFargsList(vars);
@@ -1139,7 +1139,9 @@ algorithm
       String s;
       Integer numArgs;
       list<DAE.Var> vars;
-    case(parts,smallfn as DAE.FUNCTION(p,DAE.DAE(smallparts),_,_,_),dae,numArgs,current)
+    case(parts,smallfn as DAE.FUNCTION(path=p,
+         functions={DAE.FUNCTION_DEF(DAE.DAE(smallparts))}),
+         dae,numArgs,current)
       equation
         inputs = Util.listSelect(smallparts,isInput);
         s = Absyn.pathString(p);

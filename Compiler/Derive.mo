@@ -115,7 +115,8 @@ algorithm
       DAE.Operator op,rel;
       list<DAE.Exp> expl_1,expl,sub;
       Absyn.Path a;
-      Boolean b,c,inl;
+      Boolean b,c;
+      DAE.InlineType inl;
       Integer i;
       Absyn.Path fname;
       DAE.ExpType ty;
@@ -136,7 +137,7 @@ algorithm
       equation
         (_,_) = DAELow.getVar(cr, timevars);
       then
-        DAE.CALL(Absyn.IDENT("der"),{e},false,true,DAE.ET_REAL(),false);
+        DAE.CALL(Absyn.IDENT("der"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         
     case (DAE.CALL(path = fname,expLst = {e}),timevars)
       equation
@@ -144,7 +145,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars) "der(sin(x)) = der(x)cos(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("cos"),{e},false,true,DAE.ET_REAL(),false));
+          DAE.CALL(Absyn.IDENT("cos"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
 
     case (DAE.CALL(path = fname,expLst = {e}),timevars)
       equation
@@ -152,7 +153,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars) "der(cos(x)) = -der(x)sin(x)" ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sin"),{e},false,true,DAE.ET_REAL(),false)));
+          DAE.CALL(Absyn.IDENT("sin"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
 
         // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = fname,expLst = {e}),timevars)
@@ -161,7 +162,8 @@ algorithm
         e_1 = differentiateExpTime(e, timevars)  ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},false,true,DAE.ET_REAL(),false)));
+          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},
+                   false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
 
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (DAE.CALL(path = fname,expLst = {e}),timevars)
@@ -170,7 +172,8 @@ algorithm
         e_1 = differentiateExpTime(e, timevars)  ;
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},false,true,DAE.ET_REAL(),false));
+          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},
+                   false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
 
         // der(arctan(x)) = der(x)/1+x^2
       case (DAE.CALL(path = fname,expLst = {e}),timevars)
@@ -186,7 +189,7 @@ algorithm
         e_1 = differentiateExpTime(e, timevars) "der(exp(x)) = der(x)exp(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
-          DAE.CALL(fname,{e},false,true,DAE.ET_REAL(),false));
+          DAE.CALL(fname,{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
 
         case (DAE.CALL(path = fname,expLst = {e}),timevars)
       equation
@@ -269,7 +272,7 @@ algorithm
         e3_1 = differentiateExpTime(e3, tv);
       then
         DAE.IFEXP(e1,e2_1,e3_1);
-    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,tuple_ = b,builtin = c,ty=tp,inline=inl),tv)
+    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = expl,tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv)
       local DAE.ExpType tp;
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, tv);
@@ -355,7 +358,8 @@ algorithm
       DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
       DAE.ExpType tp; 
       Absyn.Path a,fname;
-      Boolean b,c,inl;
+      Boolean b,c;
+      DAE.InlineType inl;
       DAE.Operator op,rel;
       String e_str,s,s2,str;
       list<DAE.Exp> expl_1,expl,sub;
@@ -417,13 +421,15 @@ algorithm
         true  = Exp.expContains(e2,DAE.CREF(tv,tp));
         d_e2 = differentiateExp(e2, tv,differentiateIfExp);
         exp = DAE.BINARY(d_e2,DAE.MUL(tp),
-	        DAE.BINARY(e,DAE.MUL(tp),DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,false))
+	        DAE.BINARY(e,DAE.MUL(tp),DAE.CALL(Absyn.IDENT("log"),{e1},false,true,tp,DAE.NO_INLINE()))
           );
       then
         exp;
 
         /* ax^(a-1) */
-    case (DAE.BINARY(exp1 = (e1 as DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=ctp,inline=inl)),operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
+    case (DAE.BINARY(exp1 = (e1 as DAE.CALL(path = (a as Absyn.IDENT(name = "der")),
+          expLst = {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=ctp,inlineType=inl)),
+          operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp)
       local DAE.ExpType ctp;
       equation
         true = Exp.crefEqual(cr, tv) "der(e)^x => xder(e,2)der(e)^(x-1)" ;
@@ -464,7 +470,7 @@ algorithm
         DAE.UNARY(op,e_1);
 
         /* der(tanh(x)) = der(x) / cosh(x) */
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
      local  DAE.ExpType tp;
       equation
         isTanh(fname);
@@ -475,7 +481,7 @@ algorithm
           DAE.CALL(Absyn.IDENT("cosh"),{exp},b,c,tp,inl));
 
         /* der(cosh(x)) => der(x)sinh(x) */
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isCosh(fname);
@@ -486,7 +492,7 @@ algorithm
           DAE.CALL(Absyn.IDENT("sinh"),{exp},b,c,tp,inl));
 
         /* der(sinh(x)) => der(x)sinh(x) */
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isSinh(fname);
@@ -497,7 +503,7 @@ algorithm
           DAE.CALL(Absyn.IDENT("cosh"),{exp},b,c,tp,inl));
 
         /* sin(x) */
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isSin(fname);
@@ -507,7 +513,7 @@ algorithm
         DAE.BINARY(DAE.CALL(Absyn.IDENT("cos"),{exp},b,c,tp,inl),DAE.MUL(DAE.ET_REAL()),
           exp_1);
 
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isCos(fname);
@@ -526,7 +532,8 @@ algorithm
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},false,true,DAE.ET_REAL(),false)));
+          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},
+                   false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
 
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
@@ -536,7 +543,8 @@ algorithm
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
-          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},false,true,DAE.ET_REAL(),false));
+          DAE.CALL(Absyn.IDENT("sqrt"),{DAE.BINARY(DAE.RCONST(1.0),DAE.SUB(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e))},
+                   false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
 
         // der(arctan(x)) = der(x)/1+x^2
       case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
@@ -547,7 +555,7 @@ algorithm
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e)));
 
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isExp(fname) "exp(x) => x\'  exp(x)" ;
@@ -565,7 +573,7 @@ algorithm
         DAE.BINARY(exp_1,DAE.MUL(DAE.ET_REAL()),
           DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(DAE.ET_REAL()),exp));
 
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isLog10(fname) "log10(x) => x\'1/(xlog(10))" ;
@@ -577,7 +585,7 @@ algorithm
           DAE.BINARY(exp,DAE.MUL(DAE.ET_REAL()),
           DAE.CALL(Absyn.IDENT("log"),{DAE.RCONST(10.0)},b,c,tp,inl))));
 
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
@@ -589,7 +597,7 @@ algorithm
           DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),
           DAE.CALL(Absyn.IDENT("sqrt"),(exp :: {}),b,c,tp,inl))),DAE.MUL(DAE.ET_REAL()),exp_1);
 
-    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         isTan(fname) "tan x => 1/((cos x)^2)" ;
@@ -631,7 +639,8 @@ algorithm
         DAE.RELATION(e1_1,rel,e2_1);
 
         /* der(x) */
-    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inline=inl),tv,differentiateIfExp)
+    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = 
+          {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
         true = Exp.crefEqual(cr, tv);
@@ -643,7 +652,7 @@ algorithm
       equation
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
-        DAE.BINARY(DAE.CALL(Absyn.IDENT("sign"),{exp_1},false,true,DAE.ET_INT(),false),
+        DAE.BINARY(DAE.CALL(Absyn.IDENT("sign"),{exp_1},false,true,DAE.ET_INT(),DAE.NO_INLINE()),
           DAE.MUL(DAE.ET_REAL()),exp_1);
 
     case (DAE.ARRAY(ty = tp,scalar = b,array = expl),tv,differentiateIfExp)

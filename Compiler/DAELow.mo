@@ -1040,7 +1040,8 @@ algorithm
          *          
          * adrpo: after a bit of talk with Francesco Casella & Peter Aronsson we will add der($dummy) = 0; 
          */
-        (vars_1,(EQUATION(DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}),DAE.ET_REAL())},false,true,DAE.ET_REAL(),false),
+        (vars_1,(EQUATION(DAE.CALL(Absyn.IDENT("der"),
+                          {DAE.CREF(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}),DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
                           DAE.RCONST(0.0))  :: eqns));
 
   end matchcontinue;
@@ -3206,7 +3207,7 @@ algorithm
       then
         ((
           DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(DAE.CREF_IDENT(id_1,ty,s),tp)},
-          false,true,DAE.ET_REAL(),false),str));
+          false,true,DAE.ET_REAL(),DAE.NO_INLINE()),str));
     case ((e,str)) then ((e,str));
   end matchcontinue;
 end renameDerivativesExp;
@@ -8660,7 +8661,7 @@ algorithm
       WhenEquation elsepart;
     case (st,dummyder,EQUATION(exp = e1,scalar = e2))
       equation
-        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),false) "scalar equation" ;
+        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) "scalar equation" ;
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
       then
@@ -8671,14 +8672,14 @@ algorithm
       then ALGORITHM(indx,in_,out);  /* Algorithms */
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE)))
       equation
-        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),false);
+        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE));
       then
         res;
     case (st,dummyder,WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart))))
       equation
-        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),false);
+        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         WHEN_EQUATION(elsepartRes) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)));
@@ -11585,7 +11586,7 @@ algorithm
       list<DAE.Exp> expl2;
       Boolean tpl ;
       Boolean b;
-      Boolean i;
+      DAE.InlineType i;
       DAE.ExpType ty;
     case({},vars) then {};
     case(DAE.IFEXP(cond,t,f)::expl,vars) equation
@@ -13025,7 +13026,7 @@ algorithm
         newid = Util.stringAppendList({derivativeNamePrefix, c_name}); // "$",c_name})  ;
         // Derivatives are always or REAL type
       then
-        ((DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(s,DAE.ET_REAL())},false,true,DAE.ET_REAL(),false) :: s1),
+        ((DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(s,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) :: s1),
         (DAE.CREF(DAE.CREF_IDENT(newid,DAE.ET_REAL(),{}),DAE.ET_REAL()) :: t1));
     case (_)
       equation
