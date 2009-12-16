@@ -86,7 +86,7 @@ package SimCode
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
-      list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
+      list<list<SimVar>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;

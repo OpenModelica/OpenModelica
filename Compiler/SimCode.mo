@@ -308,7 +308,7 @@ uniontype SimCode
     list<SimEqSystem> parameterEquations;
     list<SimEqSystem> removedEquations;
     list<DAELow.ZeroCrossing> zeroCrossings;
-    list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
+    list<list<SimVar>> zeroCrossingsNeedSave;
     list<HelpVarInfo> helpVarInfo;
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
@@ -1200,7 +1200,7 @@ algorithm
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
       list<DAELow.ZeroCrossing> zeroCrossings;
-      list<list<DAE.ComponentRef>> zeroCrossingsNeedSave;
+      list<list<SimVar>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions)
@@ -2152,7 +2152,7 @@ protected function createZeroCrossingsNeedSave
   input Integer[:] ass1;
   input Integer[:] ass2;
   input list<list<Integer>> blocks;
-  output list<list<DAE.ComponentRef>> needSave;
+  output list<list<SimVar>> needSave;
 algorithm
   needSave :=
   matchcontinue (zeroCrossings, dae, dlow, ass1, ass2, blocks)
@@ -2160,18 +2160,18 @@ algorithm
       DAELow.ZeroCrossing zc;
       list<DAELow.ZeroCrossing> rest_zc;
       list<Integer> eql;
-      list<DAE.ComponentRef> needSave;
-      list<list<DAE.ComponentRef>> needSave_rest;
+      list<SimVar> needSaveTmp;
+      list<list<SimVar>> needSave_rest;
     case ({}, _, _, _, _, _)
       then {};
     case ((zc as DAELow.ZERO_CROSSING(occurEquLst=eql)) :: rest_zc, dae, dlow,
           ass1, ass2, blocks)
       equation
-        needSave = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, eql,
-                                              blocks);
+        needSaveTmp = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, eql,
+                                                 blocks);
         needSave_rest = createZeroCrossingsNeedSave(rest_zc, dae, dlow, ass1,
                                                     ass2, blocks);
-      then needSave :: needSave_rest;
+      then needSaveTmp :: needSave_rest;
   end matchcontinue;
 end createZeroCrossingsNeedSave;
 
@@ -2182,12 +2182,12 @@ protected function createZeroCrossingNeedSave
   input Integer[:] ass2;
   input list<Integer> eqns2;
   input list<list<Integer>> blocks;
-  output list<DAE.ComponentRef> needSave;
+  output list<SimVar> needSave;
 algorithm
   needSave :=
   matchcontinue (dae, dlow, ass1, ass2, eqns2, blocks)
     local
-      list<DAE.ComponentRef> crs;
+      list<SimVar> crs;
       Integer cg_id,eqn_1,v,eqn,cg_id,cg_id_1,numValues;
       list<Integer> block_,rest;
       DAE.ComponentRef cr;
@@ -2210,6 +2210,8 @@ algorithm
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
       DAELow.ExternalObjectClasses eoc;
+      DAELow.Var dlowvar;
+      SimVar simvar;
     case (_,_,_,_,{},_)
       then {};
     /* zero crossing for mixed system */      
@@ -2221,10 +2223,11 @@ algorithm
         block_ = getZcMixedSystem(dlow, eqn, blocks, ass2);
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
-        (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
+        (dlowvar as DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, rest, blocks);
+        simvar = dlowvarToSimvar(dlowvar);
       then
-        (cr :: crs);
+        (simvar :: crs);
     /* zero crossing for single equation */
     case (dae, (dlow as DAELow.DAELOW(orderedVars = vars)), ass1, ass2,
           (eqn :: rest), blocks) 
@@ -2233,10 +2236,11 @@ algorithm
       equation
         eqn_1 = eqn - 1;
         v = ass2[eqn_1 + 1];
-        (DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
+        (dlowvar as DAELow.VAR(cr,_,_,_,_,_,_,_,_,_,_,_,_,_)) = DAELow.getVarAt(vars, v);
         crs = createZeroCrossingNeedSave(dae, dlow, ass1, ass2, rest, blocks);
+        simvar = dlowvarToSimvar(dlowvar);
       then
-        (cr :: crs);
+        (simvar :: crs);
   end matchcontinue;
 end createZeroCrossingNeedSave;
 

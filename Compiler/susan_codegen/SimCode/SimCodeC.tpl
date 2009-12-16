@@ -626,7 +626,7 @@ int function_zeroCrossing(long *neqm, double *t, double *x, long *ng,
 
 // This function should only save in cases. The rest is done in
 // function_updateDependents.
-functionHandleZeroCrossing(list<list<ComponentRef>> zeroCrossingsNeedSave) ::=
+functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave) ::=
 <<
 int handleZeroCrossing(long index)
 {
@@ -635,8 +635,8 @@ int handleZeroCrossing(long index)
   mem_state = get_memory_state();
 
   switch(index) {
-    <zeroCrossingsNeedSave of crefs:
-      'case <i0>:<\n><crefs of cref: '  save(<cref(cref)>);' "\n"><\n>  break;' "\n">
+    <zeroCrossingsNeedSave of vars:
+      'case <i0>:<\n><vars of SIMVAR: '  save(<cref(name)>);' "\n"><\n>  break;' "\n">
     default:
       break;
   }

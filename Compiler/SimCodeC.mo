@@ -72,7 +72,7 @@ algorithm
         list<SimCode.SimWhenClause> i_whenClauses;
         list<SimCode.HelpVarInfo> i_helpVarInfo;
         list<SimCode.SimEqSystem> i_allEquations;
-        list<list<DAE.ComponentRef>> i_zeroCrossingsNeedSave;
+        list<list<SimCode.SimVar>> i_zeroCrossingsNeedSave;
         list<DAELow.ZeroCrossing> i_zeroCrossings;
         list<SimCode.SimEqSystem> i_nonStateDiscEquations;
         list<SimCode.SimEqSystem> i_removedEquations;
@@ -2127,7 +2127,7 @@ end functionZeroCrossing;
 
 protected function lm_52
   input Tpl.Text in_txt;
-  input list<DAE.ComponentRef> in_items;
+  input list<SimCode.SimVar> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -2141,14 +2141,14 @@ algorithm
       then txt;
 
     case ( txt,
-           i_cref :: rest )
+           SimCode.SIMVAR(name = i_name) :: rest )
       local
-        list<DAE.ComponentRef> rest;
-        DAE.ComponentRef i_cref;
+        list<SimCode.SimVar> rest;
+        DAE.ComponentRef i_name;
       equation
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("save("));
-        txt = cref(txt, i_cref);
+        txt = cref(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
         txt = Tpl.popBlock(txt);
         txt = Tpl.nextIter(txt);
@@ -2158,7 +2158,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        list<DAE.ComponentRef> rest;
+        list<SimCode.SimVar> rest;
       equation
         txt = lm_52(txt, rest);
       then txt;
@@ -2167,7 +2167,7 @@ end lm_52;
 
 protected function lm_53
   input Tpl.Text in_txt;
-  input list<list<DAE.ComponentRef>> in_items;
+  input list<list<SimCode.SimVar>> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -2181,10 +2181,10 @@ algorithm
       then txt;
 
     case ( txt,
-           i_crefs :: rest )
+           i_vars :: rest )
       local
-        list<list<DAE.ComponentRef>> rest;
-        list<DAE.ComponentRef> i_crefs;
+        list<list<SimCode.SimVar>> rest;
+        list<SimCode.SimVar> i_vars;
         Integer i_i0;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
@@ -2193,7 +2193,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"));
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_52(txt, i_crefs);
+        txt = lm_52(txt, i_vars);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("  break;"));
@@ -2204,7 +2204,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        list<list<DAE.ComponentRef>> rest;
+        list<list<SimCode.SimVar>> rest;
       equation
         txt = lm_53(txt, rest);
       then txt;
@@ -2213,7 +2213,7 @@ end lm_53;
 
 public function functionHandleZeroCrossing
   input Tpl.Text txt;
-  input list<list<DAE.ComponentRef>> i_zeroCrossingsNeedSave;
+  input list<list<SimCode.SimVar>> i_zeroCrossingsNeedSave;
 
   output Tpl.Text out_txt;
 algorithm
