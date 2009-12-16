@@ -9140,7 +9140,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix
   case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = (subs2 as _::_),absynExpOption=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,elemDecl,baseFunc,inCache,inEnv,inPrefix)
     equation
       deriveFunc = Absyn.crefToPath(acr);
-
+      (_,deriveFunc) = makeFullyQualified(inCache,inEnv,deriveFunc);
       order = getDerivativeOrder(subs2);
 
       ErrorExt.setCheckpoint() "don't report errors on modifers in functions";

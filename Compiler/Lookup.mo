@@ -334,8 +334,8 @@ algorithm
   end matchcontinue;
 end isPrimitive;
 
-public function lookupClass
-"Tries to find a specified class in an environment
+public function lookupClass "
+Tries to find a specified class in an environment
   
   Arg1: The enviroment where to look
   Arg2: The path for the class
@@ -2272,7 +2272,7 @@ algorithm
             
     case (cache,(env as (frame :: fs)),Absyn.IDENT(name = id),msg) /* msg */ 
       equation 
-        (cache,c,env_1) = lookupClassInFrame(cache,frame, (frame :: fs), id, msg) "print \"looking in env for \" & print id & print \"\\n\" &" ;
+        (cache,c,env_1) = lookupClassInFrame(cache,frame, (frame :: fs), id, msg);
       then
         (cache,c,env_1);
     case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),(aid as Absyn.IDENT(name = id)),_)
@@ -2300,6 +2300,19 @@ algorithm
         (cache,c,env_1) = lookupClassInEnv(cache,i_env, aid, msgflag);
       then
         (cache,c,env_1);
+    /*case (cache,((f as Env.FRAME(optName = sid,isEncapsulated = false)) :: fs),id,msgflag)  
+      local
+        Option<String> sid;
+        Absyn.Path id;
+      equation 
+        "thermoRoot_der" =Absyn.pathString(id);
+        ("Utilities"::_) = Env.getScopeNames(fs);
+        print(" looking for: " +& Absyn.pathString(id) +& " in scope " +& Util.stringDelimitList(Env.getScopeNames(fs),", ") +& "\n");
+        print("***************\n\n\n env:\n"+& Env.printEnvStr(fs) +& "\n\n**************"); 
+        (cache,c,env_1) = lookupClassInEnv(cache,fs, id, msgflag);
+      then
+        (cache,c,env_1);
+        */
     case (cache,((f as Env.FRAME(optName = sid,isEncapsulated = false)) :: fs),id,msgflag) /* if not found and not encapsulated, look in next enclosing scope */ 
       local
         Option<String> sid;
