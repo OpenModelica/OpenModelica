@@ -4023,7 +4023,7 @@ algorithm
 	       to the environment here.
 	      */	      
         cdefelts2 = classdefElts2(extcomps); 
-        //(env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
+        (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
                                              lst_constantEls, lst_constantEls, {}, 
                                              inst_dims, false);
