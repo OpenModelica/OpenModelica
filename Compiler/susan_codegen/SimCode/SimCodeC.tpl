@@ -1003,46 +1003,10 @@ case INDEX then (
   case _ then "SUBSCRIPT_NOT_CONSTANT"
 )
 case _ then "SUBSCRIPT_NOT_CONSTANT"
-
-// TODO: Check with Codegen
-expType(DAE.ExpType) ::=
-  case ET_INT    then "modelica_integer"
-  case ET_REAL   then "modelica_real"
-  case ET_BOOL   then "modelica_boolean"
-  case ET_STRING then "modelica_string"
-  case ET_COMPLEX(complexClassType = EXTERNAL_OBJ)  then "void *" 
-  case ET_OTHER  then "modelica_complex"
-  case ET_LIST
-  case ET_METATUPLE
-  case ET_METAOPTION
-  case ET_UNIONTYPE
-  case ET_POLYMORPHIC then "metamodelica_type"
-  case ET_ARRAY then 
-    match ty
-    case ET_INT    then "integer_array"
-    case ET_REAL   then "real_array"
-    case ET_STRING then "string_array"
-    case ET_BOOL   then "boolean_array"
-
-expTypeArray(DAE.ExpType) ::=
-  case ET_INT    then "integer_array"
-  case ET_REAL   then "real_array"
-  case ET_STRING then "string_array"
-  case ET_BOOL   then "boolean_array"
-
-// TODO: Check with Codegen
-expShortType(DAE.ExpType) ::=
-  case ET_INT    then "integer"
-  case ET_REAL   then "real"
-  case ET_STRING then "string"
-  case ET_BOOL   then "boolean"
-  case ET_OTHER  then "complex"
-  case ET_ARRAY then expShortType(ty)   
-  case ET_COMPLEX then 'struct <name>'  
-  
+ 
 // TODO: Check with Codegen (expTypeStr)
 expTypeA(DAE.ExpType, Boolean isArray) ::=
-  case ET_COMPLEX     then expShortType() // i.e. 'struct <name>'  
+  case ET_COMPLEX     then expTypeShort() // i.e. 'struct <name>'  
   case ET_LIST
   case ET_METATUPLE
   case ET_METAOPTION
@@ -1065,7 +1029,7 @@ recordDeclaration(RecordDeclaration) ::=
 <<
 struct <name> {
   <variables of var as VARIABLE :
-      if expType(ty) then '<it> <cref(var.name)>;'
+      if expTypeArrayIf(ty) then '<it> <cref(var.name)>;'
       else '/* <cref(var.name)> is an odd member. */'
   \n>
 };
@@ -1139,41 +1103,12 @@ extern "C" {
 varDeclaration(Variable) ::=
 case VARIABLE then '<varType(it)> <cref(name)>;<\n>'
 
-varType(Variable) ::=
-case var as VARIABLE then
-  if instDims then
-    match var.ty
-    case ET_INT    then "integer_array"
-    case ET_REAL   then "real_array"
-    case ET_STRING then "string_array"
-    case ET_BOOL   then "boolean_array"
-    case _         then "unknown array"
-  else
-    match var.ty
-    case ET_INT    then "modelica_integer"
-    case ET_REAL   then "modelica_real"
-    case ET_BOOL   then "modelica_boolean"
-    case ET_STRING then "modelica_string"
-    case ET_COMPLEX(complexClassType = EXTERNAL_OBJ)  then "void *" 
-    case ET_OTHER  then "modelica_complex"
-    case ET_LIST
-    case ET_METATUPLE
-    case ET_METAOPTION
-    case ET_UNIONTYPE
-    case ET_POLYMORPHIC then "metamodelica_type"
-    case ET_ARRAY then 
-      match ty
-      case ET_INT    then "integer_array"
-      case ET_REAL   then "real_array"
-      case ET_STRING then "string_array"
-      case ET_BOOL   then "boolean_array"
-
 varInit(Variable, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
   # varDecls += varDeclaration(var)
   # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
-    # varInits += 'alloc_<expShortType(var.ty)>_array(&<cref(var.name)>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<cref(var.name)>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
     ()
   else
     ()
@@ -1182,9 +1117,9 @@ varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits)
 case var as VARIABLE then
   # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
-    # varInits += 'alloc_<expShortType(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
     <<
-    copy_<expShortType(var.ty)>_array_data(&<cref(var.name)>, &<dest>.targ<i>);
+    copy_<expTypeShort(var.ty)>_array_data(&<cref(var.name)>, &<dest>.targ<i>);
     >>
   else
     <<
@@ -1204,7 +1139,7 @@ functionDef(Function) ::=
     # bodyPart = (body of stmt : funStatement(stmt, varDecls) \n)
     # outVarsStr = (outVars: varOutput(it, retVar, i1, varDecls, varInits))
     <<
-    <retType> _<fname>(<functionArguments of VARIABLE: '<expType(ty)> <cref(name)>' ", ">)
+    <retType> _<fname>(<functionArguments of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>' ", ">)
     {
       <varDecls>
       <stateVar> = get_memory_state();
@@ -1263,7 +1198,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     # expPart = daeExp(exp, context, preExp, varDecls)
     <<
     <preExp>
-    copy_<expShortType(type_)>_array_data(&<expPart>, &<cref(componentRef)>);
+    copy_<expTypeArray(type_)>_data(&<expPart>, &<cref(componentRef)>);
     >>
   case STMT_IF then
     # preExp = ""
@@ -1294,7 +1229,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     {
     <identType> <ident>;
 
-      for (<ident> = <r1>; in_range_<expShortType(type_)>(<ident>, <r1>, <r3>); <ident> += <r2>) {
+      for (<ident> = <r1>; in_range_<expTypeShort(type_)>(<ident>, <r1>, <r3>); <ident> += <r2>) {
         <stateVar> = get_memory_state();
         <statementLst : algStatement(it, context, varDecls) \n /* ??CONTEXT(codeContext,expContext,IN_FOR_LOOP(loopContext)*/ >
         restore_memory_state(<stateVar>);
@@ -1306,11 +1241,11 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     # arrayType = expTypeArray(type_)
     # dvar = System.tmpTick() // a hack to be precisely the same as original ... see Codegen.generateAlgorithmStatement case FOR
     # tvar = tempDecl("int", varDecls)
-    # ivar = tempDecl(expType(type_), varDecls)
+    # identType = expType(type_, boolean)
+    # ivar = tempDecl(identType, varDecls)
     # preExp = ""
     # evar = daeExp(exp, context, preExp, varDecls)
     # statements = (statementLst: algStatement(it, context, varDecls) \n)
-    # identType = expType(type_)
     # id = '<ident>'
     # stmtStuff = if boolean
                   then 'simple_index_alloc_<identType>1(&<evar>, <tvar>, &<ivar>);'
@@ -1465,7 +1400,7 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case MATRIX     then daeExpMatrix(it, context, preExp, varDecls)
   case RANGE      then "RANGE_NOT_IMPLEMENTED"
   case TUPLE      then "TUPLE_NOT_IMPLEMENTED"
-  case CAST       then '((<expType(ty)>)<daeExp(exp, context, preExp, varDecls)>)'
+  case CAST       then daeExpCast(it, context, preExp, varDecls)
   case ASUB       then daeExpAsub(it, context, preExp, varDecls)
   case SIZE       then daeExpSize(it, context, preExp, varDecls)
   case CODE       then "CODE_NOT_IMPLEMENTED"
@@ -1578,7 +1513,8 @@ daeExpIf(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case IFEXP then
   # condExp = daeExp(expCond, context, preExp, varDecls)
   # condVar = tempDecl("modelica_boolean", varDecls)
-  # resVar = tempDecl(typeStrFromExp(expThen), varDecls)
+  # resVarType = expTypeFromExpArrayIf(expThen)
+  # resVar = tempDecl(resVarType, varDecls)
   # preExpThen = ""
   # eThen = daeExp(expThen, context, preExpThen, varDecls)
   # preExpElse = ""
@@ -1599,72 +1535,11 @@ case IFEXP then
 //  ((<condVar>)?<eThen>:<eElse>)
 //  >>
 
-typeStrFromExp(Exp) ::=
-  case ICONST    then "modelica_integer"
-  case RCONST    then "modelica_real"
-  case SCONST    then "modelica_string"
-  case BCONST    then "modelica_bool"
-  case CREF      then expType(ty)
-  case BINARY    then typeStrFromOp(operator)
-  case UNARY     then typeStrFromOp(operator)
-  case LBINARY   then typeStrFromOp(operator)
-  case LUNARY    then typeStrFromOp(operator)
-  case RELATION  then typeStrFromOp(operator)
-  case IFEXP     then typeStrFromExp(expThen)
-  case CALL      then expType(ty)
-  //PARTEVALFUNCTION
-  case ARRAY     then expType(ty)
-  case MATRIX    then expType(ty)
-  case RANGE     then expType(ty)
-  //TUPLE
-  case CAST      then expType(ty)
-  case ASUB      then typeStrFromExp(exp)
-  case CODE      then expType(ty)
-  case REDUCTION then typeStrFromExp(expr)
-
-typeStrFromOp(Operator) ::=
-  case ADD then expType(ty) 
-  case SUB then expType(ty) 
-  case MUL then expType(ty) 
-  case DIV then expType(ty) 
-  case POW then expType(ty) 
-  case UMINUS then expType(ty) 
-  case UPLUS then expType(ty) 
-  case UMINUS_ARR then expType(ty) 
-  case UPLUS_ARR then expType(ty) 
-  case ADD_ARR then expType(ty) 
-  case SUB_ARR then expType(ty) 
-  case MUL_ARR then expType(ty) 
-  case DIV_ARR then expType(ty) 
-  case MUL_SCALAR_ARRAY then expType(ty)
-  case MUL_ARRAY_SCALAR then expType(ty)
-  case ADD_SCALAR_ARRAY then expType(ty)
-  case ADD_ARRAY_SCALAR then expType(ty)
-  case SUB_SCALAR_ARRAY then expType(ty)  
-  case SUB_ARRAY_SCALAR then expType(ty)
-  case MUL_SCALAR_PRODUCT then expType(ty) 
-  case MUL_MATRIX_PRODUCT then expType(ty) 
-  case DIV_ARRAY_SCALAR then expType(ty)
-  case DIV_SCALAR_ARRAY then expType(ty)
-  case POW_ARRAY_SCALAR then expType(ty)
-  case POW_SCALAR_ARRAY then expType(ty)  
-  case POW_ARR then expType(ty) 
-  case POW_ARR2 then expType(ty) 
-  case AND then "modelica_boolean" 
-  case OR then "modelica_boolean" 
-  case NOT then "modelica_boolean" 
-  case LESS then expType(ty) 
-  case LESSEQ then expType(ty) 
-  case GREATER then expType(ty) 
-  case GREATEREQ then expType(ty) 
-  case EQUAL then expType(ty) 
-  case NEQUAL then expType(ty) 
-
 daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
   // special builtins
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="pre"), expLst={arg as CREF}) then
-    # retType = '<expType(arg.ty)>'
+    # retType = '<expTypeArrayIf(arg.ty)>'
     # retVar = tempDecl(retType, varDecls)
     # cast = if arg.ty is ET_INT then "(modelica_integer)" else ""
     # preExp += '<retVar> = <cast>pre(<cref(arg.componentRef)>);<\n>'
@@ -1673,16 +1548,16 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
             path=IDENT(name="promote"), expLst={A, n}) then
     # var1 = daeExp(A, context, preExp, varDecls)
     # var2 = daeExp(n, context, preExp, varDecls)
-    # retType = '<typeStrFromExp(A)>'
-    # tvar = tempDecl(retType, varDecls)
-    # preExp += 'promote_alloc_<retType>(&<var1>, &<var2>, &<tvar>);<\n>'
+    # arr_tp_str = '<expTypeFromExpArray(A)>'
+    # tvar = tempDecl(arr_tp_str, varDecls)
+    # preExp += 'promote_alloc_<arr_tp_str>(&<var1>, &<var2>, &<tvar>);<\n>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="transpose"), expLst={A}) then
     # var1 = daeExp(A, context, preExp, varDecls)
-    # retType = '<typeStrFromExp(A)>'
-    # tvar = tempDecl(retType, varDecls)
-    # preExp += 'transpose_alloc_<retType>(&<var1>, &<tvar>);<\n>'
+    # arr_tp_str = '<expTypeFromExpArray(A)>'
+    # tvar = tempDecl(arr_tp_str, varDecls)
+    # preExp += 'transpose_alloc_<arr_tp_str>(&<var1>, &<tvar>);<\n>'
     tvar
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
@@ -1710,7 +1585,7 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
 
 daeExpArray(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case ARRAY then
-# arrayTypeStr = '<expShortType(ty)>_array'
+# arrayTypeStr = '<expTypeArray(ty)>'
 # arrayVar = tempDecl(arrayTypeStr, varDecls)
 # scalarPrefix = if scalar then "scalar_" else ""
 # scalarRef = if scalar then "&" else ""
@@ -1732,7 +1607,7 @@ case MATRIX(scalar={}) then
   # preExp += 'alloc_<arrayTypeStr>(&<tmp>, 2, 0, 1);<\n>'
   tmp
 case m as MATRIX then
-  # arrayTypeStr = expType(m.ty)
+  # arrayTypeStr = expTypeArray(m.ty)
   # vars2 = ""
   # promote = ""
   # catAlloc = (m.scalar of row:
@@ -1762,6 +1637,20 @@ daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
 # preExp2 += "\n"
 # preExp += preExp2
 varLstStr
+
+daeExpCast(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case CAST then
+  # expVar = daeExp(exp, context, preExp, varDecls)
+  match ty
+  case ET_INT   then '((modelica_int)<expVar>)' // TODO: really int? not integer?
+  case ET_REAL  then '((modelica_real)<expVar>)'
+  case ET_ARRAY then
+    # arrayTypeStr = expTypeArray(ty)
+    # tvar = tempDecl(arrayTypeStr, varDecls)
+    # to = expTypeShort(ty)
+    # from = expTypeFromExpShort(exp)
+    # preExp += 'cast_<from>_array_to_<to>(&<expVar>, &<tvar>);<\n>'
+    tvar
 
 daeExpAsub(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case ASUB(exp=RANGE(ty=t), sub={idx}) then
@@ -1801,7 +1690,7 @@ case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     # tmpArr = tempDecl(expTypeArray(aty), varDecls)
     # dimsLenStr = listLengthOptionInt(dims)
     # dimsValuesStr = (dims of dim as SOME(i): i ", ")
-    # preExp += '<expShortType(cref.ty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
+    # preExp += '<expTypeShort(aty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
     tmpArr
   case _ then
     cref(cref.componentRef)
@@ -1811,7 +1700,7 @@ case SIZE(exp=CREF, sz=SOME(dim)) then
   # expPart = daeExp(exp, context, preExp, varDecls)
   # dimPart = daeExp(dim, context, preExp, varDecls)
   # resVar = tempDecl("size_t", varDecls)
-  # typeStr = '<expShortType(exp.ty)>_array'
+  # typeStr = '<expTypeArray(exp.ty)>'
   # preExp += '<resVar> = size_of_dimension_<typeStr>(<expPart>, <dimPart>);<\n>'
   resVar
 case _ then "size(X) not implemented"
@@ -1824,6 +1713,123 @@ tempDecl(String ty, Text varDecls) ::=
   # newVar = 'tmp<System.tmpTick()>'
   # varDecls += '<ty> <newVar>;<\n>'
   newVar
+
+varType(Variable) ::=
+  case var as VARIABLE then
+    if instDims then
+      expTypeArray(var.ty)
+    else
+      expTypeArrayIf(var.ty)
+
+expTypeShort(DAE.ExpType) ::=
+  case ET_INT     then "integer"
+  case ET_REAL    then "real"
+  case ET_STRING  then "string"
+  case ET_BOOL    then "boolean"
+  case ET_OTHER   then "complex"
+  case ET_ARRAY   then expTypeShort(ty)   
+  case ET_COMPLEX then 'struct <name>'  
+  case _          then "expTypeShort:ERROR"
+
+expType(DAE.ExpType ty, Boolean array) ::=
+  match array
+  case true  then expTypeArray(ty)
+  case false then expTypeModelica(ty)
+
+expTypeModelica(DAE.ExpType ty) ::=
+  expTypeFlag(ty, 2)
+
+expTypeArray(DAE.ExpType ty) ::=
+  expTypeFlag(ty, 3)
+
+expTypeArrayIf(DAE.ExpType ty) ::=
+  expTypeFlag(ty, 4)
+
+expTypeFromExpShort(Exp exp) ::=
+  expTypeFromExpFlag(exp, 1)
+
+expTypeFromExpArray(Exp exp) ::=
+  expTypeFromExpFlag(exp, 3)
+
+expTypeFromExpArrayIf(Exp exp) ::=
+  expTypeFromExpFlag(exp, 4)
+
+expTypeFlag(DAE.ExpType ty, Integer flag) ::=
+  match flag
+  // we want the short type
+  case 1 then expTypeShort(ty)
+  // we want the "modelica type"
+  case 2 then 'modelica_<expTypeShort(ty)>'
+  // we want the "array type"
+  case 3 then '<expTypeShort(ty)>_array'
+  // we want the "array type" only if type is array, otherwise "modelica type"
+  case 4 then
+    match ty
+    case ET_ARRAY then '<expTypeShort(ty)>_array'
+    case _        then 'modelica_<expTypeShort(ty)>'
+
+expTypeFromExpFlag(Exp, Integer flag) ::=
+  case ICONST        then if flag is 1 then "integer" else "modelica_integer"
+  case RCONST        then if flag is 1 then "real" else "modelica_real"
+  case SCONST        then if flag is 1 then "string" else "modelica_string"
+  case BCONST        then if flag is 1 then "boolean" else "modelica_boolean"
+  case e as BINARY
+  case e as UNARY
+  case e as LBINARY
+  case e as LUNARY
+  case e as RELATION then expTypeFromOpFlag(e.operator, flag)
+  case IFEXP         then expTypeFromExpFlag(expThen, flag)
+  case CALL          then expTypeFlag(ty, flag)
+  case c as ARRAY
+  case c as MATRIX
+  case c as RANGE
+  case c as CAST
+  case c as CREF
+  case c as CODE     then expTypeFlag(c.ty, flag)
+  case ASUB          then expTypeFromExpFlag(exp, flag)
+  case REDUCTION     then expTypeFromExpFlag(expr, flag)
+  case _             then "expTypeFromExpFlag:ERROR"
+
+expTypeFromOpFlag(Operator, Integer flag) ::=
+  case o as ADD
+  case o as SUB
+  case o as MUL
+  case o as DIV
+  case o as POW
+  case o as UMINUS
+  case o as UPLUS
+  case o as UMINUS_ARR
+  case o as UPLUS_ARR
+  case o as ADD_ARR
+  case o as SUB_ARR
+  case o as MUL_ARR
+  case o as DIV_ARR
+  case o as MUL_SCALAR_ARRAY
+  case o as MUL_ARRAY_SCALAR
+  case o as ADD_SCALAR_ARRAY
+  case o as ADD_ARRAY_SCALAR
+  case o as SUB_SCALAR_ARRAY
+  case o as SUB_ARRAY_SCALAR
+  case o as MUL_SCALAR_PRODUCT
+  case o as MUL_MATRIX_PRODUCT
+  case o as DIV_ARRAY_SCALAR
+  case o as DIV_SCALAR_ARRAY
+  case o as POW_ARRAY_SCALAR
+  case o as POW_SCALAR_ARRAY
+  case o as POW_ARR
+  case o as POW_ARR2
+  case o as LESS
+  case o as LESSEQ
+  case o as GREATER
+  case o as GREATEREQ
+  case o as EQUAL
+  case o as NEQUAL then
+    expTypeFlag(o.ty, flag)
+  case o as AND
+  case o as OR
+  case o as NOT then
+    if flag is 1 then "boolean" else "modelica_boolean"
+  case _ then "expTypeFromOpFlag:ERROR"
 
 end SimCodeC;
 // vim: filetype=susan sw=2 sts=2
