@@ -2207,5 +2207,21 @@ algorithm
   end matchcontinue;
 end getClassComponents;
 
+public function elementBaseClassPath "
+This function returns baseClassPath from COMPONENT and CLASDEF,
+  NONE() from other Elements"
+  input Element inElement;
+  output Option<Path> outBaseClassPath;
+algorithm
+  outBaseClassPath:= matchcontinue(inElement)
+  local
+    Option<Path> optPath;
+    
+    case COMPONENT(baseClassPath=optPath) then optPath; 
+    case CLASSDEF(baseClassPath=optPath) then optPath;
+    case _ then NONE();
+  end matchcontinue;
+end elementBaseClassPath;         
+
 end SCode;
 

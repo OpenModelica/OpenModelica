@@ -4157,6 +4157,7 @@ algorithm
       ClassInf.State ci_state;
       Boolean impl;
       Env.Cache cache;
+      Option<Absyn.Path> bc;
       output InstanceHierarchy ih;
       
     case (cache,env,ih,pre,{},_,csets,_) then (cache,env,ih,{},csets); 
@@ -4197,6 +4198,8 @@ algorithm
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
         
+        bc=SCode.elementBaseClassPath(comp);
+        (cache,env,ih)=getDerivedEnv(cache,env,ih,bc);
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env, ih, cmod2, crefs, ci_state, csets, impl);
         (cache,env2,ih,csets) = updateComponentsInEnv(cache, env2, ih, DAE.NOMOD(), crefs2, ci_state, csets, impl);
         (cache,cmod_1) = Mod.updateMod(cache,env2, pre, cmod, impl);
