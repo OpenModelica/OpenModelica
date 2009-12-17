@@ -1318,6 +1318,21 @@ algorithm
         e = indexEqmod(SOME(DAE.TYPED(exp,NONE,DAE.PROP(t_1,c))), xs);
       then
         e;        
+        
+    case (e as SOME(DAE.TYPED(modifierAsExp = exp, properties = DAE.PROP(type_ = t))), _)
+      local
+        String exp_str;
+      equation
+				/* Trying to apply a non-array modifier to an array, which isn't
+				 * really allowed but working anyway. Some standard Modelica libraries
+				 * are missing the 'each' keyword though (i.e. the doublePendulum
+				 * example), and therefore relying on this behaviour, so just print a
+				 * warning here. */
+        failure(t_1 = Types.unliftArray(t));
+        exp_str = Exp.printExpStr(exp);
+				Error.addMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str});
+			then fail();
+        
     case (SOME(eq),inIntegerLst) equation
 			true = RTOpts.debugFlag("failtrace");
       Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +& 
