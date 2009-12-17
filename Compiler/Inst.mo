@@ -1539,7 +1539,13 @@ algorithm
       Option<DAE.ComponentRef> aa_9;
       replaceable type Type_a subtypeof Any;
       Type_a bbx, bby;
-      
+    /* Partial packages can sometimes be instantiated here, but should really be done in partialInstClass, since
+     * it filters out a lot of things. */
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction = SCode.R_PACKAGE(), partialPrefix = true),prot,inst_dims,impl,graph,instSingleCref) 
+      equation
+        (cache,env,ih,ci_state) = partialInstClassIn(cache, env, ih, mods, pre, csets, ci_state, c, prot, inst_dims);
+      then (cache,env,ih,store,{},csets,ci_state,{},NONE,NONE,NONE,graph);
+        
     /*  see if we have it in the cache */ 
     case (cache,env,ih,store,mods,pre,csets,ci_state,c,prot,inst_dims,impl,graph,instSingleCref) 
       equation 
@@ -2297,7 +2303,7 @@ algorithm
       String n;
       SCode.Restriction r;
       SCode.ClassDef d;
-      Boolean prot;
+      Boolean prot,partialPrefix;
       InstDims inst_dims;
       Env.Cache cache;
       Absyn.Path fullPath;
@@ -2316,10 +2322,10 @@ algorithm
     case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = "Boolean")),_,_) 
       then (cache,env,ih,ci_state);
          
-    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,partialPrefix=partialPrefix,classDef = d)),prot,inst_dims)
       equation 
         // t1 = clock();
-        (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, csets, ci_state, d, r, prot, inst_dims, n);
+        (cache,env_1,ih,ci_state_1) = partialInstClassdef(cache,env,ih, mods, pre, csets, ci_state, d, r, partialPrefix, prot, inst_dims, n);
         // t2 = clock();
         // time = t2 -. t1;
         //b=realGt(time,0.05);
@@ -3941,7 +3947,8 @@ protected function partialInstClassdef
   input ClassInf.State inState;
   input SCode.ClassDef inClassDef;
   input SCode.Restriction inRestriction;
-  input Boolean inBoolean;
+  input Boolean inPartialPrefix;
+  input Boolean inProt;
   input InstDims inInstDims;
   input String inClassName "the class name that contains the elements we are instanting";
 	output Env.Cache outCache;
@@ -3950,7 +3957,7 @@ protected function partialInstClassdef
   output ClassInf.State outState;
 algorithm 
   (outCache,outEnv,outIH,outState):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inBoolean,inInstDims,inClassName)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClassDef,inRestriction,inPartialPrefix,inProt,inInstDims,inClassName)
     local
       ClassInf.State ci_state1,ci_state,new_ci_state,new_ci_state_1,ci_state2;
       list<SCode.Element> cdefelts,extendselts,els,allEls,cdefelts2,classextendselts,compelts;
@@ -3962,7 +3969,7 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Restriction re,r;
-      Boolean prot,enc2,isPackage;
+      Boolean prot,enc2,isPackage,partialPrefix;
       InstDims inst_dims;
       SCode.Class c;
       String cn2,cns,scope_str,className,baseClassName;
@@ -4003,11 +4010,12 @@ algorithm
       then
         (cache,env3,ih,ci_state1);
     */
-        case (cache,env,ih,mods,pre,csets,ci_state,
+      
+      case (cache,env,ih,mods,pre,csets,ci_state,
           SCode.PARTS(elementLst = els,
-                      normalEquationLst = eqs, initialEquationLst = initeqs,
-      		            normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
-      	  re,prot,inst_dims,className)
+            normalEquationLst = eqs, initialEquationLst = initeqs,
+            normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
+            re,partialPrefix,prot,inst_dims,className)
       equation
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
@@ -4015,6 +4023,9 @@ algorithm
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
+        extendselts = Util.if_(partialPrefix, {}, extendselts);
+        els = Util.if_(partialPrefix, {}, els);
+        // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
 		    lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";
 	      /* 
 	       Since partial instantiation is done in lookup, we need to add inherited classes here.
@@ -4022,7 +4033,7 @@ algorithm
 	       base class context (since we do not have any element to find it in), the class must be added 
 	       to the environment here.
 	      */	      
-        cdefelts2 = classdefElts2(extcomps); 
+        cdefelts2 = classdefElts2(extcomps, partialPrefix); 
         (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
                                              lst_constantEls, lst_constantEls, {}, 
@@ -4036,7 +4047,7 @@ algorithm
     /* This rule describes how to instantiate a derived class definition */ 
     case (cache,env,ih,mods,pre,csets,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,prot,inst_dims,className) 
+          re,partialPrefix,prot,inst_dims,className) 
       equation 
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache, env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
@@ -4052,7 +4063,7 @@ algorithm
      */
     case (cache,env,ih,mods,pre,csets,ci_state,
           SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod),
-          re,prot,inst_dims,className)
+          re,partialPrefix,prot,inst_dims,className)
       equation 
         failure((_,_,_) = Lookup.lookupClass(cache,env, cn, false));
         cns = Absyn.pathString(cn);
@@ -4670,6 +4681,7 @@ algorithm
       SCode.Class cd;      
       Option<Absyn.Info> info;
       Option<Absyn.ConstrainClass> cc;
+      SCode.Restriction r;
     case ({},_) then {}; 
 
     case ((SCode.COMPONENT(component = a,innerOuter=io,finalPrefix = b,replaceablePrefix = c,
@@ -5094,22 +5106,28 @@ protected function classdefElts2
   author: PA
   This function filters out the class definitions (ElementMod) list."
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
+  input Boolean partialPrefix;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
-  outSCodeElementLst := matchcontinue (inTplSCodeElementModLst)
+  outSCodeElementLst := matchcontinue (inTplSCodeElementModLst,partialPrefix)
     local
       list<SCode.Element> res;
       SCode.Element cdef;
       list<tuple<SCode.Element, Mod>> xs;
-    case ({}) then {}; 
-    case ((((cdef as SCode.CLASSDEF(name = _)),_) :: xs))
+    case ({},_) then {}; 
+    case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(restriction = SCode.R_PACKAGE())),_) :: xs,true)
+      equation
+        res = classdefElts2(xs,partialPrefix);
+      then
+        cdef :: res;
+    case (((cdef as SCode.CLASSDEF(name = _),_)) :: xs,false)
       equation 
-        res = classdefElts2(xs);
+        res = classdefElts2(xs,partialPrefix);
       then
         (cdef :: res);
-    case ((_ :: xs))
+    case ((_ :: xs),_)
       equation 
-        res = classdefElts2(xs);
+        res = classdefElts2(xs,partialPrefix);
       then
         res;
   end matchcontinue;
