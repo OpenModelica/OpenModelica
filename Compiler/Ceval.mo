@@ -274,15 +274,6 @@ algorithm
       then
         (cache,v,st_1);
         
-    case (cache,env,(e as DAE.CALL(path = func,expLst = expl)),impl,st,_,msg)
-      equation
-        (cache,false) = Static.isExternalObjectFunction(cache,env,func);
-        (cache,vallst) = cevalList(cache, env, expl, impl, st, msg) 
-        "Call of record constructors, etc., i.e. functions that can be constant propagated." ;
-        (cache,newval) = cevalFunction(cache, env, func, vallst, impl, msg);
-      then
-        (cache,newval,st);
-
     /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,dimOpt,msg) 
       /* Call functions FIXME: functions are always generated. Put back the check
@@ -292,16 +283,26 @@ algorithm
         (cache,newval,st)= cevalCallFunction(cache, env, e, vallst, impl, st, dimOpt, msg);
       then
         (cache,newval,st);
-        
-    case (cache,env,(e as DAE.CALL(path = _)),(impl as false),NONE,_, NO_MSG()) then fail(); 
-
+    
+        /* Try Interactive functions last */
     case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),_,msg)
-      local Interactive.InteractiveSymbolTable st;
+      local
+        Interactive.InteractiveSymbolTable st;
       equation 
         (cache,value,st) = CevalScript.cevalInteractiveFunctions(cache,env, e, st, msg);
       then
         (cache,value,SOME(st));
     
+    case (_,_,e as DAE.CALL(path = _),_,_,_,_)
+      equation
+				true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "- Ceval.ceval DAE.CALL failed: ");
+        str = Exp.printExpStr(e);
+        Debug.fprintln("failtrace", str);
+      then
+        fail();
+    
+        
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.ET_STRING()),exp2 = rh),impl,st,_,msg) /* Strings */ 
       local String lhv,rhv;
       equation 
@@ -827,16 +828,14 @@ algorithm
       then
         fail();
 
-    /* ceval can fail and that is ok, catched by other rules... */ 
-    case (cache,env,e,_,_,_, MSG()) 
+    /* ceval can fail and that is ok, caught by other rules... */ 
+    case (cache,env,e,_,_,_,_) // MSG()) 
       equation
         /*
-        Debug.fprint("failtrace", "- Ceval.ceval failed: ");
-        str = Exp.printExpStr(e);
-        Debug.fprint("failtrace", str);
-        Debug.fprint("failtrace", "\n");        
-        Debug.fprint("failtrace", " Env:" );
-        Debug.fcall("failtrace", Env.printEnv, env);
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Ceval.ceval failed: " +& Exp.printExpStr(e));
+        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+        //Debug.traceln("  Env:" +& Env.printEnvStr(env));
         */
       then
         fail();
@@ -1075,10 +1074,16 @@ algorithm
       list<DAE.Element> daeList;
       String error_Str;      
 
-   /* 
-   External functions that are "known" should be evaluated without
-	 compilation, e.g. all math functions 
-	 */ 
+      /* Try cevalFunction first */
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,_,msg)
+      equation
+        (cache,false) = Static.isExternalObjectFunction(cache,env,funcpath);
+        // Call of record constructors, etc., i.e. functions that can be constant propagated.
+        (cache,newval) = cevalFunction(cache, env, funcpath, vallst, impl, msg);
+      then
+        (cache,newval,st);
+
+        /* External functions that are "known" should be evaluated without compilation, e.g. all math functions */ 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg) 
       equation 
         (cache,newval) = cevalKnownExternalFuncs(cache,env, funcpath, vallst, msg);
@@ -1234,14 +1239,6 @@ algorithm
       then
         fail();
 
-    case (cache,env,e,_,impl,st,dim,msg)
-      equation
-				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Ceval.cevalCallFunction failed: ");
-        str = Exp.printExpStr(e);
-        Debug.fprintln("failtrace", str);
-      then
-        fail();
   end matchcontinue;
 end cevalCallFunction;
 
@@ -3880,18 +3877,16 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
+      Values.Value res;
     case (cache,env,{exp},impl,st,msg)
       equation 
         (cache,Values.ARRAY(rv2),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         dimension = listLength(rv2);
         correctDimension = dimension + 1;
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, exp, impl, st, correctDimension, 1, {}, msg);
-        dimensionString = intString(dimension);
-        Debug.fcall("ceval", Print.printBuf, "== dimensionString ");
-        Debug.fcall("ceval", Print.printBuf, dimensionString);
-        Debug.fcall("ceval", Print.printBuf, "\n");
+        res = Values.ARRAY(retExp);
       then
-        (cache,Values.ARRAY(retExp),st);
+        (cache,res,st);
     case (_,_,_,_,_,MSG())
       equation 
         Print.printErrorBuf("#- Error, could not evaulate diagonal. Ceval.cevalBuiltinDiagonal failed.\n");
