@@ -4708,7 +4708,7 @@ algorithm
       equation 
         (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP((DAE.T_ARRAY((dim as DAE.DIM(SOME(dimension))),arrType),NONE),c),_) 
         	= elabExp(cache,env, v1, impl, NONE,true);
-        res = elabBuiltinDiagonal2(expl);
+        res = elabBuiltinDiagonal2(expl,tp);
       then
         (cache,res,DAE.PROP(
           (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE)),NONE),c));
@@ -4738,23 +4738,25 @@ protected function elabBuiltinDiagonal2 "function: elabBuiltinDiagonal2
   For instance diagonal({a,b}) => {a,0;0,b}
 "
   input list<DAE.Exp> expl;
+  input Exp.Type inType;
   output DAE.Exp res;
   Integer dim;
 algorithm 
   dim := listLength(expl);
-  res := elabBuiltinDiagonal3(expl, 0, dim);
+  res := elabBuiltinDiagonal3(expl, 0, dim, inType);
 end elabBuiltinDiagonal2;
 
 protected function elabBuiltinDiagonal3
   input list<DAE.Exp> inExpExpLst1;
   input Integer inInteger2;
   input Integer inInteger3;
+  input Exp.Type inType;
   output DAE.Exp outExp;
 algorithm 
   outExp:=
-  matchcontinue (inExpExpLst1,inInteger2,inInteger3)
+  matchcontinue (inExpExpLst1,inInteger2,inInteger3,inType)
     local
-      DAE.ExpType tp;
+      DAE.ExpType tp,ty;
       Boolean sc;
       list<Boolean> scs;
       list<DAE.Exp> expl,expl_1,es;
@@ -4762,24 +4764,24 @@ algorithm
       DAE.Exp e;
       Integer indx,dim,indx_1,mdim;
       list<list<tuple<DAE.Exp, Boolean>>> rows;
-    case ({e},indx,dim)
+    case ({e},indx,dim,ty)
       equation 
         tp = Exp.typeof(e);
         sc = Exp.typeBuiltin(tp);
         scs = Util.listFill(sc, dim);
-        expl = Util.listFill(DAE.ICONST(0), dim);
+        expl = Util.listFill(Exp.makeConstZero(ty), dim);
         expl_1 = Util.listReplaceAt(e, indx, expl);
         row = Util.listThreadTuple(expl_1, scs);
       then
         DAE.MATRIX(tp,dim,{row});
-    case ((e :: es),indx,dim)
+    case ((e :: es),indx,dim,ty)
       equation 
         indx_1 = indx + 1;
-        DAE.MATRIX(tp,mdim,rows) = elabBuiltinDiagonal3(es, indx_1, dim);
+        DAE.MATRIX(tp,mdim,rows) = elabBuiltinDiagonal3(es, indx_1, dim, ty);
         tp = Exp.typeof(e);
         sc = Exp.typeBuiltin(tp);
         scs = Util.listFill(sc, dim);
-        expl = Util.listFill(DAE.ICONST(0), dim);
+        expl = Util.listFill(Exp.makeConstZero(ty), dim);
         expl_1 = Util.listReplaceAt(e, indx, expl);
         row = Util.listThreadTuple(expl_1, scs);
       then
