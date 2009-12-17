@@ -8976,7 +8976,9 @@ algorithm
       equation
         {} = DAEUtil.getNamedFunction(path, elements);
         pathstr = Absyn.pathString(path);
-        Error.addMessage(Error.LOOKUP_ERROR, {pathstr,"global scope"});
+        //Error.addMessage(Error.LOOKUP_ERROR, {pathstr,"global scope"});
+				Debug.fprintln("failtrace", "SimCodegen.getCalledFunctionsInFunction: Class " 
+					+& pathstr +& " not found in global scope.");
       then
         path::acc;
         
