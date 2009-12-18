@@ -1209,7 +1209,7 @@ algorithm
       SCode.Attributes a6;
       Absyn.TypeSpec a7;
       SCode.Mod a8;
-      Option<SCode.Path> a9;
+      SCode.OptBaseClass a9;
       Option<SCode.Comment> a10;
       Option<Absyn.Exp> a11;
       Option<Absyn.Info> a12;

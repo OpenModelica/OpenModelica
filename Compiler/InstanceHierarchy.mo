@@ -637,7 +637,7 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs;
-      Option<Absyn.Path> pathOpt;
+      SCode.OptBaseClass pathOpt;
       Absyn.TypeSpec typath;
       SCode.Mod mod;
       Boolean finalPrefix,repl,prot;

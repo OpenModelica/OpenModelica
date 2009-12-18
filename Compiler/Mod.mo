@@ -166,7 +166,7 @@ algorithm
 	  Absyn.InnerOuter io;
 	  list<SCode.Element> elts;
 	  SCode.Ident cn,cn2,compname; 
-	  Option<Absyn.Path> bc;
+	  SCode.OptBaseClass bc;
 	  Option<SCode.Comment> cmt;
 	  SCode.Restriction restr;
 	  Absyn.TypeSpec tp,tp1;
@@ -1428,7 +1428,7 @@ algorithm
       SCode.Attributes attr;
       Absyn.TypeSpec tp;
       SCode.Mod m1,m2;
-      Option<Absyn.Path> bc,bc2;
+      SCode.OptBaseClass bc,bc2;
       Option<SCode.Comment> comment,comment2;
       list<Env.Frame> env;
       Prefix.Prefix pre;

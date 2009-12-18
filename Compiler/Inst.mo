@@ -4168,7 +4168,7 @@ algorithm
       ClassInf.State ci_state;
       Boolean impl;
       Env.Cache cache;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       output InstanceHierarchy ih;
       
     case (cache,env,ih,pre,{},_,csets,_) then (cache,env,ih,{},csets); 
@@ -4329,11 +4329,11 @@ algorithm
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
         (cache,tp_1) = makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
-        els_1 = addInheritScope(noImportElements(els), tp_1) "Add the scope of the base class to elements" ;       
-        eq1_1 = addEqnInheritScope(eq1, tp_1);
-        ieq1_1 = addEqnInheritScope(ieq1, tp_1);
-        alg1_1 = addAlgInheritScope(alg1, tp_1);
-        ialg1_1 = addAlgInheritScope(ialg1, tp_1);
+        els_1 = addInheritScope(noImportElements(els), (tp_1,emod)) "Add the scope of the base class to elements" ;
+        eq1_1 = addEqnInheritScope(eq1, (tp_1,emod));
+        ieq1_1 = addEqnInheritScope(ieq1, (tp_1,emod));
+        alg1_1 = addAlgInheritScope(alg1, (tp_1,emod));
+        ialg1_1 = addAlgInheritScope(ialg1, (tp_1,emod));
 
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
         new_ci_state = ClassInf.start(r, cn);
@@ -4473,7 +4473,7 @@ algorithm
       list<tuple<SCode.Element, Mod>> rest,elsAndMods;
       SCode.Mod mods;
       Mod mod,mod1,mod2,emod;
-      Option<Absyn.Path> baseClassPath1,baseClassPath2;
+      SCode.OptBaseClass baseClassPath1,baseClassPath2;
       Option<Absyn.ConstrainClass> cc1,cc2;
     case (emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,baseClassPath2,cc2),mod1)::rest)
       equation
@@ -4598,7 +4598,7 @@ algorithm
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
         (cache,tp_1) = makeFullyQualified(cache, /* adrpo: CHECK cenv1? */ env, tp); 
-        els_1 = addInheritScope(noImportElements(els), tp_1) "Add the scope of the base class to elements" ;
+        els_1 = addInheritScope(noImportElements(els), (tp_1,emod)) "Add the scope of the base class to elements" ;
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
         new_ci_state = ClassInf.start(r, cn);
         (els_1,classextendselts) = splitClassExtendsElts(els_1);
@@ -4661,10 +4661,10 @@ protected function addInheritScope
   be able to look up classes, etc. from the scope where the component is 
   defined."
   input list<SCode.Element> inSCodeElementLst;
-  input Absyn.Path inPath;
+  input SCode.BaseClass inPathMod;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
-  outSCodeElementLst := matchcontinue (inSCodeElementLst,inPath)
+  outSCodeElementLst := matchcontinue (inSCodeElementLst,inPathMod)
     local
       list<SCode.Element> res,xs;
       String a;
@@ -4672,7 +4672,7 @@ algorithm
       Boolean o2,i2;
       SCode.Attributes e;
       Absyn.TypeSpec f;
-      Absyn.Path tp;
+      SCode.BaseClass tp;
       SCode.Mod g;
       Option<SCode.Comment> comment;
       SCode.Element x;
@@ -4720,14 +4720,14 @@ protected function addEqnInheritScope
   to be able to look up e.g. constants, etc. from the scope where the 
   equation  is defined."
   input list<SCode.Equation> inSCodeEquationLst;
-  input Absyn.Path inPath;
+  input SCode.BaseClass inPathMod;
   output list<SCode.Equation> outSCodeEquationLst;
 algorithm 
-  outSCodeEquationLst := matchcontinue (inSCodeEquationLst,inPath)
+  outSCodeEquationLst := matchcontinue (inSCodeEquationLst,inPathMod)
     local
       list<SCode.Equation> res,xs;
       SCode.EEquation e;
-      Absyn.Path tp;
+      SCode.BaseClass tp;
     case ({},_) then {}; 
     case ((SCode.EQUATION(eEquation = e) :: xs),tp)
       equation 
@@ -4745,14 +4745,14 @@ protected function addAlgInheritScope
   to be able to look up e.g. constants, etc. from the scope where the 
   algorithm is defined."
   input list<SCode.Algorithm> inSCodeAlgorithmLst;
-  input Absyn.Path inPath;
+  input SCode.BaseClass inPathMod;
   output list<SCode.Algorithm> outSCodeAlgorithmLst;
 algorithm 
-  outSCodeAlgorithmLst := matchcontinue (inSCodeAlgorithmLst,inPath)
+  outSCodeAlgorithmLst := matchcontinue (inSCodeAlgorithmLst,inPathMod)
     local
       list<SCode.Algorithm> res,xs;
       list<Absyn.Algorithm> a;
-      Absyn.Path tp;
+      SCode.BaseClass tp;
     case ({},_) then {}; 
     case ((SCode.ALGORITHM(statements = a) :: xs),tp)
       equation 
@@ -5460,7 +5460,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,allcomps,comps;
       list<SCode.Equation> eqns;
@@ -5599,7 +5599,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,comps;
       InstDims inst_dims;
@@ -5759,7 +5759,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       Option<DAE.EqMod> eq;
       list<DimExp> dims;
@@ -6329,7 +6329,7 @@ protected function getDerivedEnv
   input Env.Cache inCache;
   input Env inEnv;
   input InstanceHierarchy inIH;
-  input Option<Absyn.Path> inAbsynPathOption;
+  input SCode.OptBaseClass inAbsynPathOption;
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
@@ -6348,10 +6348,12 @@ algorithm
       Env.AvlTree cl;
       list<Env.Item> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      SCode.BaseClass bc;
       Absyn.Path tp,envpath,newTp;
       Env.Cache cache;
       InstanceHierarchy ih;
       list<SCode.Element> defineUnits;
+      SCode.Mod mod;
 
     /* case (cache,env,NONE,ih) then (cache,env,ih); adrpo: CHECK if needed! */
 
@@ -6365,12 +6367,12 @@ algorithm
      * will be instantiated over and over again, see testcase packages2.mo
      */      		
     case (cache,
-          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME(tp)) 
+          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod))) 
       equation
 				SOME(envpath) = Env.getEnvPath(env);
 				true = Absyn.pathPrefixOf(envpath,tp);
 				newTp = Absyn.removePrefix(envpath,tp);
-				(cache,env_2) = Lookup.lookupAndInstantiate(cache,env,newTp,true);
+				(cache,env_2) = Lookup.lookupAndInstantiate(cache,env,newTp,mod,true);
       then
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs,ih);
             
@@ -6379,10 +6381,10 @@ algorithm
     * by this and therefore should search from top scope directly. 
     */ 
     case (cache,
-          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME(tp))
+          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod)))
       equation 
         top_frame = Env.topFrame(env);
-        (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,true);
+        (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,mod,true);
       then
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs,ih);
         
@@ -6464,7 +6466,7 @@ algorithm
       Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment,comment2;
       list<tuple<SCode.Element, Mod>> rest;
       Prefix.Prefix pre;
@@ -7453,7 +7455,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
       SCode.Class cl;
@@ -8234,7 +8236,7 @@ algorithm
       SCode.Variability param;
       Absyn.Direction dir;
       SCode.Mod m,m_1;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       DAE.Mod cmod,cmod_1,m_2,mod_2;
       DAE.EqMod eq;
@@ -10495,7 +10497,7 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -10600,7 +10602,7 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -11755,7 +11757,7 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -11808,7 +11810,7 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -14470,7 +14472,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod mod;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       SCode.Element elt;
       Env.Cache cache;
@@ -15681,7 +15683,7 @@ algorithm oltuple := matchcontinue(ltuple)
       Ident c1;
       Absyn.InnerOuter c2;
       Boolean c3,c4,c5;
-      Option<Absyn.Path> c9;
+      SCode.OptBaseClass c9;
       Option<SCode.Comment> c10;
       Option<Absyn.Exp> c11;
       Option<Absyn.Info> c12;

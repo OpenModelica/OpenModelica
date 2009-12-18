@@ -1406,11 +1406,12 @@ return its environment. Helper function used e.g by Inst.mo"
   input Env.Cache inCache;
   input Env.Env env;
   input Absyn.Path path;
+  input SCode.Mod mod;
   input Boolean msg;
   output Env.Cache outCache;
   output Env.Env classEnv;
 algorithm
-  (outCache,classEnv) := matchcontinue(cache,env,path,msg)
+  (outCache,classEnv) := matchcontinue(cache,env,path,mod,msg)
     local	Env.Cache cache;
       String cn2;
       Boolean enc2,enc;
@@ -1420,32 +1421,34 @@ algorithm
       Absyn.Path scope;
       SCode.Class c;
       Absyn.Ident ident;
+      DAE.Mod dmod;
 
       // Try to find in cache.
-    case(cache,env,path,msg)
+    case(cache,env,path,mod,msg) /* Should we only lookup if it is SCode.NOMOD? */
       equation
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env, path, msg);
+        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env,path,msg);
         SOME(scope) = Env.getEnvPath(cenv);
         ident = Absyn.pathLastIdent(path);
        classEnv = Env.cacheGet(scope,Absyn.IDENT(ident),cache);
       then (cache,classEnv);
 
       // Not found in cache, lookup and instantiate.
-    case(cache,env,path,msg)
+    case(cache,env,path,mod,msg)
       equation
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env, path, msg);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
-        new_ci_state = ClassInf.start(r, cn2);     
+        new_ci_state = ClassInf.start(r, cn2);
+        dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         (cache,classEnv,_,_) = 
         Inst.partialInstClassIn(
           cache,cenv_2,InstanceHierarchy.emptyInstanceHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+          dmod, Prefix.NOPRE(), Connect.emptySet, 
           new_ci_state, c, false, {});
       then (cache,classEnv);
-    case(cache,env,path,msg)
+    case(cache,env,path,mod,msg)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " in scope " +& Env.printEnvPathStr(env));
+        Debug.traceln( "- Lookup.lookupAndInstantiate failed " +&  Absyn.pathString(path) +& " with mod: " +& SCode.printModStr(mod) +& " in scope " +& Env.printEnvPathStr(env));
      then fail();
   end matchcontinue;
 end lookupAndInstantiate;
@@ -1999,7 +2002,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
       SCode.Mod mod;
-      Option<Absyn.Path> bc;
+      SCode.OptBaseClass bc;
       Option<SCode.Comment> comment;
       list<Env.Frame> env_1;
       Option<Absyn.Exp> cond; 

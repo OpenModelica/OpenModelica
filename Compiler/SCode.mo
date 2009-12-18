@@ -54,6 +54,12 @@ type Path = Absyn.Path;
 
 public 
 type Subscript = Absyn.Subscript;
+  
+public
+type BaseClass = tuple<Absyn.Path,Mod>;
+
+public
+type OptBaseClass = Option<BaseClass>;
 
 public 
 uniontype Restriction
@@ -244,7 +250,7 @@ public
 uniontype Equation "- Equations"
   record EQUATION "an equation"
     EEquation eEquation "an equation";
-    Option<Absyn.Path> baseClassPath 
+    OptBaseClass baseClassPath 
     "the baseClassPath is present if the equation originates from a base class" ;
   end EQUATION;
   
@@ -321,7 +327,7 @@ uniontype Algorithm "- Algorithms
   algorithm section."
   record ALGORITHM "the algorithm section"
     list<Absyn.Algorithm> statements "the algorithm statements" ;
-    Option<Absyn.Path> baseClassPath "the baseclass name if these algorithms are from a baseclass" ;
+    OptBaseClass baseClassPath "the baseclass name if these algorithms are from a baseclass" ;
   end ALGORITHM;
 
 end Algorithm;
@@ -347,7 +353,7 @@ uniontype Element "- Elements
     Boolean finalPrefix        "final prefix" ;
     Boolean replaceablePrefix  "replaceable prefix" ;
     Class   classDef           "the class definition" ;
-    Option<Path> baseClassPath "the base class path if this class definition originates from a base class" ;
+    OptBaseClass baseClassPath "the base class path if this class definition originates from a base class" ;
     Option<Absyn.ConstrainClass> cc;
   end CLASSDEF;
 
@@ -364,7 +370,7 @@ uniontype Element "- Elements
     Attributes attributes         "the component attributes";
     Absyn.TypeSpec typeSpec       "the type specification" ;
     Mod modifications             "the modifications to be applied to the component";
-    Option<Path> baseClassPath    "the base class path if this component originates from a base class" ;
+    OptBaseClass baseClassPath    "the base class path if this component originates from a base class" ;
     Option<Comment> comment "this if for extraction of comments and annotations from Absyn" ;
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
@@ -880,12 +886,14 @@ algorithm
 end printElementList;
 
 public function unparseOptPath
-  input  Option<Absyn.Path> optPath;
+  input  OptBaseClass optPath;
   output String str;
 algorithm
   str := matchcontinue (optPath)
-    local Absyn.Path path;
-    case (SOME(path)) then Absyn.pathString(path);
+    local
+      Absyn.Path path;
+      Mod mod;
+    case (SOME((path,mod))) then Absyn.pathString(path) +& " with mod: " +& printModStr(mod);
     case (NONE) then "<nothing>";
   end matchcontinue;
 end unparseOptPath;
@@ -920,7 +928,7 @@ algorithm
       Attributes attr;
       String modStr;
       Absyn.Path path;
-      Option<Absyn.Path> pathOpt;
+      OptBaseClass pathOpt;
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
@@ -930,10 +938,11 @@ algorithm
         res = Util.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = SOME(path))
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = SOME((path,mod)))
       equation 
         str = Absyn.pathString(path);
-        res = Util.stringAppendList({"CLASSDEF(",n,", from basclass: ",str,")"});
+        modStr = printModStr(mod);
+        res = Util.stringAppendList({"CLASSDEF(",n,", from baseclass: ",str," with mod: ",modStr,")"});
       then
         res;
     case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
@@ -970,7 +979,7 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs;
-      Option<Absyn.Path> pathOpt;
+      OptBaseClass pathOpt;
       Absyn.TypeSpec typath;
       Mod mod;
       Boolean finalPrefix,repl,prot;
@@ -2211,11 +2220,11 @@ public function elementBaseClassPath "
 This function returns baseClassPath from COMPONENT and CLASDEF,
   NONE() from other Elements"
   input Element inElement;
-  output Option<Path> outBaseClassPath;
+  output OptBaseClass outBaseClassPath;
 algorithm
   outBaseClassPath:= matchcontinue(inElement)
   local
-    Option<Path> optPath;
+    OptBaseClass optPath;
     
     case COMPONENT(baseClassPath=optPath) then optPath; 
     case CLASSDEF(baseClassPath=optPath) then optPath;
