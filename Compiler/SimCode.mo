@@ -106,6 +106,95 @@ algorithm
   len := listLength(lst);
 end listLengthMatrix2;
 
+public
+function listLengthSubscript
+  input list<DAE.Subscript> lst;
+  output Integer len;
+algorithm
+  len := listLength(lst);
+end listLengthSubscript;
+
+// Assume that cref is CREF_IDENT
+public
+function crefSubIsScalar
+  input DAE.ComponentRef cref;
+  output Boolean isScalar;
+algorithm
+  isScalar :=
+  matchcontinue (cref)
+    local
+      list<DAE.Subscript> subs;
+    case (DAE.CREF_IDENT(subscriptLst=subs)) then subsToScalar(subs);
+    case _ then false;
+  end matchcontinue;
+end crefSubIsScalar;
+
+// Assume that cref is CREF_IDENT
+public
+function crefNoSub
+  input DAE.ComponentRef cref;
+  output Boolean noSub;
+algorithm
+  noSub :=
+  matchcontinue (cref)
+    local
+      list<DAE.Subscript> subs;
+    case (DAE.CREF_IDENT(subscriptLst={})) then true;
+    case (DAE.CREF_IDENT(subscriptLst=subs)) then false;
+    case _
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {""});
+      then
+        fail();
+  end matchcontinue;
+end crefNoSub;
+
+protected
+function subsToScalar "function: subsToScalar
+
+  Returns true if subscript results applied to variable or expression
+  results in scalar expression.
+"
+  input list<DAE.Subscript> inExpSubscriptLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inExpSubscriptLst)
+    local
+      Boolean b;
+      list<DAE.Subscript> r;
+    case {} then true;
+    case (DAE.SLICE(exp = _) :: _) then false;
+    case (DAE.WHOLEDIM() :: _) then false;
+    case (DAE.INDEX(exp = _) :: r)
+      equation
+        b = subsToScalar(r);
+      then
+        b;
+  end matchcontinue;
+end subsToScalar;
+
+public function buildCrefExpFromAsub
+  input DAE.Exp cref;
+  input list<DAE.Exp> subs;
+  output DAE.Exp cRefOut;
+algorithm
+  cRefOut := matchcontinue(cref, subs)
+    local 
+      DAE.Exp sub; 
+      DAE.ExpType ty; 
+      list<DAE.Exp> rest; 
+      DAE.ComponentRef crNew;
+      list<DAE.Subscript> indexes;
+    case (cref, {}) then cref;
+    case (DAE.CREF(componentRef=crNew, ty=ty), subs)
+      equation
+        indexes = Util.listMap(subs, Exp.makeIndexSubscript);
+        crNew = Exp.subscriptCref(crNew, indexes); 
+      then
+        DAE.CREF(crNew, ty);
+  end matchcontinue; 
+end buildCrefExpFromAsub;
 
 /************** FUNCTIONS ***********/
 /* a type to use for function return, parameters and variable declarations is based on Exp.Type */

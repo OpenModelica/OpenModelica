@@ -897,7 +897,7 @@ zeroCrossingTpl(Integer index, Exp relation, Text varDecls) ::=
     # e2 = daeExp(interval, createOtherContext(), preExp, varDecls)
     <<
     <preExp>
-    ZEROCROSSING(<index>, Samle(*t, <e1>, <e2>));
+    ZEROCROSSING(<index>, Sample(*t, <e1>, <e2>));
     >>
   case _ then
     <<
@@ -914,7 +914,7 @@ utilStaticStringArray(String name, list<SimVar> items) ::=
 if items then
 <<
 char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
-  '"<cref(origName)>"' ", ">};
+  '"<crefSubscript(origName)>"' ", ">};
 >>
 else
 <<
@@ -989,6 +989,10 @@ discreteAttrInt(Boolean isDiscrete) ::=
   case false then "0"
 
 cref(ComponentRef) ::=
+  case CREF_IDENT then '<ident>'
+  case _ then "CREF_NOT_IDENT"
+
+crefSubscript(ComponentRef) ::=
   case CREF_IDENT then '<ident><subscriptsTpl(subscriptLst)>'
   case _ then "CREF_NOT_IDENT"
 
@@ -1183,7 +1187,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     # expPart = daeExp(exp, context, preExp, varDecls)
     <<
     <preExp>
-    <scalarLhsCref(exp1.componentRef)> = <expPart>;
+    <scalarLhsCref(exp1, context, preExp, varDecls)> = <expPart>;
     >>
   case STMT_ASSIGN then
     # preExp = ""
@@ -1213,7 +1217,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
   case STMT_FOR(exp = rng as RANGE) then
     # stateVar = tempDecl("state", varDecls)
     # dvar = System.tmpTick() // a hack to be precisely the same as original ... see Codegen.generateAlgorithmStatement case FOR
-    # identType = expTypeA(type_, boolean)
+    # identType = expType(type_, boolean)
     # r1 = tempDecl(identType, varDecls)
     # r2 = tempDecl(identType, varDecls)
     # r3 = tempDecl(identType, varDecls)
@@ -1368,9 +1372,14 @@ elseExpr(DAE.Else, Context context, Text varDecls) ::=
     }
     >>
 
-scalarLhsCref(ComponentRef) ::=
-  case CREF_IDENT then ident
-  case CREF_QUAL  then '<ident>.<scalarLhsCref(componentRef)>'
+scalarLhsCref(Exp cref, Context context, Text preExp, Text varDecls) ::=
+case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
+  if crefNoSub(cref.componentRef) then
+    '<cref(cref.componentRef)>'
+  else
+    daeExpCrefRhs(cref, context, preExp, varDecls)
+case _ then
+  "ONLY IDENT SUPPORTED"
 
 //TODO: this wrong for qualified integers !
 rhsCref(ComponentRef, ExpType ty) ::=
@@ -1387,7 +1396,7 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case RCONST     then real
   case SCONST     then daeExpSconst(string, preExp, varDecls)
   case BCONST     then if bool then "(1)" else "(0)"
-  case CREF       then rhsCref(componentRef, ty)
+  case CREF       then daeExpCrefRhs(it, context, preExp, varDecls)
   case BINARY     then daeExpBinary(it, context, preExp, varDecls)
   case UNARY      then daeExpUnary(it, context, preExp, varDecls)
   case LBINARY    then daeExpLbinary(it, context, preExp, varDecls)
@@ -1414,6 +1423,80 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   // METARECORDCALL
   case _          then "UNKNOWN_EXP"
 
+daeExpCrefRhs(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
+  if daeExpCrefRhsArrayBox(exp, context, preExp, varDecls) then
+    it
+  else if crefNoSub(cref.componentRef) then
+    # cast = if cref.ty is ET_INT then "(modelica_integer)" else ""
+    '<cast><cref(cref.componentRef)>'
+  else if crefSubIsScalar(cref.componentRef) then
+    // The array subscript results in a scalar
+    # arrName = cref(cref.componentRef)
+    # arrayType = expTypeArray(cref.ty)
+    # dimsLenStr = listLengthSubscript(subs)
+    # dimsValuesStr = (subs of INDEX: daeExp(exp, context, preExp, varDecls) ", ")
+    <<
+    (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
+    >>
+  else
+    // The array subscript denotes a slice
+    # arrName = cref(cref.componentRef)
+    # arrayType = expTypeArray(cref.ty)
+    # tmp = tempDecl(arrayType, varDecls)
+    # spec1 = indexSpec(subs, context, preExp, varDecls)
+    # preExp += 'index_alloc_<arrayType>(&<arrName>, &<spec1>, &<tmp>);<\n>'
+    tmp
+case _ then
+  "UNKNOWN RHS CREF: ONLY IDENT SUPPORTED"
+
+indexSpec(list<Subscript> subs, Context context, Text preExp, Text varDecls) ::=
+# nridx_str = listLengthSubscript(subs)
+# idx_str = (subs of sub:
+               case INDEX then
+                 # expPart = daeExp(exp, context, preExp, varDecls)
+                 <<
+                 (1), make_index_array(1, <expPart>), 'S'
+                 >>
+               case WHOLEDIM then
+                 <<
+                 (1), (0), 'W'
+                 >>
+               case SLICE then
+                 # expPart = daeExp(exp, context, preExp, varDecls)
+                 # tmp = tempDecl("modelica_integer", varDecls)
+                 # preExp += '<tmp> = size_of_dimension_integer_array(<expPart>, 1);<\n>'
+                 <<
+                 <tmp>, integer_array_make_index_array(&<expPart>), 'A'
+                 >>
+             ", ")
+# tmp = tempDecl("index_spec_t", varDecls)
+# preExp += 'create_index_spec(&<tmp>, <nridx_str>, <idx_str>);<\n>'
+tmp
+
+daeExpCrefRhsArrayBox(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
+  if context is SIMULATION then
+    // For context simulation array variables must be boxed into a real_array
+    // object since they are represented only in a double array.
+    # tmpArr = tempDecl(expTypeArray(aty), varDecls)
+    # dimsLenStr = listLengthOptionInt(dims)
+    # dimsValuesStr = (dims of dim as SOME(i): i ", ")
+    # preExp += '<expTypeShort(aty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
+    tmpArr
+
+// TODO: Optimize as in Codegen
+// TODO: Use this function in other places where almost the same thing is hard
+//       coded
+arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
+               Text preExp, Text varDecls) ::=
+  # arrayType = expTypeArray(ty)
+  # dimsLenStr = listLengthExp(subs)
+  # dimsValuesStr = (subs of exp: daeExp(exp, context, preExp, varDecls) ", ")
+  <<
+  (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
+  >>
+
 daeExpSconst(String string, Text preExp, Text varDecls) ::=
   # strVar = tempDecl("modelica_string", varDecls)
   # preExp += 'init_modelica_string(&<strVar>,"<Util.escapeModelicaStringToCString(string)>");<\n>'
@@ -1433,10 +1516,25 @@ case BINARY then
   case MUL then '(<e1> * <e2>)'
   case DIV then '(<e1> / <e2>)'
   case POW then 'pow((modelica_real)<e1>, (modelica_real)<e2>)'
+  case ADD_ARR then
+    # type = if ty is ET_ARRAY(ty=ET_INT) then "integer_array" else "real_array"
+    # var = tempDecl(type, varDecls)
+    # preExp += 'add_alloc_<type>(&<e1>, &<e2>, &<var>);<\n>'
+    '<var>'
+  case SUB_ARR then
+    # type = if ty is ET_ARRAY(ty=ET_INT) then "integer_array" else "real_array"
+    # var = tempDecl(type, varDecls)
+    # preExp += 'sub_alloc_<type>(&<e1>, &<e2>, &<var>);<\n>'
+    '<var>'
   case MUL_ARRAY_SCALAR then
     # type = if ty is ET_ARRAY(ty=ET_INT) then "integer_array" else "real_array"
     # var = tempDecl(type, varDecls)
-    # preExp += 'mul_alloc_<type>_scalar(&<e1>, <e2>, &<var>);'
+    # preExp += 'mul_alloc_<type>_scalar(&<e1>, <e2>, &<var>);<\n>'
+    '<var>'
+  case DIV_ARRAY_SCALAR then
+    # type = if ty is ET_ARRAY(ty=ET_INT) then "integer_array" else "real_array"
+    # var = tempDecl(type, varDecls)
+    # preExp += 'div_alloc_<type>_scalar(&<e1>, <e2>, &<var>);<\n>'
     '<var>'
   case _   then "daeExpBinary:ERR"
 
@@ -1467,19 +1565,11 @@ case UNARY then
 
 daeExpRelation(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case rel as RELATION then
-  # e1 = daeExp(exp1, context, preExp, varDecls)
-  # e2 = daeExp(exp2, context, preExp, varDecls)
-  match context
-  case SIMULATION then (
-    # res = tempDecl("modelica_boolean", varDecls)
-    match rel.operator
-    case LESS      then # preExp += 'RELATIONLESS(<res>, <e1>, <e2>);<\n>' res
-    case LESSEQ    then # preExp += 'RELATIONLESSEQ(<res>, <e1>, <e2>);<\n>' res
-    case GREATER   then # preExp += 'RELATIONGREATER(<res>, <e1>, <e2>);<\n>' res
-    case GREATEREQ then # preExp += 'RELATIONGREATEREQ(<res>, <e1>, <e2>);<\n>' res
-    case _         then "daeExpRelation:SIMULATION:ERR"
-  )
-  case OTHER then (
+  if daeExpRelationSim(exp, context, preExp, varDecls) then
+    it
+  else
+    # e1 = daeExp(rel.exp1, context, preExp, varDecls)
+    # e2 = daeExp(rel.exp2, context, preExp, varDecls)
     match rel.operator
     case LESS(ty = ET_BOOL)        then '(!<e1> && <e2>)'
     case LESS(ty = ET_STRING)      then "# string comparison not supported\n"
@@ -1505,9 +1595,20 @@ case rel as RELATION then
     case NEQUAL(ty = ET_STRING)    then '(strcmp(<e1>, <e2>))'
     case NEQUAL(ty = ET_INT)       then '(<e1> != <e2>)'
     case NEQUAL(ty = ET_REAL)      then '(<e1> != <e2>)'
-    case _                         then "daeExpRelation:OTHER:ERR"
-  )
-  case _ then "daeExpRelation:ERR"
+    case _                         then "daeExpRelation:ERR"
+
+daeExpRelationSim(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case rel as RELATION then
+  match context
+  case SIMULATION then
+    # e1 = daeExp(rel.exp1, context, preExp, varDecls)
+    # e2 = daeExp(rel.exp2, context, preExp, varDecls)
+    # res = tempDecl("modelica_boolean", varDecls)
+    match rel.operator
+    case LESS      then # preExp += 'RELATIONLESS(<res>, <e1>, <e2>);<\n>' res
+    case LESSEQ    then # preExp += 'RELATIONLESSEQ(<res>, <e1>, <e2>);<\n>' res
+    case GREATER   then # preExp += 'RELATIONGREATER(<res>, <e1>, <e2>);<\n>' res
+    case GREATEREQ then # preExp += 'RELATIONGREATEREQ(<res>, <e1>, <e2>);<\n>' res
 
 daeExpIf(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case IFEXP then
@@ -1550,7 +1651,7 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # var2 = daeExp(n, context, preExp, varDecls)
     # arr_tp_str = '<expTypeFromExpArray(A)>'
     # tvar = tempDecl(arr_tp_str, varDecls)
-    # preExp += 'promote_alloc_<arr_tp_str>(&<var1>, &<var2>, &<tvar>);<\n>'
+    # preExp += 'promote_alloc_<arr_tp_str>(&<var1>, <var2>, &<tvar>);<\n>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="transpose"), expLst={A}) then
@@ -1558,6 +1659,13 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # arr_tp_str = '<expTypeFromExpArray(A)>'
     # tvar = tempDecl(arr_tp_str, varDecls)
     # preExp += 'transpose_alloc_<arr_tp_str>(&<var1>, &<tvar>);<\n>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="identity"), expLst={A}) then
+    # var1 = daeExp(A, context, preExp, varDecls)
+    # arr_tp_str = '<expTypeFromExpArray(A)>'
+    # tvar = tempDecl(arr_tp_str, varDecls)
+    # preExp += 'identity_alloc_<arr_tp_str>(<var1>, &<tvar>);<\n>'
     tvar
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
@@ -1613,14 +1721,14 @@ case m as MATRIX then
   # catAlloc = (m.scalar of row:
                  # tmp = tempDecl(arrayTypeStr, varDecls)
                  # vars = daeExpMatrixRow(row, arrayTypeStr, context, promote, varDecls)
-                 # vars2 += ', <tmp>'
+                 # vars2 += ', &<tmp>'
                  'cat_alloc_<arrayTypeStr>(2, &<tmp>, <listLengthMatrix2(row)><vars>);'
                "\n")
   # preExp += promote
   # preExp += catAlloc
   # preExp += "\n"
   # tmp = tempDecl(arrayTypeStr, varDecls)
-  # preExp += 'cat_alloc_<arrayTypeStr>(2, &<tmp>, <listLengthMatrix1(m.scalar)><vars2>);<\n>'
+  # preExp += 'cat_alloc_<arrayTypeStr>(1, &<tmp>, <listLengthMatrix1(m.scalar)><vars2>);<\n>'
   tmp
 
 daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
@@ -1672,28 +1780,14 @@ case ASUB(exp=ASUB(exp=e, sub={ICONST(integer=i)}),
   'ASUB_2D'
 case ASUB(exp=e, sub={ICONST(integer=i)}) then
   'ASUB_ARRAY'
-case ASUB(exp=cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)), sub=subs) then // TODO: Optimize as in Codegen
-  # arrName = arrayRhs(cref, context, preExp, varDecls)
-  # arrayType = expTypeArray(aty)
-  # dimsLenStr = listLengthOptionInt(dims)
-  # dimsValuesStr = (subs of exp: daeExp(exp, context, preExp, varDecls) ", ")
-  <<
-  (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
-  >>
+case ASUB(exp=cref as CREF, sub=subs) then
+  # arrName = daeExpCrefRhs(buildCrefExpFromAsub(cref, subs), context, preExp, varDecls)
+  if context is SIMULATION then
+    arrayScalarRhs(cref.ty, subs, arrName, context, preExp, varDecls)
+  else
+    '<arrName>'
 case _ then
   'OTHER_ASUB'
-
-arrayRhs(Exp cref, Context context, Text preExp, Text varDecls) ::=
-case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
-  match context
-  case SIMULATION then
-    # tmpArr = tempDecl(expTypeArray(aty), varDecls)
-    # dimsLenStr = listLengthOptionInt(dims)
-    # dimsValuesStr = (dims of dim as SOME(i): i ", ")
-    # preExp += '<expTypeShort(aty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
-    tmpArr
-  case _ then
-    cref(cref.componentRef)
 
 daeExpSize(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case SIZE(exp=CREF, sz=SOME(dim)) then

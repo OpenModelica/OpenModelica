@@ -29,6 +29,27 @@ package SimCode
     input list<tuple<DAE.Exp,Boolean>> lst;
     output Integer len;
   end listLengthMatrix2;
+
+  function listLengthSubscript
+    input list<DAE.Subscript> lst;
+    output Integer len;
+  end listLengthSubscript;
+
+  function crefSubIsScalar
+    input DAE.ComponentRef cref;
+    output Boolean isScalar;
+  end crefSubIsScalar;
+  
+  function crefNoSub
+    input DAE.ComponentRef cref;
+    output Boolean noSub;
+  end crefNoSub;
+
+  function buildCrefExpFromAsub
+    input DAE.Exp cref;
+    input list<DAE.Exp> subs;
+    output DAE.Exp cRefOut;
+  end buildCrefExpFromAsub;
   
   uniontype Context
     record SIMULATION end SIMULATION;
