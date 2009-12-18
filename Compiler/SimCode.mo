@@ -1594,6 +1594,12 @@ algorithm
       String varname;
       String id;
       Integer indx;
+      Integer e_1;
+      Algorithm.Algorithm alg;
+      Algorithm.Algorithm[:] algs;
+      list<DAE.Statement> algStatements;
+      list<DAE.Exp> inputs,outputs;
+      DAELow.VariableArray vararr;
     /* single equation: non-state */
     case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, eqNum)
@@ -1623,6 +1629,15 @@ algorithm
         exp_ = Exp.solve(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr_1, exp_);
+    /* single equation: algorithm */
+    case (dae, DAELow.DAELOW(orderedVars=DAELow.VARIABLES(varArr=vararr),orderedEqs=eqns,algorithms=algs), ass1, ass2, eqNum)
+      equation
+        e_1 = eqNum - 1 "Algorithms Each algorithm should only be genated once." ;
+        DAELow.ALGORITHM(indx,inputs,outputs) = DAELow.equationNth(eqns, e_1);
+        alg = algs[indx + 1];
+        DAE.ALGORITHM_STMTS(algStatements) = alg;
+      then
+        SES_ALGORITHM(algStatements);
     case (_,_,_,_,_)
       then
         SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");

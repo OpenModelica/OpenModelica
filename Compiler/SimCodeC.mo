@@ -3686,10 +3686,11 @@ algorithm
            i_varDecls )
       local
         String i_msg;
+        String ret_0;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("SES_NOT_IMPLEMENTED(\""));
-        txt = Tpl.writeStr(txt, i_msg);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\");"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("SES_NOT_IMPLEMENTED_"));
+        ret_0 = System.stringReplace(i_msg, " ", "_");
+        txt = Tpl.writeStr(txt, ret_0);
       then (txt, i_varDecls);
 
     case ( txt,

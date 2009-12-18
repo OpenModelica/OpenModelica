@@ -955,7 +955,7 @@ case SES_ALGORITHM then
 >>
 case SES_NOT_IMPLEMENTED then
 <<
-SES_NOT_IMPLEMENTED("<msg>");
+SES_NOT_IMPLEMENTED_<System.stringReplace(msg, " ", "_")>
 >>
 case _ then
 <<
