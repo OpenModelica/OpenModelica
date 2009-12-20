@@ -54,6 +54,7 @@ protected import Print;
 protected import SimCodegen;
 protected import RTOpts;
 protected import System;
+protected import VarTransform;
 
 protected import CevalScript;
 
@@ -113,6 +114,14 @@ function listLengthSubscript
 algorithm
   len := listLength(lst);
 end listLengthSubscript;
+
+public
+function listLengthCref
+  input list<DAE.ComponentRef> lst;
+  output Integer len;
+algorithm
+  len := listLength(lst);
+end listLengthCref;
 
 // Assume that cref is CREF_IDENT
 public
@@ -419,6 +428,17 @@ uniontype SimEqSystem
   record SES_ALGORITHM
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
+  record SES_LINEAR
+    list<SimVar> vars;
+    list<DAE.Exp> beqs;
+    // SimEqSystem is SES_RESIDUAL
+    list<tuple<Integer, Integer, SimEqSystem>> simJac;
+  end SES_LINEAR;
+  record SES_NONLINEAR
+    Integer index;
+    list<SimEqSystem> eqs;
+    list<DAE.ComponentRef> crefs;
+  end SES_NONLINEAR;
   record SES_NOT_IMPLEMENTED
     String msg;
   end SES_NOT_IMPLEMENTED;
@@ -1578,6 +1598,7 @@ algorithm
   matchcontinue (dae, dlow, ass1, ass2, eqNum)
     local
       list<Integer> restEqNums;
+      list<DAELow.Equation> eqnsList;
       Exp.ComponentRef cr,origname, cr_1;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
@@ -1591,15 +1612,23 @@ algorithm
       Exp.Exp exp_;
       DAELow.Variables vars;
       DAELow.EquationArray eqns;
+      DAELow.Equation eqn;
       String varname;
+      String name;
+      String c_name;
       String id;
       Integer indx;
       Integer e_1;
+      Integer e;
+      Integer index;
       Algorithm.Algorithm alg;
       Algorithm.Algorithm[:] algs;
       list<DAE.Statement> algStatements;
       list<DAE.Exp> inputs,outputs;
       DAELow.VariableArray vararr;
+      DAELow.MultiDimEquation[:] ae;
+      VarTransform.VariableReplacements repl;
+      list<SimEqSystem> resEqs;
     /* single equation: non-state */
     case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
           ass1, ass2, eqNum)
@@ -1611,7 +1640,6 @@ algorithm
         isNonState(kind);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         exp_ = Exp.solve(e1, e2, varexp);
-        varname = Exp.printComponentRefStr(cr);
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
     /* single equation: state */
@@ -1629,6 +1657,43 @@ algorithm
         exp_ = Exp.solve(e1, e2, varexp);
       then
         SES_SIMPLE_ASSIGN(cr_1, exp_);
+    /* non-state non-linear */
+    case (dae, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          ass1, ass2, e)
+      equation
+        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
+        getEquationAndSolvedVar(e, eqns, vars, ass2);
+        isNonState(kind);
+        //indxs = intString(indx);
+        //varexp = DAE.CREF(cr,DAE.ET_REAL());
+        //failure(_ = Exp.solve(e1, e2, varexp));
+        //(res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr}, {eqn},ae, cg_id);
+        index = tick();
+        index = eqNum; // Use the equation number as unique index
+        repl = makeResidualReplacements({cr});
+        resEqs = createNonlinearResidualEquations({eqn}, ae, repl);
+      then
+        SES_NONLINEAR(index, resEqs, {cr});
+    /* state nonlinear */
+    case (dae, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          ass1, ass2, e)
+      equation
+        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
+        getEquationAndSolvedVar(e, eqns, vars, ass2);
+        //indxs = intString(indx);
+        name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
+        c_name = name; // Util.modelicaStringToCStr(name,true);
+        id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        //varexp = DAE.CREF(cr_1,DAE.ET_REAL());
+        //failure(_ = Exp.solve(e1, e2, varexp));
+        //(res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
+        index = tick();
+        index = eqNum; // Use the equation number as unique index
+        repl = makeResidualReplacements({cr});
+        resEqs = createNonlinearResidualEquations({eqn}, ae, repl);
+      then
+        SES_NONLINEAR(index, resEqs, {cr});
     /* single equation: algorithm */
     case (dae, DAELow.DAELOW(orderedVars=DAELow.VARIABLES(varArr=vararr),orderedEqs=eqns,algorithms=algs), ass1, ass2, eqNum)
       equation
@@ -1643,6 +1708,64 @@ algorithm
         SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");
   end matchcontinue;
 end createEquation;
+
+protected function createNonlinearResidualEquations
+  input list<DAELow.Equation> eqs;
+  input DAELow.MultiDimEquation[:] arrayEqs;
+  input VarTransform.VariableReplacements repl;
+  output list<SimEqSystem> eqSystems;
+algorithm
+  eqSystems :=
+  matchcontinue (eqs, arrayEqs, repl)
+    local
+      Integer cg_id,cg_id_1,indx_1,cg_id_2,indx,aindx;
+      DAE.ExpType tp;
+      DAE.Exp res_exp,res_exp_1,res_exp_2,e1,e2,e;
+      String var,indx_str,stmt;
+      list<DAELow.Equation> rest,rest2;
+      DAELow.MultiDimEquation[:] aeqns;
+      VarTransform.VariableReplacements repl;
+      list<SimEqSystem> eqSystemsRest;
+    case ({}, _, _)
+      then {};
+    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, repl)
+      equation
+        tp = Exp.typeof(e1);
+        res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        res_exp_1 = Exp.simplify(res_exp);
+        res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
+        //(exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.simContext);
+        //indx_str = intString(indx);
+        //indx_1 = indx + 1;
+        eqSystemsRest = createNonlinearResidualEquations(rest, aeqns, repl);
+        //stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
+        //exp_func_1 = Codegen.cAddStatements(exp_func, {stmt});
+        //cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
+      then
+        SES_RESIDUAL(res_exp_2) :: eqSystemsRest;
+    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, repl)
+      equation
+        res_exp_1 = Exp.simplify(e);
+        res_exp_2 = VarTransform.replaceExp(res_exp_1, repl, SOME(skipPreOperator));
+        //(exp_func,var,cg_id_1) = Codegen.generateExpression(res_exp_2, cg_id, Codegen.simContext);
+        //indx_str = intString(indx);
+        //indx_1 = indx + 1;
+        eqSystemsRest = createNonlinearResidualEquations(rest, aeqns, repl);
+        //(cfunc,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest, aeqns,indx_1, repl, cg_id_1);
+        //stmt = Util.stringAppendList({TAB,"res[",indx_str,"] = ",var,";"});
+        //exp_func_1 = Codegen.cAddStatements(exp_func, {stmt});
+        //cfunc_1 = Codegen.cMergeFns({exp_func_1,cfunc});
+      then
+        SES_RESIDUAL(res_exp_2) :: eqSystemsRest;
+    ///* An array equation */
+    //case (rest as DAELow.ARRAY_EQUATION(aindx,_) :: _, aeqns, repl)
+    //  equation
+    //    (cfunc_1,cg_id_1,rest2,indx_1) = generateOdeSystem2NonlinearResidualsArrayEqn(aindx,rest,aeqns,indx,repl,cg_id);
+    //    (cfunc_2,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest2, aeqns,indx_1, repl, cg_id_1);
+    //    cfunc = Codegen.cMergeFns({cfunc_1,cfunc_2});
+    //  then (cfunc,cg_id_2);
+  end matchcontinue;
+end createNonlinearResidualEquations;
 
 public function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
@@ -1790,34 +1913,47 @@ algorithm
         equation_ = createSingleAlgorithmCode(dae, jac);
       then
         equation_;
-    //    /* constant jacobians. Linear system of equations (A x = b) where
-    //     A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as
-    //     for next case */
-    //case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT())
-    //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
-    //  equation
-    //    eqn_size = DAELow.equationSize(eqn);
-    //    (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,genDiscrete,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
-    //  then
-    //    (s1,cg_id_1,f1);
-
-    //    /* Time varying jacobian. Linear system of equations that needs to
-    //    	  be solved during runtime. */
-    //case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING())
-    //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
-    //  equation
-    //    //print("linearSystem of equations:");
-    //    //DAELow.dump(d);
-    //    //print("Jacobian:");print(DAELow.dumpJacobianStr(SOME(jac)));print("\n");
-    //    eqn_size = DAELow.equationSize(eqn);
-    //    unique_id = tick();
-    //    (s1,cg_id1) = generateOdeSystem2Declaration(mixedEvent,eqn_size, unique_id, cg_id);
-    //    (s2,cg_id2) = generateOdeSystem2PopulateAb(mixedEvent,jac, v, eqn, unique_id, cg_id1);
-    //    (s3,cg_id3) = generateOdeSystem2SolveCall(mixedEvent,eqn_size, unique_id, cg_id2);
-    //    (s4,cg_id4) = generateOdeSystem2CollectResults(mixedEvent,v, unique_id, cg_id3);
-    //    s = Codegen.cMergeFns({s1,s2,s3,s4});
-    //  then
-    //    (s,cg_id4,{});
+    /* constant jacobians. Linear system of equations (A x = b) where
+       A and b are constants. TODO: implement symbolic gaussian elimination
+       here. Currently uses dgesv as for next case */
+    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT())
+      local
+        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+      equation
+        eqn_size = DAELow.equationSize(eqn);
+        // NOTE: Not impl. yet, use time_varying...
+        equation_ = createOdeSystem2(mixedEvent, genDiscrete, d, SOME(jac),
+                                     DAELow.JAC_TIME_VARYING());
+      then
+        equation_;
+    /* Time varying jacobian. Linear system of equations that needs to
+       be solved during runtime. */
+    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING())
+      local
+        list<DAELow.Var> dlowVars;
+        list<SimVar> simVars;
+        list<DAELow.Equation> dlowEqs;
+        list<DAE.Exp> beqs;
+        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      equation
+        ////print("linearSystem of equations:");
+        ////DAELow.dump(d);
+        ////print("Jacobian:");print(DAELow.dumpJacobianStr(SOME(jac)));print("\n");
+        //eqn_size = DAELow.equationSize(eqn);
+        //unique_id = tick();
+        //(s1,cg_id1) = generateOdeSystem2Declaration(mixedEvent,eqn_size, unique_id, cg_id);
+        //(s2,cg_id2) = generateOdeSystem2PopulateAb(mixedEvent,jac, v, eqn, unique_id, cg_id1);
+        //(s3,cg_id3) = generateOdeSystem2SolveCall(mixedEvent,eqn_size, unique_id, cg_id2);
+        //(s4,cg_id4) = generateOdeSystem2CollectResults(mixedEvent,v, unique_id, cg_id3);
+        //s = Codegen.cMergeFns({s1,s2,s3,s4});
+        dlowVars = DAELow.varList(v);
+        simVars = Util.listMap(dlowVars, dlowvarToSimvar);
+        dlowEqs = DAELow.equationList(eqn);
+        beqs = Util.listMap1(dlowEqs, dlowEqToExp, v);
+        simJac = Util.listMap1(jac, jacToSimjac, v);
+      then
+        SES_LINEAR(simVars, beqs, simJac);
     //case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR()) /* Time varying nonlinear jacobian. Non-linear system of equations */
     //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
     //  equation
@@ -1843,6 +1979,61 @@ algorithm
         SES_NOT_IMPLEMENTED("some case in createOdeSystem2 not implemented");
   end matchcontinue;
 end createOdeSystem2;
+
+public function jacToSimjac
+  input tuple<Integer, Integer, DAELow.Equation> jac;
+  input DAELow.Variables v;
+  output tuple<Integer, Integer, SimEqSystem> simJac;
+algorithm
+  simJac :=
+  matchcontinue (jac, v)
+    local
+      Integer row;
+      Integer col;
+      DAE.Exp e;
+      DAE.Exp rhs_exp;
+      DAE.Exp rhs_exp_1;
+    case ((row, col, DAELow.RESIDUAL_EQUATION(exp=e)), v)
+      equation
+        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
+        rhs_exp_1 = Exp.simplify(rhs_exp);
+      then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
+  end matchcontinue;
+end jacToSimjac;
+
+public function dlowEqToExp
+  input DAELow.Equation dlowEq;
+  input DAELow.Variables v;
+  output DAE.Exp exp_;
+algorithm
+  exp_ :=
+  matchcontinue (dlowEq, v)
+    local
+      Integer row;
+      Integer col;
+      DAE.Exp e;
+      DAE.Exp e1;
+      DAE.Exp e2;
+      DAE.Exp new_exp;
+      DAE.Exp rhs_exp;
+      DAE.Exp rhs_exp_1;
+      DAE.Exp rhs_exp_2;
+      DAE.ExpType tp;
+    case (DAELow.RESIDUAL_EQUATION(exp=e), v)
+      equation
+        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
+        rhs_exp_1 = Exp.simplify(rhs_exp);
+      then rhs_exp_1;
+    case (DAELow.EQUATION(exp=e1, scalar=e2), v)
+      equation
+        tp = Exp.typeof(e1);
+        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
+        rhs_exp_2 = Exp.simplify(rhs_exp_1);
+      then rhs_exp_2;
+  end matchcontinue;
+end dlowEqToExp;
 
 public function createSingleArrayEqnCode 
   input DAELow.DAELow inDAELow;
@@ -2955,7 +3146,6 @@ protected constant String paramInGetNameFunction="ptr";
 protected import Codegen;
 //protected import Print;
 protected import ModUtil;
-protected import VarTransform;
 
 protected function generateHelpVarsForWhenStatements
 	input list<HelpVarInfo> inHelpVarInfo;

@@ -35,6 +35,11 @@ package SimCode
     output Integer len;
   end listLengthSubscript;
 
+  function listLengthCref
+    input list<DAE.ComponentRef> lst;
+    output Integer len;
+  end listLengthCref;
+
   function crefSubIsScalar
     input DAE.ComponentRef cref;
     output Boolean isScalar;
@@ -129,6 +134,16 @@ package SimCode
     record SES_ALGORITHM
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
+    record SES_LINEAR
+      list<SimVar> vars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+    end SES_LINEAR;
+    record SES_NONLINEAR
+      Integer index;
+      list<SimEqSystem> eqs;
+      list<DAE.ComponentRef> crefs;
+    end SES_NONLINEAR;
     record SES_NOT_IMPLEMENTED
       String msg;
     end SES_NOT_IMPLEMENTED;

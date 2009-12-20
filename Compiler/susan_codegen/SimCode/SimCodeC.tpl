@@ -74,6 +74,8 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <functionDaeRes()>
 
+<functionExtraResudials(allEquations)>
+
 <functionZeroCrossing(zeroCrossings)>
 
 <functionHandleZeroCrossing(zeroCrossingsNeedSave)>
@@ -796,6 +798,26 @@ int initial_residual()
 }
 >>
 
+functionExtraResudials(list<SimEqSystem> allEquations) ::=
+(allEquations of eq as SES_NONLINEAR:
+   # varDecls = ""
+   # body = (eq.eqs of eq2 as SES_RESIDUAL:
+       # preExp = ""
+       # expPart = daeExp(eq2.exp, createSimulationContext(), preExp, varDecls)
+       '<preExp>res[<i0>] = <expPart>;'
+     "\n")
+   <<
+   void residualFunc<index>(int *n, double* xloc, double* res, int* iflag)
+   {
+     state mem_state;
+     <varDecls>
+     mem_state = get_memory_state();
+     <body>
+     restore_memory_state(mem_state);
+   }
+   >>
+ "\n\n")
+
 functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
 # varDecls = ""
 # body = (parameterEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
@@ -952,6 +974,36 @@ case SES_ALGORITHM then
 # stmt = (statements : algStatement(it, context, varDecls) \n) 
 <<
 <stmt>
+>>
+case SES_LINEAR then
+# uid = System.tmpTick()
+# size = listLengthSimVar(vars)
+# aname = 'A<uid>'
+# bname = 'b<uid>'
+<<
+declare_matrix(<aname>, <size>, <size>);
+declare_vector(<bname>, <size>);
+<simJac of (row, col, eq as SES_RESIDUAL):
+   # preExp = ""
+   # expPart = daeExp(eq.exp, context, preExp, varDecls)
+   '<preExp>set_matrix_elt(<aname>, <row>, <col>, <size>, <expPart>);'
+ "\n">
+<beqs:
+   # preExp = ""
+   # expPart = daeExp(it, context, preExp, varDecls)
+   '<preExp>set_vector_elt(<bname>, <i0>, <expPart>);'
+ "\n">
+solve_linear_equation_system(<aname>, <bname>, <size>, <uid>);
+<vars of SIMVAR: '<cref(it.name)> = get_vector_elt(<bname>, <i0>);' "\n">
+>>
+case SES_NONLINEAR then
+# size = listLengthCref(crefs)
+<<
+start_nonlinear_system(<size>);
+<crefs: 'nls_x[<i0>] = extraPolate(<cref(it)>);<\n>nls_xold[<i0>] = old(&<cref(it)>);' "\n">
+solve_nonlinear_system(residualFunc<index>, <index>);
+<crefs: '<cref(it)> = nls_x[<i0>];' "\n">
+end_nonlinear_system();
 >>
 case SES_NOT_IMPLEMENTED then
 <<
