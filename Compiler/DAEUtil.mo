@@ -5153,6 +5153,41 @@ algorithm
   end matchcontinue;
 end transformIfEqToExpr;
 
+protected function selectBranches
+"@author: adrpo
+ this function will select the equations in the
+ correct branch IF (and only if) the conditions 
+ are boolean literals. We need this here as
+ Connections.isRoot is replaced by true/false
+ at the end of instatiation"
+ input list<DAE.Exp> cond;
+ input list<list<DAE.Element>> true_branch;
+ input list<DAE.Element> false_branch;
+ output list<DAE.Element> equations;
+algorithm
+ equations := matchcontinue(cond, true_branch, false_branch)
+   local
+     list<DAE.Exp> rest;
+     list<list<DAE.Element>> restTrue;
+     list<DAE.Element> eqs;
+   // nothing selects the else
+   case ({}, {}, false_branch) 
+     then false_branch;
+   // if true select the head from the true_branch
+   case (DAE.BCONST(true)::rest, eqs::restTrue, false_branch) 
+     then eqs;
+   // if false recurse with rest on both lists
+   case (DAE.BCONST(false)::rest, eqs::restTrue, false_branch)
+     equation
+       eqs = selectBranches(rest, restTrue, false_branch);
+     then eqs;
+   case (_, _, _)
+     equation
+       // Debug.fprintln("failtrace", "- DAEUtil.selectBranches failed: the IF equation is malformed!");
+     then fail();       
+ end matchcontinue;
+end selectBranches;
+ 
 protected function ifEqToExpr 
 "function: ifEqToExpr
   Transform one if-equation into equations involving if-expressions"
@@ -5169,6 +5204,17 @@ algorithm
       list<DAE.Element> false_branch,equations;
       list<list<DAE.Element>> true_branch;
 
+    // adrpo: handle selection of branches if conditions are boolean literals
+    //        this is needed as Connections.isRoot becomes true/false at the 
+    //        end of instantiation. 
+    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
+      equation 
+        equations = selectBranches(cond, true_branch, false_branch);
+        // transform further if needed
+        DAE.DAE(equations) = transformIfEqToExpr(DAE.DAE(equations));
+      then
+        equations;
+    // handle the erroneous case where the number of equations are not equal in different branches
     case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
       equation 
         true_eq = ifEqToExpr2(true_branch);
@@ -5178,6 +5224,7 @@ algorithm
         Error.addMessage(Error.DIFFERENT_NO_EQUATION_IF_BRANCHES, {elt_str});
       then
         {};
+    // handle the default case.
     case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
       equation 
         true_eq = ifEqToExpr2(true_branch);
