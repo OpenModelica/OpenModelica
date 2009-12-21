@@ -1097,14 +1097,6 @@ algorithm
       then 
         fail();
 
-        /* Record constructors */
-    case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,
-         impl,st,dim,msg)
-      equation
-        true = complexName ==& Absyn.pathLastIdent(funcpath); // TODO: ClassInf should contain a Path, or DAE.CALL a DAE.Type...
-        varNames = Util.listMap(varLst,Exp.varName);
-      then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
-
     // adrpo: 2009-11-17 re-enable the Cevalfunc after dealing with record constructors!      
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
       equation
@@ -1127,6 +1119,14 @@ algorithm
         //print("ret value(/s): "); print(ValuesUtil.printValStr(newval));print("\n"); 
       then
         (cache,newval,st);
+
+        /* Record constructors */
+    case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,
+         impl,st,dim,msg)
+      equation
+        true = complexName ==& Absyn.pathLastIdent(funcpath); // TODO: ClassInf should contain a Path, or DAE.CALL a DAE.Type...
+        varNames = Util.listMap(varLst,Exp.varName);
+      then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 
 /*     This match-rule is commented out due to a new constant evaluation algorithm in 
      Cevalfunc.mo.

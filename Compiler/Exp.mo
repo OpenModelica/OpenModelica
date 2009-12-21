@@ -329,6 +329,29 @@ algorithm outSubscriptLst:= matchcontinue (inComponentRef)
   end matchcontinue;
 end crefIdent;
 
+public function crefSubs 
+"function: crefLastSubs 
+  Return the all subscripts of a ComponentRef"
+  input ComponentRef inComponentRef;
+  output list<Subscript> outSubscriptLst;
+algorithm 
+  outSubscriptLst:=
+  matchcontinue (inComponentRef)
+    local
+      Ident id;
+      list<Subscript> subs,res;
+      ComponentRef cr;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst = subs)) 
+      then subs; 
+    case (DAE.CREF_QUAL(componentRef = cr,subscriptLst=subs))
+      equation 
+        res = crefSubs(cr);
+        res = listAppend(subs,res);
+      then
+        res;
+  end matchcontinue;
+end crefSubs;
+
 public function crefLastSubs 
 "function: crefLastSubs 
   Return the last subscripts of a ComponentRef"

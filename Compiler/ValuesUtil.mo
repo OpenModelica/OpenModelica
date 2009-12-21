@@ -123,10 +123,32 @@ algorithm
     case (Values.BOOL(boolean = _)) then false; 
     case (Values.TUPLE(valueLst = _)) then false; 
     case (Values.META_TUPLE(valueLst = _)) then false; 
+    case (Values.RECORD(orderd = _)) then false;
     case (Values.ARRAY(valueLst = _)) then true; 
     case (Values.LIST(_)) then false; //MetaModelica list
   end matchcontinue;
 end isArray;
+
+public function isRecord "function: isArray
+ 
+  Return true if Value is an array.
+"
+  input Value inValue;
+  output Boolean outBoolean;
+algorithm 
+  outBoolean:=
+  matchcontinue (inValue)
+    case (Values.INTEGER(integer = _)) then false; 
+    case (Values.REAL(real = _)) then false; 
+    case (Values.STRING(string = _)) then false; 
+    case (Values.BOOL(boolean = _)) then false; 
+    case (Values.TUPLE(valueLst = _)) then false; 
+    case (Values.META_TUPLE(valueLst = _)) then false; 
+    case (Values.ARRAY(valueLst = _)) then false; 
+    case (Values.LIST(_)) then false; //MetaModelica list
+    case (Values.RECORD(orderd = _)) then true;
+  end matchcontinue;
+end isRecord;
 
 public function nthArrayelt "function: nthArrayelt
   author: PA
