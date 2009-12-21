@@ -361,7 +361,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e = DAE.META_OPTION(NONE());
-        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_VAR());
+        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_CONST());
       then
         (cache,e,prop1,st);
       /*-------------------------------------*/
@@ -463,7 +463,8 @@ algorithm
         (cache,e,prop,st_1) = elabExp(cache,env, e1, impl, st,doVect);
         t = Types.getPropType(prop);
         e = DAE.META_OPTION(SOME(e));
-        prop1 = DAE.PROP((DAE.T_METAOPTION(t),NONE()),DAE.C_VAR());
+        c = Types.propAllConst(prop);
+        prop1 = DAE.PROP((DAE.T_METAOPTION(t),NONE()),c);
       then
         (cache,e,prop1,st);
 
@@ -472,7 +473,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         e = DAE.META_OPTION(NONE());
-        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_VAR());
+        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_CONST());
       then
         (cache,e,prop1,st);
 
@@ -707,7 +708,6 @@ algorithm
 
        c = Types.constAnd(c1,c2);
        prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
-
      then (cache,exp,prop,st);
 
        // The Absyn.LIST() node is used for list expressions that are
@@ -719,20 +719,23 @@ algorithm
       DAE.Type t;
     equation
       t = (DAE.T_LIST((DAE.T_NOTYPE,NONE)),NONE);
-      prop = DAE.PROP(t,DAE.C_VAR());
+      prop = DAE.PROP(t,DAE.C_CONST());
     then (cache,DAE.LIST(DAE.ET_LIST(DAE.ET_OTHER()),{}),prop,st);
 
   case (cache,env,Absyn.LIST(es),impl,st,doVect)
     local
       list<DAE.Properties> propList;
       list<DAE.Type> typeList;
+      list<DAE.Const> constList;
       Boolean correctTypes;
       DAE.Type t;
     equation
       (cache,es_1,propList,st_2) = elabExpList(cache,env, es, impl, st,doVect);
       typeList = Util.listMap(propList, Types.getPropType);
+      constList = Types.getConstList(propList);
+      c = Util.listReduce(constList, Types.constAnd) "The case empty list is handled above";
       (es_1, t, _) = Types.listMatchSuperType(es_1, typeList, {}, Types.matchTypeRegular, true);
-      prop = DAE.PROP((DAE.T_LIST(t),NONE()),DAE.C_VAR());
+      prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
       tp_1 = Types.elabType(t);
     then (cache,DAE.LIST(tp_1,es_1),prop,st_2);
        // ----------------------------------

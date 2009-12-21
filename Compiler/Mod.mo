@@ -114,7 +114,7 @@ algorithm
       equation 
         (cache,subs_1) = elabSubmods(cache,env, pre, subs, impl);
         (cache,e_1,prop,_) = Static.elabExp(cache, env, e, impl, NONE, true);
-        (cache,e_val) = elabModValue(cache, env, e_1);
+        (cache,e_val) = elabModValue(cache, env, e_1, prop);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre) 
         "Bug: will cause elaboration of parameters without value to fail, 
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
@@ -239,22 +239,25 @@ protected function elabModValue
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
+  input DAE.Properties inProp;
   output Env.Cache outCache;
   output Option<Values.Value> outValuesValueOption;
 algorithm 
   (outCache,outValuesValueOption) :=
-  matchcontinue (inCache,inEnv,inExp)
+  matchcontinue (inCache,inEnv,inExp,inProp)
     local
       Values.Value v;
       list<Env.Frame> env;
       DAE.Exp e;
       Env.Cache cache;
-    case (cache,env,e) /* If ceval fails, it should not print error messages. */ 
+      DAE.Properties prop;
+    case (cache,env,e,prop)
       equation 
-        (cache,v,_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
+        failure(DAE.C_VAR() = Types.propAllConst(prop)) "Don't ceval variables";
+        (cache,v,_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.MSG());
       then
         (cache,SOME(v));
-    case (cache,_,_) then (cache,NONE);
+    case (cache,_,_,_) then (cache,NONE);
   end matchcontinue;
 end elabModValue;
 
@@ -412,7 +415,7 @@ algorithm
       equation 
         (cache,subs_1) = updateSubmods(cache,env, pre, subs, impl);
         (cache,e_1,prop,_) = Static.elabExp(cache,env, e, impl, NONE,true);
-        (cache,e_val) = elabModValue(cache,env, e_1);
+        (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
         Debug.fcall("updmod", printMod, 
@@ -435,13 +438,7 @@ algorithm
       equation 
 				true = RTOpts.debugFlag("failtrace");
         str = printModStr(m);
-        str = Util.stringDelimitList({ str, "\n"}," ");
-        
-        Print.printBuf("- update_mod failed\n mod:");
-        Print.printBuf(str);
-        
-        Debug.fprint("failtrace", "- update_mod failed mod:");
-        Debug.fprint("failtrace", str);
+        Debug.traceln("- Mod.updateMod failed mod: " +& str);
       then
         fail();
   end matchcontinue;
