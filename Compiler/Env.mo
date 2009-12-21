@@ -118,7 +118,7 @@ uniontype Frame
   record FRAME 
     Option<Ident> optName           "Optional class name";
     AvlTree       clsAndVars        "List of uniquely named classes and variables";
-    AvlTree       types             "List of types, which DOES NOT be uniquely named, eg. size have several types";
+    AvlTree       types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
     list<Item>    imports           "list of unnamed items (imports)";
     list<Frame>   inherited         "list of frames for inherited elements";
     CSetsType     connectionSet     "current connection set crefs";

@@ -601,7 +601,7 @@ algorithm
         dump2(DAE.DAE(xs));
       then
         ();
-    case (DAE.DAE(elementLst = DAE.FUNCTION(path = path,(functions = (DAE.FUNCTION_EXT(body = dae,externalDecl=extdecl))::_) ,type_ = tp) :: xs))
+    case (DAE.DAE(elementLst = DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_EXT(body = dae,externalDecl=extdecl))::_ ,type_ = tp) :: xs))
         equation 
         Print.printBuf("EXTFUNCTION(\n");
         str = Absyn.pathString(path);
@@ -5168,6 +5168,7 @@ algorithm
       list<DAE.Exp> cond;
       list<DAE.Element> false_branch,equations;
       list<list<DAE.Element>> true_branch;
+
     case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
       equation 
         true_eq = ifEqToExpr2(true_branch);

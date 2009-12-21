@@ -89,6 +89,7 @@ public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
 public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
 
 protected import Exp;
+protected import Debug;
 
 public
 function printEdges
@@ -475,10 +476,10 @@ algorithm
       DAE.ComponentRef ref1, ref2;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> tail;
     case(table, ((ref1,ref2)::tail))
-    equation
-      (table1,_) = connectComponents(table, ref1, ref2, {}, {}, {});
-      table2 = addBranchesToTable(table, tail);
-    then table2;
+      equation
+        (table1,_) = connectComponents(table, ref1, ref2, {}, {}, {});
+        table2 = addBranchesToTable(table, tail);
+      then table2;
     case(table, {})
     then table;
   end matchcontinue;
@@ -559,29 +560,34 @@ function findResultGraph
   input ConnectionGraph inGraph;
   output list<DAE.ComponentRef> outRoots;
   output list<DAE.Element> outDae;
-  list<DAE.ComponentRef> definiteRoots, finalRoots;
-  list<tuple<DAE.ComponentRef,Real>> potentialRoots;
-  list<tuple<DAE.ComponentRef,Real>> orderedPotentialRoots;
-  Edges branches;
-  DaeEdges connections;
-  HashTableCG.HashTable table;
-  DAE.ComponentRef dummyRoot;
-  Edges brokenConnections, normalConnections;
-  list<DAE.Element> dae;
 algorithm
-  definiteRoots := getDefiniteRoots(inGraph);
-  potentialRoots := getPotentialRoots(inGraph);
-  branches := getBranches(inGraph);
-  connections := getConnections(inGraph);
-
-  table := resultGraphWithRoots(definiteRoots);
-  table := addBranchesToTable(table, branches);
-  orderedPotentialRoots := Util.sort(potentialRoots, ord);
-  dummyRoot := DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
-  (table, dae) := addConnections(table, connections, {});
-  (table, finalRoots) := addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);  
-  outRoots := finalRoots;
-  outDae := dae;
+  (outRoots, outDae) := matchcontinue(inGraph)
+    local
+      list<DAE.ComponentRef> definiteRoots, finalRoots;
+      list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+      list<tuple<DAE.ComponentRef,Real>> orderedPotentialRoots;
+      Edges branches;
+      DaeEdges connections;
+      HashTableCG.HashTable table;
+      DAE.ComponentRef dummyRoot;
+      Edges brokenConnections, normalConnections;
+      list<DAE.Element> dae;
+    // deal with empty connection graph
+    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}))
+    then ({}, {});
+      
+    // we have something in the connection graph
+    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots, 
+                   branches = branches, connections = connections))
+      equation
+        table = resultGraphWithRoots(definiteRoots);
+        table = addBranchesToTable(table, branches);
+        orderedPotentialRoots = Util.sort(potentialRoots, ord);
+        dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+        (table, dae) = addConnections(table, connections, {});
+        (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);  
+      then (finalRoots, dae);
+  end matchcontinue;
 end findResultGraph;
 
 function evalIsRoot  
@@ -591,7 +597,14 @@ function evalIsRoot
   input list<DAE.Element> inDae;
   output list<DAE.Element> outDae;
 algorithm
-  (outDae, _) := DAEUtil.traverseDAE(inDae, evalIsRootHelper, inRoots);
+  outDae := matchcontinue(inRoots, inDae)
+    case ({}, {}) then {};
+    case ({}, inDae) then inDae;
+    case (inRoots, inDae) 
+      equation 
+        (outDae, _) = DAEUtil.traverseDAE(inDae, evalIsRootHelper, inRoots);
+      then outDae; 
+  end matchcontinue;
 end evalIsRoot;
 
 function evalIsRootHelper
@@ -602,19 +615,70 @@ function evalIsRootHelper
   output list<DAE.ComponentRef> outRoots;
 algorithm  
   (outExp,outRoots) := matchcontinue(inExp,inRoots)
-  local  
-    DAE.Exp exp; 
-    list<DAE.ComponentRef> roots;
-    DAE.ComponentRef cref;
-    Boolean result;
+    local  
+      DAE.Exp exp; 
+      list<DAE.ComponentRef> roots;
+      DAE.ComponentRef cref;
+      Boolean result;
+    
+    // no roots, same exp
+    case (exp, {}) then (exp, {});    
+    // deal with Connections.isRoot
     case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
           expLst={DAE.CREF(componentRef = cref)}), roots)
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
+        //Debug.fprintln("cgraph", Exp.printExpStr(inExp) +& " is found in roots:");
       then (DAE.BCONST(result), roots);
+    // deal with NOT Connections.isRoot
+    case (DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
+          expLst={DAE.CREF(componentRef = cref)})), roots)
+      equation
+        result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
+        result = boolNot(result);
+        //Debug.fprintln("cgraph", Exp.printExpStr(inExp) +& " is found in roots!");
+      then (DAE.BCONST(result), roots);
+    // no replacement needed        
     case (exp, roots)
+      equation
+        //Debug.fprintln("cgraph", Exp.printExpStr(exp) +& " not found in roots!");
       then (exp, roots);
   end matchcontinue;
 end evalIsRootHelper;
+
+public function handleOverconstrainedConnections
+"author: adrpo
+ this function gets the connection graph and adds the
+ new connections to the DAE given as input and returns
+ a new DAE"
+ input ConnectionGraph inGraph;
+ input list<DAE.Element> inDAE;
+ output list<DAE.Element> outDAE;
+algorithm
+  outDAE := matchcontinue(inGraph, inDAE)
+    local
+      ConnectionGraph graph;
+      list<DAE.Element> dae, daeConnections;
+      list<DAE.ComponentRef> roots;
+    // empty graph gives you the same dae
+    case (GRAPH(_, {}, {}, {}, {}), dae) then dae;
+    // no dae
+    case (graph, {}) then {};
+    // handle the connection braking
+    case (graph, dae)
+      equation
+        (roots,daeConnections) = findResultGraph(graph);
+        dae = evalIsRoot(roots, dae);
+        dae = Util.listAppendNoCopy(dae, daeConnections);
+      then
+        dae;
+    // handle the connection braking 
+    case (graph, dae)
+      equation
+        Debug.fprintln("cgraph", "- ConnectionGraph.handleOverconstrainedConnections failed");
+      then 
+        fail();        
+  end matchcontinue;
+end handleOverconstrainedConnections;
 
 end ConnectionGraph;

@@ -333,12 +333,13 @@ algorithm
     local
       Absyn.Path cr,path;
       list<Env.Frame> env,env_1,env_2;
-      list<DAE.Element> dae1,dae;
+      list<DAE.Element> dae1,dae,dae2;
       list<SCode.Class> cdecls;
       String name2,n,pathstr,name,cname_str;
       SCode.Class cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
+      ConnectionGraph.ConnectionGraph graph;
       
     case (cache,ih,{},cr)
       equation 
@@ -350,17 +351,19 @@ algorithm
       equation 
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
-        (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
+        (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
       then
-        (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae))}));
+        (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae2))}));
         
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
       equation 
         (cache,env) = Builtin.initialEnv(cache);
+        pathstr = Absyn.pathString(path);
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, true);
-        (cache,env_2,ih,_,dae,_,_,_,_,_) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
-        pathstr = Absyn.pathString(path);
+        (cache,env_2,ih,_,dae,_,_,_,_,graph) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl";
+        // deal with Overconstrained connections
+        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
       then
         (cache, env_2, ih, DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae))}));
         
@@ -577,7 +580,7 @@ protected function instClassInProgram
 algorithm 
   (outCache,outEnv,outIH,outDAEElementLst) := matchcontinue (inCache,inEnv,inIH,inProgram,inPath)
     local
-      list<DAE.Element> dae;
+      list<DAE.Element> dae, dae2;
       list<Env.Frame> env_1,env;
       SCode.Class c;
       String name,name2;
@@ -585,11 +588,14 @@ algorithm
       Absyn.Path path;
       Env.Cache cache;
       InstanceHierarchy ih;
+      ConnectionGraph.ConnectionGraph graph;
       
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
       equation 
         equality(name = name2);
-        (cache,env_1,ih,_,dae,_,_,_,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
+        (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
+        // deal with Overconstrained connections
+        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
       then
         (cache,env_1,ih,dae);
         
@@ -654,7 +660,7 @@ algorithm
        
     case (_,env,ih,_,_) 
       equation
-        Debug.fprint("failtrace", "Inst.instClassInProgram failed");
+        Debug.fprint("failtrace", "Inst.instClassInProgramImplicit failed");
       then fail();
   end matchcontinue;
 end instClassInProgramImplicit;
@@ -848,7 +854,6 @@ algorithm
       list<SCode.Class> cs;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
-      list<DAE.ComponentRef> roots;
       InstanceHierarchy ih;
       InstanceHierarchy.Instance i;
       UnitAbsyn.InstStore store;
@@ -871,9 +876,8 @@ algorithm
         // Debug.fcall("instance", print, "\n");
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) ;
         Debug.fcall("execstat",print, "*** Inst -> instClass finished at time: " +& realString(clock()) +& "\n" );
-        (roots,dae2) = ConnectionGraph.findResultGraph(graph);
-        dae = ConnectionGraph.evalIsRoot(roots, dae);
-        dae = listAppend(dae, dae2);
+        // deal with Overconstrained connections
+        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
       then
         (cache,ih,{DAE.COMP(n,DAE.DAE(dae))});
@@ -1561,7 +1565,7 @@ algorithm
         bby = (mods,pre,csets, ci_state,c,inst_dims,impl,instSingleCref);
         equality(bbx = bby);
         (cache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph) = outputs;
-        Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        // Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph);
         
@@ -2240,7 +2244,7 @@ algorithm
         bby = (mods,pre,csets,ci_state,c,inst_dims);
         equality(bbx = bby);
         (cache,env,ih,ci_state_1) = outputs;
-        Debug.fprintln("cache", "IIIIPARTIAL->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
+        // Debug.fprintln("cache", "IIIIPARTIAL->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,ci_state_1);
         
@@ -6772,7 +6776,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGr
         instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, 
                  cl, attr, prot, dims, idxs, inst_dims, impl, 
                  comment,io,finalPrefix,graph);
-          Error.updateCurrentComponent("",NONE); 
+        Error.updateCurrentComponent("",NONE); 
       then
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph);
         
@@ -6947,7 +6951,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));   
+        cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
@@ -10917,18 +10921,17 @@ algorithm
         list<SCode.Element> elementLst;
         list<Values.Value> vals;
       equation 
-        
         typePath = Absyn.crefToPath(cr);
-        /* make sure is an enumeration! */
+        // make sure is an enumeration!
         (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
-        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE()));
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph);
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
     // Frenkel TUD: enumeration again 
@@ -10940,22 +10943,21 @@ algorithm
         list<SCode.Enum> enumLst;
         list<Values.Value> vals;
       equation 
-        
         typePath = Absyn.crefToPath(cr);
-        /* make sure is an enumeration! */
+        // make sure is an enumeration! 
         (_, SCode.CLASS(_, _, _, SCode.R_TYPE(), SCode.ENUMERATION(enumLst = enumLst)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(enumLst);        
-        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE())) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE()));
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph);
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
-
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph) // Implicit range  
+    // Implicit range
+    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph)  
       equation 
         lst=SCode.findIteratorInEEquationLst(i,el);
         equality(lst={});
@@ -10970,24 +10972,24 @@ algorithm
         tpl=Util.listFirst(lst);
         e=rangeExpression(tpl);
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
-        env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        env_1 = addForLoopScope(env, i, id_t);
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph);
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
 
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph) 
       equation 
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),_),_) = Static.elabExp(cache,env, e, impl, NONE,true) "//Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1\") &" ;
-        env_1 = addForLoopScope(env, i, id_t) "//Debug.fprintln (\"insti\", \"for expression elaborated\") &" ;
+        env_1 = addForLoopScope(env, i, id_t);
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "	//Debug.fprintln (\"insti\", \"loop-variable added to scope\") &" ;
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "	//Debug.fprintln (\"insti\", \"loop variable looked up\") & FIXME: Check bounds" ;
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph) "	//Debug.fprintln (\"insti\", \"for expression evaluated\") &" ;
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_) "	//Debug.fprintln (\"insti\", \"for expression unrolled\") & 	& //Debug.fprintln (\"insttr\", \"inst_equation_common_eqfor_1 succeeded\")" ;
+        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph);
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
@@ -13149,7 +13151,7 @@ algorithm
         Absyn.Path fpath1, fpath2;
         Integer dim1, dim2;
         DAE.Exp zeroVector;
-      equation         
+      equation
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);        
         // Connect components ignoring equality constraints 

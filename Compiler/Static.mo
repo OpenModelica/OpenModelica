@@ -7755,7 +7755,7 @@ algorithm
       Absyn.ElementAttributes attributes ;
       Option<SCode.Comment> comment "the translated comment from the Absyn" ;
       Option<Absyn.ArrayDim> arrayDim;           
-    
+    // handle derived component functions i.e. gravityAcceleration = gravityAccelerationTypes    
     case(cache, env, sc as SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef as 
          SCode.DERIVED(typeSpec as Absyn.TPATH(extendsPath, arrayDim), modifications, attributes, comment)), 
          classEnv, cn)
@@ -7781,6 +7781,19 @@ algorithm
         // construct the extended class world.gravityAccelerationType
         sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef);
         // add the extended class function to the environment
+        env = Env.extendFrameC(env, sc);
+      then (cache, env);
+    // handle component functions made of parts
+    case(cache, env, sc as SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef as _), 
+         classEnv, cn)
+      equation
+        // System.enableTrace();
+        // change the class name from gravityAcceleration to be world.gravityAcceleration
+        name = componentName +& "." +& name;
+        // remove modifications as they are added via transformModificationsToNamedArguments
+        // also change extendsPath to world.gravityAccelerationTypes
+        sc = SCode.CLASS(name, partialPrefix, encapsulatedPrefix, restriction, classDef);
+        // add the class function to the environment
         env = Env.extendFrameC(env, sc);
       then (cache, env);
   end matchcontinue;

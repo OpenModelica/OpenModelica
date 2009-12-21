@@ -5513,5 +5513,24 @@ algorithm
   out := (a,b);
 end makeTuple2;
 
+public function listAppendNoCopy
+"author: adrpo
+ this function handles special cases
+ such as empty lists so it does no
+ copy if any of the arguments are
+ empty lists"
+  input  list<Type_a> inLst1;
+  input  list<Type_a> inLst2;
+  output list<Type_a> outLst;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outLst := matchcontinue(inLst1, inLst2)
+    case ({},{}) then {};
+    case (inLst1, {}) then inLst1;
+    case ({}, inLst2) then inLst2;
+    case (inLst1, inLst2) then listAppend(inLst1,inLst2);
+  end matchcontinue;
+end listAppendNoCopy;
+
 end Util;
 
