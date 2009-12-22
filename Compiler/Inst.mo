@@ -4024,20 +4024,20 @@ algorithm
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
-        (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
+        (cache,env2,ih,emods,extcomps) = 
         partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
-        extendselts = Util.if_(partialPrefix, {}, extendselts);
         els = Util.if_(partialPrefix, {}, els);
         // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
-		    lst_constantEls = addNomod(listAppend(constantEls(extendselts),constantEls(els))) " Retrieve all constants";
+		    lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
 	      /* 
 	       Since partial instantiation is done in lookup, we need to add inherited classes here.
 	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
 	       base class context (since we do not have any element to find it in), the class must be added 
 	       to the environment here.
 	      */	      
-        cdefelts2 = classdefElts2(extcomps, partialPrefix); 
+        (cdefelts2,extcomps) = classdefElts2(extcomps, partialPrefix);
+        // lst_constantEls = listAppend(extcomps,lst_constantEls); // Adding this line breaks mofiles/ClassExtends3.mo
         (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state, 
                                              lst_constantEls, lst_constantEls, {}, 
@@ -4530,17 +4530,13 @@ protected function partialInstExtendsAndClassExtendsList "
   output InstanceHierarchy outIH;
   output Mod outMod;
   output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
-  output list<SCode.Equation> outSCodeNormalEquationLst;
-  output list<SCode.Equation> outSCodeInitialEquationLst;
-  output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
-  output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
   Env env;
   list<SCode.Element> lst;
   list<Mod> mods;
   list<String> modStrings,elStrs;
 algorithm 
-  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl);
+  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst):=
+  partialInstExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl);
   (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
 end partialInstExtendsAndClassExtendsList;
 
@@ -4554,17 +4550,13 @@ protected function partialInstExtendsList
   input Mod inMod;
   input list<SCode.Element> inSCodeElementLst;
   input ClassInf.State inState;
-  input String inClassName "the class name that holds the elements to be instantiated";
+  input String inClassName; // the class name whose elements are getting instantiated.
   input Boolean inBoolean;
-  output Env.Cache outCache;
+	output Env.Cache outCache;
   output Env outEnv1;
   output InstanceHierarchy outIH;
   output Mod outMod2;
   output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst3;
-  output list<SCode.Equation> outSCodeEquationLst4;
-  output list<SCode.Equation> outSCodeEquationLst5;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst6;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst7;
 algorithm 
   (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
   matchcontinue (inCache,inEnv,inIH,inMod,inSCodeElementLst,inState,inClassName,inBoolean)
@@ -4574,21 +4566,19 @@ algorithm
       Boolean encf,impl;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,mod;
-      list<SCode.Element> els,els_1,rest,classextendselts;
-      list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
-      list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
+      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
+      list<SCode.Element> els,els_1,rest,cdefelts,extendselts,classextendselts;
       Absyn.Path tp_1,tp;
       ClassInf.State new_ci_state,ci_state;
       list<tuple<SCode.Element, Mod>> compelts1,compelts2,compelts,compelts3;
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
+      ClassInf.State new_ci_state;
       InstanceHierarchy ih;
-      
-    /* inherited initial equations inherited algorithms inherited initial algorithms */
+    /* instantiate a base class */
     case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
-      equation 
+      equation
         // adrpo - here we need to check if we don't have recursive extends of the form:
         // package Icons
         //   extends Icons.BaseLibrary;
@@ -4598,57 +4588,67 @@ algorithm
         // if we don't check that, then the compiler enters an infinite loop!
         // what we do is removing Icons from extends Icons.BaseLibrary;
         tp = removeSelfReference(className, tp);
-        (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true);
+        (cache,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, false);
+              
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
-        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
-        (cache,tp_1) = makeFullyQualified(cache, /* adrpo: CHECK cenv1? */ env, tp); 
+        (cache,cenv1,ih,els,_,_,_,_) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
+        (cache,tp_1) = makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
         els_1 = addInheritScope(noImportElements(els), (tp_1,emod)) "Add the scope of the base class to elements" ;
+
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
         new_ci_state = ClassInf.start(r, cn);
-        (els_1,classextendselts) = splitClassExtendsElts(els_1);
-        mod_1 = Mod.elabUntypedMod(emod, cenv3, Prefix.NOPRE());
-        mod_2 = Mod.merge(outermod, mod_1, cenv3, Prefix.NOPRE());
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = partialInstExtendsAndClassExtendsList(cache,cenv1,ih, outermod, els_1, classextendselts, ci_state, className, impl) 
+        /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
+        (cdefelts,classextendselts,_,_) = splitElts(els);
+        (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
+        els_1 = Util.listSelect(els_1, SCode.isNotElementClassExtends); // Filtering is faster than listAppend. TODO: Create a new splitElts so this is even faster
+        
+        (cache,_,ih,mods,compelts1) = partialInstExtendsAndClassExtendsList(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl) 
         "recurse to fully flatten extends elements env" ;
-        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl) 
+        (cache,env2,ih,mods_1,compelts2) = partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl) 
         "continue with next element in list" ;
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE()) 
-        "corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) here and then apply the 
-         bindings to the be elaborated, because for instance extends A(x=y) can reference a variable y defined in 
-         A and will thus not be found. On the other hand: A(n=4), n might be a structural parameter that must be 
-         set to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod which transforms 
-         to a Mod, but set the type information to unknown. We can then perform the merge, and update untyped 
-         modifications later (using update_mod), when we are instantiating the components." ;
-        mod_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
-        mods_1 = Mod.merge(mod_1, emod_1, env2, Prefix.NOPRE());
-        compelts = listAppend(compelts2, compelts1);
+        /*
+        corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod) 
+        here and then apply the bindings to the be elaborated, because for instance extends 
+        A(x=y) can reference a variable y defined in A and will thus not be found. 
+        On the other hand: A(n=4), n might be a structural parameter that must be set 
+        to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod 
+        which transforms to a Mod, but set the type information to unknown. We can then perform the 
+        merge, and update untyped modifications later (using update_mod), when we are instantiating 
+        the components." 
+        */
+        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE());
+        mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
+        mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
+        
+        compelts = listAppend(compelts1, compelts2);
+
         (compelts3,mods_1) = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers" ;
       then
-        (cache,env2,ih,mods_1,compelts3,{},{},{},{});
-
+        (cache,env2,ih,mods_1,compelts3);
+    
     /* base class was not found */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl) 
+    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
       equation 
-        failure((_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, true));
+        failure((_,(c as SCode.CLASS(cn,_,encf,r,_)),cenv) = Lookup.lookupClass(cache,env, tp, false));
         s = Absyn.pathString(tp);
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
       then
         fail();
-
-    /* instantiate components that are not EXTENDS */
-    case (cache,env,ih,mod,(elt :: rest),ci_state,className,impl) 
-      equation 
-        // If used, line below, the kernel fails to instantiate some base packages (such as Icons.Library, from IntroductoryExamples.HelloWorld)
-        //false = SCode.isElementExtends(elt); 
-        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) = partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl);
-      then
-        (cache,env_1,ih,mods,((elt,DAE.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
         
-    /* no further elements to instantiate */
-    case (cache,env,ih,mod,{},ci_state,className,impl) then (cache,env,ih,mod,{},{},{},{},{});
+    /* instantiate elements that are not extends */
+    case (cache,env,ih,mod,(elt :: rest),ci_state,className,impl) /* Components that are not EXTENDS */
+      equation
+         false = SCode.isElementExtends(elt) "verify that it is not an extends element";
+        (cache,env_1,ih,mods,compelts2) = 
+        partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl);
+      then
+        (cache,env_1,ih,mods,((elt,DAE.NOMOD()) :: compelts2));
 
-    /* failed to instantiate */
+    /* no further elements to instantiate */
+    case (cache,env,ih,mod,{},ci_state,className,impl) then (cache,env,ih,mod,{});
+
+    /* instantiation failed */
     case (_,_,_,_,_,_,_,_)
       equation 
         Debug.fprint("failtrace", "- Inst.partialInstExtendsList failed\n");
@@ -5112,28 +5112,36 @@ protected function classdefElts2
   input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
   input Boolean partialPrefix;
   output list<SCode.Element> outSCodeElementLst;
+  output list<tuple<SCode.Element, Mod>> outConstEls;
 algorithm 
-  outSCodeElementLst := matchcontinue (inTplSCodeElementModLst,partialPrefix)
+  (outSCodeElementLst,outConstEls) := matchcontinue (inTplSCodeElementModLst,partialPrefix)
     local
-      list<SCode.Element> res;
+      list<SCode.Element> cdefs;
       SCode.Element cdef;
-      list<tuple<SCode.Element, Mod>> xs;
-    case ({},_) then {}; 
+      tuple<SCode.Element, Mod> el;
+      list<tuple<SCode.Element, Mod>> xs, els;
+      SCode.Attributes attr;
+    case ({},_) then ({},{}); 
     case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(restriction = SCode.R_PACKAGE())),_) :: xs,true)
       equation
-        res = classdefElts2(xs,partialPrefix);
+        (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
-        cdef :: res;
+        (cdef::cdefs,els);
     case (((cdef as SCode.CLASSDEF(name = _),_)) :: xs,false)
       equation 
-        res = classdefElts2(xs,partialPrefix);
+        (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
-        (cdef :: res);
+        (cdef::cdefs,els);
+    case((el as (SCode.COMPONENT(attributes=attr),_))::xs,false)
+ 	    equation
+				SCode.CONST() = SCode.attrVariability(attr);
+ 	      (cdefs,els) = classdefElts2(xs,partialPrefix);
+ 	    then (cdefs,el::els);
     case ((_ :: xs),_)
       equation 
-        res = classdefElts2(xs,partialPrefix);
+        (cdefs,els) = classdefElts2(xs,partialPrefix);
       then
-        res;
+        (cdefs,els);
   end matchcontinue;
 end classdefElts2;
 
@@ -5936,7 +5944,8 @@ algorithm
 				
         (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
         //Instantiate the component  
-         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
+        inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
+        (cache,mod_1) = Mod.updateMod(cache,cenv, pre, mod_1, impl);
         (cache,compenv,ih,store,dae,csets_1,ty,graph) = instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ; 
