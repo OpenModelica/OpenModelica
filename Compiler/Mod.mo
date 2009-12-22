@@ -1145,7 +1145,7 @@ algorithm
     case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD(); 
     case ((inmod as DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = eq)),idx)
       equation 
-        (mod_1,subs_1) = lookupIdxModification2(subs, NONE, idx);
+        (mod_1,subs_1) = lookupIdxModification2(subs,idx);
         mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE), mod_1, {}, Prefix.NOPRE());
         eq_1 = indexEqmod(eq, {idx});
         mod_3 = merge(mod_2, DAE.MOD(f,each_,{},eq_1), {}, Prefix.NOPRE());
@@ -1154,7 +1154,7 @@ algorithm
     case (mod,idx)
       equation 
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "-lookup_idx_modification(");
+        Debug.fprint("failtrace", "- Mod.lookupIdxModification(");
         str = printModStr(mod);
         Debug.fprint("failtrace", str);
         Debug.fprint("failtrace", ", ");
@@ -1171,13 +1171,12 @@ protected function lookupIdxModification2 "function: lookupIdxModification2
   This function does part of the job for `lookup_idx_modification\'.
 "
   input list<DAE.SubMod> inTypesSubModLst;
-  input Option<DAE.EqMod> inTypesEqModOption;
   input Integer inInteger;
   output DAE.Mod outMod;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm 
   (outMod,outTypesSubModLst):=
-  matchcontinue (inTypesSubModLst,inTypesEqModOption,inInteger)
+  matchcontinue (inTypesSubModLst,inInteger)
     local
       list<DAE.SubMod> subs_1,subs,xs_1;
       Integer x,y,idx;
@@ -1185,46 +1184,46 @@ algorithm
       Option<DAE.EqMod> eq;
       list<Integer> xs;
       Ident name;
-    case ({},_,_) then (DAE.NOMOD(),{}); 
-    case ((DAE.IDXMOD(integerLst = {x},mod = mod) :: subs),eq,y) /* FIXME: Redeclaration */ 
+    case ({},_) then (DAE.NOMOD(),{}); 
+    case ((DAE.IDXMOD(integerLst = {x},mod = mod) :: subs),y) /* FIXME: Redeclaration */ 
       equation 
         equality(x = y);
-        (DAE.NOMOD(),subs_1) = lookupIdxModification2(subs, eq, y);
+        (DAE.NOMOD(),subs_1) = lookupIdxModification2(subs,y);
       then
         (mod,subs_1);
-    case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),eq,y)
+    case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),y)
       equation 
         equality(x = y);
-        (mod_1,subs_1) = lookupIdxModification2(subs, eq, y);
+        (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,(DAE.IDXMOD(xs,mod) :: subs_1));
-    case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),eq,y)
+    case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),y)
       equation 
         failure(equality(x = y));
-        (mod_1,subs_1) = lookupIdxModification2(subs, eq, y);
+        (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,subs_1);
-    case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),eq,y)
+    case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
       equation 
         DAE.NOMOD() = lookupIdxModification3(nmod, y);
-        (mod_1,subs_1) = lookupIdxModification2(subs, eq, y);
+        (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,subs_1);
-    case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),eq,y)
+    case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
       equation 
         nmod_1 = lookupIdxModification3(nmod, y);
-        (mod_1,subs_1) = lookupIdxModification2(subs, eq, y);
+        (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,(DAE.NAMEMOD(name,nmod_1) :: subs_1));
-    case ((x :: xs),eq,idx)
+    case ((x :: xs),idx)
       local
         DAE.SubMod x;
         list<DAE.SubMod> xs;
       equation 
-        (mod,xs_1) = lookupIdxModification2(xs, eq, idx);
+        (mod,xs_1) = lookupIdxModification2(xs,idx);
       then
         (mod,(x :: xs_1));
-    case (_,_,_)
+    case (_,_)
       equation 
        Debug.fprint("failtrace", "-lookupIdxModification2 failed\n");
       then
@@ -1253,7 +1252,7 @@ algorithm
     case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD(); 
     case (DAE.MOD(finalPrefix = f,each_ = Absyn.NON_EACH(),subModLst = subs,eqModOption = eq),idx)
       equation 
-        (_,subs_1) = lookupIdxModification2(subs, NONE, idx);
+        (_,subs_1) = lookupIdxModification2(subs,idx);
         eq_1 = indexEqmod(eq, {idx});
       then
         DAE.MOD(f,Absyn.NON_EACH(),subs_1,eq_1);
@@ -1297,7 +1296,7 @@ algorithm
       
       /* For modifiers with value, retrieve nth element*/
     case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c))),(x :: xs))
-      equation 
+      equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         exp = Exp.simplify(DAE.ASUB(e,{exp2}));
