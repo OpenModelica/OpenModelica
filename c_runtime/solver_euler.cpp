@@ -39,22 +39,20 @@
 using namespace std;
 
 
-void euler (DATA * data,
-		double* step,
-		int (*f)() // time
-);
+void euler_ex_step (double* step, int (*f)() );
+void rungekutta_step (double* step, int (*f)());
 
 double TOL=0;
 
 /* The main function for the explicit euler solver */
 int euler_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
-		double &tolerance)
+		double &tolerance,int flag)
 {
 
 	//double sim_time;
-	
-	//double tol = 1e-05
-	globalData->timeValue = start;
+	int dideventstep = 0;
+	double laststep = 0;
+	globalData->oldTime = start;
 	
 	if (tolerance!=0) TOL = tolerance;
 	//to get debug output with more precision 
@@ -84,13 +82,21 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 	if (sim_verbose) { cout << "Calculated bound parameters" << endl; }
 
 	// Calculate initial values from (fixed) start attributes
+	// TODO: Check the intialisation
+	
 	globalData->init=1;
 	initial_function();
+	saveall();
+	emit();
+	
 	if (initialize(init_method)) {
 		throw TerminateSimulationException(globalData->timeValue,
 				string("Error in initialization. Storing results and exiting.\n"));
 	}
-	
+	saveall();
+	if(emit()) { printf("Error, not enough space to save data"); return -1; }
+
+	/*
 	//Calculate initial derivatives
 	if(functionODE()) {
 		throw TerminateSimulationException(globalData->timeValue,string("Error calculating initial derivatives\n"));
@@ -101,9 +107,8 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 			string("Error calculating initial derivatives\n"));
 	}
 	cout << "Calculated function_ODE and functionsDAE_output (at time "<< globalData->timeValue << ")." << endl;
-
-
-	//function_updateDependents();
+	*/
+	function_updateDepend();
 	saveall();
 	if(emit()) { printf("Error, not enough space to save data"); return -1; }
 	
@@ -114,34 +119,47 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 	
 	// check for Event at Initial
 	if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
-	if (CheckForNewEvent(NOINTERVAL))
-		if(emit()) { printf("Error, not enough space to save data"); return -1; }	
-
+	if (CheckForNewEvent(NOINTERVAL)){
+		saveall();
+		if(emit()) { printf("Error, not enough space to save data"); return -1; }
+	}	
 	globalData->init=0;
 	
 	
 	if (sim_verbose)  {
 		cout << "Performed initial value calutation." << endl;
-		cout << "Start numerical solver \"Euler\" from "<< globalData->timeValue << " to "<< stop << endl; 
+		cout << "Start numerical solver from "<< globalData->timeValue << " to "<< stop << endl; 
 	}
 
 	while( globalData->timeValue <= stop){
 	//for(globalData->timeValue=start; globalData->timeValue<= stop; globalData->timeValue+=step,pt++) {
 	
 		//TODO: calc new step size here
-		
-		globalData->timeValue+=step;
-		
+		if (dideventstep == 1){
+			globalData->timeValue += (step-globalData->timeValue+laststep);
+			dideventstep = 0;
+		}else{
+			globalData->timeValue+=step;
+		}
 		// do one integration step
-		euler(globalData,&step,functionODE);
+		if (flag == 1) euler_ex_step(&step,functionODE);
+		else if (flag == 2) rungekutta_step(&step,functionODE);
+		else euler_ex_step(&step,functionODE);
 		
 		functionDAE_output();
-		//functionDAE_output2();
 
 		//Check for Events
-		//if (sim_verbose) { cout << "Checking for new events (at time "<< globalData->timeValue << ")." << endl; }
-		CheckForNewEvent(INTERVAL);
-		//if (sim_verbose) { cout << "Check for new events done." << endl; }
+		if (sim_verbose) { cout << "Checking for new events (at time "<< globalData->timeValue << ")." << endl; }
+		if (CheckForNewEvent(INTERVAL) == 2){
+			dideventstep = 1;
+			if (sim_verbose) cout << "Go to Event time h_e" << endl;
+		}else{
+			laststep = globalData->timeValue;
+			if (sim_verbose) cout << "Did Odinary step" << endl;
+		}
+			
+		
+		if (sim_verbose) { cout << "Check for new events done." << endl; }
 		
 		// Emit this timestep
 		emit();
@@ -163,15 +181,46 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 	return 0;
 }
 
-
-void euler (DATA * data,
-		double* step,
-		int (*f)() // time
-)
-{
-	setLocalData(data);	
-	for(int i=0; i < data->nStates; i++) {
-		data->states[i]=data->states[i]+data->statesDerivatives[i]*(*step); // Based on that, calculate state variables.
+void euler_ex_step (double* step, int (*f)())
+{	
+	for(int i=0; i < globalData->nStates; i++) {
+		globalData->states[i] = globalData->states[i] + globalData->statesDerivatives[i] * (*step);
 	}
-	f(); // calculate equations
+	f();
 }
+
+void rungekutta_step (double* step, int (*f)())
+{	
+	double* k1 = new double[globalData->nStates];
+	double* k2 = new double[globalData->nStates];
+	double* k3 = new double[globalData->nStates];
+	double* k4 = new double[globalData->nStates];
+	double* backupstats = new double[globalData->nStates];
+	
+	for(int i=0; i < globalData->nStates; i++) {
+		backupstats[i] = globalData->states[i];
+		k1[i] = globalData->statesDerivatives[i];
+		globalData->states[i] = backupstats[i] + 0.5 *(*step) * k1[i];
+	}
+	globalData->timeValue = globalData->timeValue - 0.5 *(*step);
+	f();
+	for(int i=0; i < globalData->nStates; i++) {
+		k2[i] = globalData->statesDerivatives[i];
+		globalData->states[i] = backupstats[i] + 0.5 *(*step) * k2[i];
+	}
+	f();
+	for(int i=0; i < globalData->nStates; i++) {
+		k3[i] = globalData->statesDerivatives[i];
+	}	
+	globalData->timeValue = globalData->timeValue + 0.5 * (*step);
+	for(int i=0; i < globalData->nStates; i++) {
+		globalData->states[i] = backupstats[i] + (*step) * k3[i];
+	}
+	f();
+	for(int i=0; i < globalData->nStates; i++) {
+		k4[i] = globalData->statesDerivatives[i];
+		globalData->states[i] = backupstats[i] + (*step) * ( (1.0/6.0) * (k1[i] + 2 * k2[i] + 2* k3[i] + k4[i]));
+	}
+	f();
+}
+

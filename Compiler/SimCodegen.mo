@@ -188,7 +188,7 @@ algorithm
   matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11)
     local
       String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
-      	czerocross,res,filename,funcfilename,fileDir;
+      	czerocross,res,filename,funcfilename,fileDir,updatedepend ;
       String extObjInclude; list<String> extObjIncludes;
       list<list<Integer>> blt_states,blt_no_states,comps;
       Integer n_o,n_i,n_h,nres;
@@ -222,6 +222,7 @@ algorithm
         s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
         czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        updatedepend = generateUpdateDepended(dae, dlow2, ass1, ass2, comps, helpVarInfo); 
         (extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
         extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
         extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
@@ -238,7 +239,7 @@ algorithm
             "#endif \n\n",            
             "#include \"",funcfilename,"\"\n\n",
             extObjInclude,cglobal,coutput,in_str,out_str,
-            cstate,czerocross,cwhen,c_ode,s_code,s_code2,
+            cstate,czerocross,updatedepend,cwhen,c_ode,s_code,s_code2,
             s_code3,c_eventchecking});
         System.writeFile(filename, res);
       then
@@ -3847,6 +3848,57 @@ algorithm
   end matchcontinue;
 end generateOdeBlocks;
 
+protected function generateOdeBlocks_new 
+"function: generateOdeBlocks
+  author: PA
+  Generates the simulation code for the ode code."
+	input Boolean genDiscrete "if true generate calculation of discrete variables";
+  input DAELow.DAELow inDAELow1;
+  input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray3;
+  input list<list<Integer>> inIntegerLstLst4;
+  input Integer inInteger5;
+  input list<HelpVarInfo> helpvarinfo;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output list<CFunction> outCFunctionLst;
+algorithm
+  (outCFunction,outInteger,outCFunctionLst):=
+  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4,inInteger5,helpvarinfo)
+    local
+      Integer cg_id,cg_id_1,cg_id_2,eqn;
+      Codegen.CFunction s1,s2,res;
+      list<CFunction> f1,f2,res2;
+      DAELow.DAELow dae;
+      Integer[:] ass1,ass2;
+      list<Integer> block_;
+      list<list<Integer>> blocks;
+      list<HelpVarInfo> helpvarinfo1;
+    case (genDiscrete,_,_,_,{},cg_id,_) then (Codegen.cEmptyFunction,cg_id,{});  /* cg var_id block code cg var_id extra functions code */
+    case (genDiscrete,dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks),cg_id,helpvarinfo1)
+      equation
+        (s1,cg_id_1,f1) = generateOdeSystem(genDiscrete,dae, ass1, ass2, block_, cg_id) "For system of equations" ;
+        (s2,cg_id_2,f2) = generateOdeBlocks_new(genDiscrete,dae, ass1, ass2, blocks, cg_id_1,helpvarinfo1);
+        res = Codegen.cMergeFns({s1,s2});
+        res2 = listAppend(f1, f2);
+      then
+        (res,cg_id_2,res2);
+    case (genDiscrete,dae,ass1,ass2,((block_ as {eqn}) :: blocks),cg_id,helpvarinfo1)
+      equation
+        (s1,cg_id_1,f1) = generateOdeEquation_new(genDiscrete,dae, ass1, ass2, eqn, cg_id,helpvarinfo1) "for single equations" ;
+        (s2,cg_id_2,f2) = generateOdeBlocks_new(genDiscrete,dae, ass1, ass2, blocks, cg_id_1,helpvarinfo1);
+        res = Codegen.cMergeFns({s1,s2});
+        res2 = listAppend(f1, f2);
+      then
+        (res,cg_id_2,res2);
+    case (_,_,_,_,_,_,_)
+      equation
+        Debug.fprint("failtrace", "-generate_ode_blocks failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateOdeBlocks_new;
+
 protected function generateOdeSystem "function: generateOdeSystem
   author: PA
 
@@ -6124,6 +6176,180 @@ algorithm
   end matchcontinue;
 end generateOdeEquation;
 
+protected function generateOdeEquation_new "function: generateOdeEquation
+  author: PA
+
+   Generates code for a single equation for the ode code generation, see
+  genrerate_ode_code.
+"
+	input Boolean genDiscrete "if true generate discrete equations";
+  input DAELow.DAELow inDAELow1;
+ input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray3;
+  input Integer inInteger4;
+  input Integer inInteger5;
+  input list<HelpVarInfo> inhelpvarinfo;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output list<CFunction> outCFunctionLst;
+algorithm
+  (outCFunction,outInteger,outCFunctionLst):=
+  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inInteger4,inInteger5,inhelpvarinfo)
+    local
+      DAE.Exp e1,e2,varexp,expr,cond;
+      DAELow.Var v;
+      DAELow.Variables vars;
+      DAELow.EquationArray eqns;
+      Integer[:] ass1,ass2;
+      Integer e,cg_id,cg_id_1,indx;
+      DAE.ComponentRef cr,origname,cr_1;
+      DAELow.VarKind kind;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      Codegen.CFunction exp_func,res,cfunc;
+      String var,cr_str,stmt,indxs,name,c_name,id,s1,s2,s;
+      DAELow.Equation eqn;
+      DAELow.MultiDimEquation[:] ae;
+      list<CFunction> f1;
+      Algorithm.Algorithm alg;
+      list<HelpVarInfo> helpvarinfo1;
+      list<DAELow.WhenClause> wc;
+    /*discrete equations not considered if event-code is produced */
+    case (false,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id,_)
+      equation
+        true = useZerocrossing();
+        (DAELow.EQUATION(e1,e2),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        true = hasDiscreteVar({v});
+      then
+        (Codegen.cEmptyFunction,cg_id,{});
+        
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id,_)
+      equation
+        (DAELow.EQUATION(e1,e2),(v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = 
+        getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving for non-states" ;
+        isNonState(kind);
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        expr = Exp.solve(e1, e2, varexp);
+        (exp_func,var,cg_id_1) = 
+        Codegen.generateExpression_new(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+        cr_str = Exp.printComponentRefStr(cr);
+        stmt = Util.stringAppendList({cr_str," = ",var,";"});
+        res = Codegen.cAddStatements(exp_func, {stmt});
+      then
+        (res,cg_id_1,{});
+        
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id,_)
+      equation
+        (DAELow.EQUATION(e1,e2),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))
+        = getEquationAndSolvedVar(e, eqns, vars, ass2) "Solving the state s means solving for der(s)" ;
+        indxs = intString(indx);
+        name = Exp.printComponentRefStr(cr);
+        // c_name = Util.modelicaStringToCStr(name,true);
+        // id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
+        id = Util.stringAppendList({DAELow.derivativeNamePrefix, name});
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
+        expr = Exp.solve(e1, e2, varexp);
+        (exp_func,var,cg_id_1) = 
+        Codegen.generateExpression_new(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+        cr_str = Exp.printComponentRefStr(cr_1);
+        stmt = Util.stringAppendList({cr_str," = ",var,";"});
+        res = Codegen.cAddStatements(exp_func, {stmt});
+      then
+        (res,cg_id_1,{});
+
+    /* state nonlinear */
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns,arrayEqs = ae),ass1,ass2,e,cg_id,_)
+      equation
+        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
+        getEquationAndSolvedVar(e, eqns, vars, ass2);
+        indxs = intString(indx);
+        name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
+        c_name = name; // Util.modelicaStringToCStr(name,true);
+        id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
+        cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
+        failure(_ = Exp.solve(e1, e2, varexp));
+        (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
+      then
+        (res,cg_id_1,f1);
+
+    /* non-state non-linear */
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns,arrayEqs = ae),ass1,ass2,e,cg_id,_)
+      equation
+        ((eqn as DAELow.EQUATION(e1,e2)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
+        getEquationAndSolvedVar(e, eqns, vars, ass2);
+        isNonState(kind);
+        indxs = intString(indx);
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        failure(_ = Exp.solve(e1, e2, varexp));
+        (res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr}, {eqn},ae, cg_id);
+      then
+        (res,cg_id_1,f1);
+        
+    /*	When Equations  */        
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns,eventInfo = DAELow.EVENT_INFO(whenClauseLst = wc)),ass1,ass2,e,cg_id,helpvarinfo1)
+      equation
+        (eqn as DAELow.WHEN_EQUATION(_),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) =
+        getEquationAndSolvedVar(e, eqns, vars, ass2);
+        
+        (exp_func,cg_id_1) = 
+        generateWhenEquation(cg_id,eqn,wc, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP),helpvarinfo1);
+      then
+        (exp_func,cg_id_1,{});
+
+    /* Algorithm for single variable. */
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e,cg_id,_)
+      local
+        Integer indx;
+        list<DAE.Exp> algInputs,algOutputs;
+        DAELow.Var v;
+        DAE.ComponentRef varOutput;
+      equation
+        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+				// The output variable of the algorithm must be the variable solved for, otherwise we need to
+				// solve an inverse problem of an algorithm section.
+        true = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        alg = alg[indx + 1];
+        (cfunc,cg_id_1) = 
+        Codegen.generateAlgorithm(DAE.ALGORITHM(alg), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+      then (cfunc,cg_id_1,{});
+
+    /* inverse Algorithm for single variable . */
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e,cg_id,_)
+      local
+        Integer indx;
+        list<DAE.Exp> algInputs,algOutputs;
+        DAELow.Var v;
+        DAE.ComponentRef varOutput;
+        String algStr,message;
+      equation
+        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+				// We need to solve an inverse problem of an algorithm section.
+        false = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        alg = alg[indx + 1];
+        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg)});
+        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{message});
+      then fail();
+
+    case (genDiscrete,DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e,cg_id,_)
+      equation
+        Debug.fprint("failtrace", "-SimCodegen.generateOdeEquation failed\n");
+        (eqn,DAELow.VAR(cr,_,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        s1 = DAELow.equationStr(eqn);
+        s2 = Exp.printComponentRefStr(cr);
+        s = Util.stringAppendList({"trying to solve ",s2," from eqn: ",s1,"\n"});
+        Debug.fprint("failtrace", s);
+      then
+        fail();
+        
+  end matchcontinue;
+end generateOdeEquation_new;
+
+
 public function generateFunctions 
 "function generateFunctions
   Finds the called functions in daelow and generates code for them from 
@@ -6340,7 +6566,7 @@ end appendNonpresentPaths;
 
 public function generateInitData 
 "function generateInitData
-  This function generates initial values for the 
+  This function generates initial values for the generateExpression_new
   simulation by investigating values of variables."
   input DAELow.DAELow inDAELow1;
   input Absyn.Path inPath2;
@@ -6852,7 +7078,6 @@ algorithm
     local
       Codegen.CFunction func_zc,func_handle_zc,cfunc,cfunc0_1,cfunc0,cfunc_1,cfunc_2,func_zc0,func_handle_zc0,func_handle_zc0_1;
       Codegen.CFunction func_handle_zc0_2,func_handle_zc0_3,func_zc0_1,func_zc_1,func_handle_zc_1,cfuncHelpvars;
-      Codegen.CFunction func_ozc;
       Integer cg_id1,cg_id2,cg_id;
       list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
       String extra_funcs_str,helpvarUpdateStr,func_str,res,cname;
@@ -6898,13 +7123,7 @@ algorithm
         func_zc_1 = Codegen.cMergeFns({func_zc0_1,func_zc});
         func_handle_zc_1 = Codegen.cMergeFns({func_handle_zc0_3,func_handle_zc});
         
-        
-        func_ozc = Codegen.cMakeFunction("int", "function_onlyZeroCrossings", {}, {"double *gout,double *t"});
-        func_ozc = addMemoryManagement(func_ozc);
-        func_ozc = Codegen.cMergeFns({func_ozc,func_zc});
-        func_ozc = Codegen.cAddCleanups(func_ozc, {"return 0;"});
-        
-        func_str = Codegen.cPrintFunctionsStr({func_zc_1,func_handle_zc_1,cfunc_2,func_ozc});
+        func_str = Codegen.cPrintFunctionsStr({func_zc_1,func_handle_zc_1,cfunc_2});
         res = Util.stringAppendList({extra_funcs_str,func_str});
       then
         res;
@@ -6998,6 +7217,62 @@ algorithm
         
   end matchcontinue;
 end generateZeroCrossing2;
+
+protected function generateUpdateDepended
+  input DAE.DAElist inDAElist;
+  input DAELow.DAELow inDAELow;
+  input Integer[:] inIntegerArray1;
+  input Integer[:] inIntegerArray2;
+  input list<list<Integer>> inIntegerLstLst;
+  input list<HelpVarInfo> helpVarLst;
+  output String outString;
+algorithm 
+  outString :=
+  matchcontinue (inDAElist,inDAELow,inIntegerArray1,inIntegerArray2,inIntegerLstLst,helpVarLst)
+    local
+      Codegen.CFunction cfunc,cfunc_reinit,func_uD,cfunc_uD_0, func_zc,func_handle_zc,func_ozc;
+      Integer cg_id,cg_id2,cg_id3;
+      list<CFunction> extra_funcs,extra_funcs1;
+      String func_str,res,func_str1,func_str2;
+      DAE.DAElist dae;
+      DAELow.DAELow dlow;
+      Integer[:] ass1,ass2;
+      list<list<Integer>> blocks;
+      list<HelpVarInfo> helpVarInfo;
+      list<DAELow.ZeroCrossing> zc;
+    case (dae,(dlow as DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(zeroCrossingLst = zc))),ass1,ass2,blocks,helpVarInfo)
+      equation
+        (cfunc,cg_id,extra_funcs) = generateOdeBlocks_new(true,dlow, ass1, ass2, blocks, 0,helpVarInfo);
+        (func_zc,cg_id2,func_handle_zc,cg_id3,extra_funcs1) = generateZeroCrossing2(zc, 0, dae, dlow, ass1, ass2, blocks, helpVarInfo, cg_id, cg_id); // testing here
+        (cfunc_reinit, cg_id) = generateReinitStatmt(cg_id2, dlow, helpVarInfo );
+
+        cfunc_uD_0 = Codegen.cMakeFunction("int", "function_updateDepend", {}, {""});
+        cfunc_uD_0 = addMemoryManagement(cfunc_uD_0);
+        cfunc_uD_0 = Codegen.cAddInits(cfunc_uD_0, {"inUpdate=initial()?0:1;"});
+        cfunc_uD_0 = Codegen.cAddCleanups(cfunc_uD_0, {"inUpdate=0;","return 0;"});
+        func_uD = Codegen.cMergeFns({cfunc_uD_0,cfunc,cfunc_reinit});
+        
+        func_ozc = Codegen.cMakeFunction("int", "function_onlyZeroCrossings", {}, {"double *gout,double *t"});
+        func_ozc = addMemoryManagement(func_ozc);
+        func_ozc = Codegen.cMergeFns({func_ozc,func_zc});
+        func_ozc = Codegen.cAddCleanups(func_ozc, {"return 0;"});
+
+        func_str = Codegen.cPrintFunctionsStr({func_uD,func_ozc});
+        func_str1 = Codegen.cPrintFunctionsStr(extra_funcs);
+        func_str2 = Codegen.cPrintFunctionsStr(extra_funcs1);
+        res = Util.stringAppendList({func_str,func_str1,func_str2});
+      then
+        res;
+        
+    case (_,_,_,_,_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"generate_update_depended failed"});
+      then
+        fail();        
+        
+  end matchcontinue;
+end generateUpdateDepended;
+
 
 protected function isPartOfMixedSystem 
 "function: isPartOfMixedSystem
@@ -7251,6 +7526,219 @@ algorithm
   end matchcontinue;
 end generateWhenClauses2;
 
+protected function generateWhenEquation
+	input Integer intmpIdx;
+	input DAELow.Equation eqn;
+	input list<DAELow.WhenClause> inWhenClause;
+  input Codegen.Context inContext;
+  input list<HelpVarInfo> varhelpinfo;
+  output Codegen.CFunction outCFunction;
+  output Integer outtmpIdx;
+algorithm
+  (outCFunction,outtmpIdx):=
+  matchcontinue (intmpIdx,eqn,inWhenClause,inContext,varhelpinfo)
+    local
+      Codegen.Context context;
+      Integer tnr, tnr2,tnr3,tnr4,hlpnr,hlpnr1,cidx;
+      DAE.Exp ex1,ex2;
+      list<DAE.Exp> expl;
+      DAE.ComponentRef cpr;
+      String cr_str;
+      String ifExprStr,ifExprStr2,ifExprStr3,ifExprStr4,ifExprStr5;
+      String out;
+      String var,var1,var2,helpvar;
+      list<HelpVarInfo> varhelpinfo1;
+      Codegen.CFunction cfn, cfn2,cfn3,cfn4,cfn5;
+      list<DAELow.WhenClause> wc;
+      
+    case (tnr,(DAELow.WHEN_EQUATION(DAELow.WHEN_EQ(left = cpr, right = ex2, index = cidx ))),wc,context,varhelpinfo1)
+      equation
+        expl = getConditionList(wc,cidx);
+        (cfn,tnr2,helpvar) = generateHelpVarAssignTempHelp(varhelpinfo1,tnr,expl);
+        (cfn3,var1,tnr3) = Codegen.generateExpression_new(ex2,tnr2,context);
+        cr_str = Exp.printComponentRefStr(cpr);   
+        ifExprStr = Util.stringAppendList({"if (",helpvar,") {"});
+        ifExprStr2 = Util.stringAppendList({cr_str,"=",var1,";"});
+        ifExprStr3 = "}else{";
+        ifExprStr4 = Util.stringAppendList({cr_str,"= pre(",cr_str,");"});
+        ifExprStr5 = "}";
+        cfn2 = Codegen.cAddStatements(cfn, {ifExprStr});
+        cfn4 = Codegen.cMergeFns({cfn2, cfn3});
+        cfn = Codegen.cAddStatements(cfn4,{ifExprStr2,ifExprStr3,ifExprStr4,ifExprStr5});
+      then (cfn,tnr3);
+    case(tnr,_,_,_,_) then (Codegen.cEmptyFunction,tnr);
+  end matchcontinue;
+end generateWhenEquation;
+
+protected function generateHelpVarAssignTemp
+  input list<HelpVarInfo> helpVarLst;
+  input Integer inInteger;
+  input DAE.Exp inVar;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output String HelpVar;
+algorithm
+  (outCFunction,outInteger,HelpVar):=
+  matchcontinue (helpVarLst,inInteger,inVar)
+    local
+      Integer cg_id;
+      String helpvar;
+      CFunction cfunc;
+      Integer helpVarIndex;
+      list<HelpVarInfo> helpinfolist;
+      DAE.Exp e;
+      list<DAE.Exp> elst;
+    case ({},cg_id,_) then (Codegen.cEmptyFunction,cg_id,"");  // cg_id cg var_id 
+    case (helpinfolist,cg_id,DAE.ARRAY(array = elst))
+      equation
+        (cfunc,cg_id,helpvar) = generateHelpVarAssignTempHelp(helpinfolist, cg_id, elst);
+      then
+        (cfunc,cg_id,helpvar);
+    case (helpinfolist,cg_id,e)
+      equation
+        (cfunc,cg_id,helpvar) = generateHelpVarAssignTempHelp(helpinfolist, cg_id, {e});
+      then
+        (cfunc,cg_id,helpvar);
+  end matchcontinue;
+end generateHelpVarAssignTemp;
+
+protected function generateHelpVarAssignTempHelp
+  input list<HelpVarInfo> helpVarLst;
+  input Integer inInteger;
+  input list<DAE.Exp> inVar;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output String HelpVar;
+algorithm
+  (outCFunction,outInteger,HelpVar):=
+  matchcontinue (helpVarLst,inInteger,inVar)
+    local
+      Integer cg_id,cg_id_1,cg_id_2;
+      CFunction cfunc,cfunc1,cfunc2;
+      list<HelpVarInfo> helpinfo;
+      String helpvar1,helpvar2,helpvar;
+      DAE.Exp e;
+      list<DAE.Exp> rest_e;
+    case ({},cg_id,{}) then (Codegen.cEmptyFunction,cg_id,"");  /* cg_id cg var_id */
+    case (helpinfo,cg_id,e::rest_e)
+      equation
+        (cfunc1,cg_id_1,helpvar1) = generateHelpVarAssignTempHelp(helpinfo, cg_id, rest_e);
+        (cfunc2,cg_id_2,helpvar2) = generateHelpVarAssignTempHelp2(helpinfo, cg_id_1, e);
+        cfunc = Codegen.cMergeFns({cfunc1,cfunc2});
+        helpvar = Util.stringAppendList({helpvar1," || ",helpvar2});
+      then
+        (cfunc,cg_id_2,helpvar);
+    case (helpinfo,cg_id,e::{})
+      equation
+        (cfunc,cg_id_1,helpvar) = generateHelpVarAssignTempHelp2(helpinfo, cg_id, e);
+      then
+        (cfunc,cg_id_1,helpvar);
+  end matchcontinue;
+end generateHelpVarAssignTempHelp;      
+
+protected function generateHelpVarAssignTempHelp2
+  input list<HelpVarInfo> helpVarLst;
+  input Integer inInteger;
+  input DAE.Exp inVar;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output String HelpVar;
+algorithm
+  (outCFunction,outInteger,HelpVar):=
+  matchcontinue (helpVarLst,inInteger,inVar)
+    local
+      Integer cg_id,cg_id_1;
+      String ind_str, assign,var,helpvar;
+      CFunction cfunc,cfunc1;
+      Integer helpVarIndex;
+      list<HelpVarInfo> helpinfolist;
+      DAE.Exp e,e1;
+      list<DAE.Exp> elst,rest_e;
+      
+    case ({},cg_id,_) then (Codegen.cEmptyFunction,cg_id,"");  /* cg_id cg var_id */
+    case (((helpVarIndex,e,_) :: helpinfolist),cg_id,e1)
+      equation
+        true = Exp.expEqual(e1, e);
+        ind_str = intString(helpVarIndex);
+        (cfunc1,var,cg_id_1) = Codegen.generateExpression_new(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(true),Codegen.NORMAL(),Codegen.NO_LOOP));
+        helpvar = Util.stringAppendList({"edge(localData->helpVars[",ind_str,"])"});
+        assign = Util.stringAppendList({"localData->helpVars[",ind_str,"] = ",var,";"});
+        cfunc = Codegen.cAddStatements(cfunc1, {assign});
+      then
+        (cfunc,cg_id_1,helpvar);
+    case (((helpVarIndex,e,_) :: helpinfolist),cg_id,e1)
+      equation
+        false = Exp.expEqual(e1, e);
+        (cfunc,cg_id_1,helpvar) = generateHelpVarAssignTempHelp2(helpinfolist, cg_id,e1);
+      then
+        (cfunc,cg_id_1,helpvar);      
+  end matchcontinue;
+end generateHelpVarAssignTempHelp2; 
+
+protected function generateReinitStatmt
+  input Integer inInteger;
+  input DAELow.DAELow inDAELow;
+  input list<HelpVarInfo> inHelpVarInfo;
+  output CFunction outCFunction;
+  output Integer outInteger;
+algorithm
+  (outCFunction,outInteger):=
+  matchcontinue (inInteger,inDAELow,inHelpVarInfo)
+    local
+      Integer cg_id,cg_id_1;
+      Codegen.CFunction cfn;
+      list<HelpVarInfo> helpvarinfo;
+      list<DAELow.WhenClause> wc;
+    case (cg_id,DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(whenClauseLst = wc)),helpvarinfo)
+      equation
+        (cfn,cg_id_1) = generateReinitStatmtHelp(cg_id,wc,helpvarinfo, Codegen.cEmptyFunction );
+      then
+        (cfn,cg_id_1);             
+  end matchcontinue;
+end generateReinitStatmt;
+
+protected function generateReinitStatmtHelp
+  input Integer inInteger;
+  input list<DAELow.WhenClause> inDAELow;
+  input list<HelpVarInfo> inHelpVarInfo;
+  input CFunction inCFunction;
+  output CFunction outCFunction;
+  output Integer outInteger;
+algorithm
+  (outCFunction,outInteger):=
+  matchcontinue (inInteger,inDAELow,inHelpVarInfo,inCFunction)
+    local
+      Integer cg_id,cg_id_1;
+      list<String> reinit_str;
+      String ifExprStr, ifExprStr2, ifExprStr3, helpvar, reinit_str_1;
+      Codegen.CFunction cfn,cfn1,cfn2,cfn3;
+      DAE.Exp cond;
+      list<DAELow.ReinitStatement> reinit;
+      list<HelpVarInfo> helpvarinfo;
+      list<DAELow.WhenClause> xs;
+   case (cg_id,(DAELow.WHEN_CLAUSE(condition = cond,reinitStmtLst = {}) :: xs),helpvarinfo,cfn)
+      equation
+        //false = Util.isListNotEmpty(reinit);
+        (cfn,cg_id_1) = generateReinitStatmtHelp(cg_id,xs,helpvarinfo,cfn);        
+      then
+        (cfn,cg_id_1);      
+    case (cg_id,(DAELow.WHEN_CLAUSE(condition = cond,reinitStmtLst = reinit) :: xs),helpvarinfo,cfn)
+      equation
+        (cfn1,cg_id_1,helpvar) = generateHelpVarAssignTemp(helpvarinfo,cg_id,cond);
+        ifExprStr = Util.stringAppendList({"if (",helpvar,") {"});
+        reinit_str = Util.listMap(reinit, buildReinitStr);
+        reinit_str_1 = Util.stringAppendList(reinit_str);
+        ifExprStr2 = "}else{";
+        ifExprStr3 = "}";
+        cfn2 = Codegen.cAddStatements(cfn1, {ifExprStr,reinit_str_1,ifExprStr2,ifExprStr3});
+        cfn3 = Codegen.cMergeFns({cfn,cfn2});
+        (cfn,cg_id) = generateReinitStatmtHelp(cg_id_1,xs,helpvarinfo,cfn3);
+      then
+        (cfn,cg_id);
+    case(cg_id,{},_,cfn) then (cfn,cg_id);             
+  end matchcontinue;
+end generateReinitStatmtHelp;
+
 protected function buildReinitStr
   input DAELow.ReinitStatement inReinitStatement;
   output String outString;
@@ -7265,7 +7753,7 @@ algorithm
       equation
         cr_str = Exp.printComponentRefStr(cr);
         exp_str = printExpCppStr(exp);
-        eqn_str = Util.stringAppendList({"    ",cr_str," = ",exp_str,";"});
+        eqn_str = Util.stringAppendList({"    ",cr_str," = ",exp_str,";\n"});
       then
         eqn_str;
   end matchcontinue;
@@ -7503,7 +7991,7 @@ algorithm
     local
       Integer e_1,wc_ind,v,v_1,cg_id_1,e,index,cg_id;
       DAE.ComponentRef cr,origname;
-      DAE.Exp expr;
+      DAE.Exp expr,cond;
       DAELow.Var va;
       DAELow.VarKind kind;
       Option<DAE.VariableAttributes> dae_var_attr;

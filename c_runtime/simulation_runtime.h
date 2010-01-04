@@ -221,6 +221,11 @@ functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *i
 int
 function_updateDependents();
 
+/* 	function for calculating all equation sorting order 
+	uses in EventHandle	*/
+int
+function_updateDepend();
+
 // function for calculating states on explicit ODE form
 /*used in functionDAE_res function*/
 int functionODE();

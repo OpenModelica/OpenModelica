@@ -121,7 +121,7 @@ double newTime(double t, double step,double stop)
  */
 void storeExtrapolationData()
 {
-	if (globalData->timeValue == globalData->oldTime)
+	if (globalData->timeValue == globalData->oldTime && globalData->init!=1)
 	  return;
 
 	int i;
@@ -238,15 +238,20 @@ int main(int argc, char**argv)
   /* the main method identifies which solver to use and then calls
      respecive solver main function*/
   if (method == "") {
-    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+	  if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
+	  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
   } else  if (method == std::string("euler")) {
-    retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-  }
-  else if (method == std::string("dassl")) {
-    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-  } else {
-    cout << "Unrecognized solver: "<< method <<", using dassl." << endl;
-    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+	  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+	  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
+  } else  if (method == std::string("rungekutta")) {
+	  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+	  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+  } else if (method == std::string("dassl")) {
+	  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+	  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+ } else {
+	 if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
+	 retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
   }
   deInitializeDataStruc(globalData,ALL);
   return retVal;

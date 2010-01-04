@@ -309,7 +309,7 @@ double GreaterEq(double a, double b) {
 }
 
 double Sample(double t, double start, double interval) {
-  double pipi = atan(1.0) * 8.0;
+  double pipi = atan(1.0) * 4.0;
   if (t < (start - interval * .25))
     return -1.0;
   return sin(pipi * (t - start) / interval);
@@ -441,16 +441,17 @@ int CheckForNewEvent(int flag) {
 	if (flag != INTERVAL){
 	   while(checkForDiscreteVarChanges()) {
 		   saveall();
-		   function_updateDependents();
+		   function_updateDepend();
+		   if (sim_verbose) cout << "Discrete Var Changed!" << endl;
 	   }
 	}
 	
 	function_onlyZeroCrossings(gout,&globalData->timeValue);
 
 	for (long i = 0; i < globalData->nZeroCrossing; i++) {
-		
+		if (sim_verbose) cout << "gout[" << i << "] = " << gout[i] << endl;
 		if (gout[i] < 0) { // check also zero crossings that are on zero.
-			if (sim_verbose) cout << "gout[" << i << "] = " << gout[i] << endl;
+			
 			if (sim_verbose) {
 				cout << "adding event " << i << " at time: "
 				<< globalData->timeValue << endl;
@@ -461,7 +462,7 @@ int CheckForNewEvent(int flag) {
 	if (!EventQueue.empty() && flag == INTERVAL){
 		FindRoot();
 		EventHandle();
-		return 1;
+		return 2;
 	}else if(!EventQueue.empty()){
 		EventHandle();
 		return 1;
@@ -486,10 +487,11 @@ void EventHandle(){
 		else if (zeroCrossingEnabled[event_id] == -1){
 			zeroCrossingEnabled[event_id] = 1;}
 		else{
-			zeroCrossingEnabled[event_id] = 1;}
+			zeroCrossingEnabled[event_id] = -1;}
 		
-		handleZeroCrossing(event_id);
-	    function_updateDependents();
+		//handleZeroCrossing(event_id);
+		saveall();
+		function_updateDepend();
 	    saveall();
 	    
 		EventQueue.pop_front();
@@ -503,28 +505,34 @@ void EventHandle(){
 //
 void FindRoot(){
 	double EventTime = 0;
+	
 	long int event_id =0;
 	
 	double *states_right = new double[globalData->nStates];
 	double *states_left = new double[globalData->nStates];
+	
+	double time_left = globalData->oldTime;
+	double time_right = globalData->timeValue;
 
 	//write states to work and backup Array
 	for(int i=0;i<globalData->nStates;i++){
-		states_right[i] = globalData->states[i];
 		states_left[i] = globalData->oldStates[i];
+		states_right[i] = globalData->states[i];
 	}
 
 	// Search for event time with Bisection method
-	EventTime = BiSection(globalData->oldTime, globalData->timeValue, states_right, states_left, &event_id);
+	EventTime = BiSection(&time_left,&time_right, states_left, states_right, &event_id);
 
 	//if (EventTime!=0){ // Found event at EventTime
 	
-	globalData->timeValue = EventTime;
+	
 	if (sim_verbose) {
-		cout << "Found event " << event_id << " at time: "<< globalData->timeValue << endl;
+		cout << "Found event " << event_id << " at time: "<< EventTime << endl;
+		cout << "Time at Point left: " << time_left << endl;
+		cout << "Time at Point right: " << time_right << endl;
 	}
 	AddEvent(event_id);
-	
+	globalData->timeValue = time_left;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_left[i];
 	}
@@ -532,7 +540,7 @@ void FindRoot(){
 	functionDAE_output();
 	emit();
 
-	
+	globalData->timeValue = time_right;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_right[i];
 	}
@@ -546,22 +554,22 @@ void FindRoot(){
 // 
 // Method to find root in Intervall[oldTime,timeValue]
 //
-double BiSection(double a, double b, double* states_a, double* states_b,long int* event_id )	
+double BiSection(double* a, double* b, double* states_a, double* states_b,long int* event_id )	
 {
 	
 	//double TTOL =  DBL_EPSILON;//*fabs(2*b-a)*100;
-	double TTOL = 1e-05;
+	double TTOL = 1e-06;
 	if(TOL!=0) TTOL = TOL;
 	double c;
 
 	if (sim_verbose){
-			cout << "Check Intervall [" << a << "," << b << "]" << endl; 
+			cout << "Check Intervall [" << *a << "," << *b << "]" << endl; 
 			cout << "TTOL is set to: " << TTOL << endl;
 	}
 	
-	while ( fabs(b-a) > TTOL){
+	while ( fabs(*b-*a) > TTOL){
 		
-		c = (a+b)/2.0;
+		c = (*a+*b)/2.0;
 		globalData->timeValue = c;
 		
 		//calculates states at time c 
@@ -575,24 +583,89 @@ double BiSection(double a, double b, double* states_a, double* states_b,long int
 	
 		if ( CheckZeroCrossings(event_id)){ //If Zerocrossing in left Section
 			
-			//if (sim_verbose) cout << "\t\tSearch in the left section" << endl;
+			//if (sim_verbose) cout << "  Search in the left section" << endl;
 			for(int i=0;i<globalData->nStates;i++){
-				states_a[i] = globalData->states[i];
+				states_b[i] = globalData->states[i];
 			}
-			b = c;
+			//if (sim_verbose) {
+			//	for(int i=0;i<globalData->nStates;i++){
+			//		cout << "State[" << i <<"] = " << states_a[i] << endl;
+			//	}
+			//}
+			*b = c;
 		}else{   //If Zerocrossing in right Section
 			
 			//if (sim_verbose) cout << "\t\tSearch in the right section" << endl;
 			for(int i=0;i<globalData->nStates;i++){
-				states_b[i] = globalData->states[i];
+				states_a[i] = globalData->states[i];
 			}
-			a = c;
+			//if (sim_verbose) {
+			//	for(int i=0;i<globalData->nStates;i++){
+			//		cout << "State[" << i <<"] = " << states_b[i] << endl;
+			//	}
+			//}
+			*a = c;
 		} 
 	}
 	
-	c = (a+b)/2.0;
+	c = (*a+*b)/2.0;
 	return c;
 }
+
+/*
+// 
+// Method to find root in Intervall[oldTime,timeValue]
+//
+double regulafalsi(double* a, double* b, double* states_a, double* states_b,long int* event_id){
+	
+	double TTOL = 1e-06;
+	if(TOL!=0) TTOL = TOL;
+
+
+	double c;
+
+	if (sim_verbose){
+			cout << "Check Intervall [" << *a << "," << *b << "]" << endl; 
+			cout << "TTOL is set to: " << TTOL << endl;
+	}
+
+	
+
+	while ( (fabs(DX) < Delta) && (fabs(YC) < Epsilon) > TTOL){
+		
+		c = (*a+*b)/2.0;
+		globalData->timeValue = c;
+		
+		//calculates states at time c 
+		for(int i=0;i<globalData->nStates;i++){
+			globalData->states[i] = (states_a[i] + states_b[i]) / 2.0; 
+		}
+    DX = YB * (B - A)/(YB -YA);      // Change in iterate 
+    C = B - DX;                      // New iterate       
+
+    YC = ffunction(C);   // Function value of new iterate 
+
+
+if( YC == 0) {           // first 'if'          
+        Satisfied = 1; // Exact root is found 
+}
+else if( ( (YB >= 0) && (YC >=0) ) || ( (YB < 0) && (YC < 0) )   ) {
+   B = C;      // Squeeze from the right 
+   YB = YC;
+}
+else {
+   A = C;      // Squeeze from the left
+  YA = YC;
+}
+
+if( (fabs(DX) < Delta) && (fabs(YC) < Epsilon) ) Satisfied = 1;
+
+}  // end of 'for'-loop 
+
+
+
+}   // End of main program 
+*/
 
 
 //

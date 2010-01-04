@@ -3080,7 +3080,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
-        res = Util.stringAppendList({s1," := ",s2,"when clause no:",is,"\n"});
+        res = Util.stringAppendList({s1," := ",s2," when clause no:",is,"\n"});
       then
         res;
     case (RESIDUAL_EQUATION(exp = e))
@@ -6070,10 +6070,11 @@ algorithm
       list<Value>[:] arr;
       Variables vars;
       EquationArray eqns;
-    case (DAELOW(orderedVars = vars,orderedEqs = eqns))
+      list<WhenClause> wc;
+    case (DAELOW(orderedVars = vars,orderedEqs = eqns, eventInfo = EVENT_INFO(whenClauseLst = wc)))
       equation
         eqnsl = equationList(eqns);
-        lstlst = incidenceMatrix2(vars, eqnsl);
+        lstlst = incidenceMatrix2(vars, eqnsl, wc);
         arr = listArray(lstlst);
       then
         arr;
@@ -6093,24 +6094,26 @@ protected function incidenceMatrix2
   Calculates the incidence matrix as a list of list of integers"
   input Variables inVariables;
   input list<Equation> inEquationLst;
+  input list<WhenClause> inWhenClause;
   output list<list<Integer>> outIntegerLstLst;
 algorithm
   outIntegerLstLst:=
-  matchcontinue (inVariables,inEquationLst)
+  matchcontinue (inVariables,inEquationLst,inWhenClause)
     local
       list<list<Value>> lst;
       list<Value> row;
       Variables vars;
       Equation e;
       list<Equation> eqns;
-    case (_,{}) then {};
-    case (vars,(e :: eqns))
+      list<WhenClause> wc;
+    case (_,{},_) then {};
+    case (vars,(e :: eqns),wc)
       equation
-        lst = incidenceMatrix2(vars, eqns);
-        row = incidenceRow(vars, e);
+        lst = incidenceMatrix2(vars, eqns, wc);
+        row = incidenceRow(vars, e, wc);
       then
         (row :: lst);
-    case (_,_)
+    case (_,_,_)
       equation
         print("incidence_matrix2 failed\n");
       then
@@ -6125,9 +6128,10 @@ protected function incidenceRow
   in the matrix for one equation."
   input Variables inVariables;
   input Equation inEquation;
+  input list<WhenClause> inWhenClause;
   output list<Integer> outIntegerLst;
 algorithm
-  outIntegerLst := matchcontinue (inVariables,inEquation)
+  outIntegerLst := matchcontinue (inVariables,inEquation,inWhenClause)
     local
       list<Value> lst1,lst2,res,res_1;
       Variables vars;
@@ -6137,55 +6141,61 @@ algorithm
       DAE.ComponentRef cr;
       WhenEquation we;
       Value indx;
-    case (vars,EQUATION(exp = e1,scalar = e2))
+      list<WhenClause> wc;
+      Integer wc_index;
+    case (vars,EQUATION(exp = e1,scalar = e2),_)
       equation
         lst1 = incidenceRowExp(e1, vars) "EQUATION" ;
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,COMPLEX_EQUATION(lhs = e1,rhs = e2))
+    case (vars,COMPLEX_EQUATION(lhs = e1,rhs = e2),_)
       equation
         lst1 = incidenceRowExp(e1, vars) "COMPLEX_EQUATION" ;
         lst2 = incidenceRowExp(e2, vars);
         res = listAppend(lst1, lst2);
       then
         res;        
-    case (vars,ARRAY_EQUATION(crefOrDerCref = expl)) /* ARRAY_EQUATION */
+    case (vars,ARRAY_EQUATION(crefOrDerCref = expl),_) /* ARRAY_EQUATION */
       equation
         lst3 = Util.listMap1(expl, incidenceRowExp, vars);
         res = Util.listFlatten(lst3);
       then
         res;
-    case (vars,SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
+    case (vars,SOLVED_EQUATION(componentRef = cr,exp = e),_) /* SOLVED_EQUATION */
       equation
         lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,SOLVED_EQUATION(componentRef = cr,exp = e)) /* SOLVED_EQUATION */
+    case (vars,SOLVED_EQUATION(componentRef = cr,exp = e),_) /* SOLVED_EQUATION */
       equation
         lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
         lst2 = incidenceRowExp(e, vars);
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,RESIDUAL_EQUATION(exp = e)) /* RESIDUAL_EQUATION */
+    case (vars,RESIDUAL_EQUATION(exp = e),_) /* RESIDUAL_EQUATION */
       equation
         res = incidenceRowExp(e, vars);
       then
         res;
-    case (vars,WHEN_EQUATION(whenEquation = we)) /* WHEN_EQUATION */
+    case (vars,WHEN_EQUATION(whenEquation = we as WHEN_EQ(index=wc_index)),wc) /* WHEN_EQUATION */
       equation
         (cr,e2) = getWhenEquationExpr(we);
         e1 = DAE.CREF(cr,DAE.ET_OTHER());
-        lst1 = incidenceRowExp(e1, vars);
-        lst2 = incidenceRowExp(e2, vars);
+        expl = getWhenCondition(wc,wc_index);
+        lst3 = Util.listMap1(expl, incidenceRowExp, vars);
+        lst1 = Util.listFlatten(lst3);
+        lst2 = incidenceRowExp(e1, vars);
         res = listAppend(lst1, lst2);
+        lst1 = incidenceRowExp(e2, vars); 
+        res = listAppend(res, lst1);
       then
         res;
-    case (vars,ALGORITHM(index = indx,in_ = inputs,out = outputs)) 
+    case (vars,ALGORITHM(index = indx,in_ = inputs,out = outputs),_) 
       /* ALGORITHM For now assume that algorithm will be solvable for correct
 	       variables. I.e. find all variables in algorithm and add to lst.
 	       If algorithm later on needs to be inverted, i.e. solved for
@@ -6200,7 +6210,7 @@ algorithm
         res_1 = Util.listFlatten(res);
       then
         res_1;
-    case (vars,_)
+    case (vars,_,_)
       equation
         print("-incidence_row failed\n");
       then
@@ -8376,14 +8386,15 @@ algorithm
       list<list<Value>> changedvars2;
       Variables vars,knvars;
       EquationArray daeeqns,daeseqns;
+      list<WhenClause> wc;
       
     case (dae,m,{}) then (m,{{}});
       
-    case ((dae as DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns)),m,(e :: eqns))
+    case ((dae as DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = daeeqns,removedEqs = daeseqns,eventInfo = EVENT_INFO(whenClauseLst = wc))),m,(e :: eqns))
       equation
         e_1 = e - 1;
         eqn = equationNth(daeeqns, e_1);
-        row = incidenceRow(vars, eqn);
+        row = incidenceRow(vars, eqn,wc);
         m_1 = Util.arrayReplaceAtWithFill(row, e_1 + 1, m, {});
         changedvars1 = varsInEqn(m_1, e);
         (m_2,changedvars2) = updateIncidenceMatrix2(dae, m_1, eqns);
@@ -9991,7 +10002,7 @@ protected function statesInEqn "function: statesInEqn
   Variables vars_1;
 algorithm
   vars_1 := statesAsAlgebraicVars(vars);
-  res := incidenceRow(vars_1, eqn);
+  res := incidenceRow(vars_1, eqn,{});
 end statesInEqn;
 
 protected function statesAsAlgebraicVars "function: statesAsAlgebraicVars
@@ -15187,6 +15198,30 @@ algorithm
     case (WHEN_EQ(left = cr,right = e)) then (cr,e);
   end matchcontinue;
 end getWhenEquationExpr;
+
+public function getWhenCondition
+"function: getWhenCodition
+  Get expression's of condition by when equation"  
+  input list<WhenClause> inWhenClause;
+  input Integer inIndex; 
+  output list<DAE.Exp> outExp;
+algorithm
+  conditionList := matchcontinue (inWhenClause, inIndex)
+    local
+      list<WhenClause> wc;
+      Integer ind;
+      list<DAE.Exp> condlst;
+      DAE.Exp e;
+    case (wc, ind)
+      equation
+        WHEN_CLAUSE(condition=DAE.ARRAY(_,_,condlst)) = listNth(wc, ind);
+      then condlst;
+    case (wc, ind)
+      equation
+        WHEN_CLAUSE(condition=e) = listNth(wc, ind);
+      then {e};
+  end matchcontinue;
+end getWhenCondition;
 
 public function getZeroCrossingIndicesFromWhenClause "function: getZeroCrossingIndicesFromWhenClause
   Returns a list of indices of zerocrossings that a given when clause is dependent on.

@@ -118,6 +118,16 @@ function_when(int i);
 
 extern long* zeroCrossingEnabled;
 
+
+#define REL(res,x,y,op1)  { \
+		res = (x) op1 (y); \
+}
+
+#define REGREATER(res,x,y)    REL(res,x,y,>)
+#define RELESS(res,x,y)       REL(res,x,y,<)
+#define REGREATEREQ(res,x,y)  REL(res,x,y,>=)
+#define RELESSEQ(res,x,y)     REL(res,x,y,<=)
+
 int
 function_onlyZeroCrossings(double* gout ,double* t);
 
@@ -127,7 +137,7 @@ void EventHandle();
 
 void FindRoot();
 
-double BiSection(double, double, double*, double*, long int*);
+double BiSection(double*, double*, double*, double*, long int*);
 
 int CheckZeroCrossings(long int*);
 
