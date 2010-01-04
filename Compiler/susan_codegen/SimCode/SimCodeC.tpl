@@ -64,6 +64,8 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <functionDeInitializeDataStruc()>
 
+<functionExtraResudials(allEquations)>
+
 <functionDaeOutput(nonStateContEquations, removedEquations)>
 
 <functionDaeOutput2(nonStateDiscEquations, removedEquations)>
@@ -73,8 +75,6 @@ case SIMCODE(modelInfo = MODELINFO) then
 <functionOutput(modelInfo)>
 
 <functionDaeRes()>
-
-<functionExtraResudials(allEquations)>
 
 <functionZeroCrossing(zeroCrossings)>
 

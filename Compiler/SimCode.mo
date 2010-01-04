@@ -1828,7 +1828,7 @@ algorithm
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true);
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
-        equation_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp);
+        equation_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp, block_);
       then
         equation_;
     /* mixed system of equations, both continous and discrete eqns*/
@@ -1858,7 +1858,7 @@ algorithm
       //  (s3,cg_id4,_) = generateMixedSystemDiscretePartCheck(disc_eqn, disc_var, cg_id3,numValues);
       //  (s1,cg_id5,_) = generateMixedSystemStoreDiscrete(disc_var, 0, cg_id4);
       //  cfn = Codegen.cMergeFns({s0,s1,s2_1,s3,s4});
-        equation_ = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp);
+        equation_ = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp, block_);
         simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
         discEqs = extractDiscEqs(disc_eqn, disc_var);
         (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var);
@@ -1880,7 +1880,7 @@ algorithm
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,false);
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
-        equation_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp);
+        equation_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_);
       then
         equation_;
     case (_,_,_,_,_)
@@ -1959,10 +1959,12 @@ public function createOdeSystem2
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   input DAELow.JacobianType inJacobianType;
+  input list<Integer> block_;
   output SimEqSystem equation_;
 algorithm
   equation_ :=
-  matchcontinue (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType)
+  matchcontinue
+    (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,block_)
     local
       Codegen.CFunction s1,s2,s3,s4,s5,s;
       Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
@@ -1977,15 +1979,19 @@ algorithm
       list<DAE.ComponentRef> crefs;
       DAELow.MultiDimEquation[:] ae;
       Boolean genDiscrete;
+      VarTransform.VariableReplacements repl;
+      list<SimEqSystem> resEqs;
+      list<String> blockIdStrLst;
+      String blockIdStr;
     /* A single array equation */
-    case (mixedEvent,_,dae,jac,jac_tp)
+    case (mixedEvent,_,dae,jac,jac_tp,block_)
       equation
         singleArrayEquation(dae); // fails if not single array eq
         equation_ = createSingleArrayEqnCode(dae, jac);
       then
         equation_;
     /* A single algorithm section for several variables. */
-    case (mixedEvent,genDiscrete,dae,jac,jac_tp)
+    case (mixedEvent,genDiscrete,dae,jac,jac_tp,block_)
       equation
         singleAlgorithmSection(dae);
         equation_ = createSingleAlgorithmCode(dae, jac);
@@ -1994,19 +2000,19 @@ algorithm
     /* constant jacobians. Linear system of equations (A x = b) where
        A and b are constants. TODO: implement symbolic gaussian elimination
        here. Currently uses dgesv as for next case */
-    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT())
+    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),block_)
       local
         list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation
         eqn_size = DAELow.equationSize(eqn);
         // NOTE: Not impl. yet, use time_varying...
         equation_ = createOdeSystem2(mixedEvent, genDiscrete, d, SOME(jac),
-                                     DAELow.JAC_TIME_VARYING());
+                                     DAELow.JAC_TIME_VARYING(), block_);
       then
         equation_;
     /* Time varying jacobian. Linear system of equations that needs to
        be solved during runtime. */
-    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING())
+    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),block_)
       local
         list<DAELow.Var> dlowVars;
         list<SimVar> simVars;
@@ -2032,25 +2038,35 @@ algorithm
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
         SES_LINEAR(mixedEvent, simVars, beqs, simJac);
-    //case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR()) /* Time varying nonlinear jacobian. Non-linear system of equations */
-    //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
-    //  equation
-
-    //    eqn_lst = DAELow.equationList(eqn);
-    //    var_lst = DAELow.varList(v);
-    //    crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $der for states.
-    //    (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst,ae, cg_id);
-    //  then
-    //    (s1,cg_id_1,f1);
-    //case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC()) /* no analythic jacobian available. Generate non-linear system */
-    //  equation
-    //    eqn_lst = DAELow.equationList(eqn);
-    //    var_lst = DAELow.varList(v);
-    //    crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
-    //    (s1,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(mixedEvent,crefs, eqn_lst, ae, cg_id);
-    //  then
-    //    (s1,cg_id_1,f1);
-    case (_,_,_,_,_)
+    /* Time varying nonlinear jacobian. Non-linear system of equations. */
+    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR(),block_)
+      local
+        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        Integer index;
+      equation
+        eqn_lst = DAELow.equationList(eqn);
+        var_lst = DAELow.varList(v);
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates);// get varnames and prefix $der for states.
+        repl = makeResidualReplacements(crefs);
+        resEqs = createNonlinearResidualEquations(eqn_lst, ae, repl);
+        index = Util.listFirst(block_); // use first equation nr as index
+      then
+        SES_NONLINEAR(index, resEqs, crefs);
+    /* No analythic jacobian available. Generate non-linear system. */
+    case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),NONE,DAELow.JAC_NO_ANALYTIC(),block_)
+      local
+        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        Integer index;
+      equation
+        eqn_lst = DAELow.equationList(eqn);
+        var_lst = DAELow.varList(v);
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
+        repl = makeResidualReplacements(crefs);
+        resEqs = createNonlinearResidualEquations(eqn_lst, ae, repl);
+        index = Util.listFirst(block_); // use first equation nr as index
+      then
+        SES_NONLINEAR(index, resEqs, crefs);
+    case (_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem2 failed"});
       then
