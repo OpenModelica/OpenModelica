@@ -429,6 +429,7 @@ uniontype SimEqSystem
     list<DAE.Statement> statements;
   end SES_ALGORITHM;
   record SES_LINEAR
+    Boolean partOfMixed;
     list<SimVar> vars;
     list<DAE.Exp> beqs;
     // SimEqSystem is SES_RESIDUAL
@@ -439,6 +440,13 @@ uniontype SimEqSystem
     list<SimEqSystem> eqs;
     list<DAE.ComponentRef> crefs;
   end SES_NONLINEAR;
+  record SES_MIXED
+    SimEqSystem cont;
+    list<SimVar> discVars;
+    list<SimEqSystem> discEqs;
+    list<String> values;
+    list<Integer> value_dims;
+  end SES_MIXED;
   record SES_NOT_IMPLEMENTED
     String msg;
   end SES_NOT_IMPLEMENTED;
@@ -1799,6 +1807,10 @@ algorithm
       DAELow.ExternalObjectClasses eoc;
       list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
       Integer numValues;
+      list<SimVar> simVarsDisc;
+      list<SimEqSystem> discEqs;
+      list<String> values;
+      list<Integer> value_dims;
     /* mixed system of equations, continuous part only */
     case (false,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_)
       equation
@@ -1846,8 +1858,12 @@ algorithm
       //  (s3,cg_id4,_) = generateMixedSystemDiscretePartCheck(disc_eqn, disc_var, cg_id3,numValues);
       //  (s1,cg_id5,_) = generateMixedSystemStoreDiscrete(disc_var, 0, cg_id4);
       //  cfn = Codegen.cMergeFns({s0,s1,s2_1,s3,s4});
+        equation_ = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp);
+        simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
+        discEqs = extractDiscEqs(disc_eqn, disc_var);
+        (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var);
       then
-        SES_NOT_IMPLEMENTED("mixed system not implemented");
+        SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims);
     /* continuous system of equations */
     case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_)
       equation
@@ -1874,6 +1890,68 @@ algorithm
         fail();
   end matchcontinue;
 end createOdeSystem;
+
+protected function extractDiscEqs
+  input list<DAELow.Equation> disc_eqn;
+  input list<DAELow.Var> disc_var;
+  output list<SimEqSystem> discEqsOut;
+algorithm
+  discEqsOut :=
+  matchcontinue (disc_eqn, disc_var)
+    local
+      list<SimEqSystem> restEqs;
+      Integer cg_id,indx_1,cg_id_1,cg_id_2,indx;
+      Codegen.CFunction cfn,exp_func,exp_func_1,cfn_1;
+      list<CFunction> funcs;
+      DAE.ComponentRef cr;
+      DAE.Exp varexp,expr,e1,e2;
+      String var,indx_str,cr_str,stmt,stmt2;
+      list<DAELow.Equation> eqns;
+      DAELow.Var v;
+      list<DAELow.Var> vs;
+    case ({},_) then {};
+    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: eqns),(v :: vs))
+      equation
+        cr = DAELow.varCref(v);
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        expr = Exp.solve(e1, e2, varexp);
+        restEqs = extractDiscEqs(eqns, vs);
+      then
+        SES_SIMPLE_ASSIGN(cr, expr) :: restEqs;
+  end matchcontinue;
+end extractDiscEqs;
+
+protected function extractValuesAndDims
+  input list<DAELow.Equation> inDAELowEquationLst1;
+  input list<DAELow.Var> inDAELowVarLst2;
+  input list<DAELow.Equation> inDAELowEquationLst3;
+  input list<DAELow.Var> inDAELowVarLst4;
+  output list<String> valuesRet;
+  output list<Integer> value_dims;
+algorithm
+  (valuesRet, value_dims) :=
+  matchcontinue (inDAELowEquationLst1,inDAELowVarLst2,inDAELowEquationLst3,inDAELowVarLst4)
+    local
+      list<DAE.Exp> rels;
+      list<list<String>> values,values_1;
+      list<Integer> value_dims;
+      list<String> values_2,ss;
+      String s,s2,disc_len_str,values_len_str,stmt1,stmt2;
+      Integer disc_len,values_len;
+      Codegen.CFunction cfn_1;
+      list<DAELow.Equation> cont_e,disc_e;
+      list<DAELow.Var> cont_v,disc_v;
+    case (cont_e,cont_v,disc_e,disc_v)
+      equation
+        rels = mixedCollectRelations(cont_e, disc_e);
+        (values,value_dims) = generateMixedDiscretePossibleValues2(rels, disc_v, 0);
+        values_1 = generateMixedDiscreteCombinationValues(values);
+        values_2 = Util.listFlatten(values_1);
+        valuesRet = values_2;
+      then
+        (valuesRet, value_dims);
+  end matchcontinue;
+end extractValuesAndDims;
 
 public function createOdeSystem2
   input Boolean mixedEvent "true if generating the mixed system event code";
@@ -1953,7 +2031,7 @@ algorithm
         beqs = Util.listMap1(dlowEqs, dlowEqToExp, v);
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
-        SES_LINEAR(simVars, beqs, simJac);
+        SES_LINEAR(mixedEvent, simVars, beqs, simJac);
     //case (mixedEvent,_,DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn,arrayEqs=ae),SOME(jac),DAELow.JAC_NONLINEAR()) /* Time varying nonlinear jacobian. Non-linear system of equations */
     //  local list<tuple<Integer, Integer, DAELow.Equation>> jac;
     //  equation

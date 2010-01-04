@@ -980,6 +980,7 @@ case SES_LINEAR then
 # size = listLengthSimVar(vars)
 # aname = 'A<uid>'
 # bname = 'b<uid>'
+# mixedPostfix = if partOfMixed then "_mixed" else ""
 <<
 declare_matrix(<aname>, <size>, <size>);
 declare_vector(<bname>, <size>);
@@ -993,8 +994,36 @@ declare_vector(<bname>, <size>);
    # expPart = daeExp(it, context, preExp, varDecls)
    '<preExp>set_vector_elt(<bname>, <i0>, <expPart>);'
  "\n">
-solve_linear_equation_system(<aname>, <bname>, <size>, <uid>);
+solve_linear_equation_system<mixedPostfix>(<aname>, <bname>, <size>, <uid>);
 <vars of SIMVAR: '<cref(it.name)> = get_vector_elt(<bname>, <i0>);' "\n">
+>>
+case SES_MIXED then
+# contEqs = equation_(cont, context, varDecls)
+# numDiscVarsStr = listLengthSimVar(discVars) 
+# valuesLenStr = listLengthStr(values)
+# preDisc = ""
+# discLoc2 = (discEqs of SES_SIMPLE_ASSIGN:
+  # expPart = daeExp(exp, context, preDisc, varDecls)
+  <<
+  <cref(componentRef)> = <expPart>;
+  discrete_loc2[<i0>] = <cref(componentRef)>;
+  >>
+  "\n")
+<<
+mixed_equation_system(<numDiscVarsStr>);
+double values[<valuesLenStr>] = {<values: '<it>' ", ">};
+int value_dims[<numDiscVarsStr>] = {<value_dims: '<it>' ", ">};
+<discVars of SIMVAR: 'discrete_loc[<i0>] = <cref(it.name)>;' "\n">
+{
+  <contEqs>
+}
+<preDisc>
+<discLoc2>
+{
+  double *loc_ptrs[<numDiscVarsStr>] = {<discVars of SIMVAR: '&<cref(name)>' ", ">};
+  check_discrete_values(<numDiscVarsStr>, <valuesLenStr>);
+}
+mixed_equation_system_end(<numDiscVarsStr>);
 >>
 case SES_NONLINEAR then
 # size = listLengthCref(crefs)

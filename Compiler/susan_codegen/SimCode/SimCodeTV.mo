@@ -135,6 +135,7 @@ package SimCode
       list<DAE.Statement> statements;
     end SES_ALGORITHM;
     record SES_LINEAR
+      Boolean partOfMixed;
       list<SimVar> vars;
       list<DAE.Exp> beqs;
       list<tuple<Integer, Integer, SimEqSystem>> simJac;
@@ -144,6 +145,13 @@ package SimCode
       list<SimEqSystem> eqs;
       list<DAE.ComponentRef> crefs;
     end SES_NONLINEAR;
+    record SES_MIXED
+      SimEqSystem cont;
+      list<SimVar> discVars;
+      list<SimEqSystem> discEqs;
+      list<String> values;
+      list<Integer> value_dims;
+    end SES_MIXED;
     record SES_NOT_IMPLEMENTED
       String msg;
     end SES_NOT_IMPLEMENTED;
