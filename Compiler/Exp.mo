@@ -3819,6 +3819,22 @@ algorithm
   end matchcontinue;
 end abs;
 
+public function arrayDimensionsToSubscripts "transform array dimensions (in DAE.ExpType) to Dae.Subscript's "
+  input list<Option<Integer>> dims;
+  output list<DAE.Subscript> subs;
+algorithm
+  subs := matchcontinue(dims)
+  local Integer i;
+    case({}) then {};
+    case(NONE::dims) equation
+      subs = arrayDimensionsToSubscripts(dims);
+    then DAE.WHOLEDIM()::subs;
+    case(SOME(i)::dims) equation
+      subs = arrayDimensionsToSubscripts(dims);
+    then DAE.INDEX(DAE.ICONST(i))::subs;     
+  end matchcontinue;
+end arrayDimensionsToSubscripts;
+
 public function arrayTypeDimensions 
 "Return the array dimensions of a type."
 	input Type tp;

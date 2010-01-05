@@ -3022,7 +3022,7 @@ algorithm
       env = Env.extendFrameT(env, "rem", realReal2real);
       env = Env.extendFrameT(env, "rem", intInt2int);
       env = Env.extendFrameT(env, "ceil", real2real);
-      envb = Env.extendFrameT(env, "floor", real2int);
+      envb = Env.extendFrameT(env, "floor", real2real);
       env = Env.extendFrameT(envb, "integer", real2int);
       env = Env.extendFrameT(env, "Integer", enumeration2int);
       env = Env.extendFrameT(env, "abs", real2real) "differentiable functions" ;

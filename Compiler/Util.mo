@@ -4511,10 +4511,10 @@ algorithm
         res_str = System.stringReplace(str_1, from, to);
       then
         res_str;
-    case (_,_)
+    case (str,_)
       equation 
-        print("- Util.modelicaStringToCStr1 failed\n");
-      then
+        print("- Util.modelicaStringToCStr1 failed for str:"+&str+&"\n");
+      then 
         fail();
   end matchcontinue;
 end modelicaStringToCStr1;

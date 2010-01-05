@@ -2731,9 +2731,8 @@ algorithm
       equation 
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         rv_1 = realFloor(rv);
-        iv=realInt(rv_1);
       then
-        (cache,Values.INTEGER(iv),st);
+        (cache,Values.REAL(rv_1),st);
   end matchcontinue;
 end cevalBuiltinFloor;
 

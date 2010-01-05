@@ -1976,7 +1976,7 @@ algorithm
     case (NONE) then ""; 
     case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation 
-        str = Util.stringAppendList({" \"",cmt,"\""});
+        str = Util.stringAppendList({"\"",cmt,"\""});
       then
         str;
     case (SOME(SCode.COMMENT(annopt,NONE))) then ""; 

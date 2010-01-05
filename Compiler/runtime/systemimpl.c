@@ -161,97 +161,6 @@ static int set_ldflags(char *str)
   return 0;
 }
 
-/*
-* Description:
-*   Find and replace text within a string.
-*
-* Parameters:
-*   source_src  (in) - pointer to source string
-*   search_str (in) - pointer to search text
-*   replace_str   (in) - pointer to replacement text
-*
-* Returns:
-*   Returns a pointer to dynamically-allocated memory containing string
-*   with occurences of the text pointed to by 'search_str' replaced by with the
-*   text pointed to by 'replace_str'.
-*/
-
-static char *_strcat(char *buf, size_t *buf_size, char **ptr,
-                     const char *addon, size_t addon_len)
-{
-  size_t pos = (*ptr) - buf;
-  char *ret = buf;
-  if ((pos + addon_len) > (*buf_size)) {
-    (*buf_size) = (pos + addon_len);
-    ret = realloc(buf, (*buf_size) + 1);
-    if (ret == NULL) {
-      free(buf);
-      return NULL;
-    }
-    *ptr = ret + pos;
-  }
-  memcpy(*ptr, addon, addon_len);
-  (*ptr) += addon_len;
-  return ret;
-}
-
-char* _replace(const char* source_str,
-               const char* search_str,
-               const char* replace_str)
-{
-  char *ostr, *out = NULL;
-  const char *pos = NULL, *last = NULL;
-  const size_t nreplace = strlen(replace_str);
-  const size_t nsearch = strlen(search_str);
-  size_t ostr_allocated;
-
-  if (!source_str || !search_str || !replace_str) {
-    printf("Not enough arguments\n");
-    return NULL;
-  }
-
-  ostr_allocated = strlen(source_str);
-  ostr = malloc(ostr_allocated + 1);
-  if (!ostr) {
-    printf("Insufficient memory available\n");
-    return NULL;
-  }
-
-  last = source_str;
-  out = ostr;
-  while((pos = strstr(last, search_str)) != NULL) {
-    if (last < pos) {
-      ostr = _strcat(ostr, &ostr_allocated, &out, last, pos - last);
-      if (ostr == NULL) {
-        printf("Insufficient memory available\n");
-        return NULL;
-      }
-    }
-
-    ostr = _strcat(ostr, &ostr_allocated, &out, replace_str, nreplace);
-    if (ostr == NULL) {
-      printf("Insufficient memory available\n");
-      return NULL;
-    }
-
-    last = pos + nsearch;
-  }
-
-  if (*last != '\0') {
-    ostr = _strcat(ostr, &ostr_allocated, &out, last, strlen(last));
-    if (ostr == NULL) {
-      printf("Insufficient memory available\n");
-      return NULL;
-    }
-  }
-
-  *out = '\0';
-
-  return ostr;
-}
-
-
-
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
@@ -559,8 +468,8 @@ RML_BEGIN_LABEL(System__trimChar)
   }
   if(end_pos > start_pos){
     res= (char*)malloc(end_pos - start_pos +1);
-    strncpy(res,&str[start_pos],end_pos - start_pos + 1);
-    res[end_pos - start_pos + 1] = '\0';
+    strncpy(res,&str[start_pos],end_pos - start_pos);
+    res[end_pos - start_pos] = '\0';
     rmlA0 = (void*) mk_scon(res);
     free(res);
     RML_TAILCALLK(rmlSC);
@@ -775,17 +684,17 @@ RML_BEGIN_LABEL(System__loadLibrary)
   _snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
 #else
   snprintf(libname, MAXPATHLEN, "%s\\%s.dll", currentDirectory, str);
-#endif  
-  
+#endif
+
   h = LoadLibrary(libname);
   if (h == NULL) {
     //fprintf(stderr, "Unable to load '%s': %lu.\n", libname, GetLastError());
     fflush(stderr);
     RML_TAILCALLK(rmlFC);
-  }  
+  }
   libIndex = alloc_ptr();
   if (libIndex < 0) {
-    //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr); 
+    //fprintf(stderr, "Error loading library %s!\n", libname); fflush(stderr);
     FreeLibrary(h);
     h = NULL;
     RML_TAILCALLK(rmlFC);
