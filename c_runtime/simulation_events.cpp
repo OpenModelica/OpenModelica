@@ -309,7 +309,7 @@ double GreaterEq(double a, double b) {
 }
 
 double Sample(double t, double start, double interval) {
-  double pipi = atan(1.0) * 4.0;
+  double pipi = atan(1.0) * 8.0;
   if (t < (start - interval * .25))
     return -1.0;
   return sin(pipi * (t - start) / interval);
@@ -427,7 +427,7 @@ bool change(double& var) {
 }
 
 /*
- * All event functions from new, are till now only used in Euler  
+ * All event functions from here, are till now only used in Euler  
  * 
 */
 
@@ -438,18 +438,18 @@ bool change(double& var) {
 //
 int CheckForNewEvent(int flag) {
 	
-	if (flag != INTERVAL){
-	   while(checkForDiscreteVarChanges()) {
-		   saveall();
-		   function_updateDepend();
-		   if (sim_verbose) cout << "Discrete Var Changed!" << endl;
-	   }
-	}
+	//if (flag != INTERVAL){
+	//   while(checkForDiscreteVarChanges()) {
+	//	   saveall();
+	//	   function_updateDepend();
+	//	   if (sim_verbose) cout << "Discrete Var Changed!" << endl;
+	//   }
+	//}
 	
 	function_onlyZeroCrossings(gout,&globalData->timeValue);
 
 	for (long i = 0; i < globalData->nZeroCrossing; i++) {
-		if (sim_verbose) cout << "gout[" << i << "] = " << gout[i] << endl;
+		//if (sim_verbose) cout << "gout[" << i << "] = " << gout[i] << endl;
 		if (gout[i] < 0) { // check also zero crossings that are on zero.
 			
 			if (sim_verbose) {
@@ -489,7 +489,6 @@ void EventHandle(){
 		else{
 			zeroCrossingEnabled[event_id] = -1;}
 		
-		//handleZeroCrossing(event_id);
 		saveall();
 		function_updateDepend();
 	    saveall();
@@ -522,8 +521,6 @@ void FindRoot(){
 
 	// Search for event time with Bisection method
 	EventTime = BiSection(&time_left,&time_right, states_left, states_right, &event_id);
-
-	//if (EventTime!=0){ // Found event at EventTime
 	
 	
 	if (sim_verbose) {
@@ -587,11 +584,6 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 			for(int i=0;i<globalData->nStates;i++){
 				states_b[i] = globalData->states[i];
 			}
-			//if (sim_verbose) {
-			//	for(int i=0;i<globalData->nStates;i++){
-			//		cout << "State[" << i <<"] = " << states_a[i] << endl;
-			//	}
-			//}
 			*b = c;
 		}else{   //If Zerocrossing in right Section
 			
@@ -599,11 +591,6 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 			for(int i=0;i<globalData->nStates;i++){
 				states_a[i] = globalData->states[i];
 			}
-			//if (sim_verbose) {
-			//	for(int i=0;i<globalData->nStates;i++){
-			//		cout << "State[" << i <<"] = " << states_b[i] << endl;
-			//	}
-			//}
 			*a = c;
 		} 
 	}
@@ -611,61 +598,6 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 	c = (*a+*b)/2.0;
 	return c;
 }
-
-/*
-// 
-// Method to find root in Intervall[oldTime,timeValue]
-//
-double regulafalsi(double* a, double* b, double* states_a, double* states_b,long int* event_id){
-	
-	double TTOL = 1e-06;
-	if(TOL!=0) TTOL = TOL;
-
-
-	double c;
-
-	if (sim_verbose){
-			cout << "Check Intervall [" << *a << "," << *b << "]" << endl; 
-			cout << "TTOL is set to: " << TTOL << endl;
-	}
-
-	
-
-	while ( (fabs(DX) < Delta) && (fabs(YC) < Epsilon) > TTOL){
-		
-		c = (*a+*b)/2.0;
-		globalData->timeValue = c;
-		
-		//calculates states at time c 
-		for(int i=0;i<globalData->nStates;i++){
-			globalData->states[i] = (states_a[i] + states_b[i]) / 2.0; 
-		}
-    DX = YB * (B - A)/(YB -YA);      // Change in iterate 
-    C = B - DX;                      // New iterate       
-
-    YC = ffunction(C);   // Function value of new iterate 
-
-
-if( YC == 0) {           // first 'if'          
-        Satisfied = 1; // Exact root is found 
-}
-else if( ( (YB >= 0) && (YC >=0) ) || ( (YB < 0) && (YC < 0) )   ) {
-   B = C;      // Squeeze from the right 
-   YB = YC;
-}
-else {
-   A = C;      // Squeeze from the left
-  YA = YC;
-}
-
-if( (fabs(DX) < Delta) && (fabs(YC) < Epsilon) ) Satisfied = 1;
-
-}  // end of 'for'-loop 
-
-
-
-}   // End of main program 
-*/
 
 
 //

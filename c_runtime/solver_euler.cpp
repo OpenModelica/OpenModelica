@@ -138,6 +138,8 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 		if (dideventstep == 1){
 			globalData->timeValue += (step-globalData->timeValue+laststep);
 			dideventstep = 0;
+			if (globalData->timeValue == globalData->oldTime)
+				globalData->timeValue += step;
 		}else{
 			globalData->timeValue+=step;
 		}
@@ -149,17 +151,17 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 		functionDAE_output();
 
 		//Check for Events
-		if (sim_verbose) { cout << "Checking for new events (at time "<< globalData->timeValue << ")." << endl; }
+		//if (sim_verbose) { cout << "Checking for new events (at time "<< globalData->timeValue << ")." << endl; }
 		if (CheckForNewEvent(INTERVAL) == 2){
 			dideventstep = 1;
-			if (sim_verbose) cout << "Go to Event time h_e" << endl;
+			//if (sim_verbose) cout << "Go to Event time h_e" << endl;
 		}else{
 			laststep = globalData->timeValue;
-			if (sim_verbose) cout << "Did Odinary step" << endl;
+			//if (sim_verbose) cout << "Did Odinary step" << endl;
 		}
 			
 		
-		if (sim_verbose) { cout << "Check for new events done." << endl; }
+		//if (sim_verbose) { cout << "Check for new events done." << endl; }
 		
 		// Emit this timestep
 		emit();

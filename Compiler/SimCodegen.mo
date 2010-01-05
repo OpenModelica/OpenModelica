@@ -7260,7 +7260,7 @@ algorithm
         func_str = Codegen.cPrintFunctionsStr({func_uD,func_ozc});
         func_str1 = Codegen.cPrintFunctionsStr(extra_funcs);
         func_str2 = Codegen.cPrintFunctionsStr(extra_funcs1);
-        res = Util.stringAppendList({func_str,func_str1,func_str2});
+        res = Util.stringAppendList({func_str1,func_str,func_str2});
       then
         res;
         
@@ -7792,7 +7792,12 @@ algorithm
         cfn = Codegen.cMergeFns({cfn1,cfn2});
       then
         (cfn,cg_id_2);
-        
+    case (dae,dlow,ass1,ass2,(block_  :: blocks),index,cg_id)
+      equation
+        //(cfn1,cg_id_1) = buildWhenEquation(dae, dlow, ass1, ass2, eqn, index, cg_id);
+        (cfn,cg_id_1) = buildWhenBlocks(dae, dlow, ass1, ass2, blocks, index, cg_id);
+      then
+        (cfn,cg_id_1);
     case (_,_,_,_,_,_,cg_id) then (Codegen.cEmptyFunction,cg_id);
   end matchcontinue;
 end buildWhenBlocks;
