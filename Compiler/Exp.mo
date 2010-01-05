@@ -329,6 +329,27 @@ algorithm outSubscriptLst:= matchcontinue (inComponentRef)
   end matchcontinue;
 end crefIdent;
 
+public function crefStripSubs "
+Removes all subscript of a componentref
+"
+  input ComponentRef inCref;
+  output ComponentRef outCref;
+algorithm 
+  outCref := matchcontinue(inCref)
+    local
+      Ident id;
+      ComponentRef cr;
+      Type ty;
+    case (DAE.CREF_IDENT(ident = id,identType = ty)) 
+    then DAE.CREF_IDENT(id,ty,{});
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, ident=id))
+      equation 
+        outCref = crefStripSubs(cr);
+      then
+        DAE.CREF_QUAL(id,ty,{},outCref);
+  end matchcontinue;
+end crefStripSubs;
+
 public function crefSubs 
 "function: crefLastSubs 
   Return the all subscripts of a ComponentRef"
