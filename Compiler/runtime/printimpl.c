@@ -149,9 +149,8 @@ RML_BEGIN_LABEL(Print__printBuf)
     }
     /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
   }
-  sprintf((char*)(buf+strlen(buf)),"%s",str);
-  nfilled=strlen(buf);
-  /*  printf("%s",str);*/
+  nfilled += sprintf((char*)(buf+nfilled),"%s",str);
+  /*printf("%s",str);*/
 
   RML_TAILCALLK(rmlSC);
 }
