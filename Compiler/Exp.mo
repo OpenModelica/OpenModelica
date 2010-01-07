@@ -5320,7 +5320,7 @@ algorithm
         xs_1 = toExpCrefSubs(xs);
       then
         (DAE.INDEX(DAE.ICONST(i)) :: xs_1);
-    case ((Absyn.SUBSCRIPT(subScript = Absyn.CREF(componentReg = cr)) :: xs)) /* Assumes index is INTEGER. TODO: what about if index
+    case ((Absyn.SUBSCRIPT(subScript = Absyn.CREF(componentRef = cr)) :: xs)) /* Assumes index is INTEGER. TODO: what about if index
          is an array? */ 
       equation 
         cr_1 = toExpCref(cr);

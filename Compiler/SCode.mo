@@ -565,7 +565,7 @@ algorithm str := matchcontinue(aea)
     String compName;
     Absyn.ElementSpec spec;
     Absyn.ComponentRef cr;
-  case(Absyn.MODIFICATION(modification = oam,componentReg=cr))
+  case(Absyn.MODIFICATION(modification = oam,componentRef=cr))
     equation  
       compName = Absyn.printComponentRefStr(cr);
     then prettyPrintOptModifier(oam,compName);

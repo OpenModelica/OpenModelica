@@ -366,7 +366,7 @@ algorithm
         (cache,e,prop1,st);
       /*-------------------------------------*/
 
-     case (cache,env,Absyn.CREF(componentReg = cr),impl,st,doVect) // BoschRexroth specifics
+     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect) // BoschRexroth specifics
        local DAE.Type ty;
       equation 
         false = OptManager.getOption("cevalEquation"); 
@@ -374,7 +374,7 @@ algorithm
       then
         (cache,exp,DAE.PROP(ty,DAE.C_VAR()),st);
            
-    case (cache,env,Absyn.CREF(componentReg = cr),impl,st,doVect)
+    case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect)
       equation 
         (cache,exp,prop,_) = elabCref(cache,env, cr, impl,doVect);
       then
@@ -1515,7 +1515,7 @@ algorithm
       local Boolean x;
       then
         (cache,DAE.BCONST(x),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()));
-    case (cache,env,Absyn.CREF(componentReg = cr),impl)
+    case (cache,env,Absyn.CREF(componentRef = cr),impl)
       equation 
         Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");
         (cache,exp,prop,_) = elabCref(cache,env, cr, impl,true /*perform vectorization*/);
@@ -2797,7 +2797,7 @@ algorithm
       Absyn.ComponentRef cr;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* impl */ 
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* impl */ 
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
       then
@@ -5121,7 +5121,7 @@ algorithm _ :=  matchcontinue(cache,env,expl,impl)
     Absyn.Exp exp;
     list<Ident> lst;
     Ident s; 
-  case (cache,env,{(exp as Absyn.CREF(componentReg = _))},impl) 
+  case (cache,env,{(exp as Absyn.CREF(componentRef = _))},impl) 
     equation 
       failure((cache,_,DAE.PROP(_,DAE.C_VAR),_) = elabExp(cache,env, exp, impl, NONE,true));
       lst = Util.listMap({exp}, Dump.printExpStr);
@@ -5222,7 +5222,7 @@ algorithm
       Absyn.ComponentRef cr;
       Boolean impl;
       Env.Cache cache;
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* impl simple type, \'discrete\' variable */ 
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* impl simple type, \'discrete\' variable */ 
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
@@ -5230,26 +5230,26 @@ algorithm
       then
         (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
 
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, boolean or integer => discrete variable */ 
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, boolean or integer => discrete variable */ 
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
         Types.discreteType(tp1);
       then
         (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, constant variability */ 
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, constant variability */ 
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,DAE.C_CONST()),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
       then
         (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl) /* simple type, param variability */ 
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, param variability */ 
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,DAE.C_PARAM()),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
       then
         (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()));
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl)
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl)
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
@@ -5257,7 +5257,7 @@ algorithm
         Error.addMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change"});
       then
         fail();
-    case (cache,env,{(exp as Absyn.CREF(componentReg = cr))},_,impl)
+    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl)
       equation 
         (cache,exp_1,DAE.PROP(tp1,_),_) = elabExp(cache,env, exp, impl, NONE,true);
         failure(Types.simpleType(tp1));
@@ -6355,7 +6355,7 @@ algorithm
       Absyn.Exp size_absyn,exp,bool_exp;
       Env.Cache cache;
 
-    case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentReg = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st)) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
+    case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st)) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
           {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st)) then (cache,DAE.CALL(Absyn.IDENT("clear"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
@@ -6364,35 +6364,35 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("list"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
 				className = Absyn.crefToPath(cr);	
       then
         (cache,DAE.CALL(Absyn.IDENT("list"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-		case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st)) 
+		case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st)) 
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,DAE.CALL(Absyn.IDENT("checkModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-		case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+		case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,DAE.CALL(Absyn.IDENT("checkAllModelsRecursive"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-		case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st)) 
+		case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st)) 
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,DAE.CALL(Absyn.IDENT("translateGraphics"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 		
-    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local
         Absyn.Path className;
       equation 
@@ -6411,7 +6411,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("translateModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "exportDAEtoMatlab"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local
         Absyn.Path className;
       equation 
@@ -6430,7 +6430,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("exportDAEtoMatlab"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
         
-    case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "instantiateModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr); 
@@ -6439,7 +6439,7 @@ algorithm
         (cache, DAE.CALL(Absyn.IDENT("instantiateModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
@@ -6468,7 +6468,7 @@ algorithm
           numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
-    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
@@ -6498,7 +6498,7 @@ algorithm
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
       local Absyn.Path className; DAE.Exp storeInTemp,noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
@@ -6533,7 +6533,7 @@ algorithm
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
+    case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
       then
@@ -6559,7 +6559,7 @@ algorithm
 	list_length(vars) => var_len */  then (cache, DAE.CALL(Absyn.IDENT("readSimulationResultSize"),
           {DAE.SCONST(filename)},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentReg = _))},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentRef = _))},{},impl,SOME(st))
       local Absyn.Exp cr;
       equation 
         vars_1 = elabVariablenames({cr});
@@ -6575,7 +6575,7 @@ algorithm
           false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //visualize(model)
-  case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
+  case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
     local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
       		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points;
 //      		String vars;
@@ -6587,7 +6587,7 @@ algorithm
 
 
 //plotAll(model)
-  case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
+  case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
     local Absyn.Path className; DAE.Exp storeInTemp;
       		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
@@ -6662,7 +6662,7 @@ algorithm
 
 
 //plot2(model, x)
-  case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _)},args,impl,SOME(st)) /* Fill in rest of defaults here */
+  case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), cr2 as Absyn.CREF(componentRef = _)},args,impl,SOME(st)) /* Fill in rest of defaults here */
     local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
       		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
@@ -6699,7 +6699,7 @@ algorithm
           false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //plot2(model, {x,y})
-  case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentReg = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */
+  case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */
     local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
         DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
@@ -6739,7 +6739,7 @@ algorithm
 
 
 //plot2(x)
-    case (cache,env,Absyn.CREF_IDENT(name = "plot"),{(cr as Absyn.CREF(componentReg = _))},args,impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "plot"),{(cr as Absyn.CREF(componentRef = _))},args,impl,SOME(st))
       local Absyn.Exp cr;
         DAE.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation
@@ -6808,7 +6808,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("plot"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-   case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentReg = _)),cd},{},impl,SOME(st))
+   case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentRef = _)),cd},{},impl,SOME(st))
       local 
         Absyn.Exp cr,cd;
         DAE.Exp cd1,cr2;
@@ -6829,7 +6829,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("plotParametric2"),
           vars_1,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-   case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.CREF(componentReg = cr), cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
+   case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.CREF(componentRef = cr), cr2 as Absyn.CREF(componentRef = _), cr3 as Absyn.CREF(componentRef = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
    local Absyn.Path className; list<DAE.Exp> vars_3; Absyn.Exp cr2, cr3;
@@ -6872,7 +6872,7 @@ algorithm
         ,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 //plotParametric2(x,y)
-   case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{cr2 as Absyn.CREF(componentReg = _), cr3 as Absyn.CREF(componentReg = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
+   case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{cr2 as Absyn.CREF(componentRef = _), cr3 as Absyn.CREF(componentRef = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
    Thus, plotParametric has to take an array as an argument, or two componentRefs. */
    local Absyn.Path className; list<DAE.Exp> vars_3; Absyn.Exp cr2, cr3;
@@ -6976,7 +6976,7 @@ algorithm
       then
         (cache,DAE.CALL(Absyn.IDENT("timing"),{exp_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),st_1);
 
-    case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
@@ -7048,7 +7048,7 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("runScript"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
@@ -7060,7 +7060,7 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("loadFile"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
           className = Absyn.crefToPath(cr); 
@@ -7068,7 +7068,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("saveModel"),
           {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "saveTotalModel"),{Absyn.STRING(value = str),Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "saveTotalModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
           className = Absyn.crefToPath(cr); 
@@ -7076,7 +7076,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("saveTotalModel"),
           {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentReg = cr)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
@@ -7087,7 +7087,7 @@ algorithm
 
     case (cache,env,Absyn.CREF_IDENT(name = "help"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("help"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7095,7 +7095,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getUnit"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getQuantity"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getQuantity"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7103,7 +7103,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getQuantity"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getDisplayUnit"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getDisplayUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7111,7 +7111,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getDisplayUnit"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getMin"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getMin"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7119,7 +7119,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getMin"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getMax"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getMax"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7127,7 +7127,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getMax"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getStart"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getStart"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7135,7 +7135,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getStart"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getFixed"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getFixed"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7143,7 +7143,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getFixed"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getNominal"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getNominal"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7151,7 +7151,7 @@ algorithm
         (cache,DAE.CALL(Absyn.IDENT("getNominal"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getStateSelect"),{Absyn.CREF(componentReg = cr),Absyn.CREF(componentReg = cr2)},{},impl,SOME(st))
+    case (cache,env,Absyn.CREF_IDENT(name = "getStateSelect"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
         (cache,cr_1) = elabUntypedCref(cache,env, cr, impl);
         (cache,cr2_1) = elabUntypedCref(cache,env, cr2, impl);
@@ -7173,7 +7173,7 @@ algorithm
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},{},impl,SOME(st))
     then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
         
-case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentReg = cr)},args,impl,SOME(st))
+case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       equation
         className = Absyn.crefToPath(cr);
@@ -7217,7 +7217,7 @@ algorithm
       list<Absyn.Exp> xs;
       String str, str2;
     case {} then {}; 
-    case ((Absyn.CREF(componentReg = cr) :: xs))
+    case ((Absyn.CREF(componentRef = cr) :: xs))
       equation 
         
         xs_1 = elabVariablenames(xs);

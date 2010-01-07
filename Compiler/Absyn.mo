@@ -610,7 +610,7 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
   record MODIFICATION
     Boolean finalItem "finalItem" ;
     Each each_ "each" ;
-    ComponentRef componentReg "componentReg" ;
+    ComponentRef componentRef "componentRef" ;
     Option<Modification> modification "modification" ;
     Option<String> comment "comment" ;
   end MODIFICATION;
@@ -702,7 +702,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end REAL;
 
   record CREF
-    ComponentRef componentReg;
+    ComponentRef componentRef;
   end CREF;
 
   record STRING
@@ -2205,10 +2205,10 @@ algorithm
     case (REAL(value = _),checkSubs) then {}; 
     case (STRING(value = _),checkSubs) then {}; 
     case (BOOL(value = _),checkSubs) then {}; 
-    case (CREF(componentReg = cr),false) then {cr}; 
-    case (CREF(componentReg = (cr as WILD)),_) then {};
+    case (CREF(componentRef = cr),false) then {cr}; 
+    case (CREF(componentRef = (cr as WILD)),_) then {};
       
-      case (CREF(componentReg = (cr)),true) 
+      case (CREF(componentRef = (cr)),true) 
         local
           list<Subscript> subs;
         equation

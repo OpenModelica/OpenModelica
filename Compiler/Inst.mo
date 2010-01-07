@@ -8569,7 +8569,7 @@ algorithm
         (cache,NONE :: l);
     // For functions, this can occur: Real x{:,size(x,1)} ,i.e. refering to  the variable itself but a different dimension.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
-          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),_}))) :: ds),impl,st,doVect)
+          functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),_}))) :: ds),impl,st,doVect)
       equation 
         true = Absyn.crefEqual(cref, cr);
         (cache,l) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);

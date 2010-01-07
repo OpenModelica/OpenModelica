@@ -623,7 +623,7 @@ algorithm
     case(Absyn.MODIFICATION(
       finalItem = fi,
       each_ = e,
-      componentReg =
+      componentRef =
       	Absyn.CREF_IDENT(name = "extent",subscripts = s),
       modification =
       	SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))),
@@ -642,7 +642,7 @@ algorithm
       then res;
 
     case(Absyn.MODIFICATION(finalItem = fi, each_ = e,
-      componentReg = Absyn.CREF_IDENT(name = "extent",subscripts = s),
+      componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s),
       modification = SOME(Absyn.CLASSMOD(elementArgLst = args,
       expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com) :: rest,
       context as ("Component" :: c),res,cPath,path,p,env)
@@ -765,7 +765,7 @@ algorithm
 
     case({}) then NONE;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(ex)))) :: rest)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "rotation"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(ex)))) :: rest)
 
       equation
 
@@ -1458,7 +1458,7 @@ algorithm
       Context context;
 
     case({},_) then (Absyn.REAL(-100.0),Absyn.REAL(-100.0),Absyn.REAL(100.0),Absyn.REAL(100.0))/*If coordsys is not explicit defined, old implicit standard is [-100,-100;100,100]*/;
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Coordsys"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,context)
 
       equation
 
@@ -1466,7 +1466,7 @@ algorithm
       then
         (x1,y1,x2,y2);
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Icon"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Icon" :: context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Icon" :: context)
 
       equation
 
@@ -1475,7 +1475,7 @@ algorithm
       then
         (x1,y1,x2,y2);
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Diagram"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Diagram" :: context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest,"Diagram" :: context)
 
       equation
 
@@ -1516,7 +1516,7 @@ algorithm
       Absyn.Exp x1,y1,x2,y2;
       list<Absyn.ElementArg> rest;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest)
 
     then
       (x1,y1,x2,y2);
@@ -1544,7 +1544,7 @@ algorithm
   (x1,y1,x2,y2) := matchcontinue (elementArgLst)
     local list<Absyn.ElementArg> rest;
     case (Absyn.MODIFICATION(
-      componentReg = Absyn.CREF_IDENT(name = "extent"), 
+      componentRef = Absyn.CREF_IDENT(name = "extent"), 
       modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))) )):: rest)
       equation
       then (x1,y1,x2,y2);
@@ -1573,7 +1573,7 @@ algorithm
       Absyn.Exp x1,y1,x2,y2;
       list<Absyn.ElementArg> rest,args;
 
-    case (Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest)
+    case (Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "coordinateSystem"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args)))::rest)
       equation
         (x1,y1,x2,y2) = getExtentModification(args);
       then
@@ -1629,7 +1629,7 @@ algorithm
 
     case({},_,res,p) then res ;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  )), comment = com) :: rest,context as ("Connect" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  )), comment = com) :: rest,context as ("Connect" :: c),res,p)
 
       equation
 
@@ -1639,7 +1639,7 @@ algorithm
 
       then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s), SOME(Absyn.CLASSMOD(Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY(expLst))  )),NONE) :: res,NONE)),com)};//res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  )), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "points",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  )), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1648,7 +1648,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("points",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY(expLst))  )),com) :: res; //res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  ex )), comment = com) :: rest,context as ("Connect" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  ex )), comment = com) :: rest,context as ("Connect" :: c),res,p)
 
       equation
 
@@ -1659,7 +1659,7 @@ algorithm
 
       then {Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("Line",s),SOME(Absyn.CLASSMOD(res,ex)),com)};
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  ex )), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "style",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption =  ex )), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1670,7 +1670,7 @@ algorithm
       then res;
 
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "color",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "color",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1679,7 +1679,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("color",s), SOME(Absyn.CLASSMOD(args,SOME(Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)})))),com):: res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "pattern",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "pattern",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1688,7 +1688,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("pattern",s), SOME(Absyn.CLASSMOD(args,SOME(Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {})))))),com):: res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "thickness",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "thickness",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1697,7 +1697,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("thickness",s), SOME(Absyn.CLASSMOD(args,SOME(Absyn.REAL(thick)))),com):: res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "smooth",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = ex)), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "smooth",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = ex)), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1705,7 +1705,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi,e,Absyn.CREF_IDENT("smooth",s), SOME(Absyn.CLASSMOD(args,ex)),com):: res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "arrow",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "arrow",subscripts = s), modification = SOME(Absyn.CLASSMOD( elementArgLst = args ,expOption = SOME(Absyn.INTEGER(value = x)))), comment = com) :: rest,context as ("Line" :: c),res,p)
 
       equation
 
@@ -1763,7 +1763,7 @@ algorithm
 
     case({},_,res,p) then res ;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "Icon", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Icon", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
 
       equation
 
@@ -1774,7 +1774,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Icon",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE)}, ex)),com) :: res		;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Diagram", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context as ("Class" :: c),res,p)
 
       equation
 
@@ -1785,7 +1785,7 @@ algorithm
 
       then Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Diagram",s), SOME(Absyn.CLASSMOD({coord,Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("graphics",{}),SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY(argRes))   )),NONE)}, ex)),com) :: res;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context,res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context,res,p)
 
       equation
 
@@ -1795,7 +1795,7 @@ algorithm
 
       then Util.listDeleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, ex)),com));
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context,res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,context,res,p)
 
       equation
 
@@ -1807,7 +1807,7 @@ algorithm
 
       then Util.listDeleteMember(res,Absyn.MODIFICATION(fi, e, Absyn.CREF_IDENT("Coordsys",s), SOME(Absyn.CLASSMOD(args, ex)),com));
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "extent",subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com) :: rest,context as ("Coordsys" :: c),res,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "extent",subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} )))), comment = com) :: rest,context as ("Coordsys" :: c),res,p)
 
       equation
 
@@ -1816,7 +1816,7 @@ algorithm
 
       then res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "grid")) :: rest,context ,res,p)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "grid")) :: rest,context ,res,p)
 
       equation
 
@@ -1824,7 +1824,7 @@ algorithm
 
       then res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "component")) :: rest,context ,res,p)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "component")) :: rest,context ,res,p)
 
       equation
 
@@ -1832,7 +1832,7 @@ algorithm
 
       then res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Window")) :: rest,context ,res,p)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Window")) :: rest,context ,res,p)
 
       equation
 
@@ -1840,7 +1840,7 @@ algorithm
 
       then res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Terminal")) :: rest,context ,res,p)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Terminal")) :: rest,context ,res,p)
 
       equation
 
@@ -1879,12 +1879,12 @@ algorithm
 
     case({}) then false;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Diagram")) :: rest)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram")) :: rest)
 
     then
       true;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Icon")) :: rest)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon")) :: rest)
 
     then
       true;
@@ -1931,7 +1931,7 @@ algorithm
     then
       Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("coordinateSystem", {}), SOME(Absyn.CLASSMOD({Absyn.MODIFICATION(false, Absyn.NON_EACH, Absyn.CREF_IDENT("extent",{}), SOME(Absyn.CLASSMOD({}, SOME(Absyn.ARRAY({Absyn.ARRAY({Absyn.INTEGER(-100),Absyn.INTEGER(-100)}	),Absyn.ARRAY({Absyn.INTEGER(100),Absyn.INTEGER(100)})})))),NONE)}, NONE)), NONE)/*Create default*/;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,p)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "Coordsys", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption =  ex   )), comment = com) :: rest,p)
 
       equation
 
@@ -1978,7 +1978,7 @@ algorithm
     case({},_) then {} ;
 
       /* Special case for Line, need to add default color={0,0,255} if no color given */
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "Line"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Line"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
       
       equation 
         c = addContext(context,"Line");			                    
@@ -1990,7 +1990,7 @@ algorithm
         Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;		        
 
       /* Special case for Rectangle Ellipse, Polygon, Text, need to add default lineColor={0,0,255} if no color given */
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
       
       equation 
         c = addContext(context,n);			                    
@@ -2003,7 +2003,7 @@ algorithm
         Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;		        
 
       
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
       
       equation 
         c = addContext(context,n);			                    
@@ -2069,7 +2069,7 @@ algorithm
 
     case({},_) then {} ;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "extent"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args, expOption = SOME(Absyn.MATRIX(matrix = {{x1,y1},{x2,y2}} ))))) :: rest,context)
 
       equation
 
@@ -2077,7 +2077,7 @@ algorithm
 
       then Absyn.NAMEDARG("extent",Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})})) :: restRes;//res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "style"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context)
 
       equation
 
@@ -2088,7 +2088,7 @@ algorithm
         res = listAppend(argRes,restRes);
       then res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x))))) :: rest, context as ("Text" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x))))) :: rest, context as ("Text" :: c))
 
       equation
 
@@ -2097,7 +2097,7 @@ algorithm
 
       then Absyn.NAMEDARG("fillColor", Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)})) :: restRes;//res;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x))))) :: rest, context as ("Line" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x))))) :: rest, context as ("Line" :: c))
 
       equation
 
@@ -2106,7 +2106,7 @@ algorithm
 
       then Absyn.NAMEDARG("color", Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)})) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x))))) :: rest, context )
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "color"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x))))) :: rest, context )
 
       equation
 
@@ -2115,7 +2115,7 @@ algorithm
 
       then Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)})) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "fillColor"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "fillColor"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
 
       equation
 
@@ -2124,7 +2124,7 @@ algorithm
 
       then Absyn.NAMEDARG("fillColor", Absyn.ARRAY({Absyn.INTEGER(color1),Absyn.INTEGER(color2),Absyn.INTEGER(color3)})) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "pattern"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
 
       equation
 
@@ -2133,7 +2133,7 @@ algorithm
 
       then Absyn.NAMEDARG("pattern",Absyn.CREF(Absyn.CREF_QUAL("LinePattern", {},Absyn.CREF_IDENT(val, {})))) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "fillPattern"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "fillPattern"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
 
       equation
 
@@ -2142,7 +2142,7 @@ algorithm
 
       then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {})))) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context as ("Line" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context as ("Line" :: c))
 
       equation
 
@@ -2151,7 +2151,7 @@ algorithm
 
       then Absyn.NAMEDARG("thickness",Absyn.REAL(thick)) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "thickness"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context )
 
       equation
 
@@ -2160,7 +2160,7 @@ algorithm
 
       then Absyn.NAMEDARG("lineThickness",Absyn.REAL(thick)) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "gradient"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x)) ))) :: rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "gradient"), modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.INTEGER(value = x)) ))) :: rest,context)
 
       equation
 
@@ -2169,7 +2169,7 @@ algorithm
 
       then Absyn.NAMEDARG("fillPattern",Absyn.CREF(Absyn.CREF_QUAL("FillPattern", {},Absyn.CREF_IDENT(val, {}))))	:: restRes	;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "smooth"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context)
 
       equation
 
@@ -2177,7 +2177,7 @@ algorithm
 
       then Absyn.NAMEDARG("smooth",exp) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "arrow"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "arrow"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(Absyn.INTEGER(value = x))   ))) :: rest,context)
 
       equation
 
@@ -2188,7 +2188,7 @@ algorithm
 
       then Absyn.NAMEDARG("arrow",Absyn.ARRAY({Absyn.CREF(Absyn.CREF_QUAL("Arrow", {},Absyn.CREF_IDENT(val1, {}))),Absyn.CREF(Absyn.CREF_QUAL("Arrow",{},Absyn.CREF_IDENT(val2,{})))})):: restRes		;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "textStyle"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "textStyle"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
 
       equation
 
@@ -2196,7 +2196,7 @@ algorithm
 
       then Absyn.NAMEDARG("textStyle",exp) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "font"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "font"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
 
       equation
 
@@ -2204,7 +2204,7 @@ algorithm
 
       then Absyn.NAMEDARG("font",exp) :: restRes;
 
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "string"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "string"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
       
       equation 
         
@@ -2212,7 +2212,7 @@ algorithm
         
       then Absyn.NAMEDARG("textString",exp) :: restRes;	
         
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "name"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Bitmap" :: c))
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "name"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Bitmap" :: c))
       
       equation 
         
@@ -2220,7 +2220,7 @@ algorithm
       
       then Absyn.NAMEDARG("fileName",exp) :: restRes;	
         
-    case(Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  ))) :: rest,context)
+    case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  ))) :: rest,context)
       
       equation 
                 
@@ -2357,7 +2357,7 @@ algorithm
 
     case({},resultList,_) then resultList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = m, comment = com)) :: rest, resultList,context	)
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = m, comment = com)) :: rest, resultList,context	)
 
       equation
 
@@ -2366,19 +2366,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
-
-      equation
-        //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
-        false = isGradientInList(listAppend(rest,resultList));
-        false = isFillPatternInList(listAppend(rest,resultList));
-        resultList = insertFillPatternInList(resultList);
-        resultList = Util.listAppendElt(arg,resultList);
-        outList = cleanStyleAttrs2(rest,resultList,context);
-
-      then outList;
-
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
 
       equation
         //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
@@ -2390,7 +2378,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
 
       equation
         //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
@@ -2402,7 +2390,19 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
+
+      equation
+        //If fillColor is specified but not fillPattern or Gradient we need to insert a FillPattern
+        false = isGradientInList(listAppend(rest,resultList));
+        false = isFillPatternInList(listAppend(rest,resultList));
+        resultList = insertFillPatternInList(resultList);
+        resultList = Util.listAppendElt(arg,resultList);
+        outList = cleanStyleAttrs2(rest,resultList,context);
+
+      then outList;
+
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle"::c))
 
       equation
 
@@ -2411,7 +2411,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse"::c))
 
       equation
 
@@ -2420,7 +2420,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillColor", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon"::c))
 
       equation
 
@@ -2429,7 +2429,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
 
       equation
 
@@ -2438,7 +2438,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
 
       equation
 
@@ -2447,7 +2447,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Polygon" :: c))
 
       equation
 
@@ -2456,7 +2456,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Line" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Line" :: c))
 
       equation
 
@@ -2466,7 +2466,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Rectangle" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Rectangle" :: c))
 
       equation
 
@@ -2475,7 +2475,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Ellipse" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Ellipse" :: c))
 
       equation
 
@@ -2484,7 +2484,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
 
       equation
 
@@ -2493,7 +2493,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Bitmap" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Bitmap" :: c))
 
       equation
 
@@ -2502,7 +2502,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = m, comment = com)) :: rest, resultList,context)
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = m, comment = com)) :: rest, resultList,context)
 
       equation
 
@@ -2511,14 +2511,14 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args,expOption = SOME(Absyn.INTEGER(value = 0)))), comment = com)) :: rest, resultList,context)
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst = args,expOption = SOME(Absyn.INTEGER(value = 0)))), comment = com)) :: rest, resultList,context)
       //Filter away
       equation
         outList = cleanStyleAttrs2(rest,resultList,context);
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Rectangle" :: c))
 
       equation
 
@@ -2532,7 +2532,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as ("Ellipse" :: c))
 
       equation
 
@@ -2548,7 +2548,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "smooth", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "smooth", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Polygon" :: c))
 
       equation
 
@@ -2557,7 +2557,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "smooth", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "smooth", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
 
       equation
 
@@ -2566,7 +2566,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "arrow", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "arrow", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Line" :: c))
 
       equation
 
@@ -2575,7 +2575,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "textStyle", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "textStyle", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
 
       equation
 
@@ -2584,7 +2584,7 @@ algorithm
 
       then outList;
 
-    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "font", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
+    case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "font", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
 
       equation
 
@@ -2593,7 +2593,7 @@ algorithm
 
       then outList;
 
- /*   case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "string", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
+ /*   case((arg as Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "string", subscripts = s), modification = m, comment = com)) :: rest, resultList,context as("Text" :: c))
 
       equation
 
@@ -2669,7 +2669,7 @@ algorithm
 
     case({}) then false;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = m, comment = com):: rest)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "gradient", subscripts = s), modification = m, comment = com):: rest)
 
     then true;
 
@@ -2710,7 +2710,7 @@ algorithm
 
     case({}) then false;
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com):: rest)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com):: rest)
 
     then true;
 
@@ -2751,7 +2751,7 @@ algorithm
 
     case({}) then {};
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "fillPattern", subscripts = s), modification = m, comment = com) :: rest)
 
     then rest;
 
@@ -2825,7 +2825,7 @@ algorithm
     case({})
     then false;
 
-    case( Absyn.MODIFICATION(componentReg = Absyn.CREF_IDENT(name = "fillColor")):: rest)
+    case( Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "fillColor")):: rest)
 
     then true;
 
@@ -2864,7 +2864,7 @@ algorithm
 
     case({}) then {};
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args,expOption = ex)), comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "thickness", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args,expOption = ex)), comment = com) :: rest)
 
       equation
 
@@ -2872,7 +2872,7 @@ algorithm
 
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args,expOption = ex)), comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "pattern", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args,expOption = ex)), comment = com) :: rest)
 
       equation
 
@@ -2880,7 +2880,7 @@ algorithm
 
       then lst; //filtered
 
-    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentReg = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args,expOption = ex)), comment = com) :: rest)
+    case(Absyn.MODIFICATION(finalItem = fi, each_ = e, componentRef = Absyn.CREF_IDENT(name = "color", subscripts = s), modification = SOME(Absyn.CLASSMOD(elementArgLst= args,expOption = ex)), comment = com) :: rest)
 
       equation
 

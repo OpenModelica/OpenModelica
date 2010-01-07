@@ -2823,7 +2823,7 @@ algorithm
       Env.Cache cache;
     case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_) then (cache,e); 
     case (cache,_,(e as Absyn.REAL(value = _)),_,_,_) then (cache,e); 
-    case (cache,_,(e as Absyn.CREF(componentReg = _)),_,_,_) then (cache,e); 
+    case (cache,_,(e as Absyn.CREF(componentRef = _)),_,_,_) then (cache,e); 
     case (cache,_,(e as Absyn.STRING(value = _)),_,_,_) then (cache,e); 
     case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_) then (cache,e); 
     case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
@@ -3172,7 +3172,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{},_,_,msg) then (cache,{}); 
     /* TODO: look through redeclarations for Eval(var) as well */   
-    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg) 
+    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentRef = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg) 
       equation 
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg);

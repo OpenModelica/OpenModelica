@@ -1187,7 +1187,7 @@ algorithm
       then SCode.EQ_TERMINATE(e1,com);
          
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("reinit", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentReg = cr),e2},argNames = {})),com) 
+                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),e2},argNames = {})),com) 
       then SCode.EQ_REINIT(cr,e2,com);
          
     case (Absyn.EQ_NORETCALL(fname,fargs),com) 
@@ -1282,7 +1282,7 @@ algorithm
       Option<Absyn.ConstrainClass> constropt;
       
     case {} then {}; 
-    case ((Absyn.MODIFICATION(finalItem = finalPrefix,each_ = each_,componentReg = cref,modification = mod,comment = cmt) :: xs))
+    case ((Absyn.MODIFICATION(finalItem = finalPrefix,each_ = each_,componentRef = cref,modification = mod,comment = cmt) :: xs))
       equation 
         subs = translateArgs(xs);
         mod_1 = translateMod(mod, finalPrefix, each_);
@@ -1528,10 +1528,10 @@ algorithm
     case (Absyn.BOOL(_), _) then exp;      
     
     // do NOT prefix if you have qualified component references
-    case (Absyn.CREF(componentReg = c as Absyn.CREF_QUAL(name=_)), _) then exp;
+    case (Absyn.CREF(componentRef = c as Absyn.CREF_QUAL(name=_)), _) then exp;
      
     // do prefix if you have simple component references
-    case (Absyn.CREF(componentReg = c as Absyn.CREF_IDENT(name=_)), prefix)
+    case (Absyn.CREF(componentRef = c as Absyn.CREF_IDENT(name=_)), prefix)
       equation
         e = Absyn.crefExp(Absyn.CREF_QUAL(prefix, {}, c));
       then
