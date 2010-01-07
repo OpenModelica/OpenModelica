@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -160,6 +160,8 @@ protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
 protected import System;
+protected import DAELow;
+protected import CevalScript;
 
 
 protected function printDimsStr 
@@ -352,6 +354,9 @@ algorithm
         (cache,env) = Builtin.initialEnv(cache);
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
+        // check the models for balancing
+        Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae1);
+        Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
       then
         (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae2))}));
         
@@ -364,6 +369,8 @@ algorithm
         (cache,env_2,ih,_,dae,_,_,_,_,graph) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl";
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        // check the model for balancing
+        Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
       then
         (cache, env_2, ih, DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae))}));
         
@@ -596,6 +603,8 @@ algorithm
         (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        // check the models for balancing
+        Debug.fcall2("checkModel",checkModelBalancing,SOME(inPath),dae);                
       then
         (cache,env_1,ih,dae);
         
@@ -850,7 +859,7 @@ algorithm
       list<DAE.Element> dae,dae1,dae2;
       Connect.Sets csets;
       SCode.Class c;
-      String n;
+      String n, fullPathName;
       list<SCode.Class> cs;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -858,6 +867,7 @@ algorithm
       InstanceHierarchy.Instance i;
       UnitAbsyn.InstStore store;
       Option<Absyn.Path> containedInOpt;
+      Absyn.Path fullPath;
       
     case (cache,env,ih,{})
       equation 
@@ -878,6 +888,9 @@ algorithm
         Debug.fcall("execstat",print, "*** Inst -> instClass finished at time: " +& realString(clock()) +& "\n" );
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        // check the models for balancing
+        Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
+        // finish with the execution statistics        
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
       then
         (cache,ih,{DAE.COMP(n,DAE.DAE(dae))});
@@ -989,7 +1002,7 @@ algorithm
       Prefix.Prefix pre;
       Connect.Sets csets,csets_1;
       String n;
-      Boolean partialPrefix,impl,callscope_1,encflag;
+      Boolean partialPrefix,impl,callscope_1,encflag,isFn,notIsPartial,isPartialFn;
       ClassInf.State ci_state,ci_state_1;
       list<DAE.Element> dae1,dae1_1,dae2,dae3,dae;
       list<DAE.ComponentRef> crs;
@@ -1009,7 +1022,7 @@ algorithm
       list<DAE.ComponentRef> dc;
       ConnectionGraph.ConnectionGraph graph; 
       InstanceHierarchy ih;
-      DAE.EqualityConstraint equalityConstraint;
+      DAE.EqualityConstraint equalityConstraint; 
       
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
@@ -1017,9 +1030,6 @@ algorithm
     case (cache,env,ih,store,mod,pre,csets,
           (c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r, partialPrefix = partialPrefix)),
           inst_dims,impl,callscope,graph)
-      local
-        Boolean partialPrefix, isFn, notIsPartial, isPartialFn;
-        DAE.EqualityConstraint equalityConstraint;
       equation 
         //print("---- CLASS: "); print(n);print(" ----\n"); print(SCode.printClassStr(c)); //Print out the input SCode class
         //str = SCode.printClassStr(c); print("------------------- CLASS instClass-----------------\n");print(str);print("\n===============================================\n");
@@ -1044,7 +1054,7 @@ algorithm
         (csets_1,_) = retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
         //print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");        
         dae2 = Connect.equations(csets_1,pre);
-        (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
+        (cache,dae3) = Connect.unconnectedFlowEquations(cache, csets_1, dae1, env_3, pre, callscope_1, {});
         dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
         dae = Util.listFlatten({dae1_1,dae2,dae3});
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c); 
@@ -1570,7 +1580,7 @@ algorithm
         (inCache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph);
         
     /* call the function and then add it in the cache */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c,prot,inst_dims,impl,graph,instSingleCref) 
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction=r),prot,inst_dims,impl,graph,instSingleCref) 
       equation 
         instHash = System.getFromRoots("instantiationCache");        
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = 
@@ -1585,7 +1595,7 @@ algorithm
         
         instHash = add((fullEnvPathPlusClass, {FUNC_instClassIn(inputs,outputs)}), instHash);
         System.addToRoots("instantiationCache", instHash);
-
+        checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);        
     
@@ -2633,7 +2643,7 @@ algorithm
         dae = Util.listFlatten({dae1,dae2,dae3,dae4,dae5});
         
         //Change outer references to corresponding inner reference
-        (dae,csets5) = changeOuterReferences(dae,csets5);
+        (dae,csets5,graph) = changeOuterReferences(dae,csets5,graph);
         
         // Perform unit checking/dimensional analysis	               
         daetemp = Connect.equations(csets5,pre); // ToDO. calculation of connect eqns done twice. remove in future.          
@@ -3116,30 +3126,40 @@ inner reference, given that an inner reference exist in the DAE.
 Update connection sets incase of Absyn.INNEROUTER()"
   input list<DAE.Element> inDae;
   input Connect.Sets csets;
+  input ConnectionGraph.ConnectionGraph inGraph;
   output list<DAE.Element> outDae;
   output Connect.Sets ocsets;
-  protected
-  list<DAE.Element> innerVars,outerVars,allVars;
-  VarTransform.VariableReplacements repl;
-  list<DAE.ComponentRef> srcs,targets;
+  output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
-  (ocsets,outDae) := matchcontinue(inDae,csets)
+  (ocsets,outDae,outGraph) := matchcontinue(inDae,csets,inGraph)
+    local
+      list<DAE.Element> innerVars,outerVars,allVars;
+      VarTransform.VariableReplacements repl;
+      list<DAE.ComponentRef> sources,targets;
+      Boolean updateGraph ;
+      list<DAE.ComponentRef> definiteRoots "Roots defined with Connection.root" ;
+      list<tuple<DAE.ComponentRef, Real>> potentialRoots "Roots defined with Connection.potentialRoot" ;
+      ConnectionGraph.Edges branches "Edges defined with Connection.branch" ;
+      ConnectionGraph.DaeEdges connections "Edges defined with connect statement" ;
+      ConnectionGraph.ConnectionGraph graph;      
+  
     // general case
-    case(inDae,csets)
+    case(inDae,csets,graph as ConnectionGraph.GRAPH(updateGraph, definiteRoots, potentialRoots, branches, connections))
       equation
         (innerVars,outerVars) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);  
         repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
-
-        srcs = VarTransform.replacementSources(repl);
+        
+        sources = VarTransform.replacementSources(repl);
         targets = VarTransform.replacementTargets(repl);
-        inDae = DAEUtil.removeVariables(inDae,srcs);
+        inDae = DAEUtil.removeVariables(inDae,sources);
         inDae = DAEUtil.removeInnerAttrs(inDae,targets); 
         outDae = VarTransform.applyReplacementsDAE(inDae,repl,NONE);
-        ocsets = changeOuterReferences2(repl,csets);
+        // adrpo: send in the sources/targets so we avoid building them again!
+        ocsets = changeOuterReferences2(repl,csets,sources,targets);
       then
-        (outDae,ocsets);
+        (outDae,ocsets,graph);
     // failtrace
-    case(inDae,csets)
+    case(inDae,csets,graph)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Inst.changeOuterReferences failed!");
@@ -3152,80 +3172,95 @@ protected function changeOuterReferences2 "
 Author: BZ, 2008-09 
 Helper function for changeOuterReferences 
 Verfify that we have replacement rules, then apply them for the outerconnect.
-With the difference that we add the scope of the inner declaration to the connection set variables.
-"
-input VarTransform.VariableReplacements repl;
-input Connect.Sets csets;
-output Connect.Sets ocsets;
-algorithm ocsets := matchcontinue(repl,csets)
-  case(repl,Connect.SETS(_,_,_,{})) then csets;
-  case(repl,csets)
-    local list<DAE.ComponentRef> targets;
-    equation
-      targets = VarTransform.replacementTargets(repl);
-      true = intEq(listLength(targets),0);
-      then csets;
-  case(repl,Connect.SETS(sets,ccons,dcs,ocs))
+With the difference that we add the scope of the inner declaration to the connection set variables."
+  input VarTransform.VariableReplacements repl;
+  input Connect.Sets csets;
+  input list<DAE.ComponentRef> sources;
+  input list<DAE.ComponentRef> targets; 
+  output Connect.Sets ocsets;
+algorithm 
+  ocsets := matchcontinue(repl,csets,sources,targets)
     local
-    list<Connect.Set> sets;
-    list<DAE.ComponentRef> ccons,dcs;    
-		list<Connect.OuterConnect> ocs,ocs2;
-		equation
-		  ocs2 = changeOuterReferences3(ocs,repl);
-		  then
-		    Connect.SETS(sets,ccons,dcs,ocs2);
+      list<Connect.Set> sets;
+      list<DAE.ComponentRef> ccons,dcs;    
+      list<Connect.OuterConnect> ocs,ocs2;
+    // no outer connects!
+    case(repl,Connect.SETS(outerConnects = {}),_,_) then csets;
+    // no targets!
+    case(repl,csets,sources,{})
+      equation
+        // adrpo: not needed as the targets are send from up ABOVE :)
+        // targets = VarTransform.replacementTargets(repl);
+        // true = intEq(listLength(targets),0);
+      then 
+        csets;
+    // we have something
+    case(repl,Connect.SETS(sets,ccons,dcs,ocs),sources,targets)
+      equation
+        // adrpo: send in the sources/targets so we avoid building them again!
+        ocs2 = changeOuterReferences3(ocs,repl,sources,targets);
+      then
+        Connect.SETS(sets,ccons,dcs,ocs2);
   end matchcontinue;
 end changeOuterReferences2;
 
 protected function changeOuterReferences3 "
 Author: BZ, 2008-09 
 Helper function for changeOuterReferences 
-Extract the innouter declared connections. 
-"
-input list<Connect.OuterConnect> ocs;
-input VarTransform.VariableReplacements repl;
-output list<Connect.OuterConnect> oocs;
-algorithm oocs := matchcontinue(ocs,repl)
-  local
-    list<Connect.OuterConnect> recRes;
-    DAE.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
-    Absyn.InnerOuter io1,io2;
-    Connect.Face f1,f2;
-    Prefix.Prefix scope;
-    list<DAE.ComponentRef> src,dst;
-  case({},_) then {};
-  case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
-    equation
-      (_,true) = innerOuterBooleans(io1);
-      cr3 = Prefix.prefixCref(scope,cr1);
-      src = VarTransform.replacementSources(repl);
-      dst = VarTransform.replacementTargets(repl);
-      ncr1 = changeOuterReferences4(cr3,src,dst);
-      ver1 = Exp.crefFirstIdent(ncr1);
-      ver2 = Exp.crefFirstIdent(cr1);
-      false = Exp.crefEqual(ver1,ver2);
-      recRes = changeOuterReferences3(ocs,repl);
-    then
-      Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2)::recRes;
-  case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
-    equation
-      (_,true) = innerOuterBooleans(io2);
-      cr3 = Prefix.prefixCref(scope,cr2);      
-      src = VarTransform.replacementSources(repl);
-      dst = VarTransform.replacementTargets(repl); 
-      ncr2 = changeOuterReferences4(cr3,src,dst);
-      ver1 = Exp.crefFirstIdent(ncr2);
-      ver2 = Exp.crefFirstIdent(cr2);
-      false = Exp.crefEqual(ver1,ver2);
-      recRes = changeOuterReferences3(ocs,repl);
-    then
-      Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2)::recRes;
-  case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl)
-    local String s1,s2; 
-    equation
-      s1 = Exp.printComponentRefStr(cr1);
-      s2 = Exp.printComponentRefStr(cr2);
-      recRes = changeOuterReferences3(ocs,repl); 
+Extract the innouter declared connections. "
+  input list<Connect.OuterConnect> ocs;
+  input VarTransform.VariableReplacements repl;
+  input list<DAE.ComponentRef> sources;
+  input list<DAE.ComponentRef> targets;
+  output list<Connect.OuterConnect> oocs;
+algorithm 
+  oocs := matchcontinue(ocs,repl,sources,targets)
+    local
+      list<Connect.OuterConnect> recRes;
+      DAE.ComponentRef cr1,cr2,ncr1,ncr2,cr3,ver1,ver2;
+      Absyn.InnerOuter io1,io2;
+      Connect.Face f1,f2;
+      Prefix.Prefix scope;
+      list<DAE.ComponentRef> src,dst;
+      String s1,s2; 
+    // handle nothingness
+    case({},_,_,_) then {};
+    // the left hand side is an outer!
+    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl,sources,targets)
+      equation
+        (_,true) = innerOuterBooleans(io1);
+        cr3 = Prefix.prefixCref(scope,cr1);
+        // adrpo: not needed as the sources/targets are send from up ABOVE :)
+        src = sources; // VarTransform.replacementSources(repl);
+        dst = targets; // VarTransform.replacementTargets(repl);
+        ncr1 = changeOuterReferences4(cr3,src,dst);
+        ver1 = Exp.crefFirstIdent(ncr1);
+        ver2 = Exp.crefFirstIdent(cr1);
+        false = Exp.crefEqual(ver1,ver2);
+        recRes = changeOuterReferences3(ocs,repl,src,dst);
+      then
+        Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2)::recRes;
+    // the right hand side is an outer!
+    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl,sources,targets)
+      equation
+        (_,true) = innerOuterBooleans(io2);
+        cr3 = Prefix.prefixCref(scope,cr2);
+        // adrpo: not needed as the sources/targets are send from up ABOVE :)
+        src = sources; // VarTransform.replacementSources(repl);
+        dst = targets; // VarTransform.replacementTargets(repl); 
+        ncr2 = changeOuterReferences4(cr3,src,dst);
+        ver1 = Exp.crefFirstIdent(ncr2);
+        ver2 = Exp.crefFirstIdent(cr2);
+        false = Exp.crefEqual(ver1,ver2);
+        recRes = changeOuterReferences3(ocs,repl,src,dst);
+      then
+        Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2)::recRes;
+    // none of left or right hand side are outer
+    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl,sources,targets) 
+      equation
+        s1 = Exp.printComponentRefStr(cr1);
+        s2 = Exp.printComponentRefStr(cr2);
+        recRes = changeOuterReferences3(ocs,repl,sources,targets); 
       then 
         Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::recRes;
   end matchcontinue; 
@@ -5787,7 +5822,7 @@ algorithm
       Option<Absyn.Info> aInfo;
       Absyn.TypeSpec ts,tSpec;
       Absyn.Ident id;
-      ConnectionGraph.ConnectionGraph graph;
+      ConnectionGraph.ConnectionGraph graph,graphNew;
       Option<Absyn.ConstrainClass> cc,cc2;
       InstanceHierarchy ih;
     // Imports are simply added to the current frame, so that the lookup rule can find them.
@@ -5946,7 +5981,7 @@ algorithm
         //Instantiate the component  
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         (cache,mod_1) = Mod.updateMod(cache,cenv, pre, mod_1, impl);
-        (cache,compenv,ih,store,dae,csets_1,ty,graph) = instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
+        (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 				//The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache,env2_1, attr, mod_1, ty) ; 
         //true in update_frame means the variable is now instantiated. 
@@ -5955,13 +5990,13 @@ algorithm
         //type info present Now we can also put the binding into the dae.
         //If the type is one of the simple, predifined types a simple variable 
         //declaration is added to the DAE. 
-        env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv)  ;
+        env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv);
         vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding)});
         dae = Util.if_(alreadyDeclared,{},dae);
-        dae = handleInnerOuterEquations(io,dae);
+        (dae,graph) = handleInnerOuterEquations(io,dae,graphNew,graph);
         
         /* if declaration condition is true, remove dae elements and connections */
-        (cache,dae,csets_1) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre);
+        (cache,dae,csets_1,graph) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre,graph);
       then
         (cache,env_1,ih,store,dae,csets_1,ci_state,vars,graph);
         
@@ -6052,7 +6087,7 @@ algorithm
         (cache,dims) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true)  ;
 
         // Instantiate the component
-        (cache,compenv,ih,store,dae,csets_1,ty,graph) = instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
+        (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 
         // The environment is extended (updated) with the new variable binding.
         (cache,binding) = makeBinding(cache,env, attr, m_1, ty) ;
@@ -6066,7 +6101,7 @@ algorithm
         env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
         vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding)});
         dae = Util.if_(alreadyDeclared,{},dae);
-        dae = handleInnerOuterEquations(io,dae);
+        (dae,graph) = handleInnerOuterEquations(io,dae,graphNew,graph);
         // If an outer element, remove this variable from the DAE. Variable references will be bound to
         // corresponding inner element instead.
         // dae2 = Util.if_(ModUtil.isOuter(io),{},dae);
@@ -11114,7 +11149,7 @@ algorithm
         cr2_ = Prefix.prefixCref(pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
       then
-        (cache,env,ih,{},csets,ci_state,graph);     
+        (cache,env,ih,{},csets,ci_state,graph);
         
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_NORETCALL(cr,fargs,_),initial_,impl,graph)
       local DAE.ComponentRef cr_2; DAE.ExpType t; Absyn.Path path; list<DAE.Exp> expl; Absyn.FunctionArgs fargs;
@@ -12959,14 +12994,14 @@ algorithm
     local DAE.ComponentRef c1,c2;
     case (env,inIH,c1,c2)
       equation 
-        Connect.INNER() = componentFace(env,inIH,c1);
-        Connect.OUTER() = componentFace(env,inIH,c1);
+        Connect.INSIDE()  = componentFace(env,inIH,c1);
+        Connect.OUTSIDE() = componentFace(env,inIH,c1);
       then
         ();
     case (env,inIH,c1,c2)
       equation 
-        Connect.OUTER() = componentFace(env,inIH,c1);
-        Connect.INNER() = componentFace(env,inIH,c1);
+        Connect.OUTSIDE() = componentFace(env,inIH,c1);
+        Connect.INSIDE()  = componentFace(env,inIH,c1);
       then
         ();
   end matchcontinue;
@@ -13152,9 +13187,9 @@ algorithm
         (cache,env,ih,sets_1,{},graph);
         
     /* Connection of connectors with an equality constraint.*/
-    case (cache,env,ih,sets,pre,c1,f1,
-        t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1))),_),vt1,c2,f2,
-        t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2))),_),vt2,flowPrefix,io1,io2,
+    case (cache,env,ih,sets,pre,c1,f1,t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1))),_),vt1,
+                                c2,f2,t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2))),_),vt2,
+                                flowPrefix,io1,io2,
         (graph as ConnectionGraph.GRAPH(updateGraph = true))) 
       local
         Absyn.Path fpath1, fpath2;
@@ -13162,9 +13197,9 @@ algorithm
         DAE.Exp zeroVector;
       equation
         c1_1 = Prefix.prefixCref(pre, c1);
-        c2_1 = Prefix.prefixCref(pre, c2);        
+        c2_1 = Prefix.prefixCref(pre, c2);
         // Connect components ignoring equality constraints 
-        (cache,_,ih,sets_1,dae,_) = 
+        (cache,env,ih,sets_1,dae,_) = 
         connectComponents(
           cache,env,ih,sets, pre, 
           c1, f1, t1, vt1, 
@@ -13174,12 +13209,12 @@ algorithm
         /* We can form the daes from connection set already at this point
            because there must not be flow components in types having equalityConstraint. 
            TODO Is this correct if inner/outer has been used? */
-        dae2 = Connect.equations(sets_1,pre);
-        dae = listAppend(dae, dae2);                
+        //dae2 = Connect.equations(sets_1,pre);
+        //dae = listAppend(dae, dae2);
         //DAE.printDAE(DAE.DAE(dae));
         
         /* Add an edge to connection graph. The edge contains daes to be added in 
-           both cases whether the edge remains or is broken.             
+           both cases whether the edge remains or is broken.
          */
         zeroVector = Exp.makeRealArrayOfZeros(dim1);
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, dae, 
@@ -13190,7 +13225,7 @@ algorithm
           false, false, DAE.ET_REAL,DAE.NO_INLINE)
           )});
       then
-        (cache,env,ih,sets,{},graph);        
+        (cache,env,ih,sets_1,dae,graph);
 
     /* Complex types t1 extending basetype */ 
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph) 
@@ -13661,9 +13696,9 @@ algorithm
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) equation
        (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_) 
          = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-    then Connect.OUTER();       
-    case (env,ih,DAE.CREF_QUAL(componentRef =_)) then Connect.INNER(); 
-    case (env,ih,DAE.CREF_IDENT(ident = _)) then Connect.OUTER(); 
+    then Connect.OUTSIDE();       
+    case (env,ih,DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE(); 
+    case (env,ih,DAE.CREF_IDENT(ident = _)) then Connect.OUTSIDE(); 
   end matchcontinue;
 end componentFace;
 
@@ -13677,9 +13712,9 @@ protected function componentFaceType
 algorithm 
   outFace:=
   matchcontinue (inComponentRef)
-    case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTER();       
-    case (DAE.CREF_QUAL(componentRef =_)) then Connect.INNER();    
-    case (DAE.CREF_IDENT(ident = _)) then Connect.OUTER(); 
+    case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
+    case (DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE();
+    case (DAE.CREF_IDENT(ident = _)) then Connect.OUTSIDE();
   end matchcontinue;
 end componentFaceType;
 
@@ -15760,30 +15795,45 @@ protected function handleInnerOuterEquations
  them with this prefix for the inner part of the innerouter."
   input Absyn.InnerOuter io;
   input list<DAE.Element> dae;
+  input ConnectionGraph.ConnectionGraph inGraphNew;
+  input ConnectionGraph.ConnectionGraph inGraph;
   output list<DAE.Element> odae;
+  output ConnectionGraph.ConnectionGraph outGraph;  
 algorithm 
-  odae := matchcontinue(io,dae)
-    local list<DAE.Element> dae1,dae2;
-
-    case(Absyn.OUTER(),dae) 
+  (odae,outGraph) := matchcontinue(io,dae,inGraphNew,inGraph)
+    local 
+      list<DAE.Element> dae1,dae2;
+      ConnectionGraph.ConnectionGraph graphNew,graph;
+    // is an outer, remove equations
+    // outer components do NOT change the connection graph!
+    case(Absyn.OUTER(),dae,graphNew,graph) 
       equation
-        (odae,_) = DAEUtil.removeEquations(dae);
+        (odae,_) = DAEUtil.splitDAEIntoVarsAndEquations(dae);
       then
-        odae;
-
-    case(Absyn.INNEROUTER(),dae)
+        (odae,graph);
+    // is both an inner and an outer, 
+    // rename inner vars in the equations to unique names
+    // innerouter component change the connection graph
+    case(Absyn.INNEROUTER(),dae,graphNew,graph)
       equation
-        (dae1,dae2) = DAEUtil.removeEquations(dae);
+        (dae1,dae2) = DAEUtil.splitDAEIntoVarsAndEquations(dae);
+        // rename variables in the equations and algs.
         dae2 = DAEUtil.nameUniqueOuterVars(dae2);
+        // rename variables in the 
         dae = listAppend(dae1,dae2);
+        // adrpo: TODO! FIXME: here we should do a difference of graphNew-graph
+        //                     and rename the new equations added with unique vars.
       then
-        dae;
-
-    case(Absyn.INNER(),dae) then dae;
-    case(Absyn.UNSPECIFIED (),dae) then dae;
-    case(_,dae) 
-      equation print("FAILURE in handleInnerOuterEquations\n"); 
-      then fail(); 
+        (dae,graph);
+    // is an inner do nothing
+    case(Absyn.INNER(),dae,graphNew,graph) then (dae,graphNew);
+    // is not an inner nor an outer
+    case(Absyn.UNSPECIFIED (),dae,graphNew,graph) then (dae,graphNew);
+    // something went totally wrong!
+    case(_,dae,graphNew,graph)
+      equation
+        print("FAILURE in handleInnerOuterEquations\n");
+      then fail();
   end matchcontinue;
 end handleInnerOuterEquations;
 
@@ -15970,41 +16020,46 @@ protected function  instConditionalDeclaration
   input list<DAE.Element> dae;
   input Connect.Sets sets;
   input Prefix.Prefix pre;
+  input ConnectionGraph.ConnectionGraph inGraph;
   output Env.Cache outCache;
   output list<DAE.Element> outDae;
   output Connect.Sets outSets;
+  output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outDae,outSets) := matchcontinue(cache,env,cond,compName,dae,sets,pre)
-    local Absyn.Exp condExp; DAE.Exp e;
+  (outCache,outDae,outSets,outGraph) := matchcontinue(cache,env,cond,compName,dae,sets,pre,inGraph)
+    local 
+      Absyn.Exp condExp; DAE.Exp e;
       DAE.Type t; DAE.Const c;
       String s1,s2;
       Boolean b;
       DAE.ComponentRef cr;
-    case(cache,env,NONE,compName,dae,sets,_) then (cache,dae,sets);
+      ConnectionGraph.ConnectionGraph graph;
       
-    case(cache,env,SOME(condExp),compName,dae,sets,pre) equation
-      (cache,e,DAE.PROP(t,c ),_) = Static.elabExp(cache,env, condExp, false,NONE,false);
+    // no condition ... keep the same
+    case(cache,env,NONE,compName,dae,sets,_,graph) then (cache,dae,sets,graph);
+    // we have some condition, deal with it
+    case(cache,env,SOME(condExp),compName,dae,sets,pre,graph) equation
+      (cache,e,DAE.PROP(t,c ),_) = Static.elabExp(cache, env, condExp, false, NONE, false);
       true = Types.isBoolean(t);
       true = Types.isParameterOrConstant(c);
-      (cache,Values.BOOL(b),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.MSG());
+      (cache,Values.BOOL(b),_) = Ceval.ceval(cache, env, e, false, NONE, NONE, Ceval.MSG());
       dae = Util.if_(b,dae,{});
       cr = Prefix.prefixCref(pre,DAE.CREF_IDENT(compName,DAE.ET_OTHER(),{}));
       sets = Connect.addDeletedComponent(b,cr,sets);
+    then (cache,dae,sets,graph);
 
-    then (cache,dae,sets);
-
-      /* Error: Wrong type on condition */
-    case(cache,env,SOME(condExp),compName,dae,sets,_) equation
-      (cache,e,DAE.PROP(t,c ),_) = Static.elabExp(cache,env, condExp, false,NONE,false);
+    // Error: Wrong type on condition
+    case(cache,env,SOME(condExp),compName,dae,sets,_,graph) equation
+      (cache,e,DAE.PROP(t,c ),_) = Static.elabExp(cache, env, condExp, false, NONE, false);
       false = Types.isBoolean(t);
       s1 = Exp.printExpStr(e);
       s2 = Types.unparseType(t);
       Error.addMessage(Error.IF_CONDITION_TYPE_ERROR,{s1,s2});
     then fail();
 
-      /* Error: condition not parameter or constant */
-    case(cache,env,SOME(condExp),compName,dae,sets,_) equation
-      (cache,e,DAE.PROP(t,c ),_) = Static.elabExp(cache,env, condExp, false,NONE,false);
+    // Error: condition not parameter or constant
+    case(cache,env,SOME(condExp),compName,dae,sets,_,graph) equation
+      (cache,e,DAE.PROP(t,c ),_) = Static.elabExp(cache, env, condExp, false, NONE, false);
       true = Types.isBoolean(t);
       false = Types.isParameterOrConstant(c);
       s1 = Exp.printExpStr(e);
@@ -17227,5 +17282,92 @@ algorithm
         fail();
   end matchcontinue;
 end valueArrayNth;
-                
+
+protected function checkModelBalancing
+"@author adrpo
+ this function checks the balancing of the given model"
+  input Option<Absyn.Path> classNameOpt;
+  input list<DAE.Element> inDAEElements; 
+algorithm
+  _ := matchcontinue(classNameOpt, inDAEElements)
+    local
+      DAE.DAElist dae;
+      Integer eqnSize,varSize,simpleEqnSize;
+      String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
+      DAELow.EquationArray eqns;
+      Integer elimLevel; 
+      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
+    // check the balancing of the instantiated model
+    // special case for no elements!
+    case (classNameOpt, {})
+      equation
+        //classNameStr = Absyn.optPathString(classNameOpt);
+        //warnings = Error.printMessagesStr();
+        //retStr= Util.stringAppendList({"# CHECK: ", classNameStr, " inst has 0 equation(s) and 0 variable(s)", warnings, "."});
+        // do not show empty elements with 0 vars and 0 equs
+        // Debug.fprintln("checkModel", retStr);
+    then ();      
+    // check the balancing of the instantiated model
+    case (classNameOpt, inDAEElements)
+      equation
+        dae = DAEUtil.transformIfEqToExpr(DAE.DAE(inDAEElements));
+        elimLevel = RTOpts.eliminationLevel();
+        RTOpts.setEliminationLevel(0); // No variable elimination
+        (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
+        = DAELow.lower(dae, false/* no dummy variable*/, true);
+        // Debug.fcall("dumpdaelow", DAELow.dump, dlow);
+        RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
+        eqnSize = DAELow.equationSize(eqns);
+        (eqnSize,varSize) = CevalScript.subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
+        simpleEqnSize = DAELow.countSimpleEquations(eqns);
+        eqnSizeStr = intString(eqnSize);
+        varSizeStr = intString(varSize);
+        simpleEqnSizeStr = intString(simpleEqnSize);
+        classNameStr = Absyn.optPathString(classNameOpt);
+        warnings = Error.printMessagesStr();
+        retStr= Util.stringAppendList({"# CHECK: ", classNameStr, " inst has ", eqnSizeStr, 
+                                       " equation(s) and ", varSizeStr," variable(s). ",
+                                       simpleEqnSizeStr, " of these are trivial equation(s).", 
+                                       warnings});
+        Debug.fprintln("checkModel", retStr);
+    then ();
+    // we might fail, show a message
+    case (classNameOpt, inDAEElements)
+      equation
+        classNameStr = Absyn.optPathString(classNameOpt);
+        Debug.fprintln("checkModel", "# CHECK: " +& classNameStr +& " inst failed!");
+      then ();      
+  end matchcontinue;
+end checkModelBalancing;
+
+protected function checkModelBalancingFilterByRestriction
+"@author: adrpo 
+ filter out some restricted classes"
+  input SCode.Restriction r;
+  input Option<Absyn.Path> pathOpt;
+  input list<DAE.Element> dae;
+algorithm
+  _ := matchcontinue(r, pathOpt, dae)
+    // no checking for these!
+    case (SCode.R_FUNCTION(), _, _) then ();
+    case (SCode.R_EXT_FUNCTION(), _, _) then ();
+    case (SCode.R_TYPE(), _, _) then ();
+    case (SCode.R_RECORD(), _, _) then ();
+    case (SCode.R_PACKAGE(), _, _) then ();
+    case (SCode.R_ENUMERATION(), _, _) then ();
+    case (SCode.R_PREDEFINED_BOOL(), _, _) then ();
+    case (SCode.R_PREDEFINED_INT(), _, _) then ();
+    case (SCode.R_PREDEFINED_REAL(), _, _) then ();
+    case (SCode.R_PREDEFINED_STRING(), _, _) then ();
+    // check anything else
+    case (_, pathOpt, dae)
+      equation
+        true = RTOpts.debugFlag("checkModel");
+        checkModelBalancing(pathOpt, dae);
+      then ();
+    // do nothing if the debug flag checkModel is not set
+    case (_, pathOpt, dae) then (); 
+  end matchcontinue;
+end checkModelBalancingFilterByRestriction;
+
 end Inst;
