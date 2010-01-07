@@ -1142,11 +1142,11 @@ algorithm
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),dim,msg)
       equation
         false = RTOpts.debugFlag("nogen");
-        (cache,false) = Static.isExternalObjectFunction(cache,env,funcpath);        
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
         // see if the build time from the class is the same as the build time from the compiled functions list
-        false = stringEqual(fNew,""); // see if the WE have a file or not!        
+        false = stringEqual(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
         funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
         Debug.fprintln("dynload", "CALL: About to execute function present in CF list: " +& funcstr);
@@ -1159,15 +1159,14 @@ algorithm
       (st as SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))),dim,msg)
       equation
         false = RTOpts.debugFlag("nogen");
-        
-        (cache,false) = Static.isExternalObjectFunction(cache,env,funcpath);
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);        
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = 
            Interactive.getPathedClassInProgram(funcpath, p);
-
+        
         // note, this should only work for classes that have no file name!
         true = stringEqual(fNew,""); // see that we don't have a file!
-
+        
         // see if the build time from the class is the same as the build time from the compiled functions list
         //debug_print("edit",edit);  
         true = (buildTime >=. build);
@@ -1187,8 +1186,6 @@ algorithm
       equation
         false = RTOpts.debugFlag("nogen");
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
- 				// make sure is NOT a record constructor!
- 				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg));
         newCF = Interactive.removeCf(funcpath, cf); // remove it as it might be there with an older build time.        
         (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
@@ -1214,8 +1211,6 @@ algorithm
       equation
         false = RTOpts.debugFlag("nogen");        
  				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
- 				// make sure is NOT a record constructor!
- 				failure((_,_) = cevalFunction(cache,env,funcpath,vallst,false,msg));
         // we might actually have a function loaded here already!
         // we need to unload all functions to not get conflicts!
         (cache,funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
