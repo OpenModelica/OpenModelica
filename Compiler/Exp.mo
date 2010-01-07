@@ -9274,9 +9274,14 @@ public function crefHaveSubs "Function: crefHaveSubs
   input ComponentRef icr;
   output Boolean ob; 
 algorithm ob := matchcontinue(icr)
-  local ComponentRef cr; Boolean b;
+  local ComponentRef cr; Boolean b; Ident str; Integer idx;
   case(DAE.CREF_QUAL(_,_,_ :: _, _)) then true;
   case(DAE.CREF_IDENT(_,_,_ :: _)) then true;
+  case(DAE.CREF_IDENT(str,_,{})) // for stringified crefs!
+    equation
+      idx = System.stringFind(str, "["); // (-1 on failure)
+      idx > 0 = true; // index should be more than 0! 
+    then true;
   case(DAE.CREF_QUAL(_,_,{}, cr))
     equation 
       b = crefHaveSubs(cr); 
@@ -10211,11 +10216,11 @@ algorithm otype := matchcontinue(inRef)
   case(DAE.CREF_QUAL(id,DAE.ET_OTHER(),_,cr)) 
     local String id,s;
     equation 
-      Debug.fprint("failtrace", "- **WARNING** Exp.elaborateCrefQualType caught an Exp.DAE.ET_OTHER() type");
+      Debug.fprint("failtrace", "- **WARNING** Exp.elaborateCrefQualType caught an Exp.DAE.ET_OTHER() type: ");
       s = printComponentRefStr(DAE.CREF_QUAL(id,DAE.ET_OTHER(),{},cr));
       Debug.fprint("failtrace", s);
       Debug.fprint("failtrace", "\n");
-      then elaborateCrefQualType(cr);
+    then elaborateCrefQualType(cr);
   case(DAE.CREF_QUAL(_,ty,_,cr)) then ty;
 end matchcontinue;
 end elaborateCrefQualType;
@@ -10675,6 +10680,35 @@ algorithm
     case _ then false;
   end matchcontinue;
 end isArrayType;
+
+public function sizeOf
+"Returns the size of an ET_ARRAY or ET_COMPLEX"
+  input DAE.ExpType inType;
+  output Integer i;
+algorithm
+  i := matchcontinue inType
+    local 
+      list<Option<Integer>> ad;
+      Integer nr;
+      list<Integer> lstInt;
+      list<Var> varLst;
+    // count the variables in array
+    case DAE.ET_ARRAY(_,ad)
+      equation
+        nr = Util.mulListIntegerOpt(ad, 1);
+      then 
+        nr;
+    // count the variables in record
+    case DAE.ET_COMPLEX(varLst = varLst)
+      equation
+        lstInt = Util.listMap(Util.listMap(varLst, varType), sizeOf);
+        nr = Util.listReduce(lstInt, intAdd);
+      then 
+        nr;
+    // for all other consider it just 1 variable
+    case _ then 1;
+  end matchcontinue;
+end sizeOf;
 
 end Exp;
 
