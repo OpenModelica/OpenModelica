@@ -306,7 +306,7 @@ algorithm
           lstVarVal = iv, 
           compiledFunctions = cf)),msg)
            equation 
-        (cache,ret_val,st_1) = checkModel(cache,env, className, st, msg);
+        (cache,ret_val,st_1) = checkModel(cache, env, className, st, msg);
       then
         (cache,ret_val,st_1);
         
@@ -2517,6 +2517,7 @@ algorithm
       Absyn.Within win1;
       Env.Cache cache;
       Boolean cdToTemp;
+    // do not recompile.
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
           expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,_,options})),
           (st_1 as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -2543,12 +2544,11 @@ algorithm
         true = existFile == 0; 
     then
       (cache,filenameprefix,method_str,st2,init_filename);
-
+    // compile the model
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),expLst = ({DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options}))),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Absyn.TimeStamp ts,ts2;
         Real r1,r2,globalEdit,globalBuild;
         String s1,s2,s3;
-        
       equation 
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
         Absyn.PROGRAM(_,_,Absyn.TIMESTAMP(globalBuild,_)) = p;
@@ -3283,6 +3283,7 @@ algorithm
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
         = DAELow.lower(dae, false/* no dummy variable*/, true);
+        Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
         (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
@@ -3550,7 +3551,7 @@ algorithm _:= matchcontinue(classIn)
 end matchcontinue;
 end compileOrNot;
 
-protected function subtractDummy 
+public function subtractDummy 
 "if $dummy is present in Variables, subtract 1 from equation and variable size, otherwise not"
   input DAELow.Variables vars;
   input Integer eqnSize;
