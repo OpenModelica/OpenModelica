@@ -251,8 +251,13 @@ algorithm
       DAE.Exp e;
       Env.Cache cache;
       DAE.Properties prop;
+      DAE.Const const;
+    // evaluate ONLY constants and parameters
     case (cache,env,e,prop)
       equation 
+        // const = Types.propAllConst(prop) "Don't ceval variables";
+        // true = listMember(const, {DAE.C_CONST(),DAE.C_PARAM()});
+        // now which one is faster?
         failure(DAE.C_VAR() = Types.propAllConst(prop)) "Don't ceval variables";
         (cache,v,_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.MSG());
       then
