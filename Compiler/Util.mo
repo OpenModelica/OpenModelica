@@ -5532,5 +5532,27 @@ algorithm
   end matchcontinue;
 end listAppendNoCopy;
 
+public function mulListIntegerOpt
+  input list<Option<Integer>> ad;
+  input Integer acc "accumulator, should be given 1";
+  output Integer i;
+algorithm
+  i := matchcontinue(ad, acc)
+    local 
+      Integer ii, iii;
+      list<Option<Integer>> rest;
+    case ({}, acc) then acc;
+    case (SOME(ii)::rest, acc)
+      equation
+        acc = ii * acc;
+        iii = mulListIntegerOpt(rest, acc);  
+      then iii;
+    case (NONE()::rest, acc)
+      equation
+        iii = mulListIntegerOpt(rest, acc);  
+      then iii;
+  end matchcontinue;
+end mulListIntegerOpt;
+
 end Util;
 
