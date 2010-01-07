@@ -52,23 +52,23 @@ public import Prefix;
 public import Absyn;
 
 public 
-uniontype Face "This type indicates whether a connector is an inside or an outside
-    connector. Note: this is not the same as inner and outer references. A connector is inside if it connects from the outside into a component
-    and it is outside if it connects out from the component. This is important when generating equations for flow variables,
-    where outside connectors are multiplied with -1 (since flow is always into a component)."
-  record INNER end INNER;
-
-  record OUTER end OUTER;
-
+uniontype Face"This type indicates whether a connector is an inside or an outside connector. 
+ Note: this is not the same as inner and outer references. 
+       A connector is inside if it connects from the outside into a 
+       component and it is outside if it connects out from the component. 
+       This is important when generating equations for flow variables,
+       where outside connectors are multiplied with -1 (since flow is always into a component)."
+  record INSIDE "This is an inside connection" end INSIDE;
+  record OUTSIDE "This is an outside connection" end OUTSIDE;
 end Face;
 
 public 
-uniontype Set "A connection set is represented using the `Set\' type."
-  record EQU
+uniontype Set "A connection set is represented using the Set type."
+  record EQU "a list of component references"
     list<DAE.ComponentRef> expComponentRefLst;
   end EQU;
 
-  record FLOW
+  record FLOW "a list of component reference and a face"
     list<tuple<DAE.ComponentRef, Face>> tplExpComponentRefFaceLst;
   end FLOW;
 
@@ -81,31 +81,29 @@ uniontype Sets "The connection \'Sets\' contains
 	 - a list of deleted components
 	 - connect statements to propagate upwards in instance hierachy (inner/outer connectors)
 	 
-	The list of componentReferences are
-  used only when evaluating the cardinality operator. It is passed -into-
-  classes to be instantiated, while the \'Set list\' is returned -from-
+	The list of componentReferences are used only when evaluating the cardinality operator. 
+	It is passed -into- classes to be instantiated, while the Set list is returned -from-
   instantiated classes. 
-  The list of deleted components is required to be able to remove connections to them.  
-"
+  The list of deleted components is required to be able to remove connections to them."
   record SETS
-    list<Set> setLst;
+    list<Set> setLst "the connection set";
     list<DAE.ComponentRef> connection "connection_set connect_refs - list of 
-					      crefs in connect statements. This is used to be able to evaluate cardinality. It is registered in env
-					      by Inst.addConnnectionSetToEnv. " ;
+					      crefs in connect statements. This is used to be able to evaluate cardinality. 
+					      It is registered in env by Inst.addConnnectionSetToEnv.";
 		list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";			      
-		list<OuterConnect> outerConnects "connects to propagate upwards"; 
+		list<OuterConnect> outerConnects "connect statements to propagate upwards"; 
   end SETS;
-
 end Sets;
+
 uniontype OuterConnect
   record OUTERCONNECT
     Prefix.Prefix scope "the scope that this connect was created";
-    DAE.ComponentRef cr1;
+    DAE.ComponentRef cr1 "the lhs component reference";
     Absyn.InnerOuter io1 "inner/outer attribute for cr1 component";
-    Face f1;
-    DAE.ComponentRef cr2;
+    Face f1 "the face of the lhs component";
+    DAE.ComponentRef cr2 "the rhs component reference";
     Absyn.InnerOuter io2 "inner/outer attribute for cr2 component";
-    Face f2;    
+    Face f2 "the face of the rhs component";
   end OUTERCONNECT;
 end OuterConnect;    
 
@@ -133,7 +131,7 @@ end addDeletedComponent;
 
 public function addOuterConnection " Adds a connection with a reference to an outer connector
 
-These are added to a special list, such that they can be moved up in the instance hierachy to a place
+These are added to a special list, such that they can be moved up in the instance hierarchy to a place
 where both instances are defined.
 "
   input Prefix.Prefix scope;
@@ -733,10 +731,9 @@ end flowSum;
 protected function signFlow "function: signFlow
  
   This function takes a name of a component and a `Face\', returns an
-  expression.  If the face is `INNER\' the expression simply contains
-  the component reference, but if it is `OUTER\', the expression is
-  negated.
-"
+  expression.  If the face is INSIDE the expression simply contains
+  the component reference, but if it is OUTSIDE, the expression is
+  negated."
   input DAE.ComponentRef inComponentRef;
   input Face inFace;
   output DAE.Exp outExp;
@@ -744,8 +741,8 @@ algorithm
   outExp:=
   matchcontinue (inComponentRef,inFace)
     local DAE.ComponentRef c;
-    case (c,INNER()) then DAE.CREF(c,DAE.ET_OTHER()); 
-    case (c,OUTER()) then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.CREF(c,DAE.ET_OTHER())); 
+    case (c,INSIDE()) then DAE.CREF(c,DAE.ET_OTHER()); 
+    case (c,OUTSIDE()) then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.CREF(c,DAE.ET_OTHER())); 
   end matchcontinue;
 end signFlow;
 
@@ -1052,10 +1049,10 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   function: unconnectedFlowEquations 
  
   This function will generate set-to-zero equations for INSIDE flow variables.
-  It can not generate for OUTSIDE flow varaibles, since we do not yet know if 
+  It can not generate for OUTSIDE flow variables, since we do not yet know if 
   these are connected or not. This is only known in the preceding recursive 
   call. However, the top call must generate for both INSIDE and OUTSIDE
-  connectors, hence the last argument, true for top call"
+  connectors, hence the preceding to last argument, true for top call"
  	input Env.Cache inCache;
   input Sets inSets;
   input list<DAE.Element> inDAEElementLst;
@@ -1092,7 +1089,7 @@ algorithm
 				//print(" Inside connectors, v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
 				 
         vars = listAppend(v1, v2);
-        vars2 = getInnerFlowVariables(csets);     
+        vars2 = getInsideFlowVariables(csets);     
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);
         vars2 = listAppend(vars3,vars2);
         
@@ -1114,7 +1111,7 @@ algorithm
       case (cache,(csets as SETS(deletedComponents = deletedComponents)),dae,env,prefix,false,ocl)
       equation 
         vars = Env.localInsideConnectorFlowvars(env);
-        vars2 = getInnerFlowVariables(csets);
+        vars2 = getInsideFlowVariables(csets);
         prefixCref = Prefix.prefixToCref(prefix);
         vars2 = Util.listMap1(vars2,Exp.crefStripPrefix,prefixCref);
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);       
@@ -1172,7 +1169,7 @@ input Absyn.InnerOuter io;
 input Face dir;
 output list<DAE.ComponentRef> res;
 algorithm res := matchcontinue(cr,io,dir)
-  case(cr,Absyn.INNER(),INNER) then {cr};
+  case(cr,Absyn.INNER(),INSIDE) then {cr};
   case(_,_,_) then {};
   end matchcontinue;
 end extractOuterNonEnvDeclaredVars22;
@@ -1183,8 +1180,8 @@ input Absyn.InnerOuter io;
 input Face dir;
 output list<DAE.ComponentRef> res;
 algorithm res := matchcontinue(cr,io,dir)
-  case(cr,Absyn.INNER(),INNER) then {cr};
-  case(cr,_,OUTER) then {cr};
+  case(cr,Absyn.INNER(),INSIDE) then {cr};
+  case(cr,_,OUTSIDE) then {cr};
   case(_,_,_) then {};
   end matchcontinue;
 end extractOuterNonEnvDeclaredVars2;
@@ -1551,7 +1548,7 @@ algorithm
   end matchcontinue;
 end removePrefixOnNonOuter;
 
-protected function getInnerFlowVariables "function: getInnerFlowVariables
+protected function getInsideFlowVariables "function: getInsideFlowVariables
  
   Get all flow variables that are inner variables from the Sets.
 "
@@ -1569,21 +1566,21 @@ algorithm
     case (SETS(setLst = {})) then {}; 
     case (SETS((FLOW(tplExpComponentRefFaceLst = vars) :: xs),crs,dc,outerConn))
       equation 
-        res1 = getInnerFlowVariables2(vars);
-        res2 = getInnerFlowVariables(SETS(xs,crs,dc,outerConn));
+        res1 = getInsideFlowVariables2(vars);
+        res2 = getInsideFlowVariables(SETS(xs,crs,dc,outerConn));
         res = listAppend(res1, res2);
       then
         res;
     case (SETS((EQU(expComponentRefLst = _) :: xs),crs,dc,outerConn))
       equation 
-        res = getInnerFlowVariables(SETS(xs,crs,dc,outerConn));
+        res = getInsideFlowVariables(SETS(xs,crs,dc,outerConn));
       then
         res;
     case (_) /* Debug.fprint(\"failtrace\",\"-get_inner_flow_variables failed\\n\") */  then fail(); 
   end matchcontinue;
-end getInnerFlowVariables;
+end getInsideFlowVariables;
 
-protected function getInnerFlowVariables2 "function: getInnerFlowVariables2
+protected function getInsideFlowVariables2 "function: getInsideFlowVariables2
  
   Help function to get_inner_flow_variables.
 "
@@ -1597,21 +1594,21 @@ algorithm
       DAE.ComponentRef cr;
       list<tuple<DAE.ComponentRef, Face>> xs;
     case ({}) then {}; 
-    case (((cr,INNER()) :: xs))
+    case (((cr,INSIDE()) :: xs))
       equation 
-        res = getInnerFlowVariables2(xs);
+        res = getInsideFlowVariables2(xs);
       then
         (cr :: res);
     case ((_ :: xs))
       equation 
-        res = getInnerFlowVariables2(xs);
+        res = getInsideFlowVariables2(xs);
       then
         res;
     case (_) /* Debug.fprint(\"failtrace\",\"-get_inner_flow_variables_2 failed\\n\") */  then fail(); 
   end matchcontinue;
-end getInnerFlowVariables2;
+end getInsideFlowVariables2;
 
-protected function getOuterFlowVariables "function: getOuterFlowVariables
+protected function getOutsideFlowVariables "function: getOutsideFlowVariables
  
   Get all flow variables that are outer variables from the Sets.
 "
@@ -1628,21 +1625,21 @@ algorithm
     case (SETS(setLst = {})) then {}; 
     case (SETS((FLOW(tplExpComponentRefFaceLst = vars) :: xs),crs,dc,outerConn))
       equation 
-        res1 = getOuterFlowVariables2(vars);
-        res2 = getOuterFlowVariables(SETS(xs,crs,dc,outerConn));
+        res1 = getOutsideFlowVariables2(vars);
+        res2 = getOutsideFlowVariables(SETS(xs,crs,dc,outerConn));
         res = listAppend(res1, res2);
       then
         res;
     case (SETS((EQU(expComponentRefLst = _) :: xs),crs,dc,outerConn))
       equation 
-        res = getOuterFlowVariables(SETS(xs,crs,dc,outerConn));
+        res = getOutsideFlowVariables(SETS(xs,crs,dc,outerConn));
       then
         res;
     case (_) /* Debug.fprint(\"failtrace\",\"-get_outer_flow_variables failed\\n\") */  then fail(); 
   end matchcontinue;
-end getOuterFlowVariables;
+end getOutsideFlowVariables;
 
-protected function getOuterFlowVariables2 "function: getOuterFlowVariables2
+protected function getOutsideFlowVariables2 "function: getOutsideFlowVariables2
  
   Help function to get_outer_flow_variables.
 "
@@ -1656,19 +1653,19 @@ algorithm
       DAE.ComponentRef cr;
       list<tuple<DAE.ComponentRef, Face>> xs;
     case ({}) then {}; 
-    case (((cr,OUTER()) :: xs))
+    case (((cr,OUTSIDE()) :: xs))
       equation 
-        res = getOuterFlowVariables2(xs);
+        res = getOutsideFlowVariables2(xs);
       then
         (cr :: res);
     case (( _ :: xs))
       equation 
-        res = getOuterFlowVariables2(xs);
+        res = getOutsideFlowVariables2(xs);
       then
         res;
     case (_) /* Debug.fprint(\"failtrace\",\"-get_outer_flow_variables_2 failed\\n\") */  then fail(); 
   end matchcontinue;
-end getOuterFlowVariables2;
+end getOutsideFlowVariables2;
 
 protected import Print;
 protected import Util;
@@ -1808,13 +1805,13 @@ algorithm
     local
       String s,res;
       DAE.ComponentRef c;
-    case ((c,INNER()))
+    case ((c,INSIDE()))
       equation 
         s = Exp.printComponentRefStr(c);
         res = stringAppend(s, " INSIDE");
       then
         res;
-    case ((c,OUTER()))
+    case ((c,OUTSIDE()))
       equation 
         s = Exp.printComponentRefStr(c);
         res = stringAppend(s, " OUTSIDE");
