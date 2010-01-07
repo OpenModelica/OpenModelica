@@ -134,7 +134,7 @@ uniontype Equation "- Equation"
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
     DAE.Exp lhs "left ; lhs" ;
-    DAE.Exp rhs "right ; rhs" ;
+    DAE.Exp rhs "right ; rhs" ; 
   end COMPLEX_EQUATION;
 
 end Equation;
@@ -437,6 +437,8 @@ algorithm
       list<String> strList;
       list<Equation> res;
       list<DAE.Exp> expList,expList2;
+      Integer i;
+      
      case ({},_) then ();
      case (EQUATION(e1,e2)::res,printExpTree) /* header */
       equation
@@ -3065,7 +3067,7 @@ algorithm
       equation
         indx_str = intString(indx);
         var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),", ");
-        res = Util.stringAppendList({"Array eqn no: ",indx_str," for variables:",var_str,"\n"});
+        res = Util.stringAppendList({"Array eqn no: ",indx_str," for variables: ",var_str /*,"\n"*/});
       then
         res;
     case (SOLVED_EQUATION(componentRef = cr,exp = e2))
@@ -3080,7 +3082,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         is = intString(i);
-        res = Util.stringAppendList({s1," := ",s2," when clause no:",is,"\n"});
+        res = Util.stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */});
       then
         res;
     case (RESIDUAL_EQUATION(exp = e))
@@ -3092,7 +3094,7 @@ algorithm
     case (ALGORITHM(index = i))
       equation
         is = intString(i);
-        res = Util.stringAppendList({"Algorithm no: ",is,"\n"});
+        res = Util.stringAppendList({"Algorithm no: ",is /*,"\n"*/});
       then
         res;
   end matchcontinue;
@@ -4594,7 +4596,7 @@ algorithm
     local
       Variables v1,v2,v3,vars,knvars,extVars,extVars1,extVars2,vars_1,knvars_1,vars1,vars2,knvars1,knvars2,kv;
       list<WhenClause> whenclauses,whenclauses_1,whenclauses_2;
-      list<Equation> eqns,reqns,ieqns,eqns1,eqns2,reqns1,ieqns1,reqns2,ieqns2,re,ie;
+      list<Equation> eqns,reqns,ieqns,eqns1,eqns2,reqns1,ieqns1,reqns2,ieqns2,re,ie,eqsComplex;
       list<MultiDimEquation> aeqns,aeqns1,aeqns2,ae;
       list<DAE.Algorithm> algs,algs1,algs2,al;
       ExternalObjectClasses extObjCls,extObjCls1,extObjCls2;
@@ -4610,10 +4612,20 @@ algorithm
       DAE.DAElist dae;
       DAE.ExpType ty;
       DAE.ComponentRef cr;
+      Absyn.InnerOuter io;
       
     case (DAE.DAE(elementLst = {}),_,v1,v2,v3,whenclauses)
       then
         (v1,v2,v3,{},{},{},{},{},whenclauses,{});
+        
+    // adrpo: should we ignore OUTER vars?!
+    //case (DAE.DAE(elementLst = ((v as DAE.VAR(innerOuter=io)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    //  equation
+    //    DAEUtil.isOuterVar(v);
+    //    (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) = 
+    //    lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+    //  then
+    //    (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);            
 
     // External object variables
     case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
@@ -4714,18 +4726,20 @@ algorithm
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
-        e_1 = lowerComplexEqn(e);
+        eqsComplex = lowerComplexEqn(e);
+        eqns = listAppend(eqsComplex, eqns);
       then
-        (vars,knvars,extVars,e_1::eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
     
     // complex initial equations!!    
     case (DAE.DAE(elementLst = ((e as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
-        e_1 = lowerComplexEqn(e);
+        eqsComplex = lowerComplexEqn(e);
+        ieqns = listAppend(eqsComplex, ieqns);
       then
-        (vars,knvars,extVars,eqns,reqns,e_1::ieqns,aeqns,algs,whenclauses_1,extObjCls);    
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);    
 
     /* array equations */
     case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
@@ -5388,7 +5402,17 @@ algorithm
         res = Util.listUnionOnTrue(s1, s2, Exp.expEqual);
       then
         res;
-    case (_,_) then {};
+    // ignore constants!
+    case (DAE.ICONST(_),_) then {};
+    case (DAE.RCONST(_),_) then {};
+    case (DAE.BCONST(_),_) then {};
+    case (DAE.SCONST(_),_) then {};
+    // deal with possible failure
+    case (e,_)
+      equation
+        // adrpo: TODO! FIXME! this function fails for some of the expressions: cr.cr.cr[{1,2,3}] for example.
+        //Debug.fprintln("daelow", "- DAELow.statesAndVarsExp failed to extract states or vars from expression: " +& Exp.dumpExpStr(e,0)); 
+      then {};
   end matchcontinue;
 end statesAndVarsExp;
 
@@ -5657,11 +5681,16 @@ protected function lowerComplexEqn
   Helper function to lower2.
   Transform a DAE.Element to ComplexEquation."
   input DAE.Element inElement;
-  output Equation outComplexEquation;
+  output list<Equation> outComplexEquations;
 algorithm
-  outComplexEquation := matchcontinue (inElement)
+  outComplexEquations := matchcontinue (inElement)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
+      DAE.ExpType ty;
+      list<DAE.ExpVar> varLst;
+      Integer i;
+      list<Equation> complexEqs;
+      
     // normal
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2))
       equation
@@ -5669,8 +5698,12 @@ algorithm
         e2_1 = Exp.simplify(e2);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
+        // create as many equations as the dimension of the record
+        ty = Exp.typeof(e1);
+        i = Exp.sizeOf(ty);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(e1_2,e2_2), i);
       then
-        COMPLEX_EQUATION(e1_2,e2_2);
+        complexEqs;
     // initial
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2))
       equation
@@ -5678,8 +5711,16 @@ algorithm
         e2_1 = Exp.simplify(e2);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
+        // create as many equations as the dimension of the record        
+        ty = Exp.typeof(e1);
+        i = Exp.sizeOf(ty);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(e1_2,e2_2), i);
       then
-        COMPLEX_EQUATION(e1_2,e2_2);        
+        complexEqs;
+    case (_)
+      equation
+        print("# DAELow.lowerComplexEqn failed!\n");
+      then {};      
   end matchcontinue;
 end lowerComplexEqn;
 
@@ -6034,6 +6075,10 @@ algorithm
         topLevelInput(cr, dir, flowPrefix);
       then
         VARIABLE();
+    // adrpo: topLevelInput might fail!
+    // case (DAE.VARIABLE(),cr,dir,flowPrefix)
+    //  then
+    //    VARIABLE();
     case (_,_,_,_)
       equation
         print("lower_known_varkind failed\n");
@@ -6820,17 +6865,25 @@ algorithm
       DAE.ComponentRef cr;
       Variables vars;
       list<Value> indxs;
+      list<Var> vLst;      
+      
     case (cr,vars)
       equation
         (v,indx) = getVar2(cr, vars) "if scalar found, return it" ;
       then
         ({v},{indx});
     case (cr,vars) /* check if array */
-      local list<Var> v;
       equation
-        (v,indxs) = getArrayVar(cr, vars);
+        (vLst,indxs) = getArrayVar(cr, vars);
       then
-        (v,indxs);
+        (vLst,indxs);
+    /* failure 
+    case (cr,vars) 
+      equation
+        Debug.fprintln("daelow", "- DAELow.getVar failed on component reference: " +& Exp.printComponentRefStr(cr));
+      then
+        fail();
+    */
   end matchcontinue;
 end getVar;
 
@@ -6865,7 +6918,7 @@ algorithm
         true = Exp.crefEqual(cr3, cr2);
         indx_1 = indx + 1;
       then
-        (v,indx_1);       
+        (v,indx_1);
   end matchcontinue;
 end getVar2;
 
@@ -6974,6 +7027,20 @@ algorithm
         indxs_1 = Util.listFlatten(indxs);
       then
         (vs_1,indxs_1);
+    // adrpo: cr can be of form cr.cr.cr[2].cr[3] which means that it has type dimension [2,3] but we only need to walk [3]
+    case ({_,DAE.INDEX(exp = DAE.ICONST(integer = i1))},arr_cr,vars)
+      equation
+        // see if cr contains ANY array dimensions. if it doesn't this case is not valid!
+        true = Exp.crefHaveSubs(arr_cr); 
+        indx_lst = Util.listIntRange(i1);
+        indx_lstlst = Util.listMap(indx_lst, Util.listCreate);
+        subscripts_lstlst = Util.listMap(indx_lstlst, Exp.intSubscripts);
+        scalar_crs = Util.listMap1r(subscripts_lstlst, Exp.subscriptCref, arr_cr);
+        (vs,indxs) = Util.listMap12(scalar_crs, getVar, vars);
+        vs_1 = Util.listFlatten(vs);
+        indxs_1 = Util.listFlatten(indxs);
+      then
+        (vs_1,indxs_1);        
   end matchcontinue;
 end getArrayVar2;
 
