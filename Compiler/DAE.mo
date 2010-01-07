@@ -155,7 +155,6 @@ public uniontype Element
     Exp rhs;
   end INITIAL_COMPLEX_EQUATION;
   
-  
   record WHEN_EQUATION " a when equation"
     Exp condition "Condition" ;
     list<Element> equations "Equations" ;
@@ -227,11 +226,12 @@ public uniontype Element
     Exp exp;
   end REINIT;
 
-   record NORETCALL "call with no return value, i.e. no equation. 
-	   Typically sideeffect call of external function."  
-     Absyn.Path functionName;
-     list<Exp> functionArgs;
-   end NORETCALL;
+  record NORETCALL "call with no return value, i.e. no equation. 
+	  Typically sideeffect call of external function but also
+	  Connections.* i.e. Connections.root(...) functions."  
+    Absyn.Path functionName;
+    list<Exp> functionArgs;
+  end NORETCALL;
 end Element;
 
 public uniontype InlineType
