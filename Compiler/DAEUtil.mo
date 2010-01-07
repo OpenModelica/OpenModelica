@@ -119,100 +119,118 @@ protected import System;
 protected import Types;
 protected import Util;
 
-public function removeEquations "Removes all equations and algorithms, from the dae"
+public function splitDAEIntoVarsAndEquations 
+"Splits the DAE into one with vars and no equations and algorithms 
+ and another one which has all the equations and algorithms but no variables."
 	input list<DAE.Element> inDae;
-	output list<DAE.Element> outDaeNonEq;
-	output list<DAE.Element> outDaeEq;
+	output list<DAE.Element> outDaeNoEqAllVars;
+	output list<DAE.Element> outDaeAllEqNoVars;
 algorithm
-	inDae := matchcontinue(inDae)
+	(outDaeNoEqAllVars,outDaeAllEqNoVars) := matchcontinue(inDae)
 	  local
 	    DAE.Element v,e;
 	    list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
 	    String  id;
+	    
 	  case({}) then  ({},{});
 	    
 	  case((v as DAE.VAR(componentRef=_))::elts)
 	    equation
-	      (elts2,elts3)=removeEquations(elts);
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (v::elts2,elts3);
+	  // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE! 
 	  case(DAE.COMP(id,DAE.DAE(elts1))::elts2)
 	    equation
-	      (elts11,elts3) = removeEquations(elts1);
-	      (elts22,elts33) = removeEquations(elts2);
+	      (elts11,elts3) = splitDAEIntoVarsAndEquations(elts1);
+	      (elts22,elts33) = splitDAEIntoVarsAndEquations(elts2);
 	      elts3 = listAppend(elts3,elts33);
 	    then (DAE.COMP(id,DAE.DAE(elts11))::elts22,elts3);
 	  case((e as DAE.EQUATION(_,_))::elts2)
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.EQUEQUATION(_,_))::elts2) 
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts2);
+	    then (elts2,e::elts3);
+	  case((e as DAE.EQUEQUATION(_,_))::elts) 
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.INITIALEQUATION(_,_))::elts2) 
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.INITIALEQUATION(_,_))::elts) 
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.ARRAY_EQUATION(_,_,_))::elts2) 
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.ARRAY_EQUATION(_,_,_))::elts) 
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.COMPLEX_EQUATION(_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.COMPLEX_EQUATION(_,_))::elts)  
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.INITIAL_COMPLEX_EQUATION(_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.INITIAL_COMPLEX_EQUATION(_,_))::elts)  
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.INITIALDEFINE(_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.INITIALDEFINE(_,_))::elts)  
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);	    
-	  case((e as DAE.DEFINE(_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.DEFINE(_,_))::elts)
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);	    	    
-	  case((e as DAE.WHEN_EQUATION(_,_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.WHEN_EQUATION(_,_,_))::elts)  
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);	    	    
-	  case((e as DAE.IF_EQUATION(_,_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.IF_EQUATION(_,_,_))::elts)
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);	    	    	    
-	  case((e as DAE.INITIAL_IF_EQUATION(_,_,_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);	    	    	    
+	  case((e as DAE.INITIAL_IF_EQUATION(_,_,_))::elts)
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);	    	    	    	    
-	  case((e as DAE.ALGORITHM(_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.ALGORITHM(_))::elts)  
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.INITIALALGORITHM(_))::elts2)  
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.INITIALALGORITHM(_))::elts)
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.FUNCTION(path=_))::elts2) equation
-	    (elts22,elts3) = removeEquations(elts2);
-    then (e::elts22,elts3);
-	  case((e as DAE.RECORD_CONSTRUCTOR(path=_))::elts2) equation
-	    (elts22,elts3) = removeEquations(elts2);
-    then (e::elts22,elts3);
-	  case((e as DAE.EXTOBJECTCLASS(path=_))::elts2) equation
-	    (elts22,elts3) = removeEquations(elts2);
-    then (e::elts22,elts3);	            
-	  case((e as DAE.ASSERT(_,_))::elts2) 
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  // adrpo: TODO! FIXME! why are function calls added to the non-equations DAE?? 
+	  case((e as DAE.FUNCTION(path=_))::elts) 
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);
-	  case((e as DAE.REINIT(_,_))::elts2) 
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (e::elts2,elts3);
+	  // adrpo: TODO! FIXME! why are record constructor calls added to the non-equations DAE??
+	  case((e as DAE.RECORD_CONSTRUCTOR(path=_))::elts) 
 	    equation
-	      (outDaeNonEq,outDaeEq) = removeEquations(elts2);
-	    then (outDaeNonEq,e::outDaeEq);	    
-	end matchcontinue;  
-  
-end removeEquations;
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (e::elts2,elts3);
+	  // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
+	  case((e as DAE.EXTOBJECTCLASS(path=_))::elts) 
+	    equation
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (e::elts2,elts3);	            
+	  case((e as DAE.ASSERT(_,_))::elts) 
+	    equation
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.REINIT(_,_))::elts) 
+	    equation
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  // handle also NORETCALL! Connections.root(...)
+	  case((e as DAE.NORETCALL(_,_))::elts) 
+	    equation
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case(e::elts) 
+	    equation
+	      Debug.fprintln("failtrace", "- DAEUtil.splitDAEIntoVarsAndEquations failed on: " );
+	    then fail();	      
+	end matchcontinue;
+end splitDAEIntoVarsAndEquations;
 
 public function removeVariables "Remove the variables in the list from the DAE"
   input list<DAE.Element> dae;
@@ -2005,6 +2023,9 @@ algorithm
     local
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
+      Absyn.Path functionName;
+      list<DAE.Exp> functionArgs;
+      
     case (DAE.EQUATION(exp = e1,scalar = e2))
       equation 
         Print.printBuf("  ");
@@ -2063,6 +2084,14 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
+    case (DAE.NORETCALL(functionName, functionArgs))
+      equation 
+        Print.printBuf(Absyn.pathString(functionName));
+        Print.printBuf("(");
+        Print.printBuf(Exp.printExpListStr(functionArgs));
+        Print.printBuf(");\n");
+      then
+        ();        
     case _ then (); 
   end matchcontinue;
 end dumpEquation;
@@ -3039,11 +3068,10 @@ algorithm
     case(_) then false;
   end matchcontinue;
 end isNormalInlineFunc;
+
 public function findAllMatchingElements "function findAllMatchingElements
   author:  adrpo 
- 
-  Similar to getMatchingElements but gets two conditions and returns two lists.
-"
+  Similar to getMatchingElements but gets two conditions and returns two lists."
   input list<DAE.Element> elist;
   input FuncTypeElementTo cond1;
   input FuncTypeElementTo cond2;  
@@ -3169,7 +3197,8 @@ public function isOuterVar "function isOuterVar
   input DAE.Element inElement;
 algorithm _:= matchcontinue (inElement)
     case DAE.VAR(innerOuter = Absyn.OUTER()) then ();
-    /* FIXME? adrpo: do we need this? case VAR(innerOuter = Absyn.INNEROUTER()) then (); */
+    // FIXME? adrpo: do we need this? 
+    // case DAE.VAR(innerOuter = Absyn.INNEROUTER()) then ();
   end matchcontinue;
 end isOuterVar;
 
