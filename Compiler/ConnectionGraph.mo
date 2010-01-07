@@ -90,6 +90,7 @@ public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
 
 protected import Exp;
 protected import Debug;
+protected import Print;
 
 public
 function printEdges
@@ -227,7 +228,11 @@ algorithm
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root)
-    then GRAPH(updateGraph,root::definiteRoots,potentialRoots,branches,connections);
+      equation
+        Debug.fprintln("cgraph", "- ConnectionGraph.addDefiniteRoot(" +& 
+            Exp.printComponentRefStr(root) +& ")");
+      then 
+        GRAPH(updateGraph,root::definiteRoots,potentialRoots,branches,connections);
   end matchcontinue;
 end addDefiniteRoot;
 
@@ -254,7 +259,11 @@ algorithm
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root, priority)
-    then GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,branches,connections);
+      equation
+        Debug.fprintln("cgraph", "- ConnectionGraph.addPotentialRoot(" +& 
+            Exp.printComponentRefStr(root) +& ", " +& realString(priority) +& ")");
+      then 
+        GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,branches,connections);
   end matchcontinue;
 end addPotentialRoot;
 
@@ -280,8 +289,14 @@ algorithm
       list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
+
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2)
-    then GRAPH(updateGraph, definiteRoots,potentialRoots,(ref1,ref2)::branches,connections);
+      equation
+        Debug.fprintln("cgraph", "- ConnectionGraph.addBranch(" +& 
+            Exp.printComponentRefStr(ref1) +& ", " +& 
+            Exp.printComponentRefStr(ref2) +& ")");
+      then 
+        GRAPH(updateGraph, definiteRoots,potentialRoots,(ref1,ref2)::branches,connections);
   end matchcontinue;
 end addBranch;
 
@@ -311,6 +326,10 @@ algorithm
       Edges branches;
       DaeEdges connections;
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2, dae,dae2)
+      equation
+        Debug.fprintln("cgraph", "- ConnectionGraph.addConnection(" +& 
+            Exp.printComponentRefStr(ref1) +& ", " +& 
+            Exp.printComponentRefStr(ref2) +& ")");
     then GRAPH(updateGraph, definiteRoots,potentialRoots,branches,(ref1,ref2,dae,dae2)::connections);
   end matchcontinue;
 end addConnection;
@@ -323,18 +342,18 @@ function canonical
 //  output HashTableCG.HashTable outPartition;
   output DAE.ComponentRef outCanonical;
 algorithm
-  /*outPartition,*/ outCanonical := matchcontinue(inPartition, inRef)
+  /*outPartition,*/ 
+  outCanonical := matchcontinue(inPartition, inRef)
     local
       HashTableCG.HashTable partition, partition2;
       DAE.ComponentRef ref, parent, parentCanonical;
     case (partition, ref)
-    equation
-      parent = HashTableCG.get(ref, partition);
-      parentCanonical = canonical(partition, parent);
-      //partition2 = HashTableCG.add((ref, parentCanonical), partition);
-    then parentCanonical; 
-    case (partition,ref)
-    then ref;
+      equation
+        parent = HashTableCG.get(ref, partition);
+        parentCanonical = canonical(partition, parent);
+        //partition2 = HashTableCG.add((ref, parentCanonical), partition);
+      then parentCanonical; 
+    case (partition,ref) then ref;
   end matchcontinue;
 end canonical;
 
@@ -350,12 +369,15 @@ algorithm
   outResult := matchcontinue(inPartition,inRef1,inRef2)
     local
       HashTableCG.HashTable partition;
-      DAE.ComponentRef ref1, ref2, canon;
+      DAE.ComponentRef ref1, ref2, canon1,canon2;
     case(partition,ref1,ref2)
-    equation
-      canon = canonical(partition,ref1);
-      canon = canonical(partition,ref2);
-    then true;
+      equation
+        canon1 = canonical(partition,ref1);
+        canon2 = canonical(partition,ref2);
+        //print("canon1: " +& Exp.printComponentRefStr(canon1));
+        //print("\tcanon2: " +& Exp.printComponentRefStr(canon2) +& "\n");
+        true = Exp.crefEqual(canon1, canon2);
+      then true;
     case(_,_,_)
     then false;
   end matchcontinue;
@@ -380,26 +402,31 @@ algorithm
     local
       HashTableCG.HashTable partition;
       DAE.ComponentRef ref1, ref2, canon1, canon2;
-      list<DAE.Element> connectionDae, dae;
-    case(partition,ref1,ref2,connectionDae,_,dae)
-    equation      
-      canon1 = canonical(partition,ref1);
-      canon2 = canonical(partition,ref2);
-      (partition, true) = connectCanonicalComponents(partition,canon1,canon2);
-      dae = listAppend(dae, connectionDae);
-      /*print(Exp.printComponentRefStr(ref1));
-      print(" -- ");
-      print(Exp.printComponentRefStr(ref2));
-      print("\n");*/
-    then (partition, dae);
-    case(partition,ref1,ref2,_,connectionDae,dae)
-    equation
-      dae = listAppend(dae, connectionDae);
-      /*print(Exp.printComponentRefStr(ref1));
-      print(" -/- ");
-      print(Exp.printComponentRefStr(ref2));
-      print("\n");*/
-    then (partition, dae);
+      list<DAE.Element> connectionDae, dae, breakDae;
+      
+    case(partition,ref1,ref2,connectionDae,breakDae,dae)
+      equation
+        canon1 = canonical(partition,ref1);
+        canon2 = canonical(partition,ref2);
+        //print(Exp.printComponentRefStr(canon1));
+        //print(" -cc- ");
+        //print(Exp.printComponentRefStr(canon2));
+        //print("\n");        
+        (partition, true) = connectCanonicalComponents(partition,canon1,canon2);
+        dae = listAppend(dae, connectionDae);
+        //print(Exp.printComponentRefStr(ref1));
+        //print(" -- ");
+        //print(Exp.printComponentRefStr(ref2));
+        //print("\n");
+      then (partition, dae);
+    case(partition,ref1,ref2,connectionDae,breakDae,dae)
+      equation
+        // dae = listAppend(dae, connectionDae/* breakDae */);
+        //print(Exp.printComponentRefStr(ref1));
+        //print(" -/- ");
+        //print(Exp.printComponentRefStr(ref2));
+        //print("\n");
+      then (partition, dae);
   end matchcontinue;
 end connectComponents;
 
@@ -419,13 +446,13 @@ algorithm
       DAE.ComponentRef ref1, ref2;
       list<DAE.Element> connectionDae, dae;
     case(partition,ref1,ref2)
-    equation 
-      true = Exp.crefEqual(ref1, ref2);
-    then (partition, false);
+      equation 
+        true = Exp.crefEqual(ref1, ref2);
+      then (partition, false);
     case(partition,ref1,ref2)
-    equation 
-      partition = HashTableCG.add((ref1,ref2), partition);      
-    then (partition, true);
+      equation 
+        partition = HashTableCG.add((ref1,ref2), partition);
+      then (partition, true);
   end matchcontinue;
 end connectCanonicalComponents;
 
@@ -668,6 +695,11 @@ algorithm
     case (graph, dae)
       equation
         (roots,daeConnections) = findResultGraph(graph);
+        Debug.fprintln("cgraph", "Extra equations from connection graph: " +& intString(listLength(daeConnections)));
+        Debug.fprintln("cgraph", "Roots:\n" +& Util.stringDelimitList(Util.listMap(roots, Exp.printComponentRefStr), ",\n"));
+        Debug.fcall("cgraph", DAEUtil.dumpElements, daeConnections);
+        Debug.fprintln("cgraph", Print.getString());
+        Debug.fprintln("cgraph", "\n");
         dae = evalIsRoot(roots, dae);
         dae = Util.listAppendNoCopy(dae, daeConnections);
       then
