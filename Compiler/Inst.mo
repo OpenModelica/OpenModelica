@@ -355,8 +355,8 @@ algorithm
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
         (cache,env_2,ih,dae2) = instClassInProgram(cache, env_1, ih, cdecls, path);
         // check the models for balancing
-        Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae1);
-        Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
+        //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae1);
+        //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
       then
         (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae2))}));
         
@@ -370,7 +370,7 @@ algorithm
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
         // check the model for balancing
-        Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
+        //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
       then
         (cache, env_2, ih, DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae))}));
         
@@ -604,7 +604,7 @@ algorithm
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
         // check the models for balancing
-        Debug.fcall2("checkModel",checkModelBalancing,SOME(inPath),dae);                
+        //Debug.fcall2("checkModel",checkModelBalancing,SOME(inPath),dae);                
       then
         (cache,env_1,ih,dae);
         
@@ -889,7 +889,7 @@ algorithm
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
         // check the models for balancing
-        Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
+        //Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
         // finish with the execution statistics        
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
       then
@@ -1595,7 +1595,7 @@ algorithm
         
         instHash = add((fullEnvPathPlusClass, {FUNC_instClassIn(inputs,outputs)}), instHash);
         System.addToRoots("instantiationCache", instHash);
-        checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
+        //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);        
     
@@ -17283,7 +17283,7 @@ algorithm
   end matchcontinue;
 end valueArrayNth;
 
-protected function checkModelBalancing
+/*protected function checkModelBalancing
 "@author adrpo
  this function checks the balancing of the given model"
   input Option<Absyn.Path> classNameOpt;
@@ -17314,7 +17314,7 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 
-        = DAELow.lower(dae, false/* no dummy variable*/, true);
+        = DAELow.lower(dae, false, true);
         // Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
@@ -17339,8 +17339,10 @@ algorithm
       then ();      
   end matchcontinue;
 end checkModelBalancing;
+*/
 
-protected function checkModelBalancingFilterByRestriction
+
+/*protected function checkModelBalancingFilterByRestriction
 "@author: adrpo 
  filter out some restricted classes"
   input SCode.Restriction r;
@@ -17369,5 +17371,5 @@ algorithm
     case (_, pathOpt, dae) then (); 
   end matchcontinue;
 end checkModelBalancingFilterByRestriction;
-
+*/
 end Inst;
