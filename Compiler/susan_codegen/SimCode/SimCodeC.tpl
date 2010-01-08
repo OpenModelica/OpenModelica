@@ -1145,6 +1145,7 @@ functionHeaders(list<Function> functions) ::=
     <<
     /*recordDecls : recordDeclaration() \n*/
     <functionHeader(underscorePath(name), funArgs, outVars)>
+
     <extFunDef(it)>
     >> 
 \n> 
@@ -1228,7 +1229,7 @@ extFunDefArg(SimExtArg) ::=
           else
             'const <extType(t)> *'
         else
-          'const <extType(t)> *'
+          '<extType(t)>'
       else
         '<extType(t)>*'
     <<
@@ -1330,13 +1331,43 @@ case var as VARIABLE then
     <dest>.targ<i> = <cref(var.name)>;
     >>
 
-extFunCall(Function, Text preExp, Text varDecls) ::=
+extFunCall(Function fun, Text preExp, Text varDecls) ::=
 case EXTERNAL_FUNCTION then
   # fname = underscorePath(name)
   # args = (extArgs: extArg(it, preExp, varDecls) ", ")
+  # returnAssign = if extReturn is SIMEXTARG(cref=c) then '<cref(c)>_ext = ' else ""
   <<
-  <fname>(<args>);
+  <extArgs: extFunCallVardecl(it, varDecls) "\n">
+  <if extReturn is SIMEXTARG then extFunCallVardecl(extReturn, varDecls)>
+  <returnAssign><extName>(<args>);
+  <extArgs: extFunCallVarcopy(it) "\n">
+  <if extReturn is SIMEXTARG then extFunCallVarcopy(extReturn)>
   >>
+
+extFunCallVardecl(SimExtArg arg, Text varDecls) ::=
+case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
+  if ty is ET_STRING then
+    ""
+  else
+    # varDecls += '<extType(ty)> <cref(c)>_ext;<\n>'
+    <<
+    <cref(c)>_ext = (<extType(ty)>)<cref(c)>;
+    >>
+case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
+  if oi is 0 then
+    ""
+  else
+    # varDecls += '<extType(ty)> <cref(c)>_ext;<\n>'
+    ""
+
+extFunCallVarcopy(SimExtArg arg) ::=
+case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
+  if oi is 0 then
+    ""
+  else
+    <<
+    out.targ<oi> = (<expTypeModelica(ty)>)<cref(c)>_ext;
+    >>
 
 extArg(SimExtArg, Text preExp, Text varDecls) ::=
   // arrays

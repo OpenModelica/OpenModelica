@@ -237,6 +237,7 @@ package SimCode
     end FUNCTION;
     record EXTERNAL_FUNCTION
       Path name;
+      Ident extName;
       list<Variable> funArgs;
       list<SimExtArg> extArgs;
       SimExtArg extReturn;

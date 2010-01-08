@@ -323,6 +323,7 @@ uniontype Function
     //FunctionArguments functionArguments "the function arguments";
     //VariableDeclarations variableDeclarations "the declarations of local variables";
     Path name;
+    Ident extName;
     list<Variable> funArgs;
     list<SimExtArg> extArgs;
     SimExtArg extReturn;
@@ -928,10 +929,10 @@ algorithm
     //    wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
     //    cfns = func_decl :: rcw_fn :: ext_decl :: wrapper_body;
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
-        simextargs = fixOutputIndex(simextargs, 0);
         extReturn = extArgsToSimExtArgs(extretarg);
+        (simextargs, extReturn) = fixOutputIndexOuter(simextargs, extReturn);
       then
-        (EXTERNAL_FUNCTION(fpath, funArgs, simextargs, extReturn, inVars, outVars, biVars, includes, libs, lang), rt);
+        (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn, inVars, outVars, biVars, includes, libs, lang), rt);
     /* Can we even end up in this case? isFunction returns false for COMP */
     //case (DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist)),rt)
     //  equation
@@ -945,6 +946,34 @@ algorithm
         fail();
   end matchcontinue;
 end elaborateFunction;
+
+protected function fixOutputIndexOuter
+  input list<SimExtArg> simExtArgsIn;
+  input SimExtArg extReturnIn;
+  output list<SimExtArg> simExtArgsOut;
+  output SimExtArg extReturnOut;
+algorithm
+  (simExtArgsOut, extReturnOut) :=
+  matchcontinue (simExtArgsIn, extReturnIn)
+    local
+      DAE.ComponentRef cref;
+      Boolean isInput;
+      Integer outputIndex;
+      Boolean isArray;
+      DAE.ExpType type_;
+    case (simExtArgsIn, SIMEXTARG(cref, isInput, outputIndex, isArray, type_))
+      equation
+        simExtArgsOut = fixOutputIndex(simExtArgsIn, 1);
+        extReturnOut = SIMEXTARG(cref, isInput, 1, isArray, type_);
+      then
+        (simExtArgsOut, extReturnOut);
+    case (simExtArgsIn, extReturnIn)
+      equation
+        simExtArgsOut = fixOutputIndex(simExtArgsIn, 0);
+      then
+        (simExtArgsOut, extReturnIn);
+  end matchcontinue;
+end fixOutputIndexOuter;
 
 protected function fixOutputIndex
   input list<SimExtArg> simExtArgsIn;
