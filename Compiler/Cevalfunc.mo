@@ -33,6 +33,7 @@ protected import InstanceHierarchy;
 protected import Types;
 protected import UnitAbsyn;
 protected import ValuesUtil;
+protected import ErrorExt;
 
 protected constant String forScopeName="$for loop scope$";
 
@@ -64,6 +65,7 @@ algorithm
          sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
                            SCode.PARTS(elementLst=elementList) ),daeList)
       equation
+        ErrorExt.setCheckpoint();
         str = Absyn.pathString(funcpath);
 replacements = createReplacementRules(inArgs,elementList);
 ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
@@ -72,9 +74,17 @@ ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2);
         env2 = evaluateStatements(env1,sc,ht2);
         retVals = getOutputVarValues(elementList, env2);
-        retVal = convertOutputVarValues(retVals); 
+        retVal = convertOutputVarValues(retVals);
+        ErrorExt.rollBack(); 
         then 
           retVal;
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
+        sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
+          SCode.PARTS(elementLst=elementList) ),daeList)
+      equation
+          ErrorExt.rollBack();
+          then
+            fail();
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
          sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
                            SCode.PARTS(elementLst=elementList) ),daeList)
