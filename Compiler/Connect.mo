@@ -532,32 +532,35 @@ algorithm oIndexies := matchcontinue(curr,Indexies)
 end mergeCurrentWithRestIndexies;
 
 public function equations "
-  - Equation generation
- 
-  From a number of connection sets, this function generates a list
-  of equations.
-"
+  Equation generation
+  From a number of connection sets, this function generates a list of equations."
   input Sets sets;
   input Prefix.Prefix pre "prefix required for checking deleted components";
   output list<DAE.Element> eqns;
-  algorithm
-    eqns := matchcontinue(sets,pre)
-    local list<Set> s;
+algorithm
+  eqns := matchcontinue(sets,pre)
+    local 
+      list<Set> s;
       list<DAE.ComponentRef> crs,deletedComps;
       DAE.ComponentRef cr,deletedComp;
       list<OuterConnect> outerConn;
-
-      case(sets as SETS(s,crs,{},outerConn),pre) equation
+    // no deleted components  
+    case(sets as SETS(s,crs,{},outerConn),pre)
+      equation
+         //print(printSetsStr(sets));
       then equations2(sets);
-
-      case(SETS(s,crs,deletedComp::deletedComps,outerConn),pre) equation
-        cr=  deletedComp;
-        s = removeComponentInSets(cr,s);          
-      then equations(SETS(s,crs,deletedComps,outerConn),pre);  
-      case(_,_) equation
-        Debug.fprint("failtrace","Connect.equations failed\n");
-      then fail();
-    end matchcontinue;
+    // handle deleted components  
+    case(SETS(s,crs,deletedComp::deletedComps,outerConn),pre) 
+      equation
+        cr = deletedComp;
+        s = removeComponentInSets(cr,s);
+      then 
+        equations(SETS(s,crs,deletedComps,outerConn),pre);
+    // failure
+    case(_,_) equation
+      Debug.fprint("failtrace","Connect.equations failed\n");
+    then fail();
+  end matchcontinue;
 end equations;
 
 protected function removeComponentInSets "Removes all connections to component from the set"
@@ -566,19 +569,31 @@ protected function removeComponentInSets "Removes all connections to component f
   output list<Set> outS;
 algorithm
   outS := matchcontinue(compName,s)
-  local list<DAE.ComponentRef> crs;
-    list<tuple<DAE.ComponentRef, Face>> fcrs;
+    local 
+      list<DAE.ComponentRef> crs;
+      list<tuple<DAE.ComponentRef, Face>> fcrs;
+    // handle the empty case
     case(compName,{}) then {};
-    case(compName, EQU(crs)::s) equation
-      crs = Util.listSelect1R(crs,compName,Exp.crefNotPrefixOf);
-      s = removeComponentInSets(compName,s);
-    then EQU(crs)::s;
-    case(compName, FLOW(fcrs)::s) equation  
-      fcrs = Util.listSelect1(fcrs,compName,flowTupleNotPrefixOf);
-      s = removeComponentInSets(compName,s);
-    then FLOW(fcrs)::s;
-    case(_,_) equation
-      Debug.fprint("failtrace","-removeComponentInSets failed\n");
+    // we have an equation
+    case(compName, EQU(crs)::s) 
+      equation
+        //print("Deleting: " +& Exp.printComponentRefStr(compName) +& "\n");
+        crs = Util.listSelect1R(crs,compName,Exp.crefNotPrefixOf);
+        //print("Result EQU after remove: " +& Util.stringDelimitList(Util.listMap(crs, Exp.printComponentRefStr), ", ") +& "\n");        
+        s = removeComponentInSets(compName,s);
+      then EQU(crs)::s;
+    // we have a flow component
+    case(compName, FLOW(fcrs)::s) 
+      equation  
+        //print("Deleting: " +& Exp.printComponentRefStr(compName) +& "\n");        
+        fcrs = Util.listSelect1(fcrs,compName,flowTupleNotPrefixOf);
+        //print("Result FLOW after remove: " +& Util.stringDelimitList(Util.listMap(Util.listMap(fcrs, Util.tuple21), Exp.printComponentRefStr), ", ") +& "\n");
+        s = removeComponentInSets(compName,s);
+      then FLOW(fcrs)::s;
+    // failure
+    case(compName,_) equation
+      // print("Failed to remove component:" +& Exp.printComponentRefStr(compName) +& "\n");
+      Debug.fprintln("failtrace","- Connect.removeComponentInSets failed");
     then fail();
   end matchcontinue;
 end removeComponentInSets;
@@ -597,14 +612,12 @@ algorithm
 end flowTupleNotPrefixOf;
 
 protected function equations2 "
-Helper function to equations. Once deleted components has been removed from connection sets, 
-this function generates the equations.
-"
+Helper function to equations. Once deleted components has been 
+removed from connection sets, this function generates the equations."
   input Sets inSets;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inSets)
+  outDAEElementLst := matchcontinue (inSets)
     local
       list<DAE.Element> dae1,dae2,dae;
       list<DAE.ComponentRef> cs,crs,dc;
@@ -625,7 +638,7 @@ algorithm
       equation 
         dae = equations2(SETS(ss,crs,dc,outerConn));
       then
-        dae;    
+        dae;
     
     case (SETS((EQU(expComponentRefLst = cs) :: ss),crs,dc,outerConn))
       equation 
@@ -644,7 +657,7 @@ algorithm
         dae;
     case (sets)
       equation 
-        Debug.fprint("failtrace","-equations2 failed\n");
+        Debug.fprint("failtrace","- Connect.equations2 failed\n");
       then
         fail();        
   end matchcontinue;
@@ -679,16 +692,13 @@ algorithm
 end equEquations;
 
 protected function flowEquations "function: flowEquations
-  
   Generating equations from a flow connection set is a little
   trickier that from a non-flow set.  Only one equation is
   generated, but it has to consider whether the comoponents were
   inner or outer connectors.
- 
   This function uses `flow_sum\' to create the sum of all components
   (some of which will be negated), and the returns the equation
-  where this sum is equal to 0.0.
-"
+  where this sum is equal to 0.0."
   input list<tuple<DAE.ComponentRef, Face>> cs;
   output list<DAE.Element> outDAEElementLst;
   DAE.Exp sum;
@@ -698,25 +708,23 @@ algorithm
 end flowEquations;
 
 protected function flowSum "function: flowSum
-  
   This function creates an exression expressing the sum of all
   components in the given list.  Before adding the component to the
   sum, it is passed to `sign_flow\' which will negate all outer
-  connectors.
-"
+  connectors."
   input list<tuple<DAE.ComponentRef, Face>> inTplExpComponentRefFaceLst;
   output DAE.Exp outExp;
 algorithm 
-  outExp:=
-  matchcontinue (inTplExpComponentRefFaceLst)
+  outExp := matchcontinue (inTplExpComponentRefFaceLst)
     local
       DAE.Exp exp,exp1,exp2;
       DAE.ComponentRef c;
       Face f;
       list<tuple<DAE.ComponentRef, Face>> cs;
     case {(c,f)}
-      equation 
+      equation
         exp = signFlow(c, f);
+        // print("Generating flow expresion: " +& Exp.printExpStr(exp) +& "\n");
       then
         exp;
     case (((c,f) :: cs))
@@ -1063,8 +1071,7 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  (outCache,outDAEElementLst) :=
-  matchcontinue (inCache,inSets,inDAEElementLst,inEnv,prefix,inBoolean,ocl)
+  (outCache,outDAEElementLst) := matchcontinue (inCache,inSets,inDAEElementLst,inEnv,prefix,inBoolean,ocl)
     local
       list<DAE.ComponentRef> v1,v2,v3,vSpecial,vars,vars2,vars3,unconnectedvars,deletedComponents;
       list<DAE.Element> dae_1,dae;
@@ -1089,7 +1096,7 @@ algorithm
 				//print(" Inside connectors, v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
 				 
         vars = listAppend(v1, v2);
-        vars2 = getInsideFlowVariables(csets);     
+        vars2 = getInsideFlowVariables(csets);
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);
         vars2 = listAppend(vars3,vars2);
         
@@ -1099,7 +1106,7 @@ algorithm
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs); 
         unconnectedvars = removeVariables(vars, vars2);
-        unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets);
+        unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets,prefix);
       
         // no prefix for top level
         /* SE COMMENT ABOVE  
@@ -1119,7 +1126,7 @@ algorithm
         // last array subscripts are not present in vars, therefor removed from vars2 too.
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs);
         unconnectedvars = removeVariables(vars, vars2);
-        unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets);
+        unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets,prefix);
           
 				// Add prefix that was "removed" above
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,prefix,deletedComponents);
@@ -1247,31 +1254,59 @@ end extractFlowCrefs;
 protected function removeUnconnectedDeletedComponents "Removes deleted components,
  i.e. with conditional declaration = false, from
 the list of unconnected variables"
-input list<DAE.ComponentRef> vars;
-input Sets sets;
-output list<DAE.ComponentRef> outVars;
+  input list<DAE.ComponentRef> vars;
+  input Sets sets;
+  input Prefix.Prefix prefix;
+  output list<DAE.ComponentRef> outVars;
 algorithm
-  outVars := matchcontinue(vars,sets)
-  local
-    DAE.ComponentRef deletedComp;
-    list<Set> s;
-    list<DAE.ComponentRef> crs,deletedComps;
-    list<OuterConnect> outerConn;
+  outVars := matchcontinue(vars,sets,prefix)
+    local
+      DAE.ComponentRef deletedComp;
+      list<Set> s;
+      list<DAE.ComponentRef> crs,deletedComps;
+      list<OuterConnect> outerConn;
 
-    case(vars,SETS(s,crs,{},_)) then vars;
+    case(vars,SETS(s,crs,{},_),prefix) then vars;
 
-    case(vars,SETS(s,crs,deletedComp::deletedComps,outerConn))
+    case(vars,SETS(s,crs,deletedComp::deletedComps,outerConn),prefix)
       equation
-        vars = Util.listSelect1R(vars,deletedComp,Exp.crefNotPrefixOf);
-        vars = removeUnconnectedDeletedComponents(vars,SETS(s,crs,deletedComps,outerConn));
-        then vars;
+        vars = Util.listSelect2(vars, deletedComp, prefix, crefNotPrefixOf);
+        // print("Deleting: " +& Exp.printComponentRefStr(deletedComp) +& "\n");
+        // print("Result unconnected vars after remove -> prefix: " +& Prefix.printPrefixStr(prefix) +& "/" +& Util.stringDelimitList(Util.listMap(vars, Exp.printComponentRefStr), ", ") +& "\n");
+        vars = removeUnconnectedDeletedComponents(vars,SETS(s,crs,deletedComps,outerConn),prefix);
+      then vars;
   end matchcontinue;
 end removeUnconnectedDeletedComponents;
 
+protected function crefNotPrefixOf
+  input DAE.ComponentRef crSubPrefix;
+  input DAE.ComponentRef cr;
+  input Prefix.Prefix prefix;
+  output Boolean selected;
+algorithm
+   selected := matchcontinue (crSubPrefix, cr, prefix)
+     local DAE.ComponentRef prefixCref; Boolean select;
+     // deal with NO prefix!
+     case (crSubPrefix, cr, Prefix.NOPRE())
+       equation
+         select = not Exp.crefPrefixOf(cr, crSubPrefix);
+       then
+         select;
+     case (crSubPrefix, cr, prefix)
+       equation
+         // adrpo: we need to ADD the prefix otherwise it won't find components!
+         //        Example of the problem: Deleting: rev.constantTorque
+         //                                Result unconnected vars after remove: constantTorque.support.tau <- add it here
+         prefixCref = Prefix.prefixToCref(prefix);
+         crSubPrefix = Exp.joinCrefs(prefixCref, crSubPrefix);
+         select = not Exp.crefPrefixOf(cr, crSubPrefix);
+       then
+         select;         
+   end matchcontinue; 
+end crefNotPrefixOf;
+
 protected function removeVariables "function: removeVariables
- 
-  Removes all the variables in the second list from the first list.
-"
+  Removes all the variables in the second list from the first list."
   input list<DAE.ComponentRef> inExpComponentRefLst1;
   input list<DAE.ComponentRef> inExpComponentRefLst2;
   output list<DAE.ComponentRef> outExpComponentRefLst;
@@ -1721,14 +1756,11 @@ algorithm
 end printFlowRef;
 
 public function printSetsStr "function: printSetsStr
- 
-  Prints a description of a number of connection sets to a string
-"
+  Prints a description of a number of connection sets to a string"
   input Sets inSets;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inSets)
+  outString := matchcontinue (inSets)
     local
       list<String> s1;
       String s1_1,s2,res,s3,s4;
@@ -1736,6 +1768,11 @@ algorithm
       list<DAE.ComponentRef> crs;
       list<DAE.ComponentRef> dc;
       list<OuterConnect> outerConn;
+    case SETS(setLst = {},connection = {},deletedComponents = {},outerConnects = {})
+      equation
+        res = "SETS( EMPTY )\n";
+      then
+        res;      
     case SETS(setLst = sets,connection = crs,deletedComponents=dc,outerConnects=outerConn)
       equation 
         s1 = Util.listMap(sets, printSetStr);
@@ -1743,8 +1780,7 @@ algorithm
         s2 = printSetCrsStr(crs);
         s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr),",");
         s4 = printOuterConnectsStr(outerConn);
-        res = Util.stringAppendList({"SETS(\n  ",s1_1,",\n  ",s2,", \n deleted comps:",s3,
-        "\n outer connections:",s4,"\n)\n"});
+        res = Util.stringAppendList({"SETS( ",s1_1,", ",s2,", deleted comps: ",s3,", outer connections:",s4,")\n"});
       then
         res;
   end matchcontinue;
@@ -1772,8 +1808,7 @@ protected function printSetStr
   input Set inSet;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inSet)
+  outString := matchcontinue (inSet)
     local
       list<String> strs;
       String s1,res;
@@ -1782,7 +1817,7 @@ algorithm
       equation 
         strs = Util.listMap(cs, Exp.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({" non-flow set: { ",s1,"}"});
+        res = Util.stringAppendList({" non-flow set: {",s1,"}"});
       then
         res;
     case FLOW(tplExpComponentRefFaceLst = cs)
@@ -1790,7 +1825,7 @@ algorithm
       equation 
         strs = Util.listMap(cs, printFlowRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({" flow set: { ",s1,"}"});
+        res = Util.stringAppendList({" flow set: {",s1,"}"});
       then
         res;
   end matchcontinue;
