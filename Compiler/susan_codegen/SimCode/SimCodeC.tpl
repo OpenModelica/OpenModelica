@@ -1,38 +1,22 @@
-// This file defines templates for transforming an internal representation of a
-// Modelica program to C code.
-//
-// When compiling a model the following files will be created:
-//
-// Model.cpp
-// Model_functions.cpp
-// Model_init.txt
-// Model.makefile
-//
-// The following template functions generate the content of these files:
-//
-// cppFile
-// functionsFile
-// initFile
-// makefile
+// This file defines templates for transforming Modelica code to C code.
 
 spackage SimCodeC
 
 typeview "SimCodeTV.mo"
 
-// Root template for simulation "target"
+// SECTION: SIMULATION TARGET, ROOT TEMPLATE
+
 translateModel(SimCode simCode) ::=
   case SIMCODE(modelInfo = MODELINFO) then
     # cppFileContent = cppFile(simCode)
     # textFile(cppFileContent, '<modelInfo.name>.cpp')
-    # functionsFileContent = functionsCpp('<functions>')
+    # functionsFileContent = functionsFile(functions)
     # textFile(functionsFileContent, '<modelInfo.name>_functions.cpp')
     //initFile(...)
     //makefile(...)
     () // empty result
 
-// Root template for function library "target"
-//translateFunction(...) ::=
-//    ...
+// SECTION: SIMULATION TARGET, CPP FILE SPECIFIC TEMPLATES
 
 cppFile(SimCode simCode) ::=
 case SIMCODE(modelInfo = MODELINFO) then
@@ -122,50 +106,98 @@ extern "C" { /* adrpo: this is needed for Visual C++ compilation to work! */
   char *model_dir="<directory>";
 }
 
-<utilStaticStringArray("state_names", vars.stateVars)>
-<utilStaticStringArray("derivative_names", vars.derivativeVars)>
-<utilStaticStringArray("algvars_names", vars.algVars)>
-<utilStaticStringArray("input_names", vars.inputVars)>
-<utilStaticStringArray("output_names", vars.outputVars)>
-<utilStaticStringArray("param_names", vars.paramVars)>
-<utilStaticStringArray("string_alg_names", vars.stringAlgVars)>
-<utilStaticStringArray("string_param_names", vars.stringParamVars)>
+<globalDataVarNamesArray("state_names", vars.stateVars)>
+<globalDataVarNamesArray("derivative_names", vars.derivativeVars)>
+<globalDataVarNamesArray("algvars_names", vars.algVars)>
+<globalDataVarNamesArray("input_names", vars.inputVars)>
+<globalDataVarNamesArray("output_names", vars.outputVars)>
+<globalDataVarNamesArray("param_names", vars.paramVars)>
+<globalDataVarNamesArray("string_alg_names", vars.stringAlgVars)>
+<globalDataVarNamesArray("string_param_names", vars.stringParamVars)>
 
-<utilStaticStringArrayComment("state_comments", vars.stateVars)>
-<utilStaticStringArrayComment("derivative_comments", vars.derivativeVars)>
-<utilStaticStringArrayComment("algvars_comments", vars.algVars)>
-<utilStaticStringArrayComment("input_comments", vars.inputVars)>
-<utilStaticStringArrayComment("output_comments", vars.outputVars)>
-<utilStaticStringArrayComment("param_comments", vars.paramVars)>
-<utilStaticStringArrayComment("string_alg_comments", vars.stringAlgVars)>
-<utilStaticStringArrayComment("string_param_comments", vars.stringParamVars)>
+<globalDataVarCommentsArray("state_comments", vars.stateVars)>
+<globalDataVarCommentsArray("derivative_comments", vars.derivativeVars)>
+<globalDataVarCommentsArray("algvars_comments", vars.algVars)>
+<globalDataVarCommentsArray("input_comments", vars.inputVars)>
+<globalDataVarCommentsArray("output_comments", vars.outputVars)>
+<globalDataVarCommentsArray("param_comments", vars.paramVars)>
+<globalDataVarCommentsArray("string_alg_comments", vars.stringAlgVars)>
+<globalDataVarCommentsArray("string_param_comments", vars.stringParamVars)>
 
-<vars.stateVars of var as SIMVAR: define(it, "states") "\n">
-<vars.derivativeVars of var as SIMVAR: define(it, "statesDerivatives") "\n">
-<vars.algVars of var as SIMVAR: define(it, "algebraics") "\n">
-<vars.paramVars of var as SIMVAR: define(it, "parameters") "\n">
-<vars.extObjVars of var as SIMVAR: define(it, "extObjs") "\n">
+<vars.stateVars of var as SIMVAR: globalDataVarDefine(it, "states") "\n">
+<vars.derivativeVars of var as SIMVAR: globalDataVarDefine(it, "statesDerivatives") "\n">
+<vars.algVars of var as SIMVAR: globalDataVarDefine(it, "algebraics") "\n">
+<vars.paramVars of var as SIMVAR: globalDataVarDefine(it, "parameters") "\n">
+<vars.extObjVars of var as SIMVAR: globalDataVarDefine(it, "extObjs") "\n">
 
 static char init_fixed[NX+NX+NY+NP] = {
   <[(vars.stateVars of var as SIMVAR:
-      '<boolToInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
+      '<globalDataBoolInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
     (vars.derivativeVars of var as SIMVAR:
-      '<boolToInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
+      '<globalDataBoolInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
     (vars.algVars of var as SIMVAR:
-      '<boolToInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
+      '<globalDataBoolInt(var.isFixed)> /* <cref(origName)> */' ",\n"),
     (vars.paramVars of var as SIMVAR:
-      '<boolToInt(var.isFixed)> /* <cref(origName)> */' ",\n")] ",\n">
+      '<globalDataBoolInt(var.isFixed)> /* <cref(origName)> */' ",\n")] ",\n">
 };
 
 char var_attr[NX+NY+NP] = {
   <[(vars.stateVars of var as SIMVAR:
-      '<typeAttrInt(type_)>+<discreteAttrInt(isDiscrete)> /* <cref(origName)> */' ",\n"),
+      '<globalDataAttrInt(type_)>+<globalDataDiscAttrInt(isDiscrete)> /* <cref(origName)> */' ",\n"),
     (vars.algVars of var as SIMVAR:
-      '<typeAttrInt(type_)>+<discreteAttrInt(isDiscrete)> /* <cref(origName)> */' ",\n"),
+      '<globalDataAttrInt(type_)>+<globalDataDiscAttrInt(isDiscrete)> /* <cref(origName)> */' ",\n"),
     (vars.paramVars of var as SIMVAR:
-      '<typeAttrInt(type_)>+<discreteAttrInt(isDiscrete)> /* <cref(origName)> */' ",\n")] ",\n">
+      '<globalDataAttrInt(type_)>+<globalDataDiscAttrInt(isDiscrete)> /* <cref(origName)> */' ",\n")] ",\n">
 };
 >>
+
+globalDataVarNamesArray(String name, list<SimVar> items) ::=
+if items then
+<<
+char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
+  '"<crefSubscript(origName)>"' ", ">};
+>>
+else
+<<
+char* <name>[1] = {""};
+>>
+
+globalDataVarCommentsArray(String name, list<SimVar> items) ::=
+if items then
+<<
+char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
+  '"<item.comment>"' ", ">};
+>>
+else
+<<
+char* <name>[1] = {""};
+>>
+
+globalDataVarDefine(SimVar, String arrayName) ::=
+case SIMVAR(arrayCref=SOME(c)) then
+  <<
+  #define <cref(c)> localData-\><arrayName>[<index>]
+  #define <cref(name)> localData-\><arrayName>[<index>]
+  >>
+case SIMVAR then
+  <<
+  #define <cref(name)> localData-\><arrayName>[<index>]
+  >>
+
+globalDataBoolInt(Boolean) ::=
+  case true  then "1"
+  case false then "0"
+
+// TODO: Correct type? Correct value?
+globalDataAttrInt(DAE.ExpType) ::=
+  case ET_REAL   then "1"
+  case ET_STRING then "2"
+  case ET_INT    then "4"
+  case ET_BOOL   then "8"
+
+globalDataDiscAttrInt(Boolean isDiscrete) ::=
+  case true  then "16"
+  case false then "0"
 
 functionGetName(ModelInfo modelInfo) ::=
 case MODELINFO(varInfo = VARINFO, vars = SIMVARS) then
@@ -183,17 +215,6 @@ char* getName(double* ptr)
   return "";
 }
 >>
-
-define(SimVar, String arrayName) ::=
-case SIMVAR(arrayCref=SOME(c)) then
-  <<
-  #define <cref(c)> localData-\><arrayName>[<index>]
-  #define <cref(name)> localData-\><arrayName>[<index>]
-  >>
-case SIMVAR then
-  <<
-  #define <cref(name)> localData-\><arrayName>[<index>]
-  >>
 
 functionDivisionError() ::=
 <<
@@ -741,10 +762,10 @@ functionWhen(list<SimWhenClause> whenClauses) ::=
 # cases = whenClauses of whenClause as SIM_WHEN_CLAUSE:
   <<
   case <i0>:
-    <whenEqTpl(whenEq, varDecls)>
+    <functionWhenCaseEquation(whenEq, varDecls)>
     <reinits of reinit:
       # preExp = ""
-      # body = reinit(reinit, preExp, varDecls)
+      # body = functionWhenReinitStatements(reinit, preExp, varDecls)
       '<preExp><\n><body>'
     "\n">
     break;<\n>
@@ -768,6 +789,24 @@ int function_when(int i)
   return 0;
 }
 >>
+
+functionWhenCaseEquation(Option<WhenEquation>, Text varDecls) ::=
+case SOME(weq as WHEN_EQ) then
+# preExp = ""
+# expPart = daeExp(weq.right, createSimulationContext(), preExp, varDecls)
+<<
+save(<cref(weq.left)>);
+
+<preExp>
+<cref(weq.left)> = <expPart>;
+>>
+
+functionWhenReinitStatements(ReinitStatement, Text preExp, Text varDecls) ::=
+case REINIT then
+  # val = daeExp(value, createSimulationContext(), preExp, varDecls)
+  <<
+  <cref(stateVar)> = <val>;
+  >>
 
 functionOde(list<SimEqSystem> stateContEquations) ::=
 # varDecls = ""
@@ -899,38 +938,6 @@ int checkForDiscreteVarChanges()
 }
 >>
 
-//functionsFile() ::=
-//<<
-//#ifdef __cplusplus
-//extern "C" {
-//#endif
-//
-///* Header part */
-///* End of header part */
-//
-///* Body */
-///* End body */
-//
-//#ifdef __cplusplus
-//}
-//#endif
-//>>
-//
-//initFile() ::=
-//<<
-//>>
-//
-//makefile() ::=
-//<<
-//>>
-
-reinit(ReinitStatement, Text preExp, Text varDecls) ::=
-  case REINIT then
-    # val = daeExp(value, createSimulationContext(), preExp, varDecls)
-    <<
-    <cref(stateVar)> = <val>;
-    >>
-
 // TODO: Better name?
 zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text varDecls) ::=
   <<
@@ -967,28 +974,6 @@ zeroCrossingOpFunc(Operator) ::=
   case GREATER   then "Greater"
   case LESSEQ    then "LessEq"
   case GREATEREQ then "GreaterEq"
-
-utilStaticStringArray(String name, list<SimVar> items) ::=
-if items then
-<<
-char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
-  '"<crefSubscript(origName)>"' ", ">};
->>
-else
-<<
-char* <name>[1] = {""};
->>
-
-utilStaticStringArrayComment(String name, list<SimVar> items) ::=
-if items then
-<<
-char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
-  '"<item.comment>"' ", ">};
->>
-else
-<<
-char* <name>[1] = {""};
->>
 
 // Residual equations are not handled here
 equation_(SimEqSystem eq, Context context, Text varDecls) ::=
@@ -1079,31 +1064,29 @@ case _ then
 notimplemented = notimplemented;
 >>
 
-whenEqTpl(Option<WhenEquation>, Text varDecls) ::=
-case SOME(weq as WHEN_EQ) then
-# preExp = ""
-# expPart = daeExp(weq.right, createSimulationContext(), preExp, varDecls)
-<<
-save(<cref(weq.left)>);
+// SECTION: SIMULATION TARGET, FUNCTIONS FILE SPECIFIC TEMPLATES
 
-<preExp>
-<cref(weq.left)> = <expPart>;
+functionsFile(list<Function> functions) ::=
+<<
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Header */
+<externalFunctionIncludes(functions)>
+<functionHeaders(functions)>
+/* End Header */
+
+/* Body */
+<functionBodies(functions)>
+/* End Body */
+
+#ifdef __cplusplus
+}
+#endif
 >>
 
-boolToInt(Boolean) ::=
-  case true  then "1"
-  case false then "0"
-
-// TODO: Correct type? Correct value?
-typeAttrInt(DAE.ExpType) ::=
-  case ET_REAL   then "1"
-  case ET_STRING then "2"
-  case ET_INT    then "4"
-  case ET_BOOL   then "8"
-
-discreteAttrInt(Boolean isDiscrete) ::=
-  case true  then "16"
-  case false then "0"
+// SECTION: GENERAL TEMPLATES, COMPONENT REFERENCES
 
 cref(ComponentRef) ::=
   case CREF_IDENT then '<ident>'
@@ -1125,14 +1108,7 @@ case INDEX then (
 )
 case _ then "SUBSCRIPT_NOT_CONSTANT"
  
-// TODO: Check with Codegen (expTypeStr)
-expTypeA(DAE.ExpType, Boolean isArray) ::=
-  case ET_COMPLEX     then expTypeShort() // i.e. 'struct <name>'  
-  case ET_LIST
-  case ET_METATUPLE
-  case ET_METAOPTION
-  case ET_UNIONTYPE
-  case ET_POLYMORPHIC then "metamodelica_type"
+// SECTION: GENERAL TEMPLATES, PATHS
 
 dotPath(Path) ::=
   case QUALIFIED      then '<name>.<dotPath(path)>'
@@ -1144,25 +1120,53 @@ underscorePath(Path) ::=
   case IDENT          then System.stringReplace(name, "_", "__")
   case FULLYQUALIFIED then underscorePath(path)
 
+// SECTION: GENERAL TEMPLATES, FUNCTION GENERATION
+
+externalFunctionIncludes(list<Function> functions) ::=
+<<
+#ifdef __cplusplus
+extern "C" {
+#endif
+<functions of EXTERNAL_FUNCTION: (includes: it "\n") "\n">
+#ifdef __cplusplus
+}
+#endif
+>>
+
+functionHeaders(list<Function> functions) ::=
+<<
+<functions:
+  case FUNCTION then
+    <<
+    /*recordDecls : recordDeclaration() \n*/
+    <functionHeader(underscorePath(name), functionArguments, outVars)>
+    >> 
+  case EXTERNAL_FUNCTION then
+    <<
+    /*recordDecls : recordDeclaration() \n*/
+    <functionHeader(underscorePath(name), funArgs, outVars)>
+    <extFunDef(it)>
+    >> 
+\n> 
+>>
 
 recordDeclaration(RecordDeclaration) ::=
   case RECORD_DECL_FULL then
-<<
-struct <name> {
-  <variables of var as VARIABLE :
-      if expTypeArrayIf(ty) then '<it> <cref(var.name)>;'
-      else '/* <cref(var.name)> is an odd member. */'
-  \n>
-};
-<recordDefinition( dotPath(defPath),
-                   underscorePath(defPath),
-                   (variables of VARIABLE : '"<cref(name)>"' ",") )>
->> 
+    <<
+    struct <name> {
+      <variables of var as VARIABLE :
+          if expTypeArrayIf(ty) then '<it> <cref(var.name)>;'
+          else '/* <cref(var.name)> is an odd member. */'
+      \n>
+    };
+    <recordDefinition( dotPath(defPath),
+                       underscorePath(defPath),
+                       (variables of VARIABLE : '"<cref(name)>"' ",") )>
+    >> 
   case RECORD_DECL_DEF then 
-    recordDefinition( dotPath(path),
-                      underscorePath(path),
-                      (fieldNames : '"<it>"' ",") )
-
+    recordDefinition(dotPath(path),
+                     underscorePath(path),
+                     (fieldNames : '"<it>"' ","))
 
 recordDefinition(String origName, String encName, String fieldNames) ::=
 <<
@@ -1173,7 +1177,6 @@ struct record_description <encName>__desc = {
   <encName>__desc__fields
 };
 >>
-
 
 //!! assumes the type is T_ARRAY when array, so no branching by isArray here ... see Codegen.generateReturnDecl,
 // ?? initopt dump ? see Codegen.tmpPrintInit usage in generateReturnDecl
@@ -1196,53 +1199,23 @@ DLLExport
 <fname>_rettype _<fname>(<fargs of VARIABLE : '<varType(it)> <cref(name)>' ", ">);
 >>
 
-
-functionsCpp(list<Function> functions) ::=
-<<
-#ifdef __cplusplus
-extern "C" {
-#endif
-/* header part */
-#ifdef __cplusplus
-extern "C" {
-#endif
-<functions of EXTERNAL_FUNCTION:
- (includes: it "\n")
- "\n">
-#ifdef __cplusplus
-}
-#endif
-<functions:
-  case FUNCTION then
-    <<
-    /*recordDecls : recordDeclaration() \n*/
-    <functionHeader(underscorePath(name), functionArguments, outVars)>
-    >> 
-  case EXTERNAL_FUNCTION then
-    <<
-    /*recordDecls : recordDeclaration() \n*/
-    <functionHeader(underscorePath(name), funArgs, outVars)>
-
-    <extFunDef(it)>
-    >> 
-\n> 
-/* End of header part */
-
-/* Body */
-<functions : functionDef() \n>
-/* End Body */
-
-#ifdef __cplusplus
-}
-#endif
-
->>
-
 extFunDef(Function) ::=
 case EXTERNAL_FUNCTION then
   <<
   extern <extReturnType(extReturn)> <underscorePath(name)>(<extArgs: extFunDefArg(it) ", ">);
   >>
+
+extReturnType(SimExtArg) ::=
+  case SIMEXTARG then extType(type_)
+  case SIMNOEXTARG then "void"
+
+extType(Type) ::=
+  case ET_INT then "int"
+  case ET_REAL then "double"
+  case ET_STRING then "const char*"
+  case ET_BOOL then "int"
+  case ET_ARRAY then extType(ty)
+  case _ then "OTHER_EXT_TYPE"
 
 // assume language c for now
 extFunDefArg(SimExtArg) ::=
@@ -1279,46 +1252,12 @@ daeExpToString(Exp exp) ::=
   # varDecls = ""
   daeExp(exp, createOtherContext(), preExp, varDecls)
 
-extReturnType(SimExtArg) ::=
-  case SIMEXTARG then extType(type_)
-  case SIMNOEXTARG then "void"
+functionBodies(list<Function> functions) ::=
+<<
+<functions : functionBody(it) \n>
+>>
 
-extType(Type) ::=
-  case ET_INT then "int"
-  case ET_REAL then "double"
-  case ET_STRING then "const char*"
-  case ET_BOOL then "int"
-  case ET_ARRAY then extType(ty)
-  case _ then "OTHER_EXT_TYPE"
-
-varDeclaration(Variable) ::=
-case VARIABLE then '<varType(it)> <cref(name)>;<\n>'
-
-varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
-case var as VARIABLE then
-  # varDecls += varDeclaration(var)
-  # varName = if outStruct then '<outStruct>.targ<i>' else '<cref(var.name)>'
-  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
-  if instDims then
-    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<varName>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
-    ()
-  else
-    ()
-
-varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits) ::=
-case var as VARIABLE then
-  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
-  if instDims then
-    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
-    <<
-    copy_<expTypeShort(var.ty)>_array_data(&<cref(var.name)>, &<dest>.targ<i>);
-    >>
-  else
-    <<
-    <dest>.targ<i> = <cref(var.name)>;
-    >>
-
-functionDef(Function fn) ::=
+functionBody(Function fn) ::=
   case FUNCTION then
     # System.tmpTickReset(1)
     # fname = underscorePath(name)
@@ -1365,6 +1304,30 @@ functionDef(Function fn) ::=
       <callPart>
       return out;
     }
+    >>
+
+varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
+case var as VARIABLE then
+  # varDecls += '<varType(var)> <cref(var.name)>;<\n>'
+  # varName = if outStruct then '<outStruct>.targ<i>' else '<cref(var.name)>'
+  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
+  if instDims then
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<varName>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    ()
+  else
+    ()
+
+varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits) ::=
+case var as VARIABLE then
+  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
+  if instDims then
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    <<
+    copy_<expTypeShort(var.ty)>_array_data(&<cref(var.name)>, &<dest>.targ<i>);
+    >>
+  else
+    <<
+    <dest>.targ<i> = <cref(var.name)>;
     >>
 
 extFunCall(Function, Text preExp, Text varDecls) ::=
@@ -1630,6 +1593,8 @@ rhsCrefType(ExpType) ::=
   case ET_INT then "(modelica_integer)"
   case _      then ""
   
+// SECTION: GENERAL TEMPLATES, EXPRESSIONS
+
 daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case ICONST     then integer
   case RCONST     then real
@@ -1662,6 +1627,11 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   // METARECORDCALL
   case _          then "UNKNOWN_EXP"
 
+daeExpSconst(String string, Text preExp, Text varDecls) ::=
+  # strVar = tempDecl("modelica_string", varDecls)
+  # preExp += 'init_modelica_string(&<strVar>,"<Util.escapeModelicaStringToCString(string)>");<\n>'
+  strVar  
+
 daeExpCrefRhs(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
   if daeExpCrefRhsArrayBox(exp, context, preExp, varDecls) then
@@ -1683,13 +1653,13 @@ case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
     # arrName = cref(cref.componentRef)
     # arrayType = expTypeArray(cref.ty)
     # tmp = tempDecl(arrayType, varDecls)
-    # spec1 = indexSpec(subs, context, preExp, varDecls)
+    # spec1 = daeExpCrefRhsIndexSpec(subs, context, preExp, varDecls)
     # preExp += 'index_alloc_<arrayType>(&<arrName>, &<spec1>, &<tmp>);<\n>'
     tmp
 case _ then
   "UNKNOWN RHS CREF: ONLY IDENT SUPPORTED"
 
-indexSpec(list<Subscript> subs, Context context, Text preExp, Text varDecls) ::=
+daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text preExp, Text varDecls) ::=
 # nridx_str = listLengthSubscript(subs)
 # idx_str = (subs of sub:
                case INDEX then
@@ -1723,23 +1693,6 @@ case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     # dimsValuesStr = (dims of dim as SOME(i): i ", ")
     # preExp += '<expTypeShort(aty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
     tmpArr
-
-// TODO: Optimize as in Codegen
-// TODO: Use this function in other places where almost the same thing is hard
-//       coded
-arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
-               Text preExp, Text varDecls) ::=
-  # arrayType = expTypeArray(ty)
-  # dimsLenStr = listLengthExp(subs)
-  # dimsValuesStr = (subs of exp: daeExp(exp, context, preExp, varDecls) ", ")
-  <<
-  (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
-  >>
-
-daeExpSconst(String string, Text preExp, Text varDecls) ::=
-  # strVar = tempDecl("modelica_string", varDecls)
-  # preExp += 'init_modelica_string(&<strVar>,"<Util.escapeModelicaStringToCString(string)>");<\n>'
-  strVar  
 
 daeExpBinary(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case BINARY then
@@ -1777,6 +1730,16 @@ case BINARY then
     '<var>'
   case _   then "daeExpBinary:ERR"
 
+daeExpUnary(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case UNARY then
+  # e = daeExp(exp, context, preExp, varDecls)
+  match operator
+  case UMINUS     then '(-<e>)'
+  case UPLUS      then '(<e>)'
+  case UMINUS_ARR then "UMINUS_ARR_NOT_IMPLEMENTED"
+  case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
+  case _          then "daeExpUnary:ERR"
+
 daeExpLbinary(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case LBINARY then
   # e1 = daeExp(exp1, context, preExp, varDecls)
@@ -1791,16 +1754,6 @@ case LUNARY then
   # e = daeExp(exp, context, preExp, varDecls)
   match operator
   case NOT then '(!<e>)'
-
-daeExpUnary(Exp exp, Context context, Text preExp, Text varDecls) ::=
-case UNARY then
-  # e = daeExp(exp, context, preExp, varDecls)
-  match operator
-  case UMINUS     then '(-<e>)'
-  case UPLUS      then '(<e>)'
-  case UMINUS_ARR then "UMINUS_ARR_NOT_IMPLEMENTED"
-  case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
-  case _          then "daeExpUnary:ERR"
 
 daeExpRelation(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case rel as RELATION then
@@ -1911,7 +1864,7 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
   case CALL(tuple_=false, ty=ET_NORETCALL) then
     # argStr = (expLst of exp: '<daeExp(exp, context, preExp, varDecls)>' ", ")
     # funName = '<underscorePath(path)>'
-    # preExp += '<underscorePrefix(builtin)><funName>(<argStr>);<\n>'
+    # preExp += '<daeExpCallBuiltinPrefix(builtin)><funName>(<argStr>);<\n>'
     '/* NORETCALL */'
   // non tuple calls (single return value)
   case CALL(tuple_=false) then
@@ -1919,7 +1872,7 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # funName = '<underscorePath(path)>'
     # retType = '<funName>_rettype'
     # retVar = tempDecl(retType, varDecls)
-    # preExp += '<retVar> = <underscorePrefix(builtin)><funName>(<argStr>);<\n>'
+    # preExp += '<retVar> = <daeExpCallBuiltinPrefix(builtin)><funName>(<argStr>);<\n>'
     if builtin then '<retVar>' else '<retVar>.<retType>_1'
   // tuple calls (multiple return values)
   case CALL(tuple_=true) then
@@ -1927,8 +1880,12 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # funName = '<underscorePath(path)>'
     # retType = '<funName>_rettype'
     # retVar = tempDecl(retType, varDecls)
-    # preExp += '<retVar> = <underscorePrefix(builtin)><funName>(<argStr>);<\n>'
+    # preExp += '<retVar> = <daeExpCallBuiltinPrefix(builtin)><funName>(<argStr>);<\n>'
     '<retVar>'
+
+daeExpCallBuiltinPrefix(Boolean builtin) ::=
+  case true then ""
+  case false then "_"
 
 daeExpArray(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case ARRAY then
@@ -2038,14 +1995,26 @@ case SIZE(exp=CREF, sz=SOME(dim)) then
   resVar
 case _ then "size(X) not implemented"
 
-underscorePrefix(Boolean builtin) ::=
-  case true then ""
-  case false then "_"
+// TODO: Optimize as in Codegen
+// TODO: Use this function in other places where almost the same thing is hard
+//       coded
+arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
+               Text preExp, Text varDecls) ::=
+  # arrayType = expTypeArray(ty)
+  # dimsLenStr = listLengthExp(subs)
+  # dimsValuesStr = (subs of exp: daeExp(exp, context, preExp, varDecls) ", ")
+  <<
+  (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
+  >>
+
+// SECTION: GENERAL TEMPLATES, TEMPORARY VARIABLES
 
 tempDecl(String ty, Text varDecls) ::=
   # newVar = 'tmp<System.tmpTick()>'
   # varDecls += '<ty> <newVar>;<\n>'
   newVar
+
+// SECTION: GENERAL TEMPLATES, TYPES
 
 varType(Variable) ::=
   case var as VARIABLE then
@@ -2165,4 +2134,5 @@ expTypeFromOpFlag(Operator, Integer flag) ::=
   case _ then "expTypeFromOpFlag:ERROR"
 
 end SimCodeC;
+
 // vim: filetype=susan sw=2 sts=2
