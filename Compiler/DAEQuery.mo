@@ -386,6 +386,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<DAELow.Var> xs;
       DAELow.Type var_type;
+      DAE.ElementSource source "the origin of the element";
       
     case ({},_) then "";
     case (((v as DAELow.VAR(varName = cr,
@@ -395,7 +396,7 @@ algorithm
                             bindExp = e,
                             index = indx,
                             origVarName = old_name,
-                            className = paths,
+                            source = source,
                             values = dae_var_attr,
                             comment = comment,
                             flowPrefix = flowPrefix,
@@ -433,7 +434,7 @@ algorithm
                               bindExp = e,
                               index = indx,
                               origVarName = old_name,
-                              className = paths,
+                              source = source,
                               values = dae_var_attr,
                               comment = comment,
                               flowPrefix = flowPrefix,

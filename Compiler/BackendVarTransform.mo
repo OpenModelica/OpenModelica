@@ -65,15 +65,18 @@ algorithm
       Integer indx;
       list<DAE.Exp> expl,expl1,expl2;
       DAELow.WhenEquation whenEqn,whenEqn1;
+      DAE.ElementSource source "the origin of the element";
+      
     case ({},_) then {};
-    case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
+    case ((DAELow.ARRAY_EQUATION(indx,expl,source)::es),repl)
       equation
         expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
         expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es,repl);
       then
-         (DAELow.ARRAY_EQUATION(indx,expl2)::es_1);
-    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es),repl)
+         (DAELow.ARRAY_EQUATION(indx,expl2,source)::es_1);
+
+    case ((DAELow.EQUATION(exp = e1,scalar = e2,source = source) :: es),repl)
       equation
         e1_1 = VarTransform.replaceExp(e1, repl, NONE);
         e2_1 = VarTransform.replaceExp(e2, repl, NONE);
@@ -81,33 +84,36 @@ algorithm
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.EQUATION(e1_2,e2_2) :: es_1);
+        (DAELow.EQUATION(e1_2,e2_2,source) :: es_1);
+
     case (((a as DAELow.ALGORITHM(index = _)) :: es),repl)
       equation
         es_1 = replaceEquations(es, repl);
       then
         (a :: es_1);
-    case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e) :: es),repl)
-      equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
-        e_2 = Exp.simplify(e_1);
-        es_1 = replaceEquations(es, repl);
-      then
-        (DAELow.SOLVED_EQUATION(cr,e_2) :: es_1);
-    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),repl)
-      equation
-        e_1 = VarTransform.replaceExp(e, repl, NONE);
-        e_2 = Exp.simplify(e_1);
-        es_1 = replaceEquations(es, repl);
-      then
-        (DAELow.RESIDUAL_EQUATION(e_2) :: es_1);
 
-    case ((DAELow.WHEN_EQUATION(whenEqn) :: es),repl)
+    case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
+      equation
+        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_2 = Exp.simplify(e_1);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.SOLVED_EQUATION(cr,e_2,source) :: es_1);
+
+    case ((DAELow.RESIDUAL_EQUATION(exp = e,source = source) :: es),repl)
+      equation
+        e_1 = VarTransform.replaceExp(e, repl, NONE);
+        e_2 = Exp.simplify(e_1);
+        es_1 = replaceEquations(es, repl);
+      then
+        (DAELow.RESIDUAL_EQUATION(e_2,source) :: es_1);
+
+    case ((DAELow.WHEN_EQUATION(whenEqn,source) :: es),repl)
       equation
 				whenEqn1 = replaceWhenEquation(whenEqn,repl);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.WHEN_EQUATION(whenEqn1) :: es_1);
+        (DAELow.WHEN_EQUATION(whenEqn1,source) :: es_1);
 
     case ((a :: es),repl)
       equation
@@ -349,8 +355,10 @@ algorithm
       DAELow.Equation a;
       DAE.ComponentRef cr;
       list<Integer> dims;
+      DAE.ElementSource source "the origin of the element";
+      
     case ({},_) then {}; 
-    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims) :: es),repl)
+    case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims,source=source) :: es),repl)
       equation 
         e1_1 = VarTransform.replaceExp(e1, repl, NONE);
         e2_1 = VarTransform.replaceExp(e2, repl, NONE);
@@ -358,7 +366,7 @@ algorithm
         e2_2 = Exp.simplify(e2_1);
         es_1 = replaceMultiDimEquations(es, repl);
       then
-        (DAELow.MULTIDIM_EQUATION(dims,e1_2,e2_2) :: es_1);
+        (DAELow.MULTIDIM_EQUATION(dims,e1_2,e2_2,source) :: es_1);
   end matchcontinue;
 end replaceMultiDimEquations;
 

@@ -319,10 +319,7 @@ algorithm
 end prefixToCref2;
 
 public function prefixExp "function: prefixExp
- 
-  Add the supplied prefix to all component references in an
-  expression.
-"
+  Add the supplied prefix to all component references in an expression."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.Exp inExp;
@@ -330,8 +327,7 @@ public function prefixExp "function: prefixExp
   output Env.Cache outCache;
   output DAE.Exp outExp;
 algorithm 
-  (outCache,outExp) :=
-  matchcontinue (inCache,inEnv,inExp,inPrefix)
+  (outCache,outExp) := matchcontinue (inCache,inEnv,inExp,inPrefix)
     local
       DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3,cref_1,dim_1,cref,dim,start_1,stop_1,start,stop,step_1,step,e_1,exp_1,iterexp_1,exp,iterexp;
       DAE.ComponentRef p_1,p;
@@ -630,10 +626,8 @@ end prefixCrefList;
 //--------------------------------------------
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
 protected function prefixDecls "function: prefixDecls
-
   Add the supplied prefix to the DAE elements located in Exp.mo.
-  PART OF THE WORKAROUND FOR VALUEBLOCKS
-"
+  PART OF THE WORKAROUND FOR VALUEBLOCKS"
   input Env.Cache cache;
   input Env.Env env;
 	input list<DAE.Element> lDecls;
@@ -642,17 +636,18 @@ protected function prefixDecls "function: prefixDecls
   output Env.Cache outCache;
 	output list<DAE.Element> outDecls;
 algorithm
-  (outCache,outDecls) :=
-  matchcontinue (cache,env,lDecls,accList,p)
+  (outCache,outDecls) := matchcontinue (cache,env,lDecls,accList,p)
     local
       list<DAE.Element> localAccList;
       Prefix pre;  
       Env.Cache localCache;
       Env.Env localEnv;
+      DAE.ElementSource source "the origin of the element";
       
     case (localCache,_,{},localAccList,_) then (localCache,localAccList);
+    // variables
     case (localCache,localEnv,DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,
-      											flowPrefix,streamPrefix,f,vAttr,com,inOut)
+      											flowPrefix,streamPrefix,source,vAttr,com,inOut)
        :: rest,localAccList,pre)
     local
       DAE.ComponentRef cRef;
@@ -672,11 +667,12 @@ algorithm
     	DAE.Element elem;
     equation
       cRef = prefixCref(pre,cRef);  
-      elem = DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,f,vAttr,com,inOut);  
+      elem = DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,source,vAttr,com,inOut);  
       localAccList = listAppend(localAccList,Util.listCreate(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);  
     then (localCache,temp);
-    case (localCache,localEnv,DAE.EQUATION(e1,e2) :: rest,localAccList,pre)
+    // equations
+    case (localCache,localEnv,DAE.EQUATION(e1,e2,source) :: rest,localAccList,pre)
       local
         DAE.Exp e1,e2;
         list<DAE.Element> rest,temp;
@@ -684,10 +680,11 @@ algorithm
       equation
         (localCache,e1) = prefixExp(localCache,localEnv,e1,pre);
         (localCache,e2) = prefixExp(localCache,localEnv,e2,pre);
-        elem = DAE.EQUATION(e1,e2); 
+        elem = DAE.EQUATION(e1,e2,source); 
         localAccList = listAppend(localAccList,Util.listCreate(elem));
         (localCache,temp) = prefixDecls(localCache,localEnv,rest,localAccList,pre);	
-      then (localCache,temp);  
+      then (localCache,temp);
+    // failure  
     case (_,_,_,_,_)
       equation
         print("Prefix.prefixDecls failed\n");

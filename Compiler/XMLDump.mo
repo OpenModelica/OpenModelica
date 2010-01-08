@@ -529,7 +529,7 @@ algorithm
       local Integer algNo_1;
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
-        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts))));
+        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.UNKNOWN())));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
@@ -1917,8 +1917,10 @@ algorithm
      DAE.Element constr,destr;
      Absyn.Path path;
      String c;
+     DAE.ElementSource source "the origin of the element";
+     
     case ({},_) then ();
-    case (DAELow.EXTOBJCLASS(path,constr,destr)::xs,c)
+    case (DAELow.EXTOBJCLASS(path,constr,destr,source)::xs,c)
       equation
         dumpStrOpenTag(c);
         Print.printBuf("class ");Print.printBuf(Absyn.pathString(path));Print.printBuf("\n  extends ExternalObject");
@@ -3278,9 +3280,7 @@ See dumpVariable for more details on the XML output.
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm
-  _:=
-  matchcontinue (inVarLst,inInteger,addMathMLCode)
-      
+  _ := matchcontinue (inVarLst,inInteger,addMathMLCode)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -3301,6 +3301,8 @@ algorithm
       Option<Values.Value> b;
       Integer var_1;
       DAE.Exp addMMLCode;
+      DAE.ElementSource source "the origin of the element";
+      
     case ({},_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
@@ -3311,7 +3313,7 @@ algorithm
                             arryDim = arry_Dim,
                             index = indx,
                             origVarName = old_name,
-                            className = paths,
+                            source = source,
                             values = dae_var_attr,
                             comment = comment,
                             flowPrefix = flowPrefix,
@@ -3324,6 +3326,7 @@ algorithm
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
+        paths = DAEUtil.getElementSourcePaths(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpStrCloseTag(VARIABLE);
@@ -3347,8 +3350,7 @@ See dumpVariable for more details on the XML output.
   input Integer inInteger;
   input DAE.Exp addMathMLCode;
 algorithm
-  _:=
-  matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
+  _ := matchcontinue (inVarLst,crefIdxLstArr,strIdxLstArr,inInteger,addMathMLCode)
     local
       String varnostr,dirstr,str,path_str,comment_str,s,indx_str;
       list<String> paths_lst,path_strs;
@@ -3369,6 +3371,8 @@ algorithm
       Option<Values.Value> b;
       Integer var_1;
       DAE.Exp addMMLCode;
+      DAE.ElementSource source "the origin of the element";
+      
     case ({},_,_,_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
@@ -3379,7 +3383,7 @@ algorithm
                             arryDim = arry_Dim,
                             index = indx,
                             origVarName = old_name,
-                            className = paths,
+                            source = source,
                             values = dae_var_attr,
                             comment = comment,
                             flowPrefix = flowPrefix,
@@ -3392,6 +3396,7 @@ algorithm
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
+        paths = DAEUtil.getElementSourcePaths(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpVarsAdditionalInfo(crefIdxLstArr,strIdxLstArr,varno);

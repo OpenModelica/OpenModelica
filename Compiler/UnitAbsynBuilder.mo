@@ -873,14 +873,14 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       list<DAE.Element> dae1;
     case(env,{},ht,store) then ({},store);
-    case(env,DAE.EQUATION(e1,e2)::dae,ht,store) equation
+    case(env,DAE.EQUATION(e1,e2,_)::dae,ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);      
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2))::terms,store);
       
-    case(env,DAE.EQUEQUATION(cr1,cr2)::dae,ht,store) equation
+    case(env,DAE.EQUEQUATION(cr1,cr2,_)::dae,ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,DAE.CREF(cr2,DAE.ET_OTHER()),false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
@@ -895,7 +895,7 @@ algorithm
       terms = listAppend(terms1,listAppend(terms2,terms));    
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
             
-    case(env,DAE.DEFINE(cr1,e1)::dae,ht,store) equation
+    case(env,DAE.DEFINE(cr1,e1,_)::dae,ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
       (terms,store) = buildTerms(env,dae,ht,store);
@@ -1324,7 +1324,7 @@ algorithm
     UnitAbsyn.Unit unit;
     DAE.Exp e1,e2;
     case({},store,ht) then (store,ht);    
-    case(DAE.EQUATION(e1,e2)::dae,store,ht) equation
+    case(DAE.EQUATION(e1,e2,_)::dae,store,ht) equation
        (store,ht) = buildStoreExp(e1,store,ht,NONE);
        (store,ht) = buildStoreExp(e2,store,ht,NONE);
        (store,ht) = buildStores3(dae,store,ht);

@@ -59,20 +59,22 @@ public function differentiateEquationTime "function: differentiateEquationTime
   input DAELow.Variables inVariables;
   output DAELow.Equation outEquation;
 algorithm
-  outEquation:=
-  matchcontinue (inEquation,inVariables)
+  outEquation := matchcontinue (inEquation,inVariables)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       DAELow.Variables timevars;
       DAELow.Equation dae_equation;
-    case (DAELow.EQUATION(exp = e1,scalar = e2),timevars) /* time varying variables */
+      DAE.ElementSource source "the origin of the element";
+      
+    case (DAELow.EQUATION(exp = e1,scalar = e2,source=source),timevars) /* time varying variables */
       equation
         e1_1 = differentiateExpTime(e1, timevars);
         e2_1 = differentiateExpTime(e2, timevars);
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
       then
-        DAELow.EQUATION(e1_2,e2_2);
+        DAELow.EQUATION(e1_2,e2_2,source);
+
     case (DAELow.ALGORITHM(index = _),_)
       equation
         print("-differentiate_equation_time on algorithm not impl yet.\n");
@@ -87,7 +89,6 @@ algorithm
 end differentiateEquationTime;
 
 public function differentiateExpTime "function: differentiateExpTime
-
   This function differentiates expressions with respect to the \'time\' variable.
   All other variables that are varying over time are given as the second variable.
   For instance, given the model:
@@ -98,14 +99,12 @@ public function differentiateExpTime "function: differentiateExpTime
     x+y=5PI;
   end test;
   gives
-  differentiate_exp_time(\'x+y=5PI\', {x,y}) => der(x)+der(y)=0
-"
+  differentiate_exp_time(\'x+y=5PI\', {x,y}) => der(x)+der(y)=0"
   input DAE.Exp inExp;
   input DAELow.Variables inVariables;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp,inVariables)
+  outExp := matchcontinue (inExp,inVariables)
     local
       DAE.ExpType tp;
       DAE.ComponentRef cr;

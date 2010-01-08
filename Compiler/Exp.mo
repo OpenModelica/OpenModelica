@@ -610,7 +610,10 @@ algorithm
         res = subscriptEqual(ss1, ss2);
       then
         res;
-    case (_,_) then false; 
+    case (cr1,cr2)
+      equation
+        // print("Exp.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");  
+      then false; 
   end matchcontinue;
 end crefPrefixOf;
 

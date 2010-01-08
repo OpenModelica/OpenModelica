@@ -88,8 +88,8 @@ public function getClassList "get list of classes from Var"
   output list<Absyn.Path> lst;
 algorithm
   lst := matchcontinue(v)
-    case(DAE.VAR(pathLst = lst)) then lst;
-    case(_) then {};
+    case DAE.VAR(source = DAE.SOURCE(pathLst=lst)) then lst;
+    case _ then {};
   end matchcontinue;
 end getClassList;
 
@@ -131,6 +131,7 @@ algorithm
 	    DAE.Element v,e;
 	    list<DAE.Element> elts,elts2,elts22,elts1,elts11,elts3,elts33;
 	    String  id;
+	    DAE.ElementSource source "the origin of the element";
 	    
 	  case({}) then  ({},{});
 	    
@@ -139,61 +140,61 @@ algorithm
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (v::elts2,elts3);
 	  // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE! 
-	  case(DAE.COMP(id,DAE.DAE(elts1))::elts2)
+	  case(DAE.COMP(id,DAE.DAE(elts1),source)::elts2)
 	    equation
 	      (elts11,elts3) = splitDAEIntoVarsAndEquations(elts1);
 	      (elts22,elts33) = splitDAEIntoVarsAndEquations(elts2);
 	      elts3 = listAppend(elts3,elts33);
-	    then (DAE.COMP(id,DAE.DAE(elts11))::elts22,elts3);
-	  case((e as DAE.EQUATION(_,_))::elts2)
+	    then (DAE.COMP(id,DAE.DAE(elts11),source)::elts22,elts3);
+	  case((e as DAE.EQUATION(exp=_))::elts2)
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts2);
 	    then (elts2,e::elts3);
-	  case((e as DAE.EQUEQUATION(_,_))::elts) 
+	  case((e as DAE.EQUEQUATION(cr1=_))::elts) 
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.INITIALEQUATION(_,_))::elts) 
+	  case((e as DAE.INITIALEQUATION(exp1=_))::elts) 
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.ARRAY_EQUATION(_,_,_))::elts) 
+	  case((e as DAE.ARRAY_EQUATION(dimension=_))::elts) 
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.COMPLEX_EQUATION(_,_))::elts)  
+	  case((e as DAE.COMPLEX_EQUATION(lhs=_))::elts)  
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.INITIAL_COMPLEX_EQUATION(_,_))::elts)  
+	  case((e as DAE.INITIAL_COMPLEX_EQUATION(lhs=_))::elts)  
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.INITIALDEFINE(_,_))::elts)  
+	  case((e as DAE.INITIALDEFINE(componentRef=_))::elts)  
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.DEFINE(_,_))::elts)
+	  case((e as DAE.DEFINE(componentRef=_))::elts)
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.WHEN_EQUATION(_,_,_))::elts)  
+	  case((e as DAE.WHEN_EQUATION(condition=_))::elts)  
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.IF_EQUATION(_,_,_))::elts)
+	  case((e as DAE.IF_EQUATION(condition1=_))::elts)
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);	    	    	    
-	  case((e as DAE.INITIAL_IF_EQUATION(_,_,_))::elts)
+	  case((e as DAE.INITIAL_IF_EQUATION(condition1=_))::elts)
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.ALGORITHM(_))::elts)  
+	  case((e as DAE.ALGORITHM(algorithm_=_))::elts)  
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.INITIALALGORITHM(_))::elts)
+	  case((e as DAE.INITIALALGORITHM(algorithm_=_))::elts)
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
@@ -212,16 +213,20 @@ algorithm
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (e::elts2,elts3);	            
-	  case((e as DAE.ASSERT(_,_))::elts) 
+	  case((e as DAE.ASSERT(condition=_))::elts) 
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
-	  case((e as DAE.REINIT(_,_))::elts) 
+	  case((e as DAE.TERMINATE(message=_))::elts) 
+	    equation
+	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
+	    then (elts2,e::elts3);
+	  case((e as DAE.REINIT(componentRef=_))::elts) 
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
 	  // handle also NORETCALL! Connections.root(...)
-	  case((e as DAE.NORETCALL(_,_))::elts) 
+	  case((e as DAE.NORETCALL(functionName=_))::elts) 
 	    equation
 	      (elts2,elts3) = splitDAEIntoVarsAndEquations(elts);
 	    then (elts2,e::elts3);
@@ -245,23 +250,31 @@ public function removeVariable "Remove the variable from the DAE"
   input list<DAE.Element> dae;
   output list<DAE.Element> outDae;
 algorithm
-   outDae := matchcontinue(var,dae)
-     local DAE.ComponentRef cr;
-       list<DAE.Element> elist,elist2;
-       DAE.Element e,v;
-       String id;
-     case(var,{}) then {};
-     case(var,(v as DAE.VAR(componentRef = cr))::dae) equation
-       true = Exp.crefEqual(var,cr);
-     then dae;
-     case(var,DAE.COMP(id,DAE.DAE(elist))::dae) equation
-       elist2=removeVariable(var,elist);
-       dae = removeVariable(var,dae);
-     then DAE.COMP(id,DAE.DAE(elist2))::dae;
-     case(var,e::dae) equation
-         dae = removeVariable(var,dae);
-      then e::dae;        
-   end matchcontinue;
+  outDae := matchcontinue(var,dae)
+    local 
+      DAE.ComponentRef cr;
+      list<DAE.Element> elist,elist2;
+      DAE.Element e,v; String id;
+      DAE.ElementSource source "the origin of the element";
+       
+    case(var,{}) then {};
+
+    case(var,(v as DAE.VAR(componentRef = cr))::dae) 
+      equation
+        true = Exp.crefEqual(var,cr);
+      then dae;
+
+    case(var,DAE.COMP(id,DAE.DAE(elist),source)::dae) 
+      equation
+        elist2=removeVariable(var,elist);
+        dae = removeVariable(var,dae);
+      then DAE.COMP(id,DAE.DAE(elist2),source)::dae;
+
+    case(var,e::dae) 
+      equation
+        dae = removeVariable(var,dae);
+      then e::dae;
+  end matchcontinue;
 end removeVariable;
 
 public function removeInnerAttrs "Remove the inner attribute of all vars in list"
@@ -277,53 +290,54 @@ public function removeInnerAttr "Remove the inner attribute from variable in the
   input list<DAE.Element> dae;
   output list<DAE.Element> outDae;
 algorithm
-   outDae := matchcontinue(var,dae)
-   			local DAE.ComponentRef cr,oldVar,newVar;
-   			  list<DAE.Element> elist,elist2,elist3;
-   			  DAE.Element e,v,u,o;
-   			  String id;
-   			  DAE.ComponentRef cr;
-   			  DAE.VarKind kind;
-   			  DAE.VarDirection dir;
-    			DAE.Type tp;
-   			  Option<DAE.Exp> bind;
-   			  DAE.InstDims dim;
-    			DAE.Flow flow_;
-   			  list<Absyn.Path> cls;
-    			Option<DAE.VariableAttributes> attr;
-   			  Option<SCode.Comment> cmt;
-    			Absyn.InnerOuter io,io2;
-   			  DAE.VarProtection prot;
-   			  DAE.Stream st;
-     case(var,{}) then {};
+  outDae := matchcontinue(var,dae)
+    local 
+      DAE.ComponentRef cr,oldVar,newVar;
+      list<DAE.Element> elist,elist2,elist3;
+      DAE.Element e,v,u,o; String id;
+      DAE.ComponentRef cr; DAE.VarKind kind;
+      DAE.VarDirection dir; DAE.Type tp;
+      Option<DAE.Exp> bind; DAE.InstDims dim;
+      DAE.Flow flow_; list<Absyn.Path> cls;
+      Option<DAE.VariableAttributes> attr;
+      Option<SCode.Comment> cmt; Absyn.InnerOuter io,io2;
+      DAE.VarProtection prot; DAE.Stream st;
+      DAE.ElementSource source "the origin of the element";
+      
+    case(var,{}) then {};
      /* When having an inner outer, we declare two variables on the same line. 
         Since we can not handle this with current instantiation procedure, we create temporary variables in the dae.
         These are named uniqly and renamed later in "instClass" 
      */ 
-     case(var,DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,(io as Absyn.INNEROUTER()))::dae) equation
-       true = compareUniquedVarWithNonUnique(var,oldVar);
-       newVar = nameInnerouterUniqueCref(oldVar);
-       o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE,dim,flow_,st,cls,attr,cmt,Absyn.OUTER()) "intact";
-       u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,Absyn.UNSPECIFIED()) " unique'ified";
-       elist3 = u::{o};
-       dae = listAppend(elist3,dae);
-     then 
-       dae;
+    case(var,DAE.VAR(oldVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,(io as Absyn.INNEROUTER()))::dae) 
+      equation
+        true = compareUniquedVarWithNonUnique(var,oldVar);
+        newVar = nameInnerouterUniqueCref(oldVar);
+        o = DAE.VAR(oldVar,kind,dir,prot,tp,NONE,dim,flow_,st,source,attr,cmt,Absyn.OUTER()) "intact";
+        u = DAE.VAR(newVar,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,Absyn.UNSPECIFIED()) " unique'ified";
+        elist3 = u::{o};
+        dae = listAppend(elist3,dae);
+      then 
+        dae;
          
-     case(var,DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io)::dae) equation
-       true = Exp.crefEqual(var,cr);
-       io2 = removeInnerAttribute(io);
-     then 
-       DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,cls,attr,cmt,io2)::dae;
+    case(var,DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io)::dae) 
+      equation
+        true = Exp.crefEqual(var,cr);
+        io2 = removeInnerAttribute(io);
+      then 
+        DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io2)::dae;
        
-     case(var,DAE.COMP(id,DAE.DAE(elist))::dae) equation
-       elist2=removeInnerAttr(var,elist);
-       dae = removeInnerAttr(var,dae);
-     then DAE.COMP(id,DAE.DAE(elist2))::dae;
-     case(var,e::dae) equation
-         dae = removeInnerAttr(var,dae);
+    case(var,DAE.COMP(id,DAE.DAE(elist),source)::dae) 
+      equation
+        elist2=removeInnerAttr(var,elist);
+        dae = removeInnerAttr(var,dae);
+      then DAE.COMP(id,DAE.DAE(elist2),source)::dae;
+
+    case(var,e::dae) 
+      equation
+        dae = removeInnerAttr(var,dae);
       then e::dae;        
-   end matchcontinue;
+  end matchcontinue;
 end removeInnerAttr;
 
 protected function compareUniquedVarWithNonUnique "
@@ -983,14 +997,11 @@ algorithm
 end dumpInitialalgorithmsStr;
 
 protected function dumpEquationsStr "function: dumpEquationsStr
- 
-  Dump equations to a string.
-"
+  Dump equations to a string."
   input list<DAE.Element> inElementLst;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inElementLst)
+  outString := matchcontinue (inElementLst)
     local
       String s1,s2,s3,s4,s4_1,s5,s6,str,s;
       DAE.Exp e1,e2,e;
@@ -1010,7 +1021,7 @@ algorithm
       then
         str;
         
-      case ((DAE.EQUEQUATION(cr1,cr2) :: xs))
+      case ((DAE.EQUEQUATION(cr1=cr1,cr2=cr2) :: xs))
       equation 
         s1 = Exp.printComponentRefStr(cr1)+&" = "+&Exp.printComponentRefStr(cr2)+&";\n";
         s2 = dumpEquationsStr(xs);
@@ -1480,20 +1491,15 @@ public function setVariableAttributes "sets the attributes of a DAE.Element that
 algorithm
   outVar := matchcontinue(var,varOpt)
     local
-      DAE.ComponentRef cr;
-      DAE.VarKind k;
-      DAE.VarDirection d ;
-      DAE.VarProtection p;
-      DAE.Type ty ;
-      Option<DAE.Exp> b; 
-      DAE.InstDims  dims ;
-      DAE.Flow fl;
-      DAE.Stream st;
-      list<Absyn.Path> cls;
-      Option<SCode.Comment> cmt;
-      Absyn.InnerOuter io; 
+      DAE.ComponentRef cr; DAE.VarKind k;
+      DAE.VarDirection d ; DAE.VarProtection p;
+      DAE.Type ty; Option<DAE.Exp> b; 
+      DAE.InstDims  dims; DAE.Flow fl; DAE.Stream st;
+      DAE.ElementSource source "the origin of the element";
+      Option<SCode.Comment> cmt; Absyn.InnerOuter io; 
     
-    case(DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,cls,_,cmt,io),varOpt) then DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,cls,varOpt,cmt,io);
+    case(DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,source,_,cmt,io),varOpt) 
+      then DAE.VAR(cr,k,d,p,ty,b,dims,fl,st,source,varOpt,cmt,io);
   end matchcontinue;
 end setVariableAttributes;
 
@@ -1834,12 +1840,10 @@ algorithm
 end dumpVariableAttributesStr;
 
 protected function dumpVar "
-  Dump Var.
-"
+  Dump Var."
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
+  _ := matchcontinue (inElement)
     local
       DAE.ComponentRef id;
       DAE.VarKind kind;
@@ -1851,6 +1855,9 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Exp e;
+      DAE.ElementSource source "the element source";
+      
+    // var with no binding
     case DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
@@ -1858,7 +1865,7 @@ algorithm
              binding = NONE,
              flowPrefix = flowPrefix,
              streamPrefix = streamPrefix,
-             pathLst = classlst,
+             source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
       equation 
@@ -1867,11 +1874,12 @@ algorithm
         Print.printBuf(Types.unparseType(typ));
         Print.printBuf(" ");
         Exp.printComponentRef(id);
-        dumpCommentOption(comment) "	dump_start_value start &" ;
+        dumpCommentOption(comment);
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(";\n");
       then
         ();
+    // var with binding
     case DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
@@ -1879,7 +1887,7 @@ algorithm
              binding = SOME(e),
              flowPrefix = flowPrefix,
              streamPrefix = streamPrefix,
-             pathLst = class_,
+             source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
       equation 
@@ -1899,14 +1907,11 @@ algorithm
 end dumpVar;
 
 protected function dumpVarStr "function: dumpVarStr
- 
-  Dump var to a string.
-"
+  Dump var to a string."
   input DAE.Element inElement;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inElement)
+  outString := matchcontinue (inElement)
     local
       String s1,s2,s3,s4,comment_str,s5,str,s6,s7;
       DAE.ComponentRef id;
@@ -1916,10 +1921,12 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       list<Absyn.Path> classlst;
+      DAE.ElementSource source "the origin of the element";
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.Exp e;
       DAE.VarProtection prot;
+    // no binding
     case DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
@@ -1928,7 +1935,7 @@ algorithm
              binding = NONE,
              flowPrefix = flowPrefix,
              streamPrefix =  streamPrefix,
-             pathLst = classlst,
+             source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
       equation 
@@ -1942,6 +1949,7 @@ algorithm
         str = Util.stringAppendList({s7,s1,s2,s3," ",s4,s5,comment_str,";\n"});
       then
         str;
+    // we have a binding
     case DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
@@ -1950,7 +1958,7 @@ algorithm
              binding = SOME(e),
              flowPrefix = flowPrefix,
              streamPrefix = streamPrefix,
-             pathLst = classlst,
+             source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment)
       equation 
@@ -1979,10 +1987,8 @@ algorithm
   end matchcontinue;
 end dumpVarProtectionStr;
 
-public function dumpCommentOptionStr "function: dumpCommentOptionStr
- 
-  Dump Comment option to a string.
-"
+public function dumpCommentOptionStr "function: dumpCommentOptionStr 
+  Dump Comment option to a string."
   input Option<SCode.Comment> inAbsynCommentOption;
   output String outString;
 algorithm 
@@ -2002,9 +2008,7 @@ algorithm
 end dumpCommentOptionStr;
 
 protected function dumpCommentOption "function: dumpCommentOption_str
- 
-  Dump Comment option.
-"
+  Dump Comment option."
   input Option<SCode.Comment> comment;
   String str;
 algorithm 
@@ -2013,13 +2017,10 @@ algorithm
 end dumpCommentOption;
 
 protected function dumpEquation "function: dumpEquation
- 
-  Dump equation.
-"
+  Dump equation."
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
+  _ := matchcontinue (inElement)
     local
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
@@ -2036,7 +2037,7 @@ algorithm
       then
         ();
         
-      case (DAE.EQUEQUATION(cr1,cr2))
+      case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2))
       equation 
         Print.printBuf("  ");
         Exp.printComponentRef(cr1);
@@ -2084,7 +2085,7 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    case (DAE.NORETCALL(functionName, functionArgs))
+    case (DAE.NORETCALL(functionName = functionName, functionArgs = functionArgs))
       equation 
         Print.printBuf(Absyn.pathString(functionName));
         Print.printBuf("(");
@@ -2097,13 +2098,10 @@ algorithm
 end dumpEquation;
 
 protected function dumpInitialequation "function: dumpInitialequation
- 
-  Dump initial equation.
-"
+  Dump initial equation."
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
+  _ := matchcontinue (inElement)
     local
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c;
@@ -2157,18 +2155,16 @@ algorithm
 end dumpInitialequation;
 
 protected function dumpEquationStr "function: dumpEquationStr
- 
-  Dump equation to a string.
-"
+  Dump equation to a string."
   input DAE.Element inElement;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inElement)
+  outString := matchcontinue (inElement)
     local
       String s1,s2,s3,s4,s5,str,s;
       DAE.Exp e1,e2,e;
       DAE.ComponentRef c,cr1,cr2;
+
     case (DAE.EQUATION(exp = e1,scalar = e2))
       equation 
         s1 = Exp.printExpStr(e1);
@@ -2179,7 +2175,8 @@ algorithm
         str = stringAppend(s5, ";\n");
       then
         str;
-     case (DAE.EQUEQUATION(cr1,cr2))
+
+     case (DAE.EQUEQUATION(cr1=cr1,cr2=cr2))
       equation 
         s1 = Exp.printComponentRefStr(cr1);
         s2 = stringAppend("  ", s1);
@@ -2189,13 +2186,14 @@ algorithm
         str = stringAppend(s5, ";\n");
       then
         str;
-    case(DAE.ARRAY_EQUATION(_,e1,e2)) equation
+
+    case(DAE.ARRAY_EQUATION(exp=e1,array=e2)) equation
       s1 = Exp.printExpStr(e1);
       s2 = Exp.printExpStr(e2);
       str = s1 +& " = " +& s2;
     then str;
     
-    case(DAE.COMPLEX_EQUATION(e1,e2)) equation
+    case(DAE.COMPLEX_EQUATION(lhs=e1,rhs=e2)) equation
       s1 = Exp.printExpStr(e1);
       s2 = Exp.printExpStr(e2);
       str = s1 +& " = " +& s2;
@@ -2211,6 +2209,7 @@ algorithm
         str = stringAppend(s5, ";\n");
       then
         str;
+
     case (DAE.ASSERT(condition=e1,message = e2))
       equation 
         s1 = Exp.printExpStr(e1);
@@ -2218,18 +2217,23 @@ algorithm
         str = Util.stringAppendList({"assert(",s1, ",",s2,");\n"});
       then
         str;
+
+    case (DAE.TERMINATE(message=e1))
+      equation 
+        s1 = Exp.printExpStr(e1);
+        str = Util.stringAppendList({"terminate(",s1,");\n"});
+      then
+        str;
+    // adrpo: TODO! FIXME! should we say UNKNOWN equation here? we don't handle all cases!
     case _ then ""; 
   end matchcontinue;
 end dumpEquationStr;
 
 public function dumpAlgorithm "function: dumpAlgorithm
- 
-  Dump algorithm.
-"
+  Dump algorithm."
   input DAE.Element inElement;
 algorithm 
-  _:=
-  matchcontinue (inElement)
+  _ := matchcontinue (inElement)
     local list<DAE.Statement> stmts;
     case DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts))
       equation 
@@ -3041,7 +3045,7 @@ algorithm
       list<DAE.Element> elist2;
       DAE.Element e;
     case({},_) then {};
-    case(DAE.COMP(_,DAE.DAE(elist))::elist2,cond) equation
+    case(DAE.COMP(dAElist=DAE.DAE(elist))::elist2,cond) equation
       elist= getAllMatchingElements(elist,cond);
       elist2 = getAllMatchingElements(elist2,cond);
       elist2 = listAppend(elist,elist2);
@@ -3089,7 +3093,7 @@ algorithm
     // handle the empty case
     case({},_,_) then ({},{});
     // handle the dive-in case
-    case(DAE.COMP(_,DAE.DAE(lst))::rest,cond1,cond2) 
+    case(DAE.COMP(dAElist=DAE.DAE(lst))::rest,cond1,cond2) 
       equation
         (elist1,elist2) = findAllMatchingElements(lst,cond1,cond2);
         (elist1a,elist2a) = findAllMatchingElements(rest,cond1,cond2);
@@ -3282,14 +3286,12 @@ end setComponentTypeOpt;
 public function setComponentType "
   This function takes a dae element list and a type name and 
   inserts the type name into each Var (variable) of the dae.
-  This type name is the origin of the variable.
-"
+  This type name is the origin of the variable."
   input list<DAE.Element> inElementLst;
   input Absyn.Path inPath;
   output list<DAE.Element> outElementLst;
 algorithm 
-  outElementLst:=
-  matchcontinue (inElementLst,inPath)
+  outElementLst := matchcontinue (inElementLst,inPath)
     local
       list<DAE.Element> xs_1,xs;
       DAE.ComponentRef cr;
@@ -3302,11 +3304,12 @@ algorithm
       DAE.Element x;
 			DAE.VarProtection prot;
 			Option<DAE.Exp> bind;
-      list<Absyn.Path> lst;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Absyn.Path newtype;
       Absyn.InnerOuter io;
+      DAE.ElementSource source "the element origin";
+      
     case ({},_) then {}; 
     case ((DAE.VAR(componentRef = cr,
                kind = kind,
@@ -3317,15 +3320,16 @@ algorithm
                dims = dim,
                flowPrefix = flowPrefix,
                streamPrefix = streamPrefix,
-               pathLst = lst,
+               source = source,
                variableAttributesOption = dae_var_attr,
                absynCommentOption = comment,
                innerOuter=io) :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
+        source = setElementSourceType(source, newtype);
       then
-        (DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,(newtype :: lst),dae_var_attr,comment,io) :: xs_1);
-        
+        (DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: xs_1);
+    // adrpo: TODO! FIXME! set also the type in the equations, not only in vars.
     case ((x :: xs),newtype)
       equation 
         xs_1 = setComponentType(xs, newtype);
@@ -3333,6 +3337,41 @@ algorithm
         (x :: xs_1);
   end matchcontinue;
 end setComponentType;
+
+public function setElementSourceType
+  input DAE.ElementSource inSource;
+  input Absyn.Path classPath;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, classPath)
+    local
+      list<Absyn.Path> lst "classes from where this element came" ;
+      Option<DAE.ComponentRef> instance "the instance this element is part of" ;
+      Option<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquation "this element came from this connect" ;
+
+    case (DAE.SOURCE(lst, instance, connectEquation), classPath)
+      then DAE.SOURCE(classPath::lst, instance, connectEquation);
+    case (DAE.UNKNOWN(), classPath)
+      then DAE.SOURCE({classPath}, NONE(), NONE());
+  end matchcontinue;      
+end setElementSourceType;
+
+public function setElementSourceTypeOpt
+  input DAE.ElementSource inSource;
+  input Option<Absyn.Path> classPathOpt;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, classPathOpt)
+    local
+      Absyn.Path classPath;
+      DAE.ElementSource src;
+    case (inSource, NONE()) then inSource; // no source change.
+    case (inSource, SOME(classPath))
+      equation
+        src = setElementSourceType(inSource, classPath);
+      then src;
+  end matchcontinue;      
+end setElementSourceTypeOpt;
 
 public function isOutputVar 
 "Succeeds if Element is an output variable."
@@ -3596,7 +3635,7 @@ algorithm
       then
         ();
               
-     case DAE.EQUEQUATION(cr1,cr2)
+     case DAE.EQUEQUATION(cr1=cr1,cr2=cr2)
       equation 
         Print.printBuf("EQUATION(");
         Exp.printComponentRef(cr1);
@@ -3917,7 +3956,7 @@ algorithm
         e2str = printExpStrSpecial(e2);
       then
         Graphviz.LNODE("EQUATION",{e1str,"=",e2str},{},{});
-    case DAE.EQUEQUATION(cr1,cr2)
+    case DAE.EQUEQUATION(cr1=cr1,cr2=cr2)
       equation 
         e1str = printExpStrSpecial(DAE.CREF(cr1,DAE.ET_OTHER()));
         e2str = printExpStrSpecial(DAE.CREF(cr2,DAE.ET_OTHER()));
@@ -4293,10 +4332,8 @@ algorithm
   end matchcontinue;
 end toModelicaForm;
 
-protected function toModelicaFormElts "function: toModelicaFormElts
- 
-  Helper function to to_modelica_form.
-"
+protected function toModelicaFormElts "function: toModelicaFormElts 
+  Helper function to toModelicaForm."
   input list<DAE.Element> inElementLst;
   output list<DAE.Element> outElementLst;
 algorithm 
@@ -4329,6 +4366,8 @@ algorithm
       Boolean partialPrefix;
       list<DAE.FunctionDefinition> derFuncs;
       DAE.InlineType inlineType;
+      DAE.ElementSource source "the element origin";
+      
     case ({}) then {}; 
     case ((DAE.VAR(componentRef = cr,
                kind = a,
@@ -4339,7 +4378,7 @@ algorithm
                dims = e,
                flowPrefix = g,
                streamPrefix = streamPrefix,
-               pathLst = h,
+               source=source,
                variableAttributesOption = dae_var_attr,
                absynCommentOption = comment,
                innerOuter=io) :: elts))
@@ -4352,9 +4391,9 @@ algorithm
         d_1 = toModelicaFormExpOpt(d);
         ty = Exp.crefType(cr); 
       then
-        (DAE.VAR(DAE.CREF_IDENT(str_1,ty,{}),a,b,prot,t,d_1,e,g,streamPrefix,h,dae_var_attr,
-          comment,io) :: elts_1);
-    case ((DAE.DEFINE(componentRef = cr,exp = e) :: elts))
+        (DAE.VAR(DAE.CREF_IDENT(str_1,ty,{}),a,b,prot,t,d_1,e,g,streamPrefix,source,dae_var_attr,comment,io) :: elts_1);
+
+    case ((DAE.DEFINE(componentRef = cr,exp = e,source = source) :: elts))
       local
         DAE.Exp e;
       equation 
@@ -4362,8 +4401,9 @@ algorithm
         cr_1 = toModelicaFormCref(cr);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.DEFINE(cr_1,e_1) :: elts_1);
-    case ((DAE.INITIALDEFINE(componentRef = cr,exp = e) :: elts))
+        (DAE.DEFINE(cr_1,e_1,source) :: elts_1);
+
+    case ((DAE.INITIALDEFINE(componentRef = cr,exp = e,source = source) :: elts))
       local
         DAE.Exp e;
       equation 
@@ -4371,15 +4411,33 @@ algorithm
         cr_1 = toModelicaFormCref(cr);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.INITIALDEFINE(cr_1,e_1) :: elts_1);
-    case ((DAE.EQUATION(exp = e1,scalar = e2) :: elts))
+        (DAE.INITIALDEFINE(cr_1,e_1,source) :: elts_1);
+
+    case ((DAE.EQUATION(exp = e1,scalar = e2,source = source) :: elts))
       equation 
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.EQUATION(e1_1,e2_1) :: elts_1);
-    case ((DAE.EQUEQUATION(cr1,cr2) :: elts))
+        (DAE.EQUATION(e1_1,e2_1,source) :: elts_1);
+
+    case ((DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source) :: elts))
+      equation 
+        e1_1 = toModelicaFormExp(e1);
+        e2_1 = toModelicaFormExp(e2);
+        elts_1 = toModelicaFormElts(elts);
+      then
+        (DAE.COMPLEX_EQUATION(e1_1,e2_1,source) :: elts_1);
+
+    case ((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source) :: elts))
+      equation 
+        e1_1 = toModelicaFormExp(e1);
+        e2_1 = toModelicaFormExp(e2);
+        elts_1 = toModelicaFormElts(elts);
+      then
+        (DAE.INITIAL_COMPLEX_EQUATION(e1_1,e2_1,source) :: elts_1);
+
+    case ((DAE.EQUEQUATION(cr1 = cr1,cr2 = cr2,source = source) :: elts))
       local
         DAE.ComponentRef cr1,cr2;
       equation 
@@ -4387,87 +4445,100 @@ algorithm
          DAE.CREF(cr2,_) = toModelicaFormExp(DAE.CREF(cr2,DAE.ET_OTHER()));
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.EQUEQUATION(cr1,cr2) :: elts_1);
-    case ((DAE.WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = SOME(elt)) :: elts))
+        (DAE.EQUEQUATION(cr1,cr2,source) :: elts_1);
+
+    case ((DAE.WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = SOME(elt),source = source) :: elts))
       equation 
         e1_1 = toModelicaFormExp(e1);
         welts_1 = toModelicaFormElts(welts);
         {elt_1} = toModelicaFormElts({elt});
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.WHEN_EQUATION(e1_1,welts_1,SOME(elt_1)) :: elts_1);
-    case ((DAE.WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = NONE) :: elts))
+        (DAE.WHEN_EQUATION(e1_1,welts_1,SOME(elt_1),source) :: elts_1);
+
+    case ((DAE.WHEN_EQUATION(condition = e1,equations = welts,elsewhen_ = NONE,source = source) :: elts))
       equation 
         e1_1 = toModelicaFormExp(e1);
         welts_1 = toModelicaFormElts(welts);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.WHEN_EQUATION(e1_1,welts_1,NONE) :: elts_1);
-    case ((DAE.IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts) :: elts))
+        (DAE.WHEN_EQUATION(e1_1,welts_1,NONE,source) :: elts_1);
+
+    case ((DAE.IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts,source = source) :: elts))
       equation 
         conds_1 = Util.listMap(conds,toModelicaFormExp);
         trueBranches_1 = Util.listMap(trueBranches,toModelicaFormElts);
         eelts_1 = toModelicaFormElts(eelts);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.IF_EQUATION(conds_1,trueBranches_1,eelts_1) :: elts_1);
-    case ((DAE.INITIAL_IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts) :: elts))
+        (DAE.IF_EQUATION(conds_1,trueBranches_1,eelts_1,source) :: elts_1);
+
+    case ((DAE.INITIAL_IF_EQUATION(condition1 = conds,equations2 = trueBranches,equations3 = eelts,source = source) :: elts))
       equation 
         conds_1 = Util.listMap(conds,toModelicaFormExp);
         trueBranches_1 = Util.listMap(trueBranches,toModelicaFormElts);
         eelts_1 = toModelicaFormElts(eelts);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.INITIAL_IF_EQUATION(conds_1,trueBranches_1,eelts_1) :: elts_1);
-    case ((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2) :: elts))
+        (DAE.INITIAL_IF_EQUATION(conds_1,trueBranches_1,eelts_1,source) :: elts_1);
+
+    case ((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2,source = source) :: elts))
       equation 
         e1_1 = toModelicaFormExp(e1);
         e2_1 = toModelicaFormExp(e2);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.INITIALEQUATION(e1_1,e2_1) :: elts_1);
-    case ((DAE.ALGORITHM(algorithm_ = a) :: elts))
+        (DAE.INITIALEQUATION(e1_1,e2_1,source) :: elts_1);
+
+    case ((DAE.ALGORITHM(algorithm_ = a,source = source) :: elts))
       local
         Algorithm.Algorithm a;
       equation 
         print("to_modelica_form_elts(ALGORITHM) not impl. yet\n");
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.ALGORITHM(a) :: elts_1);
-    case ((DAE.INITIALALGORITHM(algorithm_ = a) :: elts))
+        (DAE.ALGORITHM(a,source) :: elts_1);
+
+    case ((DAE.INITIALALGORITHM(algorithm_ = a,source = source) :: elts))
       local
         Algorithm.Algorithm a;
       equation 
         print("to_modelica_form_elts(INITIALALGORITHM) not impl. yet\n");
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.INITIALALGORITHM(a) :: elts_1);
-    case ((DAE.COMP(ident = id,dAElist = dae) :: elts))
+        (DAE.INITIALALGORITHM(a,source) :: elts_1);
+
+    case ((DAE.COMP(ident = id,dAElist = dae,source = source) :: elts))
       equation 
         dae_1 = toModelicaForm(dae);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.COMP(id,dae_1) :: elts_1);
-    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_DEF(dae)::derFuncs),type_ = t,partialPrefix=partialPrefix,inlineType = inlineType) :: elts))
+        (DAE.COMP(id,dae_1,source) :: elts_1);
+
+    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_DEF(dae)::derFuncs),
+           type_ = t,partialPrefix=partialPrefix,inlineType = inlineType,source = source) :: elts))
       equation 
         dae_1 = toModelicaForm(dae);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.FUNCTION(p,(DAE.FUNCTION_DEF(dae_1)::derFuncs),t,partialPrefix,inlineType) :: elts_1);
-    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_EXT(dae, d)::derFuncs),type_ = t,partialPrefix=partialPrefix,inlineType = inlineType) :: elts))
+        (DAE.FUNCTION(p,(DAE.FUNCTION_DEF(dae_1)::derFuncs),t,partialPrefix,inlineType,source) :: elts_1);
+
+    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_EXT(dae, d)::derFuncs),
+           type_ = t,partialPrefix=partialPrefix,inlineType = inlineType,source = source) :: elts))
       local DAE.ExternalDecl d;
       equation 
         elts_1 = toModelicaFormElts(elts);
         dae_1 = toModelicaForm(dae);
       then
-        (DAE.FUNCTION(p,(DAE.FUNCTION_EXT(dae, d)::derFuncs),t,partialPrefix,inlineType) :: elts_1);
+        (DAE.FUNCTION(p,(DAE.FUNCTION_EXT(dae, d)::derFuncs),t,partialPrefix,inlineType,source) :: elts_1);
  
-    case ((DAE.RECORD_CONSTRUCTOR(path = p,type_ = t) :: elts))
+    case ((DAE.RECORD_CONSTRUCTOR(path = p,type_ = t,source = source) :: elts))
       equation 
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.RECORD_CONSTRUCTOR(p,t) :: elts_1);
-    case ((DAE.ASSERT(condition = e1,message=e2) :: elts))
+        (DAE.RECORD_CONSTRUCTOR(p,t,source) :: elts_1);
+
+    case ((DAE.ASSERT(condition = e1,message=e2,source = source) :: elts))
       local
         DAE.Exp e1,e2,e_1,e_2;
       equation 
@@ -4475,61 +4546,53 @@ algorithm
         e_1 = toModelicaFormExp(e1);
         e_2 = toModelicaFormExp(e2);
       then
-        (DAE.ASSERT(e_1,e_2) :: elts_1);
+        (DAE.ASSERT(e_1,e_2,source) :: elts_1);
+    case ((DAE.TERMINATE(message = e1,source = source) :: elts))
+      local
+        DAE.Exp e1,e2,e_1,e_2;
+      equation 
+        elts_1 = toModelicaFormElts(elts);
+        e_1 = toModelicaFormExp(e1);
+      then
+        (DAE.TERMINATE(e_1,source) :: elts_1);        
   end matchcontinue;
 end toModelicaFormElts;
 
 public function replaceCrefInVar "
 Author BZ 
- Function for updating the Component Ref of the Var
-"
+ Function for updating the Component Ref of the Var"
   input DAE.ComponentRef newCr;
   input DAE.Element inelem;
   output DAE.Element outelem;
 algorithm
   outelem := matchcontinue(newCr, inelem)
     local
-      DAE.ComponentRef a1;
-      DAE.VarKind a2;
-      DAE.VarDirection a3;
-      DAE.VarProtection a4;
-      DAE.Type a5;
-      DAE.InstDims a7;
-      DAE.Flow a8;
-      DAE.Stream a9;
-      Option<DAE.Exp> a6; 
-      list<Absyn.Path> a10;
+      DAE.ComponentRef a1; DAE.VarKind a2;
+      DAE.VarDirection a3; DAE.VarProtection a4;
+      DAE.Type a5; DAE.InstDims a7; DAE.Flow a8;
+      DAE.Stream a9; Option<DAE.Exp> a6; 
+      DAE.ElementSource source;
       Option<DAE.VariableAttributes> a11;
-      Option<SCode.Comment> a12;
-      Absyn.InnerOuter a13;
-    case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13))
-      then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12,a13);
+      Option<SCode.Comment> a12; Absyn.InnerOuter a13;
+    case(newCr, DAE.VAR(a1,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13))
+      then DAE.VAR(newCr,a2,a3,a4,a5,a6,a7,a8,a9,source,a11,a12,a13);
   end matchcontinue;
 end replaceCrefInVar;
 
-protected function toModelicaFormExpOpt "function: toModelicaFormExpOpt
- 
-  Helper function to to_mdelica_form_elts.
-"
+protected function toModelicaFormExpOpt "function: toModelicaFormExpOpt 
+  Helper function to toMdelicaFormElts."
   input Option<DAE.Exp> inExpExpOption;
   output Option<DAE.Exp> outExpExpOption;
 algorithm 
-  outExpExpOption:=
-  matchcontinue (inExpExpOption)
+  outExpExpOption := matchcontinue (inExpExpOption)
     local DAE.Exp e_1,e;
-    case (SOME(e))
-      equation 
-        e_1 = toModelicaFormExp(e);
-      then
-        SOME(e_1);
+    case (SOME(e)) equation e_1 = toModelicaFormExp(e); then SOME(e_1);
     case (NONE) then NONE; 
   end matchcontinue;
 end toModelicaFormExpOpt;
 
-protected function toModelicaFormCref "function: toModelicaFormCref
- 
-  Helper function to to_modelica_form_elts.
-"
+protected function toModelicaFormCref "function: toModelicaFormCref 
+  Helper function to toModelicaFormElts."
   input DAE.ComponentRef cr;
   output DAE.ComponentRef outComponentRef;
   String str,str_1;
@@ -4542,9 +4605,7 @@ algorithm
 end toModelicaFormCref;
 
 protected function toModelicaFormExp "function: toModelicaFormExp
- 
-  Helper function to to_modelica_form_elts.
-"
+  Helper function to toModelicaFormElts."
   input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm 
@@ -4717,30 +4778,31 @@ algorithm  leftSideCrefs := matchcontinue(inElems)
     list<DAE.ComponentRef> crefs1,crefs2;
   case({}) then {};
     // no need to check elseWhen, they are beein handled in a reverse order, from inst.mo.
-  case(DAE.WHEN_EQUATION(_,elems1,_)::moreWhen) then verifyWhenEquationStatements(elems1);
-    
+  case(DAE.WHEN_EQUATION(equations=elems1)::moreWhen) then verifyWhenEquationStatements(elems1);
   case(inElems) then verifyWhenEquationStatements(inElems);
   case(inElems) 
     equation 
       print("-verify_When_Equation FAILED\n"); 
       //print(dumpElementsStr(elems1) +& "\n\n");
-      then fail();
+    then fail();
 end matchcontinue;
 end verifyWhenEquation;
 
 protected function verifyWhenEquationStatements2 ""
   input list<DAE.Exp> inExps;
+  input DAE.ElementSource source "the element origin";
   output list<DAE.ComponentRef> leftSideCrefs;
 algorithm
-  leftSideCrefs := matchcontinue(inExps)
+  leftSideCrefs := matchcontinue(inExps,source)
     local
       DAE.Exp e;
       list<DAE.ComponentRef> crefs1,crefs2;
-    case({}) then {};
-    case(e::inExps)
+      DAE.ElementSource source "the element origin";
+    case({},_) then {};
+    case(e::inExps,source)
       equation
-        crefs1 = verifyWhenEquationStatements({DAE.EQUATION(e,e)});
-        crefs2 = verifyWhenEquationStatements2(inExps);
+        crefs1 = verifyWhenEquationStatements({DAE.EQUATION(e,e,source)});
+        crefs2 = verifyWhenEquationStatements2(inExps,source);
         leftSideCrefs = listAppend(crefs1,crefs2);
       then
         leftSideCrefs;
@@ -4783,6 +4845,8 @@ algorithm
       list<list<DAE.Exp>> argexps,expslist;
       list<DAE.ExtArg> args;
       Option<Absyn.Annotation> ann;
+      DAE.ElementSource source "the element origin";
+      
     case({}) then {};
     case(DAE.VAR(componentRef = _)::rest) 
       equation
@@ -4794,20 +4858,19 @@ algorithm
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
         cref::lhsCrefs;
-
     case(DAE.EQUATION(exp = DAE.CREF(cref,_))::rest)
       equation
       lhsCrefs = verifyWhenEquationStatements(rest);
       then
         cref::lhsCrefs;
-    case(DAE.EQUATION(exp = DAE.TUPLE(exps1))::rest)
+    case(DAE.EQUATION(exp = DAE.TUPLE(exps1),source=source)::rest)
       equation
-        crefs1 = verifyWhenEquationStatements2(exps1);
+        crefs1 = verifyWhenEquationStatements2(exps1,source);
         lhsCrefs = verifyWhenEquationStatements(rest);
         lhsCrefs = listAppend(crefs1,lhsCrefs);
       then 
         lhsCrefs;
-    case(DAE.EQUEQUATION(cref,_)::rest)
+    case(DAE.EQUEQUATION(cr1=cref,cr2=_)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
@@ -4824,18 +4887,19 @@ algorithm
         lhsCrefs = listAppend(crefs1,lhsCrefs);
       then
         lhsCrefs;
-    case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb)::rest)
-      local list<list<DAE.ComponentRef>> crefslist;
+    case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb,source=source)::rest)
+      local 
+        list<list<DAE.ComponentRef>> crefslist;
+        DAE.ElementSource source "the origin of the element";
       equation 
         crefslist = Util.listMap(eqstrueb,verifyWhenEquationStatements);
         crefs2 = verifyWhenEquationStatements(eqsfalseb);
         (crefs1,false) = compareCrefList(crefslist);
-        s2 = dumpEquationStr(DAE.IF_EQUATION(exps,eqstrueb,eqsfalseb));
+        s2 = dumpEquationStr(DAE.IF_EQUATION(exps,eqstrueb,eqsfalseb,source));
         s1 = "Error in IF-equation: \n" +& s2 +& "\n " +& "\nAll branches must write to same variables \n";
         print(s1);
       then
         fail();
-
     case(DAE.ALGORITHM(algorithm_ = alg)::rest)
       equation 
         print("ALGORITHM not implemented for use inside when equation\n"); 
@@ -4886,10 +4950,11 @@ algorithm
       equation print("INITIALEQUATION not allowed inside when equation\n");
       then 
         fail();  
-    case(DAE.NORETCALL(_,_)::rest)
+    // adrpo: TODO! FIXME! WHY??!! we might read from outside file x = readFile();
+    case(DAE.NORETCALL(functionName=_)::rest)
       equation print("NORETCALL not allowed inside when equation\n"); 
       then 
-        fail();  
+        fail();
     case(DAE.WHEN_EQUATION(condition = _)::rest)
       equation 
         print(" When-equation inside when equation..?\n");
@@ -4909,9 +4974,9 @@ algorithm
 end verifyWhenEquationStatements;
 
 protected function compareCrefList ""
-input list<list<DAE.ComponentRef>> inrefs;
-output list<DAE.ComponentRef> outrefs;
-output Boolean matching;
+  input list<list<DAE.ComponentRef>> inrefs;
+  output list<DAE.ComponentRef> outrefs;
+  output Boolean matching;
 algorithm (outrefs,matching) := matchcontinue(inrefs)
   local
     list<DAE.ComponentRef> crefs,recRefs;
@@ -4933,17 +4998,12 @@ algorithm (outrefs,matching) := matchcontinue(inrefs)
 end compareCrefList; 
 
 protected function getAllExpsElement "function: getAllExpsElement
-  
-  Helper to get_all_exps. Implements get_all_exps for different kinds of
-  elements 
-"
+  Helper to getAllExps. Implements getAllExps for different kinds of elements "
   input DAE.Element inElement;
   output list<DAE.Exp> outExpExpLst;
 algorithm 
-  outExpExpLst:=
-  matchcontinue (inElement)
+  outExpExpLst := matchcontinue (inElement)
     local
-      
       list<DAE.Exp> e1,e2,e3,exps,explist1,explist2,exps1,exps2,exps3,ifcond;
       DAE.Exp crefexp,exp,cond;
       DAE.ComponentRef cref;
@@ -4967,6 +5027,8 @@ algorithm
       list<DAE.ExtArg> args;
       DAE.ExtArg retarg;
       Option<Absyn.Annotation> ann;
+      DAE.ElementSource source "the element origin";
+      
     case DAE.VAR(componentRef = cref,
              kind = vk,
              direction= vd,
@@ -4975,7 +5037,7 @@ algorithm
              dims = instdims,
              flowPrefix = flowPrefix,
              streamPrefix = streamPrefix,
-             pathLst = pathlist,
+             source = source,
              variableAttributesOption = dae_var_attr,
              absynCommentOption = comment) /* VAR */ 
       equation 
@@ -5000,7 +5062,7 @@ algorithm
       local DAE.Exp e1,e2;
       then
         {e1,e2};
-    case DAE.EQUEQUATION(cr1,cr2)
+    case DAE.EQUEQUATION(cr1=cr1,cr2=cr2)
       local DAE.ComponentRef cr1,cr2; DAE.Exp e1,e2;
         equation
           e1 = crefToExp(cr1);
@@ -5068,7 +5130,7 @@ algorithm
         exps;
     case DAE.RECORD_CONSTRUCTOR(path = path) then {};
     case DAE.ASSERT(condition=e1,message=e2) local DAE.Exp e1,e2; then {e1,e2}; 
-    case DAE.NORETCALL(fname,fargs)
+    case DAE.NORETCALL(functionName=fname,functionArgs=fargs)
       local
         Absyn.Path fname;
         list<DAE.Exp> fargs;
@@ -5158,12 +5220,14 @@ algorithm
       list<DAE.Element> rest_result,rest,res2,res1,res;
       DAE.Element subresult,el;
       String name;
+      DAE.ElementSource source "the origin of the element";
+      
     case (DAE.DAE(elementLst = {})) then DAE.DAE({}); 
-    case (DAE.DAE(elementLst = (DAE.COMP(ident = name,dAElist = sublist) :: rest)))
+    case (DAE.DAE(elementLst = (DAE.COMP(ident = name,dAElist = sublist,source =  source) :: rest)))
       equation 
         sublist_result = transformIfEqToExpr(sublist);
         DAE.DAE(rest_result) = transformIfEqToExpr(DAE.DAE(rest));
-        subresult = DAE.COMP(name,sublist_result);
+        subresult = DAE.COMP(name,sublist_result,source);
         result = DAE.DAE((subresult :: rest_result));
       then
         result;
@@ -5232,6 +5296,7 @@ algorithm
       list<DAE.Exp> cond;
       list<DAE.Element> false_branch,equations;
       list<list<DAE.Element>> true_branch;
+      DAE.ElementSource source "the origin of the element";
 
     // adrpo: handle selection of branches if conditions are boolean literals
     //        this is needed as Connections.isRoot becomes true/false at the 
@@ -5254,15 +5319,15 @@ algorithm
       then
         {};
     // handle the default case.
-    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch))
+    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source = source))
       equation 
         true_eq = ifEqToExpr2(true_branch);
         false_eq = listLength(false_branch);
         (true_eq == false_eq) = true;
-        equations = makeEquationsFromIf(cond, true_branch, false_branch);
+        equations = makeEquationsFromIf(cond, true_branch, false_branch, source);
       then
         equations;
-    case (elt as DAE.IF_EQUATION(_, _, _)) // only display failure on if equation  
+    case (elt as DAE.IF_EQUATION(condition1 = _)) // only display failure on if equation  
       equation
         elt_str = dumpElementsStr({elt});
         Debug.fprintln("failtrace", "- DAE.ifEqToExpr failed " +& elt_str);
@@ -5291,32 +5356,34 @@ protected function makeEquationsFromIf
   input list<DAE.Exp> inExp1;
   input list<list<DAE.Element>> inElementLst2;
   input list<DAE.Element> inElementLst3;
+  input DAE.ElementSource source "the origin of the element";
   output list<DAE.Element> outElementLst;
 algorithm 
-  outElementLst:=
-  matchcontinue (inExp1,inElementLst2,inElementLst3)
+  outElementLst := matchcontinue (inExp1,inElementLst2,inElementLst3,source)
     local 
       list<list<DAE.Element>> tbs,rest1,tbsRest,tbsFirstL;
       list<DAE.Element> tbsFirst,fbs,rest_res;
       DAE.Element fb,eq;
       list<DAE.Exp> conds,tbsexp; 
       DAE.Exp fbexp,ifexp;
-    case (_,tbs,{})
+      DAE.ElementSource source "the origin of the element";
+      
+    case (_,tbs,{},_)
       equation
         Util.listMap0(tbs, Util.assertListEmpty);
       then {}; 
 
-    case (conds,tbs,fb::fbs)
+    case (conds,tbs,fb::fbs,source)
       equation 
         tbsRest = Util.listMap(tbs,Util.listRest);
-        rest_res = makeEquationsFromIf(conds, tbsRest, fbs);
+        rest_res = makeEquationsFromIf(conds, tbsRest, fbs, source);
         
         tbsFirst = Util.listMap(tbs,Util.listFirst);        
         tbsexp = Util.listMap(tbsFirst,makeEquationToResidualExp);        
         fbexp = makeEquationToResidualExp(fb);
         
         ifexp = Exp.makeNestedIf(conds,tbsexp,fbexp);
-        eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp);
+        eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,source);
       then
         (eq :: rest_res);
   end matchcontinue;
@@ -5329,7 +5396,7 @@ algorithm
   oExp := matchcontinue(eq)
     local
       DAE.Exp e1,e2;
-    case(DAE.EQUATION(e1,e2))
+    case(DAE.EQUATION(e1,e2,_))
       equation
         oExp = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
       then 
@@ -5338,8 +5405,7 @@ algorithm
 end makeEquationToResidualExp;
 
 public function dumpFlow "
-Author BZ 2008-07, dump flow properties to string.
-"
+Author BZ 2008-07, dump flow properties to string."
   input DAE.Flow var;
   output String flowStrig;
 algorithm flowString := matchcontinue(var)
@@ -5569,8 +5635,7 @@ end traverseDAEList;
 public function traverseDAE "
 Author: BZ, 2008-12
 This function traverses all dae exps.
-NOTE, it also traverses DAE.VAR(componenname) as an expression.
-"
+NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input list<DAE.Element> daeList;
   input FuncExpType func;
   input Type_a extraArg;
@@ -5599,7 +5664,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     Option<DAE.Exp> optExp;
     Absyn.InnerOuter io;
     list<Integer> idims;
-    String id;
+    String id,str;
     Absyn.Path path;
     list<DAE.Statement> stmts,stmts2;
     list<list<DAE.Element>> tbs,tbs_1;
@@ -5609,183 +5674,184 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     list<DAE.Exp> expl;
     list<DAE.FunctionDefinition> derFuncs;
     DAE.InlineType inlineType;
+    DAE.ElementSource source "the origin of the element";
+
   case({},_,extraArg) then ({},extraArg);
-  case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io)::dae,func,extraArg) 
+  case(DAE.VAR(cr,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae,func,extraArg) 
     equation
       (DAE.CREF(cr2,_),extraArg) = func(DAE.CREF(cr,DAE.ET_REAL()), extraArg);
       (optExp,extraArg) = traverseDAEOptExp(optExp,func,extraArg);      
       (attr,extraArg) = traverseDAEVarAttr(attr,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,clsLst,attr,cmt,io)::dae2,extraArg);
+    then (DAE.VAR(cr2,kind,dir,prot,tp,optExp,dims,fl,st,source,attr,cmt,io)::dae2,extraArg);
       
-  case(DAE.DEFINE(cr,e)::dae,func,extraArg)
+  case(DAE.DEFINE(cr,e,source)::dae,func,extraArg)
     equation
       (e2,extraArg) = func(e, extraArg);
       (DAE.CREF(cr2,_),extraArg) = func(DAE.CREF(cr,DAE.ET_REAL()), extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.DEFINE(cr2,e2)::dae2,extraArg);
+    then (DAE.DEFINE(cr2,e2,source)::dae2,extraArg);
       
-  case(DAE.INITIALDEFINE(cr,e)::dae,func,extraArg) 
+  case(DAE.INITIALDEFINE(cr,e,source)::dae,func,extraArg) 
     equation
       (e2,extraArg) = func(e, extraArg);
       (DAE.CREF(cr2,_),extraArg) = func(DAE.CREF(cr,DAE.ET_REAL()), extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.INITIALDEFINE(cr2,e2)::dae2,extraArg);
+    then (DAE.INITIALDEFINE(cr2,e2,source)::dae2,extraArg);
       
-  case(DAE.EQUEQUATION(cr,cr1)::dae,func,extraArg) 
+  case(DAE.EQUEQUATION(cr,cr1,source)::dae,func,extraArg) 
     equation
       (DAE.CREF(cr2,_),extraArg) = func(DAE.CREF(cr,DAE.ET_REAL()), extraArg);
       (DAE.CREF(cr1_2,_),extraArg) = func(DAE.CREF(cr1,DAE.ET_REAL()), extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.EQUEQUATION(cr2,cr1_2)::dae2,extraArg);
+    then (DAE.EQUEQUATION(cr2,cr1_2,source)::dae2,extraArg);
       
-  case(DAE.EQUATION(e1,e2)::dae,func,extraArg) 
+  case(DAE.EQUATION(e1,e2,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1, extraArg);
       (e22,extraArg) = func(e2, extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.EQUATION(e11,e22)::dae2,extraArg);
+    then (DAE.EQUATION(e11,e22,source)::dae2,extraArg);
       
-  case(DAE.COMPLEX_EQUATION(e1,e2)::dae,func,extraArg) 
+  case(DAE.COMPLEX_EQUATION(e1,e2,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1, extraArg);
       (e22,extraArg) = func(e2, extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.COMPLEX_EQUATION(e11,e22)::dae2,extraArg);
+    then (DAE.COMPLEX_EQUATION(e11,e22,source)::dae2,extraArg);
       
-  case(DAE.ARRAY_EQUATION(idims,e1,e2)::dae,func,extraArg) 
+  case(DAE.ARRAY_EQUATION(idims,e1,e2,source)::dae,func,extraArg) 
     equation
       (e11, extraArg) = func(e1, extraArg);
       (e22, extraArg) = func(e2, extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.ARRAY_EQUATION(idims,e11,e22)::dae2,extraArg);
+    then (DAE.ARRAY_EQUATION(idims,e11,e22,source)::dae2,extraArg);
       
-  case(DAE.WHEN_EQUATION(e1,elist,SOME(elt))::dae,func,extraArg) 
+  case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,func,extraArg) 
     equation
       (e11, extraArg) = func(e1, extraArg);
       ({elt2}, extraArg)= traverseDAE({elt},func,extraArg);
       (elist2, extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.WHEN_EQUATION(e11,elist2,SOME(elt2))::dae2,extraArg);
+    then (DAE.WHEN_EQUATION(e11,elist2,SOME(elt2),source)::dae2,extraArg);
       
-  case(DAE.WHEN_EQUATION(e1,elist,NONE)::dae,func,extraArg) 
+  case(DAE.WHEN_EQUATION(e1,elist,NONE,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1, extraArg);
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.WHEN_EQUATION(e11,elist2,NONE)::dae2,extraArg);
+    then (DAE.WHEN_EQUATION(e11,elist2,NONE,source)::dae2,extraArg);
       
-  case(DAE.INITIALEQUATION(e1,e2)::dae,func,extraArg) 
-    equation
-      (e11,extraArg) = func(e1, extraArg);
-      (e22,extraArg) = func(e2, extraArg);
-      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.INITIALEQUATION(e11,e22)::dae2,extraArg);
-      
-  case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2)::dae,func,extraArg) 
+  case(DAE.INITIALEQUATION(e1,e2,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1, extraArg);
       (e22,extraArg) = func(e2, extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.INITIAL_COMPLEX_EQUATION(e11,e22)::dae2,extraArg);
+    then (DAE.INITIALEQUATION(e11,e22,source)::dae2,extraArg);
       
-  case(DAE.COMP(id,DAE.DAE(elist))::dae,func,extraArg) 
+  case(DAE.INITIAL_COMPLEX_EQUATION(e1,e2,source)::dae,func,extraArg) 
+    equation
+      (e11,extraArg) = func(e1, extraArg);
+      (e22,extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE(dae,func,extraArg);
+    then (DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source)::dae2,extraArg);
+      
+  case(DAE.COMP(id,DAE.DAE(elist),source)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.COMP(id,DAE.DAE(elist))::dae2,extraArg);
+    then (DAE.COMP(id,DAE.DAE(elist),source)::dae2,extraArg);
       
-  case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(DAE.DAE(elementLst = elist))::derFuncs),ftp,partialPrefix,inlineType)::dae,func,extraArg) 
+  case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(DAE.DAE(elementLst = elist))::derFuncs),ftp,partialPrefix,inlineType,source)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(DAE.DAE(elist2))::derFuncs,ftp,partialPrefix,inlineType)::dae2,extraArg);
+    then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(DAE.DAE(elist2))::derFuncs,ftp,partialPrefix,inlineType,source)::dae2,extraArg);
     
-    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = elist),externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType)::dae,func,extraArg) 
+  case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = elist),externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source)::dae,func,extraArg) 
     equation
       (elist2,extraArg) = traverseDAE(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-     then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(DAE.DAE(elist2),extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE)::dae2,extraArg);
+     then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(DAE.DAE(elist2),extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE,source)::dae2,extraArg);
       
-  case(DAE.RECORD_CONSTRUCTOR(path,tp)::dae,func,extraArg) 
+  case(DAE.RECORD_CONSTRUCTOR(path,tp,source)::dae,func,extraArg) 
     equation
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.RECORD_CONSTRUCTOR(path,tp)::dae2,extraArg);
+    then (DAE.RECORD_CONSTRUCTOR(path,tp,source)::dae2,extraArg);
       
-  case(DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae,func,extraArg) 
+  case(DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae,func,extraArg) 
     equation
       ({elt11,elt22},extraArg) =  traverseDAE({elt1,elt2},func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.EXTOBJECTCLASS(path,elt1,elt2)::dae2,extraArg);
+    then (DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae2,extraArg);
       
-  case(DAE.ASSERT(e1,e2)::dae,func,extraArg) 
+  case(DAE.ASSERT(e1,e2,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1,extraArg);
       (e22,extraArg) = func(e2,extraArg);          
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.ASSERT(e11,e22)::dae2,extraArg);
+    then (DAE.ASSERT(e11,e22,source)::dae2,extraArg);
       
-  case(DAE.TERMINATE(e1)::dae,func,extraArg) 
+  case(DAE.TERMINATE(e1,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.TERMINATE(e11)::dae2,extraArg);    
+    then (DAE.TERMINATE(e11,source)::dae2,extraArg);    
   
-  case(DAE.NORETCALL(path,expl)::dae,func,extraArg) 
+  case(DAE.NORETCALL(path,expl,source)::dae,func,extraArg) 
     equation
       (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.NORETCALL(path,expl)::dae2,extraArg);
-                
-  case(DAE.NORETCALL(path,expl)::dae,func,extraArg) 
+    then (DAE.NORETCALL(path,expl,source)::dae2,extraArg);
+
+  /* adrpo: am I seeing double or this is EXACTLY the same as above??!! TODO! FIXME!
+  case(DAE.NORETCALL(path,expl,source)::dae,func,extraArg) 
     equation
       (expl,extraArg) = traverseDAEExpList(expl,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.NORETCALL(path,expl)::dae2,extraArg);
+    then (DAE.NORETCALL(path,expl,source)::dae2,extraArg); */
                 
-  case(DAE.REINIT(cr,e1)::dae,func,extraArg) 
+  case(DAE.REINIT(cr,e1,source)::dae,func,extraArg) 
     equation
       (e11,extraArg) = func(e1,extraArg);
       (DAE.CREF(cr2,_),extraArg) = func(DAE.CREF(cr,DAE.ET_REAL()),extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.REINIT(cr2,e11)::dae2,extraArg);
+    then (DAE.REINIT(cr2,e11,source)::dae2,extraArg);
       
-  case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts))::dae,func,extraArg) 
+  case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,func,extraArg) 
     equation
       (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2))::dae2,extraArg);
+    then (DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2,extraArg);
       
-  case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts))::dae,func,extraArg) 
+  case(DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts),source)::dae,func,extraArg) 
     equation
       (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2))::dae2,extraArg);
+    then (DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2,extraArg);
       
-  case(DAE.IF_EQUATION(conds,tbs,elist2)::dae,func,extraArg)
+  case(DAE.IF_EQUATION(conds,tbs,elist2,source)::dae,func,extraArg)
     equation
       (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
       (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
       (elist22,extraArg) = traverseDAE(elist2,func,extraArg);
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.IF_EQUATION(conds_1,tbs_1,elist22)::dae2,extraArg);
+    then (DAE.IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2,extraArg);
 
-  case(DAE.INITIAL_IF_EQUATION(conds,tbs,elist2)::dae,func,extraArg)
+  case(DAE.INITIAL_IF_EQUATION(conds,tbs,elist2,source)::dae,func,extraArg)
     equation
       (conds_1,extraArg) = traverseDAEExpList(conds, func, extraArg);
       (tbs_1,extraArg) = traverseDAEList(tbs,func,extraArg);
       (elist22,extraArg) = traverseDAE(elist2,func,extraArg); 
       (dae2,extraArg) = traverseDAE(dae,func,extraArg);
-    then (DAE.INITIAL_IF_EQUATION(conds_1,tbs_1,elist22)::dae2,extraArg);
+    then (DAE.INITIAL_IF_EQUATION(conds_1,tbs_1,elist22,source)::dae2,extraArg);
   // Empty function call - stefan
-  case(DAE.NORETCALL(_, _)::dae,func,extraArg)
+  case(DAE.NORETCALL(_, _, _)::dae,func,extraArg)
     equation
       Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"Empty function call in equations", "Move the function calls to appropriate algorithm section"});
     then fail();
 
   case(elt::_,_,_)
-    local
-      String str;
     equation
       print(" failure in DAE.traverseDAE\n");
       str = dumpElementsStr({elt});
@@ -6013,5 +6079,18 @@ algorithm
       case (NONE(),_,extraArg) then (NONE(),extraArg);        
   end matchcontinue; 
 end traverseDAEVarAttr; 
+
+public function getElementSourcePaths
+"@author: adrpo
+ retrieves the patsh from the DAE.ElementSource.SOURCE.pathLst"
+ input DAE.ElementSource source "the source of the element";
+ output list<Absyn.Path> pathLst;
+algorithm
+  pathLst := matchcontinue(source)
+    local list<Absyn.Path> pLst;
+    case DAE.UNKNOWN() then {};
+    case DAE.SOURCE(pathLst = pLst) then pLst;
+  end matchcontinue;
+end getElementSourcePaths;
 
 end DAEUtil;

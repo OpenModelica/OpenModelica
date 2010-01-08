@@ -1718,9 +1718,10 @@ algorithm
       list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
+      DAE.ElementSource source "the origin of the element";
+      
     case ((var as DAE.VAR(componentRef = id,
                           kind = DAE.VARIABLE(),
                           direction = DAE.OUTPUT(),
@@ -1729,7 +1730,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix=streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i)
       equation
@@ -1767,13 +1768,15 @@ algorithm
       list<Absyn.Path> cl;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
+      DAE.ElementSource source "the origin of the element";
+      
     case ((el as DAE.VAR(componentRef = cr,
                          kind = vk,
                          direction = vd,
                          dims = {},
                          flowPrefix = fl,
                          streamPrefix = st,
-                         pathLst = cl,
+                         source = source,
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
 
@@ -1788,7 +1791,7 @@ algorithm
                          dims = (_ :: _),
                          flowPrefix = fl,
                          streamPrefix = st, 
-                         pathLst = cl,
+                         source = source,
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
       equation
@@ -2549,8 +2552,7 @@ protected function generateAllocOutvars
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst1,inString2,inString3,i,inInteger4,inContext5)
+  (outCFunction,outInteger) := matchcontinue (inDAEElementLst1,inString2,inString3,i,inInteger4,inContext5)
     local
       Lib rv,rd;
 			String var_str;
@@ -2566,10 +2568,10 @@ algorithm
       list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<DAE.Element> r;
+      DAE.ElementSource source "the origin of the element";
       
     case ({},"",rv,i,tnr,context) then (cEmptyFunction,tnr);
       
@@ -2587,7 +2589,7 @@ algorithm
                            dims = id,
                            flowPrefix = flowPrefix,
                            streamPrefix = streamPrefix,
-                           pathLst = class_,
+                           source = source,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rd,rv,i,tnr,context)
       equation
@@ -2716,8 +2718,7 @@ protected function generateAllocOutvarsExt
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inDAEElementLst,inString,i,inInteger,inExternalDecl)
+  (outCFunction,outInteger) := matchcontinue (inDAEElementLst,inString,i,inInteger,inExternalDecl)
     local
       Lib rv,rett;
 			String var_str;
@@ -2733,10 +2734,10 @@ algorithm
       list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       list<DAE.Element> r;
+      DAE.ElementSource source "the origin of the element";
       
     case ({},rv,i,tnr,extdecl) then (cEmptyFunction,tnr);
       
@@ -2748,7 +2749,7 @@ algorithm
                            dims = id,
                            flowPrefix = flowPrefix,
                            streamPrefix = streamPrefix,
-                           pathLst = class_,
+                           source = source,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
       equation
@@ -2768,7 +2769,7 @@ algorithm
                            dims = id,
                            flowPrefix = flowPrefix,
                            streamPrefix = streamPrefix,
-                           pathLst = class_,
+                           source = source,
                            variableAttributesOption = dae_var_attr,
                            absynCommentOption = comment)) :: r),rv,i,tnr,extdecl)
       equation
@@ -2798,8 +2799,7 @@ protected function generateAllocOutvarF77
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inElement,inString,i,inInteger)
+  (outCFunction,outInteger) := matchcontinue (inElement,inString,i,inInteger)
     local
       Boolean is_a,emptypre;
       Lib typ_str,cref_str1,cref_str2,cref_str,ndims_str,dims_str,alloc_str,prefix,iStr;
@@ -2815,9 +2815,9 @@ algorithm
       list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
+      DAE.ElementSource source "the origin of the element";
       
     case ((var as DAE.VAR(componentRef = id,
                           kind = vk,
@@ -2827,7 +2827,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),prefix,i,tnr)
       equation
@@ -3801,12 +3801,12 @@ algorithm
       list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Context context;
       DAE.Exp e;
       DAE.ExpType etp;
+      DAE.ElementSource source "the origin of the element";
 
     /* variables without binding */
     case ((var as DAE.VAR(componentRef = id,
@@ -3817,7 +3817,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
       equation
@@ -3850,7 +3850,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
       equation
@@ -3885,7 +3885,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
       equation
@@ -3921,8 +3921,7 @@ protected function generateVarDecl
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inElement,inInteger,inContext)
+  (outCFunction,outInteger) := matchcontinue (inElement,inInteger,inContext)
     local
       Boolean is_a;
       Lib typ_str,cref_str,dims_str,dim_comment,dim_comment_1,ndims_str,decl_str;
@@ -3937,7 +3936,6 @@ algorithm
       list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Context context;
@@ -3945,6 +3943,8 @@ algorithm
       DAE.Type tp;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
+      DAE.ElementSource source "the origin of the element";
+      
     case ((var as DAE.VAR(componentRef = id,
                           kind = vk,
                           direction = vd,
@@ -3953,7 +3953,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),tnr,context)
       equation
@@ -3980,12 +3980,12 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
                           innerOuter=io)),tnr,context)
       equation
-        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io), tnr, context);
+        (cfn,tnr1) = generateVarDecl(DAE.VAR(id,vk,vd,prot,typ,NONE,inst_dims,flowPrefix,streamPrefix,source,dae_var_attr,comment,io), tnr, context);
       then
         (cfn,tnr1);
         
@@ -4009,8 +4009,7 @@ protected function generateVarInit
   output CFunction outCFunction;
   output Integer outInteger;
 algorithm
-  (outCFunction,outInteger):=
-  matchcontinue (inElement,i,inInteger,inString,inContext)
+  (outCFunction,outInteger) := matchcontinue (inElement,i,inInteger,inString,inContext)
     local
       DAE.Element var;
       DAE.ComponentRef id,id_1,idstr;
@@ -4021,7 +4020,6 @@ algorithm
       list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       Integer tnr,tnr1;
@@ -4033,6 +4031,7 @@ algorithm
       CFunction cfn;
       DAE.Exp e;
       String iStr,id_1_str;
+      DAE.ElementSource source "the origin of the element";
       
     /* No binding */
     case ((var as DAE.VAR(componentRef = id,
@@ -4043,7 +4042,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i,tnr,pre,context)
       then (cEmptyFunction,tnr);
@@ -4057,7 +4056,7 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = class_,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment)),i,tnr,pre,context)
       equation
@@ -4095,8 +4094,7 @@ protected function dimString
   input DAE.Subscript inSubscript;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inSubscript)
+  outString := matchcontinue (inSubscript)
     local
       Lib str;
       Integer i;
@@ -7887,16 +7885,18 @@ algorithm
       Boolean b_isOutput;
       Integer i1;
       DAE.VarProtection prot;
+      DAE.ElementSource source "the origin of the element";
+      
     case ({},i,tnr) then (cEmptyFunction,tnr);
     case ((var :: rest),i,tnr)
       equation
-        DAE.VAR(componentRef = cref,kind = vk,direction = vd,protection=prot,ty = ty,binding = value,dims = dims) = var;
+        DAE.VAR(componentRef = cref,kind = vk,direction = vd,protection=prot,ty = ty,binding = value,dims = dims,source = source) = var;
         true = isArray(var);
         b_isOutput = isOutput(var);
         i1 = Util.if_(b_isOutput,i+1,i);
         cref_1 = varNameExternalCref(cref);
         dims_1 = listReverse(dims);
-        extvar = DAE.VAR(cref_1,vk,vd,prot,ty,value,dims_1,DAE.NON_FLOW(),DAE.NON_STREAM(),{},NONE,NONE,Absyn.UNSPECIFIED());
+        extvar = DAE.VAR(cref_1,vk,vd,prot,ty,value,dims_1,DAE.NON_FLOW(),DAE.NON_STREAM(),source,NONE,NONE,Absyn.UNSPECIFIED());
         (fn,tnr_1) = generateVarDecl(extvar, tnr, funContext);
         (restfn,tnr_3) = generateExtcallCopydeclsF77(rest, i1,tnr_1);
         resfn = cMergeFn(fn, restfn);
@@ -7914,16 +7914,13 @@ algorithm
 end generateExtcallCopydeclsF77;
 
 protected function generateExtcallVardecls2 "function: generateExtcallVardecls2
-
-  Helper function to generate_extcall_vardecls
-"
+  Helper function to generateExtcallVardecls"
   input list<DAE.ExtArg> inDAEExtArgLst;
   input DAE.ExtArg inExtArg;
   input Integer i "nth tuple elt, only used for outputs";
   output CFunction outCFunction;
 algorithm
-  outCFunction:=
-  matchcontinue (inDAEExtArgLst,inExtArg,i)
+  outCFunction := matchcontinue (inDAEExtArgLst,inExtArg,i)
     local
       CFunction retdecl,decl,decls,res;
       DAE.ExtArg retarg,var;

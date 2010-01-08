@@ -48,13 +48,12 @@ public function fromDAEeqsToAbsynAlg "function: fromDAEeqsToAbsynAlg"
   output list<Absyn.AlgorithmItem> outList;
   output list<DAE.Element> outLd;
 algorithm
-  (outList,outLd) :=
-  matchcontinue (ld,accList1,accList2)
+  (outList,outLd) := matchcontinue (ld,accList1,accList2)
     local
       list<Absyn.AlgorithmItem> localAccList1;
       list<DAE.Element> restLd,localAccList2;
     case ({},localAccList1,localAccList2) then (localAccList1,localAccList2);
-    case (DAE.EQUATION(exp1,exp2) :: restLd,localAccList1,localAccList2)
+    case (DAE.EQUATION(exp1,exp2,_) :: restLd,localAccList1,localAccList2)
       local
         list<Absyn.AlgorithmItem> stmt;
         DAE.Exp exp1,exp2;

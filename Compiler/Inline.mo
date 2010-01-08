@@ -139,39 +139,46 @@ algorithm
       list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
       DAE.ComponentRef cref;
       DAELow.WhenEquation weq,weq_1;
+      DAE.ElementSource source "the origin of the element";
+
     case(NONE,_) then NONE;
-    case(SOME(DAELow.EQUATION(e1,e2)),fns)
+    case(SOME(DAELow.EQUATION(e1,e2,source)),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        SOME(DAELow.EQUATION(e1_1,e2_1));
-    case(SOME(DAELow.ARRAY_EQUATION(i,explst)),fns)
+        SOME(DAELow.EQUATION(e1_1,e2_1,source));
+
+    case(SOME(DAELow.ARRAY_EQUATION(i,explst,source)),fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
       then
-        SOME(DAELow.ARRAY_EQUATION(i,explst_1));
-    case(SOME(DAELow.SOLVED_EQUATION(cref,e)),fns)
+        SOME(DAELow.ARRAY_EQUATION(i,explst_1,source));
+
+    case(SOME(DAELow.SOLVED_EQUATION(cref,e,source)),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        SOME(DAELow.SOLVED_EQUATION(cref,e_1));
-    case(SOME(DAELow.RESIDUAL_EQUATION(e)),fns)
+        SOME(DAELow.SOLVED_EQUATION(cref,e_1,source));
+
+    case(SOME(DAELow.RESIDUAL_EQUATION(e,source)),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        SOME(DAELow.RESIDUAL_EQUATION(e_1));
-    case(SOME(DAELow.ALGORITHM(i,explst1,explst2)),fns)
+        SOME(DAELow.RESIDUAL_EQUATION(e_1,source));
+
+    case(SOME(DAELow.ALGORITHM(i,explst1,explst2,source)),fns)
       equation
         explst1_1 = Util.listMap1(explst1,inlineExp,fns);
         explst2_1 = Util.listMap1(explst2,inlineExp,fns);
       then
-        SOME(DAELow.ALGORITHM(i,explst1_1,explst2_1));
-    case(SOME(DAELow.WHEN_EQUATION(weq)),fns)
+        SOME(DAELow.ALGORITHM(i,explst1_1,explst2_1,source));
+
+    case(SOME(DAELow.WHEN_EQUATION(weq,source)),fns)
       equation
         weq_1 = inlineWhenEq(weq,fns);
       then
-        SOME(DAELow.WHEN_EQUATION(weq_1));
+        SOME(DAELow.WHEN_EQUATION(weq_1,source));
   end matchcontinue;
 end inlineEqOpt;
 
@@ -253,12 +260,14 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Option<DAELow.Var> var;
+      DAE.ElementSource source "the origin of the element";
+      
     case(NONE,_) then NONE;
-    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,origVarName,className,values,comment,flowPrefix,streamPrefix)),fns)
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,origVarName,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,origVarName,className,values,comment,flowPrefix,streamPrefix));
+        SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,origVarName,source,values,comment,flowPrefix,streamPrefix));
     case(var,_) then var;
   end matchcontinue;
 end inlineVarOpt;
@@ -275,12 +284,14 @@ algorithm
       list<DAE.Element> fns;
       list<Integer> ilst;
       DAE.Exp e1,e1_1,e2,e2_1;
-    case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2),fns)
+      DAE.ElementSource source "the origin of the element";
+      
+    case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        DAELow.MULTIDIM_EQUATION(ilst,e1_1,e2_1);
+        DAELow.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
   end matchcontinue;
 end inlineMultiDimEqs;
 
@@ -338,6 +349,7 @@ algorithm
       DAE.Exp e,e_1;
       list<DAELow.ReinitStatement> rslst,rslst_1;
       Option<Integer> io;
+      
     case(DAELow.WHEN_CLAUSE(e,rslst,io),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -360,11 +372,13 @@ algorithm
       DAE.ComponentRef cref;
       DAE.Exp e,e_1;
       DAELow.ReinitStatement rs;
-    case(DAELow.REINIT(cref,e),fns)
+      DAE.ElementSource source "the origin of the element";
+      
+    case(DAELow.REINIT(cref,e,source),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        DAELow.REINIT(cref,e_1);
+        DAELow.REINIT(cref,e_1,source);
     case(rs,_) then rs;
   end matchcontinue;
 end inlineReinitStmt;
@@ -383,11 +397,13 @@ algorithm
       DAELow.ExternalObjectClass res;
       Absyn.Path p;
       DAE.Element e1,e1_1,e2,e2_1;
+      DAE.ElementSource source "the origin of the element";
+      
     case({},_) then {};
-    case(DAELow.EXTOBJCLASS(p,e1,e2) :: cdr,fns)
+    case(DAELow.EXTOBJCLASS(p,e1,e2,source) :: cdr,fns)
       equation
         {e1_1,e2_1} = inlineDAEElements({e1,e2},fns);
-        res = DAELow.EXTOBJCLASS(p,e1_1,e2_1);
+        res = DAELow.EXTOBJCLASS(p,e1_1,e2_1,source);
         cdr_1 = inlineExtObjClasses(cdr,fns);
       then
         res :: cdr_1;
@@ -436,177 +452,201 @@ algorithm
       DAE.ExternalDecl ext;
       list<DAE.Exp> explst,explst_1;
       DAE.InlineType inlineType;
-      list<DAE.FunctionDefinition> funcDefs; 
+      list<DAE.FunctionDefinition> funcDefs;
+      DAE.ElementSource source "the origin of the element";
+       
     case({},_) then {};
-    case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
+    case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
+                 source,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
       equation
         binding_1 = inlineExp(binding,fns);
-        res = DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter);
+        res = DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding_1),dims,flowPrefix,streamPrefix,
+                      source,variableAttributesOption,absynCommentOption,innerOuter);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.DEFINE(componentRef,exp) :: cdr,fns)
+
+    case(DAE.DEFINE(componentRef,exp,source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
-        res = DAE.DEFINE(componentRef,exp_1);
+        res = DAE.DEFINE(componentRef,exp_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.INITIALDEFINE(componentRef,exp) :: cdr,fns)
+
+    case(DAE.INITIALDEFINE(componentRef,exp,source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
-        res = DAE.INITIALDEFINE(componentRef,exp_1);
+        res = DAE.INITIALDEFINE(componentRef,exp_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.EQUATION(exp1,exp2) :: cdr,fns)
+
+    case(DAE.EQUATION(exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);
         exp2_1 = inlineExp(exp2,fns);
-        res = DAE.EQUATION(exp1_1,exp2_1);
+        res = DAE.EQUATION(exp1_1,exp2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.ARRAY_EQUATION(dimension,exp1,exp2) :: cdr,fns)
+
+    case(DAE.ARRAY_EQUATION(dimension,exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);
         exp2_1 = inlineExp(exp2,fns);
-        res = DAE.ARRAY_EQUATION(dimension,exp1_1,exp2_1);
+        res = DAE.ARRAY_EQUATION(dimension,exp1_1,exp2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.COMPLEX_EQUATION(exp1,exp2) :: cdr,fns)
+
+    case(DAE.COMPLEX_EQUATION(exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);
         exp2_1 = inlineExp(exp2,fns);
-        res = DAE.COMPLEX_EQUATION(exp1_1,exp2_1);
+        res = DAE.COMPLEX_EQUATION(exp1_1,exp2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.INITIAL_COMPLEX_EQUATION(exp1,exp2) :: cdr,fns)
+
+    case(DAE.INITIAL_COMPLEX_EQUATION(exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);
         exp2_1 = inlineExp(exp2,fns);
-        res = DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1);
+        res = DAE.INITIAL_COMPLEX_EQUATION(exp1_1,exp2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.WHEN_EQUATION(exp,elist,SOME(el)) :: cdr,fns)
+
+    case(DAE.WHEN_EQUATION(exp,elist,SOME(el),source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
         elist_1 = inlineDAEElements(elist,fns);
         {el_1} = inlineDAEElements({el},fns);
-        res = DAE.WHEN_EQUATION(exp_1,elist_1,SOME(el_1));
+        res = DAE.WHEN_EQUATION(exp_1,elist_1,SOME(el_1),source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.WHEN_EQUATION(exp,elist,NONE) :: cdr,fns)
+
+    case(DAE.WHEN_EQUATION(exp,elist,NONE,source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.WHEN_EQUATION(exp_1,elist_1,NONE);
+        res = DAE.WHEN_EQUATION(exp_1,elist_1,NONE,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.IF_EQUATION(explst,dlist,elist) :: cdr,fns)
+
+    case(DAE.IF_EQUATION(explst,dlist,elist,source) :: cdr,fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
         dlist_1 = Util.listMap1(dlist,inlineDAEElements,fns);
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.IF_EQUATION(explst_1,dlist_1,elist_1);
+        res = DAE.IF_EQUATION(explst_1,dlist_1,elist_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.INITIAL_IF_EQUATION(explst,dlist,elist) :: cdr,fns)
+
+    case(DAE.INITIAL_IF_EQUATION(explst,dlist,elist,source) :: cdr,fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
         dlist_1 = Util.listMap1(dlist,inlineDAEElements,fns);
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.INITIAL_IF_EQUATION(explst_1,dlist_1,elist_1);
+        res = DAE.INITIAL_IF_EQUATION(explst_1,dlist_1,elist_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.INITIALEQUATION(exp1,exp2) :: cdr,fns)
+
+    case(DAE.INITIALEQUATION(exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);
         exp2_1 = inlineExp(exp2,fns);
-        res = DAE.INITIALEQUATION(exp1_1,exp2_1);
+        res = DAE.INITIALEQUATION(exp1_1,exp2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.ALGORITHM(alg) :: cdr,fns)
+
+    case(DAE.ALGORITHM(alg,source) :: cdr,fns)
       equation
         alg_1 = inlineAlgorithm(alg,fns);
-        res = DAE.ALGORITHM(alg_1);
+        res = DAE.ALGORITHM(alg_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.INITIALALGORITHM(alg) :: cdr,fns)
+
+    case(DAE.INITIALALGORITHM(alg,source) :: cdr,fns)
       equation
         alg_1 = inlineAlgorithm(alg,fns);
-        res = DAE.INITIALALGORITHM(alg_1);
+        res = DAE.INITIALALGORITHM(alg_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.COMP(i,DAE.DAE(elist)) :: cdr,fns)
+
+    case(DAE.COMP(i,DAE.DAE(elist),source) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.COMP(i,DAE.DAE(elist_1));
+        res = DAE.COMP(i,DAE.DAE(elist_1),source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = DAE.DAE(elist))::funcDefs,t,partialPrefix,inlineType) :: cdr,fns)
+
+    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = DAE.DAE(elist))::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(DAE.DAE(elist_1))::funcDefs,t,partialPrefix,inlineType);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(DAE.DAE(elist_1))::funcDefs,t,partialPrefix,inlineType,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    //case(DAE.EXTFUNCTION(p,DAE.DAE(elist),t,ext) :: cdr,fns)
-    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist),ext)::funcDefs,t,partialPrefix,inlineType) :: cdr,fns)
+    // external functions
+    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist),ext)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist_1),ext)::funcDefs,t,partialPrefix,inlineType);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist_1),ext)::funcDefs,t,partialPrefix,inlineType,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.EXTOBJECTCLASS(p,el1,el2) :: cdr,fns)
+    case(DAE.EXTOBJECTCLASS(p,el1,el2,source) :: cdr,fns)
       equation
         {el1_1} = inlineDAEElements({el1},fns);
         {el2_1} = inlineDAEElements({el2},fns);
-        res = DAE.EXTOBJECTCLASS(p,el1_1,el2_1);
+        res = DAE.EXTOBJECTCLASS(p,el1_1,el2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.ASSERT(exp1,exp2) :: cdr,fns)
+
+    case(DAE.ASSERT(exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);
         exp2_1 = inlineExp(exp2,fns);
-        res = DAE.ASSERT(exp1_1,exp2_1);
+        res = DAE.ASSERT(exp1_1,exp2_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.TERMINATE(exp) :: cdr,fns)
+
+    case(DAE.TERMINATE(exp,source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
-        res = DAE.TERMINATE(exp_1);
+        res = DAE.TERMINATE(exp_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.REINIT(componentRef,exp) :: cdr,fns)
+
+    case(DAE.REINIT(componentRef,exp,source) :: cdr,fns)
       equation
         exp_1 = inlineExp(exp,fns);
-        res = DAE.REINIT(componentRef,exp_1);
+        res = DAE.REINIT(componentRef,exp_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
-    case(DAE.NORETCALL(p,explst) :: cdr,fns)
+
+    case(DAE.NORETCALL(p,explst,source) :: cdr,fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
-        res = DAE.NORETCALL(p,explst_1);
+        res = DAE.NORETCALL(p,explst_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
+
     case(el :: cdr,fns)
       equation
         cdr_1 = inlineDAEElements(cdr,fns);
@@ -840,9 +880,9 @@ algorithm
         Debug.fprintln("failtrace","Inline.getRhsExp failed - cannot inline such a function");
       then
         fail();
-    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(_,_,res)})) :: _) then res;
-    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(_,_,res)})):: _) then res;
-    case(DAE.ALGORITHM(DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(_,_,res)})) :: _) then res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(_,_,res)})) :: _) then res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(_,_,res)})):: _) then res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(_,_,res)})) :: _) then res;
     case(_ :: cdr)
       equation
         res = getRhsExp(cdr);
@@ -927,12 +967,5 @@ algorithm
     case(_) then true;
   end matchcontinue;
 end removeWilds;
-
-
-
-
-
-
-
 
 end Inline;

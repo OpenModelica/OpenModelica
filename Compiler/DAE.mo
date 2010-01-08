@@ -102,6 +102,19 @@ public uniontype VarProtection
   record PROTECTED "protected variables" end PROTECTED;
 end VarProtection;
 
+uniontype ElementSource "gives information about the origin of the element"
+  record SOURCE
+    list<Absyn.Path> pathLst "classes from where this element came";
+    Option<ComponentRef> instance "the instance this element is part of";
+    Option<tuple<ComponentRef, ComponentRef>> connectEquation "this element came from this connect";
+  end SOURCE;
+  
+  record UNKNOWN "no source was set for this element"
+  end UNKNOWN;
+end ElementSource;
+
+public constant ElementSource emptyElementSource = SOURCE({}, NONE(), NONE()); 
+
 public uniontype Element
   record VAR 
     ComponentRef componentRef " The variable name";
@@ -113,7 +126,7 @@ public uniontype Element
     InstDims  dims "dimensions";
     Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
     Stream streamPrefix "Stream variables in connectors" ;
-    list<Absyn.Path> pathLst " " ;
+    ElementSource source "the origin of the component/equation/algorithm";    
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
@@ -122,75 +135,87 @@ public uniontype Element
   record DEFINE "A solved equation"
     ComponentRef componentRef;
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end DEFINE;
 
   record INITIALDEFINE " A solved initial equation"
     ComponentRef componentRef;
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end INITIALDEFINE;
   
   record EQUATION "Scalar equation"
     Exp exp;
-    Exp scalar ;
+    Exp scalar;
+    ElementSource source "the origin of the component/equation/algorithm";
   end EQUATION;
 
   record EQUEQUATION "effort variable equality"
     ComponentRef cr1;
     ComponentRef cr2;
+    ElementSource source "the origin of the component/equation/algorithm";
   end EQUEQUATION;
 
   record ARRAY_EQUATION " an array equation"
     list<Integer> dimension "dimension sizes" ;
     Exp exp;
-    Exp array  ;
+    Exp array;
+    ElementSource source "the origin of the component/equation/algorithm";
   end ARRAY_EQUATION;
 
   record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
     Exp lhs;
     Exp rhs;
+    ElementSource source "the origin of the component/equation/algorithm";
   end COMPLEX_EQUATION;
   
   record INITIAL_COMPLEX_EQUATION "an initial equation of complex type, e.g. record = func(..)"
     Exp lhs;
     Exp rhs;
+    ElementSource source "the origin of the component/equation/algorithm";
   end INITIAL_COMPLEX_EQUATION;
   
   record WHEN_EQUATION " a when equation"
     Exp condition "Condition" ;
     list<Element> equations "Equations" ;
     Option<Element> elsewhen_ "Elsewhen should be of type WHEN_EQUATION" ;
+    ElementSource source "the origin of the component/equation/algorithm";
   end WHEN_EQUATION;
 
   record IF_EQUATION " an if-equation"
     list<Exp> condition1 "Condition" ;
     list<list<Element>> equations2 "Equations of true branch" ;
     list<Element> equations3 "Equations of false branch" ;
+    ElementSource source "the origin of the component/equation/algorithm";
   end IF_EQUATION;
 
   record INITIAL_IF_EQUATION "An initial if-equation"
     list<Exp> condition1 "Condition" ;
     list<list<Element>> equations2 "Equations of true branch" ;
     list<Element> equations3 "Equations of false branch" ;
+    ElementSource source "the origin of the component/equation/algorithm";
   end INITIAL_IF_EQUATION;
 
   record INITIALEQUATION " An initial equaton"
     Exp exp1;
     Exp exp2;
+    ElementSource source "the origin of the component/equation/algorithm";
   end INITIALEQUATION;
 
   record ALGORITHM " An algorithm section"
     Algorithm algorithm_;
+    ElementSource source "the origin of the component/equation/algorithm";
   end ALGORITHM;
 
   record INITIALALGORITHM " An initial algorithm section"
     Algorithm algorithm_;
+    ElementSource source "the origin of the component/equation/algorithm";
   end INITIALALGORITHM;
 
   record COMP
     Ident ident;
-    DAElist dAElist "a component with 
-						    subelements, normally 
-						    only used at top level." ;
+    DAElist dAElist "a component with subelements, normally only used at top level.";
+    ElementSource source "the origin of the component/equation/algorithm"; // we might not this here.
   end COMP;
 
   record FUNCTION " A Modelica function"
@@ -199,31 +224,37 @@ public uniontype Element
     Type type_;
     Boolean partialPrefix "MetaModelica extension";
     InlineType inlineType;
+    ElementSource source "the origin of the component/equation/algorithm";
   end FUNCTION;
   
   record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
     Absyn.Path path;
     Type type_;
+    ElementSource source "the origin of the component/equation/algorithm";
   end RECORD_CONSTRUCTOR;
 
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
     Element constructor "constructor is an EXTFUNCTION";
     Element destructor "destructor is an EXTFUNCTION";
+    ElementSource source "the origin of the component/equation/algorithm";
   end EXTOBJECTCLASS;
   
   record ASSERT " The Modelica builtin assert"
     Exp condition;
     Exp message;
+    ElementSource source "the origin of the component/equation/algorithm";
   end ASSERT;
 
   record TERMINATE " The Modelica builtin terminate(msg)"
     Exp message;
+    ElementSource source "the origin of the component/equation/algorithm";
   end TERMINATE;
 
   record REINIT " reinit operator for reinitialization of states"
     ComponentRef componentRef;
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end REINIT;
 
   record NORETCALL "call with no return value, i.e. no equation. 
@@ -231,6 +262,7 @@ public uniontype Element
 	  Connections.* i.e. Connections.root(...) functions."  
     Absyn.Path functionName;
     list<Exp> functionArgs;
+    ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
 end Element;
 

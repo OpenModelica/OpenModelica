@@ -64,8 +64,7 @@ public function buildTaskgraph ""
   input Integer[:] inIntegerArray3;
   input list<list<Integer>> inIntegerLstLst4;
 algorithm
-  _:=
-  matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
+  _ := matchcontinue (inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4)
     local
       Integer starttask,endtask;
       list<DAELow.Var> vars,knvars;
@@ -87,7 +86,7 @@ algorithm
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
         addVariables({DAELow.VAR(DAE.CREF_IDENT("sim_time",DAE.ET_REAL(),{}),DAELow.VARIABLE(),
-                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,DAE.CREF_IDENT("time",DAE.ET_REAL(),{}),{},NONE,
+                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,DAE.CREF_IDENT("time",DAE.ET_REAL(),{}),DAE.UNKNOWN(),NONE,
                       NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, ass1, ass2, blocks);
         print("done building taskgraph, about to build inits.\n");
@@ -107,12 +106,10 @@ end buildTaskgraph;
 protected function buildInits "function: buildInits
   This function traverses the DAE and calls external functions to build
   the initialization values for the DAE
-  This is implemented in C++ as a set of vectors
-"
+  This is implemented in C++ as a set of vectors"
   input DAELow.DAELow inDAELow;
 algorithm
-  _:=
-  matchcontinue (inDAELow)
+  _ := matchcontinue (inDAELow)
     local
       list<DAELow.Var> vars,kvars;
       DAELow.VariableArray vararr,kvararr;
@@ -130,8 +127,7 @@ end buildInits;
 protected function buildInits2
   input list<DAELow.Var> inDAELowVarLst;
 algorithm
-  _:=
-  matchcontinue (inDAELowVarLst)
+  _ := matchcontinue (inDAELowVarLst)
     local
       String v,origname_str;
       DAE.Exp value;
@@ -334,7 +330,7 @@ algorithm
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       equation
         e_1 = e - 1 "Solving for non-states" ;
-        DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
+        DAELow.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
@@ -355,7 +351,7 @@ algorithm
       local Integer v;
       equation
         e_1 = e - 1 "Solving the state s means solving for der(s)" ;
-        DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
+        DAELow.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
@@ -377,7 +373,7 @@ algorithm
       then
         ();
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e) /* rule	int_sub(e,1) => e\' &
-	DAELow.equation_nth(eqns,e\') => DAELow.EQUATION(e1,e2) &
+	DAELow.equation_nth(eqns,e\') => DAELow.EQUATION(e1,e2,_) &
 	vector_nth(ass2,e\') => v & ( v==variable no solved in this equation ))
 	int_sub(v,1) => v\' &
 	DAELow.vararray_nth(vararr,v\') => DAELow.VAR(cr,_,_,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flow) &
@@ -390,7 +386,7 @@ algorithm
       local Integer v;
       equation
         e_1 = e - 1 "state nonlinear" ;
-        DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
+        DAELow.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
@@ -408,7 +404,7 @@ algorithm
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqns),ass1,ass2,e)
       equation
         e_1 = e - 1 "Solving nonlinear for non-states" ;
-        DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
+        DAELow.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         varlst = DAELow.varList(vars);
@@ -731,7 +727,7 @@ algorithm
     case ((dae as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),orderedEqs = eqns)),ass1,ass2,(e :: rest),tid)
       equation
         e_1 = e - 1;
-        DAELow.EQUATION(e1,e2) = DAELow.equationNth(eqns, e_1);
+        DAELow.EQUATION(e1,e2,_) = DAELow.equationNth(eqns, e_1);
         v = ass2[e_1 + 1];
         v_1 = v - 1 "v == variable no solved in this equation" ;
         ((v as DAELow.VAR(cr,DAELow.VARIABLE(),_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);

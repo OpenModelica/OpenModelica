@@ -686,7 +686,7 @@ algorithm
       equation 
         eq = equEquations((y :: cs));
       then
-        (DAE.EQUEQUATION(x,y) :: eq);
+        (DAE.EQUEQUATION(x,y,DAE.UNKNOWN()) :: eq);
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();
   end matchcontinue;
 end equEquations;
@@ -704,7 +704,7 @@ protected function flowEquations "function: flowEquations
   DAE.Exp sum;
 algorithm 
   sum := flowSum(cs);
-  outDAEElementLst := {DAE.EQUATION(sum,DAE.RCONST(0.0))};
+  outDAEElementLst := {DAE.EQUATION(sum,DAE.RCONST(0.0), DAE.UNKNOWN())};
 end flowEquations;
 
 protected function flowSum "function: flowSum
@@ -1404,7 +1404,7 @@ algorithm
         cr2 = Prefix.prefixCref(prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
-        (cache,DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0)) :: res);
+        (cache,DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.UNKNOWN()) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -1461,7 +1461,7 @@ algorithm
       equation
         cr = Exp.subscriptCref(cr, indexSubscriptList);        
       then
-        DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()), initExp);
+        DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()), initExp, DAE.UNKNOWN());
   end matchcontinue;
 end genZeroEquation;
 
@@ -1863,7 +1863,7 @@ protected function printSetCrsStr
 algorithm 
   c_strs := Util.listMap(crs, Exp.printComponentRefStr);
   s := Util.stringDelimitList(c_strs, ", ");
-  res := Util.stringAppendList({" connect crs: { ",s,"}"});
+  res := Util.stringAppendList({" connect crs: {",s,"}"});
 end printSetCrsStr;
 end Connect;
 

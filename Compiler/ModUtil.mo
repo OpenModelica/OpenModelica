@@ -234,8 +234,7 @@ protected function stringPrefixComponentRefsList
   end FuncTypeExp_ComponentRefType_bTo;
   replaceable type Type_b subtypeof Any;
 algorithm 
-  outExpExpLstLst:=
-  matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExpExpLstLst)
+  outExpExpLstLst := matchcontinue (inString,inFuncTypeExpComponentRefTypeBTo,inTypeB,inExpExpLstLst)
     local
       list<DAE.Exp> el_1,el;
       list<list<DAE.Exp>> res,rest;
@@ -257,8 +256,7 @@ protected function stringPrefixCref
   input DAE.ComponentRef inComponentRef;
   output DAE.ComponentRef outComponentRef;
 algorithm 
-  outComponentRef:=
-  matchcontinue (inString,inComponentRef)
+  outComponentRef := matchcontinue (inString,inComponentRef)
     local
       String s_1,str,s;
       list<DAE.Subscript> si;
@@ -283,8 +281,7 @@ protected function stringPrefixElements
   input list<DAE.Element> inDAEElementLst3;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inString1,inDAEElementLst2,inDAEElementLst3)
+  outDAEElementLst := matchcontinue (inString1,inDAEElementLst2,inDAEElementLst3)
     local
       DAE.Element el_1,el;
       list<DAE.Element> res,dae,rest;
@@ -305,31 +302,19 @@ protected function stringPrefixElement
   input DAE.Element inElement;
   output DAE.Element outElement;
 algorithm 
-  outElement:=
-  matchcontinue (inString,inDAEElementLst,inElement)
+  outElement := matchcontinue (inString,inDAEElementLst,inElement)
     local
-      DAE.Exp exp_1,exp,exp1_1,exp2_1,exp1,exp2;
-      String str,n;
-      list<DAE.Element> dae,dae_1,dae1;
-      DAE.ComponentRef cr;
-      DAE.VarKind vk;
-      DAE.VarDirection vd;
-      DAE.Type ty;
-      list<DAE.Subscript> inst_dims;
-      Option<DAE.Exp> start;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      list<Absyn.Path> cl;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Algorithm.Algorithm alg;
-      DAE.ExternalDecl decl;
-      DAE.Element e;
-      Absyn.InnerOuter io;
-      DAE.Type ftp;
-      DAE.VarProtection prot;
-      list<DAE.FunctionDefinition> funcDer;
-      Boolean partialPrefix;
+      DAE.Exp exp_1,exp,exp1_1,exp2_1,exp1,exp2; String str,n; 
+      list<DAE.Element> dae,dae_1,dae1; DAE.ComponentRef cr; 
+      DAE.VarKind vk; DAE.VarDirection vd; DAE.Type ty; 
+      list<DAE.Subscript> inst_dims; Option<DAE.Exp> start;
+      DAE.Flow flowPrefix; DAE.Stream streamPrefix;
+      list<Absyn.Path> cl; Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment; Algorithm.Algorithm alg;
+      DAE.ExternalDecl decl; DAE.Element e; Absyn.InnerOuter io;
+      DAE.Type ftp; DAE.VarProtection prot; list<DAE.FunctionDefinition> funcDer;
+      Boolean partialPrefix; DAE.ElementSource source "the origin of the element";
+    // variables with binding      
     case (str,dae,DAE.VAR(componentRef = cr,
                           kind = vk,
                           direction = vd,
@@ -339,38 +324,42 @@ algorithm
                           dims = inst_dims,
                           flowPrefix = flowPrefix,
                           streamPrefix = streamPrefix,
-                          pathLst = cl,
+                          source = source,
                           variableAttributesOption = dae_var_attr,
                           absynCommentOption = comment,
                           innerOuter=io))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
-        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flowPrefix,streamPrefix,cl,dae_var_attr,comment,io);
-    case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp))
+        DAE.VAR(cr,vk,vd,prot,ty,SOME(exp_1),inst_dims,flowPrefix,streamPrefix,source,dae_var_attr,comment,io);
+
+    case (str,dae,DAE.DEFINE(componentRef = cr,exp = exp,source = source))
       equation 
         exp_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp);
       then
-        DAE.DEFINE(cr,exp_1);
-    case (str,dae,DAE.EQUATION(exp = exp1,scalar = exp2))
+        DAE.DEFINE(cr,exp_1,source);
+
+    case (str,dae,DAE.EQUATION(exp = exp1,scalar = exp2,source = source))
       equation 
         exp1_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp1);
         exp2_1 = stringPrefixComponentRef(str, isParameterDaelist, dae, exp2);
       then
-        DAE.EQUATION(exp1_1,exp2_1);
-    case (str,dae,DAE.ALGORITHM(algorithm_ = alg)) then DAE.ALGORITHM(alg);
+        DAE.EQUATION(exp1_1,exp2_1,source);
 
-    case (str,dae1,DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae))) 
+    case (str,dae,DAE.ALGORITHM(algorithm_ = alg,source = source)) then DAE.ALGORITHM(alg,source);
+
+    case (str,dae1,DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae),source = source)) 
       /* What happens if a variable is not found among dae, should we check dae1,
     i.e. where the COMP and FUNCTION was found? */ 
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
-        DAE.COMP(n,DAE.DAE(dae_1));
+        DAE.COMP(n,DAE.DAE(dae_1),source);
+
     case (str,dae1,
       DAE.FUNCTION(path = n,
-      functions = (DAE.FUNCTION_DEF(body = DAE.DAE(dae))::funcDer)
-      ,type_ = ty,partialPrefix = partialPrefix,inlineType=inlineType))
+      functions = (DAE.FUNCTION_DEF(body = DAE.DAE(dae))::funcDer),
+      type_ = ty,partialPrefix = partialPrefix,inlineType=inlineType,source = source))
       local
         Absyn.Path n;
         tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -378,15 +367,20 @@ algorithm
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
-        DAE.FUNCTION(n,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::funcDer,ty,partialPrefix,inlineType);
-    case (str,dae1,DAE.FUNCTION(path = n,partialPrefix = partialPrefix,functions = (DAE.FUNCTION_EXT(DAE.DAE(elementLst = dae),decl)::funcDer),type_ = ty))
+        DAE.FUNCTION(n,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::funcDer,ty,partialPrefix,inlineType,source);
+
+    case (str,dae1,
+      DAE.FUNCTION(path = n,
+      partialPrefix = partialPrefix,functions = (DAE.FUNCTION_EXT(DAE.DAE(elementLst = dae),decl)::funcDer),
+      type_ = ty,source = source))
       local
         Absyn.Path n;
         tuple<DAE.TType, Option<Absyn.Path>> ty;
       equation 
         dae_1 = stringPrefixElements(str, dae, dae);
       then
-         DAE.FUNCTION(n,DAE.FUNCTION_EXT(DAE.DAE(dae_1),decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE);
+         DAE.FUNCTION(n,DAE.FUNCTION_EXT(DAE.DAE(dae_1),decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE(),source);
+
     case (str,dae,e) then e; 
   end matchcontinue;
 end stringPrefixElement;
@@ -395,8 +389,7 @@ protected function isParameterDaelist
   input DAE.ComponentRef inComponentRef;
   input list<DAE.Element> inDAEElementLst;
 algorithm 
-  _:=
-  matchcontinue (inComponentRef,inDAEElementLst)
+  _ := matchcontinue (inComponentRef,inDAEElementLst)
     local
       DAE.ComponentRef cr,crv;
       DAE.VarDirection vd;

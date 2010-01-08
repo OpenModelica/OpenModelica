@@ -342,6 +342,7 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       ConnectionGraph.ConnectionGraph graph;
+      DAE.ElementSource source "the origin of the element";
       
     case (cache,ih,{},cr)
       equation 
@@ -357,8 +358,11 @@ algorithm
         // check the models for balancing
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae1);
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae2))}));
+        (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae2),source)}));
         
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
       equation 
@@ -371,8 +375,11 @@ algorithm
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
         // check the model for balancing
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache, env_2, ih, DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae))}));
+        (cache, env_2, ih, DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae),source)}));
         
     case (cache,ih,cdecls,path) /* error instantiating */ 
       equation 
@@ -407,6 +414,7 @@ algorithm
       SCode.Class cdef;
       Env.Cache cache;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
       
     case (cache,ih,{},cr)
       equation 
@@ -420,8 +428,11 @@ algorithm
         (cache,env_1,ih,dae1) = instClassDecls(cache, env, ih, cdecls, path);
         cdecls = Util.listMap1(cdecls,SCode.classSetPartial,false);
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
+
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae))}));
+        (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae),source)}));
         
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */ 
       equation 
@@ -433,8 +444,11 @@ algorithm
           instClass(cache, env_2, ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), 
                     Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
         pathstr = Absyn.pathString(path);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env_2,ih,DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae))}));
+        (cache,env_2,ih,DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae),source)}));
         
     case (cache,ih,cdecls,path) /* error instantiating */ 
       equation 
@@ -868,6 +882,7 @@ algorithm
       UnitAbsyn.InstStore store;
       Option<Absyn.Path> containedInOpt;
       Absyn.Path fullPath;
+      DAE.ElementSource source "the origin of the element";
       
     case (cache,env,ih,{})
       equation 
@@ -890,10 +905,14 @@ algorithm
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
         // check the models for balancing
         //Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
+                       
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
         // finish with the execution statistics        
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
       then
-        (cache,ih,{DAE.COMP(n,DAE.DAE(dae))});
+        (cache,ih,{DAE.COMP(n,DAE.DAE(dae),source)});
         
     case (cache,env,ih,(c :: (cs as (_ :: _))))
          local String str;
@@ -3491,16 +3510,16 @@ protected function instantiateExternalObject
 "instantiate an external object. 
  This is done by instantiating the destructor and constructor
  functions and create a DAE element containing these two."
-input Env.Cache inCache;
-input Env.Env env "environment";
-input InstanceHierarchy inIH;
-input list<SCode.Element> els "elements";
-input Boolean impl;
-output Env.Cache outCache;
-output Env.Env outEnv;
-output InstanceHierarchy outIH;
-output list<DAE.Element> dae "resulting dae";
-output ClassInf.State ciState;
+  input Env.Cache inCache;
+  input Env.Env env "environment";
+  input InstanceHierarchy inIH;
+  input list<SCode.Element> els "elements";
+  input Boolean impl;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output list<DAE.Element> dae "resulting dae";
+  output ClassInf.State ciState;
 algorithm
   (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,impl) 
  	 local 
@@ -3515,32 +3534,39 @@ algorithm
  	   list<Env.Frame> fs,fs1;
  	   Absyn.Path classNameFQ;
  	   InstanceHierarchy ih;
+ 	   DAE.ElementSource source "the origin of the element";
 
  	   // Explicit instantiation, generate constructor and destructor and the function type.
-  case	(cache,env,ih,els,false) 
-    equation     
-    destr = getExternalObjectDestructor(els);
-    constr = getExternalObjectConstructor(els);
-    (cache,ih,destr_dae) = instantiateExternalObjectDestructor(cache,env,ih,destr);
-    (cache,ih,constr_dae,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
-    className=Env.getClassName(env); // The external object classname is in top frame of environment.
-    SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
-		//Extend the frame with the type, one frame up at the same place as the class.
-    f::fs = env;
-    fs1 = Env.extendFrameT(fs,className,functp);
-    env1 = f::fs1; 
-    then (cache,env1,ih,{DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae)},ClassInf.EXTERNAL_OBJ(classNameFQ));
+    case	(cache,env,ih,els,false) 
+      equation     
+        destr = getExternalObjectDestructor(els);
+        constr = getExternalObjectConstructor(els);
+        (cache,ih,destr_dae) = instantiateExternalObjectDestructor(cache,env,ih,destr);
+        (cache,ih,constr_dae,functp) = instantiateExternalObjectConstructor(cache,env,ih,constr);
+        className=Env.getClassName(env); // The external object classname is in top frame of environment.
+        SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
+        // Extend the frame with the type, one frame up at the same place as the class.
+        f::fs = env;
+        fs1 = Env.extendFrameT(fs,className,functp);
+        env1 = f::fs1; 
+            
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+      then 
+        (cache,env1,ih,{DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae,source)},ClassInf.EXTERNAL_OBJ(classNameFQ));
       
-      // Implicit, do not instantiate constructor and destructor.
-  case (cache,env,ih,els,true) 
-    equation 
-      	SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
-    then (cache,env,ih,{},ClassInf.EXTERNAL_OBJ(classNameFQ));
+    // Implicit, do not instantiate constructor and destructor.
+    case (cache,env,ih,els,true) 
+      equation 
+        SOME(classNameFQ)= Env.getEnvPath(env); // Fully qualified classname
+      then 
+        (cache,env,ih,{},ClassInf.EXTERNAL_OBJ(classNameFQ));
     
     // failed
-  case (cache,env,ih,els,impl) equation
-     print("Inst.instantiateExternalObject failed\n");
-     then fail();
+    case (cache,env,ih,els,impl) 
+      equation
+        print("Inst.instantiateExternalObject failed\n");
+      then fail();
   end matchcontinue;   
 end instantiateExternalObject;
 
@@ -6906,6 +6932,8 @@ algorithm
       Option<Absyn.ElementAttributes> oDA;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
+      
     // Rules for instantation of function variables (e.g. input and output     
       
     // Function variables with modifiers (outputs or local/protected variables)
@@ -6938,7 +6966,11 @@ algorithm
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,ty_2,{}));
-        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,true);
+
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
+        dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
         (cache,env_1,ih,store,dae,csets_1,ty_1,graph);
@@ -6955,8 +6987,12 @@ algorithm
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
-        dims_1 = instDimExpLst(dims, impl)  ;
-        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,true);
+        dims_1 = instDimExpLst(dims, impl);
+
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
+        dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
         arrty = makeArrayType(dims, ty);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
@@ -6976,7 +7012,11 @@ algorithm
         identType = makeCrefBaseType(ty,inst_dims);
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));        
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,false);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,source,false);
         dae = listAppend(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
       then
@@ -6998,9 +7038,13 @@ algorithm
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
         
-        dae2 = instModEquation(cr, ty, mod, impl);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+                
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
+        
+        dae2 = instModEquation(cr, ty, mod, source, impl);
         daex= propagateBinding(dae1_1, dae2) "The equations generated by instModEquation are used only to modify
                                               the bindings of parameters (DAE.VAR's in dae1_1). No extra equations are added. -- alleb";  
         dae = listAppend(daex, dae3);
@@ -7030,7 +7074,11 @@ algorithm
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
-        dae2 = instModEquation(cr, ty, mod, impl);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        
+        dae2 = instModEquation(cr, ty, mod, source, impl);
         index_string = Util.listMap(idxs_1, int_string);
         //Debug.fprint("insttrind", "\n ******************\n ");
         //Debug.fprint("insttrind", "\n index_string ");
@@ -7044,10 +7092,11 @@ algorithm
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA);
         false = modificationOnOuter(cr,mod,io); 
-        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
-          inst_dims, start, dae_var_attr, comment,io,finalPrefix,false);
+        
+        dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, 
+                          inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
         dae3 = DAEUtil.setComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
-        dae2 = Util.if_(Types.isComplexType(ty), dae2,{});
+        dae2 = Util.if_(Types.isComplexType(ty), dae2, {});
         dae3 = listAppend(dae2,dae3);
         dae = listAppend(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -7108,11 +7157,10 @@ end instVar2;
 
 protected function extractEnumerationClassModifier "
 Author: BZ, 2008-07
-remove builtin attributes from modifier for Enumeration class.
-"
-input DAE.Mod inMod;
-input SCode.Class cl;
-output DAE.Mod outMod2;
+remove builtin attributes from modifier for Enumeration class."
+  input DAE.Mod inMod;
+  input SCode.Class cl;
+  output DAE.Mod outMod2;
 algorithm (outMod2) := matchcontinue(inMod,cl)
   local
     Boolean b;
@@ -7153,12 +7201,10 @@ For external objects the binding contains the constructor call.  This must be in
 as the binding expression so the constructor code can be generated.
 -- BZ 2008-11, added:
 If the type is not externa object, the normal binding value is bound, 
-Unless it is a complex var that not inherites a basic type. In that case DAE.Equation are generated.
-"
-input DAE.Type tp;
-input DAE.Mod mod;
-output Option<DAE.Exp> eOpt;
-
+Unless it is a complex var that not inherites a basic type. In that case DAE.Equation are generated."
+  input DAE.Type tp;
+  input DAE.Mod mod;
+  output Option<DAE.Exp> eOpt;
 algorithm eOpt := matchcontinue(tp,mod)
   local DAE.Exp e,e1;DAE.Properties p;
   case ((DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
@@ -7814,6 +7860,7 @@ algorithm
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
       String idName;
+      DAE.ElementSource source "the origin of the element";
 
     /* Component that is bidirectional does not change direction on subcomponents */
     case (lst,Absyn.BIDIR()) then lst;   
@@ -7829,7 +7876,7 @@ algorithm
                    dims = id,
                    flowPrefix = flowPrefix,
                    streamPrefix = streamPrefix,
-                   pathLst = class_,
+                   source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
                    innerOuter=io) :: r),dir)  
@@ -7837,7 +7884,7 @@ algorithm
         dir_1 = absynDirToDaeDir(dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,vk,dir_1,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
    /* Error, component declared as input or output  when containing variable that has prefix input. */
     case ((DAE.VAR(componentRef = cr,
@@ -7849,7 +7896,7 @@ algorithm
                    dims = id,
                    flowPrefix = flowPrefix,
                    streamPrefix = streamPrefix,
-                   pathLst = class_,
+                   source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
                    innerOuter=io) :: r),dir)  
@@ -7869,7 +7916,7 @@ algorithm
                    dims = id,
                    flowPrefix = flowPrefix,
                    streamPrefix = streamPrefix,
-                   pathLst = class_,
+                   source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment) :: r),dir)  
       equation 
@@ -7879,12 +7926,12 @@ algorithm
       then
         fail();
 
-    case ((DAE.COMP(ident = idName,dAElist = DAE.DAE(elementLst = lst)) :: r),dir)
+    case ((DAE.COMP(ident = idName,dAElist = DAE.DAE(elementLst = lst),source = source) :: r),dir)
       equation 
         lst_1 = propagateDirection(lst, dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.COMP(idName,DAE.DAE(lst_1)) :: r_1);
+        (DAE.COMP(idName,DAE.DAE(lst_1),source) :: r_1);
     case ((x :: r),dir)
       equation 
         r_1 = propagateDirection(r, dir);
@@ -7920,41 +7967,43 @@ protected function propagateVariability " help function to propagateAttributes, 
       String s1,s2;
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
+      DAE.ElementSource source "the origin of the element";
+      
       /* Component that is VAR does not change variablity of subcomponents */ 
     case (lst,SCode.VAR()) then lst;  
       
     case ({},_) then {}; 
       
       /* the most restrictive variability is preserved (a const may not become PARAM) */
-    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io)) :: r,SCode.PARAM()) 
+    case ((x as DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io)) :: r,SCode.PARAM()) 
       equation
         r_1 = propagateVariability(r, vt);
       then
         x :: r_1;
 
       /* parameter */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.PARAM()) 
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r),SCode.PARAM()) 
       equation 
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,DAE.PARAM(),dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
       /* constant */
-    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r),SCode.CONST()) 
+    case ((DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r),SCode.CONST()) 
       equation 
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,DAE.CONST(),dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
 
 			/* Traverse components */
-    case ((DAE.COMP(ident = id,dAElist = DAE.DAE(elementLst = lst)) :: r),vt)
+    case ((DAE.COMP(ident = id,dAElist = DAE.DAE(elementLst = lst),source = source) :: r),vt)
       local String id;
       equation 
         lst_1 = propagateVariability(lst, vt);
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.COMP(id,DAE.DAE(lst_1)) :: r_1);
+        (DAE.COMP(id,DAE.DAE(lst_1),source) :: r_1);
 
     case ((x :: r),vt)
       equation 
@@ -7984,7 +8033,6 @@ protected function propagateInnerOuter
       list<DAE.Subscript> id;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.VarDirection dir;
@@ -7993,6 +8041,7 @@ protected function propagateInnerOuter
       Absyn.InnerOuter io;
       DAE.VarProtection prot;
       String idName;
+      DAE.ElementSource source "the origin of the element";
 
       /* Component that is unspecified does not change inner/outer on subcomponents */ 
     case (lst,Absyn.UNSPECIFIED()) then lst;  
@@ -8009,7 +8058,7 @@ protected function propagateInnerOuter
                    dims = id,
                    flowPrefix = flowPrefix,
                    streamPrefix = streamPrefix,
-                   pathLst = class_,
+                   source = source,
                    variableAttributesOption = dae_var_attr,
                    absynCommentOption = comment,
                    innerOuter=Absyn.UNSPECIFIED()) :: r),io) 
@@ -8017,7 +8066,7 @@ protected function propagateInnerOuter
 				false = ModUtil.isUnspecified(io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io) :: r_1);
+        (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
 			/* If var already have inner/outer, keep it. */
     case ( (v as DAE.VAR(componentRef = _)) :: r,io) 
@@ -8027,12 +8076,12 @@ protected function propagateInnerOuter
         v :: r_1;
 
 			/* Traverse components */
-    case ((DAE.COMP(ident = idName,dAElist = DAE.DAE(elementLst = lst)) :: r),io)
+    case ((DAE.COMP(ident = idName,dAElist = DAE.DAE(elementLst = lst),source = source) :: r),io)
       equation 
         lst_1 = propagateInnerOuter(lst, io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.COMP(idName,DAE.DAE(lst_1)) :: r_1);
+        (DAE.COMP(idName,DAE.DAE(lst_1),source) :: r_1);
 
     case ((x :: r),io)
       equation 
@@ -8120,6 +8169,7 @@ algorithm
       Boolean prot;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
 
     /* component environment If is a function var. */
     case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,_,graph) 
@@ -8129,7 +8179,11 @@ algorithm
         ty_1 = Types.elabType(ty);
         cr = Prefix.prefixCref(pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";        
         (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
-        dae = makeDaeEquation(DAE.CREF(cr,ty_1), e_1, SCode.NON_INITIAL());
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
+        dae = makeDaeEquation(DAE.CREF(cr,ty_1), e_1, source, SCode.NON_INITIAL());
       then
         (cache,env_1,ih,store,{dae},csets,ty,graph);
 
@@ -9075,12 +9129,13 @@ algorithm
       list<Absyn.Path> funcnames;
       Env.Cache cache;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
 
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims) 
       equation
         (c,cenv) = Lookup.lookupRecordConstructorClass(env,Absyn.IDENT(n));
-        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_)}) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
-      then (cache,env,ih,{DAE.RECORD_CONSTRUCTOR(fpath,ty1)});
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source)}) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
+      then (cache,env,ih,{DAE.RECORD_CONSTRUCTOR(fpath,ty1,source)});
       
     /* normal functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION())),inst_dims)
@@ -9101,8 +9156,11 @@ algorithm
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1); 
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae))::derFuncs,ty1,partialPrefix,inlineType)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae))::derFuncs,ty1,partialPrefix,inlineType,source)});
 
     /* External functions should also have their type in env, but no dae. */ 
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
@@ -9118,8 +9176,11 @@ algorithm
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) = 
           instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1, ClassInf.FUNCTION(n), n,parts, restr, prot, inst_dims, true,ConnectionGraph.EMPTY,NONE) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true) "impl" ;
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env_1,ih,{DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(DAE.DAE(dae),extdecl)},ty1,partialPrefix,DAE.NO_INLINE)});
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(DAE.DAE(dae),extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)});
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
@@ -9128,6 +9189,7 @@ algorithm
         (cache,env_1,ih,daefuncs) = instOverloadedFunctions(cache,env,ih, n, funcnames) "Overloaded functions" ;
       then
         (cache,env_1,ih,daefuncs);
+    // handle failure
     case (_,env,_,_,_,_,SCode.CLASS(name=n),_)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -9576,7 +9638,7 @@ protected function instOverloadedFunctions
   output InstanceHierarchy outIH;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  (outCache,outEnv,outIH,outDAEElementLst):= matchcontinue (inCache,inEnv,inIH,inIdent,inAbsynPathLst)
+  (outCache,outEnv,outIH,outDAEElementLst) := matchcontinue (inCache,inEnv,inIH,inIdent,inAbsynPathLst)
     local
       list<Env.Frame> env,cenv,env_1,env_2;
       SCode.Class c;
@@ -9592,10 +9654,11 @@ algorithm
       InstanceHierarchy ih;
       Boolean partialPrefix;
       DAE.InlineType isInline;
+      DAE.ElementSource source "the origin of the element";
       
     case (cache,env,ih,_,{}) then (cache,env,ih,{});
 
-    /* Instantiate each function, add its FQ name to the type, needed when deoverloading */ 
+    // Instantiate each function, add its FQ name to the type, needed when deoverloading  
     case (cache,env,ih,overloadname,(fn :: fns))  
       equation 
         (cache,(c as SCode.CLASS(id,partialPrefix,encflag,SCode.R_FUNCTION(),_)),cenv) = Lookup.lookupClass(cache, env, fn, true);
@@ -9608,8 +9671,12 @@ algorithm
         (cache,env_2,ih,dae1) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
         // TODO: Fix inline here 
         print(" DAE.InlineType FIX HERE \n");
+
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
       then
-        (cache,env_2,ih,(DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(DAE.DAE(dae))},ty,partialPrefix,DAE.NO_INLINE) :: dae1));
+        (cache,env_2,ih,(DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(DAE.DAE(dae))},ty,partialPrefix,DAE.NO_INLINE(),source) :: dae1));
+    // failure
     case (_,env,ih,_,_)
       equation 
         Debug.fprint("failtrace", "-Inst.instOverloaded_functions failed\n");
@@ -10200,11 +10267,13 @@ protected function daeDeclare
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
+  input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars "if true, declare variables for complex variables, e.g. record vars in functions";  
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inComponentRef,inState,inType,inAttributes,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars )
+  outDAEElementLst := matchcontinue (inComponentRef,inState,inType,inAttributes,protection,inExpExpOption,
+                                     inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,
+                                     io,finalPrefix,source,declareComplexVars )
     local
       DAE.Flow flowPrefix1;
       DAE.Stream streamPrefix1;
@@ -10223,14 +10292,14 @@ algorithm
           SCode.ATTR(flowPrefix = flowPrefix,
                      streamPrefix = streamPrefix,
                      variability = par,direction = dir),
-          prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
+          prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
         flowPrefix1 = DAEUtil.toFlow(flowPrefix, ci_state);
         streamPrefix1 = DAEUtil.toStream(streamPrefix, ci_state);
-        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
+        dae = daeDeclare2(vn, ty, flowPrefix1, streamPrefix1, par, dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.daeDeclare failed");
       then
@@ -10255,12 +10324,13 @@ protected function daeDeclare2
   input Option<SCode.Comment> inAbsynCommentOption;
 	input Absyn.InnerOuter io;
 	input Boolean finalPrefix;
+	input DAE.ElementSource source "the origin of the element";
 	input Boolean declareComplexVars;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,protection,inExpExpOption,
-                 inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars)
+  outDAEElementLst := matchcontinue (inComponentRef,inType,inFlow,inStream,inVariability,inDirection,protection,inExpExpOption,
+                                     inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,
+                                     source,declareComplexVars)
     local
       list<DAE.Element> dae;
       DAE.ComponentRef vn;
@@ -10274,27 +10344,27 @@ algorithm
       Option<SCode.Comment> comment;
       Boolean prot;
       
-    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,ty,flowPrefix,streamPrefix,SCode.VAR(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.VARIABLE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.DISCRETE(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.DISCRETE(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.PARAM(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix, DAE.PARAM(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars )
+    case (vn,ty,flowPrefix,streamPrefix,SCode.CONST(),dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars )
       equation 
-        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars );
+        dae = daeDeclare3(vn, ty, flowPrefix, streamPrefix,DAE.CONST(), dir,prot, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars );
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.daeDeclare2 failed");
       then
@@ -10319,11 +10389,12 @@ protected function daeDeclare3
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
+  input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars )
+  outDAEElementLst := matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inDirection,protection,inExpExpOption,inInstDims,
+                                     inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
     local
       list<DAE.Element> dae;
       DAE.ComponentRef vn;
@@ -10337,25 +10408,25 @@ algorithm
       Option<SCode.Comment> comment;
       Boolean prot;
       DAE.VarProtection prot1;
-    case (vn,ty,fl,st,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.INPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         prot1 = makeDaeProt(prot);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.INPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.OUTPUT(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         prot1 = makeDaeProt(prot);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.OUTPUT(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (vn,ty,fl,st,vk,Absyn.BIDIR(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,ty,fl,st,vk,Absyn.BIDIR(),prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         prot1 = makeDaeProt(prot);
-        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,declareComplexVars);
+        dae = daeDeclare4(vn, ty, fl, st, vk, DAE.BIDIR(),prot1, e, inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,declareComplexVars);
       then
         dae;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_,source,_)
       equation 
         //Debug.fprintln("failtrace", "- Inst.daeDeclare3 failed");
       then
@@ -10388,11 +10459,13 @@ protected function daeDeclare4
   input Option<SCode.Comment> inAbsynCommentOption;
   input Absyn.InnerOuter io;
   input Boolean finalPrefix;
+  input DAE.ElementSource source "the origin of the element";
   input Boolean declareComplexVars;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
   outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,declareComplexVars)
+  matchcontinue (inComponentRef,inType,inFlow,inStream,inVarKind,inVarDirection,protection,inExpExpOption,inInstDims,
+                 inStartValue,inDAEVariableAttributesOption,inAbsynCommentOption,io,finalPrefix,source,declareComplexVars)
     local
       DAE.ComponentRef vn,c;
       DAE.Flow fl;
@@ -10413,67 +10486,67 @@ algorithm
       DAE.VarProtection prot;
       list<DAE.Subscript> finst_dims;
 
-    case (vn,ty as(DAE.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
+    case (vn,ty as(DAE.T_INTEGER(varLstInt = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_INTEGER({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_INTEGER({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
          
-    case (vn,ty as(DAE.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,ty as(DAE.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_REAL({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_REAL({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
          
-    case (vn,ty as(DAE.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
+    case (vn,ty as(DAE.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_BOOL({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_BOOL({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
          
-    case (vn,ty as(DAE.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) 
+    case (vn,ty as(DAE.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_STRING({}),NONE),e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+      then {DAE.VAR(vn,kind,dir,prot,(DAE.T_STRING({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
          
-    case (vn,ty as(DAE.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
-//    case (vn,ty as(DAE.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars) then {}; 
+    case (vn,ty as(DAE.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) then {}; 
+//    case (vn,ty as(DAE.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) then {}; 
 
     /* We should not declare each enumeration value of an enumeration when instantiating,
   	 * e.g Myenum my !=> constant EnumType my.enum1,... {DAE.VAR(vn, kind, dir, DAE.ENUM, e, inst_dims)} 
   	 * instantiation of complex type extending from basic type 
      */ 
-    case (vn,ty as(DAE.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,ty as(DAE.T_ENUMERATION(names = l),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{}, dae_var_attr,comment,io)};  
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)};  
 
           /* Complex type that is ExternalObject*/
-     case (vn, ty as (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+     case (vn, ty as (DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
        local Absyn.Path path;
        equation 
          finst_dims = Util.listFlatten(inst_dims);
          dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+       then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
             
       /* instantiation of complex type extending from basic type */ 
-    case (vn,(DAE.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,(DAE.T_COMPLEX(complexClassType = ci,complexTypeOption = SOME(tp)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         (_,dae_var_attr) = instDaeVariableAttributes(Env.emptyCache(),Env.emptyEnv, DAE.NOMOD(), tp, {});
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
-        dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars);
+        dae = daeDeclare4(vn,tp,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
     then dae;
 		
 		/* Array that extends basic type */          
-    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
-        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,declareComplexVars);
+        dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then dae;
 
     /* Report an error */
-    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         s = Exp.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
@@ -10481,13 +10554,13 @@ algorithm
         fail();
         
         /* Complex/Record components, only if declareComplexVars is true */
-    case(vn,ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,true)
+    case(vn,ty as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,true)
       equation
         finst_dims = Util.listFlatten(inst_dims);
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
      
     /* MetaModelica extensions */
-    case (vn,(tty as DAE.T_FUNCTION(_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+    case (vn,(tty as DAE.T_FUNCTION(_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       local
         DAE.TType tty;
         Absyn.Path path;
@@ -10496,17 +10569,18 @@ algorithm
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         path = Exp.crefToPath(vn);
         ty = (tty,SOME(path));
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
-    case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,declareComplexVars)
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
+    // MetaModelica extension
+    case (vn,ty,fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         true = Types.isBoxedType(ty);
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);      
-      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,{},dae_var_attr,comment,io)};
+      then {DAE.VAR(vn,kind,dir,prot,ty,e,finst_dims,fl,st,source,dae_var_attr,comment,io)};
     /*----------------------------*/
     
-    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,_) then {}; 
+    case (c,ty,_,_,_,_,_,_,_,_,_,_,_,_,source,_) then {}; 
   end matchcontinue;
 end daeDeclare4;
 
@@ -10780,6 +10854,7 @@ algorithm
       InstanceHierarchy ih;
       list<tuple<Absyn.ComponentRef, Integer>> lst;
       tuple<Absyn.ComponentRef, Integer> tpl;
+      DAE.ElementSource source "the origin of the element";
        
     /* connect statements */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_CONNECT(crefLeft = c1,crefRight = c2),initial_,impl,graph) 
@@ -10855,8 +10930,12 @@ algorithm
         (cache,e1_1,e2_1,prop1) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
         //Check that the lefthandside and the righthandside get along.
-        dae = instEqEquation(e1_2, prop1, e2_2, prop2, initial_, impl);
+        dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
@@ -10898,21 +10977,27 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props);
         (cache,expl1) = Prefix.prefixExpList(cache,env, expl1, pre);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
         (cache,env_1,ih,dael,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl,graph);
         (cache,env_2,ih,dae2,_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl,graph) "There are no connections inside if-clauses." ;
       then
-        (cache,env_1,ih,{DAE.IF_EQUATION(expl1,dael,dae2)},csets,ci_state_1,graph);
+        (cache,env_1,ih,{DAE.IF_EQUATION(expl1,dael,dae2,source)},csets,ci_state_1,graph);
 
         // Initial IF_EQUATION 
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.INITIAL(),impl,graph)
       equation 
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props);
-        (cache,expl1) = Prefix.prefixExpList(cache,env, expl1, pre);     
+        (cache,expl1) = Prefix.prefixExpList(cache,env, expl1, pre);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
         (cache,env_1,ih,dael,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl,graph);
         (cache,env_2,ih,dae2,_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialequation, fb, impl,graph) "There are no connections inside if-clauses." ;
       then
-        (cache,env_1,ih,{DAE.INITIAL_IF_EQUATION(expl1,dael,dae2)},csets,ci_state_1,graph);
+        (cache,env_1,ih,{DAE.INITIAL_IF_EQUATION(expl1,dael,dae2,source)},csets,ci_state_1,graph);
 
         /* `when equation\' statement, modelica 1.1 
          When statements are instantiated by evaluating the
@@ -10923,6 +11008,8 @@ algorithm
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
         
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(dae1);
@@ -10935,19 +11022,22 @@ algorithm
         true = intEq(listLength(lhsCrefs),i1);
         ci_state_2 = instEquationCommonCiTrans(ci_state_1, initial_);
       then
-        (cache,env_2,ih,{DAE.WHEN_EQUATION(e_2,dae1,SOME(dae2))},csets,ci_state_2,graph);
+        (cache,env_2,ih,{DAE.WHEN_EQUATION(e_2,dae1,SOME(dae2),source)},csets,ci_state_2,graph);
         
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}),(initial_ as SCode.NON_INITIAL()),impl,graph)
       local list<DAE.ComponentRef> lhsCrefs; 
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(dae1);
 //TODO: fix error reporting, print(" exps: " +& Util.stringDelimitList(Util.listMap(lhsCrefs,Exp.printComponentRefStr),", ") +& "\n");
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
-        (cache,env_1,ih,{DAE.WHEN_EQUATION(e_2,dae1,NONE)},csets,ci_state_1,graph);
+        (cache,env_1,ih,{DAE.WHEN_EQUATION(e_2,dae1,NONE,source)},csets,ci_state_1,graph);
 
 
 /* seems unnecessary to handle when equations that are initial `for\' loops
@@ -11054,16 +11144,20 @@ algorithm
         (cache,e2_1,DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);                
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre); 
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
       then
-        (cache,env,ih,{DAE.ASSERT(e1_2,e2_2)},csets,ci_state,graph);
+        (cache,env,ih,{DAE.ASSERT(e1_2,e2_2,source)},csets,ci_state,graph);
 
     /* terminate statements */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_TERMINATE(message= e1),initial_,impl,graph)
       equation 
         (cache,e1_1,DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE,true);
-        (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);          
+        (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env,ih,{DAE.TERMINATE(e1_2)},csets,ci_state,graph);
+        (cache,env,ih,{DAE.TERMINATE(e1_2,source)},csets,ci_state,graph);
 
     /* reinit statement */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_REINIT(cref = cr,expReinit = e2),initial_,impl,graph)
@@ -11077,8 +11171,11 @@ algorithm
         (cache,e1_1,e2_1,tprop1) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl);
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
-        //(cache,DAE.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, DAE.CREF(cr_1,t), pre);   
-        trDae = instEqEquation(e1_2, tprop1, e2_2, tprop2, initial_, impl);
+        //(cache,DAE.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, DAE.CREF(cr_1,t), pre);
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+
+        trDae = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
         trDae = Util.listMap(trDae,makeDAEArrayEqToReinitForm);
       then
         (cache,env,ih,trDae,csets,ci_state,graph);
@@ -11157,7 +11254,10 @@ algorithm
       equation 
         (cache,exp,_,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false);
         (cache,exp) = Prefix.prefixExp(cache,env,exp,pre);
-        dae = instEquationNoRetCallVectorization(exp);        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        
+        dae = instEquationNoRetCallVectorization(exp,source);
       then
         (cache,env,ih,dae,csets,ci_state,graph);
                
@@ -11174,48 +11274,49 @@ end instEquationCommon;
 
 protected function instEquationNoRetCallVectorization "creates DAE for NORETCALLs and also performs vectorization if needed"
   input DAE.Exp expCall;
+  input DAE.ElementSource source "the origin of the element";
   output list<DAE.Element> dae;
 algorithm
-  dae := matchcontinue(expCall)
+  dae := matchcontinue(expCall,source)
   local Absyn.Path fn; list<DAE.Exp> expl; DAE.ExpType ty; Boolean s; DAE.Exp e;
     list<DAE.Element> dae1,dae2;
-    case(expCall as DAE.CALL(path=fn,expLst=expl)) then {DAE.NORETCALL(fn,expl)};
-    case(DAE.ARRAY(ty,s,e::expl)) equation
-      dae1 = instEquationNoRetCallVectorization(DAE.ARRAY(ty,s,expl));
-      dae2 = instEquationNoRetCallVectorization(e);
+    case(expCall as DAE.CALL(path=fn,expLst=expl),source) then {DAE.NORETCALL(fn,expl,source)};
+    case(DAE.ARRAY(ty,s,e::expl),source) equation
+      dae1 = instEquationNoRetCallVectorization(DAE.ARRAY(ty,s,expl),source);
+      dae2 = instEquationNoRetCallVectorization(e,source);
       dae = listAppend(dae1,dae2);
     then dae;
-    case(DAE.ARRAY(ty,s,{})) equation
+    case(DAE.ARRAY(ty,s,{}),source) equation
     then {};
   end matchcontinue;
 end instEquationNoRetCallVectorization;
 
 protected function makeDAEArrayEqToReinitForm "
 Author: BZ, 2009-02 
-Function for transforming DAE equations into DAE.REINIT form, used by instEquationCommon   
-"
-input DAE.Element inEq;
-output DAE.Element outEqn;
+Function for transforming DAE equations into DAE.REINIT form, used by instEquationCommon   "
+  input DAE.Element inEq;
+  output DAE.Element outEqn;
 algorithm outEqn := matchcontinue(inEq)
   local
     DAE.ComponentRef cr,cr2; 
     DAE.Exp e1,e2,e;
     DAE.ExpType t;
-  case(DAE.EQUATION(DAE.CREF(cr,_),e)) then DAE.REINIT(cr,e);
-  case(DAE.DEFINE(cr,e)) then DAE.REINIT(cr,e);
-  case(DAE.EQUEQUATION(cr,cr2))
+    DAE.ElementSource source "the origin of the element";
+    
+  case(DAE.EQUATION(DAE.CREF(cr,_),e,source)) then DAE.REINIT(cr,e,source);
+  case(DAE.DEFINE(cr,e,source)) then DAE.REINIT(cr,e,source);
+  case(DAE.EQUEQUATION(cr,cr2,source))
     equation
       t = Exp.crefLastType(cr2);
-      then DAE.REINIT(cr,DAE.CREF(cr2,t));
+      then DAE.REINIT(cr,DAE.CREF(cr2,t),source);
   case(_) equation print("Failure in: makeDAEArrayEqToReinitForm\n"); then fail();
 end matchcontinue;
 end makeDAEArrayEqToReinitForm;
 
 protected function condenseArrayEquation "This function transforms makes the two sides of an array equation
-into its condense form. By default, most array variables are vectorized,
+into its condensed form. By default, most array variables are vectorized,
 i.e. v becomes {v[1],v[2],..,v[n]}. But for array equations containing function calls this is not wanted.
-This function detect this case and elaborates expressions without vectorization.
-"
+This function detect this case and elaborates expressions without vectorization."
 	input Env.Cache inCache;
 	input Env.Env env;
 	input Absyn.Exp e1;
@@ -11346,11 +11447,12 @@ protected function instEqEquation
   input DAE.Properties inProperties2;
   input DAE.Exp inExp3;
   input DAE.Properties inProperties4;
+  input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial5;
   input Boolean inBoolean6;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,inInitial5,inBoolean6)
+  outDAEElementLst := matchcontinue (inExp1,inProperties2,inExp3,inProperties4,source,inInitial5,inBoolean6)
     local
       DAE.Exp e1_1,e1,e2,e2_1;
       tuple<DAE.TType, Option<Absyn.Path>> t_1,t1,t2,t;
@@ -11359,7 +11461,7 @@ algorithm
       SCode.Initial initial_;
       Boolean impl;
       String e1_str,t1_str,e2_str,t2_str,s1,s2;
-    case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),initial_,impl) /* impl PR. e1= lefthandside, e2=righthandside
+    case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),source,initial_,impl) /* impl PR. e1= lefthandside, e2=righthandside
 	 This seem to be a strange function. 
 	 wich rule is matched? or is both rules matched?
 	 LS: Static.type_convert in Static.match_prop can probably fail,
@@ -11370,46 +11472,47 @@ algorithm
 	 BZ(2007-05-30): Not so strange it checks for eihter exp1 or exp2 to be from expected type.*/ 
       equation 
         (e1_1,DAE.PROP(t_1,_)) = Types.matchProp(e1, p1, p2, false);
-        dae = instEqEquation2(e1_1, e2, t_1, initial_);
+        dae = instEqEquation2(e1_1, e2, t_1, source, initial_);
       then
         dae;
-    case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),initial_,impl) /* If it fails then this rule is matched. */ 
+    case (e1,(p1 as DAE.PROP(type_ = t1)),e2,(p2 as DAE.PROP(type_ = t2)),source,initial_,impl) /* If it fails then this rule is matched. */ 
       equation 
         (e2_1,DAE.PROP(t_1,_)) = Types.matchProp(e2, p2, p1, true);
-        dae = instEqEquation2(e1, e2_1, t_1, initial_);
+        dae = instEqEquation2(e1, e2_1, t_1, source, initial_);
       then
         dae;
-    case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),initial_,impl) /* PR. */ 
+    case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),source,initial_,impl) /* PR. */ 
       equation 
         (e1_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e1, p1, p2, false);
-        dae = instEqEquation2(e1_1, e2, t_1, initial_);
+        dae = instEqEquation2(e1_1, e2, t_1, source, initial_);
       then
         dae;
-    case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),initial_,impl) /* PR. 
+    case (e1,(p1 as DAE.PROP_TUPLE(type_ = t1)),e2,(p2 as DAE.PROP_TUPLE(type_ = t2)),source,initial_,impl) /* PR. 
 	    An assignment to a varaible of T_ENUMERATION type is an explicit 
 	    assignment to the value componnent of the enumeration, i.e. having 
 	    a type T_ENUM
 	 */ 
       equation 
         (e2_1,DAE.PROP_TUPLE(t_1,_)) = Types.matchProp(e2, p2, p1, true);
-        dae = instEqEquation2(e1, e2_1, t_1, initial_);
+        dae = instEqEquation2(e1, e2_1, t_1, source, initial_);
       then
         dae;
-//    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUM(),_))),initial_,impl) /* 
+//    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUM(),_))),source,initial_,impl) /* 
 //	    An assignment to a varaible of T_ENUMERATION type is an explicit 
 //	    assignment to the value componnent of the enumeration, i.e. having 
 //	    a type T_ENUM
 //	 */ 
 //      equation 
-//        dae = instEqEquation2(e1, e2, t, initial_);
+//        dae = instEqEquation2(e1, e2, t, source, initial_);
 //      then
 //        dae;
-    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),e2,DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _),_))),initial_,impl)
+    case ((e1 as DAE.CREF(componentRef = _)),DAE.PROP(type_ = (DAE.T_ENUMERATION(names = _),_)),
+           e2,DAE.PROP(type_ = (t as (DAE.T_ENUMERATION(names = _),_))),source,initial_,impl)
       equation 
-        dae = instEqEquation2(e1, e2, t, initial_);
+        dae = instEqEquation2(e1, e2, t, source, initial_);
       then
         dae;
-    case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),initial_,impl)
+    case (e1,DAE.PROP(type_ = t1),e2,DAE.PROP(type_ = t2),source,initial_,impl)
       equation
         e1_str = Exp.printExpStr(e1);
         t1_str = Types.unparseType(t1);
@@ -11431,57 +11534,55 @@ protected function instEqEquation2
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
   input DAE.Type inType3;
+  input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial4;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst := matchcontinue (inExp1,inExp2,inType3,inInitial4)
+  outDAEElementLst := matchcontinue (inExp1,inExp2,inType3,source,inInitial4)
     local
-      DAE.Element dae;
-      DAE.Exp e1,e2;
+      DAE.Element dae; DAE.Exp e1,e2;
       SCode.Initial initial_;
       DAE.ComponentRef cr,c1_1,c2_1,c1,c2;
       DAE.ExpType t,t1,t2,tp;
       list<Integer> ds;
       tuple<DAE.TType, Option<Absyn.Path>> bc;
       list<DAE.Element> dae1,dae2,decl;
-      DAE.ArrayDim ad;
-      ClassInf.State cs;
-      String n;
-      list<DAE.Var> vs;
-      Option<Absyn.Path> p;
-    case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),initial_)
+      DAE.ArrayDim ad; ClassInf.State cs;
+      String n; list<DAE.Var> vs; Option<Absyn.Path> p;
+
+    case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),source,initial_)
       equation 
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-    case (e1,e2,(DAE.T_REAL(varLstReal = _),_),initial_)
+    case (e1,e2,(DAE.T_REAL(varLstReal = _),_),source,initial_)
       equation 
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-    case (e1,e2,(DAE.T_STRING(varLstString = _),_),initial_)
+    case (e1,e2,(DAE.T_STRING(varLstString = _),_),source,initial_)
       equation 
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-    case (e1,e2,(DAE.T_BOOL(varLstBool = _),_),initial_)
+    case (e1,e2,(DAE.T_BOOL(varLstBool = _),_),source,initial_)
       equation 
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-//    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUM(),_),initial_)
+//    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUM(),_),source,initial_)
 //      equation 
-//        dae = makeDaeDefine(cr, e2, initial_);
+//        dae = makeDaeDefine(cr, e2, source, initial_);
 //      then
 //        {dae};
-    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUMERATION(names = _),_),initial_)
+    case (DAE.CREF(componentRef = cr,ty = t),e2,(DAE.T_ENUMERATION(names = _),_),source,initial_)
       equation 
-        dae = makeDaeDefine(cr, e2, initial_);
+        dae = makeDaeDefine(cr, e2, source, initial_);
       then
         {dae};
 
     /* arrays with function calls => array equations */
-    case (e1,e2,(t as (DAE.T_ARRAY(arrayDim = _),_)),initial_) 
+    case (e1,e2,(t as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_) 
       local tuple<DAE.TType, Option<Absyn.Path>> t; Boolean b1,b2;
       equation 
         b1 = Exp.containVectorFunctioncall(e2);
@@ -11491,63 +11592,63 @@ algorithm
         e1 = Exp.simplify(e1);
         e2 = Exp.simplify(e2);
       then
-        {DAE.ARRAY_EQUATION(ds,e1,e2)};
+        {DAE.ARRAY_EQUATION(ds,e1,e2,source)};
     /* arrays that are splitted */
-    case (e1,e2,(DAE.T_ARRAY(arrayDim = ad,arrayType = t),_),initial_) 
+    case (e1,e2,(DAE.T_ARRAY(arrayDim = ad,arrayType = t),_),source,initial_) 
       local
         list<DAE.Element> dae;
         tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
-        dae = instArrayEquation(e1, e2, ad, t, initial_);
+        dae = instArrayEquation(e1, e2, ad, t, source, initial_);
       then
         dae;
     /* tuples */
-    case (e1,e2,(DAE.T_TUPLE(tupleType = _),_),initial_) 
+    case (e1,e2,(DAE.T_TUPLE(tupleType = _),_),source,initial_) 
       equation 
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
 
     /* MetaModelica types */
-    case (e1,e2,(DAE.T_LIST(_),_),initial_)
+    case (e1,e2,(DAE.T_LIST(_),_),source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-    case (e1,e2,(DAE.T_METATUPLE(_),_),initial_)
+    case (e1,e2,(DAE.T_METATUPLE(_),_),source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-    case (e1,e2,(DAE.T_METAOPTION(_),_),initial_)
+    case (e1,e2,(DAE.T_METAOPTION(_),_),source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
-    case (e1,e2,(DAE.T_UNIONTYPE(_),_),initial_)
+    case (e1,e2,(DAE.T_UNIONTYPE(_),_),source,initial_)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        dae = makeDaeEquation(e1, e2, initial_);
+        dae = makeDaeEquation(e1, e2, source, initial_);
       then
         {dae};
     /* -------------- */
     /* Complex types extending basic type */
-    case (e1,e2,(DAE.T_COMPLEX(complexTypeOption = SOME(bc)),_),initial_) 
+    case (e1,e2,(DAE.T_COMPLEX(complexTypeOption = SOME(bc)),_),source,initial_) 
       local list<DAE.Element> dae;
       equation 
-        dae = instEqEquation2(e1, e2, bc, initial_);
+        dae = instEqEquation2(e1, e2, bc, source, initial_);
       then
        dae;
   
   /* Complex equation for records on form e1 = e2, expand to equality over record elements*/
-    case (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),initial_) 
+    case (DAE.CREF(componentRef=_),DAE.CREF(componentRef=_),(DAE.T_COMPLEX(complexVarLst = {}),_),source,initial_) 
       then {}; 
     case (DAE.CREF(componentRef = c1,ty = t1),DAE.CREF(componentRef = c2,ty = t2),
           (DAE.T_COMPLEX(complexClassType = cs,complexVarLst = (DAE.TYPES_VAR(name = n,type_ = t) :: vs),
-          complexTypeOption = bc, equalityConstraint = ec),p),initial_)
+          complexTypeOption = bc, equalityConstraint = ec),p),source,initial_)
       local
         list<DAE.Element> dae;
         tuple<DAE.TType, Option<Absyn.Path>> t;
@@ -11558,20 +11659,19 @@ algorithm
         ty2 = Types.elabType(t);
         c1_1 = Exp.extendCref(c1,ty2, n, {});
         c2_1 = Exp.extendCref(c2,ty2, n, {});
-        dae1 = instEqEquation2(DAE.CREF(c1_1,t1), DAE.CREF(c2_1,t2), t, initial_);
-        dae2 = instEqEquation2(DAE.CREF(c1,t1), DAE.CREF(c2,t2), 
-          (DAE.T_COMPLEX(cs,vs,bc,ec),p), initial_);
+        dae1 = instEqEquation2(DAE.CREF(c1_1,t1), DAE.CREF(c2_1,t2), t, source, initial_);
+        dae2 = instEqEquation2(DAE.CREF(c1,t1), DAE.CREF(c2,t2), (DAE.T_COMPLEX(cs,vs,bc,ec),p), source, initial_);
         dae = listAppend(dae1, dae2);
       then
         dae; 
    /* all other COMPLEX equations */
-   case (e1,e2, t as (DAE.T_COMPLEX(complexVarLst = _),_),initial_)
+   case (e1,e2, t as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
      local list<DAE.Element> dae; DAE.Type t;     
       equation
-     dae = instComplexEquation(e1,e2,t,initial_);
+     dae = instComplexEquation(e1,e2,t,source,initial_);
     then dae;
    
-    case (e1,e2,t,initial_)
+    case (e1,e2,t,source,initial_)
       local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
         Debug.fprintln("failtrace", "- Inst.instEqEquation2 failed");
@@ -11588,13 +11688,14 @@ protected function makeDaeEquation
   either an initial equation or an ordinary equation."
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
+  input DAE.ElementSource source "the origin of the element";  
   input SCode.Initial inInitial3;
   output DAE.Element outElement;
 algorithm 
-  outElement := matchcontinue (inExp1,inExp2,inInitial3)
+  outElement := matchcontinue (inExp1,inExp2,source,inInitial3)
     local DAE.Exp e1,e2;
-    case (e1,e2,SCode.NON_INITIAL()) then DAE.EQUATION(e1,e2); 
-    case (e1,e2,SCode.INITIAL()) then DAE.INITIALEQUATION(e1,e2); 
+    case (e1,e2,source,SCode.NON_INITIAL()) then DAE.EQUATION(e1,e2,source); 
+    case (e1,e2,source,SCode.INITIAL()) then DAE.INITIALEQUATION(e1,e2,source); 
   end matchcontinue;
 end makeDaeEquation;
 
@@ -11603,15 +11704,14 @@ protected function makeDaeDefine
   author: LS, ELN "
   input DAE.ComponentRef inComponentRef;
   input DAE.Exp inExp;
+  input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial;
   output DAE.Element outElement;
 algorithm 
-  outElement := matchcontinue (inComponentRef,inExp,inInitial)
-    local
-      DAE.ComponentRef cr;
-      DAE.Exp e2;
-    case (cr,e2,SCode.NON_INITIAL()) then DAE.DEFINE(cr,e2); 
-    case (cr,e2,SCode.INITIAL()) then DAE.INITIALDEFINE(cr,e2); 
+  outElement := matchcontinue (inComponentRef,inExp,source,inInitial)
+    local DAE.ComponentRef cr; DAE.Exp e2;
+    case (cr,e2,source,SCode.NON_INITIAL()) then DAE.DEFINE(cr,e2,source); 
+    case (cr,e2,source,SCode.INITIAL()) then DAE.INITIALDEFINE(cr,e2,source); 
   end matchcontinue;
 end makeDaeDefine;
 
@@ -11622,18 +11722,17 @@ protected function instArrayEquation
   input DAE.Exp inExp2;
   input DAE.ArrayDim inArrayDim3;
   input DAE.Type inType4;
+  input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial5;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst := matchcontinue (inExp1,inExp2,inArrayDim3,inType4,inInitial5)
+  outDAEElementLst := matchcontinue (inExp1,inExp2,inArrayDim3,inType4,source,inInitial5)
     local
-      String e1_str,e2_str,s1;
-      DAE.Exp e1,e2;
+      String e1_str,e2_str,s1; DAE.Exp e1,e2;
       tuple<DAE.TType, Option<Absyn.Path>> t;
-      SCode.Initial initial_;
-      list<DAE.Element> dae;
-      Integer sz;
-    case (e1,e2,DAE.DIM(integerOption = NONE),t,initial_) /* array elt type */ 
+      SCode.Initial initial_; list<DAE.Element> dae; Integer sz;
+
+    case (e1,e2,DAE.DIM(integerOption = NONE),t,source,initial_) /* array elt type */ 
       equation 
         e1_str = Exp.printExpStr(e1);
         e2_str = Exp.printExpStr(e1);
@@ -11641,12 +11740,12 @@ algorithm
         Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {s1});
       then
         fail();
-    case (e1,e2,DAE.DIM(integerOption = SOME(sz)),t,initial_)
+    case (e1,e2,DAE.DIM(integerOption = SOME(sz)),t,source,initial_)
       equation 
-        dae = instArrayElEq(e1, e2, t, 1, sz, initial_);
+        dae = instArrayElEq(e1, e2, t, 1, sz, source, initial_);
       then
         dae;
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instArrayEquation failed");
       then
@@ -11663,35 +11762,35 @@ protected function instArrayElEq
   input DAE.Type inType3;
   input Integer inInteger4;
   input Integer inInteger5;
+  input DAE.ElementSource source "the origin of the element";
   input SCode.Initial inInitial6;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst := matchcontinue (inExp1,inExp2,inType3,inInteger4,inInteger5,inInitial6)
+  outDAEElementLst := matchcontinue (inExp1,inExp2,inType3,inInteger4,inInteger5,source,inInitial6)
     local
-      DAE.Exp e1_1,e2_1,e1,e2;
-      list<DAE.Element> dae1,dae2,dae;
-      Integer i_1,i,sz;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Exp e1_1,e2_1,e1,e2; list<DAE.Element> dae1,dae2,dae;
+      Integer i_1,i,sz; tuple<DAE.TType, Option<Absyn.Path>> t;
       SCode.Initial initial_;
-    case (e1,e2,t,i,sz,initial_) /* lhs rhs elt type iterator dim size */ 
+      
+    case (e1,e2,t,i,sz,source,initial_) /* lhs rhs elt type iterator dim size */ 
       local DAE.Exp ae1;
       equation 
         (i <= sz) = true;
         ae1 = DAE.ICONST(i);
         e1_1 = Exp.simplify(DAE.ASUB(e1,{ae1}));
         e2_1 = Exp.simplify(DAE.ASUB(e2,{ae1}));
-        dae1 = instEqEquation2(e1_1, e2_1, t, initial_);
+        dae1 = instEqEquation2(e1_1, e2_1, t, source, initial_);
         i_1 = i + 1;
-        dae2 = instArrayElEq(e1, e2, t, i_1, sz, initial_);
+        dae2 = instArrayElEq(e1, e2, t, i_1, sz, source, initial_);
         dae = listAppend(dae1, dae2);
       then
         dae;
-    case (e1,e2,t,i,sz,initial_)
+    case (e1,e2,t,i,sz,source,initial_)
       equation 
         (i <= sz) = false;
       then
         {};
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instArrayElEq failed");
       then
@@ -11700,7 +11799,6 @@ algorithm
 end instArrayElEq;
 
 protected function unroll "function: unroll
- 
   Unrolling a loop is a way of removing the non-linear structure of
   the FOR clause by explicitly repeating the body of the loop once
   for each iteration."
@@ -11810,13 +11908,18 @@ algorithm
       SCode.Algorithm algSCode;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
       
     case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements,baseClassPath = bc),impl,graph) /* impl */ 
       equation 
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc) "If algorithm is inherited, find base class environment" ;
         (cache,statements_1) = instStatements(cache,env_1,pre, statements, SCode.NON_INITIAL(),impl);
+
+        // set the source of this element 
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
-        (cache,env,ih,{DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1))},csets,ci_state,graph);
+        (cache,env,ih,{DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)},csets,ci_state,graph);
+
     case (_,_,_,_,_,_,_,algSCode,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instAlgorithm failed");
@@ -11862,13 +11965,18 @@ algorithm
       Prefix pre;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
       
     case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements,baseClassPath = bc),impl,graph) /* impl */
       equation 
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc);
         (cache,statements_1) = instStatements(cache,env, pre,statements, SCode.INITIAL(), impl);
+        
+        // set the source of this element
+        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
       then
-        (cache,env,ih,{DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1))},csets,ci_state,graph);
+        (cache,env,ih,{DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)},csets,ci_state,graph);
+
     case (_,_,_,_,_,_,_,_,_,_)
       equation 
         Debug.fprintln("failtrace", "- Inst.instInitialAlgorithm failed");
@@ -13108,8 +13216,9 @@ algorithm
       then
         (cache,env,ih,sets,{
           DAE.ASSERT(
-            DAE.RELATION(DAE.CREF(c1_1,DAE.ET_REAL()),DAE.EQUAL(DAE.ET_BOOL()),
-              DAE.CREF(c2_1,DAE.ET_REAL())),DAE.SCONST("automatically generated from connect")
+            DAE.RELATION(DAE.CREF(c1_1,DAE.ET_REAL()),DAE.EQUAL(DAE.ET_BOOL()),DAE.CREF(c2_1,DAE.ET_REAL())),
+            DAE.SCONST("automatically generated from connect"),
+            DAE.SOURCE({}, NONE(), SOME((c1_1,c2_1))) // set the origin of the element
           )},graph);
     /* Same as above, but returns empty (removed conditional var)*/ 
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph)
@@ -13218,11 +13327,10 @@ algorithm
          */
         zeroVector = Exp.makeRealArrayOfZeros(dim1);
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, dae, 
-          {DAE.EQUATION(
-          zeroVector, 
-          DAE.CALL(fpath1, 
-          {DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())}, 
-          false, false, DAE.ET_REAL,DAE.NO_INLINE)
+          {DAE.EQUATION(zeroVector, 
+                        DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())}, 
+                                 false, false, DAE.ET_REAL,DAE.NO_INLINE),
+                        DAE.SOURCE({}, NONE(), SOME((c1_1,c2_1))) // set the origin of the element
           )});
       then
         (cache,env,ih,sets_1,dae,graph);
@@ -14211,11 +14319,11 @@ protected function instModEquation
   input DAE.ComponentRef inComponentRef;
   input DAE.Type inType;
   input Mod inMod;
+  input DAE.ElementSource source "the origin of the element";
   input Boolean inBoolean;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inComponentRef,inType,inMod,inBoolean)
+  outDAEElementLst := matchcontinue (inComponentRef,inType,inMod,source,inBoolean)
     local
       DAE.ExpType t;
       list<DAE.Element> dae;
@@ -14225,25 +14333,25 @@ algorithm
       DAE.Exp e;
       DAE.Properties prop2;
       Boolean impl;
+      
       // Record constructors are different
       // If it's a constant binding, all fields will already be bound correctly. Don't return a DAE.
-    case (cr,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()))))),impl) then {};
+    case (cr,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()))))),source,impl) then {};
      // Regular cases
-    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2)))),impl)
+    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2)))),source,impl)
       equation 
         t = Types.elabType(ty1);
-        dae = instEqEquation(DAE.CREF(cr,t), DAE.PROP(ty1,DAE.C_VAR()), e, prop2, SCode.NON_INITIAL(), impl);
+        dae = instEqEquation(DAE.CREF(cr,t), DAE.PROP(ty1,DAE.C_VAR()), e, prop2, source, SCode.NON_INITIAL(), impl);
       then
         dae;
-    case (_,_,DAE.MOD(eqModOption = NONE),impl) then {}; 
-    case (_,_,DAE.NOMOD(),impl) then {}; 
-    case (_,_,DAE.REDECL(finalPrefix = _),impl) then {}; 
-    case (c,t,m,impl)
-      local tuple<DAE.TType, Option<Absyn.Path>> t;
+    case (_,_,DAE.MOD(eqModOption = NONE),_,impl) then {}; 
+    case (_,_,DAE.NOMOD(),_,impl) then {}; 
+    case (_,_,DAE.REDECL(finalPrefix = _),_,impl) then {}; 
+    case (c,ty1,m,source,impl)
       equation 
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Inst.instModEquation failed\n type: ");
-        Debug.fprint("failtrace", Types.printTypeStr(t));
+        Debug.fprint("failtrace", Types.printTypeStr(ty1));
         Debug.fprint("failtrace", "\n  cref: ");
         Debug.fprint("failtrace", Exp.printComponentRefStr(c));
         Debug.fprint("failtrace", "\n mod:");
@@ -14384,7 +14492,7 @@ algorithm
       list<DAE.Subscript> inst_dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
-      list<Absyn.Path> class_;
+      DAE.ElementSource source "the origin of the element";      
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       String n;
@@ -14395,6 +14503,7 @@ algorithm
       list<DAE.FunctionDefinition> derFuncs; 
       Boolean partialPrefix;      
       DAE.InlineType inlineType;
+      
     case (done,{}) then done; 
     case (done,((v as DAE.VAR(componentRef = cr,
                               kind = vk,
@@ -14405,30 +14514,35 @@ algorithm
                               dims = inst_dims,
                               flowPrefix = flowPrefix,
                               streamPrefix = streamPrefix,
-                              pathLst = class_,
+                              source = source,
                               variableAttributesOption = dae_var_attr,
                               absynCommentOption = comment,
                               innerOuter=io)) :: todorest))
       equation 
         (exp_1,done_1) = initVarsModelicaOutput2(cr, exp, done);
         (exp_2,todorest_1) = initVarsModelicaOutput2(cr, exp_1, todorest);
-        done_2 = listAppend(done_1,{DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flowPrefix,streamPrefix,class_,dae_var_attr,comment,io)});
+        done_2 = listAppend(done_1,{DAE.VAR(cr,vk,vd,prot,ty,exp_2,inst_dims,flowPrefix,streamPrefix,source,dae_var_attr,comment,io)});
         done_3 = initVarsModelicaOutput1(done_2, todorest_1);
       then
         done_3;
         
-    case (done,(DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae)) :: rest))
+    case (done,(DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae),source = source) :: rest))
       equation 
         dae_1 = initVarsModelicaOutput(dae);
-        done_1 = listAppend(done, {DAE.COMP(n,DAE.DAE(dae_1))});
+        done_1 = listAppend(done, {DAE.COMP(n,DAE.DAE(dae_1),source)});
         done_2 = initVarsModelicaOutput1(done_1, rest);
       then
         done_2;
         
- case (done,(DAE.FUNCTION(path = fpath, partialPrefix = partialPrefix, functions = (DAE.FUNCTION_DEF(body=DAE.DAE(elementLst = dae))::derFuncs),type_ = ty, inlineType = inlineType) :: rest))
+ case (done,(DAE.FUNCTION(path = fpath, 
+                          partialPrefix = partialPrefix, 
+                          functions = (DAE.FUNCTION_DEF(body=DAE.DAE(elementLst = dae))::derFuncs),
+                          type_ = ty, 
+                          inlineType = inlineType, 
+                          source = source) :: rest))
       equation 
         dae_1 = initVarsModelicaOutput(dae);
-        done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::derFuncs,ty,partialPrefix,inlineType)});
+        done_1 = listAppend(done, {DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::derFuncs,ty,partialPrefix,inlineType,source)});
         done_2 = initVarsModelicaOutput1(done_1, rest);
       then
         done_2;
@@ -16446,59 +16560,59 @@ protected function instComplexEquation "instantiate a comlex equation, i.e. c = 
   input DAE.Exp lhs;
   input DAE.Exp rhs;
   input DAE.Type tp;
+  input DAE.ElementSource source "the origin of the element";
   input SCode.Initial initial_;
   output list<DAE.Element> dae;
 algorithm
-  dae := matchcontinue(lhs,rhs,tp,initial_)
-    /* Records */
-    case(lhs,rhs,tp,initial_) equation
-      true = Types.isRecord(tp);
-      dae = makeComplexDaeEquation(lhs,rhs,initial_);
+  dae := matchcontinue(lhs,rhs,tp,source,initial_)
+    local DAE.Element daeEl; String s;
+    // Records 
+    case(lhs,rhs,tp,source,initial_) 
+      equation
+        true = Types.isRecord(tp);
+        dae = makeComplexDaeEquation(lhs,rhs,source,initial_);
       then dae;
         
-        /* External objects are treated as ordinary equations*/
-    case (lhs,rhs,tp,initial_)
-      local DAE.Element dae; 
+    // External objects are treated as ordinary equations
+    case (lhs,rhs,tp,source,initial_) 
       equation
-      true = Types.isExternalObject(tp);
-      dae = makeDaeEquation(lhs,rhs,initial_);
-    then {};
-               
-    /* 
-     * adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
-     *                   as is used in Modelica.Mechanics.MultiBody (Orientation type)
-     */
-    case(lhs,rhs,tp,initial_) equation 
+        true = Types.isExternalObject(tp);
+        daeEl = makeDaeEquation(lhs,rhs,source,initial_);
+        // adrpo: TODO! FIXME! shouldn't we return the dae here??!!
+      then {};
+
+    // adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
+    //                   as is used in Modelica.Mechanics.MultiBody (Orientation type)
+    case(lhs,rhs,tp,source,initial_) equation 
       // adrpo: TODO! check if T_COMPLEX(ClassInf.TYPE)!     
-      dae = makeComplexDaeEquation(lhs,rhs,initial_);
+      dae = makeComplexDaeEquation(lhs,rhs,source,initial_);
     then dae;               
                                   
-        /* complex equation that is not of restriction record is not allowed */
-    case(lhs,rhs,tp,initial_) 
-      local String s;
+    // complex equation that is not of restriction record is not allowed 
+    case(lhs,rhs,tp,source,initial_) 
       equation 
-      false = Types.isRecord(tp);     
-      s = Exp.printExpStr(lhs) +& " = " +& Exp.printExpStr(rhs);
-      Error.addMessage(Error.ILLEGAL_EQUATION_TYPE,{s});
+        false = Types.isRecord(tp);     
+        s = Exp.printExpStr(lhs) +& " = " +& Exp.printExpStr(rhs);
+        Error.addMessage(Error.ILLEGAL_EQUATION_TYPE,{s});
       then fail();        
   end matchcontinue;
 end instComplexEquation;
   
 protected function makeComplexDaeEquation "Creates a DAE.COMPLEX_EQUATION for equations involving records"
   input DAE.Exp lhs;
-  input DAE.Exp rhs;  
+  input DAE.Exp rhs;
+  input DAE.ElementSource source "the origin of the element";  
   input SCode.Initial initial_;
   output list<DAE.Element> dae;
 algorithm
-  dae := matchcontinue(lhs,rhs,initial_)
-    case(lhs,rhs,SCode.NON_INITIAL()) then {DAE.COMPLEX_EQUATION(lhs,rhs)};
-    case(lhs,rhs,SCode.INITIAL()) then {DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs)};
+  dae := matchcontinue(lhs,rhs,source,initial_)
+    case(lhs,rhs,source,SCode.NON_INITIAL()) then {DAE.COMPLEX_EQUATION(lhs,rhs,source)};
+    case(lhs,rhs,source,SCode.INITIAL()) then {DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source)};
   end matchcontinue;
 end makeComplexDaeEquation;
 
 protected function getCrefFromComp "
-Author: BZ
-"
+Author: BZ"
   input SCode.Element inEle;
   output list<Absyn.ComponentRef> cref;
 algorithm cref := matchcontinue(inEle)
@@ -16514,8 +16628,7 @@ end getCrefFromComp;
 
 protected function getCrefFromCompDim "
 Author: BZ, 2009-07
-Get Absyn.ComponentRefs from dimension in SCode.COMPONENT
-"
+Get Absyn.ComponentRefs from dimension in SCode.COMPONENT"
   input SCode.Element inEle;
   output list<Absyn.ComponentRef> cref;
 algorithm cref := matchcontinue(inEle)
@@ -16531,11 +16644,9 @@ end getCrefFromCompDim;
 
 protected function getCrefFromCond "
   author: PA
- 
   Return all variables in a conditional component clause.
   Done to instantiate components referenced in other components, See also getCrefFromMod and
-  updateComponentsInEnv.
-"
+  updateComponentsInEnv."
   input Option<Absyn.Exp> cond;
   output list<Absyn.ComponentRef> crefs;
 algorithm 
@@ -16658,33 +16769,33 @@ This function modifies equations into bindings for parameters"
   input list<DAE.Element> inEquations;
   output list<DAE.Element> outVars;
 algorithm
-  outVars:=matchcontinue(inVars,inEquations)
+  outVars := matchcontinue(inVars,inEquations)
   local
     list<DAE.Element> vars, vars1, equations;
-    DAE.Element var;
-    DAE.Exp e;
-    DAE.ComponentRef componentRef;
-    DAE.VarKind kind;
-    DAE.VarDirection direction;
-    DAE.VarProtection protection;
-    DAE.Type ty;
-    Option<DAE.Exp> binding; 
-    DAE.InstDims  dims;
-    DAE.Flow flowPrefix;
-    DAE.Stream streamPrefix;
+    DAE.Element var; DAE.Exp e; DAE.ComponentRef componentRef;
+    DAE.VarKind kind; DAE.VarDirection direction; 
+    DAE.VarProtection protection; DAE.Type ty;
+    Option<DAE.Exp> binding; DAE.InstDims  dims;
+    DAE.Flow flowPrefix; DAE.Stream streamPrefix;
     list<Absyn.Path> pathLst;
     Option<DAE.VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter;
+    DAE.ElementSource source "the origin of the element";
     
     case (vars,{}) then vars;
     case ({},_) then {};  
-    case (DAE.VAR(componentRef,kind,direction,protection,ty,NONE(),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter)::vars, equations)
+    case (DAE.VAR(componentRef,kind,direction,protection,ty,NONE(),dims,
+                  flowPrefix,streamPrefix,source,variableAttributesOption,
+                  absynCommentOption,innerOuter)::vars, equations)
       equation
         SOME(e)=findCorrespondingBinding(componentRef, equations);
         vars1=propagateBinding(vars,equations);
       then  
-        DAE.VAR(componentRef,kind,direction,protection,ty,SOME(e),dims,flowPrefix,streamPrefix,pathLst,variableAttributesOption,absynCommentOption,innerOuter)::vars1;
+        DAE.VAR(componentRef,kind,direction,protection,ty,SOME(e),dims,
+                flowPrefix,streamPrefix,source,variableAttributesOption,
+                absynCommentOption,innerOuter)::vars1;
+
     case (var::vars, equations)
       equation        
         vars1=propagateBinding(vars,equations);
@@ -16706,23 +16817,23 @@ algorithm
     list<DAE.Element> equations;
     
     case (_, {}) then NONE();
-    case (cref, DAE.DEFINE(cref2, e)::_)
+    case (cref, DAE.DEFINE(componentRef=cref2, exp=e)::_)
       equation
         true=Exp.crefEqual(cref,cref2);
       then
         SOME(e);
-    case (cref, DAE.EQUATION(DAE.CREF(cref2,_),e)::_)          
+    case (cref, DAE.EQUATION(exp=DAE.CREF(cref2,_),scalar=e)::_)          
       equation
         true=Exp.crefEqual(cref,cref2);
       then
         SOME(e);
-    case (cref, DAE.EQUEQUATION(cref2,cref3)::_)          
+    case (cref, DAE.EQUEQUATION(cr1=cref2,cr2=cref3)::_)          
       equation
         true=Exp.crefEqual(cref,cref2);
         e=Exp.crefExp(cref3);
       then
         SOME(e);
-    case (cref, DAE.COMPLEX_EQUATION(DAE.CREF(cref2,_),e)::_)          
+    case (cref, DAE.COMPLEX_EQUATION(lhs=DAE.CREF(cref2,_),rhs=e)::_)          
       equation
         true=Exp.crefEqual(cref,cref2);
       then
