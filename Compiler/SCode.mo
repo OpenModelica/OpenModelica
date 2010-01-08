@@ -745,6 +745,8 @@ algorithm
     case R_FUNCTION() then "FUNCTION"; 
     case R_EXT_FUNCTION() then "EXTFUNCTION";
     case R_ENUMERATION() then "ENUMERATION";
+    case R_METARECORD(_,_) then "METARECORD";
+    case R_UNIONTYPE() then "UNIONTYPE";
     // predefined types
     case R_PREDEFINED_INT() then "PREDEFINED_INT";
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
