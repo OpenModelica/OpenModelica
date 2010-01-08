@@ -82,6 +82,8 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <functionUpdateDependents(allEquations, helpVarInfo)>
 
+<functionUpdateDepend(allEquations, helpVarInfo)>
+
 <functionOnlyZeroCrossing(zeroCrossings)>
 
 <functionWhen(whenClauses)>
@@ -681,6 +683,40 @@ int function_updateDependents()
 }
 >>
 
+// All when equations should go in here too according to Willi
+// And something about if-eqs being sorted ans not just added to end
+functionUpdateDepend(list<SimEqSystem> allEquations,
+                     list<HelpVarInfo> helpVarInfo) ::=
+# varDecls = ""
+# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
+# hvars = (
+  helpVarInfo of (in1, exp, _):
+    # preExp = ""
+    # expPart = daeExp(exp, createSimulationContext(), preExp, varDecls)
+    '<preExp>localData->helpVars[<in1>] = <expPart>;'
+  "\n"
+)
+<<
+int function_updateDepend()
+{
+  state mem_state;
+  <varDecls>
+
+  inUpdate=initial()?0:1;
+
+  mem_state = get_memory_state();
+
+  <eq1>
+  <hvars>
+
+  restore_memory_state(mem_state);
+
+  inUpdate=0;
+
+  return 0;
+}
+>>
+
 functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
 # varDecls = ""
 # zeroCrossingCode = zeroCrossingsTpl(zeroCrossings, varDecls)
@@ -1154,10 +1190,10 @@ typedef struct <fname>_rettype_s
 } <fname>_rettype;
 
 DLLExport 
-<fname>_rettype _<fname>(<fargs of VARIABLE : '<varType(it)> <cref(name)>' ", ">);
+int in_<fname>(type_description * inArgs, type_description * outVar);
 
 DLLExport 
-int in_<fname>(type_description * inArgs, type_description * outVar);
+<fname>_rettype _<fname>(<fargs of VARIABLE : '<varType(it)> <cref(name)>' ", ">);
 >>
 
 
@@ -1167,11 +1203,28 @@ functionsCpp(list<Function> functions) ::=
 extern "C" {
 #endif
 /* header part */
-<functions of FUNCTION : 
-  <<
-  /*recordDecls : recordDeclaration() \n*/
-  <functionHeader(underscorePath(name), functionArguments, outVars)>
-  >> 
+#ifdef __cplusplus
+extern "C" {
+#endif
+<functions of EXTERNAL_FUNCTION:
+ (includes: it "\n")
+ "\n">
+#ifdef __cplusplus
+}
+#endif
+<functions:
+  case FUNCTION then
+    <<
+    /*recordDecls : recordDeclaration() \n*/
+    <functionHeader(underscorePath(name), functionArguments, outVars)>
+    >> 
+  case EXTERNAL_FUNCTION then
+    <<
+    /*recordDecls : recordDeclaration() \n*/
+    <functionHeader(underscorePath(name), funArgs, outVars)>
+
+    <extFunDef(it)>
+    >> 
 \n> 
 /* End of header part */
 
@@ -1185,15 +1238,69 @@ extern "C" {
 
 >>
 
+extFunDef(Function) ::=
+case EXTERNAL_FUNCTION then
+  <<
+  extern <extReturnType(extReturn)> <underscorePath(name)>(<extArgs: extFunDefArg(it) ", ">);
+  >>
+
+// assume language c for now
+extFunDefArg(SimExtArg) ::=
+  case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
+    # name = cref(c)
+    # typeStr = if ii then
+        if ia then
+          if t is ET_STRING then
+            '<extType(t)> const *'
+          else
+            'const <extType(t)> *'
+        else
+          'const <extType(t)> *'
+      else
+        '<extType(t)>*'
+    <<
+    <typeStr> <name>
+    >>
+  case SIMEXTARGEXP then
+    # typeStr = extType(type_)
+    <<
+    <typeStr>
+    >>
+  case SIMEXTARGSIZE(cref=c) then
+    # name = cref(c)
+    # eStr = daeExpToString(exp)
+    <<
+    size_t <name>_<eStr>
+    >>
+
+// todo: is this correct?
+daeExpToString(Exp exp) ::=
+  # preExp = ""
+  # varDecls = ""
+  daeExp(exp, createOtherContext(), preExp, varDecls)
+
+extReturnType(SimExtArg) ::=
+  case SIMEXTARG then extType(type_)
+  case SIMNOEXTARG then "void"
+
+extType(Type) ::=
+  case ET_INT then "int"
+  case ET_REAL then "double"
+  case ET_STRING then "const char*"
+  case ET_BOOL then "int"
+  case ET_ARRAY then extType(ty)
+  case _ then "OTHER_EXT_TYPE"
+
 varDeclaration(Variable) ::=
 case VARIABLE then '<varType(it)> <cref(name)>;<\n>'
 
-varInit(Variable, Text varDecls, Text varInits) ::=
+varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
   # varDecls += varDeclaration(var)
+  # varName = if outStruct then '<outStruct>.targ<i>' else '<cref(var.name)>'
   # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
-    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<cref(var.name)>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<varName>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
     ()
   else
     ()
@@ -1211,7 +1318,7 @@ case var as VARIABLE then
     <dest>.targ<i> = <cref(var.name)>;
     >>
 
-functionDef(Function) ::=
+functionDef(Function fn) ::=
   case FUNCTION then
     # System.tmpTickReset(1)
     # fname = underscorePath(name)
@@ -1220,7 +1327,7 @@ functionDef(Function) ::=
     # varInits = ""
     # retVar   = tempDecl(retType, varDecls)
     # stateVar = tempDecl("state", varDecls)
-    # foo = (variableDeclarations: varInit(it, varDecls, varInits))
+    # foo = (variableDeclarations: varInit(it, "", i1, varDecls, varInits))
     # bodyPart = (body of stmt : funStatement(stmt, varDecls) \n)
     # outVarsStr = (outVars: varOutput(it, retVar, i1, varDecls, varInits))
     <<
@@ -1239,7 +1346,59 @@ functionDef(Function) ::=
       return <retVar>;
     }
     >>
-    
+  case EXTERNAL_FUNCTION then
+    # System.tmpTickReset(1)
+    # fname = underscorePath(name)
+    # retType = '<fname>_rettype'
+    # preExp = ""
+    # varDecls = ""
+    # outputAlloc = ""
+    # callPart = extFunCall(fn, preExp, varDecls)
+    # foo = (outVars: varInit(it, "out", i1, varDecls, outputAlloc))
+    <<
+    <retType> _<fname>(<funArgs of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>' ", ">)
+    {
+      <varDecls>
+      <retType> out;
+      <outputAlloc>
+      <preExp>
+      <callPart>
+      return out;
+    }
+    >>
+
+extFunCall(Function, Text preExp, Text varDecls) ::=
+case EXTERNAL_FUNCTION then
+  # fname = underscorePath(name)
+  # args = (extArgs: extArg(it, preExp, varDecls) ", ")
+  <<
+  <fname>(<args>);
+  >>
+
+extArg(SimExtArg, Text preExp, Text varDecls) ::=
+  // arrays
+  case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
+    # name = if oi then 'out.targ<oi>' else cref(c)
+    # shortTypeStr = expTypeShort(t)
+    <<
+    data_of_<shortTypeStr>_array(&(<name>))
+    >>
+  case SIMEXTARG(cref=c, isInput=ii, outputIndex=oi, type_=t) then
+    # prefix = if oi then "&" else ""
+    # suffix = if oi then "_ext"
+               else if t is ET_STRING then ""
+               else "_ext"
+    <<
+    <prefix><cref(c)><suffix>
+    >>
+  case SIMEXTARGEXP then '<daeExp(exp, createOtherContext(), preExp, varDecls)>'
+  case SIMEXTARGSIZE(cref=c) then
+    # typeStr = expTypeShort(type_)
+    # name = if outputIndex then 'out.targ<outputIndex>' else cref(c)
+    # dim = daeExp(exp, createOtherContext(), preExp, varDecls)
+    <<
+    size_of_dimension_<typeStr>_array(<name>, <dim>)
+    >>
 
 funBody(list<Statement> body) ::=
   # varDecls = ""
@@ -1248,7 +1407,6 @@ funBody(list<Statement> body) ::=
 <varDecls>
 <bodyPart>
 >>
-
 
 funStatement(Statement, Text varDecls) ::=
   case ALGORITHM then (statementLst : algStatement(it, createOtherContext(), varDecls) \n) 

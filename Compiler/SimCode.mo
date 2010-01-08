@@ -319,14 +319,43 @@ uniontype Function
 
   record EXTERNAL_FUNCTION
 //??    ReturnType returnType     "the return type of the function";
-    FunctionName functionName "the function name";
-    FunctionArguments functionArguments "the function arguments";
-    VariableDeclarations variableDeclarations "the declarations of local variables";
+    //FunctionName functionName "the function name";
+    //FunctionArguments functionArguments "the function arguments";
+    //VariableDeclarations variableDeclarations "the declarations of local variables";
+    Path name;
+    list<Variable> funArgs;
+    list<SimExtArg> extArgs;
+    SimExtArg extReturn;
+    list<Variable> inVars;
+    list<Variable> outVars;
+    list<Variable> biVars;
     Includes includes "the list of possible needed includes";
     Libs libs "the list of dependent libraries";
     String language " \"C\" or \"Fortran\" according to language specification";
   end EXTERNAL_FUNCTION;
 end Function;
+
+uniontype SimExtArg
+  record SIMEXTARG
+    DAE.ComponentRef cref;
+    Boolean isInput;
+    Integer outputIndex; // > 0 if output
+    Boolean isArray;
+    DAE.ExpType type_;
+  end SIMEXTARG;
+  record SIMEXTARGEXP
+    DAE.Exp exp;
+    DAE.ExpType type_;
+  end SIMEXTARGEXP;
+  record SIMEXTARGSIZE
+    DAE.ComponentRef cref;
+    Boolean isInput;
+    Integer outputIndex; // > 0 if output
+    DAE.ExpType type_;
+    DAE.Exp exp;
+  end SIMEXTARGSIZE;
+  record SIMNOEXTARG end SIMNOEXTARG;
+end SimExtArg;
 
 uniontype RecordDeclaration
   record RECORD_DECL_FULL
@@ -676,16 +705,41 @@ algorithm
         //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
         fns = elaborateFunctions(funcelems);
         //TODO: libs ? see in Codegen.cPrintFunctionIncludes(cfns)
-        libs2 = {};
+        libs2 = extractLibs(fns);
       then
         (Util.listUnion(libs1,libs2), fns);
     case (_,_,_,_,_)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Code generation of Modelica functions failed. "});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
       then
         fail();
   end matchcontinue;
 end createFunctions;
+
+protected function extractLibs
+  input list<Function> fns;
+  output list<String> libs;
+algorithm
+  libs :=
+  matchcontinue (fns)
+    local
+      list<Function> restFns;
+      list<String> fnLibs;
+      list<String> libs;
+      list<String> restLibs;
+    case ({})
+      then {};
+    case (EXTERNAL_FUNCTION(libs=fnLibs) :: restFns)
+      equation
+        restLibs = extractLibs(restFns);
+        libs = Util.listUnion(fnLibs, restLibs);
+      then (libs);
+    case (_ :: restFns)
+      equation
+        libs = extractLibs(restFns);
+      then (libs);
+  end matchcontinue;
+end extractLibs;
 
 protected function elaborateFunctions 
   input list<DAE.Element> daeElements;
@@ -712,11 +766,18 @@ algorithm
       list<String> rt, rt_1, rt_2;
       DAE.Element fel;
       list<DAE.Element> rest;
-    case ({},accfns,rt) then (accfns,rt);
-    case ((fel :: rest),accfns,rt)
+    case ({}, accfns, rt)
+      then (accfns, rt);
+    case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt)
       equation
-        (fn,rt_1) = elaborateFunction(fel, rt);
-        (fns,rt_2) = elaborateFunctions2(rest, fn::accfns, rt_1);        
+        // skip over partial functions
+        (fns, rt_2) = elaborateFunctions2(rest, accfns, rt);
+      then
+        (fns, rt_2);
+    case ((fel :: rest), accfns, rt)
+      equation
+        (fn, rt_1) = elaborateFunction(fel, rt);
+        (fns, rt_2) = elaborateFunctions2(rest, (fn :: accfns), rt_1);        
       then
         (fns, rt_2);
   end matchcontinue;
@@ -733,143 +794,150 @@ algorithm
   matchcontinue (inElement,inRecordTypes)
     local
       String fn_name_str,fn_name_str_1,retstr,extfnname,lang,retstructtype,extfnname_1,n,str;
-      list<DAE.Element> dae,bivars,orgdae,daelist,funrefs, algs, vars;
+      list<DAE.Element> dae,bivars,orgdae,daelist,funrefs, algs, vars, invars, outvars;
       list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs;
-      //CFunction head_cfn,body_cfn,cfn,rcw_fn,func_decl,ext_decl;
       Absyn.Path fpath;
       list<tuple<String, Types.Type>> args;
       Types.Type restype,tp;
       list<DAE.ExtArg> extargs;
+      list<SimExtArg> simextargs;
+      SimExtArg extReturn;
       DAE.ExtArg extretarg;
       Option<Absyn.Annotation> ann;
       DAE.ExternalDecl extdecl;
-      //list<CFunction> cfns;
       DAE.Element comp;
       list<String> rt, rt_1, struct_funrefs, struct_funrefs_int;
       list<Absyn.Path> funrefPaths;
-      Variables outVars, inVars, funArgs, varDecls;
+      Variables outVars, inVars, biVars, funArgs, varDecls;
       list<RecordDeclaration> recordDecls;
       FunctionBody body;
       DAE.InlineType inl;
-      
-    /* Modelica functions External functions */
+    /* Modelica functions. */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_DEF(DAE.DAE(elementLst = dae))},
-                       type_ = (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
-                       partialPrefix = false,inlineType = inl),rt) 
+                       functions = {DAE.FUNCTION_DEF(body = DAE.DAE(elementLst=dae))},
+                       type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
+                       partialPrefix=false), rt) 
       equation
-        //fn_name_str = generateFunctionName(fpath);
-        //fn_name_str = stringAppend("_", fn_name_str);
-        //Debug.fprintl("cgtr", {"generating function ",fn_name_str,"\n"});
-        //Debug.fprintln("cgtrdumpdae3", "Dumping DAE:");
-        //Debug.fcall("cgtrdumpdae3", DAEUtil.dump2, DAE.DAE(dae));
         outVars = Util.listMap(DAEUtil.getOutputVars(dae), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(dae), daeInOutSimVar);
         funArgs = Util.listMap(args, typesSimFunctionArg);
-        (recordDecls,rt_1) = elaborateRecordDeclarations(dae,{}, rt);
-        
+        (recordDecls,rt_1) = elaborateRecordDeclarations(dae, {}, rt);
         vars = Util.listFilter(dae, isVarQ);
         varDecls = Util.listMap(vars, daeInOutSimVar);
-        
         algs = Util.listFilter(dae, DAEUtil.isAlgorithm);
         body = Util.listMap(algs, elaborateStatement);
-        
-        //struct_strs_1 = generateResultStruct(outvars, fpath);
-        //struct_strs = listAppend(struct_strs, struct_strs_1);
-        /*-- MetaModelica Partial Function. sjoelund --*/
-        //funrefs = Util.listSelect(invars, DAEUtil.isFunctionRefVar);
-        //struct_funrefs = Util.listFlatten(Util.listMap(funrefs, generateFunctionRefReturnStruct));
-        /*--                                           --*/
-        /*
-        retstr = generateReturnType(fpath);
-        arg_strs = Util.listMap(args, generateFunctionArg);
-        head_cfn = cMakeFunction(retstr, fn_name_str, struct_strs, arg_strs);
-        body_cfn = generateFunctionBody(fpath, dae, restype, struct_funrefs);
-        cfn = cMergeFn(head_cfn, body_cfn);
-        rcw_fn = generateReadCallWrite(fn_name_str, outvars, retstr, invars);
-        */
       then
-        (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body ),rt_1);
-    
-    /* MetaModelica Partial Function. sjoelund */    
-    /*
+        (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body), rt_1);
+     /* Modelica Record Constructor. We would like to use this as a C macro,
+        but this is not possible. */
+    //case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
+    //  local
+    //    String name, defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
+    //    DAE.ExpType expType;
+    //    list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
+    //    Integer tnr;
+    //  equation
+    //    fn_name_str = generateFunctionName(fpath);
+    //    fn_name_str = stringAppend("_", fn_name_str);
+    //    retstr = generateReturnType(fpath);
+    //    tnr = 1;
+    //    (decl1,ret_var,tnr) = generateTempDecl(retstr, tnr);
+    //    (decl2,record_var,tnr) = generateTempDecl("struct " +& name, tnr);
+    //    (struct_strs,rt_1) = generateRecordDeclarations(restype, rt);
+
+    //    expType = Types.elabType(restype);
+    //    defhead = "#define " +& retstr +& "_1 targ1";
+    //    head = "typedef struct " +& retstr +& "_s {";
+    //    body = "struct " +& name +& " targ1;";
+    //    foot = "} "+&retstr+&";";
+    //    struct_strs = listAppend(struct_strs, {defhead, head, body, foot});
+    //    arg_names = Util.listMap(args, Util.tuple21);
+    //    arg_tmp1 = Util.listMap1(arg_names, stringAppend, " = ");
+    //    arg_tmp2 = Util.listMap1(arg_names, stringAppend, ";");
+    //    arg_tmp1 = Util.listThreadMap(arg_tmp1, arg_tmp2, stringAppend);
+    //    record_var_dot = record_var +& ".";
+    //    arg_assignments = Util.listMap1r(arg_tmp1, stringAppend, record_var_dot);
+    //    assign_res = ret_var +& ".targ1 = " +& record_var +& ";";
+    //    return_stmt = "return "+&ret_var+&";";
+    //    
+    //    arg_strs = Util.listMap(args, generateFunctionArg);
+    //    head_cfn = cMakeFunction(retstr, fn_name_str, struct_strs, arg_strs);
+    //    body_cfn = cEmptyFunction;
+    //    body_cfn = cAddVariables(body_cfn, {decl1,decl2});
+    //    body_cfn = cAddStatements(body_cfn, arg_assignments);
+    //    body_cfn = cAddCleanups(body_cfn, {assign_res,return_stmt});
+    //    wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
+    //    cfn = cMergeFn(head_cfn, body_cfn);
+    //  then
+    //    (cfn::wrapper_body,rt_1);
+    /* Builtin functions. */
+    //case (DAE.FUNCTION(path = fpath,
+    //                   functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+    //                   type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
+    //  equation
+    //    true = isBuiltinFunction(fpath);
+    //    fn_name_str = generateFunctionName(fpath);
+    //    fn_name_str = stringAppend("_", fn_name_str);
+    //    DAE.EXTERNALDECL(ident = extfnname, external_ = extargs,parameters = extretarg, returnType = lang, language = ann) = extdecl;
+    //    dae = Inst.initVarsModelicaOutput(orgdae);
+    //    outvars = DAEUtil.getOutputVars(dae);
+    //    invars = DAEUtil.getInputVars(dae);
+    //    bivars = DAEUtil.getBidirVars(dae);
+    //    (struct_strs,rt_1) = generateStructsForRecords(dae,rt);
+    //    struct_strs_1 = generateResultStruct(outvars, fpath);
+    //    struct_strs = listAppend(struct_strs, struct_strs_1);
+    //    retstructtype = generateReturnType(fpath);
+    //    retstr = generateExtFunctionName(extfnname, lang);
+    //    extfnname_1 = generateExtFunctionName(extfnname,lang);
+    //    arg_strs = generateExtFunctionArgs(extargs, lang);
+    //    (includes,libs) = generateExtFunctionIncludes(ann);
+    //    rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
+    //    ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
+    //    cfns = {rcw_fn, ext_decl};
+    //  then (cfns, rt_1);
+    /* External functions. */
     case (DAE.FUNCTION(path = fpath,
-                       dAElist = DAE.DAE(elementLst = dae),
-                       type_ = (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
-                       partialPrefix = true),rt) 
-      then
-        ({},{});
-    */    
-    /* Builtin functions - stefan */
-    /*
-    case (DAE.EXTFUNCTION(path = fpath,
-                          dAElist = DAE.DAE(elementLst = orgdae),
-                          type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
-                          externalDecl = extdecl),rt)
+                       functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt) 
       equation
-        true = isBuiltinFunction(fpath);
-        fn_name_str = generateFunctionName(fpath);
-        fn_name_str = stringAppend("_", fn_name_str);
-        DAE.EXTERNALDECL(ident = extfnname, external_ = extargs,parameters = extretarg, returnType = lang, language = ann) = extdecl;
+        DAE.EXTERNALDECL(ident=extfnname, external_=extargs,
+                         parameters=extretarg, returnType=lang, language=ann) = extdecl;
         dae = Inst.initVarsModelicaOutput(orgdae);
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         bivars = DAEUtil.getBidirVars(dae);
-        (struct_strs,rt_1) = generateStructsForRecords(dae,rt);
-        struct_strs_1 = generateResultStruct(outvars, fpath);
-        struct_strs = listAppend(struct_strs, struct_strs_1);
-        retstructtype = generateReturnType(fpath);
-        retstr = generateExtFunctionName(extfnname, lang);
-        extfnname_1 = generateExtFunctionName(extfnname,lang);
-        arg_strs = generateExtFunctionArgs(extargs, lang);
-        (includes,libs) = generateExtFunctionIncludes(ann);
-        rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
-        ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
-        cfns = {rcw_fn, ext_decl};
-      then (cfns, rt_1);
-    */
-    /* External functions */
-    /*
-    case (DAE.EXTFUNCTION(path = fpath,
-                          dAElist = DAE.DAE(elementLst = orgdae),
-                          type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)),
-                          externalDecl = extdecl),rt) 
-      equation
-        fn_name_str = generateFunctionName(fpath);
-        fn_name_str = stringAppend("_", fn_name_str);
-        Debug.fprintl("cgtr", {"generating external function ",fn_name_str,"\n"});
-        DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann) = extdecl;
-        Debug.fprintln("cgtrdumpdae1", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae1", DAEUtil.dump2, DAE.DAE(orgdae));
-        dae = Inst.initVarsModelicaOutput(orgdae);
-        Debug.fprintln("cgtrdumpdae2", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae2", DAEUtil.dump2, DAE.DAE(dae));
-        outvars = DAEUtil.getOutputVars(dae);
-        invars = DAEUtil.getInputVars(dae);
-        bivars = DAEUtil.getBidirVars(dae);
-        (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
-        struct_strs_1 = generateResultStruct(outvars, fpath);
-        struct_strs = listAppend(struct_strs, struct_strs_1);
-        retstructtype = generateReturnType(fpath);
-        retstr = generateExtReturnType(extretarg);
-        extfnname_1 = generateExtFunctionName(extfnname, lang);
-        extfnname_1 = Util.if_("Java" ==& lang, "", extfnname_1);
-        arg_strs = generateExtFunctionArgs(extargs, lang);
-        (includes,libs) = generateExtFunctionIncludes(ann);
-        includes = Util.if_("Java" ==& lang, "#include \"java_interface.h\"" :: includes, includes);
-        rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
-        ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
-        func_decl = cMakeFunctionDecl(retstr, extfnname_1, struct_strs, arg_strs, includes, libs);
-        cfns = {func_decl, rcw_fn, ext_decl};
+
+        funArgs = Util.listMap(args, typesSimFunctionArg);
+
+        outVars = Util.listMap(DAEUtil.getOutputVars(dae), daeInOutSimVar);
+        inVars = Util.listMap(DAEUtil.getInputVars(dae), daeInOutSimVar);
+        biVars = Util.listMap(DAEUtil.getBidirVars(dae), daeInOutSimVar);
+    //    (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
+    //    struct_strs_1 = generateResultStruct(outvars, fpath);
+    //    struct_strs = listAppend(struct_strs, struct_strs_1);
+    //    retstructtype = generateReturnType(fpath);
+    //    retstr = generateExtReturnType(extretarg);
+    //    extfnname_1 = generateExtFunctionName(extfnname, lang);
+    //    extfnname_1 = Util.if_("Java" ==& lang, "", extfnname_1);
+    //    arg_strs = generateExtFunctionArgs(extargs, lang);
+        (includes, libs) = Codegen.generateExtFunctionIncludes(ann);
+    //    includes = Util.if_("Java" ==& lang, "#include \"java_interface.h\"" :: includes, includes);
+    //    rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
+    //    ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
+    //    func_decl = cMakeFunctionDecl(retstr, extfnname_1, struct_strs, arg_strs, includes, libs);
+    //    wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
+    //    cfns = func_decl :: rcw_fn :: ext_decl :: wrapper_body;
+        simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
+        simextargs = fixOutputIndex(simextargs, 0);
+        extReturn = extArgsToSimExtArgs(extretarg);
       then
-        (cfns,rt_1);
-        
-    case (DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist)),rt)
-      equation
-        (cfns,rt_1) = generateFunctionsElist(daelist,rt);
-      then
-        (cfns,rt_1);
-    */    
+        (EXTERNAL_FUNCTION(fpath, funArgs, simextargs, extReturn, inVars, outVars, biVars, includes, libs, lang), rt);
+    /* Can we even end up in this case? isFunction returns false for COMP */
+    //case (DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist)),rt)
+    //  equation
+    //    (cfns,rt_1) = generateFunctionsElist(daelist,rt);
+    //  then
+    //    (cfns,rt_1);
     case (comp,rt)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.elaborateFunction failed"});
@@ -878,6 +946,85 @@ algorithm
   end matchcontinue;
 end elaborateFunction;
 
+protected function fixOutputIndex
+  input list<SimExtArg> simExtArgsIn;
+  input Integer newOutputIndex;
+  output list<SimExtArg> simExtArgsOut;
+algorithm
+  simExtArgsOut :=
+  matchcontinue (simExtArgsIn, newOutputIndex)
+    local
+      list<SimExtArg> rest;
+      SimExtArg simExtArg;
+      Integer nextNewOutputIndex;
+      DAE.ComponentRef cref;
+      Boolean isInput;
+      Integer outputIndex;
+      Boolean isArray;
+      DAE.ExpType type_;
+      DAE.Exp exp;
+    case ({}, _)
+      then {};
+    // outputIndex of -1 means it is an output with unassigned output index
+    case ((SIMEXTARG(cref, isInput, outputIndex, isArray, type_) :: rest), newOutputIndex)
+      equation
+        true = outputIndex == -1;
+        nextNewOutputIndex = newOutputIndex + 1;
+        simExtArg = SIMEXTARG(cref, isInput, nextNewOutputIndex, isArray, type_);
+        rest = fixOutputIndex(rest, nextNewOutputIndex);
+      then (simExtArg :: rest);
+    case ((SIMEXTARGSIZE(cref, isInput, outputIndex, type_, exp) :: rest), newOutputIndex)
+      equation
+        true = outputIndex == -1;
+        simExtArg = SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
+        rest = fixOutputIndex(rest, newOutputIndex);
+      then (simExtArg :: rest);
+    case ((simExtArg :: rest), newOutputIndex)
+      equation
+        rest = fixOutputIndex(rest, newOutputIndex);
+      then (simExtArg :: rest);
+  end matchcontinue;
+end fixOutputIndex;
+
+protected function extArgsToSimExtArgs 
+  input DAE.ExtArg extArg;
+  output SimExtArg simExtArg;
+algorithm
+  simExtArg :=
+  matchcontinue (extArg)
+    local
+      DAE.ComponentRef componentRef;
+      DAE.Attributes attributes;
+      DAE.Type type_;
+      Boolean isInput;
+      Boolean isOutput;
+      Boolean isArray;
+      DAE.ExpType expType;
+      DAE.Exp exp_;
+      Integer outputIndex;
+    case DAE.EXTARG(componentRef, attributes, type_)
+      equation
+        isInput = Types.isInputAttr(attributes);
+        isOutput = Types.isOutputAttr(attributes);
+        outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
+        isArray = Types.isArray(type_);
+        expType = Types.elabType(type_);
+      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, expType);
+    case DAE.EXTARGEXP(exp_, type_)
+      equation
+        expType = Types.elabType(type_);
+      then SIMEXTARGEXP(exp_, expType);
+    case DAE.EXTARGSIZE(componentRef, attributes, type_, exp_)
+      equation
+        isInput = Types.isInputAttr(attributes);
+        isOutput = Types.isOutputAttr(attributes);
+        outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
+        expType = Types.elabType(type_);
+      then SIMEXTARGSIZE(componentRef, isInput, outputIndex, expType, exp_);
+    case DAE.NOEXTARG()
+      then SIMNOEXTARG();
+  end matchcontinue;
+end extArgsToSimExtArgs;
 
 protected function isVarQ 
 "function isVarQ
@@ -973,7 +1120,7 @@ algorithm
     case (_)
       equation
         // TODO: ArrayEqn fails here
-        Debug.fprint("failtrace", "-SimCode.daeInOutSimVar failed\n");
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.daeInOutSimVar failed\n"});
       then
         fail();
   end matchcontinue;

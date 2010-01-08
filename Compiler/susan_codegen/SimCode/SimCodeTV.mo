@@ -236,10 +236,14 @@ package SimCode
       FunctionBody body;
     end FUNCTION;
     record EXTERNAL_FUNCTION
-      FunctionName functionName;
-      FunctionArguments functionArguments;
-      VariableDeclarations variableDeclarations;
-      Includes includes;
+      Path name;
+      list<Variable> funArgs;
+      list<SimExtArg> extArgs;
+      SimExtArg extReturn;
+      list<Variable> inVars;
+      list<Variable> outVars;
+      list<Variable> biVars;
+      list<String> includes;
       Libs libs;
       String language;
     end EXTERNAL_FUNCTION;
@@ -256,6 +260,28 @@ package SimCode
       list<Ident> fieldNames;
     end RECORD_DECL_DEF;
   end RecordDeclaration;
+
+  uniontype SimExtArg
+    record SIMEXTARG
+      DAE.ComponentRef cref;
+      Boolean isInput;
+      Integer outputIndex;
+      Boolean isArray;
+      DAE.ExpType type_;
+    end SIMEXTARG;
+    record SIMEXTARGEXP
+      DAE.Exp exp;
+      DAE.ExpType type_;
+    end SIMEXTARGEXP;
+    record SIMEXTARGSIZE
+      DAE.ComponentRef cref;
+      Boolean isInput;
+      Integer outputIndex;
+      DAE.ExpType type_;
+      DAE.Exp exp;
+    end SIMEXTARGSIZE;
+    record SIMNOEXTARG end SIMNOEXTARG;
+  end SimExtArg;
 
 end SimCode;
 
