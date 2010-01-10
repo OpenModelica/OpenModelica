@@ -1304,12 +1304,18 @@ protected function addForLoopScopeConst "function: addForLoopScopeConst
   input Ident i;
   input DAE.Type typ;
   output Env.Env env_2;
-  list<Env.Frame> env_1,env_2;
+  list<Env.Frame> env_1,env_2; // Two env_2?
 algorithm 
   env_1 := Env.openScope(env, false, SOME("$for loop scope$")) "encapsulated?" ;
-  env_2 := Env.extendFrameV(env_1, 
+	// Defining the iterator as a parameter causes it to be constant evaluated in
+	// cases such as 'r[i] for i in 1:n' => 'r[1]', so it should probably be a
+	// variable instead.
+  /*env_2 := Env.extendFrameV(env_1, 
           DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,typ,DAE.VALBOUND(Values.INTEGER(1))), NONE, Env.VAR_UNTYPED(), {});
+          false,typ,DAE.VALBOUND(Values.INTEGER(1))), NONE, Env.VAR_UNTYPED(), {});*/
+  env_2 := Env.extendFrameV(env_1, 
+          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          false,typ,DAE.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});      
 end addForLoopScopeConst;
 
 protected function elabCallReduction 
