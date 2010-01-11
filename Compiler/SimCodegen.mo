@@ -8275,7 +8275,7 @@ algorithm
       
     case((a as DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond =_)}))::algs,cg_id) 
       equation
-        (cfunc1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(a,DAE.UNKNOWN()),cg_id,Codegen.simContext);
+        (cfunc1,cg_id) = Codegen.generateAlgorithm(DAE.ALGORITHM(a,DAE.emptyElementSource),cg_id,Codegen.simContext);
         (cfunc2,cg_id) = generateAlgorithmAsserts2(algs,cg_id);
         cfunc = Codegen.cMergeFns({cfunc1,cfunc2});
       then (cfunc,cg_id);

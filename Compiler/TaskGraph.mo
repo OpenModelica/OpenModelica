@@ -86,7 +86,7 @@ algorithm
         addVariables(vars, starttask);
         addVariables(knvars, starttask);
         addVariables({DAELow.VAR(DAE.CREF_IDENT("sim_time",DAE.ET_REAL(),{}),DAELow.VARIABLE(),
-                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,DAE.CREF_IDENT("time",DAE.ET_REAL(),{}),DAE.UNKNOWN(),NONE,
+                      DAE.INPUT(),DAELow.REAL(),NONE,NONE,{},0,DAE.CREF_IDENT("time",DAE.ET_REAL(),{}),DAE.emptyElementSource,NONE,
                       NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM())}, starttask);
         buildBlocks(dae, ass1, ass2, blocks);
         print("done building taskgraph, about to build inits.\n");

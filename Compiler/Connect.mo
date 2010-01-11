@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -61,15 +61,16 @@ uniontype Face"This type indicates whether a connector is an inside or an outsid
   record INSIDE "This is an inside connection" end INSIDE;
   record OUTSIDE "This is an outside connection" end OUTSIDE;
 end Face;
-
+ 
 public 
 uniontype Set "A connection set is represented using the Set type."
+
   record EQU "a list of component references"
-    list<DAE.ComponentRef> expComponentRefLst;
+    list<tuple<DAE.ComponentRef, DAE.ElementSource>> expComponentRefLst;
   end EQU;
 
   record FLOW "a list of component reference and a face"
-    list<tuple<DAE.ComponentRef, Face>> tplExpComponentRefFaceLst;
+    list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> tplExpComponentRefFaceLst;
   end FLOW;
 
 end Set;
@@ -104,12 +105,14 @@ uniontype OuterConnect
     DAE.ComponentRef cr2 "the rhs component reference";
     Absyn.InnerOuter io2 "inner/outer attribute for cr2 component";
     Face f2 "the face of the rhs component";
+    DAE.ElementSource source "the element origin";
   end OUTERCONNECT;
 end OuterConnect;    
 
 public constant Sets emptySet=SETS({},{},{},{});
 
 protected import Exp;
+protected import DAEUtil;
 
 public function addDeletedComponent "Adds a deleted component, i.e. conditional component 
 with condition = false, to Sets, if condition b is false"
@@ -130,10 +133,8 @@ algorithm
 end addDeletedComponent;
 
 public function addOuterConnection " Adds a connection with a reference to an outer connector
-
 These are added to a special list, such that they can be moved up in the instance hierarchy to a place
-where both instances are defined.
-"
+where both instances are defined."
   input Prefix.Prefix scope;
   input Sets sets;
   input DAE.ComponentRef cr1;
@@ -142,19 +143,22 @@ where both instances are defined.
   input Absyn.InnerOuter io2;
   input Face f1;
   input Face f2;
-  
+  input DAE.ElementSource source;
   output Sets outSets;
 algorithm
-  outSets := matchcontinue(scope,sets,cr1,cr2,io1,io2,f1,f2)
-  local list<Set> ss;
-    list<DAE.ComponentRef> crs,dc;
-    list<OuterConnect> oc;
-    /* First check if already added */
-    case(scope,sets as SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2) equation
-      _::_ = Util.listSelect2(oc,cr1,cr2,outerConnectionMatches);
-    then sets;
-      
-    case(scope,SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2) then SETS(ss,crs,dc,OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::oc);        
+  outSets := matchcontinue(scope,sets,cr1,cr2,io1,io2,f1,f2,source)
+    local 
+      list<Set> ss;
+      list<DAE.ComponentRef> crs,dc;
+      list<OuterConnect> oc;
+    // First check if already added
+    case(scope,sets as SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2,_) 
+      equation
+        _::_ = Util.listSelect2(oc,cr1,cr2,outerConnectionMatches);
+      then sets;
+    // add the outerconnect
+    case(scope,SETS(ss,crs,dc,oc),cr1,cr2,io1,io2,f1,f2,source) 
+      then SETS(ss,crs,dc,OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::oc);        
   end matchcontinue;
 end addOuterConnection;
 
@@ -167,21 +171,19 @@ algorithm
   matches := matchcontinue(oc,cr1,cr2)
     local DAE.ComponentRef cr11,cr22;
     case(OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) equation
-      matches = Exp.crefEqual(cr11,cr1) and Exp.crefEqual(cr22,cr2) or
-           Exp.crefEqual(cr11,cr2) and Exp.crefEqual(cr22,cr1);
+      matches = 
+        Exp.crefEqual(cr11,cr1) and Exp.crefEqual(cr22,cr2) or
+        Exp.crefEqual(cr11,cr2) and Exp.crefEqual(cr22,cr1);
     then matches;
   end matchcontinue;
 end outerConnectionMatches;
  
 public function addOuterConnectToSets "adds an outerconnection to all sets where a corresponding inner definition is present
-
 For instance, 
 if a connection set contains {world.v, topPin.v}
 and we have an outer connection connect(world,a2.aPin),
 the connection should be added to the set, resulting in
-{world.v,topPin.v,a2.aPin.v}
-
-"
+{world.v,topPin.v,a2.aPin.v}"
   input DAE.ComponentRef cr1;
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io1;
@@ -195,9 +197,10 @@ the connection should be added to the set, resulting in
   output Boolean added "true if addition was made";
 algorithm
   (outSetLst,outCrs,added) := matchcontinue(cr1,cr2,io1,io2,f1,f2,setLst,inCrs)
-  local list<DAE.ComponentRef> crs; Set set;
-    list<tuple<DAE.ComponentRef,Face>> fcrs;
-    Boolean added2;
+  local 
+    list<tuple<DAE.ComponentRef,DAE.ElementSource>> crs; 
+    list<tuple<DAE.ComponentRef,Face,DAE.ElementSource>> fcrs;
+    Set set; Boolean added2;
     
     case(cr1,cr2,io1,io2,f1,f2,{},inCrs) then ({},inCrs,false);
       
@@ -222,9 +225,9 @@ protected function addOuterConnectToSets2 "help function to addOuterconnectToSet
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;  
-  input list<DAE.ComponentRef> crs;
+  input list<tuple<DAE.ComponentRef,DAE.ElementSource>> crs;
   input list<DAE.ComponentRef> inCrs "from connection crefs (outer scopes)";
-  output list<DAE.ComponentRef> outCrs;
+  output list<tuple<DAE.ComponentRef,DAE.ElementSource>> outCrs;
   output list<DAE.ComponentRef> outCrs2 "from connection crefs (outer scopes)";
   output Boolean added;
 protected 
@@ -240,27 +243,36 @@ protected function addOuterConnectToSets22 "help function to addOuterconnectToSe
   input DAE.ComponentRef cr2;
   input Boolean isOuter1;
   input Boolean isOuter2;
-  input list<DAE.ComponentRef> crs;
+  input list<tuple<DAE.ComponentRef,DAE.ElementSource>> crs;
   input list<DAE.ComponentRef> inCrs "from connection crefs (outer scopes)";
-  output list<DAE.ComponentRef> outCrs;
+  output list<tuple<DAE.ComponentRef,DAE.ElementSource>> outCrs;
   output list<DAE.ComponentRef> outCrs2 "from connection crefs (outer scopes)";
   output Boolean added;
 algorithm
   (outCrs,outCrs2,added) := matchcontinue(cr1,cr2,isOuter1,isOuter2,crs,inCrs)
-  local DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
-    case(cr1,cr2,true,true,crs,inCrs) equation
-      Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"Connections where both connectors are outer references","No suggestion"});
-    then (crs,inCrs,false);
-    case(cr1,cr2,true,false,crs,inCrs) equation
-       outerCr::_ = Util.listSelect1R(crs,cr1,Exp.crefPrefixOf);
-       connectorCr = Exp.crefStripPrefix(outerCr,cr1);
-       newCr = Exp.joinCrefs(cr2,connectorCr);
-    then  (newCr::crs,inCrs,true);
-    case(cr1,cr2,false,true,crs,inCrs) equation
-       outerCr::_ = Util.listSelect1R(crs,cr2,Exp.crefPrefixOf);
-       connectorCr = Exp.crefStripPrefix(outerCr,cr2);
-       newCr = Exp.joinCrefs(cr1,connectorCr);
-    then (newCr::crs,inCrs,true);
+    local 
+      DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
+      DAE.ElementSource src;
+    
+    case(cr1,cr2,true,true,crs,inCrs) 
+      equation
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"Connections where both connectors are outer references","No suggestion"});
+      then (crs,inCrs,false);
+      
+    case(cr1,cr2,true,false,crs,inCrs) 
+      equation
+        (outerCr,src)::_ = Util.listSelect1(crs,cr1,crefTuplePrefixOf);
+        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
+        newCr = Exp.joinCrefs(cr2,connectorCr);
+      then ((newCr,src)::crs,inCrs,true);
+
+    case(cr1,cr2,false,true,crs,inCrs) 
+      equation
+        (outerCr,src)::_ = Util.listSelect1(crs,cr2,crefTuplePrefixOf);
+        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
+        newCr = Exp.joinCrefs(cr1,connectorCr);
+      then ((newCr,src)::crs,inCrs,true);
+      
     case(cr1,cr2,_,_,crs,inCrs) then (crs,inCrs,false);
   end matchcontinue;
 end addOuterConnectToSets22; 
@@ -272,9 +284,9 @@ protected function addOuterConnectToSets3 "help function to addOuterconnectToSet
   input Face f2;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;  
-  input list<tuple<DAE.ComponentRef,Face>> crs;
+  input list<tuple<DAE.ComponentRef,Face,DAE.ElementSource>> crs;
   input list<DAE.ComponentRef> inCrs;
-  output list<tuple<DAE.ComponentRef,Face>> outCrs;
+  output list<tuple<DAE.ComponentRef,Face,DAE.ElementSource>> outCrs;
   output list<DAE.ComponentRef> outCrs2;
   output Boolean added;
 protected
@@ -292,38 +304,44 @@ protected function addOuterConnectToSets33 "help function to addOuterconnectToSe
   input Boolean isOuter2;
   input Face f1;
   input Face f2;
-  input list<tuple<DAE.ComponentRef,Face>> crs;
+  input list<tuple<DAE.ComponentRef,Face,DAE.ElementSource>> crs;
   input list<DAE.ComponentRef> inCrs;
-  output list<tuple<DAE.ComponentRef,Face>> outCrs;
+  output list<tuple<DAE.ComponentRef,Face,DAE.ElementSource>> outCrs;
   output list<DAE.ComponentRef> outCrs2;
   output Boolean added;
 algorithm
   (outCrs,outCrs2,added) := matchcontinue(cr1,cr2,isOuter1,isOuter2,f1,f2,crs,inCrs)
-  local DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
-    case(cr1,cr2,true,true,f1,f2,crs,inCrs) equation
-      Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"Connections where both connectors are outer references","No suggestion"});
-    then (crs,inCrs,false);
-    case(cr1,cr2,true,false,f1,f2,crs,inCrs) equation      
-       outerCr::_ = Util.listSelect1R(Util.listMap(crs,Util.tuple21),cr1,Exp.crefPrefixOf);
-       connectorCr = Exp.crefStripPrefix(outerCr,cr1);
-       newCr = Exp.joinCrefs(cr2,connectorCr);  
-    then  ((newCr,f2)::crs,inCrs,true);
-    case(cr1,cr2,false,true,f1,f2,crs,inCrs) equation
-       outerCr::_ = Util.listSelect1R(Util.listMap(crs,Util.tuple21),cr2,Exp.crefPrefixOf);
-       connectorCr = Exp.crefStripPrefix(outerCr,cr2);
-       newCr = Exp.joinCrefs(cr1,connectorCr);
-    then ((newCr,f1)::crs,inCrs,true);
+    local 
+      DAE.ComponentRef outerCr,outerCr,connectorCr,newCr;
+      DAE.ElementSource src;
+
+    case(cr1,cr2,true,true,f1,f2,crs,inCrs) 
+      equation
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"Connections where both connectors are outer references","No suggestion"});
+      then (crs,inCrs,false);
+
+    case(cr1,cr2,true,false,f1,f2,crs,inCrs) 
+      equation      
+        (outerCr,_,src)::_ = Util.listSelect1(crs,cr1,flowTuplePrefixOf);
+        connectorCr = Exp.crefStripPrefix(outerCr,cr1);
+        newCr = Exp.joinCrefs(cr2,connectorCr);  
+      then ((newCr,f2,src)::crs,inCrs,true);
+
+    case(cr1,cr2,false,true,f1,f2,crs,inCrs) 
+      equation
+        (outerCr,_,src)::_ = Util.listSelect1(crs,cr2,flowTuplePrefixOf);
+        connectorCr = Exp.crefStripPrefix(outerCr,cr2);
+        newCr = Exp.joinCrefs(cr1,connectorCr);
+      then ((newCr,f1,src)::crs,inCrs,true);
+        
     case(cr1,cr2,_,_,_,_,crs,inCrs) then (crs,inCrs,false);
   end matchcontinue;
 end addOuterConnectToSets33; 
  
 public function addEqu "function: addEqu
- 
   Adds an equal equation, see explaining text above.
- 
   - Adding
- 
-  The two functions `add_eq\' and `add_flow\' addes a variable to a
+  The two functions addEq and addFlow addes a variable to a
   connection set.  The first function is used to add a non-flow
   variable, and the second is used to add a flow variable.  When
   two component are to be added to a collection of connection sets,
@@ -332,68 +350,67 @@ public function addEqu "function: addEqu
   is created.
  
   If the connection sets containing the two components are not the
-  same, they are merged.
-"
+  same, they are merged."
   input Sets ss;
   input DAE.ComponentRef r1;
   input DAE.ComponentRef r2;
+  input DAE.ElementSource source "the origin of the element";
   output Sets ss_1;
   Set s1,s2;
   Sets ss_1;
 algorithm 
-  s1 := findEquSet(ss, r1);
-  s2 := findEquSet(ss, r2);
+  s1 := findEquSet(ss, r1, source);
+  s2 := findEquSet(ss, r2, source);
   ss_1 := merge(ss, s1, s2);
 end addEqu;
 
 public function addFlow "function: addFlow
-  
-  Adds an flow equation, see add_equ above.
-"
+  Adds an flow equation, see addEqu above."
   input Sets ss;
   input DAE.ComponentRef r1;
   input Face d1;
   input DAE.ComponentRef r2;
   input Face d2;
-  output Sets ss_1;
+  input DAE.ElementSource source "the element origin";
+  output Sets ss_1;  
   Set s1,s2;
   Sets ss_1;
 algorithm 
-  s1 := findFlowSet(ss, r1, d1);
-  s2 := findFlowSet(ss, r2, d2);
+  s1 := findFlowSet(ss, r1, d1, source);
+  s2 := findFlowSet(ss, r2, d2, source);
   ss_1 := merge(ss, s1, s2);
 end addFlow;
 
 public function addArrayFlow "function: addArrayFlow
- For connecting two arrays, a flow equation for each index should be generated, see addFlow.
-"
+ For connecting two arrays, a flow equation for each index should be generated, see addFlow."
   input Sets ss;
   input DAE.ComponentRef r1;
   input Face d1;
   input DAE.ComponentRef r2;
   input Face d2;
   input Integer dsize;
+  input DAE.ElementSource source "the element origin";
   output Sets ss_1;
   Set s1,s2;
   Sets ss_1;
 algorithm 
-    outSets:=
-  matchcontinue (ss,r1,d1,r2,d2,dsize)
+  outSets := matchcontinue (ss,r1,d1,r2,d2,dsize,source)
     local
       Sets s,ss_1,ss_2,ss;
       DAE.ComponentRef r1_1,r2_1,r1,r2;
       Integer i_1,i;
       Set s1,s2;
-    case (s,_,_,_,_,0) then s; 
-    case (ss,r1,d1,r2,d2,i)
+
+    case (s,_,_,_,_,0,source) then s; 
+    case (ss,r1,d1,r2,d2,i,source)
       equation 
         r1_1 = Exp.subscriptCref(r1, {DAE.INDEX(DAE.ICONST(i))});
         r2_1 = Exp.subscriptCref(r2, {DAE.INDEX(DAE.ICONST(i))});
         i_1 = i - 1;
-        s1 = findFlowSet(ss, r1_1,d1);
-        s2 = findFlowSet(ss, r2_1,d2);
+        s1 = findFlowSet(ss, r1_1, d1, source);
+        s2 = findFlowSet(ss, r2_1, d2, source);
         ss_1 = merge(ss, s1, s2);
-        ss_2 = addArrayFlow(ss_1, r1,d1, r2,d2, i_1);        
+        ss_2 = addArrayFlow(ss_1, r1, d1, r2, d2, i_1, source);        
       then
         ss_2;
   end matchcontinue;
@@ -402,29 +419,28 @@ end addArrayFlow;
 public function addMultiArrayEqu "function: addMultiArrayEqu 
  Author: BZ 2008-07
   For connecting two arrays, an equal equation for each index should 
-  be generated. generic dimensionality
-"
+  be generated. generic dimensionality"
   input Sets inSets1;
   input DAE.ComponentRef inComponentRef2;
   input DAE.ComponentRef inComponentRef3;
   input list<Integer> dimensions;
+  input DAE.ElementSource source "the origins of the element";
   output Sets outSets;
 algorithm 
-  outSets:=
-  matchcontinue (inSets1,inComponentRef2,inComponentRef3,dimensions)
+  outSets := matchcontinue (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
     local
       Integer i_1,i;
       list<Integer> rest;
       list<list<Integer>> intSubs;
       list<list<DAE.Subscript>> subSubs;
       Integer dimension;
-    case (inSets1,_,_,{}) then inSets1; 
-    case (inSets1,inComponentRef2,inComponentRef3,dimensions)
+    case (inSets1,_,_,{},source) then inSets1; 
+    case (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
       equation  
         intSubs = generateSubscriptList(dimensions);
         intSubs = listReverse(intSubs);
         subSubs = Util.listMap(intSubs,Exp.intSubscripts);
-        outSets = addMultiArrayEqu2(inSets1,inComponentRef2,inComponentRef3,subSubs);
+        outSets = addMultiArrayEqu2(inSets1,inComponentRef2,inComponentRef3,subSubs,source);
       then
        outSets;
   end matchcontinue;
@@ -432,14 +448,15 @@ end addMultiArrayEqu;
 
 protected function addMultiArrayEqu2 "
 Author: BZ, 2008-07
-Generates Subscripts, from the input list<list, for the componentreferences given.
-"
+Generates Subscripts, from the input list<list, for the componentreferences given."
   input Sets inSets1;
   input DAE.ComponentRef inComponentRef2;
   input DAE.ComponentRef inComponentRef3;
   input list<list<DAE.Subscript>> dimensions;
+  input DAE.ElementSource source "the origins of the element";
   output Sets outSets;
-  algorithm outSets := matchcontinue(inSets1,inComponentRef2,inComponentRef3,dimensions)
+algorithm 
+  outSets := matchcontinue(inSets1,inComponentRef2,inComponentRef3,dimensions,source)
     local
       Sets s,ss_1,ss_2,ss;
       DAE.ComponentRef r1_1,r2_1,r1,r2;
@@ -447,24 +464,23 @@ Generates Subscripts, from the input list<list, for the componentreferences give
       list<list<DAE.Subscript>> restDims;
       list<DAE.Subscript> dims;
       Integer dimension;
-    case (s,_,_,{}) then s; 
-    case (ss,r1,r2,dims::restDims)
+    case (s,_,_,{},_) then s; 
+    case (ss,r1,r2,dims::restDims,source)
       equation
         r1_1 = Exp.replaceCrefSliceSub(r1,dims);
         r2_1 = Exp.replaceCrefSliceSub(r2,dims);
-        s1 = findEquSet(ss, r1_1);
-        s2 = findEquSet(ss, r2_1);
+        s1 = findEquSet(ss, r1_1, source);
+        s2 = findEquSet(ss, r2_1, source);
         ss_1 = merge(ss, s1, s2);
-        ss_2 = addMultiArrayEqu2(ss_1, r1, r2, restDims);
+        ss_2 = addMultiArrayEqu2(ss_1, r1, r2, restDims, source);
       then
         ss_2;
-end matchcontinue;
+  end matchcontinue;
 end addMultiArrayEqu2;
 
 protected function generateSubscriptList "
 Author BZ 2008-07
-Generates all subscripts for the dimension/(s)
-"
+Generates all subscripts for the dimension/(s)"
   input list<Integer> dims;
   output list<list<Integer>> subs;
 algorithm subs := matchcontinue(dims)
@@ -488,8 +504,7 @@ end matchcontinue;
 end generateSubscriptList;
 
 protected function generateSubscriptList2 "
-helper function for generateSubscriptList
-"
+helper function for generateSubscriptList"
   input Integer i;
   output list<list<Integer>>  oil;
 algorithm oil := matchcontinue(i)
@@ -498,17 +513,16 @@ algorithm oil := matchcontinue(i)
   case(i)
     equation
       oil = generateSubscriptList2(i-1);      
-      then
-        {i}::oil;
+    then
+      {i}::oil;
 end matchcontinue;
 end generateSubscriptList2;
 
 protected function mergeCurrentWithRestIndexies "
-Helper function for generateSubscriptList, merges recursive dimensions with current.
-"
-input list<list<Integer>> curr;
-input list<list<Integer>> Indexies;
-output list<list<Integer>> oIndexies;
+Helper function for generateSubscriptList, merges recursive dimensions with current."
+  input list<list<Integer>> curr;
+  input list<list<Integer>> Indexies;
+  output list<list<Integer>> oIndexies;
 algorithm oIndexies := matchcontinue(curr,Indexies)
   local
     list<Integer> il;
@@ -570,15 +584,15 @@ protected function removeComponentInSets "Removes all connections to component f
 algorithm
   outS := matchcontinue(compName,s)
     local 
-      list<DAE.ComponentRef> crs;
-      list<tuple<DAE.ComponentRef, Face>> fcrs;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> crs;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> fcrs;
     // handle the empty case
     case(compName,{}) then {};
     // we have an equation
     case(compName, EQU(crs)::s) 
       equation
         //print("Deleting: " +& Exp.printComponentRefStr(compName) +& "\n");
-        crs = Util.listSelect1R(crs,compName,Exp.crefNotPrefixOf);
+        crs = Util.listSelect1(crs,compName,crefTupleNotPrefixOf);
         //print("Result EQU after remove: " +& Util.stringDelimitList(Util.listMap(crs, Exp.printComponentRefStr), ", ") +& "\n");        
         s = removeComponentInSets(compName,s);
       then EQU(crs)::s;
@@ -598,18 +612,51 @@ algorithm
   end matchcontinue;
 end removeComponentInSets;
 
+function crefTupleNotPrefixOf
+  input tuple<DAE.ComponentRef, DAE.ElementSource> tupleCrSource;
+  input DAE.ComponentRef compName;    
+  output Boolean selected;
+algorithm
+  selected := matchcontinue(tupleCrSource,compName)
+    local DAE.ComponentRef cr;
+    case((cr,_),compName) then Exp.crefNotPrefixOf(compName,cr);
+  end matchcontinue;
+end crefTupleNotPrefixOf;
+
+function crefTuplePrefixOf
+  input tuple<DAE.ComponentRef, DAE.ElementSource> tupleCrSource;
+  input DAE.ComponentRef compName;    
+  output Boolean selected;
+algorithm
+  selected := matchcontinue(tupleCrSource,compName)
+    local DAE.ComponentRef cr;
+    case((cr,_),compName) then Exp.crefPrefixOf(compName,cr);
+  end matchcontinue;
+end crefTuplePrefixOf;
+
 protected function flowTupleNotPrefixOf "Help function to removeComponentInSets.
-Determines if connection cref is to the component "
-  input tuple<DAE.ComponentRef, Face> tpl;
+Determines if connection cref is NOT to the component "
+  input tuple<DAE.ComponentRef, Face, DAE.ElementSource> tpl;
   input DAE.ComponentRef compName;
   output Boolean b;
 algorithm
   b:= matchcontinue(tpl,compName)
-  local DAE.ComponentRef cr1;
-    case((cr1,_),compName)
-      then Exp.crefNotPrefixOf(compName,cr1);
+    local DAE.ComponentRef cr;
+    case((cr,_,_),compName) then Exp.crefNotPrefixOf(compName,cr);
   end matchcontinue;
 end flowTupleNotPrefixOf;
+
+protected function flowTuplePrefixOf "Help function to removeComponentInSets.
+Determines if connection cref is to the component "
+  input tuple<DAE.ComponentRef, Face, DAE.ElementSource> tpl;
+  input DAE.ComponentRef compName;
+  output Boolean b;
+algorithm
+  b:= matchcontinue(tpl,compName)
+    local DAE.ComponentRef cr;
+    case((cr,_,_),compName) then Exp.crefPrefixOf(compName,cr);
+  end matchcontinue;
+end flowTuplePrefixOf;
 
 protected function equations2 "
 Helper function to equations. Once deleted components has been 
@@ -620,10 +667,12 @@ algorithm
   outDAEElementLst := matchcontinue (inSets)
     local
       list<DAE.Element> dae1,dae2,dae;
-      list<DAE.ComponentRef> cs,crs,dc;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
+      list<DAE.ComponentRef> crs, dc;
       list<Set> ss;
       Sets sets;
       list<OuterConnect> outerConn;
+
     case (SETS(setLst = {})) then {}; 
     
     /* Empty equ set, can come from deleting components */
@@ -648,7 +697,7 @@ algorithm
       then
         dae;
     case (SETS((FLOW(tplExpComponentRefFaceLst = cs) :: ss),crs,dc,outerConn))
-      local list<tuple<DAE.ComponentRef, Face>> cs;
+      local list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
       equation 
         dae1 = flowEquations(cs);
         dae2 = equations2(SETS(ss,crs,dc,outerConn));
@@ -664,29 +713,28 @@ algorithm
 end equations2;
 
 protected function equEquations "function: equEquations
-  
   A non-flow connection set contains a number of components.
   Generating the equation from this set means equating all the
   components.  For n components, this will give n-1 equations.
- 
-  For example, if the set contains the components `x\', `y.a\' and
-  `z.b\', the equations generated will me `x = y.a\' and `y.a = z.b\'.
-"
-  input list<DAE.ComponentRef> inExpComponentRefLst;
+  For example, if the set contains the components X, Y.A and
+  Z.B, the equations generated will me X = Y.A and Y.A = Z.B."
+  input list<tuple<DAE.ComponentRef,DAE.ElementSource>> inExpComponentRefLst;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  outDAEElementLst:=
-  matchcontinue (inExpComponentRefLst)
+  outDAEElementLst := matchcontinue (inExpComponentRefLst)
     local
       list<DAE.Element> eq;
       DAE.ComponentRef x,y;
-      list<DAE.ComponentRef> cs;
+      list<tuple<DAE.ComponentRef,DAE.ElementSource>> cs;
+      DAE.ElementSource src,src1,src2;
+
     case {_} then {}; 
-    case (x :: (y :: cs))
+    case ((x,src1) :: ((y,src2) :: cs))
       equation 
-        eq = equEquations((y :: cs));
+        eq = equEquations(((y,src2) :: cs));
+        src = DAEUtil.mergeSources(src1,src2);
       then
-        (DAE.EQUEQUATION(x,y,DAE.UNKNOWN()) :: eq);
+        (DAE.EQUEQUATION(x,y,src) :: eq);
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();
   end matchcontinue;
 end equEquations;
@@ -696,15 +744,17 @@ protected function flowEquations "function: flowEquations
   trickier that from a non-flow set.  Only one equation is
   generated, but it has to consider whether the comoponents were
   inner or outer connectors.
-  This function uses `flow_sum\' to create the sum of all components
+  This function uses flowSum to create the sum of all components
   (some of which will be negated), and the returns the equation
   where this sum is equal to 0.0."
-  input list<tuple<DAE.ComponentRef, Face>> cs;
+  input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
   output list<DAE.Element> outDAEElementLst;
   DAE.Exp sum;
+  DAE.ElementSource source;
 algorithm 
   sum := flowSum(cs);
-  outDAEElementLst := {DAE.EQUATION(sum,DAE.RCONST(0.0), DAE.UNKNOWN())};
+  source := Util.listReduce(Util.listMap(cs, Util.tuple33), DAEUtil.mergeSources);
+  outDAEElementLst := {DAE.EQUATION(sum, DAE.RCONST(0.0), source)};
 end flowEquations;
 
 protected function flowSum "function: flowSum
@@ -712,7 +762,7 @@ protected function flowSum "function: flowSum
   components in the given list.  Before adding the component to the
   sum, it is passed to `sign_flow\' which will negate all outer
   connectors."
-  input list<tuple<DAE.ComponentRef, Face>> inTplExpComponentRefFaceLst;
+  input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> inTplExpComponentRefFaceLst;
   output DAE.Exp outExp;
 algorithm 
   outExp := matchcontinue (inTplExpComponentRefFaceLst)
@@ -720,14 +770,14 @@ algorithm
       DAE.Exp exp,exp1,exp2;
       DAE.ComponentRef c;
       Face f;
-      list<tuple<DAE.ComponentRef, Face>> cs;
-    case {(c,f)}
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
+    case {(c,f,_)}
       equation
         exp = signFlow(c, f);
         // print("Generating flow expresion: " +& Exp.printExpStr(exp) +& "\n");
       then
         exp;
-    case (((c,f) :: cs))
+    case (((c,f,_) :: cs))
       equation 
         exp1 = signFlow(c, f);
         exp2 = flowSum(cs);
@@ -737,77 +787,85 @@ algorithm
 end flowSum;
 
 protected function signFlow "function: signFlow
- 
-  This function takes a name of a component and a `Face\', returns an
-  expression.  If the face is INSIDE the expression simply contains
+  This function takes a name of a component and a Face, returns an
+  expression. If the face is INSIDE the expression simply contains
   the component reference, but if it is OUTSIDE, the expression is
   negated."
   input DAE.ComponentRef inComponentRef;
   input Face inFace;
   output DAE.Exp outExp;
 algorithm 
-  outExp:=
-  matchcontinue (inComponentRef,inFace)
+  outExp := matchcontinue (inComponentRef,inFace)
     local DAE.ComponentRef c;
     case (c,INSIDE()) then DAE.CREF(c,DAE.ET_OTHER()); 
     case (c,OUTSIDE()) then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.CREF(c,DAE.ET_OTHER())); 
   end matchcontinue;
 end signFlow;
 
-protected function findEquSet "
-  - Lookup
-  
-  These functions are used to find and create connection sets.
+protected function faceEqual "function: sameFace
+Test for face equality."
+  input Face inFace1;
+  input Face inFace2;
+  output Boolean sameFaces;
+algorithm 
+  sameFaces := matchcontinue (inFace1,inFace2)
+    local DAE.ComponentRef c;
+    case (INSIDE(),INSIDE()) then true; 
+    case (OUTSIDE(),OUTSIDE()) then true;
+    case (_,_) then false; 
+  end matchcontinue;
+end faceEqual;
 
-  function: findEquSet
- 
+//- Lookup
+//  These functions are used to find and create connection sets.
+
+
+protected function findEquSet "function: findEquSet
   This function finds a non-flow connection set that contains the
-  component named by the second argument.  If no such set is found,
-  a new set is created.
-"
+  component named by the second argument. If no such set is found,
+  a new set is created."
   input Sets inSets;
   input DAE.ComponentRef inComponentRef;
+  input DAE.ElementSource source "the element source";
   output Set outSet;
 algorithm 
-  outSet:=
-  matchcontinue (inSets,inComponentRef)
+  outSet := matchcontinue (inSets,inComponentRef,source)
     local
       Set s;
       DAE.ComponentRef c;
       list<Set> ss;
       list<DAE.ComponentRef> crs,dc;
       list<OuterConnect> outerConn;
-    case (SETS(setLst = {}),c)
+
+    case (SETS(setLst = {}),c,source)
       equation 
-        s = newEquSet(c);
+        s = newEquSet(c, source);
       then
         s;
-    case (SETS(setLst = (s :: _)),c)
+    case (SETS(setLst = (s :: _)),c,source)
       equation 
         findInSet(s, c);
       then
         s;
-    case (SETS((_ :: ss),crs,dc,outerConn),c)
+    case (SETS((_ :: ss),crs,dc,outerConn),c,source)
       equation 
-        s = findEquSet(SETS(ss,crs,dc,outerConn), c);
+        s = findEquSet(SETS(ss,crs,dc,outerConn), c, source);
       then
         s;
   end matchcontinue;
 end findEquSet;
 
 protected function findFlowSet "function: findFlowSet
- 
   This function finds a flow connection set that contains the
   component named by the second argument.  If no such set is found,
-  a new set is created.
-"
+  a new set is created."
   input Sets inSets;
   input DAE.ComponentRef inComponentRef;
   input Face inFace;
+  input DAE.ElementSource source "the element source";
   output Set outSet;
 algorithm 
-  outSet:=
-  matchcontinue (inSets,inComponentRef,inFace)
+  outSet := matchcontinue (inSets,inComponentRef,inFace,source)
     local
       Set s;
       DAE.ComponentRef c;
@@ -815,36 +873,34 @@ algorithm
       list<Set> ss;
       list<DAE.ComponentRef> crs,dc;
       list<OuterConnect> outerConn;
-    case (SETS(setLst = {}),c,d)
+
+    case (SETS(setLst = {}),c,d,source)
       equation 
-        s = newFlowSet(c, d);
+        s = newFlowSet(c, d, source);
       then
         s;
-    case (SETS(setLst = (s :: _)),c,d)
+    case (SETS(setLst = (s :: _)),c,d,source)
       equation 
         findInSet(s, c);
       then
         s;
-    case (SETS((_ :: ss),crs,dc,outerConn),c,d)
+    case (SETS((_ :: ss),crs,dc,outerConn),c,d,source)
       equation 
-        s = findFlowSet(SETS(ss,crs,dc,outerConn), c, d);
+        s = findFlowSet(SETS(ss,crs,dc,outerConn), c, d, source);
       then
         s;
   end matchcontinue;
 end findFlowSet;
 
 protected function findInSet "function: findInSet
-  
-  This function checks if a componet already appears in a given
-  connection set.
-"
+  This function checks if a componet already 
+  appears in a given connection set."
   input Set inSet;
   input DAE.ComponentRef inComponentRef;
 algorithm 
-  _:=
-  matchcontinue (inSet,inComponentRef)
-    local
-      list<DAE.ComponentRef> cs;
+  _ := matchcontinue (inSet,inComponentRef)
+    local 
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs; 
       DAE.ComponentRef c;
     case (EQU(expComponentRefLst = cs),c)
       equation 
@@ -852,7 +908,7 @@ algorithm
       then
         ();
     case (FLOW(tplExpComponentRefFaceLst = cs),c)
-      local list<tuple<DAE.ComponentRef, Face>> cs;
+      local list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
       equation 
         findInSetFlow(cs, c);
       then
@@ -861,121 +917,125 @@ algorithm
 end findInSet;
 
 protected function findInSetEqu "function: findInSetEqu
-  
-  This is a version of `find_in_set\' which is specialized on
-  non-flow connection sets
-"
-  input list<DAE.ComponentRef> inExpComponentRefLst;
+  This is a version of findInSet which is specialized on non-flow connection sets"
+  input list<tuple<DAE.ComponentRef, DAE.ElementSource>> inExpComponentRefLst;
   input DAE.ComponentRef inComponentRef;
 algorithm 
-  _:=
-  matchcontinue (inExpComponentRefLst,inComponentRef)
-    local
-      DAE.ComponentRef c1,c2;
-      list<DAE.ComponentRef> cs;
-    case ((c1 :: _),c2)
-      equation 
-        Static.eqCref(c1, c2);
-      then
-        ();
-    case ((_ :: cs),c2)
-      equation 
-        findInSetEqu(cs, c2);
-      then
-        ();
+  _ := matchcontinue (inExpComponentRefLst,inComponentRef)
+    local DAE.ComponentRef c1,c2;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
+
+    case ((c1,_) :: _,c2) equation Static.eqCref(c1, c2); then ();
+    case (_ :: cs,c2) equation findInSetEqu(cs, c2); then ();
   end matchcontinue;
 end findInSetEqu;
 
 protected function findInSetFlow "function: findInSetFlow
-  
-  This is a version of `find_in_set\' which is specialized on
-  flow connection sets
-"
-  input list<tuple<DAE.ComponentRef, Face>> inTplExpComponentRefFaceLst;
+  This is a version of findInSet which is specialized on flow connection sets"
+  input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> inTplExpComponentRefFaceLst;
   input DAE.ComponentRef inComponentRef;
 algorithm 
-  _:=
-  matchcontinue (inTplExpComponentRefFaceLst,inComponentRef)
-    local
-      DAE.ComponentRef c1,c2;
-      list<tuple<DAE.ComponentRef, Face>> cs;
-    case (((c1,_) :: _),c2)
-      equation 
-        Static.eqCref(c1, c2);
-      then
-        ();
-    case ((_ :: cs),c2)
-      equation 
-        findInSetFlow(cs, c2);
-      then
-        ();
+  _ := matchcontinue (inTplExpComponentRefFaceLst,inComponentRef)
+    local DAE.ComponentRef c1,c2; list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
+    case ((c1,_,_) :: _,c2) equation Static.eqCref(c1, c2); then ();
+    case (_ :: cs,c2) equation findInSetFlow(cs, c2); then ();
   end matchcontinue;
 end findInSetFlow;
 
-protected function newEquSet "function: newEquSet
- 
-  This function creates a new non-flow connection set containing
-  only the given component.
-"
+protected function newEquSet "function: newEquSet 
+  This function creates a new non-flow connection 
+  set containing only the given component."
   input DAE.ComponentRef inComponentRef;
+  input DAE.ElementSource source "the origin of the element";
   output Set outSet;
 algorithm 
-  outSet:=
-  matchcontinue (inComponentRef)
+  outSet := matchcontinue (inComponentRef, source)
     local DAE.ComponentRef c;
-    case c then EQU({c}); 
+    case (c,source) then EQU({(c,source)}); 
   end matchcontinue;
 end newEquSet;
 
 protected function newFlowSet "function: newFlowSet
- 
   This function creates a new-flow connection set containing only
-  the given component.
-"
+  the given component."
   input DAE.ComponentRef inComponentRef;
   input Face inFace;
+  input DAE.ElementSource source "the origin of the element";
   output Set outSet;
 algorithm 
-  outSet:=
-  matchcontinue (inComponentRef,inFace)
-    local
-      DAE.ComponentRef c;
-      Face d;
-    case (c,d) then FLOW({(c,d)}); 
+  outSet := matchcontinue (inComponentRef,inFace,source)
+    local DAE.ComponentRef c; Face d;
+    case (c,d,source) then FLOW({(c,d,source)}); 
   end matchcontinue;
 end newFlowSet;
 
-protected function merge "
-  - Merging
-  
-  The result of merging two connection sets is the intersection of
-  the two sets.
-"
-  input Sets inSets1;
+function setsEqual
+  input Set inSet1;
   input Set inSet2;
-  input Set inSet3;
+  output Boolean equalSets;
+algorithm
+  equalSets := matchcontinue(inSet1,inSet2)
+    local
+      DAE.ComponentRef cr1,cr2;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> equRest1,equRest2;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> flowRest1,flowRest2;
+      Face face1,face2;
+      
+    // deal with empty case
+    case (EQU({}), EQU({})) then true;
+    case (FLOW({}), FLOW({})) then true;
+    // deal with non empty EQU
+    case (EQU((cr1,_)::equRest1), EQU((cr2,_)::equRest2))
+      equation
+        true = Exp.crefEqual(cr1, cr2); // equality(cr1 = cr2); 
+        true = setsEqual(EQU(equRest1),EQU(equRest2));
+      then
+        true;
+    // deal with non empty FLOW
+    case (FLOW((cr1,face1,_)::flowRest1), FLOW((cr2,face2,_)::flowRest2))
+      equation
+        true = faceEqual(face1, face2);
+        true = Exp.crefEqual(cr1, cr2); // equality(cr1 = cr2); 
+        true = setsEqual(FLOW(flowRest1),FLOW(flowRest2));
+      then
+        true;
+    case (_, _) then false;
+  end matchcontinue;
+end setsEqual;
+
+//- Merging
+
+protected function merge "function: merge  
+  The result of merging two connection sets 
+  is the intersection of the two sets."
+  input Sets inSets;
+  input Set inSet1;
+  input Set inSet2;
   output Sets outSets;
 algorithm 
-  outSets:=
-  matchcontinue (inSets1,inSet2,inSet3)
+  outSets := matchcontinue (inSets,inSet1,inSet2)
     local
       list<Set> ss,ss_1;
-      list<DAE.ComponentRef> crs,cs,cs1,cs2,dc;
+      list<DAE.ComponentRef> crs,dc;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs,cs1,cs2;
       Set s1,s2;
       list<OuterConnect> outerConn;
-    case (SETS(ss,crs,dc,outerConn),s1,s2)
+      
+    case (inSets/*SETS(ss,crs,dc,outerConn)*/,s1,s2)
       equation 
-        equality(s1 = s2);
+        true = setsEqual(s1,s2);
       then
-        SETS(ss,crs,dc,outerConn);
+        inSets; // SETS(ss,crs,dc,outerConn);
+
     case (SETS(ss,crs,dc,outerConn),(s1 as EQU(expComponentRefLst = cs1)),(s2 as EQU(expComponentRefLst = cs2)))
       equation 
         cs = listAppend(cs1, cs2);
         SETS(ss_1,_,_,_) = removeSet2(SETS(ss,crs,dc,outerConn), s1, s2);
       then
         SETS((EQU(cs) :: ss_1),crs,dc,outerConn);
+
     case (SETS(ss,crs,dc,outerConn),(s1 as FLOW(tplExpComponentRefFaceLst = cs1)),(s2 as FLOW(tplExpComponentRefFaceLst = cs2)))
-      local list<tuple<DAE.ComponentRef, Face>> cs,cs1,cs2;
+      local list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs,cs1,cs2;
       equation 
         cs = listAppend(cs1, cs2);
         SETS(ss_1,_,_,_) = removeSet2(SETS(ss,crs,dc,outerConn), s1, s2);
@@ -985,36 +1045,37 @@ algorithm
 end merge;
 
 protected function removeSet2 "function: removeSet2
-  
   This function removes the two sets given in the second and third
-  argument from the collection of sets given in the first argument.
-"
+  argument from the collection of sets given in the first argument."
   input Sets inSets1;
   input Set inSet2;
   input Set inSet3;
   output Sets outSets;
 algorithm 
-  outSets:=
-  matchcontinue (inSets1,inSet2,inSet3)
+  outSets := matchcontinue (inSets1,inSet2,inSet3)
     local
       list<DAE.ComponentRef> crs,dc;
       Sets ss_1;
       Set s,s1,s2;
       list<Set> ss;
-      list<OuterConnect> outerConn;      
+      list<OuterConnect> outerConn;
+
     case (SETS({},crs,dc,outerConn),_,_) then SETS({},crs,dc,outerConn); 
+
     case (SETS((s :: ss),crs,dc,outerConn),s1,s2)
       equation 
-        equality(s = s1);
+        true = setsEqual(s, s1);
         ss_1 = removeSet(SETS(ss,crs,dc,outerConn), s2);
       then
         ss_1;
+
     case (SETS((s :: ss),crs,dc,outerConn),s1,s2)
       equation 
-        equality(s = s2);
+        true = setsEqual(s, s2);
         ss_1 = removeSet(SETS(ss,crs,dc,outerConn), s1);
       then
         ss_1;
+        
     case (SETS((s :: ss),crs,dc,outerConn),s1,s2)
       local list<Set> ss_1;
       equation 
@@ -1025,9 +1086,7 @@ algorithm
 end removeSet2;
 
 protected function removeSet "function: removeSet
- 
-  This function removes one set from a list of sets.
-"
+  This function removes one set from a list of sets."
   input Sets inSets;
   input Set inSet;
   output Sets outSets;
@@ -1038,13 +1097,16 @@ algorithm
       list<DAE.ComponentRef> crs,dc;
       Set s,s1;
       list<Set> ss,ss_1;
-      list<OuterConnect> outerConn;      
+      list<OuterConnect> outerConn;
+
     case (SETS({},crs,dc,outerConn),_) then SETS({},crs,dc,outerConn); 
+
     case (SETS((s :: ss),crs,dc,outerConn),s1)
       equation 
-        equality(s = s1);
+        true = setsEqual(s, s1);
       then
         SETS(ss,crs,dc,outerConn);
+
     case (SETS((s :: ss),crs,dc,outerConn),s1)
       equation 
         SETS(ss_1,_,_,_) = removeSet(SETS(ss,crs,dc,outerConn), s1);
@@ -1079,9 +1141,10 @@ algorithm
       list<Env.Frame> env;
       Env.Cache cache;
       DAE.ComponentRef prefixCref;
-        list<Set> set;
+      list<Set> set;
+      list<DAE.ComponentRef> flowCrefs;
+        
     case (cache,(csets as SETS(setLst = set, deletedComponents = deletedComponents)),dae,env,prefix,true,ocl)
-      local list<DAE.ComponentRef> flowCrefs;
       equation 
         v1 = Env.localOutsideConnectorFlowvars(env) "if outermost call look at both inner and outer unconnected connectors" ;
         v2 = Env.localInsideConnectorFlowvars(env);
@@ -1115,7 +1178,7 @@ algorithm
       then
         (cache,dae_1);
 
-      case (cache,(csets as SETS(deletedComponents = deletedComponents)),dae,env,prefix,false,ocl)
+    case (cache,(csets as SETS(deletedComponents = deletedComponents)),dae,env,prefix,false,ocl)
       equation 
         vars = Env.localInsideConnectorFlowvars(env);
         vars2 = getInsideFlowVariables(csets);
@@ -1132,8 +1195,8 @@ algorithm
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,prefix,deletedComponents);
       then
         (cache,dae_1);
-    case (cache,csets,dae,env,_,_,_) 
-    then (cache,{}); 
+
+    case (cache,csets,dae,env,_,_,_) then (cache,{}); 
   end matchcontinue;
 end unconnectedFlowEquations;
 
@@ -1311,8 +1374,7 @@ protected function removeVariables "function: removeVariables
   input list<DAE.ComponentRef> inExpComponentRefLst2;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inExpComponentRefLst1,inExpComponentRefLst2)
+  outExpComponentRefLst := matchcontinue (inExpComponentRefLst1,inExpComponentRefLst2)
     local
       list<DAE.ComponentRef> vars,vars_1,res,removelist;
       DAE.ComponentRef r1;
@@ -1326,16 +1388,13 @@ algorithm
   end matchcontinue;
 end removeVariables;
 
-protected function removeVariable "function: removeVariable
- 
-  Removes a variable from a list of variables.
-"
+protected function removeVariable "function: removeVariable 
+  Removes a variable from a list of variables."
   input DAE.ComponentRef inComponentRef;
   input list<DAE.ComponentRef> inExpComponentRefLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inComponentRef,inExpComponentRefLst)
+  outExpComponentRefLst := matchcontinue (inComponentRef,inExpComponentRefLst)
     local
       DAE.ComponentRef cr,cr2;
       list<DAE.ComponentRef> xs,res;
@@ -1354,10 +1413,8 @@ algorithm
 end removeVariable;
 
 protected function generateZeroflowEquations "function: generateZeroflowEquations
- 
   Unconnected flow variables should be set to zero. This function 
-  generates equations setting each variable in the list to zero.
-"
+  generates equations setting each variable in the list to zero."
 	input Env.Cache inCache;
   input list<DAE.ComponentRef> inExpComponentRefLst;
   input Env.Env inEnv;
@@ -1366,8 +1423,7 @@ protected function generateZeroflowEquations "function: generateZeroflowEquation
   output Env.Cache outCache;
   output list<DAE.Element> outDAEElementLst;
 algorithm 
-  (outCache,outDAEElementLst) :=
-  matchcontinue (inCache,inExpComponentRefLst,inEnv,prefix,deletedComponents)
+  (outCache,outDAEElementLst) := matchcontinue (inCache,inExpComponentRefLst,inEnv,prefix,deletedComponents)
     local
       list<DAE.Element> res,res1;
       DAE.ComponentRef cr;
@@ -1404,7 +1460,7 @@ algorithm
         cr2 = Prefix.prefixCref(prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
-        (cache,DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.UNKNOWN()) :: res);
+        (cache,DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.emptyElementSource) :: res);
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -1461,7 +1517,7 @@ algorithm
       equation
         cr = Exp.subscriptCref(cr, indexSubscriptList);        
       then
-        DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()), initExp, DAE.UNKNOWN());
+        DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL()), initExp, DAE.emptyElementSource);
   end matchcontinue;
 end genZeroEquation;
 
@@ -1496,28 +1552,27 @@ algorithm
 end integer2Subscript;
 
 protected function getAllFlowVariables "function: getAllFlowVariables
-  
-  Return a list of all flow variables from the connection sets.
-"
+  Return a list of all flow variables from the connection sets."
   input Sets inSets;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inSets)
+  outExpComponentRefLst := matchcontinue (inSets)
     local
       list<DAE.ComponentRef> res1,res2,res,crs,dc;
-      list<tuple<DAE.ComponentRef, Face>> varlst;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> resTplLst;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> varlst;
       list<Set> xs;
       list<OuterConnect> outerConn;
-    case SETS(setLst = {}) then {}; 
+
+    case SETS(setLst = {}) then {};
     case (SETS((FLOW(tplExpComponentRefFaceLst = varlst) :: xs),crs,dc,outerConn))
       equation 
-        res1 = Util.listMap(varlst, Util.tuple21);
+        res1 = Util.listMap(varlst, Util.tuple31);
         res2 = getAllFlowVariables(SETS(xs,crs,dc,outerConn));
         res = listAppend(res1, res2);
       then
         res;
-    case (SETS((EQU(expComponentRefLst = res1) :: xs),crs,dc,outerConn))
+    case (SETS((EQU(expComponentRefLst = resTplLst) :: xs),crs,dc,outerConn))
       equation 
         res = getAllFlowVariables(SETS(xs,crs,dc,outerConn));
       then
@@ -1552,16 +1607,16 @@ protected function getOuterConnectFlowVariables2 "Help function to getOuterConne
   output list<DAE.ComponentRef> flowVars;
 algorithm
   flowVars := matchcontinue(outerConnect,allFlowVars,prefix)
-  local DAE.ComponentRef cr1,cr2;
-    Absyn.InnerOuter io1,io2;
-    case(OUTERCONNECT(_,cr1,io1,_,cr2,io2,_),allFlowVars,prefix) equation
+    local 
+      DAE.ComponentRef cr1,cr2;
+      Absyn.InnerOuter io1,io2;
+
+    case(OUTERCONNECT(_,cr1,io1,_,cr2,io2,_,_),allFlowVars,prefix) equation
       cr1 = removePrefixOnNonOuter(cr1,io1,prefix);
       cr2 = removePrefixOnNonOuter(cr2,io2,prefix);
       flowVars = listAppend(
-        Util.listSelect1R(allFlowVars,cr1,Exp.crefPrefixOf)
-        ,
-        Util.listSelect1R(allFlowVars,cr2,Exp.crefPrefixOf)
-        );
+        Util.listSelect1R(allFlowVars,cr1,Exp.crefPrefixOf),
+        Util.listSelect1R(allFlowVars,cr2,Exp.crefPrefixOf));
      then flowVars;        
   end matchcontinue;   
 end getOuterConnectFlowVariables2;
@@ -1584,17 +1639,14 @@ algorithm
 end removePrefixOnNonOuter;
 
 protected function getInsideFlowVariables "function: getInsideFlowVariables
- 
-  Get all flow variables that are inner variables from the Sets.
-"
+  Get all flow variables that are inner variables from the Sets."
   input Sets inSets;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inSets)
+  outExpComponentRefLst := matchcontinue (inSets)
     local
       list<DAE.ComponentRef> res1,res2,res,crs,dc;
-      list<tuple<DAE.ComponentRef, Face>> vars;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> vars;
       list<Set> xs;
       list<OuterConnect> outerConn;
             
@@ -1616,45 +1668,41 @@ algorithm
 end getInsideFlowVariables;
 
 protected function getInsideFlowVariables2 "function: getInsideFlowVariables2
- 
-  Help function to get_inner_flow_variables.
-"
-  input list<tuple<DAE.ComponentRef, Face>> inTplExpComponentRefFaceLst;
+  Help function to getInnerFlowVariables."
+  input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> inTplExpComponentRefFaceLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inTplExpComponentRefFaceLst)
+  outExpComponentRefLst := matchcontinue (inTplExpComponentRefFaceLst)
     local
       list<DAE.ComponentRef> res;
       DAE.ComponentRef cr;
-      list<tuple<DAE.ComponentRef, Face>> xs;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> xs;
+
     case ({}) then {}; 
-    case (((cr,INSIDE()) :: xs))
+    case ((cr,INSIDE(),_) :: xs)
       equation 
         res = getInsideFlowVariables2(xs);
       then
         (cr :: res);
-    case ((_ :: xs))
+    case (_ :: xs)
       equation 
         res = getInsideFlowVariables2(xs);
       then
         res;
-    case (_) /* Debug.fprint(\"failtrace\",\"-get_inner_flow_variables_2 failed\\n\") */  then fail(); 
+    case (_) /* Debug.fprint(\"failtrace\",\"-get_inner_flow_variables_2 failed\\n\") */  
+      then fail(); 
   end matchcontinue;
 end getInsideFlowVariables2;
 
 protected function getOutsideFlowVariables "function: getOutsideFlowVariables
- 
-  Get all flow variables that are outer variables from the Sets.
-"
+  Get all flow variables that are outer variables from the Sets."
   input Sets inSets;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inSets)
+  outExpComponentRefLst := matchcontinue (inSets)
     local
       list<DAE.ComponentRef> res1,res2,res,crs,dc;
-      list<tuple<DAE.ComponentRef, Face>> vars;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> vars;
       list<Set> xs;
       list<OuterConnect> outerConn;
     case (SETS(setLst = {})) then {}; 
@@ -1675,25 +1723,22 @@ algorithm
 end getOutsideFlowVariables;
 
 protected function getOutsideFlowVariables2 "function: getOutsideFlowVariables2
- 
-  Help function to get_outer_flow_variables.
-"
-  input list<tuple<DAE.ComponentRef, Face>> inTplExpComponentRefFaceLst;
+  Help function to getOuterFlowVariables."
+  input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> inTplExpComponentRefFaceLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm 
-  outExpComponentRefLst:=
-  matchcontinue (inTplExpComponentRefFaceLst)
+  outExpComponentRefLst := matchcontinue (inTplExpComponentRefFaceLst)
     local
       list<DAE.ComponentRef> res;
       DAE.ComponentRef cr;
-      list<tuple<DAE.ComponentRef, Face>> xs;
+      list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> xs;
     case ({}) then {}; 
-    case (((cr,OUTSIDE()) :: xs))
+    case ((cr,OUTSIDE(),_) :: xs)
       equation 
         res = getOutsideFlowVariables2(xs);
       then
         (cr :: res);
-    case (( _ :: xs))
+    case (_ :: xs)
       equation 
         res = getOutsideFlowVariables2(xs);
       then
@@ -1750,7 +1795,7 @@ algorithm
 end printSet;
 
 protected function printFlowRef
-  input tuple<DAE.ComponentRef, Face> inTplExpComponentRefFace;
+  input tuple<DAE.ComponentRef, Face, DAE.ElementSource> inTplExpComponentRefFace;
 algorithm 
   Print.printBuf(printFlowRefStr(inTplExpComponentRefFace));
 end printFlowRef;
@@ -1791,11 +1836,13 @@ protected function printOuterConnectsStr "prints the outer connections to a stri
   output String str;
 algorithm
   str := matchcontinue(outerConn)
-  local String s1,s2,s3; DAE.ComponentRef cr1,cr2;
-    Absyn.InnerOuter io1,io2;
+    local 
+      String s1,s2,s3; DAE.ComponentRef cr1,cr2;
+      Absyn.InnerOuter io1,io2;
+
     case({}) then "";
       
-    case(OUTERCONNECT(_,cr1,io1,_,cr2,io2,_)::outerConn) equation
+    case(OUTERCONNECT(_,cr1,io1,_,cr2,io2,_,_)::outerConn) equation
       s1 = printOuterConnectsStr(outerConn);
       s2 = Exp.printComponentRefStr(cr1);
       s3 = Exp.printComponentRefStr(cr2);
@@ -1812,16 +1859,16 @@ algorithm
     local
       list<String> strs;
       String s1,res;
-      list<DAE.ComponentRef> cs;
+      list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
     case EQU(expComponentRefLst = cs)
       equation 
-        strs = Util.listMap(cs, Exp.printComponentRefStr);
+        strs = Util.listMap(Util.listMap(cs, Util.tuple21), Exp.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
         res = Util.stringAppendList({" non-flow set: {",s1,"}"});
       then
         res;
     case FLOW(tplExpComponentRefFaceLst = cs)
-      local list<tuple<DAE.ComponentRef, Face>> cs;
+      local list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
       equation 
         strs = Util.listMap(cs, printFlowRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
@@ -1832,21 +1879,20 @@ algorithm
 end printSetStr;
 
 public function printFlowRefStr
-  input tuple<DAE.ComponentRef, Face> inTplExpComponentRefFace;
+  input tuple<DAE.ComponentRef, Face, DAE.ElementSource> inTplExpComponentRefFace;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inTplExpComponentRefFace)
+  outString := matchcontinue (inTplExpComponentRefFace)
     local
       String s,res;
       DAE.ComponentRef c;
-    case ((c,INSIDE()))
+    case ((c,INSIDE(),_))
       equation 
         s = Exp.printComponentRefStr(c);
         res = stringAppend(s, " INSIDE");
       then
         res;
-    case ((c,OUTSIDE()))
+    case ((c,OUTSIDE(),_))
       equation 
         s = Exp.printComponentRefStr(c);
         res = stringAppend(s, " OUTSIDE");

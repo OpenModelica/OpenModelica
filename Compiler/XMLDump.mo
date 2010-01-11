@@ -529,7 +529,7 @@ algorithm
       local Integer algNo_1;
       equation
         dumpStrOpenTagAttr(ALGORITHM, LABEL, stringAppend(stringAppend(ALGORITHM_REF,"_"),intString(algNo)));
-        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.UNKNOWN())));
+        Print.printBuf(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)));
         dumpStrCloseTag(ALGORITHM);
         algNo_1=algNo+1;
         dumpAlgorithms2(algs,algNo_1);
@@ -3326,7 +3326,7 @@ algorithm
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
-        paths = DAEUtil.getElementSourcePaths(source);
+        paths = DAEUtil.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpStrCloseTag(VARIABLE);
@@ -3396,7 +3396,7 @@ algorithm
         //The command below adds information to the XML about the dimension of the
         //containing vector, in the casse the variable is an element of a vector.
         //dumpDAEInstDims(arry_Dim,"ArrayDims");
-        paths = DAEUtil.getElementSourcePaths(source);
+        paths = DAEUtil.getElementSourceTypes(source);
         dumpAbsynPathLst(paths,stringAppend(CLASSES,NAMES_));
         dumpDAEVariableAttributes(dae_var_attr,VAR_ATTRIBUTES_VALUES,addMMLCode);
         dumpVarsAdditionalInfo(crefIdxLstArr,strIdxLstArr,varno);

@@ -139,8 +139,9 @@ uniontype Equation "- Equation"
   end WHEN_EQUATION;
 
   record COMPLEX_EQUATION "complex equations: recordX = function call(x, y, ..);"
-    DAE.Exp lhs "left ; lhs" ;
-    DAE.Exp rhs "right ; rhs" ; 
+    Integer index "Index in algorithm clauses";
+    DAE.Exp lhs "left ; lhs";
+    DAE.Exp rhs "right ; rhs"; 
     DAE.ElementSource source "origin of equation";
   end COMPLEX_EQUATION;
 
@@ -463,7 +464,7 @@ algorithm
         print("\n");
       then
         ();
-     case (COMPLEX_EQUATION(e1,e2,source)::res,printExpTree) /* header */
+     case (COMPLEX_EQUATION(i,e1,e2,source)::res,printExpTree) /* header */
       equation
         dumpDAELowEqnList2(res,printExpTree);
         print("COMPLEX_EQUATION: ");
@@ -720,10 +721,10 @@ algorithm
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
     then (EQUATION(e1,e2,source),vars);
-    case(COMPLEX_EQUATION(e1,e2,source),vars) equation
+    case(COMPLEX_EQUATION(i,e1,e2,source),vars) equation
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
       ((e2,vars)) = Exp.traverseExp(e2,expandDerExp,vars);
-    then (COMPLEX_EQUATION(e1,e2,source),vars);      
+    then (COMPLEX_EQUATION(i,e1,e2,source),vars);      
     case  (ARRAY_EQUATION(i,expl,source),vars) 
     then (ARRAY_EQUATION(i,expl,source),vars);
     case (SOLVED_EQUATION(cr,e1,source),vars) equation
@@ -1058,7 +1059,7 @@ algorithm
     case (vars,eqns,true) /* TODO::The dummy variable must be fixed */
       equation
         vars_1 = addVar(VAR(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}), STATE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}),
-                            DAE.UNKNOWN(),
+                            DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(true)),NONE,NONE,NONE,NONE,NONE)),
                             NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), vars);
       then
@@ -1079,7 +1080,7 @@ algorithm
          */
         (vars_1,(EQUATION(DAE.CALL(Absyn.IDENT("der"),
                           {DAE.CREF(DAE.CREF_IDENT("$dummy",DAE.ET_REAL(),{}),DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
-                          DAE.RCONST(0.0), DAE.UNKNOWN())  :: eqns));
+                          DAE.RCONST(0.0), DAE.emptyElementSource)  :: eqns));
 
   end matchcontinue;
 end addDummyState;
@@ -2387,7 +2388,7 @@ algorithm
     local list<Algorithm.Statement> stmts;
     case({}) then ();
     case(DAE.ALGORITHM_STMTS(stmts)::algs) equation
-      print(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.UNKNOWN())));
+      print(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)));
       dumpAlgorithms(algs);
     then ();
   end matchcontinue;
@@ -3193,6 +3194,7 @@ algorithm
       DAE.ComponentRef cr1;
       Equation e;
       DAE.ElementSource source "the element source";
+      Integer index;
 
     case ({}) then {};
 
@@ -3204,13 +3206,13 @@ algorithm
       then
         (EQUATION(e1_1,e2_1,source) :: es_1);
 
-    case ((COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source) :: es))
+    case ((COMPLEX_EQUATION(index = index,lhs = e1,rhs = e2,source = source) :: es))
       equation
         ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp, derivativeNamePrefix +& "$");
         ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp, derivativeNamePrefix +& "$");
         es_1 = renameDerivatives(es);
       then
-        (COMPLEX_EQUATION(e1_1,e2_1,source) :: es_1);
+        (COMPLEX_EQUATION(index,e1_1,e2_1,source) :: es_1);
 
     case ((SOLVED_EQUATION(componentRef = cr1,exp = e1,source = source) :: es))
       equation
@@ -3287,14 +3289,14 @@ protected function renameDerivatives2
   input list<Equation> inEquationLst;
   output list<Equation> outEquationLst;
 algorithm
-  outEquationLst:=
-  matchcontinue (inEquationLst)
+  outEquationLst := matchcontinue (inEquationLst)
     local
       DAE.Exp e1_1,e2_1,e1,e2;
       list<Equation> es_1,es;
       DAE.ComponentRef cr1;
       Equation e;
       DAE.ElementSource source "the element source";
+      Integer index;
       
     case ({}) then {};
     case ((EQUATION(exp = e1,scalar = e2,source = source) :: es))
@@ -3305,13 +3307,13 @@ algorithm
       then
         (EQUATION(e1_1,e2_1,source) :: es_1);
 
-    case ((COMPLEX_EQUATION(lhs = e1,rhs = e2,source = source) :: es))
+    case ((COMPLEX_EQUATION(index = index, lhs = e1,rhs = e2,source = source) :: es))
       equation
         ((e1_1,_)) = Exp.traverseExp(e1, renameDerivativesExp2, derivativeNamePrefix +& "$");
         ((e2_1,_)) = Exp.traverseExp(e2, renameDerivativesExp2, derivativeNamePrefix +& "$");
         es_1 = renameDerivatives2(es);
       then
-        (COMPLEX_EQUATION(e1_1,e2_1,source) :: es_1);
+        (COMPLEX_EQUATION(index, e1_1, e2_1, source) :: es_1);
 
     case ((SOLVED_EQUATION(componentRef = cr1,exp = e1,source = source) :: es))
       equation
@@ -3942,7 +3944,7 @@ algorithm
         print("\n");
         print(DAEUtil.dumpFunctionStr(destr));
         print("\n origin: ");
-        paths = DAEUtil.getElementSourcePaths(source);
+        paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         print(path_str +& "\n");
@@ -4011,7 +4013,7 @@ algorithm
         print(str);
         print(":");
         dumpKind(kind);
-        paths = DAEUtil.getElementSourcePaths(source);
+        paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
         comment_str = DAEUtil.dumpCommentOptionStr(comment);
@@ -4053,7 +4055,7 @@ algorithm
         print(dirstr);
         print(" ");
         str = Exp.printComponentRefStr(cr);
-        paths = DAEUtil.getElementSourcePaths(source);
+        paths = DAEUtil.getElementSourceTypes(source);
         path_strs = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(path_strs, ", ");
         comment_str = DAEUtil.dumpCommentOptionStr(comment);
@@ -5154,7 +5156,7 @@ algorithm
         numnodes_1 = numnodes - 1;
         res = lowerAlgorithm2(inputs, outputs, numnodes_1, aindx);
       then
-        (ALGORITHM(aindx,inputs,outputs,DAE.UNKNOWN()) :: res);
+        (ALGORITHM(aindx,inputs,outputs,DAE.emptyElementSource) :: res);
   end matchcontinue;
 end lowerAlgorithm2;
 
@@ -5764,7 +5766,7 @@ algorithm
         // create as many equations as the dimension of the record
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(e1_2,e2_2,source), i);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
       then
         complexEqs;
     // initial
@@ -5777,7 +5779,7 @@ algorithm
         // create as many equations as the dimension of the record        
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(e1_2,e2_2,source), i);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
       then
         complexEqs;
     case (_)
@@ -12218,7 +12220,7 @@ protected function makeResidualEqn "function: makeResidualEqn
 algorithm
   outEquation := matchcontinue (inExp)
     local DAE.Exp e;
-    case (e) then RESIDUAL_EQUATION(e,DAE.UNKNOWN());
+    case (e) then RESIDUAL_EQUATION(e,DAE.emptyElementSource);
   end matchcontinue;
 end makeResidualEqn;
 
@@ -12257,7 +12259,7 @@ algorithm
         e_2 = Exp.simplify(e_1);
         SOME(es) = calculateJacobianRow2(e, vars, eqn_indx, vindxs, differentiateIfExp);
       then
-        SOME(((eqn_indx,vindx,RESIDUAL_EQUATION(e_2,DAE.UNKNOWN())) :: es));
+        SOME(((eqn_indx,vindx,RESIDUAL_EQUATION(e_2,DAE.emptyElementSource)) :: es));
   end matchcontinue;
 end calculateJacobianRow2;
 
@@ -13297,16 +13299,16 @@ protected function getListConst
   The output is a list of tuples (element,place)."
   input list< tuple<Type_a,Integer,Integer> > inTypeALst;
   input Integer inValue;
-  output list<Type_a,Integer> outTypeALst;
+  output list<tuple<Type_a,Integer>> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
   outTypeALst :=
   matchcontinue (inTypeALst,inValue)
     local
-      list<Type_a,Integer,Integer> rest;
+      list<tuple<Type_a,Integer,Integer>> rest;
       Type_a item;
       Integer value, itemvalue,place;
-      list<Type_a,Integer> out_lst,val_lst,val_lst1;
+      list<tuple<Type_a,Integer>> out_lst,val_lst,val_lst1;
     case ({},value) then {};
     case ((item,itemvalue,place)::rest,value)
       equation
@@ -13331,10 +13333,9 @@ protected function sortList
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst :=
-  matchcontinue (inTypeALst,inPlace)
+  outTypeALst := matchcontinue (inTypeALst,inPlace)
     local
-      list<Type_a,Integer> itemlst,rest;
+      list<tuple<Type_a,Integer>> itemlst,rest;
       Type_a item,outitem;
       Integer place,itemplace;
       list<Type_a> out_lst,val_lst;
@@ -13365,7 +13366,7 @@ algorithm
   (outType,outTypeALst) :=
   matchcontinue (inTypeALst,inPlace)
     local
-      list<Type_a,Integer> rest,out_itemlst;
+      list<tuple<Type_a,Integer>> rest,out_itemlst;
       Type_a item;
       Integer place,itemplace;
       Type_a out_item;

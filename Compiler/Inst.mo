@@ -360,7 +360,7 @@ algorithm
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
         (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae2),source)}));
         
@@ -377,7 +377,7 @@ algorithm
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
         (cache, env_2, ih, DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae),source)}));
         
@@ -430,7 +430,7 @@ algorithm
         (cache,env_2,ih,dae) = instClassInProgram(cache, env_1, ih, cdecls, path);
 
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
         (cache,env_2,ih,DAE.DAE({DAE.COMP(name2,DAE.DAE(dae),source)}));
         
@@ -446,7 +446,7 @@ algorithm
         pathstr = Absyn.pathString(path);
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then
         (cache,env_2,ih,DAE.DAE({DAE.COMP(pathstr,DAE.DAE(dae),source)}));
         
@@ -907,7 +907,7 @@ algorithm
         //Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
                        
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         
         // finish with the execution statistics        
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
@@ -1065,8 +1065,8 @@ algorithm
         			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
 				//str = Absyn.pathString(fq_class); print("------------------- CLASS makeFullyQualified instClass-----------------\n");print(n); print("  ");print(str);print("\n===============================================\n");
-        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
-        callscope_1 = isTopCall(callscope);              
+        dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
+        callscope_1 = isTopCall(callscope);
         reportUnitConsistency(callscope_1,store);
         //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
         checkMissingInnerDecl(dae1_1,callscope_1);
@@ -1464,7 +1464,7 @@ algorithm
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,_,_,_) 
         = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY,NONE);
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
-        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
+        dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         dae2 = Connect.equations(csets_1,pre);
         (cache,dae3) = Connect.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
@@ -1748,7 +1748,7 @@ algorithm
         (cache,env_2,ih,store,dae1,csets,ci_state_1,tys1,graph) = instElementList(cache,env_1,ih,store, mods, pre, csets, ci_state_1, comp, inst_dims, impl,graph);
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
         eqConstraint = equalityConstraint(cache, env_2, els);        
-        dae1_1 = DAEUtil.setComponentType(dae1, fq_class);
+        dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys1),NONE));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c); 
@@ -1798,8 +1798,7 @@ algorithm
 end instClassIn_dispatch;
 
 public function isBuiltInClass "
-Author: BZ, this function identifies built in classes.
-" 
+Author: BZ, this function identifies built in classes." 
   input String className;
   output Boolean b;
 algorithm b := matchcontinue(className)
@@ -3242,10 +3241,11 @@ algorithm
       Prefix.Prefix scope;
       list<DAE.ComponentRef> src,dst;
       String s1,s2; 
+      DAE.ElementSource source "the origin of the element"; 
     // handle nothingness
     case({},_,_,_) then {};
     // the left hand side is an outer!
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl,sources,targets)
+    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets)
       equation
         (_,true) = innerOuterBooleans(io1);
         cr3 = Prefix.prefixCref(scope,cr1);
@@ -3258,9 +3258,9 @@ algorithm
         false = Exp.crefEqual(ver1,ver2);
         recRes = changeOuterReferences3(ocs,repl,src,dst);
       then
-        Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2)::recRes;
+        Connect.OUTERCONNECT(scope,ncr1,Absyn.INNER(),f1,cr2,io2,f2,source)::recRes;
     // the right hand side is an outer!
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl,sources,targets)
+    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets)
       equation
         (_,true) = innerOuterBooleans(io2);
         cr3 = Prefix.prefixCref(scope,cr2);
@@ -3273,15 +3273,15 @@ algorithm
         false = Exp.crefEqual(ver1,ver2);
         recRes = changeOuterReferences3(ocs,repl,src,dst);
       then
-        Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2)::recRes;
+        Connect.OUTERCONNECT(scope,cr1,io1,f1,ncr2,Absyn.INNER(),f2,source)::recRes;
     // none of left or right hand side are outer
-    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::ocs,repl,sources,targets) 
+    case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets) 
       equation
         s1 = Exp.printComponentRefStr(cr1);
         s2 = Exp.printComponentRefStr(cr2);
         recRes = changeOuterReferences3(ocs,repl,sources,targets); 
       then 
-        Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::recRes;
+        Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::recRes;
   end matchcontinue; 
 end changeOuterReferences3;
 
@@ -3550,8 +3550,8 @@ algorithm
         fs1 = Env.extendFrameT(fs,className,functp);
         env1 = f::fs1; 
             
-        // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        // set the  of this element
+       source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
       then 
         (cache,env1,ih,{DAE.EXTOBJECTCLASS(classNameFQ,constr_dae,destr_dae,source)},ClassInf.EXTERNAL_OBJ(classNameFQ));
       
@@ -6968,7 +6968,7 @@ algorithm
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,ty_2,{}));
 
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -6990,7 +6990,7 @@ algorithm
         dims_1 = instDimExpLst(dims, impl);
 
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
         arrty = makeArrayType(dims, ty);
@@ -7014,7 +7014,7 @@ algorithm
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,source,false);
         dae = listAppend(dae1_1, dae3);
@@ -7040,7 +7040,7 @@ algorithm
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
                 
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, SOME(e), inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
         
@@ -7076,7 +7076,7 @@ algorithm
         cr = Prefix.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae2 = instModEquation(cr, ty, mod, source, impl);
         index_string = Util.listMap(idxs_1, int_string);
@@ -7095,7 +7095,7 @@ algorithm
         
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, 
                           inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
-        dae3 = DAEUtil.setComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
+        dae3 = DAEUtil.addComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
         dae2 = Util.if_(Types.isComplexType(ty), dae2, {});
         dae3 = listAppend(dae2,dae3);
         dae = listAppend(dae1_1, dae3);
@@ -8181,7 +8181,7 @@ algorithm
         (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae = makeDaeEquation(DAE.CREF(cr,ty_1), e_1, source, SCode.NON_INITIAL());
       then
@@ -9158,7 +9158,7 @@ algorithm
         env_1 = Env.extendFrameT(env_1, n, ty1); 
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(DAE.DAE(dae))::derFuncs,ty1,partialPrefix,inlineType,source)});
 
@@ -9178,7 +9178,7 @@ algorithm
         (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true) "impl" ;
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
       then
         (cache,env_1,ih,{DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(DAE.DAE(dae),extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)});
 
@@ -9672,8 +9672,8 @@ algorithm
         // TODO: Fix inline here 
         print(" DAE.InlineType FIX HERE \n");
 
-        // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        // set the  of this element
+        source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
       then
         (cache,env_2,ih,(DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(DAE.DAE(dae))},ty,partialPrefix,DAE.NO_INLINE(),source) :: dae1));
     // failure
@@ -10932,7 +10932,7 @@ algorithm
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
@@ -10977,8 +10977,9 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props);
         (cache,expl1) = Prefix.prefixExpList(cache,env, expl1, pre);
+        
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         (cache,env_1,ih,dael,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl,graph);
         (cache,env_2,ih,dae2,_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl,graph) "There are no connections inside if-clauses." ;
@@ -10991,8 +10992,9 @@ algorithm
         (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR())) = Types.propsAnd(props);
         (cache,expl1) = Prefix.prefixExpList(cache,env, expl1, pre);
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         (cache,env_1,ih,dael,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl,graph);
         (cache,env_2,ih,dae2,_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialequation, fb, impl,graph) "There are no connections inside if-clauses." ;
@@ -11008,8 +11010,9 @@ algorithm
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(dae1);
@@ -11029,8 +11032,9 @@ algorithm
       equation 
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         (cache,env_1,ih,dae1,_,_,graph) = instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, el, impl, graph);
         lhsCrefs = DAEUtil.verifyWhenEquation(dae1);
@@ -11144,8 +11148,9 @@ algorithm
         (cache,e2_1,DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);                
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre); 
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
       then
         (cache,env,ih,{DAE.ASSERT(e1_2,e2_2,source)},csets,ci_state,graph);
 
@@ -11154,8 +11159,9 @@ algorithm
       equation 
         (cache,e1_1,DAE.PROP((DAE.T_STRING(_),_),_),_) = Static.elabExp(cache,env, e1, impl, NONE,true);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
       then
         (cache,env,ih,{DAE.TERMINATE(e1_2,source)},csets,ci_state,graph);
 
@@ -11172,8 +11178,9 @@ algorithm
         (cache,e2_2) = Prefix.prefixExp(cache,env, e2_1, pre);
         (cache,e1_2) = Prefix.prefixExp(cache,env, e1_1, pre);
         //(cache,DAE.CREF(cr_2,_)) = Prefix.prefixExp(cache,env, DAE.CREF(cr_1,t), pre);
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
 
         trDae = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
         trDae = Util.listMap(trDae,makeDAEArrayEqToReinitForm);
@@ -11254,8 +11261,9 @@ algorithm
       equation 
         (cache,exp,_,_) = Static.elabExp(cache,env,Absyn.CALL(cr,fargs),impl,NONE,false);
         (cache,exp) = Prefix.prefixExp(cache,env,exp,pre);
+
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
         
         dae = instEquationNoRetCallVectorization(exp,source);
       then
@@ -11915,8 +11923,8 @@ algorithm
         (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc) "If algorithm is inherited, find base class environment" ;
         (cache,statements_1) = instStatements(cache,env_1,pre, statements, SCode.NON_INITIAL(),impl);
 
-        // set the source of this element 
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
       then
         (cache,env,ih,{DAE.ALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)},csets,ci_state,graph);
 
@@ -11973,7 +11981,7 @@ algorithm
         (cache,statements_1) = instStatements(cache,env, pre,statements, SCode.INITIAL(), impl);
         
         // set the source of this element
-        source = DAEUtil.setElementSourceTypeOpt(DAE.emptyElementSource, Env.getEnvPath(env));        
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
       then
         (cache,env,ih,{DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(statements_1),source)},csets,ci_state,graph);
 
@@ -13166,6 +13174,7 @@ algorithm
       Boolean c1outer,c2outer;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
       
     /* connections to outer components */      
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph) 
@@ -13177,15 +13186,23 @@ algorithm
         (c1outer,c2outer) = referOuter(io1,io2);
         c1_1 = Util.if_(c1outer,c1,c1_1);
         c2_1 = Util.if_(c2outer,c2,c2_1);
-        sets = Connect.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        
+        sets = Connect.addOuterConnection(pre,sets,c1_1,c2_1,io1,io2,f1,f2,source);
       then (cache,env,ih,sets,{},graph);
-         
+
     /* flow - with a subtype of Real */ 
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_REAL(varLstReal = _),_),vt1,c2,f2,(DAE.T_REAL(varLstReal = _),_),vt2,true,io1,io2,graph) 
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
-        sets_1 = Connect.addFlow(sets, c1_1, f1, c2_1, f2);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+                
+        sets_1 = Connect.addFlow(sets, c1_1, f1, c2_1, f2, source);
       then
         (cache,env,ih,sets_1,{},graph);
         
@@ -13196,7 +13213,11 @@ algorithm
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
-        sets_1 = Connect.addArrayFlow(sets, c1_1,f1, c2_1,f2,dim1);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        
+        sets_1 = Connect.addArrayFlow(sets, c1_1, f1, c2_1, f2, dim1, source);
       then
         (cache,env,ih,sets_1,{},graph);
 
@@ -13213,13 +13234,17 @@ algorithm
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
         true = Types.basicType(t1);
         true = Types.basicType(t2);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
       then
         (cache,env,ih,sets,{
           DAE.ASSERT(
             DAE.RELATION(DAE.CREF(c1_1,DAE.ET_REAL()),DAE.EQUAL(DAE.ET_BOOL()),DAE.CREF(c2_1,DAE.ET_REAL())),
             DAE.SCONST("automatically generated from connect"),
-            DAE.SOURCE({}, NONE(), SOME((c1_1,c2_1))) // set the origin of the element
-          )},graph);
+            source) // set the origin of the element
+          },graph);
+
     /* Same as above, but returns empty (removed conditional var)*/ 
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph)
       equation
@@ -13236,8 +13261,12 @@ algorithm
     case (cache,env,ih,sets,pre,c1,_,(DAE.T_REAL(varLstReal = _),_),vt1,c2,_,(DAE.T_REAL(varLstReal = _),_),vt2,false,io1,io2,graph)
       equation         
         c1_1 = Prefix.prefixCref(pre, c1);
-        c2_1 = Prefix.prefixCref(pre, c2);        
-        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+        c2_1 = Prefix.prefixCref(pre, c2);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+                
+        sets_1 = Connect.addEqu(sets, c1_1, c2_1, source);
       then
         (cache,env,ih,sets_1,{},graph);
 
@@ -13246,7 +13275,11 @@ algorithm
       equation         
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
-        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        
+        sets_1 = Connect.addEqu(sets, c1_1, c2_1, source);
       then
         (cache,env,ih,sets_1,{},graph);
         
@@ -13255,7 +13288,11 @@ algorithm
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2); 
-        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        
+        sets_1 = Connect.addEqu(sets, c1_1, c2_1, source);
       then
         (cache,env,ih,sets_1,{},graph);
 
@@ -13264,7 +13301,11 @@ algorithm
       equation 
         c1_1 = Prefix.prefixCref(pre, c1);
         c2_1 = Prefix.prefixCref(pre, c2);
-        sets_1 = Connect.addEqu(sets, c1_1, c2_1);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+        
+        sets_1 = Connect.addEqu(sets, c1_1, c2_1, source);
       then
         (cache,env,ih,sets_1,{},graph);
 
@@ -13273,7 +13314,9 @@ algorithm
       equation         
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);        
+
         equality(dim1 = dim2);
+        
         (cache,_,ih,sets_1,dae,graph) = connectArrayComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,1,graph);
       then
         (cache,env,ih,sets_1,dae,graph);
@@ -13290,8 +13333,12 @@ algorithm
         DAE.ET_ARRAY(_,odims2) = Types.elabType(inType9);
         dims = Util.listFlatten(Util.listMap(odims,Util.genericOption));
         dims2 = Util.listFlatten(Util.listMap(odims2,Util.genericOption));        
-        equality(dims = dims2);        
-        sets_1 = Connect.addMultiArrayEqu(sets, c1_1, c2_1, dims);        
+        equality(dims = dims2);
+        
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+                
+        sets_1 = Connect.addMultiArrayEqu(sets, c1_1, c2_1, dims, source);
       then
         (cache,env,ih,sets_1,{},graph);
         
@@ -13321,16 +13368,19 @@ algorithm
         //dae2 = Connect.equations(sets_1,pre);
         //dae = listAppend(dae, dae2);
         //DAE.printDAE(DAE.DAE(dae));
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
         
         /* Add an edge to connection graph. The edge contains daes to be added in 
            both cases whether the edge remains or is broken.
          */
         zeroVector = Exp.makeRealArrayOfZeros(dim1);
-        graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, dae, 
+        graph = ConnectionGraph.addConnection(graph, c1_1, c2_1,  
           {DAE.EQUATION(zeroVector, 
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())}, 
                                  false, false, DAE.ET_REAL,DAE.NO_INLINE),
-                        DAE.SOURCE({}, NONE(), SOME((c1_1,c2_1))) // set the origin of the element
+                        source // set the origin of the element
           )});
       then
         (cache,env,ih,sets_1,dae,graph);
@@ -15275,10 +15325,11 @@ algorithm
       Connect.Face f1,f2;    
       Prefix.Prefix scope;
       InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
       
     case(cache,env,ih,pre,{},setLst,crs,_) then ({},setLst,crs,{});
       
-    case(cache,env,ih,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs,topCall) 
+    case(cache,env,ih,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::outerConnects,setLst,crs,topCall) 
       equation
         cr1first = Exp.crefFirstIdent(cr1);
         cr2first = Exp.crefFirstIdent(cr2);
@@ -15296,13 +15347,13 @@ algorithm
      
         (outerConnects,setLst,crs,innerOuterConnects) = 
         retrieveOuterConnections2(cache,env,ih,pre,outerConnects,setLst,crs,topCall);
-        outerConnects = Util.if_(outer1,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,outerConnects);      
+        outerConnects = Util.if_(outer1,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::outerConnects,outerConnects);      
       then 
         (outerConnects,setLst,crs,innerOuterConnects);
       
       /* This case is for innerouter declarations, since we do not have them in enviroment we need to treat them
       in a special way */
-    case(cache,env,ih,pre,(oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2))::outerConnects,setLst,crs,true)
+    case(cache,env,ih,pre,(oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source))::outerConnects,setLst,crs,true)
       local Boolean b1,b2,b3,b4; 
       equation
         (b1,b3) = innerOuterBooleans(io1);
@@ -15323,12 +15374,12 @@ algorithm
       then 
         (outerConnects,setLst,crs,innerOuterConnects);
          
-    case(cache,env,ih,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs,topCall) 
+    case(cache,env,ih,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::outerConnects,setLst,crs,topCall) 
       equation
         (outerConnects,setLst,crs,innerOuterConnects) = 
         retrieveOuterConnections2(cache,env,ih,pre,outerConnects,setLst,crs,topCall);
       then 
-        (Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2)::outerConnects,setLst,crs,innerOuterConnects);  
+        (Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::outerConnects,setLst,crs,innerOuterConnects);  
   end matchcontinue;
 end retrieveOuterConnections2;
 

@@ -4616,7 +4616,7 @@ algorithm
       MatchingExp inmexp, mexp, restmexp;
       list<MatchingExp> mexpLst;
       TypedIdents fields;
-      list<String, TypedIdents> rts;
+      list<tuple<String, TypedIdents>> rts;
     
     
     case ( _, IDENT(ident = id), 

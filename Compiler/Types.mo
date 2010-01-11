@@ -2834,9 +2834,7 @@ algorithm
 end getClassname;
 
 public function getClassnameOpt "function: getClassname
- 
-  Return the classname as option from a type.
-"
+  Return the classname as option from a type."
   input Type inType;
   output Option<Absyn.Path> outPath;
 algorithm 
@@ -2849,10 +2847,8 @@ end getClassnameOpt;
 
 public function getVars "function getVars
   author: LS 
-  
-  Select the variables from the list for which the condition function given
-  as second argument succeeds.
-"
+  Select the variables from the list for which the 
+  condition function given as second argument succeeds."
   input list<Var> inVarLst;
   input FuncTypeVarTo inFuncTypeVarTo;
   output list<Var> outVarLst;

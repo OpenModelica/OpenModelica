@@ -104,16 +104,14 @@ end VarProtection;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
-    list<Absyn.Path> pathLst "classes from where this element came";
-    Option<ComponentRef> instance "the instance this element is part of";
-    Option<tuple<ComponentRef, ComponentRef>> connectEquation "this element came from this connect";
+    list<Absyn.Within> partOfLst "the model(s) this element came from";    
+    list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
+    list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
+    list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";    
   end SOURCE;
-  
-  record UNKNOWN "no source was set for this element"
-  end UNKNOWN;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE({}, NONE(), NONE()); 
+public constant ElementSource emptyElementSource = SOURCE({},{},{},{}); 
 
 public uniontype Element
   record VAR 
@@ -126,7 +124,7 @@ public uniontype Element
     InstDims  dims "dimensions";
     Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
     Stream streamPrefix "Stream variables in connectors" ;
-    ElementSource source "the origin of the component/equation/algorithm";    
+    ElementSource source "the origins of the component/equation/algorithm";    
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";

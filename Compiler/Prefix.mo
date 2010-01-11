@@ -85,14 +85,11 @@ protected import Print;
 protected import Util;
 
 public function printPrefixStr "function: printPrefixStr
-  
-  Prints a Prefix to a string.
-"
+  Prints a Prefix to a string."
   input Prefix inPrefix;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inPrefix)
+  outString :=  matchcontinue (inPrefix)
     local
       String str,s,rest_1,s_1,s_2;
       ComponentPrefix rest;
@@ -253,12 +250,9 @@ algorithm
 end prefixToPath;
 
 public function prefixCref "function: prefixCref
- 
-  Prefix a `ComponentRef\' variable by adding the supplied prefix to
-  it and returning a new `ComponentRef\'.
- 
-  LS: Changed to call prefix_to_cref which is more general now
-"
+  Prefix a ComponentRef variable by adding the supplied prefix to
+  it and returning a new ComponentRef.
+  LS: Changed to call prefixToCref which is more general now"
   input Prefix pre;
   input DAE.ComponentRef cref;
   output DAE.ComponentRef cref_1;
@@ -267,29 +261,24 @@ algorithm
   cref_1 := prefixToCref2(pre, SOME(cref));
 end prefixCref;
 
-public function prefixToCref "function: prefixToCref
- 
-  Convert a prefix to a component reference.
-"
+public function prefixToCref "function: prefixToCref 
+  Convert a prefix to a component reference."
   input Prefix pre;
   output DAE.ComponentRef cref_1;
   DAE.ComponentRef cref_1;
 algorithm 
-  cref_1 := prefixToCref2(pre, NONE);
+  cref_1 := prefixToCref2(pre, NONE());
 end prefixToCref;
 
 protected function prefixToCref2 "function: prefixToCref2
- 
   Convert a prefix to a component reference. Converting NOPRE with no
   component reference is an error because a component reference cannot be
-  empty
-"
+  empty"
   input Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
   output DAE.ComponentRef outComponentRef;
 algorithm 
-  outComponentRef:=
-  matchcontinue (inPrefix,inExpComponentRefOption)
+  outComponentRef := matchcontinue (inPrefix,inExpComponentRefOption)
     local
       DAE.ComponentRef cref,cref_1;
       list<DAE.Subscript> s_1;
@@ -317,6 +306,50 @@ algorithm
         cref_1;
   end matchcontinue;
 end prefixToCref2;
+
+public function prefixToCrefOpt "function: prefixToCref 
+  Convert a prefix to an optional component reference."
+  input Prefix pre;
+  output Option<DAE.ComponentRef> cref_1;
+  Option<DAE.ComponentRef> cref_1;
+algorithm 
+  cref_1 := prefixToCrefOpt2(pre, NONE());
+end prefixToCrefOpt;
+
+public function prefixToCrefOpt2 "function: prefixToCrefOpt2
+  Convert a prefix to a component reference. Converting NOPRE with no
+  component reference gives a NONE"
+  input Prefix inPrefix;
+  input Option<DAE.ComponentRef> inExpComponentRefOption;
+  output Option<DAE.ComponentRef> outComponentRefOpt;
+algorithm 
+  outComponentRefOpt := matchcontinue (inPrefix,inExpComponentRefOption)
+    local
+      Option<DAE.ComponentRef> cref_1;
+      DAE.ComponentRef cref;
+      list<DAE.Subscript> s_1;
+      String i;
+      list<Integer> s;
+      ComponentPrefix xs;
+      ClassPrefix cp;
+
+    case (NOPRE(),NONE()) then NONE();
+    case (NOPRE(),SOME(cref)) then SOME(cref); 
+    case (PREFIX(NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
+    case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
+      equation 
+        s_1 = Exp.intSubscripts(s);
+        cref_1 = prefixToCrefOpt2(PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1)));
+      then
+        cref_1;
+    case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
+      equation 
+        s_1 = Exp.intSubscripts(s);
+        cref_1 = prefixToCrefOpt2(PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1,cref)));
+      then
+        cref_1;
+  end matchcontinue;
+end prefixToCrefOpt2;
 
 public function prefixExp "function: prefixExp
   Add the supplied prefix to all component references in an expression."

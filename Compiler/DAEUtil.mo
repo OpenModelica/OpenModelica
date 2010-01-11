@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linköpings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -35,8 +35,7 @@ package DAEUtil
  
   RCS: $Id$
   
-  This module exports some helper functions to the DAE AST.
-"
+  This module exports some helper functions to the DAE AST."
 
 public import Absyn;
 public import ClassInf;
@@ -88,7 +87,7 @@ public function getClassList "get list of classes from Var"
   output list<Absyn.Path> lst;
 algorithm
   lst := matchcontinue(v)
-    case DAE.VAR(source = DAE.SOURCE(pathLst=lst)) then lst;
+    case DAE.VAR(source = DAE.SOURCE(typeLst=lst)) then lst;
     case _ then {};
   end matchcontinue;
 end getClassList;
@@ -3265,114 +3264,6 @@ algorithm
   vl_1 := getMatchingElements(vl, isInput);
 end getInputVars;
 
-public function setComponentTypeOpt "
-  
-  See setComponentType
-"
-  input list<DAE.Element> inElementLst;
-  input Option<Absyn.Path> inPath;
-  output list<DAE.Element> outElementLst;
-algorithm 
-  outElementLst:=
-  matchcontinue (inElementLst,inPath)
-      local Absyn.Path p;
-    case (inElementLst,SOME(p)) equation
-      outElementLst = setComponentType(inElementLst,p);
-    then outElementLst ;
-    case(inElementLst,NONE) then inElementLst;
-  end matchcontinue;
-end setComponentTypeOpt;
-
-public function setComponentType "
-  This function takes a dae element list and a type name and 
-  inserts the type name into each Var (variable) of the dae.
-  This type name is the origin of the variable."
-  input list<DAE.Element> inElementLst;
-  input Absyn.Path inPath;
-  output list<DAE.Element> outElementLst;
-algorithm 
-  outElementLst := matchcontinue (inElementLst,inPath)
-    local
-      list<DAE.Element> xs_1,xs;
-      DAE.ComponentRef cr;
-      DAE.VarKind kind;
-      DAE.VarDirection dir;
-      DAE.Type tp;
-      DAE.InstDims dim;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      DAE.Element x;
-			DAE.VarProtection prot;
-			Option<DAE.Exp> bind;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      Option<SCode.Comment> comment;
-      Absyn.Path newtype;
-      Absyn.InnerOuter io;
-      DAE.ElementSource source "the element origin";
-      
-    case ({},_) then {}; 
-    case ((DAE.VAR(componentRef = cr,
-               kind = kind,
-               direction = dir, 
-               protection = prot,
-               ty = tp,
-               binding = bind,
-               dims = dim,
-               flowPrefix = flowPrefix,
-               streamPrefix = streamPrefix,
-               source = source,
-               variableAttributesOption = dae_var_attr,
-               absynCommentOption = comment,
-               innerOuter=io) :: xs),newtype)
-      equation 
-        xs_1 = setComponentType(xs, newtype);
-        source = setElementSourceType(source, newtype);
-      then
-        (DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: xs_1);
-    // adrpo: TODO! FIXME! set also the type in the equations, not only in vars.
-    case ((x :: xs),newtype)
-      equation 
-        xs_1 = setComponentType(xs, newtype);
-      then
-        (x :: xs_1);
-  end matchcontinue;
-end setComponentType;
-
-public function setElementSourceType
-  input DAE.ElementSource inSource;
-  input Absyn.Path classPath;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := matchcontinue(inSource, classPath)
-    local
-      list<Absyn.Path> lst "classes from where this element came" ;
-      Option<DAE.ComponentRef> instance "the instance this element is part of" ;
-      Option<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquation "this element came from this connect" ;
-
-    case (DAE.SOURCE(lst, instance, connectEquation), classPath)
-      then DAE.SOURCE(classPath::lst, instance, connectEquation);
-    case (DAE.UNKNOWN(), classPath)
-      then DAE.SOURCE({classPath}, NONE(), NONE());
-  end matchcontinue;      
-end setElementSourceType;
-
-public function setElementSourceTypeOpt
-  input DAE.ElementSource inSource;
-  input Option<Absyn.Path> classPathOpt;
-  output DAE.ElementSource outSource;
-algorithm
-  outSource := matchcontinue(inSource, classPathOpt)
-    local
-      Absyn.Path classPath;
-      DAE.ElementSource src;
-    case (inSource, NONE()) then inSource; // no source change.
-    case (inSource, SOME(classPath))
-      equation
-        src = setElementSourceType(inSource, classPath);
-      then src;
-  end matchcontinue;      
-end setElementSourceTypeOpt;
-
 public function isOutputVar 
 "Succeeds if Element is an output variable."
   input DAE.Element inElement;
@@ -6080,17 +5971,272 @@ algorithm
   end matchcontinue; 
 end traverseDAEVarAttr; 
 
-public function getElementSourcePaths
+public function getElementSourceTypes
 "@author: adrpo
- retrieves the patsh from the DAE.ElementSource.SOURCE.pathLst"
+ retrieves the paths from the DAE.ElementSource.SOURCE.typeLst"
  input DAE.ElementSource source "the source of the element";
  output list<Absyn.Path> pathLst;
 algorithm
   pathLst := matchcontinue(source)
     local list<Absyn.Path> pLst;
-    case DAE.UNKNOWN() then {};
-    case DAE.SOURCE(pathLst = pLst) then pLst;
+    case DAE.SOURCE(typeLst = pLst) then pLst;
   end matchcontinue;
-end getElementSourcePaths;
+end getElementSourceTypes;
+
+public function getElementSourceInstances
+"@author: adrpo
+ retrieves the paths from the DAE.ElementSource.SOURCE.instanceOptLst"
+ input DAE.ElementSource source "the source of the element";
+ output list<Option<DAE.ComponentRef>> instanceOptLst;
+algorithm
+  pathLst := matchcontinue(source)
+    local list<Option<DAE.ComponentRef>> pLst;
+    case DAE.SOURCE(instanceOptLst = pLst) then pLst;
+  end matchcontinue;
+end getElementSourceInstances;
+
+public function getElementSourceConnects
+"@author: adrpo
+ retrieves the paths from the DAE.ElementSource.SOURCE.connectEquationOptLst"
+ input DAE.ElementSource source "the source of the element";
+ output list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
+algorithm
+  pathLst := matchcontinue(source)
+    local list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> pLst;
+    case DAE.SOURCE(connectEquationOptLst = pLst) then pLst;
+  end matchcontinue;
+end getElementSourceConnects;
+
+public function getElementSourcePartOfs
+"@author: adrpo
+ retrieves the withins from the DAE.ElementSource.SOURCE.partOfLst"
+ input DAE.ElementSource source "the source of the element";
+ output list<Absyn.Within> withinLst;
+algorithm
+  pathLst := matchcontinue(source)
+    local list<Absyn.Within> pLst;
+    case DAE.SOURCE(partOfLst = pLst) then pLst;
+  end matchcontinue;
+end getElementSourcePartOfs;
+
+public function addComponentTypeOpt "  
+  See setComponentType"
+  input list<DAE.Element> inElementLst;
+  input Option<Absyn.Path> inPath;
+  output list<DAE.Element> outElementLst;
+algorithm 
+  outElementLst := matchcontinue (inElementLst,inPath)
+      local Absyn.Path p;
+    case (inElementLst,SOME(p)) equation
+      outElementLst = addComponentType(inElementLst,p);
+    then outElementLst ;
+    case(inElementLst,NONE) then inElementLst;
+  end matchcontinue;
+end addComponentTypeOpt;
+
+public function addComponentType "
+  This function takes a dae element list and a type name and 
+  inserts the type name into each Var (variable) of the dae.
+  This type name is the origin of the variable."
+  input list<DAE.Element> inElementLst;
+  input Absyn.Path inPath;
+  output list<DAE.Element> outElementLst;
+algorithm 
+  outElementLst := matchcontinue (inElementLst,inPath)
+    local
+      list<DAE.Element> xs_1,xs;
+      DAE.ComponentRef cr;
+      DAE.VarKind kind;
+      DAE.VarDirection dir;
+      DAE.Type tp;
+      DAE.InstDims dim;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      DAE.Element x;
+			DAE.VarProtection prot;
+			Option<DAE.Exp> bind;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Option<SCode.Comment> comment;
+      Absyn.Path newtype;
+      Absyn.InnerOuter io;
+      DAE.ElementSource source "the element origin";
+      
+    case ({},_) then {}; 
+    case ((DAE.VAR(componentRef = cr,
+               kind = kind,
+               direction = dir, 
+               protection = prot,
+               ty = tp,
+               binding = bind,
+               dims = dim,
+               flowPrefix = flowPrefix,
+               streamPrefix = streamPrefix,
+               source = source,
+               variableAttributesOption = dae_var_attr,
+               absynCommentOption = comment,
+               innerOuter=io) :: xs),newtype)
+      equation 
+        xs_1 = addComponentType(xs, newtype);
+        source = addElementSourceType(source, newtype);
+      then
+        (DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: xs_1);
+    // adrpo: TODO! FIXME! set also the type in the equations, not only in vars.
+    case ((x :: xs),newtype)
+      equation 
+        xs_1 = addComponentType(xs, newtype);
+      then
+        (x :: xs_1);
+  end matchcontinue;
+end addComponentType;
+
+public function addElementSourceType
+  input DAE.ElementSource inSource;
+  input Absyn.Path classPath;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, classPath)
+    local
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+
+    case (DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
+      then DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
+  end matchcontinue;      
+end addElementSourceType;
+
+public function addElementSourceTypeOpt
+  input DAE.ElementSource inSource;
+  input Option<Absyn.Path> classPathOpt;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, classPathOpt)
+    local
+      Absyn.Path classPath;
+      DAE.ElementSource src;
+    case (inSource, NONE()) then inSource; // no source change.
+    case (inSource, SOME(classPath))
+      equation
+        src = addElementSourceType(inSource, classPath);
+      then src;
+  end matchcontinue;      
+end addElementSourceTypeOpt;
+
+public function addElementSourcePartOf
+  input DAE.ElementSource inSource;
+  input Absyn.Within withinPath;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, withinPath)
+    local
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+
+    case (DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
+      then DAE.SOURCE(withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
+  end matchcontinue;      
+end addElementSourcePartOf;
+
+public function addElementSourcePartOfOpt
+  input DAE.ElementSource inSource;
+  input Option<Absyn.Path> classPathOpt;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, classPathOpt)
+    local
+      Absyn.Path classPath;
+      DAE.ElementSource src;
+    // a top level
+    case (inSource, NONE())
+      equation
+        src = addElementSourcePartOf(inSource, Absyn.TOP());
+      then inSource; 
+    case (inSource, SOME(classPath))
+      equation
+        src = addElementSourcePartOf(inSource, Absyn.WITHIN(classPath));
+      then src;
+  end matchcontinue;      
+end addElementSourcePartOfOpt;
+
+public function addElementSourceInstanceOpt
+  input DAE.ElementSource inSource;
+  input Option<DAE.ComponentRef> instanceOpt;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, instanceOpt)
+    local
+      Absyn.Path classPath;
+      DAE.ElementSource src;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
+      
+    // a NONE means top level (equivalent to NO_PRE, SOME(cref) means subcomponent 
+    case (DAE.SOURCE(partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
+      then DAE.SOURCE(partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
+  end matchcontinue;      
+end addElementSourceInstanceOpt;
+
+public function addElementSourceConnectOpt
+  input DAE.ElementSource inSource;
+  input Option<tuple<DAE.ComponentRef,DAE.ComponentRef>> connectEquationOpt;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue(inSource, connectEquationOpt)
+    local
+      Absyn.Path classPath;
+      DAE.ElementSource src;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
+      
+    // a top level
+    case (inSource, NONE()) then inSource;
+    case (inSource as DAE.SOURCE(partOfLst,instanceOptLst,connectEquationOptLst,typeLst), connectEquationOpt)
+      then DAE.SOURCE(partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst);
+  end matchcontinue;      
+end addElementSourceConnectOpt;
+
+public function mergeSources
+  input DAE.ElementSource src1;
+  input DAE.ElementSource src2;
+  output DAE.ElementSource mergedSrc;
+algorithm
+  mergedSrc := matchcontinue(src1,src2)
+    local
+      list<Absyn.Within> partOfLst1,partOfLst2,p;
+      list<Option<DAE.ComponentRef>> instanceOptLst1,instanceOptLst2,i;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
+      list<Absyn.Path> typeLst1,typeLst2,t;
+    case (DAE.SOURCE(partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1),
+          DAE.SOURCE(partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2))
+      equation
+        p = listAppend(partOfLst1, partOfLst2);
+        i = listAppend(instanceOptLst1, instanceOptLst2); 
+        c = listAppend(connectEquationOptLst1, connectEquationOptLst1);
+        t = listAppend(typeLst1, typeLst2);
+      then DAE.SOURCE(p,i,c,t);
+ end matchcontinue;
+end mergeSources;
+
+function createElementSource
+"@author: adrpo
+ set the various sources of the element"
+  input Option<Absyn.Path> partOf "the model(s) this element came from";
+  input Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
+  input Option<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOpt "this element came from this connect(s)";
+  input Option<Absyn.Path> typeOpt "the classes where the type(s) of the element is defined";
+  output DAE.ElementSource source;
+algorithm 
+  source := addElementSourcePartOfOpt(DAE.emptyElementSource, partOf);
+  source := addElementSourceInstanceOpt(source, instanceOpt);
+  source := addElementSourceConnectOpt(source, connectEquationOpt);
+  source := addElementSourceTypeOpt(source, typeOpt);
+end createElementSource;
 
 end DAEUtil;

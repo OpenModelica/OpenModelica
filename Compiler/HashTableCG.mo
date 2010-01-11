@@ -222,9 +222,7 @@ end delete;
 
 public function get "
 author: PA
-  
-   Returns a Value given a Key and a HashTable.
-"
+  Returns a Value given a Key and a HashTable."
   input Key key;
   input HashTable hashTable;
   output Value value;
@@ -238,8 +236,7 @@ protected function get1 "help function to get"
   output Value value;
   output Integer indx;
 algorithm 
-  (value,indx):=
-  matchcontinue (key,hashTable)
+  (value,indx) := matchcontinue (key,hashTable)
     local
       Integer hval,hashindx,indx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
@@ -265,16 +262,13 @@ algorithm
 end get1;
 
 protected function get2 "
- author: PA
-  
-  Helper function to get
-"
+author: PA  
+  Helper function to get"
   input Key key;
   input list<tuple<Key,Integer>> keyIndices;
   output Integer index;
 algorithm 
-  index :=
-  matchcontinue (key,keyIndices)
+  index := matchcontinue (key,keyIndices)
     local
       Key key2;
       Value res;
