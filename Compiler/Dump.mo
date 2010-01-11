@@ -5078,8 +5078,10 @@ algorithm
       list<Absyn.Class> classes;
       Absyn.Within within_;
       Absyn.TimeStamp globalBuildTimes;
+      String old;
     case Absyn.PROGRAM(classes = classes, within_ = within_, globalBuildTimes = globalBuildTimes)
       equation
+        old = Print.getString();
         Print.clearBuf();
         Print.printBuf("record Absyn.PROGRAM\nclasses = ");
         printListAsCorbaString(classes,printClassAsCorbaString,",\n");
@@ -5090,6 +5092,7 @@ algorithm
         Print.printBuf("\nend Absyn.PROGRAM;");
         outStr = Print.getString();
         Print.clearBuf();
+        Print.printBuf(old);
       then outStr;
   end matchcontinue;
 end getAstAsCorbaString;
@@ -6072,7 +6075,7 @@ algorithm
       equation
         Print.printBuf("record Absyn.ANNOTATION elementArgs = "); 
         printListAsCorbaString(elementArgs, printElementArgAsCorbaString, ",");
-        Print.printBuf(" end Absyn.ANNOTATION");
+        Print.printBuf(" end Absyn.ANNOTATION;");
       then ();
   end matchcontinue;
 end printAnnotationAsCorbaString;
@@ -6144,7 +6147,7 @@ algorithm
       equation
         Print.printBuf("record Absyn.SUB subScript = ");
         printExpAsCorbaString(subScript);
-        Print.printBuf(" end Absyn.NOSUB;");
+        Print.printBuf(" end Absyn.SUB;");
       then ();
   end matchcontinue;
 end printSubscriptAsCorbaString;
