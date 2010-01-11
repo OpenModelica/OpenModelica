@@ -1920,7 +1920,7 @@ algorithm
         SimCode.SimEqSystem i_eq;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext();
+        ret_0 = SimCode.createSimulationContext(false);
         (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_49(txt, rest, i_varDecls);
@@ -1964,7 +1964,7 @@ algorithm
         SimCode.SimEqSystem i_eq;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext();
+        ret_0 = SimCode.createSimulationContext(false);
         (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_50(txt, rest, i_varDecls);
@@ -2054,7 +2054,7 @@ algorithm
         SimCode.SimEqSystem i_eq;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
+        ret_0 = SimCode.createSimulationContext(true);
         (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_52(txt, rest, i_varDecls);
@@ -2098,7 +2098,7 @@ algorithm
         SimCode.SimEqSystem i_eq;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
+        ret_0 = SimCode.createSimulationContext(true);
         (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_53(txt, rest, i_varDecls);
@@ -2562,7 +2562,7 @@ algorithm
         SimCode.SimEqSystem i_eq;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext();
+        ret_0 = SimCode.createSimulationContext(true);
         (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_64(txt, rest, i_varDecls);
@@ -2610,7 +2610,7 @@ algorithm
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext();
+        ret_2 = SimCode.createSimulationContext(true);
         (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, ret_2, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
@@ -2709,7 +2709,7 @@ algorithm
         SimCode.SimEqSystem i_eq;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext();
+        ret_0 = SimCode.createSimulationContext(true);
         (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_67(txt, rest, i_varDecls);
@@ -2757,7 +2757,7 @@ algorithm
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext();
+        ret_2 = SimCode.createSimulationContext(true);
         (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, ret_2, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
@@ -3043,7 +3043,7 @@ algorithm
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext();
+        ret_2 = SimCode.createSimulationContext(true);
         (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_weq_right, ret_2, i_preExp, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("save("));
         txt = cref(txt, i_weq_left);
@@ -3093,7 +3093,7 @@ algorithm
         SimCode.Context ret_1;
         Tpl.Text i_val;
       equation
-        ret_1 = SimCode.createSimulationContext();
+        ret_1 = SimCode.createSimulationContext(true);
         (i_val, i_preExp, i_varDecls) = daeExp(emptyTxt, i_value, ret_1, i_preExp, i_varDecls);
         txt = cref(txt, i_stateVar);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
@@ -3468,7 +3468,7 @@ algorithm
       equation
         i_i0 = Tpl.getIteri_i0(txt);
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext();
+        ret_2 = SimCode.createSimulationContext(true);
         (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_eq2_exp, ret_2, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("res["));
@@ -8169,7 +8169,7 @@ algorithm
       DAE.Statement i_when;
 
     case ( txt,
-           (i_context as SimCode.SIMULATION()),
+           (i_context as SimCode.SIMULATION(genDiscrete = true)),
            i_varDecls,
            i_when )
       local
@@ -8555,42 +8555,45 @@ protected function lm_194
   input Tpl.Text in_txt;
   input list<DAE.Statement> in_items;
   input Tpl.Text in_i_varDecls;
+  input SimCode.Context in_i_context;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_varDecls;
 algorithm
   (out_txt, out_i_varDecls) :=
-  matchcontinue(in_txt, in_items, in_i_varDecls)
+  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_context)
     local
       Tpl.Text txt;
       Tpl.Text i_varDecls;
+      SimCode.Context i_context;
 
     case ( txt,
            {},
-           i_varDecls )
+           i_varDecls,
+           _ )
       then (txt, i_varDecls);
 
     case ( txt,
            i_it :: rest,
-           i_varDecls )
+           i_varDecls,
+           i_context )
       local
         list<DAE.Statement> rest;
         DAE.Statement i_it;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext();
-        (txt, i_varDecls) = algStatement(txt, i_it, ret_0, i_varDecls);
+        (txt, i_varDecls) = algStatement(txt, i_it, i_context, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls) = lm_194(txt, rest, i_varDecls);
+        (txt, i_varDecls) = lm_194(txt, rest, i_varDecls, i_context);
       then (txt, i_varDecls);
 
     case ( txt,
            _ :: rest,
-           i_varDecls )
+           i_varDecls,
+           i_context )
       local
         list<DAE.Statement> rest;
       equation
-        (txt, i_varDecls) = lm_194(txt, rest, i_varDecls);
+        (txt, i_varDecls) = lm_194(txt, rest, i_varDecls, i_context);
       then (txt, i_varDecls);
   end matchcontinue;
 end lm_194;
@@ -8633,22 +8636,25 @@ algorithm
   end matchcontinue;
 end lm_195;
 
-protected function fun_196
+public function algStatementWhen
   input Tpl.Text in_txt;
   input DAE.Statement in_i_it;
+  input SimCode.Context in_i_context;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_varDecls;
 algorithm
   (out_txt, out_i_varDecls) :=
-  matchcontinue(in_txt, in_i_it, in_i_varDecls)
+  matchcontinue(in_txt, in_i_it, in_i_context, in_i_varDecls)
     local
       Tpl.Text txt;
+      SimCode.Context i_context;
       Tpl.Text i_varDecls;
 
     case ( txt,
            (i_it as DAE.STMT_WHEN(statementLst = i_statementLst, elseWhen = i_elseWhen, helpVarIndices = i_helpVarIndices)),
+           i_context,
            i_varDecls )
       local
         list<Integer> i_helpVarIndices;
@@ -8661,7 +8667,7 @@ algorithm
       equation
         (i_preIf, i_varDecls) = algStatementWhenPre(emptyTxt, i_it, i_varDecls);
         i_statements = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_statements, i_varDecls) = lm_194(i_statements, i_statementLst, i_varDecls);
+        (i_statements, i_varDecls) = lm_194(i_statements, i_statementLst, i_varDecls, i_context);
         i_statements = Tpl.popIter(i_statements);
         (i_else, i_varDecls) = algStatementWhenElse(emptyTxt, i_elseWhen, i_varDecls);
         txt = Tpl.writeText(txt, i_preIf);
@@ -8681,24 +8687,13 @@ algorithm
 
     case ( txt,
            _,
+           _,
            i_varDecls )
       then (txt, i_varDecls);
   end matchcontinue;
-end fun_196;
-
-public function algStatementWhen
-  input Tpl.Text txt;
-  input DAE.Statement i_it;
-  input SimCode.Context i_context;
-  input Tpl.Text i_varDecls;
-
-  output Tpl.Text out_txt;
-  output Tpl.Text out_i_varDecls;
-algorithm
-  (out_txt, out_i_varDecls) := fun_196(txt, i_it, i_varDecls);
 end algStatementWhen;
 
-protected function fun_198
+protected function fun_197
   input Tpl.Text in_txt;
   input Option<DAE.Statement> in_i_elseWhen;
   input Tpl.Text in_i_varDecls;
@@ -8726,9 +8721,9 @@ algorithm
            i_varDecls )
       then (txt, i_varDecls);
   end matchcontinue;
-end fun_198;
+end fun_197;
 
-protected function fun_199
+protected function fun_198
   input Tpl.Text in_txt;
   input Option<DAE.Statement> in_i_when_elseWhen;
   input Tpl.Text in_i_varDecls;
@@ -8756,9 +8751,9 @@ algorithm
            i_varDecls )
       then (txt, i_varDecls);
   end matchcontinue;
-end fun_199;
+end fun_198;
 
-protected function fun_200
+protected function fun_199
   input Tpl.Text in_txt;
   input list<Integer> in_i_helpVarIndices;
   input DAE.Exp in_i_when_exp;
@@ -8788,9 +8783,9 @@ algorithm
         Tpl.Text i_preExp;
         Tpl.Text i_restPre;
       equation
-        (i_restPre, i_varDecls) = fun_199(emptyTxt, i_when_elseWhen, i_varDecls);
+        (i_restPre, i_varDecls) = fun_198(emptyTxt, i_when_elseWhen, i_varDecls);
         i_preExp = emptyTxt;
-        ret_3 = SimCode.createSimulationContext();
+        ret_3 = SimCode.createSimulationContext(true);
         (i_res, i_preExp, i_varDecls) = daeExp(emptyTxt, i_when_exp, ret_3, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
@@ -8809,7 +8804,7 @@ algorithm
            _ )
       then (txt, i_varDecls);
   end matchcontinue;
-end fun_200;
+end fun_199;
 
 public function algStatementWhenPre
   input Tpl.Text in_txt;
@@ -8836,7 +8831,7 @@ algorithm
         Tpl.Text i_preExp;
         Tpl.Text i_restPre;
       equation
-        (i_restPre, i_varDecls) = fun_198(emptyTxt, i_elseWhen, i_varDecls);
+        (i_restPre, i_varDecls) = fun_197(emptyTxt, i_elseWhen, i_varDecls);
         i_preExp = emptyTxt;
         (i_fooRes, i_preExp, i_varDecls) = foo(emptyTxt, i_el, i_helpVarIndices, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
@@ -8855,7 +8850,7 @@ algorithm
         list<Integer> i_helpVarIndices;
         DAE.Statement i_when;
       equation
-        (txt, i_varDecls) = fun_200(txt, i_helpVarIndices, i_when_exp, i_varDecls, i_when_elseWhen);
+        (txt, i_varDecls) = fun_199(txt, i_helpVarIndices, i_when_exp, i_varDecls, i_when_elseWhen);
       then (txt, i_varDecls);
 
     case ( txt,
@@ -8865,7 +8860,7 @@ algorithm
   end matchcontinue;
 end algStatementWhenPre;
 
-protected function lm_202
+protected function lm_201
   input Tpl.Text in_txt;
   input list<DAE.Statement> in_items;
   input Tpl.Text in_i_varDecls;
@@ -8892,10 +8887,10 @@ algorithm
         DAE.Statement i_it;
         SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext();
+        ret_0 = SimCode.createSimulationContext(true);
         (txt, i_varDecls) = algStatement(txt, i_it, ret_0, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls) = lm_202(txt, rest, i_varDecls);
+        (txt, i_varDecls) = lm_201(txt, rest, i_varDecls);
       then (txt, i_varDecls);
 
     case ( txt,
@@ -8904,12 +8899,12 @@ algorithm
       local
         list<DAE.Statement> rest;
       equation
-        (txt, i_varDecls) = lm_202(txt, rest, i_varDecls);
+        (txt, i_varDecls) = lm_201(txt, rest, i_varDecls);
       then (txt, i_varDecls);
   end matchcontinue;
-end lm_202;
+end lm_201;
 
-protected function lm_203
+protected function lm_202
   input Tpl.Text in_txt;
   input list<Integer> in_items;
 
@@ -8934,7 +8929,7 @@ algorithm
         txt = Tpl.writeStr(txt, intString(i_it));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("])"));
         txt = Tpl.nextIter(txt);
-        txt = lm_203(txt, rest);
+        txt = lm_202(txt, rest);
       then txt;
 
     case ( txt,
@@ -8942,10 +8937,10 @@ algorithm
       local
         list<Integer> rest;
       equation
-        txt = lm_203(txt, rest);
+        txt = lm_202(txt, rest);
       then txt;
   end matchcontinue;
-end lm_203;
+end lm_202;
 
 public function algStatementWhenElse
   input Tpl.Text in_txt;
@@ -8973,12 +8968,12 @@ algorithm
         Tpl.Text i_statements;
       equation
         i_statements = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_statements, i_varDecls) = lm_202(i_statements, i_when_statementLst, i_varDecls);
+        (i_statements, i_varDecls) = lm_201(i_statements, i_when_statementLst, i_varDecls);
         i_statements = Tpl.popIter(i_statements);
         (i_else, i_varDecls) = algStatementWhenElse(emptyTxt, i_when_elseWhen, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("else if ("));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(" || ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        txt = lm_203(txt, i_when_helpVarIndices);
+        txt = lm_202(txt, i_when_helpVarIndices);
         txt = Tpl.popIter(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
@@ -8996,7 +8991,7 @@ algorithm
   end matchcontinue;
 end algStatementWhenElse;
 
-protected function fun_205
+protected function fun_204
   input Tpl.Text in_txt;
   input list<Integer> in_i_ints;
   input DAE.Exp in_i_firstExp;
@@ -9033,7 +9028,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
         txt = Tpl.writeStr(txt, intString(i_firstInt));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = "));
-        ret_1 = SimCode.createSimulationContext();
+        ret_1 = SimCode.createSimulationContext(true);
         (txt, i_preExp, i_varDecls) = daeExp(txt, i_firstExp, ret_1, i_preExp, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(";\n"));
         txt = Tpl.writeText(txt, i_rest);
@@ -9047,7 +9042,7 @@ algorithm
            _ )
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end fun_205;
+end fun_204;
 
 public function foo
   input Tpl.Text in_txt;
@@ -9084,7 +9079,7 @@ algorithm
         list<DAE.Exp> i_restExps;
         DAE.Exp i_firstExp;
       equation
-        (txt, i_varDecls, i_preExp) = fun_205(txt, i_ints, i_firstExp, i_varDecls, i_preExp, i_restExps);
+        (txt, i_varDecls, i_preExp) = fun_204(txt, i_ints, i_firstExp, i_varDecls, i_preExp, i_restExps);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -9095,6 +9090,53 @@ algorithm
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
 end foo;
+
+protected function lm_206
+  input Tpl.Text in_txt;
+  input list<DAE.Statement> in_items;
+  input Tpl.Text in_i_varDecls;
+  input SimCode.Context in_i_context;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+algorithm
+  (out_txt, out_i_varDecls) :=
+  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_context)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_varDecls;
+      SimCode.Context i_context;
+
+    case ( txt,
+           {},
+           i_varDecls,
+           _ )
+      then (txt, i_varDecls);
+
+    case ( txt,
+           i_it :: rest,
+           i_varDecls,
+           i_context )
+      local
+        list<DAE.Statement> rest;
+        DAE.Statement i_it;
+      equation
+        (txt, i_varDecls) = algStatement(txt, i_it, i_context, i_varDecls);
+        txt = Tpl.nextIter(txt);
+        (txt, i_varDecls) = lm_206(txt, rest, i_varDecls, i_context);
+      then (txt, i_varDecls);
+
+    case ( txt,
+           _ :: rest,
+           i_varDecls,
+           i_context )
+      local
+        list<DAE.Statement> rest;
+      equation
+        (txt, i_varDecls) = lm_206(txt, rest, i_varDecls, i_context);
+      then (txt, i_varDecls);
+  end matchcontinue;
+end lm_206;
 
 protected function lm_207
   input Tpl.Text in_txt;
@@ -9143,53 +9185,6 @@ algorithm
   end matchcontinue;
 end lm_207;
 
-protected function lm_208
-  input Tpl.Text in_txt;
-  input list<DAE.Statement> in_items;
-  input Tpl.Text in_i_varDecls;
-  input SimCode.Context in_i_context;
-
-  output Tpl.Text out_txt;
-  output Tpl.Text out_i_varDecls;
-algorithm
-  (out_txt, out_i_varDecls) :=
-  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_context)
-    local
-      Tpl.Text txt;
-      Tpl.Text i_varDecls;
-      SimCode.Context i_context;
-
-    case ( txt,
-           {},
-           i_varDecls,
-           _ )
-      then (txt, i_varDecls);
-
-    case ( txt,
-           i_it :: rest,
-           i_varDecls,
-           i_context )
-      local
-        list<DAE.Statement> rest;
-        DAE.Statement i_it;
-      equation
-        (txt, i_varDecls) = algStatement(txt, i_it, i_context, i_varDecls);
-        txt = Tpl.nextIter(txt);
-        (txt, i_varDecls) = lm_208(txt, rest, i_varDecls, i_context);
-      then (txt, i_varDecls);
-
-    case ( txt,
-           _ :: rest,
-           i_varDecls,
-           i_context )
-      local
-        list<DAE.Statement> rest;
-      equation
-        (txt, i_varDecls) = lm_208(txt, rest, i_varDecls, i_context);
-      then (txt, i_varDecls);
-  end matchcontinue;
-end lm_208;
-
 public function elseExpr
   input Tpl.Text in_txt;
   input DAE.Else in_i_it;
@@ -9233,7 +9228,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(")) {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (txt, i_varDecls) = lm_207(txt, i_statementLst, i_varDecls, i_context);
+        (txt, i_varDecls) = lm_206(txt, i_statementLst, i_varDecls, i_context);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.popBlock(txt);
@@ -9253,7 +9248,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("else {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (txt, i_varDecls) = lm_208(txt, i_statementLst, i_varDecls, i_context);
+        (txt, i_varDecls) = lm_207(txt, i_statementLst, i_varDecls, i_context);
         txt = Tpl.popIter(txt);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.popBlock(txt);
@@ -9268,7 +9263,7 @@ algorithm
   end matchcontinue;
 end elseExpr;
 
-protected function fun_210
+protected function fun_209
   input Tpl.Text in_txt;
   input Boolean in_it;
   input DAE.ComponentRef in_i_cref_componentRef;
@@ -9313,7 +9308,7 @@ algorithm
         txt = cref(txt, i_cref_componentRef);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end fun_210;
+end fun_209;
 
 public function scalarLhsCref
   input Tpl.Text in_txt;
@@ -9346,7 +9341,7 @@ algorithm
         Boolean ret_0;
       equation
         ret_0 = SimCode.crefNoSub(i_cref_componentRef);
-        (txt, i_varDecls, i_preExp) = fun_210(txt, ret_0, i_cref_componentRef, i_varDecls, i_preExp, i_context, i_cref);
+        (txt, i_varDecls, i_preExp) = fun_209(txt, ret_0, i_cref_componentRef, i_varDecls, i_preExp, i_context, i_cref);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -9428,7 +9423,7 @@ algorithm
   end matchcontinue;
 end rhsCrefType;
 
-protected function fun_214
+protected function fun_213
   input Tpl.Text in_txt;
   input Boolean in_i_bool;
 
@@ -9451,7 +9446,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("(1)"));
       then txt;
   end matchcontinue;
-end fun_214;
+end fun_213;
 
 public function daeExp
   input Tpl.Text in_txt;
@@ -9513,7 +9508,7 @@ algorithm
       local
         Boolean i_bool;
       equation
-        txt = fun_214(txt, i_bool);
+        txt = fun_213(txt, i_bool);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -9766,7 +9761,7 @@ algorithm
   out_txt := Tpl.writeText(txt, i_strVar);
 end daeExpSconst;
 
-protected function lm_217
+protected function lm_216
   input Tpl.Text in_txt;
   input list<DAE.Subscript> in_items;
   input Tpl.Text in_i_varDecls;
@@ -9803,7 +9798,7 @@ algorithm
       equation
         (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, i_context, i_preExp, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_217(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_216(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -9814,12 +9809,12 @@ algorithm
       local
         list<DAE.Subscript> rest;
       equation
-        (txt, i_varDecls, i_preExp) = lm_217(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_216(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end lm_217;
+end lm_216;
 
-protected function fun_218
+protected function fun_217
   input Tpl.Text in_txt;
   input Boolean in_it;
   input Tpl.Text in_i_preExp;
@@ -9895,7 +9890,7 @@ algorithm
         ret_3 = SimCode.listLengthSubscript(i_subs);
         i_dimsLenStr = Tpl.writeStr(emptyTxt, intString(ret_3));
         i_dimsValuesStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_dimsValuesStr, i_varDecls, i_preExp) = lm_217(i_dimsValuesStr, i_subs, i_varDecls, i_preExp, i_context);
+        (i_dimsValuesStr, i_varDecls, i_preExp) = lm_216(i_dimsValuesStr, i_subs, i_varDecls, i_preExp, i_context);
         i_dimsValuesStr = Tpl.popIter(i_dimsValuesStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("(*"));
         txt = Tpl.writeText(txt, i_arrayType);
@@ -9908,9 +9903,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("))"));
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
-end fun_218;
+end fun_217;
 
-protected function fun_219
+protected function fun_218
   input Tpl.Text in_txt;
   input DAE.ExpType in_i_cref_ty;
 
@@ -9931,9 +9926,9 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_219;
+end fun_218;
 
-protected function fun_220
+protected function fun_219
   input Tpl.Text in_txt;
   input Boolean in_it;
   input Tpl.Text in_i_preExp;
@@ -9970,7 +9965,7 @@ algorithm
         Boolean ret_0;
       equation
         ret_0 = SimCode.crefSubIsScalar(i_cref_componentRef);
-        (txt, i_preExp, i_varDecls) = fun_218(txt, ret_0, i_preExp, i_context, i_subs, i_varDecls, i_cref_ty, i_cref_componentRef);
+        (txt, i_preExp, i_varDecls) = fun_217(txt, ret_0, i_preExp, i_context, i_subs, i_varDecls, i_cref_ty, i_cref_componentRef);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -9984,14 +9979,14 @@ algorithm
       local
         Tpl.Text i_cast;
       equation
-        i_cast = fun_219(emptyTxt, i_cref_ty);
+        i_cast = fun_218(emptyTxt, i_cref_ty);
         txt = Tpl.writeText(txt, i_cast);
         txt = cref(txt, i_cref_componentRef);
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
-end fun_220;
+end fun_219;
 
-protected function fun_221
+protected function fun_220
   input Tpl.Text in_txt;
   input String in_it;
   input Tpl.Text in_i_preExp;
@@ -10028,7 +10023,7 @@ algorithm
         Boolean ret_0;
       equation
         ret_0 = SimCode.crefNoSub(i_cref_componentRef);
-        (txt, i_preExp, i_varDecls) = fun_220(txt, ret_0, i_preExp, i_context, i_subs, i_varDecls, i_cref_ty, i_cref_componentRef);
+        (txt, i_preExp, i_varDecls) = fun_219(txt, ret_0, i_preExp, i_context, i_subs, i_varDecls, i_cref_ty, i_cref_componentRef);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -10045,7 +10040,7 @@ algorithm
         txt = Tpl.writeStr(txt, str_1);
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
-end fun_221;
+end fun_220;
 
 public function daeExpCrefRhs
   input Tpl.Text in_txt;
@@ -10081,7 +10076,7 @@ algorithm
       equation
         (txt_0, i_preExp, i_varDecls) = daeExpCrefRhsArrayBox(emptyTxt, i_cref, i_context, i_preExp, i_varDecls);
         str_1 = Tpl.textString(txt_0);
-        (txt, i_preExp, i_varDecls) = fun_221(txt, str_1, i_preExp, i_context, i_subs, i_varDecls, i_cref_ty, i_cref_componentRef);
+        (txt, i_preExp, i_varDecls) = fun_220(txt, str_1, i_preExp, i_context, i_subs, i_varDecls, i_cref_ty, i_cref_componentRef);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -10095,7 +10090,7 @@ algorithm
   end matchcontinue;
 end daeExpCrefRhs;
 
-protected function fun_223
+protected function fun_222
   input Tpl.Text in_txt;
   input DAE.Subscript in_i_sub;
   input Tpl.Text in_i_varDecls;
@@ -10168,9 +10163,9 @@ algorithm
            _ )
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end fun_223;
+end fun_222;
 
-protected function lm_224
+protected function lm_223
   input Tpl.Text in_txt;
   input list<DAE.Subscript> in_items;
   input Tpl.Text in_i_varDecls;
@@ -10205,9 +10200,9 @@ algorithm
         list<DAE.Subscript> rest;
         DAE.Subscript i_sub;
       equation
-        (txt, i_varDecls, i_preExp) = fun_223(txt, i_sub, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = fun_222(txt, i_sub, i_varDecls, i_preExp, i_context);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_224(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_223(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -10218,10 +10213,10 @@ algorithm
       local
         list<DAE.Subscript> rest;
       equation
-        (txt, i_varDecls, i_preExp) = lm_224(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_223(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end lm_224;
+end lm_223;
 
 public function daeExpCrefRhsIndexSpec
   input Tpl.Text txt;
@@ -10242,7 +10237,7 @@ algorithm
   ret_1 := SimCode.listLengthSubscript(i_subs);
   i_nridx__str := Tpl.writeStr(emptyTxt, intString(ret_1));
   i_idx__str := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  (i_idx__str, out_i_varDecls, out_i_preExp) := lm_224(i_idx__str, i_subs, i_varDecls, i_preExp, i_context);
+  (i_idx__str, out_i_varDecls, out_i_preExp) := lm_223(i_idx__str, i_subs, i_varDecls, i_preExp, i_context);
   i_idx__str := Tpl.popIter(i_idx__str);
   (i_tmp, out_i_varDecls) := tempDecl(emptyTxt, "index_spec_t", out_i_varDecls);
   out_i_preExp := Tpl.writeTok(out_i_preExp, Tpl.ST_STRING("create_index_spec(&"));
@@ -10256,7 +10251,7 @@ algorithm
   out_txt := Tpl.writeText(txt, i_tmp);
 end daeExpCrefRhsIndexSpec;
 
-protected function lm_226
+protected function lm_225
   input Tpl.Text in_txt;
   input list<Option<Integer>> in_items;
 
@@ -10280,7 +10275,7 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, intString(i_i));
         txt = Tpl.nextIter(txt);
-        txt = lm_226(txt, rest);
+        txt = lm_225(txt, rest);
       then txt;
 
     case ( txt,
@@ -10288,12 +10283,12 @@ algorithm
       local
         list<Option<Integer>> rest;
       equation
-        txt = lm_226(txt, rest);
+        txt = lm_225(txt, rest);
       then txt;
   end matchcontinue;
-end lm_226;
+end lm_225;
 
-protected function fun_227
+protected function fun_226
   input Tpl.Text in_txt;
   input SimCode.Context in_i_context;
   input DAE.ComponentRef in_i_cref_componentRef;
@@ -10317,7 +10312,7 @@ algorithm
       DAE.ExpType i_aty;
 
     case ( txt,
-           SimCode.SIMULATION(),
+           SimCode.SIMULATION(genDiscrete = _),
            i_cref_componentRef,
            i_preExp,
            i_dims,
@@ -10335,7 +10330,7 @@ algorithm
         ret_3 = SimCode.listLengthOptionInt(i_dims);
         i_dimsLenStr = Tpl.writeStr(emptyTxt, intString(ret_3));
         i_dimsValuesStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        i_dimsValuesStr = lm_226(i_dimsValuesStr, i_dims);
+        i_dimsValuesStr = lm_225(i_dimsValuesStr, i_dims);
         i_dimsValuesStr = Tpl.popIter(i_dimsValuesStr);
         i_preExp = expTypeShort(i_preExp, i_aty);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_array_create(&"));
@@ -10360,7 +10355,7 @@ algorithm
            _ )
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
-end fun_227;
+end fun_226;
 
 public function daeExpCrefRhsArrayBox
   input Tpl.Text in_txt;
@@ -10392,7 +10387,7 @@ algorithm
         DAE.ExpType i_aty;
         DAE.Exp i_cref;
       equation
-        (txt, i_preExp, i_varDecls) = fun_227(txt, i_context, i_cref_componentRef, i_preExp, i_dims, i_varDecls, i_aty);
+        (txt, i_preExp, i_varDecls) = fun_226(txt, i_context, i_cref_componentRef, i_preExp, i_dims, i_varDecls, i_aty);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -10403,6 +10398,31 @@ algorithm
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
 end daeExpCrefRhsArrayBox;
+
+protected function fun_228
+  input Tpl.Text in_txt;
+  input DAE.ExpType in_i_ty;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_ty)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           DAE.ET_ARRAY(ty = DAE.ET_INT()) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("real_array"));
+      then txt;
+  end matchcontinue;
+end fun_228;
 
 protected function fun_229
   input Tpl.Text in_txt;
@@ -10480,31 +10500,6 @@ algorithm
 end fun_231;
 
 protected function fun_232
-  input Tpl.Text in_txt;
-  input DAE.ExpType in_i_ty;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_ty)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           DAE.ET_ARRAY(ty = DAE.ET_INT()) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer_array"));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("real_array"));
-      then txt;
-  end matchcontinue;
-end fun_232;
-
-protected function fun_233
   input Tpl.Text in_txt;
   input DAE.Operator in_i_operator;
   input Tpl.Text in_i_e2;
@@ -10627,7 +10622,7 @@ algorithm
         Tpl.Text i_var;
         Tpl.Text i_type;
       equation
-        i_type = fun_229(emptyTxt, i_ty);
+        i_type = fun_228(emptyTxt, i_ty);
         (i_var, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_type), i_varDecls);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("add_alloc_"));
         i_preExp = Tpl.writeText(i_preExp, i_type);
@@ -10653,7 +10648,7 @@ algorithm
         Tpl.Text i_var;
         Tpl.Text i_type;
       equation
-        i_type = fun_230(emptyTxt, i_ty);
+        i_type = fun_229(emptyTxt, i_ty);
         (i_var, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_type), i_varDecls);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("sub_alloc_"));
         i_preExp = Tpl.writeText(i_preExp, i_type);
@@ -10679,7 +10674,7 @@ algorithm
         Tpl.Text i_var;
         Tpl.Text i_type;
       equation
-        i_type = fun_231(emptyTxt, i_ty);
+        i_type = fun_230(emptyTxt, i_ty);
         (i_var, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_type), i_varDecls);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("mul_alloc_"));
         i_preExp = Tpl.writeText(i_preExp, i_type);
@@ -10705,7 +10700,7 @@ algorithm
         Tpl.Text i_var;
         Tpl.Text i_type;
       equation
-        i_type = fun_232(emptyTxt, i_ty);
+        i_type = fun_231(emptyTxt, i_ty);
         (i_var, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_type), i_varDecls);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("div_alloc_"));
         i_preExp = Tpl.writeText(i_preExp, i_type);
@@ -10730,7 +10725,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("daeExpBinary:ERR"));
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
-end fun_233;
+end fun_232;
 
 public function daeExpBinary
   input Tpl.Text in_txt;
@@ -10765,7 +10760,7 @@ algorithm
       equation
         (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp1, i_context, i_preExp, i_varDecls);
         (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp2, i_context, i_preExp, i_varDecls);
-        (txt, i_preExp, i_varDecls) = fun_233(txt, i_operator, i_e2, i_e1, i_preExp, i_varDecls);
+        (txt, i_preExp, i_varDecls) = fun_232(txt, i_operator, i_e2, i_e1, i_preExp, i_varDecls);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -10777,7 +10772,7 @@ algorithm
   end matchcontinue;
 end daeExpBinary;
 
-protected function fun_235
+protected function fun_234
   input Tpl.Text in_txt;
   input DAE.Operator in_i_operator;
   input Tpl.Text in_i_e;
@@ -10829,7 +10824,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("daeExpUnary:ERR"));
       then txt;
   end matchcontinue;
-end fun_235;
+end fun_234;
 
 public function daeExpUnary
   input Tpl.Text in_txt;
@@ -10861,7 +10856,7 @@ algorithm
         Tpl.Text i_e;
       equation
         (i_e, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
-        txt = fun_235(txt, i_operator, i_e);
+        txt = fun_234(txt, i_operator, i_e);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -10873,7 +10868,7 @@ algorithm
   end matchcontinue;
 end daeExpUnary;
 
-protected function fun_237
+protected function fun_236
   input Tpl.Text in_txt;
   input DAE.Operator in_i_operator;
   input Tpl.Text in_i_e2;
@@ -10920,7 +10915,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("daeExpLbinary:ERR"));
       then txt;
   end matchcontinue;
-end fun_237;
+end fun_236;
 
 public function daeExpLbinary
   input Tpl.Text in_txt;
@@ -10955,7 +10950,7 @@ algorithm
       equation
         (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp1, i_context, i_preExp, i_varDecls);
         (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp2, i_context, i_preExp, i_varDecls);
-        txt = fun_237(txt, i_operator, i_e2, i_e1);
+        txt = fun_236(txt, i_operator, i_e2, i_e1);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -10967,7 +10962,7 @@ algorithm
   end matchcontinue;
 end daeExpLbinary;
 
-protected function fun_239
+protected function fun_238
   input Tpl.Text in_txt;
   input DAE.Operator in_i_operator;
   input Tpl.Text in_i_e;
@@ -10994,7 +10989,7 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_239;
+end fun_238;
 
 public function daeExpLunary
   input Tpl.Text in_txt;
@@ -11026,7 +11021,7 @@ algorithm
         Tpl.Text i_e;
       equation
         (i_e, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
-        txt = fun_239(txt, i_operator, i_e);
+        txt = fun_238(txt, i_operator, i_e);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -11038,7 +11033,7 @@ algorithm
   end matchcontinue;
 end daeExpLunary;
 
-protected function fun_241
+protected function fun_240
   input Tpl.Text in_txt;
   input DAE.Operator in_i_rel_operator;
   input Tpl.Text in_i_e2;
@@ -11341,9 +11336,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("daeExpRelation:ERR"));
       then txt;
   end matchcontinue;
-end fun_241;
+end fun_240;
 
-protected function fun_242
+protected function fun_241
   input Tpl.Text in_txt;
   input String in_it;
   input DAE.Operator in_i_rel_operator;
@@ -11382,7 +11377,7 @@ algorithm
       equation
         (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_rel_exp1, i_context, i_preExp, i_varDecls);
         (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_rel_exp2, i_context, i_preExp, i_varDecls);
-        txt = fun_241(txt, i_rel_operator, i_e2, i_e1);
+        txt = fun_240(txt, i_rel_operator, i_e2, i_e1);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -11399,7 +11394,7 @@ algorithm
         txt = Tpl.writeStr(txt, str_1);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end fun_242;
+end fun_241;
 
 public function daeExpRelation
   input Tpl.Text in_txt;
@@ -11435,7 +11430,7 @@ algorithm
       equation
         (txt_0, i_preExp, i_varDecls) = daeExpRelationSim(emptyTxt, i_rel, i_context, i_preExp, i_varDecls);
         str_1 = Tpl.textString(txt_0);
-        (txt, i_varDecls, i_preExp) = fun_242(txt, str_1, i_rel_operator, i_rel_exp2, i_varDecls, i_preExp, i_context, i_rel_exp1);
+        (txt, i_varDecls, i_preExp) = fun_241(txt, str_1, i_rel_operator, i_rel_exp2, i_varDecls, i_preExp, i_context, i_rel_exp1);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -11447,7 +11442,7 @@ algorithm
   end matchcontinue;
 end daeExpRelation;
 
-protected function fun_244
+protected function fun_243
   input Tpl.Text in_txt;
   input DAE.Operator in_i_rel_operator;
   input Tpl.Text in_i_e2;
@@ -11547,9 +11542,9 @@ algorithm
            i_preExp )
       then (txt, i_preExp);
   end matchcontinue;
-end fun_244;
+end fun_243;
 
-protected function fun_245
+protected function fun_244
   input Tpl.Text in_txt;
   input SimCode.Context in_i_context;
   input DAE.Operator in_i_rel_operator;
@@ -11573,7 +11568,7 @@ algorithm
       DAE.Exp i_rel_exp1;
 
     case ( txt,
-           (i_context as SimCode.SIMULATION()),
+           (i_context as SimCode.SIMULATION(genDiscrete = _)),
            i_rel_operator,
            i_rel_exp2,
            i_varDecls,
@@ -11588,7 +11583,7 @@ algorithm
         (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_rel_exp1, i_context, i_preExp, i_varDecls);
         (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_rel_exp2, i_context, i_preExp, i_varDecls);
         (i_res, i_varDecls) = tempDecl(emptyTxt, "modelica_boolean", i_varDecls);
-        (txt, i_preExp) = fun_244(txt, i_rel_operator, i_e2, i_e1, i_res, i_preExp);
+        (txt, i_preExp) = fun_243(txt, i_rel_operator, i_e2, i_e1, i_res, i_preExp);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -11600,7 +11595,7 @@ algorithm
            _ )
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end fun_245;
+end fun_244;
 
 public function daeExpRelationSim
   input Tpl.Text in_txt;
@@ -11632,7 +11627,7 @@ algorithm
         DAE.Exp i_rel_exp1;
         DAE.Exp i_rel;
       equation
-        (txt, i_varDecls, i_preExp) = fun_245(txt, i_context, i_rel_operator, i_rel_exp2, i_varDecls, i_preExp, i_rel_exp1);
+        (txt, i_varDecls, i_preExp) = fun_244(txt, i_context, i_rel_operator, i_rel_exp2, i_varDecls, i_preExp, i_rel_exp1);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -11729,7 +11724,7 @@ algorithm
   end matchcontinue;
 end daeExpIf;
 
-protected function fun_248
+protected function fun_247
   input Tpl.Text in_txt;
   input DAE.ExpType in_i_arg_ty;
 
@@ -11750,7 +11745,60 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_248;
+end fun_247;
+
+protected function lm_248
+  input Tpl.Text in_txt;
+  input list<DAE.Exp> in_items;
+  input Tpl.Text in_i_varDecls;
+  input Tpl.Text in_i_preExp;
+  input SimCode.Context in_i_context;
+
+  output Tpl.Text out_txt;
+  output Tpl.Text out_i_varDecls;
+  output Tpl.Text out_i_preExp;
+algorithm
+  (out_txt, out_i_varDecls, out_i_preExp) :=
+  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_preExp, in_i_context)
+    local
+      Tpl.Text txt;
+      Tpl.Text i_varDecls;
+      Tpl.Text i_preExp;
+      SimCode.Context i_context;
+
+    case ( txt,
+           {},
+           i_varDecls,
+           i_preExp,
+           _ )
+      then (txt, i_varDecls, i_preExp);
+
+    case ( txt,
+           i_exp :: rest,
+           i_varDecls,
+           i_preExp,
+           i_context )
+      local
+        list<DAE.Exp> rest;
+        DAE.Exp i_exp;
+      equation
+        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, i_context, i_preExp, i_varDecls);
+        txt = Tpl.nextIter(txt);
+        (txt, i_varDecls, i_preExp) = lm_248(txt, rest, i_varDecls, i_preExp, i_context);
+      then (txt, i_varDecls, i_preExp);
+
+    case ( txt,
+           _ :: rest,
+           i_varDecls,
+           i_preExp,
+           i_context )
+      local
+        list<DAE.Exp> rest;
+      equation
+        (txt, i_varDecls, i_preExp) = lm_248(txt, rest, i_varDecls, i_preExp, i_context);
+      then (txt, i_varDecls, i_preExp);
+  end matchcontinue;
+end lm_248;
 
 protected function lm_249
   input Tpl.Text in_txt;
@@ -11805,60 +11853,7 @@ algorithm
   end matchcontinue;
 end lm_249;
 
-protected function lm_250
-  input Tpl.Text in_txt;
-  input list<DAE.Exp> in_items;
-  input Tpl.Text in_i_varDecls;
-  input Tpl.Text in_i_preExp;
-  input SimCode.Context in_i_context;
-
-  output Tpl.Text out_txt;
-  output Tpl.Text out_i_varDecls;
-  output Tpl.Text out_i_preExp;
-algorithm
-  (out_txt, out_i_varDecls, out_i_preExp) :=
-  matchcontinue(in_txt, in_items, in_i_varDecls, in_i_preExp, in_i_context)
-    local
-      Tpl.Text txt;
-      Tpl.Text i_varDecls;
-      Tpl.Text i_preExp;
-      SimCode.Context i_context;
-
-    case ( txt,
-           {},
-           i_varDecls,
-           i_preExp,
-           _ )
-      then (txt, i_varDecls, i_preExp);
-
-    case ( txt,
-           i_exp :: rest,
-           i_varDecls,
-           i_preExp,
-           i_context )
-      local
-        list<DAE.Exp> rest;
-        DAE.Exp i_exp;
-      equation
-        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, i_context, i_preExp, i_varDecls);
-        txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_250(txt, rest, i_varDecls, i_preExp, i_context);
-      then (txt, i_varDecls, i_preExp);
-
-    case ( txt,
-           _ :: rest,
-           i_varDecls,
-           i_preExp,
-           i_context )
-      local
-        list<DAE.Exp> rest;
-      equation
-        (txt, i_varDecls, i_preExp) = lm_250(txt, rest, i_varDecls, i_preExp, i_context);
-      then (txt, i_varDecls, i_preExp);
-  end matchcontinue;
-end lm_250;
-
-protected function fun_251
+protected function fun_250
   input Tpl.Text in_txt;
   input Boolean in_i_builtin;
   input Tpl.Text in_i_retType;
@@ -11892,9 +11887,9 @@ algorithm
         txt = Tpl.writeText(txt, i_retVar);
       then txt;
   end matchcontinue;
-end fun_251;
+end fun_250;
 
-protected function lm_252
+protected function lm_251
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_items;
   input Tpl.Text in_i_varDecls;
@@ -11931,7 +11926,7 @@ algorithm
       equation
         (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, i_context, i_preExp, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_252(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_251(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -11942,10 +11937,10 @@ algorithm
       local
         list<DAE.Exp> rest;
       equation
-        (txt, i_varDecls, i_preExp) = lm_252(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_251(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end lm_252;
+end lm_251;
 
 public function daeExpCall
   input Tpl.Text in_txt;
@@ -11981,7 +11976,7 @@ algorithm
       equation
         i_retType = expTypeArrayIf(emptyTxt, i_arg_ty);
         (i_retVar, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_retType), i_varDecls);
-        i_cast = fun_248(emptyTxt, i_arg_ty);
+        i_cast = fun_247(emptyTxt, i_arg_ty);
         i_preExp = Tpl.writeText(i_preExp, i_retVar);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = "));
         i_preExp = Tpl.writeText(i_preExp, i_cast);
@@ -12085,7 +12080,7 @@ algorithm
         Tpl.Text i_argStr;
       equation
         i_argStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_argStr, i_varDecls, i_preExp) = lm_249(i_argStr, i_expLst, i_varDecls, i_preExp, i_context);
+        (i_argStr, i_varDecls, i_preExp) = lm_248(i_argStr, i_expLst, i_varDecls, i_preExp, i_context);
         i_argStr = Tpl.popIter(i_argStr);
         i_funName = underscorePath(emptyTxt, i_path);
         i_preExp = daeExpCallBuiltinPrefix(i_preExp, i_builtin);
@@ -12112,7 +12107,7 @@ algorithm
         Tpl.Text i_argStr;
       equation
         i_argStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_argStr, i_varDecls, i_preExp) = lm_250(i_argStr, i_expLst, i_varDecls, i_preExp, i_context);
+        (i_argStr, i_varDecls, i_preExp) = lm_249(i_argStr, i_expLst, i_varDecls, i_preExp, i_context);
         i_argStr = Tpl.popIter(i_argStr);
         i_funName = underscorePath(emptyTxt, i_path);
         i_retType = Tpl.writeText(emptyTxt, i_funName);
@@ -12126,7 +12121,7 @@ algorithm
         i_preExp = Tpl.writeText(i_preExp, i_argStr);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
-        txt = fun_251(txt, i_builtin, i_retType, i_retVar);
+        txt = fun_250(txt, i_builtin, i_retType, i_retVar);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -12144,7 +12139,7 @@ algorithm
         Tpl.Text i_argStr;
       equation
         i_argStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_argStr, i_varDecls, i_preExp) = lm_252(i_argStr, i_expLst, i_varDecls, i_preExp, i_context);
+        (i_argStr, i_varDecls, i_preExp) = lm_251(i_argStr, i_expLst, i_varDecls, i_preExp, i_context);
         i_argStr = Tpl.popIter(i_argStr);
         i_funName = underscorePath(emptyTxt, i_path);
         i_retType = Tpl.writeText(emptyTxt, i_funName);
@@ -12197,7 +12192,7 @@ algorithm
   end matchcontinue;
 end daeExpCallBuiltinPrefix;
 
-protected function fun_255
+protected function fun_254
   input Tpl.Text in_txt;
   input Boolean in_i_scalar;
 
@@ -12218,9 +12213,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("scalar_"));
       then txt;
   end matchcontinue;
-end fun_255;
+end fun_254;
 
-protected function fun_256
+protected function fun_255
   input Tpl.Text in_txt;
   input Boolean in_i_scalar;
 
@@ -12241,9 +12236,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("&"));
       then txt;
   end matchcontinue;
-end fun_256;
+end fun_255;
 
-protected function lm_257
+protected function lm_256
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_items;
   input Tpl.Text in_i_varDecls;
@@ -12280,7 +12275,7 @@ algorithm
       equation
         (txt, i_preExp, i_varDecls) = daeExp(txt, i_e, i_context, i_preExp, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_257(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_256(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -12291,10 +12286,10 @@ algorithm
       local
         list<DAE.Exp> rest;
       equation
-        (txt, i_varDecls, i_preExp) = lm_257(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_256(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end lm_257;
+end lm_256;
 
 public function daeExpArray
   input Tpl.Text in_txt;
@@ -12333,10 +12328,10 @@ algorithm
       equation
         i_arrayTypeStr = expTypeArray(emptyTxt, i_ty);
         (i_arrayVar, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_arrayTypeStr), i_varDecls);
-        i_scalarPrefix = fun_255(emptyTxt, i_scalar);
-        i_scalarRef = fun_256(emptyTxt, i_scalar);
+        i_scalarPrefix = fun_254(emptyTxt, i_scalar);
+        i_scalarRef = fun_255(emptyTxt, i_scalar);
         i_params = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_params, i_varDecls, i_preExp) = lm_257(i_params, i_array, i_varDecls, i_preExp, i_context);
+        (i_params, i_varDecls, i_preExp) = lm_256(i_params, i_array, i_varDecls, i_preExp, i_context);
         i_params = Tpl.popIter(i_params);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("array_alloc_"));
         i_preExp = Tpl.writeText(i_preExp, i_scalarPrefix);
@@ -12362,7 +12357,7 @@ algorithm
   end matchcontinue;
 end daeExpArray;
 
-protected function lm_259
+protected function lm_258
   input Tpl.Text in_txt;
   input list<list<tuple<DAE.Exp, Boolean>>> in_items;
   input Tpl.Text in_i_vars2;
@@ -12423,7 +12418,7 @@ algorithm
         txt = Tpl.writeText(txt, i_vars);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
         txt = Tpl.nextIter(txt);
-        (txt, i_vars2, i_promote, i_varDecls) = lm_259(txt, rest, i_vars2, i_promote, i_context, i_varDecls, i_arrayTypeStr);
+        (txt, i_vars2, i_promote, i_varDecls) = lm_258(txt, rest, i_vars2, i_promote, i_context, i_varDecls, i_arrayTypeStr);
       then (txt, i_vars2, i_promote, i_varDecls);
 
     case ( txt,
@@ -12436,10 +12431,10 @@ algorithm
       local
         list<list<tuple<DAE.Exp, Boolean>>> rest;
       equation
-        (txt, i_vars2, i_promote, i_varDecls) = lm_259(txt, rest, i_vars2, i_promote, i_context, i_varDecls, i_arrayTypeStr);
+        (txt, i_vars2, i_promote, i_varDecls) = lm_258(txt, rest, i_vars2, i_promote, i_context, i_varDecls, i_arrayTypeStr);
       then (txt, i_vars2, i_promote, i_varDecls);
   end matchcontinue;
-end lm_259;
+end lm_258;
 
 public function daeExpMatrix
   input Tpl.Text in_txt;
@@ -12522,7 +12517,7 @@ algorithm
         i_vars2 = emptyTxt;
         i_promote = emptyTxt;
         i_catAlloc = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-        (i_catAlloc, i_vars2, i_promote, i_varDecls) = lm_259(i_catAlloc, i_m_scalar, i_vars2, i_promote, i_context, i_varDecls, i_arrayTypeStr);
+        (i_catAlloc, i_vars2, i_promote, i_varDecls) = lm_258(i_catAlloc, i_m_scalar, i_vars2, i_promote, i_context, i_varDecls, i_arrayTypeStr);
         i_catAlloc = Tpl.popIter(i_catAlloc);
         i_preExp = Tpl.writeText(i_preExp, i_promote);
         i_preExp = Tpl.writeText(i_preExp, i_catAlloc);
@@ -12550,7 +12545,7 @@ algorithm
   end matchcontinue;
 end daeExpMatrix;
 
-protected function fun_261
+protected function fun_260
   input Tpl.Text in_txt;
   input Boolean in_i_b;
 
@@ -12571,9 +12566,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("scalar_"));
       then txt;
   end matchcontinue;
-end fun_261;
+end fun_260;
 
-protected function fun_262
+protected function fun_261
   input Tpl.Text in_txt;
   input Boolean in_i_b;
 
@@ -12594,9 +12589,9 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_262;
+end fun_261;
 
-protected function lm_263
+protected function lm_262
   input Tpl.Text in_txt;
   input list<tuple<DAE.Exp, Boolean>> in_items;
   input Tpl.Text in_i_varLstStr;
@@ -12646,8 +12641,8 @@ algorithm
         Tpl.Text i_scalarRefStr;
         Tpl.Text i_scalarStr;
       equation
-        i_scalarStr = fun_261(emptyTxt, i_b);
-        i_scalarRefStr = fun_262(emptyTxt, i_b);
+        i_scalarStr = fun_260(emptyTxt, i_b);
+        i_scalarRefStr = fun_261(emptyTxt, i_b);
         (i_expVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e, i_context, i_preExp, i_varDecls);
         (i_tmp, i_varDecls) = tempDecl(emptyTxt, i_arrayTypeStr, i_varDecls);
         i_varLstStr = Tpl.writeTok(i_varLstStr, Tpl.ST_STRING(", &"));
@@ -12662,7 +12657,7 @@ algorithm
         txt = Tpl.writeText(txt, i_tmp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
         txt = Tpl.nextIter(txt);
-        (txt, i_varLstStr, i_varDecls, i_preExp) = lm_263(txt, rest, i_varLstStr, i_arrayTypeStr, i_varDecls, i_preExp, i_context);
+        (txt, i_varLstStr, i_varDecls, i_preExp) = lm_262(txt, rest, i_varLstStr, i_arrayTypeStr, i_varDecls, i_preExp, i_context);
       then (txt, i_varLstStr, i_varDecls, i_preExp);
 
     case ( txt,
@@ -12675,10 +12670,10 @@ algorithm
       local
         list<tuple<DAE.Exp, Boolean>> rest;
       equation
-        (txt, i_varLstStr, i_varDecls, i_preExp) = lm_263(txt, rest, i_varLstStr, i_arrayTypeStr, i_varDecls, i_preExp, i_context);
+        (txt, i_varLstStr, i_varDecls, i_preExp) = lm_262(txt, rest, i_varLstStr, i_arrayTypeStr, i_varDecls, i_preExp, i_context);
       then (txt, i_varLstStr, i_varDecls, i_preExp);
   end matchcontinue;
-end lm_263;
+end lm_262;
 
 public function daeExpMatrixRow
   input Tpl.Text txt;
@@ -12697,14 +12692,14 @@ protected
 algorithm
   i_varLstStr := emptyTxt;
   i_preExp2 := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  (i_preExp2, i_varLstStr, out_i_varDecls, out_i_preExp) := lm_263(i_preExp2, i_row, i_varLstStr, i_arrayTypeStr, i_varDecls, i_preExp, i_context);
+  (i_preExp2, i_varLstStr, out_i_varDecls, out_i_preExp) := lm_262(i_preExp2, i_row, i_varLstStr, i_arrayTypeStr, i_varDecls, i_preExp, i_context);
   i_preExp2 := Tpl.popIter(i_preExp2);
   i_preExp2 := Tpl.writeTok(i_preExp2, Tpl.ST_NEW_LINE());
   out_i_preExp := Tpl.writeText(out_i_preExp, i_preExp2);
   out_txt := Tpl.writeText(txt, i_varLstStr);
 end daeExpMatrixRow;
 
-protected function fun_265
+protected function fun_264
   input Tpl.Text in_txt;
   input DAE.ExpType in_i_ty;
   input Tpl.Text in_i_preExp;
@@ -12787,7 +12782,7 @@ algorithm
            _ )
       then (txt, i_preExp, i_varDecls);
   end matchcontinue;
-end fun_265;
+end fun_264;
 
 public function daeExpCast
   input Tpl.Text in_txt;
@@ -12819,7 +12814,7 @@ algorithm
         Tpl.Text i_expVar;
       equation
         (i_expVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
-        (txt, i_preExp, i_varDecls) = fun_265(txt, i_ty, i_preExp, i_exp, i_varDecls, i_expVar);
+        (txt, i_preExp, i_varDecls) = fun_264(txt, i_ty, i_preExp, i_exp, i_varDecls, i_expVar);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -12831,7 +12826,7 @@ algorithm
   end matchcontinue;
 end daeExpCast;
 
-protected function fun_267
+protected function fun_266
   input Tpl.Text in_txt;
   input SimCode.Context in_i_context;
   input Tpl.Text in_i_varDecls;
@@ -12855,7 +12850,7 @@ algorithm
       DAE.ExpType i_cref_ty;
 
     case ( txt,
-           (i_context as SimCode.SIMULATION()),
+           (i_context as SimCode.SIMULATION(genDiscrete = _)),
            i_varDecls,
            i_preExp,
            i_arrName,
@@ -12878,7 +12873,7 @@ algorithm
         txt = Tpl.writeText(txt, i_arrName);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end fun_267;
+end fun_266;
 
 public function daeExpAsub
   input Tpl.Text in_txt;
@@ -12979,7 +12974,7 @@ algorithm
       equation
         ret_1 = SimCode.buildCrefExpFromAsub(i_cref, i_subs);
         (i_arrName, i_preExp, i_varDecls) = daeExpCrefRhs(emptyTxt, ret_1, i_context, i_preExp, i_varDecls);
-        (txt, i_varDecls, i_preExp) = fun_267(txt, i_context, i_varDecls, i_preExp, i_arrName, i_subs, i_cref_ty);
+        (txt, i_varDecls, i_preExp) = fun_266(txt, i_context, i_varDecls, i_preExp, i_arrName, i_subs, i_cref_ty);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -13053,7 +13048,7 @@ algorithm
   end matchcontinue;
 end daeExpSize;
 
-protected function lm_270
+protected function lm_269
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_items;
   input Tpl.Text in_i_varDecls;
@@ -13090,7 +13085,7 @@ algorithm
       equation
         (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, i_context, i_preExp, i_varDecls);
         txt = Tpl.nextIter(txt);
-        (txt, i_varDecls, i_preExp) = lm_270(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_269(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
 
     case ( txt,
@@ -13101,10 +13096,10 @@ algorithm
       local
         list<DAE.Exp> rest;
       equation
-        (txt, i_varDecls, i_preExp) = lm_270(txt, rest, i_varDecls, i_preExp, i_context);
+        (txt, i_varDecls, i_preExp) = lm_269(txt, rest, i_varDecls, i_preExp, i_context);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
-end lm_270;
+end lm_269;
 
 public function arrayScalarRhs
   input Tpl.Text txt;
@@ -13128,7 +13123,7 @@ algorithm
   ret_2 := SimCode.listLengthExp(i_subs);
   i_dimsLenStr := Tpl.writeStr(emptyTxt, intString(ret_2));
   i_dimsValuesStr := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
-  (i_dimsValuesStr, out_i_varDecls, out_i_preExp) := lm_270(i_dimsValuesStr, i_subs, i_varDecls, i_preExp, i_context);
+  (i_dimsValuesStr, out_i_varDecls, out_i_preExp) := lm_269(i_dimsValuesStr, i_subs, i_varDecls, i_preExp, i_context);
   i_dimsValuesStr := Tpl.popIter(i_dimsValuesStr);
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("(*"));
   out_txt := Tpl.writeText(out_txt, i_arrayType);
@@ -13163,7 +13158,7 @@ algorithm
   out_txt := Tpl.writeText(txt, i_newVar);
 end tempDecl;
 
-protected function fun_273
+protected function fun_272
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_i_instDims;
   input SimCode.Type in_i_var_ty;
@@ -13190,7 +13185,7 @@ algorithm
         txt = expTypeArray(txt, i_var_ty);
       then txt;
   end matchcontinue;
-end fun_273;
+end fun_272;
 
 public function varType
   input Tpl.Text in_txt;
@@ -13210,7 +13205,7 @@ algorithm
         list<DAE.Exp> i_instDims;
         SimCode.Variable i_var;
       equation
-        txt = fun_273(txt, i_instDims, i_var_ty);
+        txt = fun_272(txt, i_instDims, i_var_ty);
       then txt;
 
     case ( txt,
@@ -13285,7 +13280,7 @@ algorithm
   end matchcontinue;
 end expTypeShort;
 
-protected function fun_276
+protected function fun_275
   input Tpl.Text in_txt;
   input Boolean in_i_array;
   input DAE.ExpType in_i_ty;
@@ -13317,7 +13312,7 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_276;
+end fun_275;
 
 public function expType
   input Tpl.Text txt;
@@ -13326,7 +13321,7 @@ public function expType
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := fun_276(txt, i_array, i_ty);
+  out_txt := fun_275(txt, i_array, i_ty);
 end expType;
 
 public function expTypeModelica
@@ -13383,7 +13378,7 @@ algorithm
   out_txt := expTypeFromExpFlag(txt, i_exp, 4);
 end expTypeFromExpArrayIf;
 
-protected function fun_284
+protected function fun_283
   input Tpl.Text in_txt;
   input DAE.ExpType in_i_ty;
 
@@ -13412,9 +13407,9 @@ algorithm
         txt = expTypeShort(txt, i_ty);
       then txt;
   end matchcontinue;
-end fun_284;
+end fun_283;
 
-protected function fun_285
+protected function fun_284
   input Tpl.Text in_txt;
   input Integer in_i_flag;
   input DAE.ExpType in_i_ty;
@@ -13454,7 +13449,7 @@ algorithm
            4,
            i_ty )
       equation
-        txt = fun_284(txt, i_ty);
+        txt = fun_283(txt, i_ty);
       then txt;
 
     case ( txt,
@@ -13462,7 +13457,7 @@ algorithm
            _ )
       then txt;
   end matchcontinue;
-end fun_285;
+end fun_284;
 
 public function expTypeFlag
   input Tpl.Text txt;
@@ -13471,10 +13466,10 @@ public function expTypeFlag
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := fun_285(txt, i_flag, i_ty);
+  out_txt := fun_284(txt, i_flag, i_ty);
 end expTypeFlag;
 
-protected function fun_287
+protected function fun_286
   input Tpl.Text in_txt;
   input Integer in_i_flag;
 
@@ -13497,9 +13492,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_integer"));
       then txt;
   end matchcontinue;
-end fun_287;
+end fun_286;
 
-protected function fun_288
+protected function fun_287
   input Tpl.Text in_txt;
   input Integer in_i_flag;
 
@@ -13522,9 +13517,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_real"));
       then txt;
   end matchcontinue;
-end fun_288;
+end fun_287;
 
-protected function fun_289
+protected function fun_288
   input Tpl.Text in_txt;
   input Integer in_i_flag;
 
@@ -13547,9 +13542,9 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_string"));
       then txt;
   end matchcontinue;
-end fun_289;
+end fun_288;
 
-protected function fun_290
+protected function fun_289
   input Tpl.Text in_txt;
   input Integer in_i_flag;
 
@@ -13572,7 +13567,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_boolean"));
       then txt;
   end matchcontinue;
-end fun_290;
+end fun_289;
 
 public function expTypeFromExpFlag
   input Tpl.Text in_txt;
@@ -13591,28 +13586,28 @@ algorithm
            DAE.ICONST(integer = _),
            i_flag )
       equation
-        txt = fun_287(txt, i_flag);
+        txt = fun_286(txt, i_flag);
       then txt;
 
     case ( txt,
            DAE.RCONST(real = _),
            i_flag )
       equation
-        txt = fun_288(txt, i_flag);
+        txt = fun_287(txt, i_flag);
       then txt;
 
     case ( txt,
            DAE.SCONST(string = _),
            i_flag )
       equation
-        txt = fun_289(txt, i_flag);
+        txt = fun_288(txt, i_flag);
       then txt;
 
     case ( txt,
            DAE.BCONST(bool = _),
            i_flag )
       equation
-        txt = fun_290(txt, i_flag);
+        txt = fun_289(txt, i_flag);
       then txt;
 
     case ( txt,
@@ -13770,6 +13765,31 @@ algorithm
   end matchcontinue;
 end expTypeFromExpFlag;
 
+protected function fun_291
+  input Tpl.Text in_txt;
+  input Integer in_i_flag;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_flag)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           1 )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("boolean"));
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_boolean"));
+      then txt;
+  end matchcontinue;
+end fun_291;
+
 protected function fun_292
   input Tpl.Text in_txt;
   input Integer in_i_flag;
@@ -13819,31 +13839,6 @@ algorithm
       then txt;
   end matchcontinue;
 end fun_293;
-
-protected function fun_294
-  input Tpl.Text in_txt;
-  input Integer in_i_flag;
-
-  output Tpl.Text out_txt;
-algorithm
-  out_txt :=
-  matchcontinue(in_txt, in_i_flag)
-    local
-      Tpl.Text txt;
-
-    case ( txt,
-           1 )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("boolean"));
-      then txt;
-
-    case ( txt,
-           _ )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("modelica_boolean"));
-      then txt;
-  end matchcontinue;
-end fun_294;
 
 public function expTypeFromOpFlag
   input Tpl.Text in_txt;
@@ -14194,7 +14189,7 @@ algorithm
       local
         DAE.Operator i_o;
       equation
-        txt = fun_292(txt, i_flag);
+        txt = fun_291(txt, i_flag);
       then txt;
 
     case ( txt,
@@ -14203,7 +14198,7 @@ algorithm
       local
         DAE.Operator i_o;
       equation
-        txt = fun_293(txt, i_flag);
+        txt = fun_292(txt, i_flag);
       then txt;
 
     case ( txt,
@@ -14212,7 +14207,7 @@ algorithm
       local
         DAE.Operator i_o;
       equation
-        txt = fun_294(txt, i_flag);
+        txt = fun_293(txt, i_flag);
       then txt;
 
     case ( txt,

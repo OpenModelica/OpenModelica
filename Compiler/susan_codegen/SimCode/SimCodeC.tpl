@@ -510,8 +510,8 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 functionDaeOutput(list<SimEqSystem> nonStateContEquations,
                   list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
-# body = (nonStateContEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
-# body2 = (removedEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
+# body = (nonStateContEquations of eq: '<equation_(eq, createSimulationContext(false), varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, createSimulationContext(false), varDecls)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
@@ -533,8 +533,8 @@ int functionDAE_output()
 functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
                    list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
-# body = (nonStateDiscEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
-# body2 = (removedEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
+# body = (nonStateDiscEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
 <<
 /* for discrete time variables */
 int functionDAE_output2()
@@ -675,11 +675,11 @@ int handleZeroCrossing(long index)
 functionUpdateDependents(list<SimEqSystem> allEquations,
                          list<HelpVarInfo> helpVarInfo) ::=
 # varDecls = ""
-# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
+# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
 # hvars = (
   helpVarInfo of (in1, exp, _):
     # preExp = ""
-    # expPart = daeExp(exp, createSimulationContext(), preExp, varDecls)
+    # expPart = daeExp(exp, createSimulationContext(true), preExp, varDecls)
     '<preExp>localData->helpVars[<in1>] = <expPart>;'
   "\n"
 )
@@ -709,11 +709,11 @@ int function_updateDependents()
 functionUpdateDepend(list<SimEqSystem> allEquations,
                      list<HelpVarInfo> helpVarInfo) ::=
 # varDecls = ""
-# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(), varDecls)>' "\n")
+# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
 # hvars = (
   helpVarInfo of (in1, exp, _):
     # preExp = ""
-    # expPart = daeExp(exp, createSimulationContext(), preExp, varDecls)
+    # expPart = daeExp(exp, createSimulationContext(true), preExp, varDecls)
     '<preExp>localData->helpVars[<in1>] = <expPart>;'
   "\n"
 )
@@ -793,7 +793,7 @@ int function_when(int i)
 functionWhenCaseEquation(Option<WhenEquation>, Text varDecls) ::=
 case SOME(weq as WHEN_EQ) then
 # preExp = ""
-# expPart = daeExp(weq.right, createSimulationContext(), preExp, varDecls)
+# expPart = daeExp(weq.right, createSimulationContext(true), preExp, varDecls)
 <<
 save(<cref(weq.left)>);
 
@@ -803,7 +803,7 @@ save(<cref(weq.left)>);
 
 functionWhenReinitStatements(ReinitStatement, Text preExp, Text varDecls) ::=
 case REINIT then
-  # val = daeExp(value, createSimulationContext(), preExp, varDecls)
+  # val = daeExp(value, createSimulationContext(true), preExp, varDecls)
   <<
   <cref(stateVar)> = <val>;
   >>
@@ -878,7 +878,7 @@ functionExtraResudials(list<SimEqSystem> allEquations) ::=
    # varDecls = ""
    # body = (eq.eqs of eq2 as SES_RESIDUAL:
        # preExp = ""
-       # expPart = daeExp(eq2.exp, createSimulationContext(), preExp, varDecls)
+       # expPart = daeExp(eq2.exp, createSimulationContext(true), preExp, varDecls)
        '<preExp>res[<i0>] = <expPart>;'
      "\n")
    <<
@@ -1518,7 +1518,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     <preExp>
     MODELICA_ASSERT(<condVar>, <msgVar>);
     >>
-  case when as STMT_WHEN then if context is SIMULATION
+  case when as STMT_WHEN then if context is SIMULATION(genDiscrete=true)
                          then algStatementWhen(when, context, varDecls)
                          else ""
   case _ then "/* not implemented alg statement*/"
@@ -1528,7 +1528,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
 algStatementWhen(DAE.Statement, Context context, Text varDecls) ::=
 case STMT_WHEN then
   # preIf = algStatementWhenPre(it, varDecls)
-  # statements = (statementLst: '<algStatement(it, createSimulationContext(), varDecls)>' "\n")
+  # statements = (statementLst: '<algStatement(it, context, varDecls)>' "\n")
   # else = algStatementWhenElse(elseWhen, varDecls)
   <<
   <preIf>
@@ -1555,7 +1555,7 @@ case when as STMT_WHEN then
     # restPre = if when.elseWhen is SOME(ew)
                 then algStatementWhenPre(ew, varDecls) else ""
     # preExp = ""
-    # res = daeExp(when.exp, createSimulationContext(), preExp, varDecls)
+    # res = daeExp(when.exp, createSimulationContext(true), preExp, varDecls)
     <<
     <preExp>
     localData-\>helpVars[<i>] = <res>;
@@ -1564,7 +1564,7 @@ case when as STMT_WHEN then
 
 algStatementWhenElse(Option<DAE.Statement>, Text varDecls) ::=
 case SOME(when as STMT_WHEN) then
-  # statements = (when.statementLst: '<algStatement(it, createSimulationContext(), varDecls)>' "\n")
+  # statements = (when.statementLst: '<algStatement(it, createSimulationContext(true), varDecls)>' "\n")
   # else = algStatementWhenElse(when.elseWhen, varDecls)
   <<
   else if (<when.helpVarIndices: 'edge(localData-\>helpVars[<it>])' " || ">) {
@@ -1580,7 +1580,7 @@ case (firstExp :: restExps) then
   case (firstInt :: restInts) then
     # rest = foo(restExps, restInts, preExp, varDecls)
     <<
-    localData-\>helpVars[<firstInt>] = <daeExp(firstExp, createSimulationContext(), preExp, varDecls)>;
+    localData-\>helpVars[<firstInt>] = <daeExp(firstExp, createSimulationContext(true), preExp, varDecls)>;
     <rest>
     >>
 

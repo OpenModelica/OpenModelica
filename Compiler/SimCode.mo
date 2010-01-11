@@ -483,14 +483,18 @@ uniontype SimEqSystem
 end SimEqSystem;
 
 uniontype Context
-  record SIMULATION end SIMULATION;
-  record OTHER end OTHER;
+  record SIMULATION
+    Boolean genDiscrete;
+  end SIMULATION;
+  record OTHER
+  end OTHER;
 end Context;
 
 function createSimulationContext
+  input Boolean genDiscrete;
   output Context context;
 algorithm
-  context := SIMULATION();
+  context := SIMULATION(genDiscrete);
 end createSimulationContext;
 
 function createOtherContext
