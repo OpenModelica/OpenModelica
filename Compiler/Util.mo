@@ -255,8 +255,9 @@ algorithm isequal := matchcontinue(input1,input2,equalLength)
 end isListEqual;
 
 public function isListNotEmpty 
-input list<Type_a> input1;
-output Boolean isempty;
+  input list<Type_a> input1;
+  output Boolean isempty;
+  replaceable type Type_a subtypeof Any;
 algorithm isempty := matchcontinue(input1)
   case({}) then false; 
   case(_) then true;  
@@ -265,6 +266,7 @@ end isListNotEmpty;
 
 public function assertListEmpty
   input list<Type_a> input1;
+  replaceable type Type_a subtypeof Any;
 algorithm
   _ := matchcontinue(input1)
     case({}) then ();
@@ -1485,6 +1487,7 @@ public function listMap5 "function listMap5
   replaceable type Type_e subtypeof Any;
   replaceable type Type_f subtypeof Any;
   replaceable type Type_g subtypeof Any;
+  replaceable type Type_i subtypeof Any;
 algorithm 
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5)
@@ -1516,7 +1519,6 @@ public function listMap6 "function listMap6
   input Type_f a5;
   input Type_g a6;
   output list<Type_i> outLst;
-  replaceable type Type_a subtypeof Any;
   partial function listMap7Func
     input Type_a inTypeA;
     input Type_b inTypeB;
@@ -1527,6 +1529,7 @@ public function listMap6 "function listMap6
     input Type_g inTypeG;
     output Type_i outTypeI; 
   end listMap7Func;
+  replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
   replaceable type Type_c subtypeof Any;
   replaceable type Type_d subtypeof Any;
@@ -1534,6 +1537,7 @@ public function listMap6 "function listMap6
   replaceable type Type_f subtypeof Any;
   replaceable type Type_g subtypeof Any;
   replaceable type Type_h subtypeof Any;
+  replaceable type Type_i subtypeof Any;
 algorithm 
   outLst:=
   matchcontinue (lst,func,a1,a2,a3,a4,a5,a6)
