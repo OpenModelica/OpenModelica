@@ -48,4 +48,18 @@ int in_range_real(modelica_real i,
   return 0;
 }
 
+modelica_real modelica_div(modelica_real x, modelica_real y)
+{
+	return (modelica_real)((modelica_integer)(x/y));
+}
+
+modelica_real modelica_mod(modelica_real x, modelica_real y)
+{
+	return (x - floor(x/y) * y);
+}
+
+modelica_real rem(modelica_real x, modelica_real y)
+{
+	return fmod(x, y);
+}
 

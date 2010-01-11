@@ -42,4 +42,8 @@ int in_range_real(modelica_real i,
 		  modelica_real start,
 		  modelica_real stop);
 
+modelica_real modelica_div(modelica_real x, modelica_real y);
+modelica_real modelica_mod(modelica_real x, modelica_real y);
+modelica_real rem(modelica_real x, modelica_real y);
+
 #endif

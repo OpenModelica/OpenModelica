@@ -91,8 +91,19 @@ typedef modelica_real max_rettype;
 typedef modelica_real min_rettype;
 typedef modelica_real arctan_rettype;
 typedef modelica_real atan2_rettype;
+typedef modelica_real div_rettype;
+typedef modelica_real mod_rettype;
+typedef modelica_real rem_rettype;
 #define arctan atan
 
+/* div is already defined in stdlib, so it's redefined here to modelica_div so
+ * that it can be implemented without changing the name. Hopefully no one uses
+ * the stdlib div and includes this header... */
+#define div modelica_div
+
+/* fmod in math.h does not work in the same way as mod defined by modelica, so
+ * we need to define our own mod. */
+#define mod modelica_mod
 
 /* Special Modelica builtin functions*/
 typedef modelica_real    pre_rettype;
