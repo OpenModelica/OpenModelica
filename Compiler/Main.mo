@@ -160,15 +160,18 @@ protected function makeDebugResult
   input String flagstr;
   input String res;
   output String res_1;
-  String debugstr,res_with_debug,res_1;
-  Boolean dumpflag;
 algorithm 
-  debugstr := Print.getString();
-  res_with_debug := Util.stringAppendList(
-          {res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",
-          flagstr,")---\n"});
-  dumpflag := RTOpts.debugFlag(flagstr);
-  res_1 := Util.if_(dumpflag, res_with_debug, res);
+  res_1 := matchcontinue (flagstr,res)
+    local
+      String debugstr,res_with_debug;
+    case (flagstr,res)
+      equation
+        true = RTOpts.debugFlag(flagstr);
+        debugstr = Print.getString();
+        res_with_debug = Util.stringAppendList({res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",flagstr,")---\n"});
+      then res_with_debug;
+    case (_,res) then res;
+  end matchcontinue;
 end makeDebugResult;
 
 protected function handleCommand
