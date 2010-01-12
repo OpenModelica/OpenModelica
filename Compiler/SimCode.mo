@@ -435,6 +435,7 @@ uniontype SimCode
     list<SimEqSystem> initialEquations;
     list<SimEqSystem> parameterEquations;
     list<SimEqSystem> removedEquations;
+    list<DAE.Statement> algorithmAndEquationAsserts;
     list<DAELow.ZeroCrossing> zeroCrossings;
     list<list<SimVar>> zeroCrossingsNeedSave;
     list<HelpVarInfo> helpVarInfo;
@@ -1496,6 +1497,7 @@ algorithm
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
+      list<Algorithm.Statement> algorithmAndEquationAsserts;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
@@ -1528,16 +1530,17 @@ algorithm
         //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
         // Add model info
         modelInfo = createModelInfo(class_, dlow2, n_o, n_i, n_h, nres, fileDir);
-        allEquations = createEquations(true, dae, dlow2, ass1, ass2, comps);
-        stateContEquations = createEquations(false, dae, dlow2, ass1, ass2, blt_states);
+        allEquations = createEquations(false, true, dae, dlow2, ass1, ass2, comps);
+        stateContEquations = createEquations(false, false, dae, dlow2, ass1, ass2, blt_states);
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
-        nonStateContEquations = createEquations(true, dae, dlow2, ass1, ass2,
+        nonStateContEquations = createEquations(false, true, dae, dlow2, ass1, ass2,
                                                 contBlocks);
-        nonStateDiscEquations = createEquations(true, dae, dlow2, ass1, ass2,
+        nonStateDiscEquations = createEquations(useZerocrossing(), true, dae, dlow2, ass1, ass2,
                                                 discBlocks);
         initialEquations = createInitialEquations(dlow2);
         parameterEquations = createParameterEquations(dlow2);
         removedEquations = createRemovedEquations(dlow2);
+        algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         whenClauses = createSimWhenClauses(dlow2);
@@ -1545,7 +1548,8 @@ algorithm
         simCode = SIMCODE(modelInfo, functions, allEquations, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
-                          parameterEquations, removedEquations, zeroCrossings,
+                          parameterEquations, removedEquations,
+                          algorithmAndEquationAsserts, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
                           discreteModelVars);
       then
@@ -1557,6 +1561,45 @@ algorithm
         fail();
   end matchcontinue;
 end createSimCode;
+
+public function createAlgorithmAndEquationAsserts
+  input DAELow.DAELow dlow;
+  output list<Algorithm.Statement> algorithmAndEquationAsserts;
+algorithm
+  algorithmAndEquationAsserts :=
+  matchcontinue (dlow)
+    case(DAELow.DAELOW(algorithms=algs)) 
+      local
+        Algorithm.Algorithm[:] algs;
+        list<Algorithm.Statement> res;
+      equation
+        res = createAlgorithmAndEquationAssertsFromAlgs(arrayList(algs));
+      then res;
+  end matchcontinue;
+end createAlgorithmAndEquationAsserts;
+
+public function createAlgorithmAndEquationAssertsFromAlgs
+  input list<Algorithm.Algorithm> algs;
+  output list<Algorithm.Statement> algorithmAndEquationAsserts;
+algorithm
+  algorithmAndEquationAsserts :=
+  matchcontinue (algs)
+    local
+      Algorithm.Statement stmt;
+      list<Algorithm.Statement> restStmt;
+      list<Algorithm.Algorithm> restAlgs;
+    case ({})
+      then ({});
+    case((DAE.ALGORITHM_STMTS({stmt as DAE.STMT_ASSERT(cond =_)})) :: restAlgs)
+      equation
+        restStmt = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
+      then (stmt :: restStmt);
+    case(_ :: restAlgs) 
+      equation
+        restStmt = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
+      then (restStmt);
+  end matchcontinue;
+end createAlgorithmAndEquationAssertsFromAlgs;
 
 public function createRemovedEquations
   input DAELow.DAELow dlow;
@@ -1714,6 +1757,7 @@ algorithm
 end whenClauseToSimWhenClause;
 
 public function createEquations
+  input Boolean skipDiscInZc;
   input Boolean genDiscrete;
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
@@ -1723,7 +1767,7 @@ public function createEquations
   output list<SimEqSystem> equations;
 algorithm
   equations :=
-  matchcontinue (genDiscrete, dae, dlow, ass1, ass2, comps)
+  matchcontinue (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, comps)
     local
       list<Integer> comp;
       list<list<Integer>> restComps;
@@ -1733,40 +1777,52 @@ algorithm
       DAELow.Variables vars;
       DAELow.EquationArray eqns;
       DAELow.Var v;
-    case (genDiscrete, dae, dlow, ass1, ass2, {})
+      list<Integer> zcEqns;
+    case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {})
       then {};
     /* ignore when equations: they are handled elsewhere */
-    case (genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
+    case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
       equation
         DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
         (DAELow.WHEN_EQUATION(_,_),_) = getEquationAndSolvedVar(index, eqns, vars, ass2);
-        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+        equations = createEquations(skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps);
       then
         equations;
     /* ignore discrete if we should not generate them */
-    case (false, dae, dlow, ass1, ass2, {index} :: restComps)
+    case (skipDiscInZc, false, dae, dlow, ass1, ass2, {index} :: restComps)
       equation
         DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
         (DAELow.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
         true = hasDiscreteVar({v});
-        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+        equations = createEquations(skipDiscInZc, false, dae, dlow, ass1, ass2, restComps);
+      then
+        equations;
+    /* ignore discrete in zero crossing if we should not generate them */
+    case (true, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
+      equation
+        DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns) = dlow;
+        (DAELow.EQUATION(_,_,_),v) = getEquationAndSolvedVar(index, eqns, vars, ass2);
+        true = hasDiscreteVar({v});
+        zcEqns = DAELow.zeroCrossingsEquations(dlow);
+        true = listMember(index, zcEqns);
+        equations = createEquations(true, genDiscrete, dae, dlow, ass1, ass2, restComps);
       then
         equations;
     /* single equation */
-    case (genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
+    case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
       equation
         equation_ = createEquation(dae, dlow, ass1, ass2, index);
-        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+        equations = createEquations(skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps);
       then
         equation_ :: equations;
     /* multiple equations that must be solved together (algebraic loop) */
-    case (genDiscrete, dae, dlow, ass1, ass2, comp :: restComps)
+    case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, comp :: restComps)
       equation
         equation_ = createOdeSystem(genDiscrete, dlow, ass1, ass2, comp);
-        equations = createEquations(genDiscrete, dae, dlow, ass1, ass2, restComps);
+        equations = createEquations(skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps);
       then
         equation_ :: equations;
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
@@ -1853,8 +1909,8 @@ algorithm
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         //indxs = intString(indx);
-        //varexp = DAE.CREF(cr,DAE.ET_REAL());
-        //failure(_ = Exp.solve(e1, e2, varexp));
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        failure(_ = Exp.solve(e1, e2, varexp));
         //(res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr}, {eqn},ae, cg_id);
         index = tick();
         index = eqNum; // Use the equation number as unique index
@@ -1873,15 +1929,15 @@ algorithm
         c_name = name; // Util.modelicaStringToCStr(name,true);
         id = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name});
         cr_1 = DAE.CREF_IDENT(id,DAE.ET_REAL(),{});
-        //varexp = DAE.CREF(cr_1,DAE.ET_REAL());
-        //failure(_ = Exp.solve(e1, e2, varexp));
+        varexp = DAE.CREF(cr_1,DAE.ET_REAL());
+        failure(_ = Exp.solve(e1, e2, varexp));
         //(res,cg_id_1,f1) = generateOdeSystem2NonlinearResiduals(false,{cr_1}, {eqn},ae, cg_id);
         index = tick();
         index = eqNum; // Use the equation number as unique index
-        repl = makeResidualReplacements({cr});
+        repl = makeResidualReplacements({cr_1});
         resEqs = createNonlinearResidualEquations({eqn}, ae, repl);
       then
-        SES_NONLINEAR(index, resEqs, {cr});
+        SES_NONLINEAR(index, resEqs, {cr_1});
     /* single equation: algorithm */
     case (dae, DAELow.DAELOW(orderedVars=DAELow.VARIABLES(varArr=vararr),orderedEqs=eqns,algorithms=algs), ass1, ass2, eqNum)
       equation
@@ -2269,9 +2325,10 @@ algorithm
       DAE.Exp rhs_exp_1;
     case ((row, col, DAELow.RESIDUAL_EQUATION(exp=e)), v)
       equation
-        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
-        rhs_exp_1 = Exp.simplify(rhs_exp);
-      then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
+//        rhs_exp = DAELow.getEqnsysRhsExp(e, v);
+//        rhs_exp_1 = Exp.simplify(rhs_exp);
+//      then ((row - 1, col - 1, SES_RESIDUAL(rhs_exp_1)));
+      then ((row - 1, col - 1, SES_RESIDUAL(e)));
   end matchcontinue;
 end jacToSimjac;
 

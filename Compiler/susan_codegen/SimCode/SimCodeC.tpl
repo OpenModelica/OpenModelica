@@ -50,7 +50,8 @@ case SIMCODE(modelInfo = MODELINFO) then
 
 <functionExtraResudials(allEquations)>
 
-<functionDaeOutput(nonStateContEquations, removedEquations)>
+<functionDaeOutput(nonStateContEquations, removedEquations,
+                   algorithmAndEquationAsserts)>
 
 <functionDaeOutput2(nonStateDiscEquations, removedEquations)>
 
@@ -508,10 +509,12 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags)
 >>
 
 functionDaeOutput(list<SimEqSystem> nonStateContEquations,
-                  list<SimEqSystem> removedEquations) ::=
+                  list<SimEqSystem> removedEquations,
+                  list<DAE.Statement> algorithmAndEquationAsserts) ::=
 # varDecls = ""
 # body = (nonStateContEquations of eq: '<equation_(eq, createSimulationContext(false), varDecls)>' "\n")
 # body2 = (removedEquations of eq: '<equation_(eq, createSimulationContext(false), varDecls)>' "\n")
+# stmts = (algorithmAndEquationAsserts : '<algStatement(it, createSimulationContext(false), varDecls)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
@@ -520,10 +523,9 @@ int functionDAE_output()
   <varDecls>
 
   mem_state = get_memory_state();
-
   <body>
+  <stmts>
   <body2>
-
   restore_memory_state(mem_state);
 
   return 0;
@@ -1437,6 +1439,13 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     <preExp>
     copy_<expTypeArray(type_)>_data(&<expPart>, &<cref(componentRef)>);
     >>
+  case STMT_TUPLE_ASSIGN(exp = CALL) then
+    # preExp = ""
+    # retStruct = daeExp(exp, context, preExp, varDecls)
+    <<
+    <preExp>
+    <expExpLst of CREF: '<scalarLhsCref(it, context, preExp, varDecls)> = <retStruct>.targ<i1>;' "\n">
+    >>
   case STMT_IF then
     # preExp = ""
     # condExp = daeExp(exp, context, preExp, varDecls)
@@ -1890,6 +1899,22 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # tvar = tempDecl(arr_tp_str, varDecls)
     # preExp += 'identity_alloc_<arr_tp_str>(<var1>, &<tvar>);<\n>'
     tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="abs"), expLst={s1}) then
+    # tvar = tempDecl(expTypeFromExpModelica(s1), varDecls)
+    # s1Exp = daeExp(s1, context, preExp, varDecls)
+    # preExp += '<tvar> = fabs(<s1Exp>);<\n>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="String"), expLst={s, minlen, leftjust, signdig}) then
+    # tvar = tempDecl("modelica_string", varDecls)
+    # sExp = daeExp(s, context, preExp, varDecls)
+    # minlenExp = daeExp(minlen, context, preExp, varDecls)
+    # leftjustExp = daeExp(leftjust, context, preExp, varDecls)
+    # signdigExp = daeExp(signdig, context, preExp, varDecls)
+    # typeStr = expTypeFromExpModelica(s)
+    # preExp += '<typeStr>_to_modelica_string(&<tvar>, <sExp>, <minlenExp>, <leftjustExp>, <signdigExp>);<\n>'
+    tvar
   // TODO: add more special builtins (Codegen.generateBuiltinFunction)
   // no return calls
   case CALL(tuple_=false, ty=ET_NORETCALL) then
@@ -2080,6 +2105,9 @@ expTypeArrayIf(DAE.ExpType ty) ::=
 
 expTypeFromExpShort(Exp exp) ::=
   expTypeFromExpFlag(exp, 1)
+
+expTypeFromExpModelica(Exp exp) ::=
+  expTypeFromExpFlag(exp, 2)
 
 expTypeFromExpArray(Exp exp) ::=
   expTypeFromExpFlag(exp, 3)

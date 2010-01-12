@@ -115,6 +115,7 @@ package SimCode
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
+      list<DAE.Statement> algorithmAndEquationAsserts;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<HelpVarInfo> helpVarInfo;
@@ -663,6 +664,11 @@ package DAE
       ComponentRef componentRef;
       Exp exp;
     end STMT_ASSIGN_ARR;
+    record STMT_TUPLE_ASSIGN
+      ExpType type_;
+      list<Exp> expExpLst;
+      Exp exp;
+    end STMT_TUPLE_ASSIGN;
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;
