@@ -11,19 +11,24 @@ public class ModelicaBoolean implements ModelicaObject {
   public ModelicaBoolean(Boolean b) {
     this.b = b;
   }
+  @Override
   public String toString() {
     return Boolean.toString(b);
   }
-  
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append(b);
+  }
+
   @Override
   public boolean equals(Object o) {
     try {
       return b == ((ModelicaBoolean)o).b;
     } catch (Throwable t) {
-      return false;      
+      return false;
     }
   }
-  
+
   @Override
   public void setObject(ModelicaObject o) {
     if (o instanceof ModelicaInteger) {

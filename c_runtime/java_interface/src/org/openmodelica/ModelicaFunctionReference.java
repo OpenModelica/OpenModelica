@@ -8,11 +8,17 @@ public class ModelicaFunctionReference implements ModelicaObject {
   public ModelicaFunctionReference(ModelicaObject o) {
     setObject(o);
   }
-  
+
+  @Override
   public String toString() {
     return functionReference;
   }
-  
+
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append(functionReference);
+  }
+
   @Override
   public boolean equals(Object o) {
     try {
@@ -21,7 +27,7 @@ public class ModelicaFunctionReference implements ModelicaObject {
       return false;
     }
   }
-  
+
   @Override
   public void setObject(ModelicaObject o) {
     functionReference = ((ModelicaFunctionReference)o).functionReference;

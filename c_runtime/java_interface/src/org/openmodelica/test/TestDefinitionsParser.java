@@ -75,7 +75,7 @@ public class TestDefinitionsParser {
         "org.openmodelica.OMC",
         new File("../../Compiler/").getAbsoluteFile(),
         new String[]{
-          "Absyn.mo", "ClassInf.mo", "Exp.mo", "Graphviz.mo", "SCode.mo", "Values.mo"
+          "Absyn.mo", "Values.mo"
           },
         true);
   }

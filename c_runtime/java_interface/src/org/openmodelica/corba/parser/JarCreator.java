@@ -8,7 +8,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.Vector;
 import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
 import java.util.jar.Manifest;
 import java.util.zip.CRC32;
@@ -26,7 +25,7 @@ public class JarCreator {
         return new File(originalName + newExtension);
     }
   }
-  
+
   static private List<File> getFileListing(File dir) {
     List<File> res = new Vector<File>();
     File[] dirContent = dir.listFiles();
@@ -41,7 +40,7 @@ public class JarCreator {
     return res;
   }
 
-  
+
   private static void addEntry(JarOutputStream jarOut, File basePath, File source, byte[] buffer) throws IOException {
     if (source == null || !source.exists() || source.isDirectory())
       throw new IOException(source + " does not exist");
@@ -65,7 +64,7 @@ public class JarCreator {
     jarAdd.setSize(source.length());
     jarAdd.setCrc(crc.getValue());
     jarOut.putNextEntry(jarAdd);
-    
+
     /* Write the file contents */
     in = new FileInputStream(source);
     while (true) {
@@ -86,7 +85,7 @@ public class JarCreator {
                    "Call JDK_HOME/bin/java.exe instead of java.exe.";
       throw new Error(message);
     }
-    
+
     for (File sourceFile : sourceFiles) {
       if (javac.run(null, null, null, "-classpath", System.getenv("OPENMODELICAHOME") + "share/java/modelica_java.jar","-sourcepath", basePath.getAbsolutePath(), sourceFile.getAbsolutePath()) != 0)
         throw new RuntimeException("Failed to compile " + sourceFile);
@@ -96,15 +95,15 @@ public class JarCreator {
   public static void compileAndCreateJarArchive(File archiveFile, File basePath, List<File> sourceFiles) throws IOException {
     long t1 = new Date().getTime();
     byte buffer[] = new byte[BUFFER_SIZE];
-    
+
     if (archiveFile == null)
       throw new IOException("Output file is null");
     if (archiveFile == null || archiveFile.isDirectory())
       throw new IOException("Cannot create file at location: " + archiveFile);
-    
+
     compileSources(basePath, sourceFiles);
     archiveFile.delete();
-    
+
     FileOutputStream stream = new FileOutputStream(archiveFile);
     Manifest m = new Manifest();
     m.getMainAttributes().putValue("Manifest-Version", "1.0");
@@ -118,7 +117,7 @@ public class JarCreator {
 
     jarOut.close();
     stream.close();
-    
+
     /*FileInputStream fileInput = new FileInputStream(archiveFile);
     JarInputStream jarInput = new JarInputStream(fileInput, true);
     JarEntry entry;
@@ -127,7 +126,7 @@ public class JarCreator {
     }
     jarInput.close();
     fileInput.close();*/
-    
+
     long t2 = new Date().getTime();
     System.out.println("Created JAR archive at " + archiveFile + " in " + (t2-t1) + " ms");
   }

@@ -55,4 +55,8 @@ public class ConnectException extends CompilerException
 		super(error);
 	}
 
+	public ConnectException(String error, Throwable t)
+	{
+		super(error,t);
+	}
 }

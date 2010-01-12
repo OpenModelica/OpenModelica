@@ -61,6 +61,11 @@ abstract public class CompilerException extends Exception
 		super(message);
 	}
 	
+	public CompilerException(String message,Throwable t)
+	{
+		super(message,t);
+	}
+	
 	/**
 	 * @see Exception#Exception()
 	 */

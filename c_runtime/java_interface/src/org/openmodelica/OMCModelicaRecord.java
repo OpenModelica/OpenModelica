@@ -11,7 +11,7 @@ class OMCModelicaRecord extends ModelicaRecord {
   private static final long serialVersionUID = 6568271462248961532L;
   private int ctor_index;
 
-  public OMCModelicaRecord(int ctor_index, String recordName, Map<String, ModelicaObject> map) {
+  public OMCModelicaRecord(int ctor_index, String recordName, Map<String, ModelicaObject> map) throws ModelicaRecordException {
     super(recordName, map);
     this.ctor_index = ctor_index;
   }
@@ -33,9 +33,8 @@ class OMCModelicaRecord extends ModelicaRecord {
       }
       this.clear();
       this.setRecordName(rec.getRecordName());
-      this.setRecordPath(rec.getRecordPath());
       for (String key : rec.keySet()) {
-        super.put_prot(key, rec.get(key));
+        put(key, rec.get(key));
       }
       this.ctor_index = rec.get_ctor_index();
     }

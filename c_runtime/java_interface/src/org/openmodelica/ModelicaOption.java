@@ -3,10 +3,10 @@ package org.openmodelica;
 public class ModelicaOption<T extends ModelicaObject> implements ModelicaObject {
 
   public T o;
-  
+
   public ModelicaOption() {
   }
-  
+
   @SuppressWarnings("unchecked")
   public ModelicaOption(ModelicaObject o) {
     if (o == null) {
@@ -29,7 +29,7 @@ public class ModelicaOption<T extends ModelicaObject> implements ModelicaObject 
     }
     return false;
   }
-  
+
   @SuppressWarnings("unchecked")
   @Override
   public void setObject(ModelicaObject o) {
@@ -39,10 +39,20 @@ public class ModelicaOption<T extends ModelicaObject> implements ModelicaObject 
     else
       this.o = (T) o2;
   }
-  
+
+  @Override
   public String toString() {
     if (o == null)
       return "NONE()";
-    return "SOME("+o.toString()+")";
+    StringBuffer buf = new StringBuffer();
+    printToBuffer(buf);
+    return buf.toString();
+  }
+
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append("SOME(");
+    o.printToBuffer(buffer);
+    buffer.append(")");
   }
 }

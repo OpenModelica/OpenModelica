@@ -204,7 +204,7 @@ public class TestParser {
     assertEquals(test, res);
   }
   
-  @Test public void simpleUnionType() throws ParseException {
+  @Test public void simpleUnionType() throws ParseException, ModelicaRecordException {
    ABC_UT expected = new abc(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaReal(3));
    String test = "record test.abc a=1, b=2, c=3.0 end test.abc;";
    ABC_UT res = parse(test, ABC_UT.class);
@@ -213,8 +213,9 @@ public class TestParser {
    assertEquals(1, ((abc)res).get_a().i);
   }
   
-  @Test public void nestedUnionType() throws ParseException {
-    ABC_UT expected = new ABC_CONTAINER(new ABC_CONTAINER(new abc(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaReal(3))));
+  @Test public void nestedUnionType() throws ParseException, ModelicaRecordException {
+    ABC_UT ut = new abc(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaReal(3));
+    ABC_UT expected = new ABC_CONTAINER(new ABC_CONTAINER(ut));
     String test = "record test.ABC_CONTAINER a = record test.ABC_CONTAINER a = record test.abc a=1, b=2, c=3.0 end test.abc; end test.ABC_CONTAINER; end test.ABC_CONTAINER;";
     ABC_UT res = parse(test, ABC_UT.class);
     assertEquals(expected.toString(), res.toString());

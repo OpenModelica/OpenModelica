@@ -782,8 +782,8 @@ char* copyJstring(JNIEnv* env, jobject jstr)
 
 void* jobject_to_mmc_record(JNIEnv* env, jobject record)
 {
-  jmethodID midGetKeys,midToArray,midGetIndex;
-  jfieldID fidRecName, fidRecPath;
+  jmethodID midGetKeys,midToArray,midGetIndex,midRecPath;
+  jfieldID fidRecName;
   jclass clsObj;
   jclass clsKeySet;
   jobject keySet, jarrKeys, recordName, recordPath;
@@ -802,9 +802,9 @@ void* jobject_to_mmc_record(JNIEnv* env, jobject record)
   CHECK_FOR_JAVA_EXCEPTION(env);
   recordName = (*env)->GetObjectField(env, record, fidRecName);
   CHECK_FOR_JAVA_EXCEPTION(env);
-  fidRecPath = (*env)->GetFieldID(env, clsObj, "recordPath", "Ljava/lang/String;");
+  midRecPath = (*env)->GetMethodID(env, clsObj, "getRecordPath", "()Ljava/lang/String;");
   CHECK_FOR_JAVA_EXCEPTION(env);
-  recordPath = (*env)->GetObjectField(env, record, fidRecPath);
+  recordPath = (*env)->CallObjectMethod(env, record, midRecPath);
   CHECK_FOR_JAVA_EXCEPTION(env);
   rec_desc->path=copyJstring(env, recordPath);
   rec_desc->name=copyJstring(env, recordName);

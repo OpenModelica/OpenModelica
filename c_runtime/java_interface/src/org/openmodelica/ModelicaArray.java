@@ -12,24 +12,24 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
   public ModelicaArray(ModelicaObject o) {
     setObject(o);
   }
-  
+
   public ModelicaArray(T... objs) {
     for(T obj : objs) {
       add(obj);
     }
   }
-  
+
   public ModelicaArray() {
   }
-  
+
   public ModelicaArray(int i) {
     setSize(i);
   }
-  
+
   public static<T extends ModelicaObject> ModelicaArray<ModelicaObject> createMultiDimArray(T[] flatArr, int firstDim, int... dims) {
     return createMultiDimArray(Arrays.asList(flatArr), firstDim, dims);
   }
-  
+
   public static ModelicaArray<ModelicaObject> createMultiDimArray(List<? extends ModelicaObject> flatArr, int firstDim, int... dims) {
     if (firstDim == 0)
       throw new RuntimeException("Cannot create a multi-dim array with a zero-length dimension");
@@ -46,9 +46,9 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
       int[] dims2 = new int[dims.length-1];
       for (int i=0; i<dims.length-1; i++) {
         dims2[i] = dims[i+1];
-      }      
+      }
       ModelicaArray<ModelicaObject> res = new ModelicaArray<ModelicaObject>(firstDim);
-      
+
       int subLength = acc/firstDim;
       for (int i=0; i<firstDim; i++) {
         List<? extends ModelicaObject> subFlat = flatArr.subList(i*subLength, (i+1)*subLength);
@@ -64,7 +64,7 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
       return res;
     }
   }
-  
+
   private void setDims(int firstDim, int[] dims) {
     this.firstDim = firstDim;
     this.dims = dims;
@@ -76,9 +76,9 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
     ModelicaArray cur = this;
     for (int i=0; i<ixs.length-1; i++)
       cur = (ModelicaArray) cur.get(ixs[i]);
-    cur.set(ixs[ixs.length-1], (T)o);
+    cur.set(ixs[ixs.length-1], o);
   }
-  
+
   @SuppressWarnings("unchecked")
   public T getMulDim(int... ixs) {
     ModelicaArray cur = this;
@@ -86,7 +86,7 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
       cur = (ModelicaArray) cur.get(ixs[i]);
     return (T)cur.get(ixs[ixs.length-1]);
   }
-  
+
   public ModelicaArray(Class<T> c, List<ModelicaObject> objs) throws ModelicaObjectException {
     try {
       for(ModelicaObject obj : objs) {
@@ -96,7 +96,7 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
       throw new ModelicaObjectException("Failed to create Modelica Array...");
     }
   }
-  
+
   @SuppressWarnings("unchecked")
   public static ModelicaArray<? extends ModelicaObject> createModelicaArray(List<ModelicaObject> objs) throws ModelicaObjectException {
     if (objs.size() == 0)
@@ -104,11 +104,11 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
     else
       return new ModelicaArray(objs.get(0).getClass(),objs);
   }
-  
+
   public void unflattenModelicaArray() {
     setObject(createMultiDimArray(this, firstDim, dims));
   }
-  
+
   public void flattenModelicaArray() {
     if (isFlat)
       return;
@@ -127,18 +127,25 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
     res.isFlat = true;
     setObject(res);
   }
-  
+
+  @Override
   public String toString() {
-    String res = "{";
+    StringBuffer buf = new StringBuffer();
+    printToBuffer(buf);
+    return buf.toString();
+  }
+
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append("{");
     for (int i=0; i<this.elementCount; i++) {
       if (i != 0)
-        res += ",";
-      res += this.get(i);
+        buffer.append(",");
+      this.get(i).printToBuffer(buffer);
     }
-    res += "}";
-    return res;
+    buffer.append("}");
   }
-  
+
   @SuppressWarnings("unchecked")
   @Override
   public void setObject(ModelicaObject o) {

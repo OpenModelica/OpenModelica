@@ -5,11 +5,10 @@ import org.openmodelica.ModelicaAny;
 import org.openmodelica.ModelicaObject;
 
 public class OMCStringParser {
-  public static ModelicaObject parse(String s) throws ParseException {return parse(s,ModelicaObject.class);}
-  public static <T extends ModelicaObject> T parse(String s, Class<T> c) throws ParseException {
+  public static ModelicaObject parse(String s) throws ParseException {
     ANTLRStringStream input = new ANTLRStringStream(s);
     OMCorbaLexer lexer = new OMCorbaLexer(input);
-    CommonTokenStream tokens = new CommonTokenStream(lexer);
+    TokenStream tokens = new CommonTokenStream(lexer); /* TODO: Change to unbuffered */
     OMCorbaParser parser = new OMCorbaParser(tokens);
     try {
       parser.prog();
@@ -20,8 +19,12 @@ public class OMCStringParser {
     }
     if (parser.getNumberOfSyntaxErrors() != 0)
       throw new ParseException("OMCStringParser: "+parser.getNumberOfSyntaxErrors()+" syntax errors, failed to parse:\n" + s);
-    
-    ModelicaObject o = parser.memory;
+    System.gc();
+    return parser.memory;
+  }
+
+  public static <T extends ModelicaObject> T parse(String s, Class<T> c) throws ParseException {
+    ModelicaObject o = parse(s);
     try {
       return ModelicaAny.cast(o, c);
     } catch (Exception ex) {

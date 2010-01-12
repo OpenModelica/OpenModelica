@@ -5,18 +5,18 @@ public class ModelicaString implements ModelicaObject {
   public ModelicaString(ModelicaObject o) {
     setObject(o);
   }
-  
+
   public ModelicaString(String s) {
     this.s = s;
   }
-  
+
   public ModelicaString(String s, boolean escapeString) {
     if (escapeString)
       this.s = unescapeOMC(s);
     else
       this.s = s;
   }
-  
+
   public static String escapeOMC(String s) {
     if (s == null)
       return "";
@@ -25,7 +25,7 @@ public class ModelicaString implements ModelicaObject {
     res = res.replace("\"", "\\\"");
     return res;
   }
-  
+
   public static String unescapeOMC(String s) {
     if (s == null)
       return "";
@@ -49,15 +49,16 @@ public class ModelicaString implements ModelicaObject {
     }
     return res.toString();
   }
-  
+
+  @Override
   public String toString() {
     return "\"" + escapeOMC(s) + "\"";
   }
-  
+
   public String toEscapedString() {
     return escapeOMC(s);
   }
-  
+
   @Override
   public boolean equals(Object o) {
     try {
@@ -66,12 +67,17 @@ public class ModelicaString implements ModelicaObject {
       return false;
     }
   }
-  
+
   @Override
   public void setObject(ModelicaObject o) {
     if (o == null)
       s = "";
     else
       s = ((ModelicaString) o).s;
+  }
+
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append(toString());
   }
 }

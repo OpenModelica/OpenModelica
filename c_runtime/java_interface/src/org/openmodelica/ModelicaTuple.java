@@ -25,14 +25,9 @@ public class ModelicaTuple extends ModelicaBaseArray<ModelicaObject> implements 
   }
   
   public String toString() {
-    String res = "(";
-    for (int i=0; i<this.elementCount; i++) {
-      if (i != 0)
-        res += ",";
-      res += this.get(i);
-    }
-    res += ")";
-    return res;
+    StringBuffer buf = new StringBuffer();
+    printToBuffer(buf);
+    return buf.toString();
   }
 
   @Override
@@ -40,5 +35,16 @@ public class ModelicaTuple extends ModelicaBaseArray<ModelicaObject> implements 
     ModelicaTuple arr = (ModelicaTuple) o;
     this.clear();
     this.addAll(arr);
+  }
+
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append("(");
+    for (int i=0; i<this.elementCount; i++) {
+      if (i != 0)
+        buffer.append(",");
+      get(i).printToBuffer(buffer);
+    }
+    buffer.append(")");
   }
 }

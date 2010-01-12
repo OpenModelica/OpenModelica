@@ -11,23 +11,32 @@ import org.openmodelica.*;
 public class TestRecord {
   
   ModelicaRecord simpleRecord;
+  ModelicaRecord simpleRecordInt;
+  ModelicaRecord simpleRecordBool;
+  ModelicaRecord simpleRecordString;
+  ModelicaRecord simpleRecordRec;
   @Before
-  public void init() {
-    simpleRecord = new ModelicaRecord("simple", new String[]{"simple"});
+  public void init() throws ModelicaRecordException {
+    simpleRecord = new ModelicaRecord("simple", new String[]{"simple"}, new ModelicaReal(-1));
+    simpleRecordInt = new ModelicaRecord("simpleInt", new String[]{"simple"}, new ModelicaInteger(-1));
+    simpleRecordBool = new ModelicaRecord("simpleRecordBool", new String[]{"simple"}, new ModelicaBoolean(false));
+    simpleRecordString = new ModelicaRecord("simpleRecordString", new String[]{"simple"}, new ModelicaString(""));
+    simpleRecordRec = new ModelicaRecord("simpleRecordRec", new String[]{"simple"}, new ModelicaRecord("simple", new String[]{"simple"}, new ModelicaReal(-3)));
   }
 
   @Test
-  public void testModelicaRecordConstructor() {
+  public void testModelicaRecordConstructor() throws ModelicaRecordException {
     // Unsorted array that also won't keep the same order when hashed
     // The test checks that the order is the same - this is important because
     // Modelica requires that it is!
     String[] expectedResult = new String[]{"a","b","123","d","c","f","e","g","h","i","j"};
-    ModelicaRecord r = new ModelicaRecord("abc", expectedResult);
+    ModelicaObject[] expectedResultArgs = new ModelicaObject[]{new ModelicaInteger(-1),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid(),new ModelicaVoid()};
+    ModelicaRecord r = new ModelicaRecord("testSorting", expectedResult, expectedResultArgs);
     Object[] keys = r.keySet().toArray();
     assertEquals(keys.length, expectedResult.length);
     for (int i=0; i<expectedResult.length; i++)
       assertEquals(keys[i],expectedResult[i]);
-    assertEquals("abc", r.getRecordName());
+    assertEquals("testSorting", r.getRecordName());
     r.put("a", new ModelicaInteger(1));
     assertEquals(1, r.get("a", ModelicaInteger.class).i);
     // r.toString(); - How to handle null members?
@@ -35,7 +44,7 @@ public class TestRecord {
   
   @Test
   public void testSetObject() throws ModelicaRecordException {
-    ModelicaRecord r1 = new ModelicaRecord("abc", new String[] {"a","b","c"});
+    ModelicaRecord r1 = new ModelicaRecord("abc", new String[] {"a","b","c"}, new ModelicaInteger(-1), new ModelicaInteger(-1), new ModelicaInteger(-1));
     ModelicaRecord r2 = new ModelicaRecord("abc", new String[] {"a","b","c"}, new ModelicaInteger(1), new ModelicaInteger(2), new ModelicaInteger(3));
     ModelicaRecord r3 = new ModelicaRecord("abc", new String[] {"a","b","c"}, new ModelicaInteger(4), new ModelicaInteger(5), new ModelicaInteger(6));
     ModelicaRecord r4 = new ModelicaRecord("abc", new String[] {"a","b","c"}, new ModelicaInteger(4), new ModelicaInteger(5), new ModelicaInteger(6));
@@ -45,10 +54,14 @@ public class TestRecord {
   }
 
   @Test
-  public void testModelicaRecordConstructorPutGetInt() {
+  public void testModelicaRecordConstructorPutGetInt() throws ModelicaRecordException {
     String[] keys = new String[]{"a","b","123","d","c","f","e","g","h","i","j"};
+    ModelicaObject[] vals = new ModelicaObject[keys.length];
+    for (int i=0; i<keys.length; i++) {
+      vals[i] = new ModelicaInteger(-1);
+    }
     int[] expectedResult = new int[]{1,2,3,5,4,7,13,-25,8,9,0};
-    ModelicaRecord r = new ModelicaRecord("abc", keys);
+    ModelicaRecord r = new ModelicaRecord("abcTestPutInt", keys, vals);
     
     for (int i=0; i<keys.length; i++) {
       r.put(keys[i], new ModelicaInteger(expectedResult[i]));
@@ -59,7 +72,7 @@ public class TestRecord {
   }
 
   @Test
-  public void testModelicaRecordMapConstructor() {
+  public void testModelicaRecordMapConstructor() throws ModelicaRecordException {
     Map<String,ModelicaObject> m = new TreeMap<String,ModelicaObject>();
     m.put("a", new ModelicaInteger(1));
     m.put("c", new ModelicaInteger(3));
@@ -84,13 +97,13 @@ public class TestRecord {
     for (int i=0; i<expectedResultValues.length; i++)
       values[i] = new ModelicaInteger(expectedResultValues[i]);
     
-    ModelicaRecord r = new ModelicaRecord("abc", expectedResult, values);
+    ModelicaRecord r = new ModelicaRecord("abcTestValCon", expectedResult, values);
     Object[] keys = r.keySet().toArray();
     assertEquals(keys.length, expectedResult.length);
     for (int i=0; i<expectedResult.length; i++)
       assertEquals(keys[i],expectedResult[i]);
-    assertEquals("abc", r.getRecordName());
-    assertEquals(r.toString(), "abc(a=-123,b=-145,123=123,d=145,c=17,f=42,e=1,g=0,h=0,i=1,j=124144164)");
+    assertEquals("abcTestValCon", r.getRecordName());
+    assertEquals(r.toString(), "abcTestValCon(a=-123,b=-145,123=123,d=145,c=17,f=42,e=1,g=0,h=0,i=1,j=124144164)");
   }
 
   @Test(expected=ModelicaRecordException.class)
@@ -106,8 +119,8 @@ public class TestRecord {
 
   @Test
   public void testGetInt() {
-    simpleRecord.put("simple", new ModelicaInteger(32));
-    assertEquals(32, simpleRecord.get("simple", ModelicaInteger.class).i);
+    simpleRecordInt.put("simple", new ModelicaInteger(32));
+    assertEquals(32, simpleRecordInt.get("simple", ModelicaInteger.class).i);
   }
 
   @Test
@@ -118,28 +131,22 @@ public class TestRecord {
 
   @Test
   public void testGetBoolean() {
-    simpleRecord.put("simple", new ModelicaBoolean(false));
-    assertEquals(false, simpleRecord.get("simple", ModelicaBoolean.class).b);
-    simpleRecord.put("simple", new ModelicaBoolean(true));
-    assertEquals(true, simpleRecord.get("simple", ModelicaBoolean.class).b);
+    simpleRecordBool.put("simple", new ModelicaBoolean(false));
+    assertEquals(false, simpleRecordBool.get("simple", ModelicaBoolean.class).b);
+    simpleRecordBool.put("simple", new ModelicaBoolean(true));
+    assertEquals(true, simpleRecordBool.get("simple", ModelicaBoolean.class).b);
   }
 
   @Test
   public void testGetString() {
-    simpleRecord.put("simple", new ModelicaString("abc\n"));
-    assertEquals("abc\n", simpleRecord.get("simple", ModelicaString.class).s);
+    simpleRecordString.put("simple", new ModelicaString("abc\n"));
+    assertEquals("abc\n", simpleRecordString.get("simple", ModelicaString.class).s);
   }
 
   @Test
   public void testGetRecord() {
-    simpleRecord.put("simple", simpleRecord);
-    assertEquals(simpleRecord, simpleRecord.get("simple", ModelicaRecord.class));
-  }
-
-  @Test(expected=StackOverflowError.class)
-  public void testGetRecordCyclic() {
-    simpleRecord.put("simple", simpleRecord);
-    simpleRecord.toString();
+    simpleRecordRec.put("simple", simpleRecord);
+    assertEquals(simpleRecord, simpleRecordRec.get("simple", ModelicaRecord.class));
   }
 
 }

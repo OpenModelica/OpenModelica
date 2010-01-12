@@ -7,5 +7,9 @@ public interface ModelicaObject {
    * OMC accepts same syntax and auto-converts them. So we can use the same structure if we want...
    */
   public void setObject(ModelicaObject o);
+  /**
+   * Same as toString(), but more efficient
+   */
+  public void printToBuffer(StringBuffer buffer);
   //public <castT extends ModelicaObject> castT cast(Class<castT> c);
 }

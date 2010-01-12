@@ -18,4 +18,9 @@ public class ModelicaVoid implements ModelicaObject {
   @Override
   public void setObject(ModelicaObject o) {
   }
+  
+  @Override
+  public void printToBuffer(StringBuffer buffer) {
+    buffer.append(toString());
+  }
 }

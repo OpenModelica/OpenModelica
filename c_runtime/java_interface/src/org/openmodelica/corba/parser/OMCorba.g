@@ -2,7 +2,6 @@
 grammar OMCorba;
 
 options {
-output=none;
 k=1;
 }
 
@@ -10,8 +9,7 @@ k=1;
 import java.util.LinkedHashMap;
 import java.util.Vector;
 import org.openmodelica.*;}
-@lexer::header {package org.openmodelica.corba.parser;
-import org.openmodelica.*;}
+@lexer::header {package org.openmodelica.corba.parser;}
 
 @members {
 protected ModelicaObject memory;
@@ -35,13 +33,13 @@ object: INT {memory = new ModelicaInteger($INT.int);}
 record : 'record' {LinkedHashMap<String,ModelicaObject> map = new LinkedHashMap<String,ModelicaObject>();}
          id1=ident
          (field {map.put(key, memory);} (',' field {map.put(key, memory);})*)?
-         'end' id2=ident {if (!$id1.text.equals($id2.text)) throw new RecognitionException();} ';'
-         {memory = new ModelicaRecord($id1.text, map);};
+         'end' id2=ident {if (!$id1.text.equals($id2.text)) throw new RecognitionException(input);} ';'
+         {try {memory = new ModelicaRecord($id1.text, map);} catch (ModelicaRecordException ex) {throw new RecognitionException(input);}};
 
 array : '{' {Vector<ModelicaObject> vector = new Vector<ModelicaObject>();}
          (object {vector.add(memory);}
          (',' object {vector.add(memory);})*)?
-        '}' {try{memory = ModelicaArray.createModelicaArray(vector);} catch (ModelicaObjectException ex) {throw new RecognitionException();}};
+        '}' {try{memory = ModelicaArray.createModelicaArray(vector);} catch (ModelicaObjectException ex) {throw new RecognitionException(input);}};
 
 tuple : '(' {ModelicaTuple tuple = new ModelicaTuple();}
         (object {tuple.add(memory);}

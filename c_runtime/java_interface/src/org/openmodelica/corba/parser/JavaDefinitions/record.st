@@ -4,15 +4,17 @@ $header()$
 @SuppressWarnings({ "unchecked", "serial" })
 public class $record.name$ $record.generics$ extends ModelicaRecord $record.uniontype:{implements $it$}$ {
 
-  public $record.generics$ $record.name$($record.fields:{$it.TypeName$ __$it.varName$}; separator = ","$) {
-    super(new ModelicaRecord("$myFQName(var = record.name)$", new String[]{$record.fields:{"$it.varName$"};separator=","$}));
-    $record.fields:{put("$it.varName$", __$it.varName$);}; separator = "\n"$
-  }
-  
-  public $record.name$(ModelicaObject o) {
+  public $record.generics$ $record.name$($record.fields:{$it.TypeName$ __$it.varName$}; separator = ","$) throws ModelicaRecordException {
     super("$myFQName(var = record.name)$",
           new String[]{$record.fields:{"$it.varName$"};separator=","$},
-          new java.lang.Class[] {$record.fields:{$it.TypeClass$};separator=","$}, (ModelicaRecord) o);
+          new java.lang.Class[] {$record.fields:{$it.TypeClass$};separator=","$}$if(record.fields)$, $endif$
+          $record.fields:{__$it.varName$}; separator = ","$);
+  }
+  
+  public $record.name$(ModelicaObject o) throws ModelicaRecordException {
+    super(o);
+    if (!getRecordName().equals("$myFQName(var = record.name)$"))
+      throw new ModelicaRecordException("Record name mismatch");
   }
   
   $record.fields:{public $record.generics$ $it.TypeName$ get_$it.varName$() {return get("$it.varName$", $it.TypeClass$);}
