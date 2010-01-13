@@ -73,6 +73,11 @@ package SimCode
     output Context context;
   end createOtherContext;
 
+  function valueblockVars
+    input DAE.Exp valueblock;
+    output Variables vars;
+  end valueblockVars;
+
   type Path = Absyn.Path;
   type Ident = String;
   type Type = DAE.ExpType;
@@ -516,7 +521,7 @@ package DAE
     record VALUEBLOCK
       ExpType ty;
       list<Element> localDecls;
-      Element body;
+      list<Statement> body;
       Exp result;	
     end VALUEBLOCK;  
     record LIST

@@ -123,6 +123,23 @@ algorithm
   len := listLength(lst);
 end listLengthCref;
 
+public
+function valueblockVars
+  input DAE.Exp valueblock;
+  output Variables vars;
+algorithm
+  vars :=
+  matchcontinue (valueblock)
+    local
+      list<DAE.Element> ld;
+    case (DAE.VALUEBLOCK(localDecls=ld))
+      equation
+        ld = Util.listFilter(ld, isVarQ);
+        vars = Util.listMap(ld, daeInOutSimVar);
+      then vars;
+  end matchcontinue;
+end valueblockVars;
+
 // Assume that cref is CREF_IDENT
 public
 function crefSubIsScalar

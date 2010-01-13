@@ -1415,7 +1415,7 @@ algStatement(DAE.Statement, Context context, Text varDecls) ::=
     # expPart = daeExp(e, context, preExp, varDecls)
     <<
     <preExp>
-    <expPart>
+    /*<expPart>*/
     >>
   case STMT_ASSIGN(exp1 = CREF) then
     # preExp = ""
@@ -1659,7 +1659,7 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case CODE       then "CODE_NOT_IMPLEMENTED"
   case REDUCTION  then "REDUCTION_NOT_IMPLEMENTED"
   case END        then "END_NOT_IMPLEMENTED"
-  case VALUEBLOCK then "VALUEBLOCK_NOT_IMPLEMENTED"
+  case VALUEBLOCK then daeExpValueblock(it, context, preExp, varDecls)
   case LIST       then "LIST_NOT_IMPLEMENTED"
   case CONS       then "CONS_NOT_IMPLEMENTED"
   // META_TUPLE
@@ -1878,6 +1878,13 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # preExp += '<retVar> = <cast>pre(<cref(arg.componentRef)>);<\n>'
     '<retVar>'
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="max"), expLst={array}) then
+    # expVar = daeExp(array, context, preExp, varDecls)
+    # arr_tp_str = '<expTypeFromExpArray(array)>'
+    # tvar = tempDecl(expTypeFromExpModelica(array), varDecls)
+    # preExp += '<tvar> = max_<arr_tp_str>(&<expVar>);<\n>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="promote"), expLst={A, n}) then
     # var1 = daeExp(A, context, preExp, varDecls)
     # var2 = daeExp(n, context, preExp, varDecls)
@@ -2050,6 +2057,28 @@ case SIZE(exp=CREF, sz=SOME(dim)) then
   # preExp += '<resVar> = size_of_dimension_<typeStr>(<expPart>, <dimPart>);<\n>'
   resVar
 case _ then "size(X) not implemented"
+
+daeExpValueblock(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case VALUEBLOCK then
+  # preExpInner = ""
+  # preExpRes = ""
+  # varDeclsInner = ""
+  # foo = (valueblockVars(it): varInit(it, "", 0, varDeclsInner, preExpInner) "\n")
+  # resType = expTypeModelica(ty)
+  # res = tempDecl(expTypeModelica(ty), preExp)
+  # stmts = (body: '<algStatement(it, context, varDeclsInner)>' "\n")
+  # expPart = daeExp(result, context, preExpRes, varDeclsInner)
+  # preExp +=
+  <<
+  {
+    <varDeclsInner>
+    <preExpInner>
+    <stmts>
+    <preExpRes>
+    <res> = <expPart>;
+  }
+  >>
+  res
 
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
