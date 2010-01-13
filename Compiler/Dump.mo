@@ -5138,13 +5138,13 @@ algorithm
       list<Absyn.Subscript> subscripts;
     case Absyn.CREF_QUAL(name = s, subScripts = subscripts, componentRef = p)
       equation
-        Print.printBuf("record Absyn.QUALIFIED name = \"");
+        Print.printBuf("record Absyn.CREF_QUAL name = \"");
         Print.printBuf(s);
         Print.printBuf("\", subScripts = ");
         printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",");
         Print.printBuf(", componentRef = ");
         printComponentRefAsCorbaString(p);
-        Print.printBuf(" end Absyn.QUALIFIED;");        
+        Print.printBuf(" end Absyn.CREF_QUAL;");        
       then ();
     case Absyn.CREF_IDENT(name = s, subscripts = subscripts)
       equation
@@ -6145,9 +6145,9 @@ algorithm
       then ();
     case Absyn.SUBSCRIPT(subScript)
       equation
-        Print.printBuf("record Absyn.SUB subScript = ");
+        Print.printBuf("record Absyn.SUBSCRIPT subScript = ");
         printExpAsCorbaString(subScript);
-        Print.printBuf(" end Absyn.SUB;");
+        Print.printBuf(" end Absyn.SUBSCRIPT;");
       then ();
   end matchcontinue;
 end printSubscriptAsCorbaString;
@@ -6317,7 +6317,7 @@ algorithm
         Print.printBuf("record Absyn.FOR_ITER_FARG exp = ");
         printExpAsCorbaString(exp);
         Print.printBuf(", iterators = ");
-        printList(iterators, printForIteratorAsCorbaString, ",");
+        printListAsCorbaString(iterators, printForIteratorAsCorbaString, ",");
         Print.printBuf(" end Absyn.FOR_ITER_FARG;");  
       then ();
   end matchcontinue;
