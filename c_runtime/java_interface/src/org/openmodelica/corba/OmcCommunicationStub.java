@@ -55,9 +55,10 @@ public class OmcCommunicationStub extends org.omg.CORBA.portable.ObjectImpl impl
   // Type-specific CORBA::Object operations
   private static String[] __ids = {"IDL:OmcCommunication:1.0"};
 
+  @Override
   public String[] _ids ()
   {
-    return (String[])__ids.clone ();
+    return __ids.clone ();
   }
 
   private void readObject (java.io.ObjectInputStream s) throws java.io.IOException

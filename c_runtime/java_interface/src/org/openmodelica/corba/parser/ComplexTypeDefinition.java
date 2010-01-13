@@ -1,16 +1,18 @@
 package org.openmodelica.corba.parser;
 
+import java.util.Vector;
+
 public class ComplexTypeDefinition {
   public enum ComplexType {ARRAY,DEFINED_TYPE,TYPE_REFERENCE,BUILT_IN, LIST_TYPE, OPTION_TYPE, TUPLE_TYPE, GENERIC_TYPE, FUNCTION_REFERENCE;}
-  
+
   private ComplexType t;
   private String typeName;
-  private ComplexTypeDefinition complexType;
+  private Vector<ComplexTypeDefinition> complexTypes = new Vector<ComplexTypeDefinition>();
   private int dim = 0;
-  
+
   public ComplexTypeDefinition(ComplexType t) {
     this.t = t;
-    
+
     switch (t) {
     case LIST_TYPE:
       dim = 1;
@@ -23,7 +25,7 @@ public class ComplexTypeDefinition {
       throw new RuntimeException("Constructor wants more arguments for type " + t);
     }
   }
-  
+
   public ComplexTypeDefinition(ComplexType t, String s) {
     this.t = t;
     switch (t) {
@@ -37,19 +39,19 @@ public class ComplexTypeDefinition {
       throw new RuntimeException("Constructor wants other arguments for type " + t);
     }
   }
-  
+
   public ComplexTypeDefinition(ComplexType t, ComplexTypeDefinition def, int i) {
     this.t = t;
     switch (t) {
     case ARRAY:
-      complexType = def;
+      complexTypes.add(def);
       dim = i;
       break;
     default:
       throw new RuntimeException("Constructor wants more arguments for type " + t);
     }
   }
-  
+
   public static String fixTypePath(String typeName, SymbolTable st, String pack) {
     String curPack = pack;
     while (true) {
@@ -67,7 +69,7 @@ public class ComplexTypeDefinition {
       }
     }
   }
-  
+
   public void fixTypePath(SymbolTable st, String curPackage, String basePackage) {
     switch (t) {
     case DEFINED_TYPE:
@@ -87,7 +89,7 @@ public class ComplexTypeDefinition {
         default:
           t = vdef.typeDef.t;
           typeName = vdef.typeDef.typeName;
-          complexType = vdef.typeDef.complexType;
+          complexTypes = vdef.typeDef.complexTypes;
           dim = vdef.typeDef.dim;
         }
       } else {
@@ -98,31 +100,33 @@ public class ComplexTypeDefinition {
     case LIST_TYPE:
     case OPTION_TYPE:
     case ARRAY:
-      complexType.fixTypePath(st, curPackage, basePackage);
+    case TUPLE_TYPE:
+      for (ComplexTypeDefinition complexType : complexTypes)
+        complexType.fixTypePath(st, curPackage, basePackage);
       break;
     case FUNCTION_REFERENCE:
-    case TUPLE_TYPE:
     case BUILT_IN:
     case GENERIC_TYPE:
     case TYPE_REFERENCE:
         break;
     }
   }
-  
+
   public void add(ComplexTypeDefinition def) {
     switch (t) {
+    case TUPLE_TYPE:
     case OPTION_TYPE:
     case LIST_TYPE:
-      complexType = def;
+      complexTypes.add(def);
       break;
     default:
       throw new RuntimeException("Can't add element for type " + t);
     }
   }
-  
+
   public String getTypeName() {
     String res = "";
-    
+
     switch (t) {
     case BUILT_IN:
     case GENERIC_TYPE:
@@ -132,7 +136,7 @@ public class ComplexTypeDefinition {
     case ARRAY:
       for (int i=0; i<dim; i++)
         res += "ModelicaArray<";
-      res += complexType.getTypeName();
+      res += complexTypes.get(0).getTypeName();
       for (int i=0; i<dim; i++)
         res += ">";
       return res;
@@ -141,7 +145,7 @@ public class ComplexTypeDefinition {
     case TUPLE_TYPE:
       return "ModelicaTuple";
     case OPTION_TYPE:
-      return "ModelicaOption<" + complexType.getTypeName() + ">";
+      return "ModelicaOption<" + complexTypes.get(0).getTypeName() + ">";
     case TYPE_REFERENCE:
     default:
       throw new RuntimeException("Developer forgot to add case here...");
@@ -169,11 +173,39 @@ public class ComplexTypeDefinition {
     }
   }
 
+  public String getTypeSpec() {
+    switch (t) {
+    case GENERIC_TYPE:
+      return "__outClass";
+    case BUILT_IN:
+    case DEFINED_TYPE:
+      return "new org.openmodelica.SimpleTypeSpec("+typeName + ".class)";
+    case FUNCTION_REFERENCE:
+      return "new org.openmodelica.SimpleTypeSpec(ModelicaFunctionReference.class)";
+    case TUPLE_TYPE:
+      StringBuilder b = new StringBuilder();
+      b.append("new org.openmodelica.ComplexTypeSpec(ModelicaTuple.class,new org.openmodelica.TypeSpec[]{");
+      for (ComplexTypeDefinition complexType : complexTypes) {
+        b.append(complexType.getTypeSpec());
+        b.append(",");
+      }
+      b.append("})");
+      return b.toString();
+    case OPTION_TYPE:
+      return "new org.openmodelica.ComplexTypeSpec(ModelicaOption.class,new org.openmodelica.TypeSpec[]{"+complexTypes.get(0).getTypeSpec()+"})";
+    case LIST_TYPE:
+    case ARRAY:
+      return "new org.openmodelica.ComplexTypeSpec(ModelicaArray.class,new org.openmodelica.TypeSpec[]{"+complexTypes.get(0).getTypeSpec()+"})";
+    default:
+      throw new RuntimeException("Developer forgot to add case here...");
+    }
+  }
+
   public String getGenericReference() {
     if (t == ComplexType.GENERIC_TYPE)
       return typeName;
-    if (complexType != null)
-      return complexType.getGenericReference();
+    if (complexTypes.size() != 0)
+      return complexTypes.get(0).getGenericReference();
     return null;
   }
 

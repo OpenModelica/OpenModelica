@@ -19,7 +19,7 @@ public class abc extends ModelicaRecord implements ABC_UT {
   }
 
   public abc(ModelicaObject o) throws ModelicaRecordException {
-    super((ModelicaRecord) o);
+    super(o);
     if (!this.getRecordName().equals("test.abc"))
       throw new ModelicaRecordException("Record name mismatch");
   }

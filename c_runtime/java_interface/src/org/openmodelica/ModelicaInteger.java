@@ -1,5 +1,10 @@
 package org.openmodelica;
 
+import java.io.IOException;
+import java.io.Reader;
+
+import org.openmodelica.corba.parser.ParseException;
+
 public class ModelicaInteger implements ModelicaObject {
   public int i;
   public ModelicaInteger(ModelicaObject o) {
@@ -34,5 +39,12 @@ public class ModelicaInteger implements ModelicaObject {
   @Override
   public void setObject(ModelicaObject o) {
     i = ((ModelicaInteger) o).i;
+  }
+
+  public static ModelicaInteger parse(Reader r) throws ParseException, IOException {
+    StringBuilder b = new StringBuilder();
+    if (ModelicaAny.parseIntOrReal(r, b) == false)
+      return new ModelicaInteger(Integer.parseInt(b.toString()));
+    throw new ParseException("Expected Integer");
   }
 }

@@ -34,24 +34,24 @@ public class DefinitionsCreator {
     return f;
   }
 
-  private static File tempBaseDir = new File(System.getProperty("java.io.tmpdir")+"/modelica.java.definitions");  
+  private static File tempBaseDir = new File(System.getProperty("java.io.tmpdir")+"/modelica.java.definitions");
 
   public static Vector<File> parseString(String s, String basepackage) throws Exception {
     ANTLRStringStream input = new ANTLRStringStream(s);
     OMCorbaDefinitionsLexer lexer = new OMCorbaDefinitionsLexer(input);
     CommonTokenStream tokens = new CommonTokenStream(lexer);
     OMCorbaDefinitionsParser parser = new OMCorbaDefinitionsParser(tokens);
-    
+
     File flog = new File("DefinitionsCreator.log");
     FileWriter fw = new FileWriter(flog, false);
     fw.write(s);
     fw.close();
-    
+
     long t1 = new Date().getTime();
     parser.definitions();
     long t2 = new Date().getTime();
     System.out.println("Parsed input in " + (t2-t1) + " ms");
-    
+
     if (0 != parser.getNumberOfSyntaxErrors()) {
       String msg = String.format("OMCorbaDefinitions.g found syntax errors in input. The input has been logged to %s", flog.getAbsolutePath());
       throw new Exception(msg);
@@ -60,14 +60,14 @@ public class DefinitionsCreator {
     String[] templates = new String[] {
         "function", "header", "myFQName", "record", "uniontype"
     };
-    
+
     String base = "org/openmodelica/corba/parser/JavaDefinitions/";
     StringTemplateGroup group = new StringTemplateGroup("corbadefs");
-    
+
     for (String template : templates) {
       group.defineTemplate(template, group.getInstanceOf(base+template).getTemplate());
     }
-    
+
     Vector<File> sourceFiles = new Vector<File>();
 
     deleteDir(tempBaseDir);
@@ -79,7 +79,7 @@ public class DefinitionsCreator {
     for (PackageDefinition pack : parser.defs) {
       long t4 = new Date().getTime();
       pack.fixTypePath(parser.st, basepackage);
-      
+
       for (FunctionDefinition fun : pack.functions.values()) {
         st = group.getInstanceOf(base+"function");
         st.setAttribute("basepackage", basepackage);
@@ -87,7 +87,7 @@ public class DefinitionsCreator {
         st.setAttribute("function", fun);
         sourceFiles.add(writeSTResult(st, tempBaseDir, basepackage, pack.name, fun.name));
       }
-      
+
       for (RecordDefinition rec : pack.records.values()) {
         st = group.getInstanceOf("record");
         st.setAttribute("basepackage", basepackage);
@@ -103,7 +103,7 @@ public class DefinitionsCreator {
         st.setAttribute("uniontype", uniontype);
         sourceFiles.add(writeSTResult(st, tempBaseDir, basepackage, pack.name, uniontype));
       }
-      
+
       long t5 = new Date().getTime();
       System.out.println("Finished creating Java sources for package " + pack.name + " in " + (t5-t4) + " ms");
     }
@@ -125,10 +125,10 @@ public class DefinitionsCreator {
     if (!modelicaSourceDirectory.isDirectory())
       throw new Exception(modelicaSourceDirectory + " is not a directory");
     deleteDir(tempBaseDir);
-    
+
     long t1 = new Date().getTime();
     SmartProxy proxy = new SmartProxy("modelica.java.definitions", "MetaModelica", true, true);
-    
+
     try {
       System.out.println(proxy.sendModelicaExpression(String.format("cd(\"%s\")", ModelicaString.escapeOMC(modelicaSourceDirectory.getAbsolutePath()))));
 
@@ -145,7 +145,7 @@ public class DefinitionsCreator {
       s = OMCStringParser.parse(s, ModelicaString.class).s;
       long t2_1 = new Date().getTime();
       System.out.println("Parsed the OMC String to ModelicaString " + (t2_1-t2) + " ms");
-      
+
       Vector<File> sourceFiles = parseString(s, basePackage);
       JarCreator.compileAndCreateJarArchive(archiveFile, tempBaseDir, sourceFiles);
       long t3 = new Date().getTime();
@@ -154,12 +154,12 @@ public class DefinitionsCreator {
       proxy.stopServer();
       throw ex;
     }
-    deleteDir(tempBaseDir);    
+    deleteDir(tempBaseDir);
   }
-  
+
   public static String toolUsage =
     "Usage: org.openmodelica.corba.parser.DefinitionsCreator outfile.jar base.java.package.name source_directory Model1.mo [Model2.mo ...]";
-  
+
   public static boolean isJavaIdentifier(String s) {
     if (s.length() == 0 || !Character.isJavaIdentifierStart(s.charAt(0))) {
         return false;
@@ -171,7 +171,7 @@ public class DefinitionsCreator {
     }
     return true;
   }
-  
+
   public static boolean isJavaPackageName(String s) {
     String[] components = s.split("\\.");
     int len = components.length;
@@ -187,21 +187,21 @@ public class DefinitionsCreator {
     return true;
   }
 
-  
+
   public static void main(String... args) throws Exception {
     PrintStream out = System.out;
-    
+
     ByteArrayOutputStream baos = new ByteArrayOutputStream();
     System.setOut(new PrintStream(baos, false));
-    
+
     try {
-      
+
       List<String> argsLst = Arrays.asList(args);
-      
+
       if (argsLst.size() < 4) {
         throw new Exception("Too few arguments");
       }
-      
+
       if (!argsLst.get(0).endsWith(".jar")) {
         throw new Exception("Is not a .jar file: " + argsLst.get(0));
       }
@@ -209,26 +209,26 @@ public class DefinitionsCreator {
       if (!jarFile.getParentFile().isDirectory()) {
         throw new Exception("Directory does not exist: " + jarFile.getParent());
       }
-      
+
       if (!isJavaPackageName(argsLst.get(1))) {
         throw new Exception("Is not a valid Java package name: " + argsLst.get(1));
       }
-      
+
       File sourceDir = new File(argsLst.get(2)).getAbsoluteFile();
       if (!sourceDir.isDirectory()) {
         throw new Exception("Source directory does not exist: " + sourceDir);
       }
-      
+
       List<String> sourcesLst = argsLst.subList(3, argsLst.size());
       String[] sources = new String[sourcesLst.size()];
-      
+
       for (int i=0; i<sources.length; i++) {
         String s = sourcesLst.get(i);
         if (!s.endsWith(".mo"))
           throw new Exception("Is not a .mo file: " + s);
         sources[i] = s;
       }
-      
+
       createDefinitions(jarFile, argsLst.get(1), sourceDir, sources, true);
     } catch (Exception ex) {
       baos.flush();

@@ -6,7 +6,7 @@ import org.openmodelica.ModelicaRecordException;
 
 public class ABC_CONTAINER extends ModelicaRecord implements ABC_UT {
   private static final long serialVersionUID = -3058713121310353198L;
-  
+
   @SuppressWarnings("unchecked")
   public ABC_CONTAINER(ABC_UT a) throws ModelicaRecordException {
     super(new ModelicaRecord("test.ABC_CONTAINER",new String[]{"a"},new Class[]{ABC_UT.class},a));

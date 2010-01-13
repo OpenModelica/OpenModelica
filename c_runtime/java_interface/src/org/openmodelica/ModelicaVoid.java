@@ -5,11 +5,12 @@ public class ModelicaVoid implements ModelicaObject {
   }
   public ModelicaVoid() {
   }
-  
+
+  @Override
   public String toString() {
     return "NULL";
   }
-  
+
   @Override
   public boolean equals(Object o) {
     return false;
@@ -18,7 +19,7 @@ public class ModelicaVoid implements ModelicaObject {
   @Override
   public void setObject(ModelicaObject o) {
   }
-  
+
   @Override
   public void printToBuffer(StringBuffer buffer) {
     buffer.append(toString());

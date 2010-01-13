@@ -66,7 +66,7 @@ complextype :  /* MetaModelica */
        ('list') {ComplexTypeDefinition def = new ComplexTypeDefinition(ComplexTypeDefinition.ComplexType.LIST_TYPE);}
        '<' type {def.add((ComplexTypeDefinition)memory);} '>' {memory = def;}
      | ('tuple') {ComplexTypeDefinition def = new ComplexTypeDefinition(ComplexTypeDefinition.ComplexType.TUPLE_TYPE);}
-       '<' type (',' type)* '>' {memory = def;}
+       '<' type {def.add((ComplexTypeDefinition)memory);} (',' type {def.add((ComplexTypeDefinition)memory);})+ '>' {memory = def;}
      | ('Option') {ComplexTypeDefinition def = new ComplexTypeDefinition(ComplexTypeDefinition.ComplexType.OPTION_TYPE);}
        '<' type {def.add((ComplexTypeDefinition)memory);} '>' {memory = def;};
 fqid : ID {memory = $ID.text;}

@@ -45,14 +45,14 @@ package org.openmodelica.corba;
 /**
  * Supertype of all exceptions that can be encountered while communicating
  * with the modelica compiler.
- *  
+ *
  * @author Andreas Remar
  */
 abstract public class CompilerException extends Exception
 {
 	private static final long serialVersionUID = -7881546855664735599L;
 
-	
+
 	/**
 	 * @see Exception#Exception(java.lang.String)
 	 */
@@ -60,12 +60,12 @@ abstract public class CompilerException extends Exception
 	{
 		super(message);
 	}
-	
+
 	public CompilerException(String message,Throwable t)
 	{
 		super(message,t);
 	}
-	
+
 	/**
 	 * @see Exception#Exception()
 	 */
@@ -75,11 +75,11 @@ abstract public class CompilerException extends Exception
 	}
 
 	/**
-	 * @see Exception#Exception(java.lang.Throwable) 
+	 * @see Exception#Exception(java.lang.Throwable)
 	 */
 	public CompilerException(Exception e)
 	{
 		super(e);
 	}
-	
+
 }

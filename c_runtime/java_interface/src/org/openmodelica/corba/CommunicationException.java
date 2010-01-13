@@ -44,7 +44,7 @@ package org.openmodelica.corba;
 /**
  * Thrown if there was an error while invoking command on compiler. E.g. if
  * compiler dies and connection breaks.
- * 
+ *
  * @author Andreas Remar
  */
 public class CommunicationException extends CompilerException

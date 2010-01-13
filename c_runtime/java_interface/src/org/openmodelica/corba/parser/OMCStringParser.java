@@ -1,34 +1,48 @@
 package org.openmodelica.corba.parser;
 
-import org.antlr.runtime.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.StringReader;
+
 import org.openmodelica.ModelicaAny;
 import org.openmodelica.ModelicaObject;
+import org.openmodelica.SimpleTypeSpec;
+import org.openmodelica.TypeSpec;
 
 public class OMCStringParser {
   public static ModelicaObject parse(String s) throws ParseException {
-    ANTLRStringStream input = new ANTLRStringStream(s);
-    OMCorbaLexer lexer = new OMCorbaLexer(input);
-    TokenStream tokens = new CommonTokenStream(lexer); /* TODO: Change to unbuffered */
-    OMCorbaParser parser = new OMCorbaParser(tokens);
-    try {
-      parser.prog();
-    } catch (RecognitionException e) {
-      new ParseException("OMCStringParser: Failed to parse: " + s);
-    } catch (ClassCastException e) {
-      new ParseException("OMCStringParser: Failed to parse: " + s);
-    }
-    if (parser.getNumberOfSyntaxErrors() != 0)
-      throw new ParseException("OMCStringParser: "+parser.getNumberOfSyntaxErrors()+" syntax errors, failed to parse:\n" + s);
-    System.gc();
-    return parser.memory;
+    return parse(s,SimpleTypeSpec.modelicaObject);
   }
 
   public static <T extends ModelicaObject> T parse(String s, Class<T> c) throws ParseException {
-    ModelicaObject o = parse(s);
+    return parse(s,new SimpleTypeSpec<T>(c));
+  }
+  public static <T extends ModelicaObject> T parse(String s, TypeSpec<T> spec) throws ParseException {
+    StringReader input = new StringReader(s);
     try {
-      return ModelicaAny.cast(o, c);
-    } catch (Exception ex) {
-      throw new ParseException(String.format("Failed to cast %s to %s", o.toString(), c.getName()), ex);
+      T o = ModelicaAny.parse(input,spec);
+      System.gc();
+      ModelicaAny.skipWhiteSpace(input);
+      if (input.read() != -1)
+        throw new ParseException("Expected EOF");
+      return o;
+    } catch (IOException ex) {
+      throw new ParseException(ex);
+    } catch (ParseException ex) {
+      char[] cbuf = new char[40];
+      String str;
+      try {
+        input.read(cbuf,0,40);
+        str = new String(cbuf);
+        File f = File.createTempFile("OMCStringParser", ".log");
+        FileWriter fw = new FileWriter(f);
+        fw.write(s);
+        fw.close();
+        throw new ParseException("Original string saved to file "+f+"\nNext characters in stream: " + str,ex);
+      } catch (IOException ex2) {
+        throw new ParseException(ex);
+      }
     }
   }
 }

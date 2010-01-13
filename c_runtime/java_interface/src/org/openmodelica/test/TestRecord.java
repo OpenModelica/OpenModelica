@@ -9,7 +9,7 @@ import org.junit.Test;
 import org.openmodelica.*;
 
 public class TestRecord {
-  
+
   ModelicaRecord simpleRecord;
   ModelicaRecord simpleRecordInt;
   ModelicaRecord simpleRecordBool;
@@ -41,7 +41,7 @@ public class TestRecord {
     assertEquals(1, r.get("a", ModelicaInteger.class).i);
     // r.toString(); - How to handle null members?
   }
-  
+
   @Test
   public void testSetObject() throws ModelicaRecordException {
     ModelicaRecord r1 = new ModelicaRecord("abc", new String[] {"a","b","c"}, new ModelicaInteger(-1), new ModelicaInteger(-1), new ModelicaInteger(-1));
@@ -62,7 +62,7 @@ public class TestRecord {
     }
     int[] expectedResult = new int[]{1,2,3,5,4,7,13,-25,8,9,0};
     ModelicaRecord r = new ModelicaRecord("abcTestPutInt", keys, vals);
-    
+
     for (int i=0; i<keys.length; i++) {
       r.put(keys[i], new ModelicaInteger(expectedResult[i]));
     }
@@ -96,7 +96,7 @@ public class TestRecord {
     ModelicaObject[] values = new ModelicaObject[expectedResultValues.length];
     for (int i=0; i<expectedResultValues.length; i++)
       values[i] = new ModelicaInteger(expectedResultValues[i]);
-    
+
     ModelicaRecord r = new ModelicaRecord("abcTestValCon", expectedResult, values);
     Object[] keys = r.keySet().toArray();
     assertEquals(keys.length, expectedResult.length);

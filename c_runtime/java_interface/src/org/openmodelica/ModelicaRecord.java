@@ -1,5 +1,7 @@
 package org.openmodelica;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -10,11 +12,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.openmodelica.corba.parser.ParseException;
+
 public class ModelicaRecord implements IModelicaRecord {
 
   private static final long serialVersionUID = 4879640187801031110L;
   private static HashMap<String,LinkedHashMap<String,FieldSpec>> allRecords;
-  
+
   private class FieldSpec {
     public final Class<? extends ModelicaObject> fieldType;
     public final int index;
@@ -23,7 +27,7 @@ public class ModelicaRecord implements IModelicaRecord {
       this.index = index;
     }
   }
-  
+
   static {
     allRecords = new HashMap<String, LinkedHashMap<String,FieldSpec>>();
   }
@@ -48,11 +52,11 @@ public class ModelicaRecord implements IModelicaRecord {
       put(key, rec.get(key));
     }
   }
-  
+
   public ModelicaRecord(String recordName, String[] fieldNames, ModelicaObject... values) throws ModelicaRecordException {
     init(recordName,fieldNames,values);
   }
-  
+
   private void init(String recordName, String[] fieldNames, ModelicaObject[] values) throws ModelicaRecordException {
     this.recordName = recordName;
 
@@ -61,16 +65,18 @@ public class ModelicaRecord implements IModelicaRecord {
     }
 
     spec = allRecords.get(recordName);
-    
+
     if (spec == null) {
       spec = new LinkedHashMap<String,FieldSpec>();
       for (int i=0; i<values.length; i++) {
         spec.put(fieldNames[i],new FieldSpec(values[i].getClass(),i));
       }
       allRecords.put(recordName, spec);
+    } else if (values.length != spec.size()) {
+      throw new ModelicaRecordException("Tried to initialize record with wrong number of values " + recordName + " expected " + spec.keySet() + " got " + Arrays.asList(fieldNames));
     }
 
-    fields = values;    
+    fields = values;
   }
 
   // Note: The order will be the same as for the given map; if it's a TreeMap,
@@ -84,9 +90,9 @@ public class ModelicaRecord implements IModelicaRecord {
 
   // In case uniontypes are used
   public ModelicaRecord(String recordName,
-                           String[] fieldNames,
-                           Class<? extends ModelicaObject>[] fieldTypes,
-                           ModelicaObject... values) throws ModelicaRecordException {
+      String[] fieldNames,
+      Class<? extends ModelicaObject>[] fieldTypes,
+      ModelicaObject... values) throws ModelicaRecordException {
     if (fieldNames.length != fieldTypes.length)
       throw new ModelicaRecordException("Length of field names and types differ");
     if (fieldNames.length != values.length)
@@ -94,7 +100,7 @@ public class ModelicaRecord implements IModelicaRecord {
 
     this.recordName = recordName;
     spec = allRecords.get(recordName);
-    
+
     if (spec == null) {
       spec = new LinkedHashMap<String,FieldSpec>();
       for (int i=0; i<values.length; i++) {
@@ -124,7 +130,7 @@ public class ModelicaRecord implements IModelicaRecord {
       throw new RuntimeException("Record "+toString()+" does not contain the field " + key + "; its fields are " + spec);
     }
     try {
-     value = ModelicaAny.cast(value, fspec.fieldType);
+      value = ModelicaAny.cast(value, fspec.fieldType);
     } catch (Exception ex) {
       throw new RuntimeException("Record field type mismatch between " + fspec.fieldType + " and " + value.getClass());
     }
@@ -153,7 +159,7 @@ public class ModelicaRecord implements IModelicaRecord {
   @Override
   public boolean equals(Object o) {
     try {
-      ModelicaRecord o_ = (ModelicaRecord) o; 
+      ModelicaRecord o_ = (ModelicaRecord) o;
       if (!((o_).getRecordName().equals(this.getRecordName())))
         return false;
       for (int i=0; i<fields.length; i++)
@@ -279,5 +285,74 @@ public class ModelicaRecord implements IModelicaRecord {
   @Override
   public Collection<ModelicaObject> values() {
     return Arrays.asList(fields);
+  }
+
+  private static void skipEquals(Reader r) throws IOException, ParseException {
+    ModelicaAny.skipWhiteSpace(r);
+    int i;
+    char ch;
+    i = r.read();
+    if (i == -1)
+      throw new ParseException("EOF, expected '='");
+    ch = (char) i;
+    if (ch != '=')
+      throw new ParseException("Expected '='");
+    ModelicaAny.skipWhiteSpace(r);
+  }
+
+  private static boolean recordEnd(Reader r, String id) throws IOException, ParseException {
+    ModelicaAny.skipWhiteSpace(r);
+    r.mark(1);
+    int i;
+    char ch;
+    i = r.read();
+    if (i == -1) throw new ParseException("EOF, expected comma or end " + id);
+    ch = (char) i;
+    if (ch == ',') return false;
+    r.reset();
+    if (ModelicaAny.lexIdent(r).equals("end")) {
+      String id2 = ModelicaAny.lexIdent(r);
+      if (id2.equals(id))
+        return true;
+      throw new ParseException("Mismatched end identifier, got " + id2 + ", expected " + id);
+    }
+    throw new ParseException("Expected comma or end");
+  }
+
+  protected static ModelicaObject parse(Reader r) throws ParseException, IOException {
+    return parse(r,ModelicaRecord.class,null);
+  }
+
+  protected static <T extends ModelicaRecord> T parse(Reader r, Class<T> cl, TypeSpec<?>[] fieldTypeSpecs) throws ParseException, IOException {
+    String rec = ModelicaAny.lexIdent(r);
+    if (!rec.equals("record"))
+      throw new ParseException("Expected 'record' got " + rec);
+    String recordName = ModelicaAny.lexIdent(r);
+    Map<String, ModelicaObject> map = new LinkedHashMap<String, ModelicaObject>();
+    int i = 0;
+    do {
+      String fieldName = ModelicaAny.lexIdent(r);
+      if (fieldName.equals("end") && map.size() == 0) {
+        String endId = ModelicaAny.lexIdent(r);
+        if (!endId.equals(recordName))
+          throw new ParseException("Mismatched end identifier, got " + endId + ", expected " + recordName);
+        else break;
+      }
+      skipEquals(r);
+      ModelicaObject fieldValue;
+      if (fieldTypeSpecs == null)
+        fieldValue = ModelicaAny.parse(r);
+      else
+        fieldValue = ModelicaAny.parse(r,fieldTypeSpecs[i++]);
+      map.put(fieldName,fieldValue);
+    } while (!recordEnd(r,recordName));
+    i = r.read();
+    if (i == -1) throw new ParseException("EOF, expected ;");
+    if ((char) i != ';') throw new ParseException("Expected ;");
+    try {
+      return cl.getConstructor(String.class,Map.class).newInstance(recordName,map);
+    } catch (Throwable t) {
+      throw new ParseException(t);
+    }
   }
 }

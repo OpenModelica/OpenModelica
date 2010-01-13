@@ -11,5 +11,4 @@ public interface ModelicaObject {
    * Same as toString(), but more efficient
    */
   public void printToBuffer(StringBuffer buffer);
-  //public <castT extends ModelicaObject> castT cast(Class<castT> c);
 }

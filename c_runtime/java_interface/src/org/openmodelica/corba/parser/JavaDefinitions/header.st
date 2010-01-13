@@ -6,9 +6,11 @@ $if(skipHeader)$$else$
 $if(package.name)$
 package $basepackage$.$package.name$;
 import org.openmodelica.*;
+
 $else$
 package $basepackage$;
 import org.openmodelica.*;
+
 $endif$
 import org.openmodelica.corba.SmartProxy;
 import org.openmodelica.corba.parser.ParseException;

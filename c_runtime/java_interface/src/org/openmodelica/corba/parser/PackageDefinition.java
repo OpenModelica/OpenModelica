@@ -8,7 +8,7 @@ class PackageDefinition {
   public HashMap<String,RecordDefinition> records;
   public HashMap<String,String> unionTypes;
   public HashMap<String,VariableDefinition> typeDefs;
-  
+
   public PackageDefinition(String name) {
     this.name = name;
     functions = new HashMap<String,FunctionDefinition>();
@@ -16,7 +16,7 @@ class PackageDefinition {
     unionTypes = new HashMap<String,String>();
     typeDefs = new HashMap<String,VariableDefinition>();
   }
-  
+
   public void add(Object o) {
     if (o == null) {
     } else if (o instanceof FunctionDefinition) {
@@ -40,7 +40,7 @@ class PackageDefinition {
     if (typeDefs.containsKey(s)) return true;
     return false;
   }
-  
+
   public void fixTypePath(SymbolTable st, String basePackage) {
     for (RecordDefinition rec : records.values()) {
       rec.fixTypePaths(st, basePackage);

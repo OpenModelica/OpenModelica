@@ -48,7 +48,7 @@ abstract public class OmcCommunicationHelper
 
   public static void write (org.omg.CORBA.portable.OutputStream ostream, OmcCommunication value)
   {
-    ostream.write_Object ((org.omg.CORBA.Object) value);
+    ostream.write_Object (value);
   }
 
   public static OmcCommunication narrow (org.omg.CORBA.Object obj)

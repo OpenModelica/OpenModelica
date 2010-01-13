@@ -1,7 +1,11 @@
 package org.openmodelica;
 
+import java.io.IOException;
+import java.io.Reader;
 import java.util.Arrays;
 import java.util.List;
+
+import org.openmodelica.corba.parser.ParseException;
 
 public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T> implements ModelicaObject {
   private static final long serialVersionUID = 2151613083277374538L;
@@ -157,4 +161,42 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
     this.isFlat = arr.isFlat;
   }
 
+  @SuppressWarnings("unchecked")
+  static <T extends ModelicaObject> ModelicaArray<T> parse(Reader r, TypeSpec<T> spec) throws IOException, ParseException {
+    ModelicaArray<T> arr = new ModelicaArray<T>();
+    ModelicaAny.skipWhiteSpace(r);
+    int i;
+    char ch;
+    i = r.read();
+    if (i == -1) throw new ParseException("EOF, expected array");
+    ch = (char) i;
+    if (ch != '{') throw new ParseException("Expected array");
+    ModelicaAny.skipWhiteSpace(r);
+    r.mark(1);
+    i = r.read();
+    if (i == -1) throw new ParseException("EOF, expected array");
+    ch = (char) i;
+    if (ch == '}') return new ModelicaArray<T>();
+    r.reset();
+    do {
+      ModelicaAny.skipWhiteSpace(r);
+      T o = ModelicaAny.parse(r,spec);
+      if (arr.size() > 0 && spec.getClass().equals(ModelicaObject.class))
+        try {
+          o = (T) ModelicaAny.cast(o, arr.get(0).getClass());
+        } catch (Exception ex) {
+          throw new ParseException("Array type mismatch: tried adding " + o + " to " + arr);
+        }
+      arr.add(o);
+      ModelicaAny.skipWhiteSpace(r);
+      i = r.read();
+      if (i == -1)
+        throw new ParseException("EOF, expected a comma or closing array");
+      ch = (char) i;
+    } while (ch == ',');
+    if (ch != '}') {
+      throw new ParseException("Expected closing array");
+    }
+    return arr;
+  }
 }

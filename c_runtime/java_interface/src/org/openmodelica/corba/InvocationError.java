@@ -46,7 +46,7 @@ package org.openmodelica.corba;
  * some command via the 'interactive api' interface. That is when
  * compiler replys 'error' instead of returning the results in a situation
  * where no error are expected.
- * 
+ *
  * @author Elmir Jagudin
  */
 public class InvocationError extends CompilerException
@@ -54,7 +54,7 @@ public class InvocationError extends CompilerException
 	private static final long serialVersionUID = 1437868457853593664L;
 	private String action;
 	private String expression;
-	
+
 	/**
 	 * @param action human readable decscription of what action failed
 	 * @param expression the expression what was send to OMC that failed
@@ -67,18 +67,18 @@ public class InvocationError extends CompilerException
 		this.action = action;
 		this.expression = expression;
 	}
-	
+
 	/**
-	 * Get the human readable description of the action that triggered this 
+	 * Get the human readable description of the action that triggered this
 	 * error. E.g. 'fetching contents of class foo.bar'
-	 * 
-	 * The description should be phrased so that 
+	 *
+	 * The description should be phrased so that
 	 */
 	public String getAction()
 	{
 		return action;
 	}
-	
+
 	public String getExpression()
 	{
 		return expression;

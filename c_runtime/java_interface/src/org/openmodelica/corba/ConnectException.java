@@ -43,7 +43,7 @@ package org.openmodelica.corba;
 
 /**
  * Thrown when there is an error while connecting to the compiler.
- * 
+ *
  * @author Andreas Remar
  */
 public class ConnectException extends CompilerException

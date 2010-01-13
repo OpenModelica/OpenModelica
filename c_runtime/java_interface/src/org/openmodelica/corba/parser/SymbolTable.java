@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public class SymbolTable extends HashMap<String,Object> {
   private static final long serialVersionUID = -4397140748624770527L;
-  
+
   private void add(String pack, String name, Object o) {
     if (name != null)
       name = name.replace(".inner.", ".");
@@ -13,7 +13,7 @@ public class SymbolTable extends HashMap<String,Object> {
     else
       put(pack + "." + name, o);
   }
-  
+
   public void add(RecordDefinition rec, String curPackage) {
     add(curPackage, rec.name, rec);
   }

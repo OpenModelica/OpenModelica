@@ -9,7 +9,7 @@ package org.openmodelica.corba;
 
 
 // As simple as can be omc communication, sending and recieving of strings.
-public interface OmcCommunicationOperations 
+public interface OmcCommunicationOperations
 {
   String sendExpression (String expr);
   String sendClass (String model);

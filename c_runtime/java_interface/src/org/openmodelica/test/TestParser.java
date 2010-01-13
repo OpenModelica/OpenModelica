@@ -19,7 +19,7 @@ import org.openmodelica.ModelicaTuple;
 import org.openmodelica.corba.parser.*;
 
 public class TestParser {
-  
+
   @Test public void simpleInteger() throws ParseException {
     /* We test 32-bit values although OMC only supports 31-bit integers at the moment */
     int[] testValues = {-2147483648, 2147483647, 0, 42, 1337, -17};
@@ -28,7 +28,7 @@ public class TestParser {
       assertEquals(i, mi.i);
     }
   }
-  
+
   @Test public void simpleEquals() throws ParseException {
     assertEquals(new ModelicaInteger(1), new ModelicaInteger(1));
     assertEquals(new ModelicaReal(1), new ModelicaReal(1));
@@ -39,7 +39,7 @@ public class TestParser {
     assertEquals(parse("record abc a=1,b=2,c=3 end abc;"), parse("record abc a=1,b=2,c=3 end abc;"));
     assertFalse(parse("").equals(parse(""))); // Void never equals anything
   }
-  
+
   @Test public void simpleDouble() throws ParseException {
     double[] testValues = {1.23456789, -1.23456789};
     double delta = 0.0000000001;
@@ -48,7 +48,7 @@ public class TestParser {
       assertEquals(d, mr.r, delta);
     }
   }
-  
+
   @Test public void hardDouble() throws ParseException {
     String[] testValues = {
         "22.5", "3.141592653589793", "1.2E-35",
@@ -68,7 +68,7 @@ public class TestParser {
       assertEquals(-testValuesExpected[i], mr.r, delta);
     }
   }
-  
+
   @Test public void simpleBoolean() throws ParseException {
     boolean[] testValues = {true, false};
     for (boolean b : testValues) {
@@ -76,7 +76,7 @@ public class TestParser {
       assertEquals(b, mb.b);
     }
   }
-  
+
   @Test public void intArray() throws ParseException {
     String[] testValues = {"  {1,2,3}", "{4 , 5,6}  ", "{}", "{   }"};
     ModelicaArray<?>[] expectedValues = new ModelicaArray[] {
@@ -100,7 +100,7 @@ public class TestParser {
       assertEquals(expectedValues[i], mia);
     }
   }
-  
+
   @SuppressWarnings("unchecked")
   @Test public void intMulDimArray() throws ParseException {
     String[] testValues = {"{{1,2,3},{4,5,6}}"};
@@ -112,7 +112,7 @@ public class TestParser {
       assertEquals(expectedValues[i], mia.toString());
     }
   }
-  
+
   @SuppressWarnings("unchecked")
   @Test public void intCreateMulDimArray() throws ParseException {
     ModelicaInteger[] values = new ModelicaInteger[2*3*4];
@@ -122,7 +122,7 @@ public class TestParser {
     assertEquals("{{{0,1,2,3},{4,5,6,7},{8,9,10,11}},{{12,13,14,15},{16,17,18,19},{20,21,22,23}}}", miarr.toString());
     assertEquals(parse("{{{0,1,2,3},{4,5,6,7},{8,9,10,11}},{{12,13,14,15},{16,17,18,19},{20,21,22,23}}}"), miarr);
   }
-  
+
  @Test public void realArray() throws ParseException {
     String[] testValues = {"  {1.0,2.0,3.0}", "{4.0 , 5.0,6.0}  ", "{}", "{   }"};
     ModelicaArray<?>[] expectedValues = new ModelicaArray[] {
@@ -146,7 +146,7 @@ public class TestParser {
       assertEquals(expectedValues[i], mda);
     }
   }
-  
+
   @Test public void simpleRecord() throws ParseException, ModelicaRecordException {
     String test = "record ABC\na = 13, b = record DEF d=1,e=2,f=4 end DEF;,c=4.0 end ABC;";
     ModelicaRecord expected = new ModelicaRecord(
@@ -162,24 +162,24 @@ public class TestParser {
     );
     assertEquals(expected, parse(test));
   }
-  
+
   @Test(expected=ParseException.class)
   public void unbalancedRecord() throws ParseException {
     String test = "record ABC a = 13, b = record DEF d=1,e=2,f=4 end ABC;,c=4.0 end DEF;";
     parse(test);
   }
-  
+
   @Test(expected=ParseException.class)
   public void intDoubleArray() throws ParseException {
     ModelicaObject arr = parse("{1,2.0}");
     System.out.println(String.format("intDoubleArray: %s\n%s", arr, arr.getClass()));
   }
-  
+
   @Test(expected=ParseException.class)
   public void twoValues() throws ParseException {
     System.out.println(parse("1 2"));
   }
-  
+
   @Test public void optionNone() throws ParseException {
     ModelicaOption<ModelicaInteger> test = new ModelicaOption<ModelicaInteger>(null);
     String expected = "NONE()";
@@ -187,7 +187,7 @@ public class TestParser {
     assertEquals(expected, res.toString());
     assertEquals(test, res);
   }
-  
+
   @Test public void optionSome() throws ParseException {
     ModelicaOption<ModelicaInteger> test = new ModelicaOption<ModelicaInteger>(new ModelicaInteger(1));
     String expected = "SOME(1)";
@@ -195,7 +195,7 @@ public class TestParser {
     assertEquals(expected, res.toString());
     assertEquals(test, res);
   }
-  
+
   @Test public void simpleTuple() throws ParseException {
     ModelicaTuple test = new ModelicaTuple(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaInteger(3));
     String expected = "(1,2,3)";
@@ -203,16 +203,16 @@ public class TestParser {
     assertEquals(expected, res.toString());
     assertEquals(test, res);
   }
-  
+
   @Test public void simpleUnionType() throws ParseException, ModelicaRecordException {
    ABC_UT expected = new abc(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaReal(3));
    String test = "record test.abc a=1, b=2, c=3.0 end test.abc;";
    ABC_UT res = parse(test, ABC_UT.class);
    assertEquals(expected.toString(), res.toString());
-   assertEquals(expected, res); 
+   assertEquals(expected, res);
    assertEquals(1, ((abc)res).get_a().i);
   }
-  
+
   @Test public void nestedUnionType() throws ParseException, ModelicaRecordException {
     ABC_UT ut = new abc(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaReal(3));
     ABC_UT expected = new ABC_CONTAINER(new ABC_CONTAINER(ut));

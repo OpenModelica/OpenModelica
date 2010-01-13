@@ -19,13 +19,13 @@ public class TestObjects {
     assertEquals(new ModelicaBoolean(true), ModelicaAny.cast(i1, ModelicaBoolean.class));
     assertEquals(new ModelicaBoolean(false), ModelicaAny.cast(i0, ModelicaBoolean.class));
   }
-  
+
   @Test(expected=Exception.class)
   public void testImplicitTypeConversionBoolFail() throws Exception {
     ModelicaInteger i2 = new ModelicaInteger(2);
     ModelicaAny.cast(i2, ModelicaBoolean.class);
   }
-  
+
   @Test
   public void testImplicitTypeConversionReal() throws Exception {
     ModelicaInteger i2 = new ModelicaInteger(2);
@@ -35,7 +35,7 @@ public class TestObjects {
     assertEquals(new ModelicaReal(1), ModelicaAny.cast(i1, ModelicaReal.class));
     assertEquals(new ModelicaReal(0), ModelicaAny.cast(i0, ModelicaReal.class));
   }
-  
+
   @Test
   public void testStringNull() throws Exception {
     String expected = "\"\"";

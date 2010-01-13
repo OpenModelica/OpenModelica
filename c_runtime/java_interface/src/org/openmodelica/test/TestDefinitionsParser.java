@@ -14,13 +14,13 @@ import org.openmodelica.*;
 import org.openmodelica.corba.parser.DefinitionsCreator;
 
 public class TestDefinitionsParser {
-  
+
   public void test_Simple_mo() throws Exception {
     File jarFile = new File("test_files/simple.jar");
     jarFile.delete();
     DefinitionsCreator.createDefinitions(jarFile, "org.openmodelica.program", new File(System.getProperty("user.dir")+"/test_files"), new String[]{"simple.mo"}, true);
   }
-  
+
   @Test
   public void test_Simple_mo_classLoader() throws Exception {
     test_Simple_mo();
@@ -34,13 +34,13 @@ public class TestDefinitionsParser {
     Object o = cons.newInstance(new ModelicaInteger(1), new ModelicaInteger(2), new ModelicaReal(3));
     assertEquals("test.abc(a=1,b=2,c=3.0)", o.toString());
   }
-  
+
   @Test
   public void test_meta_modelica_mo() throws Exception {
     DefinitionsCreator.main("test_files/meta_modelica.jar", "org.openmodelica.metamodelicaprogram",
         new File("test_files").getAbsolutePath(), "meta_modelica.mo");
   }
-  
+
   @Test
   public void test_OMC_Util_mo() throws Exception {
     File jarFile = new File("test_files/OMC_Util.jar");
@@ -51,7 +51,7 @@ public class TestDefinitionsParser {
       },
       true);
   }
-  
+
   @Ignore
   @Test
   /**
@@ -66,7 +66,7 @@ public class TestDefinitionsParser {
         new String[]{"Absyn.mo"},
         true);
   }
-  
+
   @Test
   public void test_OMC_Values_mo() throws Exception  {
     File jarFile = new File("test_files/OMC_Values.jar");
@@ -79,7 +79,7 @@ public class TestDefinitionsParser {
           },
         true);
   }
-  
+
   @Ignore
   @Test
   public void test_OMC_ClassInf_mo() throws Exception  {
@@ -91,14 +91,15 @@ public class TestDefinitionsParser {
       },
       false);
   }
-  
+
   class MoFilter implements FilenameFilter {
     @Override
     public boolean accept(File dir, String name) {
       return name.endsWith(".mo");
-    }   
+    }
   }
-  
+
+  @Ignore
   @Test
   public void test_OMC_mo_stripped() throws Exception {
     File jarFile = new File("test_files/OMC_full_no_functions.jar");
@@ -108,7 +109,7 @@ public class TestDefinitionsParser {
         compilerDir.getAbsoluteFile(),
         files, false);
   }
-  
+
   /*
    * Takes about 8 minutes to run...
    */

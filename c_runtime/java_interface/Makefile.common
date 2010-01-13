@@ -29,6 +29,9 @@ src/org/openmodelica/ModelicaReal.java \
 src/org/openmodelica/ModelicaString.java \
 src/org/openmodelica/ModelicaBaseArray.java \
 src/org/openmodelica/ModelicaRecordException.java \
+src/org/openmodelica/TypeSpec.java \
+src/org/openmodelica/SimpleTypeSpec.java \
+src/org/openmodelica/ComplexTypeSpec.java \
 src/org/openmodelica/corba/SmartProxy.java \
 src/org/openmodelica/corba/OmcCommunicationHelper.java \
 src/org/openmodelica/corba/Result.java \
@@ -36,7 +39,6 @@ src/org/openmodelica/corba/OmcCommunicationOperations.java \
 src/org/openmodelica/corba/InvocationError.java \
 src/org/openmodelica/corba/OmcCommunication.java \
 src/org/openmodelica/corba/OMCProxy.java \
-src/org/openmodelica/corba/parser/OMCorbaParser.java \
 src/org/openmodelica/corba/parser/UniontypeDefinition.java \
 src/org/openmodelica/corba/parser/ComplexTypeDefinition.java \
 src/org/openmodelica/corba/parser/ParseException.java \
@@ -46,7 +48,6 @@ src/org/openmodelica/corba/parser/JarCreator.java \
 src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java \
 src/org/openmodelica/corba/parser/RecordDefinition.java \
 src/org/openmodelica/corba/parser/PackageDefinition.java \
-src/org/openmodelica/corba/parser/OMCorbaLexer.java \
 src/org/openmodelica/corba/parser/SymbolTable.java \
 src/org/openmodelica/corba/parser/OMCStringParser.java \
 src/org/openmodelica/corba/parser/VariableDefinition.java \
@@ -77,8 +78,6 @@ src/org/openmodelica/corba/parser/JavaDefinitions/uniontype.st \
 src/org/openmodelica/corba/parser/JavaDefinitions/record.st \
 src/org/openmodelica/corba/parser/JavaDefinitions/function.st \
 src/org/openmodelica/corba/parser/JavaDefinitions/header.st \
-src/org/openmodelica/corba/parser/OMCorba.g \
-src/org/openmodelica/corba/parser/OMCorba.tokens \
 src/org/openmodelica/corba/parser/OMCorbaDefinitions.g \
 src/org/openmodelica/corba/parser/OMCorbaDefinitions.tokens
 

@@ -12,11 +12,11 @@ public abstract class ModelicaFunction {
     this.functionName = functionName;
     this.proxy = proxy;
   }
-  
+
   public ModelicaFunctionReference getReference() {
     return new ModelicaFunctionReference(functionName);
   }
-  
+
   protected <T extends ModelicaObject> T call(Class<T> c, ModelicaObject... args) throws ConnectException, ParseException {
     return proxy.callModelicaFunction(functionName, c, args);
   }

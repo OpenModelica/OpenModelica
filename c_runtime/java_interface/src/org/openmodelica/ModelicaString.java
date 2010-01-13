@@ -1,5 +1,10 @@
 package org.openmodelica;
 
+import java.io.IOException;
+import java.io.Reader;
+
+import org.openmodelica.corba.parser.ParseException;
+
 public class ModelicaString implements ModelicaObject {
   public String s;
   public ModelicaString(ModelicaObject o) {
@@ -33,21 +38,25 @@ public class ModelicaString implements ModelicaObject {
     for (int i=0; i<s.length(); i++) {
       if (s.charAt(i) == '\\') {
         i++;
-        switch(s.charAt(i)) {
-        case 'a': res.append('\007'); break;
-        case 'b': res.append('\b'); break;
-        case 'f': res.append('\f'); break;
-        case 'n': res.append('\n'); break;
-        case 'r': res.append('\r'); break;
-        case 't': res.append('\t'); break;
-        case 'v': res.append('\013'); break;
-        default: res.append(s.charAt(i)); break;
-        }
+        res.append(unescapeChar(s.charAt(i)));
       } else {
         res.append(s.charAt(i));
       }
     }
     return res.toString();
+  }
+
+  public static char unescapeChar(char ch) {
+    switch(ch) {
+    case 'a': return '\007';
+    case 'b': return '\b';
+    case 'f': return '\f';
+    case 'n': return '\n';
+    case 'r': return '\r';
+    case 't': return '\t';
+    case 'v': return '\013';
+    default: return ch;
+    }
   }
 
   @Override
@@ -79,5 +88,38 @@ public class ModelicaString implements ModelicaObject {
   @Override
   public void printToBuffer(StringBuffer buffer) {
     buffer.append(toString());
+  }
+
+  public static ModelicaString parse(Reader r) throws ParseException, IOException {
+    StringBuilder b = new StringBuilder();
+    int i;
+    char ch;
+    ModelicaAny.skipWhiteSpace(r);
+    i = r.read();
+    if (i == -1)
+      throw new ParseException("EOF, expected String");
+    ch = (char) i;
+
+    if (ch != '\"')
+      throw new ParseException("Expected String");
+
+    do {
+      i = r.read();
+      if (i == -1)
+        throw new ParseException("EOF, expected String");
+      ch = (char) i;
+
+      if (ch == '\\') {
+        i = r.read();
+        if (i == -1)
+          throw new ParseException("EOF, expected String");
+        ch = (char) i;
+        b.append(unescapeChar(ch));
+      } else if (ch != '\"')
+        b.append(ch);
+      else
+        break;
+    } while (true);
+    return new ModelicaString(b.toString(),false);
   }
 }

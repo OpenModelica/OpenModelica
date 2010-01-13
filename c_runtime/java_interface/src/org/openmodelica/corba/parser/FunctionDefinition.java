@@ -16,7 +16,7 @@ class FunctionDefinition {
   public Vector<VariableDefinition> output;
   private Set<String> genericTypes;
   public String generics;
-  
+
   public void fixTypePath(SymbolTable st, String basePackage) {
     genericTypes = new LinkedHashSet<String>();
     StringBuffer buf = new StringBuffer();

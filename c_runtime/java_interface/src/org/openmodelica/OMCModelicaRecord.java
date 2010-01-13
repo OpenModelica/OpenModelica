@@ -20,7 +20,7 @@ class OMCModelicaRecord extends ModelicaRecord {
   public int get_ctor_index() {
     return ctor_index;
   }
-  
+
   @Override
   public void setObject(ModelicaObject o) {
     if (o instanceof ModelicaRecord) {
