@@ -72,7 +72,8 @@ Adrian Pop, adrpo@ida.liu.se, date above.
     If you don't have an OpenModelicaX.Y.Z release installed
      then create a directory called OpenModelica/build/ModelicaLibrary
     in which you unpack the Modelica Standard Library you
-    can take from: OpenModelica/Compiler/VC7/Setup/zips/ModelicaLib.tar.gz
+    can take from another directory in Subversion : 
+    https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
     To run the testsuite from Eclipse:
     - Ctrl+B and type: test
     To run the testsuite from MSYS terminal:

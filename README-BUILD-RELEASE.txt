@@ -35,7 +35,9 @@ using the Microsoft Visual Studio .NET 2008
 02. Additional needed files:
     - unpack trunk\Compiler\VC7\Setup\zips\mingw.tar.gz
       -> to \trunk\build\MinGW
-    - unpack trunk\Compiler\VC7\Setup\zips\ModelicaLib.tar.gz
+    - take 
+      https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
+      and unpack 
       -> to \turnk\build\ModelicaLibrary
     - build trunk\OMShell then you will get a file:
       \trunk\OMShell\Release\OMShell.exe
