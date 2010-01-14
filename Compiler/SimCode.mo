@@ -458,8 +458,22 @@ uniontype SimCode
     list<HelpVarInfo> helpVarInfo;
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
+    ExtObjInfo extObjInfo;
   end SIMCODE;
 end SimCode;
+
+type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
+type ExtDestructor = tuple<String, DAE.ComponentRef>;
+type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
+
+uniontype ExtObjInfo
+  record EXTOBJINFO
+    list<String> includes;
+    list<ExtConstructor> constructors;
+    list<ExtDestructor> destructors;
+    list<ExtAlias> aliases;
+  end EXTOBJINFO;
+end ExtObjInfo;
 
 uniontype SimEqSystem
   record SES_RESIDUAL
@@ -722,8 +736,8 @@ algorithm
         //debugstr = Print.getString();
         //Print.clearBuf();
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-        //(_,libs1) = SimCodegen.generateExternalObjectIncludes(dlow);
-        libs1 = {};
+        (_,libs1) = generateExternalObjectIncludes(dlow);
+        //libs1 = {};
         //usless filter, all are already functions from generateFunctions2
         //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
         fns = elaborateFunctions(funcelems);
@@ -1202,7 +1216,7 @@ algorithm
       String name;
     case ((name,tty))
       equation
-        expType = typesExpType(tty);        
+        expType = Types.elabType(tty);        
       then
         VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
   end matchcontinue;
@@ -1519,6 +1533,7 @@ algorithm
       list<list<SimVar>> zeroCrossingsNeedSave;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions)
       equation
         cname = Absyn.pathString(class_);
@@ -1542,7 +1557,7 @@ algorithm
         //s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
         //czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        //(extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
+        extObjInfo = createExtObjInfo(dlow2);
         //extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
         //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
         // Add model info
@@ -1568,7 +1583,7 @@ algorithm
                           parameterEquations, removedEquations,
                           algorithmAndEquationAsserts, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
-                          discreteModelVars);
+                          discreteModelVars, extObjInfo);
       then
         simCode;
     case (_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1578,6 +1593,106 @@ algorithm
         fail();
   end matchcontinue;
 end createSimCode;
+
+public function createExtObjInfo
+  input DAELow.DAELow dlow;
+  output ExtObjInfo extObjInfo;
+algorithm
+  extObjInfo :=
+  matchcontinue (dlow)
+    local
+      DAELow.Variables evars;
+      DAELow.ExternalObjectClasses eclasses;
+      list<DAELow.Var> evarLst;
+      list<String> includes;
+      list<ExtConstructor> constructors;
+      list<ExtDestructor> destructors;
+      list<ExtAlias> aliases;
+    case (dlow as DAELow.DAELOW(externalObjects=evars, extObjClasses=eclasses))
+      equation
+        evarLst = DAELow.varList(evars);
+        (includes, _) = generateExternalObjectIncludes(dlow);
+        (constructors, destructors, aliases) = extractExtObjInfo2(evarLst, eclasses);
+      then EXTOBJINFO(includes, constructors, destructors, aliases);
+  end matchcontinue;
+end createExtObjInfo;
+
+public function extractExtObjInfo2
+  input list<DAELow.Var> varLst;
+  input DAELow.ExternalObjectClasses eclasses;
+  output list<ExtConstructor> constructors;
+  output list<ExtDestructor> destructors;
+  output list<ExtAlias> aliases;
+algorithm
+  (constructors, destructors, aliases) :=
+  matchcontinue (varLst, eclasses)
+    local
+      DAELow.Var v;
+      list<DAELow.Var> vs;
+      list<ExtConstructor> constructors1;
+      list<ExtDestructor> destructors1;
+      list<ExtAlias> aliases1;
+    case ({}, eclasses)
+      then ({}, {}, {});
+    case (v :: vs, eclasses)
+      equation
+        (constructors1, destructors1, aliases1) = createExtObjInfoSingle(v, eclasses);
+        (constructors, destructors, aliases) = extractExtObjInfo2(vs, eclasses);
+        constructors = listAppend(constructors1, constructors);
+        destructors = listAppend(destructors1, destructors);
+        aliases = listAppend(aliases1, aliases);
+      then (constructors, destructors, aliases);
+  end matchcontinue;
+end extractExtObjInfo2;
+
+public function createExtObjInfoSingle
+  input DAELow.Var var;
+  input DAELow.ExternalObjectClasses eclasses;
+  output list<ExtConstructor> constructors;
+  output list<ExtDestructor> destructors;
+  output list<ExtAlias> aliases;
+algorithm
+  (constructors, destructors, aliases) :=
+  matchcontinue (var, eclasses)
+    local
+      DAE.Element ctor, dstr;
+      DAE.ComponentRef name;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> args;
+      Absyn.Path path1, path2;
+      String cFuncStr, dFuncStr;
+    case (_, {})
+      then fail();
+    // alias
+    case (DAELow.VAR(varName=name, bindExp=SOME(DAE.CREF(cr,_)),
+                     varKind=DAELow.EXTOBJ(_)), _)
+      then ({}, {}, {(name, cr)});
+    case (DAELow.VAR(varName=name), {})
+      equation
+        print("generateExternalObjectConstructorCall for var:");
+        print(Exp.printComponentRefStr(name));print(" failed\n");
+      then fail();
+    // found class
+    case (DAELow.VAR(varName=name, bindExp=SOME(DAE.CALL(expLst=args)),
+                     varKind=DAELow.EXTOBJ(path1)),
+          DAELow.EXTOBJCLASS(
+            path=path2,
+            constructor=DAE.FUNCTION(
+              functions={DAE.FUNCTION_EXT(
+                externalDecl=DAE.EXTERNALDECL(ident=cFuncStr))}),
+            destructor=DAE.FUNCTION(
+              functions={DAE.FUNCTION_EXT(
+                externalDecl=DAE.EXTERNALDECL(ident=dFuncStr))})) :: _)
+      equation
+        true = ModUtil.pathEqual(path1, path2);
+      then ({(name, cFuncStr, args)}, {(dFuncStr, name)}, {});
+    // try next class
+    case (var, (_ :: eclasses))
+      equation
+        (constructors, destructors, aliases) = createExtObjInfoSingle(var, eclasses);
+      then (constructors, destructors, aliases);
+  end matchcontinue;
+end createExtObjInfoSingle;
 
 public function createAlgorithmAndEquationAsserts
   input DAELow.DAELow dlow;

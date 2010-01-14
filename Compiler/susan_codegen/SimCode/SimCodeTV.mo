@@ -126,8 +126,22 @@ package SimCode
       list<HelpVarInfo> helpVarInfo;
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
     end SIMCODE;
   end SimCode;
+
+  type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
+  type ExtDestructor = tuple<String, DAE.ComponentRef>;
+  type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
+  
+  uniontype ExtObjInfo
+    record EXTOBJINFO
+      list<String> includes;
+      list<ExtConstructor> constructors;
+      list<ExtDestructor> destructors;
+      list<ExtAlias> aliases;
+    end EXTOBJINFO;
+  end ExtObjInfo;
   
   uniontype SimEqSystem
     record SES_RESIDUAL
