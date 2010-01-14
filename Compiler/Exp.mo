@@ -2374,6 +2374,7 @@ algorithm
     local
       Exp e,e_1,e1;
       list<Exp> es;
+      Type tp;
     case ({}) then {}; 
     case ({e}) then {e}; 
     case ((e1 :: es))
@@ -3752,14 +3753,28 @@ algorithm
       Ident str;
     case ({}) then DAE.RCONST(0.0); 
     case ({e1}) then e1; 
-    case ({e1,e2})
+		case ({e1, e2})
+			equation
+				true = isZero(e1);
+			then e2;
+		case ({e1, e2})
+			equation
+				true = isZero(e2);
+			then e1;
+		case ({e1, e2})
+			equation
+        tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
+			then DAE.BINARY(e1, DAE.ADD(tp), e2);
+				//res = DAE.BINARY(e1, DAE.ADD(tp), e2);
+			//then res;
+    /*case ({e1,e2})
       equation 
         b1 = isZero(e1);
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
         res = DAE.BINARY(e1,DAE.ADD(tp),e2);
 				res = Util.if_(b1,e2,res);
       then
-        res;
+        res;*/
     case ((e1 :: rest))
       equation 
         b1 = isZero(e1);
