@@ -228,7 +228,9 @@ record-type:
 
 function-type:
 	'function' IDENT (string-comment)?
+	  ('replaceable' 'type' IDENT 'subtypeof' 'Any' ';')*
 	  (  ('input' |  'output')   (type-signature  IDENT (string-comment)?  ';')*
+	  ('replaceable' 'type' IDENT 'subtypeof' 'Any' ';')*
 	'end' IDENT
 
 constant-type:
@@ -438,10 +440,12 @@ absynType:
 	=> (id, TI_RECORD_TYPE(fields))
 	|
 	'function' identifier:id  stringComment
+		typeVars({}):tyVars
 		inputFunArgs:inArgs
-		outputFunArgs:outArgs	  
+		outputFunArgs:outArgs
+		typeVars(tyVars):tyVars			  
 	endDefIdent(id)
-	=> (id, TI_FUN_TYPE(inArgs,outArgs))
+	=> (id, TI_FUN_TYPE(inArgs,outArgs,tyVars))
 	|
 	'constant'  typeSig:ts  identifier:id  stringComment  ';'
 	=> (id, TI_CONST_TYPE(ts))
@@ -487,6 +491,13 @@ outputFunArgs:
 	=> (id,ts) :: oargs
 	|
 	_ => {} 
+
+typeVars(tyvars):
+	'replaceable' 'type'  identifier:id  'subtypeof' 'Any' ';'
+	typeVars(id :: tyvars):tyvars
+	=> tyvars
+	|
+	_ => tyvars 
 
 //TODO: is optional	... it is not when templDef_ConstOrTempl:td  
 templDef:

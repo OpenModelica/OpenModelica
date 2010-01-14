@@ -5,6 +5,34 @@ spackage test
 	  input String inString;
 	  output Integer outString;
 	end testfn;
+	
+	function listLength "Return the length of the list"
+      replaceable type TypeVar subtypeof Any;    
+      input list<TypeVar> lst;
+      output Integer result;
+    end listLength;
+    
+    function listMember "Verify if an element is part of the list"
+      replaceable type TypeVar subtypeof Any;
+      input TypeVar element;
+      input list<TypeVar> lst;
+      output Boolean result;
+    end listMember;
+	
+	function listGet "Return the element of the list at the given index.
+                      The index starts from 1."
+      input list<TypeVar> lst;
+      input Integer index;
+      output TypeVar result;
+      replaceable type TypeVar subtypeof Any;
+    end listGet;
+	
+	function listReverse "Reverse the order of elements in the list"
+      replaceable type TypeVar subtypeof Any;
+      input list<TypeVar> lst;
+      output list<TypeVar> result;
+    end listReverse;
+	
   end builtin;
   
   package TplAbsyn
@@ -166,6 +194,7 @@ contCase2(PathIdent) ::=
     then 'id=<ident>'
   case IDENT then "hej"
 
+
 /*
   case skdflk then
     <<
@@ -187,6 +216,18 @@ contCase2(PathIdent) ::=
     >>
  */
 
-  
+genericTest(list<String> lst) ::= listLength(lst)  
+genericTest2(list<Integer> lst) ::= listLength(lst)
+genericTest3(list<Integer> lst) ::= listMember(3,lst)
+genericTest4(list<String> lst) ::= listMember("ahoj",lst)
+genericTest5(list<String> lst, String hoj) ::= listMember('a<hoj>',lst)
+genericTest6(list<String> lst, Integer idx) ::= listGet(lst,idx)
+genericTest7(list<Integer> lst, Integer idx) ::= listGet(lst,idx)
+genericTest8(list<Integer> lst) ::= listReverse(lst) : '<it>th revesed'
+genericTest9(list<list<String>> lst) ::= listReverse() : listReverse() : '<it>hej!'
+
+//Error - unmatched type for type variable 'TypeVar'. Firstly inferred 'String', next inferred 'Integer'(dealiased 'Integer').
+//genericTest10(list<Integer> lst) ::= listMember("3",lst) 
+
 
 end test;

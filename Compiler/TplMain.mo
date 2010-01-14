@@ -779,7 +779,8 @@ end Susan;:)";
              { ("stringListStringChar", 
                   TplAbsyn.TI_FUN_TYPE(
                      { ("inString", TplAbsyn.STRING_TYPE()) },
-                     { ("outStringList", TplAbsyn.LIST_TYPE(TplAbsyn.STRING_TYPE())) } )
+                     { ("outStringList", TplAbsyn.LIST_TYPE(TplAbsyn.STRING_TYPE())) },
+                     {} )
                )
              } )
            }, 

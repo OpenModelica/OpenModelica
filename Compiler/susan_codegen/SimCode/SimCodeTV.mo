@@ -1,3 +1,15 @@
+
+package builtin
+  
+  function listLength "Return the length of the list"
+    replaceable type TypeVar subtypeof Any;    
+    input list<TypeVar> lst;
+    output Integer result;
+  end listLength;
+
+end builtin;
+
+
 package SimCode
 
   function listLengthExp
@@ -63,7 +75,11 @@ package SimCode
     record OTHER
     end OTHER;
   end Context;
-
+  
+  constant Context contextSimulationNonDescrete;
+  constant Context contextSimulationDescrete;
+  constant Context contextOther;  
+  
   function createSimulationContext
     input Boolean genDiscrete;
     output Context context;

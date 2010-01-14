@@ -84,6 +84,7 @@ SRCMO= Absyn.mo \
     TplParser.mo \
 	TplMain.mo \
 	SimCodeC.mo \
+	SimCodeCSharp.mo \
 	SimCode.mo \
 	Util.mo \
 	Values.mo \

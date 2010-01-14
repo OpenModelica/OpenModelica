@@ -1953,4 +1953,227 @@ algorithm
   end matchcontinue;
 end contCase2;
 
+public function genericTest
+  input Tpl.Text txt;
+  input list<String> i_lst;
+
+  output Tpl.Text out_txt;
+protected
+  Integer ret_0;
+algorithm
+  ret_0 := listLength(i_lst);
+  out_txt := Tpl.writeStr(txt, intString(ret_0));
+end genericTest;
+
+public function genericTest2
+  input Tpl.Text txt;
+  input list<Integer> i_lst;
+
+  output Tpl.Text out_txt;
+protected
+  Integer ret_0;
+algorithm
+  ret_0 := listLength(i_lst);
+  out_txt := Tpl.writeStr(txt, intString(ret_0));
+end genericTest2;
+
+public function genericTest3
+  input Tpl.Text txt;
+  input list<Integer> i_lst;
+
+  output Tpl.Text out_txt;
+protected
+  Boolean ret_0;
+algorithm
+  ret_0 := listMember(3, i_lst);
+  out_txt := Tpl.writeStr(txt, Tpl.booleanString(ret_0));
+end genericTest3;
+
+public function genericTest4
+  input Tpl.Text txt;
+  input list<String> i_lst;
+
+  output Tpl.Text out_txt;
+protected
+  Boolean ret_0;
+algorithm
+  ret_0 := listMember("ahoj", i_lst);
+  out_txt := Tpl.writeStr(txt, Tpl.booleanString(ret_0));
+end genericTest4;
+
+public function genericTest5
+  input Tpl.Text txt;
+  input list<String> i_lst;
+  input String i_hoj;
+
+  output Tpl.Text out_txt;
+protected
+  Boolean ret_1;
+  Tpl.Text txt_0;
+algorithm
+  txt_0 := Tpl.writeTok(emptyTxt, Tpl.ST_STRING("a"));
+  txt_0 := Tpl.writeStr(txt_0, i_hoj);
+  ret_1 := listMember(Tpl.textString(txt_0), i_lst);
+  out_txt := Tpl.writeStr(txt, Tpl.booleanString(ret_1));
+end genericTest5;
+
+public function genericTest6
+  input Tpl.Text txt;
+  input list<String> i_lst;
+  input Integer i_idx;
+
+  output Tpl.Text out_txt;
+protected
+  String ret_0;
+algorithm
+  ret_0 := listGet(i_lst, i_idx);
+  out_txt := Tpl.writeStr(txt, ret_0);
+end genericTest6;
+
+public function genericTest7
+  input Tpl.Text txt;
+  input list<Integer> i_lst;
+  input Integer i_idx;
+
+  output Tpl.Text out_txt;
+protected
+  Integer ret_0;
+algorithm
+  ret_0 := listGet(i_lst, i_idx);
+  out_txt := Tpl.writeStr(txt, intString(ret_0));
+end genericTest7;
+
+protected function lm_82
+  input Tpl.Text in_txt;
+  input list<Integer> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<Integer> rest;
+        Integer i_it;
+      equation
+        txt = Tpl.writeStr(txt, intString(i_it));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("th revesed"));
+        txt = lm_82(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<Integer> rest;
+      equation
+        txt = lm_82(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_82;
+
+public function genericTest8
+  input Tpl.Text txt;
+  input list<Integer> i_lst;
+
+  output Tpl.Text out_txt;
+protected
+  list<Integer> ret_0;
+algorithm
+  ret_0 := listReverse(i_lst);
+  out_txt := lm_82(txt, ret_0);
+end genericTest8;
+
+protected function lm_84
+  input Tpl.Text in_txt;
+  input list<String> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<String> rest;
+        String i_it;
+      equation
+        txt = Tpl.writeStr(txt, i_it);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("hej!"));
+        txt = lm_84(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<String> rest;
+      equation
+        txt = lm_84(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_84;
+
+protected function lm_85
+  input Tpl.Text in_txt;
+  input list<list<String>> in_items;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_items)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           {} )
+      then txt;
+
+    case ( txt,
+           i_it :: rest )
+      local
+        list<list<String>> rest;
+        list<String> i_it;
+        list<String> ret_0;
+      equation
+        ret_0 = listReverse(i_it);
+        txt = lm_84(txt, ret_0);
+        txt = lm_85(txt, rest);
+      then txt;
+
+    case ( txt,
+           _ :: rest )
+      local
+        list<list<String>> rest;
+      equation
+        txt = lm_85(txt, rest);
+      then txt;
+  end matchcontinue;
+end lm_85;
+
+public function genericTest9
+  input Tpl.Text txt;
+  input list<list<String>> i_lst;
+
+  output Tpl.Text out_txt;
+protected
+  list<list<String>> ret_0;
+algorithm
+  ret_0 := listReverse(i_lst);
+  out_txt := lm_85(txt, ret_0);
+end genericTest9;
+
 end test;

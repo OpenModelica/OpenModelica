@@ -1,0 +1,4 @@
+loadFile("RightHeartStarling.mo");
+translateModel(RightHeartStarling);
+//simulate(RightHeartStarling);
+getErrorString();

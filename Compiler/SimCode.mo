@@ -34,7 +34,7 @@ public import Ceval;
 public import Tpl;
 
 //?? why these should be public, when it works in CevalScript as protected? -> Adrian
-// Adrian: in general when you return form a public function in a package a type
+// Adrian: in general when you return from a public function in a package a type
 //         defined in another package, that package import should be public too!
 public import SCode;
 public import DAE;
@@ -44,6 +44,7 @@ protected import ValuesUtil;
 protected import SCodeUtil;
 protected import ClassInf;
 protected import SimCodeC;
+protected import SimCodeCSharp;
 
 protected import Util;
 protected import Debug;
@@ -522,6 +523,10 @@ uniontype Context
   end OTHER;
 end Context;
 
+constant Context contextSimulationNonDescrete = SIMULATION(false);
+constant Context contextSimulationDescrete    = SIMULATION(true);
+constant Context contextOther                 = OTHER();
+
 function createSimulationContext
   input Boolean genDiscrete;
   output Context context;
@@ -689,9 +694,9 @@ algorithm
         simCode = createSimCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps,
                                 className, filename, funcfilename,file_dir,
                                 functions);
-        /* feed SimCode data structure to template to produce target code: this
-           generates Model.cpp, Model_functions.cpp, and Makefile */
-        _ = Tpl.tplString(SimCodeC.translateModel, simCode);
+        
+        callTargetTemplates(simCode);
+        
         /* generate makefile in old way since it's not implemented in
            templates yet */
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs,
@@ -700,6 +705,32 @@ algorithm
         (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
 end translateModel;
+
+
+public function callTargetTemplates
+  input SimCode inSimCode;
+  
+algorithm 
+  (_):=  matchcontinue (inSimCode)
+    local
+      SimCode simCode;
+    
+    case (simCode)
+      equation 
+        true = RTOpts.debugFlag("CSharp");
+        _ = Tpl.tplString(SimCodeCSharp.translateModel, simCode);
+      then (); 
+        
+    case (simCode)
+      equation
+        //TODO: use another switch ... later make it first class option like -target or so
+        false = RTOpts.debugFlag("CSharp"); 
+        /* feed SimCode data structure to template to produce target code: this
+           generates Model.cpp, Model_functions.cpp, and Makefile */
+        _ = Tpl.tplString(SimCodeC.translateModel, simCode);
+      then ();        
+  end matchcontinue;
+end callTargetTemplates;
 
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */

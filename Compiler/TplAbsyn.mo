@@ -201,7 +201,7 @@ uniontype MatchingExp
   
   record LITERAL_MATCH
     String value;
-    TypeSignature litType; // only INTEGER_TYPE, REAL_TYPE or BOOLEAN_TYPE 
+    TypeSignature litType "only INTEGER_TYPE, REAL_TYPE or BOOLEAN_TYPE"; 
   end LITERAL_MATCH;
   
   record REST_MATCH end REST_MATCH;
@@ -225,6 +225,7 @@ uniontype TypeInfo
   record TI_FUN_TYPE "Imported AST/builtin functions."
     TypedIdents inArgs;
     TypedIdents outArgs;
+    list<Ident> tyVars;
     //Ident callName; ... can be made as direct/wrapper calls
   end TI_FUN_TYPE;
   
@@ -1069,6 +1070,7 @@ algorithm
       MMExp stmt, mmexp, mmarg;
       ScopeEnv scEnv;
       Ident intxt, outtxt, ident, txtIdent;
+      list<Ident> tyVars;
       PathIdent path, fname;
       TypedIdents locals, iargs, oargs;
       TypeSignature idtype, exptype, elabtype, rettype, littype;
@@ -1152,7 +1154,7 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         Debug.fprint("failtrace","\n FUN_CALL fname = " +& pathIdentString(fname) +& "\n");
-        (fname, iargs, oargs) = getFunSignature(fname, tplPackage);
+        (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
         //Debug.fprint("failtrace"," after fname = " +& pathIdentString(fname) +& "\n");
         
         explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
@@ -1163,7 +1165,7 @@ algorithm
         //Debug.fprint("failtrace"," FUN_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
         
         (hasretval, stmt, mmexp, rettype, locals, intxt) 
-          = statementFromFun(argvals, fname, iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage);
         Debug.fprint("failtrace"," FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
         
         rettype = deAliasedType(rettype, astDefs);
@@ -1182,7 +1184,7 @@ algorithm
         (argvals, fname, iargs, oargs, scEnv, accMMDecls)
           = makeMatchFun(argval, mcases, scEnv, tplPackage, accMMDecls);          
         (_, stmt, _, _, locals, intxt) 
-          = statementFromFun(argvals, fname, iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
     
     case ( CONDITION( isNot = isnot, lhsExp = exp,
@@ -1201,7 +1203,7 @@ algorithm
         ( argvals, fname, iargs, oargs, scEnv, accMMDecls)
           = makeMatchFun(argval, mcases, scEnv, tplPackage, accMMDecls);          
         (_, stmt, _, _, locals, intxt) 
-          = statementFromFun(argvals, fname, iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then ( (stmt :: stmts),  locals, scEnv, accMMDecls, intxt);
     
     case ( MAP(argExp = argexp, ofBinding = ofbind, mapExp = mapexp), mmopts,
@@ -1318,7 +1320,7 @@ algorithm
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
         Debug.fprint("failtrace","\n NORET_CALL fname = " +& pathIdentString(fname) +& "\n");
-        (fname, iargs, oargs) = getFunSignature(fname, tplPackage);
+        (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
         //Debug.fprint("failtrace"," after fname = " +& pathIdentString(fname) +& "\n");
 
         {} = oargs;
@@ -1330,14 +1332,14 @@ algorithm
         //Debug.fprint("failtrace"," NORET_CALL after argList stmts (in reverse order) =\n" +& stmtsString(stmts) +& "\n");
         
         (hasretval, stmt, mmexp, rettype, locals, intxt) 
-          = statementFromFun(argvals, fname, iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, tyVars, intxt, outtxt, locals, tplPackage);
         Debug.fprint("failtrace"," NORET_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");        
       then ( stmt::stmts, locals, scEnv, accMMDecls, intxt);
     
     case ( NORET_CALL(name = fname, args = explst), mmopts,
            stmts, intxt, outtxt, locals, scEnv, tplPackage as TEMPL_PACKAGE(astDefs = astDefs), accMMDecls )
       equation
-        (fname, iargs, oargs) = getFunSignature(fname, tplPackage);
+        (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
         //Debug.fprint("failtrace"," after fname = " +& pathIdentString(fname) +& "\n");
         (_::_) = oargs;
         
@@ -1627,7 +1629,24 @@ algorithm
       equation
         areTextInOutArgs(iarg, oarg, tplPackage);
       then { BOUND_VALUE(IDENT("it")) };
-        
+    
+    //when the function is a non-template function
+    //and the signature has the only one argument and none is specified on the call
+    // assume the 'it'
+    //- case with an output argument (check if it is not a template function with no argument - i.e. only one text input argument) 
+    case ( {}, { iarg }, oarg :: _ , tplPackage)
+      equation
+        failure(areTextInOutArgs(iarg, oarg, tplPackage));
+      then { BOUND_VALUE(IDENT("it")) };
+    
+    //when the function is a non-template function
+    //and the signature has the only one argument and none is specified on the call
+    // assume the 'it'
+    //- case with no output argument (evidently a no-ret non-template function)
+    case ( {}, { iarg }, {} , tplPackage)
+      then { BOUND_VALUE(IDENT("it")) };
+    
+    
     //otherwise no change
     case ( explst, _, _, _ )
       then explst;
@@ -1663,6 +1682,7 @@ algorithm
       MMExp stmt;    
       ScopeEnv scEnv;
       Ident intxt, outtxt, ident;
+      list<Ident> tyVars;
       TypedIdents locals;
       tuple<MMExp, TypeSignature> argval;
       list<tuple<MMExp, TypeSignature>> argvals;
@@ -1708,13 +1728,13 @@ algorithm
     case ( FUN_CALL(name = fname, args = explst),
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
-        (fname, iargs, oargs) = getFunSignature(fname, tplPackage);
+        (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
         explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
            = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
         outtxt = "txt_" +& intString(listLength(locals));
         (_, stmt, mmexp, rettype, locals, outtxt) 
-           = statementFromFun(argvals, fname, iargs, oargs, emptyTxt, outtxt, locals, tplPackage);
+           = statementFromFun(argvals, fname, iargs, oargs, tyVars, emptyTxt, outtxt, locals, tplPackage);
         Debug.fprint("failtrace"," arg FUN_CALL stmt =\n" +& stmtsString({stmt}) +& "\n");
         //if emptyList in case of non-template function, not to be included to locals
         locals = addLocalValue(outtxt, TEXT_TYPE(), locals);
@@ -1876,7 +1896,7 @@ algorithm
           = makeMatchFun((mmexp, exptype), 
               {(SOME_MATCH(BIND_MATCH("val")), BOUND_VALUE(IDENT("val"))) }, scEnv, tplPackage, accMMDecls);          
         (_, stmt, _, _, locals, intxt) 
-          = statementFromFun(argvals, fname, iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argvals, fname, iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
       then
         ( (stmt :: stmts), locals, scEnv, accMMDecls, intxt);
     
@@ -2011,6 +2031,7 @@ public function statementFromFun
   input PathIdent inFunName;
   input TypedIdents inInArgs;
   input TypedIdents inOutArgs;
+  input list<Ident> inTypeVars;
   input Ident inInText;
   input Ident inOutText;
   input TypedIdents inLocals;
@@ -2024,16 +2045,17 @@ public function statementFromFun
   output Ident outOutText; 
 algorithm
   (outIsTemplate, outStmt, outRetMMExp, outRetType, outLocals) 
-    := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inInText, inOutText, inLocals, inTplPackage)
+    := matchcontinue (inArgValues, inFunName, inInArgs, inOutArgs, inTypeVars, inInText, inOutText, inLocals, inTplPackage)
     local
       
       PathIdent fname, itpath, typepckg;
-      TypedIdents iargs, oargs, locals;
+      TypedIdents iargs, oargs, locals, setTyVars;
       tuple<Ident,TypeSignature> iarg, oarg; 
       list<tuple<MMExp, TypeSignature>> argvals;
       list<MMExp> mmargs;
       
       Ident inid, outid, ident, typeident, intxt, outtxt, retval;
+      list<Ident> lhsArgs, tyVars;
       TypeSignature idtype, outtype;
       Scope scope;
       ScopeEnv scEnv;
@@ -2049,17 +2071,16 @@ algorithm
       Real rval;
       Boolean bval;
       String reason;
-      list<Ident> lhsArgs;        
       
     
     //simple template function - one implicit text argument 
     //- make a template call statement and return the out argument
-    case (argvals, fname, ( iarg  :: iargs ),  { oarg }, 
+    case (argvals, fname, ( iarg  :: iargs ),  { oarg }, tyVars,
           intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       equation
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId 
         //equality(listLength(argvals) = listLength(iargs));
-        mmargs = typeAdaptMMArgsForFun(argvals, iargs, astDefs);
+        (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
         mmtxt = MM_IDENT(IDENT(outtxt));
         mmexp = MM_FN_CALL(fname, MM_IDENT(IDENT(intxt)) :: mmargs); 
       then
@@ -2069,12 +2090,12 @@ algorithm
     //- make a template call statement and return only the first out argument
     case (argvals, fname, 
            ( iarg :: iargs ), 
-           ( oarg :: (oargs as (_::_)) ), 
+           ( oarg :: (oargs as (_::_)) ), tyVars,
            intxt, outtxt, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       equation
         areTextInOutArgs(iarg, oarg, tplPackage); //texts and equal or equal without conventional prefixes in/out, i.e. inId = outId
         //equality(listLength(argvals) = listLength(iargs));        
-        mmargs = typeAdaptMMArgsForFun(argvals, iargs, astDefs); 
+        (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs); 
         lhsArgs = elabOutTextArgs(mmargs, iargs, oargs, tplPackage); //assuming the same lengths (from above typeAdaptMMArgsForFun)
         lhsArgs = outtxt :: lhsArgs;
         mmtxt = MM_IDENT(IDENT(outtxt));
@@ -2085,11 +2106,12 @@ algorithm
     //a non-template function - no implicit text argument 
     //one return value
     //- make a locally bound return value and assign the function to it
-    case (argvals, fname, iargs,  { (_, outtype) }, 
+    case (argvals, fname, iargs,  { (_, outtype) }, tyVars,
          intxt, _, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       equation
         //equality(listLength(argvals) = listLength(iargs));
-        mmargs = typeAdaptMMArgsForFun(argvals, iargs, astDefs);
+        (mmargs, setTyVars) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
+        outtype = specializeType(outtype, tyVars, setTyVars);
         //make a separate locally bound return value
         retval = "ret_" +& intString(listLength(locals));
         locals = addLocalValue(retval, outtype, locals);          
@@ -2098,19 +2120,20 @@ algorithm
         ( true, MM_ASSIGN({retval}, mmexp), MM_IDENT(IDENT(retval)), outtype, locals, intxt );
 
     
+    //TODO: move this to be available only for # context 
     //a non-template function - no implicit text argument 
     //no return value - i.e. an intrinsic call like <# fun(arg) #>
     //- inline it as it is
-    case (argvals, fname, iargs,  {}, 
+    case (argvals, fname, iargs,  {}, tyVars, 
           intxt, _, locals, tplPackage as TEMPL_PACKAGE(astDefs = astDefs))
       equation
         //equality(listLength(argvals) = listLength(iargs));
-        mmargs = typeAdaptMMArgsForFun(argvals, iargs, astDefs);
+        (mmargs,_) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, {}, astDefs);
         mmexp = MM_FN_CALL(fname, mmargs); 
       then
         ( false, mmexp, mmexp, UNRESOLVED_TYPE("No return value."), locals, intxt );
     
-    case (argvals, fname, iargs,  oargs, intxt, outtxt, locals, tplPackage)
+    case (argvals, fname, iargs,  oargs, tyVars, intxt, outtxt, locals, tplPackage)
       equation
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "Error - cannot elaborate function '" +& pathIdentString(fname) +& "'.\n Invalid types (cannot convert) or number of in/out arguments (text in/out arguments must match by order and name equality where prefixes 'in' and 'out' can be used; A function has valid template signature only if all text out params have corresponding in text arguments.).\n");
@@ -2118,7 +2141,7 @@ algorithm
         fail();
     
     //should not ever happen
-    case ( _, _, _, _, _, _ ,_ ,_)
+    case ( _, _, _, _, _, _ ,_ , _, _)
       equation
         Debug.fprint("failtrace", "-!!!mmExpFromFun failed\n");
       then
@@ -2168,45 +2191,49 @@ end areTextInOutArgs;
 public function typeAdaptMMArgsForFun
   input list<tuple<MMExp, TypeSignature>> inArgValues;
   input TypedIdents inInArgs;
+  input list<Ident> inTypeVars;
+  input TypedIdents inSetTypeVars;
   input list<ASTDef> inASTDefs;
   
   output list<MMExp> outMMArguments;
+  output TypedIdents outSetTypeVars;
 algorithm
-  outMMArguments  := matchcontinue (inArgValues, inInArgs, inASTDefs)
+  (outMMArguments,outSetTypeVars)  
+  := matchcontinue (inArgValues, inInArgs, inTypeVars, inSetTypeVars, inASTDefs)
     local
-      TypedIdents iargs;
+      TypedIdents iargs, setTyVars;
       list<tuple<MMExp, TypeSignature>> argvals;
       MMExp mmarg;
       list<MMExp> mmargs;
       TypeSignature argtype, sigArgtype;
-      list<ASTDef> astdefs;      
+      list<ASTDef> astdefs;
+      list<Ident> tyVars;      
     
-    case ( {}, {}, _)
+    case ( {}, {}, _,setTyVars,  _)
       then
-        {};
+        ({}, setTyVars);
         
-    case ( (mmarg, argtype) :: argvals, (_, sigArgtype) :: iargs, astdefs)
+    case ( (mmarg, argtype) :: argvals, (_, sigArgtype) :: iargs, tyVars, setTyVars, astdefs)
       equation
         argtype = deAliasedType(argtype, astdefs);
-        sigArgtype = deAliasedType(sigArgtype, astdefs);
-        mmarg = typeAdaptMMArg(mmarg, argtype, sigArgtype, astdefs);
-        mmargs = typeAdaptMMArgsForFun(argvals, iargs, astdefs);
+        (mmarg, setTyVars) = typeAdaptMMArg(mmarg, argtype, sigArgtype, tyVars, setTyVars, astdefs);
+        (mmargs, setTyVars) = typeAdaptMMArgsForFun(argvals, iargs, tyVars, setTyVars, astdefs);
       then
-        ( mmarg :: mmargs );
+        ( mmarg :: mmargs, setTyVars );
     
-    case ( {}, (_ :: _), _)
+    case ( {}, (_ :: _), _,_,_)
       equation
         Debug.fprint("failtrace", "Error - more arguments expected for a function.\n");
       then
         fail();
     
-    case ( (_ :: _), {}, _)
+    case ( (_ :: _), {}, _,_,_)
       equation
         Debug.fprint("failtrace", "Error - less number of arguments expected for a function.\n");
       then
         fail();
         
-    case ( _, _, _)
+    case ( _, _,_,_, _)
       equation
         Debug.fprint("failtrace", "!!! - typeAdaptMMArgsForFun failed\n");
       then
@@ -2217,39 +2244,76 @@ end typeAdaptMMArgsForFun;
 
 public function typeAdaptMMArg
   input MMExp inMMArg;
-  input TypeSignature inArgType;
-  input TypeSignature inTargetType;
+  input TypeSignature inArgType "assumed to be dealiased";
+  input TypeSignature inTargetType "not dealiased - must check for type vars first";
+  input list<Ident> inTypeVars;
+  input TypedIdents inSetTypeVars;
   input list<ASTDef> inASTDefs;
   
   output MMExp outMMArg;
+  output TypedIdents outSetTypeVars;
 algorithm
-  outMMArg := matchcontinue (inMMArg, inArgType, inTargetType, inASTDefs)
+  (outMMArg, outSetTypeVars)
+  := matchcontinue (inMMArg, inArgType, inTargetType, inTypeVars, inSetTypeVars, inASTDefs)
     local
-      TypedIdents iargs;
+      TypedIdents iargs, setTyVars;
       MMExp mmarg, mmexp;
       list<tuple<MMExp, TypeSignature>> argvals;
       list<MMExp> mmargs;
       TypeSignature argtype, targettype;
       list<ASTDef> astdefs; 
       String str;
-      StringToken strtok;     
+      StringToken strtok;
+      list<Ident> tyVars;     
 
-    //no conversion ... 
-    case ( mmarg, argtype, targettype, astdefs)
+    
+    //special case when argtype is STRING_TOKEN_TYPE()
+    //to-string conversion will take precedence (is default) when targettype is an unbound type variable
+    //this is to prevent the surprise when imported function with type variable has a template expression as argument (the result is converted to string by default as user would expect intuitively) 
+    case ( mmexp, argtype as STRING_TOKEN_TYPE(), targettype, tyVars, setTyVars, astdefs)
       equation
-        typesEqual(argtype, targettype, astdefs); //assumes the arguments are deAliasedType-ed
+        setTyVars = typesEqual(targettype, STRING_TYPE(), tyVars, setTyVars, astdefs);
+        mmarg = mmExpToString(mmexp, argtype);
       then
-        mmarg;
+        (mmarg, setTyVars);
     
-    //convert to string
-    case ( mmexp, argtype, STRING_TYPE(), _)
+    //special case when argtype is TEXT_TYPE()
+    //to-string conversion will take precedence (is default) when targettype is an unbound type variable
+    //this is to prevent the surprise when imported function with type variable has a template expression as argument (the result is converted to string by default as user would expect intuitively) 
+    case ( mmexp, argtype as TEXT_TYPE(), targettype, tyVars, setTyVars, astdefs)
+      equation
+        setTyVars = typesEqual(targettype, STRING_TYPE(), tyVars, setTyVars, astdefs);
+        mmarg = mmExpToString(mmexp, argtype);
       then
-        mmExpToString(mmexp, argtype);
+        (mmarg, setTyVars);
     
-    //strTokText 
-    case ( mmarg, STRING_TOKEN_TYPE(), TEXT_TYPE(), _)
+    
+    //no conversion when equal ... 
+    case ( mmarg, argtype, targettype, tyVars, setTyVars, astdefs)
+      equation
+        setTyVars = typesEqual(targettype, argtype, tyVars, setTyVars, astdefs);
       then
-        MM_FN_CALL(PATH_IDENT("Tpl",IDENT("strTokText")), { mmarg });
+        (mmarg, setTyVars);
+    
+    //convert to string  
+    case ( mmexp, argtype, targettype, tyVars, setTyVars, astdefs)
+      equation
+        setTyVars = typesEqual(targettype, STRING_TYPE(), tyVars, setTyVars, astdefs);
+        mmarg = mmExpToString(mmexp, argtype);
+      then
+        (mmarg, setTyVars);
+    
+    
+    ////when target type is TEXT_TYPE() ... special case 
+    //strTokText -> directly TEXT_TYPE() 
+    case ( mmarg, STRING_TOKEN_TYPE(), targettype, tyVars, setTyVars, astdefs)
+      equation
+        setTyVars = typesEqual(targettype, TEXT_TYPE(), tyVars, setTyVars, astdefs);
+      then
+        ( MM_FN_CALL(PATH_IDENT("Tpl",IDENT("strTokText")), { mmarg }),  setTyVars);
+    
+    
+    
     
     /* no convertion to stringtoken yet, ... every string will be stringtoken then
     //textStrTok - useful for options when from a template
@@ -2264,15 +2328,16 @@ algorithm
         MM_FN_CALL(PATH_IDENT("Tpl",IDENT("ST_STRING")), { mmarg });
     */
     
+    //when target type is TEXT_TYPE() 
     // _ -> text ... to string and -> text 
-    case ( mmarg, argtype, TEXT_TYPE(), _)
+    case ( mmarg, argtype, targettype, tyVars, setTyVars, astdefs)
       equation
+        setTyVars = typesEqual(targettype, TEXT_TYPE(), tyVars, setTyVars, astdefs);
         mmarg = mmExpToString(mmarg, argtype);
       then
-        MM_FN_CALL(PATH_IDENT("Tpl",IDENT("stringText")), { mmarg });
+        ( MM_FN_CALL(PATH_IDENT("Tpl",IDENT("stringText")), { mmarg }),  setTyVars);
     
-    
-    case ( _, _, _, _)
+    case ( _, _, _, _,_,_)
       equation
         Debug.fprint("failtrace", "Error - typeAdaptMMArg failed\n");
       then
@@ -2309,7 +2374,8 @@ algorithm
 
     case ( mmarg, argtype, targettype, stmts, locals, astdefs)
       equation
-        mmarg = typeAdaptMMArg(mmarg, argtype, targettype, astdefs);
+        argtype = deAliasedType(argtype, astdefs);
+        (mmarg,_) = typeAdaptMMArg(mmarg, argtype, targettype, {}, {}, astdefs);
         (mmarg, stmts, locals) = mmEnsureNonFunctionArg(mmarg, targettype, stmts, locals);
       then
         (mmarg, stmts, locals);
@@ -2608,7 +2674,7 @@ algorithm
         
         //call the elaborated function
         (_, stmt, _, _, locals, intxt) 
-          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
           
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(false, restargs, mapctx, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, mmFun :: accMMDecls);
@@ -2680,7 +2746,7 @@ algorithm
         
         //call the elaborated function
         (_, stmt, _, _, locals, intxt) 
-          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, intxt, outtxt, locals, tplPackage);
+          = statementFromFun(argtomap :: extargvals, IDENT(fname), iargs, oargs, {}, intxt, outtxt, locals, tplPackage);
           
         (stmts, locals, scEnv, accMMDecls, intxt)
           = statementsFromMapExp(false, restargs, mapctx, stmt::stmts, intxt, outtxt, locals, scEnv, tplPackage, mmFun :: accMMDecls);
@@ -3357,7 +3423,7 @@ algorithm
     case ( mexp as LITERAL_MATCH(litType = ot), 
            mtype, astDefs )
       equation
-        typesEqual(deAliasedType(ot, astDefs), deAliasedType(mtype, astDefs), astDefs);         
+        typesEqualConcrete(deAliasedType(ot, astDefs), deAliasedType(mtype, astDefs), astDefs);         
       then 
         mexp;
     
@@ -5314,97 +5380,263 @@ end deAliasedType;
 
 
 protected function typesEqual "function typesEqual:
-This function compares two type signatures. It assumes the input types are deAliasedType-ed"
-  input TypeSignature inTypeA;
-  input TypeSignature inTypeB;
+This function compares two type signatures.
+Typed variables and already set type variables can be specified. 
+"
+  input TypeSignature inType "may have type variables - not dealiased";
+  input TypeSignature inTypeConcrete "must be conrete - not dealiased";
+  input list<Ident> inTypeVars;
+  input TypedIdents inSetTypeVars;
   input list<ASTDef> inASTDefs;
+  
+  output TypedIdents outSetTypeVars;  
 algorithm
-  _ := matchcontinue(inTypeA, inTypeB, inASTDefs)
+  outSetTypeVars := matchcontinue(inType, inTypeConcrete, inTypeVars, inSetTypeVars, inASTDefs)
     local
-      TypeSignature ota, otb;
+      TypeSignature ota, otb, ty, tyConcrete, tyConcreteDA;
       list<TypeSignature> otaLst, otbLst;
-      Ident typeident;
+      Ident tid;
+      list<Ident> tyVars;
+      TypedIdents setTyVars;
       PathIdent na, nb;
       Option<PathIdent> typepckgOpt;
       list<ASTDef> astDefs;
       
-    case ( LIST_TYPE(ofType = ota), LIST_TYPE(ofType = otb), astDefs )
-      equation
-        ota = deAliasedType(ota, astDefs);
-        otb = deAliasedType(otb, astDefs);
-        typesEqual(ota, otb, astDefs);
+    
+    case ( LIST_TYPE(ofType = ota), LIST_TYPE(ofType = otb), tyVars, setTyVars, astDefs )
       then 
-        ();
+        typesEqual(ota, otb, tyVars, setTyVars, astDefs);
     
-    case ( ARRAY_TYPE(ofType = ota), ARRAY_TYPE(ofType = otb), astDefs )
-      equation
-        ota = deAliasedType(ota, astDefs);
-        otb = deAliasedType(otb, astDefs);
-        typesEqual(ota, otb, astDefs);
+    case ( ARRAY_TYPE(ofType = ota), ARRAY_TYPE(ofType = otb), tyVars, setTyVars, astDefs )
       then 
-        ();
+        typesEqual(ota, otb, tyVars, setTyVars, astDefs);
     
-    case ( OPTION_TYPE(ofType = ota), OPTION_TYPE(ofType = otb), astDefs )
-      equation
-        ota = deAliasedType(ota, astDefs);
-        otb = deAliasedType(otb, astDefs);
-        typesEqual(ota, otb, astDefs);
+    case ( OPTION_TYPE(ofType = ota), OPTION_TYPE(ofType = otb), tyVars, setTyVars, astDefs )
       then 
-        ();
+        typesEqual(ota, otb, tyVars, setTyVars, astDefs);
+      
+    case ( TUPLE_TYPE(ofTypes = otaLst), TUPLE_TYPE(ofTypes = otbLst), tyVars, setTyVars, astDefs )
+      then 
+        typesEqualList(otaLst, otbLst, tyVars, setTyVars, astDefs);
     
-    case ( TUPLE_TYPE(ofTypes = otaLst), TUPLE_TYPE(ofTypes = otbLst), astDefs )
-      equation 
-        typesEqualList(otaLst, otbLst, astDefs);
-      then ();
+    //concrete named type with PathIdent that is not a type variable
+    case ( ty as NAMED_TYPE(name = PATH_IDENT(_,_)), tyConcrete, _, setTyVars, astDefs )
+      equation
+        ty = deAliasedType(ty, astDefs);
+        tyConcrete = deAliasedType(tyConcrete, astDefs);
+        typesEqualConcrete(ty, tyConcrete, astDefs);        
+      then 
+        setTyVars;
     
+    //concrete named type with Ident that is not a type variable
+    case ( ty as NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars, setTyVars, astDefs )
+      equation
+        false = listMember(tid, tyVars);
+        ty = deAliasedType(ty, astDefs);
+        tyConcrete = deAliasedType(tyConcrete, astDefs);
+        typesEqualConcrete(ty, tyConcrete, astDefs);        
+      then 
+        setTyVars;
+    
+    //try set type vars first
+    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars as (_::_), setTyVars, astDefs )
+      equation
+        ty = lookupTupleList(setTyVars, tid);
+        //true = listMember(na, tyVars); //must be true
+        tyConcreteDA = deAliasedType(tyConcrete, astDefs);
+        typesEqualConcrete(ty, tyConcreteDA, astDefs);                
+      then 
+        setTyVars;
+    
+    //failed after found set type var
+    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars as (_::_), setTyVars, astDefs )
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        ty = lookupTupleList(setTyVars, tid);
+        //true = listMember(na, tyVars); //must be true
+        tyConcreteDA = deAliasedType(tyConcrete, astDefs);
+        failure( typesEqualConcrete(ty, tyConcreteDA, astDefs) );
+        Debug.fprint("failtrace", "Error - unmatched type for type variable '" +& tid 
+           +& "'. Firstly inferred '" +& typeSignatureString(ty)
+           +& "', next inferred '" +& typeSignatureString(tyConcrete) 
+           +& "'(dealiased '" +& typeSignatureString(tyConcreteDA) +& "').\n" 
+            );        
+      then 
+        fail();
+    
+    
+    //infer/make a new set type var 
+    case ( NAMED_TYPE(name = IDENT(tid)), tyConcrete, tyVars as (_::_), setTyVars, astDefs )
+      equation
+        failure(_ = lookupTupleList(setTyVars, tid));
+        true = listMember(tid, tyVars);
+        tyConcreteDA = deAliasedType(tyConcrete, astDefs);                
+      then 
+        (tid, tyConcreteDA) :: setTyVars;
+    
+    
+    //?? don't know if this is needed
+    case ( UNRESOLVED_TYPE(_), UNRESOLVED_TYPE(_), tyVars, setTyVars, _ )
+      then 
+        setTyVars;
+    
+    // all the others can be matched structurally (as they have no structure)
+    //except NAMED_TYPE that was matched above
+    case ( ty, tyConcrete, tyVars, setTyVars,_ )
+      equation
+        failure(NAMED_TYPE(name = _) = ty);
+        equality(ty = tyConcrete);
+      then 
+        setTyVars;
+    
+  end matchcontinue;
+end typesEqual;
+
+
+protected function typesEqualConcrete "function typesEqualConcrete:
+This function compares two type signatures. 
+It assumes the input types are deAliasedType-ed.
+"
+  input TypeSignature inTypeA "must be conrete - dealiased without type variables";
+  input TypeSignature inTypeB "must be conrete - dealiased without type variables";
+  input list<ASTDef> inASTDefs;
+  
+algorithm
+  _:= matchcontinue(inTypeA, inTypeB, inASTDefs)
+    local
+      TypeSignature tyA, tyB;
+      PathIdent na, nb;
+      list<ASTDef> astDefs;
+      
+    //named types 
     case ( NAMED_TYPE(name = na), NAMED_TYPE(name = nb), _ )
       equation
         equality(na = nb);
       then 
         ();
     
-    case ( UNRESOLVED_TYPE(_), UNRESOLVED_TYPE(_), _ )
-      then 
-        ();
-    
-    // all the others can be matched structurally (as they have no structure)
-    case ( ota, otb, _ )
+    //non-NAME_TYPE can call typesEqual ... the above case prevents infinite recursion loop for NAMED_TYPE  
+    case ( tyA, tyB, astDefs )
       equation
-        equality(ota = otb);
+        failure(NAMED_TYPE(name = _) = tyA);
+        _ = typesEqual(tyA, tyB, {},{}, astDefs);
       then 
         ();
     
   end matchcontinue;
-end typesEqual;
-
-
+end typesEqualConcrete;
 
 
 protected function typesEqualList
   input list<TypeSignature> inTypeAList;
   input list<TypeSignature> inTypeBList;
+  input list<Ident> inTypeVars;
+  input TypedIdents inSetTypeVars;
   input list<ASTDef> inASTDefs;
+  
+  output TypedIdents outSetTypeVars;
 algorithm
-  _ := matchcontinue(inTypeAList, inTypeBList, inASTDefs)
+  outSetTypeVars := matchcontinue(inTypeAList, inTypeBList, inTypeVars, inSetTypeVars, inASTDefs)
     local
       TypeSignature ota, otb;
       list<TypeSignature> otaLst, otbLst;
       list<ASTDef> astDefs;
+      list<Ident> tyVars;
+      TypedIdents setTyVars;
       
-    case ( {}, {}, _)
-      then ();
+    case ( {}, {},_ , setTyVars, _)
+      then setTyVars;
           
-    case ( ota :: otaLst, otb :: otbLst, astDefs )
+    case ( ota :: otaLst, otb :: otbLst, tyVars, setTyVars, astDefs )
       equation
-        ota = deAliasedType(ota, astDefs);
-        otb = deAliasedType(otb, astDefs);
-        typesEqual(ota, otb, astDefs);
-        typesEqualList(otaLst, otbLst, astDefs);
+        setTyVars = typesEqual(ota, otb, tyVars, setTyVars, astDefs);
       then 
-        ();
+        typesEqualList(otaLst, otbLst, tyVars, setTyVars, astDefs);
         
   end matchcontinue;
 end typesEqualList;
+
+
+protected function specializeType "function specializeType:
+This function specializes type with set type variables and checks if all of them are replaced. 
+"
+  input TypeSignature inType "may have type variables";
+  input list<Ident> inTypeVars;
+  input TypedIdents inSetTypeVars;
+  
+  output TypeSignature outType;  
+algorithm
+  outType := matchcontinue(inType, inTypeVars, inSetTypeVars)
+    local
+      TypeSignature ota, otb, tyConcrete;
+      list<TypeSignature> otaLst, otbLst;
+      Ident tid;
+      list<Ident> tyVars;
+      TypedIdents setTyVars;
+      PathIdent na, nb;
+      Option<PathIdent> typepckgOpt;
+      list<ASTDef> astDefs;
+      
+    
+    case ( LIST_TYPE(ofType = ota), tyVars, setTyVars)
+      equation
+        ota = specializeType(ota, tyVars, setTyVars);               
+      then 
+        LIST_TYPE(ota);
+    
+    case ( ARRAY_TYPE(ofType = ota), tyVars, setTyVars)
+      equation
+        ota = specializeType(ota, tyVars, setTyVars);               
+      then 
+        ARRAY_TYPE(ota);
+    
+    case ( OPTION_TYPE(ofType = ota), tyVars, setTyVars)
+      equation
+        ota = specializeType(ota, tyVars, setTyVars);               
+      then 
+        OPTION_TYPE(ota);
+    
+    case ( TUPLE_TYPE(ofTypes = otaLst), tyVars, setTyVars)
+      equation
+        otaLst = Util.listMap2(otaLst, specializeType, tyVars, setTyVars); 
+      then 
+        TUPLE_TYPE(otaLst);
+    
+    //normal named type that is not a type variable
+    case ( tyConcrete as NAMED_TYPE(name = IDENT(tid)), tyVars, setTyVars)
+      equation
+        false = listMember(tid, tyVars);
+      then 
+        tyConcrete;
+    
+    //try set type vars first
+    case ( NAMED_TYPE(name = IDENT(tid)), tyVars as (_::_), setTyVars)
+      equation
+        tyConcrete = lookupTupleList(setTyVars, tid);
+      then 
+        tyConcrete;
+    
+    //error - is type var but not assigned/inferred
+    case ( NAMED_TYPE(name = IDENT(tid)), tyVars as (_::_), setTyVars )
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        true = listMember(tid, tyVars);
+        failure(_ = lookupTupleList(setTyVars, tid));
+        Debug.fprint("failtrace", "Error - cannot infer type variable '" +& tid +& "'.\n" );        
+      then 
+        fail();
+    
+    
+    // all the others are concrete already 
+    //except NAMED_TYPE with ident that was dealt above
+    case ( tyConcrete, tyVars, setTyVars)
+      equation
+        failure(NAMED_TYPE(name = IDENT(_)) = tyConcrete);
+      then 
+        tyConcrete;
+    
+  end matchcontinue;
+end specializeType;
 
 
 public function getFunSignature
@@ -5414,12 +5646,15 @@ public function getFunSignature
   output PathIdent outPath;
   output TypedIdents outInArgs;
   output TypedIdents outOutArgs;
+  output list<Ident> outTypeVars;
 algorithm
-  outMMPackage := matchcontinue (inFunName, inTplPackage)
+  (outPath, outInArgs, outOutArgs, outTypeVars)
+  := matchcontinue (inFunName, inTplPackage)
     local
       PathIdent fname, funpckg;
       Option<PathIdent> funpckgOpt;
       Ident templname, fident;
+      list<Ident> tyVars;
       list<tuple<Ident,TemplateDef>> templateDefs;
       list<MMDeclaration> mmDeclarations;
       TemplPackage tp;
@@ -5435,7 +5670,7 @@ algorithm
         //templname = encodeIdent(templname);
         fname = IDENT( templname );
       then 
-        (fname, iargs, oargs);
+        (fname, iargs, oargs, {});
     
     case (fname as IDENT(templname), TEMPL_PACKAGE(templateDefs = templateDefs))
       equation
@@ -5449,12 +5684,13 @@ algorithm
       equation
         NAMED_TYPE(fname) = deAliasedType(NAMED_TYPE(fname), astDefs);
         (funpckgOpt, fident) = splitPackageAndIdent(fname);
-        (funpckg, TI_FUN_TYPE(inArgs = iargs, outArgs = oargs)) = getTypeInfo(funpckgOpt, fident, astDefs);
+        (funpckg, TI_FUN_TYPE(inArgs = iargs, outArgs = oargs, tyVars = tyVars)) 
+         = getTypeInfo(funpckgOpt, fident, astDefs);
         fname = Util.if_(Util.equal(IDENT("builtin"), funpckg), 
                      IDENT(fident),
                      makePathIdent(funpckg, fident)); 
       then 
-        (fname, iargs, oargs);
+        (fname, iargs, oargs, tyVars);
         
     case (fname, _)
       equation
@@ -5638,35 +5874,36 @@ algorithm
       list<tuple<Ident, TypedIdents>> recTags;
       TypedIdents fields, inArgs, outArgs;
       TypeSignature aliasType, constType;
+      list<Ident> tyvars;
       
     case ( TI_UNION_TYPE( recTags = recTags ) , importpckg )
       equation
-        recTags = listMap1Tuple22(recTags, fullyQualifyAstTypedIdents, importpckg);
+        recTags = listMap2Tuple22(recTags, fullyQualifyAstTypedIdents, importpckg, {});
       then 
         TI_UNION_TYPE(recTags);
     
     case ( TI_RECORD_TYPE( fields = fields ) , importpckg )
       equation
-        fields = fullyQualifyAstTypedIdents(fields, importpckg);
+        fields = fullyQualifyAstTypedIdents(fields, importpckg, {});
       then 
         TI_RECORD_TYPE(fields);
     
     case ( TI_ALIAS_TYPE( aliasType = aliasType ) , importpckg )
       equation
-        aliasType = fullyQualifyAstTypeSignature(aliasType, importpckg);
+        aliasType = fullyQualifyAstTypeSignature(aliasType, importpckg, {});
       then 
         TI_ALIAS_TYPE(aliasType);
     
-    case ( TI_FUN_TYPE( inArgs = inArgs, outArgs = outArgs) , importpckg )
+    case ( TI_FUN_TYPE( inArgs = inArgs, outArgs = outArgs, tyVars = tyvars) , importpckg )
       equation
-        inArgs  = fullyQualifyAstTypedIdents(inArgs, importpckg);
-        outArgs = fullyQualifyAstTypedIdents(outArgs, importpckg);
+        inArgs  = fullyQualifyAstTypedIdents(inArgs, importpckg, tyvars);
+        outArgs = fullyQualifyAstTypedIdents(outArgs, importpckg, tyvars);
       then 
-        TI_FUN_TYPE( inArgs, outArgs);
+        TI_FUN_TYPE( inArgs, outArgs, tyvars);
     
     case ( TI_CONST_TYPE( constType = constType ) , importpckg )
       equation
-        constType = fullyQualifyAstTypeSignature(constType, importpckg);
+        constType = fullyQualifyAstTypeSignature(constType, importpckg, {});
       then 
         TI_CONST_TYPE( constType );
     
@@ -5684,53 +5921,64 @@ end fullyQualifyAstTypeInfo;
 public function fullyQualifyAstTypedIdents 
   input TypedIdents inASTDefTypedIdents;
   input PathIdent inImportPackage;
+  input list<Ident> inTypeVars;
     
   output TypedIdents outASTDefTypedIdents;  
 algorithm 
   outASTDefTypedIdents := 
-    listMap1Tuple22(inASTDefTypedIdents, fullyQualifyAstTypeSignature, inImportPackage); 
+  listMap2Tuple22(inASTDefTypedIdents, fullyQualifyAstTypeSignature, inImportPackage, inTypeVars);    
 end fullyQualifyAstTypedIdents;
 
 
 public function fullyQualifyAstTypeSignature 
   input TypeSignature inASTDefTypeSignature;
   input PathIdent inImportPackage;
+  input list<Ident> inTypeVars;
     
   output TypeSignature outASTDefTypeSignature;  
 algorithm 
-  outASTDefTypeSignature := matchcontinue (inASTDefTypeSignature, inImportPackage)
+  outASTDefTypeSignature := matchcontinue (inASTDefTypeSignature, inImportPackage, inTypeVars)
     local
       list<TypeSignature> typeLst;
       Ident typeident;
+      list<Ident> tyVars;
       PathIdent importpckg, na;
       TypeSignature ota, ts;
       
-    case ( LIST_TYPE(ofType = ota), importpckg )
+    case ( LIST_TYPE(ofType = ota), importpckg, tyVars )
       equation
-        ota = fullyQualifyAstTypeSignature(ota, importpckg);        
+        ota = fullyQualifyAstTypeSignature(ota, importpckg, tyVars);        
       then 
         LIST_TYPE(ota);
     
-    case ( ARRAY_TYPE(ofType = ota), importpckg )
+    case ( ARRAY_TYPE(ofType = ota), importpckg, tyVars )
       equation
-        ota = fullyQualifyAstTypeSignature(ota, importpckg);
+        ota = fullyQualifyAstTypeSignature(ota, importpckg, tyVars);
       then 
         ARRAY_TYPE(ota);
     
-    case ( OPTION_TYPE(ofType = ota), importpckg )
+    case ( OPTION_TYPE(ofType = ota), importpckg, tyVars )
       equation
-        ota = fullyQualifyAstTypeSignature(ota, importpckg);
+        ota = fullyQualifyAstTypeSignature(ota, importpckg, tyVars);
       then 
         OPTION_TYPE(ota);
     
-    case ( TUPLE_TYPE(ofTypes = typeLst), importpckg )
+    case ( TUPLE_TYPE(ofTypes = typeLst), importpckg, tyVars )
       equation
-        typeLst = Util.listMap1(typeLst, fullyQualifyAstTypeSignature, importpckg);
+        typeLst = Util.listMap2(typeLst, fullyQualifyAstTypeSignature, importpckg, tyVars);
       then 
         TUPLE_TYPE(typeLst);
         
+    //exclude a type variable from qualification 
+    case ( ts as NAMED_TYPE(name = IDENT(ident = typeident)),  importpckg, tyVars )
+      equation
+        true = listMember(typeident, tyVars);
+      then 
+        ts;
+    
+    
     //qualify  and convert  Tpl.Text -> TEXT_TYPE() 
-    case ( NAMED_TYPE(name = IDENT(ident = typeident)),  importpckg )
+    case ( NAMED_TYPE(name = IDENT(ident = typeident)),  importpckg, _ )
       equation
         na = makePathIdent(importpckg, typeident);
         ts = convertNameTypeIfIntrinsic(na);
@@ -5738,20 +5986,20 @@ algorithm
         ts;
     
     //convert  Tpl.Text -> TEXT_TYPE()
-    case ( NAMED_TYPE(name = na as PATH_IDENT(_,_)),  importpckg )
+    case ( NAMED_TYPE(name = na as PATH_IDENT(_,_)),  importpckg, _ )
       equation
         ts = convertNameTypeIfIntrinsic(na);
       then 
         ts;
     
     //all the others
-    case ( ts , _ )
+    case ( ts , _, _ )
       then 
         ts;
     
     
     //should not happen
-    case ( _, _ )
+    case ( _, _, _ )
       equation
         Debug.fprint("failtrace", "-!!! fullyQualifyAstTypeSignature failed .\n");
       then 
@@ -6066,6 +6314,51 @@ algorithm
 end listMap1Tuple22;
 
 
+protected function listMap2Tuple22
+  input list<tuple<Type_a,Type_b>> inList;
+  input Fun_Tbde_to_Tc inFun_Tbde_to_Tc;
+  input Type_d inExtraArg;
+  input Type_e inExtraArg2;
+  
+  output list<tuple<Type_a,Type_c>> outList;
+    
+  partial function Fun_Tbde_to_Tc
+    input Type_b inTypeB;
+    input Type_d inTypeD;
+    input Type_e inExtraArg2;
+    output Type_c outTypeC;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end Fun_Tbde_to_Tc;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any; 
+  replaceable type Type_e subtypeof Any; 
+algorithm
+  outList := matchcontinue(inList, inFun_Tbde_to_Tc, inExtraArg, inExtraArg2)
+    local
+       Type_a a;
+       Type_b itemB;
+       Type_c itemC;
+       Type_d extarg;
+       Type_e extarg2;
+       Fun_Tbde_to_Tc funBDEtoC;
+       list<tuple<Type_a,Type_b>> restB;
+       list<tuple<Type_a,Type_c>> restC;
+       
+    case ( {}, _, _, _) then {};
+    
+    case ( (a, itemB) :: restB, funBDEtoC, extarg, extarg2 )
+      equation
+        itemC = funBDEtoC(itemB, extarg, extarg2);
+        restC = listMap2Tuple22(restB, funBDEtoC, extarg, extarg2); 
+      then 
+        ((a, itemC) :: restC);
+        
+       
+  end matchcontinue;
+end listMap2Tuple22;
 
 //**************************************
 // *** debug output functions
