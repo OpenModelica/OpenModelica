@@ -13629,6 +13629,17 @@ algorithm
         enumtype = Types.makeEnumerationType(p, v1);
       then
         enumtype;
+		/* Array of type extending from base type. */
+		case (_, ClassInf.TYPE(string = _), _, SOME((DAE.T_ARRAY(_, (arrayType, _)), _)), _, _)
+			local
+				DAE.TType arrayType;
+				DAE.Type resType;
+				ClassInf.State classState;
+			equation
+				classState = arrayTTypeToClassInfState(arrayType);
+				resType = mktype(inPath, classState, inTypesVarLst, inTypesTypeOption, inEqualityConstraint, inClass);
+			then resType;
+
     /* MetaModelica extension */
     case (p,ClassInf.META_TUPLE(_),_,SOME(bc2),_,_)local DAE.Type bc2; equation then bc2;
     case (p,ClassInf.META_OPTION(_),_,SOME(bc2),_,_) local DAE.Type bc2; equation then bc2;
@@ -13646,6 +13657,18 @@ algorithm
         ((DAE.T_COMPLEX(st,l,bc,equalityConstraint),somep));
   end matchcontinue;
 end mktype;
+
+protected function arrayTTypeToClassInfState
+	input DAE.TType arrayType;
+	output ClassInf.State classInfState;
+algorithm
+	classInfState := matchcontinue(arrayType)
+		case (DAE.T_INTEGER(_)) then ClassInf.TYPE_INTEGER("");
+		case (DAE.T_REAL(_)) then ClassInf.TYPE_REAL("");
+		case (DAE.T_STRING(_)) then ClassInf.TYPE_STRING("");
+		case (DAE.T_BOOL(_)) then ClassInf.TYPE_BOOL("");
+	end matchcontinue;
+end arrayTTypeToClassInfState;
 
 protected function mktypeWithArrays 
 "function: mktypeWithArrays
