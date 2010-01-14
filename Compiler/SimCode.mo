@@ -1414,6 +1414,8 @@ algorithm
       then (accRecDecls,rt_2);
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),_), accRecDecls, rt)
       then (accRecDecls,rt);
+    case ((_,_), accRecDecls, rt)
+      then (accRecDecls,rt);
     case ((_,_), accRecDecls, rt) then 
       (RECORD_DECL_FULL("#an odd record#", Absyn.IDENT("?noname?"), {}) :: accRecDecls ,rt);
   end matchcontinue;

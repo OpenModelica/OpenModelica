@@ -1113,6 +1113,7 @@ extern "C" {
 
 cref(ComponentRef) ::=
   case CREF_IDENT then '<ident>'
+  case CREF_QUAL then '<ident>.<cref(componentRef)>'
   case _ then "CREF_NOT_IDENT"
 
 crefSubscript(ComponentRef) ::=
@@ -1161,12 +1162,11 @@ functionHeaders(list<Function> functions) ::=
 <functions:
   case FUNCTION then
     <<
-    /*recordDecls : recordDeclaration() \n*/
+    <recordDecls : recordDeclaration(it) \n>
     <functionHeader(underscorePath(name), functionArguments, outVars)>
     >> 
   case EXTERNAL_FUNCTION then
     <<
-    /*recordDecls : recordDeclaration() \n*/
     <functionHeader(underscorePath(name), funArgs, outVars)>
 
     <extFunDef(it)>
@@ -1178,19 +1178,12 @@ recordDeclaration(RecordDeclaration) ::=
   case RECORD_DECL_FULL then
     <<
     struct <name> {
-      <variables of var as VARIABLE :
-          if expTypeArrayIf(ty) then '<it> <cref(var.name)>;'
-          else '/* <cref(var.name)> is an odd member. */'
-      \n>
+      <variables of var as VARIABLE : '<varType(var)> <cref(var.name)>;' \n>
     };
     <recordDefinition( dotPath(defPath),
                        underscorePath(defPath),
                        (variables of VARIABLE : '"<cref(name)>"' ",") )>
     >> 
-  case RECORD_DECL_DEF then 
-    recordDefinition(dotPath(path),
-                     underscorePath(path),
-                     (fieldNames : '"<it>"' ","))
 
 recordDefinition(String origName, String encName, String fieldNames) ::=
 <<
@@ -1642,6 +1635,8 @@ case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
     '<cref(cref.componentRef)>'
   else
     daeExpCrefRhs(cref, context, preExp, varDecls)
+case cref as CREF(componentRef=CREF_QUAL(subscriptLst=subs)) then
+  '<cref(cref.componentRef)>'
 case _ then
   "ONLY IDENT SUPPORTED"
 
@@ -1718,6 +1713,8 @@ case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
     # spec1 = daeExpCrefRhsIndexSpec(subs, context, preExp, varDecls)
     # preExp += 'index_alloc_<arrayType>(&<arrName>, &<spec1>, &<tmp>);<\n>'
     tmp
+case cref as CREF(componentRef=CREF_QUAL(subscriptLst=subs)) then
+  '<cref(cref.componentRef)>'
 case _ then
   "UNKNOWN RHS CREF: ONLY IDENT SUPPORTED"
 
@@ -2172,14 +2169,17 @@ expTypeFlag(DAE.ExpType ty, Integer flag) ::=
   // we want the short type
   case 1 then expTypeShort(ty)
   // we want the "modelica type"
-  case 2 then 'modelica_<expTypeShort(ty)>'
+  case 2 then
+    if ty is ET_COMPLEX(complexClassType=EXTERNAL_OBJ) then 'modelica_<expTypeShort(ty)>'
+    else if ty is ET_COMPLEX then 'struct <name>'
+    else 'modelica_<expTypeShort(ty)>'
   // we want the "array type"
   case 3 then '<expTypeShort(ty)>_array'
   // we want the "array type" only if type is array, otherwise "modelica type"
   case 4 then
     match ty
     case ET_ARRAY then '<expTypeShort(ty)>_array'
-    case _        then 'modelica_<expTypeShort(ty)>'
+    case _        then expTypeFlag(ty, 2)
 
 expTypeFromExpFlag(Exp, Integer flag) ::=
   case ICONST        then if flag is 1 then "integer" else "modelica_integer"
