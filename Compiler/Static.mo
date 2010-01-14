@@ -1318,6 +1318,23 @@ algorithm
           false,typ,DAE.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});      
 end addForLoopScopeConst;
 
+protected function addForLoopIterator
+	"Adds an iterator variable to the current scope."
+	input Env.Env env;
+	input Ident iterName;
+	input DAE.Type iterType;
+	output Env.Env new_env;
+algorithm
+	new_env := Env.extendFrameV(env, 
+		DAE.TYPES_VAR(
+			iterName,
+			DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+			false,
+			iterType,
+			DAE.UNBOUND()),
+		NONE, Env.VAR_UNTYPED(), {});
+end addForLoopIterator;
+
 protected function elabCallReduction 
 "function: elabCallReduction  
   This function elaborates reduction expressions, that look like function
@@ -1356,58 +1373,165 @@ algorithm
       list<DAE.Exp> expl;
       list<Values.Value> vallst;
       /*Symbolically expand arrays if iterator is parameter or constant
-        NOTE: This only works for one iterator.
-        TODO: Implement support for more iterators. 
       */
-      case (cache,env,Absyn.CREF_IDENT("array",{}),exp,(afis as (iter,SOME(iterexp))::{}),impl,st,doVect)
-        local
-          Absyn.ForIterators afis;
-      equation 
-        (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_) 
-        	= elabExp(cache,env, iterexp, impl, st,doVect);         
-        true = Types.isParameterOrConstant(iterconst);
-        env_1 = addForLoopScopeConst(env, iter, iterty);
-        (cache,Values.ARRAY(vallst),_) = Ceval.ceval(cache,env, iterexp_1, impl, NONE, NONE, Ceval.MSG());
-        (cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
-        expl = elabCallReduction2(vallst,exp_1,iter);
-        ty = (DAE.T_ARRAY(arraydim,expty),NONE);
-        b = not Types.isArray(expty);
-        etp = Types.elabType(ty);
-        const = Types.constAnd(expconst, iterconst);
-        prop = DAE.PROP(ty,const);
-      then
-        (cache,DAE.ARRAY(etp,b,expl),prop,st);
-case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
-      equation
-        (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_)
-        	= elabExp(cache,env, iterexp, impl, st,doVect);
-        env_1 = addForLoopScopeConst(env, iter, iterty);
-        (cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
-        const = Types.constAnd(expconst, iterconst);
-        prop = DAE.PROP((DAE.T_ARRAY(arraydim,expty),NONE),const);
-        fn_1 = Absyn.crefToPath(fn);
-      then 
-        (cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);
-    case (cache,env,fn,exp,iterators,impl,st,doVect)
-      equation
-        Debug.fprint("failtrace", "Static.elabCallReduction - multiple iterators, not yet handled!\n");
-      then fail();
-  end matchcontinue;
+		case (cache,env,Absyn.CREF_IDENT("array",{}),exp,(afis as (iter,SOME(iterexp))::{}),impl,st,doVect)
+			local
+				Absyn.ForIterators afis;
+			equation 
+				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_) 
+				= elabExp(cache,env, iterexp, impl, st,doVect);         
+				true = Types.isParameterOrConstant(iterconst);
+				env_1 = addForLoopScopeConst(env, iter, iterty);
+				(cache,Values.ARRAY(vallst),_) = Ceval.ceval(cache,env, iterexp_1, impl, NONE, NONE, Ceval.MSG());
+				(cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
+				expl = elabCallReduction2(exp_1, vallst, iter);
+				ty = (DAE.T_ARRAY(arraydim,expty),NONE);
+				b = not Types.isArray(expty);
+				etp = Types.elabType(ty);
+				const = Types.constAnd(expconst, iterconst);
+				prop = DAE.PROP(ty,const);
+			then
+			(cache,DAE.ARRAY(etp,b,expl),prop,st);
+		case (cache, env, Absyn.CREF_IDENT("array", {}), exp, iterators, impl, st, doVect)
+			local
+				list<list<Values.Value>> vals;
+				list<Ident> iter_names;
+			equation
+				(cache, env, iterconst, vals, iter_names, arraydim) 
+					= elabArrayIterators(cache, env, iterators, impl, st, doVect);
+				(cache, exp_1, DAE.PROP(expty, expconst), st) 
+					= elabExp(cache, env, exp, impl, st, doVect);
+				expl = expandArray(vals, iter_names, {exp_1});
+				ty = (DAE.T_ARRAY(arraydim, expty), NONE);
+				b = not Types.isArray(expty);
+				etp = Types.elabType(ty);
+				const = Types.constAnd(expconst, iterconst);
+				prop = DAE.PROP(ty, const);
+			then
+				(cache, DAE.ARRAY(etp, b, expl), prop, st);
+		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
+			equation
+				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_)
+				= elabExp(cache,env, iterexp, impl, st,doVect);
+				env_1 = addForLoopScopeConst(env, iter, iterty);
+				(cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
+				const = Types.constAnd(expconst, iterconst);
+				prop = DAE.PROP((DAE.T_ARRAY(arraydim,expty),NONE),const);
+				fn_1 = Absyn.crefToPath(fn);
+			then 
+			(cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);
+		case (cache,env,fn,exp,iterators,impl,st,doVect)
+			equation
+				Debug.fprint("failtrace", "Static.elabCallReduction - failed!\n");
+			then fail();
+	end matchcontinue;
 end elabCallReduction;
 
+protected function elabArrayIterators
+	input Env.Cache cache;
+	input Env.Env env;
+	input Absyn.ForIterators iterators;
+	input Boolean implicitInstantiation;
+	input Option<Interactive.InteractiveSymbolTable> st;
+	input Boolean performVectorization;
+	output Env.Cache newCache;
+	output Env.Env newEnv;
+	output DAE.Const const;
+	output list<list<Values.Value>> iteratorValues;
+	output list<Ident> iteratorNames;
+	output DAE.ArrayDim arrayDim;
+algorithm
+	(newCache, newEnv, const, iteratorValues, iteratorNames, arrayDim) := 
+	matchcontinue(cache, env, iterators, implicitInstantiation, st, performVectorization)
+		local
+			Ident iter_name;
+			list<Ident> iter_names;
+			DAE.Exp iter_exp;
+			Absyn.ForIterators rest_iters;
+			Env.Cache new_cache;
+			Env.Env new_env;
+			DAE.Const iter_const, iters_const;
+			DAE.ArrayDim array_dim, arrays_dim;
+			DAE.Type iter_type;
+			list<Values.Value> iter_values;
+			list<list<Values.Value>> iter_values_list;
+		case (_, _, {}, _, _, _)
+			equation
+				new_env = Env.openScope(env, false, SOME("$for loop scope$"));
+			then (cache, new_env, DAE.C_CONST(), {}, {}, DAE.DIM(SOME(1)));
+		case (_, _, (iter_name, SOME(iter_exp)) :: rest_iters, _, _, _)
+			equation
+				(new_cache, new_env, iters_const, iter_values_list, iter_names, arrays_dim)
+					= elabArrayIterators(cache, env, rest_iters, implicitInstantiation, st, performVectorization);
+				(new_cache, iter_exp, DAE.PROP(
+						(type_ = DAE.T_ARRAY(arrayDim = array_dim, arrayType = iter_type), _), 
+				    constFlag = iter_const), _)
+					= elabExp(cache, env, iter_exp, implicitInstantiation, st, performVectorization);
+				(new_cache, Values.ARRAY(iter_values), _) 
+					= Ceval.ceval(new_cache, env, iter_exp, implicitInstantiation, NONE, NONE, Ceval.MSG());
+				true = Types.isParameterOrConstant(iter_const);
+				new_env = addForLoopIterator(new_env, iter_name, iter_type);
+				iters_const = Types.constAnd(iters_const, iter_const);
+				arrays_dim = arrayDimMultiply(arrays_dim, array_dim);
+			then (new_cache, new_env, iters_const, iter_values :: iter_values_list, iter_name :: iter_names, arrays_dim);
+	end matchcontinue;
+end elabArrayIterators;
+
+protected function arrayDimMultiply
+	"Multiplies two array dimensions, or fails if either of the dimensions are
+	unspecified."
+	input DAE.ArrayDim dim1;
+	input DAE.ArrayDim dim2;
+	output DAE.ArrayDim res;
+algorithm
+	res := matchcontinue(dim1, dim2)
+		local
+			Integer d1, d2, r;
+		case (DAE.DIM(SOME(d1)), DAE.DIM(SOME(d2)))
+			equation
+				r = d1 * d2;
+			then DAE.DIM(SOME(r));
+		case (_, _) then fail();
+	end matchcontinue;
+end arrayDimMultiply;
+
+protected function expandArray
+	input list<list<Values.Value>> valLists;
+	input list<Ident> iteratorNames;
+	input list<DAE.Exp> expl;
+	output list<DAE.Exp> expandedExpl;
+algorithm
+	expandedExpl := matchcontinue(valLists, iteratorNames, expl)
+		local
+			list<Values.Value> values;
+			list<list<Values.Value>> rest_values;
+			Ident iterator_name;
+			list<Ident> rest_iterators;
+			list<list<DAE.Exp>> new_expl;
+			list<DAE.Exp> flattened_expl, expanded_expl;
+		case ({}, {}, _) then expl;
+		case (values :: rest_values, iterator_name :: rest_iterators, _)
+			equation
+				new_expl = Util.listMap2(expl, elabCallReduction2, values, iterator_name); 
+				flattened_expl = Util.listFlatten(new_expl);
+				expanded_expl = expandArray(rest_values, rest_iterators, flattened_expl);
+			then expanded_expl;
+	end matchcontinue;
+end expandArray;
+
 protected function elabCallReduction2 "help function to elabCallReduction. symbolically expands arrays"
-  input list<Values.Value> valLst;
   input DAE.Exp e;
+  input list<Values.Value> valLst;
   input Ident id;
   output list<DAE.Exp> expl;
 algorithm
-  expl := matchcontinue(valLst,e,id)
+	expl := matchcontinue(e, valLst, id)
   local Integer i;
     DAE.Exp e1;
-    case({},e,id) then {};
-    case(Values.INTEGER(i)::valLst,e,id) equation
+    case(e, {}, id) then {};
+    case(e, Values.INTEGER(i)::valLst, id) equation
       (e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),DAE.ICONST(i));
-      expl = elabCallReduction2(valLst,e,id);
+      expl = elabCallReduction2(e, valLst, id);
     then e1::expl;
   end matchcontinue;
 end elabCallReduction2;
