@@ -751,9 +751,12 @@ protected function flowEquations "function: flowEquations
   output list<DAE.Element> outDAEElementLst;
   DAE.Exp sum;
   DAE.ElementSource source;
+  list<DAE.ElementSource> lde;
+  DAE.ElementSource ed;
 algorithm 
   sum := flowSum(cs);
-  source := Util.listReduce(Util.listMap(cs, Util.tuple33), DAEUtil.mergeSources);
+  (ed::lde) := Util.listMap(cs, Util.tuple33);
+  source := Util.listFold(lde, DAEUtil.mergeSources,ed);
   outDAEElementLst := {DAE.EQUATION(sum, DAE.RCONST(0.0), source)};
 end flowEquations;
 
