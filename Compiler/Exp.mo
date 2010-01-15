@@ -310,7 +310,7 @@ algorithm
   end matchcontinue;
 end crefLastIdent;
 
-public function crefIdent "function: crefLastSubs
+public function crefIdent "
  
   Return the last ComponentRef
 "
@@ -350,8 +350,8 @@ algorithm
   end matchcontinue;
 end crefStripSubs;
 
-public function crefSubs 
-"function: crefLastSubs 
+public function crefSubs "
+function: crefSubs 
   Return the all subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;
@@ -373,8 +373,8 @@ algorithm
   end matchcontinue;
 end crefSubs;
 
-public function crefLastSubs 
-"function: crefLastSubs 
+public function crefLastSubs "
+function: crefLastSubs 
   Return the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;

@@ -282,8 +282,8 @@ algorithm
   end matchcontinue;
 end cevalIfConstant;
 
-public function elabExp 
-"function: elabExp 
+public function elabExp "
+function: elabExp 
   Static analysis of expressions means finding out the properties of
   the expression.  These properties are described by the
   `DAE.Properties\' type, and include the type and the variability of the
@@ -6335,8 +6335,8 @@ algorithm
   end matchcontinue;
 end elabCallBuiltin;
 
-protected function elabCall 
-"function: elabCall 
+protected function elabCall "
+function: elabCall 
   This function elaborates on a function call.  It converts the name
   to a Absyn.Path, and used the Static.elabCallArgs to do the rest of the
   work."
@@ -7932,8 +7932,8 @@ algorithm
   end matchcontinue;
 end addComponentFunctionsToCurrentEnvironment;
   
-protected function elabCallArgs 
-"function: elabCallArgs 
+protected function elabCallArgs "
+function: elabCallArgs 
   Given the name of a function and two lists of expression and 
   NamedArg respectively to be used 
   as actual arguments in a function call to that function, this
@@ -8601,8 +8601,8 @@ algorithm
   end matchcontinue;
 end isTuple;
 
-protected function elabTypes 
-"function: elabTypes  
+protected function elabTypes "
+function: elabTypes  
    Elaborate input parameters to a function and 
    select matching function type from a list of types."
   input Env.Cache inCache;
@@ -9330,15 +9330,15 @@ algorithm
     case (cache, _, {}, _, slots, checkTypes, impl, polymorphicBindings) 
       then (cache,slots,{},polymorphicBindings);  /* impl const */ 
       
-    // exact match
+        // exact match
     case (cache, env, (e :: es), ((farg as (_,vt)) :: vs), slots, checkTypes as true, impl, polymorphicBindings)  
       equation 
-        (cache,e_1,props,_) = elabExp(cache,env, e, impl, NONE,true);
+        (cache,e_1,props,_) = elabExp(cache,env, e, impl, NONE, true);
         t = Types.getPropType(props);
         c1 = Types.propAllConst(props);
         (e_2,_,polymorphicBindings) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false);
         (cache,slots_1,clist,polymorphicBindings) = 
-          elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings);
+        elabPositionalInputArgs(cache, env, es, vs, slots, checkTypes, impl, polymorphicBindings);
         newslots = fillSlot(farg, e_2, {}, slots_1,checkTypes) "no vectorized dim" ;
       then
         (cache,newslots,(c1 :: clist),polymorphicBindings);
@@ -9567,8 +9567,8 @@ algorithm
   end matchcontinue;
 end fillSlot;
 
-public function elabCref 
-"function: elabCref
+public function elabCref "
+function: elabCref
   Elaborate on a component reference.  Check the type of the
   component referred to, and check if the environment contains
   either a constant binding for that variable, or if it contains an
