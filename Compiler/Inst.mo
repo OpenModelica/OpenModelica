@@ -129,9 +129,6 @@ uniontype DimExp "a dimension expresion"
   end DIMEXP;
 end DimExp;
 
-public 
-constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
-
 // protected imports
 protected import Algorithm;
 protected import Builtin;
@@ -11429,21 +11426,15 @@ algorithm
   end matchcontinue;
 end instEquationCommonCiTrans;
 
-protected function addForLoopScope 
-"function: addForLoopScope
-  author: HJ
-  Adds a scope on the environment used in for loops.
-  The name of the scope is for_scope_name, defined as a value."
-  input Env env;
-  input Ident i;
-  input DAE.Type typ;
-  output Env env_2;
-  list<Env.Frame> env_1,env_2;
-algorithm 
-  env_1 := Env.openScope(env, false, SOME(forScopeName));
-  env_2 := Env.extendFrameV(env_1, 
-          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,typ,DAE.UNBOUND()), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
+protected function addForLoopScope
+	"Adds a scope to the environment used in for loops."
+	input Env env;
+	input Ident iterName;
+	input DAE.Type iterType;
+	output Env newEnv;
+algorithm
+	newEnv := Env.openScope(env, false, SOME(Env.forScopeName));
+	newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), SCode.VAR()); 
 end addForLoopScope;
 
 protected function instEqEquation 
@@ -11847,10 +11838,8 @@ algorithm
     case (cache,_,_,_,csets,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph) then (cache,{},csets,graph);  /* impl */ 
     case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest)),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
       equation 
-        env_1 = Env.openScope(env, false, SOME(forScopeName));
-        env_2 = Env.extendFrameV(env_1, 
-          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          true,(DAE.T_INTEGER({}),NONE),DAE.VALBOUND(fst)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstanceHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl,graph);
         (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest), eqs, initial_, impl,graph);
         dae = listAppend(dae1, dae2);
@@ -11858,10 +11847,8 @@ algorithm
         (cache,dae,csets_2,graph);
     case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest)),eqs,(initial_ as SCode.INITIAL()),impl,graph)
       equation 
-        env_1 = Env.openScope(env, false, SOME(forScopeName));
-        env_2 = Env.extendFrameV(env_1, 
-          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          true,(DAE.T_INTEGER({}),NONE),DAE.VALBOUND(fst)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstanceHierarchy, mods, pre, csets, ci_state, instEInitialequation, eqs, impl,graph);
         (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest), eqs, initial_, impl,graph);
         dae = listAppend(dae1, dae2);

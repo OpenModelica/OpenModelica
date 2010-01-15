@@ -1293,48 +1293,6 @@ algorithm
   end matchcontinue;
 end matrixConstrMaxDim;
 
-protected function addForLoopScopeConst "function: addForLoopScopeConst 
- 
-  Creates a new scope on the environment used for loops and adds a loop 
-  variable which is named by the second argument. The variable is given 
-  the value 1 (one) such that elaboration of expressions of containing the 
-  loop variable become constant.
-"
-  input Env.Env env;
-  input Ident i;
-  input DAE.Type typ;
-  output Env.Env env_2;
-  list<Env.Frame> env_1,env_2; // Two env_2?
-algorithm 
-  env_1 := Env.openScope(env, false, SOME("$for loop scope$")) "encapsulated?" ;
-	// Defining the iterator as a parameter causes it to be constant evaluated in
-	// cases such as 'r[i] for i in 1:n' => 'r[1]', so it should probably be a
-	// variable instead.
-  /*env_2 := Env.extendFrameV(env_1, 
-          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,typ,DAE.VALBOUND(Values.INTEGER(1))), NONE, Env.VAR_UNTYPED(), {});*/
-  env_2 := Env.extendFrameV(env_1, 
-          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,typ,DAE.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});      
-end addForLoopScopeConst;
-
-protected function addForLoopIterator
-	"Adds an iterator variable to the current scope."
-	input Env.Env env;
-	input Ident iterName;
-	input DAE.Type iterType;
-	output Env.Env new_env;
-algorithm
-	new_env := Env.extendFrameV(env, 
-		DAE.TYPES_VAR(
-			iterName,
-			DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-			false,
-			iterType,
-			DAE.UNBOUND()),
-		NONE, Env.VAR_UNTYPED(), {});
-end addForLoopIterator;
-
 protected function elabCallReduction 
 "function: elabCallReduction  
   This function elaborates reduction expressions, that look like function
@@ -1374,14 +1332,20 @@ algorithm
       list<Values.Value> vallst;
       /*Symbolically expand arrays if iterator is parameter or constant
       */
-		case (cache,env,Absyn.CREF_IDENT("array",{}),exp,(afis as (iter,SOME(iterexp))::{}),impl,st,doVect)
+		/* peros - 2010-01-15
+		 * This case only works for one iterator, but since the next case that takes
+		 * care of any number of iterators was implemented it should no longer be
+		 * needed. This case might be slightly faster than the general case though,
+		 * so I'm leaving it here for a while to see if someone complains. */
+		/*case (cache,env,Absyn.CREF_IDENT("array",{}),exp,(afis as (iter,SOME(iterexp))::{}),impl,st,doVect)
 			local
 				Absyn.ForIterators afis;
 			equation 
 				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_) 
 				= elabExp(cache,env, iterexp, impl, st,doVect);         
 				true = Types.isParameterOrConstant(iterconst);
-				env_1 = addForLoopScopeConst(env, iter, iterty);
+				env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.VAR());
 				(cache,Values.ARRAY(vallst),_) = Ceval.ceval(cache,env, iterexp_1, impl, NONE, NONE, Ceval.MSG());
 				(cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
 				expl = elabCallReduction2(exp_1, vallst, iter);
@@ -1391,7 +1355,7 @@ algorithm
 				const = Types.constAnd(expconst, iterconst);
 				prop = DAE.PROP(ty,const);
 			then
-			(cache,DAE.ARRAY(etp,b,expl),prop,st);
+			(cache,DAE.ARRAY(etp,b,expl),prop,st);*/
 		case (cache, env, Absyn.CREF_IDENT("array", {}), exp, iterators, impl, st, doVect)
 			local
 				list<list<Values.Value>> vals;
@@ -1413,7 +1377,8 @@ algorithm
 			equation
 				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_)
 				= elabExp(cache,env, iterexp, impl, st,doVect);
-				env_1 = addForLoopScopeConst(env, iter, iterty);
+				env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.VAR());
 				(cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
 				const = Types.constAnd(expconst, iterconst);
 				prop = DAE.PROP((DAE.T_ARRAY(arraydim,expty),NONE),const);
@@ -1428,6 +1393,7 @@ algorithm
 end elabCallReduction;
 
 protected function elabArrayIterators
+	"Elaborates array constructors such as 'array(i for i in 1:5)'"
 	input Env.Cache cache;
 	input Env.Env env;
 	input Absyn.ForIterators iterators;
@@ -1457,7 +1423,7 @@ algorithm
 			list<list<Values.Value>> iter_values_list;
 		case (_, _, {}, _, _, _)
 			equation
-				new_env = Env.openScope(env, false, SOME("$for loop scope$"));
+				new_env = Env.openScope(env, false, SOME(Env.forScopeName));
 			then (cache, new_env, DAE.C_CONST(), {}, {}, DAE.DIM(SOME(1)));
 		case (_, _, (iter_name, SOME(iter_exp)) :: rest_iters, _, _, _)
 			equation
@@ -1470,7 +1436,7 @@ algorithm
 				(new_cache, Values.ARRAY(iter_values), _) 
 					= Ceval.ceval(new_cache, env, iter_exp, implicitInstantiation, NONE, NONE, Ceval.MSG());
 				true = Types.isParameterOrConstant(iter_const);
-				new_env = addForLoopIterator(new_env, iter_name, iter_type);
+				new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), SCode.VAR());
 				iters_const = Types.constAnd(iters_const, iter_const);
 				arrays_dim = arrayDimMultiply(arrays_dim, array_dim);
 			then (new_cache, new_env, iters_const, iter_values :: iter_values_list, iter_name :: iter_names, arrays_dim);
@@ -1496,6 +1462,9 @@ algorithm
 end arrayDimMultiply;
 
 protected function expandArray
+	"Symbolically expands an array with the help of elabCallReduction2."
+	/* Example: expandArray({{1, 2, 3}, {4, 5}}, {"i", "j"}, i + j) =
+								{1 + 4, 1 + 5, 2 + 4, 2 + 5, 3 + 4, 3 + 5} */
 	input list<list<Values.Value>> valLists;
 	input list<Ident> iteratorNames;
 	input list<DAE.Exp> expl;

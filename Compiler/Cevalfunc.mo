@@ -35,8 +35,6 @@ protected import UnitAbsyn;
 protected import ValuesUtil;
 protected import ErrorExt;
 
-protected constant String forScopeName="$for loop scope$";
-
 public function cevalUserFunc "Function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
 evaluate it. This is to prevent multiple compilation of c files.
@@ -600,8 +598,7 @@ algorithm
     case(env, Absyn.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE, stop=ae2)))},forBody = algitemlst),ht2)
       equation 
         start = evaluateSingleExpression(ae1,env,NONE,ht2); 
-        ty = Types.typeOfValue(start);
-        env1 = addForLoopScope(env,varName,ty);
+				env1 = addForLoopScope(env,varName,start);
         stop = evaluateSingleExpression(ae2,env1,NONE,ht2);
         step = Values.INTEGER(1);
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
@@ -610,8 +607,7 @@ algorithm
     case(env, Absyn.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1, step=SOME(ae2), stop=ae3)))},forBody = algitemlst),ht2)
       equation 
         start = evaluateSingleExpression(ae1,env,NONE,ht2);
-        ty = Types.typeOfValue(start);
-        env1 = addForLoopScope(env,varName,ty);
+				env1 = addForLoopScope(env,varName,start);
         stop = evaluateSingleExpression(ae3,env1,NONE,ht2);
         step = evaluateSingleExpression(ae2,env1,NONE,ht2);
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
@@ -621,8 +617,7 @@ algorithm
       equation 
         (Values.ARRAY(values)) = evaluateSingleExpression(ae1, env,NONE,ht2);
         start = listNth(values,0);
-        ty = Types.typeOfValue(start);
-        env1 = addForLoopScope(env,varName,ty);
+				env1 = addForLoopScope(env,varName,start);
         env2 = evaluateForLoopArray(env1, varName, values, algitemlst, ht2);
       then
         env2;
@@ -989,22 +984,19 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   end matchcontinue;
 end setValue;
 
-protected function addForLoopScope "function: addForLoopScope
-  Adds a scope on the environment used in for loops.
-  The name of the scope is for_scope_name, defined as a value.
-"
-  input Env.Env env;
-  input String i;
-  input DAE.Type typ;
-  output Env.Env env_2;
-  list<Env.Frame> env_1,env_2;
-  Values.Value baseValue;
-algorithm 
-  baseValue := typeOfValue(typ);
-  env_1 := Env.openScope(env, false, SOME(forScopeName));
-  env_2 := Env.extendFrameV(env_1, 
-          DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,typ,DAE.VALBOUND(baseValue)), NONE, Env.VAR_UNTYPED(), {}) "comp env" ;
+protected function addForLoopScope
+	"Adds a scope in the environment used in for loops."
+	input Env.Env env;
+	input String iterName;
+	input Values.Value startValue;
+	output Env.Env newEnv;
+	DAE.Type baseType;
+	Values.Value baseValue;
+algorithm
+	baseType := Types.typeOfValue(startValue);
+	baseValue := typeOfValue(baseType);
+	newEnv := Env.openScope(env, false, SOME(Env.forScopeName));
+	newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue), SCode.VAR); 
 end addForLoopScope;
 
 protected function setQualValue "Function: setQualValue

@@ -193,6 +193,9 @@ algorithm
   cache := CACHE(arr,NONE);
 end emptyCache;
 
+public 
+constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
+
 // functions for dealing with the environment
 
 public function newFrame "function: newFrame
@@ -292,7 +295,7 @@ algorithm
   outEnv := matchcontinue(env)
   local String name;
     case(FRAME(optName = SOME(name))::env) equation
-      equality(name=Inst.forScopeName);
+      equality(name=forScopeName);
       env = stripForLoopScope(env);
     then env; 
     case(env) then env; 
@@ -653,6 +656,43 @@ algorithm
     then (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defunit::defineUnits) :: fs);
   end matchcontinue;
 end extendFrameDefunit;
+
+public function extendFrameForIterator
+	"Adds a for loop iterator to the environment."
+	input Env env;
+	input String name;
+	input DAE.Type type_;
+	input DAE.Binding binding;
+	input SCode.Variability variability;
+	output Env new_env;
+algorithm
+	new_env := matchcontinue(env, name, type_, binding, variability)
+		local
+			Env new_env_1;
+		case (_, _, _, _, SCode.VAR())
+			equation
+				new_env_1 = extendFrameV(env, 
+					DAE.TYPES_VAR(
+						name, 
+						DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+						false, 
+						type_,
+						binding),
+					NONE, VAR_UNTYPED(), {});
+			then new_env_1;
+		case (_, _, _, _, SCode.CONST())
+			equation
+				new_env_1 = extendFrameV(env,
+					DAE.TYPES_VAR(
+						name,
+						DAE.ATTR(false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+						true,
+						type_,
+						binding),
+					NONE, VAR_UNTYPED(), {});
+			then new_env_1;
+	end matchcontinue;
+end extendFrameForIterator;
 
 protected function memberImportList "Returns true if import exist in imps"
 	input list<Item> imps;
