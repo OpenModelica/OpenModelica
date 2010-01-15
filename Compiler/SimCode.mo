@@ -3117,9 +3117,12 @@ algorithm
       DAELow.Variables knvars;
       DAELow.Variables extvars;
       SimVars varsTmp;
+      DAELow.EquationArray ie;
+      list<DAELow.Equation> ie_lst;
     case (DAELow.DAELOW(orderedVars = vars,
                         knownVars = knvars,
-                        externalObjects = extvars))
+                        externalObjects = extvars,
+                        initialEqs=ie))
       equation
         /* Extract from variable list */
         var_lst = DAELow.varList(vars);
@@ -3134,6 +3137,9 @@ algorithm
         varsOut = mergeVars(varsOut, varsTmp);
         /* sort variables on index */
         varsOut = sortSimvarsOnIndex(varsOut);
+        /* fix the initial thing */
+        ie_lst = DAELow.equationList(ie);
+        varsOut = fixInitialThing(varsOut, ie_lst);
       then
         varsOut;
   end matchcontinue;
@@ -3173,6 +3179,82 @@ algorithm
                    extObjVars);
   end matchcontinue;
 end sortSimvarsOnIndex;
+
+public function fixInitialThing
+  input SimVars simvarsIn;
+  input list<DAELow.Equation> initialEqs;
+  output SimVars simvarsOut;
+algorithm
+  simvarsOut :=
+  matchcontinue (simvarsIn, initialEqs)
+    local
+      list<SimVar> stateVars;
+      list<SimVar> derivativeVars;
+      list<SimVar> algVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> paramVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> extObjVars;
+    /* no initial equations so nothing to do */
+    case (_, {})
+      then simvarsIn;
+    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                  outputVars, paramVars, stringAlgVars, stringParamVars,
+                  extObjVars), initialEqs)
+      equation
+        true = Util.boolAndList(Util.listMap(stateVars, simvarFixed));
+        stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initialEqs);
+      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                   outputVars, paramVars, stringAlgVars, stringParamVars,
+                   extObjVars);
+    /* not all were fixed so nothing to do */
+    case (_, _)
+      then simvarsIn;
+  end matchcontinue;
+end fixInitialThing;
+
+protected function simvarFixed
+  input SimVar simvar;
+  output Boolean fixed_;
+algorithm
+  fixed_ :=
+  matchcontinue (simvar)
+    case (SIMVAR(isFixed=fixed_)) then fixed_;
+    case (_) then fail();
+  end matchcontinue;
+end simvarFixed;
+
+protected function nonFixifyIfHasInit
+  input SimVar simvarIn;
+  input list<DAELow.Equation> initialEqs;
+  output SimVar simvarOut;
+algorithm
+  simvarOut :=
+  matchcontinue (simvarIn, initialEqs)
+    local
+      DAE.ComponentRef name;
+      DAE.ComponentRef origName;
+      String comment;
+      Integer index;
+      Boolean isFixed;
+      Exp.Type type_;
+      Boolean isDiscrete;
+      Option<DAE.ComponentRef> arrayCref;
+      list<DAE.ComponentRef> initCrefs;
+      String varNameStr;
+    case (SIMVAR(name, origName, comment, index, isFixed, type_, isDiscrete, arrayCref), initialEqs)
+      equation
+        initCrefs = DAELow.equationsCrefs(initialEqs);
+        (_ :: _) = Util.listSelect1(initCrefs, name, Exp.crefEqual);
+        varNameStr = Exp.printComponentRefStr(origName);
+        Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
+      then SIMVAR(name, origName, comment, index, false, type_, isDiscrete, arrayCref);
+    case (_, _)
+      then simvarIn;
+  end matchcontinue;
+end nonFixifyIfHasInit;
 
 public function varIndexComparer
   input SimVar lhs;
