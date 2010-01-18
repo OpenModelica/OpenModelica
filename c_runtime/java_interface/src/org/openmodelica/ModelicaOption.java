@@ -65,7 +65,11 @@ public class ModelicaOption<T extends ModelicaObject> implements ModelicaObject 
     buffer.append(")");
   }
 
-  static <T extends ModelicaObject> ModelicaOption<T> parse(Reader r, TypeSpec<T> spec) throws IOException, ParseException {
+  public static ModelicaOption<?> parse(Reader r) throws IOException, ParseException {
+    return parse(r,SimpleTypeSpec.modelicaObject);
+  }
+
+    public static <T extends ModelicaObject> ModelicaOption<T> parse(Reader r, TypeSpec<T> spec) throws IOException, ParseException {
     ModelicaAny.skipWhiteSpace(r);
     char[] cbuf = new char[5];
     r.read(cbuf, 0, 5);
