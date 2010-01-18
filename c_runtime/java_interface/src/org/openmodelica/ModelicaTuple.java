@@ -53,6 +53,10 @@ public class ModelicaTuple extends ModelicaBaseArray<ModelicaObject> implements 
     buffer.append(")");
   }
 
+  public static ModelicaTuple parse(Reader r) throws ParseException, IOException {
+    return parse(r,null);
+  }
+
   public static ModelicaTuple parse(Reader r, TypeSpec<?>[] spec) throws ParseException, IOException {
     ModelicaTuple tuple = new ModelicaTuple();
     ModelicaAny.skipWhiteSpace(r);

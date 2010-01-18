@@ -161,8 +161,12 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
     this.isFlat = arr.isFlat;
   }
 
-  @SuppressWarnings("unchecked")
-  static <T extends ModelicaObject> ModelicaArray<T> parse(Reader r, TypeSpec<T> spec) throws IOException, ParseException {
+  public static ModelicaArray<?> parse(Reader r) throws IOException, ParseException {
+    return parse(r,SimpleTypeSpec.modelicaObject);
+  }
+
+    @SuppressWarnings("unchecked")
+  public static <T extends ModelicaObject> ModelicaArray<T> parse(Reader r, TypeSpec<T> spec) throws IOException, ParseException {
     ModelicaArray<T> arr = new ModelicaArray<T>();
     ModelicaAny.skipWhiteSpace(r);
     int i;

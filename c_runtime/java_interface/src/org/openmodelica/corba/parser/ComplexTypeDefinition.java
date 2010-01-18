@@ -176,7 +176,7 @@ public class ComplexTypeDefinition {
   public String getTypeSpec() {
     switch (t) {
     case GENERIC_TYPE:
-      return "__outClass";
+      return "new org.openmodelica.SimpleTypeSpec(ModelicaObject.class)";
     case BUILT_IN:
     case DEFINED_TYPE:
       return "new org.openmodelica.SimpleTypeSpec("+typeName + ".class)";

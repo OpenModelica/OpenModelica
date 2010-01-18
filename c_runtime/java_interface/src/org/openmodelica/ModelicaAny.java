@@ -3,17 +3,18 @@ package org.openmodelica;
 import java.io.IOException;
 import java.io.Reader;
 import java.lang.reflect.Constructor;
-
 import org.openmodelica.corba.parser.ParseException;
 
 public class ModelicaAny {
   @SuppressWarnings("unchecked")
   public static <T extends ModelicaObject> T cast(ModelicaObject o, Class<T> c) throws Exception {
-    /* ModelicaObject -> ModelicaObject: Simple */
-    if (c == ModelicaObject.class) {
+    if (o.getClass() == c) {
+      return (T) o;
+    } else if (c == ModelicaObject.class) {
+      /* ModelicaObject -> ModelicaObject: Simple */
       return c.cast(o);
-      /* ModelicaObject -> Interface extends ModelicaObject (must be Uniontype) */
     } else if (c.isInterface()) {
+      /* ModelicaObject -> Interface extends ModelicaObject (must be Uniontype) */
       if (!(o instanceof ModelicaRecord))
         throw new Exception(o + " is not a record, but tried to cast it to Uniontype " + c);
       /* Find the Java name of the record. We know the record will be part of the same package */
@@ -193,11 +194,12 @@ public class ModelicaAny {
       String id = lexIdent(r,false);
       r.reset();
       return parse(r,new SimpleTypeSpec<T>((Class<T>)findUniontypeRecordClass(c,id)));
-    }
-    try {
-      return (T) c.getMethod("parse", java.io.Reader.class).invoke(null, r);
-    } catch (Exception e) {
-      throw new ParseException(e);
+    } else {
+      try {
+        return (T) c.getMethod("parse", java.io.Reader.class).invoke(null, r);
+      } catch (Exception e) {        
+        throw new ParseException(e);
+      }
     }
   }
 

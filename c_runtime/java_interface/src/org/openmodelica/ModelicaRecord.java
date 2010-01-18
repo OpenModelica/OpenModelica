@@ -319,11 +319,11 @@ public class ModelicaRecord implements IModelicaRecord {
     throw new ParseException("Expected comma or end");
   }
 
-  protected static ModelicaObject parse(Reader r) throws ParseException, IOException {
+  public static ModelicaRecord parse(Reader r) throws ParseException, IOException {
     return parse(r,ModelicaRecord.class,null);
   }
 
-  protected static <T extends ModelicaRecord> T parse(Reader r, Class<T> cl, TypeSpec<?>[] fieldTypeSpecs) throws ParseException, IOException {
+  public static <T extends ModelicaRecord> T parse(Reader r, Class<T> cl, TypeSpec<?>[] fieldTypeSpecs) throws ParseException, IOException {
     String rec = ModelicaAny.lexIdent(r);
     if (!rec.equals("record"))
       throw new ParseException("Expected 'record' got " + rec);
