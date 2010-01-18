@@ -49,7 +49,7 @@ public class SmartProxy extends OMCProxy {
   public <T extends ModelicaObject> T callModelicaFunction(String name, Class<T> c, ModelicaObject... args) throws ParseException, ConnectException {
     return callModelicaFunction(name, new SimpleTypeSpec<T>(c), args);
   }
-  
+
   public ModelicaObject callModelicaFunction(String name, ModelicaObject... args) throws ParseException, ConnectException {
     return callModelicaFunction(name, SimpleTypeSpec.modelicaObject, args);
   }

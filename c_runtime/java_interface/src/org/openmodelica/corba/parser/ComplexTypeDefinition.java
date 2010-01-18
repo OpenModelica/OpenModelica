@@ -59,6 +59,9 @@ public class ComplexTypeDefinition {
       if (st.containsKey(relative)) {
         return relative;
       }
+      if (st.containsKey(relative + "_UT")) {
+        return relative + "_UT";
+      }
       if (curPack == null)
         throw new RuntimeException(String.format("%s not in the symbol table (%s as top package)", typeName, pack));
       int lastDot = curPack.lastIndexOf(".");

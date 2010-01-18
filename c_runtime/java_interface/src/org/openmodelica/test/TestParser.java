@@ -208,6 +208,7 @@ public class TestParser {
    ABC_UT expected = new abc(new ModelicaInteger(1),new ModelicaInteger(2),new ModelicaReal(3));
    String test = "record test.abc a=1, b=2, c=3.0 end test.abc;";
    ABC_UT res = parse(test, ABC_UT.class);
+   assertEquals("class org.openmodelica.test.abc",res.getClass().toString());
    assertEquals(expected.toString(), res.toString());
    assertEquals(expected, res);
    assertEquals(1, ((abc)res).get_a().i);
@@ -220,6 +221,9 @@ public class TestParser {
     ABC_UT res = parse(test, ABC_UT.class);
     assertEquals(expected.toString(), res.toString());
     assertEquals(expected, res);
-    assertEquals(2, ((abc)((ABC_CONTAINER)((ABC_CONTAINER)res).get_a()).get_a()).get_b().i);
+
+    ABC_UT res2 = ((ABC_CONTAINER)res).get_a();
+    ABC_UT res3 = ((ABC_CONTAINER)res2).get_a();
+    assertEquals(2, ((abc)res3).get_b().i);
    }
 }

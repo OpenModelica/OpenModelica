@@ -185,7 +185,7 @@ public class ModelicaArray<T extends ModelicaObject> extends ModelicaBaseArray<T
     do {
       ModelicaAny.skipWhiteSpace(r);
       T o = ModelicaAny.parse(r,spec);
-      if (arr.size() > 0 && spec.getClass().equals(ModelicaObject.class))
+      if (arr.size() > 0 && spec.getClassType() == ModelicaObject.class)
         try {
           o = (T) ModelicaAny.cast(o, arr.get(0).getClass());
         } catch (Exception ex) {

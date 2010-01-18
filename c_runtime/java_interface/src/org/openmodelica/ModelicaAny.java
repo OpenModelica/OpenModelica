@@ -185,7 +185,7 @@ public class ModelicaAny {
   private static <T extends ModelicaObject> T parse(Reader r, Class<T> c) throws IOException, ParseException {
     if (c == ModelicaObject.class)
       return (T)parse(r);
-    if (c.isInterface()) {
+    else if (c.isInterface()) {
       /* Uniontypes are special */
       r.mark(500);
       String rec = lexIdent(r,false);
@@ -197,7 +197,7 @@ public class ModelicaAny {
     } else {
       try {
         return (T) c.getMethod("parse", java.io.Reader.class).invoke(null, r);
-      } catch (Exception e) {        
+      } catch (Exception e) {
         throw new ParseException(e);
       }
     }

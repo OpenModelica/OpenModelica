@@ -57,7 +57,7 @@ public class OMCStringParser {
       throw new ParseException(ex);
     }
   }
-  
+
   public static ModelicaObject parse(File f) throws ParseException, FileNotFoundException {
     return parse(f,SimpleTypeSpec.modelicaObject);
   }

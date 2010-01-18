@@ -5,7 +5,7 @@ import java.util.Map;
 
 /* Record $record.name$ */
 @SuppressWarnings({ "unchecked", "serial" })
-public class $record.name$ $record.generics$ extends ModelicaRecord $record.uniontype:{implements $it$}$ {
+public class $record.name$ $record.generics$ extends ModelicaRecord $record.uniontype:{implements $it$_UT}$ {
 
   private static java.lang.Class[] fieldTypes = new java.lang.Class[] {$record.fields:{$it.TypeClass$};separator=","$};
   private static org.openmodelica.TypeSpec[] fieldTypeSpecs;

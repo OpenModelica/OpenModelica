@@ -57,7 +57,6 @@ src/org/openmodelica/corba/CommunicationException.java \
 src/org/openmodelica/corba/OmcCommunicationHolder.java \
 src/org/openmodelica/corba/CompilerException.java \
 src/org/openmodelica/corba/OmcCommunicationStub.java \
-src/org/openmodelica/corba/JreSocketFactory.java \
 src/org/openmodelica/ModelicaObjectException.java \
 src/org/openmodelica/ModelicaFunction.java \
 src/org/openmodelica/IModelicaRecord.java \

@@ -351,13 +351,19 @@ public class OMCProxy
 
     ORB orb;
     Properties props = System.getProperties();
+    /* Disabled due to using proprietary API.
+     * If you desire a longer timeout, comment out the following section
+     * and add the JreSocketFactory to the jar-file. */
+
+    /*
     if (!props.containsKey("com.sun.CORBA.transport.ORBSocketFactoryClass"))
       props.put("com.sun.CORBA.transport.ORBSocketFactoryClass", "org.openmodelica.corba.JreSocketFactory");
     if (!props.containsKey("com.sun.CORBA.transport.ORBConnectionSocketType"))
       props.put("com.sun.CORBA.transport.ORBConnectionSocketType", "Socket");
     props.put("org.openmodelica.corba.timeoutval", "100000");
+    */
+
     orb = ORB.init(args, props);
-    //orb.create_policy(RELATIVE_RT_TIMEOUT_POLICY_TYPE.value, 10000000);
 
     /* Convert string to object. */
     org.omg.CORBA.Object obj
