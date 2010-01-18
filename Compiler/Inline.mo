@@ -852,7 +852,7 @@ algorithm
       DAE.InlineType inlineType;
     case((DAE.CALL(p,args,tup,built,t,inlineType),fns))
       equation
-        true = DAE.convertInlineTypeToBool(inlineType);
+        true = DAEUtil.convertInlineTypeToBool(inlineType);
         DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = DAE.DAE(fn))::_) :: _ = DAEUtil.getNamedFunction(p,fns);
         crefs = Util.listMap(fn,getInputCrefs);
         crefs = Util.listSelect(crefs,removeWilds);
