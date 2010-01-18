@@ -931,6 +931,7 @@ algorithm
         fail();
     case((cref,exp) :: cdr,key)
       equation
+        key = Exp.crefStripSubs(key);
         true = Exp.crefEqual(cref,key);
       then
         exp;
