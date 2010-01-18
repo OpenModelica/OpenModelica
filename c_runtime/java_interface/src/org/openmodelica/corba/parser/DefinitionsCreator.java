@@ -22,8 +22,9 @@ public class DefinitionsCreator {
     String filename = String.format("%s/%s/%s%s.java", basepath.getAbsolutePath(), basepackage.replace('.', '/'), (packagename != null ? packagename.replace('.', '/')+"/" : ""), classname);
     File f = new File(filename);
     try {
-      f.mkdirs();
-      f.delete();
+      f.getParentFile().mkdirs();
+      if (f.exists())
+        throw new RuntimeException(f + ": File already exists");
       f.createNewFile();
       FileWriter fw = new FileWriter(f);
       fw.write(st.toString());
