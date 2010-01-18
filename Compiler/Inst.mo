@@ -9513,7 +9513,7 @@ algorithm
     case(SCode.ANNOTATION(SCode.MOD(_,_,smlst,_)) :: cdr)
       equation
         res = isInlineFunc4(smlst);
-        true = DAE.convertInlineTypeToBool(res);
+        true = DAEUtil.convertInlineTypeToBool(res);
       then
         res;
     case(_ :: cdr)

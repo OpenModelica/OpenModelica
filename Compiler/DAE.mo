@@ -275,20 +275,6 @@ public uniontype InlineType
   end AFTER_INDEX_RED_INLINE;
 end InlineType;
 
-public function convertInlineTypeToBool "
-Author: BZ, 2009-12
-Function for converting a InlineType to a bool. 
-Whether the inline takes place before or after index reduction does not mather.
-Any kind of inline will result in true.
-"
-input InlineType it;
-output Boolean b;
-algorithm b := matchcontinue(it)
-  case(NO_INLINE) then false;
-  case(_) then true;
-  end matchcontinue;
-end convertInlineTypeToBool;
-
 public uniontype FunctionDefinition
 
    record FUNCTION_DEF "Normal function body"
