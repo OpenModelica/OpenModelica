@@ -1505,9 +1505,31 @@ algorithm
       functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
       st as SYMBOLTABLE(ast = p, explodedAst = s))
       equation
-        (top_names_str) = Dump.getAstAsCorbaString(p);
+        Dump.getAstAsCorbaString(p);
+        top_names_str = Print.getString();
+        Print.clearBuf();
       then
         (top_names_str, st);
+
+      /* Print the whole AST to file */
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAstAsCorbaString"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(filename)},argNames = {})))}),
+      st as SYMBOLTABLE(ast = p, explodedAst = s))
+      equation
+        Dump.getAstAsCorbaString(p);
+        Print.writeBuf(filename);
+        Print.clearBuf();
+      then
+        ("true", st);
+
+      /* Failed to print the whole AST to file */
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAstAsCorbaString"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(filename)},argNames = {})))}),
+      st as SYMBOLTABLE(ast = p, explodedAst = s))
+      then
+        ("false", st);
         
     /* adrpo added 2008-11-28 deal with the annotation versions */        
     case (ISTMTS(interactiveStmtLst =
