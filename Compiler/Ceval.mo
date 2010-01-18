@@ -111,6 +111,12 @@ public function ceval "
   output Env.Cache outCache;
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+
+	function ReductionOperator
+		input Values.Value v1;
+		input Values.Value v2;
+		output Values.Value res;
+	end ReductionOperator;
 algorithm 
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inIntegerOption,inMsg)
@@ -810,24 +816,18 @@ algorithm
         v = ValuesUtil.nthnthArrayelt(es_1,Values.ARRAY(vals),v);
       then
         (cache,v,st_1);
-    case (cache,env,DAE.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim, MSG()) /* (v,st) */ 
-      local
-        Absyn.Path p;
-        DAE.Exp exp;
-        Option<Integer> dim;
-      equation 
-        print("#-- Ceval.ceval reduction not impl yet.\n");
-      then
-        fail();
 
-    case (cache,env,DAE.REDUCTION(path = p,expr = exp,ident = iter,range = iterexp),impl,st,dim, NO_MSG()) /* (v,st) */ 
-      local
-        Absyn.Path p;
-        DAE.Exp exp;
-        Option<Integer> dim;
-      then
-        fail();
-
+		case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = exp, ident = iter, range = iterexp), impl, st, dimOpt, msg)
+			local
+				DAE.Ident reductionName;
+				DAE.Exp exp;
+				ReductionOperator op;
+			equation
+				(cache, Values.ARRAY(vals), st_1) = ceval(cache, env, iterexp, impl, st, dimOpt, msg);
+				env = Env.openScope(env, false, SOME(Env.forScopeName));
+				op = lookupReductionOp(reductionName);
+				(cache, value, st_1) = cevalReduction(cache, env, op, exp, iter, vals, impl, st, dimOpt, msg);
+			then (cache, value, st_1);
     /* ceval can fail and that is ok, caught by other rules... */ 
     case (cache,env,e,_,_,_,_) // MSG()) 
       equation
@@ -4917,6 +4917,123 @@ algorithm
     case(_,_) then false;
   end matchcontinue;
 end dimensionSliceInRange;
+
+protected function cevalReduction
+	"Help function to ceval. Evaluates reductions calls, such as 
+		'sum(i for i in 1:5)'"
+	input Env.Cache cache;
+	input Env.Env env;
+	input ReductionOperator op;
+	input DAE.Exp exp;
+	input DAE.Ident iteratorName;
+	input list<Values.Value> values;
+	input Boolean implicitInstantiation;
+	input Option<Interactive.InteractiveSymbolTable> symbolTable;
+	input Option<Integer> dim;
+	input Msg msg;
+	output Env.Cache newCache;
+	output Values.Value result;
+	output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
+
+	function ReductionOperator
+		input Values.Value v1;
+		input Values.Value v2;
+		output Values.Value res;
+	end ReductionOperator;
+algorithm
+	(newCache, result, newSymbolTable) := matchcontinue(cache, env, op,
+		exp, iteratorName, values, implicitInstantiation, symbolTable, dim, msg)
+		local
+			Values.Value value, value2, reduced_value;
+			list<Values.Value> rest_values;
+			Env.Env new_env;
+			Env.Cache new_cache;
+			Option<Interactive.InteractiveSymbolTable> new_st;
+		case (new_cache, new_env, _, _, _, value :: {}, _, new_st, _, _)
+			equation
+				new_env = Env.extendFrameForIterator(env, iteratorName, 
+					(DAE.T_INTEGER({}), NONE), DAE.VALBOUND(value), SCode.VAR());
+				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
+					implicitInstantiation, new_st, dim, msg);
+				then (new_cache, value, new_st); 
+		case (new_cache, new_env, _, _, _, value :: rest_values, _, new_st, _, _)
+			equation
+				(new_cache, value2, new_st) = cevalReduction(new_cache, new_env, op, exp, 
+					iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
+				new_env = Env.extendFrameForIterator(new_env, iteratorName, 
+					(DAE.T_INTEGER({}), NONE), DAE.VALBOUND(value), SCode.VAR());
+				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
+					implicitInstantiation, new_st, dim, msg);
+				reduced_value = op(value, value2);
+			then (cache, reduced_value, new_st);
+	end matchcontinue;
+end cevalReduction;
+
+protected function valueAdd
+	"Adds two Values. Used (indirectly) by cevalReduction."
+	input Values.Value v1;
+	input Values.Value v2;
+	output Values.Value res;
+algorithm
+	res := matchcontinue(v1, v2)
+		case (Values.INTEGER(i1), Values.INTEGER(i2)) 
+			local Integer i1, i2, res;
+			equation res = i1 + i2; then Values.INTEGER(res);
+		case (Values.REAL(r1), Values.REAL(r2))
+			local Real r1, r2, res;
+			equation res = r1 +. r2; then Values.REAL(res);
+	end matchcontinue;
+end valueAdd;
+
+protected function valueMax
+	"Returns the maximum of two Values. Used (indirectly) by cevalReduction."
+	input Values.Value v1;
+	input Values.Value v2;
+	output Values.Value res;
+algorithm
+	res := matchcontinue(v1, v2)
+		case (Values.INTEGER(i1), Values.INTEGER(i2)) 
+			local Integer i1, i2, res;
+			equation res = intMax(i1, i2); then Values.INTEGER(res);
+		case (Values.REAL(r1), Values.REAL(r2))
+			local Real r1, r2, res;
+			equation res = realMax(r1, r2); then Values.REAL(res);
+	end matchcontinue;
+end valueMax;
+	
+protected function valueMin
+	"Returns the minimum of two Values. Used (indirectly) by cevalReduction."
+	input Values.Value v1;
+	input Values.Value v2;
+	output Values.Value res;
+algorithm
+	res := matchcontinue(v1, v2)
+		case (Values.INTEGER(i1), Values.INTEGER(i2)) 
+			local Integer i1, i2, res;
+			equation res = intMin(i1, i2); then Values.INTEGER(res);
+		case (Values.REAL(r1), Values.REAL(r2))
+			local Real r1, r2, res;
+			equation res = realMin(r1, r2); then Values.REAL(res);
+	end matchcontinue;
+end valueMin;		
+
+protected function lookupReductionOp
+	"Looks up a reduction function based on it's name."
+	input DAE.Ident reductionName;
+	output ReductionOperator op;
+
+	function ReductionOperator
+		input Values.Value v1;
+		input Values.Value v2;
+		output Values.Value res;
+	end ReductionOperator;
+algorithm
+	op := matchcontinue(reductionName)
+		case "max" then valueMax;
+		case "min" then valueMin;
+		case "sum" then valueAdd;
+	end matchcontinue;
+end lookupReductionOp;
 
 end Ceval;
 
