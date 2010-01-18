@@ -5071,7 +5071,6 @@ end stdout;
 
 public function getAstAsCorbaString
   input Absyn.Program program;
-  output String outStr;
 algorithm
   outStr := matchcontinue program
     local
@@ -5081,8 +5080,6 @@ algorithm
       String old;
     case Absyn.PROGRAM(classes = classes, within_ = within_, globalBuildTimes = globalBuildTimes)
       equation
-        old = Print.getString();
-        Print.clearBuf();
         Print.printBuf("record Absyn.PROGRAM\nclasses = ");
         printListAsCorbaString(classes,printClassAsCorbaString,",\n");
         Print.printBuf(",\nwithin_ = ");
@@ -5090,10 +5087,7 @@ algorithm
         Print.printBuf(",\nglobalBuildTimes = ");
         printTimeStampAsCorbaString(globalBuildTimes);
         Print.printBuf("\nend Absyn.PROGRAM;");
-        outStr = Print.getString();
-        Print.clearBuf();
-        Print.printBuf(old);
-      then outStr;
+      then ();
   end matchcontinue;
 end getAstAsCorbaString;
 
