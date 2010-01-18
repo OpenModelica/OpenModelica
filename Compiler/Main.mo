@@ -565,7 +565,7 @@ algorithm
         Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
         // transform if equations to if expression before going into code generation
-        d = DAEUtil.transformIfEqToExpr(d);
+        d = DAEUtil.transformIfEqToExpr(d,false);
         cname = Absyn.lastClassname(p);
         str = Print.getString();
         silent = RTOpts.silent();
@@ -638,7 +638,7 @@ algorithm
         Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
         // transform if equations to if expression before going into code generation
-        d = DAEUtil.transformIfEqToExpr(d);
+        d = DAEUtil.transformIfEqToExpr(d,false);
         cname = Absyn.lastClassname(p);
         str = Print.getString();
         silent = RTOpts.silent();

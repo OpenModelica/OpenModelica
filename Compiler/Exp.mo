@@ -7261,9 +7261,11 @@ algorithm
       list<Integer> cnt;
       Absyn.Path path,p;
       Boolean t;
-      Type tp;
+      Type tp,ety;
       Absyn.CodeNode a;
       Ident id;
+      ComponentRef cr;
+      list<Subscript> subs;
         
     case (expr,source,target) /* expr source expr target expr */ 
       equation 
@@ -7401,6 +7403,18 @@ algorithm
         c = c1 + c2;
       then
         (DAE.REDUCTION(p,e_1,id,r_1),c);
+        /* Qualified componentreferences, replace subscripts */
+    case(DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),source,target) equation
+      (subs,c1) = replaceExpSubs(subs,source,target);
+      (DAE.CREF(cr,_),c2) = replaceExp(DAE.CREF(cr,ety),source,target);
+      c = c1+c2;
+    then (DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),c);
+    
+    /* simple componentreference, replace subscripts */
+    case(DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),source,target) equation
+      (subs,c1) = replaceExpSubs(subs,source,target);
+    then (DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),c1);
+        
     case(DAE.CREF(cr as DAE.CREF_IDENT(id,t2,ssl),ety),_,_)
         local 
           Type ety,t2;
@@ -7418,6 +7432,40 @@ algorithm
     case (e,s,_) then (e,0); 
   end matchcontinue;
 end replaceExp;
+
+protected function replaceExpSubs 
+"function: replaceExpSubs
+help function to replaceExp. replaces expressions in subscript list
+"
+input list<Subscript> subs;
+ input Exp source;
+  input Exp target;
+  output list<Subscript> outSubs;
+  output Integer cnt;
+algorithm
+  (outSubs,cnt) := matchcontinue(subs,source,target)
+  local Exp e; Integer cnt1,cnt2;
+    case({},_,_) then ({},0);
+    /* WHOLEDIM == ':' */
+    case(DAE.WHOLEDIM()::subs,source,target) equation
+      (subs,cnt) = replaceExpSubs(subs,source,target);
+    then (DAE.WHOLEDIM()::subs,cnt);
+    
+    /* Slice e.g. a[{1,5,7}] */
+    case(DAE.SLICE(e)::subs,source,target) equation
+      (e,cnt1) = replaceExp(e,source,target);
+      (subs,cnt2) = replaceExpSubs(subs,source,target);
+      cnt = cnt1 + cnt2;
+    then (DAE.SLICE(e)::subs,cnt);
+    
+    /* Index, e.g. a[i+1] */
+    case(DAE.INDEX(e)::subs,source,target) equation
+      (e,cnt1) = replaceExp(e,source,target);
+      (subs,cnt2) = replaceExpSubs(subs,source,target);
+      cnt = cnt1 + cnt2;
+    then (DAE.INDEX(e)::subs,cnt);
+  end matchcontinue;
+end replaceExpSubs;
 
 protected function replaceExpMatrix 
 "function: replaceExpMatrix

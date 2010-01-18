@@ -5103,35 +5103,35 @@ public function transformIfEqToExpr
 "function: transformIfEqToExpr
   transform all if equations to ordinary equations involving if-expressions"
   input DAE.DAElist inDAElist;
+  input Boolean onlyConstantEval "if true, only perform the constant evaluation part, not transforming to if-expr";
   output DAE.DAElist outDAElist;
 algorithm 
-  outDAElist := matchcontinue (inDAElist)
+  outDAElist := matchcontinue (inDAElist,onlyConstantEval)
     local
       DAE.DAElist sublist_result,result,sublist;
       list<DAE.Element> rest_result,rest,res2,res1,res;
       DAE.Element subresult,el;
       String name;
       DAE.ElementSource source "the origin of the element";
-      
-    case (DAE.DAE(elementLst = {})) then DAE.DAE({}); 
-    case (DAE.DAE(elementLst = (DAE.COMP(ident = name,dAElist = sublist,source =  source) :: rest)))
+    case (DAE.DAE(elementLst = {}),onlyConstantEval) then DAE.DAE({}); 
+    case (DAE.DAE(elementLst = (DAE.COMP(ident = name,dAElist = sublist,source=source) :: rest)),onlyConstantEval)
       equation 
-        sublist_result = transformIfEqToExpr(sublist);
-        DAE.DAE(rest_result) = transformIfEqToExpr(DAE.DAE(rest));
+        sublist_result = transformIfEqToExpr(sublist,onlyConstantEval);
+        DAE.DAE(rest_result) = transformIfEqToExpr(DAE.DAE(rest),onlyConstantEval);
         subresult = DAE.COMP(name,sublist_result,source);
         result = DAE.DAE((subresult :: rest_result));
       then
         result;
-    case (DAE.DAE(elementLst = (el :: rest)))
+    case (DAE.DAE(elementLst = (el :: rest)),onlyConstantEval)
       equation
-        res1 = ifEqToExpr(el);
-        DAE.DAE(res2) = transformIfEqToExpr(DAE.DAE(rest));
+        res1 = ifEqToExpr(el,onlyConstantEval);
+        DAE.DAE(res2) = transformIfEqToExpr(DAE.DAE(rest),onlyConstantEval);
         res = listAppend(res1, res2);
       then
         DAE.DAE(res);
-    case (DAE.DAE(elementLst = (el :: rest)))
+    case (DAE.DAE(elementLst = (el :: rest)),onlyConstantEval)
       equation
-        DAE.DAE(res) = transformIfEqToExpr(DAE.DAE(rest));
+        DAE.DAE(res) = transformIfEqToExpr(DAE.DAE(rest),onlyConstantEval);
       then
         DAE.DAE((el :: res));
   end matchcontinue;
@@ -5176,10 +5176,11 @@ protected function ifEqToExpr
 "function: ifEqToExpr
   Transform one if-equation into equations involving if-expressions"
   input DAE.Element inElement;
+  input Boolean onlyConstantEval;
   output list<DAE.Element> outElementLst;
 algorithm 
   outElementLst:=
-  matchcontinue (inElement)
+  matchcontinue (inElement,onlyConstantEval)
     local
       Integer true_eq,false_eq;
       String elt_str;
@@ -5192,25 +5193,34 @@ algorithm
     // adrpo: handle selection of branches if conditions are boolean literals
     //        this is needed as Connections.isRoot becomes true/false at the 
     //        end of instantiation. 
-    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
+    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)),onlyConstantEval)
       equation 
         equations = selectBranches(cond, true_branch, false_branch);
         // transform further if needed
-        DAE.DAE(equations) = transformIfEqToExpr(DAE.DAE(equations));
+        DAE.DAE(equations) = transformIfEqToExpr(DAE.DAE(equations),onlyConstantEval);
       then
         equations;
     // handle the erroneous case where the number of equations are not equal in different branches
-    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)))
+    /* BUG: The comparison of # equations in different branches below is wrong.
+    The Modelica.Blocks.Examples.PID_Controller shows why. if an assert is present in one of the branches, the number 
+    does not match, but the "counting of equations" is still the same 
+    Therfore I comment this out for now.
+    /PA
+    */
+   
+    /*case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)),onlyConstantEval)
       equation 
         true_eq = ifEqToExpr2(true_branch);
         false_eq = listLength(false_branch);
-        (true_eq == false_eq) = false;
+        (true_eq == false_eq) = false; // Bug here, must count the equations properly...
         elt_str = dumpEquationsStr({elt});
         Error.addMessage(Error.DIFFERENT_NO_EQUATION_IF_BRANCHES, {elt_str});
       then
-        {};
+        {};*/
+        
+        
     // handle the default case.
-    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source = source))
+    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
       equation 
         true_eq = ifEqToExpr2(true_branch);
         false_eq = listLength(false_branch);
@@ -5218,7 +5228,11 @@ algorithm
         equations = makeEquationsFromIf(cond, true_branch, false_branch, source);
       then
         equations;
-    case (elt as DAE.IF_EQUATION(condition1 = _)) // only display failure on if equation  
+    case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval as true)
+      
+      then
+        {elt};
+    case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval) // only display failure on if equation  
       equation
         elt_str = dumpElementsStr({elt});
         Debug.fprintln("failtrace", "- DAE.ifEqToExpr failed " +& elt_str);

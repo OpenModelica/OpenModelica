@@ -253,7 +253,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_, dae as DAE.DAE(dael)) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1, path);
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae);
+        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dael,env));
         /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
         ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
@@ -651,7 +651,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,(dae as DAE.DAE(dael))) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
-        // ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dael);        
+        // ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dael,false);        
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         str = DAEUtil.dumpStr(dae);
       then
@@ -2230,7 +2230,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1);
+        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
@@ -2313,7 +2313,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae as DAE.DAE(dael)) = 
         Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae);
+        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         dlow = DAELow.lower(dae, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
@@ -3277,7 +3277,7 @@ algorithm
         
         (cache, env, _, dae as DAE.DAE(dael)) = 
         Inst.instantiateClass(inCache, InstanceHierarchy.emptyInstanceHierarchy, p_1, className);        
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae);
+        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
@@ -3625,7 +3625,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1);
+        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);
@@ -3668,7 +3668,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstanceHierarchy, p_1, classname);
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1);
+        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae_1,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dael,env));
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);
