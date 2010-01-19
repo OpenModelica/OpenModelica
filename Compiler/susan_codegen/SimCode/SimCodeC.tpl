@@ -160,7 +160,7 @@ char var_attr[NX+NY+NP] = {
 globalDataVarNamesArray(String name, list<SimVar> items) ::=
 if items then
 <<
-char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
+char* <name>[<listLength(items)>] = {<items of item as SIMVAR:
   '"<crefSubscript(origName)>"' ", ">};
 >>
 else
@@ -171,7 +171,7 @@ char* <name>[1] = {""};
 globalDataVarCommentsArray(String name, list<SimVar> items) ::=
 if items then
 <<
-char* <name>[<listLengthSimVar(items)>] = {<items of item as SIMVAR:
+char* <name>[<listLength(items)>] = {<items of item as SIMVAR:
   '"<item.comment>"' ", ">};
 >>
 else
@@ -1021,7 +1021,7 @@ case SES_ALGORITHM then
 >>
 case SES_LINEAR then
 # uid = System.tmpTick()
-# size = listLengthSimVar(vars)
+# size = listLength(vars)
 # aname = 'A<uid>'
 # bname = 'b<uid>'
 # mixedPostfix = if partOfMixed then "_mixed" else ""
@@ -1043,8 +1043,8 @@ solve_linear_equation_system<mixedPostfix>(<aname>, <bname>, <size>, <uid>);
 >>
 case SES_MIXED then
 # contEqs = equation_(cont, context, varDecls)
-# numDiscVarsStr = listLengthSimVar(discVars) 
-# valuesLenStr = listLengthStr(values)
+# numDiscVarsStr = listLength(discVars) 
+# valuesLenStr = listLength(values)
 # preDisc = ""
 # discLoc2 = (discEqs of SES_SIMPLE_ASSIGN:
   # expPart = daeExp(exp, context, preDisc, varDecls)
@@ -1070,7 +1070,7 @@ int value_dims[<numDiscVarsStr>] = {<value_dims: '<it>' ", ">};
 mixed_equation_system_end(<numDiscVarsStr>);
 >>
 case SES_NONLINEAR then
-# size = listLengthCref(crefs)
+# size = listLength(crefs)
 <<
 start_nonlinear_system(<size>);
 <crefs: 'nls_x[<i0>] = extraPolate(<cref(it)>);<\n>nls_xold[<i0>] = old(&<cref(it)>);' "\n">
@@ -1330,7 +1330,7 @@ case var as VARIABLE then
   # varName = if outStruct then '<outStruct>.targ<i>' else '<cref(var.name)>'
   # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
-    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<varName>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<varName>, <listLength(instDims)>, <instDimsInit>);<\n>'
     ()
   else
     ()
@@ -1339,7 +1339,7 @@ varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits)
 case var as VARIABLE then
   # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
   if instDims then
-    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<dest>.targ<i>, <listLengthExp(instDims)>, <instDimsInit>);<\n>'
+    # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<dest>.targ<i>, <listLength(instDims)>, <instDimsInit>);<\n>'
     <<
     copy_<expTypeShort(var.ty)>_array_data(&<cref(var.name)>, &<dest>.targ<i>);
     >>
@@ -1700,7 +1700,7 @@ case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
     // The array subscript results in a scalar
     # arrName = cref(cref.componentRef)
     # arrayType = expTypeArray(cref.ty)
-    # dimsLenStr = listLengthSubscript(subs)
+    # dimsLenStr = listLength(subs)
     # dimsValuesStr = (subs of INDEX: daeExp(exp, context, preExp, varDecls) ", ")
     <<
     (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
@@ -1719,7 +1719,7 @@ case _ then
   "UNKNOWN RHS CREF: ONLY IDENT SUPPORTED"
 
 daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text preExp, Text varDecls) ::=
-# nridx_str = listLengthSubscript(subs)
+# nridx_str = listLength(subs)
 # idx_str = (subs of sub:
                case INDEX then
                  # expPart = daeExp(exp, context, preExp, varDecls)
@@ -1748,7 +1748,7 @@ case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     // For context simulation array variables must be boxed into a real_array
     // object since they are represented only in a double array.
     # tmpArr = tempDecl(expTypeArray(aty), varDecls)
-    # dimsLenStr = listLengthOptionInt(dims)
+    # dimsLenStr = listLength(dims)
     # dimsValuesStr = (dims of dim as SOME(i): i ", ")
     # preExp += '<expTypeShort(aty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
     tmpArr
@@ -1976,7 +1976,7 @@ case ARRAY then
 # scalarPrefix = if scalar then "scalar_" else ""
 # scalarRef = if scalar then "&" else ""
 # params = '<array of e: daeExp(e, context, preExp, varDecls) ", ">'
-# preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLengthExp(array)>, <params>);<\n>'
+# preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLength(array)>, <params>);<\n>'
 '<arrayVar>'
 
 daeExpMatrix(Exp exp, Context context, Text preExp, Text varDecls) ::=
@@ -2000,13 +2000,13 @@ case m as MATRIX then
                  # tmp = tempDecl(arrayTypeStr, varDecls)
                  # vars = daeExpMatrixRow(row, arrayTypeStr, context, promote, varDecls)
                  # vars2 += ', &<tmp>'
-                 'cat_alloc_<arrayTypeStr>(2, &<tmp>, <listLengthMatrix2(row)><vars>);'
+                 'cat_alloc_<arrayTypeStr>(2, &<tmp>, <listLength(row)><vars>);'
                "\n")
   # preExp += promote
   # preExp += catAlloc
   # preExp += "\n"
   # tmp = tempDecl(arrayTypeStr, varDecls)
-  # preExp += 'cat_alloc_<arrayTypeStr>(1, &<tmp>, <listLengthMatrix1(m.scalar)><vars2>);<\n>'
+  # preExp += 'cat_alloc_<arrayTypeStr>(1, &<tmp>, <listLength(m.scalar)><vars2>);<\n>'
   tmp
 
 daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
@@ -2105,7 +2105,7 @@ case VALUEBLOCK then
 arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
                Text preExp, Text varDecls) ::=
   # arrayType = expTypeArray(ty)
-  # dimsLenStr = listLengthExp(subs)
+  # dimsLenStr = listLength(subs)
   # dimsValuesStr = (subs of exp: daeExp(exp, context, preExp, varDecls) ", ")
   <<
   (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))

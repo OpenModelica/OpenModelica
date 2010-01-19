@@ -1177,7 +1177,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("char* "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
-        ret_0 = SimCode.listLengthSimVar(i_items);
+        ret_0 = listLength(i_items);
         txt = Tpl.writeStr(txt, intString(ret_0));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = {"));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -1269,7 +1269,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("char* "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
-        ret_0 = SimCode.listLengthSimVar(i_items);
+        ret_0 = listLength(i_items);
         txt = Tpl.writeStr(txt, intString(ret_0));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = {"));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -5046,7 +5046,7 @@ algorithm
       equation
         ret_1 = System.tmpTick();
         i_uid = Tpl.writeStr(emptyTxt, intString(ret_1));
-        ret_3 = SimCode.listLengthSimVar(i_vars);
+        ret_3 = listLength(i_vars);
         i_size = Tpl.writeStr(emptyTxt, intString(ret_3));
         i_aname = Tpl.writeTok(emptyTxt, Tpl.ST_STRING("A"));
         i_aname = Tpl.writeText(i_aname, i_uid);
@@ -5110,9 +5110,9 @@ algorithm
         Tpl.Text i_contEqs;
       equation
         (i_contEqs, i_varDecls) = equation_(emptyTxt, i_cont, i_context, i_varDecls);
-        ret_2 = SimCode.listLengthSimVar(i_discVars);
+        ret_2 = listLength(i_discVars);
         i_numDiscVarsStr = Tpl.writeStr(emptyTxt, intString(ret_2));
-        ret_4 = SimCode.listLengthStr(i_values);
+        ret_4 = listLength(i_values);
         i_valuesLenStr = Tpl.writeStr(emptyTxt, intString(ret_4));
         i_preDisc = emptyTxt;
         i_discLoc2 = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -5188,7 +5188,7 @@ algorithm
         Integer ret_1;
         Tpl.Text i_size;
       equation
-        ret_1 = SimCode.listLengthCref(i_crefs);
+        ret_1 = listLength(i_crefs);
         i_size = Tpl.writeStr(emptyTxt, intString(ret_1));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("start_nonlinear_system("));
         txt = Tpl.writeText(txt, i_size);
@@ -7129,7 +7129,7 @@ algorithm
         i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING("_array(&"));
         i_varInits = Tpl.writeText(i_varInits, i_varName);
         i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING(", "));
-        ret_0 = SimCode.listLengthExp(i_instDims);
+        ret_0 = listLength(i_instDims);
         i_varInits = Tpl.writeStr(i_varInits, intString(ret_0));
         i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING(", "));
         i_varInits = Tpl.writeText(i_varInits, i_instDimsInit);
@@ -7306,7 +7306,7 @@ algorithm
         i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING(".targ"));
         i_varInits = Tpl.writeStr(i_varInits, intString(i_i));
         i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING(", "));
-        ret_0 = SimCode.listLengthExp(i_instDims);
+        ret_0 = listLength(i_instDims);
         i_varInits = Tpl.writeStr(i_varInits, intString(ret_0));
         i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING(", "));
         i_varInits = Tpl.writeText(i_varInits, i_instDimsInit);
@@ -10349,7 +10349,7 @@ algorithm
       equation
         i_arrName = cref(emptyTxt, i_cref_componentRef);
         i_arrayType = expTypeArray(emptyTxt, i_cref_ty);
-        ret_3 = SimCode.listLengthSubscript(i_subs);
+        ret_3 = listLength(i_subs);
         i_dimsLenStr = Tpl.writeStr(emptyTxt, intString(ret_3));
         i_dimsValuesStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_dimsValuesStr, i_varDecls, i_preExp) = lm_224(i_dimsValuesStr, i_subs, i_varDecls, i_preExp, i_context);
@@ -10709,7 +10709,7 @@ protected
   Integer ret_1;
   Tpl.Text i_nridx__str;
 algorithm
-  ret_1 := SimCode.listLengthSubscript(i_subs);
+  ret_1 := listLength(i_subs);
   i_nridx__str := Tpl.writeStr(emptyTxt, intString(ret_1));
   i_idx__str := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   (i_idx__str, out_i_varDecls, out_i_preExp) := lm_231(i_idx__str, i_subs, i_varDecls, i_preExp, i_context);
@@ -10802,7 +10802,7 @@ algorithm
       equation
         txt_1 = expTypeArray(emptyTxt, i_aty);
         (i_tmpArr, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(txt_1), i_varDecls);
-        ret_3 = SimCode.listLengthOptionInt(i_dims);
+        ret_3 = listLength(i_dims);
         i_dimsLenStr = Tpl.writeStr(emptyTxt, intString(ret_3));
         i_dimsValuesStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_dimsValuesStr = lm_233(i_dimsValuesStr, i_dims);
@@ -12901,7 +12901,7 @@ algorithm
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("(&"));
         i_preExp = Tpl.writeText(i_preExp, i_arrayVar);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
-        ret_5 = SimCode.listLengthExp(i_array);
+        ret_5 = listLength(i_array);
         i_preExp = Tpl.writeStr(i_preExp, intString(ret_5));
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
         i_preExp = Tpl.writeText(i_preExp, i_params);
@@ -12975,7 +12975,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("(2, &"));
         txt = Tpl.writeText(txt, i_tmp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(", "));
-        ret_2 = SimCode.listLengthMatrix2(i_row);
+        ret_2 = listLength(i_row);
         txt = Tpl.writeStr(txt, intString(ret_2));
         txt = Tpl.writeText(txt, i_vars);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
@@ -13090,7 +13090,7 @@ algorithm
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("(1, &"));
         i_preExp = Tpl.writeText(i_preExp, i_tmp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
-        ret_5 = SimCode.listLengthMatrix1(i_m_scalar);
+        ret_5 = listLength(i_m_scalar);
         i_preExp = Tpl.writeStr(i_preExp, intString(ret_5));
         i_preExp = Tpl.writeText(i_preExp, i_vars2);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
@@ -13869,7 +13869,7 @@ protected
   Tpl.Text i_arrayType;
 algorithm
   i_arrayType := expTypeArray(emptyTxt, i_ty);
-  ret_2 := SimCode.listLengthExp(i_subs);
+  ret_2 := listLength(i_subs);
   i_dimsLenStr := Tpl.writeStr(emptyTxt, intString(ret_2));
   i_dimsValuesStr := Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
   (i_dimsValuesStr, out_i_varDecls, out_i_preExp) := lm_281(i_dimsValuesStr, i_subs, i_varDecls, i_preExp, i_context);

@@ -12,46 +12,6 @@ end builtin;
 
 package SimCode
 
-  function listLengthExp
-    input list<DAE.Exp> lst;
-    output Integer len;
-  end listLengthExp;
-
-  function listLengthStr
-    input list<String> lst;
-    output Integer len;
-  end listLengthStr;
-  
-  function listLengthSimVar
-    input list<SimVar> lst;
-    output Integer len;
-  end listLengthSimVar;
-
-  function listLengthOptionInt
-    input list<Option<Integer>> lst;
-    output Integer len;
-  end listLengthOptionInt;
-
-  function listLengthMatrix1
-    input list<list<tuple<DAE.Exp,Boolean>>> lst;
-    output Integer len;
-  end listLengthMatrix1;
-
-  function listLengthMatrix2
-    input list<tuple<DAE.Exp,Boolean>> lst;
-    output Integer len;
-  end listLengthMatrix2;
-
-  function listLengthSubscript
-    input list<DAE.Subscript> lst;
-    output Integer len;
-  end listLengthSubscript;
-
-  function listLengthCref
-    input list<DAE.ComponentRef> lst;
-    output Integer len;
-  end listLengthCref;
-
   function crefSubIsScalar
     input DAE.ComponentRef cref;
     output Boolean isScalar;
