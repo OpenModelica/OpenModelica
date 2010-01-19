@@ -1430,7 +1430,7 @@ algorithm
 				(new_cache, new_env, iters_const, iter_values_list, iter_names, arrays_dim)
 					= elabArrayIterators(cache, env, rest_iters, implicitInstantiation, st, performVectorization);
 				(new_cache, iter_exp, DAE.PROP(
-						(type_ = DAE.T_ARRAY(arrayDim = array_dim, arrayType = iter_type), _), 
+						type_ = (DAE.T_ARRAY(arrayDim = array_dim, arrayType = iter_type), _), 
 				    constFlag = iter_const), _)
 					= elabExp(cache, env, iter_exp, implicitInstantiation, st, performVectorization);
 				(new_cache, Values.ARRAY(iter_values), _) 
