@@ -1594,7 +1594,7 @@ algorithm
         //extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
         //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
         // Add model info
-        modelInfo = createModelInfo(class_, dlow2, n_o, n_i, n_h, nres, fileDir);
+        modelInfo = createModelInfo(class_, dlow2, n_h, nres, fileDir);
         allEquations = createEquations(false, true, dae, dlow2, ass1, ass2, comps);
         stateContEquations = createEquations(false, false, dae, dlow2, ass1, ass2, blt_states);
         (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
@@ -3083,32 +3083,35 @@ end createZeroCrossingNeedSave;
 public function createModelInfo
   input Absyn.Path class_;
   input DAELow.DAELow dlow;
-  input Integer numOutVars;
-  input Integer numInVars;
   input Integer numHelpVars;
   input Integer numResiduals;
   input String fileDir;
   output ModelInfo modelInfo;
 algorithm
   modelInfo :=
-  matchcontinue (class_, dlow, numOutVars, numInVars, numHelpVars,
-                 numResiduals, fileDir)
+  matchcontinue (class_, dlow, numHelpVars, numResiduals, fileDir)
     local
       String name;
       String directory;
       VarInfo varInfo;
       SimVars vars;
-    case (class_, dlow, numOutVars, numInVars, numHelpVars,
-          numResiduals, fileDir)
+      Integer numOutVars;
+      Integer numInVars;
+      list<SimVar> iv;
+      list<SimVar> ov;
+    case (class_, dlow, numHelpVars, numResiduals, fileDir)
       equation
         name = Absyn.pathString(class_);
         directory = System.trim(fileDir, "\"");
+        vars = createVars(dlow);
+        SIMVARS(inputVars=iv, outputVars=ov) = vars;
+        numOutVars = listLength(ov);
+        numInVars = listLength(iv);
         varInfo = createVarInfo(dlow, numOutVars, numInVars, numHelpVars,
                                 numResiduals);
-        vars = createVars(dlow);
       then
         MODELINFO(name, directory, varInfo, vars);
-    case (_,_,_,_,_,_,_)
+    case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createModelInfo failed"});
       then
