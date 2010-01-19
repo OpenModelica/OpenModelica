@@ -1981,7 +1981,7 @@ algorithm
       then
         equation_ :: equations;
     /* multiple equations that must be solved together (algebraic loop) */
-    case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, comp :: restComps)
+    case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, (comp as (_ :: (_ :: _))) :: restComps)
       equation
         equation_ = createOdeSystem(genDiscrete, dlow, ass1, ass2, comp);
         equations = createEquations(skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps);
@@ -2103,18 +2103,59 @@ algorithm
         resEqs = createNonlinearResidualEquations({eqn}, ae, repl);
       then
         SES_NONLINEAR(index, resEqs, {cr_1});
-    /* single equation: algorithm */
-    case (dae, DAELow.DAELOW(orderedVars=DAELow.VARIABLES(varArr=vararr),orderedEqs=eqns,algorithms=algs), ass1, ass2, eqNum)
+    ///* single equation: algorithm */
+    //case (dae, DAELow.DAELOW(orderedVars=DAELow.VARIABLES(varArr=vararr),orderedEqs=eqns,algorithms=algs), ass1, ass2, eqNum)
+    //  equation
+    //    e_1 = eqNum - 1 "Algorithms Each algorithm should only be genated once." ;
+    //    DAELow.ALGORITHM(indx,inputs,outputs,_) = DAELow.equationNth(eqns, e_1);
+    //    alg = algs[indx + 1];
+    //    DAE.ALGORITHM_STMTS(algStatements) = alg;
+    //  then
+    //    SES_ALGORITHM(algStatements);
+
+    /* Algorithm for single variable. */
+    case (dae, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, e)
+      local
+        Integer indx;
+        list<DAE.Exp> algInputs,algOutputs;
+        DAELow.Var v;
+        DAE.ComponentRef varOutput;
+        DAE.ElementSource source "the origin of the element";
       equation
-        e_1 = eqNum - 1 "Algorithms Each algorithm should only be genated once." ;
-        DAELow.ALGORITHM(indx,inputs,outputs,_) = DAELow.equationNth(eqns, e_1);
-        alg = algs[indx + 1];
+        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+        // The output variable of the algorithm must be the variable solved
+        // for, otherwise we need to solve an inverse problem of an algorithm
+        // section.
+        true = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        alg = alg[indx + 1];
+        //(cfunc,cg_id_1) = 
+        //Codegen.generateAlgorithm(DAE.ALGORITHM(alg,source), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
         DAE.ALGORITHM_STMTS(algStatements) = alg;
       then
         SES_ALGORITHM(algStatements);
-    case (_,_,_,_,_)
-      then
-        SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");
+
+    /* inverse Algorithm for single variable . */
+    case (dae,DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e)
+      local
+        Integer indx;
+        list<DAE.Exp> algInputs,algOutputs;
+        DAELow.Var v;
+        DAE.ComponentRef varOutput;
+        String algStr,message;
+        DAE.ElementSource source "the origin of the element";
+      equation
+        (DAELow.ALGORITHM(indx,algInputs,DAE.CREF(varOutput,_)::_,source),v) = getEquationAndSolvedVar(e, eqns, vars, ass2);
+				// We need to solve an inverse problem of an algorithm section.
+        false = Exp.crefEqual(DAELow.varCref(v),varOutput);
+        alg = alg[indx + 1];
+        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{message});
+      then fail();
+
+//    case (_,_,_,_,_)
+//      then
+//        SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");
   end matchcontinue;
 end createEquation;
 
@@ -2471,7 +2512,7 @@ algorithm
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"createOdeSystem2 failed"});
       then
-        SES_NOT_IMPLEMENTED("some case in createOdeSystem2 not implemented");
+        fail();
   end matchcontinue;
 end createOdeSystem2;
 
