@@ -394,14 +394,10 @@ end ElementSpec;
 public 
 uniontype InnerOuter "One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities."
-  record INNER end INNER;
-
-  record OUTER end OUTER;
-
-  record INNEROUTER end INNEROUTER;
-
-  record UNSPECIFIED end UNSPECIFIED;
-
+  record INNER "an inner component"                    end INNER;
+  record OUTER "an outer component"                    end OUTER;
+  record INNEROUTER "an inner/outer component"         end INNEROUTER;
+  record UNSPECIFIED "a component without inner/outer" end UNSPECIFIED;
 end InnerOuter;
 
 public 
@@ -4109,5 +4105,33 @@ algorithm
     case (INFO(fileName = fileName)) then fileName;
   end matchcontinue;
 end getFileNameFromInfo;
-          
+
+public function isOuter
+"@author: adrpo
+ this function returns true if the given Absyn.InnerOuter 
+ is one of Absyn.INNEROUTER() or Absyn.OUTER()"
+ input InnerOuter io;
+ output Boolean isItAnOuter;
+algorithm
+  isItAnOuter := matchcontinue(io)
+    case (INNEROUTER()) then true;
+    case (OUTER()) then true;
+    case (_) then false;
+  end matchcontinue;
+end isOuter;
+
+public function isInner
+"@author: adrpo
+ this function returns true if the given Absyn.InnerOuter 
+ is one of Absyn.INNEROUTER() or Absyn.INNER()"
+ input InnerOuter io;
+ output Boolean isItAnInner;
+algorithm
+  isItAnInner := matchcontinue(io)
+    case (INNEROUTER()) then true;
+    case (INNER()) then true;
+    case (_) then false;
+  end matchcontinue;
+end isInner;
+
 end Absyn;
