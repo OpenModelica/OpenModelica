@@ -45,7 +45,6 @@ package Connect
   in DAE.mo."
 
 
-public import Static;
 public import DAE;
 public import Env;
 public import Prefix;
@@ -113,6 +112,7 @@ public constant Sets emptySet=SETS({},{},{},{});
 
 protected import Exp;
 protected import DAEUtil;
+protected import Static;
 
 public function addDeletedComponent "Adds a deleted component, i.e. conditional component 
 with condition = false, to Sets, if condition b is false"
