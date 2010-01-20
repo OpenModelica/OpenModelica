@@ -42,7 +42,7 @@ import Types;
 import SCode;
 protected import RTOpts;
 
-// addapted from Connect, not to include it as it has tons of dependecies which we don't need.
+// addapted from Connect, not to include it as it has tons of dependencies which we don't need.
 public 
 uniontype Face  
    "This type indicates whether a connector is an inside or an outside
@@ -58,6 +58,8 @@ end Face;
 protected import Debug;
 protected import Dump;
 protected import Util;
+protected import System;
+protected import Exp;
 
 public
 type InstanceHierarchy = list<Instance> "an instance hierarchy is a list of instances";
@@ -67,7 +69,7 @@ constant InstanceHierarchy emptyInstanceHierarchy={} "An empty instance hierarch
 public
 uniontype InstanceAttributes "attributes of an instance"
   record ATTRIBUTES "the attributes for an instance"
-    SCode.Element element "the actual element, beeing it a class or a component;
+    SCode.Element element "the actual element, being it a class or a component;
                            for a top class we wrap it into a SCode.CLASSDEF()";    
     Option<Types.Type> ty "the instantiated type";
     Option<Face> attrInsideOutside "whether this is an inside or outside component"; 
@@ -686,5 +688,538 @@ algorithm
 
   end matchcontinue;
 end printElementStr;
+
+///////////////////////////////////////////////////////
+///////////////////////////////////////////////////////
+public import DAE;
+
+public
+type Key = DAE.ComponentRef "the prefix + '.' + the component name";
+type Value = tuple<SCode.Element, DAE.Mod> "the inputs of the instantiation function and the results";
+
+uniontype TopInstance "a top instance is an instance of a model thar resides at top level" 
+  record TOP_INSTANCE
+    Option<Absyn.Path> path "top model path";
+    InstHierarchyHashTable ht "hash table with fully qualified components";
+  end TOP_INSTANCE;
+end TopInstance;
+
+type InstHierarchy = list<TopInstance>;
+
+constant InstHierarchy emptyInstHierarchy = {}
+"an empty instance hierarchy";
+
+public function hashFunc 
+"author: PA
+  Calculates a hash value for DAE.ComponentRef"
+  input Key k;
+  output Integer res;
+algorithm 
+  res := System.hash(Exp.crefStr(k));
+end hashFunc;
+
+public function keyEqual
+  input Key key1;
+  input Key key2;
+  output Boolean res;
+algorithm
+     res := stringEqual(Exp.crefStr(key1),Exp.crefStr(key2));
+end keyEqual;
+
+public function dumpInstHierarchyHashTable ""
+  input InstHierarchyHashTable t;
+algorithm
+  print("InstHierarchyHashTable:\n");
+  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print("\n");
+end dumpInstHierarchyHashTable;
+
+public function dumpTuple
+  input tuple<Key,Value> tpl;
+  output String str;
+algorithm
+  str := matchcontinue(tpl)
+    local 
+      Key k; Value v; SCode.Element el; DAE.Mod mod;
+    case((k,v as (el,mod))) equation
+      str = "{" +& Exp.crefStr(k) +& ", " +& SCode.printElementStr(el) +& "}\n";
+    then str;
+  end matchcontinue;
+end dumpTuple;
+
+/* end of InstHierarchyHashTable instance specific code */
+
+/* Generic hashtable code below!! */
+public  
+uniontype InstHierarchyHashTable
+  record HASHTABLE
+    list<tuple<Key,Integer>>[:] hashTable " hashtable to translate Key to array indx" ;
+    ValueArray valueArr "Array of values" ;
+    Integer bucketSize "bucket size" ;
+    Integer numberOfEntries "number of entries in hashtable" ;   
+  end HASHTABLE;
+end InstHierarchyHashTable; 
+
+uniontype ValueArray 
+"array of values are expandable, to amortize the 
+ cost of adding elements in a more efficient manner"
+  record VALUE_ARRAY
+    Integer numberOfElements "number of elements in hashtable" ;
+    Integer arrSize "size of crefArray" ;
+    Option<tuple<Key,Value>>[:] valueArray "array of values";
+  end VALUE_ARRAY;
+end ValueArray;
+
+public function cloneInstHierarchyHashTable 
+"Author BZ 2008-06
+ Make a stand-alone-copy of hashtable."
+input InstHierarchyHashTable inHash;
+output InstHierarchyHashTable outHash;
+algorithm outHash := matchcontinue(inHash)
+  local 
+    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
+    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
+    equation
+      arg1_2 = arrayCopy(arg1);
+      arg21_2 = arg21;
+      arg22_2 = arg22;
+      arg23_2 = arrayCopy(arg23);
+      arg3_2 = arg3;
+      arg4_2 = arg4;
+      then
+        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
+end matchcontinue;
+end cloneInstHierarchyHashTable;
+
+public function emptyInstHierarchyHashTable 
+"author: PA
+  Returns an empty InstHierarchyHashTable.
+  Using the bucketsize 100 and array size 10."
+  output InstHierarchyHashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+algorithm 
+  arr := fill({}, 1000);
+  emptyarr := fill(NONE(), 100);
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
+end emptyInstHierarchyHashTable;
+
+public function isEmpty "Returns true if hashtable is empty"
+  input InstHierarchyHashTable hashTable;
+  output Boolean res;
+algorithm
+  res := matchcontinue(hashTable)
+    case(HASHTABLE(_,_,_,0)) then true;
+    case(_) then false;  
+  end matchcontinue;
+end isEmpty;
+
+public function add 
+"author: PA
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple already exists, the function updates the Value."
+  input tuple<Key,Value> entry;
+  input InstHierarchyHashTable hashTable;
+  output InstHierarchyHashTable outHahsTable;
+algorithm 
+  outVariables:=
+  matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+      /* Adding when not existing previously */
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        failure((_) = get(key, hashTable));
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+      
+      /* adding when already present => Updating value */
+    case ((newv as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        (_,indx) = get1(key, hashTable);
+        //print("adding when present, indx =" );print(intString(indx));print("\n");
+        indx_1 = indx - 1;
+        varr_1 = valueArraySetnth(varr, indx, newv);
+      then HASHTABLE(hashvec,varr_1,bsize,n);
+    case (_,_)
+      equation 
+        print("-InstHierarchyHashTable.add failed\n");
+      then
+        fail();
+  end matchcontinue;
+end add;
+
+public function addNoUpdCheck 
+"author: PA
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple already exists, the function updates the Value."
+  input tuple<Key,Value> entry;
+  input InstHierarchyHashTable hashTable;
+  output InstHierarchyHashTable outHahsTable;
+algorithm 
+  outVariables := matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+    // Adding when not existing previously
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+    case (_,_)
+      equation 
+        print("-InstHierarchyHashTable.addNoUpdCheck failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addNoUpdCheck;
+
+public function delete 
+"author: PA
+  delete the Value associatied with Key from the InstHierarchyHashTable.
+  Note: This function does not delete from the index table, only from the ValueArray.
+  This means that a lot of deletions will not make the InstHierarchyHashTable more compact, it 
+  will still contain a lot of incices information."
+  input Key key;
+  input InstHierarchyHashTable hashTable;
+  output InstHierarchyHashTable outHahsTable;
+algorithm 
+  outVariables := matchcontinue (key,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;     
+    // adding when already present => Updating value
+    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        (_,indx) = get1(key, hashTable);
+        indx_1 = indx - 1;
+        varr_1 = valueArrayClearnth(varr, indx);
+      then HASHTABLE(hashvec,varr_1,bsize,n);
+    case (_,hashTable)
+      equation 
+        print("-InstHierarchyHashTable.delete failed\n");
+        print("content:"); dumpInstHierarchyHashTable(hashTable);
+      then
+        fail();
+  end matchcontinue;
+end delete;
+
+public function get 
+"author: PA 
+  Returns a Value given a Key and a InstHierarchyHashTable."
+  input Key key;
+  input InstHierarchyHashTable hashTable;
+  output Value value;
+algorithm 
+  (value,_):= get1(key,hashTable);
+end get;
+
+public function get1 "help function to get"
+  input Key key;
+  input InstHierarchyHashTable hashTable;
+  output Value value;
+  output Integer indx;
+algorithm 
+  (value,indx):= matchcontinue (key,hashTable)
+    local
+      Integer hval,hashindx,indx,indx_1,bsize,n;
+      list<tuple<Key,Integer>> indexes;
+      Value v;      
+      list<tuple<Key,Integer>>[:] hashvec;     
+      ValueArray varr;
+      Key key2;
+    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = get2(key, indexes);
+        v = valueArrayNth(varr, indx);
+      then
+        (v,indx);
+  end matchcontinue;
+end get1;
+
+public function get2 
+"author: PA 
+  Helper function to get"
+  input Key key;
+  input list<tuple<Key,Integer>> keyIndices;
+  output Integer index;
+algorithm 
+  index := matchcontinue (key,keyIndices)
+    local
+      Key key2;
+      Value res;
+      list<tuple<Key,Integer>> xs;
+    case (key,((key2,index) :: _))
+      equation 
+        true = keyEqual(key, key2);
+      then
+        index;
+    case (key,(_ :: xs))      
+      equation 
+        index = get2(key, xs);
+      then
+        index;
+  end matchcontinue;
+end get2;
+
+public function hashTableValueList "return the Value entries as a list of Values"
+  input InstHierarchyHashTable hashTable;
+  output list<Value> valLst;
+algorithm
+   valLst := Util.listMap(hashTableList(hashTable),Util.tuple22);
+end hashTableValueList;
+
+public function hashTableKeyList "return the Key entries as a list of Keys"
+  input InstHierarchyHashTable hashTable;
+  output list<Key> valLst;
+algorithm
+   valLst := Util.listMap(hashTableList(hashTable),Util.tuple21);
+end hashTableKeyList;
+
+public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
+  input InstHierarchyHashTable hashTable;
+  output list<tuple<Key,Value>> tplLst;
+algorithm
+  tplLst := matchcontinue(hashTable)
+  local ValueArray varr;
+    case(HASHTABLE(valueArr = varr)) equation
+      tplLst = valueArrayList(varr);
+    then tplLst; 
+  end matchcontinue;
+end hashTableList;
+
+public function valueArrayList 
+"author: PA
+  Transforms a ValueArray to a tuple<Key,Value> list"
+  input ValueArray valueArray;
+  output list<tuple<Key,Value>> tplLst;
+algorithm 
+  tplLst := matchcontinue (valueArray)
+    local
+      Option<tuple<Key,Value>>[:] arr;
+      tuple<Key,Value> elt;
+      Integer lastpos,n,size;
+      list<tuple<Key,Value>> lst;
+    case (VALUE_ARRAY(numberOfElements = 0,valueArray = arr)) then {}; 
+    case (VALUE_ARRAY(numberOfElements = 1,valueArray = arr))
+      equation 
+        SOME(elt) = arr[0 + 1];
+      then
+        {elt};
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr))
+      equation 
+        lastpos = n - 1;
+        lst = valueArrayList2(arr, 0, lastpos);
+      then
+        lst;
+  end matchcontinue;
+end valueArrayList;
+
+public function valueArrayList2 "Helper function to valueArrayList"
+  input Option<tuple<Key,Value>>[:] inVarOptionArray1;
+  input Integer inInteger2;
+  input Integer inInteger3;
+  output list<tuple<Key,Value>> outVarLst;
+algorithm 
+  outVarLst := matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
+    local
+      tuple<Key,Value> v;
+      Option<tuple<Key,Value>>[:] arr;
+      Integer pos,lastpos,pos_1;
+      list<tuple<Key,Value>> res;
+    case (arr,pos,lastpos)
+      equation 
+        (pos == lastpos) = true;
+        SOME(v) = arr[pos + 1];
+      then
+        {v};
+    case (arr,pos,lastpos)
+      equation 
+        pos_1 = pos + 1;
+        SOME(v) = arr[pos + 1];
+        res = valueArrayList2(arr, pos_1, lastpos);
+      then
+        (v :: res);
+    case (arr,pos,lastpos)
+      equation 
+        pos_1 = pos + 1;
+        NONE = arr[pos + 1];
+        res = valueArrayList2(arr, pos_1, lastpos);
+      then
+        (res);
+  end matchcontinue;
+end valueArrayList2;
+
+public function valueArrayLength 
+"author: PA
+  Returns the number of elements in the ValueArray"
+  input ValueArray valueArray;
+  output Integer size;
+algorithm 
+  size := matchcontinue (valueArray)
+    case (VALUE_ARRAY(numberOfElements = size)) then size; 
+  end matchcontinue;
+end valueArrayLength;
+
+public function valueArrayAdd 
+"function: valueArrayAdd
+  author: PA 
+  Adds an entry last to the ValueArray, increasing 
+  array size if no space left by factor 1.4"
+  input ValueArray valueArray;
+  input tuple<Key,Value> entry;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,entry)
+    local
+      Integer n_1,n,size,expandsize,expandsize_1,newsize;
+      Option<tuple<Key,Value>>[:] arr_1,arr,arr_2;
+      Real rsize,rexpandsize;
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
+      equation 
+        (n < size) = true "Have space to add array elt." ;
+        n_1 = n + 1;
+        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n_1,size,arr_1);
+        
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
+      equation 
+        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
+        rsize = intReal(size);
+        rexpandsize = rsize*.0.4;
+        expandsize = realInt(rexpandsize);
+        expandsize_1 = intMax(expandsize, 1);
+        newsize = expandsize_1 + size;
+        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE);
+        n_1 = n + 1;
+        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n_1,newsize,arr_2);
+    case (_,_)
+      equation 
+        print("-InstHierarchyHashTable.valueArrayAdd failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArrayAdd;
+
+public function valueArraySetnth 
+"function: valueArraySetnth
+  author: PA 
+  Set the n:th variable in the ValueArray to value."
+  input ValueArray valueArray;
+  input Integer pos;
+  input tuple<Key,Value> entry;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,pos,entry)
+    local
+      Option<tuple<Key,Value>>[:] arr_1,arr;
+      Integer n,size,pos;      
+    case (VALUE_ARRAY(n,size,arr),pos,entry)
+      equation 
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n,size,arr_1);
+    case (_,_,_)
+      equation 
+        print("-InstHierarchyHashTable.valueArraySetnth failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArraySetnth;
+
+public function valueArrayClearnth 
+"author: PA
+  Clears the n:th variable in the ValueArray (set to NONE)."
+  input ValueArray valueArray;
+  input Integer pos;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,pos)
+    local
+      Option<tuple<Key,Value>>[:] arr_1,arr;
+      Integer n,size,pos;      
+    case (VALUE_ARRAY(n,size,arr),pos)
+      equation 
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, NONE);
+      then
+        VALUE_ARRAY(n,size,arr_1);
+    case (_,_)
+      equation 
+        print("-InstHierarchyHashTable.valueArrayClearnth failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArrayClearnth;
+
+public function valueArrayNth 
+"function: valueArrayNth
+  author: PA 
+  Retrieve the n:th Vale from ValueArray, index from 0..n-1."
+  input ValueArray valueArray;
+  input Integer pos;
+  output Value value;
+algorithm 
+  value := matchcontinue (valueArray,pos)
+    local
+      Value v;
+      Integer n,pos,len;
+      Option<tuple<Key,Value>>[:] arr;
+      String ps,lens,ns;
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
+      equation 
+        (pos < n) = true;
+        SOME((_,v)) = arr[pos + 1];
+      then
+        v;
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
+      equation 
+        (pos < n) = true;
+        NONE = arr[pos + 1];
+      then
+        fail();
+  end matchcontinue;
+end valueArrayNth;
 
 end InstanceHierarchy;
