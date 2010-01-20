@@ -1034,14 +1034,15 @@ public function printClassStr "
 algorithm 
   outString := matchcontinue (inClass)
     local
-      String s,res,id;
+      String s,res,id,re;
       Boolean p,en;
       Restriction rest;
       ClassDef def;
     case (CLASS(name = id,partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
       equation 
         s = printClassdefStr(def);
-        res = Util.stringAppendList({"CLASS(",id,",_,_,_,",s,")\n"});
+        re = restrString(rest);
+        res = Util.stringAppendList({"CLASS(",id,",_,_,",re,",",s,")\n"});
       then
         res;
   end matchcontinue;
