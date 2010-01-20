@@ -80,11 +80,14 @@ algorithm
         System.addToRoots("instantiationCache", Inst.emptyInstHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
         
-
+        // set the external flag that signals the presence of inner/outer components in the model
+        System.setHasInnerOuterDefinitions(false);
+        // set the external flag that signals the presence of expandable connectors in the model
         System.setHasExpandableConnectors(false);
         sp = translate2(inProgram);
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
-        hasExpandableConnectors = System.getHasExpandableConnectors();
+        // retrieve the expandable connector presence external flag
+        hasExpandableConnectors = System.getHasExpandableConnectors();        
         (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
       then 
         sp;
@@ -812,7 +815,7 @@ algorithm
       
     case (Absyn.ELEMENT(constrainClass = (cc as SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path=p)))), finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation 
-        es = translateElementspec(cc,f, io, repl,  prot, s,SOME(info));
+        es = translateElementspec(cc, f, io, repl,  prot, s,SOME(info));
       then
         es;
         
@@ -899,6 +902,7 @@ algorithm
       list<Absyn.ComponentItem> xs;
       Absyn.Import imp;
       Option<Absyn.Exp> cond;
+
     case (cc,finalPrefix,_,repl,prot,
       Absyn.CLASSDEF(replaceable_ = rp,
                      class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,
@@ -936,8 +940,9 @@ algorithm
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       local Absyn.Variability pa;
       equation 
-        Debug.fprintln("translate", "translating component: " +& n);        
-        xs_1 = translateElementspec(cc,finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs),info);
+        Debug.fprintln("translate", "translating component: " +& n);
+        setHasInnerOuterDefinitionsHandler(io);        
+        xs_1 = translateElementspec(cc, finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs), info);
         mod = translateMod(m, false, Absyn.NON_EACH());          
         pa_1 = translateVariability(pa) "PR. This adds the arraydimension that may be specified together with the type of the component." ;
         tot_dim = listAppend(d, ad);
@@ -953,6 +958,23 @@ algorithm
         {SCode.IMPORT(imp)}; 
   end matchcontinue;
 end translateElementspec;
+
+protected function setHasInnerOuterDefinitionsHandler
+"@author: adrpo
+ This function will set the external flag that signals
+ that a model has inner/outer component definitions"
+  input Absyn.InnerOuter io;
+algorithm
+  _ := matchcontinue (io)
+    // no inner outer!
+    case (Absyn.UNSPECIFIED()) then ();
+    // has inner, outer or innerouter components
+    case (_)
+      equation
+         System.setHasInnerOuterDefinitions(true);
+      then ();
+  end matchcontinue;
+end setHasInnerOuterDefinitionsHandler;
 
 protected function translateRedeclarekeywords 
 "function: translateRedeclarekeywords
