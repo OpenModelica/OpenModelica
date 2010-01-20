@@ -4749,6 +4749,22 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,a::algs,whenclauses_1,extObjCls);
 
+		/* tuple-tuple assignments are split into one equation for each tuple
+		 * element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6; */
+		case (DAE.DAE((DAE.EQUATION(DAE.TUPLE(targets), DAE.TUPLE(sources), source = eq_source) :: xs)), 
+				states,vars,knvars,extVars,whenclauses)
+			local
+				list<DAE.Exp> targets;
+				list<DAE.Exp> sources;
+				DAE.ElementSource eq_source;
+			equation
+				(vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
+					= lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+				eqns2 = lowerTupleAssignment(targets, sources, eq_source);
+				eqns = listAppend(eqns2, eqns);
+			then
+				(vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
+
     /* scalar equations */
     case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
       equation
@@ -4930,6 +4946,32 @@ algorithm
       then fail();
   end matchcontinue;
 end checkAssertCondition;
+
+protected function lowerTupleAssignment
+	"Used by lower2 to split a tuple-tuple assignment into one equation for each
+	tuple-element"
+	input list<DAE.Exp> target_expl;
+	input list<DAE.Exp> source_expl;
+	input DAE.ElementSource eq_source; 
+	output list<Equation> eqns;
+algorithm
+	eqns := matchcontinue(target_expl, source_expl, eq_source)
+		local
+			DAE.Exp target, source;
+			list<DAE.Exp> rest_targets, rest_sources;
+			DAE.Element e;
+			Equation eq;
+			list<Equation> new_eqns;
+		case ({}, {}, _) then {};
+		case (target :: rest_targets, source :: rest_sources, _)
+			equation
+				new_eqns = lowerTupleAssignment(rest_targets, rest_sources, eq_source);
+				e = DAE.EQUATION(target, source, eq_source);
+				eq = lowerEqn(e);
+			then eq :: new_eqns;
+	end matchcontinue;
+end lowerTupleAssignment;
+
 
 protected function lowerTupleEquation 
 "Lowers a tuple equation, e.g. (a,b) = foo(x,y)
@@ -6523,9 +6565,11 @@ algorithm
         res;
     case (DAE.TUPLE(PR = expl),vars)
       equation
-        print("incidence_row_exp TUPLE not impl. yet.");
+				lst = Util.listMap1(expl, incidenceRowExp, vars);
+				lst_1 = Util.listFlatten(lst);
+        //print("incidence_row_exp TUPLE not impl. yet.");
       then
-        {};
+				lst_1;
     case (DAE.CAST(exp = e),vars)
       equation
         res = incidenceRowExp(e, vars);
