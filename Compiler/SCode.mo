@@ -980,7 +980,7 @@ public function unparseElementStr
 algorithm 
   outString := matchcontinue (inElement)
     local
-      String str,res,n,mod_str,s,vs;
+      String str,res,n,mod_str,s,vs,ioStr;
       OptBaseClass pathOpt;
       Absyn.TypeSpec typath;
       Mod mod;
@@ -991,6 +991,7 @@ algorithm
       Attributes attr;
       Absyn.Path path;
       Absyn.Import imp;
+      Absyn.InnerOuter io;      
       
     case EXTENDS(baseClassPath = path,modifications = mod)
       equation 
@@ -999,15 +1000,16 @@ algorithm
       then
         res;
         
-    case COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
+    case COMPONENT(component = n,innerOuter = io,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                    attributes = ATTR(variability = var),typeSpec = typath,modifications = mod,
                    baseClassPath = pathOpt,comment = comment)
-      equation 
+      equation
+        ioStr = Dump.unparseInnerouterStr(io);
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
         str = unparseOptPath(pathOpt);
-        res = Util.stringAppendList({vs," ",s," ",n,mod_str,"; // from baseclass: ",str,"\n"});
+        res = Util.stringAppendList({ioStr,vs," ",s," ",n,mod_str,"; // from baseclass: ",str,"\n"});
       then
         res;
         
