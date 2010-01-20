@@ -1078,10 +1078,6 @@ solve_nonlinear_system(residualFunc<index>, <index>);
 <crefs: '<cref(it)> = nls_x[<i0>];' "\n">
 end_nonlinear_system();
 >>
-case SES_NOT_IMPLEMENTED then
-<<
-SES_NOT_IMPLEMENTED_<System.stringReplace(msg, " ", "_")>
->>
 case _ then
 <<
 notimplemented = notimplemented;
@@ -1421,7 +1417,7 @@ funBody(list<Statement> body) ::=
 
 funStatement(Statement, Text varDecls) ::=
   case ALGORITHM then (statementLst : algStatement(it, createOtherContext(), varDecls) \n) 
-  case BLOCK then "/* not implemented fun statement */"
+  case _ then "/* not implemented fun statement */"
 
 // Codegen.generateAlgorithmStatement
 algStatement(DAE.Statement, Context context, Text varDecls) ::=

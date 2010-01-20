@@ -54,15 +54,12 @@ package SimCode
     output Variables vars;
   end valueblockVars;
 
-  type Path = Absyn.Path;
   type Ident = String;
   type Type = DAE.ExpType;
   type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
   
   type Variables = list<Variable>;
   type Statements = list<Statement>;
-  type FunctionArguments = Variables;
-  type FunctionBody = list<Statement>;
   type VariableDeclarations = Variables;
   
   uniontype Variable
@@ -78,10 +75,6 @@ package SimCode
     record ALGORITHM
        list<DAE.Statement> statementLst;
     end ALGORITHM;
-    record BLOCK
-      VariableDeclarations variableDeclarations;
-      FunctionBody body;
-    end BLOCK;
   end Statement;
   
   uniontype SimCode
@@ -152,9 +145,6 @@ package SimCode
       list<String> values;
       list<Integer> value_dims;
     end SES_MIXED;
-    record SES_NOT_IMPLEMENTED
-      String msg;
-    end SES_NOT_IMPLEMENTED;
   end SimEqSystem;
 
   uniontype SimWhenClause
@@ -217,26 +207,18 @@ package SimCode
     end SIMVAR;
   end SimVar;
   
-  uniontype TargetSettings
-    record TS_C
-      String CCompiler;
-      String CXXCompiler;
-      String linker;
-    end TS_C;
-  end TargetSettings;
-  
   uniontype Function
     record FUNCTION    
-      Path name;
+      Absyn.Path name;
       Variables inVars;
       Variables outVars;
       list<RecordDeclaration> recordDecls; 
-      FunctionArguments functionArguments;
-      VariableDeclarations variableDeclarations;
-      FunctionBody body;
+      list<Variable> functionArguments;
+      list<Variable> variableDeclarations;
+      list<Statement> body;
     end FUNCTION;
     record EXTERNAL_FUNCTION
-      Path name;
+      Absyn.Path name;
       Ident extName;
       list<Variable> funArgs;
       list<SimExtArg> extArgs;
@@ -253,11 +235,11 @@ package SimCode
   uniontype RecordDeclaration
     record RECORD_DECL_FULL
       Ident name;
-      Path defPath;
+      Absyn.Path defPath;
       Variables variables;
     end RECORD_DECL_FULL;
     record RECORD_DECL_DEF
-      Path path;
+      Absyn.Path path;
       list<Ident> fieldNames;
     end RECORD_DECL_DEF;
   end RecordDeclaration;

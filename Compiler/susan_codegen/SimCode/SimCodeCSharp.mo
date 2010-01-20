@@ -2706,7 +2706,7 @@ end subscript;
 
 public function dotPath
   input Tpl.Text in_txt;
-  input SimCode.Path in_i_it;
+  input Absyn.Path in_i_it;
 
   output Tpl.Text out_txt;
 algorithm
@@ -2750,7 +2750,7 @@ end dotPath;
 
 public function underscorePath
   input Tpl.Text in_txt;
-  input SimCode.Path in_i_it;
+  input Absyn.Path in_i_it;
 
   output Tpl.Text out_txt;
 algorithm

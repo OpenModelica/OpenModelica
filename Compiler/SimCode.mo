@@ -1,51 +1,67 @@
-package SimCode
-" file:	       SimCodegen.mo
-  package:     SimCodegen
-  description: A new Module (SimCode) that contains data structures for representing equation code.
-   
-It should be possible to represent: 
-*	Expressions (Exp.mo) 
-*	Algorithms (Algorithm.mo) 
-*	Functions  (functionODE, residualFunctions, etc). 
-*	Linear systems (A and b matrix) list<tuple<Integer,Integer,Exp>>
-*	NonLinear systems (residuals) 
-*	Mixed linear systems  (A and b matrix, discrete variables (with domain information)) 
-*	Mixed nonlinear systems (residuals, discrete variables (with domain information)) 
-*	Jacobians list<tuple<Integer,Integer,Exp>> 
-*	Data about variables, components, zero-crossings, etc (e.g. strings of originalname, equation, etc)
+/*
+ * This file is part of OpenModelica.
+ *
+ * Copyright (c) 1998-2008, Linköpings University,
+ * Department of Computer and Information Science,
+ * SE-58183 Linköping, Sweden.
+ *
+ * All rights reserved.
+ *
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF THIS OSMC PUBLIC
+ * LICENSE (OSMC-PL). ANY USE, REPRODUCTION OR DISTRIBUTION OF
+ * THIS PROGRAM CONSTITUTES RECIPIENT'S ACCEPTANCE OF THE OSMC
+ * PUBLIC LICENSE.
+ *
+ * The OpenModelica software and the Open Source Modelica
+ * Consortium (OSMC) Public License (OSMC-PL) are obtained
+ * from Linköpings University, either from the above address,
+ * from the URL: http://www.ida.liu.se/projects/OpenModelica
+ * and in the OpenModelica distribution.
+ *
+ * This program is distributed  WITHOUT ANY WARRANTY; without
+ * even the implied warranty of  MERCHANTABILITY or FITNESS
+ * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
+ * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
+ * OF OSMC-PL.
+ *
+ * See the full OSMC Public License conditions for more details.
+ *
+ */
 
- RCS: $Id: SimCode.mo 3689 2009-02-26 07:38:30Z adrpo $
+
+package SimCode
+" file:	       SimCode.mo
+  package:     SimCode
+  description: Code generation using Susan templates
+
+  RCS: $Id: SimCode.mo 3689 2009-02-26 07:38:30Z adrpo $
+
+  The entry point to this module is the translateModel function. (TODO: We need
+  another entry point for translating only functions.)
+
+  Except for the entry points, the only other public functions are those that
+  can be imported and called from templates.
 "
 
-/** types in the output AST **/
+
 public import Exp;
 public import Algorithm;
 public import Values;
-
 public import Types;
-
-
-/** additional types for the translation calls **/
 public import DAELow;
 public import Env;
 public import Interactive;
 public import Absyn;
 public import Ceval;
 public import Tpl;
-
-//?? why these should be public, when it works in CevalScript as protected? -> Adrian
-// Adrian: in general when you return from a public function in a package a type
-//         defined in another package, that package import should be public too!
 public import SCode;
 public import DAE;
-
+public import Codegen;
 protected import DAEUtil;
-protected import ValuesUtil;
 protected import SCodeUtil;
 protected import ClassInf;
 protected import SimCodeC;
 protected import SimCodeCSharp;
-
 protected import Util;
 protected import Debug;
 protected import Error;
@@ -56,329 +72,27 @@ protected import SimCodegen;
 protected import RTOpts;
 protected import System;
 protected import VarTransform;
-
 protected import CevalScript;
+protected import ModUtil;
+
 
 public
-function valueblockVars
-  input DAE.Exp valueblock;
-  output Variables vars;
-algorithm
-  vars :=
-  matchcontinue (valueblock)
-    local
-      list<DAE.Element> ld;
-    case (DAE.VALUEBLOCK(localDecls=ld))
-      equation
-        ld = Util.listFilter(ld, isVarQ);
-        vars = Util.listMap(ld, daeInOutSimVar);
-      then vars;
-  end matchcontinue;
-end valueblockVars;
-
-// Assume that cref is CREF_IDENT
-public
-function crefSubIsScalar
-  input DAE.ComponentRef cref;
-  output Boolean isScalar;
-algorithm
-  isScalar :=
-  matchcontinue (cref)
-    local
-      list<DAE.Subscript> subs;
-    case (DAE.CREF_IDENT(subscriptLst=subs)) then subsToScalar(subs);
-    case _ then false;
-  end matchcontinue;
-end crefSubIsScalar;
-
-// Assume that cref is CREF_IDENT
-public
-function crefNoSub
-  input DAE.ComponentRef cref;
-  output Boolean noSub;
-algorithm
-  noSub :=
-  matchcontinue (cref)
-    local
-      list<DAE.Subscript> subs;
-    case (DAE.CREF_IDENT(subscriptLst={})) then true;
-    case (DAE.CREF_IDENT(subscriptLst=subs)) then false;
-    case _
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {""});
-      then
-        fail();
-  end matchcontinue;
-end crefNoSub;
-
-protected
-function subsToScalar "function: subsToScalar
-
-  Returns true if subscript results applied to variable or expression
-  results in scalar expression.
-"
-  input list<DAE.Subscript> inExpSubscriptLst;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inExpSubscriptLst)
-    local
-      Boolean b;
-      list<DAE.Subscript> r;
-    case {} then true;
-    case (DAE.SLICE(exp = _) :: _) then false;
-    case (DAE.WHOLEDIM() :: _) then false;
-    case (DAE.INDEX(exp = _) :: r)
-      equation
-        b = subsToScalar(r);
-      then
-        b;
-  end matchcontinue;
-end subsToScalar;
-
-public function buildCrefExpFromAsub
-  input DAE.Exp cref;
-  input list<DAE.Exp> subs;
-  output DAE.Exp cRefOut;
-algorithm
-  cRefOut := matchcontinue(cref, subs)
-    local 
-      DAE.Exp sub; 
-      DAE.ExpType ty; 
-      list<DAE.Exp> rest; 
-      DAE.ComponentRef crNew;
-      list<DAE.Subscript> indexes;
-    case (cref, {}) then cref;
-    case (DAE.CREF(componentRef=crNew, ty=ty), subs)
-      equation
-        indexes = Util.listMap(subs, Exp.makeIndexSubscript);
-        crNew = Exp.subscriptCref(crNew, indexes); 
-      then
-        DAE.CREF(crNew, ty);
-  end matchcontinue; 
-end buildCrefExpFromAsub;
-
-/************** FUNCTIONS ***********/
-/* a type to use for function return, parameters and variable declarations is based on Exp.Type */
-public
-
-type Path = Absyn.Path;
-type Ident = String; // encoded ?
+type Ident = String;
 type Type = Exp.Type;
-
-/* variables are used in function argument list and declaration list */
 type Variables = list<Variable>;
 type Statements = list<Statement>;
+type Jacobian = list<tuple<Integer,Integer,Exp.Exp>>;
+type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
+type ExtDestructor = tuple<String, DAE.ComponentRef>;
+type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
+type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
 
-type FunctionArguments = Variables;
-type FunctionBody = Statements;
-type VariableDeclarations = Variables;
-
-type Includes = list<String>;
-type Libs = list<String>;
-
-uniontype FunctionName
-  record FUNCTION_NAME
-    /* we need the model name as we might generate C++ code modelName::functionName */
-    String modelName    "the model containing the function"; 
-    String functionName "the name of the function";
-  end FUNCTION_NAME;
-end FunctionName;
-
-/* a variable represents a name, a type and a possible default value */
-uniontype Variable
-  record VARIABLE
-    //the name should become a Path because templates will take responsibility for ident encodings
-    //an alternative is to expect names with dot notation inside the string; an encoding function sholud be then imported
-    DAE.ComponentRef       name   "variable name";
-    Type          ty    "variable type";
-    Option<Exp.Exp> value "variable default value";
-    //list<Exp.Exp> instDims "for array allocation, DAE.ICONST() or DAE.CREF()"; //only on input vars (dimensions) dependens
-//??st missing    VariableAttributes attributes "Based on DAE.VariableAttributes, but possibly extended"; 
-    list<DAE.Exp> instDims;
-  end VARIABLE;  
-end Variable;
-
-
-uniontype Equations
-   record RESIDUAL_EQUATION
-      Exp.Exp residual;
-   end RESIDUAL_EQUATION;
-   
-   /* What is needed more here??? */
-
-end Equations;
-
-uniontype Statement
-  record ALGORITHM
-    list<Algorithm.Statement> statementLst; // in functions
-  end ALGORITHM;
-  
-  /*
-  record VAR_DECL_SCALAR
-    Variable var;    
-  end VAR_DECL_SCALAR;
-  
-  record VAR_DECL_ARRAY
-    Variable var;   
-    list<Exp.Exp> dims; 
-  end VAR_DECL_ARRAY;
-  */
-  record BLOCK // a workaroud for the VALUEBLOCK ... should be redesigned inside Exp/DAE
-    VariableDeclarations variableDeclarations "the declarations of local variables";
-    FunctionBody body;
-  end BLOCK;
-  
-  record SYSTEM
-     System stmt;
-  end SYSTEM;
-
-  record WHEN_CHECK //see code in  SimCodegen.buildWhenConditionChecks3
-    Integer whenClauseIndex;
-    Integer helpVarIndex;
-    Boolean isElseWhen;
-  end WHEN_CHECK;
-  
-  record DISCRETE_CHECK //see code in  SimCodegen.buildDiscreteVarChangesAddEvent
-    Exp.ComponentRef componentRef;
-  end DISCRETE_CHECK;
-
-/* 
-??  SimCodegen.generateOutputFunctionCode2/generateInputFunctionCode2
-  Integer index;
-  Exp.ComponentRef cr;  
-  assign_str = Util.stringAppendList({"localData->outputVars[",i_str,"] =",cr_str,";"});
-  assign_str = Util.stringAppendList({cr_str," = localData->inputVars[",i_str,"];"});
-
-?? SimCodegen.generateInitialResidualEqn  
-  Exp.Exp e ... var 
-  assign = Util.stringAppendList({"localData->initialResiduals[i++] = ",var,";"});
-*/
-end Statement;
-
-/* Functions */
-uniontype Function
-  record FUNCTION    
-//??    ReturnType returnType     "the return type of the function";
-    Path name;
-    Variables inVars;
-    Variables outVars;
-    list<RecordDeclaration> recordDecls; 
-    //FunctionName functionName "the function name";
-    FunctionArguments functionArguments "the function arguments";
-    VariableDeclarations variableDeclarations "the declarations of local variables";
-    FunctionBody body;
-  end FUNCTION;
-
-  record EXTERNAL_FUNCTION
-//??    ReturnType returnType     "the return type of the function";
-    //FunctionName functionName "the function name";
-    //FunctionArguments functionArguments "the function arguments";
-    //VariableDeclarations variableDeclarations "the declarations of local variables";
-    Path name;
-    Ident extName;
-    list<Variable> funArgs;
-    list<SimExtArg> extArgs;
-    SimExtArg extReturn;
-    list<Variable> inVars;
-    list<Variable> outVars;
-    list<Variable> biVars;
-    Includes includes "the list of possible needed includes";
-    Libs libs "the list of dependent libraries";
-    String language " \"C\" or \"Fortran\" according to language specification";
-  end EXTERNAL_FUNCTION;
-end Function;
-
-uniontype SimExtArg
-  record SIMEXTARG
-    DAE.ComponentRef cref;
-    Boolean isInput;
-    Integer outputIndex; // > 0 if output
-    Boolean isArray;
-    DAE.ExpType type_;
-  end SIMEXTARG;
-  record SIMEXTARGEXP
-    DAE.Exp exp;
-    DAE.ExpType type_;
-  end SIMEXTARGEXP;
-  record SIMEXTARGSIZE
-    DAE.ComponentRef cref;
-    Boolean isInput;
-    Integer outputIndex; // > 0 if output
-    DAE.ExpType type_;
-    DAE.Exp exp;
-  end SIMEXTARGSIZE;
-  record SIMNOEXTARG end SIMNOEXTARG;
-end SimExtArg;
-
-uniontype RecordDeclaration
-  record RECORD_DECL_FULL
-    Ident name; // struct (record) name ? encoded
-    Path defPath; //definition path   
-    Variables variables; //only name and type
-    //Types.Type fullType;
-  end RECORD_DECL_FULL;
-  
-  record RECORD_DECL_DEF
-    Path path; //definition path .. encoded ?    
-    list<Ident> fieldNames;
-  end RECORD_DECL_DEF;
-end RecordDeclaration;
-
-
-/*
-*	Linear systems (A and b matrix) list<tuple<Integer,Integer,Exp>>
-*	NonLinear systems (residuals) 
-*	Mixed linear systems  (A and b matrix, discrete variables (with domain information)) 
-*	Mixed nonlinear systems (residuals, discrete variables (with domain information)) 
-*	Jacobians list<tuple<Integer,Integer,Exp>> 
-*	Data about variables, components, zero-crossings, etc (e.g. strings of originalname, equation, etc)
-*/
-
-type SparseMatrix = list<tuple<Integer,Integer,Exp.Exp>>;
-
-type Jacobian = SparseMatrix;
-
-uniontype System
-  
-  record LINEAR_SYSTEM
-    Variables solvedFor;
-    SparseMatrix A;
-    SparseMatrix b;
-  end LINEAR_SYSTEM;
-  
-  record NON_LINEAR_SYSTEM
-    Variables solvedFor;
-    Equations residuals;
-    Jacobian jac;
-  end NON_LINEAR_SYSTEM;
-  
-  record MIXED_SYSTEM
-    Variables discreteVars;
-    System continouosSystem;
-//??    Statements discreteAssignments;
-  end MIXED_SYSTEM;   
-  
-end System;
-
-/* Is this required? 
-to be able to generate different code depending on what method we use to solve a system we also have SolvingMethod */
-//?? type SystemCode = tuple<System, SolvingMethod>;
-
-type GlobalVariables = Variables;
-
-type MacroDefinitions = list<String> "for preprocessor macros";
-
-type Includes = list<String> " for model-specific include-files, each string contain only the file-name";
 
 // Root data structure containing information required for templates to
 // generate simulation code.
 uniontype SimCode
   record SIMCODE
     ModelInfo modelInfo;
-//    MacroDefinitions macroDefinitions "requires target code to have a preprocessor, or preprocessor must be done before code generation";
-//    Includes includes "include files";
-//    GlobalVariables globalVars ;
     list<Function> functions;
     list<SimEqSystem> allEquations;
     list<SimEqSystem> stateContEquations;
@@ -397,91 +111,6 @@ uniontype SimCode
     ExtObjInfo extObjInfo;
   end SIMCODE;
 end SimCode;
-
-type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
-type ExtDestructor = tuple<String, DAE.ComponentRef>;
-type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
-
-uniontype ExtObjInfo
-  record EXTOBJINFO
-    list<String> includes;
-    list<ExtConstructor> constructors;
-    list<ExtDestructor> destructors;
-    list<ExtAlias> aliases;
-  end EXTOBJINFO;
-end ExtObjInfo;
-
-uniontype SimEqSystem
-  record SES_RESIDUAL
-    DAE.Exp exp;
-  end SES_RESIDUAL;
-  record SES_SIMPLE_ASSIGN
-    DAE.ComponentRef componentRef;
-    DAE.Exp exp;
-  end SES_SIMPLE_ASSIGN;
-  record SES_ARRAY_CALL_ASSIGN
-    DAE.ComponentRef componentRef;
-    DAE.Exp exp;
-  end SES_ARRAY_CALL_ASSIGN;
-  record SES_ALGORITHM
-    list<DAE.Statement> statements;
-  end SES_ALGORITHM;
-  record SES_LINEAR
-    Boolean partOfMixed;
-    list<SimVar> vars;
-    list<DAE.Exp> beqs;
-    // SimEqSystem is SES_RESIDUAL
-    list<tuple<Integer, Integer, SimEqSystem>> simJac;
-  end SES_LINEAR;
-  record SES_NONLINEAR
-    Integer index;
-    list<SimEqSystem> eqs;
-    list<DAE.ComponentRef> crefs;
-  end SES_NONLINEAR;
-  record SES_MIXED
-    SimEqSystem cont;
-    list<SimVar> discVars;
-    list<SimEqSystem> discEqs;
-    list<String> values;
-    list<Integer> value_dims;
-  end SES_MIXED;
-  record SES_NOT_IMPLEMENTED
-    String msg;
-  end SES_NOT_IMPLEMENTED;
-end SimEqSystem;
-
-uniontype Context
-  record SIMULATION
-    Boolean genDiscrete;
-  end SIMULATION;
-  record OTHER
-  end OTHER;
-end Context;
-
-constant Context contextSimulationNonDescrete = SIMULATION(false);
-constant Context contextSimulationDescrete    = SIMULATION(true);
-constant Context contextOther                 = OTHER();
-
-function createSimulationContext
-  input Boolean genDiscrete;
-  output Context context;
-algorithm
-  context := SIMULATION(genDiscrete);
-end createSimulationContext;
-
-function createOtherContext
-  output Context context;
-algorithm
-  context := OTHER();
-end createOtherContext;
-
-uniontype SimWhenClause
-  record SIM_WHEN_CLAUSE
-    list<DAE.ComponentRef> conditionVars;
-    list<DAELow.ReinitStatement> reinits;
-    Option<DAELow.WhenEquation> whenEq;
-  end SIM_WHEN_CLAUSE;
-end SimWhenClause;
 
 uniontype ModelInfo
   record MODELINFO
@@ -535,21 +164,246 @@ uniontype SimVar
   end SIMVAR;
 end SimVar;
 
-uniontype TargetSettings
-  record TS_C
-    String CCompiler;
-    String CXXCompiler;
-    String linker;
-    // ... everything needed for makefile generation ... CevalScript.generateMakefileHeader()
-  end TS_C;
-end TargetSettings;
-    
+uniontype Function
+  record FUNCTION    
+    Absyn.Path name;
+    Variables inVars;
+    Variables outVars;
+    list<RecordDeclaration> recordDecls; 
+    list<Variable> functionArguments;
+    list<Variable> variableDeclarations;
+    list<Statement> body;
+  end FUNCTION;
+  record EXTERNAL_FUNCTION
+    Absyn.Path name;
+    Ident extName;
+    list<Variable> funArgs;
+    list<SimExtArg> extArgs;
+    SimExtArg extReturn;
+    list<Variable> inVars;
+    list<Variable> outVars;
+    list<Variable> biVars;
+    list<String> includes;
+    list<String> libs;
+    String language "C or Fortran";
+  end EXTERNAL_FUNCTION;
+end Function;
 
-/*********************************************************/
-/*********************************************************/
-/*********************************************************/
+uniontype RecordDeclaration
+  record RECORD_DECL_FULL
+    Ident name; // struct (record) name ? encoded
+    Absyn.Path defPath; //definition path   
+    Variables variables; //only name and type
+  end RECORD_DECL_FULL;
+  record RECORD_DECL_DEF
+    Absyn.Path path; //definition path .. encoded ?    
+    list<Ident> fieldNames;
+  end RECORD_DECL_DEF;
+end RecordDeclaration;
+
+uniontype SimExtArg
+  record SIMEXTARG
+    DAE.ComponentRef cref;
+    Boolean isInput;
+    Integer outputIndex; // > 0 if output
+    Boolean isArray;
+    DAE.ExpType type_;
+  end SIMEXTARG;
+  record SIMEXTARGEXP
+    DAE.Exp exp;
+    DAE.ExpType type_;
+  end SIMEXTARGEXP;
+  record SIMEXTARGSIZE
+    DAE.ComponentRef cref;
+    Boolean isInput;
+    Integer outputIndex; // > 0 if output
+    DAE.ExpType type_;
+    DAE.Exp exp;
+  end SIMEXTARGSIZE;
+  record SIMNOEXTARG end SIMNOEXTARG;
+end SimExtArg;
+
+/* a variable represents a name, a type and a possible default value */
+uniontype Variable
+  record VARIABLE
+    //the name should become a Path because templates will take responsibility
+    //for ident encodings an alternative is to expect names with dot notation
+    //inside the string; an encoding function sholud be then imported
+    DAE.ComponentRef       name   "variable name";
+    Type          ty    "variable type";
+    Option<Exp.Exp> value "variable default value";
+    list<DAE.Exp> instDims;
+  end VARIABLE;  
+end Variable;
+
+// TODO: Replace this with just list<Algorithm.Statement>?
+uniontype Statement
+  record ALGORITHM
+    list<Algorithm.Statement> statementLst; // in functions
+  end ALGORITHM;
+end Statement;
+
+uniontype SimEqSystem
+  record SES_RESIDUAL
+    DAE.Exp exp;
+  end SES_RESIDUAL;
+  record SES_SIMPLE_ASSIGN
+    DAE.ComponentRef componentRef;
+    DAE.Exp exp;
+  end SES_SIMPLE_ASSIGN;
+  record SES_ARRAY_CALL_ASSIGN
+    DAE.ComponentRef componentRef;
+    DAE.Exp exp;
+  end SES_ARRAY_CALL_ASSIGN;
+  record SES_ALGORITHM
+    list<DAE.Statement> statements;
+  end SES_ALGORITHM;
+  record SES_LINEAR
+    Boolean partOfMixed;
+    list<SimVar> vars;
+    list<DAE.Exp> beqs;
+    list<tuple<Integer, Integer, SimEqSystem>> simJac;
+  end SES_LINEAR;
+  record SES_NONLINEAR
+    Integer index;
+    list<SimEqSystem> eqs;
+    list<DAE.ComponentRef> crefs;
+  end SES_NONLINEAR;
+  record SES_MIXED
+    SimEqSystem cont;
+    list<SimVar> discVars;
+    list<SimEqSystem> discEqs;
+    list<String> values;
+    list<Integer> value_dims;
+  end SES_MIXED;
+end SimEqSystem;
+
+uniontype SimWhenClause
+  record SIM_WHEN_CLAUSE
+    list<DAE.ComponentRef> conditionVars;
+    list<DAELow.ReinitStatement> reinits;
+    Option<DAELow.WhenEquation> whenEq;
+  end SIM_WHEN_CLAUSE;
+end SimWhenClause;
+
+uniontype ExtObjInfo
+  record EXTOBJINFO
+    list<String> includes;
+    list<ExtConstructor> constructors;
+    list<ExtDestructor> destructors;
+    list<ExtAlias> aliases;
+  end EXTOBJINFO;
+end ExtObjInfo;
+
+/* Created ad used by templates to be able to generate different code depending
+   on the context it is generated in. */
+uniontype Context
+  record SIMULATION
+    Boolean genDiscrete;
+  end SIMULATION;
+  record OTHER
+  end OTHER;
+end Context;
+
+
+public constant Context contextSimulationNonDescrete = SIMULATION(false);
+public constant Context contextSimulationDescrete    = SIMULATION(true);
+public constant Context contextOther                 = OTHER();
+
+
+public function valueblockVars
+"Used by templates to get a list of variables from a valueblock.
+
+It is a temporary fix and should be replaced."
+  input DAE.Exp valueblock;
+  output Variables vars;
+algorithm
+  vars :=
+  matchcontinue (valueblock)
+    local
+      list<DAE.Element> ld;
+    case (DAE.VALUEBLOCK(localDecls=ld))
+      equation
+        ld = Util.listFilter(ld, isVarQ);
+        vars = Util.listMap(ld, daeInOutSimVar);
+      then vars;
+  end matchcontinue;
+end valueblockVars;
+
+public function crefSubIsScalar
+"Used
+
+Assume that cref is CREF_IDENT."
+  input DAE.ComponentRef cref;
+  output Boolean isScalar;
+algorithm
+  isScalar :=
+  matchcontinue (cref)
+    local
+      list<DAE.Subscript> subs;
+    case (DAE.CREF_IDENT(subscriptLst=subs)) then subsToScalar(subs);
+    case _ then false;
+  end matchcontinue;
+end crefSubIsScalar;
+
+public function crefNoSub
+"Assume that cref is CREF_IDENT."
+  input DAE.ComponentRef cref;
+  output Boolean noSub;
+algorithm
+  noSub :=
+  matchcontinue (cref)
+    local
+      list<DAE.Subscript> subs;
+    case (DAE.CREF_IDENT(subscriptLst={})) then true;
+    case (DAE.CREF_IDENT(subscriptLst=subs)) then false;
+    case _
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {""});
+      then
+        fail();
+  end matchcontinue;
+end crefNoSub;
+
+public function buildCrefExpFromAsub
+  input DAE.Exp cref;
+  input list<DAE.Exp> subs;
+  output DAE.Exp cRefOut;
+algorithm
+  cRefOut := matchcontinue(cref, subs)
+    local 
+      DAE.Exp sub; 
+      DAE.ExpType ty; 
+      list<DAE.Exp> rest; 
+      DAE.ComponentRef crNew;
+      list<DAE.Subscript> indexes;
+    case (cref, {}) then cref;
+    case (DAE.CREF(componentRef=crNew, ty=ty), subs)
+      equation
+        indexes = Util.listMap(subs, Exp.makeIndexSubscript);
+        crNew = Exp.subscriptCref(crNew, indexes); 
+      then
+        DAE.CREF(crNew, ty);
+  end matchcontinue; 
+end buildCrefExpFromAsub;
+
+// TODO: Remove this and use constants above instead
+public function createSimulationContext
+  input Boolean genDiscrete;
+  output Context context;
+algorithm
+  context := SIMULATION(genDiscrete);
+end createSimulationContext;
+
+// TODO: Remove this and use constants above instead
+public function createOtherContext
+  output Context context;
+algorithm
+  context := OTHER();
+end createOtherContext;
 
 public function translateModel
+"One of the entry points."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
@@ -642,34 +496,9 @@ algorithm
 end translateModel;
 
 
-public function callTargetTemplates
-  input SimCode inSimCode;
-  
-algorithm 
-  (_):=  matchcontinue (inSimCode)
-    local
-      SimCode simCode;
-    
-    case (simCode)
-      equation 
-        true = RTOpts.debugFlag("CSharp");
-        _ = Tpl.tplString(SimCodeCSharp.translateModel, simCode);
-      then (); 
-        
-    case (simCode)
-      equation
-        //TODO: use another switch ... later make it first class option like -target or so
-        false = RTOpts.debugFlag("CSharp"); 
-        /* feed SimCode data structure to template to produce target code: this
-           generates Model.cpp, Model_functions.cpp, and Makefile */
-        _ = Tpl.tplString(SimCodeC.translateModel, simCode);
-      then ();        
-  end matchcontinue;
-end callTargetTemplates;
-
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */
-public function createFunctions 
+protected function createFunctions 
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input DAELow.DAELow inDAELow;
@@ -693,7 +522,7 @@ algorithm
       SimCode sc;
     case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filenameprefix) 
       equation
-        funcpaths = SimCodegen.getCalledFunctions(dae, dlow);
+        funcpaths = getCalledFunctions(dae, dlow);
         //Debug.fprint("info", "Found called functions: ") "debug" ;
         //debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
         //debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
@@ -702,7 +531,7 @@ algorithm
         //debugstr = Print.getString();
         //Print.clearBuf();
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-        (_,libs1) = generateExternalObjectIncludes(dlow);
+        (_, libs1) = generateExternalObjectIncludes(dlow);
         //libs1 = {};
         //usless filter, all are already functions from generateFunctions2
         //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
@@ -719,30 +548,64 @@ algorithm
   end matchcontinue;
 end createFunctions;
 
-protected function extractLibs
-  input list<Function> fns;
+protected function getCalledFunctions 
+"Goes through the DAELow structure, finds all function calls, and returns them
+in a list. Removes duplicates."
+  input DAE.DAElist dae;
+  input DAELow.DAELow dlow;
+  output list<Absyn.Path> res;
+  list<Exp.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
+  list<Absyn.Path> calledfuncs;
+algorithm
+  explist := DAELow.getAllExps(dlow);
+  fcallexps := Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
+  fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
+  fcallexps_2 := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
+  calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
+  res := removeDuplicatePaths(calledfuncs);
+end getCalledFunctions;
+
+protected function generateExternalObjectIncludes 
+"Generates the library paths for external objects"
+  input DAELow.DAELow daelow;
+  output list<String> includes;
   output list<String> libs;
 algorithm
-  libs :=
-  matchcontinue (fns)
+  (includes,libs) :=
+  matchcontinue (daelow)
     local
-      list<Function> restFns;
-      list<String> fnLibs;
-      list<String> libs;
-      list<String> restLibs;
-    case ({})
-      then {};
-    case (EXTERNAL_FUNCTION(libs=fnLibs) :: restFns)
+      list<list<String>> libsL,includesL;
+      DAELow.ExternalObjectClasses extObjs;
+    case DAELow.DAELOW(extObjClasses = extObjs)
       equation
-        restLibs = extractLibs(restFns);
-        libs = Util.listUnion(fnLibs, restLibs);
-      then (libs);
-    case (_ :: restFns)
-      equation
-        libs = extractLibs(restFns);
-      then (libs);
+        (includesL, libsL) = Util.listMap_2(extObjs, generateExternalObjectInclude);
+        includes = Util.listListUnion(includesL);
+        libs = Util.listListUnion(libsL);
+      then (includes,libs);
   end matchcontinue;
-end extractLibs;
+end generateExternalObjectIncludes;
+
+protected function generateExternalObjectInclude 
+"Helper function to generateExteralObjectInclude"
+  input DAELow.ExternalObjectClass extObjCls;
+  output list<String> includes;
+  output list<String> libs;
+algorithm
+  (includes,libs) :=
+  matchcontinue(extObjCls)
+    local
+      Option<Absyn.Annotation> ann1,ann2;
+      list<String> includes1,libs1,includes2,libs2;
+    case (DAELow.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
+      											destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann2))})))
+      equation
+        (includes1,libs1) = Codegen.generateExtFunctionIncludes(ann1);
+        (includes2,libs2) = Codegen.generateExtFunctionIncludes(ann2);
+        includes = Util.listListUnion({includes1, includes2});
+        libs = Util.listListUnion({libs1, libs2});
+      then (includes,libs);
+  end matchcontinue;
+end generateExternalObjectInclude;
 
 protected function elaborateFunctions 
   input list<DAE.Element> daeElements;
@@ -751,7 +614,7 @@ protected
   list<Function> fns;  
 algorithm
   (fns, _) := elaborateFunctions2(daeElements, {},{});
-  functions := listReverse(fns);  
+  functions := listReverse(fns); // Is there a reason why we reverse here?
 end elaborateFunctions;
 
 protected function elaborateFunctions2 
@@ -761,7 +624,7 @@ protected function elaborateFunctions2
   output list<Function> outFunctions;
   output list<String> outRecordTypes;
 algorithm
-  (outFunctions, outRecordTypes):=
+  (outFunctions, outRecordTypes) :=
   matchcontinue (daeElements, inFunctions, inRecordTypes)
     local
       list<Function> accfns, fns;
@@ -813,7 +676,7 @@ algorithm
       list<Absyn.Path> funrefPaths;
       Variables outVars, inVars, biVars, funArgs, varDecls;
       list<RecordDeclaration> recordDecls;
-      FunctionBody body;
+      list<Statement> body;
       DAE.InlineType inl;
     /* Modelica functions. */
     case (DAE.FUNCTION(path = fpath,
@@ -830,74 +693,8 @@ algorithm
         algs = Util.listFilter(dae, DAEUtil.isAlgorithm);
         body = Util.listMap(algs, elaborateStatement);
       then
-        (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body), rt_1);
-     /* Modelica Record Constructor. We would like to use this as a C macro,
-        but this is not possible. */
-    //case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
-    //  local
-    //    String name, defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
-    //    DAE.ExpType expType;
-    //    list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
-    //    Integer tnr;
-    //  equation
-    //    fn_name_str = generateFunctionName(fpath);
-    //    fn_name_str = stringAppend("_", fn_name_str);
-    //    retstr = generateReturnType(fpath);
-    //    tnr = 1;
-    //    (decl1,ret_var,tnr) = generateTempDecl(retstr, tnr);
-    //    (decl2,record_var,tnr) = generateTempDecl("struct " +& name, tnr);
-    //    (struct_strs,rt_1) = generateRecordDeclarations(restype, rt);
-
-    //    expType = Types.elabType(restype);
-    //    defhead = "#define " +& retstr +& "_1 targ1";
-    //    head = "typedef struct " +& retstr +& "_s {";
-    //    body = "struct " +& name +& " targ1;";
-    //    foot = "} "+&retstr+&";";
-    //    struct_strs = listAppend(struct_strs, {defhead, head, body, foot});
-    //    arg_names = Util.listMap(args, Util.tuple21);
-    //    arg_tmp1 = Util.listMap1(arg_names, stringAppend, " = ");
-    //    arg_tmp2 = Util.listMap1(arg_names, stringAppend, ";");
-    //    arg_tmp1 = Util.listThreadMap(arg_tmp1, arg_tmp2, stringAppend);
-    //    record_var_dot = record_var +& ".";
-    //    arg_assignments = Util.listMap1r(arg_tmp1, stringAppend, record_var_dot);
-    //    assign_res = ret_var +& ".targ1 = " +& record_var +& ";";
-    //    return_stmt = "return "+&ret_var+&";";
-    //    
-    //    arg_strs = Util.listMap(args, generateFunctionArg);
-    //    head_cfn = cMakeFunction(retstr, fn_name_str, struct_strs, arg_strs);
-    //    body_cfn = cEmptyFunction;
-    //    body_cfn = cAddVariables(body_cfn, {decl1,decl2});
-    //    body_cfn = cAddStatements(body_cfn, arg_assignments);
-    //    body_cfn = cAddCleanups(body_cfn, {assign_res,return_stmt});
-    //    wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
-    //    cfn = cMergeFn(head_cfn, body_cfn);
-    //  then
-    //    (cfn::wrapper_body,rt_1);
-    /* Builtin functions. */
-    //case (DAE.FUNCTION(path = fpath,
-    //                   functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
-    //                   type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
-    //  equation
-    //    true = isBuiltinFunction(fpath);
-    //    fn_name_str = generateFunctionName(fpath);
-    //    fn_name_str = stringAppend("_", fn_name_str);
-    //    DAE.EXTERNALDECL(ident = extfnname, external_ = extargs,parameters = extretarg, returnType = lang, language = ann) = extdecl;
-    //    dae = Inst.initVarsModelicaOutput(orgdae);
-    //    outvars = DAEUtil.getOutputVars(dae);
-    //    invars = DAEUtil.getInputVars(dae);
-    //    bivars = DAEUtil.getBidirVars(dae);
-    //    (struct_strs,rt_1) = generateStructsForRecords(dae,rt);
-    //    struct_strs_1 = generateResultStruct(outvars, fpath);
-    //    struct_strs = listAppend(struct_strs, struct_strs_1);
-    //    retstructtype = generateReturnType(fpath);
-    //    retstr = generateExtFunctionName(extfnname, lang);
-    //    extfnname_1 = generateExtFunctionName(extfnname,lang);
-    //    arg_strs = generateExtFunctionArgs(extargs, lang);
-    //    (includes,libs) = generateExtFunctionIncludes(ann);
-    //    rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
-    //    ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
-    //    cfns = {rcw_fn, ext_decl};
-    //  then (cfns, rt_1);
+        (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body),
+         rt_1);
     /* External functions. */
     case (DAE.FUNCTION(path = fpath,
                        functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
@@ -909,38 +706,18 @@ algorithm
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         bivars = DAEUtil.getBidirVars(dae);
-
         funArgs = Util.listMap(args, typesSimFunctionArg);
-
         outVars = Util.listMap(DAEUtil.getOutputVars(dae), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(dae), daeInOutSimVar);
         biVars = Util.listMap(DAEUtil.getBidirVars(dae), daeInOutSimVar);
-    //    (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
-    //    struct_strs_1 = generateResultStruct(outvars, fpath);
-    //    struct_strs = listAppend(struct_strs, struct_strs_1);
-    //    retstructtype = generateReturnType(fpath);
-    //    retstr = generateExtReturnType(extretarg);
-    //    extfnname_1 = generateExtFunctionName(extfnname, lang);
-    //    extfnname_1 = Util.if_("Java" ==& lang, "", extfnname_1);
-    //    arg_strs = generateExtFunctionArgs(extargs, lang);
         (includes, libs) = Codegen.generateExtFunctionIncludes(ann);
-    //    includes = Util.if_("Java" ==& lang, "#include \"java_interface.h\"" :: includes, includes);
-    //    rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
-    //    ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
-    //    func_decl = cMakeFunctionDecl(retstr, extfnname_1, struct_strs, arg_strs, includes, libs);
-    //    wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
-    //    cfns = func_decl :: rcw_fn :: ext_decl :: wrapper_body;
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndexOuter(simextargs, extReturn);
       then
-        (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn, inVars, outVars, biVars, includes, libs, lang), rt);
-    /* Can we even end up in this case? isFunction returns false for COMP */
-    //case (DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist)),rt)
-    //  equation
-    //    (cfns,rt_1) = generateFunctionsElist(daelist,rt);
-    //  then
-    //    (cfns,rt_1);
+        (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
+                           inVars, outVars, biVars, includes, libs, lang),
+         rt);
     case (comp,rt)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.elaborateFunction failed"});
@@ -948,6 +725,97 @@ algorithm
         fail();
   end matchcontinue;
 end elaborateFunction;
+
+protected function typesSimFunctionArg 
+"function: generateFunctionArgs
+  Generates code from a function argument."
+  input Types.FuncArg inFuncArg;
+  output Variable outVar;
+algorithm
+  outString:=
+  matchcontinue (inFuncArg)
+    local
+      Types.Type tty;
+      Exp.Type expType;
+      String name;
+    case ((name,tty))
+      equation
+        expType = Types.elabType(tty);        
+      then
+        VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
+  end matchcontinue;
+end typesSimFunctionArg;
+
+protected function daeInOutSimVar
+  input DAE.Element inElement;
+  output Variable outVar;
+algorithm
+  outVar := matchcontinue(inElement)
+    local
+      String name;
+      Type expType;
+      DAE.Type daeType;
+      Exp.ComponentRef id;
+      list<Exp.Subscript> inst_dims;
+      list<DAE.Exp> inst_dims_exp;
+    //TODO: componentRef ?? can it be something other than CREF_IDENT here ?     
+    case (DAE.VAR(componentRef = id,
+                  kind = DAE.VARIABLE(),
+                  ty = daeType,
+                  dims = inst_dims
+                 ))
+      equation
+        expType = Types.elabType(daeType);
+        inst_dims_exp = Util.listMap(inst_dims, indexSubscriptToExp);
+      then VARIABLE(id,expType,NONE,inst_dims_exp);
+    case (_)
+      equation
+        // TODO: ArrayEqn fails here
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.daeInOutSimVar failed\n"});
+      then
+        fail();
+  end matchcontinue;
+end daeInOutSimVar;
+
+protected function extArgsToSimExtArgs 
+  input DAE.ExtArg extArg;
+  output SimExtArg simExtArg;
+algorithm
+  simExtArg :=
+  matchcontinue (extArg)
+    local
+      DAE.ComponentRef componentRef;
+      DAE.Attributes attributes;
+      DAE.Type type_;
+      Boolean isInput;
+      Boolean isOutput;
+      Boolean isArray;
+      DAE.ExpType expType;
+      DAE.Exp exp_;
+      Integer outputIndex;
+    case DAE.EXTARG(componentRef, attributes, type_)
+      equation
+        isInput = Types.isInputAttr(attributes);
+        isOutput = Types.isOutputAttr(attributes);
+        outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
+        isArray = Types.isArray(type_);
+        expType = Types.elabType(type_);
+      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, expType);
+    case DAE.EXTARGEXP(exp_, type_)
+      equation
+        expType = Types.elabType(type_);
+      then SIMEXTARGEXP(exp_, expType);
+    case DAE.EXTARGSIZE(componentRef, attributes, type_, exp_)
+      equation
+        isInput = Types.isInputAttr(attributes);
+        isOutput = Types.isOutputAttr(attributes);
+        outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
+        expType = Types.elabType(type_);
+      then SIMEXTARGSIZE(componentRef, isInput, outputIndex, expType, exp_);
+    case DAE.NOEXTARG()
+      then SIMNOEXTARG();
+  end matchcontinue;
+end extArgsToSimExtArgs;
 
 protected function fixOutputIndexOuter
   input list<SimExtArg> simExtArgsIn;
@@ -1017,94 +885,7 @@ algorithm
   end matchcontinue;
 end fixOutputIndex;
 
-protected function extArgsToSimExtArgs 
-  input DAE.ExtArg extArg;
-  output SimExtArg simExtArg;
-algorithm
-  simExtArg :=
-  matchcontinue (extArg)
-    local
-      DAE.ComponentRef componentRef;
-      DAE.Attributes attributes;
-      DAE.Type type_;
-      Boolean isInput;
-      Boolean isOutput;
-      Boolean isArray;
-      DAE.ExpType expType;
-      DAE.Exp exp_;
-      Integer outputIndex;
-    case DAE.EXTARG(componentRef, attributes, type_)
-      equation
-        isInput = Types.isInputAttr(attributes);
-        isOutput = Types.isOutputAttr(attributes);
-        outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
-        isArray = Types.isArray(type_);
-        expType = Types.elabType(type_);
-      then SIMEXTARG(componentRef, isInput, outputIndex, isArray, expType);
-    case DAE.EXTARGEXP(exp_, type_)
-      equation
-        expType = Types.elabType(type_);
-      then SIMEXTARGEXP(exp_, expType);
-    case DAE.EXTARGSIZE(componentRef, attributes, type_, exp_)
-      equation
-        isInput = Types.isInputAttr(attributes);
-        isOutput = Types.isOutputAttr(attributes);
-        outputIndex = Util.if_(isOutput, -1, 0); // correct output index is added later by fixOutputIndex
-        expType = Types.elabType(type_);
-      then SIMEXTARGSIZE(componentRef, isInput, outputIndex, expType, exp_);
-    case DAE.NOEXTARG()
-      then SIMNOEXTARG();
-  end matchcontinue;
-end extArgsToSimExtArgs;
-
-protected function isVarQ 
-"function isVarQ
-  Succeds if DAE.Element is a variable or constant that is not input."
-  input DAE.Element inElement;
-algorithm
-  _:=  matchcontinue (inElement)
-    local
-      Exp.ComponentRef id;
-      DAE.VarKind vk;
-      DAE.VarDirection vd;
-    case DAE.VAR(componentRef = id,kind = vk,direction = vd)
-      equation
-        generateVarQ(vk);
-        generateVarQ2(vd);
-      then
-        ();
-  end matchcontinue;
-end isVarQ;
-
-
-protected function generateVarQ 
-"function generateVarQ
-  Helper function to isVarQ."
-  input DAE.VarKind inVarKind;
-algorithm
-  _:=
-  matchcontinue (inVarKind)
-    case DAE.VARIABLE() then ();
-    case DAE.PARAM() then ();
-  end matchcontinue;
-end generateVarQ;
-
-protected function generateVarQ2 
-"function generateVarQ2
-  Helper function to isVarQ."
-  input DAE.VarDirection inVarDirection;
-algorithm
-  _:=
-  matchcontinue (inVarDirection)
-    case DAE.OUTPUT() then ();
-    case DAE.BIDIR() then ();
-  end matchcontinue;
-end generateVarQ2;
-
-
-public function elaborateStatement 
-"function elaborateStatement
-  "
+protected function elaborateStatement 
   input DAE.Element inElement;
   output Statement outStatement;
 algorithm
@@ -1112,11 +893,9 @@ algorithm
   matchcontinue (inElement)
     local
       list<Algorithm.Statement> stmts;
-      
     case (DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS(statementLst = stmts)))
       then
         ALGORITHM(stmts);
-        
     case (_)
       equation
         Debug.fprint("failtrace", "# SimCode.elaborateStatement failed\n");
@@ -1125,182 +904,302 @@ algorithm
   end matchcontinue;
 end elaborateStatement;
 
-
-protected function daeInOutSimVar
-  input DAE.Element inElement;
-  output Variable outVar;
+// Copied from SimCodegen.generateSimulationCode.
+protected function createSimCode
+  input DAE.DAElist inDAElist1;
+  input DAELow.DAELow inDAELow2;
+  input Integer[:] inIntegerArray3;
+  input Integer[:] inIntegerArray4;
+  input DAELow.IncidenceMatrix inIncidenceMatrix5;
+  input DAELow.IncidenceMatrixT inIncidenceMatrixT6;
+  input list<list<Integer>> inIntegerLstLst7;
+  input Absyn.Path inPath8;
+  input String inString9;
+  input String inString10;
+  input String inString11;
+  input list<Function> functions;
+  output SimCode simCode;
 algorithm
-  outVar := matchcontinue(inElement)
+  simCode :=
+  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11,functions)
     local
-      String name;
-      Type expType;
-      DAE.Type daeType;
-      Exp.ComponentRef id;
-      list<Exp.Subscript> inst_dims;
-      list<DAE.Exp> inst_dims_exp;
-    //TODO: componentRef ?? can it be something other than CREF_IDENT here ?     
-    case (DAE.VAR(componentRef = id,
-                  kind = DAE.VARIABLE(),
-                  ty = daeType,
-                  dims = inst_dims
-                 ))
+      String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
+      	czerocross,filename,funcfilename,fileDir;
+      String extObjInclude; list<String> extObjIncludes;
+      list<list<Integer>> blt_states,blt_no_states,comps;
+      list<list<Integer>> contBlocks,discBlocks;
+      Integer n_o,n_i,n_h,nres;
+      list<HelpVarInfo> helpVarInfo,helpVarInfo1;
+      DAE.DAElist dae;
+      DAELow.DAELow dlow,dlow2;
+      Integer[:] ass1,ass2;
+      list<Integer>[:] m,mt;
+      Absyn.Path class_;
+      // new variables
+      SimCode simCode;
+      ModelInfo modelInfo;
+      list<SimEqSystem> allEquations;
+      list<SimEqSystem> stateContEquations;
+      list<SimEqSystem> nonStateContEquations;
+      list<SimEqSystem> nonStateDiscEquations;
+      list<SimEqSystem> residualEquations;
+      list<SimEqSystem> initialEquations;
+      list<SimEqSystem> parameterEquations;
+      list<SimEqSystem> removedEquations;
+      list<Algorithm.Statement> algorithmAndEquationAsserts;
+      list<DAELow.ZeroCrossing> zeroCrossings;
+      list<list<SimVar>> zeroCrossingsNeedSave;
+      list<SimWhenClause> whenClauses;
+      list<DAE.ComponentRef> discreteModelVars;
+      ExtObjInfo extObjInfo;
+    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions)
       equation
-        expType = Types.elabType(daeType);
-        inst_dims_exp = Util.listMap(inst_dims, indexSubscriptToExp);
-      then VARIABLE(id,expType,NONE,inst_dims_exp);
-    case (_)
+        cname = Absyn.pathString(class_);
+
+        (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
+
+        (helpVarInfo, dlow2) = generateHelpVarInfo(dlow, comps);
+        //(out_str,n_o) = generateOutputFunctionCode(dlow2);
+        //(in_str,n_i) = generateInputFunctionCode(dlow2);
+        n_h = listLength(helpVarInfo);
+
+        residualEquations = createResidualEquations(dlow2, ass1, ass2);
+        nres = listLength(residualEquations);
+
+        //(s_code3) = generateInitialBoundParameterCode(dlow2);
+        //cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir);
+        //coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
+        //cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
+        //c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
+        //s_code = generateInitialValueCode(dlow2);
+        //cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
+        //czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        extObjInfo = createExtObjInfo(dlow2);
+        //extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
+        //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
+        // Add model info
+        modelInfo = createModelInfo(class_, dlow2, n_h, nres, fileDir);
+        allEquations = createEquations(false, true, dae, dlow2, ass1, ass2, comps);
+        stateContEquations = createEquations(false, false, dae, dlow2, ass1, ass2, blt_states);
+        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
+        nonStateContEquations = createEquations(false, true, dae, dlow2, ass1, ass2,
+                                                contBlocks);
+        nonStateDiscEquations = createEquations(useZerocrossing(), true, dae, dlow2, ass1, ass2,
+                                                discBlocks);
+        initialEquations = createInitialEquations(dlow2);
+        parameterEquations = createParameterEquations(dlow2);
+        removedEquations = createRemovedEquations(dlow2);
+        algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
+        zeroCrossings = createZeroCrossings(dlow2);
+        zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
+        whenClauses = createSimWhenClauses(dlow2);
+        discreteModelVars = extractDiscreteModelVars(dlow2, mt);
+        simCode = SIMCODE(modelInfo, functions, allEquations, stateContEquations,
+                          nonStateContEquations, nonStateDiscEquations,
+                          residualEquations, initialEquations,
+                          parameterEquations, removedEquations,
+                          algorithmAndEquationAsserts, zeroCrossings,
+                          zeroCrossingsNeedSave, helpVarInfo, whenClauses,
+                          discreteModelVars, extObjInfo);
+      then
+        simCode;
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
-        // TODO: ArrayEqn fails here
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.daeInOutSimVar failed\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
       then
         fail();
   end matchcontinue;
-end daeInOutSimVar;
+end createSimCode;
 
-protected function indexSubscriptToExp
-  input DAE.Subscript subscript;
-  output DAE.Exp exp_;
+protected function generateHelpVarInfo
+  input DAELow.DAELow dlow;
+  input list<list<Integer>> comps;
+  output list<HelpVarInfo> outHelpVarInfo;
+  output DAELow.DAELow outDAELow;
 algorithm
-  exp_ :=
-  matchcontinue (subscript)
-    case (DAE.INDEX(exp_)) then exp_;
-    case (_) then DAE.ICONST(99); // TODO: Why do we end up here?
+  (outHelpVarInfo, outDAELow) :=
+  matchcontinue (dlow, comps)
+    case (dlow, comps)
+      local
+        DAELow.DAELow dlow2;
+        list<HelpVarInfo> helpVarInfo1;
+        list<HelpVarInfo> helpVarInfo;
+      equation
+        helpVarInfo1 = helpVarInfoFromWhenConditionChecks(dlow, comps);
+        (helpVarInfo, dlow2) = generateHelpVarsForWhenStatements(helpVarInfo1, dlow);
+      then (helpVarInfo, dlow2);
   end matchcontinue;
-end indexSubscriptToExp;
+end generateHelpVarInfo;
 
-protected function typesSimFunctionArg 
-"function: generateFunctionArgs
-  Generates code from a function argument."
-  input Types.FuncArg inFuncArg;
-  output Variable outVar;
+protected function helpVarInfoFromWhenConditionChecks
+"Return a list of help variables that were introduced by when conditions?"
+  input DAELow.DAELow inDAELow;
+  input list<list<Integer>> comps;
+  output list<HelpVarInfo> helpVarList;
 algorithm
-  outString:=
-  matchcontinue (inFuncArg)
+  helpVarLst :=
+  matchcontinue (inDAELow, comps)
     local
-      Types.Type tty;
-      Exp.Type expType;
-      String name;
-    case ((name,tty))
+      list<Integer> orderOfEquations,orderOfEquations_1;
+      list<DAELow.Equation> eqnl;
+      Integer n;
+      list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
+      DAELow.DAELow dlow;
+      DAELow.EquationArray eqns;
+      list<DAELow.WhenClause> whenClauseList;
+      list<list<Integer>> blocks;
+    case ((dlow as DAELow.DAELOW(orderedEqs = eqns,eventInfo = DAELow.EVENT_INFO(whenClauseLst = whenClauseList))),blocks)
       equation
-        expType = Types.elabType(tty);        
+        orderOfEquations = generateEquationOrder(blocks);
+        eqnl = DAELow.equationList(eqns);
+        n = listLength(eqnl);
+        orderOfEquations_1 = addMissingEquations(n, orderOfEquations);
+        // First generate checks for all when equations, in the order of the sorted equations.
+        (_, helpVarInfo1) = buildWhenConditionChecks4(orderOfEquations_1, eqnl, whenClauseList, 0);
+        n = listLength(helpVarInfo1);
+        // Generate checks also for when clauses without equations but containing reinit statements.
+        (_, helpVarInfo2) = buildWhenConditionChecks2(whenClauseList, 0, n);
+        helpVarInfo = listAppend(helpVarInfo1, helpVarInfo2);
       then
-        VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
-  end matchcontinue;
-end typesSimFunctionArg;
-
-protected function typesExpType  // TODO: change to Types.elabType
-"function: generateType
-  Generates code for a Type."
-  input Types.Type inType;
-  output Exp.Type outType;
-algorithm
-  outType:=
-  matchcontinue (inType)
-    local
-      list<Types.Type> tys;
-      list<Exp.Type> etys;
-      Types.Type arrayty, ty;
-      Exp.Type ety;
-      list<Integer> dims;
-      list<Option<Integer>> dimOpts;
-      ClassInf.State cType;
-      list<Types.Var> tVarLst;
-      list<Exp.Var> eVarLst;
-      
-    case ((DAE.T_TUPLE(tupleType = tys),_))
+        (helpVarInfo);
+    case (_,_)
       equation
-        etys = Util.listMap(tys, typesExpType);
-      then
-        DAE.ET_METATUPLE(etys);
-        
-    //TODO: check this for the proper order of dimensions or make a custom  flattenArrayType(tys) where the arrayDim are properly transformed (now, when there is a NONE, it is just omitted ?? correct)
-    case ((ty as (DAE.T_ARRAY(arrayDim = _),_)))
-      equation
-        (arrayty,dims) = Types.flattenArrayType(ty);
-        dimOpts = Util.listMap(dims, Util.makeOption);
-        ety = typesExpType(arrayty);
-      then
-        DAE.ET_ARRAY(ety, dimOpts);
-        
-    case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
-    case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
-    case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING();
-    case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL();
-    //what about Option<Type> complexTypeOption in DAE.T_COMPLEX ?
-    case ((DAE.T_COMPLEX(complexClassType = cType as ClassInf.RECORD(name), complexVarLst = tVarLst),_))
-      local String name;
-      equation
-        eVarLst = Util.listMap(tVarLst, typesExpVar);
-      then
-        DAE.ET_COMPLEX(name, eVarLst, cType);        
-    case ((DAE.T_LIST(ty),_))
-      equation
-        ety = typesExpType(ty);
-      then
-        DAE.ET_LIST(ety);    
-    //?? what is the difference between the T_TUPL and T_METATUPLE in context of Exp.Type ?
-    case ((DAE.T_METATUPLE(tys),_)) 
-      equation
-        etys = Util.listMap(tys, typesExpType);
-      then
-        DAE.ET_METATUPLE(etys);        
-    case ((DAE.T_METAOPTION(ty),_)) 
-      equation
-        ety = typesExpType(ty);
-      then
-        DAE.ET_METAOPTION(ety);
-    
-    //?? loss of information
-    case ((DAE.T_FUNCTION(_,_,_),_)) then DAE.ET_FUNCTION_REFERENCE_FUNC;
-    case ((DAE.T_UNIONTYPE(_),_)) then DAE.ET_UNIONTYPE;
-    case ((DAE.T_POLYMORPHIC(_),_)) then DAE.ET_POLYMORPHIC;
-    case ((DAE.T_BOXED(ty),_))
-      equation
-        ety = typesExpType(ty);
-      then
-        DAE.ET_BOXED(ety);
-
-    case (ty)
-      equation
-        Debug.fprint("failtrace", "#-- SimCode.typesExpType failed\n");
+        print("-build_when_condition_checks failed.\n");
       then
         fail();
   end matchcontinue;
-end typesExpType;
+end helpVarInfoFromWhenConditionChecks;
 
 
-protected function typesExpVar
-  input Types.Var typesVar;
-  output Exp.Var expVar;
+protected function buildDiscreteVarChanges "
+For all discrete variables in the model, generate code that checks if they have changed and if so generate code
+that add events to the event queue: if (change(<discretevar>)) { AddEvent(c1);...;AddEvent(cn)}
+
+"
+  input DAELow.DAELow daelow;
+  input list<list<Integer>> comps;
+  input Integer[:] ass1;
+  input Integer[:] ass2;
+  input DAELow.IncidenceMatrix m;
+  input DAELow.IncidenceMatrixT mT;
+  output String outString;
 algorithm
-  expVar := matchcontinue(typesVar)
-    local
-      String name;
-      Exp.Type expType;
-      Types.Type typesType;
-    case (DAE.TYPES_VAR(name = name, type_ = typesType))
+  outString := matchcontinue(daelow,comps,ass1,ass2,m,mT)
+    local String s1,s2;
+      list<Integer> b;
+      list<list<Integer>> blocks;
+      DAELow.Variables v;
+      list<DAELow.Var> vLst;
+    case (daelow as DAELow.DAELOW(orderedVars = v),blocks,ass1,ass2,m,mT)
       equation
-        expType = typesExpType(typesType);
-      then DAE.COMPLEX_VAR(name,expType);
+      vLst = DAELow.varList(v);
+      vLst = Util.listSelect(vLst,DAELow.isVarDiscrete); // select all discrete vars.
+			outString = Util.stringDelimitList(Util.listMap2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
+    then outString;
+    case(_,_,_,_,_,_) equation
+      print("buildDiscreteVarChanges failed\n");
+      then fail();
   end matchcontinue;
-end typesExpVar;
+end buildDiscreteVarChanges;
 
-protected function typesVar
-  input Types.Var inTypesVar;
-  output Variable outVar;
+protected function buildDiscreteVarChangesVar "help function to buildDiscreteVarChanges"
+  input DAELow.Var var;
+  input DAELow.DAELow daelow;
+  input DAELow.IncidenceMatrixT mT;
+  output String outString;
 algorithm
-  outVar := matchcontinue(inTypesVar)
-    local
-      String name;
-      Type expType;
-      Types.Type typesType;
-    case (DAE.TYPES_VAR(name = name, type_ = typesType))
-      equation
-        expType = typesExpType(typesType);
-      then VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
-  end matchcontinue;
-end typesVar;
+  outString := matchcontinue(var,daelow,mT)
+  local list<String> strLst;
+    Exp.ComponentRef cr;
+    Integer varIndx;
+    list<Integer> eqns;
+    case(var as DAELow.VAR(varName=cr,index=varIndx), daelow,mT) equation
 
+      eqns = mT[varIndx+1]; // eqns continaing var
+      true = crefNotInWhenEquation(cr,daelow,eqns);
+      outString = buildDiscreteVarChangesAddEvent(0,cr);
+
+  		/*strLst = Util.listMap2(eqns,buildDiscreteVarChangesVar2,cr,daelow);
+  		outString = Util.stringDelimitList(strLst,"\n");*/
+
+    then outString;
+
+    case(_,_,_) then "";
+  end matchcontinue;
+end buildDiscreteVarChangesVar;
+
+protected function crefNotInWhenEquation "Returns true if cref is not solved in any of the equations
+given as indices which is a when_equation"
+  input Exp.ComponentRef cr;
+  input DAELow.DAELow daelow;
+  input list<Integer> eqns;
+  output Boolean res;
+algorithm
+  res := matchcontinue(cr,daelow,eqns)
+  local
+    DAELow.EquationArray eqs;
+    Integer e;
+    Exp.ComponentRef cr2;
+    Exp.Exp exp;
+    Boolean b1,b2;
+    case(cr,daelow,{}) then true;
+    case(cr,daelow as DAELow.DAELOW(orderedEqs=eqs),e::eqns) equation
+      DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
+      //We can asume the same component refs are solved in any else-branch.
+      b1 = Exp.crefEqual(cr,cr2);
+      b2 = Exp.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
+      true = boolOr(b1,b2);
+    then false;
+    case(cr,daelow,_::eqns) equation
+      res = crefNotInWhenEquation(cr,daelow,eqns);
+    then res;
+  end matchcontinue;
+end crefNotInWhenEquation;
+
+// TODO: use another switch ... later make it first class option like -target or so
+protected function callTargetTemplates
+"Generate target code by passing the SimCode data structure to templates."
+  input SimCode simCode;
+algorithm 
+  (_) :=
+  matchcontinue (simCode)
+    case (simCode)
+      equation 
+        true = RTOpts.debugFlag("CSharp");
+        _ = Tpl.tplString(SimCodeCSharp.translateModel, simCode);
+      then (); 
+    case (simCode)
+      equation
+        false = RTOpts.debugFlag("CSharp"); 
+        _ = Tpl.tplString(SimCodeC.translateModel, simCode);
+      then ();        
+  end matchcontinue;
+end callTargetTemplates;
+
+protected function extractLibs
+  input list<Function> fns;
+  output list<String> libs;
+algorithm
+  libs :=
+  matchcontinue (fns)
+    local
+      list<Function> restFns;
+      list<String> fnLibs;
+      list<String> libs;
+      list<String> restLibs;
+    case ({})
+      then {};
+    case (EXTERNAL_FUNCTION(libs=fnLibs) :: restFns)
+      equation
+        restLibs = extractLibs(restFns);
+        libs = Util.listUnion(fnLibs, restLibs);
+      then (libs);
+    case (_ :: restFns)
+      equation
+        libs = extractLibs(restFns);
+      then (libs);
+  end matchcontinue;
+end extractLibs;
 
 protected function elaborateRecordDeclarations 
 "function elaborateRecordDeclarations
@@ -1450,119 +1349,7 @@ algorithm
   end matchcontinue;
 end elaborateRecordDeclarationsForMetarecords;
 
-// ********** START COPY FROM SIMCODEGEN MODULE **********
-
-// Functions copied for adaption.
-
-// Copied from SimCodegen.generateSimulationCode.
-public function createSimCode
-  input DAE.DAElist inDAElist1;
-  input DAELow.DAELow inDAELow2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
-  input DAELow.IncidenceMatrix inIncidenceMatrix5;
-  input DAELow.IncidenceMatrixT inIncidenceMatrixT6;
-  input list<list<Integer>> inIntegerLstLst7;
-  input Absyn.Path inPath8;
-  input String inString9;
-  input String inString10;
-  input String inString11;
-  input list<Function> functions;
-  output SimCode simCode;
-algorithm
-  simCode :=
-  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11,functions)
-    local
-      String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
-      	czerocross,filename,funcfilename,fileDir;
-      String extObjInclude; list<String> extObjIncludes;
-      list<list<Integer>> blt_states,blt_no_states,comps;
-      list<list<Integer>> contBlocks,discBlocks;
-      Integer n_o,n_i,n_h,nres;
-      list<HelpVarInfo> helpVarInfo,helpVarInfo1;
-      DAE.DAElist dae;
-      DAELow.DAELow dlow,dlow2;
-      Integer[:] ass1,ass2;
-      list<Integer>[:] m,mt;
-      Absyn.Path class_;
-      // new variables
-      SimCode simCode;
-      ModelInfo modelInfo;
-      list<SimEqSystem> allEquations;
-      list<SimEqSystem> stateContEquations;
-      list<SimEqSystem> nonStateContEquations;
-      list<SimEqSystem> nonStateDiscEquations;
-      list<SimEqSystem> residualEquations;
-      list<SimEqSystem> initialEquations;
-      list<SimEqSystem> parameterEquations;
-      list<SimEqSystem> removedEquations;
-      list<Algorithm.Statement> algorithmAndEquationAsserts;
-      list<DAELow.ZeroCrossing> zeroCrossings;
-      list<list<SimVar>> zeroCrossingsNeedSave;
-      list<SimWhenClause> whenClauses;
-      list<DAE.ComponentRef> discreteModelVars;
-      ExtObjInfo extObjInfo;
-    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions)
-      equation
-        cname = Absyn.pathString(class_);
-
-        (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-
-        (c_eventchecking,helpVarInfo1) = generateEventCheckingCode(dlow, comps, ass1, ass2, m, mt, class_);
-        (helpVarInfo,dlow2) = generateHelpVarsForWhenStatements(helpVarInfo1,dlow);
-        //(out_str,n_o) = generateOutputFunctionCode(dlow2);
-        //(in_str,n_i) = generateInputFunctionCode(dlow2);
-        n_h = listLength(helpVarInfo);
-
-        residualEquations = createResidualEquations(dlow2, ass1, ass2);
-        nres = listLength(residualEquations);
-
-        //(s_code3) = generateInitialBoundParameterCode(dlow2);
-        //cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir);
-        //coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
-        //cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
-        //c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
-        //s_code = generateInitialValueCode(dlow2);
-        //cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
-        //czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        extObjInfo = createExtObjInfo(dlow2);
-        //extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
-        //extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
-        // Add model info
-        modelInfo = createModelInfo(class_, dlow2, n_h, nres, fileDir);
-        allEquations = createEquations(false, true, dae, dlow2, ass1, ass2, comps);
-        stateContEquations = createEquations(false, false, dae, dlow2, ass1, ass2, blt_states);
-        (contBlocks, discBlocks) = splitOutputBlocks(dlow2, ass1, ass2, m, mt, blt_no_states);
-        nonStateContEquations = createEquations(false, true, dae, dlow2, ass1, ass2,
-                                                contBlocks);
-        nonStateDiscEquations = createEquations(useZerocrossing(), true, dae, dlow2, ass1, ass2,
-                                                discBlocks);
-        initialEquations = createInitialEquations(dlow2);
-        parameterEquations = createParameterEquations(dlow2);
-        removedEquations = createRemovedEquations(dlow2);
-        algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
-        zeroCrossings = createZeroCrossings(dlow2);
-        zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
-        whenClauses = createSimWhenClauses(dlow2);
-        discreteModelVars = extractDiscreteModelVars(dlow2, mt);
-        simCode = SIMCODE(modelInfo, functions, allEquations, stateContEquations,
-                          nonStateContEquations, nonStateDiscEquations,
-                          residualEquations, initialEquations,
-                          parameterEquations, removedEquations,
-                          algorithmAndEquationAsserts, zeroCrossings,
-                          zeroCrossingsNeedSave, helpVarInfo, whenClauses,
-                          discreteModelVars, extObjInfo);
-      then
-        simCode;
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
-      then
-        fail();
-  end matchcontinue;
-end createSimCode;
-
-public function createExtObjInfo
+protected function createExtObjInfo
   input DAELow.DAELow dlow;
   output ExtObjInfo extObjInfo;
 algorithm
@@ -1585,7 +1372,7 @@ algorithm
   end matchcontinue;
 end createExtObjInfo;
 
-public function extractExtObjInfo2
+protected function extractExtObjInfo2
   input list<DAELow.Var> varLst;
   input DAELow.ExternalObjectClasses eclasses;
   output list<ExtConstructor> constructors;
@@ -1613,7 +1400,7 @@ algorithm
   end matchcontinue;
 end extractExtObjInfo2;
 
-public function createExtObjInfoSingle
+protected function createExtObjInfoSingle
   input DAELow.Var var;
   input DAELow.ExternalObjectClasses eclasses;
   output list<ExtConstructor> constructors;
@@ -1662,7 +1449,7 @@ algorithm
   end matchcontinue;
 end createExtObjInfoSingle;
 
-public function createAlgorithmAndEquationAsserts
+protected function createAlgorithmAndEquationAsserts
   input DAELow.DAELow dlow;
   output list<Algorithm.Statement> algorithmAndEquationAsserts;
 algorithm
@@ -1678,7 +1465,7 @@ algorithm
   end matchcontinue;
 end createAlgorithmAndEquationAsserts;
 
-public function createAlgorithmAndEquationAssertsFromAlgs
+protected function createAlgorithmAndEquationAssertsFromAlgs
   input list<Algorithm.Algorithm> algs;
   output list<Algorithm.Statement> algorithmAndEquationAsserts;
 algorithm
@@ -1701,7 +1488,7 @@ algorithm
   end matchcontinue;
 end createAlgorithmAndEquationAssertsFromAlgs;
 
-public function createRemovedEquations
+protected function createRemovedEquations
   input DAELow.DAELow dlow;
   output list<SimEqSystem> removedEquations;
 algorithm
@@ -1720,7 +1507,7 @@ algorithm
   end matchcontinue;
 end createRemovedEquations;
 
-public function extractDiscreteModelVars
+protected function extractDiscreteModelVars
   input DAELow.DAELow dlow;
   input DAELow.IncidenceMatrixT mT;
   output list<DAE.ComponentRef> discreteModelVars;
@@ -1744,7 +1531,7 @@ algorithm
   end matchcontinue;
 end extractDiscreteModelVars;
 
-public function varNotSolvedInWhen
+protected function varNotSolvedInWhen
   input DAELow.Var var;
   input DAELow.DAELow dlow;
   input DAELow.IncidenceMatrixT mT;
@@ -1766,7 +1553,7 @@ algorithm
   end matchcontinue;
 end varNotSolvedInWhen;
 
-public function createSimWhenClauses
+protected function createSimWhenClauses
   input DAELow.DAELow dlow;
   output list<SimWhenClause> simWhenClauses;
 algorithm
@@ -1783,7 +1570,7 @@ algorithm
   end matchcontinue;
 end createSimWhenClauses;
 
-public function createSimWhenClausesWithEqs
+protected function createSimWhenClausesWithEqs
   input list<DAELow.WhenClause> whenClauses;
   input DAELow.DAELow dlow;
   input Integer currentWhenClauseIndex;
@@ -1813,7 +1600,7 @@ algorithm
   end matchcontinue;
 end createSimWhenClausesWithEqs;
 
-public function findWhenEquation
+protected function findWhenEquation
   input list<DAELow.Equation> eqs;
   input Integer index;
   output Option<DAELow.WhenEquation> whenEq;
@@ -1837,7 +1624,7 @@ algorithm
   end matchcontinue;
 end findWhenEquation;
 
-public function whenClauseToSimWhenClause
+protected function whenClauseToSimWhenClause
   input DAELow.WhenClause whenClause;
   input Option<DAELow.WhenEquation> whenEq;
   output SimWhenClause simWhenClause;
@@ -1856,7 +1643,7 @@ algorithm
   end matchcontinue;
 end whenClauseToSimWhenClause;
 
-public function createEquations
+protected function createEquations
   input Boolean skipDiscInZc;
   input Boolean genDiscrete;
   input DAE.DAElist dae;
@@ -1930,7 +1717,7 @@ algorithm
   end matchcontinue;
 end createEquations;
 
-public function createEquation
+protected function createEquation
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
@@ -2087,10 +1874,6 @@ algorithm
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
-
-//    case (_,_,_,_,_)
-//      then
-//        SES_NOT_IMPLEMENTED("none of cases in createEquation succeeded");
   end matchcontinue;
 end createEquation;
 
@@ -2152,7 +1935,7 @@ algorithm
   end matchcontinue;
 end createNonlinearResidualEquations;
 
-public function createOdeSystem
+protected function createOdeSystem
   input Boolean genDiscrete "if true generate discrete equations";
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
@@ -2173,9 +1956,7 @@ algorithm
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       String s;
-      Codegen.CFunction s2,s1,s0,s2_1,s3,s4,cfn;
       Integer cg_id_1,cg_id,cg_id3,cg_id1,cg_id2,cg_id4,cg_id5;
-      list<CFunction> f1,extra_funcs1;
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
@@ -2278,8 +2059,6 @@ algorithm
     local
       list<SimEqSystem> restEqs;
       Integer cg_id,indx_1,cg_id_1,cg_id_2,indx;
-      Codegen.CFunction cfn,exp_func,exp_func_1,cfn_1;
-      list<CFunction> funcs;
       DAE.ComponentRef cr;
       DAE.Exp varexp,expr,e1,e2;
       String var,indx_str,cr_str,stmt,stmt2;
@@ -2315,7 +2094,6 @@ algorithm
       list<String> values_2,ss;
       String s,s2,disc_len_str,values_len_str,stmt1,stmt2;
       Integer disc_len,values_len;
-      Codegen.CFunction cfn_1;
       list<DAELow.Equation> cont_e,disc_e;
       list<DAELow.Var> cont_v,disc_v;
     case (cont_e,cont_v,disc_e,disc_v)
@@ -2330,7 +2108,7 @@ algorithm
   end matchcontinue;
 end extractValuesAndDims;
 
-public function createOdeSystem2
+protected function createOdeSystem2
   input Boolean mixedEvent "true if generating the mixed system event code";
   input Boolean genDiscrete;
   input DAELow.DAELow inDAELow;
@@ -2343,9 +2121,7 @@ algorithm
   matchcontinue
     (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,block_)
     local
-      Codegen.CFunction s1,s2,s3,s4,s5,s;
       Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
-      list<CFunction> f1;
       DAELow.DAELow dae,d;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
@@ -2451,7 +2227,7 @@ algorithm
   end matchcontinue;
 end createOdeSystem2;
 
-public function jacToSimjac
+protected function jacToSimjac
   input tuple<Integer, Integer, DAELow.Equation> jac;
   input DAELow.Variables v;
   output tuple<Integer, Integer, SimEqSystem> simJac;
@@ -2473,7 +2249,7 @@ algorithm
   end matchcontinue;
 end jacToSimjac;
 
-public function dlowEqToExp
+protected function dlowEqToExp
   input DAELow.Equation dlowEq;
   input DAELow.Variables v;
   output DAE.Exp exp_;
@@ -2507,7 +2283,7 @@ algorithm
   end matchcontinue;
 end dlowEqToExp;
 
-public function createSingleArrayEqnCode 
+protected function createSingleArrayEqnCode 
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   output SimEqSystem equation_;
@@ -2519,8 +2295,6 @@ algorithm
       list<Integer> ds;
       DAE.Exp e1,e2;
       DAE.ComponentRef cr,origname,cr_1;
-      Codegen.CFunction s1;
-      list<CFunction> f1;
       DAELow.Variables vars,knvars;
       DAELow.EquationArray eqns,se,ie;
       DAELow.MultiDimEquation[:] ae;
@@ -2559,7 +2333,7 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode;
 
-public function createSingleAlgorithmCode 
+protected function createSingleAlgorithmCode 
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   output SimEqSystem equation_;
@@ -2570,8 +2344,6 @@ algorithm
       list<Integer> ds;
       Exp.Exp e1,e2;
       Exp.ComponentRef cr,origname,cr_1;
-      Codegen.CFunction s1;
-      list<CFunction> f1;
       DAELow.Variables vars,knvars;
       DAELow.EquationArray eqns,se,ie;
       DAELow.MultiDimEquation[:] ae;
@@ -2623,7 +2395,7 @@ algorithm
 end createSingleAlgorithmCode;
 
 // TODO: are the cases really correct?
-public function createSingleArrayEqnCode2 
+protected function createSingleArrayEqnCode2 
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
   input DAE.Exp inExp3;
@@ -2634,7 +2406,6 @@ algorithm
   matchcontinue (inComponentRef1,inComponentRef2,inExp3,inExp4)
     local
       String s1,s2,stmt,s3,s4,s;
-      Codegen.CFunction cfunc,func_1;
       Integer cg_id_1,cg_id;
       DAE.ComponentRef cr,eltcr,cr2;
       DAE.Exp e1,e2;
@@ -2737,7 +2508,7 @@ algorithm
   end matchcontinue;
 end createResidualEquations;
 
-public function dlowEqToSimEqSystem
+protected function dlowEqToSimEqSystem
   input DAELow.Equation inEquation;
   output SimEqSystem outEquation;
 algorithm
@@ -2971,9 +2742,7 @@ algorithm
       list<Integer>[:] m,m_1,mt_1;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
-      Codegen.CFunction s0,s2_1,s4,s3,s1,cfn3,cfn,cfn2,cfn1;
       list<String> retrec,arg,init,stmts,cleanups,stmts_1;
-      list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
       DAE.DAElist dae;
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
@@ -3015,7 +2784,7 @@ algorithm
   end matchcontinue;
 end createZeroCrossingNeedSave;
 
-public function createModelInfo
+protected function createModelInfo
   input Absyn.Path class_;
   input DAELow.DAELow dlow;
   input Integer numHelpVars;
@@ -3054,7 +2823,7 @@ algorithm
   end matchcontinue;
 end createModelInfo;
 
-public function createVarInfo
+protected function createVarInfo
   input DAELow.DAELow dlow;
   input Integer numOutVars;
   input Integer numInVars;
@@ -3082,7 +2851,7 @@ algorithm
   end matchcontinue;
 end createVarInfo;
 
-public function createVars
+protected function createVars
   input DAELow.DAELow dlow;
   output SimVars varsOut;
 algorithm
@@ -3123,132 +2892,6 @@ algorithm
         varsOut;
   end matchcontinue;
 end createVars;
-
-public function sortSimvarsOnIndex
-  input SimVars unsortedSimvars;
-  output SimVars sortedSimvars;
-algorithm
-  sortedSimvars :=
-  matchcontinue (unsortedSimvars)
-    local
-      list<SimVar> stateVars;
-      list<SimVar> derivativeVars;
-      list<SimVar> algVars;
-      list<SimVar> inputVars;
-      list<SimVar> outputVars;
-      list<SimVar> paramVars;
-      list<SimVar> stringAlgVars;
-      list<SimVar> stringParamVars;
-      list<SimVar> extObjVars;
-    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                  outputVars, paramVars, stringAlgVars, stringParamVars,
-                  extObjVars))
-      equation
-        stateVars = Util.sort(stateVars, varIndexComparer);
-        derivativeVars = Util.sort(derivativeVars, varIndexComparer);
-        algVars = Util.sort(algVars, varIndexComparer);
-        inputVars = Util.sort(inputVars, varIndexComparer);
-        outputVars = Util.sort(outputVars, varIndexComparer);
-        paramVars = Util.sort(paramVars, varIndexComparer);
-        stringAlgVars = Util.sort(stringAlgVars, varIndexComparer);
-        stringParamVars = Util.sort(stringParamVars, varIndexComparer);
-        extObjVars = Util.sort(extObjVars, varIndexComparer);
-      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                   outputVars, paramVars, stringAlgVars, stringParamVars,
-                   extObjVars);
-  end matchcontinue;
-end sortSimvarsOnIndex;
-
-public function fixInitialThing
-  input SimVars simvarsIn;
-  input list<DAELow.Equation> initialEqs;
-  output SimVars simvarsOut;
-algorithm
-  simvarsOut :=
-  matchcontinue (simvarsIn, initialEqs)
-    local
-      list<SimVar> stateVars;
-      list<SimVar> derivativeVars;
-      list<SimVar> algVars;
-      list<SimVar> inputVars;
-      list<SimVar> outputVars;
-      list<SimVar> paramVars;
-      list<SimVar> stringAlgVars;
-      list<SimVar> stringParamVars;
-      list<SimVar> extObjVars;
-    /* no initial equations so nothing to do */
-    case (_, {})
-      then simvarsIn;
-    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                  outputVars, paramVars, stringAlgVars, stringParamVars,
-                  extObjVars), initialEqs)
-      equation
-        true = Util.boolAndList(Util.listMap(stateVars, simvarFixed));
-        stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initialEqs);
-      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                   outputVars, paramVars, stringAlgVars, stringParamVars,
-                   extObjVars);
-    /* not all were fixed so nothing to do */
-    case (_, _)
-      then simvarsIn;
-  end matchcontinue;
-end fixInitialThing;
-
-protected function simvarFixed
-  input SimVar simvar;
-  output Boolean fixed_;
-algorithm
-  fixed_ :=
-  matchcontinue (simvar)
-    case (SIMVAR(isFixed=fixed_)) then fixed_;
-    case (_) then fail();
-  end matchcontinue;
-end simvarFixed;
-
-protected function nonFixifyIfHasInit
-  input SimVar simvarIn;
-  input list<DAELow.Equation> initialEqs;
-  output SimVar simvarOut;
-algorithm
-  simvarOut :=
-  matchcontinue (simvarIn, initialEqs)
-    local
-      DAE.ComponentRef name;
-      DAE.ComponentRef origName;
-      String comment;
-      Integer index;
-      Boolean isFixed;
-      Exp.Type type_;
-      Boolean isDiscrete;
-      Option<DAE.ComponentRef> arrayCref;
-      list<DAE.ComponentRef> initCrefs;
-      String varNameStr;
-    case (SIMVAR(name, origName, comment, index, isFixed, type_, isDiscrete, arrayCref), initialEqs)
-      equation
-        initCrefs = DAELow.equationsCrefs(initialEqs);
-        (_ :: _) = Util.listSelect1(initCrefs, name, Exp.crefEqual);
-        varNameStr = Exp.printComponentRefStr(origName);
-        Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
-      then SIMVAR(name, origName, comment, index, false, type_, isDiscrete, arrayCref);
-    case (_, _)
-      then simvarIn;
-  end matchcontinue;
-end nonFixifyIfHasInit;
-
-public function varIndexComparer
-  input SimVar lhs;
-  input SimVar rhs;
-  output Boolean res;
-algorithm
-  res :=
-  matchcontinue (lhs, rhs)
-    local
-      Integer lhsIndex;
-      Integer rhsIndex;
-    case (SIMVAR(index=lhsIndex), SIMVAR(index=rhsIndex))
-      then rhsIndex < lhsIndex;
-  end matchcontinue;
-end varIndexComparer;
 
 protected function extractVarsFromList
   input list<DAELow.Var> varList;
@@ -3351,6 +2994,48 @@ algorithm
   end matchcontinue;
 end extractVarFromVar;
 
+protected function derVarFromStateVar
+  input SimVar state;
+  output SimVar deriv;
+algorithm
+  deriv :=
+  matchcontinue (state)
+    local
+      DAE.Ident nameIdent;
+      DAE.ExpType nameIdentType;
+      list<DAE.Subscript> nameSubscriptLst;
+      DAE.Ident origNameIdent;
+      DAE.ExpType origNameIdentType;
+      list<DAE.Subscript> origNameSubscriptLst;
+      String comment;
+      Integer index;
+      Boolean isFixed;
+      Exp.Type type_;
+      Boolean isDiscrete;
+      DAE.ComponentRef newName;
+      DAE.ComponentRef newOrigName;
+      DAE.Ident newNameIdent;
+      DAE.Ident newOrigNameIdent;
+      Option<DAE.ComponentRef> arrayCref;
+    case (SIMVAR(DAE.CREF_IDENT(nameIdent, nameIdentType, nameSubscriptLst),
+                 DAE.CREF_IDENT(origNameIdent, origNameIdentType,
+                                origNameSubscriptLst),
+                 comment, index, isFixed, type_, isDiscrete, arrayCref))
+      equation
+        newNameIdent = DAELow.derivativeNamePrefix +& nameIdent;
+        newName = DAE.CREF_IDENT(newNameIdent, nameIdentType,
+                                 nameSubscriptLst);
+        newOrigNameIdent = changeNameForDerivative(origNameIdent);
+        newOrigName = DAE.CREF_IDENT(newOrigNameIdent, origNameIdentType,
+                                     origNameSubscriptLst);
+        //TODO: transform arraycref?
+        //arrayCref = getArrayCref(...);
+      then
+        SIMVAR(newName, newOrigName, comment, index, isFixed, type_,
+               isDiscrete, arrayCref);
+  end matchcontinue;
+end derVarFromStateVar;
+
 protected function addSimvarIfTrue
   input Boolean condition;
   input SimVar var;
@@ -3366,7 +3051,7 @@ algorithm
   end matchcontinue;
 end addSimvarIfTrue;
 
-public function mergeVars
+protected function mergeVars
   input SimVars vars1;
   input SimVars vars2;
   output SimVars varsResult;
@@ -3410,12 +3095,12 @@ algorithm
   end matchcontinue;
 end mergeVars;
 
-public function reverseVars
-  input SimVars vars;
-  output SimVars varsResult;
+protected function sortSimvarsOnIndex
+  input SimVars unsortedSimvars;
+  output SimVars sortedSimvars;
 algorithm
-  varsResult :=
-  matchcontinue (vars)
+  sortedSimvars :=
+  matchcontinue (unsortedSimvars)
     local
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
@@ -3426,70 +3111,115 @@ algorithm
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
-    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars, outputVars,
-                  paramVars, stringAlgVars, stringParamVars, extObjVars))
+    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                  outputVars, paramVars, stringAlgVars, stringParamVars,
+                  extObjVars))
       equation
-        stateVars = listReverse(stateVars);
-        derivativeVars = listReverse(derivativeVars);
-        algVars = listReverse(algVars);
-        inputVars = listReverse(inputVars);
-        outputVars = listReverse(outputVars);
-        paramVars = listReverse(paramVars);
-        stringAlgVars = listReverse(stringAlgVars);
-        stringParamVars = listReverse(stringParamVars);
-        extObjVars = listReverse(extObjVars);
-      then 
-        SIMVARS(stateVars, derivativeVars, algVars, inputVars, outputVars,
-                paramVars, stringAlgVars, stringParamVars, extObjVars);
-    case (_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"reverseVars failed"});
-      then
-        fail();
+        stateVars = Util.sort(stateVars, varIndexComparer);
+        derivativeVars = Util.sort(derivativeVars, varIndexComparer);
+        algVars = Util.sort(algVars, varIndexComparer);
+        inputVars = Util.sort(inputVars, varIndexComparer);
+        outputVars = Util.sort(outputVars, varIndexComparer);
+        paramVars = Util.sort(paramVars, varIndexComparer);
+        stringAlgVars = Util.sort(stringAlgVars, varIndexComparer);
+        stringParamVars = Util.sort(stringParamVars, varIndexComparer);
+        extObjVars = Util.sort(extObjVars, varIndexComparer);
+      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                   outputVars, paramVars, stringAlgVars, stringParamVars,
+                   extObjVars);
   end matchcontinue;
-end reverseVars;
+end sortSimvarsOnIndex;
 
-protected function derVarFromStateVar
-  input SimVar state;
-  output SimVar deriv;
+protected function varIndexComparer
+  input SimVar lhs;
+  input SimVar rhs;
+  output Boolean res;
 algorithm
-  deriv :=
-  matchcontinue (state)
+  res :=
+  matchcontinue (lhs, rhs)
     local
-      DAE.Ident nameIdent;
-      DAE.ExpType nameIdentType;
-      list<DAE.Subscript> nameSubscriptLst;
-      DAE.Ident origNameIdent;
-      DAE.ExpType origNameIdentType;
-      list<DAE.Subscript> origNameSubscriptLst;
+      Integer lhsIndex;
+      Integer rhsIndex;
+    case (SIMVAR(index=lhsIndex), SIMVAR(index=rhsIndex))
+      then rhsIndex < lhsIndex;
+  end matchcontinue;
+end varIndexComparer;
+
+protected function fixInitialThing
+  input SimVars simvarsIn;
+  input list<DAELow.Equation> initialEqs;
+  output SimVars simvarsOut;
+algorithm
+  simvarsOut :=
+  matchcontinue (simvarsIn, initialEqs)
+    local
+      list<SimVar> stateVars;
+      list<SimVar> derivativeVars;
+      list<SimVar> algVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> paramVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> extObjVars;
+    /* no initial equations so nothing to do */
+    case (_, {})
+      then simvarsIn;
+    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                  outputVars, paramVars, stringAlgVars, stringParamVars,
+                  extObjVars), initialEqs)
+      equation
+        true = Util.boolAndList(Util.listMap(stateVars, simvarFixed));
+        stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initialEqs);
+      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
+                   outputVars, paramVars, stringAlgVars, stringParamVars,
+                   extObjVars);
+    /* not all were fixed so nothing to do */
+    case (_, _)
+      then simvarsIn;
+  end matchcontinue;
+end fixInitialThing;
+
+protected function simvarFixed
+  input SimVar simvar;
+  output Boolean fixed_;
+algorithm
+  fixed_ :=
+  matchcontinue (simvar)
+    case (SIMVAR(isFixed=fixed_)) then fixed_;
+    case (_) then fail();
+  end matchcontinue;
+end simvarFixed;
+
+protected function nonFixifyIfHasInit
+  input SimVar simvarIn;
+  input list<DAELow.Equation> initialEqs;
+  output SimVar simvarOut;
+algorithm
+  simvarOut :=
+  matchcontinue (simvarIn, initialEqs)
+    local
+      DAE.ComponentRef name;
+      DAE.ComponentRef origName;
       String comment;
       Integer index;
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
-      DAE.ComponentRef newName;
-      DAE.ComponentRef newOrigName;
-      DAE.Ident newNameIdent;
-      DAE.Ident newOrigNameIdent;
       Option<DAE.ComponentRef> arrayCref;
-    case (SIMVAR(DAE.CREF_IDENT(nameIdent, nameIdentType, nameSubscriptLst),
-                 DAE.CREF_IDENT(origNameIdent, origNameIdentType,
-                                origNameSubscriptLst),
-                 comment, index, isFixed, type_, isDiscrete, arrayCref))
+      list<DAE.ComponentRef> initCrefs;
+      String varNameStr;
+    case (SIMVAR(name, origName, comment, index, isFixed, type_, isDiscrete, arrayCref), initialEqs)
       equation
-        newNameIdent = DAELow.derivativeNamePrefix +& nameIdent;
-        newName = DAE.CREF_IDENT(newNameIdent, nameIdentType,
-                                 nameSubscriptLst);
-        newOrigNameIdent = changeNameForDerivative(origNameIdent);
-        newOrigName = DAE.CREF_IDENT(newOrigNameIdent, origNameIdentType,
-                                     origNameSubscriptLst);
-        //TODO: transform arraycref?
-        //arrayCref = getArrayCref(...);
-      then
-        SIMVAR(newName, newOrigName, comment, index, isFixed, type_,
-               isDiscrete, arrayCref);
+        initCrefs = DAELow.equationsCrefs(initialEqs);
+        (_ :: _) = Util.listSelect1(initCrefs, name, Exp.crefEqual);
+        varNameStr = Exp.printComponentRefStr(origName);
+        Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
+      then SIMVAR(name, origName, comment, index, false, type_, isDiscrete, arrayCref);
+    case (_, _)
+      then simvarIn;
   end matchcontinue;
-end derVarFromStateVar;
+end nonFixifyIfHasInit;
 
 protected function getArrayCref
   input DAELow.Var var;
@@ -3515,70 +3245,7 @@ algorithm
   end matchcontinue;
 end getArrayCref;
 
-protected function dlowvarToSimvar
-  input DAELow.Var dlowVar;
-  output SimVar simVar;
-algorithm
-  simVar := 
-  matchcontinue (dlowVar)
-    local
-      Exp.ComponentRef cr, origname;
-      DAELow.VarKind kind;
-      DAE.VarDirection dir;
-      list<Exp.Subscript> inst_dims;
-      Integer indx;
-      Option<DAE.VariableAttributes> dae_var_attr;
-      DAE.Flow flowPrefix;
-      DAE.Stream streamPrefix;
-      Option<SCode.Comment> comment;
-      DAELow.Type tp;
-      String orignameStr, commentStr, name;
-      Boolean isFixed;
-      Exp.Type type_;
-      Boolean isDiscrete;
-      Option<DAE.ComponentRef> arrayCref;
-    case ((dlowVar as DAELow.VAR(varName = cr,
-                                 varKind = kind,
-                                 varDirection = dir,
-                                 arryDim = inst_dims,
-                                 index = indx,
-                                 origVarName = origname,
-                                 values = dae_var_attr,
-                                 comment = comment,
-                                 varType = tp,
-                                 flowPrefix = flowPrefix,
-                                 streamPrefix = streamPrefix)))
-    equation
-      //orignameStr = Exp.printComponentRefStr(origname);
-      commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
-      //name = Exp.printComponentRefStr(cr);
-      isFixed = DAELow.varFixed(dlowVar);
-      type_ = DAELow.makeExpType(tp);
-      isDiscrete = isVarDiscrete(tp, kind);
-      arrayCref = getArrayCref(dlowVar);
-    then
-      SIMVAR(cr, origname, commentStr, indx, isFixed, type_, isDiscrete,
-             arrayCref);
-  end matchcontinue;
-end dlowvarToSimvar;
-
-protected function isVarDiscrete 
-  input DAELow.Type tp;
-  input DAELow.VarKind kind;
-  output Boolean res;
-algorithm
-  res :=
-  matchcontinue (tp, kind)
-    case (DAELow.REAL(), DAELow.DISCRETE()) then true;
-    case (_, DAELow.DISCRETE()) then true;
-    case (DAELow.INT(), _) then true;
-    case (DAELow.BOOL(), _) then true;
-    case (DAELow.ENUMERATION(_), _) then true;
-    case (_,_) then false;
-  end matchcontinue;
-end isVarDiscrete;
-
-public function unparseCommentOptionNoAnnotationNoQuote
+protected function unparseCommentOptionNoAnnotationNoQuote
   input Option<SCode.Comment> absynComment;
   output String commentStr;
 algorithm
@@ -3588,108 +3255,6 @@ algorithm
     case (_) then "";
   end matchcontinue;
 end unparseCommentOptionNoAnnotationNoQuote;
-
-/* TODO: Is this correct? */
-public function isVarAlg
-  input DAELow.Var var;
-  output Boolean result;
-algorithm
-  result := matchcontinue (var)
-    local
-      DAELow.VarKind kind;
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
-    /* string variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.STRING()))
-      then false;
-    /* non-string variable */
-    case (DAELow.VAR(varKind = kind))
-      equation
-        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
-                    DAELow.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarAlg;
-
-/* TODO: Is this correct? */
-public function isVarStringAlg
-  input DAELow.Var var;
-  output Boolean result;
-algorithm
-  result := matchcontinue (var)
-    local
-      DAELow.VarKind kind;
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
-    /* string variable */
-    case (DAELow.VAR(varKind = kind,
-                     varType = typeVar as DAELow.STRING()))
-      equation
-        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
-                    DAELow.DUMMY_STATE()};
-        _ = Util.listGetMember(kind, kind_lst);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarStringAlg;
-
-/* TODO: Is this correct? */
-public function isVarParam
-  input DAELow.Var var;
-  output Boolean result;
-algorithm
-  result := matchcontinue (var)
-    local
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
-    /* string variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
-      then false;
-    /* non-string variable */
-    case (var)
-      equation
-        true = DAELow.isParam(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarParam;
-
-/* TODO: Is this correct? */
-public function isVarStringParam
-  input DAELow.Var var;
-  output Boolean result;
-algorithm
-  result := matchcontinue (var)
-    local
-      DAELow.Type typeVar;
-      list<DAELow.VarKind> kind_lst;
-    /* string variable */
-    case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
-      equation
-        true = DAELow.isParam(var);
-      then true;
-    case (_)
-      then false;
-  end matchcontinue;
-end isVarStringParam;
-
-// ***** To rewrite and delete below here *****
-
-public type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression, whenclause index
-
-protected type CFunction = Codegen.CFunction;
-protected constant String TAB="    ";
-
-//protected import RTOpts;
-protected import Codegen;
-//protected import Print;
-protected import ModUtil;
 
 protected function generateHelpVarsForWhenStatements
 	input list<HelpVarInfo> inHelpVarInfo;
@@ -3879,25 +3444,7 @@ algorithm
   end matchcontinue;
 end generateHelpVarsInArrayCondition;
 
-protected function filterNg "function: filterNg
-  This function sets the number of zero crossings to zero if events are disabled
-"
-  input Integer inInteger;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  matchcontinue (inInteger)
-    local Integer ng;
-    case _
-      equation
-        false = useZerocrossing();
-      then
-        0;
-    case ng then ng;
-  end matchcontinue;
-end filterNg;
-
-public function changeNameForDerivative 
+protected function changeNameForDerivative 
 "function changeNameForDerivative
   author: x02lucpo
   helper function to generateVarNamesAndComments.
@@ -4261,91 +3808,6 @@ algorithm
 end addMissingEquations;
 
 
-protected function buildDiscreteVarChanges "
-For all discrete variables in the model, generate code that checks if they have changed and if so generate code
-that add events to the event queue: if (change(<discretevar>)) { AddEvent(c1);...;AddEvent(cn)}
-
-"
-  input DAELow.DAELow daelow;
-  input list<list<Integer>> comps;
-  input Integer[:] ass1;
-  input Integer[:] ass2;
-  input DAELow.IncidenceMatrix m;
-  input DAELow.IncidenceMatrixT mT;
-  output String outString;
-algorithm
-  outString := matchcontinue(daelow,comps,ass1,ass2,m,mT)
-    local String s1,s2;
-      list<Integer> b;
-      list<list<Integer>> blocks;
-      DAELow.Variables v;
-      list<DAELow.Var> vLst;
-    case (daelow as DAELow.DAELOW(orderedVars = v),blocks,ass1,ass2,m,mT)
-      equation
-      vLst = DAELow.varList(v);
-      vLst = Util.listSelect(vLst,DAELow.isVarDiscrete); // select all discrete vars.
-			outString = Util.stringDelimitList(Util.listMap2(vLst, buildDiscreteVarChangesVar,daelow,mT),"\n  ");
-    then outString;
-    case(_,_,_,_,_,_) equation
-      print("buildDiscreteVarChanges failed\n");
-      then fail();
-  end matchcontinue;
-end buildDiscreteVarChanges;
-
-protected function buildDiscreteVarChangesVar "help function to buildDiscreteVarChanges"
-  input DAELow.Var var;
-  input DAELow.DAELow daelow;
-  input DAELow.IncidenceMatrixT mT;
-  output String outString;
-algorithm
-  outString := matchcontinue(var,daelow,mT)
-  local list<String> strLst;
-    Exp.ComponentRef cr;
-    Integer varIndx;
-    list<Integer> eqns;
-    case(var as DAELow.VAR(varName=cr,index=varIndx), daelow,mT) equation
-
-      eqns = mT[varIndx+1]; // eqns continaing var
-      true = crefNotInWhenEquation(cr,daelow,eqns);
-      outString = buildDiscreteVarChangesAddEvent(0,cr);
-
-  		/*strLst = Util.listMap2(eqns,buildDiscreteVarChangesVar2,cr,daelow);
-  		outString = Util.stringDelimitList(strLst,"\n");*/
-
-    then outString;
-
-    case(_,_,_) then "";
-  end matchcontinue;
-end buildDiscreteVarChangesVar;
-
-protected function crefNotInWhenEquation "Returns true if cref is not solved in any of the equations
-given as indices which is a when_equation"
-  input Exp.ComponentRef cr;
-  input DAELow.DAELow daelow;
-  input list<Integer> eqns;
-  output Boolean res;
-algorithm
-  res := matchcontinue(cr,daelow,eqns)
-  local
-    DAELow.EquationArray eqs;
-    Integer e;
-    Exp.ComponentRef cr2;
-    Exp.Exp exp;
-    Boolean b1,b2;
-    case(cr,daelow,{}) then true;
-    case(cr,daelow as DAELow.DAELOW(orderedEqs=eqs),e::eqns) equation
-      DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(_,cr2,exp,_)) = DAELow.equationNth(eqs,intAbs(e)-1);
-      //We can asume the same component refs are solved in any else-branch.
-      b1 = Exp.crefEqual(cr,cr2);
-      b2 = Exp.expContains(exp,DAE.CREF(cr,DAE.ET_OTHER()));
-      true = boolOr(b1,b2);
-    then false;
-    case(cr,daelow,_::eqns) equation
-      res = crefNotInWhenEquation(cr,daelow,eqns);
-    then res;
-  end matchcontinue;
-end crefNotInWhenEquation;
-
 
 protected function buildDiscreteVarChangesVar2 
 "Help relation to buildDiscreteVarChangesVar
@@ -4409,98 +3871,6 @@ algorithm
 	indxStr := intString(indx);
 	str := Util.stringAppendList({"if (change(",crStr,")) { needToIterate=1; }"});
 end buildDiscreteVarChangesAddEvent;
-
-protected function buildWhenConditionChecks
-"function:  buildWhenConditionChecks
-Generates simulation code that checks whether a when condition has become true."
-  input DAELow.DAELow inDAELow          "The lowered DAE";
-  input list<list<Integer>> comps       "The order of the sorted equations";
-  output String outString               "The generated C-code";
-  output list<HelpVarInfo> helpVarList  "List of help variables that were introduced by this function.";
-algorithm
-  (outString,helpVarLst):=
-  matchcontinue (inDAELow,comps)
-    local
-      list<Integer> orderOfEquations,orderOfEquations_1;
-      list<DAELow.Equation> eqnl;
-      Integer n;
-      String res1,res2,res;
-      list<HelpVarInfo> helpVarInfo1,helpVarInfo2,helpVarInfo;
-      DAELow.DAELow dlow;
-      DAELow.EquationArray eqns;
-      list<DAELow.WhenClause> whenClauseList;
-      list<list<Integer>> blocks;
-    case ((dlow as DAELow.DAELOW(orderedEqs = eqns,eventInfo = DAELow.EVENT_INFO(whenClauseLst = whenClauseList))),blocks)
-      equation
-        orderOfEquations = generateEquationOrder(blocks);
-        eqnl = DAELow.equationList(eqns);
-        n = listLength(eqnl);
-        orderOfEquations_1 = addMissingEquations(n, orderOfEquations);
-        // First generate checks for all when equations, in the order of the sorted equations.
-        (res1,helpVarInfo1) = buildWhenConditionChecks4(orderOfEquations_1, eqnl, whenClauseList, 0);
-        n = listLength(helpVarInfo1);
-        // Generate checks also for when clauses without equations but containing reinit statements.
-        (res2,helpVarInfo2) = buildWhenConditionChecks2(whenClauseList, 0, n);
-        res = stringAppend(res1, res2);
-        helpVarInfo = listAppend(helpVarInfo1, helpVarInfo2);
-      then
-        (res,helpVarInfo);
-    case (_,_)
-      equation
-        print("-build_when_condition_checks failed.\n");
-      then
-        fail();
-  end matchcontinue;
-end buildWhenConditionChecks;
-
-protected function generateEventCheckingCode 
-"function:  generateEventCheckingCode"
-  input DAELow.DAELow inDAELow1;
-  input list<list<Integer>> inIntegerLstLst2;
-  input Integer[:] inIntegerArray3;
-  input Integer[:] inIntegerArray4;
-  input DAELow.IncidenceMatrix inIncidenceMatrix5;
-  input DAELow.IncidenceMatrixT inIncidenceMatrixT6;
-  input Absyn.Path inPath7;
-  output String outString "Generated event checking code";
-  output list<HelpVarInfo> helpVarLst "List of introduced help variables";
-algorithm
-  (outString,helpVarLst):=
-  matchcontinue (inDAELow1,inIntegerLstLst2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inPath7)
-    local
-      Boolean usezc;
-      String check_code,check_code_1,res,check_code2,check_code2_1;
-      list<HelpVarInfo> helpVarInfo;
-      DAELow.DAELow dlow;
-      list<list<Integer>> comps;
-      Integer[:] ass1,ass2;
-      list<Integer>[:] m,mt;
-      Absyn.Path class_;
-    case (dlow,comps,ass1,ass2,m,mt,class_)
-      equation
-        usezc = useZerocrossing();
-        // The eventChecking consist of checking if the helpvariables from when equations has changed
-        // and checking if discrete variables in the model has changed.
-        (check_code,helpVarInfo) = buildWhenConditionChecks(dlow, comps);
-        check_code2 = buildDiscreteVarChanges(dlow,comps,ass1,ass2,m,mt);
-        check_code_1 = Util.if_(usezc, check_code, "");
-        check_code2_1 = Util.if_(usezc,check_code2, "");
-        res = Util.stringAppendList(
-          {"int checkForDiscreteVarChanges()\n{\n",
-          "  int needToIterate=0;\n",
-          check_code_1,"  ",check_code2_1,"\n",
-				  "  for (long i = 0; i < localData->nHelpVars; i++) {\n",
-				  "    if (change(localData->helpVars[i])) { needToIterate=1; }\n  }\n",
-          "  return needToIterate;\n","}\n"});
-      then
-        (res,helpVarInfo);
-    case (_,_,_,_,_,_,_)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"generate_event_checking_code failed"});
-      then
-        fail();
-  end matchcontinue;
-end generateEventCheckingCode;
 
 protected function mixedCollectRelations "function: mixedCollectRelations
   author: PA
@@ -4759,63 +4129,6 @@ algorithm
     case (_,_) then false;
   end matchcontinue;
 end isMixedSystem;
-
-protected function hasDiscreteVar "function: hasDiscreteVar
-  author: PA
-
-  Helper function to is_mixed_system. Returns true if var list contains
-  discrete time variable.
-"
-  input list<DAELow.Var> inDAELowVarLst;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inDAELowVarLst)
-    local
-      Exp.ComponentRef cr;
-      Boolean res;
-      DAELow.Var v;
-      list<DAELow.Var> vs;
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.DISCRETE()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varType = DAELow.INT()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varType = DAELow.BOOL()) :: _)) then true;
-    case ((v :: vs))
-      equation
-        res = hasDiscreteVar(vs);
-      then
-        res;
-    case ({}) then false;
-  end matchcontinue;
-end hasDiscreteVar;
-
-protected function hasContinousVar "function: hasContinousVar
-  author: PA
-
-  Helper function to is_mixed_system. Returns true if var list contains
-  discrete time variable.
-"
-  input list<DAELow.Var> inDAELowVarLst;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inDAELowVarLst)
-    local
-      Exp.ComponentRef cr;
-      Boolean res;
-      DAELow.Var v;
-      list<DAELow.Var> vs;
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.VARIABLE()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.STATE()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.DUMMY_DER()) :: _)) then true;
-    case ((DAELow.VAR(varName = cr,varKind = DAELow.DUMMY_STATE()) :: _)) then true;
-    case ((v :: vs))
-      equation
-        res = hasContinousVar(vs);
-      then
-        res;
-    case ({}) then false;
-  end matchcontinue;
-end hasContinousVar;
 
 protected function solveTrivialArrayEquation 
 "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
@@ -5146,58 +4459,6 @@ algorithm
   end matchcontinue;
 end getEquationAndSolvedVar;
 
-protected function isNonState "function: isNonState
-  failes if the given variable kind is state
-"
-  input DAELow.VarKind inVarKind;
-algorithm
-  _:=
-  matchcontinue (inVarKind)
-    case (DAELow.VARIABLE()) then ();
-    case (DAELow.DUMMY_DER()) then ();
-    case (DAELow.DUMMY_STATE()) then ();
-    case (DAELow.DISCRETE()) then ();
-  end matchcontinue;
-end isNonState;
-
-protected function generateExternalObjectIncludes 
-"Generates the library paths for external objects"
-	input DAELow.DAELow daelow;
-  output list<String> includes;
-	output list<String> libs;
-algorithm
-  (includes,libs) := matchcontinue (daelow)
-    case DAELow.DAELOW(extObjClasses = extObjs)
-    local list<list<String>> libsL,includesL;
-      DAELow.ExternalObjectClasses extObjs;
-      equation
-        (includesL,libsL) = Util.listMap_2(extObjs,generateExternalObjectInclude);
-        includes = Util.listListUnion(includesL);
-        libs = Util.listListUnion(libsL);
-      then (includes,libs);
-  end matchcontinue;
-end generateExternalObjectIncludes;
-
-protected function generateExternalObjectInclude 
-"Helper function to generateExteralObjectInclude"
-  input DAELow.ExternalObjectClass extObjCls;
-  output list<String> includes;
-  output list<String> libs;
-algorithm
-  (includes,libs) := matchcontinue(extObjCls)
-    case (DAELow.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
-      											destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann2))})))
-      local Option<Absyn.Annotation> ann1,ann2;
-        list<String> includes1,libs1,includes2,libs2;
-      equation
-        (includes1,libs1) = Codegen.generateExtFunctionIncludes(ann1);
-        (includes2,libs2) = Codegen.generateExtFunctionIncludes(ann2);
-        includes = Util.listListUnion({includes1,includes2});
-        libs = Util.listListUnion({libs1,libs2});
-      then (includes,libs);
-  end matchcontinue;
-end generateExternalObjectInclude;
-
 protected function isPartOfMixedSystem 
 "function: isPartOfMixedSystem
   Helper function to generateZeroCrossing2, returns true if any equation 
@@ -5266,8 +4527,7 @@ algorithm
 end getZcMixedSystem;
 
 protected function splitOutputBlocks 
-"function splitOutputBlocks
-  Help function to generateComputeOutput, splits the output blocks into two 
+"Splits the output blocks into two 
   parts, one for continous output variables and one for discrete output values. 
   This must be done to ensure that discrete variables are calculated before and 
   after a discrete event."
@@ -5294,7 +4554,6 @@ algorithm
 end splitOutputBlocks;
 
 protected function splitOutputBlocks2 
-"Help function to splitOutputBlocks"
   input DAELow.Variables discVars;
   input DAELow.Variables vars;
   input DAELow.Variables knvars;
@@ -5361,51 +4620,7 @@ algorithm
   end matchcontinue;
 end blockSolvesDiscrete;
 
-// For compiling function references - stefan
-protected function getCrefFromExp
-"function getCrefFromExp
-  Assume input Exp is CREF, return the ComponentRef
-  fail otherwise"
-  input Exp.Exp e;
-  output Absyn.ComponentRef c;
-algorithm
-  c :=
-  matchcontinue(e)
-    local
-      Exp.ComponentRef crefe;
-      Absyn.ComponentRef crefa;
-    case(DAE.CREF(componentRef = crefe))
-      equation
-        crefa = Exp.unelabCref(crefe);
-      then
-        crefa;
-    case(e) 
-      equation
-        print("SimCodegen.getCrefFromExp failed: input was not of DAE.CREF type");
-      then 
-        fail();
-  end matchcontinue;
-end getCrefFromExp;
-
-public function getCalledFunctions 
-"function: getCalledFunctions
-  Goes through the DAELow structure, finds all function 
-  calls and returns them in a list. Removes duplicates."
-  input DAE.DAElist dae;
-  input DAELow.DAELow dlow;
-  output list<Absyn.Path> res;
-  list<Exp.Exp> explist,fcallexps,fcallexps_1,fcallexps_2;
-  list<Absyn.Path> calledfuncs;
-algorithm
-  explist := DAELow.getAllExps(dlow);
-  fcallexps := Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
-  fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
-  fcallexps_2 := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
-  calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
-  res := removeDuplicatePaths(calledfuncs);
-end getCalledFunctions;
-
-public function getCalledFunctionsInFunctions 
+protected function getCalledFunctionsInFunctions 
 "function: getCalledFunctionsInFunctions
   Goes through the given DAE, finds the given functions and collects 
   the names of the functions called from within those functions"
@@ -5428,7 +4643,7 @@ algorithm
   end matchcontinue;
 end getCalledFunctionsInFunctions;
 
-public function getCalledFunctionsInFunction 
+protected function getCalledFunctionsInFunction 
 "function: getCalledFunctionsInFunction
   Goes through the given DAE, finds the given function and collects 
   the names of the functions called from within those functions"
@@ -5512,27 +4727,6 @@ algorithm
   end matchcontinue;
 end getCalledFunctionsInFunction;
 
-protected function isNotBuiltinCall 
-"function: isNotBuiltinCall
-  return true if the given DAE.CALL is a call but not 
-  to a builtin function. checks the builtin flag in DAE.CALL"
-  input Exp.Exp inExp;
-  output Boolean outBoolean;
-algorithm
-  outBoolean:=
-  matchcontinue (inExp)
-    local
-      Boolean res,builtin;
-      Exp.Exp e;
-    case DAE.CALL(builtin = builtin)
-      equation
-        res = boolNot(builtin);
-      then
-        res;
-    case e then false;
-  end matchcontinue;
-end isNotBuiltinCall;
-
 protected function getCallPath 
 "function: getCallPath
   Retrive the function name from a CALL expression."
@@ -5546,7 +4740,7 @@ algorithm
   end matchcontinue;
 end getCallPath;
 
-public function getFunctionRefVarPath 
+protected function getFunctionRefVarPath 
 "function: getFunctionRefVarFunctionPath
   Retrive the function name from a function variable."
   input DAE.Element inElem;
@@ -5574,8 +4768,7 @@ algorithm
 end getFunctionElementsList;
 
 protected function removeDuplicatePaths 
-"function: removeDuplicatePaths
-  Removed duplicate Paths in a list of Path."
+"Remove duplicate Paths in a list of Paths."
   input list<Absyn.Path> inAbsynPathLst;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
@@ -5595,8 +4788,6 @@ algorithm
 end removeDuplicatePaths;
 
 protected function removePathFromList 
-"function: removePathFromList
-  Helper function to removeDuplicatePaths."
   input list<Absyn.Path> inAbsynPathLst;
   input Absyn.Path inPath;
   output list<Absyn.Path> outAbsynPathLst;
@@ -5621,14 +4812,6 @@ algorithm
         (first :: res);
   end matchcontinue;
 end removePathFromList;
-
-protected function useZerocrossing
-  output Boolean res_1;
-  Boolean res,res_1;
-algorithm
-  res := RTOpts.debugFlag("noevents");
-  res_1 := boolNot(res);
-end useZerocrossing;
 
 protected function generateEquationOrder
   input list<list<Integer>> inIntegerLstLst;
@@ -5659,6 +4842,374 @@ algorithm
   end matchcontinue;
 end generateEquationOrder;
 
-// ********** END COPY FROM SIMCODEGEN MODULE **********
+protected function isVarQ 
+"Succeeds if inElement is a variable or constant that is not input."
+  input DAE.Element inElement;
+algorithm
+  _ :=
+  matchcontinue (inElement)
+    local
+      DAE.VarKind vk;
+      DAE.VarDirection vd;
+    case DAE.VAR(kind=vk, direction=vd)
+      equation
+        isVarVarOrConstant(vk);
+        isDirectionNotInput(vd);
+      then ();
+  end matchcontinue;
+end isVarQ;
+
+protected function isVarVarOrConstant 
+  input DAE.VarKind inVarKind;
+algorithm
+  _ :=
+  matchcontinue (inVarKind)
+    case DAE.VARIABLE() then ();
+    case DAE.PARAM() then ();
+  end matchcontinue;
+end isVarVarOrConstant;
+
+protected function isDirectionNotInput
+  input DAE.VarDirection inVarDirection;
+algorithm
+  _ :=
+  matchcontinue (inVarDirection)
+    case DAE.OUTPUT() then ();
+    case DAE.BIDIR() then ();
+  end matchcontinue;
+end isDirectionNotInput;
+
+protected function filterNg
+"Sets the number of zero crossings to zero if events are disabled."
+  input Integer inInteger;
+  output Integer outInteger;
+algorithm
+  outInteger :=
+  matchcontinue (inInteger)
+    local
+      Integer ng;
+    case _
+      equation
+        false = useZerocrossing();
+      then
+        0;
+    case ng
+      then ng;
+  end matchcontinue;
+end filterNg;
+
+protected function useZerocrossing
+  output Boolean res;
+  Boolean flagSet;
+algorithm
+  flagSet := RTOpts.debugFlag("noevents");
+  res := boolNot(flagSet);
+end useZerocrossing;
+
+protected function isNonState
+"Fails if the given variable kind is state."
+  input DAELow.VarKind inVarKind;
+algorithm
+  _ :=
+  matchcontinue (inVarKind)
+    case (DAELow.VARIABLE()) then ();
+    case (DAELow.DUMMY_DER()) then ();
+    case (DAELow.DUMMY_STATE()) then ();
+    case (DAELow.DISCRETE()) then ();
+  end matchcontinue;
+end isNonState;
+
+protected function hasDiscreteVar
+"Returns true if var list contains a discrete time variable."
+  input list<DAELow.Var> inDAELowVarLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean :=
+  matchcontinue (inDAELowVarLst)
+    local
+      Boolean res;
+      DAELow.Var v;
+      list<DAELow.Var> vs;
+    case ((DAELow.VAR(varKind=DAELow.DISCRETE()) :: _)) then true;
+    case ((DAELow.VAR(varType=DAELow.INT()) :: _)) then true;
+    case ((DAELow.VAR(varType=DAELow.BOOL()) :: _)) then true;
+    case ((v :: vs))
+      equation
+        res = hasDiscreteVar(vs);
+      then
+        res;
+    case ({}) then false;
+  end matchcontinue;
+end hasDiscreteVar;
+
+protected function hasContinousVar
+"Returns true if var list contains a continous time variable."
+  input list<DAELow.Var> inDAELowVarLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean :=
+  matchcontinue (inDAELowVarLst)
+    local
+      Boolean res;
+      DAELow.Var v;
+      list<DAELow.Var> vs;
+    case ((DAELow.VAR(varKind=DAELow.VARIABLE()) :: _)) then true;
+    case ((DAELow.VAR(varKind=DAELow.STATE()) :: _)) then true;
+    case ((DAELow.VAR(varKind=DAELow.DUMMY_DER()) :: _)) then true;
+    case ((DAELow.VAR(varKind=DAELow.DUMMY_STATE()) :: _)) then true;
+    case ((v :: vs))
+      equation
+        res = hasContinousVar(vs);
+      then
+        res;
+    case ({}) then false;
+  end matchcontinue;
+end hasContinousVar;
+
+protected function getCrefFromExp
+"Assume input Exp is CREF and return the ComponentRef, fail otherwise."
+  input Exp.Exp e;
+  output Absyn.ComponentRef c;
+algorithm
+  c :=
+  matchcontinue(e)
+    local
+      Exp.ComponentRef crefe;
+      Absyn.ComponentRef crefa;
+    case(DAE.CREF(componentRef = crefe))
+      equation
+        crefa = Exp.unelabCref(crefe);
+      then
+        crefa;
+    case(e) 
+      equation
+        print("SimCode.getCrefFromExp failed: input was not of type DAE.CREF");
+      then 
+        fail();
+  end matchcontinue;
+end getCrefFromExp;
+
+protected function isVarDiscrete 
+  input DAELow.Type tp;
+  input DAELow.VarKind kind;
+  output Boolean res;
+algorithm
+  res :=
+  matchcontinue (tp, kind)
+    case (DAELow.REAL(), DAELow.DISCRETE()) then true;
+    case (_, DAELow.DISCRETE()) then true;
+    case (DAELow.INT(), _) then true;
+    case (DAELow.BOOL(), _) then true;
+    case (DAELow.ENUMERATION(_), _) then true;
+    case (_,_) then false;
+  end matchcontinue;
+end isVarDiscrete;
+
+/* TODO: Is this correct? */
+protected function isVarAlg
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.VarKind kind;
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* string variable */
+    case (DAELow.VAR(varKind = kind,
+                     varType = typeVar as DAELow.STRING()))
+      then false;
+    /* non-string variable */
+    case (DAELow.VAR(varKind = kind))
+      equation
+        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
+                    DAELow.DUMMY_STATE()};
+        _ = Util.listGetMember(kind, kind_lst);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarAlg;
+
+/* TODO: Is this correct? */
+protected function isVarStringAlg
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.VarKind kind;
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* string variable */
+    case (DAELow.VAR(varKind = kind,
+                     varType = typeVar as DAELow.STRING()))
+      equation
+        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
+                    DAELow.DUMMY_STATE()};
+        _ = Util.listGetMember(kind, kind_lst);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarStringAlg;
+
+/* TODO: Is this correct? */
+protected function isVarParam
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* string variable */
+    case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
+      then false;
+    /* non-string variable */
+    case (var)
+      equation
+        true = DAELow.isParam(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarParam;
+
+/* TODO: Is this correct? */
+protected function isVarStringParam
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* string variable */
+    case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
+      equation
+        true = DAELow.isParam(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarStringParam;
+
+protected function indexSubscriptToExp
+  input DAE.Subscript subscript;
+  output DAE.Exp exp_;
+algorithm
+  exp_ :=
+  matchcontinue (subscript)
+    case (DAE.INDEX(exp_)) then exp_;
+    case (_) then DAE.ICONST(99); // TODO: Why do we end up here?
+  end matchcontinue;
+end indexSubscriptToExp;
+
+protected function isNotBuiltinCall 
+"Return true if the given DAE.CALL is a call but not to a builtin function."
+  input Exp.Exp inExp;
+  output Boolean outBoolean;
+algorithm
+  outBoolean :=
+  matchcontinue (inExp)
+    local
+      Boolean res, builtin;
+    case DAE.CALL(builtin=builtin)
+      equation
+        res = boolNot(builtin);
+      then
+        res;
+    case inExp then false;
+  end matchcontinue;
+end isNotBuiltinCall;
+
+protected function typesVar
+  input Types.Var inTypesVar;
+  output Variable outVar;
+algorithm
+  outVar :=
+  matchcontinue(inTypesVar)
+    local
+      String name;
+      Types.Type typesType;
+      Type expType;
+    case (DAE.TYPES_VAR(name=name, type_=typesType))
+      equation
+        expType = Types.elabType(typesType);
+      then VARIABLE(DAE.CREF_IDENT(name, expType, {}), expType, NONE, {});
+  end matchcontinue;
+end typesVar;
+
+protected function dlowvarToSimvar
+  input DAELow.Var dlowVar;
+  output SimVar simVar;
+algorithm
+  simVar := 
+  matchcontinue (dlowVar)
+    local
+      Exp.ComponentRef cr, origname;
+      DAELow.VarKind kind;
+      DAE.VarDirection dir;
+      list<Exp.Subscript> inst_dims;
+      Integer indx;
+      Option<DAE.VariableAttributes> dae_var_attr;
+      DAE.Flow flowPrefix;
+      DAE.Stream streamPrefix;
+      Option<SCode.Comment> comment;
+      DAELow.Type tp;
+      String orignameStr, commentStr, name;
+      Boolean isFixed;
+      Exp.Type type_;
+      Boolean isDiscrete;
+      Option<DAE.ComponentRef> arrayCref;
+    case ((dlowVar as DAELow.VAR(varName = cr,
+                                 varKind = kind,
+                                 varDirection = dir,
+                                 arryDim = inst_dims,
+                                 index = indx,
+                                 origVarName = origname,
+                                 values = dae_var_attr,
+                                 comment = comment,
+                                 varType = tp,
+                                 flowPrefix = flowPrefix,
+                                 streamPrefix = streamPrefix)))
+    equation
+      commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
+      isFixed = DAELow.varFixed(dlowVar);
+      type_ = DAELow.makeExpType(tp);
+      isDiscrete = isVarDiscrete(tp, kind);
+      arrayCref = getArrayCref(dlowVar);
+    then
+      SIMVAR(cr, origname, commentStr, indx, isFixed, type_, isDiscrete,
+             arrayCref);
+  end matchcontinue;
+end dlowvarToSimvar;
+
+protected function subsToScalar
+"Returns true if subscript results applied to variable or expression results in
+scalar expression."
+  input list<DAE.Subscript> inExpSubscriptLst;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inExpSubscriptLst)
+    local
+      Boolean b;
+      list<DAE.Subscript> r;
+    case {} then true;
+    case (DAE.SLICE(exp = _) :: _) then false;
+    case (DAE.WHOLEDIM() :: _) then false;
+    case (DAE.INDEX(exp = _) :: r)
+      equation
+        b = subsToScalar(r);
+      then
+        b;
+  end matchcontinue;
+end subsToScalar;
 
 end SimCode;

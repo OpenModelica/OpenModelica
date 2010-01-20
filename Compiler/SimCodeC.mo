@@ -5210,19 +5210,6 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           SimCode.SES_NOT_IMPLEMENTED(msg = i_msg),
-           _,
-           i_varDecls )
-      local
-        String i_msg;
-        String ret_0;
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("SES_NOT_IMPLEMENTED_"));
-        ret_0 = System.stringReplace(i_msg, " ", "_");
-        txt = Tpl.writeStr(txt, ret_0);
-      then (txt, i_varDecls);
-
-    case ( txt,
            _,
            _,
            i_varDecls )
@@ -5453,7 +5440,7 @@ end subscriptTpl;
 
 public function dotPath
   input Tpl.Text in_txt;
-  input SimCode.Path in_i_it;
+  input Absyn.Path in_i_it;
 
   output Tpl.Text out_txt;
 algorithm
@@ -5497,7 +5484,7 @@ end dotPath;
 
 public function underscorePath
   input Tpl.Text in_txt;
-  input SimCode.Path in_i_it;
+  input Absyn.Path in_i_it;
 
   output Tpl.Text out_txt;
 algorithm
@@ -5690,8 +5677,8 @@ algorithm
            SimCode.FUNCTION(recordDecls = i_recordDecls, name = i_name, functionArguments = i_functionArguments, outVars = i_outVars) )
       local
         SimCode.Variables i_outVars;
-        SimCode.FunctionArguments i_functionArguments;
-        SimCode.Path i_name;
+        list<SimCode.Variable> i_functionArguments;
+        Absyn.Path i_name;
         list<SimCode.RecordDeclaration> i_recordDecls;
         Tpl.Text txt_0;
       equation
@@ -5708,7 +5695,7 @@ algorithm
       local
         list<SimCode.Variable> i_outVars;
         list<SimCode.Variable> i_funArgs;
-        SimCode.Path i_name;
+        Absyn.Path i_name;
         SimCode.Function i_it;
         Tpl.Text txt_0;
       equation
@@ -5864,7 +5851,7 @@ algorithm
     case ( txt,
            SimCode.RECORD_DECL_FULL(name = i_name, variables = i_variables, defPath = i_defPath) )
       local
-        SimCode.Path i_defPath;
+        Absyn.Path i_defPath;
         SimCode.Variables i_variables;
         SimCode.Ident i_name;
         Tpl.Text txt_2;
@@ -6579,7 +6566,7 @@ end functionBodies;
 
 protected function lm_157
   input Tpl.Text in_txt;
-  input SimCode.VariableDeclarations in_items;
+  input list<SimCode.Variable> in_items;
   input Tpl.Text in_i_varInits;
   input Tpl.Text in_i_varDecls;
 
@@ -6605,7 +6592,7 @@ algorithm
            i_varInits,
            i_varDecls )
       local
-        SimCode.VariableDeclarations rest;
+        list<SimCode.Variable> rest;
         SimCode.Variable i_it;
         Integer i_i1;
       equation
@@ -6620,7 +6607,7 @@ algorithm
            i_varInits,
            i_varDecls )
       local
-        SimCode.VariableDeclarations rest;
+        list<SimCode.Variable> rest;
       equation
         (txt, i_varInits, i_varDecls) = lm_157(txt, rest, i_varInits, i_varDecls);
       then (txt, i_varInits, i_varDecls);
@@ -6629,7 +6616,7 @@ end lm_157;
 
 protected function lm_158
   input Tpl.Text in_txt;
-  input SimCode.FunctionBody in_items;
+  input list<SimCode.Statement> in_items;
   input Tpl.Text in_i_varDecls;
 
   output Tpl.Text out_txt;
@@ -6650,7 +6637,7 @@ algorithm
            i_stmt :: rest,
            i_varDecls )
       local
-        SimCode.FunctionBody rest;
+        list<SimCode.Statement> rest;
         SimCode.Statement i_stmt;
       equation
         (txt, i_varDecls) = funStatement(txt, i_stmt, i_varDecls);
@@ -6662,7 +6649,7 @@ algorithm
            _ :: rest,
            i_varDecls )
       local
-        SimCode.FunctionBody rest;
+        list<SimCode.Statement> rest;
       equation
         (txt, i_varDecls) = lm_158(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -6726,7 +6713,7 @@ end lm_159;
 
 protected function lm_160
   input Tpl.Text in_txt;
-  input SimCode.FunctionArguments in_items;
+  input list<SimCode.Variable> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -6742,7 +6729,7 @@ algorithm
     case ( txt,
            SimCode.VARIABLE(ty = i_ty, name = i_name) :: rest )
       local
-        SimCode.FunctionArguments rest;
+        list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
         SimCode.Type i_ty;
       equation
@@ -6756,7 +6743,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        SimCode.FunctionArguments rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_160(txt, rest);
       then txt;
@@ -6866,11 +6853,11 @@ algorithm
     case ( txt,
            SimCode.FUNCTION(name = i_name, variableDeclarations = i_variableDeclarations, body = i_body, outVars = i_outVars, functionArguments = i_functionArguments) )
       local
-        SimCode.FunctionArguments i_functionArguments;
+        list<SimCode.Variable> i_functionArguments;
         SimCode.Variables i_outVars;
-        SimCode.FunctionBody i_body;
-        SimCode.VariableDeclarations i_variableDeclarations;
-        SimCode.Path i_name;
+        list<SimCode.Statement> i_body;
+        list<SimCode.Variable> i_variableDeclarations;
+        Absyn.Path i_name;
         Tpl.Text i_outVarsStr;
         Tpl.Text i_bodyPart;
         Tpl.Text i_foo;
@@ -6945,7 +6932,7 @@ algorithm
       local
         list<SimCode.Variable> i_funArgs;
         list<SimCode.Variable> i_outVars;
-        SimCode.Path i_name;
+        Absyn.Path i_name;
         SimCode.Function i_fn;
         Tpl.Text i_foo;
         Tpl.Text i_callPart;
@@ -7607,7 +7594,7 @@ algorithm
         SimCode.Ident i_extName;
         SimCode.SimExtArg i_extReturn;
         list<SimCode.SimExtArg> i_extArgs;
-        SimCode.Path i_name;
+        Absyn.Path i_name;
         Tpl.Text i_returnAssign;
         Tpl.Text i_args;
         Tpl.Text i_fname;
@@ -8207,15 +8194,10 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           SimCode.BLOCK(variableDeclarations = _),
+           _,
            i_varDecls )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/* not implemented fun statement */"));
-      then (txt, i_varDecls);
-
-    case ( txt,
-           _,
-           i_varDecls )
       then (txt, i_varDecls);
   end matchcontinue;
 end funStatement;
