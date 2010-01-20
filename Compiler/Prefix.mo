@@ -191,6 +191,52 @@ algorithm
   end matchcontinue;
 end prefixLast;
 
+public function prefixStripLast
+"@author: adrpo
+ remove the last prefix from the component prefix"
+  input Prefix inPrefix;
+  output Prefix outPrefix;
+algorithm 
+  outPrefix := matchcontinue (inPrefix)
+    local
+      ClassPrefix cp;
+      ComponentPrefix compPre;
+    // we can't remove what it isn't there!
+    case (NOPRE()) then NOPRE();
+    // if there isn't any next prefix, return NOPRE!
+    case (PREFIX(compPre,cp))
+      equation
+         compPre = compPreStripLast(compPre);
+      then PREFIX(compPre,cp);
+  end matchcontinue;
+end prefixStripLast;
+
+protected function compPreStripLast
+"@author: adrpo
+ remove the last prefix from the component prefix"
+  input ComponentPrefix inCompPrefix;
+  output ComponentPrefix outCompPrefix;
+algorithm
+  outCompPrefix := matchcontinue(inCompPrefix)
+    local
+      String p;
+      list<Integer> subs;
+      ComponentPrefix next;
+      
+    // nothing to remove!
+    case NOCOMPPRE() then NOCOMPPRE();
+    // the last is already nothing
+    case PRE(prefix = p, subscripts = subs, next = NOCOMPPRE())
+    then NOCOMPPRE();
+    // the last is already nothing
+    case PRE(prefix = p, subscripts = subs, next = next)
+      equation
+        next = compPreStripLast(next);
+      then 
+        PRE(p, subs, next);      
+   end matchcontinue;
+end compPreStripLast;
+
 public function prefixPath "function: prefixPath
  
   Prefix a `Path\' variable by adding the supplied prefix to it and
