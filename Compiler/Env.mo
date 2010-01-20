@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2009, Linköpings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *
@@ -116,13 +116,13 @@ type CSetsType = tuple<list<DAE.ComponentRef>,DAE.ComponentRef>;
 public 
 uniontype Frame
   record FRAME 
-    Option<Ident> optName           "Optional class name";
-    AvlTree       clsAndVars        "List of uniquely named classes and variables";
-    AvlTree       types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
-    list<Item>    imports           "list of unnamed items (imports)";
-    list<Frame>   inherited         "list of frames for inherited elements";
-    CSetsType     connectionSet     "current connection set crefs";
-    Boolean       isEncapsulated    "encapsulated bool=true means that FRAME is created due to encapsulated class";
+    Option<Ident>       optName           "Optional class name";
+    AvlTree             clsAndVars        "List of uniquely named classes and variables";
+    AvlTree             types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
+    list<Item>          imports           "list of unnamed items (imports)";
+    list<Frame>         inherited         "list of frames for inherited elements";
+    CSetsType           connectionSet     "current connection set crefs";
+    Boolean             isEncapsulated    "encapsulated bool=true means that FRAME is created due to encapsulated class";
     list<SCode.Element> defineUnits "list of units defined in the frame";
   end FRAME;
 end Frame;
@@ -142,6 +142,22 @@ and finally instantiated to produce the DAE. These three states are indicated by
                   between typed variables without DAE to know when to skip multiply declared dae elements"
   end VAR_DAE;                  
 end InstStatus;
+
+/*
+public 
+uniontype InstantiatedVar
+  record INSTANTIATED_VAR
+    Env.Cache outCache;
+    Env outEnv;
+    InstanceHierarchy outIH;
+    UnitAbsyn.InstStore outStore;
+    list<DAE.Element> outDAEElementLst;
+    Connect.Sets outSets;
+    DAE.Type outType;
+    ConnectionGraph.ConnectionGraph outGraph;
+  end INSTANTIATED_VAR;  
+end InstantiatedVar;
+*/
 
 public 
 uniontype Item
@@ -225,18 +241,16 @@ algorithm b := matchcontinue(is)
 end isTyped;
 
 public function openScope "function: openScope
- 
   Opening a new scope in the environment means adding a new frame on
   top of the stack of frames. If the scope is not the top scope a classname
   of the scope should be provided such that a name for the scope can be
-  derived, see name_scope."
+  derived, see nameScope."
   input Env inEnv;
   input Boolean inBoolean;
   input Option<Ident> inIdentOption;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,inBoolean,inIdentOption)
+  outEnv := matchcontinue (inEnv,inBoolean,inIdentOption)
     local
       Frame frame;
       Env env_1,env;
@@ -250,9 +264,9 @@ algorithm
         env_1;
     case (env,encflag,NONE)
       equation 
-        frame = newFrame(encflag);
+        frame = newFrame(encflag); 
       then
-        (frame :: env);
+        frame :: env;
   end matchcontinue;
 end openScope;
 
@@ -272,8 +286,7 @@ protected function nameScope
   input Ident inIdent;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,inIdent)
+  outEnv := matchcontinue (inEnv,inIdent)
     local
       AvlTree httypes;
       AvlTree ht;
@@ -283,6 +296,7 @@ algorithm
       Boolean encflag;
       Ident id;
       list<SCode.Element> defineUnits; 
+      
     case ((FRAME(_,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: res),id) 
     then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: res); 
   end matchcontinue;
@@ -303,20 +317,17 @@ algorithm
 end stripForLoopScope;
 
 public function getScopeName "function: getScopeName
- Returns the name of a scope, if no name exist, the function fails.
-"
+ Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
   output Ident name;
 algorithm 
-  name:=
-  matchcontinue (inEnv)
+  name:= matchcontinue (inEnv)
     case ((FRAME(optName = SOME(name))::_)) then (name); 
   end matchcontinue;
 end getScopeName;
 
 public function getScopeNames "function: getScopeName
- Returns the name of a scope, if no name exist, the function fails.
-"
+ Returns the name of a scope, if no name exist, the function fails."
   input Env inEnv;
   output list<Ident> names;
 algorithm names := matchcontinue (inEnv)
@@ -349,9 +360,11 @@ algorithm
     tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
     Boolean enc; 
     list<SCode.Element> defineUnits;
-    case(FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs,classEnv) equation
-      clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
-    then FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs;
+    
+    case(FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs,classEnv) 
+      equation
+        clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
+      then FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs;
   end matchcontinue;
 end updateEnvClasses;
 
@@ -361,24 +374,26 @@ protected function updateEnvClassesInTree "Help function to updateEnvClasses"
   output AvlTree outTree;
 algorithm
   outTree := matchcontinue(tree,classEnv)  
-  local SCode.Class cl;
-    Option<AvlTree> l,r;
-    AvlKey k;
-    Env env;
-    Item item;
-    Integer h;
-    /* Classes */  
+    local 
+      SCode.Class cl;
+      Option<AvlTree> l,r;
+      AvlKey k;
+      Env env;
+      Item item;
+      Integer h;
+   // Classes  
    case(AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,env))),h,l,r),classEnv) equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);     
    then AVLTREENODE(SOME(AVLTREEVALUE(k,CLASS(cl,classEnv))),h,l,r);
-
-     /* Other items */
+   
+   // Other items
    case(AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r),classEnv) equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);     
    then AVLTREENODE(SOME(AVLTREEVALUE(k,item)),h,l,r);
-     
+   
+   // nothing  
    case(AVLTREENODE(NONE,h,l,r),classEnv) equation
       l = updateEnvClassesInTreeOpt(l,classEnv);
       r = updateEnvClassesInTreeOpt(r,classEnv);     
@@ -401,15 +416,12 @@ algorithm
 end updateEnvClassesInTreeOpt;  
 
 public function extendFrameC "function: extendFrameC
- 
-  This function adds a class definition to the environment.
-"
+  This function adds a class definition to the environment."
   input Env inEnv;
   input SCode.Class inClass;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,inClass)
+  outEnv := matchcontinue (inEnv,inClass)
     local
       AvlTree httypes;
       AvlTree ht,ht_1;
@@ -421,11 +433,13 @@ algorithm
       SCode.Class c;
       Ident n;
       list<SCode.Element> defineUnits;
+
     case ((env as (FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs)),(c as SCode.CLASS(name = n)))
       equation 
         (ht_1) = avlTreeAdd(ht, n, CLASS(c,env));
       then
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
+
     case (_,_)
       equation 
         print("extend_frame_c FAILED\n");
@@ -435,15 +449,12 @@ algorithm
 end extendFrameC;
 
 public function extendFrameClasses "function: extendFrameClasses
- 
-  Adds all clases in a Program to the environment.
-"
+  Adds all clases in a Program to the environment."
   input Env inEnv;
   input SCode.Program inProgram;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,inProgram)
+  outEnv := matchcontinue (inEnv,inProgram)
     local
       Env env,env_1,env_2;
       SCode.Class c;
@@ -459,19 +470,15 @@ algorithm
 end extendFrameClasses;
 
 public function extendFrameV "function: extendFrameV
- 
-  This function adds a component to the environment.
-"
+  This function adds a component to the environment."
   input Env inEnv1;
   input DAE.Var inVar2;
   input Option<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementTypesModOption3;
   input InstStatus instStatus;
   input Env inEnv5;
   output Env outEnv;
-
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv1,inVar2,inTplSCodeElementTypesModOption3,instStatus,inEnv5)
+  outEnv := matchcontinue (inEnv1,inVar2,inTplSCodeElementTypesModOption3,instStatus,inEnv5)
     local
       AvlTree httypes;
       AvlTree ht,ht_1;
@@ -485,6 +492,7 @@ algorithm
       Ident n;
       Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
+      
     case ((FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
         //failure((_)= avlTreeGet(ht, n)); 
@@ -492,7 +500,7 @@ algorithm
       then
         (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
 
-        // Variable already added, perhaps from baseclass
+    // Variable already added, perhaps from baseclass
     case (remember as (FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),
           (v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */ 
       equation 
@@ -503,19 +511,16 @@ algorithm
 end extendFrameV;
 
 public function updateFrameV "function: updateFrameV
- 
   This function updates a component already added to the environment, but 
   that prior to the update did not have any binding. I.e this function is
-  called in the second stage of instantiation with declare before use.
-"
+  called in the second stage of instantiation with declare before use."
   input Env inEnv1;
   input DAE.Var inVar2;
   input InstStatus instStatus;
   input Env inEnv4;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv1,inVar2,instStatus,inEnv4)
+  outEnv := matchcontinue (inEnv1,inVar2,instStatus,inEnv4)
     local
       Boolean encflag;
       InstStatus i;
@@ -529,6 +534,7 @@ algorithm
       DAE.Var v;
       Ident n,id;
       list<SCode.Element> defineUnits;
+      
     case ({},_,i,_) then {};  /* fully instantiated env of component */ 
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
       equation 
@@ -562,20 +568,17 @@ algorithm
 end updateFrameV;
 
 public function extendFrameT "function: extendFrameT
- 
   This function adds a type to the environment.  Types in the
   environment are used for looking up constants etc. inside class
   definitions, such as packages.  For each type in the environment,
   there is a class definition with the same name in the
-  environment.
-"
+  environment."
   input Env inEnv;
   input Ident inIdent;
   input DAE.Type inType;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,inIdent,inType)
+  outEnv := matchcontinue (inEnv,inIdent,inType)
     local
       list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       AvlTree httypes_1,httypes;
@@ -588,6 +591,7 @@ algorithm
       Ident n;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<SCode.Element> defineUnits;
+      
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),n,t)
       equation 
         TYPE(tps) = avlTreeGet(httypes, n) "Other types with that name allready exist, add this type as well" ;
@@ -603,16 +607,13 @@ algorithm
   end matchcontinue;
 end extendFrameT;
 
-public function extendFrameI "function: extends_frame_i
- 
-  Adds an import statement to the environment.
-"
+public function extendFrameI "function: extendsFrameI
+  Adds an import statement to the environment."
   input Env inEnv;
   input Absyn.Import inImport;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,inImport)
+  outEnv := matchcontinue (inEnv,inImport)
     local
       Option<Ident> sid;
       AvlTree httypes;
@@ -624,24 +625,23 @@ algorithm
       Absyn.Import imp;
       Env env;
       list<SCode.Element> defineUnits;
+      
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),imp) 
       equation
         false = memberImportList(imps,imp);
     then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),bcframes,crs,encflag,defineUnits) :: fs);
-      case (env,imp) then env;
+
+    case (env,imp) then env;
   end matchcontinue;
 end extendFrameI;
 
-public function extendFrameDefunit "
- 
-  Adds a defineunit to the environment.
-"
+public function extendFrameDefunit " 
+  Adds a defineunit to the environment."
   input Env inEnv;
   input SCode.Element defunit;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv,defunit)
+  outEnv := matchcontinue (inEnv,defunit)
     local
       Option<Ident> sid;
       AvlTree httypes;
@@ -652,6 +652,7 @@ algorithm
       Boolean encflag;
       Env env;
       list<SCode.Element> defineUnits;
+      
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),defunit) 
     then (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defunit::defineUnits) :: fs);
   end matchcontinue;
@@ -718,16 +719,13 @@ end memberImportList;
 
 public function addBcFrame "function: addBcFrame
   author: PA
- 
   Adds a baseclass frame to the environment from the baseclass environment
-  to the list of base classes of the top frame of the passed environment.
-"
+  to the list of base classes of the top frame of the passed environment."
   input Env inEnv1;
   input Env inEnv2;
   output Env outEnv;
 algorithm 
-  outEnv:=
-  matchcontinue (inEnv1,inEnv2)
+  outEnv := matchcontinue (inEnv1,inEnv2)
     local
       Option<Ident> sid;
       AvlTree tps;
@@ -738,20 +736,18 @@ algorithm
       Boolean enc;
       Frame f;
       list<SCode.Element> defineUnits;
+      
     case ((FRAME(sid,cls,tps,imps,bc,crefs,enc,defineUnits) :: fs),(f :: _)) 
       then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc,defineUnits) :: fs);  /* env bc env */ 
   end matchcontinue;
 end addBcFrame;
 
 public function topFrame "function: topFrame
- 
-  Returns the top frame.
-"
+  Returns the top frame."
   input Env inEnv;
   output Frame outFrame;
 algorithm 
-  outFrame:=
-  matchcontinue (inEnv)
+  outFrame := matchcontinue (inEnv)
     local
       Frame fr,elt;
       Env lst;
@@ -764,6 +760,22 @@ algorithm
   end matchcontinue;
 end topFrame;
 
+public function enclosingScopeEnv "function: enclosingScopeEnv
+@author: adrpo 
+ Returns the environment with the current scope frame removed."
+  input Env inEnv;
+  output Env outEnv;
+algorithm 
+  outEnv := matchcontinue (inEnv)
+    local
+      Env rest;
+    case ({}) then {}; 
+    case (_ :: rest)
+      then
+        rest;
+  end matchcontinue;
+end enclosingScopeEnv;
+
 public function getClassName
   input Env inEnv;
   output Ident name;
@@ -775,17 +787,14 @@ algorithm
 end getClassName;    	
 
 public function getEnvPath "function: getEnvPath
- 
   This function returns all partially instantiated parents as an Absyn.Path 
   option I.e. it collects all identifiers of each frame until it reaches 
   the topmost unnamed frame. If the environment is only the topmost frame, 
-  NONE is returned.
-"
+  NONE is returned."
   input Env inEnv;
   output Option<Absyn.Path> outAbsynPathOption;
 algorithm 
-  outAbsynPathOption:=
-  matchcontinue (inEnv)
+  outAbsynPathOption := matchcontinue (inEnv)
     local
       Ident id;
       Absyn.Path path,path_1;
@@ -802,8 +811,7 @@ algorithm
 end getEnvPath;
 
 public function joinEnvPath "function: joinEnvPath 
-  Used to join an Env with an Absyn.Path (probably an IDENT)
-"
+  Used to join an Env with an Absyn.Path (probably an IDENT)"
   input Env inEnv;
   input Absyn.Path inPath;
   output Absyn.Path outPath;
@@ -824,14 +832,11 @@ algorithm
 end joinEnvPath;
 
 public function printEnvPathStr "function: printEnvPathStr
- 
-  Retrive the environment path as a string, see get_env_path.
-"
+ Retrive the environment path as a string, see getEnvPath."
   input Env inEnv;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inEnv)
+  outString := matchcontinue (inEnv)
     local
       Absyn.Path path;
       Ident pathstr;
@@ -847,14 +852,11 @@ algorithm
 end printEnvPathStr;
 
 public function printEnvPath "function: printEnvPath
- 
   Print the environment path to the Print buffer. 
-  See also get_env_path
-"
+  See also getEnvPath"
   input Env inEnv;
 algorithm 
-  _:=
-  matchcontinue (inEnv)
+  _ := matchcontinue (inEnv)
     local
       Absyn.Path path;
       Ident pathstr;
@@ -875,14 +877,11 @@ algorithm
 end printEnvPath;
 
 public function printEnvStr "function: printEnvStr
- 
-  Print the environment as a string.
-"
+  Print the environment as a string."
   input Env inEnv;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inEnv)
+  outString := matchcontinue (inEnv)
     local
       Ident s1,s2,res;
       Frame fr;
@@ -899,9 +898,7 @@ algorithm
 end printEnvStr;
 
 public function printEnv "function: printEnv
- 
-  Print the environment to the Print buffer.
-"
+  Print the environment to the Print buffer."
   input Env e;
   Ident s;
 algorithm 
@@ -910,11 +907,12 @@ algorithm
 end printEnv;
 
 public function printEnvConnectionCrefs "prints the connection crefs of the top frame"
-input Env env;
+  input Env env;
 algorithm
-  _ := matchcontinue(env ) 
-  local list<DAE.ComponentRef> crs;
-   Env env;
+  _ := matchcontinue(env) 
+    local 
+      list<DAE.ComponentRef> crs;
+      Env env;
     case(env as (FRAME(connectionSet = (crs,_))::_)) equation
       print(printEnvPathStr(env));print(" :   ");
       print(Util.stringDelimitList(Util.listMap(crs,Exp.printComponentRefStr),", "));
@@ -924,14 +922,11 @@ algorithm
 end printEnvConnectionCrefs;
 
 protected function printFrameStr "function: printFrameStr
- 
-  Print a Frame to a string.
-"
+  Print a Frame to a string."
   input Frame inFrame;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inFrame)
+  outString := matchcontinue (inFrame)
     local
       Ident s1,s2,s3,encflag_str,s4,res,sid;
       AvlTree httypes;
