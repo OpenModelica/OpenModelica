@@ -544,14 +544,36 @@ public function readFileNoNumeric
 end readFileNoNumeric;
 
 public function setHasExpandableConnectors
+"@author: adrpo
+ sets the external flag that signals the 
+ presence of expandable connectors in a model"
   input Boolean hasExpandable;
   external "C" ;
 end setHasExpandableConnectors;
 
 public function getHasExpandableConnectors
+"@author: adrpo
+ retrieves the external flag that signals the 
+ presence of expandable connectors in a model"
   output Boolean hasExpandable;
   external "C" ;
 end getHasExpandableConnectors;
+
+public function setHasInnerOuterDefinitions
+"@author: adrpo
+ sets the external flag that signals the presence 
+ of inner/outer comoponent definitions in a model"
+  input Boolean hasInnerOuterDefinitions;
+  external "C" ;
+end setHasInnerOuterDefinitions;
+
+public function getHasInnerOuterDefinitions
+"@author: adrpo
+ retrieves the external flag that signals the presence 
+ of inner/outer comoponent definitions in a model"
+  output Boolean hasInnerOuterDefinitions;
+  external "C" ;
+end getHasInnerOuterDefinitions;
 
 public function tmpTick "returns a tick that can be reset"
 output Integer tickNo;

@@ -3517,11 +3517,13 @@ void free_function(modelica_ptr_t func)
 }
 
 /*
- * side effect to dectect if we have expandable conenctors in a program
+ * @author: adrpo
+ * side effect to detect if we have expandable conenctors in a program
  */
 int hasExpandableConnector = 0;
 /*
- * side effect to dectect if we have expandable conenctors in a program
+ * @author: adrpo
+ * side effect to set if we have expandable conenctors in a program
  */
 RML_BEGIN_LABEL(System__getHasExpandableConnectors)
 {
@@ -3529,7 +3531,10 @@ RML_BEGIN_LABEL(System__getHasExpandableConnectors)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
+/*
+ * @author: adrpo
+ * side effect to get if we have expandable conenctors in a program
+ */
 RML_BEGIN_LABEL(System__setHasExpandableConnectors)
 {
   hasExpandableConnector = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
@@ -3537,6 +3542,31 @@ RML_BEGIN_LABEL(System__setHasExpandableConnectors)
 }
 RML_END_LABEL
 
+/*
+ * @author: adrpo
+ * side effect to detect if we have expandable conenctors in a program
+ */
+int hasInnerOuterDefinitions = 0;
+/*
+ * @author: adrpo
+ * side effect to set if we have expandable conenctors in a program
+ */
+RML_BEGIN_LABEL(System__getHasInnerOuterDefinitions)
+{
+  rmlA0 = hasInnerOuterDefinitions ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+/*
+ * @author: adrpo
+ * side effect to get if we have expandable conenctors in a program
+ */
+RML_BEGIN_LABEL(System__setHasInnerOuterDefinitions)
+{
+  hasInnerOuterDefinitions = (RML_UNTAGFIXNUM(rmlA0)) ? 1 : 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /*
  * @author ppriv
