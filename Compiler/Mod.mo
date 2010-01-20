@@ -1366,18 +1366,19 @@ algorithm outMod:= matchcontinue (inMod1,inMod2,inEnv3,inPrefix4)
 
     case(inMod1,inMod2,inEnv3,inPrefix4)
       equation
-        true = modSubsetOrEqual(inMod1,inMod2);
+        true = modSubsetOrEqualOrNonOverlap(inMod1,inMod2);
       then doMerge(inMod1,inMod2,inEnv3,inPrefix4);
         
     case(inMod1,inMod2,inEnv3,inPrefix4)
       local String s; Option<Absyn.Path> p;
       equation
         false = merge2(inMod2);
-        false = modSubsetOrEqual(inMod1,inMod2);
+        false = modSubsetOrEqualOrNonOverlap(inMod1,inMod2);
         p = Env.getEnvPath(inEnv3);
         s = Absyn.optPathString(p);
         Error.addMessage(Error.FINAL_OVERRIDE, {s}); // having a string there incase we
-        //print(" final override: " +& s +& "\n "); 
+        // print(" final override: " +& s +& "\n ");
+        // print("trying to override final while merging mod1:\n" +& printModStr(inMod1) +& " with mod2(final):\n" +& printModStr(inMod2) +& "\n");   
       then fail();
   end matchcontinue;  
 end merge;
@@ -1677,10 +1678,12 @@ algorithm
   end matchcontinue;
 end modEquation;
 
-protected function modSubsetOrEqual "
-same as modEqual with the difference that we allow outer(input arg1: mod1)-modifier to be a subset of 
-inner(input arg2: mod2)-modifier, IF the subset is cotained in mod2 and those subset matches are equal.
-"
+protected function modSubsetOrEqualOrNonOverlap "
+same as modEqual with the difference that we allow:
+ outer(input arg1: mod1) - modifier to be a subset of 
+ inner(input arg2: mod2) - modifier, 
+ IF the subset is cotained in mod2 and those subset matches are equal
+ or if outer(expr=NONE) with inner(expr=(SOME))"
   input DAE.Mod mod1;
   input DAE.Mod mod2;
   output Boolean equal;
@@ -1691,18 +1694,29 @@ algorithm
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
       
-    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) equation
-      b1 = Util.boolEqual(f1,f2);
-      b2 = Absyn.eachEqual(each1,each2);
-      b3 = subModsEqual(submods1,submods2);
-      b4 = eqModSubsetOrEqual(eqmod1,eqmod2);
-      equal = Util.boolAndList({b1,b2,b3,b4});
+    // adrpo: handle non-overlap: final parameter Real eAxis_ia[3](each final unit="1") = {1,2,3};
+    //        mod1 = final each unit="1" mod2 = final = {1,2,3}
+    //        otherwise we get an error as: Error: Variable eAxis_ia: trying to override final variable ...  
+    case(DAE.MOD(f1,each1,submods1,NONE()),DAE.MOD(f2,Absyn.NON_EACH(),{},eqmod2 as SOME(_))) 
+      equation
+        b1 = Util.boolEqual(f1,f2);
+        equal = b1;
+      then equal;      
+      
+    // handle subset equal
+    case(DAE.MOD(f1,each1,submods1,eqmod1),DAE.MOD(f2,each2,submods2,eqmod2)) 
+      equation
+        b1 = Util.boolEqual(f1,f2);
+        b2 = Absyn.eachEqual(each1,each2);
+        b3 = subModsEqual(submods1,submods2);
+        b4 = eqModSubsetOrEqual(eqmod1,eqmod2);
+        equal = Util.boolAndList({b1,b2,b3,b4});
       then equal;
     case(DAE.REDECL(_,_),DAE.REDECL(_,_)) then false;
     case(DAE.NOMOD(),DAE.NOMOD()) then true;
      
   end matchcontinue;
-end modSubsetOrEqual;
+end modSubsetOrEqualOrNonOverlap;
 
 protected function eqModSubsetOrEqual "
 Returns true if two EqMods are equal or outer(input arg1) is NONE"
@@ -1757,7 +1771,7 @@ algorithm
     case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2) 
       equation
         blst1 = Util.listThreadMap(indx1,indx2,intEq);
-        b2 = modSubsetOrEqual(mod1,mod2);
+        b2 = modSubsetOrEqualOrNonOverlap(mod1,mod2);
         b3 = subModsSubsetOrEqual(subModLst1,subModLst2);
         equal = Util.boolAndList(b2::b3::blst1);
       then equal;
