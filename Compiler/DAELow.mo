@@ -4905,9 +4905,9 @@ algorithm
     case (DAE.DAE(elementLst = (ddl :: xs)),_,vars,knvars,extVars,_)
       local DAE.Element ddl; String s3;
       equation
-        print("- DAELow.lower2 failed\n");
-        s3 = DAEUtil.dumpElementsStr({ddl});
-        print(s3 +& "\n");
+        // show only on failtrace!
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- DAELow.lower2 failed on: " +& DAEUtil.dumpElementsStr({ddl}));
       then
         fail();
   end matchcontinue;
