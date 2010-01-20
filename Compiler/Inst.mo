@@ -104,7 +104,7 @@ public
 type Env = Env.Env "an environment";
   
 public 
-type InstanceHierarchy = InstanceHierarchy.InstanceHierarchy "an instance hierarchy";
+type InstanceHierarchy = InstanceHierarchy.InstHierarchy "an instance hierarchy";
 
 public uniontype CallingScope "
 Calling scope is used to determine when unconnected flow variables should be set to zero."
@@ -157,8 +157,8 @@ protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
 protected import System;
-protected import DAELow;
-protected import CevalScript;
+//protected import DAELow;
+//protected import CevalScript;
 
 
 protected function printDimsStr 
@@ -813,7 +813,7 @@ public function makeEnvFromProgram
   Env.Cache cache;
 algorithm 
   (cache,env) := Builtin.initialEnv(inCache);
-  (outCache,env_1,_) := addProgramToEnv(cache,env,InstanceHierarchy.emptyInstanceHierarchy, prog, c);
+  (outCache,env_1,_) := addProgramToEnv(cache,env,InstanceHierarchy.emptyInstHierarchy, prog, c);
 end makeEnvFromProgram;
 
 public function makeSimpleEnvFromProgram 
@@ -829,7 +829,7 @@ public function makeSimpleEnvFromProgram
   list<Env.Frame> env,env_1;
 algorithm 
   env := Builtin.simpleInitialEnv();
-  (outCache,env_1,_) := addProgramToEnv(inCache,env,InstanceHierarchy.emptyInstanceHierarchy, prog, c);
+  (outCache,env_1,_) := addProgramToEnv(inCache,env,InstanceHierarchy.emptyInstHierarchy, prog, c);
 end makeSimpleEnvFromProgram;
 
 protected function addProgramToEnv 
@@ -1057,6 +1057,7 @@ algorithm
         true = notIsPartial or isPartialFn;
         
         env_1 = Env.openScope(env, encflag, SOME(n));
+        
         ci_state = ClassInf.start(r, n);
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
         			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
@@ -2619,7 +2620,7 @@ algorithm
         id = Env.printEnvPathStr(env);
 
         //Add variables to env, wihtout type and binding, which will be added 
-        //later in inst_element_list (where update_variable is called)" 
+        //later in instElementList (where update_variable is called)" 
         (cache,env3,ih) = addComponentsToEnv(cache,env2,ih, emods, pre, csets, ci_state, compelts_1, compelts_1, eqs_1, inst_dims, impl);
         //Update the modifiers of elements to typed ones, needed for modifiers
 		    //on components that are inherited.  		 
@@ -2706,11 +2707,11 @@ algorithm
         (cache,(c as SCode.CLASS(cn2,_,enc2,r as SCode.R_ENUMERATION(),_)),cenv) = Lookup.lookupClass(cache,env, cn, true);
 
        
-        env3 = Env.openScope(cenv, enc2, SOME(cn2));
+        env3 = Env.openScope(cenv, enc2, SOME(cn2));        
         ci_state2 = ClassInf.start(r, cn2);
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) = 
         instClassIn(
-          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state2, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         
@@ -3158,6 +3159,12 @@ algorithm
       ConnectionGraph.DaeEdges connections "Edges defined with connect statement" ;
       ConnectionGraph.ConnectionGraph graph;      
   
+    // adrpo: return the same if we have no inner/outer components! 
+    case(inDae,csets,graph)
+      equation
+        false = System.getHasInnerOuterDefinitions();
+      then (inDae,csets,graph);
+
     // general case
     case(inDae,csets,graph as ConnectionGraph.GRAPH(updateGraph, definiteRoots, potentialRoots, branches, connections))
       equation
@@ -5316,7 +5323,7 @@ algorithm
         "classes added with correct env.
         This is needed to store the correct env in Env.CLASS. 
         It is required to get external objects to work";
-       then (env_2,inIH);     
+       then (env_2,inIH);
     case(_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- Inst.addClassdefsToEnv failed\n");
@@ -5333,7 +5340,7 @@ protected function addClassdefsToEnv2
   input InstanceHierarchy inIH;
   input list<SCode.Element> inSCodeElementLst;
   input Boolean inBoolean;
-  input Option<Mod> redeclareMod; 
+  input Option<Mod> redeclareMod;  
   output Env outEnv;
   output InstanceHierarchy outIH;
 algorithm 
@@ -5348,7 +5355,7 @@ algorithm
       InstanceHierarchy ih;
       
     case (env,ih,{},_,_) then (env,ih); 
-        // we do have a redeclaration of class. 
+    // we do have a redeclaration of class. 
     case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = cl)) :: xs),impl,redeclareMod)
       local String s;
       equation 
@@ -5574,7 +5581,8 @@ algorithm
         (cache,env,ih,selem,smod,csets) = redeclareType(cache,env,ih,compModLocal, 
         /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tss,m,bc,comment, aExp, aInfo,cc),
         pre, cistate, csets, impl,cmod);
-        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);
+        
+        (cache,env_1,ih) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);        
         (cache,env_2,ih) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
         (cache,env_2,ih);
@@ -5679,8 +5687,7 @@ algorithm
       InstanceHierarchy ih;
       Env.Cache cache;
 
-    /* a component */
-
+    // a component 
     case (cache,env,ih,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,
                                     attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
@@ -5700,15 +5707,26 @@ algorithm
 	       modifications, e.g. when instanitating a partial class that must
 	       be redeclared through a modification" ;
         cmod_1 = Mod.merge(compmod, cmod, env, pre);
+
+        /*
+        print("Inst.addCompToEnv: " +& 
+          n +& " in env " +& 
+          Env.printEnvPathStr(env) +& " with mod: " +& Mod.printModStr(cmod_1) +& " in element: " +& 
+          SCode.printElementStr(comp) +& "\n");
+        */
+        
         env_1 = Env.extendFrameV(env, 
           DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
           (DAE.T_NOTYPE(),NONE),DAE.UNBOUND()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
+        
+        ih = updateInstanceHierarchy(ih, pre, io, (comp,cmod_1));
+        
         (cache,env_2,ih) = addComponentsToEnv2(cache, env_1, ih, mods, pre, csets, ci_state, xs, inst_dims, impl);
       then
         (cache,env_2,ih);
-        
+    // no components in list    
     case (cache,env,ih,_,_,_,_,{},_,_) then (cache,env,ih);
-
+    // failtrace
     case (cache,env,ih,_,_,_,_,comps,_,_)
       equation 
         Debug.fprint("failtrace", "- Inst.addComponentsToEnv2 failed\n");
@@ -5717,6 +5735,70 @@ algorithm
         fail();
   end matchcontinue;
 end addComponentsToEnv2;
+
+protected function updateInstanceHierarchy
+"@author: adrpo
+ This function updates the instance hierarchy by adding 
+ the INNER components to it with the given prefix"
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input Absyn.InnerOuter inInnerOuter;
+  input tuple<SCode.Element,Mod> inCompAndMod; 
+  output InstanceHierarchy outIH;
+algorithm
+  outIH := matchcontinue(inIH,inPrefix,inInnerOuter,inCompAndMod)
+    local
+      InstanceHierarchy.TopInstance tih;
+      InstanceHierarchy restIH, ih;
+      DAE.ComponentRef cref;
+      Ident name;
+      Absyn.InnerOuter io;
+      Mod mod;
+      InstanceHierarchy.InstHierarchyHashTable ht;
+      Option<Absyn.Path> pathOpt;
+      SCode.Element c;
+
+    // only add inner elements
+    case(ih,inPrefix,inInnerOuter,inCompAndMod as (c as SCode.COMPONENT(component=name,innerOuter=io),mod))
+      equation
+        false = Absyn.isInner(inInnerOuter);
+        // prefix the name!
+        // cref = Prefix.prefixCref(inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        // print ("Inst.updateInstanceHierarchy jumping over non-inner: " +& Exp.printComponentRefStr(cref) +& "\n");
+      then
+        ih;
+
+    // no hashtable, create one!
+    case({},inPrefix,inInnerOuter,inCompAndMod)
+      equation
+        // print ("Inst.updateInstanceHierarchy creating an empty hash table! \n");        
+        ht = InstanceHierarchy.emptyInstHierarchyHashTable();
+        tih = InstanceHierarchy.TOP_INSTANCE(NONE(), ht);
+        ih = updateInstanceHierarchy({tih}, inPrefix, inInnerOuter, inCompAndMod);
+      then 
+        ih;
+
+    // add to the hierarchy
+    case((tih as InstanceHierarchy.TOP_INSTANCE(pathOpt, ht))::restIH,inPrefix,inInnerOuter,
+         inCompAndMod as (c as SCode.COMPONENT(component=name,innerOuter=io),mod))
+      equation
+        // prefix the name!
+        cref = Prefix.prefixCref(inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        // add to hashtable!
+        // print ("Inst.updateInstanceHierarchy adding: " +& Exp.printComponentRefStr(cref) +& " element: " +& SCode.printElementStr(c) +& "\n");
+        ht = InstanceHierarchy.add((cref,inCompAndMod), ht);
+      then 
+        InstanceHierarchy.TOP_INSTANCE(pathOpt, ht)::restIH;
+    // failure
+    case(ih,inPrefix,inInnerOuter,inCompAndMod as (c,mod))
+      equation
+        // prefix the name!
+        cref = Prefix.prefixCref(inPrefix, DAE.CREF_IDENT("UNKNOWN", DAE.ET_OTHER(), {}));        
+        print ("Inst.updateInstanceHierarchy failure for: " +& Exp.printComponentRefStr(cref) +& " element: " +& SCode.printElementStr(c) +& "\n");
+      then 
+        fail();        
+  end matchcontinue;  
+end updateInstanceHierarchy;
 
 protected function getCrefsFromCompdims 
 "function: getCrefsFromCompdims
@@ -5848,6 +5930,7 @@ algorithm
       ConnectionGraph.ConnectionGraph graph,graphNew;
       Option<Absyn.ConstrainClass> cc,cc2;
       InstanceHierarchy ih;
+      
     // Imports are simply added to the current frame, so that the lookup rule can find them.
 	 	// Import have allready been added to the environment so there is nothing more to do here.
     case (cache,env,ih,store,mod,pre,csets,ci_state,(SCode.IMPORT(imp = imp),_),instdims,_,graph)
@@ -5872,6 +5955,7 @@ algorithm
         //print(" to strp redecl?\n");
         classmod = Types.removeMod(classmod,n);
         (cache,env_1,ih,dae) = instClassDecl(cache,env,ih, classmod, pre, csets, cls2, inst_dims);
+        
         //print(" instClassDecl Call finished \n");
         // Debug.fprintln("insttr", "--Classdef mods");
         // Debug.fcall ("insttr", Mod.printMod, classmod);
@@ -5919,6 +6003,10 @@ algorithm
           inst_dims,impl,graph)  
       equation
         //print("  instElement: A component: " +& n +& "\n");
+        // see if we have a modification on the inner component
+        // merge m and cmod with the ones from inner!
+        (m, cmod) = handleOuterWithModificationOnInner(cache, env, ih, pre, n, io, m, cmod, impl);
+        // continue with normal operation
         m = traverseModAddFinal(m, finalPrefix); 
         comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,bc,comment, cond, aInfo,cc);
         // Fails if multiple decls not identical
@@ -5989,19 +6077,26 @@ algorithm
           Absyn.TPATH(t, _),m,bc,comment,cond,_,_),
           mod_1,csets) = redeclareType(cache, env2, ih, mod1_1, comp, pre, ci_state, csets, impl, DAE.NOMOD());
         (cache,env_1,ih) = getDerivedEnv(cache, env, ih, bc);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env_1, t, true);
+        (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
         
         checkRecursiveDefinition(env,t,ci_state,cl);
-         
+                 
 				//If the element is `protected\', and an external modification 
 				//is applied, it is an error. 
         checkProt(prot, mm_1, vn) ;
         eq = Mod.modEquation(mod_1);
         
-				// The variable declaration and the (optional) equation modification are inspected for array dimensions.
-				
-        (cache,dims) = elabArraydim(cache,env2_1, owncref, t,ad, eq, impl, NONE,true)  ;
-        //Instantiate the component  
+				// The variable declaration and the (optional) equation modification are inspected for array dimensions.				
+        (cache,dims) = elabArraydim(cache, env2_1, owncref, t, ad, eq, impl, NONE, true);
+        
+        /*
+        print("instElement: " +& Prefix.printPrefixStr(pre) +& "/" +& n +& " environments:" +&
+         "\n\t env: " +& Env.printEnvPathStr(env) +& 
+         "\n\t cenv: " +& Env.printEnvPathStr(cenv) +& 
+         "\n");
+        */
+        
+        //Instantiate the component
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         (cache,mod_1) = Mod.updateMod(cache,cenv, pre, mod_1, impl);
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
@@ -6046,6 +6141,13 @@ algorithm
       local Absyn.Path typeName;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
+        // see if we have a modification on the inner component
+        // merge m and cmod with the ones from inner!
+        (m, cmod) = handleOuterWithModificationOnInner(cache, env, ih, pre, n, io, m, cmod, impl);
+        // continue with normal operation
+        m = traverseModAddFinal(m, finalPrefix); 
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tSpec,m,bc,comment, cond, aInfo,cc);
+        
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         //checkRecursiveDefinition(env,t);
@@ -6325,7 +6427,7 @@ algorithm
       tuple<SCode.Element,DAE.Mod> newComp;
       Boolean alreadyDeclared;
 
-case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint(); then fail();
+    case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint(); then fail();
         
     /* If a variable is declared multiple times, the first is used. 
      * If the two variables are not identical, an error is given.
@@ -6334,8 +6436,8 @@ case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.se
     case (cache,env,mod,prefix,csets,ciState,
           (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation 
-        (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache,env, n); 
-          checkMultipleElementsIdentical((oldElt,oldMod),newComp);
+        (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache, env, n); 
+        checkMultipleElementsIdentical((oldElt,oldMod),newComp);
         alreadyDeclared = instStatusToBool(instStatus);
       then alreadyDeclared;
        
@@ -6377,12 +6479,37 @@ algorithm
       SCode.Element oldElt,newElt;
       DAE.Mod oldMod,newMod;
       String s1,s2;
+      SCode.Ident n "the component name" ;
+      Absyn.InnerOuter io "the inner/outer/innerouter prefix" ;
+      Boolean fp,rp,pp;
+      SCode.Attributes attr;
+      Absyn.TypeSpec ts ;
+      SCode.Mod mod;
+      SCode.OptBaseClass bcp1, bcp2;
+      Option<SCode.Comment> comment;
+      Option<Absyn.Exp> condition;
+      Option<Absyn.Info> info;
+      Option<Absyn.ConstrainClass> cc;
+
+    // try equality first! 
     case((oldElt,oldMod),(newElt,newMod)) 
       equation
         // NOTE: Should be type identical instead? see spec. 
         // p.23, check of flattening. "Check that duplicate elements are identical". 
         true = SCode.elementEqual(oldElt,newElt);
       then ();
+
+    // adrpo: if we have an outer with a modification, remove the modification!
+    case((oldElt as SCode.COMPONENT(baseClassPath=bcp1),oldMod),(newElt as SCode.COMPONENT(n, io, fp, rp, pp, attr, ts, mod, bcp2, comment, condition, info, cc),newMod)) 
+      equation        
+        true = Absyn.isOuter(io);   // is ONLY outer
+        false = Absyn.isInner(io);  // is NOT inner
+        equality(bcp1 = bcp2); // the baseclass should be the same!
+        // if is an outer then remove the modification when checking!
+        newElt = SCode.COMPONENT(n, io, fp, rp, pp, attr, ts, SCode.NOMOD(), bcp2, comment, condition, info, cc);
+        true = SCode.elementEqual(oldElt,newElt);
+      then ();
+
     case ((oldElt,oldMod),(newElt,newMod)) 
       equation
       s1 = SCode.unparseElementStr(oldElt);
@@ -6735,7 +6862,7 @@ algorithm str := matchcontinue(cc,env)
     equation
       (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
       (_,classextendselts,extendselts,compelts) = splitElts(selems); 
-      (_,_,_,_,extcomps,_,_,_,_) = instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstanceHierarchy, DAE.NOMOD(), extendselts, classextendselts, ClassInf.UNKNOWN(""), name, true);
+      (_,_,_,_,extcomps,_,_,_,_) = instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendselts, classextendselts, ClassInf.UNKNOWN(""), name, true);
       extcompelts = Util.listMap(extcomps,Util.tuple21);
       compelts = listAppend(compelts,extcompelts);
     then
@@ -6748,6 +6875,148 @@ algorithm str := matchcontinue(cc,env)
       compelts;  
 end matchcontinue;
 end extractConstrainingComps;
+
+
+protected function lookupModificationsOnInner
+"@author: adrpo
+ Given an environment and a component name find the 
+ modification of the inner component with the same name"
+ input InstanceHierarchy.TopInstance inTIH;
+ input Prefix.Prefix inPrefix;
+ input Ident inComponentIdent;
+ output SCode.Mod outerModComp;
+ output Mod outerModOut;
+algorithm
+  (outerModComp,outerModOut) := matchcontinue(inTIH, inPrefix, inComponentIdent)
+    local
+      Ident name;
+      Mod mod,modOut; 
+      SCode.Mod modComp;
+      Env.Cache outCache;
+      DAE.Var outVar;
+      tuple<SCode.Element, Mod> tplElementAndMod;
+      SCode.Element el;
+      Prefix.Prefix prefix;
+      Absyn.InnerOuter io;
+      Boolean isInner;
+      InstanceHierarchy.InstHierarchyHashTable ht;
+      DAE.ComponentRef cref;
+
+    // no prefix, this is an error!
+    // disabled as this is used in Interactive.getComponents
+    // and makes mosfiles/interactive_api_attributes.mos to fail!
+    case (InstanceHierarchy.TOP_INSTANCE(_, ht), Prefix.NOPRE(),  name) 
+      equation
+        // print ("Error: outer component: " +& name +& " defined at the top level!"); 
+      then (SCode.NOMOD(),DAE.NOMOD());
+
+    // we have a prefix, remove the last cref from the prefix and search!    
+    case (InstanceHierarchy.TOP_INSTANCE(_, ht), inPrefix,  name) 
+      equation
+        // back one step in the instance hierarchy
+        prefix = Prefix.prefixStripLast(inPrefix);
+        // put the name as the last prefix
+        cref = Prefix.prefixCref(prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {})); 
+        // search in instance hierarchy
+        tplElementAndMod = InstanceHierarchy.get(cref, ht);
+        
+        (el as SCode.COMPONENT(innerOuter=io, modifications=modComp),modOut) = tplElementAndMod;
+        // print("Inst.lookupModificationOnInner: Found: " +& 
+        //    name +& " with mod comp: " +& SCode.printModStr(modComp) +& 
+        //    " modOut: " +&  Mod.printModStr(modOut) +& " in element: " +& 
+        //    SCode.printElementStr(el) +& "\n");
+        // it should be a freaking inner! otherwise a shadow so return NOMOD
+        isInner = Absyn.isInner(io);
+        modComp = Util.if_(isInner, modComp, SCode.NOMOD());
+        modOut  = Util.if_(isInner, modOut, DAE.NOMOD());
+      then (modComp,modOut);
+        
+    // we have a prefix, search recursively as there was a failure before!    
+    case (InstanceHierarchy.TOP_INSTANCE(_, ht), inPrefix,  name) 
+      equation
+        // back one step in the instance hierarchy
+        prefix = Prefix.prefixStripLast(inPrefix);
+        // put the name as the last prefix
+        cref = Prefix.prefixCref(prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {})); 
+        // search in instance hierarchy
+        // we had a failure
+        failure(tplElementAndMod = InstanceHierarchy.get(cref, ht));
+        // call recursively to back one more step!        
+        (modComp,modOut) = lookupModificationsOnInner(inTIH, prefix, name);
+     then
+       (modComp,modOut);
+        
+    // if we fail return nomod
+    case (inTIH, prefix, name)
+      equation
+        // print("Inst.lookupModificationOnInner: Looking up: " +& name +& " NOT FOUND! \n");
+      then (SCode.NOMOD(),DAE.NOMOD());
+  end matchcontinue;
+end lookupModificationsOnInner;
+
+protected function handleOuterWithModificationOnInner 
+"@author: adrpo
+ This function lookups the modification from the inner component
+ given an instance hierarchy a prefix and a component name."
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix inPrefix;
+  input Ident inIdent;
+  input Absyn.InnerOuter io;
+  input SCode.Mod scodeMod;
+  input Mod mod;
+  input Boolean impl;
+  output SCode.Mod outSCodeMod;  
+  output Mod outMod;
+algorithm 
+  (outSCodeMod, outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inIdent,io,scodeMod,mod,impl)
+    local
+      Env.Cache cache;
+      DAE.Mod mod;
+      String n;
+      Boolean impl;
+      Absyn.InnerOuter io;
+      SCode.Mod modCompSCode;
+      Mod modComp, modOut;
+      Env env,enclosingEnv;
+      Prefix.Prefix pre;
+      InstanceHierarchy ih;
+      InstanceHierarchy.TopInstance tih;
+      
+    // adrpo: if component is an outer or an inner/outer we need to 
+    //        lookup the modification of the inner component and use it
+    //        when we instantiate the outer component
+    case (cache,env,tih::_,pre,n,io,scodeMod,mod,impl) 
+      equation 
+        // is component an outer or an inner/outer?
+        true = Absyn.isOuter(io);  // is outer
+        false = Absyn.isInner(io); // and is not inner
+        // search the instance hierarchy for modification of the inner component
+        (modCompSCode, modOut) = lookupModificationsOnInner(tih, pre, n);
+        // print("Inst.handleOuterWithModificationOnInner: Found: " +& n +& " with smod: " +& SCode.printModStr(modCompSCode) +& " with mod: " +& Mod.printModStr(modOut) +& "\n");
+        mod = Mod.merge(modOut, mod, env, pre);
+        scodeMod = modCompSCode;
+        // print("Inst.handleOuterWithModificationOnInner: Merged: " +& n +& " with smod: " +& SCode.printModStr(scodeMod) +& " with mod: " +& Mod.printModStr(mod) +& "\n");
+        // System.enableTrace();
+      then 
+        (scodeMod, mod);
+      
+    // generic case, no outer!
+    case (cache,env,_,pre,n,io,scodeMod,mod,impl)
+      equation
+        false = Absyn.isOuter(io);
+      then 
+        (scodeMod, mod);
+    
+    // failure!
+    case (cache,env,_,pre,n,io,scodeMod,mod,impl)
+      equation
+        Debug.fprintln("failtrace", "Inst.handleOuterWithModificationOnInner failed on component: " +& Prefix.printPrefixStr(pre) +& "." +& n); 
+      then 
+        (scodeMod, mod);        
+    end matchcontinue;
+end handleOuterWithModificationOnInner;
 
 protected function instVar 
 "function: instVar 
@@ -6788,7 +7057,7 @@ protected function instVar
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGraph):=
-  matchcontinue (outCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       list<DimExp> dims_1,dims;
       list<Env.Frame> compenv,env;
@@ -6811,11 +7080,13 @@ algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGr
       String str;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
+      Mod modificationOnInnerComponent;
+      Env enclosingEnv;      
       
    	// impl component environment dae elements for component Variables of userdefined type, 
    	// e.g. Point p => Real p[3]; These must be handled separately since even if they do not 
 	 	// appear to be an array, they can. Therefore we need to collect
- 	 	// the full dimensionality and call inst_var2 	 	 
+ 	 	// the full dimensionality and call instVar2 	 	 
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph) 
       equation 
 				// Collect dimensions
@@ -6836,7 +7107,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDAEElementLst,outSets,outType,outGr
       equation 
         p1 = Absyn.IDENT(n);
         p1 = Prefix.prefixPath(p1,pre);
-        str = Absyn.pathString(p1);         
+        str = Absyn.pathString(p1); 
         Error.updateCurrentComponent(str,info);
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = 
@@ -7088,7 +7359,12 @@ algorithm
         eOpt = makeVariableBinding(ty,mod);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA);
-        false = modificationOnOuter(cr,mod,io); 
+        // adrpo: we cannot check this here as:
+        //        we might have modifications on inner that we copy here
+        //        Dymola doesn't report modifications on outer as error!
+        //        instead we check here if the modification is not the same
+        //        as the one on inner  
+        false = modificationOnOuter(cache,env,ih,pre,n,cr,mod,io,impl);
         
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, 
                           inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
@@ -10946,7 +11222,7 @@ algorithm
      
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_IF(condition = conditions,thenBranch = tb,elseBranch = fb),SCode.NON_INITIAL(),impl,graph)
       equation 
-        (cache, expl1,props,_) = Static.elabExpList(cache,env, conditions, impl, NONE,true);
+        (cache, expl1,props,_) = Static.elabExpList(cache, env, conditions, impl, NONE,true);
         (DAE.PROP((DAE.T_BOOL(_),_),_)) = Types.propsAnd(props);
         (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
         blist = Util.listMap(valList,ValuesUtil.valueBool);
@@ -11840,7 +12116,7 @@ algorithm
       equation 
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
 				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
-        (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstanceHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl,graph);
+        (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl,graph);
         (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest), eqs, initial_, impl,graph);
         dae = listAppend(dae1, dae2);
       then
@@ -11849,7 +12125,7 @@ algorithm
       equation 
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
 				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
-        (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstanceHierarchy, mods, pre, csets, ci_state, instEInitialequation, eqs, impl,graph);
+        (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstHierarchy, mods, pre, csets, ci_state, instEInitialequation, eqs, impl,graph);
         (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest), eqs, initial_, impl,graph);
         dae = listAppend(dae1, dae2);
       then
@@ -15026,7 +15302,7 @@ algorithm
         ld2 = SCodeUtil.translateEitemlist(ld,false);
         ld2 = componentElts(ld2);
         ld_mod = addNomod(ld2);
-        (localCache,env2,ih) = addComponentsToEnv(localCache, env2, InstanceHierarchy.emptyInstanceHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+        (localCache,env2,ih) = addComponentsToEnv(localCache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
         Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);
 			 (cache2,env2,ih,_,_,_,_,_,_) = instElementList(localCache,env2,ih,UnitAbsyn.noStore,
 			  DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"),
@@ -15268,12 +15544,20 @@ protected function renameUniqueVarsInTopScope
   output list<DAE.Element> odae;
 algorithm 
   odae := matchcontinue(isTopScope,dae)
-    case(true,dae)
+    // adrpo: don't do anything if there are no inner/outer declarations in the model!
+    case (_, dae)
+      equation
+        false = System.getHasInnerOuterDefinitions();
+      then 
+        dae;
+    // we are in top level scope (isTopScope=true) and we need to rename
+    case (true,dae)
       equation
         odae = DAEUtil.renameUniqueOuterVars(dae);
       then
         odae;
-    case(false,dae) then dae;
+    // we are NOT in top level scope (isTopScope=false) and we need to rename
+    case (false,dae) then dae;
 end matchcontinue;
 end renameUniqueVarsInTopScope; 
 
@@ -15602,13 +15886,20 @@ protected
   VarTransform.VariableReplacements repl;
   list<DAE.ComponentRef> srcs,targets;
 algorithm
-  _ := matchcontinue(inDae,callScope)  
+  _ := matchcontinue(inDae,callScope)
+    // adrpo, do nothing if we have no inner/outer components
+    case(inDae,_)
+      equation
+        false = System.getHasInnerOuterDefinitions();
+      then ();
+    // if call scope is TOP level (true) do the checking
     case(inDae,true) 
       equation
         //print("DAE has :" +& intString(listLength(inDae)) +& " elements\n");
         (innerVars,outerVars) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
         checkMissingInnerDecl1(innerVars,outerVars);
       then ();
+    // if call scope is NOT TOP level (false) do nothing
     case(inDae,false) 
       then ();
    end matchcontinue;
@@ -15714,6 +16005,7 @@ algorithm
     local
       list<SCode.Element> res,xs;
       SCode.Element cdef,imp,ext,comp;
+      Absyn.InnerOuter io;
     case ({}) then ({},{},{},{}); 
       
     case ((cdef as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
@@ -15740,12 +16032,52 @@ algorithm
         (cdefImpElts,classextendsElts,extElts,compElts) = splitElts(xs);
       then (cdefImpElts,classextendsElts,ext::extElts,compElts);
 
+    // add components with inner to the top of the list!
     case ((comp as SCode.COMPONENT(component=_) ):: xs)
       equation 
         (cdefImpElts,classextendsElts,extElts,compElts) = splitElts(xs);
+        // adds inner elements at the start of the list to be instantiated 
+        // first and all others at the end of the list.
+        // compElts = orderComponents(comp, compElts);
       then (cdefImpElts,classextendsElts,extElts,comp::compElts);
   end matchcontinue;
 end splitElts;
+
+protected function orderComponents
+"@author: adrpo
+ this functions puts the component in front of the list if
+ is inner or innerouter and at the end of the list otherwise"
+  input SCode.Element inComp;
+  input list<SCode.Element> inCompElts;
+  output list<SCode.Element> outCompElts;
+algorithm
+  outCompElts := matchcontinue(inComp, inCompElts)
+    local
+      list<SCode.Element> compElts;
+    
+    // input/output come first!
+    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(direction = Absyn.INPUT())), inCompElts)
+      then inComp::inCompElts;
+    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(direction = Absyn.OUTPUT())), inCompElts)
+      then inComp::inCompElts;    
+    // put inner/outer in front.
+    case (SCode.COMPONENT(component=_,innerOuter = Absyn.INNER()), inCompElts)
+      then inComp::inCompElts;
+    case (SCode.COMPONENT(component=_,innerOuter = Absyn.INNEROUTER()), inCompElts)
+      then inComp::inCompElts;
+    // put constants in front
+    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(variability = SCode.CONST())), inCompElts)
+      then inComp::inCompElts;
+    // put parameters in front
+    case (SCode.COMPONENT(component=_,attributes = SCode.ATTR(variability = SCode.PARAM())), inCompElts)
+      then inComp::inCompElts;
+    // all other append to the end.
+    case (SCode.COMPONENT(component=_), inCompElts)
+      equation
+        compElts = listAppend(inCompElts, {inComp});
+      then compElts;
+  end matchcontinue; 
+end orderComponents;
 
 protected function splitClassExtendsElts 
 "This function splits the Element list into two lists
@@ -16239,7 +16571,12 @@ algorithm
       false = Types.isParameterOrConstant(c);
       s1 = Exp.printExpStr(e);
       Error.addMessage(Error.COMPONENT_CONDITION_VARIABILITY,{s1});
-    then fail();            
+    then fail();
+    // failtrace
+    case(cache,env,SOME(condExp),compName,dae,sets,_,graph)
+      equation
+        Debug.fprintln("failtrace", "- Inst.instConditionalDeclaration failed on component: " +& compName +& " for cond: " +& Dump.printExpStr(condExp));
+      then fail();      
   end matchcontinue;
 end instConditionalDeclaration;
 
@@ -16512,22 +16849,44 @@ end updateConnectionSetTypesCrefs;
 
 protected function modificationOnOuter "
 Author BZ, 2008-11 
-According to specification modifiers on outer elements is not allowed.
-"
-input DAE.ComponentRef cr;
-input Mod inMod;
-input Absyn.InnerOuter io;
-output Boolean modd;
-algorithm omodexp := matchcontinue(cr,inMod,io)
+According to specification modifiers on outer elements is not allowed."
+  input Env.Cache cache;
+  input Env env;
+  input InstanceHierarchy ih;
+  input Prefix.Prefix prefix;
+  input String componentName;
+  input DAE.ComponentRef cr;
+  input Mod inMod;
+  input Absyn.InnerOuter io;
+  input Boolean impl;
+  output Boolean modd;
+algorithm 
+  omodexp := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
   local
     String s1,s2;
-  case(cr,DAE.MOD(finalPrefix = _),Absyn.OUTER())
+    SCode.Mod scmod;
+    Mod mod,fromSCMod;
+  // intercept this and see if we have the same modification on inner!
+  case(cache,env,ih,prefix,componentName,cr,inMod as DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation
+      // search for the modification on inner
+      (scmod,mod) = handleOuterWithModificationOnInner(cache, env, ih, prefix, componentName, io, SCode.NOMOD(), DAE.NOMOD(), impl);
+      (cache,fromSCMod) = Mod.elabMod(cache, env, prefix, scmod, impl);
+      mod = Mod.merge(mod, fromSCMod, env, prefix);
+      // print("Mod inner:" +& Mod.printModStr(mod) +& "\n"); 
+      // print("Mod outer:" +& Mod.printModStr(inMod) +& "\n");
+      // see if the mods are equal
+      true = Mod.modEqual(mod, inMod);
+    then
+      false;
+  // if we don't have the same modification on inner report error!
+  case(_,_,_,_,_,cr,DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
+    equation      
       s1 = Exp.printComponentRefStr(cr);
       Error.addMessage(Error.OUTER_MODIFICATION, {s1});
       then
         true;
-  case(_,_,_) then false;
+  case(_,_,_,_,_,_,_,_,impl) then false;
   end matchcontinue;
 end modificationOnOuter;
  
@@ -16911,7 +17270,6 @@ end findCorrespondingBinding;
 // *********************************************************************
 public 
 uniontype CachedInstItem
-
   // *important* inputs/outputs for instClassIn 
   record FUNC_instClassIn
     tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore,
@@ -17482,7 +17840,7 @@ algorithm
     // check the balancing of the instantiated model
     case (classNameOpt, inDAEElements)
       equation
-        dae = DAEUtil.transformIfEqToExpr(DAE.DAE(inDAEElements));
+        dae = DAEUtil.transformIfEqToExpr(DAE.DAE(inDAEElements),false);
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns)) 

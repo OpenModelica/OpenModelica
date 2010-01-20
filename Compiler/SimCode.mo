@@ -599,7 +599,7 @@ algorithm
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae as DAE.DAE(dael)) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstanceHierarchy,p_1,className);
+        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
         ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
         dlow = DAELow.lower(dae, addDummy, true);

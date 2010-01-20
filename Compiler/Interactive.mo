@@ -354,7 +354,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         scode_class = SCodeUtil.translateClass(absyn_class);
         (_,env_1,_,d) = 
-          Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InstanceHierarchy.emptyInstanceHierarchy, 
+          Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InstanceHierarchy.emptyInstHierarchy, 
                                              DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
       then
         ();
@@ -1499,7 +1499,7 @@ algorithm
        *   classes = ...,
        *   within_ = ...,
        *   globalBuildTimes = ...
-       * end Absyn.PROGRAM; */
+       * end Absyn.PROGRAM; */ 
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAstAsCorbaString"),
       functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
@@ -4809,7 +4809,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+          Inst.partialInstClassIn(cache,env2,InstanceHierarchy.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
       then env_2;
     case (p,p_class) then {};
@@ -10310,7 +10310,7 @@ algorithm
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstanceHierarchy, 
+          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstHierarchy, 
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
@@ -10505,7 +10505,7 @@ algorithm
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstanceHierarchy,
+          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
                                   ci_state, c, false, {});
         comp = getNthComponentInClass(cdef, n);
@@ -10557,7 +10557,7 @@ algorithm
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, id);
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, DAE.NOMOD(), 
+          Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), 
                                   Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
@@ -13434,7 +13434,7 @@ algorithm
         (cache,mod_2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,
+          Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet, 
                          c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
@@ -13666,7 +13666,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
+          Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
                          Connect.emptySet,placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
         str = DAEUtil.getVariableBindingsStr(dae_1);
@@ -13691,7 +13691,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+          Inst.instClass(cache,env,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
                          ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
@@ -13711,7 +13711,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, 
+          Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, 
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
@@ -13734,7 +13734,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env, InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore, 
+          Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore, 
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
                          ConnectionGraph.EMPTY);
         dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
@@ -18785,7 +18785,7 @@ algorithm
       (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
-      (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, 
+      (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstHierarchy, 
                                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                   ci_state, cl, false, {});
     then env_2;
@@ -18793,7 +18793,7 @@ algorithm
       (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, id);
-      (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InstanceHierarchy.emptyInstanceHierarchy, 
+      (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InstanceHierarchy.emptyInstHierarchy, 
                                                        UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                        ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
     then env_2;

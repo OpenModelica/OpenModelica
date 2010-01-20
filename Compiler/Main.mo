@@ -543,7 +543,7 @@ algorithm
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
         (cache,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
-                                            InstanceHierarchy.emptyInstanceHierarchy,
+                                            InstanceHierarchy.emptyInstHierarchy,
                                             scode);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
@@ -615,7 +615,7 @@ algorithm
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
         (cache,env,_,d_1) = Inst.instantiateClass(Env.emptyCache(),
-                                            InstanceHierarchy.emptyInstanceHierarchy,
+                                            InstanceHierarchy.emptyInstHierarchy,
                                             scode,
                                             lastClassPath);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );

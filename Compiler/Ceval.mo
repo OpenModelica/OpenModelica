@@ -279,12 +279,14 @@ algorithm
         (cache,v,st_1) = cevalBuiltin(cache,env, expExp, impl, st, dimOpt, msg);
       then
         (cache,v,st_1);
-        
+    
     /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,dimOpt,msg) 
       /* Call functions FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function */ 
       equation
+        // do not handle Connection.isRoot here!
+        false = stringEqual("Connection.isRoot", Absyn.pathString(funcpath));
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         (cache,newval,st)= cevalCallFunction(cache, env, e, vallst, impl, st, dimOpt, msg);
       then
@@ -1109,7 +1111,7 @@ algorithm
         Inst.implicitFunctionInstantiation(
           cache, 
           env1,
-          InstanceHierarchy.emptyInstanceHierarchy,
+          InstanceHierarchy.emptyInstHierarchy,
           DAE.NOMOD(), 
           Prefix.NOPRE(), 
           Connect.emptySet, 
@@ -1417,7 +1419,7 @@ algorithm
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,env_2,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
+        (cache,env_2,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
           Inst.TOP_CALL(),ConnectionGraph.EMPTY);
         (cache, value) = DAE.daeToRecordValue(cache, env_2, funcname, dae, impl) "adrpo: We need the env here as we need to do variable Lookup!"; 
       then

@@ -652,11 +652,11 @@ algorithm
         // Transform the element list into a list of element,NOMOD
         ld_mod = Inst.addNomod(ld2);
         
-        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2, InstanceHierarchy.emptyInstanceHierarchy, DAE.NOMOD(), Prefix.NOPRE(), 
+        (cache,env2,_) = Inst.addComponentsToEnv(cache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), 
           Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
         
         (cache,env2,_,_,dae1,_,_,_,_) = 
-          Inst.instElementList(cache,env2,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+          Inst.instElementList(cache,env2,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
                                DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), 
                                ClassInf.FUNCTION("dummieFunc"),
                                ld_mod,{},impl,ConnectionGraph.EMPTY);
@@ -7603,7 +7603,7 @@ algorithm
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
         Debug.fprintln("sei", "generate_compiled_function: class looked up");
-        (cache,env_2,_,d) = Inst.implicitFunctionInstantiation(cache, env_1, InstanceHierarchy.emptyInstanceHierarchy, 
+        (cache,env_2,_,d) = Inst.implicitFunctionInstantiation(cache, env_1, InstanceHierarchy.emptyInstHierarchy, 
                                                                DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();

@@ -187,7 +187,7 @@ algorithm
         ci_state = ClassInf.start(r, id);
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env_2,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          cache,env_2,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         // build names
@@ -208,7 +208,7 @@ algorithm
         (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
         elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
         (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
-            cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+            cache,env_1,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
             DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
         t = (DAE.T_METARECORD(index,varlst),SOME(path));
       then
@@ -221,7 +221,7 @@ algorithm
         true = Inst.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = 
         Inst.instClass(
-          cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+          cache,env_1,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         SCode.CLASS(name=id) = c;
@@ -236,7 +236,7 @@ algorithm
       equation 
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2,_) = 
-        Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy,c);
+        Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
       then
         (cache,t,env_3);        
@@ -435,7 +435,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (cache,env4,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstanceHierarchy, 
+          cache,env2,InstanceHierarchy.emptyInstHierarchy, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
          ClassInf.valid(cistate1, SCode.R_PACKAGE());
@@ -452,7 +452,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+          cache,env2,InstanceHierarchy.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
@@ -678,7 +678,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
          (cache,(f :: _),_,_) = 
          Inst.partialInstClassIn(
-           cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+           cache,env2,InstanceHierarchy.emptyInstHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
            ci_state, c, false, {}); 
         (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
@@ -751,7 +751,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (cache,(f :: _),_,_,_,_,_,_,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env2,InstanceHierarchy.emptyInstanceHierarchy, UnitAbsyn.noStore,
+          cache,env2,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
@@ -897,7 +897,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
        (cache,(f :: _),_,_) = 
        Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+          cache,env2,InstanceHierarchy.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,_,_) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false);
@@ -959,7 +959,7 @@ algorithm
         ci_state = ClassInf.start(restr, id);
         (cache,(f :: fs_1),_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstanceHierarchy,
+          cache,env2,InstanceHierarchy.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         // Restrict import to the imported scope only, not its parents, thus {f} below
@@ -1115,10 +1115,8 @@ algorithm
    end matchcontinue;
 end checkPackageVariableConstant;
 
-public function lookupVarInternal "function: lookupVarInternal
- 
-  Helper function to lookup_var. Searches the frames for variables.
-"
+public function lookupVarInternal "function: lookupVarInternal 
+  Helper function to lookupVar. Searches the frames for variables."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
@@ -1205,11 +1203,11 @@ algorithm
         ci_state = ClassInf.start(r, n);
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
  //       (cache,env5,_,_,_,_,_,_,_,_) = 
-//        Inst.instClass(cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
+//        Inst.instClass(cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
         (cache,p_env,attr,ty,bind);
@@ -1254,7 +1252,7 @@ algorithm
         filterCref = makeOptIdentOrNone(cref);
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env3,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore, 
+          cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY, filterCref);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache, env5, cref);
@@ -1370,9 +1368,7 @@ algorithm
 end lookupVarLocal;
 
 public function lookupIdentLocal "function: lookupIdentLocal
- 
-  Searches for a variable in the local scope.
-"
+  Searches for a variable in the local scope."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
@@ -1393,9 +1389,9 @@ algorithm
       Env.AvlTree ht;
       String id;
       Env.Cache cache;
-    case (cache,env as (Env.FRAME(optName = sid,clsAndVars = ht) :: fs),id) /* component environment */ 
+    case (cache,env as (Env.FRAME(optName = sid, clsAndVars = ht) :: fs),id) /* component environment */ 
       equation 
-        (cache,fv,c,i,env) = lookupVar2(cache,ht, id);
+        (cache,fv,c,i,env) = lookupVar2(cache, ht, id);
       then
         (cache,fv,c,i,env);
   end matchcontinue;
@@ -1441,7 +1437,7 @@ algorithm
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         (cache,classEnv,_,_) = 
         Inst.partialInstClassIn(
-          cache,cenv_2,InstanceHierarchy.emptyInstanceHierarchy,
+          cache,cenv_2,InstanceHierarchy.emptyInstHierarchy,
           dmod, Prefix.NOPRE(), Connect.emptySet, 
           new_ci_state, c, false, {});
       then (cache,classEnv);
@@ -1523,8 +1519,8 @@ algorithm
       local String id;
       equation 
         _ = Static.elabBuiltinHandler(id) "Check for builtin operators" ;
-        Env.FRAME(sid,ht,httypes,_,_,_,_,_) = Env.topFrame(env);
-        (cache,reslist) = lookupFunctionsInFrame(cache,ht, httypes, env, id);
+        Env.FRAME(clsAndVars = ht,types = httypes) = Env.topFrame(env);
+        (cache,reslist) = lookupFunctionsInFrame(cache, ht, httypes, env, id);
       then
         (cache,reslist);
         
@@ -1556,7 +1552,7 @@ algorithm
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_) 
-           = Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstanceHierarchy, c);
+           = Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstHierarchy, c);
         (cache,c1 as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, id);
       then
         (cache,c1);
@@ -1573,7 +1569,7 @@ algorithm
         //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache, env2, InstanceHierarchy.emptyInstanceHierarchy,
+          cache, env2, InstanceHierarchy.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,reslist) = lookupFunctionsInEnv(cache, env_2, path);
@@ -1738,7 +1734,7 @@ algorithm
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_1,_,_) = 
         Inst.implicitFunctionInstantiation(
-          cache,cenv,InstanceHierarchy.emptyInstanceHierarchy,
+          cache,cenv,InstanceHierarchy.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then 
@@ -1808,7 +1804,7 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.avlTreeGet(ht, id);        
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
         (cache,env_1,_) = 
-        Inst.implicitFunctionTypeInstantiation(cache,cenv,InstanceHierarchy.emptyInstanceHierarchy,cdef);
+        Inst.implicitFunctionTypeInstantiation(cache,cenv,InstanceHierarchy.emptyInstHierarchy,cdef);
         (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id));
       then
         (cache,tps);
@@ -1821,7 +1817,7 @@ algorithm
 	        true = Inst.classIsExternalObject(cdef);
 	        (cache,env_1,_,_,_,_,t,_,_,_) = 
 	        Inst.instClass(
-	          cache,cenv,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,
+	          cache,cenv,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,
 	          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
          	  {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
@@ -1945,14 +1941,14 @@ algorithm
     case(SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)),mods,env)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstanceHierarchy,cdefelts,false,NONE);
+        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
         funcelts = buildRecordConstructorElts(restElts,mods,env1);
       then (funcelts,elts);
     /* adrpo: TODO! handle also the case model extends x end x; */
     case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods,env)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstanceHierarchy,cdefelts,false,NONE);
+        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
         funcelts = buildRecordConstructorElts(restElts,mods,env1);
       then (funcelts,elts);
     // fail
@@ -2091,11 +2087,11 @@ algorithm
     case (cache,(cl as SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))),env)
       equation 
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstanceHierarchy,cdefelts,false,NONE);
+        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
         (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, DAE.NOMOD(),env1);        
         (cache,_,_,_,_,_,ty,_,_,_) = 
         Inst.instClass(
-          cache,env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,
+          cache,env1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
           {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
@@ -2106,11 +2102,11 @@ algorithm
     case (cache,(cl as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts))),env)
       equation 
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstanceHierarchy,cdefelts,false,NONE);
+        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
         (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, DAE.NOMOD(),env1);        
         (cache,_,_,_,_,_,ty,_,_,_) = 
         Inst.instClass(
-          cache,env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,
+          cache,env1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
           {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
       then
@@ -2158,7 +2154,7 @@ algorithm
         (cache,vars) = buildVarlstFromElts(cache,rest, mods,env);
         compMod = Mod.lookupModificationP(mods,Absyn.IDENT(n));
         (cache,_,var) = 
-        Inst.instRecordConstructorElt(cache,env,InstanceHierarchy.emptyInstanceHierarchy, comp,compMod, true) 
+        Inst.instRecordConstructorElt(cache,env,InstanceHierarchy.emptyInstHierarchy, comp,compMod, true) 
         "P.A Here we need to do a lookup of the type. 
          Therefore we need the env passed along from 
          lookup_xxxx function. FIXME: impl" ;
@@ -2198,14 +2194,14 @@ algorithm
     case(cache,env,SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)),mods)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env, InstanceHierarchy.emptyInstanceHierarchy, cdefelts, false, NONE);        
+        (env1,_) = Inst.addClassdefsToEnv(env, InstanceHierarchy.emptyInstHierarchy, cdefelts, false, NONE);        
         (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
       then (outCache,vLst);
     /* adrpo: TODO! handle also model extends x end x; */
     case(cache,env,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env, InstanceHierarchy.emptyInstanceHierarchy, cdefelts, false, NONE);        
+        (env1,_) = Inst.addClassdefsToEnv(env, InstanceHierarchy.emptyInstHierarchy, cdefelts, false, NONE);        
         (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
       then (outCache,vLst);        
     case(_,_,cl,mods) equation
@@ -2414,10 +2410,7 @@ algorithm
 end reportSeveralNamesError;
 
 protected function lookupVar2 "function: lookupVar2
-  
-  Helper function to lookup_var_f and lookup_ident.
-  
-"
+  Helper function to lookupVarF and lookupIdent."
 	input Env.Cache inCache;
   input Env.AvlTree inBinTree;
   input SCode.Ident inIdent;
@@ -2598,15 +2591,13 @@ algorithm
 end checkSubscriptsRange2;
 
 protected function lookupVarF "function: lookupVarF
- 
   This function looks in a frame to find a declared variable.  If
   the name being looked up is qualified, the first part of the name
-  is looked up, and `lookup_in_var\' is used to for further lookup in
+  is looked up, and lookupVar2 is used to for further lookup in
   the result of that lookup.
 
   2007-05-29 If we can construct a expression, we do after expanding the 
-  subscript with dimensions to fill the Cref.
-"
+  subscript with dimensions to fill the Cref."
 	input Env.Cache inCache;
   input Env.AvlTree inBinTree;
   input DAE.ComponentRef inComponentRef;
@@ -2615,7 +2606,6 @@ protected function lookupVarF "function: lookupVarF
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Exp> outOptExp;
-
 algorithm 
   (outCache,outAttributes,outType,outBinding, outOptExp):=
   matchcontinue (inCache,inBinTree,inComponentRef)
@@ -2642,7 +2632,9 @@ algorithm
       DAE.ComponentRef xCref,tCref;
       list<DAE.ComponentRef> ltCref;
       DAE.Exp splicedExp;
-      DAE.ExpType eType;      
+      DAE.ExpType eType;
+
+    // Simple identifier
     case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) ) 
       local
         DAE.Exp splicedExp;
@@ -2658,7 +2650,7 @@ algorithm
       then
         (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,SOME(splicedExp));
     
-    /* Qualified variables looked up through component environment with a spliced exp */
+    // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))  
       local        
       equation 
@@ -2675,7 +2667,7 @@ algorithm
       then
         (cache,attr,ty,binding,SOME(splicedExp));
         
-        /* Qualified componentname without spliced exp.*/
+    // Qualified componentname without spliced exp.
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))      
       equation 
         (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);

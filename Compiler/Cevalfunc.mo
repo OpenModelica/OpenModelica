@@ -1323,7 +1323,7 @@ algorithm
       equation
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
         (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache(),env1,InstanceHierarchy.emptyInstanceHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+          Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
       then
         ty;
     case (_,_) 
