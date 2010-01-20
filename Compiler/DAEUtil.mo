@@ -5147,25 +5147,40 @@ protected function selectBranches
  input list<DAE.Exp> cond;
  input list<list<DAE.Element>> true_branch;
  input list<DAE.Element> false_branch;
+ input DAE.ElementSource source "the origin of the element";
+ input Boolean recursiveCall "true if is a recursive call; we need this to avoid stack overflow!";
+ input Boolean onlyConstantEval;
  output list<DAE.Element> equations;
 algorithm
- equations := matchcontinue(cond, true_branch, false_branch)
+ equations := matchcontinue(cond, true_branch, false_branch, source, recursiveCall, onlyConstantEval)
    local
      list<DAE.Exp> rest;
      list<list<DAE.Element>> restTrue;
      list<DAE.Element> eqs;
+     
    // nothing selects the else
-   case ({}, {}, false_branch) 
+   case ({}, {}, false_branch, _, _, onlyConstantEval) 
      then false_branch;
    // if true select the head from the true_branch
-   case (DAE.BCONST(true)::rest, eqs::restTrue, false_branch) 
+   case (DAE.BCONST(true)::rest, eqs::restTrue, false_branch, _, recursiveCall, onlyConstantEval)
+     equation
+       // transform further if needed
+       DAE.DAE(eqs) = transformIfEqToExpr(DAE.DAE(eqs),onlyConstantEval);
      then eqs;
    // if false recurse with rest on both lists
-   case (DAE.BCONST(false)::rest, eqs::restTrue, false_branch)
+   case (DAE.BCONST(false)::rest, eqs::restTrue, false_branch, source, _, onlyConstantEval)
      equation
-       eqs = selectBranches(rest, restTrue, false_branch);
+       eqs = selectBranches(rest, restTrue, false_branch, source, true, onlyConstantEval);
+       // transform further if needed
+       DAE.DAE(eqs) = transformIfEqToExpr(DAE.DAE(eqs),onlyConstantEval);
      then eqs;
-   case (_, _, _)
+   // if is not a boolean literal, and is a recursive call just return the if equation!
+   case (cond, true_branch, false_branch, source, true, onlyConstantEval)
+     equation
+       eqs = ifEqToExpr(DAE.IF_EQUATION(cond, true_branch, false_branch, source), onlyConstantEval);
+     then eqs;
+   // failure?!       
+   case (_, _, _, source, false, onlyConstantEval)
      equation
        // Debug.fprintln("failtrace", "- DAEUtil.selectBranches failed: the IF equation is malformed!");
      then fail();       
@@ -5193,11 +5208,9 @@ algorithm
     // adrpo: handle selection of branches if conditions are boolean literals
     //        this is needed as Connections.isRoot becomes true/false at the 
     //        end of instantiation. 
-    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch)),onlyConstantEval)
+    case ((elt as DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch, source = source)),onlyConstantEval)
       equation 
-        equations = selectBranches(cond, true_branch, false_branch);
-        // transform further if needed
-        DAE.DAE(equations) = transformIfEqToExpr(DAE.DAE(equations),onlyConstantEval);
+        equations = selectBranches(cond, true_branch, false_branch, source, false, onlyConstantEval);
       then
         equations;
     // handle the erroneous case where the number of equations are not equal in different branches
@@ -5229,7 +5242,6 @@ algorithm
       then
         equations;
     case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval as true)
-      
       then
         {elt};
     case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval) // only display failure on if equation  
