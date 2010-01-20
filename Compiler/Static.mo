@@ -1478,13 +1478,21 @@ protected function elabCallReduction2 "help function to elabCallReduction. symbo
   output list<DAE.Exp> expl;
 algorithm
 	expl := matchcontinue(e, valLst, id)
-  local Integer i;
-    DAE.Exp e1;
+		local 
+			Integer i;
+			Real r;
+			DAE.Exp e1;
     case(e, {}, id) then {};
-    case(e, Values.INTEGER(i)::valLst, id) equation
-      (e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),DAE.ICONST(i));
-      expl = elabCallReduction2(e, valLst, id);
-    then e1::expl;
+    case(e, Values.INTEGER(i)::valLst, id) 
+			equation
+				(e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),DAE.ICONST(i));
+				expl = elabCallReduction2(e, valLst, id);
+			then e1::expl;
+		case(e, Values.REAL(r) :: valLst, id)
+			equation
+				(e1,_) = Exp.replaceExp(e, DAE.CREF(DAE.CREF_IDENT(id, DAE.ET_OTHER(), {}), DAE.ET_OTHER()), DAE.RCONST(r));
+				expl = elabCallReduction2(e, valLst, id);
+			then e1 :: expl;
   end matchcontinue;
 end elabCallReduction2;
 
