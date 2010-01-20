@@ -112,7 +112,7 @@ public function ceval "
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 
-	function ReductionOperator
+	partial function ReductionOperator
 		input Values.Value v1;
 		input Values.Value v2;
 		output Values.Value res;
@@ -4937,7 +4937,7 @@ protected function cevalReduction
 	output Values.Value result;
 	output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 
-	function ReductionOperator
+	partial function ReductionOperator
 		input Values.Value v1;
 		input Values.Value v2;
 		output Values.Value res;
@@ -5024,7 +5024,7 @@ protected function lookupReductionOp
 	input DAE.Ident reductionName;
 	output ReductionOperator op;
 
-	function ReductionOperator
+	partial function ReductionOperator
 		input Values.Value v1;
 		input Values.Value v2;
 		output Values.Value res;
