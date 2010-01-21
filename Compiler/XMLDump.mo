@@ -1,7 +1,7 @@
 /*
  * This file is a  part of OpenModelica.
  *
- * Copyright (c) 1998-2009, Linköpings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
  * SE-58183 Linköping, Sweden.
  *

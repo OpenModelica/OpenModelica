@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Link�pings University,
+ * Copyright (c) 1998-2010, Link�pings University,
  * Department of Computer and Information Science,
  * SE-58183 Link�ping, Sweden.
  *
