@@ -8073,7 +8073,7 @@ algorithm
         String lastId;
         list<Env.Frame> recordEnv;
       equation 
-        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_)),DAE.NO_INLINE),_)),env_1) 
+        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_)),DAE.NO_INLINE),_)),_) 
         	= Lookup.lookupType(cache,env, fn, true);
         
         (_,cl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
@@ -8088,7 +8088,7 @@ algorithm
         const = calculateConstantness(constlist);
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
-        (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
+        (env_2,cl) = Lookup.buildRecordConstructorClass(recordEnv, cl);
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
         tp = complexTypeFromSlots(newslots2,name,complexClassType);

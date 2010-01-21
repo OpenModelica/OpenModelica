@@ -168,9 +168,7 @@ algorithm
     // Record constructors        
     case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
       equation
-        (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
-        (cache,varlst) = buildRecordConstructorVarlst(cache,c,env_1);
-        t = Types.makeFunctionType(path, varlst, Inst.isInlineFunc2(c));
+        (env_1,t) = buildRecordType(env_1,c);
       then 
         (cache,t,env_1);
         
@@ -993,10 +991,12 @@ algorithm
       list<Env.Frame> env,env_1,env_2,env_3;
       Absyn.Path path;
       String name;
+      SCode.Restriction re;
     case (env,path)
-      equation 
-        (_,c as SCode.CLASS(name = name, restriction=SCode.R_RECORD()) ,env_1) = lookupClass2(Env.emptyCache(),env, path, false);
-        c = buildRecordConstructorClass(c, env_1);
+      equation
+        (_,c,env_1) = lookupClass2(Env.emptyCache(),env, path, false);
+        SCode.CLASS(name = name, restriction=SCode.R_RECORD()) = c;
+        (_,c) = buildRecordConstructorClass(env_1,c);
       then
         (c,env_1);
   end matchcontinue;
@@ -1718,14 +1718,11 @@ algorithm
       then
         fail();
         /* Record constructor function*/
-    case (cache,Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),_),env,id)
-      equation 
-        /*Each time a record constructor function is looked up, this rule will create the function. An improvement (perhaps needing lot of code) is to add the function to the environment, which is returned from this function.*/
-        (cache,fpath) = Inst.makeFullyQualified(cache,env, Absyn.IDENT(n));
-        (cache,varlst) = buildRecordConstructorVarlst(cache,cdef, env);
-        ftype = Types.makeFunctionType(fpath, varlst, Inst.isInlineFunc2(cdef));
+    case (cache,Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv),env,id)
+      equation
+        (env_3,ty) = buildRecordType(env,cdef);
       then
-        (cache,ftype,env);
+        (cache,ty,env_3);
 
         /* Found function */
     case (cache,Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv),env,id)
@@ -1760,7 +1757,7 @@ algorithm
       list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
       Env.AvlTree httypes;
       Env.AvlTree ht;
-      list<Env.Frame> env,cenv,env_1;
+      list<Env.Frame> env,cenv,env_1,env_3;
       String id,n;
       SCode.Class cdef;
       list<DAE.Var> varlst;
@@ -1792,9 +1789,7 @@ algorithm
     case (cache,ht,httypes,env,id) 
       equation 
         Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.avlTreeGet(ht, id);
-        (cache,varlst) = buildRecordConstructorVarlst(cache, cdef, env);
-        (cache,fpath) = Inst.makeFullyQualified(cache, cenv, Absyn.IDENT(n));
-        ftype = Types.makeFunctionType(fpath, varlst, Inst.isInlineFunc2(cdef));
+        (_,ftype) = buildRecordType(env,cdef);
       then
         (cache,{ftype});
         
@@ -1887,73 +1882,103 @@ algorithm
     case (ht,env,id)
       equation 
         Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_RECORD(),_)),_) = Env.avlTreeGet(ht, id);
-        cdef = buildRecordConstructorClass(cdef, env);
+        (_,cdef) = buildRecordConstructorClass(env,cdef);
       then
         (cdef,env);
   end matchcontinue;
 end lookupRecconstInFrame;
 
-protected function buildRecordConstructorClass 
+protected function buildRecordType
+  input Env.Env env;
+  input SCode.Class cdef;
+  output Env.Env outEnv;
+  output Types.Type ftype;
+protected
+  String name;
+  Env.Env env_1;
+algorithm
+  (_,cdef) := buildRecordConstructorClass(env,cdef);
+  (_,outEnv,_,_) := Inst.implicitFunctionInstantiation(
+     Env.emptyCache(),env,InstanceHierarchy.emptyInstHierarchy,
+     DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
+  name := SCode.className(cdef);
+  (_,ftype,_) := lookupTypeInEnv(Env.emptyCache(),outEnv,Absyn.IDENT(name));
+end buildRecordType;
+
+public function buildRecordConstructorClass 
 "function: buildRecordConstructorClass
   
   Creates the record constructor class, i.e. a function, from the record
   class given as argument."
-  input SCode.Class inClass;
   input Env.Env inEnv;
+  input SCode.Class inClass;
+  output Env.Env outEnv;
   output SCode.Class outClass;
 algorithm 
-  outClass:=
-  matchcontinue (inClass,inEnv)
+  (outEnv,outCache,outClass) :=
+  matchcontinue (inEnv,inClass)
     local
+      Env.Cache cache;
       list<SCode.Element> funcelts,elts;
       SCode.Element reselt;
       SCode.Class cl;
       String id;
       SCode.Restriction restr;
       list<Env.Frame> env;
-    case (cl as SCode.CLASS(name=id),env) /* record class function class */ 
-      local
-        list<SCode.Algorithm> initStmts;
-        list<Absyn.Algorithm> initAbsynStmts;
-      equation 
-        (funcelts,elts) = buildRecordConstructorClass2(cl,DAE.NOMOD(),env);
-        reselt = buildRecordConstructorResultElt(funcelts, id, env);
+      list<SCode.Algorithm> initStmts;
+      list<Absyn.Algorithm> initAbsynStmts;
+    case (env,cl as SCode.CLASS(name=id)) /* record class function class */ 
+      equation
+        (env,funcelts,elts) = buildRecordConstructorClass2(env,cl,DAE.NOMOD());
+        reselt = buildRecordConstructorResultElt(funcelts,id,env);
+        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE));
       then
-        SCode.CLASS(id,false,false,SCode.R_FUNCTION(),
-          SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE));
-    case (cl,env) equation
-      print("buildRecordConstructorClass failed\n");
+        (env,cl);
+    case (env,cl)
+      equation
+        Debug.fprintln("failtrace","buildRecordConstructorClass failed");
       then fail();
   end matchcontinue;
 end buildRecordConstructorClass;
 
 protected function buildRecordConstructorClass2 "help function to buildRecordConstructorClass"
+  input Env.Env env;
   input SCode.Class cl;
   input DAE.Mod mods;
-  input Env.Env env;
+  output Env.Env outEnv;
   output list<SCode.Element> funcelts;
-  output list<SCode.Element> elts;  
+  output list<SCode.Element> elts;
 algorithm
-  (funcelts,elts) := matchcontinue(cl,mods,env)
+  (outEnv,funcelts,elts) := matchcontinue(env,cl,mods)
     local 
-      list<SCode.Element> elts,cdefelts,restElts; Env.Env env1;
+      list<SCode.Element> elts,cdefelts,restElts,classExtendsElts,extendsElts,compElts;
+      list<tuple<SCode.Element,DAE.Mod>> eltsMods;
+      Env.Env env1;
+      String name;
     /* a class with parts */
-    case(SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)),mods,env)
+    case (env,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst = elts)),mods)
+      equation
+        env = Env.openScope(env, false, SOME(name));
+        (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
+        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(name), name, true);
+        eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
+        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
+        (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(name),eltsMods,eltsMods,{},{},true);
+        funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
+      then (env1,funcelts,elts);
+    /* adrpo: TODO! handle also the case model extends x end x;
+     * sjoelund: Is this really needed? Try commenting it out, since instExtendsAndClassExtendsList should handle it! */
+     /*
+    case(cache,env,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
         (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
         funcelts = buildRecordConstructorElts(restElts,mods,env1);
-      then (funcelts,elts);
-    /* adrpo: TODO! handle also the case model extends x end x; */
-    case(SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods,env)
-      equation
-        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
-        funcelts = buildRecordConstructorElts(restElts,mods,env1);
-      then (funcelts,elts);
+      then (cache,funcelts,elts);
+      */
     // fail
-    case(cl,mods,env) equation
-      print("buildRecordConstructorClass2 failed, cl:"+&SCode.printClassStr(cl)+&"\n");
+    case(env,cl,mods) equation
+      Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCode.printClassStr(cl)+&"\n");
     then fail();
       /* TODO: short class defs */   
   end matchcontinue;
@@ -1980,14 +2005,15 @@ protected function buildRecordConstructorElts
   TODO: This function should be replaced by a proper instantiation using instClassIn instead, followed by a 
   traversal of the DAE.Var changing direction to input.
   Reason for not doing that now: records can contain arrays with unknown dimensions."
-  input list<SCode.Element> inSCodeElementLst;
+  input list<tuple<SCode.Element,DAE.Mod>> inSCodeElementLst;
   input DAE.Mod mods;
   input Env.Env env;
   output list<SCode.Element> outSCodeElementLst;
 algorithm 
   outSCodeElementLst := matchcontinue (inSCodeElementLst,mods,env)
     local
-      list<SCode.Element> res,rest,res1,res2;
+      list<tuple<SCode.Element,DAE.Mod>> rest;
+      list<SCode.Element> res;
       SCode.Element comp;
       String id;
       Boolean fl,repl,prot,f,st;
@@ -2005,12 +2031,14 @@ algorithm
       SCode.Class cl;
       Absyn.Path path;
       SCode.Mod mod,umod;
-      DAE.Mod mod_1, compMod, fullMod, selectedMod;
+      DAE.Mod mod_1, compMod, fullMod, selectedMod, cmod;
       Option<Absyn.Info> nfo;
       Option<Absyn.ConstrainClass> cc;
       
-    case (((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)) :: rest),mods,env)
-      equation 
+    case ({},_,_) then {}; 
+    
+    case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+      equation
         (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
@@ -2019,6 +2047,8 @@ algorithm
         compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
+        (_,cmod) = Mod.updateMod(Env.emptyCache(),env,Prefix.NOPRE(),cmod,true);
+        selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
         umod = Mod.unelabMod(selectedMod);
         res = buildRecordConstructorElts(rest, mods, env);
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
@@ -2028,18 +2058,11 @@ algorithm
         (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,
           umod,bc,comment,cond,nfo,cc) :: res);
 
-    case (SCode.EXTENDS(path,mod,_) :: rest,mods,env)
-      equation 
-        (_,mod_1) = Mod.elabMod(Env.emptyCache(),env, Prefix.NOPRE(), mod, false);
-        mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
-        (_,cl,env_1) = lookupClass(Env.emptyCache(),env, path, false);
-        res1 = buildRecordConstructorElts(rest,mods, env);
-        (res2,_) = buildRecordConstructorClass2(cl,mod_1,env_1);
-        res = listAppend(res2,res1);
-      then
-        res;
-
-    case ({},_,_) then {}; 
+    case (_,_,_)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Lookup.buildRecordConstructorElts failed");
+      then fail();
   end matchcontinue;
 end buildRecordConstructorElts;
 
@@ -2063,153 +2086,6 @@ algorithm
           SCode.NOMOD,
           NONE,NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
-
-protected function buildRecordConstructorVarlst 
-"function: buildRecordConstructorVarlst 
-  This function takes a class  (`SCode.Class\') which holds a definition 
-  of a record and builds a list of variables of the record used for 
-  constructing a record constructor function."
-	input Env.Cache inCache;
-  input SCode.Class inClass;
-  input Env.Env inEnv;
-  output Env.Cache outCache;
-  output list<DAE.Var> outTypesVarLst;
-algorithm 
-  (outCache,outTypesVarLst) := matchcontinue (inCache,inClass,inEnv)
-    local
-      list<DAE.Var> inputvarlst;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
-      SCode.Class cl;
-      list<SCode.Element> elts,cdefelts,restElts;
-      list<Env.Frame> env,env1;
-      Env.Cache cache;
-
-    case (cache,(cl as SCode.CLASS(classDef = SCode.PARTS(elementLst = elts))),env)
-      equation 
-        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
-        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, DAE.NOMOD(),env1);        
-        (cache,_,_,_,_,_,ty,_,_,_) = 
-        Inst.instClass(
-          cache,env1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
-          {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
-      then
-        (cache,DAE.TYPES_VAR("result",
-          DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND()) :: inputvarlst);
-
-     /* adrpo: TODO! handle also the case model extends x end x; */          
-    case (cache,(cl as SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts))),env)
-      equation 
-        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
-        (cache,inputvarlst) = buildVarlstFromElts(cache,restElts, DAE.NOMOD(),env1);        
-        (cache,_,_,_,_,_,ty,_,_,_) = 
-        Inst.instClass(
-          cache,env1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, 
-          {}, true, Inst.TOP_CALL(), ConnectionGraph.EMPTY) "FIXME: impl" ;
-      then
-        (cache,DAE.TYPES_VAR("result",
-          DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND()) :: inputvarlst);
-          
-    case (_,cl,_)
-      local
-        String str;
-      equation
-				true = RTOpts.debugFlag("failtrace");
-        str = SCode.printClassStr(cl); 
-        Debug.fprintln("failtrace", "- Lookup.buildRecordConstructorVarlst failed on:\n" +& str +& "\n");
-      then
-        fail();
-  end matchcontinue;
-end buildRecordConstructorVarlst;
-
-protected function buildVarlstFromElts 
-"function: buildVarlstFromElts  
-  Helper function to buildRecordConstructorVarlst"
-	input Env.Cache inCache;
-  input list<SCode.Element> inSCodeElementLst;
-  input DAE.Mod mods;
-  input Env.Env inEnv;
-  output Env.Cache outCache;
-  output list<DAE.Var> outTypesVarLst;
-algorithm 
-  (outCache,outTypesVarLst) :=
-  matchcontinue (inCache,inSCodeElementLst,mods,inEnv)
-    local
-      list<DAE.Var> vars,vars1,vars2;
-      DAE.Var var;
-      SCode.Element comp;
-      list<SCode.Element> rest;
-      list<Env.Frame> env,env_1;
-      Env.Cache cache;
-      SCode.Class cl;
-      SCode.Mod mod;
-      Absyn.Path path;
-      String n;
-      DAE.Mod compMod,mod2;
-    case (cache,((comp as SCode.COMPONENT(component = n)) :: rest),mods,env)
-      equation 
-        (cache,vars) = buildVarlstFromElts(cache,rest, mods,env);
-        compMod = Mod.lookupModificationP(mods,Absyn.IDENT(n));
-        (cache,_,var) = 
-        Inst.instRecordConstructorElt(cache,env,InstanceHierarchy.emptyInstHierarchy, comp,compMod, true) 
-        "P.A Here we need to do a lookup of the type. 
-         Therefore we need the env passed along from 
-         lookup_xxxx function. FIXME: impl" ;
-      then
-        (cache,var :: vars);
-
-    case (cache,((SCode.EXTENDS(path,mod,_)) :: rest),mods,env)
-      equation 
-        (_,cl,env_1) = lookupClass(cache,env, path, true);
-        (cache,mod2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod, false);
-        mod2 = Mod.merge(mods,mod2,env_1,Prefix.NOPRE());                  
-       (cache,vars1) = buildVarlstFromElts2(cache,env_1,cl,mod2);
-        (cache,vars2) = buildVarlstFromElts(cache,rest, mods,env);
-        vars = listAppend(vars1,vars2);
-      then
-        (cache,vars);        
-    case (cache,{},_,_) then (cache,{}); 
-    case (_,rest,_,_) equation 
-			true = RTOpts.debugFlag("failtrace");
-      Debug.fprintln("failtrace", "- Lookup.buildVarlstFromElts failed on elts: " +& Util.stringDelimitList(Util.listMap(rest,SCode.printElementStr),"\n"));            
-    then fail(); 
-  end matchcontinue;
-end buildVarlstFromElts;
-
-protected function buildVarlstFromElts2 
-"Help function to buildVarlstFromElts"
-  input Env.Cache cache;
-  input Env.Env env;
-  input SCode.Class cl;
-  input DAE.Mod mods;
-  output Env.Cache outCache;
-  output list<DAE.Var> vLst;
-algorithm
-  (outCache,vLst) := matchcontinue(cache,env,cl,mods)
-  local list<SCode.Element> elts,cdefelts,restElts;
-    Env.Env env1;
-    case(cache,env,SCode.CLASS(classDef = SCode.PARTS(elementLst = elts)),mods)
-      equation
-        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env, InstanceHierarchy.emptyInstHierarchy, cdefelts, false, NONE);        
-        (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
-      then (outCache,vLst);
-    /* adrpo: TODO! handle also model extends x end x; */
-    case(cache,env,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods)
-      equation
-        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env, InstanceHierarchy.emptyInstHierarchy, cdefelts, false, NONE);        
-        (outCache,vLst) = buildVarlstFromElts(cache,restElts,mods,env1);
-      then (outCache,vLst);        
-    case(_,_,cl,mods) equation
-			true = RTOpts.debugFlag("failtrace");
-      Debug.fprint("failtrace", "- buildVarlstFromElts2 failed!\n class:"+&SCode.printClassStr(cl));
-    then fail();
-  end matchcontinue;
-end buildVarlstFromElts2;
 
 public function isInBuiltinEnv 
 "class lookup

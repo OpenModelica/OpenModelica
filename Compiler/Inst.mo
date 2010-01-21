@@ -4304,7 +4304,7 @@ algorithm
   end matchcontinue;
 end getOptionArraydim;
 
-protected function instExtendsAndClassExtendsList " 
+public function instExtendsAndClassExtendsList " 
   This function flattens out the inheritance structure of a class.
   It takes an SCode.Element list and flattens out the extends nodes and
   class extends nodes of that list. The result is a list of components and
@@ -5633,9 +5633,10 @@ algorithm
       then
         (cache,env_2,ih);
 
-    case (_,_,_,_,_,_,_,comps,_,_,_,_)
-      equation 
-        Debug.fprintln("failtrace", "- Inst.addComponentsToEnv failed");
+    case (_,env,_,_,_,_,_,comps,_,_,_,_)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.addComponentsToEnv failed");
       then
         fail();
   end matchcontinue;
@@ -9420,13 +9421,13 @@ algorithm
         DAE.InlineType inlineType; 
         SCode.ClassDef cd;
       equation
-        (cache,fq_func) = makeFullyQualified(cache,env, Absyn.IDENT(n));
 //print("Normal function: " +& Absyn.pathString(fq_func)+& " inline: ");
         inlineType = isInlineFunc2(c);
-        derFuncs = getDeriveAnnotation(cd,fq_func,cache,env,pre);
         (cache,cenv,ih,_,dae,csets_1,ty,st,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
-        (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
+        SOME(fpath) = Env.getEnvPath(cenv); // TODO: When perost has fixed for iterators, use this line instead of the following
+        //(cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
+        derFuncs = getDeriveAnnotation(cd,fpath,cache,env,pre);
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, n, ty1); 
         
@@ -15989,7 +15990,7 @@ algorithm
 end matchcontinue;
 end extractCurrentName;
 
-protected function splitElts 
+public function splitElts 
 "This function splits the Element list into four lists
 1. Class definitions , imports and defineunits
 2. Class-extends class definitions
