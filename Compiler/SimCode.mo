@@ -68,7 +68,7 @@ protected import Error;
 protected import Inst;
 protected import InstanceHierarchy;
 protected import Print;
-protected import SimCodegen;
+protected import Settings;
 protected import RTOpts;
 protected import System;
 protected import VarTransform;
@@ -473,8 +473,7 @@ algorithm
         
         /* generate makefile in old way since it's not implemented in
            templates yet */
-        SimCodegen.generateMakefile(makefilename, filenameprefix, libs,
-                                    file_dir);
+        generateMakefile(makefilename, filenameprefix, libs, file_dir);
       then
         (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
@@ -512,7 +511,7 @@ algorithm
         //debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
         //debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
         //Debug.fprintln("info", debugpathstr) "debug" ;
-        funcelems = SimCodegen.generateFunctions2(p, funcpaths);
+        funcelems = generateFunctions2(p, funcpaths);
         //debugstr = Print.getString();
         //Print.clearBuf();
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
@@ -4438,7 +4437,7 @@ algorithm
     case (e,eqns,vars,ass2) /* equation no. assignments2 */
       equation
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "SimCodegen.getEquationAndSolvedVar failed at index: " +& intString(e));
+        Debug.fprintln("failtrace", "SimCode.getEquationAndSolvedVar failed at index: " +& intString(e));
       then
         fail();        
   end matchcontinue;
@@ -4707,7 +4706,7 @@ algorithm
     
     case(_,_,_)
       equation
-        Debug.fprint("failtrace", "SimCodegen.getCalledFunctionsInFunction failed\n");
+        Debug.fprint("failtrace", "SimCode.getCalledFunctionsInFunction failed\n");
       then fail();
   end matchcontinue;
 end getCalledFunctionsInFunction;
@@ -5196,5 +5195,193 @@ algorithm
         b;
   end matchcontinue;
 end subsToScalar;
+
+protected function generateFunctions2 
+"function: generateFunctions2
+  author: PA
+  Helper function to generateFunctions."
+  input SCode.Program p;
+  input list<Absyn.Path> paths;
+  output list<DAE.Element> dae;
+algorithm
+  dae := generateFunctions3(p, paths, paths);
+end generateFunctions2;
+
+protected function generateFunctions3 
+"function: generateFunctions3
+  Helper function to generateFunctions2"
+  input SCode.Program inProgram1;
+  input list<Absyn.Path> inAbsynPathLst2;
+  input list<Absyn.Path> inAbsynPathLst3;
+  output list<DAE.Element> outDAEElementLst;
+algorithm
+  outDAEElementLst:=
+  matchcontinue (inProgram1,inAbsynPathLst2,inAbsynPathLst3)
+    local
+      list<Absyn.Path> allpaths,subfuncs,allpaths_1,paths_1,paths;
+      DAE.DAElist fdae,dae,patched_dae;
+      tuple<DAE.TType, Option<Absyn.Path>> t;
+      list<DAE.Element> elts,res;
+      list<SCode.Class> p;
+      Absyn.Path path;
+      DAE.ExternalDecl extdecl;
+      DAE.InlineType inl;
+      Boolean partialPrefix;
+      String s;
+      DAE.ElementSource source "the origin of the element";
+      
+    case (_,{},allpaths) then {};  /* iterated over complete list */
+      
+    case (p,(path :: paths),allpaths)
+      equation
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        DAE.DAE(elementLst = {DAE.FUNCTION(functions = 
+          DAE.FUNCTION_DEF(dae)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)}) = fdae;        
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl,source)});
+        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
+        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
+        elts = generateFunctions3(p, paths_1, allpaths_1);
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl,source)});
+      then
+        res;
+        
+    case (p,(path :: paths),allpaths)
+      equation
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        DAE.DAE(elementLst = {DAE.FUNCTION(functions=
+          DAE.FUNCTION_EXT(dae,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)}) = fdae;
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl,source)});
+        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
+        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
+        elts = generateFunctions3(p, paths_1, allpaths_1);
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl,source)});
+      then
+        res;
+        
+    case (p,(path :: paths),allpaths)
+      equation
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        DAE.DAE(elementLst = {DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)}) = fdae;
+        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)});
+        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
+        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
+        elts = generateFunctions3(p, paths_1, allpaths_1);
+        res = listAppend(elts, {DAE.RECORD_CONSTRUCTOR(path,t,source)});
+      then
+        res;
+        
+    case (_,(path :: paths),_)
+      equation
+        s = Absyn.pathString(path);
+        s = "SimCode.generateFunctions3 failed: " +& s +& "\n";
+        print(s);
+      then
+        fail();
+  end matchcontinue;
+end generateFunctions3;
+
+protected function appendNonpresentPaths 
+"function: appendNonpresentPaths
+  Appends the paths in first argument to the two path lists given as second
+  and third argument, given that the path is not present in the second path list."
+  input list<Absyn.Path> inAbsynPathLst1;
+  input list<Absyn.Path> inAbsynPathLst2;
+  input list<Absyn.Path> inAbsynPathLst3;
+  output list<Absyn.Path> outAbsynPathLst1;
+  output list<Absyn.Path> outAbsynPathLst2;
+algorithm
+  (outAbsynPathLst1,outAbsynPathLst2):=
+  matchcontinue (inAbsynPathLst1,inAbsynPathLst2,inAbsynPathLst3)
+    local
+      list<Absyn.Path> allpaths,iterpaths,paths,allpaths_1,iterpaths_1,allpaths_2,iterpaths_2;
+      Absyn.Path path;
+      
+    case ({},allpaths,iterpaths) then (allpaths,iterpaths);  /* paths to append all paths iterated paths updated all paths update iterated paths */
+      
+    case ((path :: paths),allpaths,iterpaths)
+      equation
+        _ = Util.listGetMemberOnTrue(path, allpaths, ModUtil.pathEqual);
+        (allpaths,iterpaths) = appendNonpresentPaths(paths, allpaths, iterpaths);
+      then
+        (allpaths,iterpaths);
+        
+    case ((path :: paths),allpaths,iterpaths)
+      equation
+        failure(_ = Util.listGetMemberOnTrue(path, allpaths, ModUtil.pathEqual));
+        allpaths_1 = listAppend(allpaths, {path});
+        iterpaths_1 = listAppend(iterpaths, {path});
+        (allpaths_2,iterpaths_2) = appendNonpresentPaths(paths, allpaths_1, iterpaths_1);
+      then
+        (allpaths_2,iterpaths_2);
+  end matchcontinue;
+end appendNonpresentPaths;
+
+protected function generateMakefile
+"function: generateMakefile
+  This function generates a makefile for the simulation code.
+  It uses:
+   - OPENMODELICAHOME/include as a reference to includes and
+   - OPENMODELICAHOME/lib as a reference to library files"
+  input String inMakefileName;
+  input String inFilenamePrefix;
+  input list<String> inLibs;
+  input String inFileDir;
+algorithm
+  _:=
+  matchcontinue (inMakefileName,inFilenamePrefix,inLibs,inFileDir)
+    local
+      String cpp_file,libs_1,omhome_1,omhome,str,filename,cname,file_dir,MakefileHeader;
+      list<String> libs;
+    case (filename,cname,libs,"") /* filename classname libs directory for mo-file */
+      equation
+        MakefileHeader = CevalScript.generateMakefileHeader();
+        cpp_file = Util.stringAppendList({cname,".cpp"});
+        libs = Util.listUnion(libs, libs); // un-double the libs
+        libs_1 = Util.stringDelimitList(libs, " ");
+        omhome_1 = Settings.getInstallationDirectoryPath();
+        omhome = System.trim(omhome_1, "\"");
+        str = Util.stringAppendList({MakefileHeader,
+          "\n.PHONY: ",cname,"\n",
+          cname,": ",cpp_file,"\n","\t $(CXX)",
+          " $(CFLAGS)",
+          " -I.",
+          " -o ",cname,"$(EXEEXT) ",cpp_file,
+          " -lsim",
+          " $(LDFLAGS)",
+          " -lf2c",
+          " ${SENDDATALIBS} ",
+          libs_1,
+          "\n"});
+        System.writeFile(filename, str);
+      then
+        ();
+    case (filename,cname,libs,file_dir)
+      equation
+        MakefileHeader = CevalScript.generateMakefileHeader();
+        cpp_file = Util.stringAppendList({cname,".cpp"});
+        libs = Util.listUnion(libs, libs); // un-double the libs        
+        libs_1 = Util.stringDelimitList(libs, " ");
+        omhome_1 = Settings.getInstallationDirectoryPath();
+        omhome = System.trim(omhome_1, "\"");
+        str = Util.stringAppendList(
+          {MakefileHeader,
+          "\n.PHONY: ",cname,"\n",
+          cname,": ",cpp_file,"\n","\t $(CXX)",
+          " $(CFLAGS)",
+          " -I.",
+          " -I\"",file_dir,"\"",
+          " -o ",cname,"$(EXEEXT) ",cpp_file,
+          " -L\"",file_dir,"\"",
+          " -lsim",
+          " $(LDFLAGS)",
+          " -lf2c",
+          " ${SENDDATALIBS} ",
+          libs_1,
+          "\n"});
+        System.writeFile(filename, str);
+      then
+        ();
+  end matchcontinue;
+end generateMakefile;
 
 end SimCode;
