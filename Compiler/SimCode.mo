@@ -387,21 +387,6 @@ algorithm
   end matchcontinue; 
 end buildCrefExpFromAsub;
 
-// TODO: Remove this and use constants above instead
-public function createSimulationContext
-  input Boolean genDiscrete;
-  output Context context;
-algorithm
-  context := SIMULATION(genDiscrete);
-end createSimulationContext;
-
-// TODO: Remove this and use constants above instead
-public function createOtherContext
-  output Context context;
-algorithm
-  context := OTHER();
-end createOtherContext;
-
 public function translateModel
 "One of the entry points."
   input Env.Cache inCache;

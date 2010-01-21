@@ -1734,10 +1734,8 @@ algorithm
       local
         list<DAE.Exp> rest;
         DAE.Exp i_it;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_ctorPreExp, i_ctorVarDecls) = daeExp(txt, i_it, ret_0, i_ctorPreExp, i_ctorVarDecls);
+        (txt, i_ctorPreExp, i_ctorVarDecls) = daeExp(txt, i_it, SimCode.contextOther, i_ctorPreExp, i_ctorVarDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_ctorVarDecls, i_ctorPreExp) = lm_50(txt, rest, i_ctorVarDecls, i_ctorPreExp);
       then (txt, i_ctorVarDecls, i_ctorPreExp);
@@ -2267,10 +2265,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(false);
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextSimulationNonDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_56(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -2311,10 +2307,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(false);
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextSimulationNonDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_57(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -2355,10 +2349,8 @@ algorithm
       local
         list<DAE.Statement> rest;
         DAE.Statement i_it;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(false);
-        (txt, i_varDecls) = algStatement(txt, i_it, ret_0, i_varDecls);
+        (txt, i_varDecls) = algStatement(txt, i_it, SimCode.contextSimulationNonDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_58(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -2450,10 +2442,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(true);
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextSimulationDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_60(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -2494,10 +2484,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(true);
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextSimulationDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_61(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -2958,10 +2946,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(true);
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextSimulationDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_72(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -3003,13 +2989,11 @@ algorithm
         list<SimCode.HelpVarInfo> rest;
         DAE.Exp i_exp;
         Integer i_in1;
-        SimCode.Context ret_2;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext(true);
-        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, ret_2, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
         txt = Tpl.writeStr(txt, intString(i_in1));
@@ -3105,10 +3089,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(true);
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextSimulationDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_75(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -3150,13 +3132,11 @@ algorithm
         list<SimCode.HelpVarInfo> rest;
         DAE.Exp i_exp;
         Integer i_in1;
-        SimCode.Context ret_2;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext(true);
-        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, ret_2, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
         txt = Tpl.writeStr(txt, intString(i_in1));
@@ -3436,13 +3416,11 @@ algorithm
         DAE.ComponentRef i_weq_left;
         DAE.Exp i_weq_right;
         DAELow.WhenEquation i_weq;
-        SimCode.Context ret_2;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext(true);
-        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_weq_right, ret_2, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_weq_right, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("save("));
         txt = cref(txt, i_weq_left);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
@@ -3488,11 +3466,9 @@ algorithm
       local
         DAE.ComponentRef i_stateVar;
         DAE.Exp i_value;
-        SimCode.Context ret_1;
         Tpl.Text i_val;
       equation
-        ret_1 = SimCode.createSimulationContext(true);
-        (i_val, i_preExp, i_varDecls) = daeExp(emptyTxt, i_value, ret_1, i_preExp, i_varDecls);
+        (i_val, i_preExp, i_varDecls) = daeExp(emptyTxt, i_value, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = cref(txt, i_stateVar);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = Tpl.writeText(txt, i_val);
@@ -3532,10 +3508,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextOther, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_84(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -3614,10 +3588,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextOther, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_86(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -3736,13 +3708,11 @@ algorithm
            i_varDecls )
       local
         DAE.Exp i_exp;
-        SimCode.Context ret_2;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createOtherContext();
-        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, ret_2, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, SimCode.contextOther, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->initialResiduals[i++] = "));
         txt = Tpl.writeText(txt, i_expPart);
@@ -3860,14 +3830,12 @@ algorithm
         DAE.Exp i_eq2_exp;
         SimCode.SimEqSystem i_eq2;
         Integer i_i0;
-        SimCode.Context ret_2;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createSimulationContext(true);
-        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_eq2_exp, ret_2, i_preExp, i_varDecls);
+        (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_eq2_exp, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("res["));
         txt = Tpl.writeStr(txt, intString(i_i0));
@@ -3987,10 +3955,8 @@ algorithm
       local
         list<SimCode.SimEqSystem> rest;
         SimCode.SimEqSystem i_eq;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_varDecls) = equation_(txt, i_eq, ret_0, i_varDecls);
+        (txt, i_varDecls) = equation_(txt, i_eq, SimCode.contextOther, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_95(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -4272,19 +4238,15 @@ algorithm
         DAE.Exp i_exp2;
         DAE.Operator i_operator;
         DAE.Exp i_exp1;
-        SimCode.Context ret_5;
         Tpl.Text i_e2;
         Tpl.Text i_op;
-        SimCode.Context ret_2;
         Tpl.Text i_e1;
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createOtherContext();
-        (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp1, ret_2, i_preExp, i_varDecls);
+        (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp1, SimCode.contextOther, i_preExp, i_varDecls);
         i_op = zeroCrossingOpFunc(emptyTxt, i_operator);
-        ret_5 = SimCode.createOtherContext();
-        (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp2, ret_5, i_preExp, i_varDecls);
+        (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp2, SimCode.contextOther, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("ZEROCROSSING("));
@@ -4305,17 +4267,13 @@ algorithm
       local
         DAE.Exp i_interval;
         DAE.Exp i_start;
-        SimCode.Context ret_4;
         Tpl.Text i_e2;
-        SimCode.Context ret_2;
         Tpl.Text i_e1;
         Tpl.Text i_preExp;
       equation
         i_preExp = emptyTxt;
-        ret_2 = SimCode.createOtherContext();
-        (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_start, ret_2, i_preExp, i_varDecls);
-        ret_4 = SimCode.createOtherContext();
-        (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_interval, ret_4, i_preExp, i_varDecls);
+        (i_e1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_start, SimCode.contextOther, i_preExp, i_varDecls);
+        (i_e2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_interval, SimCode.contextOther, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("ZEROCROSSING("));
@@ -6507,14 +6465,12 @@ public function daeExpToString
 
   output Tpl.Text out_txt;
 protected
-  SimCode.Context ret_2;
   Tpl.Text i_varDecls;
   Tpl.Text i_preExp;
 algorithm
   i_preExp := emptyTxt;
   i_varDecls := emptyTxt;
-  ret_2 := SimCode.createOtherContext();
-  (out_txt, i_preExp, i_varDecls) := daeExp(txt, i_exp, ret_2, i_preExp, i_varDecls);
+  (out_txt, i_preExp, i_varDecls) := daeExp(txt, i_exp, SimCode.contextOther, i_preExp, i_varDecls);
 end daeExpToString;
 
 protected function lm_155
@@ -7053,10 +7009,8 @@ algorithm
       local
         list<DAE.Exp> rest;
         DAE.Exp i_exp;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_varInits, i_varDecls) = daeExp(txt, i_exp, ret_0, i_varInits, i_varDecls);
+        (txt, i_varInits, i_varDecls) = daeExp(txt, i_exp, SimCode.contextOther, i_varInits, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls, i_varInits) = lm_165(txt, rest, i_varDecls, i_varInits);
       then (txt, i_varDecls, i_varInits);
@@ -7213,10 +7167,8 @@ algorithm
       local
         list<DAE.Exp> rest;
         DAE.Exp i_exp;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_varInits, i_varDecls) = daeExp(txt, i_exp, ret_0, i_varInits, i_varDecls);
+        (txt, i_varInits, i_varDecls) = daeExp(txt, i_exp, SimCode.contextOther, i_varInits, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls, i_varInits) = lm_168(txt, rest, i_varDecls, i_varInits);
       then (txt, i_varDecls, i_varInits);
@@ -8023,10 +7975,8 @@ algorithm
            i_varDecls )
       local
         DAE.Exp i_exp;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, ret_0, i_preExp, i_varDecls);
+        (txt, i_preExp, i_varDecls) = daeExp(txt, i_exp, SimCode.contextOther, i_preExp, i_varDecls);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
@@ -8038,15 +7988,13 @@ algorithm
         Integer i_outputIndex;
         DAE.ExpType i_type__;
         DAE.ComponentRef i_c;
-        SimCode.Context ret_3;
         Tpl.Text i_dim;
         Tpl.Text i_name;
         Tpl.Text i_typeStr;
       equation
         i_typeStr = expTypeShort(emptyTxt, i_type__);
         i_name = fun_187(emptyTxt, i_outputIndex, i_c);
-        ret_3 = SimCode.createOtherContext();
-        (i_dim, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, ret_3, i_preExp, i_varDecls);
+        (i_dim, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, SimCode.contextOther, i_preExp, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("size_of_dimension_"));
         txt = Tpl.writeText(txt, i_typeStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("_array("));
@@ -8149,10 +8097,8 @@ algorithm
       local
         list<DAE.Statement> rest;
         DAE.Statement i_it;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createOtherContext();
-        (txt, i_varDecls) = algStatement(txt, i_it, ret_0, i_varDecls);
+        (txt, i_varDecls) = algStatement(txt, i_it, SimCode.contextOther, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_191(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -9207,15 +9153,13 @@ algorithm
            i_when_elseWhen )
       local
         Integer i_i;
-        SimCode.Context ret_3;
         Tpl.Text i_res;
         Tpl.Text i_preExp;
         Tpl.Text i_restPre;
       equation
         (i_restPre, i_varDecls) = fun_206(emptyTxt, i_when_elseWhen, i_varDecls);
         i_preExp = emptyTxt;
-        ret_3 = SimCode.createSimulationContext(true);
-        (i_res, i_preExp, i_varDecls) = daeExp(emptyTxt, i_when_exp, ret_3, i_preExp, i_varDecls);
+        (i_res, i_preExp, i_varDecls) = daeExp(emptyTxt, i_when_exp, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
@@ -9314,10 +9258,8 @@ algorithm
       local
         list<DAE.Statement> rest;
         DAE.Statement i_it;
-        SimCode.Context ret_0;
       equation
-        ret_0 = SimCode.createSimulationContext(true);
-        (txt, i_varDecls) = algStatement(txt, i_it, ret_0, i_varDecls);
+        (txt, i_varDecls) = algStatement(txt, i_it, SimCode.contextSimulationDescrete, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls) = lm_209(txt, rest, i_varDecls);
       then (txt, i_varDecls);
@@ -9450,15 +9392,13 @@ algorithm
       local
         list<Integer> i_restInts;
         Integer i_firstInt;
-        SimCode.Context ret_1;
         Tpl.Text i_rest;
       equation
         (i_rest, i_preExp, i_varDecls) = foo(emptyTxt, i_restExps, i_restInts, i_preExp, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("localData->helpVars["));
         txt = Tpl.writeStr(txt, intString(i_firstInt));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = "));
-        ret_1 = SimCode.createSimulationContext(true);
-        (txt, i_preExp, i_varDecls) = daeExp(txt, i_firstExp, ret_1, i_preExp, i_varDecls);
+        (txt, i_preExp, i_varDecls) = daeExp(txt, i_firstExp, SimCode.contextSimulationDescrete, i_preExp, i_varDecls);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE(";\n"));
         txt = Tpl.writeText(txt, i_rest);
       then (txt, i_varDecls, i_preExp);

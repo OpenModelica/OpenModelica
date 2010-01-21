@@ -252,7 +252,7 @@ case EXTOBJINFO then
 # ctorPreExp = ""
 # ctor = (constructors of (var, fn, exps):
             # expsStr = (exps:
-                           daeExp(it, createOtherContext(), ctorPreExp, ctorVarDecls)
+                           daeExp(it, contextOther, ctorPreExp, ctorVarDecls)
                          ", ")
             '<cref(var)> = <fn>(<expsStr>);'
           "\n")
@@ -533,9 +533,9 @@ functionDaeOutput(list<SimEqSystem> nonStateContEquations,
                   list<SimEqSystem> removedEquations,
                   list<DAE.Statement> algorithmAndEquationAsserts) ::=
 # varDecls = ""
-# body = (nonStateContEquations of eq: '<equation_(eq, createSimulationContext(false), varDecls)>' "\n")
-# body2 = (removedEquations of eq: '<equation_(eq, createSimulationContext(false), varDecls)>' "\n")
-# stmts = (algorithmAndEquationAsserts : '<algStatement(it, createSimulationContext(false), varDecls)>' "\n")
+# body = (nonStateContEquations of eq: '<equation_(eq, contextSimulationNonDescrete, varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, contextSimulationNonDescrete, varDecls)>' "\n")
+# stmts = (algorithmAndEquationAsserts : '<algStatement(it, contextSimulationNonDescrete, varDecls)>' "\n")
 <<
 /* for continuous time variables */
 int functionDAE_output()
@@ -556,8 +556,8 @@ int functionDAE_output()
 functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
                    list<SimEqSystem> removedEquations) ::=
 # varDecls = ""
-# body = (nonStateDiscEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
-# body2 = (removedEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
+# body = (nonStateDiscEquations of eq: '<equation_(eq, contextSimulationDescrete, varDecls)>' "\n")
+# body2 = (removedEquations of eq: '<equation_(eq, contextSimulationDescrete, varDecls)>' "\n")
 <<
 /* for discrete time variables */
 int functionDAE_output2()
@@ -698,11 +698,11 @@ int handleZeroCrossing(long index)
 functionUpdateDependents(list<SimEqSystem> allEquations,
                          list<HelpVarInfo> helpVarInfo) ::=
 # varDecls = ""
-# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
+# eq1 = (allEquations of eq: '<equation_(eq, contextSimulationDescrete, varDecls)>' "\n")
 # hvars = (
   helpVarInfo of (in1, exp, _):
     # preExp = ""
-    # expPart = daeExp(exp, createSimulationContext(true), preExp, varDecls)
+    # expPart = daeExp(exp, contextSimulationDescrete, preExp, varDecls)
     '<preExp>localData->helpVars[<in1>] = <expPart>;'
   "\n"
 )
@@ -732,11 +732,11 @@ int function_updateDependents()
 functionUpdateDepend(list<SimEqSystem> allEquations,
                      list<HelpVarInfo> helpVarInfo) ::=
 # varDecls = ""
-# eq1 = (allEquations of eq: '<equation_(eq, createSimulationContext(true), varDecls)>' "\n")
+# eq1 = (allEquations of eq: '<equation_(eq, contextSimulationDescrete, varDecls)>' "\n")
 # hvars = (
   helpVarInfo of (in1, exp, _):
     # preExp = ""
-    # expPart = daeExp(exp, createSimulationContext(true), preExp, varDecls)
+    # expPart = daeExp(exp, contextSimulationDescrete, preExp, varDecls)
     '<preExp>localData->helpVars[<in1>] = <expPart>;'
   "\n"
 )
@@ -816,7 +816,7 @@ int function_when(int i)
 functionWhenCaseEquation(Option<WhenEquation>, Text varDecls) ::=
 case SOME(weq as WHEN_EQ) then
 # preExp = ""
-# expPart = daeExp(weq.right, createSimulationContext(true), preExp, varDecls)
+# expPart = daeExp(weq.right, contextSimulationDescrete, preExp, varDecls)
 <<
 save(<cref(weq.left)>);
 
@@ -826,14 +826,14 @@ save(<cref(weq.left)>);
 
 functionWhenReinitStatements(ReinitStatement, Text preExp, Text varDecls) ::=
 case REINIT then
-  # val = daeExp(value, createSimulationContext(true), preExp, varDecls)
+  # val = daeExp(value, contextSimulationDescrete, preExp, varDecls)
   <<
   <cref(stateVar)> = <val>;
   >>
 
 functionOde(list<SimEqSystem> stateContEquations) ::=
 # varDecls = ""
-# body = (stateContEquations of eq: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
+# body = (stateContEquations of eq: '<equation_(eq, contextOther, varDecls)>' "\n")
 <<
 int functionODE()
 {
@@ -852,7 +852,7 @@ int functionODE()
 
 functionInitial(list<SimEqSystem> initialEquations) ::=
 # varDecls = ""
-# body = (initialEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
+# body = (initialEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, contextOther, varDecls)>' "\n")
 <<
 int initial_function()
 {
@@ -875,7 +875,7 @@ functionInitialResidual(list<SimEqSystem> residualEquations) ::=
       'localData-\>initialResiduals[i++] = 0;'
     else
       # preExp = ""
-      # expPart = daeExp(exp, createOtherContext(), preExp, varDecls)
+      # expPart = daeExp(exp, contextOther, preExp, varDecls)
       '<preExp>localData-\>initialResiduals[i++] = <expPart>;'
   "\n"
 )
@@ -901,7 +901,7 @@ functionExtraResudials(list<SimEqSystem> allEquations) ::=
    # varDecls = ""
    # body = (eq.eqs of eq2 as SES_RESIDUAL:
        # preExp = ""
-       # expPart = daeExp(eq2.exp, createSimulationContext(true), preExp, varDecls)
+       # expPart = daeExp(eq2.exp, contextSimulationDescrete, preExp, varDecls)
        '<preExp>res[<i0>] = <expPart>;'
      "\n")
    <<
@@ -918,7 +918,7 @@ functionExtraResudials(list<SimEqSystem> allEquations) ::=
 
 functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
 # varDecls = ""
-# body = (parameterEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, createOtherContext(), varDecls)>' "\n")
+# body = (parameterEquations of eq as SES_SIMPLE_ASSIGN: '<equation_(eq, contextOther, varDecls)>' "\n")
 <<
 int bound_parameters()
 {
@@ -972,17 +972,17 @@ zeroCrossingTpl(Integer index, Exp relation, Text varDecls) ::=
   match relation
   case RELATION then
     # preExp = ""
-    # e1 = daeExp(exp1, createOtherContext(), preExp, varDecls)
+    # e1 = daeExp(exp1, contextOther, preExp, varDecls)
     # op = zeroCrossingOpFunc(operator)
-    # e2 = daeExp(exp2, createOtherContext(), preExp, varDecls)
+    # e2 = daeExp(exp2, contextOther, preExp, varDecls)
     <<
     <preExp>
     ZEROCROSSING(<index>, <op>(<e1>, <e2>));
     >>
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     # preExp = ""
-    # e1 = daeExp(start, createOtherContext(), preExp, varDecls)
-    # e2 = daeExp(interval, createOtherContext(), preExp, varDecls)
+    # e1 = daeExp(start, contextOther, preExp, varDecls)
+    # e2 = daeExp(interval, contextOther, preExp, varDecls)
     <<
     <preExp>
     ZEROCROSSING(<index>, Sample(*t, <e1>, <e2>));
@@ -1264,7 +1264,7 @@ extFunDefArg(SimExtArg) ::=
 daeExpToString(Exp exp) ::=
   # preExp = ""
   # varDecls = ""
-  daeExp(exp, createOtherContext(), preExp, varDecls)
+  daeExp(exp, contextOther, preExp, varDecls)
 
 functionBodies(list<Function> functions) ::=
 <<
@@ -1324,7 +1324,7 @@ varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
   # varDecls += '<varType(var)> <cref(var.name)>;<\n>'
   # varName = if outStruct then '<outStruct>.targ<i>' else '<cref(var.name)>'
-  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
+  # instDimsInit = (instDims of exp: daeExp(exp, contextOther, varInits, varDecls) ", ")
   if instDims then
     # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<varName>, <listLength(instDims)>, <instDimsInit>);<\n>'
     ()
@@ -1333,7 +1333,7 @@ case var as VARIABLE then
 
 varOutput(Variable source, String dest, Integer i, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
-  # instDimsInit = (instDims of exp: daeExp(exp, createOtherContext(), varInits, varDecls) ", ")
+  # instDimsInit = (instDims of exp: daeExp(exp, contextOther, varInits, varDecls) ", ")
   if instDims then
     # varInits += 'alloc_<expTypeShort(var.ty)>_array(&<dest>.targ<i>, <listLength(instDims)>, <instDimsInit>);<\n>'
     <<
@@ -1398,11 +1398,11 @@ extArg(SimExtArg, Text preExp, Text varDecls) ::=
     <<
     <prefix><cref(c)><suffix>
     >>
-  case SIMEXTARGEXP then '<daeExp(exp, createOtherContext(), preExp, varDecls)>'
+  case SIMEXTARGEXP then '<daeExp(exp, contextOther, preExp, varDecls)>'
   case SIMEXTARGSIZE(cref=c) then
     # typeStr = expTypeShort(type_)
     # name = if outputIndex then 'out.targ<outputIndex>' else cref(c)
-    # dim = daeExp(exp, createOtherContext(), preExp, varDecls)
+    # dim = daeExp(exp, contextOther, preExp, varDecls)
     <<
     size_of_dimension_<typeStr>_array(<name>, <dim>)
     >>
@@ -1416,7 +1416,7 @@ funBody(list<Statement> body) ::=
 >>
 
 funStatement(Statement, Text varDecls) ::=
-  case ALGORITHM then (statementLst : algStatement(it, createOtherContext(), varDecls) \n) 
+  case ALGORITHM then (statementLst : algStatement(it, contextOther, varDecls) \n) 
   case _ then "/* not implemented fun statement */"
 
 // Codegen.generateAlgorithmStatement
@@ -1575,7 +1575,7 @@ case when as STMT_WHEN then
     # restPre = if when.elseWhen is SOME(ew)
                 then algStatementWhenPre(ew, varDecls) else ""
     # preExp = ""
-    # res = daeExp(when.exp, createSimulationContext(true), preExp, varDecls)
+    # res = daeExp(when.exp, contextSimulationDescrete, preExp, varDecls)
     <<
     <preExp>
     localData-\>helpVars[<i>] = <res>;
@@ -1584,7 +1584,7 @@ case when as STMT_WHEN then
 
 algStatementWhenElse(Option<DAE.Statement>, Text varDecls) ::=
 case SOME(when as STMT_WHEN) then
-  # statements = (when.statementLst: '<algStatement(it, createSimulationContext(true), varDecls)>' "\n")
+  # statements = (when.statementLst: '<algStatement(it, contextSimulationDescrete, varDecls)>' "\n")
   # else = algStatementWhenElse(when.elseWhen, varDecls)
   <<
   else if (<when.helpVarIndices: 'edge(localData-\>helpVars[<it>])' " || ">) {
@@ -1600,7 +1600,7 @@ case (firstExp :: restExps) then
   case (firstInt :: restInts) then
     # rest = foo(restExps, restInts, preExp, varDecls)
     <<
-    localData-\>helpVars[<firstInt>] = <daeExp(firstExp, createSimulationContext(true), preExp, varDecls)>;
+    localData-\>helpVars[<firstInt>] = <daeExp(firstExp, contextSimulationDescrete, preExp, varDecls)>;
     <rest>
     >>
 

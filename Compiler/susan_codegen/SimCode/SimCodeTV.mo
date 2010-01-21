@@ -40,15 +40,6 @@ package SimCode
   constant Context contextSimulationDescrete;
   constant Context contextOther;  
   
-  function createSimulationContext
-    input Boolean genDiscrete;
-    output Context context;
-  end createSimulationContext;
-  
-  function createOtherContext
-    output Context context;
-  end createOtherContext;
-
   function valueblockVars
     input DAE.Exp valueblock;
     output Variables vars;
