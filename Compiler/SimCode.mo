@@ -56,7 +56,6 @@ public import Ceval;
 public import Tpl;
 public import SCode;
 public import DAE;
-public import Codegen;
 protected import DAEUtil;
 protected import SCodeUtil;
 protected import ClassInf;
@@ -542,9 +541,9 @@ in a list. Removes duplicates."
   list<Absyn.Path> calledfuncs;
 algorithm
   explist := DAELow.getAllExps(dlow);
-  fcallexps := Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
+  fcallexps := getMatchingExpsList(explist, matchCalls);
   fcallexps_1 := Util.listSelect(fcallexps, isNotBuiltinCall);
-  fcallexps_2 := Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
+  fcallexps_2 := getMatchingExpsList(explist, matchFnRefs);
   calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
   res := removeDuplicatePaths(calledfuncs);
 end getCalledFunctions;
@@ -583,8 +582,8 @@ algorithm
     case (DAELow.EXTOBJCLASS(constructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann1))}),
       											destructor=DAE.FUNCTION(functions={DAE.FUNCTION_EXT(externalDecl=DAE.EXTERNALDECL(language=ann2))})))
       equation
-        (includes1,libs1) = Codegen.generateExtFunctionIncludes(ann1);
-        (includes2,libs2) = Codegen.generateExtFunctionIncludes(ann2);
+        (includes1,libs1) = generateExtFunctionIncludes(ann1);
+        (includes2,libs2) = generateExtFunctionIncludes(ann2);
         includes = Util.listListUnion({includes1, includes2});
         libs = Util.listListUnion({libs1, libs2});
       then (includes,libs);
@@ -694,7 +693,7 @@ algorithm
         outVars = Util.listMap(DAEUtil.getOutputVars(dae), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(dae), daeInOutSimVar);
         biVars = Util.listMap(DAEUtil.getBidirVars(dae), daeInOutSimVar);
-        (includes, libs) = Codegen.generateExtFunctionIncludes(ann);
+        (includes, libs) = generateExtFunctionIncludes(ann);
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndexOuter(simextargs, extReturn);
@@ -1219,7 +1218,7 @@ algorithm
         list<Exp.Exp> expl;
       equation
         expl = Algorithm.getAllExps(algorithm_);
-        expl = Codegen.getMatchingExpsList(expl, Codegen.matchCalls);
+        expl = getMatchingExpsList(expl, matchCalls);
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
         //TODO: ? what about rest ? , can be there something else after the ALGORITHM
       then
@@ -4665,14 +4664,14 @@ algorithm
         false = listMember(path,acc);
         funcelems = DAEUtil.getNamedFunction(path, elements);
         explist = DAEUtil.getAllExps(funcelems);
-        fcallexps = Codegen.getMatchingExpsList(explist, Codegen.matchCalls);
+        fcallexps = getMatchingExpsList(explist, matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
         
         /*-- MetaModelica Partial Function. sjoelund --*/
         
         // stefan - get all arguments of constant T_FUNCTION type and add to list
-        fnrefs = Codegen.getMatchingExpsList(explist, Codegen.matchFnRefs);
+        fnrefs = getMatchingExpsList(explist, matchFnRefs);
         crefs = Util.listMap(fnrefs, getCrefFromExp);
         reffuncs = Util.listMap(crefs, Absyn.crefToPath);
         
@@ -5383,5 +5382,306 @@ algorithm
         ();
   end matchcontinue;
 end generateMakefile;
+
+public function getMatchingExpsList
+  input list<DAE.Exp> inExps;
+  input MatchFn inFn;
+  output list<DAE.Exp> outExpLst;
+  partial function MatchFn
+    input DAE.Exp inExpr;
+    output list<DAE.Exp> outExprLst;
+  end MatchFn;
+  list<list<DAE.Exp>> explists;
+algorithm 
+  explists := Util.listMap1(inExps, getMatchingExps, inFn);
+  outExpLst := Util.listFlatten(explists);
+end getMatchingExpsList;
+
+protected function getMatchingExps
+"function: getMatchingExps
+  Return all exps that match the given function.
+  Inner exps may be returned separately but not 
+  extracted from the exp they are in, e.g. 
+    CALL(foo, {CALL(bar)}) will return
+    {CALL(foo, {CALL(bar)}), CALL(bar,{})}
+Implementation note: DAE.Exp contains VALUEBLOCKS,
+  which can't be processed in Exp due to circular dependencies with DAE.
+  In the future, this function should be moved to Exp."
+  input DAE.Exp inExp;
+  input MatchFn inFn;
+  output list<DAE.Exp> outExpLst;
+  partial function MatchFn
+    input DAE.Exp inExpr;
+    output list<DAE.Exp> outExprLst;
+  end MatchFn;
+algorithm 
+  outExpLst:=
+  matchcontinue (inExp,inFn)
+    local
+      list<DAE.Exp> exps,exps2,args,a,b,res,elts,elst,elist;
+      DAE.Exp e,e1,e2,e3;
+      Absyn.Path path;
+      Boolean tuple_,builtin;
+      list<tuple<DAE.Exp, Boolean>> flatexplst;
+      list<list<tuple<DAE.Exp, Boolean>>> explst;
+      Option<DAE.Exp> optexp;
+      MatchFn fn;
+    
+    // First we check if the function matches
+    case (e, fn)
+      equation
+        res = fn(e);
+      then res;
+    
+    // Else: Traverse all Exps
+    case ((e as DAE.CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)),fn)
+      equation 
+        exps = getMatchingExpsList(args,fn);
+      then
+        exps;
+    case (DAE.PARTEVALFUNCTION(expList = args),fn)
+      equation
+        res = getMatchingExpsList(args,fn);
+      then
+        res;
+    case (DAE.BINARY(exp1 = e1,exp2 = e2),fn) /* Binary */ 
+      equation 
+        a = getMatchingExps(e1,fn);
+        b = getMatchingExps(e2,fn);
+        res = listAppend(a, b);
+      then
+        res;
+    case (DAE.UNARY(exp = e),fn) /* Unary */ 
+      equation 
+        res = getMatchingExps(e,fn);
+      then
+        res;
+    case (DAE.LBINARY(exp1 = e1,exp2 = e2),fn) /* LBinary */ 
+      equation 
+        a = getMatchingExps(e1,fn);
+        b = getMatchingExps(e2,fn);
+        res = listAppend(a, b);
+      then
+        res;
+    case (DAE.LUNARY(exp = e),fn) /* LUnary */ 
+      equation 
+        res = getMatchingExps(e,fn);
+      then
+        res;
+    case (DAE.RELATION(exp1 = e1,exp2 = e2),fn) /* Relation */ 
+      equation 
+        a = getMatchingExps(e1,fn);
+        b = getMatchingExps(e2,fn);
+        res = listAppend(a, b);
+      then
+        res;
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),fn)
+      equation 
+        res = getMatchingExpsList({e1,e2,e3},fn);
+      then
+        res;
+    case (DAE.ARRAY(array = elts),fn) /* Array */ 
+      equation 
+        res = getMatchingExpsList(elts,fn);
+      then
+        res;
+    case (DAE.MATRIX(scalar = explst),fn) /* Matrix */ 
+      equation 
+        flatexplst = Util.listFlatten(explst);
+        elst = Util.listMap(flatexplst, Util.tuple21);
+        res = getMatchingExpsList(elst,fn);
+      then
+        res;
+    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */ 
+      local list<DAE.Exp> e3;
+      equation 
+        e3 = Util.optionToList(optexp);
+        elist = listAppend({e1,e2}, e3);
+        res = getMatchingExpsList(elist,fn);
+      then
+        res;
+    case (DAE.TUPLE(PR = exps),fn) /* Tuple */ 
+      equation 
+        res = getMatchingExpsList(exps,fn);
+      then
+        res;
+    case (DAE.CAST(exp = e),fn)
+      equation 
+        res = getMatchingExps(e,fn);
+      then
+        res;
+    case (DAE.SIZE(exp = e1,sz = e2),fn) /* Size */ 
+      local Option<DAE.Exp> e2;
+      equation 
+        a = Util.optionToList(e2);
+        elist = e1 :: a;
+        res = getMatchingExpsList(elist,fn);
+      then
+        res;
+
+        /* MetaModelica list */
+    case (DAE.CONS(_,e1,e2),fn)
+      equation
+        elist = {e1,e2};
+        res = getMatchingExpsList(elist,fn);
+      then res;
+
+    case  (DAE.LIST(_,elist),fn)
+      equation
+        res = getMatchingExpsList(elist,fn);
+      then res;
+    
+    case (e as DAE.METARECORDCALL(args = elist),fn)
+      equation
+        res = getMatchingExpsList(elist,fn);
+      then res;
+
+    case (DAE.META_TUPLE(elist), fn)
+      equation
+        res = getMatchingExpsList(elist, fn);
+      then res;
+
+   case (DAE.META_OPTION(SOME(e1)), fn)
+      equation
+        res = getMatchingExps(e1, fn);
+      then res;
+
+    case(DAE.ASUB(exp = e1),fn)
+      equation
+        res = getMatchingExps(e1,fn);
+        then
+          res;
+    
+    case(DAE.CREF(_,_),_) then {};
+    
+    case (DAE.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
+      local
+    		list<DAE.Element> ld;
+    		list<DAE.Statement> body;
+      equation
+        exps = DAEUtil.getAllExps(ld);
+        exps2 = Algorithm.getAllExpsStmts(body);
+        exps = listAppend(exps,exps2);
+        res = getMatchingExpsList(e::exps,fn);
+      then res;
+        
+    case (DAE.ICONST(_),_) then {};
+    case (DAE.RCONST(_),_) then {};
+    case (DAE.BCONST(_),_) then {};
+    case (DAE.SCONST(_),_) then {};
+    case (DAE.CODE(_,_),_) then {};
+    case (DAE.END(),_) then {};
+    case (DAE.META_OPTION(NONE),_) then {};
+        
+    case (e,_)
+      equation
+        Debug.fprintln("failtrace", "- SimCodegen.getMatchingExps failed: " +& Exp.printExpStr(e));
+      then fail();
+        
+  end matchcontinue;
+end getMatchingExps;
+
+protected function matchCalls
+"Used together with getMatchingExps"
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local list<DAE.Exp> args, exps; DAE.Exp e;
+    case (e as DAE.CALL(expLst = args))
+      equation 
+        exps = getMatchingExpsList(args,matchCalls);
+      then
+        e::exps;
+  end matchcontinue;
+end matchCalls;
+
+protected function generateExtFunctionIncludes 
+"function: generateExtFunctionIncludes
+  Collects the includes and libs for an external function 
+  by investigating the annotation of an external function."
+  input Option<Absyn.Annotation> inAbsynAnnotationOption;
+  output list<String> outStringLst1;
+  output list<String> outStringLst2;
+algorithm
+  (outStringLst1,outStringLst2):=
+  matchcontinue (inAbsynAnnotationOption)
+    local
+      list<String> libs,includes;
+      list<Absyn.ElementArg> eltarg;
+    case (SOME(Absyn.ANNOTATION(eltarg)))
+      equation
+        libs = generateExtFunctionIncludesLibstr(eltarg);
+        includes = generateExtFunctionIncludesIncludestr(eltarg);
+      then
+        (includes,libs);
+    case (NONE) then ({},{});
+  end matchcontinue;
+end generateExtFunctionIncludes;
+
+protected function generateExtFunctionIncludesLibstr
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  output list<String> outStringLst;
+algorithm
+  outStringLst:=
+  matchcontinue (inAbsynElementArgLst)
+    local
+      String lib;
+      list<Absyn.ElementArg> eltarg;
+    case (eltarg)
+      equation
+        Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) = 
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{})) "System.stringReplace(lib,\"\\\"\",\"\"\") => lib\'" ;
+      then
+        {lib};
+    case (_) then {};
+  end matchcontinue;
+end generateExtFunctionIncludesLibstr;
+
+protected function generateExtFunctionIncludesIncludestr
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  output list<String> outStringLst;
+algorithm
+  outStringLst:=
+  matchcontinue (inAbsynElementArgLst)
+    local
+      String inc,inc_1;
+      list<Absyn.ElementArg> eltarg;
+    case (eltarg)
+      equation
+        Absyn.CLASSMOD(_,SOME(Absyn.STRING(inc))) = Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Include",{}));
+        inc_1 = System.stringReplace(inc, "\\\"", "\"");
+      then
+        {inc_1};
+    case (eltarg) then {};
+  end matchcontinue;
+end generateExtFunctionIncludesIncludestr;
+
+protected function matchFnRefs
+"Used together with getMatchingExps"
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local DAE.Exp e; DAE.ExpType t;
+    case((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
+    case(DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
+      local
+        DAE.ComponentRef cref; Absyn.Path p; list<DAE.Exp> expLst,expLst_1;
+      equation
+        cref = Exp.pathToCref(p);
+        e = Exp.makeCrefExp(cref,DAE.ET_FUNCTION_REFERENCE_VAR());
+        expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
+      then
+        e :: expLst_1;
+    case(DAE.CALL(expLst = expLst))
+      local
+        list<DAE.Exp> expLst,expLst_1;
+      equation
+        expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
+      then
+        expLst_1;
+  end matchcontinue;
+end matchFnRefs;
 
 end SimCode;
