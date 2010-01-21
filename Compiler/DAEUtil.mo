@@ -473,13 +473,10 @@ end printDAE;
 
 
 public function dump "function: dump
- 
-  This function prints the DAE in the standard output format.
-"
+  This function prints the DAE in the standard output format."
   input DAE.DAElist inDAElist;
 algorithm 
-  _:=
-  matchcontinue (inDAElist)
+  _ := matchcontinue (inDAElist)
     local 
       list<DAE.Element> daelist;
     case DAE.DAE(elementLst = daelist)
@@ -502,13 +499,10 @@ algorithm
 end dump2str;
 
 public function dump2 "function: dump2
- 
-  Helper function to dump. Prints the DAE using module Print.
-"
+  Helper function to dump. Prints the DAE using module Print."
   input DAE.DAElist inDAElist;
 algorithm 
-  _:=
-  matchcontinue (inDAElist)
+  _ := matchcontinue (inDAElist)
     local
       String comment_str,ident,str,extdeclstr,s1;
       DAE.ComponentRef cr;
@@ -1999,7 +1993,7 @@ algorithm
     case (NONE) then ""; 
     case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation 
-        str = Util.stringAppendList({"\"",cmt,"\""});
+        str = Util.stringAppendList({" \"",cmt,"\""});
       then
         str;
     case (SOME(SCode.COMMENT(annopt,NONE))) then ""; 
