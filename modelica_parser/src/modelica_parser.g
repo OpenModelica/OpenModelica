@@ -1,7 +1,7 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2008, Linkopings University,
+ * Copyright (c) 1998-2010, Linkopings University,
  * Department of Computer and Information Science,
  * SE-58183 Linkoping, Sweden.
  *
