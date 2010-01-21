@@ -546,8 +546,10 @@ algorithm
         Absyn.Exp exp; 
       equation 
         (cache,e,prop,st_1) = elabCallReduction(cache,env, fn, exp, iterators, impl, st,doVect);
+        c = Types.propAllConst(prop);
+        (cache, e_1, prop_1) = cevalIfConstant(cache, e, prop, c, impl, env); 
       then
-        (cache,e,prop,st_1);
+        (cache,e_1,prop,st_1);
     case (cache,env,Absyn.RANGE(start = start,step = NONE,stop = stop),impl,st,doVect)
       equation 
         (cache,start_1,DAE.PROP(start_t,c_start),st_1) = elabExp(cache,env, start, impl, st,doVect) "Range expressions without step value, e.g. 1:5" ;
@@ -1373,15 +1375,22 @@ algorithm
 				prop = DAE.PROP(ty, const);
 			then
 				(cache, exp_1, prop, st);
+		/* min, max, sum and product */
 		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
 			equation
 				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_)
 				= elabExp(cache,env, iterexp, impl, st,doVect);
 				env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+				// Elaborate the expression with a variable iterator first, so that any
+				// subscripts using the iterator aren't substituted.
 				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.VAR());
-				(cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
+				(cache,exp_1,_,st) = elabExp(cache,env_1, exp, impl, st,doVect);
+				// Then elaborate the expression with a constant iterator, to get the
+				// correct type of the expression.
+				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.VALBOUND(Values.INTEGER(1)), SCode.CONST());
+			  (cache,_,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
 				const = Types.constAnd(expconst, iterconst);
-				prop = DAE.PROP((DAE.T_ARRAY(arraydim,expty),NONE),const);
+				prop = DAE.PROP(expty, expconst);
 				fn_1 = Absyn.crefToPath(fn);
 			then 
 			(cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st);

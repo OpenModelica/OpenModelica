@@ -4987,6 +4987,22 @@ algorithm
 	end matchcontinue;
 end valueAdd;
 
+protected function valueMul
+	"Multiplies two Values. Used (indirectly) by cevalReduction."
+	input Values.Value v1;
+	input Values.Value v2;
+	output Values.Value res;
+algorithm
+	res := matchcontinue(v1, v2)
+		case (Values.INTEGER(i1), Values.INTEGER(i2))
+			local Integer i1, i2, res;
+			equation res = i1 * i2; then Values.INTEGER(res);
+		case (Values.REAL(r1), Values.REAL(r2))
+			local Real r1, r2, res;
+			equation res = r1 *. r2; then Values.REAL(res);
+	end matchcontinue;
+end valueMul;
+
 protected function valueMax
 	"Returns the maximum of two Values. Used (indirectly) by cevalReduction."
 	input Values.Value v1;
@@ -5033,6 +5049,7 @@ algorithm
 	op := matchcontinue(reductionName)
 		case "max" then valueMax;
 		case "min" then valueMin;
+		case "product" then valueMul;
 		case "sum" then valueAdd;
 	end matchcontinue;
 end lookupReductionOp;
