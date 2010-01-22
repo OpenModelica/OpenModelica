@@ -953,12 +953,12 @@ algorithm
     local
       list<DAE.Element> dae_1,dae;
       DAE.DAElist d;
-    case DAE.DAE(elementLst = dae)
+    case d
       equation 
         true = RTOpts.modelicaOutput();
-        dae_1 = Inst.initVarsModelicaOutput(dae);
+        print("DEPRECATED: modelicaOutput option no longer needed\n");
       then
-        DAE.DAE(dae_1);
+        d;
     case ((d as DAE.DAE(elementLst = dae)))
       equation 
         false = RTOpts.modelicaOutput();

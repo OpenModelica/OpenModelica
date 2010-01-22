@@ -1073,7 +1073,7 @@ algorithm
       SCode.Class sc;
       list<SCode.Element> elementList;
       SCode.ClassDef cdef;
-      list<DAE.Element> daeList;
+      DAE.DAElist daeList;
       String error_Str;      
 
       /* Try cevalFunction first */
@@ -1566,9 +1566,9 @@ algorithm
         DAE.ExpType tp;
         DAE.Exp dim;
       equation 
-        (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
+        (cache,dims,_) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
 	 For example,
-	 Real x{:}(min=fill(1.0,size(x,1))) = {1.0} 
+	 Real x[:](min=fill(1.0,size(x,1))) = {1.0} 
 	 
 	  When size(x,1) should be determined, x must be instantiated, but
 	  that is not done yet. Solution: Examine Element to find modifier 

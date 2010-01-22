@@ -634,7 +634,7 @@ algorithm
     case ({}, inDae) then inDae;
     case (inRoots, inDae) 
       equation 
-        (outDae, _) = DAEUtil.traverseDAE(inDae, evalIsRootHelper, inRoots);
+        (outDae, _) = DAEUtil.traverseDAE2(inDae, evalIsRootHelper, inRoots);
       then outDae; 
   end matchcontinue;
 end evalIsRoot;
@@ -684,20 +684,24 @@ public function handleOverconstrainedConnections
  new connections to the DAE given as input and returns
  a new DAE"
  input ConnectionGraph inGraph;
- input list<DAE.Element> inDAE;
- output list<DAE.Element> outDAE;
+ input DAE.DAElist inDAE;
+ output DAE.DAElist outDAE;
 algorithm
   outDAE := matchcontinue(inGraph, inDAE)
     local
       ConnectionGraph graph;
-      list<DAE.Element> dae, daeConnections;
+      list<DAE.Element> daeConnections;
+      list<DAE.Element> elts;
+      DAE.AvlTree funcs;
       list<DAE.ComponentRef> roots;
+      DAE.DAElist dae;
+      
     // empty graph gives you the same dae
     case (GRAPH(_, {}, {}, {}, {}), dae) then dae;
     // no dae
-    case (graph, {}) then {};
+    case (graph, DAE.DAE({},_)) then DAEUtil.emptyDae;
     // handle the connection braking
-    case (graph, dae)
+    case (graph, DAE.DAE(elts,funcs))
       equation
         (roots,daeConnections) = findResultGraph(graph);
         Debug.fprintln("cgraph", "Extra equations from connection graph: " +& intString(listLength(daeConnections)));
@@ -705,10 +709,10 @@ algorithm
         Debug.fcall("cgraph", DAEUtil.dumpElements, daeConnections);
         Debug.fprintln("cgraph", Print.getString());
         Debug.fprintln("cgraph", "\n");
-        dae = evalIsRoot(roots, dae);
-        dae = Util.listAppendNoCopy(dae, daeConnections);
+        elts= evalIsRoot(roots, elts);
+        elts = Util.listAppendNoCopy(elts, daeConnections);
       then
-        dae;
+        DAE.DAE(elts,funcs);
     // handle the connection braking 
     case (graph, dae)
       equation

@@ -314,6 +314,7 @@ algorithm
       DAE.ExternalDecl decl; DAE.Element e; Absyn.InnerOuter io;
       DAE.Type ftp; DAE.VarProtection prot; list<DAE.FunctionDefinition> funcDer;
       Boolean partialPrefix; DAE.ElementSource source "the origin of the element";
+      list<DAE.Element> daeLst;
     // variables with binding      
     case (str,dae,DAE.VAR(componentRef = cr,
                           kind = vk,
@@ -348,38 +349,38 @@ algorithm
 
     case (str,dae,DAE.ALGORITHM(algorithm_ = alg,source = source)) then DAE.ALGORITHM(alg,source);
 
-    case (str,dae1,DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = dae),source = source)) 
+    case (str,dae1,DAE.COMP(ident = n,dAElist = daeLst,source = source)) 
       /* What happens if a variable is not found among dae, should we check dae1,
     i.e. where the COMP and FUNCTION was found? */ 
       equation 
-        dae_1 = stringPrefixElements(str, dae, dae);
+        daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
-        DAE.COMP(n,DAE.DAE(dae_1),source);
+        DAE.COMP(n,daeLst,source);
 
     case (str,dae1,
       DAE.FUNCTION(path = n,
-      functions = (DAE.FUNCTION_DEF(body = DAE.DAE(dae))::funcDer),
+      functions = (DAE.FUNCTION_DEF(body = daeLst)::funcDer),
       type_ = ty,partialPrefix = partialPrefix,inlineType=inlineType,source = source))
       local
         Absyn.Path n;
         tuple<DAE.TType, Option<Absyn.Path>> ty;
         DAE.InlineType inlineType;
       equation 
-        dae_1 = stringPrefixElements(str, dae, dae);
+        daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
-        DAE.FUNCTION(n,DAE.FUNCTION_DEF(DAE.DAE(dae_1))::funcDer,ty,partialPrefix,inlineType,source);
+        DAE.FUNCTION(n,DAE.FUNCTION_DEF(daeLst)::funcDer,ty,partialPrefix,inlineType,source);
 
     case (str,dae1,
       DAE.FUNCTION(path = n,
-      partialPrefix = partialPrefix,functions = (DAE.FUNCTION_EXT(DAE.DAE(elementLst = dae),decl)::funcDer),
+      partialPrefix = partialPrefix,functions = (DAE.FUNCTION_EXT(daeLst,decl)::funcDer),
       type_ = ty,source = source))
       local
         Absyn.Path n;
         tuple<DAE.TType, Option<Absyn.Path>> ty;
       equation 
-        dae_1 = stringPrefixElements(str, dae, dae);
+        daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
-         DAE.FUNCTION(n,DAE.FUNCTION_EXT(DAE.DAE(dae_1),decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE(),source);
+         DAE.FUNCTION(n,DAE.FUNCTION_EXT(daeLst,decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE(),source);
 
     case (str,dae,e) then e; 
   end matchcontinue;
@@ -483,12 +484,13 @@ public function stringPrefixParams
 algorithm 
   outDAElist:=
   matchcontinue (inDAElist)
-    local list<DAE.Element> dae_1,dae;
-    case DAE.DAE(elementLst = dae)
+    local list<DAE.Element> daeLst_1,daeLst;
+      DAE.FunctionTree funcs;
+    case DAE.DAE(daeLst,funcs)
       equation 
-        dae_1 = stringPrefixElements("params->", dae, dae);
+        daeLst_1 = stringPrefixElements("params->", daeLst, daeLst);
       then
-        DAE.DAE(dae_1);
+        DAE.DAE(daeLst_1,funcs);
   end matchcontinue;
 end stringPrefixParams;
 

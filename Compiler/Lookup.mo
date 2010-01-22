@@ -1963,7 +1963,7 @@ algorithm
         (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(name), name, true);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
-        (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(name),eltsMods,eltsMods,{},{},true);
+        (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(name),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (env1,funcelts,elts);
     /* adrpo: TODO! handle also the case model extends x end x;
@@ -2039,7 +2039,7 @@ algorithm
     
     case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
       equation
-        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
+        (_,mod_1,_) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2047,7 +2047,7 @@ algorithm
         compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (_,cmod) = Mod.updateMod(Env.emptyCache(),env,Prefix.NOPRE(),cmod,true);
+        (_,cmod,_) = Mod.updateMod(Env.emptyCache(),env,Prefix.NOPRE(),cmod,true);
         selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
         umod = Mod.unelabMod(selectedMod);
         res = buildRecordConstructorElts(rest, mods, env);

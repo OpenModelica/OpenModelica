@@ -6367,7 +6367,9 @@ algorithm
       DAE.DAElist dae;
       DAELow.DAELow dlow;
       Absyn.Path path;
-    case (cache,env,p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filename) /* Needed to instantiate functions libs */
+      DAE.FunctionTree funcs;
+      
+    case (cache,env,p,(dae as DAE.DAE(elements,funcs)),dlow,path,filename) /* Needed to instantiate functions libs */
       equation
         funcpaths = getCalledFunctions(dae, dlow);
         funcelems = generateFunctions2(p, funcpaths);
@@ -6381,7 +6383,7 @@ algorithm
 				(_,libs1) = generateExternalObjectIncludes(dlow);
         uniontypePaths = Codegen.getUniontypePaths(funcelems_1);
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
-        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems_1),metarecordTypes);
+        libs2 = Codegen.generateFunctions(DAE.DAE(funcelems_1,funcs),metarecordTypes);
         Print.writeBuf(filename);
       then
         (cache,Util.listUnion(libs1,libs2),funcelems_1,dlow,dae);
@@ -6464,40 +6466,42 @@ algorithm
       Boolean partialPrefix;
       String s;
       DAE.ElementSource source "the origin of the element";
+      DAE.FunctionTree funcs;
+      list<DAE.Element> daeElts;
       
     case (_,{},allpaths) then {};  /* iterated over complete list */
       
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.FUNCTION(functions = 
-          DAE.FUNCTION_DEF(dae)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)}) = fdae;        
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl,source)});
+        DAE.DAE({DAE.FUNCTION(functions = 
+          DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;        
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl,source)});
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)});
       then
         res;
         
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.FUNCTION(functions=
-          DAE.FUNCTION_EXT(dae,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)}) = fdae;
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl,source)});
+        DAE.DAE({DAE.FUNCTION(functions=
+          DAE.FUNCTION_EXT(daeElts,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl,source)});
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)});
       then
         res;
         
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)}) = fdae;
-        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)});
+        DAE.DAE({DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)},funcs) = fdae;
+        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
@@ -9573,8 +9577,8 @@ algorithm
   outPath:=
   matchcontinue (inElem)
     local Absyn.Path path;
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = DAE.DAE(out))}) then out;
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body = DAE.DAE(out))}) then out;
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = out)}) then out;
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body = out)}) then out;
     case DAE.RECORD_CONSTRUCTOR(path = _) then {};
   end matchcontinue;
 end getFunctionElementsList;

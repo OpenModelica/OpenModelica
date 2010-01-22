@@ -114,7 +114,7 @@ public
 uniontype InstantiatedClass "- Instantiated Class"
   record INSTCLASS
     Absyn.Path qualName "qualName ;  The F.Q.name of the inst:ed class" ;
-    list<DAE.Element> daeElementLst "daeElementLst ; The list of DAE elements" ;
+    DAE.DAElist daeElementLst "daeElementLst ; The list of DAE elements" ;
     Env.Env env "env ; The env of the inst:ed class" ;
   end INSTCLASS;
 
@@ -330,7 +330,7 @@ algorithm
       InteractiveSymbolTable st;
       list<Env.Frame> env,env_1;
       SCode.Class scode_class;
-      list<DAE.Element> d;
+      DAE.DAElist d;
       Absyn.Class absyn_class,cls;
       Integer len;
       list<Absyn.Class> class_list,morecls;
@@ -480,7 +480,7 @@ algorithm
       		(st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,econd,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true);
+        (cache,econd,prop,SOME(st_1),_) = Static.elabExp(Env.emptyCache(),env, cond, true, SOME(st),true);
         (_,Values.BOOL(true),SOME(st_2)) = Ceval.ceval(cache,env, econd, true, SOME(st_1), NONE, Ceval.MSG());
       then
         ("",st_2);
@@ -490,7 +490,7 @@ algorithm
           (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,msg_1,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true);
+        (cache,msg_1,prop,SOME(st_1),_) = Static.elabExp(Env.emptyCache(),env, msg, true, SOME(st),true);
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
@@ -502,7 +502,7 @@ algorithm
         (st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,sexp,DAE.PROP(t,_),SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
+        (cache,sexp,DAE.PROP(t,_),SOME(st_1),_) = Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
         str = ValuesUtil.valString(value);
         newst = addVarToSymboltable(ident, value, t, st_2);
@@ -516,7 +516,7 @@ algorithm
         (st as SYMBOLTABLE(ast = p))) /* Since expressions cannot be tuples an empty string is returned */
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,srexp,rprop,SOME(st_1)) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true);
+        (cache,srexp,rprop,SOME(st_1),_) = Static.elabExp(Env.emptyCache(),env, rexp, true, SOME(st),true);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(rprop);
         idents = Util.listMap(crefexps, getIdentFromTupleCrefexp);
         (_,Values.TUPLE(values),SOME(st_2)) = Ceval.ceval(cache, env, srexp, true, SOME(st_1), NONE, Ceval.MSG());
@@ -830,7 +830,7 @@ algorithm
     case (exp,(st as SYMBOLTABLE(ast = p)))
       equation
         env = buildEnvFromSymboltable(st);
-        (cache,sexp,prop,SOME(st_1)) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true);
+        (cache,sexp,prop,SOME(st_1),_) = Static.elabExp(Env.emptyCache(), env, exp, true, SOME(st),true);
         (_,value,SOME(st_2)) = Ceval.ceval(cache,env, sexp, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (value,st_2);
@@ -850,7 +850,7 @@ protected function stringRepresOfExpr
   InteractiveSymbolTable st_1;
 algorithm
   env := buildEnvFromSymboltable(st);
-  (_,sexp,prop,SOME(st_1)) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
+  (_,sexp,prop,SOME(st_1),_) := Static.elabExp(Env.emptyCache(),env, exp, true, SOME(st),true);
   estr := Exp.printExpStr(sexp);
 end stringRepresOfExpr;
 
@@ -13413,7 +13413,7 @@ algorithm
       SCode.Class c,c_1;
       SCode.Mod mod_1;
       DAE.Mod mod_2;
-      list<DAE.Element> dae,dae_1;
+      DAE.DAElist dae,dae_1;
       Connect.Sets cs;
       DAE.Type t;
       ClassInf.State state;
@@ -13431,14 +13431,13 @@ algorithm
       equation
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
-        (cache,mod_2) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet, 
                          c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-        dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
-        gexpstr = DAEUtil.getVariableBindingsStr(dae_1);
+        gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         gexpstr_1 = Util.stringAppendList({"{",gexpstr,"}"});
         res = getComponentitemsAnnotationsFromItems(rest, env);
       then
@@ -13645,7 +13644,7 @@ algorithm
       Absyn.Class placementc;
       SCode.Class placementclass;
       DAE.Mod mod_2;
-      list<DAE.Element> dae,dae_1;
+      DAE.DAElist dae,dae_1;
       Connect.Sets cs;
       DAE.Type t;
       ClassInf.State state;
@@ -13664,12 +13663,11 @@ algorithm
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
                          Connect.emptySet,placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-        dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
-        str = DAEUtil.getVariableBindingsStr(dae_1);
+        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false) "impl" ;
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(graphicexp2);
@@ -13689,13 +13687,12 @@ algorithm
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
+        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
                          ConnectionGraph.EMPTY);
-        dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
-        str = DAEUtil.getVariableBindingsStr(dae_1);
+        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;        
       then
         str;
@@ -13709,13 +13706,12 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Diagram"));
         placementc = getClassInProgram("Diagram", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, 
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-        dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
-        str = DAEUtil.getVariableBindingsStr(dae_1);
+        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         (_,graphicexp2,prop) = Static.elabGraphicsExp(cache,env, graphicexp, false) "impl" ;
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
         gexpstr = Exp.printExpStr(graphicexp2);
@@ -13732,13 +13728,12 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(anncname));
         placementc = getClassInProgram(anncname, p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
           Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore, 
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
                          ConnectionGraph.EMPTY);
-        dae_1 = Inst.initVarsModelicaOutput(dae) "Put bindings of variables as expressions inside variable elements of the dae instead of equations" ;
-        str = DAEUtil.getVariableBindingsStr(dae_1);
+        str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         Print.clearErrorBuf() "this is to clear the error-msg generated by the annotations." ;
       then
         str;
@@ -16079,7 +16074,7 @@ algorithm
     local
       InstantiatedClass cl,newc,x;
       Absyn.Path path,path2;
-      list<DAE.Element> dae,dae_1;
+      DAE.DAElist dae,dae_1;
       list<Env.Frame> env,env_1;
       list<InstantiatedClass> xs,res;
     case ({},cl) then {cl};
@@ -16110,7 +16105,7 @@ algorithm
     local
       InstantiatedClass x,res;
       Absyn.Path path,path2;
-      list<DAE.Element> dae;
+      DAE.DAElist dae;
       list<Env.Frame> env;
       list<InstantiatedClass> xs;
     case (((x as INSTCLASS(qualName = path,daeElementLst = dae,env = env)) :: xs),path2)

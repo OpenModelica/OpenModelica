@@ -582,26 +582,26 @@ algorithm
       then
         res :: cdr_1;
 
-    case(DAE.COMP(i,DAE.DAE(elist),source) :: cdr,fns)
+    case(DAE.COMP(i,elist,source) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.COMP(i,DAE.DAE(elist_1),source);
+        res = DAE.COMP(i,elist_1,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
 
-    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = DAE.DAE(elist))::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(DAE.DAE(elist_1))::funcDefs,t,partialPrefix,inlineType,source);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,inlineType,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
     // external functions
-    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist),ext)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(DAE.DAE(elist_1),ext)::funcDefs,t,partialPrefix,inlineType,source);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,inlineType,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
@@ -853,7 +853,7 @@ algorithm
     case((DAE.CALL(p,args,tup,built,t,inlineType),fns))
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
-        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = DAE.DAE(fn))::_) :: _ = DAEUtil.getNamedFunction(p,fns);
+        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) :: _ = DAEUtil.getNamedFunction(p,fns);
         crefs = Util.listMap(fn,getInputCrefs);
         crefs = Util.listSelect(crefs,removeWilds);
         argmap = Util.listThreadTuple(crefs,args);

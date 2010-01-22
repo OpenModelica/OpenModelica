@@ -30,18 +30,21 @@ public function registerUnitWeights "traverses all dae variables and adjusts wei
 in the scopes of the classLst for each variable"
   input Env.Cache cache;
   input Env.Env env;  
-  input list<DAE.Element> dae;
+  input DAE.DAElist dae;
  protected 
  list<Absyn.Path> paths; list<SCode.Element> du;
 algorithm
    _ := matchcontinue(cache,env,dae)
-     case(cache,env,dae) equation       
+   local 
+     list<DAE.Element> elts;
+   case(cache,env,dae) equation       
        false = OptManager.getOption("unitChecking");    
    then ();
-   case(cache,env,dae) equation
+   
+   case(cache,env,DAE.DAE(elementLst=elts)) equation
      /* TODO: This is very unefficient. It increases instantiationtime by factor 2 for 
     	 instantiation of largeTests/TestNandTotal.mo */
-       paths = Util.listListUnion(Util.listMap(dae,DAEUtil.getClassList));
+       paths = Util.listListUnion(Util.listMap(elts,DAEUtil.getClassList));
        du = Util.listListUnion(Util.listMap1(paths,retrieveUnitsFromEnv,(cache,env)));
        registerUnitWeightDefineunits(du);
    then ();
@@ -646,8 +649,8 @@ end splitTypeParams;
 public function instBuildUnitTerms "builds unit terms and stores for a DAE. It also returns a hashtable that maps
 variable names to store locations."
   input Env.Env env;
-  input list<DAE.Element> dae;
-  input list<DAE.Element> compDae "to collect variable bindings";
+  input DAE.DAElist dae;
+  input DAE.DAElist compDae "to collect variable bindings";
   input UnitAbsyn.InstStore store;
   output UnitAbsyn.InstStore outStore;
   output UnitAbsyn.UnitTerms terms;  
@@ -679,7 +682,7 @@ end instBuildUnitTerms;
 public function buildUnitTerms "builds unit terms and stores for a DAE. It also returns a hashtable that maps
 variable names to store locations."
   input Env.Env env;
-  input list<DAE.Element> dae;
+  input DAE.DAElist dae;
   output UnitAbsyn.UnitTerms terms;
   output UnitAbsyn.Store store;
   output HashTable.HashTable ht;
@@ -851,7 +854,7 @@ algorithm
 end createTypeParameterLocations4;
   
 protected function buildStores "builds the stores and creates a hashtable from variable names to store locations"
-  input list<DAE.Element> dae;
+  input DAE.DAElist dae;
   output UnitAbsyn.Store store;
   output HashTable.HashTable ht;
 algorithm
@@ -861,7 +864,7 @@ end buildStores;
 
 protected function buildTerms "builds the unit terms from DAE elements (equations)"
   input Env.Env env;
-  input list<DAE.Element> dae;
+  input DAE.DAElist dae;
   input HashTable.HashTable ht;
   input UnitAbsyn.Store store;
   output UnitAbsyn.UnitTerms terms;
@@ -871,39 +874,40 @@ algorithm
     local DAE.Exp e1,e2; UnitAbsyn.UnitTerm ut1,ut2;
       list<UnitAbsyn.UnitTerm> terms1,terms2,terms;
       DAE.ComponentRef cr1,cr2;
-      list<DAE.Element> dae1;
-    case(env,{},ht,store) then ({},store);
-    case(env,DAE.EQUATION(e1,e2,_)::dae,ht,store) equation
+      list<DAE.Element> elts;
+      DAE.FunctionTree funcs;
+    case(env,DAE.DAE(elementLst={}),ht,store) then ({},store);
+    case(env,DAE.DAE(DAE.EQUATION(e1,e2,_)::elts,funcs),ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,e1,false,ht,store);      
       (ut2,terms2,store) = buildTermExp(env,e2,false,ht,store);
-      (terms,store) = buildTerms(env,dae,ht,store);
+      (terms,store) = buildTerms(env,DAE.DAE(elts,funcs),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2))::terms,store);
       
-    case(env,DAE.EQUEQUATION(cr1,cr2,_)::dae,ht,store) equation
+    case(env,DAE.DAE(DAE.EQUEQUATION(cr1,cr2,_)::elts,funcs),ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,DAE.CREF(cr2,DAE.ET_OTHER()),false,ht,store);
-      (terms,store) = buildTerms(env,dae,ht,store);
+      (terms,store) = buildTerms(env,DAE.DAE(elts,funcs),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),DAE.CREF(cr2,DAE.ET_OTHER())))::terms,store);
            
       /* Only consider variables with binding from this instance level, not furhter down */
-    case(env,DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::dae,ht,store) equation      
+    case(env,DAE.DAE(DAE.VAR(componentRef=cr1 as DAE.CREF_IDENT(_,_,_),binding = SOME(e1))::elts,funcs),ht,store) equation      
       (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
-      (terms,store) = buildTerms(env,dae,ht,store);
+      (terms,store) = buildTerms(env,DAE.DAE(elts,funcs),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));    
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
             
-    case(env,DAE.DEFINE(cr1,e1,_)::dae,ht,store) equation
+    case(env,DAE.DAE(DAE.DEFINE(cr1,e1,_)::elts,funcs),ht,store) equation
       (ut1,terms1,store) = buildTermExp(env,DAE.CREF(cr1,DAE.ET_OTHER()),false,ht,store);
       (ut2,terms2,store) = buildTermExp(env,e1,false,ht,store);
-      (terms,store) = buildTerms(env,dae,ht,store);
+      (terms,store) = buildTerms(env,DAE.DAE(elts,funcs),ht,store);
       terms = listAppend(terms1,listAppend(terms2,terms));
     then  (UnitAbsyn.EQN(ut1,ut2,DAE.BINARY(DAE.CREF(cr1,DAE.ET_OTHER()),DAE.SUB(DAE.ET_REAL()),e1))::terms,store);
         
-    case(env,_::dae,ht,store) equation
-      (terms,store) = buildTerms(env,dae,ht,store);
+    case(env,DAE.DAE(_::elts,funcs),ht,store) equation
+      (terms,store) = buildTerms(env,DAE.DAE(elts,funcs),ht,store);
       then (terms,store);    
   end matchcontinue;
 end buildTerms; 
@@ -1275,7 +1279,7 @@ algorithm
 end buildTermOp;
 
 protected function buildStores2 "help function"
-  input list<DAE.Element> dae;
+  input DAE.DAElist dae;
   input UnitAbsyn.Store store;
   input HashTable.HashTable ht;
   output UnitAbsyn.Store outStore;
@@ -1288,29 +1292,31 @@ algorithm
     list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
     UnitAbsyn.Unit unit;
     DAE.Exp e1,e2;
-    case({},store,ht) then (store,ht);
-    case(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::dae,store,ht) equation
+    DAE.FunctionTree funcs;
+    list<DAE.Element> elts;
+    case(DAE.DAE({},_),store,ht) then (store,ht);
+    case(DAE.DAE(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts,funcs),store,ht) equation
       DAE.SCONST(unitStr) = DAEUtil.getUnitAttr(attropt);
       unit = str2unit(unitStr,NONE); /* Scale and offset not used yet*/
       (store,indx) = add(unit,store);
       ht = HashTable.add((cr,indx),ht);
-      (store,ht) = buildStores2(dae,store,ht);
+      (store,ht) = buildStores2(DAE.DAE(elts,funcs),store,ht);
     then (store,ht);
     
     /* Failed to parse will give unspecified unit*/
-    case(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::dae,store,ht) equation
+    case(DAE.DAE(DAE.VAR(componentRef=cr,variableAttributesOption=attropt)::elts,funcs),store,ht) equation
       (store,indx) = add(UnitAbsyn.UNSPECIFIED(),store);
       ht = HashTable.add((cr,indx),ht);
     then (store,ht);
           
-    case(_::dae,store,ht) equation
-      (store,ht) = buildStores2(dae,store,ht);
+    case(DAE.DAE(_::elts,funcs),store,ht) equation
+      (store,ht) = buildStores2(DAE.DAE(elts,funcs),store,ht);
     then (store,ht);     
   end matchcontinue;  
 end buildStores2;
 
 protected function buildStores3 "help function"
-  input list<DAE.Element> dae;
+  input DAE.DAElist dae;
   input UnitAbsyn.Store store;
   input HashTable.HashTable ht;
   output UnitAbsyn.Store outStore;
@@ -1323,15 +1329,18 @@ algorithm
     list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> typeParams;
     UnitAbsyn.Unit unit;
     DAE.Exp e1,e2;
-    case({},store,ht) then (store,ht);    
-    case(DAE.EQUATION(e1,e2,_)::dae,store,ht) equation
+    DAE.FunctionTree funcs;
+    list<DAE.Element> elts;
+    
+    case(DAE.DAE({},_),store,ht) then (store,ht);    
+    case(DAE.DAE(DAE.EQUATION(e1,e2,_)::elts,funcs),store,ht) equation
        (store,ht) = buildStoreExp(e1,store,ht,NONE);
        (store,ht) = buildStoreExp(e2,store,ht,NONE);
-       (store,ht) = buildStores3(dae,store,ht);
+       (store,ht) = buildStores3(DAE.DAE(elts,funcs),store,ht);
     then (store,ht); 
       
-    case(_::dae,store,ht) equation
-      (store,ht) = buildStores3(dae,store,ht);
+    case(DAE.DAE(_::elts,funcs),store,ht) equation
+      (store,ht) = buildStores3(DAE.DAE(elts,funcs),store,ht);
     then (store,ht);     
   end matchcontinue;  
 end buildStores3;

@@ -212,7 +212,7 @@ public uniontype Element
 
   record COMP
     Ident ident;
-    DAElist dAElist "a component with subelements, normally only used at top level.";
+    list<Element> dAElist "a component with subelements, normally only used at top level.";
     ElementSource source "the origin of the component/equation/algorithm"; // we might not this here.
   end COMP;
 
@@ -278,11 +278,11 @@ end InlineType;
 public uniontype FunctionDefinition
 
    record FUNCTION_DEF "Normal function body"
-     DAElist body;
+     list<Element> body;
    end FUNCTION_DEF;
 
    record FUNCTION_EXT "Normal external function declaration"
-    DAElist body;
+    list<Element> body;
     ExternalDecl externalDecl;
    end FUNCTION_EXT;
 
@@ -406,8 +406,37 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
 "
   record DAE
     list<Element> elementLst;
+    FunctionTree functions "set of functions";
   end DAE;
 end DAElist;
+
+/* AVLTree for functions */
+public type AvlKey = Absyn.Path;
+
+public type AvlValue = Element;
+
+public type FunctionTree = AvlTree;
+
+public 
+uniontype AvlTree "The binary tree data structure
+ "
+  record AVLTREENODE
+    Option<AvlTreeValue> value "Value" ;
+    Integer height "heigth of tree, used for balancing";
+    Option<AvlTree> left "left subtree" ;
+    Option<AvlTree> right "right subtree" ;
+  end AVLTREENODE;
+
+end AvlTree;
+
+public 
+uniontype AvlTreeValue "Each node in the binary tree can have a value associated with it."
+  record AVLTREEVALUE
+    AvlKey key "Key" ;
+    AvlValue value "Value" ;
+  end AVLTREEVALUE;
+
+end AvlTreeValue;
 
 /* -- Algorithm.mo -- */
 public 

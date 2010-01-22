@@ -436,10 +436,9 @@ algorithm
         (cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env,_,dae as DAE.DAE(dael)) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
-        ((dae as DAE.DAE(dael))) = DAEUtil.transformIfEqToExpr(dae,false);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dael,env));
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
+        dae = DAEUtil.transformIfEqToExpr(dae,false);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
@@ -661,38 +660,39 @@ algorithm
       list<RecordDeclaration> recordDecls;
       list<Statement> body;
       DAE.InlineType inl;
+      list<DAE.Element> daeElts;
+      
     /* Modelica functions. */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_DEF(body = DAE.DAE(elementLst=dae))},
+                       functions = {DAE.FUNCTION_DEF(body = daeElts)},
                        type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
                        partialPrefix=false), rt) 
       equation
-        outVars = Util.listMap(DAEUtil.getOutputVars(dae), daeInOutSimVar);
-        inVars = Util.listMap(DAEUtil.getInputVars(dae), daeInOutSimVar);
+        outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         funArgs = Util.listMap(args, typesSimFunctionArg);
-        (recordDecls,rt_1) = elaborateRecordDeclarations(dae, {}, rt);
-        vars = Util.listFilter(dae, isVarQ);
+        (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, {}, rt);
+        vars = Util.listFilter(daeElts, isVarQ);
         varDecls = Util.listMap(vars, daeInOutSimVar);
-        algs = Util.listFilter(dae, DAEUtil.isAlgorithm);
+        algs = Util.listFilter(daeElts, DAEUtil.isAlgorithm);
         body = Util.listMap(algs, elaborateStatement);
       then
         (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body),
          rt_1);
     /* External functions. */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+                       functions = {DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)},
                        type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt) 
       equation
         DAE.EXTERNALDECL(ident=extfnname, external_=extargs,
                          parameters=extretarg, returnType=lang, language=ann) = extdecl;
-        dae = Inst.initVarsModelicaOutput(orgdae);
-        outvars = DAEUtil.getOutputVars(dae);
-        invars = DAEUtil.getInputVars(dae);
-        bivars = DAEUtil.getBidirVars(dae);
+        outvars = DAEUtil.getOutputVars(daeElts);
+        invars = DAEUtil.getInputVars(daeElts);
+        bivars = DAEUtil.getBidirVars(daeElts);
         funArgs = Util.listMap(args, typesSimFunctionArg);
-        outVars = Util.listMap(DAEUtil.getOutputVars(dae), daeInOutSimVar);
-        inVars = Util.listMap(DAEUtil.getInputVars(dae), daeInOutSimVar);
-        biVars = Util.listMap(DAEUtil.getBidirVars(dae), daeInOutSimVar);
+        outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
+        inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
+        biVars = Util.listMap(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (includes, libs) = generateExtFunctionIncludes(ann);
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
@@ -4745,8 +4745,8 @@ algorithm
   outPath:=
   matchcontinue (inElem)
     local Absyn.Path path;
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(DAE.DAE(out))}) then out;
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body=DAE.DAE(out))}) then out;
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(out)}) then out;
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_EXT(body=out)}) then out;
   end matchcontinue;
 end getFunctionElementsList;
 
@@ -5228,40 +5228,42 @@ algorithm
       Boolean partialPrefix;
       String s;
       DAE.ElementSource source "the origin of the element";
+      DAE.FunctionTree funcs;
+      list<DAE.Element> daeElts;
       
     case (_,{},allpaths) then {};  /* iterated over complete list */
       
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.FUNCTION(functions = 
-          DAE.FUNCTION_DEF(dae)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)}) = fdae;        
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl,source)});
+        DAE.DAE({DAE.FUNCTION(functions = 
+          DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;        
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(dae)},t,partialPrefix,inl,source)});
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)});
       then
         res;
         
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.FUNCTION(functions=
-          DAE.FUNCTION_EXT(dae,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)}) = fdae;
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl,source)});
+        DAE.DAE({DAE.FUNCTION(functions=
+          DAE.FUNCTION_EXT(daeElts,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
+        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(dae,extdecl)},t,partialPrefix,inl,source)});
+        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)});
       then
         res;
         
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
-        DAE.DAE(elementLst = {DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)}) = fdae;
-        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)});
+        DAE.DAE({DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)},funcs) = fdae;
+        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
         elts = generateFunctions3(p, paths_1, allpaths_1);

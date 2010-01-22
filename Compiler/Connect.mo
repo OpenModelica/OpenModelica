@@ -550,9 +550,9 @@ public function equations "
   From a number of connection sets, this function generates a list of equations."
   input Sets sets;
   input Prefix.Prefix pre "prefix required for checking deleted components";
-  output list<DAE.Element> eqns;
+  output DAE.DAElist dae;
 algorithm
-  eqns := matchcontinue(sets,pre)
+  dae := matchcontinue(sets,pre)
     local 
       list<Set> s;
       list<DAE.ComponentRef> crs,deletedComps;
@@ -662,18 +662,18 @@ protected function equations2 "
 Helper function to equations. Once deleted components has been 
 removed from connection sets, this function generates the equations."
   input Sets inSets;
-  output list<DAE.Element> outDAEElementLst;
+  output DAE.DAElist  outDae;
 algorithm 
   outDAEElementLst := matchcontinue (inSets)
     local
-      list<DAE.Element> dae1,dae2,dae;
+      DAE.DAElist dae1,dae2,dae;
       list<tuple<DAE.ComponentRef, DAE.ElementSource>> cs;
       list<DAE.ComponentRef> crs, dc;
       list<Set> ss;
       Sets sets;
       list<OuterConnect> outerConn;
 
-    case (SETS(setLst = {})) then {}; 
+    case (SETS(setLst = {})) then DAEUtil.emptyDae; 
     
     /* Empty equ set, can come from deleting components */
     case (SETS((EQU(expComponentRefLst = {}) :: ss),crs,dc,outerConn))
@@ -693,7 +693,7 @@ algorithm
       equation 
         dae1 = equEquations(cs);
         dae2 = equations2(SETS(ss,crs,dc,outerConn));
-        dae = listAppend(dae1, dae2);
+        dae = DAEUtil.joinDaes(dae1, dae2);
       then
         dae;
     case (SETS((FLOW(tplExpComponentRefFaceLst = cs) :: ss),crs,dc,outerConn))
@@ -701,7 +701,7 @@ algorithm
       equation 
         dae1 = flowEquations(cs);
         dae2 = equations2(SETS(ss,crs,dc,outerConn));
-        dae = listAppend(dae1, dae2);
+        dae = DAEUtil.joinDaes(dae1, dae2);
       then
         dae;
     case (sets)
@@ -719,22 +719,23 @@ protected function equEquations "function: equEquations
   For example, if the set contains the components X, Y.A and
   Z.B, the equations generated will me X = Y.A and Y.A = Z.B."
   input list<tuple<DAE.ComponentRef,DAE.ElementSource>> inExpComponentRefLst;
-  output list<DAE.Element> outDAEElementLst;
+  output DAE.DAElist outDae;
 algorithm 
-  outDAEElementLst := matchcontinue (inExpComponentRefLst)
+  outDae := matchcontinue (inExpComponentRefLst)
     local
       list<DAE.Element> eq;
       DAE.ComponentRef x,y;
       list<tuple<DAE.ComponentRef,DAE.ElementSource>> cs;
       DAE.ElementSource src,src1,src2;
+      DAE.FunctionTree funcs;
 
-    case {_} then {}; 
+    case {_} then DAEUtil.emptyDae; 
     case ((x,src1) :: ((y,src2) :: cs))
       equation 
-        eq = equEquations(((y,src2) :: cs));
-        src = DAEUtil.mergeSources(src1,src2);
+        DAE.DAE(eq,funcs) = equEquations(((y,src2) :: cs));
+        src = DAEUtil.mergeSources(src1,src2);       
       then
-        (DAE.EQUEQUATION(x,y,src) :: eq);
+        (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq,funcs));
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();
   end matchcontinue;
 end equEquations;
@@ -747,17 +748,19 @@ protected function flowEquations "function: flowEquations
   This function uses flowSum to create the sum of all components
   (some of which will be negated), and the returns the equation
   where this sum is equal to 0.0."
-  input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
-  output list<DAE.Element> outDAEElementLst;
+input list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> cs;
+output DAE.DAElist outDae;
   DAE.Exp sum;
   DAE.ElementSource source;
   list<DAE.ElementSource> lde;
   DAE.ElementSource ed;
+  DAE.FunctionTree funcs;
 algorithm 
   sum := flowSum(cs);
   (ed::lde) := Util.listMap(cs, Util.tuple33);
   source := Util.listFold(lde, DAEUtil.mergeSources,ed);
-  outDAEElementLst := {DAE.EQUATION(sum, DAE.RCONST(0.0), source)};
+  funcs := DAEUtil.avlTreeNew();
+  outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), source)},funcs);
 end flowEquations;
 
 protected function flowSum "function: flowSum
@@ -1128,18 +1131,18 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   connectors, hence the preceding to last argument, true for top call"
  	input Env.Cache inCache;
   input Sets inSets;
-  input list<DAE.Element> inDAEElementLst;
+  input DAE.DAElist inDae;
   input Env.Env inEnv;
   input Prefix.Prefix prefix;
   input Boolean inBoolean;
   input list<OuterConnect> ocl;   
   output Env.Cache outCache;
-  output list<DAE.Element> outDAEElementLst;
+  output DAE.DAElist outDae;
 algorithm 
-  (outCache,outDAEElementLst) := matchcontinue (inCache,inSets,inDAEElementLst,inEnv,prefix,inBoolean,ocl)
+  (outCache,outDae) := matchcontinue (inCache,inSets,inDae,inEnv,prefix,inBoolean,ocl)
     local
       list<DAE.ComponentRef> v1,v2,v3,vSpecial,vars,vars2,vars3,unconnectedvars,deletedComponents;
-      list<DAE.Element> dae_1,dae;
+      DAE.DAElist dae_1,dae;
       Sets csets;
       list<Env.Frame> env;
       Env.Cache cache;
@@ -1199,7 +1202,7 @@ algorithm
       then
         (cache,dae_1);
 
-    case (cache,csets,dae,env,_,_,_) then (cache,{}); 
+    case (cache,csets,dae,env,_,_,_) then (cache,DAEUtil.emptyDae); 
   end matchcontinue;
 end unconnectedFlowEquations;
 
@@ -1424,11 +1427,11 @@ protected function generateZeroflowEquations "function: generateZeroflowEquation
   input Prefix.Prefix prefix;
   input list<DAE.ComponentRef> deletedComponents;
   output Env.Cache outCache;
-  output list<DAE.Element> outDAEElementLst;
+  output DAE.DAElist outDae;
 algorithm 
-  (outCache,outDAEElementLst) := matchcontinue (inCache,inExpComponentRefLst,inEnv,prefix,deletedComponents)
+  (outCache,outDae) := matchcontinue (inCache,inExpComponentRefLst,inEnv,prefix,deletedComponents)
     local
-      list<DAE.Element> res,res1;
+      DAE.DAElist res,res1;
       DAE.ComponentRef cr;
       Env.Env env;
       DAE.Type tp;
@@ -1439,7 +1442,9 @@ algorithm
       list<DAE.Exp> dimExps;
       Env.Cache cache;
       DAE.ComponentRef cr2;
-    case (cache,{},_,_,_) then (cache,{}); 
+      DAE.FunctionTree funcs;
+      list<DAE.Element> elts;
+    case (cache,{},_,_,_) then (cache,DAEUtil.emptyDae); 
     case (cache,(cr :: xs),env,prefix,deletedComponents)
       equation
         (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env,cr);
@@ -1452,18 +1457,18 @@ algorithm
         arrType = DAE.ET_ARRAY(DAE.ET_REAL(),dimSizesOpt);
         dimExps = {DAE.ICONST(0),DAE.ICONST(0),DAE.ICONST(0)};
         res1 = generateZeroflowArrayEquations(cr2, dimSizes, DAE.RCONST(0.0));
-        res = listAppend(res1,res);
+        res = DAEUtil.joinDaes(res1,res);
       then
         (cache,res);
     case (cache,(cr :: xs),env,prefix,deletedComponents) // For scalars.
       equation
         (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
-        (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
+        (cache,DAE.DAE(elts,funcs)) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = Prefix.prefixCref(prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
-        (cache,DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.emptyElementSource) :: res);
+        (cache,DAE.DAE(DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.emptyElementSource) :: elts,funcs));
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -1481,13 +1486,14 @@ protected function generateZeroflowArrayEquations
   input DAE.ComponentRef cr;
   input list<Integer> dimensions;
   input DAE.Exp initExp;
-  output list<DAE.Element> equations;
+  output DAE.DAElist dae;
 algorithm
-  equations := matchcontinue(cr, dimensions, initExp)
+  dae:= matchcontinue(cr, dimensions, initExp)
     local
       list<DAE.Element> out;
       list<list<Integer>> indexIntegerLists;
       list<list<DAE.Subscript>> indexSubscriptLists;
+      DAE.FunctionTree funcs;
     case(cr, dimensions, initExp)
       equation
         // take the list of dimensions: ex. {2, 5, 3}
@@ -1500,8 +1506,9 @@ algorithm
         // which will generate indexes like [1, 1, 1], [1, 1, 2], [1, 2, 3] ... [2, 5, 3]
         indexSubscriptLists = generateAllIndexes(indexSubscriptLists, {});
         out = Util.listMap1(indexSubscriptLists, genZeroEquation, (cr, initExp));
+        funcs = DAEUtil.avlTreeNew();
       then
-        out;
+        DAE.DAE(out,funcs);
   end matchcontinue;
 end generateZeroflowArrayEquations;
 

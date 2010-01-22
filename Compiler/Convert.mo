@@ -41,7 +41,21 @@ package Convert
 public import Absyn;
 public import DAE;
 
-public function fromDAEeqsToAbsynAlg "function: fromDAEeqsToAbsynAlg"
+public function fromDAEEqsToAbsynAlg "function: fromDAEEqsToAbsynAlgElts"
+  input DAE.DAElist ld;
+  output list<Absyn.AlgorithmItem> outList;
+  output DAE.DAElist outLd;
+algorithm
+  (outList,outLd) := matchcontinue (ld)
+  local list<DAE.Element> elts; DAE.FunctionTree funcs; 
+    case(DAE.DAE(elts,funcs)) equation
+      (outList, elts) = fromDAEEqsToAbsynAlgElts(elts,{},{});    
+    
+    then (outList,DAE.DAE(elts,funcs)); 
+ end matchcontinue;
+end fromDAEEqsToAbsynAlg;
+
+public function fromDAEEqsToAbsynAlgElts "function: fromDAEEqsToAbsynAlgElts"
   input list<DAE.Element> ld;
   input list<Absyn.AlgorithmItem> accList1;
   input list<DAE.Element> accList2;
@@ -52,6 +66,7 @@ algorithm
     local
       list<Absyn.AlgorithmItem> localAccList1;
       list<DAE.Element> restLd,localAccList2;
+      DAE.FunctionTree funcs;
     case ({},localAccList1,localAccList2) then (localAccList1,localAccList2);
     case (DAE.EQUATION(exp1,exp2,_) :: restLd,localAccList1,localAccList2)
       local
@@ -63,17 +78,17 @@ algorithm
         right = fromExpExpToAbsynExp(exp2);
         stmt = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
         localAccList1 = listAppend(localAccList1,stmt);
-        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2);
+        (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
     case (firstLd :: restLd,localAccList1,localAccList2)
       local
         DAE.Element firstLd;
       equation
         localAccList2 = listAppend(localAccList2,{firstLd});
-        (localAccList1,localAccList2) = fromDAEeqsToAbsynAlg(restLd,localAccList1,localAccList2);
+        (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
   end matchcontinue;
-end fromDAEeqsToAbsynAlg;
+end fromDAEEqsToAbsynAlgElts;
 
 // More expressions have to be added?
 public function fromExpExpToAbsynExp "function: fromExpExpToAbsynExp"

@@ -43,7 +43,7 @@ evaluate it. This is to prevent multiple compilation of c files.
   input DAE.Exp callExp "DAE.CALL(userFunc)"; 
   input list<Values.Value> inArgs; 
   input SCode.Class sc; 
-  input list<DAE.Element> daeList;
+  input DAE.DAElist daeList;
   output Values.Value outVal "The output value"; 
   
 algorithm
@@ -571,7 +571,7 @@ algorithm
         
     case(env, Absyn.ALG_ASSIGN(ae1 as Absyn.CREF(_), ae2),ht2)
       equation
-       (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false);
+       (_,e1,DAE.PROP(t,_),_,_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false);
        e1 = replaceComplex(e1,ht2); 
         (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
@@ -580,7 +580,7 @@ algorithm
         // assign, tuple assign
     case(env, Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
       equation
-        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
+        (_,resExp,prop,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
         resExp = replaceComplex(resExp,ht2);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(prop);
         (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true, NONE, NONE, Ceval.MSG());
@@ -625,7 +625,7 @@ algorithm
       local
         String estr;
       equation 
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
+        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
         estr = Exp.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then 
@@ -648,14 +648,14 @@ algorithm
     case(env, Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation 
-        (_,econd,_,_) = Static.elabExp(Env.emptyCache(),env, cond, true, NONE,true);
+        (_,econd,_,_,_) = Static.elabExp(Env.emptyCache(),env, cond, true, NONE,true);
         (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
       then 
         env;
     case(env, Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
       functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation 
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, msg, true, NONE,true);
+        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env, msg, true, NONE,true);
         (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         Error.addMessage(Error.ASSERT_FAILED, {varName});
       then
@@ -725,7 +725,7 @@ algorithm
     case (value,exp,algitemlst,algrest,env, ht2) /* Report type error */ 
       local DAE.Exp e1;
       equation 
-        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
+        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false); 
         estr = Exp.printExpStr(e1);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
@@ -750,7 +750,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
     Values.Value value;
   case(inExp,env,NONE,ht2)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false);
+      (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false);
       e1 = replaceComplex(e1,ht2); 
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
     then 
@@ -758,7 +758,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
   case(inExp,env,SOME(ty),ht2)
     local DAE.Type ty,ty2;
     equation      
-      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false);
+      (_,e1,DAE.PROP(ty2,_),_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false);
       (e2,_) = Types.matchType(e1,ty2,ty,true);
       e2 = replaceComplex(e2,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
@@ -1429,7 +1429,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
 
   case((oldVal as Values.ARRAY(valueLst = values1)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
-      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false); 
+      (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false); 
       (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);

@@ -978,10 +978,12 @@ protected function generateFunctionsElist
   output list<CFunction> cfns;
   output list<String> rt_1;
   list<DAE.Element> fns;
+  DAE.FunctionTree funcs;
 algorithm
   Debug.fprintln("cgtr", "generate_functions_elist");
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
-  Debug.fcall("cgtrdumpdae", DAEUtil.dump2, DAE.DAE(els));
+  funcs := DAEUtil.avlTreeNew();
+  Debug.fcall("cgtrdumpdae", DAEUtil.dump2, DAE.DAE(els,funcs));
   fns := Util.listFilter(els, DAEUtil.isFunction);
   (cfns,rt_1) := generateFunctionsElist2(fns,rt);
 end generateFunctionsElist;
@@ -1047,10 +1049,11 @@ algorithm
       DAE.Element comp;
       list<String> rt, rt_1, struct_funrefs, struct_funrefs_int;
       list<Absyn.Path> funrefPaths;
+      DAE.FunctionTree funcs;      
       
     /* Modelica functions External functions */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_DEF(body = DAE.DAE(elementLst = dae))},
+                       functions = {DAE.FUNCTION_DEF(body = dae)},
                        type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = false),rt) 
       equation
@@ -1058,7 +1061,8 @@ algorithm
         fn_name_str = stringAppend("_", fn_name_str);
         Debug.fprintl("cgtr", {"generating function ",fn_name_str,"\n"});
         Debug.fprintln("cgtrdumpdae3", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae3", DAEUtil.dump2, DAE.DAE(dae));
+        funcs = DAEUtil.avlTreeNew();
+        Debug.fcall("cgtrdumpdae3", DAEUtil.dump2, DAE.DAE(dae,funcs));
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
@@ -1122,7 +1126,7 @@ algorithm
     
     /* MetaModelica Partial Function. sjoelund */    
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_DEF(body = DAE.DAE(elementLst = dae))},
+                       functions = {DAE.FUNCTION_DEF(body = dae)},
                        type_ = (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_),
                        partialPrefix = true),rt) 
       then
@@ -1130,14 +1134,14 @@ algorithm
         
     /* Builtin functions - stefan */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+                       functions = {DAE.FUNCTION_EXT(body = dae, externalDecl = extdecl)},
                        type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
       equation
         true = isBuiltinFunction(fpath);
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
         DAE.EXTERNALDECL(ident = extfnname, external_ = extargs,parameters = extretarg, returnType = lang, language = ann) = extdecl;
-        dae = Inst.initVarsModelicaOutput(orgdae);
+        funcs = DAEUtil.avlTreeNew();
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         bivars = DAEUtil.getBidirVars(dae);
@@ -1156,18 +1160,16 @@ algorithm
     
     /* External functions */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_EXT(body = DAE.DAE(elementLst = orgdae), externalDecl = extdecl)},
+                       functions = {DAE.FUNCTION_EXT(body = dae, externalDecl = extdecl)},
                        type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt) 
       equation
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
         Debug.fprintl("cgtr", {"generating external function ",fn_name_str,"\n"});
         DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann) = extdecl;
-        Debug.fprintln("cgtrdumpdae1", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae1", DAEUtil.dump2, DAE.DAE(orgdae));
-        dae = Inst.initVarsModelicaOutput(orgdae);
         Debug.fprintln("cgtrdumpdae2", "Dumping DAE:");
-        Debug.fcall("cgtrdumpdae2", DAEUtil.dump2, DAE.DAE(dae));
+        funcs = DAEUtil.avlTreeNew();
+        Debug.fcall("cgtrdumpdae2", DAEUtil.dump2, DAE.DAE(dae,funcs));
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         bivars = DAEUtil.getBidirVars(dae);
@@ -1189,7 +1191,7 @@ algorithm
       then
         (cfns,rt_1);
         
-    case (DAE.COMP(ident = n,dAElist = DAE.DAE(elementLst = daelist)),rt)
+    case (DAE.COMP(ident = n,dAElist = daelist),rt)
       equation
         (cfns,rt_1) = generateFunctionsElist(daelist,rt);
       then
@@ -1769,6 +1771,7 @@ algorithm
       Option<DAE.VariableAttributes> dae_var_attr;
       Option<SCode.Comment> comment;
       DAE.ElementSource source "the origin of the element";
+      DAE.FunctionTree funcs;
       
     case ((el as DAE.VAR(componentRef = cr,
                          kind = vk,
@@ -1781,7 +1784,8 @@ algorithm
                          absynCommentOption = comment)))
 
       equation
-        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el}));
+        funcs = DAEUtil.avlTreeNew();
+        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el},funcs));
       then
         false;
         
@@ -1795,7 +1799,8 @@ algorithm
                          variableAttributesOption = dae_var_attr,
                          absynCommentOption = comment)))
       equation
-        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el}));
+        funcs = DAEUtil.avlTreeNew();
+        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el},funcs));
       then
         true;
         
@@ -7791,9 +7796,11 @@ algorithm
       DAE.ExternalDecl extdecl;
       DAE.ExtArg retarg;
       Option<Absyn.Annotation> ann;
+      DAE.FunctionTree funcs;
     case (vars,(extdecl as DAE.EXTERNALDECL(ident = n,external_ = arglist,parameters = retarg,returnType = lang,language = ann)),tnr)
       equation
-        Debug.fcall("cgtrdumpdaeextcall", DAEUtil.dump2, DAE.DAE(vars));
+        funcs = DAEUtil.avlTreeNew();
+        Debug.fcall("cgtrdumpdaeextcall", DAEUtil.dump2, DAE.DAE(vars,funcs));
         extdeclstr = DAEUtil.dumpExtDeclStr(extdecl);
         Debug.fprintln("cgtrdumpdaeextcall", extdeclstr);
         (argdecls,arglist_1,tnr_1) = generateExtcallVardecls(vars, arglist, retarg, lang, 1,tnr);
@@ -7886,6 +7893,7 @@ algorithm
       Integer i1;
       DAE.VarProtection prot;
       DAE.ElementSource source "the origin of the element";
+      DAE.FunctionTree funcs;
       
     case ({},i,tnr) then (cEmptyFunction,tnr);
     case ((var :: rest),i,tnr)
@@ -7905,7 +7913,8 @@ algorithm
     case ((var :: rest),i,tnr)
       equation
         Debug.fprint("cgtr", "#--Ignoring: ");
-        Debug.fcall("cgtr", DAEUtil.dump2, DAE.DAE({var}));
+        funcs = DAEUtil.avlTreeNew();
+        Debug.fcall("cgtr", DAEUtil.dump2, DAE.DAE({var},funcs));
         Debug.fprintln("cgtr", "");
         (fn,tnr_1) = generateExtcallCopydeclsF77(rest,i, tnr);
       then
@@ -10544,7 +10553,7 @@ algorithm
       list<DAE.Type> tys;
       DAE.Type ft;
     case {} then {};
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = DAE.DAE(els))})::rest
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = els)})::rest
       equation
         paths1 = getUniontypePaths2(els);
         paths2 = getUniontypePaths2(rest);

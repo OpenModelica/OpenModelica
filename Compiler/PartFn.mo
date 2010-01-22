@@ -426,15 +426,16 @@ algorithm
     local
       list<DAE.Element> elts,elts_1,dae;
       DAE.DAElist dlst;
+      DAE.FunctionTree funcs;
     /*case(dlst,dae)
       equation
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dlst,dae);*/
-    case(DAE.DAE(elts),dae)
+    case(DAE.DAE(elts,funcs),dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
-        dlst = DAE.DAE(elts_1);
+        dlst = DAE.DAE(elts_1,funcs);
       then
         (dlst,dae);
     case(_,_)
@@ -556,6 +557,7 @@ algorithm
       DAE.Algorithm alg,alg_1;
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
+      DAE.FunctionTree funcs;
       
     case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
@@ -670,28 +672,28 @@ algorithm
       then
         (DAE.INITIALALGORITHM(alg_1,source) :: cdr_1,dae);
 
-    case(DAE.COMP(i,DAE.DAE(elts),source) :: cdr,dae)
+    case(DAE.COMP(i,elts,source) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.COMP(i,DAE.DAE(elts_1),source) :: cdr_1,dae);
+        (DAE.COMP(i,elts_1,source) :: cdr_1,dae);
 
-    case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(DAE.DAE(elts))},fullType,pp,inlineType,source) :: cdr,dae)
+    case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts)},fullType,pp,inlineType,source) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
-        el = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(DAE.DAE(elts_1))},fullType,pp,inlineType,source);
+        el = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts_1)},fullType,pp,inlineType,source);
         dae = replaceFnInFnLst(el,dae);
       then
         (el :: cdr_1,dae);
 
-    case(DAE.FUNCTION(p,{DAE.FUNCTION_EXT(DAE.DAE(elts),ed)},fullType,pp,inlineType,source) :: cdr,dae)
+    case(DAE.FUNCTION(p,{DAE.FUNCTION_EXT(elts,ed)},fullType,pp,inlineType,source) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.FUNCTION(p,{DAE.FUNCTION_EXT(DAE.DAE(elts_1 /* TODO! FIXME! was elts before */),ed)},fullType,pp,inlineType,source) :: cdr_1,dae);
+        (DAE.FUNCTION(p,{DAE.FUNCTION_EXT(elts_1 /* TODO! FIXME! was elts before */,ed)},fullType,pp,inlineType,source) :: cdr_1,dae);
 
     case(DAE.EXTOBJECTCLASS(p,el1,el2,source) :: cdr,dae)
       equation
@@ -1107,11 +1109,11 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
 
-    case(bigfn as DAE.FUNCTION(current,{DAE.FUNCTION_DEF(DAE.DAE(fnparts))},ty,pp,inlineType,source),smallfn,p,dae,numArgs)
+    case(bigfn as DAE.FUNCTION(current,{DAE.FUNCTION_DEF(fnparts)},ty,pp,inlineType,source),smallfn,p,dae,numArgs)
       equation
         (fnparts_1,vars) = buildNewFunctionParts(fnparts,smallfn,dae,numArgs,current);
         ty = buildNewFunctionType(ty,vars);
-        res = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(DAE.DAE(fnparts_1))},ty,pp,inlineType,source);
+        res = DAE.FUNCTION(p,{DAE.FUNCTION_DEF(fnparts_1)},ty,pp,inlineType,source);
       then
         res;
     case(_,_,_,_,_)
@@ -1183,7 +1185,7 @@ algorithm
       Integer numArgs;
       list<DAE.Var> vars;
     case(parts,smallfn as DAE.FUNCTION(path=p,
-         functions={DAE.FUNCTION_DEF(DAE.DAE(smallparts))}),
+         functions={DAE.FUNCTION_DEF(smallparts)}),
          dae,numArgs,current)
       equation
         inputs = Util.listSelect(smallparts,isInput);

@@ -4124,65 +4124,67 @@ algorithm
       DAE.Exp e1,e2;
       list<DAE.Element> xs;
       DAE.DAElist dae;
+      DAE.FunctionTree funcs;
+      list<DAE.Element> daeElts;
       
     case (DAE.DAE(elementLst = {}),bt) then bt;
       
-    case (DAE.DAE(elementLst = (DAE.EQUATION(exp = e1,scalar = e2) :: xs)),bt)
+    case (DAE.DAE(DAE.EQUATION(exp = e1,scalar = e2) :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;
 
-    case (DAE.DAE(elementLst = (DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs)),bt)
+    case (DAE.DAE(DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;        
         
-    case (DAE.DAE(elementLst = (DAE.INITIALEQUATION(exp1 = e1, exp2 = e2) :: xs)),bt)
+    case (DAE.DAE(DAE.INITIALEQUATION(exp1 = e1, exp2 = e2) :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;
 
-    case (DAE.DAE(elementLst = (DAE.DEFINE(componentRef = _, exp = e2) :: xs)),bt)
+    case (DAE.DAE(DAE.DEFINE(componentRef = _, exp = e2) :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
         bt = statesExp(e2, bt);
       then
         bt;
         
-    case (DAE.DAE(elementLst = (DAE.INITIALDEFINE(componentRef = _, exp = e2) :: xs)),bt)
+    case (DAE.DAE(DAE.INITIALDEFINE(componentRef = _, exp = e2) :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
         bt = statesExp(e2, bt);
       then
         bt;
         
-    case (DAE.DAE(elementLst = (DAE.ARRAY_EQUATION(exp = e1,array = e2) :: xs)),bt)
+    case (DAE.DAE(DAE.ARRAY_EQUATION(exp = e1,array = e2) :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
         bt = statesExp(e1, bt);
         bt = statesExp(e2, bt);
       then
         bt;
         
-    case (DAE.DAE(elementLst = (DAE.COMP(dAElist = dae) :: xs)),bt)
+    case (DAE.DAE(DAE.COMP(dAElist = daeElts) :: xs,funcs),bt)
       equation
-        bt = states(dae, bt);
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(daeElts,funcs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
       then
         bt;
         
-    case (DAE.DAE(elementLst = (_ :: xs)),bt)
+    case (DAE.DAE(_ :: xs,funcs),bt)
       equation
-        bt = states(DAE.DAE(xs), bt);
+        bt = states(DAE.DAE(xs,funcs), bt);
       then
         bt;
   end matchcontinue;
@@ -4668,6 +4670,8 @@ algorithm
       DAE.ComponentRef cr;
       Absyn.InnerOuter io;
       DAE.ElementSource source "the element source";
+      DAE.FunctionTree funcs;
+      list<DAE.Element> daeElts;
       
     case (DAE.DAE(elementLst = {}),_,v1,v2,v3,whenclauses)
       then
@@ -4683,32 +4687,32 @@ algorithm
     //    (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);            
 
     // External object variables
-    case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((v as DAE.VAR(componentRef = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) = 
-        lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         v_1 = lowerExtObjVar(v);
         extVars2 = addVar(v_1, extVars);
       then
         (vars,knvars,extVars2,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     // class for External object
-    case (DAE.DAE(elementLst = ((v as DAE.EXTOBJECTCLASS(path,constr,destr,source)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((v as DAE.EXTOBJECTCLASS(path,constr,destr,source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Absyn.Path path;
         DAE.Element constr,destr;
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,
         EXTOBJCLASS(path,constr,destr,source)::extObjCls);
 
     // variables: states and algebraic variables with binding equation!
-    case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = cr, source = source)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((v as DAE.VAR(componentRef = cr, source = source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) = 
-        lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);        
+        lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);        
         // adrpo 2009-09-07 - according to MathCore 
         // add the binding as an equation and remove the binding from variable!        
         true = isStateOrAlgvar(v);
@@ -4718,10 +4722,10 @@ algorithm
         (vars_1,knvars,extVars,EQUATION(DAE.CREF(cr, DAE.ET_OTHER()), e1, source)::eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     // variables: states and algebraic variables with NO binding equation!
-    case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = cr, source = source)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((v as DAE.VAR(componentRef = cr, source = source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls) = 
-        lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);        
+        lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);        
         // adrpo 2009-09-07 - according to MathCore 
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(v);
@@ -4731,27 +4735,27 @@ algorithm
         (vars_1,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     // Known variables: parameters and constants
-    case (DAE.DAE(elementLst = ((v as DAE.VAR(componentRef = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((v as DAE.VAR(componentRef = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         v_1 = lowerKnownVar(v) "in previous rule, lower_var failed." ;
         knvars_1 = addVar(v_1, knvars);
       then
         (vars,knvars_1,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     /* tuple equations are rewritten to algorihm tuple assign. */
-    case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         a = lowerTupleEquation(e);
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        	= lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        	= lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,a::algs,whenclauses_1,extObjCls);
 
 		/* tuple-tuple assignments are split into one equation for each tuple
 		 * element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6; */
-		case (DAE.DAE((DAE.EQUATION(DAE.TUPLE(targets), DAE.TUPLE(sources), source = eq_source) :: xs)), 
+		case (DAE.DAE(DAE.EQUATION(DAE.TUPLE(targets), DAE.TUPLE(sources), source = eq_source) :: xs,funcs), 
 				states,vars,knvars,extVars,whenclauses)
 			local
 				list<DAE.Exp> targets;
@@ -4759,74 +4763,74 @@ algorithm
 				DAE.ElementSource eq_source;
 			equation
 				(vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-					= lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+					= lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
 				eqns2 = lowerTupleAssignment(targets, sources, eq_source);
 				eqns = listAppend(eqns2, eqns);
 			then
 				(vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     /* scalar equations */
-    case (DAE.DAE(elementLst = ((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
       then
         (vars,knvars,extVars,(e_1 :: eqns),reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     /* effort variable equality equations */
-    case (DAE.DAE(elementLst = ((e as DAE.EQUEQUATION(cr1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.EQUEQUATION(cr1 = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
       then
         (vars,knvars,extVars,(e_1 :: eqns),reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
         
     /* a solved equation */
-    case (DAE.DAE(elementLst = ((e as DAE.DEFINE(componentRef = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.DEFINE(componentRef = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
       then
         (vars,knvars,extVars,e_1 :: eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
 
     // complex equations!!
-    case (DAE.DAE(elementLst = ((e as DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         eqsComplex = lowerComplexEqn(e);
         eqns = listAppend(eqsComplex, eqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
     
     // complex initial equations!!
-    case (DAE.DAE(elementLst = ((e as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         eqsComplex = lowerComplexEqn(e);
         ieqns = listAppend(eqsComplex, ieqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);    
 
     /* array equations */
-    case (DAE.DAE(elementLst = ((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local MultiDimEquation e_1;
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerArrEqn(e);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),algs,whenclauses_1,extObjCls);
 
     /* When equations */
-    case (DAE.DAE(elementLst = ((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars1,knvars,extVars,eqns1,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         count = listLength(whenclauses_1);
         (eqns2,vars2,count_1,whenclauses_2) = lowerWhenEqn(e, count, whenclauses_1);
         vars = mergeVars(vars1, vars2);
@@ -4835,27 +4839,27 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_2,extObjCls);
 
     /* initial equations*/
-    case (DAE.DAE(elementLst = ((e as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2)) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
       then
         (vars,knvars,extVars,eqns,reqns,(e_1 :: ieqns),aeqns,algs,whenclauses_1,extObjCls);
 
     /* Algorithm */
-    case (DAE.DAE(elementLst = (DAE.ALGORITHM(algorithm_ = a) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(DAE.ALGORITHM(algorithm_ = a) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
-        = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,(a :: algs),whenclauses_1,extObjCls);
 
     /* flat class / COMP */
-    case (DAE.DAE(elementLst = (DAE.COMP(dAElist = dae) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(DAE.COMP(dAElist = daeElts) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
-        (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,algs1,whenclauses_1,extObjCls1) = lower2(dae, states, vars, knvars, extVars, whenclauses);
-        (vars2,knvars2,extVars2,eqns2,reqns2,ieqns2,aeqns2,algs2,whenclauses_2,extObjCls2) = lower2(DAE.DAE(xs), states, vars1, knvars1, extVars1, whenclauses_1);
+        (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,algs1,whenclauses_1,extObjCls1) = lower2(DAE.DAE(daeElts,funcs), states, vars, knvars, extVars, whenclauses);
+        (vars2,knvars2,extVars2,eqns2,reqns2,ieqns2,aeqns2,algs2,whenclauses_2,extObjCls2) = lower2(DAE.DAE(xs,funcs), states, vars1, knvars1, extVars1, whenclauses_1);
         vars = vars2; // vars = mergeVars(vars1, vars2);
         knvars = knvars2; // knvars = mergeVars(knvars1, knvars2);
         extVars = extVars2; // extVars = mergeVars(extVars1,extVars2);
@@ -4885,7 +4889,7 @@ algorithm
         fail();
 
     /* assert in equation section is converted to ALGORITHM */
-    case (DAE.DAE(elementLst = (DAE.ASSERT(cond,msg,_) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(DAE.ASSERT(cond,msg,_) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Variables v;
         list<Equation> e;
@@ -4893,28 +4897,28 @@ algorithm
 
       equation
         checkAssertCondition(cond,msg);
-        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states,vars,knvars,extVars,whenclauses);
+        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs,funcs), states,vars,knvars,extVars,whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg)})::al,whenclauses_1,extObjCls);
 
     /* terminate in equation section is converted to ALGORITHM */
-    case (DAE.DAE(elementLst = (DAE.TERMINATE(message = msg) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(DAE.TERMINATE(message = msg) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Variables v;
         list<Equation> e;
         DAE.Exp cond,msg;
       equation
-        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, vars,knvars,extVars, whenclauses) ;
+        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs,funcs), states, vars,knvars,extVars, whenclauses) ;
       then
         (v,kv,extVars,e,re,ie,ae,DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg)})::al,whenclauses_1,extObjCls);
 
-    case (DAE.DAE(elementLst = (DAE.INITIALALGORITHM(algorithm_ = _) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(DAE.INITIALALGORITHM(algorithm_ = _) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Variables v;
         list<Equation> e;
       equation
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"initial algorithm","rewrite initial algorithms to initial equations"});
-        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
+        (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls);
         
