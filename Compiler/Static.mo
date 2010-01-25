@@ -1403,6 +1403,16 @@ algorithm
 			then
 				(cache, exp_1, prop, st,dae);
 				
+		/* reduction with an empty vector as range expression */
+		case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {(_, SOME(iterexp))}, impl, st, doVect)
+			local
+				String reduction_op;
+			equation
+				(cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _, dae) = elabExp(cache, env, iterexp, impl, st, doVect);
+				exp_1 = reductionDefaultValue(reduction_op);
+			then
+				(cache, exp_1, DAE.PROP((DAE.T_REAL({}), NONE), DAE.C_CONST), st, dae);
+
 		/* min, max, sum and product */
 		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
 			equation
@@ -1429,6 +1439,18 @@ algorithm
 			then fail();
 	end matchcontinue;
 end elabCallReduction;
+
+protected function reductionDefaultValue
+	input String reductionOp;
+	output DAE.Exp defaultValue;
+algorithm
+	defaultValue := matchcontinue(reductionOp)
+		case "min" then DAE.RCONST(1e60);
+		case "max" then DAE.RCONST(-1e60);
+		case "sum" then DAE.RCONST(0.0);
+		case "product" then DAE.RCONST(1.0);
+	end matchcontinue;
+end reductionDefaultValue;
 
 protected function elabArrayIterators
 	"Elaborates array constructors such as 'array(i for i in 1:5)'"

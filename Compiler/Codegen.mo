@@ -4671,21 +4671,6 @@ algorithm
       then
         (cfn,tvar,tnr);
 
-		/* reduction of empty vector */
-		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, range =
-			DAE.MATRIX(scalar = {})), tnr, context)
-			local
-				String reduction_op, start_value;
-			equation
-				ty = Exp.typeof(e1);
-				ty = Exp.unliftArray(ty);
-				type_string = expTypeStr(ty, false);
-				(_, start_value) = makeReductionFunction(reduction_op, ty);
-				(decl1, var1, tnr) = generateTempDeclWithAssignment(type_string, tnr, "", start_value);
-				cfn = cAddVariables(cEmptyFunction, {decl1});
-			then
-				(cfn, var1, tnr);
-
 		/* reduction */
 		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, ident = iter, range = e2), tnr, context)
 			local
@@ -5297,21 +5282,6 @@ algorithm
         cfn = cAddStatements(cfn, {stmt});
       then
         (cfn,tvar,tnr);
-
-		/* reduction of empty vector */
-		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, range =
-			DAE.MATRIX(scalar = {})), tnr, context)
-			local
-				String reduction_op, start_value;
-			equation
-				ty = Exp.typeof(e1);
-				ty = Exp.unliftArray(ty);
-				type_string = expTypeStr(ty, false);
-				(_, start_value) = makeReductionFunction(reduction_op, ty);
-				(decl1, var1, tnr) = generateTempDeclWithAssignment(type_string, tnr, "", start_value);
-				cfn = cAddVariables(cEmptyFunction, {decl1});
-			then
-				(cfn, var1, tnr);
 
 		/* reduction */
 		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, ident = iter, range = e2), tnr, context)
