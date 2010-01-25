@@ -1402,6 +1402,7 @@ algorithm
 				dae = DAEUtil.joinDaes(dae1,dae2);
 			then
 				(cache, exp_1, prop, st,dae);
+				
 		/* min, max, sum and product */
 		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
 			equation
@@ -1417,7 +1418,7 @@ algorithm
 				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.VALBOUND(Values.INTEGER(1)), SCode.CONST());
 			  (cache,_,DAE.PROP(expty,expconst),st,dae3) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
 				const = Types.constAnd(expconst, iterconst);
-				prop = DAE.PROP(expty, expconst);
+				prop = DAE.PROP(expty, const);
 				fn_1 = Absyn.crefToPath(fn);
 			  dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
 			then 
@@ -2408,6 +2409,9 @@ algorithm
       Boolean doVect;
       DAE.DAElist dae,dae1,dae2;
       
+		case (cache, _, {}, _, _, _) 
+			then (cache, {}, DAE.PROP((DAE.T_REAL({}), NONE), DAE.C_CONST), DAE.DAE({}, DAE.AVLTREENODE(NONE, 0, NONE, NONE)));
+
     case (cache,env,{e},impl,st,doVect)  
       equation 
         (cache,e_1,prop,_,dae) = elabExp(cache,env, e, impl, st,doVect);

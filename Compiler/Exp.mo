@@ -8552,6 +8552,11 @@ algorithm
         res = expContains(e, cr);
       then
         res;
+		case (DAE.REDUCTION(expr = e), cr)
+			equation
+				res = expContains(e, cr);
+			then
+				res;
     case (e,cr)
       equation 
 				true = RTOpts.debugFlag("failtrace");

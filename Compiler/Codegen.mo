@@ -4670,6 +4670,50 @@ algorithm
         cfn = cAddStatements(cfn, {stmt});
       then
         (cfn,tvar,tnr);
+
+		/* reduction of empty vector */
+		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, range =
+			DAE.MATRIX(scalar = {})), tnr, context)
+			local
+				String reduction_op, start_value;
+			equation
+				ty = Exp.typeof(e1);
+				ty = Exp.unliftArray(ty);
+				type_string = expTypeStr(ty, false);
+				(_, start_value) = makeReductionFunction(reduction_op, ty);
+				(decl1, var1, tnr) = generateTempDeclWithAssignment(type_string, tnr, "", start_value);
+				cfn = cAddVariables(cEmptyFunction, {decl1});
+			then
+				(cfn, var1, tnr);
+
+		/* reduction */
+		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, ident = iter, range = e2), tnr, context)
+			local
+				String reduction_op, start_value, reduction_fun;
+				DAE.Exp exp_var, accum_var;
+				Ident iter;
+				DAE.Statement for_stmt, exp_stmt, reduction_stmt;
+			equation
+				ty = Exp.typeof(e1);
+				ty = Exp.unliftArray(ty);
+				type_string = expTypeStr(ty, false);
+				(reduction_fun, start_value) = makeReductionFunction(reduction_op, ty);
+				(decl1, var1, tnr) = generateTempDecl(type_string, tnr);
+				(decl2, var2, tnr) = generateTempDeclWithAssignment(type_string, tnr, "", start_value);
+				exp_var = makeCrefExpFromStringType(var1, ty);
+				accum_var = makeCrefExpFromStringType(var2, ty);
+				// Assign the result of the reduction expression to a temporary variable.
+				exp_stmt = DAE.STMT_ASSIGN(ty, exp_var, e1);	
+				// Do the reduction, accum := reduction_fun(accum, exp);
+				reduction_stmt = DAE.STMT_ASSIGN(ty, accum_var, 
+					DAE.CALL(Absyn.IDENT(reduction_fun), {accum_var, exp_var}, false, true, ty, DAE.NO_INLINE)); 
+				// Generate a for-loop with these statements over the given range.
+				for_stmt = DAE.STMT_FOR(DAE.ET_INT, false, iter, e2, {exp_stmt, reduction_stmt}); 
+				(cfn, tnr) = generateAlgorithmStatement(for_stmt, tnr, context);
+				cfn = cAddVariables(cfn, {decl1, decl2});
+      then
+				(cfn, var2, tnr);
+
     /* valueblock */
     case (DAE.VALUEBLOCK(ty,localDecls = ld,body = b,
       		result = res),tnr,context)
@@ -5253,6 +5297,50 @@ algorithm
         cfn = cAddStatements(cfn, {stmt});
       then
         (cfn,tvar,tnr);
+
+		/* reduction of empty vector */
+		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, range =
+			DAE.MATRIX(scalar = {})), tnr, context)
+			local
+				String reduction_op, start_value;
+			equation
+				ty = Exp.typeof(e1);
+				ty = Exp.unliftArray(ty);
+				type_string = expTypeStr(ty, false);
+				(_, start_value) = makeReductionFunction(reduction_op, ty);
+				(decl1, var1, tnr) = generateTempDeclWithAssignment(type_string, tnr, "", start_value);
+				cfn = cAddVariables(cEmptyFunction, {decl1});
+			then
+				(cfn, var1, tnr);
+
+		/* reduction */
+		case (DAE.REDUCTION(path = Absyn.IDENT(reduction_op), expr = e1, ident = iter, range = e2), tnr, context)
+			local
+				String reduction_op, start_value, reduction_fun;
+				DAE.Exp exp_var, accum_var;
+				Ident iter;
+				DAE.Statement for_stmt, exp_stmt, reduction_stmt;
+			equation
+				ty = Exp.typeof(e1);
+				ty = Exp.unliftArray(ty);
+				type_string = expTypeStr(ty, false);
+				(reduction_fun, start_value) = makeReductionFunction(reduction_op, ty);
+				(decl1, var1, tnr) = generateTempDecl(type_string, tnr);
+				(decl2, var2, tnr) = generateTempDeclWithAssignment(type_string, tnr, "", start_value);
+				exp_var = makeCrefExpFromStringType(var1, ty);
+				accum_var = makeCrefExpFromStringType(var2, ty);
+				// Assign the result of the reduction expression to a temporary variable.
+				exp_stmt = DAE.STMT_ASSIGN(ty, exp_var, e1);	
+				// Do the reduction, accum := reduction_fun(accum, exp);
+				reduction_stmt = DAE.STMT_ASSIGN(ty, accum_var, 
+					DAE.CALL(Absyn.IDENT(reduction_fun), {accum_var, exp_var}, false, true, ty, DAE.NO_INLINE)); 
+				// Generate a for-loop with these statements over the given range.
+				for_stmt = DAE.STMT_FOR(DAE.ET_INT, false, iter, e2, {exp_stmt, reduction_stmt}); 
+				(cfn, tnr) = generateAlgorithmStatement(for_stmt, tnr, context);
+				cfn = cAddVariables(cfn, {decl1, decl2});
+      then
+				(cfn, var2, tnr);
+
     /* valueblock */
     case (DAE.VALUEBLOCK(ty,localDecls = ld,body = b,
       		result = res),tnr,context)
@@ -10480,6 +10568,12 @@ algorithm
     
     case(DAE.CREF(_,_),_) then {};
     
+		case (DAE.REDUCTION(expr = e1), fn)
+			equation
+				res = getMatchingExps(e1, fn);
+			then
+				res;
+
     case (DAE.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
       local
     		list<DAE.Element> ld;
@@ -10599,5 +10693,31 @@ algorithm
   cref := Exp.pathToCref(path);
   exp  := Exp.makeCrefExp(cref, DAE.ET_OTHER);
 end makeCrefExpFromString;
+
+protected function makeCrefExpFromStringType
+	input String name;
+	input DAE.ExpType ty;
+	output DAE.Exp e;
+algorithm
+	e := DAE.CREF(DAE.CREF_IDENT(name, ty, {}), ty);
+end makeCrefExpFromStringType;
+
+protected function makeReductionFunction
+	input String reductionOp;
+	input DAE.ExpType type_;
+	output String func;
+	output String startValue;
+algorithm
+	(func, startValue) := matchcontinue(reductionOp, type_)
+		case ("min", DAE.ET_INT) then ("min", "1073741823");
+		case ("min", DAE.ET_REAL) then ("min", "1.e60");
+		case ("max", DAE.ET_INT) then ("max", "-1073741823");
+		case ("max", DAE.ET_REAL) then ("max", "-1.e60");
+		case ("sum", DAE.ET_INT) then ("intAdd", "0");
+		case ("sum", DAE.ET_REAL) then ("realAdd", "0");
+		case ("product", DAE.ET_INT) then ("intMul", "1");
+		case ("product", DAE.ET_REAL) then ("realMul", "1");
+	end matchcontinue;
+end makeReductionFunction;
 
 end Codegen;
