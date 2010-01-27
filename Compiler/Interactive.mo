@@ -1505,6 +1505,7 @@ algorithm
       functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
       st as SYMBOLTABLE(ast = p, explodedAst = s))
       equation
+        Print.clearBuf();
         Dump.getAstAsCorbaString(p);
         top_names_str = Print.getString();
         Print.clearBuf();
@@ -1517,6 +1518,7 @@ algorithm
       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(filename)},argNames = {})))}),
       st as SYMBOLTABLE(ast = p, explodedAst = s))
       equation
+        Print.clearBuf();
         Dump.getAstAsCorbaString(p);
         Print.writeBuf(filename);
         Print.clearBuf();
