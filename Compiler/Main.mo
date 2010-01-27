@@ -743,18 +743,19 @@ algorithm
   _:=
   matchcontinue (inCache,inEnv,inProgram1,inProgram2,inDAElist3,inDAElist4,inPath5)
     local
-      DAELow.DAELow dlow,dlow_1;
-      list<Integer>[:] m,mT;
-      Integer[:] v1,v2;
-      list<list<Integer>> comps;
+      DAELow.DAELow dlow,dlow_1,dlow_2;
+      list<Integer>[:] m,mT,m_1,mT_1;
+      Integer[:] v1,v2,v1_1,v2_1;
+      list<list<Integer>> comps,comps_1;
       list<SCode.Class> p;
       Absyn.Program ap;
       DAE.DAElist dae,daeimpl;
       Absyn.Path classname;
       Env.Cache cache;
       Env.Env env;
+      list<Integer> reseqn,tearvar;
     case (cache,env,p,ap,dae,daeimpl,classname)
-      local String str;
+      local String str,strtearing;
       equation 
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
@@ -783,9 +784,10 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpComponents, comps);
 				str = DAELow.dumpComponentsGraphStr(DAELow.systemSize(dlow_1),m,mT,v1,v2);
 				Debug.fcall("dumpcompgraph",print,str);
-        modpar(dlow_1, v1, v2, comps);
+				(dlow_2,m_1,mT_1,v1_1,v2_1,comps_1) = DAELow.tearingSystem(dlow_1,m,mT,v1,v2,comps);
+        modpar(dlow_2, v1_1, v2_1, comps_1);
         Debug.fcall("execstat",print, "*** Main -> To simcodegen at time: " +& realString(clock()) +& "\n" );
-        simcodegen(cache,env,classname, p, ap, daeimpl, dlow_1, v1, v2, m, mT, comps);
+        simcodegen(cache,env,classname, p, ap, daeimpl, dlow_2, v1_1, v2_1, m_1, mT_1, comps_1);
       then
         ();
     case (_,_,_,_,_,_,_)
