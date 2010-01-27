@@ -115,6 +115,33 @@ public class ModelicaRecord implements IModelicaRecord {
     }
   }
 
+  // In case uniontypes are used
+  public ModelicaRecord(String recordName,
+      String[] fieldNames,
+      Class<? extends ModelicaObject>[] fieldTypes,
+      Map<String,ModelicaObject> map) throws ModelicaRecordException {
+    if (fieldNames.length != fieldTypes.length)
+      throw new ModelicaRecordException("Length of field names and types differ");
+    if (fieldNames.length != map.size())
+      throw new ModelicaRecordException("Length of field names and source record differ");
+
+    this.recordName = recordName;
+    spec = allRecords.get(recordName);
+
+    if (spec == null) {
+      spec = new LinkedHashMap<String,FieldSpec>();
+      for (int i=0; i<map.size(); i++) {
+        spec.put(fieldNames[i],new FieldSpec(fieldTypes[i],i));
+      }
+      allRecords.put(recordName, spec);
+    }
+
+    fields = new ModelicaObject[fieldNames.length];
+    for (int i=0; i<fieldNames.length; i++) {
+      put(fieldNames[i], map.get(fieldNames[i]));
+    }
+  }
+
   @SuppressWarnings("unchecked")
   protected static <T> T[] appendArrays(T[] a, T[] b) {
     List<T> res = new ArrayList<T>(a.length + b.length);
