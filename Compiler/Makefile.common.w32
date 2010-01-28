@@ -55,13 +55,22 @@ SRCMO= Absyn.mo \
 	UnitChecker.mo \
 	Util.mo \
 	Values.mo \
+	ValuesUtil.mo \
 	VarTransform.mo \
 	BackendVarTransform.mo \
 	DAEQuery.mo \
-	XMLDump.mo \
 	Refactor.mo \
 	InstanceHierarchy.mo \
-	XMLDump.mo 
+	XMLDump.mo \
+	SimCode.mo \
+	SimCodeC.mo \
+	SimCodeCSharp.mo \
+	CompiledTemplates.mo \
+    Tpl.mo \
+    TplAbsyn.mo \
+    TplCodegen.mo \
+    TplParser.mo \
+	TplMain.mo 	
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \
@@ -74,6 +83,8 @@ ALLMO = $(SRCMO) \
 	Socket.mo \
 	ErrorExt.mo \
 	Settings.mo \
-	OptManager.mo
+	OptManager.mo \
+	SimulationResults.mo \
+	DynLoad.mo
 
 
