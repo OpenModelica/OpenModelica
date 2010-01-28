@@ -5310,9 +5310,9 @@ algorithm
         Print.printBuf(baseClassName);
         Print.printBuf("\", modifications = ");
         printListAsCorbaString(modifications, printElementArgAsCorbaString, ",");
-        Print.printBuf(", optString = ");
+        Print.printBuf(", comment = ");
         printStringCommentOption(optString);
-        Print.printBuf(", classParts = ");
+        Print.printBuf(", parts = ");
         printListAsCorbaString(classParts,printClassPartAsCorbaString,",");
         Print.printBuf("end Absyn.CLASS_EXTENDS;");
       then ();

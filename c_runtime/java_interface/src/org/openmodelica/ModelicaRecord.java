@@ -108,6 +108,8 @@ public class ModelicaRecord implements IModelicaRecord {
       }
       allRecords.put(recordName, spec);
     }
+    if (spec.size() != values.length)
+      throw new ModelicaRecordException("Number of values differs from previosuly created object: " + spec);
 
     fields = new ModelicaObject[fieldNames.length];
     for (int i=0; i<fieldNames.length; i++) {
@@ -136,9 +138,13 @@ public class ModelicaRecord implements IModelicaRecord {
       allRecords.put(recordName, spec);
     }
 
-    fields = new ModelicaObject[fieldNames.length];
-    for (int i=0; i<fieldNames.length; i++) {
-      put(fieldNames[i], map.get(fieldNames[i]));
+    try {
+      fields = new ModelicaObject[fieldNames.length];
+      for (int i=0; i<fieldNames.length; i++) {
+        put(fieldNames[i], map.get(fieldNames[i]));
+      }
+    } catch (Exception ex) {
+      throw new ModelicaRecordException("Failed to insert value into record.\n  spec = " + spec.toString() + "\n  value = " + map.toString());
     }
   }
 
@@ -152,6 +158,8 @@ public class ModelicaRecord implements IModelicaRecord {
 
   @Override
   public ModelicaObject put(String key, ModelicaObject value) {
+    if (value == null)
+      throw new RuntimeException("Records may not store null values");
     FieldSpec fspec = spec.get(key);
     if (fspec == null) {
       throw new RuntimeException("Record "+toString()+" does not contain the field " + key + "; its fields are " + spec);

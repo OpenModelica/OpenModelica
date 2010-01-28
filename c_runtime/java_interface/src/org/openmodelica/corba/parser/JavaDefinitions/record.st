@@ -8,16 +8,12 @@ import java.util.Map;
 public class $record.name$ $record.generics$ extends ModelicaRecord $record.uniontype:{implements $it$_UT}$ {
 
   private static final java.lang.Class[] fieldTypes = new java.lang.Class[] {$record.fields:{$it.TypeClass$};separator=","$};
-  private static org.openmodelica.TypeSpec[] fieldTypeSpecs;
+  private static org.openmodelica.TypeSpec[] fieldTypeSpecs = new org.openmodelica.TypeSpec[] {
+    $record.fields:{$it.TypeSpec$};separator=",\n"$
+  };
   private static final java.lang.String[] fieldNames = new java.lang.String[]{$record.fields:{"$it.varName$"};separator=","$};
   private static final java.lang.String recordName = "$myFQName(var = record.name)$";  
   
-  static {
-    fieldTypeSpecs = new org.openmodelica.TypeSpec[] {
-      $record.fields:{$it.TypeSpec$};separator=",\n"$
-    };
-  };
-
   public $record.generics$ $record.name$($record.fields:{$it.TypeName$ __$it.varName$}; separator = ","$) throws ModelicaRecordException {
     super(recordName, fieldNames, fieldTypes$if(record.fields)$, $endif$ $record.fields:{__$it.varName$}; separator = ","$);
   }
