@@ -15595,16 +15595,18 @@ algorithm
       list<Integer> tearingvars,residualeqns;
       list<list<Integer>> r,t;
       list<String> str_r,str_t;
-      String str_r_f,str_r_1,str_t_f,str_t_1,str;
+      String str_r_f,str_r_1,str_t_f,str_t_1,str,sr,st;
     case (residualeqns::r,tearingvars::t)
       equation 
         str_r = Util.listMap(residualeqns, intString);
         str_r_f = Util.stringDelimitList(str_r, ", ");
         str_r_1 = stringAppend(str_r_f, "\n");    
+        sr = stringAppend("ResidualEqns: ",str_r_1);
         str_t = Util.listMap(tearingvars, intString);
         str_t_f = Util.stringDelimitList(str_t, ", ");
         str_t_1 = stringAppend(str_t_f, "\n");
-        str = stringAppend(str_r_1, str_t_1);
+        st = stringAppend("TearingEqns: ",str_t_1);
+        str = stringAppend(sr, st);
         print(str);
         print("\n");
         dumpTearing(r,t);    
@@ -15823,7 +15825,7 @@ algorithm
       DAE.Algorithm[:] algorithms;
       EventInfo einfo;
       ExternalObjectClasses eoc;
-      DAE.Exp eqn,eqn_1,scalar;
+      DAE.Exp eqn,eqn_1,scalar,scalar_1;
       DAE.ElementSource source;
     case (dlow as DAELOW(ordvars as VARIABLES(varArr=varr),knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
       equation 
@@ -15845,7 +15847,8 @@ algorithm
         // replace in residual equation orgvar with Tearing Var    
         EQUATION(eqn,scalar,source) = equationNth(eqns,residualeqn-1);
         (eqn_1,_) =  Exp.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
-        eqns_1 = equationSetnth(eqns,residualeqn-1,EQUATION(eqn_1,scalar,source));
+        (scalar_1,_) =  Exp.replaceExp(scalar,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
+        eqns_1 = equationSetnth(eqns,residualeqn-1,EQUATION(eqn_1,scalar_1,source));
         // add equation to calc org var
         eqns_2 = equationAdd(eqns_1,EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
                           {DAE.CREF(cr,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
