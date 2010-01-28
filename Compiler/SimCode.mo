@@ -66,7 +66,7 @@ protected import Debug;
 protected import Error;
 protected import Inst;
 protected import InstanceHierarchy;
-protected import Print;
+// protected import Print;
 protected import Settings;
 protected import RTOpts;
 protected import System;

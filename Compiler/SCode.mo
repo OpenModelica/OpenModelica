@@ -1780,7 +1780,7 @@ algorithm
 end matchcontinue; 
 end equationEqual22; 
   
-protected function modEqual 
+public function modEqual 
 "Return true if two Mod:s are equal"
   input Mod mod1;
   input Mod mod2;

@@ -1593,6 +1593,8 @@ algorithm
       Option<DAE.ComponentRef> aa_9;
       replaceable type Type_a subtypeof Any;
       Type_a bbx, bby;
+      CachedInstItem partialFunc;
+      
     /* Partial packages can sometimes be instantiated here, but should really be done in partialInstClass, since
      * it filters out a lot of things. */
     case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction = SCode.R_PACKAGE(), partialPrefix = true),prot,inst_dims,impl,graph,instSingleCref) 
@@ -1608,7 +1610,7 @@ algorithm
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));        
-        {FUNC_instClassIn(inputs, outputs)} = get(fullEnvPathPlusClass, instHash);
+        {SOME(FUNC_instClassIn(inputs, outputs)),_} = get(fullEnvPathPlusClass, instHash);
         (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7, aa_8, _, aa_9) = inputs;
         // are the important inputs the same??
         bbx = (aa_1, aa_2, aa_3, aa_4, aa_5, aa_7, aa_8, aa_9);
@@ -1621,20 +1623,25 @@ algorithm
         
     /* call the function and then add it in the cache */
     case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction=r),prot,inst_dims,impl,graph,instSingleCref) 
-      equation 
-        instHash = System.getFromRoots("instantiationCache");        
+      equation
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = 
            instClassIn_dispatch(inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
-
+        
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));
-        
+
         inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
         outputs = (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph); 
         
-        instHash = add((fullEnvPathPlusClass, {FUNC_instClassIn(inputs,outputs)}), instHash);
-        System.addToRoots("instantiationCache", instHash);
+        addToInstCache(fullEnvPathPlusClass,
+           SOME(FUNC_instClassIn( // result for full instantiation
+             inputs,
+             outputs)),
+           /* 
+           SOME(FUNC_partialInstClassIn( // result for partial instantiation
+             (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims),
+             (cache,env,ih,ci_state)))*/ NONE());
         //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);        
@@ -2286,7 +2293,7 @@ algorithm
         envPathOpt = Env.getEnvPath(inEnv);
         className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.joinPathsOpt(envPathOpt, Absyn.IDENT(className));        
-        {FUNC_partialInstClassIn(inputs, outputs)} = get(fullEnvPathPlusClass, instHash);
+        {_,SOME(FUNC_partialInstClassIn(inputs, outputs))} = get(fullEnvPathPlusClass, instHash);
         (_, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7) = inputs;
         // are the important inputs the same??
         bbx = (aa_1, aa_2, aa_3, aa_4, aa_5, aa_7);
@@ -2299,8 +2306,7 @@ algorithm
         
     /* call the function and then add it in the cache */
     case (cache,env,ih,mods,pre,csets,ci_state,c,prot,inst_dims) 
-      equation 
-        instHash = System.getFromRoots("instantiationCache");        
+      equation         
         (cache,env,ih,ci_state) = 
            partialInstClassIn_dispatch(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
 
@@ -2311,8 +2317,10 @@ algorithm
         inputs = (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,inBoolean,inInstDims);
         outputs = (cache,env,ih,ci_state); 
         
-        instHash = add((fullEnvPathPlusClass, {FUNC_partialInstClassIn(inputs,outputs)}), instHash);
-        System.addToRoots("instantiationCache", instHash);        
+        addToInstCache(fullEnvPathPlusClass,
+           NONE(), 
+           SOME(FUNC_partialInstClassIn( // result for partial instantiation
+             inputs,outputs)));
       then
         (cache,env,ih,ci_state);
         
@@ -5118,8 +5126,8 @@ algorithm
         mm = Mod.lookupCompModification(mods, n);
         */
         // A frequent used debugging line 
-        //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +& " \n");
-        // +& "\t mods: " +& Mod.printModStr(mod) +&  "\n");
+        //print("Instantiating element: " +& str +& " in scope " +& Env.getScopeName(env) +& ", elements to go: " +& intString(listLength(els)) +&
+        //"\t mods: " +& Mod.printModStr(mod) +&  "\n");
         
         (cache,env_1,ih,store,dae1,csets_1,ci_state_1,tys1,graph) = instElement(cache,env,ih,store, mod, pre, csets, ci_state, el, inst_dims, impl,graph);
         /*s1 = Util.if_(stringEqual("n", str),DAE.dumpElementsStr(dae1),"");
@@ -5607,14 +5615,16 @@ algorithm
           SCode.Element selem;
           DAE.Mod smod,compModLocal; 
       equation 
-        // print(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& "\n");
+        // print(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& "\n");
         compModLocal = Mod.lookupModificationP(mod, tpp);
         m = traverseModAddFinal(m, finalPrefix);
         
-        compModLocal = Mod.lookupCompModification12(mod,n);
+        // compModLocal = Mod.lookupCompModification12(mod,n);
+        // print(" \t comp: " +& n +& " " +& " compModLocal: " +& Mod.printModStr(compModLocal) +& "\n");        
         (cache,env,ih,selem,smod,csets,dae1) = redeclareType(cache,env,ih,compModLocal, 
         /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tss,m,bc,comment, aExp, aInfo,cc),
         pre, cistate, csets, impl,cmod);
+        // print(" \t comp: " +& n +& " " +& " smod: " +& Mod.printModStr(smod) +& "\n");
         (cache,env_1,ih,dae2) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);
         (cache,env_2,ih,dae3) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
@@ -7149,6 +7159,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         p1 = Prefix.prefixPath(p1,pre);
         str = Absyn.pathString(p1); 
         Error.updateCurrentComponent(str,info);
+        // print("instVar: " +& str +& " in scope " +& Env.printEnvPathStr(env) +& "\t mods: " +& Mod.printModStr(mod) +& "\n");        
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = 
         instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, 
@@ -7886,8 +7897,8 @@ algorithm
         mm = Mod.lookupCompModification(mods, n);
         mod = Mod.merge(classmod, mm, env2, Prefix.NOPRE());
         mod_1 = Mod.merge(mod, m_1, env2, Prefix.NOPRE());
-        mod_2 = Mod.merge(cmod, mod_1, env2, Prefix.NOPRE());
-        (cache,mod_3,dae2) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);
+        mod_2 = Mod.merge(cmod, mod_1, env2, Prefix.NOPRE());        
+        (cache,mod_3,dae2) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);        
         eq = Mod.modEquation(mod_3);        
         (cache,dims,dae3) = elabArraydim(cache,env2, cref, t,ad, eq, impl, NONE,true) 
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
@@ -16852,29 +16863,36 @@ According to specification modifiers on outer elements is not allowed."
 algorithm 
   omodexp := matchcontinue(cache,env,ih,prefix,componentName,cr,inMod,io,impl)
   local
-    String s1,s2;
-    SCode.Mod scmod;
+    String s1,s2,s;
+    SCode.Mod scmod1, scmod2;
     Mod mod,fromSCMod;
   // intercept this and see if we have the same modification on inner!
   case(cache,env,ih,prefix,componentName,cr,inMod as DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation
       // search for the modification on inner
-      (scmod,mod) = handleOuterWithModificationOnInner(cache, env, ih, prefix, componentName, io, SCode.NOMOD(), DAE.NOMOD(), impl);
-      (cache,fromSCMod,_) = Mod.elabMod(cache, env, prefix, scmod, impl);
-      mod = Mod.merge(mod, fromSCMod, env, prefix);
-      // print("Mod inner:" +& Mod.printModStr(mod) +& "\n"); 
-      // print("Mod outer:" +& Mod.printModStr(inMod) +& "\n");
+      (scmod1,mod) = handleOuterWithModificationOnInner(cache, env, ih, prefix, componentName, io, SCode.NOMOD(), DAE.NOMOD(), impl);
+      // do not elab as we don't have the OK scope
+      (cache,fromSCMod,_) = Mod.elabMod(cache, env, Prefix.NOPRE(), scmod1, impl);
+      // mod = Mod.merge(mod, fromSCMod, env, prefix);
+      scmod1 = Mod.unelabMod(fromSCMod);
+      scmod2 = Mod.unelabMod(inMod);
+      // print("Mod inner:" +& SCode.printModStr(scmod1) +& "\n"); 
+      // print("Mod outer:" +& SCode.printModStr(scmod2) +& "\n");
+      // debug_print("inner", scmod1);
+      // debug_print("outer", scmod2);
       // see if the mods are equal
-      true = Mod.modEqual(mod, inMod);
+      true = SCode.modEqual(scmod1, scmod2);
     then
       false;
   // if we don't have the same modification on inner report error!
-  case(_,_,_,_,_,cr,DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
+  case(_,_,_,_,_,cr,inMod as DAE.MOD(finalPrefix = _),Absyn.OUTER(),impl)
     equation      
       s1 = Exp.printComponentRefStr(cr);
-      Error.addMessage(Error.OUTER_MODIFICATION, {s1});
-      then
-        true;
+      s2 = SCode.printModStr(Mod.unelabMod(inMod));
+      s = s1 +&  " " +& s2;
+      Error.addMessage(Error.OUTER_MODIFICATION, {s});
+    then
+      true;
   case(_,_,_,_,_,_,_,_,impl) then false;
   end matchcontinue;
 end modificationOnOuter;
@@ -17267,6 +17285,86 @@ end findCorrespondingBinding;
 // *********************************************************************
 //    hash table implementation for cashing instantiation results
 // *********************************************************************
+
+function addToInstCache
+  input Absyn.Path fullEnvPathPlusClass;  
+  input Option<CachedInstItem> fullInstOpt;
+  input Option<CachedInstItem> partialInstOpt;
+algorithm
+  _ := matchcontinue(fullEnvPathPlusClass,fullInstOpt, partialInstOpt)
+    local
+      CachedInstItem fullInst, partialInst;
+      InstHashTable instHash;
+
+    // nothing is we have +d=noCache
+    case (_, _, _)
+      equation
+        true = RTOpts.debugFlag("noCache"); 
+       then 
+         ();
+      
+    // we have them both  
+    case (fullEnvPathPlusClass, SOME(fullInst), SOME(partialInst))
+      equation
+        instHash = System.getFromRoots("instantiationCache");
+        instHash = add((fullEnvPathPlusClass,{fullInstOpt,partialInstOpt}),instHash);
+        System.addToRoots("instantiationCache", instHash);
+      then
+        ();
+
+    // we have a partial inst result and the full in the cache
+    case (fullEnvPathPlusClass, NONE(), SOME(partialInst))
+      equation
+        instHash = System.getFromRoots("instantiationCache");
+        // see if we have a full inst here
+        {SOME(fullInst),_} = get(fullEnvPathPlusClass, instHash);
+        instHash = add((fullEnvPathPlusClass,{SOME(fullInst),partialInstOpt}),instHash);
+        System.addToRoots("instantiationCache", instHash);
+      then
+        ();
+
+    // we have a partial inst result and the full is NOT in the cache
+    case (fullEnvPathPlusClass, NONE(), SOME(partialInst))
+      equation
+        instHash = System.getFromRoots("instantiationCache");
+        // see if we have a full inst here
+        // failed above {SOME(fullInst),_} = get(fullEnvPathPlusClass, instHash);
+        instHash = add((fullEnvPathPlusClass,{NONE(),partialInstOpt}),instHash);
+        System.addToRoots("instantiationCache", instHash);
+      then
+        ();
+
+    // we have a full inst result and the partial in the cache
+    case (fullEnvPathPlusClass, SOME(fullInst), NONE())
+      equation
+        instHash = System.getFromRoots("instantiationCache");
+        // see if we have a partial inst here
+        {_,SOME(partialInst)} = get(fullEnvPathPlusClass, instHash);
+        instHash = add((fullEnvPathPlusClass,{fullInstOpt,SOME(partialInst)}),instHash);
+        System.addToRoots("instantiationCache", instHash);
+      then
+        ();
+
+    // we have a full inst result and the partial is NOT in the cache
+    case (fullEnvPathPlusClass, SOME(fullInst), NONE())
+      equation
+        instHash = System.getFromRoots("instantiationCache");
+        // see if we have a partial inst here
+        // failed above {_,SOME(partialInst)} = get(fullEnvPathPlusClass, instHash);
+        instHash = add((fullEnvPathPlusClass,{fullInstOpt,NONE()}),instHash);
+        System.addToRoots("instantiationCache", instHash);
+      then
+        ();
+        
+    // we failed above??!!
+    case (fullEnvPathPlusClass, fullInstOpt, partialInstOpt)
+      equation
+      then
+        ();        
+  end matchcontinue;
+end addToInstCache;
+
+
 public 
 uniontype CachedInstItem
   // *important* inputs/outputs for instClassIn 
@@ -17292,7 +17390,7 @@ uniontype CachedInstItem
 end CachedInstItem;
 
 public
-type CachedInstItems = list<CachedInstItem>;
+type CachedInstItems = list<Option<CachedInstItem>>;
 constant Option<InstHashTable> instHashTable = NONE();
 
 public
@@ -17330,8 +17428,8 @@ public function dumpTuple
 algorithm
   str := matchcontinue(tpl)
     local 
-      Absyn.Path p; CachedInstItems i;
-    case((p,i)) equation
+      Absyn.Path p; // CachedInstItems i;
+    case((p,_)) equation
       str = "{" +& Absyn.pathString(p) +& ", OPAQUE_VALUE}";
     then str;
   end matchcontinue;

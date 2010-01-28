@@ -124,7 +124,6 @@ protected import ClassInf;
 protected import Exp;
 protected import ModUtil;
 protected import Util;
-protected import Inst;
 protected import Interactive;
 protected import System;
 protected import Error;

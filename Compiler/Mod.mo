@@ -307,7 +307,7 @@ algorithm
     case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.TYPED(e,_,p)))))
       local DAE.Exp e;
       equation 
-        es = Exp.printExpStr(e);
+        //es = Exp.printExpStr(e);
         subs_1 = unelabSubmods(subs);
         e_1 = Exp.unelabExp(e);
       then
@@ -984,15 +984,12 @@ algorithm
 end lookupModificationP;
 
 public function lookupCompModification "function: lookupCompModification
- 
-  This function is used to look up an identifier in a modification.
-"
+  This function is used to look up an identifier in a modification."
   input DAE.Mod inMod; 
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
 algorithm 
-  outMod:=
-  matchcontinue (inMod,inIdent)
+  outMod := matchcontinue (inMod,inIdent)
     local
       DAE.Mod mod,mod1,mod2;
       list<DAE.SubMod> subs;
