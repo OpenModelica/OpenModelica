@@ -4123,6 +4123,8 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
+      Exp.Exp exp;
+      /* size(cr) */
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)
       equation 
         (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr);
@@ -4130,6 +4132,8 @@ algorithm
         v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
+        
+     /* For matrix expressions: [1,2;3,4] */   
 		case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
 			local
 				list<Option<Integer>> dims;
@@ -4138,6 +4142,15 @@ algorithm
 				v = ValuesUtil.intlistToValue(sizelst);
 			then
 				(cache, v, st);
+			/* For other matrix expressions e.g. on array form: {{1,2},{3,4}}	*/
+		case (cache,env,exp,impl,st,msg)
+      equation 
+        (cache,v,st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        tp = Types.typeOfValue(v);
+        sizelst = Types.getDimensionSizes(tp);
+        v = ValuesUtil.intlistToValue(sizelst);
+      then
+        (cache,v,st);
   end matchcontinue;
 end cevalBuiltinSizeMatrix;
 
