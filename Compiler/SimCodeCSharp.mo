@@ -5286,10 +5286,10 @@ algorithm
     case ( txt,
            DAE.ET_COMPLEX(name = i_name) )
       local
-        String i_name;
+        Absyn.Path i_name;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/*struct*/"));
-        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeStr(txt, Absyn.pathString(i_name));
       then txt;
 
     case ( txt,

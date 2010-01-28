@@ -4809,7 +4809,7 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(cache,env2,InstanceHierarchy.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
@@ -10310,7 +10310,7 @@ algorithm
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
         env2 = Env.openScope(env, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstHierarchy, 
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
@@ -10505,7 +10505,7 @@ algorithm
     case ((c as SCode.CLASS(name = id,encapsulatedPrefix = encflag,restriction = restr)),cdef,n,env)
       equation
         env2 = Env.openScope(env, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
@@ -10557,7 +10557,7 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
           Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), 
                                   Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
@@ -18781,7 +18781,7 @@ algorithm
     case(p,p_class,env) equation
       (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
-      ci_state = ClassInf.start(restr, id);
+      ci_state = ClassInf.start(restr, Env.getEnvName(env2));
       (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstHierarchy, 
                                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                   ci_state, cl, false, {});
@@ -18789,7 +18789,7 @@ algorithm
     case(p,p_class,env) equation
       (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
-      ci_state = ClassInf.start(restr, id);
+      ci_state = ClassInf.start(restr, Env.getEnvName(env2));
       (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InstanceHierarchy.emptyInstHierarchy, 
                                                        UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                        ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);

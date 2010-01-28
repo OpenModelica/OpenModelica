@@ -1084,23 +1084,24 @@ algorithm
       /* Modelica Record Constructor. We would like to use this as a C macro, but this is not possible. */
     case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)),rt)
       local
-        String name, defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
+        String  defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
         DAE.ExpType expType;
         list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
         Integer tnr;
+        Absyn.Path name;
       equation
         fn_name_str = generateFunctionName(fpath);
         fn_name_str = stringAppend("_", fn_name_str);
         retstr = generateReturnType(fpath);
         tnr = 1;
         (decl1,ret_var,tnr) = generateTempDecl(retstr, tnr);
-        (decl2,record_var,tnr) = generateTempDecl("struct " +& name, tnr);
+        (decl2,record_var,tnr) = generateTempDecl("struct " +& generateFunctionName(name), tnr);
         (struct_strs,rt_1) = generateRecordDeclarations(restype, rt);
 
         expType = Types.elabType(restype);
         defhead = "#define " +& retstr +& "_1 targ1";
         head = "typedef struct " +& retstr +& "_s {";
-        body = "struct " +& name +& " targ1;";
+        body = "struct " +& generateFunctionName(name) +& " targ1;";
         foot = "} "+&retstr+&";";
         struct_strs = listAppend(struct_strs, {defhead, head, body, foot});
         arg_names = Util.listMap(args, Util.tuple21);
@@ -1448,19 +1449,19 @@ algorithm
   outStrs :=
   matchcontinue (inRecordType,inReturnTypes)
     local
-      Absyn.Path path;
+      Absyn.Path path,name;
       list<DAE.Var> varlst;
-      String name, first_str, last_str, path_str;
+      String first_str, last_str, path_str,s1,strname;
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),SOME(path)),rt)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = name), complexVarLst = varlst),SOME(path)),rt)
       equation
-        failure(_ = Util.listGetMember(name,rt));
+        failure(_ = Util.listGetMember(Absyn.pathString(name),rt));
         
-        first_str = Util.stringAppendList({"struct ",name," {"});
+        first_str = "struct "+&generateFunctionName(name)+&" {";
         decl_strs = Util.listMap(varlst, generateVarDeclaration);
         last_str = "};";
-        
-        rt_1 = name :: rt;
+        s1 = generateFunctionName(name);
+        rt_1 = s1 :: rt;
         fieldNames = Util.listMap(varlst, generateVarName);
         record_definition = generateRecordDefinition(path,fieldNames);
         strs = Util.listFlatten({{first_str},decl_strs,{last_str},record_definition});
@@ -1468,14 +1469,14 @@ algorithm
         (rest_strs,rt_2) = generateNestedRecordDeclarations(varlst, rt_1);
         res = listAppend(rest_strs,strs);
       then (res,rt_2);
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),_),rt)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = name), complexVarLst = varlst),_),rt)
       then ({},rt);
     case ((DAE.T_METARECORD(fields = varlst), SOME(path)),rt)
       equation
-        name = ModUtil.pathStringReplaceDot(path, "_");
-        failure(_ = Util.listGetMember(name,rt));
+        strname = ModUtil.pathStringReplaceDot(path, "_");
+        failure(_ = Util.listGetMember(strname,rt));
         fieldNames = Util.listMap(varlst, generateVarName);
-        rt_1 = name::rt;
+        rt_1 = strname::rt;
         strs = generateRecordDefinition(path,fieldNames);
         (rest_strs,rt_2) = generateNestedRecordDeclarations(varlst, rt_1);
         strs = listAppend(rest_strs,strs);
@@ -1837,9 +1838,9 @@ algorithm
       then
         res;
     case DAE.ET_COMPLEX(name = name)
-      local String name;
+      local Absyn.Path name;
       equation
-        res = stringAppend("struct ", name);
+        res = stringAppend("struct ", generateFunctionName(name));
       then
         res;
     
@@ -1941,9 +1942,9 @@ algorithm
     case ((DAE.T_STRING(varLstString = _),_)) then "const char*";
     case ((DAE.T_BOOL(varLstBool = _),_)) then "int";
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
-      local String name;
+      local Absyn.Path name;
       equation
-        str = stringAppend("struct ", name);
+        str = stringAppend("struct ", generateFunctionName(name));
       then
         str;
 
@@ -2034,7 +2035,8 @@ algorithm
   outString:=
   matchcontinue (inType)
     local
-      String t_str,name;
+      String t_str;
+      Absyn.Path name;
       DAE.Type t_1,t,ty;
     
     case ((DAE.T_INTEGER(varLstInt = _),_)) then "modelica_integer";      
@@ -2044,7 +2046,7 @@ algorithm
     case ((DAE.T_ENUMERATION(varLst=_),_)) then "modelica_integer";      
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
       equation
-        t_str = stringAppend("struct ", name);
+        t_str = stringAppend("struct ", generateFunctionName(name));
       then
         t_str;
         
@@ -5919,6 +5921,7 @@ algorithm
         list<DAE.Var> v;
         list<DAE.Type> tys1,tys2;
         String baseStr,name,tmp;
+        Absyn.Path path;
         Integer i;
         list<Integer> intList;
         list<String> stringList, fetchStrs, tmpDecls, tmpRefs, tmpAssignments, conversionStmts, recordFields;
@@ -5928,7 +5931,7 @@ algorithm
       equation
         (cfn1,var1,tnr) = generateExpression(s1, tnr, context);
         t = Types.expTypetoTypesType(tp);
-        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = v),_) = t;
+        (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path), complexVarLst = v),_) = t;
         tys1 = Util.listMap(v, Types.getVarType);
         tys2 = Util.listMap(tys1, Types.boxIfUnboxedType);
         i = listLength(tys1);
@@ -5954,11 +5957,11 @@ algorithm
         cfn = cEmptyFunction;
         cfn = cAddVariables(cfn, tmpDecls);
         cfn = cAddVariables(cfn, {tdecl});
-        tmp = "/* Start unboxing record " +& name +& " */";
+        tmp = "/* Start unboxing record " +& Absyn.pathString(path) +& " */";
         cfn = cAddStatements(cfn, {tmp});
         cfn = cAddStatements(cfn, tmpAssignments);
         cfn = cMergeFns({cfn1,cfn,cfnConversion});
-        tmp = "/* Finished unboxing record " +& name +& " */";
+        tmp = "/* Finished unboxing record " +& Absyn.pathString(path) +& " */";
         cfn = cAddStatements(cfn, {tmp});
       then
         (cfn,tvar,tnr);

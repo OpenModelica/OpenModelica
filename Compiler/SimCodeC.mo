@@ -6291,7 +6291,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(fullClassName = _)) )
+           DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path = _)) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("void *"));
       then txt;
@@ -13935,7 +13935,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(fullClassName = _)) )
+           DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path = _)) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("complex"));
       then txt;
@@ -13943,10 +13943,10 @@ algorithm
     case ( txt,
            DAE.ET_COMPLEX(name = i_name) )
       local
-        String i_name;
+        Absyn.Path i_name;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("struct "));
-        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeStr(txt, Absyn.pathString(i_name));
       then txt;
 
     case ( txt,
@@ -14078,10 +14078,10 @@ algorithm
     case ( txt,
            DAE.ET_COMPLEX(name = i_name) )
       local
-        String i_name;
+        Absyn.Path i_name;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("struct "));
-        txt = Tpl.writeStr(txt, i_name);
+        txt = Tpl.writeStr(txt, Absyn.pathString(i_name));
       then txt;
 
     case ( txt,
@@ -14107,7 +14107,7 @@ algorithm
       Tpl.Text txt;
 
     case ( txt,
-           (i_ty as DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(fullClassName = _))) )
+           (i_ty as DAE.ET_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(path = _))) )
       local
         DAE.ExpType i_ty;
       equation

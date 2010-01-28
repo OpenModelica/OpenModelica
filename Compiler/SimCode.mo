@@ -1245,23 +1245,26 @@ algorithm
   outStrs :=
   matchcontinue (inRecordType,inAccRecordDecls,inReturnTypes)
     local
-      Absyn.Path path;
+      Absyn.Path path,name;
       list<Types.Var> varlst;
-      String name, first_str, last_str, path_str;
+      String first_str, last_str, path_str;
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
       list<RecordDeclaration> accRecDecls;
       Variables vars;
       
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
+      local  String sname;
       equation
-        failure(_ = Util.listGetMember(name,rt));
+        sname = Absyn.pathString(name);
+        failure(_ = Util.listGetMember(sname,rt));
         
         vars = Util.listMap(varlst, typesVar);
-        accRecDecls = RECORD_DECL_FULL(name, path, vars) :: accRecDecls;        
-        rt_1 = name :: rt;        
+        
+        accRecDecls = RECORD_DECL_FULL(sname, path, vars) :: accRecDecls;        
+        rt_1 = sname :: rt;        
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
       then (accRecDecls,rt_2);
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(string = name), complexVarLst = varlst),_), accRecDecls, rt)
+    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),_), accRecDecls, rt)
       then (accRecDecls,rt);
     case ((_,_), accRecDecls, rt)
       then (accRecDecls,rt);
