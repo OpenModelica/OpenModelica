@@ -182,7 +182,7 @@ algorithm
         Boolean encflag;
       equation
         env_2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(r, id);
+        ci_state = ClassInf.start(r, Env.getEnvName(env_2));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
           cache,env_2,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
@@ -207,7 +207,7 @@ algorithm
         elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
         (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
             cache,env_1,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
-            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(""), elsModList, {}, false, ConnectionGraph.EMPTY);
+            DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false, ConnectionGraph.EMPTY);
         t = (DAE.T_METARECORD(index,varlst),SOME(path));
       then
         (cache,t,env_2);
@@ -430,7 +430,7 @@ algorithm
         (false,_) = scopePrefixOf(env,p);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env4,_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstHierarchy, 
@@ -447,7 +447,7 @@ algorithm
         (false,_) = scopePrefixOf(env,p);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstHierarchy,
@@ -673,7 +673,7 @@ algorithm
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
          (cache,(f :: _),_,_) = 
          Inst.partialInstClassIn(
            cache,env2,InstanceHierarchy.emptyInstHierarchy,
@@ -746,7 +746,7 @@ algorithm
         cref = Exp.pathToCref(path);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,(f :: _),_,_,_,_,_,_,_,_,_,_) = 
         Inst.instClassIn(
           cache,env2,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
@@ -892,7 +892,7 @@ algorithm
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
        (cache,(f :: _),_,_) = 
        Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstHierarchy,
@@ -954,7 +954,7 @@ algorithm
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,(f :: fs_1),_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InstanceHierarchy.emptyInstHierarchy,
@@ -1200,7 +1200,7 @@ algorithm
         (cache,(c as SCode.CLASS(n,_,encflag,(r as SCode.R_ENUMERATION()),_)),env2) 
         	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
         env3 = Env.openScope(env2, encflag, SOME(n));
-        ci_state = ClassInf.start(r, n);
+        ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
           cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
@@ -1248,7 +1248,7 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
-        ci_state = ClassInf.start(r, n);
+        ci_state = ClassInf.start(r, Env.getEnvName(env3));
         filterCref = makeOptIdentOrNone(cref);
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
@@ -1433,7 +1433,7 @@ algorithm
       equation
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env, path, msg);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
-        new_ci_state = ClassInf.start(r, cn2);
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         (cache,classEnv,_,_) = 
         Inst.partialInstClassIn(
@@ -1563,7 +1563,7 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache, env, Absyn.IDENT(pack), false) ;
         env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, id);
+        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         
         //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
         //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
@@ -1609,9 +1609,9 @@ algorithm
     local list<Env.Frame> env;
     /* function_name cardinality */
     case (env,"cardinality") 
-      then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",false),{},NONE,NONE),NONE))},
+      then {(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),false),{},NONE,NONE),NONE))},
                               (DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE),
-            (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR("$$",true),{},NONE,NONE),NONE))},
+            (DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.CONNECTOR(Absyn.IDENT("$$"),true),{},NONE,NONE),NONE))},
                               (DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE)};
                              
   end matchcontinue;
@@ -1823,72 +1823,7 @@ algorithm
   end matchcontinue;
 end lookupFunctionsInFrame;
 
-protected function lookupRecconstInEnv 
-"function: lookupRecconstInEnv  
-  Helper function to lookup_record_constructor_class. Searches
-  The environment for record constructors."
-  input Env.Env inEnv;
-  input Absyn.Path inPath;
-  output SCode.Class outClass;
-  output Env.Env outEnv;
-algorithm 
-  (outClass,outEnv):=
-  matchcontinue (inEnv,inPath)
-    local
-      SCode.Class c;
-      list<Env.Frame> env,fs;
-      Option<String> sid;
-      Env.AvlTree ht;
-      list<Env.Item> imps;
-      String id;
-      Env.Frame f;
-    case ((env as (Env.FRAME(optName = sid,clsAndVars = ht,imports = imps) :: fs)),Absyn.IDENT(name = id))
-      equation 
-        (c,_) = lookupRecconstInFrame(ht, env, id);
-      then
-        (c,env);
-    case ((f :: fs),id)
-      local Absyn.Path id;
-      equation 
-        (c,_) = lookupRecconstInEnv(fs, id);
-      then
-        (c,(f :: fs));
-  end matchcontinue;
-end lookupRecconstInEnv;
-
-protected function lookupRecconstInFrame 
-"function: lookupRecconstInFrame 
-  This function lookups the implicit record constructor class (function) 
-  of a record in a frame"
-  input Env.AvlTree inBinTree;
-  input Env.Env inEnv;
-  input SCode.Ident inIdent;
-  output SCode.Class outClass;
-  output Env.Env outEnv;
-algorithm 
-  (outClass,outEnv):=
-  matchcontinue (inBinTree,inEnv,inIdent)
-    local
-      Env.AvlTree ht;
-      list<Env.Frame> env;
-      String id;
-      SCode.Class cdef;
-    case (ht,env,id)
-      equation 
-        Env.VAR(_,_,_,_) = Env.avlTreeGet(ht, id);
-        Error.addMessage(Error.LOOKUP_TYPE_FOUND_COMP, {id});
-      then
-        fail();
-    case (ht,env,id)
-      equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,SCode.R_RECORD(),_)),_) = Env.avlTreeGet(ht, id);
-        (_,cdef) = buildRecordConstructorClass(env,cdef);
-      then
-        (cdef,env);
-  end matchcontinue;
-end lookupRecconstInFrame;
-
-protected function buildRecordType
+protected function buildRecordType ""
   input Env.Env env;
   input SCode.Class cdef;
   output Env.Env outEnv;
@@ -1931,7 +1866,7 @@ algorithm
       equation
         (env,funcelts,elts) = buildRecordConstructorClass2(env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env);
-        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE));
+        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE));        
       then
         (env,cl);
     case (env,cl)
@@ -1955,15 +1890,18 @@ algorithm
       list<tuple<SCode.Element,DAE.Mod>> eltsMods;
       Env.Env env1;
       String name;
+      Absyn.Path fpath;
+      
     /* a class with parts */
     case (env,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst = elts)),mods)
       equation
         env = Env.openScope(env, false, SOME(name));
+        fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
-        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(name), name, true);
+        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
-        (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(name),eltsMods,eltsMods,{},{},true);
+        (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (env1,funcelts,elts);
     /* adrpo: TODO! handle also the case model extends x end x;

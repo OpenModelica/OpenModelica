@@ -341,13 +341,13 @@ algorithm
     case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),NONE)
       equation 
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1)));
+        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1)));
       then
         cref_1;
     case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation 
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1,cref)));
+        cref_1 = prefixToCref2(PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1,cref)));
       then
         cref_1;
   end matchcontinue;
@@ -385,13 +385,13 @@ algorithm
     case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       equation 
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCrefOpt2(PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1)));
+        cref_1 = prefixToCrefOpt2(PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1)));
       then
         cref_1;
     case (PREFIX(PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation 
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCrefOpt2(PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),s_1,cref)));
+        cref_1 = prefixToCrefOpt2(PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1,cref)));
       then
         cref_1;
   end matchcontinue;

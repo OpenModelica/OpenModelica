@@ -52,102 +52,101 @@ public import Absyn;
 public 
 uniontype State "- Machine states, the string contains the classname."
   record UNKNOWN
-    String string;
+    Absyn.Path path;
   end UNKNOWN;
 
   record MODEL
-    String string;
+    Absyn.Path path;
   end MODEL;
 
   record RECORD
-    /* TODO: Change this to a path so the C structs have fully-qualified names /sjoelund 2009-11-04 */
-    String string;
+    Absyn.Path path;
   end RECORD;
 
   record BLOCK
-    String string;
+    Absyn.Path path;
   end BLOCK;
 
   record CONNECTOR
-    String string;
+    Absyn.Path path;
     Boolean isExpandable;
   end CONNECTOR;
 
   record TYPE
-    String string;
+    Absyn.Path path;
   end TYPE;
 
   record PACKAGE
-    String string;
+    Absyn.Path path;
   end PACKAGE;
 
   record FUNCTION
-    String string;
+    Absyn.Path path;
   end FUNCTION;
 
   record ENUMERATION
-    String string;
+    Absyn.Path path;
   end ENUMERATION;
 
   record HAS_EQUATIONS
-    String string;
+    Absyn.Path path;
   end HAS_EQUATIONS;
 
   record IS_NEW
-    String string;
+    Absyn.Path path;
   end IS_NEW;
 
   record TYPE_INTEGER
-    String string;
+    Absyn.Path path;
   end TYPE_INTEGER;
 
   record TYPE_REAL
-    String string;
+    Absyn.Path path;
   end TYPE_REAL;
 
   record TYPE_STRING
-    String string;
+    Absyn.Path path;
   end TYPE_STRING;
 
   record TYPE_BOOL
-    String string;
+    Absyn.Path path;
   end TYPE_BOOL;
 
   record TYPE_ENUM
-    String string;
+    Absyn.Path path;
   end TYPE_ENUM;
 
 	record EXTERNAL_OBJ
-	  Absyn.Path fullClassName;
+	  Absyn.Path path;
 	end EXTERNAL_OBJ;
 
 	/* MetaModelica extension */
 	record META_TUPLE
-	  String string;
+	  Absyn.Path path;
   end META_TUPLE;
 
   record META_LIST
-    String string;
+    Absyn.Path path;
   end META_LIST;
 
   record META_OPTION
-    String string;
+    Absyn.Path path;
   end META_OPTION;
   
   record META_RECORD
-    String string;
+    Absyn.Path path;
   end META_RECORD;
   
   record UNIONTYPE
-    String string;
+    Absyn.Path path;
   end UNIONTYPE;
   
   record META_ARRAY
-    String string;
+    Absyn.Path path;
   end META_ARRAY;
 
   record META_POLYMORPHIC
-    String string;
+    Absyn.Path path;
   end META_POLYMORPHIC;
   /*---------------------*/
 end State;
@@ -177,29 +176,29 @@ public function printStateStr "- Printing
 algorithm 
   outString:=
   matchcontinue (inState)
-    local String s;
-    case UNKNOWN(string = s) then "unknown"; 
-    case MODEL(string = s) then "model"; 
-    case RECORD(string = s) then "record"; 
-    case BLOCK(string = s) then "block"; 
-    case CONNECTOR(string = s) then "connector"; 
-    case TYPE(string = s) then "type"; 
-    case PACKAGE(string = s) then "package"; 
-    case FUNCTION(string = s) then "function"; 
-    case TYPE_INTEGER(string = s) then "Integer"; 
-    case TYPE_REAL(string = s) then "Real"; 
-    case TYPE_STRING(string = s) then "String"; 
-    case TYPE_BOOL(string = s) then "Boolean"; 
-    case IS_NEW(string = s) then "new def"; 
-    case HAS_EQUATIONS(string = s) then "has eqn"; 
+    local Absyn.Path p;
+    case UNKNOWN(path = p) then "unknown"; 
+    case MODEL(path = p) then "model"; 
+    case RECORD(path = p) then "record"; 
+    case BLOCK(path = p) then "block"; 
+    case CONNECTOR(path = p) then "connector"; 
+    case TYPE(path = p) then "type"; 
+    case PACKAGE(path = p) then "package"; 
+    case FUNCTION(path = p) then "function"; 
+    case TYPE_INTEGER(path = p) then "Integer"; 
+    case TYPE_REAL(path = p) then "Real"; 
+    case TYPE_STRING(path = p) then "String"; 
+    case TYPE_BOOL(path = p) then "Boolean"; 
+    case IS_NEW(path = p) then "new def"; 
+    case HAS_EQUATIONS(path = p) then "has eqn"; 
     case EXTERNAL_OBJ(_) then "ExternalObject"; 
-    case META_TUPLE(s) then "tuple";
-    case META_LIST(s) then "list";
-    case META_OPTION(s) then "Option";
-    case META_RECORD(s) then "meta_record";
-    case META_POLYMORPHIC(s) then "polymorphic";
-    case META_ARRAY(s) then "meta_array";
-    case UNIONTYPE(s) then "uniontype";
+    case META_TUPLE(p) then "tuple";
+    case META_LIST(p) then "list";
+    case META_OPTION(p) then "Option";
+    case META_RECORD(p) then "meta_record";
+    case META_POLYMORPHIC(p) then "polymorphic";
+    case META_ARRAY(p) then "meta_array";
+    case UNIONTYPE(p) then "uniontype";
     case _ then "#printStateStr failed#";
   end matchcontinue;
 end printStateStr;
@@ -209,89 +208,90 @@ public function printState
 algorithm 
   _:=
   matchcontinue (inState)
-    local String s;
-    case UNKNOWN(string = s)
+    local Absyn.Path p;
+      
+    case UNKNOWN(path = p)
       equation 
         Print.printBuf("UNKNOWN ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case MODEL(string = s)
+    case MODEL(path = p)
       equation 
         Print.printBuf("MODEL ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case RECORD(string = s)
+    case RECORD(path = p)
       equation 
         Print.printBuf("RECORD ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case BLOCK(string = s)
+    case BLOCK(path = p)
       equation 
         Print.printBuf("BLOCK ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case CONNECTOR(string = s)
+    case CONNECTOR(path = p)
       equation 
         Print.printBuf("CONNECTOR ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case TYPE(string = s)
+    case TYPE(path = p)
       equation 
         Print.printBuf("TYPE ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case PACKAGE(string = s)
+    case PACKAGE(path = p)
       equation 
         Print.printBuf("PACKAGE ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case FUNCTION(string = s)
+    case FUNCTION(path = p)
       equation 
         Print.printBuf("FUNCTION ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case TYPE_INTEGER(string = s)
+    case TYPE_INTEGER(path = p)
       equation 
         Print.printBuf("TYPE_INTEGER ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case TYPE_REAL(string = s)
+    case TYPE_REAL(path = p)
       equation 
         Print.printBuf("TYPE_REAL ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case TYPE_STRING(string = s)
+    case TYPE_STRING(path = p)
       equation 
         Print.printBuf("TYPE_STRING ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case TYPE_BOOL(string = s)
+    case TYPE_BOOL(path = p)
       equation 
         Print.printBuf("TYPE_BOOL ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case IS_NEW(string = s)
+    case IS_NEW(path = p)
       equation 
         Print.printBuf("IS_NEW ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
-    case HAS_EQUATIONS(string = s)
+    case HAS_EQUATIONS(path = p)
       equation 
         Print.printBuf("HAS_EQUATIONS ");
-        Print.printBuf(s);
+        Print.printBuf(Absyn.pathString(p));
       then
         ();
   end matchcontinue;
@@ -302,35 +302,35 @@ public function getStateName "function: getStateName
   Returns the classname of the state.
 "
   input State inState;
-  output String outString;
+  output Absyn.Path outPath;
 algorithm 
-  outString:=
+  outPath :=
   matchcontinue (inState)
     local String s;
-      Absyn.Path path;
-    case UNKNOWN(string = s) then s; 
-    case MODEL(string = s) then s; 
-    case RECORD(string = s) then s; 
-    case BLOCK(string = s) then s; 
-    case CONNECTOR(string = s) then s; 
-    case TYPE(string = s) then s; 
-    case PACKAGE(string = s) then s; 
-    case FUNCTION(string = s) then s; 
-    case TYPE_INTEGER(string = s) then s; 
-    case TYPE_REAL(string = s) then s; 
-    case TYPE_STRING(string = s) then s; 
-    case TYPE_BOOL(string = s) then s; 
-    case IS_NEW(string = s) then s; 
-    case HAS_EQUATIONS(string = s) then s; 
-    case EXTERNAL_OBJ(path) then Absyn.pathString(path);
-    case META_TUPLE(s) then s;
-    case META_LIST(s) then s;
-    case META_OPTION(s) then s;
-    case META_RECORD(s) then s;
-    case META_POLYMORPHIC(s) then s;
-    case META_ARRAY(s) then s;
-    case UNIONTYPE(s) then s;
-    case _ then "#getStateName failed#";
+      Absyn.Path p;
+    case UNKNOWN(path = p) then p; 
+    case MODEL(path = p) then p; 
+    case RECORD(path = p) then p; 
+    case BLOCK(path = p) then p; 
+    case CONNECTOR(path = p) then p; 
+    case TYPE(path = p) then p; 
+    case PACKAGE(path = p) then p; 
+    case FUNCTION(path = p) then p; 
+    case TYPE_INTEGER(path = p) then p; 
+    case TYPE_REAL(path = p) then p; 
+    case TYPE_STRING(path = p) then p; 
+    case TYPE_BOOL(path = p) then p; 
+    case IS_NEW(path = p) then p; 
+    case HAS_EQUATIONS(path = p) then p; 
+    case EXTERNAL_OBJ(p) then p;
+    case META_TUPLE(p) then p;
+    case META_LIST(p) then p;
+    case META_OPTION(p) then p;
+    case META_RECORD(p) then p;
+    case META_POLYMORPHIC(p) then p;
+    case META_ARRAY(p) then p;
+    case UNIONTYPE(p) then p;
+    case _ then Absyn.IDENT("#getStateName failed#");
   end matchcontinue;
 end getStateName;
 
@@ -358,29 +358,30 @@ public function start "!includecode
   This is the state machine initialization function.
 "
   input SCode.Restriction inRestriction;
-  input String inString;
+  input Absyn.Path inPath;
   output State outState;
 algorithm 
   outState:=
-  matchcontinue (inRestriction,inString)
-    local String s; Boolean isExpandable;
-    case (SCode.R_CLASS(),s) then UNKNOWN(s); 
-    case (SCode.R_MODEL(),s) then MODEL(s); 
-    case (SCode.R_RECORD(),s) then RECORD(s); 
-    case (SCode.R_BLOCK(),s) then BLOCK(s); 
-    case (SCode.R_CONNECTOR(isExpandable),s) then CONNECTOR(s,isExpandable); 
-    case (SCode.R_TYPE(),s) then TYPE(s); 
-    case (SCode.R_PACKAGE(),s) then PACKAGE(s); 
-    case (SCode.R_FUNCTION(),s) then FUNCTION(s); 
-    case (SCode.R_EXT_FUNCTION(),s) then FUNCTION(s); 
-    case (SCode.R_ENUMERATION(),s) then ENUMERATION(s); 
-    case (SCode.R_PREDEFINED_INT(),s) then TYPE_INTEGER(s); 
-    case (SCode.R_PREDEFINED_REAL(),s) then TYPE_REAL(s); 
-    case (SCode.R_PREDEFINED_STRING(),s) then TYPE_STRING(s); 
-    case (SCode.R_PREDEFINED_BOOL(),s) then TYPE_BOOL(s); 
-    case (SCode.R_PREDEFINED_ENUM(),s) then TYPE_ENUM(s);
-    case (SCode.R_UNIONTYPE(),s) then UNIONTYPE(s); // Added 2009-05-11. sjoelund
-    case (SCode.R_METARECORD(_, _),s) then META_RECORD(s); // Added 2009-08-18. sjoelund
+  matchcontinue (inRestriction,inPath)
+    local Absyn.Path p; Boolean isExpandable; 
+    case (SCode.R_CLASS(),p) then UNKNOWN(p); 
+    case (SCode.R_MODEL(),p) then MODEL(p); 
+    case (SCode.R_RECORD(),p) then RECORD(p); 
+    case (SCode.R_BLOCK(),p) then BLOCK(p); 
+    case (SCode.R_CONNECTOR(isExpandable),p) then CONNECTOR(p,isExpandable); 
+    case (SCode.R_TYPE(),p) then TYPE(p); 
+    case (SCode.R_PACKAGE(),p) then PACKAGE(p); 
+    case (SCode.R_FUNCTION(),p) then FUNCTION(p); 
+    case (SCode.R_EXT_FUNCTION(),p) then FUNCTION(p); 
+    case (SCode.R_ENUMERATION(),p) then ENUMERATION(p); 
+    case (SCode.R_PREDEFINED_INT(),p) then TYPE_INTEGER(p); 
+    case (SCode.R_PREDEFINED_REAL(),p) then TYPE_REAL(p); 
+    case (SCode.R_PREDEFINED_STRING(),p) then TYPE_STRING(p); 
+    case (SCode.R_PREDEFINED_BOOL(),p) then TYPE_BOOL(p); 
+    case (SCode.R_PREDEFINED_ENUM(),p) then TYPE_ENUM(p);
+     /* Meta Modelica extensions */
+    case (SCode.R_UNIONTYPE(),p) then UNIONTYPE(p);
+    case (SCode.R_METARECORD(_, _),p) then META_RECORD(p);
   end matchcontinue;
 end start;
 
@@ -396,71 +397,75 @@ algorithm
   outState:=
   matchcontinue (inState,inEvent)
     local
-      String s;
+      Absyn.Path p;
       State st;
       Event ev;
       Boolean isExpandable;
-    case (UNKNOWN(string = s),NEWDEF()) then IS_NEW(s);  /* Event `NEWDEF\' */ 
-    case (MODEL(string = s),NEWDEF()) then MODEL(s); 
-    case (RECORD(string = s),NEWDEF()) then RECORD(s); 
-    case (BLOCK(string = s),NEWDEF()) then BLOCK(s); 
-    case (CONNECTOR(string = s,isExpandable=isExpandable),NEWDEF()) then CONNECTOR(s,isExpandable); 
-    case (TYPE(string = s),NEWDEF()) then TYPE(s); // A type can be constructed with long definition
-     case (PACKAGE(string = s),NEWDEF()) then PACKAGE(s); 
-    case (FUNCTION(string = s),NEWDEF()) then FUNCTION(s); 
-    case (ENUMERATION(string = s),NEWDEF()) then ENUMERATION(s); 
-    case (IS_NEW(string = s),NEWDEF()) then IS_NEW(s); 
-    case (TYPE_INTEGER(string = s),NEWDEF()) then TYPE_INTEGER(s); 
-    case (TYPE_REAL(string = s),NEWDEF()) then TYPE_REAL(s); 
-    case (TYPE_STRING(string = s),NEWDEF()) then TYPE_STRING(s); 
-    case (TYPE_BOOL(string = s),NEWDEF()) then TYPE_BOOL(s); 
-    case (TYPE_ENUM(string = s),NEWDEF()) then TYPE_ENUM(s);  /* Event `FOUND_EQUATION\' */
-    case (UNIONTYPE(string = s),NEWDEF()) then UNIONTYPE(s);  // Added 2009-05-11. sjoelund
-    case (META_RECORD(string = s),NEWDEF()) then META_RECORD(s);  // Added 2009-08-18. sjoelund
+      String s;
+    case (UNKNOWN(path = p),NEWDEF()) then IS_NEW(p);  /* Event `NEWDEF\' */ 
+    case (MODEL(path = p),NEWDEF()) then MODEL(p); 
+    case (RECORD(path = p),NEWDEF()) then RECORD(p); 
+    case (BLOCK(path = p),NEWDEF()) then BLOCK(p); 
+    case (CONNECTOR(path = p,isExpandable=isExpandable),NEWDEF()) then CONNECTOR(p,isExpandable); 
+    case (TYPE(path = p),NEWDEF()) then TYPE(p); // A type can be constructed with long definition
+     case (PACKAGE(path = p),NEWDEF()) then PACKAGE(p); 
+    case (FUNCTION(path = p),NEWDEF()) then FUNCTION(p); 
+    case (ENUMERATION(path = p),NEWDEF()) then ENUMERATION(p); 
+    case (IS_NEW(path = p),NEWDEF()) then IS_NEW(p); 
+    case (TYPE_INTEGER(path = p),NEWDEF()) then TYPE_INTEGER(p); 
+    case (TYPE_REAL(path = p),NEWDEF()) then TYPE_REAL(p); 
+    case (TYPE_STRING(path = p),NEWDEF()) then TYPE_STRING(p); 
+    case (TYPE_BOOL(path = p),NEWDEF()) then TYPE_BOOL(p); 
+    case (TYPE_ENUM(path = p),NEWDEF()) then TYPE_ENUM(p);  /* Event `FOUND_EQUATION\' */
+    case (UNIONTYPE(path = p),NEWDEF()) then UNIONTYPE(p);  // Added 2009-05-11. sjoelund
+    case (META_RECORD(path = p),NEWDEF()) then META_RECORD(p);  // Added 2009-08-18. sjoelund
       
    /* Event 'FOUND_COMPONENT' */
-    case (UNKNOWN(string = s),FOUND_COMPONENT()) then IS_NEW(s);  /* Event `NEWDEF\' */ 
-    case (MODEL(string = s),FOUND_COMPONENT()) then MODEL(s); 
-    case (RECORD(string = s),FOUND_COMPONENT()) then RECORD(s); 
-    case (BLOCK(string = s),FOUND_COMPONENT()) then BLOCK(s); 
-    case (CONNECTOR(string = s,isExpandable = isExpandable),FOUND_COMPONENT()) then CONNECTOR(s,isExpandable);
-    case (TYPE(string = s),FOUND_COMPONENT())  // A type can not contain components
+    case (UNKNOWN(path = p),FOUND_COMPONENT()) then IS_NEW(p);  /* Event `NEWDEF\' */ 
+    case (MODEL(path = p),FOUND_COMPONENT()) then MODEL(p); 
+    case (RECORD(path = p),FOUND_COMPONENT()) then RECORD(p); 
+    case (BLOCK(path = p),FOUND_COMPONENT()) then BLOCK(p); 
+    case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_COMPONENT()) then CONNECTOR(p,isExpandable);
+    case (TYPE(path = p),FOUND_COMPONENT())  // A type can not contain components
       equation 
+        s = Absyn.pathString(p);
         Error.addMessage(Error.TYPE_NOT_FROM_PREDEFINED, {s});
       then
         fail(); 
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
-    //case (TYPE(string = s),FOUND_COMPONENT()) then TYPE(s); 
-    case (PACKAGE(string = s),FOUND_COMPONENT()) then PACKAGE(s); 
-    case (FUNCTION(string = s),FOUND_COMPONENT()) then FUNCTION(s); 
-    case (ENUMERATION(string = s),FOUND_COMPONENT()) then ENUMERATION(s);
-    case (IS_NEW(string = s),FOUND_COMPONENT()) then IS_NEW(s); 
-    case (TYPE_INTEGER(string = s),FOUND_COMPONENT()) then TYPE_INTEGER(s); 
-    case (TYPE_REAL(string = s),FOUND_COMPONENT()) then TYPE_REAL(s); 
-    case (TYPE_STRING(string = s),FOUND_COMPONENT()) then TYPE_STRING(s); 
-    case (TYPE_BOOL(string = s),FOUND_COMPONENT()) then TYPE_BOOL(s); 
-    case (TYPE_ENUM(string = s),FOUND_COMPONENT()) then TYPE_ENUM(s);  
-    case (META_RECORD(string = s),FOUND_COMPONENT()) then META_RECORD(s);  // Added 2009-08-19. sjoelund
+    //case (TYPE(path = p),FOUND_COMPONENT()) then TYPE(p); 
+    case (PACKAGE(path = p),FOUND_COMPONENT()) then PACKAGE(p); 
+    case (FUNCTION(path = p),FOUND_COMPONENT()) then FUNCTION(p); 
+    case (ENUMERATION(path = p),FOUND_COMPONENT()) then ENUMERATION(p);
+    case (IS_NEW(path = p),FOUND_COMPONENT()) then IS_NEW(p); 
+    case (TYPE_INTEGER(path = p),FOUND_COMPONENT()) then TYPE_INTEGER(p); 
+    case (TYPE_REAL(path = p),FOUND_COMPONENT()) then TYPE_REAL(p); 
+    case (TYPE_STRING(path = p),FOUND_COMPONENT()) then TYPE_STRING(p); 
+    case (TYPE_BOOL(path = p),FOUND_COMPONENT()) then TYPE_BOOL(p); 
+    case (TYPE_ENUM(path = p),FOUND_COMPONENT()) then TYPE_ENUM(p);  
+    case (META_RECORD(path = p),FOUND_COMPONENT()) then META_RECORD(p);  // Added 2009-08-19. sjoelund
       
    /* Event `FOUND_EQUATION\' */       
-    case (UNKNOWN(string = s),FOUND_EQUATION()) then HAS_EQUATIONS(s); 
-    case (IS_NEW(string = s),FOUND_EQUATION()) then HAS_EQUATIONS(s); 
-    case (MODEL(string = s),FOUND_EQUATION()) then MODEL(s); 
-    case (RECORD(string = s),FOUND_EQUATION())
+    case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p); 
+    case (IS_NEW(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p); 
+    case (MODEL(path = p),FOUND_EQUATION()) then MODEL(p); 
+    case (RECORD(path = p),FOUND_EQUATION())
       equation 
+        s = Absyn.pathString(p);
         Error.addMessage(Error.EQUATION_IN_RECORD, {s});
       then
         fail();
-    case (BLOCK(string = s),FOUND_EQUATION()) then BLOCK(s); 
-    case (CONNECTOR(string = s,isExpandable = isExpandable),FOUND_EQUATION())
+    case (BLOCK(path = p),FOUND_EQUATION()) then BLOCK(p); 
+    case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_EQUATION())
       equation 
+        s = Absyn.pathString(p);
         Error.addMessage(Error.EQUATION_IN_CONNECTOR, {s});
       then
         fail();
-    case (TYPE(string = s),FOUND_EQUATION()) then fail(); 
-    case (PACKAGE(string = s),FOUND_EQUATION()) then fail();  /* CORRECT? */ 
-    case (FUNCTION(string = s),FOUND_EQUATION()) then fail(); 
-    case (HAS_EQUATIONS(string = s),FOUND_EQUATION()) then HAS_EQUATIONS(s); 
+    case (TYPE(path = p),FOUND_EQUATION()) then fail(); 
+    case (PACKAGE(path = p),FOUND_EQUATION()) then fail(); 
+    case (FUNCTION(path = p),FOUND_EQUATION()) then fail(); 
+    case (HAS_EQUATIONS(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p); 
     case (st,ev)
       equation 
         Print.printBuf("- trans failed: ");
@@ -487,39 +492,39 @@ public function valid "function: valid
 algorithm 
   _:=
   matchcontinue (inState,inRestriction)
-    local String s;
-    case (UNKNOWN(string = s),_) then (); 
-    case (IS_NEW(string = s),SCode.R_CLASS()) then (); 
-    case (HAS_EQUATIONS(string = s),SCode.R_CLASS()) then (); 
-    case (MODEL(string = s),SCode.R_MODEL()) then (); 
-    case (IS_NEW(string = s),SCode.R_MODEL()) then (); 
-    case (HAS_EQUATIONS(string = s),SCode.R_MODEL()) then (); 
-    case (RECORD(string = s),SCode.R_RECORD()) then (); 
-    case (IS_NEW(string = s),SCode.R_RECORD()) then (); 
-    case (BLOCK(string = s),SCode.R_BLOCK()) then (); 
-    case (HAS_EQUATIONS(string = s),SCode.R_BLOCK()) then (); 
-    case (CONNECTOR(string = _,isExpandable=false),SCode.R_CONNECTOR(false)) then (); 
-    case (CONNECTOR(string = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
-    case (IS_NEW(string = _),SCode.R_CONNECTOR(_)) then (); 
-    case (TYPE_INTEGER(string = _),SCode.R_CONNECTOR(_)) then (); 
-    case (TYPE_REAL(string = _),SCode.R_CONNECTOR(_)) then (); 
-    case (TYPE_STRING(string = _),SCode.R_CONNECTOR(_)) then (); 
-    case (TYPE_BOOL(string = _),SCode.R_CONNECTOR(_)) then (); 
-    case (TYPE(string = s),SCode.R_TYPE()) then (); 
-    case (TYPE_INTEGER(string = s),SCode.R_TYPE()) then (); 
-    case (TYPE_REAL(string = s),SCode.R_TYPE()) then (); 
-    case (TYPE_STRING(string = s),SCode.R_TYPE()) then (); 
-    case (TYPE_BOOL(string = s),SCode.R_TYPE()) then (); 
-    case (IS_NEW(string = s),SCode.R_PACKAGE()) then (); 
-    case (PACKAGE(string = s),SCode.R_PACKAGE()) then (); 
-    case (IS_NEW(string = s),SCode.R_FUNCTION()) then (); 
-    case (FUNCTION(string = s),SCode.R_FUNCTION()) then ();
-    case (META_TUPLE(s),SCode.R_TYPE()) then ();
-    case (META_LIST(s),SCode.R_TYPE()) then ();
-    case (META_OPTION(s),SCode.R_TYPE()) then ();
-    case (META_RECORD(s),SCode.R_TYPE()) then ();
-    case (UNIONTYPE(s),SCode.R_TYPE()) then ();
-    case (ENUMERATION(s),SCode.R_TYPE()) then ();
+    local Absyn.Path p;
+    case (UNKNOWN(path = p),_) then (); 
+    case (IS_NEW(path = p),SCode.R_CLASS()) then (); 
+    case (HAS_EQUATIONS(path = p),SCode.R_CLASS()) then (); 
+    case (MODEL(path = p),SCode.R_MODEL()) then (); 
+    case (IS_NEW(path = p),SCode.R_MODEL()) then (); 
+    case (HAS_EQUATIONS(path = p),SCode.R_MODEL()) then (); 
+    case (RECORD(path = p),SCode.R_RECORD()) then (); 
+    case (IS_NEW(path = p),SCode.R_RECORD()) then (); 
+    case (BLOCK(path = p),SCode.R_BLOCK()) then (); 
+    case (HAS_EQUATIONS(path = p),SCode.R_BLOCK()) then (); 
+    case (CONNECTOR(path = _,isExpandable=false),SCode.R_CONNECTOR(false)) then (); 
+    case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
+    case (IS_NEW(path = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_INTEGER(path = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_REAL(path = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_STRING(path = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE_BOOL(path = _),SCode.R_CONNECTOR(_)) then (); 
+    case (TYPE(path = p),SCode.R_TYPE()) then (); 
+    case (TYPE_INTEGER(path = p),SCode.R_TYPE()) then (); 
+    case (TYPE_REAL(path = p),SCode.R_TYPE()) then (); 
+    case (TYPE_STRING(path = p),SCode.R_TYPE()) then (); 
+    case (TYPE_BOOL(path = p),SCode.R_TYPE()) then (); 
+    case (IS_NEW(path = p),SCode.R_PACKAGE()) then (); 
+    case (PACKAGE(path = p),SCode.R_PACKAGE()) then (); 
+    case (IS_NEW(path = p),SCode.R_FUNCTION()) then (); 
+    case (FUNCTION(path = p),SCode.R_FUNCTION()) then ();
+    case (META_TUPLE(p),SCode.R_TYPE()) then ();
+    case (META_LIST(p),SCode.R_TYPE()) then ();
+    case (META_OPTION(p),SCode.R_TYPE()) then ();
+    case (META_RECORD(p),SCode.R_TYPE()) then ();
+    case (UNIONTYPE(p),SCode.R_TYPE()) then ();
+    case (ENUMERATION(p),SCode.R_TYPE()) then ();
     
   end matchcontinue;
 end valid;
@@ -546,7 +551,7 @@ algorithm
     case (st,re)
       equation 
         Print.printErrorBuf("# Restriction violation: ");
-        str = getStateName(st);
+        str = Absyn.pathString(getStateName(st));
         Print.printErrorBuf(str);
         Print.printErrorBuf(" is not a ");
         str = SCode.restrString(re);
@@ -573,22 +578,22 @@ algorithm
       list<State> rest;
       Boolean res;
     case (st,{}) then false; 
-    case (UNKNOWN(string = _),(UNKNOWN(string = _) :: rest)) then true; 
-    case (MODEL(string = _),(MODEL(string = _) :: rest)) then true; 
-    case (RECORD(string = _),(RECORD(string = _) :: rest)) then true; 
-    case (BLOCK(string = _),(BLOCK(string = _) :: rest)) then true; 
-    case (CONNECTOR(string = _),(CONNECTOR(string = _) :: rest)) then true; 
-    case (TYPE(string = _),(TYPE(string = _) :: rest)) then true; 
-    case (PACKAGE(string = _),(PACKAGE(string = _) :: rest)) then true; 
-    case (FUNCTION(string = _),(FUNCTION(string = _) :: rest)) then true; 
-    case (ENUMERATION(string = _),(ENUMERATION(string = _) :: rest)) then true; 
-    case (HAS_EQUATIONS(string = _),(HAS_EQUATIONS(string = _) :: rest)) then true; 
-    case (IS_NEW(string = _),(IS_NEW(string = _) :: rest)) then true; 
-    case (TYPE_INTEGER(string = _),(TYPE_INTEGER(string = _) :: rest)) then true; 
-    case (TYPE_REAL(string = _),(TYPE_REAL(string = _) :: rest)) then true; 
-    case (TYPE_STRING(string = _),(TYPE_STRING(string = _) :: rest)) then true; 
-    case (TYPE_BOOL(string = _),(TYPE_BOOL(string = _) :: rest)) then true; 
-    case (TYPE_ENUM(string = _),(TYPE_ENUM(string = _) :: rest)) then true; 
+    case (UNKNOWN(path = _),(UNKNOWN(path = _) :: rest)) then true; 
+    case (MODEL(path = _),(MODEL(path = _) :: rest)) then true; 
+    case (RECORD(path = _),(RECORD(path = _) :: rest)) then true; 
+    case (BLOCK(path = _),(BLOCK(path = _) :: rest)) then true; 
+    case (CONNECTOR(path = _),(CONNECTOR(path = _) :: rest)) then true; 
+    case (TYPE(path = _),(TYPE(path = _) :: rest)) then true; 
+    case (PACKAGE(path = _),(PACKAGE(path = _) :: rest)) then true; 
+    case (FUNCTION(path = _),(FUNCTION(path = _) :: rest)) then true; 
+    case (ENUMERATION(path = _),(ENUMERATION(path = _) :: rest)) then true; 
+    case (HAS_EQUATIONS(path = _),(HAS_EQUATIONS(path = _) :: rest)) then true; 
+    case (IS_NEW(path = _),(IS_NEW(path = _) :: rest)) then true; 
+    case (TYPE_INTEGER(path = _),(TYPE_INTEGER(path = _) :: rest)) then true; 
+    case (TYPE_REAL(path = _),(TYPE_REAL(path = _) :: rest)) then true; 
+    case (TYPE_STRING(path = _),(TYPE_STRING(path = _) :: rest)) then true; 
+    case (TYPE_BOOL(path = _),(TYPE_BOOL(path = _) :: rest)) then true; 
+    case (TYPE_ENUM(path = _),(TYPE_ENUM(path = _) :: rest)) then true; 
     case (st,(first :: rest))
       equation 
         res = matchingState(st, rest);
@@ -605,7 +610,7 @@ public function isFunction "function: isFunction
 algorithm 
   _:=
   matchcontinue (inState)
-    case FUNCTION(string = _) then (); 
+    case FUNCTION(path = _) then (); 
   end matchcontinue;
 end isFunction;
 
@@ -617,7 +622,7 @@ public function isConnector "function: isConnector
 algorithm 
   _:=
   matchcontinue (inState)
-    case CONNECTOR(string = _) then (); 
+    case CONNECTOR(path = _) then (); 
   end matchcontinue;
 end isConnector;
 end ClassInf;

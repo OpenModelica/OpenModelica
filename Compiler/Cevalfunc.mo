@@ -34,6 +34,7 @@ protected import Types;
 protected import UnitAbsyn;
 protected import ValuesUtil;
 protected import ErrorExt;
+protected import OptManager;
 
 public function cevalUserFunc "Function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
@@ -64,25 +65,30 @@ algorithm
                            SCode.PARTS(elementLst=elementList) ),daeList)
       equation
         ErrorExt.setCheckpoint();
+        true = OptManager.setOption("envCache",false);
         str = Absyn.pathString(funcpath);
-replacements = createReplacementRules(inArgs,elementList);
-ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
+        replacements = createReplacementRules(inArgs,elementList);
+        ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
         str = Util.stringAppendList({"cevalfunc_",str});
         env3 = Env.openScope(env, false, SOME(str));
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2);
         env2 = evaluateStatements(env1,sc,ht2);
         retVals = getOutputVarValues(elementList, env2);
         retVal = convertOutputVarValues(retVals);
-        ErrorExt.rollBack(); 
+        ErrorExt.rollBack();
+        true = OptManager.setOption("envCache",true); 
         then 
           retVal;
+    
+    /* Reset sideeffects */
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
         sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
           SCode.PARTS(elementLst=elementList) ),daeList)
       equation
           ErrorExt.rollBack();
-          then
-            fail();
+          _ = OptManager.setOption("envCache",true);
+      then fail();
+            
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
          sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
                            SCode.PARTS(elementLst=elementList) ),daeList)
@@ -230,10 +236,9 @@ algorithm (oType) := matchcontinue(inExp, inVal)
     list<String> names;
   case(DAE.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
     equation
-      pathName = Absyn.pathString(recordName);
       (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
       lv2 = setValuesInRecord(lv,names,vals);
-      cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(pathName) ,lv2 , NONE, NONE),NONE); 
+      cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE); 
     then
       cty2;
 end matchcontinue;
@@ -295,15 +300,16 @@ algorithm oType := matchcontinue(inVars,invarName,inValue)
   case((tv as DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val))),{},{})
     then
       tv;
-  case(DAE.TYPES_VAR(varName3,a,p, (t as (DAE.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(_,vals,names,-1))::values)
+  case(DAE.TYPES_VAR(varName3,a,p, (t as (DAE.T_COMPLEX(complexVarLst = typeslst),_)) ,b) ,varName2::varNames, (val as Values.RECORD(fpath,vals,names,-1))::values)
     local
       list<DAE.Var> typeslst,lv2;
       list<Values.Value> vals;
       list<String> names;
+      Absyn.Path fpath;
     equation 
       equality(varName3 = varName2);
       lv2 = setValuesInRecord(typeslst,names,vals);
-      ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(varName2) ,lv2 , NONE, NONE),NONE);
+      ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE);
       tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val));
     then tv;
   case(DAE.TYPES_VAR(varName3,a,p,t,b) ,varName2::varNames, val::values)
@@ -1255,6 +1261,7 @@ protected function typeOfValue ""
 input DAE.Type inType;
 output Values.Value oval;
 algorithm oval := matchcontinue(inType)
+  local     Absyn.Path path;
   case((DAE.T_INTEGER(_),_)) then Values.INTEGER(0);
   case((DAE.T_REAL(_),_)) then Values.REAL(0.0);
   case((DAE.T_STRING(_),_)) then Values.STRING("");
@@ -1262,19 +1269,17 @@ algorithm oval := matchcontinue(inType)
   case((DAE.T_ENUMERATION(SOME(idx),path,names,_),_))
     local
       Integer idx;
-      Absyn.Path path;
       list<String> names;    
     then Values.ENUM(idx,path,names); 
 //       then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0); 
 //  case((DAE.T_ENUM,_)) then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0); 
-  case((DAE.T_COMPLEX(ClassInf.RECORD(str), typesVar,_,_),_))
+  case((DAE.T_COMPLEX(ClassInf.RECORD(path), typesVar,_,_),_))
     local 
       list<DAE.Var> typesVar;
-      String str;
     equation
       
       then
-        Values.RECORD(Absyn.IDENT(str),{},{},-1) ;
+        Values.RECORD(path,{},{},-1) ;
   case(_) 
     equation 
       Debug.fprint("failtrace", "- Cevalfunc.typeOfValue failed might not be complete implemented\n");

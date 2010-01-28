@@ -1205,10 +1205,9 @@ algorithm
         ((DAE.T_TUPLE(ts),NONE));
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = -1)
       equation 
-        vars = valuesToVars(vl, ids);
-        cname_str = Absyn.pathString(cname);
+        vars = valuesToVars(vl, ids);        
       then
-        ((DAE.T_COMPLEX(ClassInf.RECORD(cname_str),vars,NONE,NONE),SOME(cname)));
+        ((DAE.T_COMPLEX(ClassInf.RECORD(cname),vars,NONE,NONE),SOME(cname)));
 
       // MetaModelica Uniontype
     case Values.RECORD(record_ = cname,orderd = vl,comp = ids, index = index)
@@ -2093,7 +2092,7 @@ algorithm
         res;
     case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = SOME(bc_tp)),_))
       equation 
-        res = ClassInf.getStateName(ci_state);
+        res = Absyn.pathString(ClassInf.getStateName(ci_state));
         st_str = ClassInf.printStateStr(ci_state);
         bc_tp_str = unparseType(bc_tp);
         res = Util.stringAppendList({"(",res," ",st_str," bc:",bc_tp_str,")"});
@@ -2101,7 +2100,7 @@ algorithm
         res;
     case ((DAE.T_COMPLEX(complexClassType = ci_state,complexVarLst = vs,complexTypeOption = NONE),_))
       equation 
-        res = ClassInf.getStateName(ci_state);
+        res = Absyn.pathString(ClassInf.getStateName(ci_state));
         st_str = ClassInf.printStateStr(ci_state);
         res = Util.stringAppendList({res," ",st_str});
       then
@@ -2404,7 +2403,7 @@ output String s2 "Components of connector";
 algorithm (s,s2) := matchcontinue(t)
   local
     ClassInf.State st;
-    String connectorName;
+    Absyn.Path connectorName;
     list<Var> vars;
     Option<Type> bc;
     Option<Absyn.Path> op;
@@ -2416,7 +2415,7 @@ algorithm (s,s2) := matchcontinue(t)
     equation
       varNames = Util.listMap(vars,varName);
       isExpandableStr = Util.if_(isExpandable,"/* expandable */ ", ""); 
-      s = isExpandableStr +& connectorName;
+      s = isExpandableStr +& Absyn.pathString(connectorName);
       s2 = "{" +& Util.stringDelimitList(varNames,", ") +& "}";
       then
         (s,s2);
@@ -3238,7 +3237,7 @@ algorithm
     case ((DAE.T_BOOL(varLstBool = _),_)) then "Boolean"; 
     case ((DAE.T_COMPLEX(complexClassType = st),_))
       equation 
-        n = ClassInf.getStateName(st);
+        n = Absyn.pathString(ClassInf.getStateName(st));
       then
         n;
     case ((arrayty as (DAE.T_ARRAY(arrayDim = _),_)))
@@ -3531,7 +3530,7 @@ algorithm
         list<Var> tcvl; 
         ClassInf.State CIS; 
         list<DAE.ExpVar> ecvl;
-        String name;
+        Absyn.Path name;
       equation
         ecvl = Util.listMap(tcvl,convertFromTypesToExpVar);
         name = ClassInf.getStateName(CIS);

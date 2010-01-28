@@ -167,7 +167,7 @@ constant tuple<DAE.TType, Option<Type_a>> nil2real=(DAE.T_FUNCTION({},(DAE.T_REA
 
 protected constant tuple<DAE.TType, Option<Type_a>> nil2bool=(DAE.T_FUNCTION({},(DAE.T_REAL({}),NONE),DAE.NO_INLINE),NONE);
 
-protected constant tuple<DAE.TType, Option<Type_a>> record2str=(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.UNKNOWN(""),{},NONE(),NONE),NONE))},(DAE.T_STRING({}),NONE),DAE.NO_INLINE),NONE);
+protected constant tuple<DAE.TType, Option<Type_a>> record2str=(DAE.T_FUNCTION({("x",(DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("")),{},NONE(),NONE),NONE))},(DAE.T_STRING({}),NONE),DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> strStr2bool=(DAE.T_FUNCTION({("x",(DAE.T_STRING({}),NONE)),("y",(DAE.T_STRING({}),NONE))},(DAE.T_BOOL({}),NONE),DAE.NO_INLINE),NONE);
 
@@ -334,13 +334,13 @@ protected constant tuple<DAE.TType, Option<Type_a>> anyNonExpandableConnector2in
           DAE.T_FUNCTION(
           {
           ("x",
-          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",false))),NONE))},(DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE);
+          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),false))),NONE))},(DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> anyExpandableConnector2int=(
           DAE.T_FUNCTION(
           {
           ("x",
-          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR("$dummy$",true))),NONE))},(DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE);
+          (DAE.T_ANYTYPE(SOME(ClassInf.CONNECTOR(Absyn.IDENT("$dummy$"),true))),NONE))},(DAE.T_INTEGER({}),NONE),DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> array1dimint2int=(
           DAE.T_FUNCTION(

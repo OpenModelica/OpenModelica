@@ -218,7 +218,7 @@ public uniontype Element
 
   record FUNCTION " A Modelica function"
     Absyn.Path path;
-    list<FunctionDefinition> functions;
+    list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
     Type type_;
     Boolean partialPrefix "MetaModelica extension";
     InlineType inlineType;
@@ -855,7 +855,7 @@ uniontype ExpType "- Basic types
   end ET_ENUMERATION;
 
   record ET_COMPLEX "Complex types" 
-    String name;
+    Absyn.Path name;
     list<ExpVar> varLst; 
     ClassInf.State complexClassType;
   end ET_COMPLEX;

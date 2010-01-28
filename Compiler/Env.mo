@@ -195,6 +195,7 @@ protected import System;
 protected import Types;
 protected import Inst;
 protected import Debug;
+protected import OptManager;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -786,6 +787,17 @@ algorithm
   end matchcontinue;
 end getClassName;    	
 
+public function getEnvName "returns the FQ name of the environment, see also getEnvPath"
+input Env env;
+output Absyn.Path path;
+algorithm
+  path := matchcontinue(env)
+    case(env) equation
+      SOME(path) = getEnvPath(env);
+    then path;
+  end matchcontinue;
+end getEnvName;
+
 public function getEnvPath "function: getEnvPath
   This function returns all partially instantiated parents as an Absyn.Path 
   option I.e. it collects all identifiers of each frame until it reaches 
@@ -1178,6 +1190,7 @@ algorithm
   local CacheTree tree;  Option<EnvCache>[:] arr;
    case (scope,path,CACHE(arr ,_))
       equation
+        true = OptManager.getOption("envCache");
         SOME(ENVCACHE(tree)) = arr[1];
         env = cacheGetEnv(scope,path,tree);
         //print("got cached env for ");print(Absyn.pathString(path)); print("\n");
@@ -1196,9 +1209,12 @@ algorithm
   local CacheTree tree;
     Option<Env> ie;
     Option<EnvCache>[:] arr;
+    case(_,inCache,env) equation
+      false = OptManager.getOption("envCache");
+    then inCache;
       
     case (fullpath,CACHE(arr,ie),env) 
-      equation
+      equation       
         NONE = arr[1];
         tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
         //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
@@ -1214,7 +1230,10 @@ algorithm
         //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
         arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
       then CACHE(arr,ie);
-    case (_,_,_) equation print("cacheAdd failed\n"); then fail();
+    case (_,_,_) equation 
+      true = OptManager.getOption("envCache"); 
+      print("cacheAdd failed\n"); 
+    then fail();
   end matchcontinue;
 end cacheAdd;
 
@@ -1230,9 +1249,13 @@ algorithm
   outCache := matchcontinue(inCache,id,env)
     local
       Absyn.Path path,newPath;
-    
+      case(inCache,id,env) equation
+        false = OptManager.getOption("envCache");
+      then inCache;
+        
     case(inCache,id,env) 
       equation
+         
         SOME(path) = getEnvPath(env);
         outCache = cacheAdd(path,inCache,env);
       then outCache;
@@ -1263,6 +1286,7 @@ algorithm
 			// Search only current scope. Since scopes higher up might not be cached, we cannot search upwards.
     case (path2,path,tree)
       equation
+        true = OptManager.getOption("envCache");
         env = cacheGetEnv2(path2,path,tree);
         //print("found ");print(Absyn.pathString(path));print(" in cache at scope");
 				//print(Absyn.pathString(path2));print("  pathEnv:"+&printEnvPathStr(env)+&"\n");
@@ -1664,17 +1688,18 @@ algorithm
       list<DAE.Var> vars,xs;
       Absyn.InnerOuter io;
       Boolean isExpandable;
+      Absyn.Path path;
     case ({},_) then {}; 
     case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),
-           type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
+           type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path= path, isExpandable = isExpandable),
                     complexVarLst = vars),_)) :: xs),oid)
       equation 
         lst1 = localInsideConnectorFlowvars3(xs, oid);
         (_,false) = Inst.innerOuterBooleans(io);
         // We set type unknown for inside connectors for the check of "unconnected connectors".
-        lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
-                                                           DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},
-                                                           ClassInf.CONNECTOR(name,isExpandable)),{})));
+        lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(path,{},ClassInf.UNKNOWN(Absyn.IDENT("unk"))),{},
+                                                           DAE.CREF_IDENT(id,DAE.ET_COMPLEX(path,{},
+                                                           ClassInf.CONNECTOR(path,isExpandable)),{})));
         res = listAppend(lst1, lst2);
       then
         res;
@@ -1689,13 +1714,13 @@ algorithm
         Boolean isExpandable;
         
       equation 
-        ((flatArrayType as (DAE.T_COMPLEX(ClassInf.CONNECTOR(string = name, isExpandable=isExpandable),tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
+        ((flatArrayType as (DAE.T_COMPLEX(ClassInf.CONNECTOR(path=path,isExpandable=isExpandable),tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
         (_,false) = Inst.innerOuterBooleans(io); 
         true = Types.isComplexConnector(flatArrayType);
         indexSubscriptLists = createSubs(adims);
         lst1 = localInsideConnectorFlowvars3_2(tvars, id, indexSubscriptLists);
-        connectorRef = DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},ClassInf.UNKNOWN("unk")),{},
-                                     DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name,isExpandable)),{}));
+        connectorRef = DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(path,{},ClassInf.UNKNOWN(Absyn.IDENT("unk"))),{},
+                                     DAE.CREF_IDENT(id,DAE.ET_COMPLEX(path,{},ClassInf.CONNECTOR(path,isExpandable)),{}));
         lst1 = localInsideConnectorFlowvars3_3(tvars,connectorRef,indexSubscriptLists);
         //print(" Array refs: " +& Util.stringDelimitList(Util.listMap(lst1,Exp.printComponentRefStr),", ") +& "\n");
       then lst1;
@@ -1753,21 +1778,21 @@ algorithm
       list<DAE.Subscript> s;
       DAE.Var tv;
       Boolean isExpandable;
+      Absyn.Path path;
     case ({},_,_) then {}; 
     case (_,_,{}) then {};
     case (((tv as DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),type_ = 
-           (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(string = name, isExpandable = isExpandable),
+           (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path = path, isExpandable = isExpandable),
                             complexVarLst = vars),_))) :: xs),oid,s::ssubs)
       equation 
         lst3 = localInsideConnectorFlowvars3_2({tv},oid,ssubs);
         lst1 = localInsideConnectorFlowvars3_2(xs, oid,s::ssubs);
         (_,false) = Inst.innerOuterBooleans(io);
-        //lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name)),s,DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},ClassInf.CONNECTOR(name)),{})));
         // We set type unknown for inside connectors for the check of "unconnected connectors".
-        lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(name,{},
-                                                           ClassInf.UNKNOWN("unk")),s,
-                                         DAE.CREF_IDENT(id,DAE.ET_COMPLEX(name,{},
-                                                           ClassInf.CONNECTOR(name,isExpandable)),{})));
+        lst2 = Types.flowVariables(vars, DAE.CREF_QUAL(oid,DAE.ET_COMPLEX(path,{},
+                                                           ClassInf.UNKNOWN(Absyn.IDENT("unk"))),s,
+                                         DAE.CREF_IDENT(id,DAE.ET_COMPLEX(path,{},
+                                                           ClassInf.CONNECTOR(path,isExpandable)),{})));
         res = Util.listFlatten({lst1, lst2,lst3});
       then
         res;

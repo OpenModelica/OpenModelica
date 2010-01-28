@@ -60,6 +60,26 @@ algorithm
   end matchcontinue;
 end derivativeOrder;
 
+public function getDerivativePaths " collects all paths representing derivative functions for a list of FunctionDefinition's"
+  input list<DAE.FunctionDefinition> funcDefs;
+  output list<Absyn.Path> paths;
+algorithm
+  paths := matchcontinue(funcDefs)
+  local list<Absyn.Path> pLst1,pLst2;
+    Absyn.Path p1,p2; 
+    case({}) then {};
+    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=SOME(p2),lowerOrderDerivatives=pLst1)::funcDefs) equation
+      pLst2 = getDerivativePaths(funcDefs);
+      paths = Util.listUnion(p1::p2::pLst1,pLst2);
+    then paths;
+    case(DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1,defaultDerivative=NONE,lowerOrderDerivatives=pLst1)::funcDefs) equation
+      pLst2 = getDerivativePaths(funcDefs);
+      paths = Util.listUnion(p1::pLst1,pLst2);
+    then paths;
+    case(_::funcDefs) then getDerivativePaths(funcDefs);
+  end matchcontinue;
+end getDerivativePaths;
+
 public function addEquationBoundString "" 
   input DAE.Exp bindExp;
   input Option<DAE.VariableAttributes> attr;
@@ -119,6 +139,7 @@ protected import RTOpts;
 protected import System;
 protected import Types;
 protected import Util;
+protected import ValuesUtil;
 
 public function splitDAEIntoVarsAndEquations 
 "Splits the DAE into one with vars and no equations and algorithms 
@@ -509,9 +530,11 @@ algorithm
   _ := matchcontinue (inDAElist)
     local 
       list<DAE.Element> daelist;
-    case DAE.DAE(elementLst = daelist)
-      equation 
-        Util.listMap0(daelist, dumpFunction);
+      DAE.FunctionTree funcs;
+    case DAE.DAE(daelist,funcs)
+      equation
+        //print("dumping DAE, avltree list length:"+&intString(listLength(avlTreeToList(funcs)))+&"\n");
+        Util.listMap0(Util.listMap(avlTreeToList(funcs),Util.tuple22),dumpFunction);        
         Util.listMap0(daelist, dumpExtObjectClass);
         Util.listMap0(daelist, dumpCompElement);
       then
@@ -651,12 +674,6 @@ algorithm
         dump2(DAE.DAE(xs,funcs));
       then
         ();
-    case (DAE.DAE((DAE.FUNCTION(path = _) :: xs),funcs))
-      equation 
-        Print.printBuf("FUNCTION(...)\n");
-        dump2(DAE.DAE(xs,funcs));
-      then
-        ();
     case (DAE.DAE( DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_EXT(body = elts,externalDecl=extdecl))::_ ,type_ = tp) :: xs,funcs))
         equation 
         Print.printBuf("EXTFUNCTION(\n");
@@ -670,6 +687,13 @@ algorithm
         extdeclstr = dumpExtDeclStr(extdecl);
         Print.printBuf(extdeclstr);
         Print.printBuf(")\n");
+        dump2(DAE.DAE(xs,funcs));
+      then
+        ();
+        
+    case (DAE.DAE((DAE.FUNCTION(path = _) :: xs),funcs))
+      equation 
+        Print.printBuf("FUNCTION(...)\n");
         dump2(DAE.DAE(xs,funcs));
       then
         ();
@@ -825,9 +849,12 @@ algorithm
       list<String> flist,clist,slist,extlist;
       String str;
       list<DAE.Element> daelist;
-    case DAE.DAE(elementLst = daelist)
+      DAE.FunctionTree funcs;
+    case DAE.DAE(daelist,funcs)
       equation 
-        flist = Util.listMap(daelist, dumpFunctionStr);
+        //flist = Util.listMap(daelist, dumpFunctionStr);
+        //print("dumpStr, funcs list length="+&intString(listLength(avlTreeToList(funcs)))+&"\n");
+        flist = Util.listMap(Util.listMap(avlTreeToList(funcs),Util.tuple22),dumpFunctionStr);
         extlist = Util.listMap(daelist, dumpExtObjClassStr);
         clist = Util.listMap(daelist, dumpCompElementStr);
         slist = Util.listFlatten({flist,extlist, clist});
@@ -933,6 +960,16 @@ algorithm
   Util.listMap0(l, dumpCompElement);
   
 end dumpElements;
+
+public function dumpFunctionElements "function: dumpElements
+ 
+  Dump function elements. 
+"
+  input list<DAE.Element> l;
+algorithm 
+  dumpVars(l);
+  Util.listMap0(l, dumpAlgorithm);  
+end dumpFunctionElements;
 
 public function dumpElementsStr "function: dumpElementsStr
  
@@ -1930,6 +1967,24 @@ algorithm
   end matchcontinue;
 end dumpVar;
 
+protected function unparseType "wrapper function for Types.unparseType, so records and enumerations can be output properly"
+  input Types.Type tp;
+  output String str;
+algorithm
+  str := matchcontinue(tp)
+  local String name; Absyn.Path path;
+    Types.Type bc_tp;
+    
+    case((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),SOME(path))) equation
+      name = Absyn.pathString(path);
+    then name;
+    
+    case((DAE.T_COMPLEX(complexTypeOption = SOME(bc_tp)),_)) then Types.unparseType(bc_tp);    
+    
+    case(tp) then Types.unparseType(tp);
+  end matchcontinue;
+end unparseType;
+
 protected function dumpVarStr "function: dumpVarStr
   Dump var to a string."
   input DAE.Element inElement;
@@ -1965,7 +2020,7 @@ algorithm
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
-        s3 = Types.unparseType(typ);
+        s3 = unparseType(typ);
         s4 = Exp.printComponentRefStr(id);
         s7 = dumpVarProtectionStr(prot);
         comment_str = dumpCommentOptionStr(comment);
@@ -1988,7 +2043,7 @@ algorithm
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
-        s3 = Types.unparseType(typ);
+        s3 = unparseType(typ);
         s4 = Exp.printComponentRefStr(id);
         s5 = Exp.printExpStr(e);
         comment_str = dumpCommentOptionStr(comment);
@@ -2417,12 +2472,12 @@ algorithm
       list<DAE.Element> daeElts;
       DAE.Type t;
     case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t)
-      equation 
+      equation         
         Print.printBuf("function ");
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
         Print.printBuf("\n");
-        dumpElements(daeElts);
+        dumpFunctionElements(daeElts);
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -2437,13 +2492,15 @@ algorithm
         Print.printBuf(str);
       then
         ();
-    case DAE.RECORD_CONSTRUCTOR(path = fpath)
+    case DAE.RECORD_CONSTRUCTOR(path = fpath,type_=tp)
+      local DAE.Type tp;
       equation 
-        Print.printBuf("record ");
-        fstr = Absyn.pathString(fpath);
+        Print.printBuf("function ");
+        fstr = Absyn.pathString(fpath);        
         Print.printBuf(fstr);
-        Print.printBuf("\n");
-        Print.printBuf("...\n");
+        Print.printBuf(" \"Automatically generated record constructor for "+&fstr+&"\"\n");
+        Print.printBuf(printRecordConstructorInputsStr(tp));
+        Print.printBuf("output "+&Absyn.pathLastIdent(fpath)+& " res;\n");
         Print.printBuf("end ");
         Print.printBuf(fstr);
         Print.printBuf(";\n\n");
@@ -2452,6 +2509,47 @@ algorithm
     case _ then (); 
   end matchcontinue;
 end dumpFunction;
+
+protected function printRecordConstructorInputsStr "help function to dumpFunction. Prints the inputs of a record constructor"
+  input DAE.Type tp;
+  output String str;
+algorithm
+  str := matchcontinue(tp)
+    local 
+      Option<Absyn.Path> optPath;
+      Option<DAE.Type> optTp;
+      DAE.EqualityConstraint ec;
+      DAE.Type tp;
+      DAE.Binding binding;
+      ClassInf.State cistate;
+      String name,s1,s2;
+      list<DAE.Var> varLst;
+    
+    case((DAE.T_COMPLEX(complexVarLst={}),_)) then "";
+    case((DAE.T_COMPLEX(cistate,DAE.TYPES_VAR(name=name,type_=tp,binding=binding)::varLst,optTp,ec),optPath)) equation
+      s1 ="input "+&Types.unparseType(tp)+&" "+&name+&printRecordConstructorBinding(binding)+&";\n";
+      s2 = printRecordConstructorInputsStr((DAE.T_COMPLEX(cistate,varLst,optTp,ec),optPath));
+      str = s1+&s2;
+    then str;
+    case((DAE.T_FUNCTION(funcResultType=tp),_)) then printRecordConstructorInputsStr(tp);       
+  end matchcontinue;
+end printRecordConstructorInputsStr;
+
+protected function printRecordConstructorBinding "prints the binding of a record constructor input"
+  input DAE.Binding binding;
+  output String str;
+algorithm
+  str := matchcontinue(binding)
+    local DAE.Exp e; Values.Value v;
+    case(DAE.UNBOUND()) then "";
+    case(DAE.EQBOUND(exp=e)) equation
+      str = " = "+&Exp.printExpStr(e);
+    then str;
+    case(DAE.VALBOUND(v)) equation
+      str = " = " +& ValuesUtil.valString(v);
+    then str;
+  end matchcontinue;
+end printRecordConstructorBinding;
 
 public function dumpFunctionStr "function: dumpFunctionStr
  
@@ -2468,12 +2566,13 @@ algorithm
       DAE.Type t;
       String s1,s2;
       case(inElement)
-        equation
+        equation          
           s1 = Print.getString();
           Print.clearBuf();
           dumpFunction(inElement);
           s2 = Print.getString();
-          Print.printBuf(s1);
+          Print.clearBuf();
+          Print.printBuf(s1);    
           then
             s2;
     case _ then ""; 
@@ -4038,7 +4137,7 @@ algorithm
   outFlow:=
   matchcontinue (inBoolean,inState)
     case (true,_) then DAE.FLOW(); 
-    case (_,ClassInf.CONNECTOR(string = _)) then DAE.NON_FLOW(); 
+    case (_,ClassInf.CONNECTOR(path = _)) then DAE.NON_FLOW(); 
     case (_,_) then DAE.NON_CONNECTOR(); 
   end matchcontinue;
 end toFlow;
@@ -4052,7 +4151,7 @@ algorithm
   outFlow:=
   matchcontinue (inBoolean,inState)
     case (true,_) then DAE.STREAM();
-    case (_,ClassInf.CONNECTOR(string = _)) then DAE.NON_STREAM();
+    case (_,ClassInf.CONNECTOR(path = _)) then DAE.NON_STREAM();
     case (_,_) then DAE.NON_STREAM_CONNECTOR();
   end matchcontinue;
 end toStream;
@@ -6309,6 +6408,52 @@ algorithm
   end matchcontinue;      
 end addElementSourceConnectOpt;
 
+public function elementIsFunction "returns true if element matches any kind of function"
+  input DAE.Element elt;
+  output Boolean res;
+algorithm
+  res := matchcontinue(elt)
+    case(DAE.FUNCTION(path=_)) then true;
+    case(DAE.RECORD_CONSTRUCTOR(path=_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end elementIsFunction;
+
+protected function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
+  input DAE.Element elt;
+  output Absyn.Path name;
+algorithm
+  name:= matchcontinue(elt)
+    case(DAE.FUNCTION(path=name)) then name;
+    case(DAE.RECORD_CONSTRUCTOR(path=name)) then name;  
+  end matchcontinue;
+end functionName;
+
+public function addDaeFunction "add functions present in the element list to the function tree"
+  input DAE.DAElist dae;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(dae)
+  local DAE.FunctionTree funcs;
+    list<DAE.Element> elts;
+    DAE.Element elt;   
+      
+    case(DAE.DAE({},funcs)) then DAE.DAE({},funcs);
+    
+      /* is function */
+    case(DAE.DAE(elt::elts,funcs)) equation
+        true = elementIsFunction(elt);
+        funcs = avlTreeAdd(funcs,functionName(elt),elt);
+        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));  
+    then DAE.DAE(elts,funcs);
+    
+      /* Not function */
+    case(DAE.DAE(elt::elts,funcs)) equation        
+        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));  
+    then DAE.DAE(elt::elts,funcs);
+  end matchcontinue;
+end addDaeFunction;
+
 public function mergeSources
   input DAE.ElementSource src1;
   input DAE.ElementSource src2;
@@ -6463,12 +6608,13 @@ end avlTreeToList2;
 
 public function avlTreeAddLst "Adds a list of (key,value) pairs"
   input list<tuple<DAE.AvlKey,DAE.AvlValue>> values;
-  input DAE.AvlTree tree;
+  input DAE.AvlTree inTree;
   output DAE.AvlTree outTree;
 algorithm
-  outTree := matchcontinue(values,tree)
+  outTree := matchcontinue(values,inTree)
   local DAE.AvlKey key;
     DAE.AvlValue val;
+    DAE.AvlTree tree;
     case({},tree) then tree;
     case((key,val)::values,tree) equation
       tree = avlTreeAdd(tree,key,val);

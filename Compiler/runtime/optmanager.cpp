@@ -62,7 +62,9 @@ extern "C"
 		options.insert(std::pair<std::string,bool>("checkModel",false));
 		options.insert(std::pair<std::string,bool>("unitChecking",false));
 		options.insert(std::pair<std::string,bool>("reportMatchingError",false));
-		//options.insert(std::pair<std::string,bool>("dummy",false)); 
+		options.insert(std::pair<std::string,bool>("envCache",true));
+
+		//options.insert(std::pair<std::string,bool>("dummy",false));
 
 /*		for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)
 	    {

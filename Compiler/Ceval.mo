@@ -1125,8 +1125,9 @@ algorithm
         /* Record constructors */
     case(cache,env,(e as DAE.CALL(path = funcpath,ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(complexName), varLst=varLst))),vallst,
          impl,st,dim,msg)
+         local Absyn.Path complexName;
       equation
-        true = complexName ==& Absyn.pathLastIdent(funcpath); // TODO: ClassInf should contain a Path, or DAE.CALL a DAE.Type...
+        true = ModUtil.pathEqual(funcpath,complexName);
         varNames = Util.listMap(varLst,Exp.varName);
       then (cache,Values.RECORD(funcpath,vallst,varNames,-1),st);
 

@@ -158,18 +158,19 @@ algorithm
       equation
         outStr = Util.stringAppendList({"mmc_mk_scon(",localInExp,")"});
       then outStr;
-    case (DAE.ET_COMPLEX(name = name, varLst = varLst),localInExp)
+    case (DAE.ET_COMPLEX(name = path, varLst = varLst),localInExp)
       local
         list<DAE.ExpVar> varLst;
         list<String> vars, vars1;
         list<DAE.ExpType> types;
         String str,name;
+        Absyn.Path path;
       equation
         vars = Util.listMap(varLst, Exp.varName);
         str = stringAppend(localInExp,".");
         vars1 = Util.listMap1r(vars, stringAppend, str);
         types = Util.listMap(varLst, Exp.varType);
-        outStr = listToBoxes(vars1,types,-1,name);
+        outStr = listToBoxes(vars1,types,-1,Absyn.pathString(path));
       then outStr;
     
     case (_,localInExp) then localInExp;

@@ -676,12 +676,12 @@ algorithm
         ld_mod = Inst.addNomod(ld2);
         
         (cache,env2,_,_) = Inst.addComponentsToEnv(cache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), 
-          Connect.SETS({},{},{},{}), ClassInf.FUNCTION("dummieFunc"), ld_mod, {}, {}, {}, impl);    
+          Connect.SETS({},{},{},{}), ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")), ld_mod, {}, {}, {}, impl);    
         
         (cache,env2,_,_,dae1,_,_,_,_) = 
           Inst.instElementList(cache,env2,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
                                DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), 
-                               ClassInf.FUNCTION("dummieFunc"),
+                               ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")),
                                ld_mod,{},impl,ConnectionGraph.EMPTY);
         
         (b,cache) = fromValueblockBodyToAlgs(body, cache, env2);
@@ -1623,17 +1623,17 @@ algorithm
   outType:=
   matchcontinue (inEnv,inCode)
     local list<Env.Frame> env;
-    case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN("TypeName"),{},NONE,NONE),NONE)); 
-    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN("VariableName"),{},NONE,NONE),
+    case (env,Absyn.C_TYPENAME(path = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("TypeName")),{},NONE,NONE),NONE)); 
+    case (env,Absyn.C_VARIABLENAME(componentRef = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("VariableName")),{},NONE,NONE),
           NONE)); 
     case (env,Absyn.C_EQUATIONSECTION(boolean = _)) then ((
-          DAE.T_COMPLEX(ClassInf.UNKNOWN("EquationSection"),{},NONE,NONE),NONE)); 
+          DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("EquationSection")),{},NONE,NONE),NONE)); 
     case (env,Absyn.C_ALGORITHMSECTION(boolean = _)) then ((
-          DAE.T_COMPLEX(ClassInf.UNKNOWN("AlgorithmSection"),{},NONE,NONE),NONE)); 
-    case (env,Absyn.C_ELEMENT(element = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN("Element"),{},NONE,NONE),NONE)); 
-    case (env,Absyn.C_EXPRESSION(exp = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN("Expression"),{},NONE,NONE),
+          DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("AlgorithmSection")),{},NONE,NONE),NONE)); 
+    case (env,Absyn.C_ELEMENT(element = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Element")),{},NONE,NONE),NONE)); 
+    case (env,Absyn.C_EXPRESSION(exp = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Expression")),{},NONE,NONE),
           NONE)); 
-    case (env,Absyn.C_MODIFICATION(modification = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN("Modification"),{},NONE,NONE),
+    case (env,Absyn.C_MODIFICATION(modification = _)) then ((DAE.T_COMPLEX(ClassInf.UNKNOWN(Absyn.IDENT("Modification")),{},NONE,NONE),
           NONE)); 
   end matchcontinue;
 end elabCodeType;
@@ -6763,7 +6763,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
         recordtype = (
-          DAE.T_COMPLEX(ClassInf.RECORD("SimulationObject"),
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND()),
@@ -6782,7 +6782,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
           (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
         recordtype = (
-          DAE.T_COMPLEX(ClassInf.RECORD("SimulationObject"),
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND()),
@@ -6886,7 +6886,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", 
           (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));
         recordtype = (
-          DAE.T_COMPLEX(ClassInf.RECORD("SimulationResult"),
+          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),
           {
           DAE.TYPES_VAR("resultFile",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
@@ -7704,7 +7704,7 @@ algorithm
       equation
         cref = pathToComponentRef(path);
       then
-        DAE.CREF_QUAL(id,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),{},cref);
+        DAE.CREF_QUAL(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cref);
   end matchcontinue;
 end pathToComponentRef;
 
@@ -8213,7 +8213,7 @@ algorithm
       SCode.Class cl;
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
-      DAE.DAElist dae,outDae;
+      DAE.DAElist dae,dae1,dae2,outDae;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /* 
@@ -8239,9 +8239,10 @@ algorithm
         const = calculateConstantness(constlist);
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
-        tp = complexTypeFromSlots(newslots2,"",ClassInf.UNKNOWN(""));
+        tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
+        print("record construtor from graphical exp: "+& Absyn.pathString(fn)+&"\n");
       then
         (cache,DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()),DAEUtil.emptyDae);
 
@@ -8311,29 +8312,33 @@ algorithm
       local
         String lastId;
         list<Env.Frame> recordEnv;
+        SCode.Class recordCl;
+        Absyn.Path fpath;
       equation 
-        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_)),DAE.NO_INLINE),_)),_) 
+        (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE),_)),_) 
         	= Lookup.lookupType(cache,env, fn, true);
-        
-        (_,cl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
-        true = MetaUtil.classHasRestriction(cl, SCode.R_RECORD());
+        (_,recordCl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
+        true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         lastId = Absyn.pathLastIdent(fn);
         fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
         
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
-        /* const = Util.listReduce(constlist, Types.constAnd); */
         vect_dims = slotsVectorizable(newslots);
         const = calculateConstantness(constlist);
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
-        (env_2,cl) = Lookup.buildRecordConstructorClass(recordEnv, cl);
+        (env_2,cl) = Lookup.buildRecordConstructorClass(recordEnv, recordCl);
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
-        tp = complexTypeFromSlots(newslots2,name,complexClassType);
+        tp = complexTypeFromSlots(newslots2,complexClassType);
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), outtype, vect_dims, newslots2, prop);
+
+       /* Instantiate the function and add to dae function tree*/
+        dae = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl));
+        
       then
-        (cache,call_exp,prop_1,DAEUtil.emptyDae);
+        (cache,call_exp,prop_1,dae);
         
     /* ------ */
     case (cache,env,fn,args,nargs,impl,st) /* Metamodelica extension, added by simbj */
@@ -8380,7 +8385,7 @@ algorithm
          functiontype of several possibilites. The solution is to send
          in the function type of the user function and check both the
          function name and the function\'s type." ;
-        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots,dae) = 
+        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots,dae1) = 
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl) 
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         fn_1 = deoverloadFuncname(fn, functype);
@@ -8394,6 +8399,10 @@ algorithm
         tp = Types.elabType(restype); 
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inline), restype, vect_dims, slots2, prop);
+                
+        /* Instantiate the function and add to dae function tree*/
+        dae2 = instantiateDaeFunction(cache,env,fn_1,builtin,NONE);
+        dae = DAEUtil.joinDaes(dae1,dae2);       
       then
         (cache,call_exp,prop_1,dae);
         
@@ -8447,6 +8456,52 @@ algorithm
   end matchcontinue;
 end elabCallArgs;
 
+protected function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
+functiontree of a newly created dae"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input Absyn.Path name;
+  input Boolean builtin "builtin functions create empty dae";
+  input option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(inCache,env,name,builtin,clOpt)
+  local Env.Cache cache; 
+    SCode.Class cl; DAE.DAElist dae;
+    String id,id2;    
+    /* Builtin functions skipped*/
+    case(cache,env,name,true,_) then DAEUtil.emptyDae;
+      
+    /* External object functions skipped*/  
+    case(cache,env,name,_,_) equation
+      (_,true) = isExternalObjectFunction(cache,env,name);
+    then DAEUtil.emptyDae;
+      
+      /* Recursive calls skipped */
+    case(cache,env,name,false,NONE) equation     
+      true = Absyn.pathSuffixOf(name,Env.getEnvName(env));
+            
+    then DAEUtil.emptyDae;
+
+      /* Class must be looked up*/
+    case(cache,env,name,false,NONE) equation
+      (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
+      (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+      dae = DAEUtil.addDaeFunction(dae);
+    then dae;
+    
+    /* class already available*/
+    case(cache,env,name,false,SOME(cl)) equation
+      (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});      
+      dae = DAEUtil.addDaeFunction(dae);      
+    then dae;
+      
+    case(cache,env,name,_,_) equation
+      print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&"\n");
+    then fail();     
+  end matchcontinue;
+end instantiateDaeFunction;    
+   
 protected function addDefaultArgs "adds default values (from slots) to argument list of function call.
 This is needed because when generating C-code all arguments must be present in the function call. 
 
@@ -9388,19 +9443,21 @@ protected function complexTypeFromSlots
 "Creates an DAE.ET_COMPLEX type from a list of slots. 
  Used to create type of record constructors "
   input list<Slot> slots;
-  input String name;
   input ClassInf.State complexClassType;
   output DAE.ExpType tp;
 algorithm
-  tp := matchcontinue(slots,name,complexClassType)
+  tp := matchcontinue(slots,complexClassType)
   local DAE.ExpType etp; DAE.Type tp; String id;
-    list<DAE.ExpVar> vLst; String name;
+    list<DAE.ExpVar> vLst;
     ClassInf.State ci;
-    case({},name,complexClassType) then DAE.ET_COMPLEX(name,{},complexClassType);
-    case(SLOT(an = (id,tp))::slots,name,complexClassType) equation
+    Absyn.Path path;
+    case({},complexClassType) equation 
+      path = ClassInf.getStateName(complexClassType);  
+    then DAE.ET_COMPLEX(path,{},complexClassType);
+    case(SLOT(an = (id,tp))::slots,complexClassType) equation
       etp = Types.elabType(tp);
-      DAE.ET_COMPLEX(name,vLst,ci) = complexTypeFromSlots(slots,name,complexClassType);
-    then DAE.ET_COMPLEX(name,DAE.COMPLEX_VAR(id,etp)::vLst,ci);
+      DAE.ET_COMPLEX(path,vLst,ci) = complexTypeFromSlots(slots,complexClassType);
+    then DAE.ET_COMPLEX(path,DAE.COMPLEX_VAR(id,etp)::vLst,ci);
   end matchcontinue;
 end complexTypeFromSlots;
 
@@ -11073,7 +11130,7 @@ algorithm
         crefPrefix = Prefix.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter      
         (cache,cr,const,dae) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
       then
-        (cache,DAE.CREF_QUAL(id,DAE.ET_COMPLEX("",{},ClassInf.UNKNOWN("")),{},cr),const,dae);
+        (cache,DAE.CREF_QUAL(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const,dae);
     // QUAL,with constant subscripts
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = ss,componentRef = subs),crefPrefix,impl)
       equation 
@@ -11672,8 +11729,7 @@ algorithm
         expl=Util.listMap(vallist,valueExp);
         tpl = Util.listMap(expl,Exp.typeof);
         varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
-        name = Absyn.pathLastIdent(path);
-      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(name,varlst,ClassInf.RECORD(name)),DAE.NO_INLINE);
+      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE);
     case(Values.ENUM(ix,path,names))
       local
         Integer ix;

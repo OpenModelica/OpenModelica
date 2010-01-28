@@ -1074,7 +1074,7 @@ algorithm
         
         env_1 = Env.openScope(env, encflag, SOME(n));
         
-        ci_state = ClassInf.start(r, n);
+        ci_state = ClassInf.start(r,Env.getEnvName(env_1));
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph) 
         			= instClassIn(cache, env_1, ih, store, mod, pre, csets, ci_state, c, false, inst_dims, impl, graph,NONE) ;
         (cache,fq_class) = makeFullyQualified(cache,env, Absyn.IDENT(n));
@@ -1164,10 +1164,10 @@ algorithm
     String name;
     list<String> names;
     list<DAE.Var> vars;
-    Absyn.Path p;
-    case (cache,env,ty as ((DAE.T_ENUMERATION(NONE(),_,names,vars)),SOME(p)),c,ClassInf.ENUMERATION(name)) 
+    Absyn.Path p,pname;
+    case (cache,env,ty as ((DAE.T_ENUMERATION(NONE(),_,names,vars)),SOME(p)),c,ClassInf.ENUMERATION(pname)) 
       equation
-        (cache,env_1) = updateEnumerationEnvironment1(cache,env,name,names,vars,p);
+        (cache,env_1) = updateEnumerationEnvironment1(cache,env,Absyn.pathString(pname),names,vars,p);
       then
        (cache,env_1);
     case (cache,env,ty,c,_) then (cache,env);
@@ -1177,7 +1177,7 @@ end updateEnumerationEnvironment;
 protected function updateEnumerationEnvironment1
 	input Env.Cache inCache;
   input Env inEnv;
-  input String inName;
+  input Absyn.Ident inName;
   input list<String> inNames;
   input list<DAE.Var> inVars;
   input Absyn.Path inPath;
@@ -1480,7 +1480,7 @@ algorithm
     case (cache,env,ih,store,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,callscope) /* impl */
       equation 
         env_1 = Env.openScope(env, encflag, SOME(n));
-        ci_state = ClassInf.start(r, n);
+        ci_state = ClassInf.start(r, Env.getEnvName(env_1));
         c_1 = SCode.classSetPartial(c, false);
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,_,_,_) 
         = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY,NONE);
@@ -2608,6 +2608,7 @@ algorithm
         
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, impl, SOME(mods)) 
         "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
+                
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) = 
         instExtendsAndClassExtendsList(cache, env1, ih, mods, extendselts, extendsclasselts, ci_state, className, impl) 
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;         
@@ -2741,7 +2742,7 @@ algorithm
 
        
         env3 = Env.openScope(cenv, enc2, SOME(cn2));        
-        ci_state2 = ClassInf.start(r, cn2);
+        ci_state2 = ClassInf.start(r, Env.getEnvName(env3));
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) = 
         instClassIn(
           cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
@@ -2750,7 +2751,7 @@ algorithm
         
         
         (cache,mod_1,fdae) = Mod.elabMod(cache,cenv_2, pre, mod, impl);
-        new_ci_state = ClassInf.start(r, cn2);
+        new_ci_state = ClassInf.start(r, Env.getEnvName(env3));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims,fdae1) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl, NONE,true) "owncref not valid here" ;
@@ -2784,7 +2785,7 @@ algorithm
         
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         (cache,mod_1,fdae) = Mod.elabMod(cache,env, pre, mod, impl);
-        new_ci_state = ClassInf.start(r, cn2);
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         eq = Mod.modEquation(mods_1) "instantiate array dimensions" ;
         (cache,dims,fdae1) = elabArraydimOpt(cache,cenv_2, Absyn.CREF_IDENT("",{}),cn, ad, eq, impl, NONE,true) "owncref not valid here" ;
@@ -2812,7 +2813,7 @@ algorithm
         ty = Util.listFirst(tys);
         bc = SOME((DAE.T_LIST(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(""),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_LIST(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("Option"),tSpecs,_),modifications = mod, attributes=DA),
@@ -2827,7 +2828,7 @@ algorithm
         {ty} = tys;
         bc = SOME((DAE.T_METAOPTION(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(""),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_OPTION(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecs,_),modifications = mod, attributes=DA),
@@ -2840,7 +2841,7 @@ algorithm
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,tSpecs,pre,inst_dims,impl,{},csets);
         bc = SOME((DAE.T_METATUPLE(tys),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(""),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_TUPLE(Absyn.IDENT("")),{},bc,oDA,NONE,graph);
 
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecs,_),modifications = mod, attributes=DA),
@@ -2854,7 +2855,7 @@ algorithm
         {ty} = tys;
         bc = SOME((DAE.T_META_ARRAY(ty),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(className),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_ARRAY(Absyn.IDENT(className)),{},bc,oDA,NONE,graph);
     
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(Absyn.TCOMPLEX(Absyn.IDENT("polymorphic"),{Absyn.TPATH(Absyn.IDENT("Any"),NONE)},_),modifications = mod, attributes=DA),
@@ -2867,7 +2868,7 @@ algorithm
         (cache,cenv,ih,tys,csets,oDA) = instClassDefHelper(cache,env,ih,{},pre,inst_dims,impl,{},csets);
         bc = SOME((DAE.T_POLYMORPHIC(className),NONE));
         oDA = Absyn.mergeElementAttributes(DA,oDA);
-      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_POLYMORPHIC(className),{},bc,oDA,NONE,graph);
+      then (cache,env,ih,store,DAEUtil.emptyDae,csets,ClassInf.META_POLYMORPHIC(Absyn.IDENT(className)),{},bc,oDA,NONE,graph);
     
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
           SCode.DERIVED(typeSpec=Absyn.TCOMPLEX(path=Absyn.IDENT("polymorphic"))),
@@ -4157,7 +4158,7 @@ algorithm
         (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = Lookup.lookupClass(cache, env, cn, true);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         (cache,mod_1,_) = Mod.elabMod(cache,env, pre, mod, false);
-        new_ci_state = ClassInf.start(r, cn2);
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
         (cache,env_2,ih,new_ci_state_1) = partialInstClassIn(cache, cenv_2, ih, mods_1, pre, csets, new_ci_state, c, prot, inst_dims);
       then
@@ -4445,7 +4446,7 @@ algorithm
         ialg1_1 = addAlgInheritScope(ialg1, (tp_1,emod));
 
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
-        new_ci_state = ClassInf.start(r, cn);
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (cdefelts,classextendselts,_,_) = splitElts(els);
         (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
@@ -4701,7 +4702,7 @@ algorithm
         els_1 = addInheritScope(noImportElements(els), (tp_1,emod)) "Add the scope of the base class to elements" ;
 
         cenv3 = Env.openScope(cenv1, encf, SOME(cn));
-        new_ci_state = ClassInf.start(r, cn);
+        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (cdefelts,classextendselts,_,_) = splitElts(els);
         (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
@@ -5948,7 +5949,7 @@ algorithm
       String n,n2,s,scope_str,ns;
       Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
       SCode.Class cls2,c,cl;
-      DAE.DAElist dae,dae2,fdae,fdae1,fdae2,fdae3,fdae4,fdae5;
+      DAE.DAElist dae,dae2,fdae,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6;
       DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
@@ -6109,7 +6110,7 @@ algorithm
         
         mm_1 = Mod.lookupCompModification(mods_1, n);
         //(cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
-        (cache,m_1,fdae4) = Mod.elabMod(cache,env2, pre, m, impl);
+        (cache,m_1,fdae6) = Mod.elabMod(cache,env2, pre, m, impl);
         mod = Mod.merge(mm_1,classmod_1,  env2, pre);
         mod1 = Mod.merge(mod, m_1, env2, pre);
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
@@ -6157,7 +6158,7 @@ algorithm
         
         /* if declaration condition is true, remove dae elements and connections */
         (cache,dae,csets_1,graph,fdae) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre,graph);
-        dae = DAEUtil.joinDaeLst({dae,fdae,fdae1,fdae2,fdae3,fdae4,fdae5});
+        dae = DAEUtil.joinDaeLst({dae,fdae,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6});
       then
         (cache,env_1,ih,store,dae,csets_1,ci_state,vars,graph);
         
@@ -6912,7 +6913,7 @@ algorithm str := matchcontinue(cc,env)
     equation
       (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
       (_,classextendselts,extendselts,compelts) = splitElts(selems); 
-      (_,_,_,_,extcomps,_,_,_,_) = instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendselts, classextendselts, ClassInf.UNKNOWN(""), name, true);
+      (_,_,_,_,extcomps,_,_,_,_) = instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true);
       extcompelts = Util.listMap(extcomps,Util.tuple21);
       compelts = listAppend(compelts,extcompelts);
     then
@@ -8487,7 +8488,7 @@ algorithm
       DAE.DAElist fdae;
 
     /* component environment If is a function var. */
-    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(string = _)),mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,_,graph) 
+    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,_,graph) 
       equation 
         SOME(DAE.TYPED(e,_,p)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,_,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
@@ -9397,7 +9398,7 @@ public function implicitFunctionInstantiation
 algorithm 
   (outCache,outEnv,outIH,outDae):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
     local
-      DAE.DAElist dae,daefuncs;
+      DAE.DAElist dae,daefuncs,dae1;
       Connect.Sets csets_1,csets;
       tuple<DAE.TType, Option<Absyn.Path>> ty,ty1;
       ClassInf.State st;
@@ -9419,6 +9420,7 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
       list<DAE.Element> daeElts;
+      list<DAE.FunctionDefinition> derFuncs;
 
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims) 
       equation
@@ -9431,25 +9433,29 @@ algorithm
       local 
         Option<SCode.Mod> ocp;
         Absyn.Path fq_func;
-        list<DAE.FunctionDefinition> derFuncs;
+        
         Boolean finline;
         DAE.InlineType inlineType; 
         SCode.ClassDef cd;       
       equation
-//print("Normal function: " +& Absyn.pathString(fq_func)+& " inline: ");
         inlineType = isInlineFunc2(c);
+        
         (cache,cenv,ih,_,DAE.DAE(daeElts,funcs),csets_1,ty,st,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
-        SOME(fpath) = Env.getEnvPath(cenv); // TODO: When perost has fixed for iterators, use this line instead of the following
-        //(cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
+        (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         derFuncs = getDeriveAnnotation(cd,fpath,cache,env,pre);
+                
+        dae1 = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);              
+        
         ty1 = setFullyQualifiedTypename(ty,fpath);
+
         env_1 = Env.extendFrameT(env_1, n, ty1); 
         
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
+        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefix,inlineType,source)},funcs),dae1);
       then
-        (cache,env_1,ih,DAE.DAE({DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefix,inlineType,source)},funcs));
+        (cache,env_1,ih,dae);
 
     /* External functions should also have their type in env, but no dae. */ 
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
@@ -9459,17 +9465,24 @@ algorithm
         //env_11 = Env.extendFrameC(cenv,c); 
         // Only created to be able to get FQ path.  
         (cache,fpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(n));
+
+        derFuncs = getDeriveAnnotation(parts,fpath,cache,env,pre);
+        
+        dae1 = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath); 
+         
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(cenv, n, ty1);
         prot = false;
         (cache,tempenv,ih,_,_,_,_,_,_,_,_,_) = 
-          instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1, ClassInf.FUNCTION(n), n,parts, restr, prot, inst_dims, true,ConnectionGraph.EMPTY,NONE) "how to get this? impl" ;
+          instClassdef(cache,env_1,ih, UnitAbsyn.noStore,mod, pre, csets_1, ClassInf.FUNCTION(fpath), n,parts, restr, prot, inst_dims, true,ConnectionGraph.EMPTY,NONE) "how to get this? impl" ;
         (cache,ih,extdecl) = instExtDecl(cache,tempenv,ih, n, parts, true) "impl" ;
         
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), Prefix.prefixToCrefOpt(pre), NONE(), NONE());
+        
+        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(daeElts,extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)},funcs),dae1);
       then
-        (cache,env_1,ih,DAE.DAE({DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(daeElts,extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)},funcs));
+        (cache,env_1,ih,dae);
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
@@ -9487,6 +9500,113 @@ algorithm
       then fail();
   end matchcontinue;
 end implicitFunctionInstantiation;
+
+protected function instantiateDerivativeFuncs "instantiates all functions found in derivative annotations so they are also added to the 
+dae and can be generated code for in case they are required"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy ih;
+  input list<DAE.FunctionDefinition> funcs;
+  input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
+  output DAE.DAElist dae;
+algorithm  
+ dae := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path);
+ //print("instantiated derivative functions"+&DAEUtil.dumpStr(dae)+&"\n");
+end instantiateDerivativeFuncs;
+
+protected function instantiateDerivativeFuncs2 "help function"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy ih;
+  input list<Absyn.Path> paths;
+  input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
+  output DAE.DAElist dae;
+algorithm
+  dae := matchcontinue(cache,env,ih,paths,path)
+    local Absyn.Path p; Env.Env cenv;
+      SCode.Class cdef;
+    DAE.DAElist dae1,dae2;
+    case(cache,env,ih,{},path) then DAEUtil.emptyDae;
+    case(cache,env,ih,p::paths,path) equation
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);        
+        (cache,_,ih,dae1) = implicitFunctionInstantiation(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
+        dae1 = addNameToDerivativeMapping(dae1,path);
+        dae1 = DAEUtil.addDaeFunction(dae1);
+        dae2 = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
+        dae = DAEUtil.joinDaes(dae1,dae2);        
+    then dae;        
+  end matchcontinue;
+end instantiateDerivativeFuncs2;
+
+protected function addNameToDerivativeMapping "adds the function name to the lowerOrderDerivatives list of the function mapping "
+  input DAE.DAElist dae;
+  input Absyn.Path name;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(dae,name)
+  local 
+    DAE.FunctionTree funcs;
+    list<DAE.Element> elts;
+    
+    case(DAE.DAE(elts,funcs),name) equation
+      elts = addNameToDerivativeMappingElts(elts,name);      
+    then DAE.DAE(elts,funcs);
+  end matchcontinue;   
+end addNameToDerivativeMapping;
+
+protected function addNameToDerivativeMappingElts "help function to addNameToDerivativeMapping "
+  input list<DAE.Element> elts;
+  input Absyn.Path path;
+  output list<DAE.Element> outElts;
+algorithm
+  outElts := matchcontinue(elts,path) 
+  local 
+    DAE.Element elt;
+    list<DAE.FunctionDefinition> funcs;
+    DAE.Type tp;
+    Absyn.Path p;
+    Boolean part;
+    DAE.InlineType inline;
+    DAE.ElementSource source;
+    
+    case({},path) then {};
+    
+    case(DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts,path) equation
+      elts = addNameToDerivativeMappingElts(elts,path);
+      funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
+    then DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts;
+    
+    case(elt::elts,path) equation
+        elts = addNameToDerivativeMappingElts(elts,path);
+    then elt::elts;  
+  end matchcontinue;
+end addNameToDerivativeMappingElts;
+
+protected function addNameToDerivativeMappingFunctionDefs " help function to addNameToDerivativeMappingElts"
+  input list<DAE.FunctionDefinition> funcs;
+  input Absyn.Path path;
+  output list<DAE.FunctionDefinition> outFuncs;
+algorithm
+  outFuncs := matchcontinue(funcs,path)
+  local DAE.FunctionDefinition func;
+    Absyn.Path p1,p2;
+    Integer do;
+    Option<Absyn.Path> dd;
+    list<Absyn.Path> lowerOrderDerivatives;
+    list<tuple<Integer,DAE.derivativeCond>> conds;
+    
+    case({},_) then {};
+      
+    case(DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,lowerOrderDerivatives)::funcs,path) equation
+      funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
+    then DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,path::lowerOrderDerivatives)::funcs;
+    
+    case(func::funcs,path) equation
+      funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
+    then func::funcs;
+      
+  end matchcontinue;
+end addNameToDerivativeMappingFunctionDefs;
 
 protected function getDeriveAnnotation "
 Authot BZ
@@ -9572,8 +9692,8 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix
       conditionRefs = Util.sort(conditionRefs,DAEUtil.derivativeOrder); 
       defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
       
-      /*
-      print(" adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
+      
+      /*print(" adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
       dbgString = Absyn.optPathString(defaultDerivative);
       dbgString = Util.if_(stringEqual(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
       print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");        
@@ -9582,6 +9702,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix
       print("**** Order: " +& intString(order) +& "\n");
       print(dbgString);
       */
+      
       mapper = DAE.FUNCTION_DER_MAPPER(baseFunc,deriveFunc,order,conditionRefs,defaultDerivative,{});
     then 
       {mapper};
@@ -13978,27 +14099,27 @@ algorithm
       String name;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
       SCode.Class cl;
-    case (p,ClassInf.TYPE_INTEGER(string = _),v,_,_,_)
+    case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_INTEGER(v),somep));
-    case (p,ClassInf.TYPE_REAL(string = _),v,_,_,_)
+    case (p,ClassInf.TYPE_REAL(path = _),v,_,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_REAL(v),somep));
-    case (p,ClassInf.TYPE_STRING(string = _),v,_,_,_)
+    case (p,ClassInf.TYPE_STRING(path = _),v,_,_,_)
       equation
         somep = getOptPath(p);
       then
         ((DAE.T_STRING(v),somep));
-    case (p,ClassInf.TYPE_BOOL(string = _),v,_,_,_)
+    case (p,ClassInf.TYPE_BOOL(path = _),v,_,_,_)
       equation
         somep = getOptPath(p);
       then
         ((DAE.T_BOOL(v),somep));
-    case (p,ClassInf.TYPE_ENUM(string = _),_,_,_,_)
+    case (p,ClassInf.TYPE_ENUM(path = _),_,_,_,_)
 //        local SCode.Class sclass; list<SCode.Element> eLst; list<String> names;
       equation 
         
@@ -14008,18 +14129,18 @@ algorithm
         ((DAE.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),somep));
 //        ((DAE.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */        
-    case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,_,cl)
+    case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,_,cl)
       equation
         functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
-    case (p,ClassInf.ENUMERATION(string = name),v1,_,_,_)
+    case (p,ClassInf.ENUMERATION(path = _),v1,_,_,_)
       equation 
         enumtype = Types.makeEnumerationType(p, v1);
       then
         enumtype;
 		/* Array of type extending from base type. */
-		case (_, ClassInf.TYPE(string = _), _, SOME((DAE.T_ARRAY(_, (arrayType, _)), _)), _, _)
+		case (_, ClassInf.TYPE(path = _), _, SOME((DAE.T_ARRAY(_, (arrayType, _)), _)), _, _)
 			local
 				DAE.TType arrayType;
 				DAE.Type resType;
@@ -14052,10 +14173,10 @@ protected function arrayTTypeToClassInfState
 	output ClassInf.State classInfState;
 algorithm
 	classInfState := matchcontinue(arrayType)
-		case (DAE.T_INTEGER(_)) then ClassInf.TYPE_INTEGER("");
-		case (DAE.T_REAL(_)) then ClassInf.TYPE_REAL("");
-		case (DAE.T_STRING(_)) then ClassInf.TYPE_STRING("");
-		case (DAE.T_BOOL(_)) then ClassInf.TYPE_BOOL("");
+		case (DAE.T_INTEGER(_)) then ClassInf.TYPE_INTEGER(Absyn.IDENT(""));
+		case (DAE.T_REAL(_)) then ClassInf.TYPE_REAL(Absyn.IDENT(""));
+		case (DAE.T_STRING(_)) then ClassInf.TYPE_STRING(Absyn.IDENT(""));
+		case (DAE.T_BOOL(_)) then ClassInf.TYPE_BOOL(Absyn.IDENT(""));
 	end matchcontinue;
 end arrayTTypeToClassInfState;
 
@@ -14089,39 +14210,39 @@ algorithm
         failure(ClassInf.isConnector(ci));
       then
         tp;
-    case (p,ClassInf.TYPE_INTEGER(string = _),v,_,_)
+    case (p,ClassInf.TYPE_INTEGER(path = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_INTEGER(v),somep));
-    case (p,ClassInf.TYPE_REAL(string = _),v,_,_)
+    case (p,ClassInf.TYPE_REAL(path = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_REAL(v),somep));
-    case (p,ClassInf.TYPE_STRING(string = _),v,_,_)
+    case (p,ClassInf.TYPE_STRING(path = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_STRING(v),somep));
-    case (p,ClassInf.TYPE_BOOL(string = _),v,_,_)
+    case (p,ClassInf.TYPE_BOOL(path = _),v,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_BOOL(v),somep));
-    case (p,ClassInf.TYPE_ENUM(string = _),_,_,_)
+    case (p,ClassInf.TYPE_ENUM(path = _),_,_,_)
       equation 
         somep = getOptPath(p);
       then
         ((DAE.T_ENUMERATION(SOME(0),p,{},{}),somep));
 //        ((DAE.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */ 
-    case (p,(st as ClassInf.FUNCTION(string = name)),vl,_,cl)
+    case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,cl)
       equation 
         functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
-    case (p,ClassInf.ENUMERATION(string = name),v1,_,_)
+    case (p,ClassInf.ENUMERATION(path = _),v1,_,_)
       equation 
         enumtype = Types.makeEnumerationType(p, v1);
       then
@@ -14985,7 +15106,7 @@ algorithm
         owncref = Absyn.CREF_IDENT(id,{});
         (cache,dimexp,_) = elabArraydim(cache,env, owncref,t, dim, NONE, false, NONE,true);
         //Debug.fprint("recconst", "calling inst_var\n");
-        (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(""), mod_1, Prefix.NOPRE(), 
+        (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(), 
           Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY);
         //Debug.fprint("recconst", "Type of argument:");
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
@@ -15295,9 +15416,9 @@ algorithm
         ld2 = componentElts(ld2);
         ld_mod = addNomod(ld2);
         (localCache,env2,ih,dae) = addComponentsToEnv(localCache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-        Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"), ld_mod, {}, {}, {}, impl);
+        Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")), ld_mod, {}, {}, {}, impl);
 			 (cache2,env2,ih,_,_,_,_,_,_) = instElementList(localCache,env2,ih,UnitAbsyn.noStore,
-			  DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN("temp"),
+			  DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}), ClassInf.UNKNOWN(Absyn.IDENT("temp")),
 			  ld_mod,{},impl,ConnectionGraph.EMPTY);
 
         (cache2,_,DAE.PROP(t,_),_,dae2) = Static.elabExp(cache2,env2,localIterExp,
@@ -16128,8 +16249,9 @@ algorithm
     case(env,ih, SOME(mo as DAE.MOD(_,_, lsm ,_)), sele as SCode.CLASSDEF(name=str)) 
       equation
         (mo2,lsm2) =  extractCorrectClassMod2(lsm,str,{});
+        // TODO: classinf below should be FQ
       (_,env2,ih, sele2 as SCode.CLASSDEF(classDef = retcl) , _, _,_) = 
-      redeclareType(Env.emptyCache(),env,ih, mo2,sele, Prefix.NOPRE(), ClassInf.MODEL(str),Connect.emptySet, true,DAE.NOMOD());
+      redeclareType(Env.emptyCache(),env,ih, mo2,sele, Prefix.NOPRE(), ClassInf.MODEL(Absyn.IDENT(str)),Connect.emptySet, true,DAE.NOMOD());
       then 
         (env2,ih,retcl);
   end matchcontinue;
