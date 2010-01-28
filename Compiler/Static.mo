@@ -1965,12 +1965,13 @@ algorithm
       then
         (cache,(
           DAE.T_ARRAY(DAE.DIM(SOME(n_2)),(DAE.T_REAL({}),NONE)),NONE));
-    case (cache,_,_,_,_,const,DAE.ET_INT(),(impl as true)) 
-    then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)), NONE)); 
+
+		case (cache,_,_,_,_,const,DAE.ET_INT(),_) 
+  	  then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)), NONE)); 
     
-    case (cache,_,_,_,_,const,DAE.ET_REAL(),(impl as true)) 
-    then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)); 
-    
+		case (cache,_,_,_,_,const,DAE.ET_REAL(),_) 
+   	 then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)); 
+      
     case (cache,env,start,step,stop,const,expty,impl)
       local Option<DAE.Exp> step;
       equation 

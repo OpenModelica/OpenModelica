@@ -4113,33 +4113,30 @@ algorithm
   (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
-      DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> tp;
-      DAE.Binding bind;
       list<Integer> sizelst;
       Values.Value v;
-      list<Env.Frame> env;
+      Env.Env env;
       DAE.ComponentRef cr;
       Boolean impl;
-      Option<Interactive.InteractiveSymbolTable> st,st_1;
+      Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
-      DAE.Exp exp;
       Env.Cache cache;
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)
       equation 
-        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);
         v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
-    case (cache,env,exp,impl,st,msg)
-      equation 
-        (cache,v,st_1) = ceval(cache,env, exp, impl, st, NONE, msg);
-        tp = Types.typeOfValue(v);
-        sizelst = Types.getDimensionSizes(tp);
-        v = ValuesUtil.intlistToValue(sizelst);
-      then
-        (cache,v,st);
+		case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
+			local
+				list<Option<Integer>> dims;
+			equation
+				sizelst = Util.listMap(dims, Util.getOption);
+				v = ValuesUtil.intlistToValue(sizelst);
+			then
+				(cache, v, st);
   end matchcontinue;
 end cevalBuiltinSizeMatrix;
 
