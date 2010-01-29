@@ -5187,6 +5187,17 @@ algorithm
   end matchcontinue;
 end flattenOption;
 
+public function isEmptyArray " isArrayEmpty" 
+  input list<Type_a> lst;
+  replaceable type Type_a subtypeof Any;
+  output Boolean b;
+algorithm 
+  b := matchcontinue(lst)
+    case({}) then true;
+    case(_::_) then false;
+  end matchcontinue;
+end isEmptyArray;
+
 public function isEmptyString "function: isEmptyString
   Returns true if string is the empty string."
   input String inString;
@@ -5557,6 +5568,5 @@ algorithm
       then iii;
   end matchcontinue;
 end mulListIntegerOpt;
-
 end Util;
 

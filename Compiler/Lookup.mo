@@ -2572,8 +2572,8 @@ algorithm
 end expandWholeDimSubScript;
 
 
-
-protected function makeExpIntegerArray " function makeExpIntegerArray
+// BZ(2010-01-29): Changed to public to be able to vectorize crefs from other places
+public function makeExpIntegerArray " function makeExpIntegerArray
 takes a list of integers, each representing a dimension, eg: 2,3,4 meaning an 
 array[2 array[3 array[4
 returns a DAE.SLICE for each dimension with a number from 1 to dimension size.

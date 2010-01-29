@@ -542,6 +542,58 @@ algorithm
   end matchcontinue;
 end dump;
 
+public function dumpOperatorString "
+Author bz  printOperator
+Dump operator to a string.
+"
+input DAE.Operator op;
+output String str;
+algorithm 
+  str := matchcontinue(op)
+  local
+    Absyn.Path p;
+    DAE.ExpType ty;
+    case(DAE.ADD(ty=ty)) then " ADD ";
+    case(DAE.SUB(ty=ty)) then " SUB ";
+    case(DAE.MUL(ty=ty)) then " MUL ";
+    case(DAE.DIV(ty=ty)) then " DIV ";
+    case(DAE.POW(ty=ty)) then " POW ";
+    case(DAE.UMINUS(ty=ty)) then " UMINUS ";
+    case(DAE.UPLUS(ty=ty)) then " UPLUS ";
+    case(DAE.UMINUS_ARR(ty=ty)) then " UMINUS_ARR ";
+    case(DAE.UPLUS_ARR(ty=ty)) then " UPLUS_ARR ";
+    case(DAE.ADD_ARR(ty=ty)) then " ADD_ARR ";
+    case(DAE.SUB_ARR(ty=ty)) then " SUB_ARR ";
+    case(DAE.MUL_ARR(ty=ty)) then " MUL_ARR ";
+    case(DAE.DIV_ARR(ty=ty)) then " DIV_ARR ";
+    case(DAE.MUL_SCALAR_ARRAY(ty=ty)) then " MUL_SCALAR_ARRAY ";
+    case(DAE.MUL_ARRAY_SCALAR(ty=ty)) then " MUL_ARRAY_SCALAR ";
+    case(DAE.ADD_SCALAR_ARRAY(ty=ty)) then " ADD_SCALAR_ARRAY ";
+    case(DAE.ADD_ARRAY_SCALAR(ty=ty)) then " ADD_ARRAY_SCALAR ";
+    case(DAE.SUB_SCALAR_ARRAY(ty=ty)) then " SUB_SCALAR_ARRAY ";
+    case(DAE.SUB_ARRAY_SCALAR(ty=ty)) then " SUB_ARRAY_SCALAR ";
+    case(DAE.MUL_SCALAR_PRODUCT(ty=ty)) then " MUL_SCALAR_PRODUCT ";
+    case(DAE.MUL_MATRIX_PRODUCT(ty=ty)) then " MUL_MATRIX_PRODUCT ";
+    case(DAE.DIV_ARRAY_SCALAR(ty=ty)) then " DIV_ARRAY_SCALAR ";
+    case(DAE.DIV_SCALAR_ARRAY(ty=ty)) then " DIV_SCALAR_ARRAY ";
+    case(DAE.POW_ARRAY_SCALAR(ty=ty)) then " POW_ARRAY_SCALAR ";
+    case(DAE.POW_SCALAR_ARRAY(ty=ty)) then " POW_SCALAR_ARRAY ";
+    case(DAE.POW_ARR(ty=ty)) then " POW_ARR ";
+    case(DAE.POW_ARR2(ty=ty)) then " POW_ARR2 ";
+    case(DAE.OR) then " OR ";
+    case(DAE.AND) then " AND ";
+    case(DAE.NOT) then " NOT ";
+    case(DAE.LESSEQ(ty=ty)) then " LESSEQ ";
+    case(DAE.GREATER(ty=ty)) then " GREATER ";
+    case(DAE.GREATEREQ(ty=ty)) then " GREATEREQ ";
+    case(DAE.LESS(ty=ty)) then " LESS ";
+    case(DAE.EQUAL(ty=ty)) then " EQUAL ";
+    case(DAE.NEQUAL(ty=ty)) then " NEQUAL ";
+    case(DAE.USERDEFINED(p)) then " Userdefined:" +& Absyn.pathString(p) +& " ";
+    case(_) then " --UNDEFINED-- "; 
+  end matchcontinue;
+end dumpOperatorString;
+
 public function dump2str ""
 input DAE.DAElist inDAElist;
 output String str;
@@ -2363,6 +2415,27 @@ algorithm
   end matchcontinue;
 end dumpAlgorithmStr;
 
+public function dumpFunctionNames "
+Author BZ 
+print function names 
+"
+input list<DAE.Element> fs;
+output list<String> names;
+algorithm names := matchcontinue(fs)
+  local
+    Absyn.Path p;
+    String s1; 
+  case({}) then {};
+  case(DAE.FUNCTION(path=p)::fs)
+    equation
+      s1 = Absyn.pathString(p); 
+      names = dumpFunctionNames(fs);
+    then
+      s1::names;
+  case(_::fs) then dumpFunctionNames(fs); 
+  end matchcontinue; 
+end dumpFunctionNames;
+
 protected function dumpInitialalgorithmStr 
 "function: dumpInitialalgorithmStr 
   Dump initial algorithm to a string"
@@ -2828,6 +2901,17 @@ algorithm
       equation 
         s1 = indentStr(i);
         s2 = Exp.printComponentRefStr(c);
+        s3 = stringAppend(s1, s2);
+        s4 = stringAppend(s3, " := ");
+        s5 = Exp.printExpStr(e);
+        s6 = stringAppend(s4, s5);
+        str = stringAppend(s6, ";\n");
+      then
+        str;
+    case (DAE.STMT_ASSIGN(exp1 = e2 as DAE.ARRAY(array=_),exp = e),i)
+      equation 
+        s1 = indentStr(i);
+        s2 = Exp.printExpStr(e2);
         s3 = stringAppend(s1, s2);
         s4 = stringAppend(s3, " := ");
         s5 = Exp.printExpStr(e);
@@ -4734,7 +4818,9 @@ algorithm
       Absyn.Path path,elpath;
       DAE.Element el;
       list<DAE.Element> rest,res;
-    case (_,{}) then {}; 
+    case (path,{}) 
+      //equation print(" function " +& Absyn.pathString(path) +& " not found \n"); 
+        then {}; 
     case (path,((el as DAE.FUNCTION(path = elpath)) :: rest))
       equation 
         true = ModUtil.pathEqual(path, elpath);

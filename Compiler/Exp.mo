@@ -1266,8 +1266,7 @@ algorithm
   end matchcontinue;
 end subscriptsInt;
 
-public function simplify 
-"function simplify
+public function simplify "function simplify
   Simplifies expressions"
   input Exp inExp;
   output Exp outExp;
@@ -1376,6 +1375,24 @@ algorithm
         equality(t1 = t2);
       then
         e1;
+        
+    case DAE.CALL( (path as Absyn.IDENT(name = "identity")), {DAE.ICONST(n)}, b,b2, t,b3)
+    local 
+      Boolean b2;DAE.InlineType b3; Absyn.Path path;
+      Integer n;
+      //list<list<DAE.Exp>> matrix;
+      list<DAE.Exp> matrix; // list of arrays
+      DAE.Exp e;
+      equation
+        matrix = simplifyIdentity(1,n);
+        e = DAE.ARRAY(
+        DAE.ET_ARRAY(
+           DAE.ET_ARRAY(DAE.ET_INT,{SOME(3)})
+           ,{SOME(n),SOME(n)}
+        )
+        ,false,matrix);
+      then
+        e;
 
     case DAE.CALL( path, exps_1, b,b2, t,b3)
     local Boolean b2;DAE.InlineType b3; Absyn.Path path;
@@ -1383,7 +1400,19 @@ algorithm
         exps_1 = Util.listMap(exps_1,simplify1);
       then
         DAE.CALL(path,exps_1,b,b2,t,b3);
-        
+            
+    case DAE.ARRAY( t, b,exps_1)
+      equation
+        exps_1 = Util.listMap(exps_1,simplify1);
+      then
+        DAE.ARRAY( t, b,exps_1);
+    case DAE.MATRIX( t, i, matr)
+      local
+        list<list<tuple<Exp, Boolean>>> matr,matr2;
+      equation
+        matr2 = Util.listMap(matr,simplifyMatrixRows);
+        then
+           DAE.MATRIX( t, i, matr2);
     case DAE.PARTEVALFUNCTION(path, exps_1, t)
       local Absyn.Path path;
       equation
@@ -1542,6 +1571,99 @@ algorithm
   end matchcontinue;
 end simplify1;
 
+protected function simplifyMatrixRows ""
+  input list<tuple<Exp, Boolean>> inRow;
+  output list<tuple<Exp, Boolean>> outRow;
+algorithm outRow := matchcontinue(inRow)
+  local
+    Exp e,e_1;
+    Boolean b; 
+  case({}) then {};
+  case((e,b)::inRow)
+    equation
+      e_1 = simplify(e);
+      outRow = simplifyMatrixRows(inRow);
+      then
+        (e_1,b)::outRow;
+end matchcontinue;
+end simplifyMatrixRows;
+
+protected function simplifyIdentity ""
+  input Integer row;
+  input Integer n;
+  output list<DAE.Exp> outExp;
+algorithm 
+  outExp := matchcontinue(row,n)
+    local
+      list<DAE.Exp> rowExps;
+      DAE.Exp arrExp;
+    case(row,n) // bottom right
+      equation
+        true = intEq(row,n);
+        rowExps = simplifyIdentityMakeRow(n,1,row);
+      then
+       {DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT,{SOME(n)}),true,rowExps)};
+    case(row,n) // bottom right
+      equation
+        true = row < n;
+        rowExps = simplifyIdentityMakeRow(n,1,row);
+        outExp = simplifyIdentity(row+1,n);
+        arrExp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT,{SOME(n)}),true,rowExps);
+      then
+        arrExp::outExp;
+  end matchcontinue;
+end simplifyIdentity;
+
+/*
+protected function simplifyIdentity ""
+  input Integer row;
+  input Integer n;
+  output list<list<DAE.Exp>> outExp;
+algorithm 
+  outExp := matchcontinue(row,n)
+    local
+      list<DAE.Exp> rowExps;
+    case(row,n) // bottom right
+      equation
+        true = intEq(row,n);
+        rowExps = simplifyIdentityMakeRow(n,1,row);
+      then
+        {rowExps};
+    case(row,n) // bottom right
+      equation
+        true = intEq(row,n);
+        rowExps = simplifyIdentityMakeRow(n,1,row);
+        outExp = simplifyIdentity(row+1,n);
+      then
+        rowExps::outExp;
+  end matchcontinue;
+end simplifyIdentity;
+*/
+protected function simplifyIdentityMakeRow ""
+input Integer n;
+input Integer col;
+input Integer row;
+output list<DAE.Exp> expl;
+algorithm 
+  expl := matchcontinue(n,col,row)
+  local
+    Integer i;
+    case(n,col,row)
+      equation
+        true = intEq(n,col);
+        i = Util.if_(intEq(col,row),1,0);
+      then
+        {DAE.ICONST(i)};
+    case(n,col,row)
+      equation
+        true = col < n;
+        i = Util.if_(intEq(col,row),1,0);
+        expl = simplifyIdentityMakeRow(n,col+1,row);
+      then
+        DAE.ICONST(i)::expl;
+  end matchcontinue;
+end simplifyIdentityMakeRow;
+
 public function stripNoEvent
 " Function that strips all noEvent() calls in an expression"
   input Exp e;
@@ -1673,8 +1795,7 @@ algorithm
   end matchcontinue;
 end simplify2;
 
-protected function simplifyBinaryArray 
-"function: simplifyBinaryArray  
+protected function simplifyBinaryArray "function: simplifyBinaryArray  
   Simplifies binary array expressions, 
   e.g. matrix multiplication, etc."
   input Exp inExp1;
@@ -1944,7 +2065,7 @@ algorithm
   end matchcontinue;
 end simplifyBinaryArray;
 
-protected function simplifyScalarProduct 
+public function simplifyScalarProduct 
 "function: simplifyScalarProduct
   author: PA
   Simplifies scalar product: 
@@ -3853,6 +3974,84 @@ algorithm
   end matchcontinue;
 end arrayDimensionsToSubscripts;
 
+public function arrayFill "
+listFill 
+"
+input list<Option<Integer>> dims;
+input DAE.Exp inExp;
+output DAE.Exp oExp;
+algorithm oExp := matchcontinue(dims,inExp)
+  local
+  list<DAE.Exp> expl;
+  case({},inExp) then inExp;
+  case(dims,inExp) 
+    equation
+      oExp = arrayFill2(dims,inExp); 
+      then
+        oExp;
+  end matchcontinue;
+end arrayFill;
+
+protected function arrayFill2 ""
+  input list<Option<Integer>> dims;
+  input DAE.Exp inExp;
+  output DAE.Exp oExp;
+algorithm oExp := matchcontinue(dims,inExp)
+  local
+    list<DAE.Exp> expl,expl2;
+    DAE.Exp e1,e2;
+    Integer i;
+    Type ty,bt,recty;
+    list<Option<Integer>> ad;
+    case({SOME(i)},inExp)
+      equation
+        ty = typeof(inExp);
+        expl = listCreateExp(i,inExp);
+        then
+          DAE.ARRAY(DAE.ET_ARRAY(ty,{SOME(i)}),true,expl);
+    case(SOME(i)::dims,inExp)
+      equation
+        print(" arrayFill2 not implemented for matrixes, only single arrays \n"); 
+      then
+        fail();
+end matchcontinue;
+end arrayFill2;
+
+protected function listCreateExp "
+Author BZ 
+Creates a lsit of exps containing the input exp.
+"
+input Integer n;
+input DAE.Exp e;
+output list<DAE.Exp> expl;
+algorithm expl := matchcontinue(n,e)
+  case(n,e)
+    equation
+    true = intEq(n,0);
+    then
+      {};
+  case(n,e)
+    equation
+      true = n>0;
+      expl = listCreateExp(n-1,e);
+      then
+        e::expl;
+  end matchcontinue;
+end listCreateExp;
+ 
+public function arrayDimension "
+Author BZ 
+Get dimension of array.
+"
+	input Type tp;
+	output list<Option<Integer>> dims;
+algorithm
+  dims := matchcontinue(tp)
+    case(DAE.ET_ARRAY(_,dims)) then dims;
+    case(_) then {};
+  end matchcontinue;
+end arrayDimension;
+
 public function arrayTypeDimensions 
 "Return the array dimensions of a type."
 	input Type tp;
@@ -3869,15 +4068,25 @@ output Boolean b;
 algorithm b := matchcontinue(t1,t2)
   local
     list<DAE.ExpVar> vars1,vars2; 
+    Type ty1,ty2;
+    list<Option<Integer>> ad1,ad2;
+    list<Integer> li1,li2;
+    
   case(DAE.ET_INT(),DAE.ET_INT()) then true;
   case(DAE.ET_REAL(),DAE.ET_REAL()) then true;
   case(DAE.ET_STRING(),DAE.ET_STRING()) then true;
   case(DAE.ET_BOOL(),DAE.ET_BOOL()) then true;
     
-  case(DAE.ET_COMPLEX(_,vars1,_),
-       DAE.ET_COMPLEX(_,vars2,_)) 
-       then 
-         equalTypesComplexVars(vars1,vars2);
+  case(DAE.ET_COMPLEX(_,vars1,_), DAE.ET_COMPLEX(_,vars2,_)) 
+       then equalTypesComplexVars(vars1,vars2);
+  case(DAE.ET_ARRAY(ty1,ad1),DAE.ET_ARRAY(ty2,ad2)) 
+    equation
+      li1 = Util.listFlatten(Util.listMap(ad1,Util.genericOption));
+      li2 = Util.listFlatten(Util.listMap(ad1,Util.genericOption));
+      true = Util.isListEqualWithCompareFunc(li1,li2,intEq);
+      true = equalTypes(ty1,ty2);
+    then 
+      true;         
   case(t1,t2) then false;
   end matchcontinue;
 end equalTypes;
@@ -3893,8 +4102,11 @@ algorithm
     case({},{}) then true;
     case(DAE.COMPLEX_VAR(s1,t1)::vars1,DAE.COMPLEX_VAR(s2,t2)::vars2)
       equation
+        //print(" verify subvars: " +& s1 +& " and " +& s2 +& " to go: " +& intString(listLength(vars1)) +& " , " +& intString(listLength(vars2))  +& "\n"); 
         true = stringEqual(s1,s2);
+        //print(" types: " +& typeString(t1) +& " and " +& typeString(t2) +& "\n"); 
         true = equalTypes(t1,t2);
+        //print(s1 +& " and " +& s2 +& " EQUAL \n\n"); 
         then
           equalTypesComplexVars(vars1,vars2);
     case(_,_) then false;
@@ -3999,53 +4211,21 @@ algorithm
     case (DAE.SCONST(string = _)) then DAE.ET_STRING(); 
     case (DAE.BCONST(bool = _)) then DAE.ET_BOOL(); 
     case (DAE.CREF(ty = tp)) then tp; 
-    case (DAE.BINARY(operator = op))
-      equation 
-        tp = typeofOp(op);
-      then
-        tp;
-    case (DAE.UNARY(operator = op))
-      equation 
-        tp = typeofOp(op);
-      then
-        tp;
-    case (DAE.LBINARY(operator = op))
-      equation 
-        tp = typeofOp(op);
-      then
-        tp;
-    case (DAE.LUNARY(operator = op))
-      equation 
-        tp = typeofOp(op);
-      then
-        tp;
-    case (DAE.RELATION(operator = op))
-      equation 
-        tp = typeofOp(op);
-      then
-        tp;
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
-      equation 
-        tp = typeof(e2);
-      then
-        tp;
+    case (DAE.BINARY(operator = op)) then typeofOp(op);
+    case (DAE.UNARY(operator = op)) then typeofOp(op);
+    case (DAE.LBINARY(operator = op)) then typeofOp(op);
+    case (DAE.LUNARY(operator = op)) then typeofOp(op);
+    case (DAE.RELATION(operator = op)) then typeofOp(op);
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3)) then typeof(e2);
     case (DAE.CALL(path = _,ty=tp)) then tp;
     case (DAE.PARTEVALFUNCTION(path = _,ty=tp)) then tp;  
     case (DAE.ARRAY(ty = tp)) then tp; 
     case (DAE.MATRIX(ty = tp)) then tp; 
     case (DAE.RANGE(ty = tp)) then tp; 
     case (DAE.CAST(ty = tp)) then tp; 
-    case (DAE.ASUB(exp = e))
-      equation 
-        tp = typeof(e);
-      then
-        tp;
+    case (DAE.ASUB(exp = e)) then typeof(e);
     case (DAE.CODE(ty = tp)) then tp; 
-    case (DAE.REDUCTION(expr = e))
-      equation 
-        tp = typeof(e);
-      then
-        tp;
+    case (DAE.REDUCTION(expr = e)) then typeof(e);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */ 
     case (DAE.SIZE(_,NONE)) then DAE.ET_INT();
     case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{NONE});
@@ -5357,6 +5537,32 @@ algorithm
   end matchcontinue;
 end toExpCrefSubs;
 
+public function addSubscriptsLast "
+Function for appending subscripts at end on last ident
+"
+  input ComponentRef cr;
+  input Integer i;
+  output ComponentRef ocr;
+algorithm 
+  ocr := matchcontinue(cr,i)
+  local
+    list<Subscript> a3;
+    Type a2;
+    String a1;
+    ComponentRef a4;
+  case(DAE.CREF_IDENT(a1,a2,a3),i)
+    equation
+      a3 = listAppend(a3,{DAE.INDEX(DAE.ICONST(i))});
+    then 
+      DAE.CREF_IDENT(a1,a2,a3); 
+  case(DAE.CREF_QUAL(a1,a2,a3,a4),i) 
+    equation
+      a4 = addSubscriptsLast(a4,i);
+    then
+      DAE.CREF_QUAL(a1,a2,a3,a4);
+  end matchcontinue;
+end addSubscriptsLast;
+
 public function subscriptsAppend 
 "function: subscriptsAppend 
   This function takes a subscript list and adds a new subscript.
@@ -5398,8 +5604,7 @@ end subscriptsAppend;
  *   output.  This is used for error messages, and for debugging the
  *   semantic description.
  */
-public function typeString
-"function typeString
+public function typeString "function typeString
   Converts a type into a String"
   input Type inType;
   output String outString;
@@ -6056,8 +6261,8 @@ algorithm
   outExp := makeRealArray(l);
 end makeRealArrayOfZeros;
 
-public function binopSymbol
-"function: binopSymbol
+public function binopSymbol "
+function: binopSymbol
   Return a string representation of the Operator."
   input Operator inOperator;
   output String outString;
@@ -6096,24 +6301,24 @@ algorithm
     case (DAE.DIV(ty = _)) then " / "; 
     case (DAE.POW(ty = _)) then " ^ ";
     case (DAE.EQUAL(ty = _)) then " = ";  
-    case (DAE.ADD_ARR(ty = _)) then " + "; 
-    case (DAE.SUB_ARR(ty = _)) then " - "; 
-    case (DAE.MUL_ARR(ty = _)) then " * "; 
-    case (DAE.DIV_ARR(ty = _)) then " / "; 
-    case (DAE.POW_ARR(ty = _)) then " ^ "; 
-    case (DAE.POW_ARR2(ty = _)) then " ^ "; 
-    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " * "; 
-    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " * "; 
-    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " + "; 
-    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " + "; 
-    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - "; 
-    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " - "; 
-    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " ^ "; 
-    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ^ "; 
-    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " * "; 
-    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " * "; 
-    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " / "; 
-    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " / "; 
+    case (DAE.ADD_ARR(ty = _)) then " +_arr "; 
+    case (DAE.SUB_ARR(ty = _)) then " -_arr "; 
+    case (DAE.MUL_ARR(ty = _)) then " *_arr "; 
+    case (DAE.DIV_ARR(ty = _)) then " /_arr "; 
+    case (DAE.POW_ARR(ty = _)) then " ^_arr "; 
+    case (DAE.POW_ARR2(ty = _)) then " ^_arr "; 
+    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " scal_*_arr "; 
+    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " arr_*_scal "; 
+    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " scal_+_arr "; 
+    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " arr_+_scal "; 
+    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " _scsl-_arr "; 
+    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " _arr-_scal "; 
+    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " _scal^_arr "; 
+    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " _arr^_scal "; 
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " _scal*_pr "; 
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " _matr*_pr "; 
+    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " _scal/_all "; 
+    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " _arr/_scal "; 
   end matchcontinue;
 end binopSymbol1;
 

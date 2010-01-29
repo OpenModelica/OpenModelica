@@ -157,9 +157,6 @@ protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
 protected import System;
-//protected import DAELow;
-//protected import CevalScript;
-
 
 protected function printDimsStr 
 "function: printDims
@@ -9739,7 +9736,7 @@ algorithm outconds := matchcontinue(subs,elemDecl,inCache,inEnv,inPrefix)
       outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
       varPos = setFunctionInputIndex(elemDecl,name,0);
     then 
-      (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(1)))::outconds;
+      (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(99)))::outconds;
 
   case(SCode.NAMEMOD("zeroDerivative",(m as SCode.MOD(absynExpOption =  SOME(((Absyn.CREF(acr)),_)) )))::subs,elemDecl,inCache,inEnv,inPrefix)
     equation      
@@ -11903,8 +11900,7 @@ algorithm
 	newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), SCode.VAR()); 
 end addForLoopScope;
 
-protected function instEqEquation 
-"function: instEqEquation
+protected function instEqEquation "function: instEqEquation
   author: LS, ELN 
   Equations follow the same typing rules as equality expressions.
   This function adds the equation to the DAE."
@@ -11999,13 +11995,17 @@ algorithm
     local
       DAE.DAElist dae; DAE.Exp e1,e2;
       SCode.Initial initial_;
-      DAE.ComponentRef cr,c1_1,c2_1,c1,c2;
-      DAE.ExpType t,t1,t2,tp;
+      DAE.ComponentRef cr,c1_1,c2_1,c1,c2,assignedCr;
+      DAE.ExpType t,t1,t2,tp,ty,lsty,elabedType;
       list<Integer> ds;
       tuple<DAE.TType, Option<Absyn.Path>> bc;
       DAE.DAElist dae1,dae2,decl;
       DAE.ArrayDim ad; ClassInf.State cs;
-      String n; list<DAE.Var> vs; Option<Absyn.Path> p;
+      String n; list<DAE.Var> vs; 
+      Option<Absyn.Path> p;
+      DAE.Type tt;
+      Values.Value value;
+      list<DAE.Element> dael;
       DAE.FunctionTree funcs;
 
     case (e1,e2,(DAE.T_INTEGER(varLstInt = _),_),source,initial_)
@@ -12116,10 +12116,22 @@ algorithm
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         dae; 
+        
+        // split a constant complex equation to its elements 
+    case ((e1 as DAE.CREF(assignedCr,_)),(e2 as DAE.CALL(path=_,ty=ty)),tt as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
+      local DAE.AvlTree dav; 
+      equation
+        elabedType = Types.elabType(tt);
+        true = Exp.equalTypes(elabedType,ty);
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false, NONE, NONE, Ceval.MSG());
+        dael = assignComplexConstantConstruct(value,assignedCr,source);
+        dav = DAEUtil.avlTreeNew();
+      then DAE.DAE(dael,dav); 
+        
    /* all other COMPLEX equations */
    case (e1,e2, t as (DAE.T_COMPLEX(complexVarLst = _),_),source,initial_)
      local DAE.Type t;     
-      equation
+      equation        
      dae = instComplexEquation(e1,e2,t,source,initial_);
     then dae;
    
@@ -12130,8 +12142,119 @@ algorithm
       then
         fail();
   end matchcontinue;
-end instEqEquation2;
+end instEqEquation2; 
 
+protected function assignComplexConstantConstruct "
+Author BZ 2010
+Function for assigning contrctor calls to variables inside complex var.
+Helperfunction for instEqEquation2
+ex.
+Person p
+ Real a[3,3]
+ Real b[3]
+end p
+equation
+ p = Person(identity(3),zeros(3))
+ 
+ this function will flatten this to;
+p.a = identity(3);
+p.b = zeros(3); 
+"
+
+input Values.Value constantValue;
+input DAE.ComponentRef assigned;
+input DAE.ElementSource source;
+output list<DAE.Element> eqns;
+algorithm 
+  eqns := matchcontinue(constantValue,assigned,source)
+  local
+    DAE.ComponentRef cr,cr2,cr3;
+    Integer i,index;
+    Real r;
+    String s,n;
+    Boolean b; 
+    Absyn.Path p;    
+    list<String> names;
+    Values.Value v; 
+    list<Values.Value> vals,arrVals;
+    list<DAE.Element> eqnsArray,eqns2;
+    case(Values.RECORD(orderd = {},comp = {}),cr,source) then {};
+    case(Values.RECORD(p, Values.RECORD(comp=_)::vals,n::names,index),cr,source)
+      equation
+        print(" implement assignComplexConstantConstruct for records of records\n");
+      then fail();
+
+    case(Values.RECORD(p, (v as Values.ARRAY(arrVals))::vals, n::names, index),cr,source)
+      equation
+        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_OTHER,{}));
+        eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
+        eqnsArray = assignComplexConstantConstructToArray(arrVals,cr2,source,1);
+        eqns = listAppend(eqns,eqnsArray);
+        then 
+          eqns;
+    case(Values.RECORD(p, v::vals, n::names, index),cr,source)
+      equation
+        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_INT,{}));
+        eqns2 = assignComplexConstantConstruct(v,cr2,source);
+        eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
+        eqns = listAppend(eqns,eqns2);
+      then
+        eqns;
+          
+        // REAL
+    case(Values.REAL(r),cr,source)
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_REAL),DAE.RCONST(r),source)};
+      
+    case(Values.INTEGER(i),cr,source)
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_INT),DAE.ICONST(i),source)};
+        
+    case(Values.STRING(s),cr,source)
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_STRING),DAE.SCONST(s),source)};
+        
+    case(Values.BOOL(b),cr,source)
+    then {DAE.EQUATION(DAE.CREF(cr,DAE.ET_BOOL),DAE.BCONST(b),source)};
+
+    case(constantValue,cr,source)
+      equation
+        print(" failure to assign: "  +& Exp.printComponentRefStr(cr) +& " to " +& ValuesUtil.valString(constantValue) +& "\n");
+      then
+        fail();
+  end matchcontinue;
+end assignComplexConstantConstruct;
+
+protected function assignComplexConstantConstructToArray "
+Helper function for assignComplexConstantConstruct
+Does array indexing and assignement 
+"
+input list<Values.Value> arr;
+input DAE.ComponentRef assigned;
+input DAE.ElementSource source;
+input Integer subPos;
+output list<DAE.Element> eqns;
+algorithm eqns := matchcontinue(arr,assigned,source,subPos)
+  local
+    Values.Value v;
+    list<Values.Value> arrVals; 
+    list<DAE.Element> eqns2;
+  case({},_,_,_) then {};
+  case((v  as Values.ARRAY(arrVals))::arr,assigned,source,subPos)
+    equation      
+      eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
+      assigned = Exp.addSubscriptsLast(assigned,subPos);
+      eqns2 = assignComplexConstantConstructToArray(arrVals,assigned,source,1);
+      eqns = listAppend(eqns,eqns2);
+    then 
+      eqns;
+  case(v::arr,assigned,source,subPos)
+    equation      
+      eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
+      assigned = Exp.addSubscriptsLast(assigned,subPos);
+      eqns2 = assignComplexConstantConstruct(v,assigned,source);
+      eqns = listAppend(eqns,eqns2);
+      then 
+        eqns;
+end matchcontinue;
+end assignComplexConstantConstructToArray;
 
 protected function makeDaeEquation 
 "function: makeDaeEquation

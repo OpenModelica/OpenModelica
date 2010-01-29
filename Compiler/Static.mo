@@ -86,7 +86,6 @@ uniontype Slot
   end SLOT;
 end Slot;
 
-
 protected import AbsynDep;
 protected import Ceval;
 protected import CevalScript;
@@ -252,7 +251,7 @@ algorithm
         Boolean arg3,arg4;
         DAE.InlineType inl;        
       equation 
-        (_,val,_) = Ceval.ceval(cache,env,e,true,NONE,NONE,Ceval.MSG()); 
+        (_,val,_) = Ceval.ceval(cache,env,e,true,NONE,NONE,Ceval.MSG());
         cevalType = Types.typeOfValue(val);
         cTe = Types.elabType(cevalType);
       then
@@ -7952,7 +7951,7 @@ algorithm
   end matchcontinue;
 end isFunctionInCflist;
 
-protected function calculateConstantness
+protected function calculateConstantness 
 "@author adrpo
  not always you get a list of constantness as function might not have any parameters.
  this function deals with that case"
@@ -7960,7 +7959,7 @@ protected function calculateConstantness
   output DAE.Const out;
 algorithm
   out := matchcontinue (constlist)
-    case ({}) then DAE.C_VAR();
+    case ({}) then DAE.C_CONST();
     case (constlist)
       equation
         out = Util.listReduce(constlist, Types.constAnd);
@@ -8317,6 +8316,7 @@ algorithm
       equation 
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE),_)),_) 
         	= Lookup.lookupType(cache,env, fn, true);
+//        print(" inst record: " +& name +& " \n");
         (_,recordCl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         lastId = Absyn.pathLastIdent(fn);
@@ -8324,6 +8324,7 @@ algorithm
         
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
+        //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,Exp.printExpStr), ", ") +& "\n"); 
         vect_dims = slotsVectorizable(newslots);
         const = calculateConstantness(constlist);
         tyconst = elabConsts(outtype, const);
@@ -8333,7 +8334,7 @@ algorithm
         args_2 = expListFromSlots(newslots2);
         tp = complexTypeFromSlots(newslots2,complexClassType);
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), outtype, vect_dims, newslots2, prop);
-
+        //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
         dae = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl));
         
@@ -8372,8 +8373,10 @@ algorithm
         /* ------ */
         
     case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */ 
-      local DAE.ExpType tp;
-        String str2;
+      local 
+        DAE.ExpType tp;
+        DAE.Exp callExp;
+        String str2,debugPrintString;
         list<DAE.Type> ltypes;
         list<String> lstr;
       equation
@@ -8398,7 +8401,11 @@ algorithm
         prop = getProperties(restype, tyconst);
         tp = Types.elabType(restype); 
         (cache,args_2,slots2) = addDefaultArgs(cache,env,args_1,fn,slots,impl);
-        (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inline), restype, vect_dims, slots2, prop);
+        callExp = DAE.CALL(fn_1,args_2,tuple_,builtin,tp,inline);
+
+        //debugPrintString = Util.if_(Util.isEqual(DAE.NORM_INLINE,inline)," Inline: " +& Absyn.pathString(fn_1) +& "\n", "");print(debugPrintString);
+
+        (call_exp,prop_1) = vectorizeCall(callExp, restype, vect_dims, slots2, prop);
                 
         /* Instantiate the function and add to dae function tree*/
         dae2 = instantiateDaeFunction(cache,env,fn_1,builtin,NONE);
@@ -10700,7 +10707,8 @@ algorithm
   end matchcontinue;
 end flattenSubscript;
 
-protected function flattenSubscript2 
+// BZ(2010-01-29): Changed to public to be able to vectorize crefs from other places
+public function flattenSubscript2 
 "function flattenSubscript2 
   This function takes the created 'invalid' subscripts 
   and the name of the CREF and returning the CREFS 
