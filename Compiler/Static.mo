@@ -8240,8 +8240,7 @@ algorithm
         args_2 = expListFromSlots(newslots2);
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
         //tyconst = elabConsts(outtype, const);
-        //prop = getProperties(outtype, tyconst);
-        print("record construtor from graphical exp: "+& Absyn.pathString(fn)+&"\n");
+        //prop = getProperties(outtype, tyconst);        
       then
         (cache,DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()),DAEUtil.emptyDae);
 
@@ -8302,7 +8301,7 @@ algorithm
         // use the extra arguments if any
         nargs = listAppend(nargs, translatedNArgs);
         // call the class normally
-        (cache,call_exp,prop_1,dae) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st);
+        (cache,call_exp,prop_1,dae) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st);        
       then
         (cache,call_exp,prop_1,dae);
 
@@ -8323,7 +8322,7 @@ algorithm
         fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
         
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
+        (cache,args_1,newslots,constlist,_,dae1) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
         //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,Exp.printExpStr), ", ") +& "\n"); 
         vect_dims = slotsVectorizable(newslots);
         const = calculateConstantness(constlist);
@@ -8337,7 +8336,7 @@ algorithm
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
         dae = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl));
-        
+        dae = DAEUtil.joinDaes(dae,dae1);
       then
         (cache,call_exp,prop_1,dae);
         
@@ -8486,12 +8485,11 @@ algorithm
       
       /* Recursive calls skipped */
     case(cache,env,name,false,NONE) equation     
-      true = Absyn.pathSuffixOf(name,Env.getEnvName(env));
-            
+      true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
     then DAEUtil.emptyDae;
 
       /* Class must be looked up*/
-    case(cache,env,name,false,NONE) equation
+    case(cache,env,name,false,NONE) equation      
       (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
       (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
       dae = DAEUtil.addDaeFunction(dae);

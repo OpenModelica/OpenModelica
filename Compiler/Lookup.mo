@@ -386,6 +386,15 @@ algorithm
         //print(Env.printCacheStr(cache));       
       then
         (cache,c,env);
+        
+    // If we search for A1.A2....An.x while in scope A1.A2...An, 
+    // just search for x. Must do like this to ensure finite recursion (x can be both qualified or simple)
+    case (cache,env,(Absyn.FULLYQUALIFIED(p)),msgflag)
+      equation 
+        (true,p) = scopePrefixOf(env,p);
+        (cache,c,env_1) = lookupClass2(cache,env, p, msgflag);
+      then
+        (cache,c,env_1); 
       
     // Fully qualified names are looked up in top scope.
     case (cache,env,Absyn.FULLYQUALIFIED(path),msg) 
