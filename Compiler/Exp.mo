@@ -9520,6 +9520,30 @@ algorithm outB:= matchcontinue(inExp)
   end matchcontinue;
 end isCref;
  
+public function crefAppend "
+Author BZ 
+function for appending two cref 
+append (a.b, r.q.t) ==> a.b.r.q.t
+"
+  input ComponentRef cr1,cr2;
+  output ComponentRef cr3;
+algorithm 
+  cr3 := matchcontinue(cr1,cr2) 
+    local
+      String name;
+      Type ty;
+      list<Subscript> subs;
+      ComponentRef child,merge;
+      
+    case(DAE.CREF_IDENT(name,ty,subs), cr2) then DAE.CREF_QUAL(name,ty,subs,cr2);
+    case(DAE.CREF_QUAL(name,ty,subs,child), cr2)
+      equation
+        merge = crefAppend(child,cr2);
+      then
+        DAE.CREF_QUAL(name,ty,subs,merge);
+  end matchcontinue;
+end crefAppend; 
+
 public function isCrefArray "Function isCrefArray 
 Checks wheter a cref is an array or not.
 "
