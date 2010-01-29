@@ -1455,9 +1455,10 @@ algorithm
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(path = name), complexVarLst = varlst),SOME(path)),rt)
       equation
-        failure(_ = Util.listGetMember(Absyn.pathString(name),rt));
+        s1 = generateFunctionName(name);
+        failure(_ = Util.listGetMember(s1,rt));
         
-        first_str = "struct "+&generateFunctionName(name)+&" {";
+        first_str = "struct "+&s1+&" {";
         decl_strs = Util.listMap(varlst, generateVarDeclaration);
         last_str = "};";
         s1 = generateFunctionName(name);
