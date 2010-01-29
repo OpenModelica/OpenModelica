@@ -15827,6 +15827,9 @@ algorithm
       ExternalObjectClasses eoc;
       DAE.Exp eqn,eqn_1,scalar,scalar_1;
       DAE.ElementSource source;
+      DAE.ExpType identType;
+      list<DAE.Subscript> subscriptLst;
+      Integer replace,replace1;
     case (dlow as DAELOW(ordvars as VARIABLES(varArr=varr),knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
       equation 
         tearingvar = getMaxfromListList(mT,vars,comp,0,0,exclude);
@@ -15837,17 +15840,18 @@ algorithm
         str2 = stringAppend(str1,"\n");
         Debug.fcall("tearingdump", print, str2);
         // add Tearing Var
-        VAR(cr as DAE.CREF_IDENT(ident = ident),_,_,_,_,_,_,_,_,_,_,_,_,_) = vararrayNth(varr, tearingvar-1);
+        VAR(cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst ),_,_,_,_,_,_,_,_,_,_,_,_,_) = vararrayNth(varr, tearingvar-1);
         ident_t = stringAppend(ident,"tearing");
-        crt = DAE.CREF_IDENT(ident_t,DAE.ET_REAL(),{});
+        crt = DAE.CREF_IDENT(ident_t,identType,subscriptLst);
          vars_1 = addVar(VAR(crt, VARIABLE(),DAE.BIDIR(),REAL(),NONE,NONE,{},-1,DAE.CREF_IDENT(ident_t,DAE.ET_REAL(),{}),
                             DAE.emptyElementSource,
                             SOME(DAE.VAR_ATTR_REAL(NONE,NONE,NONE,(NONE,NONE),NONE,SOME(DAE.BCONST(true)),NONE,NONE,NONE,NONE,NONE)),
                             NONE,DAE.NON_CONNECTOR(),DAE.NON_STREAM()), ordvars);
         // replace in residual equation orgvar with Tearing Var    
         EQUATION(eqn,scalar,source) = equationNth(eqns,residualeqn-1);
-        (eqn_1,_) =  Exp.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
-        (scalar_1,_) =  Exp.replaceExp(scalar,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
+        (eqn_1,replace) =  Exp.replaceExp(eqn,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
+        (scalar_1,replace1) =  Exp.replaceExp(scalar,DAE.CREF(cr,DAE.ET_REAL()),DAE.CREF(crt,DAE.ET_REAL()));
+        true = replace + replace1 > 0;
         eqns_1 = equationSetnth(eqns,residualeqn-1,EQUATION(eqn_1,scalar_1,source));
         // add equation to calc org var
         eqns_2 = equationAdd(eqns_1,EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
@@ -15864,6 +15868,7 @@ algorithm
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
         // try matching        
+        checkMatching(dlow_1, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
         (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
         v1_1 = assignmentsVector(ass1);
         v2_1 = assignmentsVector(ass2);        
