@@ -15605,7 +15605,7 @@ algorithm
         str_t = Util.listMap(tearingvars, intString);
         str_t_f = Util.stringDelimitList(str_t, ", ");
         str_t_1 = stringAppend(str_t_f, "\n");
-        st = stringAppend("TearingEqns: ",str_t_1);
+        st = stringAppend("TearingVars: ",str_t_1);
         str = stringAppend(sr, st);
         print(str);
         print("\n");
