@@ -5761,7 +5761,7 @@ Helper function for traverseDAE, traverses a list of dae element list.
   output Type_a oextraArg;
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
-algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
+algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
   local
     list<DAE.Element> branch,branch2;
     list<list<DAE.Element>> recRes; 
@@ -5784,7 +5784,7 @@ NOTE, it also traverses DAE.VAR(componenname) as an expression."
   output Type_a oextraArg;
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
-algorithm (traversedDae,Type_a) := matchcontinue(dae,func,extraArg)
+algorithm (traversedDae,oextraArg) := matchcontinue(dae,func,extraArg)
   local 
     list<DAE.Element> elts;
      list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
@@ -5832,7 +5832,7 @@ NOTE, it also traverses DAE.VAR(componenname) as an expression."
   output Type_a oextraArg;
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
-algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
+algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
   local
     DAE.ComponentRef cr,cr2,cr1,cr1_2;
     list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
@@ -5949,7 +5949,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     equation
       (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.COMP(id,elist,source)::dae2,extraArg);
+    then (DAE.COMP(id,elist2,source)::dae2,extraArg);
       
   case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source)::dae,func,extraArg) 
     equation
@@ -5972,7 +5972,7 @@ algorithm (traversedDaeList,Type_a) := matchcontinue(daeList,func,extraArg)
     equation
       ({elt11,elt22},extraArg) =  traverseDAE2({elt1,elt2},func,extraArg);
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae2,extraArg);
+    then (DAE.EXTOBJECTCLASS(path,elt11,elt22,source)::dae2,extraArg);
       
   case(DAE.ASSERT(e1,e2,source)::dae,func,extraArg) 
     equation
@@ -6280,7 +6280,7 @@ public function getElementSourceInstances
  input DAE.ElementSource source "the source of the element";
  output list<Option<DAE.ComponentRef>> instanceOptLst;
 algorithm
-  pathLst := matchcontinue(source)
+  instanceOptLst := matchcontinue(source)
     local list<Option<DAE.ComponentRef>> pLst;
     case DAE.SOURCE(instanceOptLst = pLst) then pLst;
   end matchcontinue;
@@ -6292,7 +6292,7 @@ public function getElementSourceConnects
  input DAE.ElementSource source "the source of the element";
  output list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
 algorithm
-  pathLst := matchcontinue(source)
+  connectEquationOptLst := matchcontinue(source)
     local list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> pLst;
     case DAE.SOURCE(connectEquationOptLst = pLst) then pLst;
   end matchcontinue;
@@ -6304,7 +6304,7 @@ public function getElementSourcePartOfs
  input DAE.ElementSource source "the source of the element";
  output list<Absyn.Within> withinLst;
 algorithm
-  pathLst := matchcontinue(source)
+  withinLst := matchcontinue(source)
     local list<Absyn.Within> pLst;
     case DAE.SOURCE(partOfLst = pLst) then pLst;
   end matchcontinue;
