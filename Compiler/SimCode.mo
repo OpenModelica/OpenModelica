@@ -1256,6 +1256,7 @@ algorithm
       local  String sname;
       equation
         sname = Absyn.pathString(name);
+        sname = ModUtil.pathStringReplaceDot(name, "_");
         failure(_ = Util.listGetMember(sname,rt));
         
         vars = Util.listMap(varlst, typesVar);
