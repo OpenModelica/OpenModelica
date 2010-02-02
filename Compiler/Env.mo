@@ -196,6 +196,7 @@ protected import Types;
 protected import Inst;
 protected import Debug;
 protected import OptManager;
+protected import RTOpts;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -795,6 +796,11 @@ algorithm
     case(env) equation
       SOME(path) = getEnvPath(env);
     then path;
+    case _
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Env.getEnvName failed");
+      then fail();
   end matchcontinue;
 end getEnvName;
 
