@@ -4314,20 +4314,28 @@ algorithm
         s = Util.stringAppendList({s1, " ", s2, s3, s4, s5, "\n\tend ", s1});
       then
         s;
-    case Absyn.VALUEBLOCK(els,_ /*Absyn.VALUEBLOCKALGORITHMS(algs)*/,result)
-    local Absyn.Exp result; list<Absyn.ElementItem> els; list<Absyn.AlgorithmItem> algs;
+    case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKALGORITHMS(algs),result)
+      local
+        Absyn.Exp result;
+        list<Absyn.ElementItem> els; list<Absyn.AlgorithmItem> algs;
+      equation
+        s1 = printExpStr(result);        
+        s2 = unparseAlgorithmStrLst(4 /* Exp doesn't get i input  make a guess :( */, algs, "\n");
+        s = "valueblock(\n  " +& s2 +& ", result=" +& s1 +& ")";
+      then s;
+    case Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(patternMatching,equationBody,resultAssignments),result)
+      local
+        Absyn.Exp result;
+        list<Absyn.ElementItem> els;
+        list<Absyn.AlgorithmItem> patternMatching;
+        list<Absyn.EquationItem>  equationBody;
+        list<Absyn.AlgorithmItem> resultAssignments;
       equation
         s1 = printExpStr(result);
-        s = "valueblock(...)";
-        /*
-        s2 = Print.getString();
-        Print.clearBuf();
-        printElementitems(els);
-        Util.listMap0(algs, printAlgorithmitem);
-        s3 = Print.getString();
-        Print.printBuf(s2);
-        s = "valueblock(" +& s3 +& ", result=" +& s1 +& ")";
-        */
+        s2 = unparseAlgorithmStrLst(2, patternMatching, "\n");
+        s3 = unparseEquationitemStrLst(2, equationBody, "\n");
+        s4 = unparseAlgorithmStrLst(2, resultAssignments, "\n");
+        s = "valueblock(\n" +& s2 +& "\n" +& s3 +& "\n" +& s4 +& ")";
       then s;
     case (_) then "#UNKNOWN EXPRESSION#";
   end matchcontinue;
