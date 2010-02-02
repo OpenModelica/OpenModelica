@@ -7863,7 +7863,7 @@ algorithm
         Debug.fprintln("sei", "generate_compiled_function: elaborated");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
         Debug.fprintln("sei", "generate_compiled_function: class looked up");
-        (cache,env_2,_,d) = Inst.implicitFunctionInstantiation(cache, env_1, InstanceHierarchy.emptyInstHierarchy, 
+        (_,env_2,_,d) = Inst.implicitFunctionInstantiation(cache, env_1, InstanceHierarchy.emptyInstHierarchy, 
                                                                DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprintln("sei", "generate_compiled_function: function instantiated");
         Print.clearBuf();
@@ -8335,7 +8335,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), outtype, vect_dims, newslots2, prop);
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
-        dae = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl));
+        (cache,dae) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl));
         dae = DAEUtil.joinDaes(dae,dae1);
       then
         (cache,call_exp,prop_1,dae);
@@ -8407,7 +8407,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, restype, vect_dims, slots2, prop);
                 
         /* Instantiate the function and add to dae function tree*/
-        dae2 = instantiateDaeFunction(cache,env,fn_1,builtin,NONE);
+        (cache,dae2) = instantiateDaeFunction(cache,env,fn_1,builtin,NONE);
         dae = DAEUtil.joinDaes(dae1,dae2);       
       then
         (cache,call_exp,prop_1,dae);
@@ -8469,37 +8469,49 @@ functiontree of a newly created dae"
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
   input option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  output Env.Cache outCache;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(inCache,env,name,builtin,clOpt)
+  (outCache,outDae) := matchcontinue(inCache,env,name,builtin,clOpt)
   local Env.Cache cache; 
     SCode.Class cl; DAE.DAElist dae;
     String id,id2;    
     /* Builtin functions skipped*/
-    case(cache,env,name,true,_) then DAEUtil.emptyDae;
+    case(cache,env,name,true,_) then (cache,DAEUtil.emptyDae);
       
     /* External object functions skipped*/  
     case(cache,env,name,_,_) equation
       (_,true) = isExternalObjectFunction(cache,env,name);
-    then DAEUtil.emptyDae;
+    then (cache,DAEUtil.emptyDae);
       
-      /* Recursive calls skipped */
+      /* Recursive calls (by looking at envinronment) skipped */
     case(cache,env,name,false,NONE) equation     
       true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
-    then DAEUtil.emptyDae;
-
+    then (cache,DAEUtil.emptyDae);
+      
+    /* Recursive calls (by looking in cache) skipped */
+    case(cache,env,name,false,_) equation        
+      (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
+      (cache,name) = Inst.makeFullyQualified(cache,env,name);      
+      _ = Env.getCachedInstFunc(cache,name);
+    then (cache,DAEUtil.emptyDae);
+      
+        
       /* Class must be looked up*/
     case(cache,env,name,false,NONE) equation      
       (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
+      (cache,name) = Inst.makeFullyQualified(cache,env,name);
+      cache = Env.addCachedInstFunc(cache,name);
       (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
       dae = DAEUtil.addDaeFunction(dae);
-    then dae;
+    then (cache,dae);
     
     /* class already available*/
     case(cache,env,name,false,SOME(cl)) equation
-      (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});      
+      (cache,name) = Inst.makeFullyQualified(cache,env,name);           
+      (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});     
       dae = DAEUtil.addDaeFunction(dae);      
-    then dae;
+    then (cache,dae);
       
     case(cache,env,name,_,_) equation
       print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&"\n");

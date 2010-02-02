@@ -84,14 +84,16 @@ public import Absyn;
 public import ClassInf;
 public import DAE;
 public import SCode;
+public import HashTable5;
 
 public 
 type Ident = String " An identifier is just a string " ;
 
 public uniontype Cache
   record CACHE 
-    Option<EnvCache>[:] envCache "The cache consists of environments from which classes can be found";
+    Option<EnvCache>[:] envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
+    HashTable5.HashTable instantiatedFuncs "and a hashtable to indicated already instantiated functions (to break inst. of recursive function calls)";
   end CACHE;
 end Cache;
 
@@ -204,11 +206,12 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
  protected 
-  Option<EnvCache>[:] arr;
+  Option<EnvCache>[:] arr; HashTable5.HashTable instFuncs;
 algorithm
   //print("EMPTYCACHE\n");
   arr := listArray({NONE});
-  cache := CACHE(arr,NONE);
+  instFuncs := HashTable5.emptyHashTable();
+  cache := CACHE(arr,NONE,instFuncs);
 end emptyCache;
 
 public 
@@ -1165,7 +1168,7 @@ public function getCachedInitialEnv "get the initial environment from the cache"
 algorithm	
   env := matchcontinue(cache) 
     //case (_) then fail();
-    case (CACHE(_,SOME(env))) equation
+    case (CACHE(_,SOME(env),_)) equation
     //	print("getCachedInitialEnv\n");
       then env;
   end matchcontinue;
@@ -1179,12 +1182,47 @@ algorithm
   outCache := matchcontinue(inCache,env) 
   local
     	Option<EnvCache>[:] envCache;
+    	HashTable5.HashTable ef;
 
-    case (CACHE(envCache,_),env) equation 
+    case (CACHE(envCache,_,ef),env) equation 
  //    	print("setCachedInitialEnv\n");
-      then CACHE(envCache,SOME(env));
+      then CACHE(envCache,SOME(env),ef);
   end matchcontinue;
 end setCachedInitialEnv;  
+
+public function addCachedInstFunc "adds the FQ path to the set of instantiated functions"
+  input Cache inCache;
+  input Absyn.Path func "fully qualified function name";
+  output Cache outCache;
+algorithm	
+  outCache := matchcontinue(inCache,func) 
+  local
+    	Option<EnvCache>[:] envCache;
+    	HashTable5.HashTable ef;
+    	Absyn.ComponentRef cr;
+    	Option<Env> ienv;
+
+    case (CACHE(envCache,ienv,ef),func) equation
+      cr = Absyn.pathToCref(func);
+      ef = HashTable5.add((cr,0),ef); 
+      then CACHE(envCache,ienv,ef);
+  end matchcontinue;
+end addCachedInstFunc;
+
+function getCachedInstFunc "returns the integer value 0 if the FQ function is in the set of already instantiated functions. If not, this function fails"
+  input Cache inCache;
+  input Absyn.Path path;
+  output Integer res;
+algorithm
+  res := matchcontinue(inCache,path)
+  local HashTable5.HashTable ef; Absyn.ComponentRef cr;
+    Integer v;
+    case(CACHE(instantiatedFuncs=ef),path) equation
+      cr = Absyn.pathToCref(path);
+      v = HashTable5.get(cr,ef);
+    then v;
+  end matchcontinue;
+end getCachedInstFunc;
     
 public function cacheGet "Get an environment from the cache."
   input Absyn.Path scope;
@@ -1194,7 +1232,8 @@ public function cacheGet "Get an environment from the cache."
 algorithm
   env:= matchcontinue(scope,path,cache)
   local CacheTree tree;  Option<EnvCache>[:] arr;
-   case (scope,path,CACHE(arr ,_))
+    HashTable5.HashTable ef;
+   case (scope,path,CACHE(arr ,_,ef))
       equation
         true = OptManager.getOption("envCache");
         SOME(ENVCACHE(tree)) = arr[1];
@@ -1215,18 +1254,19 @@ algorithm
   local CacheTree tree;
     Option<Env> ie;
     Option<EnvCache>[:] arr;
+    HashTable5.HashTable ef;
     case(_,inCache,env) equation
       false = OptManager.getOption("envCache");
     then inCache;
       
-    case (fullpath,CACHE(arr,ie),env) 
+    case (fullpath,CACHE(arr,ie,ef),env) 
       equation       
         NONE = arr[1];
         tree = cacheAddEnv(fullpath,CACHETREE("$global",emptyEnv,{}),env);
         //print("Adding ");print(Absyn.pathString(fullpath));print(" to empty cache\n");
         arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
-      then CACHE(arr,ie);
-    case (fullpath,CACHE(arr,ie),env) 
+      then CACHE(arr,ie,ef);
+    case (fullpath,CACHE(arr,ie,ef),env) 
       equation
         SOME(ENVCACHE(tree))=arr[1];
        // print(" about to Adding ");print(Absyn.pathString(fullpath));print(" to cache:\n");
@@ -1235,7 +1275,7 @@ algorithm
        //print("Adding ");print(Absyn.pathString(fullpath));print(" to cache\n");
         //print(printCacheStr(CACHE(SOME(ENVCACHE(tree)),ie)));
         arr = arrayUpdate(arr,1,SOME(ENVCACHE(tree)));
-      then CACHE(arr,ie);
+      then CACHE(arr,ie,ef);
     case (_,_,_) equation 
       true = OptManager.getOption("envCache"); 
       print("cacheAdd failed\n"); 
@@ -1481,14 +1521,17 @@ algorithm
   str := matchcontinue(cache)
   local CacheTree tree;
     Option<EnvCache>[:] arr;
-    case CACHE(arr,_) 
-      local String s;
+    HashTable5.HashTable ef;
+    case CACHE(arr,_,ef) 
+      local String s,s2;
       equation
         SOME(ENVCACHE(tree)) = arr[1];
       s = printCacheTreeStr(tree,1); 
       str = Util.stringAppendList({"Cache:\n",s,"\n"});
+      s2 = HashTable5.dumpHashTableStr(ef);
+      str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
-    case CACHE(_,_) then "EMPTY CACHE\n";
+    case CACHE(_,_,_) then "EMPTY CACHE\n";
   end matchcontinue;
 end printCacheStr;
 

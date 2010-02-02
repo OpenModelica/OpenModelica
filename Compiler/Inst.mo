@@ -9990,13 +9990,14 @@ algorithm
       Env.Cache cache;
       InstanceHierarchy ih;
       list<SCode.Annotation> annotationLst;
+      Env.Cache garbageCache;
 
     /* The function type can be determined without the body. Annotations need to be preserved though. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl))) 
       equation 
         stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()));
-        (cache,env_1,ih,_) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
+        (garbageCache,env_1,ih,_) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
         (cache,env_1,ih);
 

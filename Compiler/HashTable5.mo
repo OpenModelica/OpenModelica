@@ -54,6 +54,12 @@ algorithm
      res := Absyn.crefEqual(key1,key2);
 end keyEqual;
 
+public function dumpHashTableStr "dump hashtable to a string"
+  input HashTable t;
+  output String str;
+algorithm
+  str := "HashTable:\n"+&Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n")+&"\n";
+end dumpHashTableStr;
 
 protected function dumpHashTable
   input HashTable t;

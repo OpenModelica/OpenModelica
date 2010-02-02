@@ -1101,13 +1101,14 @@ algorithm
 
     // adrpo: 2009-11-17 re-enable the Cevalfunc after dealing with record constructors!      
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
+      local Env.Cache garbageCache;
       equation
         false = RTOpts.debugFlag("noevalfunc"); 
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         // make sure is NOT used for records !
         (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef ),env1) = 
         Lookup.lookupClass(cache,env,funcpath,true);
-        (cache,env1,_,daeList) = 
+        (garbageCache,env1,_,daeList) = 
         Inst.implicitFunctionInstantiation(
           cache, 
           env1,

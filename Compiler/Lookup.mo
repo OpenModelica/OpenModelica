@@ -1735,13 +1735,15 @@ algorithm
 
         /* Found function */
     case (cache,Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv),env,id)
-      local SCode.Restriction restr;
+      local SCode.Restriction restr; Env.Cache garbageCache;
       equation 
         true = SCode.isFunctionOrExtFunction(restr);
-        (cache,env_1,_,_) = 
+        
+        /* Since function is added to cache, but dae here is not propagated, throw away cache from this call */
+        (garbageCache ,env_1,_,_) = 
         Inst.implicitFunctionInstantiation(
           cache,cenv,InstanceHierarchy.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
+          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});        
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then 
         (cache,ty,env_3);
