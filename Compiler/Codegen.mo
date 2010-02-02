@@ -5699,7 +5699,6 @@ algorithm
   end matchcontinue;
 end cMoveDeclsAndInitsToStatements;
 
-
 protected function generateBuiltinFunction "function: generateBuiltinFunction
   author: PA
 
@@ -5738,6 +5737,25 @@ algorithm
         cfn = cAddStatements(cfn1, {stmt});
       then
         (cfn,tvar,tnr1);
+        
+        /* delay */
+    case (DAE.CALL(path = Absyn.IDENT(name = "delay"),expLst = {DAE.ICONST(index),e,d,delayMax},tuple_ = false,builtin = true),tnr,context)
+      local
+        DAE.Exp e,d,delayMax;
+        Boolean noCast;
+        String id_str, castStr1, castStr2;
+        Integer index;
+      equation
+        (cfn1,var1,tnr1) = generateExpression(e, tnr, context);
+        (cfn2,var2,tnr2) = generateExpression(d, tnr1, context);
+        cfn1 = cMergeFns({cfn1,cfn2});
+        (tdecl,tvar,tnr2) = generateTempDecl("modelica_real", tnr2);
+        cfn1 = cAddVariables(cfn1, {tdecl});
+        id_str = intString(index);
+        stmt = Util.stringAppendList({tvar," = delayImpl(",id_str,", ",var1,", time, ",var2,");"});
+        cfn = cAddStatements(cfn1, {stmt});
+      then
+        (cfn,tvar,tnr2);
         
         /* max */
     case (DAE.CALL(path = Absyn.IDENT(name = "max"),expLst = {arg},tuple_ = false,builtin = true),tnr,context) /* max(v), v is vector */

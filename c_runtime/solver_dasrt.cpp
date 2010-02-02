@@ -140,6 +140,8 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     numpoints = long((stop-start)/step)+2;
   }
 
+  info[2] = 1;  // We need all time steps for calculating delayed values.
+
   try {
 
     // Set starttime for simulation.
@@ -206,6 +208,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
     saveall();
 
+    function_storeDelayed();
 
     if(emit()) { printf("Error, not enough space to save data"); return -1; }
     calcEnabledZeroCrossings();
@@ -236,6 +239,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     // alg vars too.
     acceptedStep=1;
     functionDAE_output();
+    function_storeDelayed();
     acceptedStep=0;
 
     tout = newTime(tout,step,stop);
@@ -281,6 +285,10 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         StateEventHandler(jroot, &globalData->timeValue);
         CheckForNewEvents(&globalData->timeValue);
         StartEventIteration(&globalData->timeValue);
+
+        // Store new values after event into delayed expressions buffers 
+        function_storeDelayed();
+
         emit();
         if (sim_verbose) {
           cout << "Done checking events at time " << globalData->timeValue << endl;
@@ -293,27 +301,31 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         tout = globalData->timeValue +  8.0 * uround * fabs(globalData->timeValue);
         if (globalData->timeValue >= stop ) throw TerminateSimulationException(globalData->timeValue);
         calcEnabledZeroCrossings();
-        DDASRT(functionDAE_res,
-          &globalData->nStates,   &globalData->timeValue,
-          globalData->states, globalData->statesDerivatives, &tout,
-          info,&rtol, &atol,
-          &idid,rwork,&lrw, iwork, &liw, globalData->algebraics,
-          &ipar, dummyJacobianDASSL,
-          function_zeroCrossing, &globalData->nZeroCrossing, jroot);
+        do {
+          // Calculate time steps until either a zero crossing is found or tout is reached. 
+          DDASRT(functionDAE_res,
+            &globalData->nStates,   &globalData->timeValue,
+            globalData->states, globalData->statesDerivatives, &tout,
+            info,&rtol, &atol,
+            &idid,rwork,&lrw, iwork, &liw, globalData->algebraics,
+            &ipar, dummyJacobianDASSL,
+            function_zeroCrossing, &globalData->nZeroCrossing, jroot);
 
-        if (idid < 0)
-        {
-          if(!continue_with_dassl(&idid,&atol,&rtol))
-            throw TerminateSimulationException(globalData->timeValue);
-        }
-
-        functionDAE_res(&globalData->timeValue,globalData->states,
-          globalData->statesDerivatives,
-          dummy_delta,0,0,0); // Since residual function calculates
-        // alg vars too.
-        acceptedStep = 1;
-        functionDAE_output();
-        acceptedStep = 0;
+          if (idid < 0)
+          {
+            if(!continue_with_dassl(&idid,&atol,&rtol))
+              throw TerminateSimulationException(globalData->timeValue);
+          }
+  
+          functionDAE_res(&globalData->timeValue,globalData->states,
+            globalData->statesDerivatives,
+            dummy_delta,0,0,0); // Since residual function calculates
+          // alg vars too.
+          acceptedStep = 1;
+          functionDAE_output();
+          function_storeDelayed();
+          acceptedStep = 0;
+        } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout); 
 
         info[0] = 1;
 
@@ -330,28 +342,32 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       tout = newTime(globalData->timeValue,step,stop); // TODO: check time events here. Maybe dassl should not be allowed to simulate past the scheduled time event.
       if (globalData->timeValue >= stop) throw TerminateSimulationException(globalData->timeValue);
       calcEnabledZeroCrossings();
-      DDASRT(functionDAE_res,
-          &globalData->nStates, &globalData->timeValue,
-          globalData->states, globalData->statesDerivatives, &tout,
-          info,&rtol, &atol,
-          &idid,rwork,&lrw, iwork, &liw, globalData->algebraics,
-          &ipar, dummyJacobianDASSL,
-          function_zeroCrossing, &globalData->nZeroCrossing, jroot);
-
-      if (idid < 0)
-      {
-        fflush(stderr); fflush(stdout);
-        if (idid == -1)
-          info[0] = 1; // try again
-        if(!continue_with_dassl(&idid,&atol,&rtol))
-          throw TerminateSimulationException(globalData->timeValue);
-      }
-
-      functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0); // Since residual function calculates
-      // alg vars too.
-      acceptedStep=1;
-      functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
-      acceptedStep=0;
+      do {
+        // Calculate time steps until either a zero crossing is found or tout is reached.
+        DDASRT(functionDAE_res,
+            &globalData->nStates, &globalData->timeValue,
+            globalData->states, globalData->statesDerivatives, &tout,
+            info,&rtol, &atol,
+            &idid,rwork,&lrw, iwork, &liw, globalData->algebraics,
+            &ipar, dummyJacobianDASSL,
+            function_zeroCrossing, &globalData->nZeroCrossing, jroot);
+               
+        if (idid < 0)
+        {
+          fflush(stderr); fflush(stdout);
+          if (idid == -1)
+            info[0] = 1; // try again
+          if(!continue_with_dassl(&idid,&atol,&rtol))
+            throw TerminateSimulationException(globalData->timeValue);
+        }
+      
+        functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0); // Since residual function calculates
+        // alg vars too.
+        acceptedStep=1;
+        functionDAE_output();  // discrete variables are seperated so that the can be emited before and after the event.
+        function_storeDelayed();
+        acceptedStep=0;
+      } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout);
     } // end while
 
     acceptedStep=1;

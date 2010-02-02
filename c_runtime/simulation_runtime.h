@@ -40,6 +40,7 @@
 #define _SIMULATION_RUNTIME_H
 
 #include "simulation_events.h"
+#include "simulation_delay.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -225,6 +226,11 @@ function_updateDependents();
 	uses in EventHandle	*/
 int
 function_updateDepend();
+
+// function for storing value histories of delayed expressions
+// called from functionDAE_output()
+int
+function_storeDelayed();
 
 // function for calculating states on explicit ODE form
 /*used in functionDAE_res function*/

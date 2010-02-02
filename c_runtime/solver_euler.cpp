@@ -112,6 +112,9 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 	saveall();
 	if(emit()) { printf("Error, not enough space to save data"); return -1; }
 	
+	// Put initial values to delayed expression buffers
+	function_storeDelayed();
+
 	//Enable all Events
 	for (int i = 0; i < globalData->nZeroCrossing; i++) {
 	   zeroCrossingEnabled[i] = 1;
@@ -149,6 +152,7 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 		else euler_ex_step(&step,functionODE);
 		
 		functionDAE_output();
+	function_storeDelayed();
 
 		//Check for Events
 		//if (sim_verbose) { cout << "Checking for new events (at time "<< globalData->timeValue << ")." << endl; }

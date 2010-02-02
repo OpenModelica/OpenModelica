@@ -235,6 +235,9 @@ int main(int argc, char**argv)
              &start,&stop,&stepSize,&outputSteps,&tolerance,&method);
   globalData->lastEmittedTime = start;
   globalData->forceEmit=0;
+
+  initDelay(start);
+
   /* the main method identifies which solver to use and then calls
      respecive solver main function*/
   if (method == "") {

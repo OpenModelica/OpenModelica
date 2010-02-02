@@ -30,7 +30,7 @@ daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o 
 java_interface.o meta_modelica.o meta_modelica_builtin.o $(EXTRA_OBJS)
 
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
-solver_dasrt.o solver_euler.o simulation_result.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
+solver_dasrt.o solver_euler.o simulation_result.o simulation_delay.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
 
 HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	base_array.h inline.h real_array.h string_array.h boolean_array.h \
@@ -38,7 +38,8 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 	modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h \
 	simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h \
 	meta_modelica.h meta_modelica_builtin.h sendData/sendData.h sendData/humbug.h \
-	java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h
+	java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h \
+	simulation_delay.h
 
 LIBS = libc_runtime.a libsim.a
 

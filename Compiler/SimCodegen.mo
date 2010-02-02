@@ -188,7 +188,7 @@ algorithm
   matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11)
     local
       String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
-      	czerocross,res,filename,funcfilename,fileDir,updatedepend ;
+      	czerocross,res,filename,funcfilename,fileDir,updatedepend,storedelayed;
       String extObjInclude; list<String> extObjIncludes;
       list<list<Integer>> blt_states,blt_no_states,comps;
       Integer n_o,n_i,n_h,nres;
@@ -222,7 +222,8 @@ algorithm
         s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
         czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        updatedepend = generateUpdateDepended(dae, dlow2, ass1, ass2, comps, helpVarInfo); 
+        updatedepend = generateUpdateDepended(dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        storedelayed = generateStoreDelayed(dlow2);
         (extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
         extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
         extObjInclude = Util.stringAppendList({"extern \"C\" {\n",extObjInclude,"\n}\n"});
@@ -239,7 +240,7 @@ algorithm
             "#endif \n\n",            
             "#include \"",funcfilename,"\"\n\n",
             extObjInclude,cglobal,coutput,in_str,out_str,
-            cstate,czerocross,updatedepend,cwhen,c_ode,s_code,s_code2,
+            cstate,czerocross,updatedepend,storedelayed,cwhen,c_ode,s_code,s_code2,
             s_code3,c_eventchecking});
         System.writeFile(filename, res);
       then
@@ -7264,6 +7265,67 @@ algorithm
   end matchcontinue;
 end generateUpdateDepended;
 
+protected function generateStoreDelayed2
+  input list<DAE.Exp> exps;
+  input Integer inInteger;
+  output CFunction outCFunction;
+  output Integer outInteger;
+algorithm
+  (outCFunction, outInteger) := matchcontinue(exps, inInteger)
+    local
+      Integer i;
+      String exp_str;
+      DAE.Exp e, id, delay, delayMax;
+      list<DAE.Exp> xs;
+      String st, st_e;
+      CFunction fn1, fn2;
+    case ({}, i) then (Codegen.cEmptyFunction, i);
+    case (DAE.CALL(path = Absyn.IDENT("delay"), expLst = {id, e, delay, delayMax}) :: xs, i)
+      equation
+        (fn1, st_e, i) = Codegen.generateExpression(DAE.CALL(Absyn.IDENT("storeDelayedExpression"),
+          {id, e}, false, true, DAE.ET_NORETCALL(), DAE.NORM_INLINE()), i, Codegen.simContext);
+        st = Util.stringAppendList({st_e, ";"});
+        fn1 = Codegen.cAddStatements(fn1, {st});
+        (fn2, i) = generateStoreDelayed2(xs, i); 
+        fn2 = Codegen.cMergeFns({fn1, fn2});
+      then
+        (fn2, i);
+    case (_, _)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"generateStoreDelayed2 failed"});
+      then
+        fail();
+  end matchcontinue;
+end generateStoreDelayed2;
+
+protected function generateStoreDelayed
+"Generate a function for storing values of delayed expressions."
+  input DAELow.DAELow inDAE;
+  output String outString;
+algorithm
+  outString := matchcontinue(inDAE)
+    local
+      DAELow.DAELow dae;
+      list<DAE.Exp> exps;
+      list<list<DAE.Exp>> subexps;
+      Codegen.CFunction cfunc, contents;
+      Codegen.Context ctx;
+      String result;
+    case (dae)
+      equation
+        exps = DAELow.getAllExps(dae);
+        subexps = Util.listMap(exps, DAELow.findDelaySubExpressions);
+        exps = Util.listFlatten(subexps);
+        cfunc = Codegen.cMakeFunction("int", "function_storeDelayed", {}, {""});
+        cfunc = addMemoryManagement(cfunc);
+        (contents, _) = generateStoreDelayed2(exps, 0);
+        cfunc = Codegen.cMergeFns({cfunc, contents});
+        cfunc = Codegen.cAddCleanups(cfunc, {"return 0;"});
+        result = Codegen.cPrintFunctionsStr({cfunc});
+      then
+        result;
+  end matchcontinue;
+end generateStoreDelayed;
 
 protected function isPartOfMixedSystem 
 "function: isPartOfMixedSystem

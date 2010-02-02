@@ -594,6 +594,7 @@ algorithm
       
     case(lst, addDummyDerivativeIfNeeded, true) // simplify by default
       equation
+        lst = processDelayExpressions(lst);
         s = states(lst, emptyBintree);
         vars = emptyVars();
         knvars = emptyVars();
@@ -625,6 +626,7 @@ algorithm
         
     case(lst, addDummyDerivativeIfNeeded, false) // do not simplify
       equation
+        lst = processDelayExpressions(lst);
         s = states(lst, emptyBintree);
         vars = emptyVars();
         knvars = emptyVars();
@@ -16031,5 +16033,76 @@ algorithm
   end matchcontinue;
 end getMaxfromListList;
 
-end DAELow;
+protected function transformDelayExpression
+"Insert a unique index into the arguments of a delay() expression.
+Repeat delay as maxDelay if not present."
+  input tuple<DAE.Exp, Integer> inTuple;
+  output tuple<DAE.Exp, Integer> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e, e1, e2, e3;
+      Integer i;
+      list<DAE.Exp> l;
+      Boolean t, b;
+      DAE.ExpType ty;
+      DAE.InlineType it;
+    case ((DAE.CALL(Absyn.IDENT("delay"), {e1, e2}, t, b, ty, it), i))
+      then ((DAE.CALL(Absyn.IDENT("delay"), {DAE.ICONST(i), e1, e2, e2}, t, b, ty, it), i + 1));
+    case ((DAE.CALL(Absyn.IDENT("delay"), {e1, e2, e3}, t, b, ty, it), i))
+      then ((DAE.CALL(Absyn.IDENT("delay"), {DAE.ICONST(i), e1, e2, e3}, t, b, ty, it), i + 1));
+    case ((e, i)) then ((e, i));
+  end matchcontinue;
+end transformDelayExpression;
 
+protected function transformDelayExpressions
+"Helper for processDelayExpressions()"
+  input DAE.Exp inExp;
+  input Integer inInteger;
+  output DAE.Exp outExp;
+  output Integer outInteger;
+algorithm
+  ((outExp, outInteger)) := Exp.traverseExp(inExp, transformDelayExpression, inInteger);
+end transformDelayExpressions;
+
+public function processDelayExpressions
+"Assign each call to delay() with a unique id argument"
+  input DAE.DAElist inDAE;
+  output DAE.DAElist outDAE;
+algorithm
+  outDAE := matchcontinue(inDAE)
+    local
+      DAE.DAElist dae, dae2;
+    case (dae)
+      equation
+        (dae2,_) = DAEUtil.traverseDAE(dae, transformDelayExpressions, 0);
+      then
+        dae2;
+  end matchcontinue;
+end processDelayExpressions;
+
+protected function collectDelayExpressions
+"Put expression into a list if it is a call to delay().
+Useable as a function parameter for Exp.traverseExp."
+  input tuple<DAE.Exp, list<DAE.Exp>> inTuple;
+  output tuple<DAE.Exp, list<DAE.Exp>> outTuple;
+algorithm
+  outTuple := matchcontinue(inTuple)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> l;
+    case ((e as DAE.CALL(path = Absyn.IDENT("delay")), l))
+      then ((e, e :: l));
+    case ((e, l)) then ((e, l));
+  end matchcontinue;
+end collectDelayExpressions;
+
+public function findDelaySubExpressions
+"Return all subexpressions of inExp that are calls to delay()"
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExps;
+algorithm
+  ((_, outExps)) := Exp.traverseExp(inExp, collectDelayExpressions, {});
+end findDelaySubExpressions;
+
+end DAELow;
