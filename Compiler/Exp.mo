@@ -9682,18 +9682,24 @@ returns true if expression is an array.
   input Exp inExp;
   output Boolean outB;
 algorithm
-  outB:=
-  matchcontinue(inExp)
-    local
-      Exp exp1;
-    case(exp1 as DAE.ARRAY(array = _ ))
-      then 
-        true; 
-    case(_)  
-    then       
-      false;  
+  outB := matchcontinue(inExp)
+    case(DAE.ARRAY(array = _ )) then true; 
+    case(_) then false;  
   end matchcontinue; 
 end isArray;
+
+public function isMatrix " function: isArray
+returns true if expression is an array.
+"
+  input Exp inExp;
+  output Boolean outB;
+algorithm
+  outB := matchcontinue(inExp)
+    case(DAE.MATRIX(scalar = _ )) then true; 
+    case(_) then false;  
+  end matchcontinue; 
+end isMatrix;
+
 
 public function isUnary " function: isArray
 returns true if expression is an array.
