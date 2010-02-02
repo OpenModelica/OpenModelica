@@ -2357,9 +2357,9 @@ L260:
 
 L300:
 /* SET T1 TO TN OR TOUT, WHICHEVER COMES FIRST, AND GET G AT T1. -------- */
-    if (*info3 == 1) {
+/*    if (*info3 == 1) {
 	goto L310;
-    }
+    }*/
     if ((*tout - *tn) * h__ >= 0.) {
 	goto L310;
     }
