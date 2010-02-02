@@ -352,7 +352,7 @@ package DAE
       list<ExpVar> varLst;
     end ET_ENUMERATION;
     record ET_COMPLEX
-      String name;
+      Absyn.Path name;
       list<ExpVar> varLst; 
       ClassInf.State complexClassType;
     end ET_COMPLEX;
@@ -789,7 +789,7 @@ package ClassInf
       String string;
     end TYPE_ENUM;
     record EXTERNAL_OBJ
-      Absyn.Path fullClassName;
+      Absyn.Path path;
     end EXTERNAL_OBJ;
   end State;
 

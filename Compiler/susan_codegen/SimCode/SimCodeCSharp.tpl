@@ -915,7 +915,7 @@ expShortType(DAE.ExpType) ::=
   case ET_BOOL   then "bool"
   case ET_OTHER  then "#complex#"
   case ET_ARRAY then expShortType(ty)   
-  case ET_COMPLEX then '/*struct*/<name>'  
+  case ET_COMPLEX then '/*struct*/<underscorePath(name)>'  
 
 expTypeArray(DAE.ExpType ty) ::=
 <<

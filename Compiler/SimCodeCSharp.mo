@@ -5289,7 +5289,7 @@ algorithm
         Absyn.Path i_name;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/*struct*/"));
-        txt = Tpl.writeStr(txt, Absyn.pathString(i_name));
+        txt = underscorePath(txt, i_name);
       then txt;
 
     case ( txt,
