@@ -214,8 +214,8 @@ algorithm
   cache := CACHE(arr,NONE,instFuncs);
 end emptyCache;
 
-public 
-constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
+public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
+public constant String valueBlockScopeName="$valueblock scope$" "a unique scope used by valueblocks";
 
 // functions for dealing with the environment
 
@@ -803,6 +803,7 @@ algorithm
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Env.getEnvName failed");
+        _ = getEnvPath(env);
       then fail();
   end matchcontinue;
 end getEnvName;

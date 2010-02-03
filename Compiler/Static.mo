@@ -663,7 +663,7 @@ algorithm
         DAE.Properties prop;
       equation 
         // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
-        env2 = Env.openScope(env, false, NONE());
+        env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName));
         
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld,false);
