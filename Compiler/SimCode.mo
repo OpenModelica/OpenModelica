@@ -108,6 +108,7 @@ uniontype SimCode
     list<SimWhenClause> whenClauses;
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;
+    MakefileParams makefileParams;
   end SIMCODE;
 end SimCode;
 
@@ -294,6 +295,20 @@ uniontype ExtObjInfo
   end EXTOBJINFO;
 end ExtObjInfo;
 
+uniontype MakefileParams
+  record MAKEFILE_PARAMS
+    String ccompiler;
+    String cxxcompiler;
+    String linker;
+    String exeext;
+    String dllext;
+    String omhome;
+    String cflags;
+    String ldflags;
+    list<String> libs;
+  end MAKEFILE_PARAMS;
+end MakefileParams;
+
 /* Created ad used by templates to be able to generate different code depending
    on the context it is generated in. */
 uniontype Context
@@ -466,13 +481,9 @@ algorithm
                                             className, filenameprefix);
         simCode = createSimCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps,
                                 className, filename, funcfilename,file_dir,
-                                functions);
+                                functions, libs);
         
         callTargetTemplates(simCode);
-        
-        /* generate makefile in old way since it's not implemented in
-           templates yet */
-        generateMakefile(makefilename, filenameprefix, libs, file_dir);
       then
         (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
@@ -902,10 +913,11 @@ protected function createSimCode
   input String inString10;
   input String inString11;
   input list<Function> functions;
+  input list<String> libs;
   output SimCode simCode;
 algorithm
   simCode :=
-  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11,functions)
+  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inPath8,inString9,inString10,inString11,functions,libs)
     local
       String cname,out_str,in_str,c_eventchecking,s_code2,s_code3,cglobal,coutput,cstate,c_ode,s_code,cwhen,
       	czerocross,filename,funcfilename,fileDir;
@@ -936,7 +948,8 @@ algorithm
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
-    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions)
+      MakefileParams makefileParams;
+    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions,libs)
       equation
         cname = Absyn.pathString(class_);
 
@@ -978,22 +991,47 @@ algorithm
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
         whenClauses = createSimWhenClauses(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
+        makefileParams = createMakefileParams(libs);
         simCode = SIMCODE(modelInfo, functions, allEquations, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
                           parameterEquations, removedEquations,
                           algorithmAndEquationAsserts, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
-                          discreteModelVars, extObjInfo);
+                          discreteModelVars, extObjInfo, makefileParams);
       then
         simCode;
-    case (_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
       then
         fail();
   end matchcontinue;
 end createSimCode;
+
+protected function createMakefileParams
+  input list<String> libs;
+  output MakefileParams makefileParams;
+algorithm
+  makefileParams :=
+  matchcontinue (libs)
+    local
+      String omhome,header,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags;
+    case (libs)
+      equation
+        ccompiler = System.getCCompiler();
+        cxxcompiler = System.getCXXCompiler();
+        linker = System.getLinker();
+        exeext = System.getExeExt();
+        dllext = System.getDllExt();
+        omhome = Settings.getInstallationDirectoryPath();
+        omhome = System.trim(omhome, "\""); // Remove any quotation marks from omhome.
+        cflags = System.getCFlags();
+        ldflags = System.getLDFlags();
+      then MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
+                           omhome, cflags, ldflags, libs);
+  end matchcontinue;
+end createMakefileParams;
 
 protected function generateHelpVarInfo
   input DAELow.DAELow dlow;
@@ -5321,74 +5359,6 @@ algorithm
         (allpaths_2,iterpaths_2);
   end matchcontinue;
 end appendNonpresentPaths;
-
-protected function generateMakefile
-"function: generateMakefile
-  This function generates a makefile for the simulation code.
-  It uses:
-   - OPENMODELICAHOME/include as a reference to includes and
-   - OPENMODELICAHOME/lib as a reference to library files"
-  input String inMakefileName;
-  input String inFilenamePrefix;
-  input list<String> inLibs;
-  input String inFileDir;
-algorithm
-  _:=
-  matchcontinue (inMakefileName,inFilenamePrefix,inLibs,inFileDir)
-    local
-      String cpp_file,libs_1,omhome_1,omhome,str,filename,cname,file_dir,MakefileHeader;
-      list<String> libs;
-    case (filename,cname,libs,"") /* filename classname libs directory for mo-file */
-      equation
-        MakefileHeader = CevalScript.generateMakefileHeader();
-        cpp_file = Util.stringAppendList({cname,".cpp"});
-        libs = Util.listUnion(libs, libs); // un-double the libs
-        libs_1 = Util.stringDelimitList(libs, " ");
-        omhome_1 = Settings.getInstallationDirectoryPath();
-        omhome = System.trim(omhome_1, "\"");
-        str = Util.stringAppendList({MakefileHeader,
-          "\n.PHONY: ",cname,"\n",
-          cname,": ",cpp_file,"\n","\t $(CXX)",
-          " $(CFLAGS)",
-          " -I.",
-          " -o ",cname,"$(EXEEXT) ",cpp_file,
-          " -lsim",
-          " $(LDFLAGS)",
-          " -lf2c",
-          " ${SENDDATALIBS} ",
-          libs_1,
-          "\n"});
-        System.writeFile(filename, str);
-      then
-        ();
-    case (filename,cname,libs,file_dir)
-      equation
-        MakefileHeader = CevalScript.generateMakefileHeader();
-        cpp_file = Util.stringAppendList({cname,".cpp"});
-        libs = Util.listUnion(libs, libs); // un-double the libs        
-        libs_1 = Util.stringDelimitList(libs, " ");
-        omhome_1 = Settings.getInstallationDirectoryPath();
-        omhome = System.trim(omhome_1, "\"");
-        str = Util.stringAppendList(
-          {MakefileHeader,
-          "\n.PHONY: ",cname,"\n",
-          cname,": ",cpp_file,"\n","\t $(CXX)",
-          " $(CFLAGS)",
-          " -I.",
-          " -I\"",file_dir,"\"",
-          " -o ",cname,"$(EXEEXT) ",cpp_file,
-          " -L\"",file_dir,"\"",
-          " -lsim",
-          " $(LDFLAGS)",
-          " -lf2c",
-          " ${SENDDATALIBS} ",
-          libs_1,
-          "\n"});
-        System.writeFile(filename, str);
-      then
-        ();
-  end matchcontinue;
-end generateMakefile;
 
 public function getMatchingExpsList
   input list<DAE.Exp> inExps;

@@ -87,8 +87,23 @@ package SimCode
       list<SimWhenClause> whenClauses;
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
+      MakefileParams makefileParams;
     end SIMCODE;
   end SimCode;
+
+  uniontype MakefileParams
+    record MAKEFILE_PARAMS
+      String ccompiler;
+      String cxxcompiler;
+      String linker;
+      String exeext;
+      String dllext;
+      String omhome;
+      String cflags;
+      String ldflags;
+      list<String> libs;
+    end MAKEFILE_PARAMS;
+  end MakefileParams;
 
   type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
   type ExtDestructor = tuple<String, DAE.ComponentRef>;
