@@ -8406,7 +8406,7 @@ algorithm
 
         (call_exp,prop_1) = vectorizeCall(callExp, restype, vect_dims, slots2, prop);
                 
-        /* Instantiate the function and add to dae function tree*/
+        /* Instantiate the function and add to dae function tree*/        
         (cache,dae2) = instantiateDaeFunction(cache,env,fn_1,builtin,NONE);
         dae = DAEUtil.joinDaes(dae1,dae2);       
       then
@@ -8508,7 +8508,7 @@ algorithm
     
     /* class already available*/
     case(cache,env,name,false,SOME(cl)) equation
-      (cache,name) = Inst.makeFullyQualified(cache,env,name);           
+      (cache,name) = Inst.makeFullyQualified(cache,env,name);
       (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InstanceHierarchy.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});     
       dae = DAEUtil.addDaeFunction(dae);      
     then (cache,dae);
@@ -12863,185 +12863,6 @@ algorithm
         fail();
   end matchcontinue;
 end operators;
-
-protected function getKoeningFunctionTypes "function: getKoeningFunctionTypes
- 
-  Used for userdefined function overloads.
-  This function will search the types of the arguments for matching function definitions 
-  corresponding to the koening C++ lookup rule.
-  Question: What happens if we have A.foo(x,y)? Should we search for function A.foo in
-  scope where type of x and y are defined? Or is it an error?
-  See also: get_koening_operator_types
-  Note: The reason for having two functions here is that operators and functions differs a lot.
-  Operators have fixed no of arguments, functions can both have positional and named 
-  arguments, etc. Perhaps these two could be unified. This would require major refactoring.
-"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.Path inPath;
-  input list<Absyn.Exp> inAbsynExpLst;
-  input list<Absyn.NamedArg> inAbsynNamedArgLst;
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output list<DAE.Type> outTypesTypeLst;
-algorithm 
-  (outCache,outTypesTypeLst):=
-  matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean)
-    local
-      tuple<DAE.TType, Option<Absyn.Path>> t;
-      Absyn.Path p1,fn;
-      SCode.Class c;
-      Env.Frame f,f_1;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> typelist,typelist2,res;
-      list<Env.Frame> env;
-      Absyn.Exp e1,exp;
-      list<Absyn.Exp> exps;
-      list<Absyn.NamedArg> na;
-      Boolean impl;
-      Ident id,fnstr,str;
-      Env.Cache cache;
-    case (cache,env,(fn as Absyn.IDENT(name = _)),(e1 :: exps),na,impl) /* impl */ 
-      equation 
-        (cache,_,DAE.PROP(t,_),_,_) = elabExp(cache,env, e1, impl, NONE,true);
-        p1 = Types.getClassname(t);
-        (cache,c,(f :: _)) = Lookup.lookupClass(cache,env, p1, false) "msg" ;
-        (cache,_,(f_1 :: _)) = Lookup.lookupType(cache,{f}, fn, false) "To make sure the function is implicitly instantiated." ;
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,{f_1}, fn);
-        (cache,typelist2) = getKoeningFunctionTypes(cache,env, fn, exps, na, impl);
-        res = listAppend(typelist, typelist2);
-      then
-        (cache,res);
-    case (cache,env,(fn as Absyn.IDENT(name = _)),(e1 :: exps),na,impl)
-      equation 
-        (cache,typelist) = getKoeningFunctionTypes(cache,env, fn, exps, na, impl);
-      then
-        (cache,typelist);
-    case (cache,env,(fn as Absyn.IDENT(name = _)),{},(Absyn.NAMEDARG(argName = id,argValue = exp) :: na),impl)
-      equation 
-        (cache,_,DAE.PROP(t,_),_,_) = elabExp(cache,env, exp, impl, NONE,true);
-        ((p1 as Absyn.QUALIFIED(_,_))) = Types.getClassname(t);
-        (cache,c,(f :: _)) = Lookup.lookupClass(cache,env, p1, false);
-        (cache,_,(f_1 :: _)) = Lookup.lookupType(cache,{f}, fn, false) "To make sure the function is implicitly instantiated." ;
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,{f_1}, fn);
-        (cache,typelist2) = getKoeningFunctionTypes(cache,env, fn, {}, na, impl);
-        res = listAppend(typelist, typelist2);
-      then
-        (cache,res);
-    case (cache,env,(fn as Absyn.IDENT(name = _)),{},(_ :: na),impl)
-      equation 
-        (cache,res) = getKoeningFunctionTypes(cache,env, fn, {}, na, impl);
-      then
-        (cache,res);
-    case (cache,env,(fn as Absyn.IDENT(name = _)),{},{},impl) then (cache,{}); 
-    case (cache,env,(fn as Absyn.QUALIFIED(name = _)),_,_,impl)
-      equation 
-        fnstr = Absyn.pathString(fn);
-        str = stringAppend("koening lookup of non-simple function name ", fnstr);
-        Error.addMessage(Error.INTERNAL_ERROR, {str});
-      then
-        fail();
-  end matchcontinue;
-end getKoeningFunctionTypes;
-
-protected function getKoeningOperatorTypes "function: getKoeningOperatorTypes
- 
-  Used for userdefined operator overloads.
-  This function will search the scopes of the classes of the two 
-  corresponding types and look for user defined operator overloaded
-  functions, such as \'plus\', \'minus\' and \'times\'. This corresponds
-  to the koening C++ lookup rule.
-"
-	input Env.Cache inCache;
-  input String inString1;
-  input Env.Env inEnv2;
-  input DAE.Type inType3;
-  input DAE.Type inType4;
-  output Env.Cache outCache;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
-algorithm 
-  (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
-  matchcontinue (inCache,inString1,inEnv2,inType3,inType4)
-    local
-      Absyn.Path p1,p2;
-      SCode.Class c;
-      list<Env.Frame> env1,env2,env;
-      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> res1,res2,res;
-      Ident op;
-      tuple<DAE.TType, Option<Absyn.Path>> t1,t2;
-      Env.Cache cache;
-      //NOTE: Koening operator disabled. Not part of Modelica yet.
-      // When introduced in standard, remove case below.
-      case (cache,op,env,t1,t2) then (cache,{});  
-    case (cache,op,env,t1,t2)
-      equation 
-        ((p1 as Absyn.QUALIFIED(_,_))) = Types.getClassname(t1) "Both types user defined" ;
-        (cache,c,env1) = Lookup.lookupClass(cache,env, p1, false);
-        (cache,res1) = getKoeningOperatorTypesInScope(cache,op, env1);
-        ((p2 as Absyn.QUALIFIED(_,_))) = Types.getClassname(t2);
-        (cache,c,env2) = Lookup.lookupClass(cache,env, p2, false);
-        (cache,res2) = getKoeningOperatorTypesInScope(cache,op, env2);
-        res = listAppend(res1, res2);
-      then
-        (cache,res);
-    case (cache,op,env,t1,t2)
-      equation 
-        failure(Absyn.QUALIFIED(_,_) = Types.getClassname(t1)) "User defined types only in t2" ;
-        ((p2 as Absyn.QUALIFIED(_,_))) = Types.getClassname(t2);
-        (cache,c,env2) = Lookup.lookupClass(cache,env, p2, false);
-        (cache,res) = getKoeningOperatorTypesInScope(cache,op, env2);
-      then
-        (cache,res);
-    case (cache,op,env,t1,t2)
-      equation 
-        failure(Absyn.QUALIFIED(_,_) = Types.getClassname(t2)) "User defined types only in t1" ;
-        ((p1 as Absyn.QUALIFIED(_,_))) = Types.getClassname(t1);
-        (cache,c,env1) = Lookup.lookupClass(cache,env, p1, false);
-        (cache,res) = getKoeningOperatorTypesInScope(cache,op, env1);
-      then
-        (cache,res);
-    case (cache,op,env,t1,t2)
-      equation 
-        failure(Absyn.QUALIFIED(_,_) = Types.getClassname(t1)) "No User defined types at all." ;
-        failure(Absyn.QUALIFIED(_,_) = Types.getClassname(t2));
-      then
-        (cache,{});
-    case (cache,op,env,t1,t2) then (cache,{}); 
-  end matchcontinue;
-end getKoeningOperatorTypes;
-
-protected function getKoeningOperatorTypesInScope 
-"function: getKoeningOperatorTypesInScope 
-  This function is a help function to getKoeningOperatorTypes
-  and it will look for functions in the current scope of the passed
-  environment, according to the koening rule."
-	input Env.Cache inCache;
-  input String inString;
-  input Env.Env inEnv;
-  output Env.Cache outCache;
-  output list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> outTplExpOperatorTypesTypeLstTypesTypeLst;
-algorithm 
-  (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
-  matchcontinue (inCache,inString,inEnv)
-    local
-      Env.Frame f_1,f;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> tplst;
-      Integer tplen;
-      Absyn.Path fullfuncname;
-      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> res;
-      Ident funcname;
-      list<Env.Frame> fs;
-      Env.Cache cache;
-    case (cache,funcname,(f :: fs))
-      equation 
-        (cache,_,(f_1 :: _)) = Lookup.lookupType(cache, {f}, Absyn.IDENT(funcname), false) "To make sure the function is implicitly instantiated." ;
-        (cache,tplst) = Lookup.lookupFunctionsInEnv(cache, {f_1}, Absyn.IDENT(funcname)) "TODO: Fix so lookupFunctionsInEnv also does instantiation to get type" ;
-        tplen = listLength(tplst);
-        (cache,fullfuncname) = Inst.makeFullyQualified(cache,(f_1 :: fs), Absyn.IDENT(funcname));
-        res = buildOperatorTypes(tplst, fullfuncname);
-      then
-        (cache,res);
-  end matchcontinue;
-end getKoeningOperatorTypesInScope;
 
 protected function buildOperatorTypes 
 "function: buildOperatorTypes 

@@ -9442,7 +9442,7 @@ algorithm
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
         derFuncs = getDeriveAnnotation(cd,fpath,cache,env,pre);
                 
-        dae1 = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);              
+        (cache,dae1) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);              
         
         ty1 = setFullyQualifiedTypename(ty,fpath);
 
@@ -9465,7 +9465,7 @@ algorithm
 
         derFuncs = getDeriveAnnotation(parts,fpath,cache,env,pre);
         
-        dae1 = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath); 
+        (cache,dae1) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath); 
          
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(cenv, n, ty1);
@@ -9505,9 +9505,11 @@ dae and can be generated code for in case they are required"
   input InstanceHierarchy ih;
   input list<DAE.FunctionDefinition> funcs;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
+  output Env.Cache outCache;
   output DAE.DAElist dae;
 algorithm  
- dae := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path);
+  //print("instantiate deriative functions for "+&Absyn.pathString(path)+&"\n"); 
+ (outCache,dae) := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path);
  //print("instantiated derivative functions"+&DAEUtil.dumpStr(dae)+&"\n");
 end instantiateDerivativeFuncs;
 
@@ -9517,21 +9519,34 @@ protected function instantiateDerivativeFuncs2 "help function"
   input InstanceHierarchy ih;
   input list<Absyn.Path> paths;
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
+  output Env.Cache outCache;
   output DAE.DAElist dae;
 algorithm
-  dae := matchcontinue(cache,env,ih,paths,path)
+  (outCache,dae) := matchcontinue(cache,env,ih,paths,path)
     local Absyn.Path p; Env.Env cenv;
       SCode.Class cdef;
     DAE.DAElist dae1,dae2;
-    case(cache,env,ih,{},path) then DAEUtil.emptyDae;
+    case(cache,env,ih,{},path) then (cache,DAEUtil.emptyDae);
+    /* Skipped recursive calls (by looking in cache) */
     case(cache,env,ih,p::paths,path) equation
-        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);        
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);   
+        (cache,p) = makeFullyQualified(cache,cenv,p);      
+        _ = Env.getCachedInstFunc(cache,p);
+        (cache,dae) = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
+    then (cache,dae);
+      
+      
+    case(cache,env,ih,p::paths,path) equation
+        (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
+        (cache,p) = makeFullyQualified(cache,cenv,p);
+        // add to cache before instantiating, to break recursion for recursive definitions.  
+        cache = Env.addCachedInstFunc(cache,p); 
         (cache,_,ih,dae1) = implicitFunctionInstantiation(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
         dae1 = addNameToDerivativeMapping(dae1,path);
         dae1 = DAEUtil.addDaeFunction(dae1);
-        dae2 = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
+        (cache,dae2) = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
         dae = DAEUtil.joinDaes(dae1,dae2);        
-    then dae;        
+    then (cache,dae);        
   end matchcontinue;
 end instantiateDerivativeFuncs2;
 
