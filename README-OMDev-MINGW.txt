@@ -22,7 +22,12 @@ Adrian Pop, adrpo@ida.liu.se, date above.
 
 4. inside the OpenModelica directory you will find a .project-sample file
    which you should rename to OpenModelica/.project and do whatever modifications
-   you need on it to reflect your paths.
+   you need on it to reflect your paths. Windows doesn't let you create files
+   that start with dot (.) so you do like this:
+   Copy your .project-sample to .project again from DOS:
+   Start->Run->cmd.exe
+   $ cd \path\to\OpenModelica
+   $ ren ".project-sample" ".project" 
 
 5. rename the file the OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch-sample
    to OpenModelica/.externalToolBuilders/OMDev-MINGW-OpenModelicaBuilder.launch and do whatever
