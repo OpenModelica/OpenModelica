@@ -15561,20 +15561,6 @@ algorithm
       Integer[:] v1,v2,v1_1,v2_1;
       list<list<Integer>> comps,comps_1;
       list<list<Integer>> r,t;
-      Variables ordvars,knvars,exobj,ordvars1;
-      EquationArray eqns,remeqns,inieqns,eqns1;
-      MultiDimEquation[:] arreqns;
-      DAE.Algorithm[:] algorithms;
-      EventInfo einfo;
-      ExternalObjectClasses eoc;
-      Value n,size,n1,size1;
-      Option<Equation>[:] arr_1,arr;
-      list<CrefIndex>[:] crefIdxLstArr,crefIdxLstArr1;
-      list<StringIndex>[:] strIdxLstArr,strIdxLstArr1;
-      VariableArray varArr;
-      Integer bucketSize;
-      Integer numberOfVars;
-      Option<Var>[:] varOptArr,varOptArr1;
     case (dlow,m,mT,v1,v2,comps)
       equation 
         // add flag her if no tearing is desired
@@ -15582,21 +15568,7 @@ algorithm
         Debug.fcall("tearingdump", print, "Tearing\n==========\n");
         // get residual eqn and tearing var for each block
         // copy dlow
-        DAELOW(ordvars,knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc) = dlow;
-        VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
-        VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
-        crefIdxLstArr1 = fill({}, size1);      
-        crefIdxLstArr1 = Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);        
-        strIdxLstArr1 = fill({}, size1);      
-        strIdxLstArr1 = Util.arrayCopy(strIdxLstArr, strIdxLstArr1);        
-        varOptArr1 = fill(NONE, size1);      
-        varOptArr1 = Util.arrayCopy(varOptArr, varOptArr1);
-        ordvars1 = VARIABLES(crefIdxLstArr1,strIdxLstArr1,VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
-        EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) = eqns; 
-        arr_1 = fill(NONE, size);      
-        arr_1 = Util.arrayCopy(arr, arr_1);
-        eqns1 = EQUATION_ARRAY(n,size,arr_1);
-        dlow1 = DAELOW(ordvars1,knvars,exobj,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc); 
+        dlow1 = copyDaeLowforTearing(dlow); 
         (r,t,_,dlow_1,m_1,mT_1,v1_1,v2_1,comps_1) = tearingSystem1(dlow,dlow1,m,mT,v1,v2,comps);
         Debug.fcall("tearingdump", dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", dumpIncidenceMatrixT, mT_1);
@@ -15648,6 +15620,51 @@ algorithm
         ();
   end matchcontinue;
 end dumpTearing;
+
+protected function copyDaeLowforTearing
+" function: copyDaeLowforTearing
+  autor: Frenkel TUD
+  Copy the dae to avoid changes in 
+  vectors."
+  input DAELow inDlow;
+  output DAELow outDlow;
+algorithm 
+  outDlow:=
+  matchcontinue (inDlow)
+    local
+      Variables ordvars,knvars,exobj,ordvars1;
+      EquationArray eqns,remeqns,inieqns,eqns1;
+      MultiDimEquation[:] arreqns;
+      DAE.Algorithm[:] algorithms;
+      EventInfo einfo;
+      ExternalObjectClasses eoc;
+      Value n,size,n1,size1;
+      Option<Equation>[:] arr_1,arr;
+      list<CrefIndex>[:] crefIdxLstArr,crefIdxLstArr1;
+      list<StringIndex>[:] strIdxLstArr,strIdxLstArr1;
+      VariableArray varArr;
+      Integer bucketSize;
+      Integer numberOfVars;
+      Option<Var>[:] varOptArr,varOptArr1;
+    case (DAELOW(ordvars,knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+      equation 
+        VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
+        VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
+        crefIdxLstArr1 = fill({}, size1);      
+        crefIdxLstArr1 = Util.arrayCopy(crefIdxLstArr, crefIdxLstArr1);        
+        strIdxLstArr1 = fill({}, size1);      
+        strIdxLstArr1 = Util.arrayCopy(strIdxLstArr, strIdxLstArr1);        
+        varOptArr1 = fill(NONE, size1);      
+        varOptArr1 = Util.arrayCopy(varOptArr, varOptArr1);
+        ordvars1 = VARIABLES(crefIdxLstArr1,strIdxLstArr1,VARIABLE_ARRAY(n1,size1,varOptArr1),bucketSize,numberOfVars);
+        EQUATION_ARRAY(numberOfElement = n,arrSize = size,equOptArr = arr) = eqns; 
+        arr_1 = fill(NONE, size);      
+        arr_1 = Util.arrayCopy(arr, arr_1);
+        eqns1 = EQUATION_ARRAY(n,size,arr_1);
+      then
+        DAELOW(ordvars1,knvars,exobj,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+  end matchcontinue;
+end copyDaeLowforTearing;
 
 protected function tearingSystem1
 " function: tearingSystem1
@@ -15857,11 +15874,11 @@ algorithm
   (outTearVars,outResEqns,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns)
     local
-      DAELow dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2;
-      IncidenceMatrix m,m_1,m_2,m_3;
+      DAELow dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
+      IncidenceMatrix m,m_1,m_2,m_3,m_1p;
       IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       Integer[:] v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<list<Integer>> comps,comps_1;
+      list<list<Integer>> comps,comps_1,lstm,lstmp;
       list<Integer> vars,comp,comp_1,comp_2,r,t,exclude,b,cmops_flat;
       String str,str1,str2; 
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
@@ -15882,9 +15899,7 @@ algorithm
       DAE.ExpType identType;
       list<DAE.Subscript> subscriptLst;
       Integer replace,replace1;
-    case (dlow as DAELOW(ordvars as VARIABLES(varArr=varr),knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc),
-          dlow1 as DAELOW(orderedVars = ordvars1,orderedEqs = eqns1),
-          m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
+    case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
       equation 
         tearingvar = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
@@ -15893,6 +15908,11 @@ algorithm
         str1 = stringAppend("\nTearingVar: ", str);
         str2 = stringAppend(str1,"\n");
         Debug.fcall("tearingdump", print, str2);
+        // copy dlow
+        dlowc = copyDaeLowforTearing(dlow);
+        DAELOW(ordvars as VARIABLES(varArr=varr),knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc) = dlowc;
+        dlowc1 = copyDaeLowforTearing(dlow1);
+        DAELOW(orderedVars = ordvars1,orderedEqs = eqns1) = dlowc1;
         // add Tearing Var
         VAR(varName = cr as DAE.CREF_IDENT(ident = ident, identType = identType, subscriptLst = subscriptLst )) = vararrayNth(varr, tearingvar-1);
         ident_t = stringAppend("tearingresidual_",ident);
@@ -15918,18 +15938,26 @@ algorithm
         dlow1_1 = DAELOW(ordvars1,knvars,exobj,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
         m_1 = incidenceMatrix(dlow_1);
-        mT_1 = transposeMatrix(m_1);
-        nvars = arrayLength(m_1);
+        lstm = arrayList(m_1);
+        lstmp = Util.listListMap(lstm, intAbs);
+        m_1p = listArray(lstmp); 
+        mT_1 = transposeMatrix(m_1p);
+        nvars = arrayLength(m_1p);
         neqns = arrayLength(mT_1);
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
         // try matching        
         checkMatching(dlow_1, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
-        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
+        Debug.fcall("tearingdump", dumpIncidenceMatrix, m_1);
+        Debug.fcall("tearingdump", dumpIncidenceMatrixT, mT_1);
+        Debug.fcall("tearingdump", dump, dlow_1);
+        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1p, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
         v1_1 = assignmentsVector(ass1);
         v2_1 = assignmentsVector(ass2);        
         (comps) = strongComponents(m_2, mT_2, v1_1, v2_1);
+        Debug.fcall("tearingdump", dumpMatching, v1_1);        
+        Debug.fcall("tearingdump", dumpComponents, comps);         
          // check strongComponents (simply start again with tearingSystems4)
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_1,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps,residualeqns,tearingvars,tearingeqns,comp,0);
         // Add Tearing Equation
@@ -15947,6 +15975,8 @@ algorithm
         tearingvar = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
         true = tearingvar > 0;
+        // clear errors
+        Error.clearMessages();
         // try next TearingVar
         (tearingvars_1,residualeqns_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns);
       then
