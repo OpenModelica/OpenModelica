@@ -5588,8 +5588,9 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2,dae3;
       
-    /* implicit inst. */
+    /* no more components. */
     case (cache,env,ih,_,_,_,_,{},_,_,_,_) then (cache,env,ih,DAEUtil.emptyDae);
+      
     /* A TPATH component */ 
     case (cache,env,ih,mod,pre,csets,cistate,
         (((comp as SCode.COMPONENT(component = n,
@@ -9540,8 +9541,10 @@ algorithm
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = makeFullyQualified(cache,cenv,p);
         // add to cache before instantiating, to break recursion for recursive definitions.  
-        cache = Env.addCachedInstFunc(cache,p); 
+        cache = Env.addCachedInstFunc(cache,path);
+        cache = Env.addCachedInstFunc(cache,p);
         (cache,_,ih,dae1) = implicitFunctionInstantiation(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
+        
         dae1 = addNameToDerivativeMapping(dae1,path);
         dae1 = DAEUtil.addDaeFunction(dae1);
         (cache,dae2) = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
