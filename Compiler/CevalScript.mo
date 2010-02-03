@@ -2321,7 +2321,6 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        (_,_,_,_,_,_) = DAELow.tearingSystem(dlow_1,m,mT,ass1,ass2,comps);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fprint("bltdump", "indexed DAE:\n");

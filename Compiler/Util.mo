@@ -637,6 +637,34 @@ algorithm
   end matchcontinue;
 end listContains;
 
+public function listNotContains "function: listNotContains
+Checks wheter a list contains a value or not. 
+"
+  input Type_a ele;
+  input list<Type_a> elems;
+  output Boolean contains;
+  replaceable type Type_a subtypeof Any;
+algorithm 
+  contains:=
+  matchcontinue (ele,elems)
+    local
+      Type_a a,b;
+      list<Type_a> rest;
+      Boolean bool;
+    case (_,{}) then true; 
+    case (a,b::rest) 
+      equation
+        equality(a = b);
+      then 
+        false;
+    case (a,_::rest) 
+      equation 
+        bool = listNotContains(a,rest);
+      then
+        bool;
+  end matchcontinue;
+end listNotContains;
+
 public function listContainsWithCompareFunc "function: listContains
 Checks wheter a list contains a value or not. 
 "

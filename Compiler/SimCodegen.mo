@@ -218,7 +218,7 @@ algorithm
         cglobal = generateGlobalData(class_, dlow2, n_o, n_i, n_h, nres,fileDir); // CHANGED!!!
         coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
-        c_ode = generateOdeCode(dlow2, blt_states, ass1, ass2, m, mt, class_);
+        c_ode = generateOdeCode(dae, dlow2, blt_states, ass1, ass2, m, mt, class_);
         s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
         czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
@@ -3246,6 +3246,7 @@ protected function generateOdeCode "function generateOdeCode
   The state calculations are generated on explicit ode form:
   \\dot{x} := f(x,y,t)
 "
+  input DAE.DAElist inDAElist1;
   input DAELow.DAELow inDAELow1;
   input list<list<Integer>> inIntegerLstLst2;
   input Integer[:] inIntegerArray3;
@@ -3256,8 +3257,9 @@ protected function generateOdeCode "function generateOdeCode
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inDAELow1,inIntegerLstLst2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inPath7)
+  matchcontinue (inDAElist1,inDAELow1,inIntegerLstLst2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inPath7)
     local
+      input DAE.DAElist dae;
       String cname,ode_func_str,extra_funcs_str,res;
       list<list<Integer>> blt_states,blt_no_states,comps;
       Codegen.CFunction block_code,func_1,func;
@@ -3266,11 +3268,11 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer>[:] m,mt;
       Absyn.Path class_;
-    case (dlow,comps,ass1,ass2,m,mt,class_) /* components ass1 ass2 */
+    case (dae,dlow,comps,ass1,ass2,m,mt,class_) /* components ass1 ass2 */
       equation
         cname = Absyn.pathString(class_);
         (blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
-        (block_code,_,extra_funcs) = generateOdeBlocks(false,dlow,ass1, ass2, blt_states, 0);
+        (block_code,_,extra_funcs) = generateOdeBlocks(dae,false,dlow,ass1, ass2, blt_states, 0);
         func_1 = Codegen.cMakeFunction("int", "functionODE", {}, {""});
         func_1 = addMemoryManagement(func_1);
         func = Codegen.cAddCleanups(func_1, {"return 0;"});
@@ -3280,7 +3282,7 @@ algorithm
         res = Util.stringAppendList({extra_funcs_str,ode_func_str});
       then
         res;
-    case (dlow,comps,ass1,ass2,m,mt,class_)
+    case (dae,dlow,comps,ass1,ass2,m,mt,class_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"generate_ode_code failed"});
       then
@@ -3803,6 +3805,7 @@ protected function generateOdeBlocks
 "function: generateOdeBlocks
   author: PA
   Generates the simulation code for the ode code."
+  input DAE.DAElist inDAElist1;
 	input Boolean genDiscrete "if true generate calculation of discrete variables";
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
@@ -3814,8 +3817,9 @@ protected function generateOdeBlocks
   output list<CFunction> outCFunctionLst;
 algorithm
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4,inInteger5)
+  matchcontinue (inDAElist1,genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4,inInteger5)
     local
+      input DAE.DAElist daelist;
       Integer cg_id,cg_id_1,cg_id_2,eqn;
       Codegen.CFunction s1,s2,res;
       list<CFunction> f1,f2,res2;
@@ -3823,24 +3827,24 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer> block_;
       list<list<Integer>> blocks;
-    case (genDiscrete,_,_,_,{},cg_id) then (Codegen.cEmptyFunction,cg_id,{});  /* cg var_id block code cg var_id extra functions code */
-    case (genDiscrete,dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks),cg_id)
+    case (daelist,genDiscrete,_,_,_,{},cg_id) then (Codegen.cEmptyFunction,cg_id,{});  /* cg var_id block code cg var_id extra functions code */
+    case (daelist,genDiscrete,dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks),cg_id)
       equation
-        (s1,cg_id_1,f1) = generateOdeSystem(genDiscrete,dae, ass1, ass2, block_, cg_id) "For system of equations" ;
-        (s2,cg_id_2,f2) = generateOdeBlocks(genDiscrete,dae, ass1, ass2, blocks, cg_id_1);
+        (s1,cg_id_1,f1) = generateOdeSystem(daelist,genDiscrete,dae, ass1, ass2, block_, cg_id) "For system of equations" ;
+        (s2,cg_id_2,f2) = generateOdeBlocks(daelist,genDiscrete,dae, ass1, ass2, blocks, cg_id_1);
         res = Codegen.cMergeFns({s1,s2});
         res2 = listAppend(f1, f2);
       then
         (res,cg_id_2,res2);
-    case (genDiscrete,dae,ass1,ass2,((block_ as {eqn}) :: blocks),cg_id)
+    case (daelist,genDiscrete,dae,ass1,ass2,((block_ as {eqn}) :: blocks),cg_id)
       equation
         (s1,cg_id_1,f1) = generateOdeEquation(genDiscrete,dae,ass1, ass2, eqn, cg_id) "for single equations" ;
-        (s2,cg_id_2,f2) = generateOdeBlocks(genDiscrete,dae, ass1, ass2, blocks, cg_id_1);
+        (s2,cg_id_2,f2) = generateOdeBlocks(daelist,genDiscrete,dae, ass1, ass2, blocks, cg_id_1);
         res = Codegen.cMergeFns({s1,s2});
         res2 = listAppend(f1, f2);
       then
         (res,cg_id_2,res2);
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "-generate_ode_blocks failed\n");
       then
@@ -3852,6 +3856,7 @@ protected function generateOdeBlocks_new
 "function: generateOdeBlocks
   author: PA
   Generates the simulation code for the ode code."
+  input DAE.DAElist inDAElist1;
 	input Boolean genDiscrete "if true generate calculation of discrete variables";
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
@@ -3864,8 +3869,9 @@ protected function generateOdeBlocks_new
   output list<CFunction> outCFunctionLst;
 algorithm
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4,inInteger5,helpvarinfo)
+  matchcontinue (inDAElist1,genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLstLst4,inInteger5,helpvarinfo)
     local
+      input DAE.DAElist daelist;
       Integer cg_id,cg_id_1,cg_id_2,eqn;
       Codegen.CFunction s1,s2,res;
       list<CFunction> f1,f2,res2;
@@ -3874,24 +3880,24 @@ algorithm
       list<Integer> block_;
       list<list<Integer>> blocks;
       list<HelpVarInfo> helpvarinfo1;
-    case (genDiscrete,_,_,_,{},cg_id,_) then (Codegen.cEmptyFunction,cg_id,{});  /* cg var_id block code cg var_id extra functions code */
-    case (genDiscrete,dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks),cg_id,helpvarinfo1)
+    case (daelist,genDiscrete,_,_,_,{},cg_id,_) then (Codegen.cEmptyFunction,cg_id,{});  /* cg var_id block code cg var_id extra functions code */
+    case (daelist,genDiscrete,dae,ass1,ass2,((block_ as (_ :: (_ :: _))) :: blocks),cg_id,helpvarinfo1)
       equation
-        (s1,cg_id_1,f1) = generateOdeSystem(genDiscrete,dae, ass1, ass2, block_, cg_id) "For system of equations" ;
-        (s2,cg_id_2,f2) = generateOdeBlocks_new(genDiscrete,dae, ass1, ass2, blocks, cg_id_1,helpvarinfo1);
+        (s1,cg_id_1,f1) = generateOdeSystem(daelist,genDiscrete,dae, ass1, ass2, block_, cg_id) "For system of equations" ;
+        (s2,cg_id_2,f2) = generateOdeBlocks_new(daelist,genDiscrete,dae, ass1, ass2, blocks, cg_id_1,helpvarinfo1);
         res = Codegen.cMergeFns({s1,s2});
         res2 = listAppend(f1, f2);
       then
         (res,cg_id_2,res2);
-    case (genDiscrete,dae,ass1,ass2,((block_ as {eqn}) :: blocks),cg_id,helpvarinfo1)
+    case (daelist,genDiscrete,dae,ass1,ass2,((block_ as {eqn}) :: blocks),cg_id,helpvarinfo1)
       equation
         (s1,cg_id_1,f1) = generateOdeEquation_new(genDiscrete,dae, ass1, ass2, eqn, cg_id,helpvarinfo1) "for single equations" ;
-        (s2,cg_id_2,f2) = generateOdeBlocks_new(genDiscrete,dae, ass1, ass2, blocks, cg_id_1,helpvarinfo1);
+        (s2,cg_id_2,f2) = generateOdeBlocks_new(daelist,genDiscrete,dae, ass1, ass2, blocks, cg_id_1,helpvarinfo1);
         res = Codegen.cMergeFns({s1,s2});
         res2 = listAppend(f1, f2);
       then
         (res,cg_id_2,res2);
-    case (_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "-generate_ode_blocks failed\n");
       then
@@ -3931,6 +3937,7 @@ protected function generateOdeSystem "function: generateOdeSystem
   only the continous part is generated (no discrete equations at all), i.e. what is necessary to
   calculate during continuous integration.
 "
+  input DAE.DAElist inDAElist1;
 	input Boolean genDiscrete "if true generate discrete equations";
   input DAELow.DAELow inDAELow1;
   input Integer[:] inIntegerArray2;
@@ -3942,8 +3949,9 @@ protected function generateOdeSystem "function: generateOdeSystem
   output list<CFunction> outCFunctionLst;
 algorithm
   (outCFunction,outInteger,outCFunctionLst):=
-  matchcontinue (genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inInteger5)
+  matchcontinue (inDAElist1,genDiscrete,inDAELow1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inInteger5)
     local
+      DAE.DAElist dae;
       String rettp,fn;
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
@@ -3966,7 +3974,7 @@ algorithm
       list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
 
       /* Mixed system of equations, continuous part only */
-    case (false,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,false,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         true = isMixedSystem(var_lst,eqn_lst);
@@ -3996,7 +4004,7 @@ algorithm
         (s2,cg_id_1,f1);
 
         /* Mixed system of equations, both continous and discrete eqns*/
-    case (true,(dlow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,true,(dlow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
       local Integer numValues;
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -4024,8 +4032,43 @@ algorithm
       then
         (cfn,cg_id5,extra_funcs1);
 
+        /* continuous system of equations try tearing algorithm*/
+    case (dae,genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
+      local
+        DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
+        Integer[:] v1,v2,v1_1,v2_1;
+        DAELow.IncidenceMatrix m_2,m_3;
+        DAELow.IncidenceMatrixT mT_2,mT_3;
+        list<list<Integer>> comps,comps_1;
+        list<Integer> comps_flat;
+        list<list<Integer>> r,t;
+        list<Integer> rf,tf;
+      equation
+        // check tearing
+        true = RTOpts.debugFlag("tearing");
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
+        var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
+        vars_1 = DAELow.listVar(var_lst_1);
+        eqns_1 = DAELow.listEquation(eqn_lst);
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
+        m = DAELow.incidenceMatrix(subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(subsystem_dae, m_1, mt_1, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()));
+        (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
+        (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
+        comps_flat = Util.listFlatten(comps_1);
+        rf = Util.listFlatten(r);
+        tf = Util.listFlatten(t);
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        (s1,cg_id_1,f1) = generateTearingSystem(dae,v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
+	DAELow.dump subsystem_dae &" ;
+      then
+        (s1,cg_id_1,f1);
+
         /* continuous system of equations */
-    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
@@ -4041,7 +4084,7 @@ algorithm
 	DAELow.dump subsystem_dae &" ;
       then
         (s1,cg_id_1,f1);
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "-generate_ode_system failed\n");
       then
@@ -4632,7 +4675,7 @@ algorithm
       Codegen.CFunction s1,s2,s3,s4,s5,s;
       Integer cg_id_1,cg_id,eqn_size,unique_id,cg_id1,cg_id2,cg_id3,cg_id4,cg_id5;
       list<CFunction> f1;
-      DAELow.DAELow dae,d;
+      DAELow.DAELow dae;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       DAELow.Variables v,kv;
@@ -4662,17 +4705,17 @@ algorithm
         /* constant jacobians. Linear system of equations (A x = b) where
          A and b are constants. TODO: implement symbolic gaussian elimination here. Currently uses dgesv as
          for next case */
-    case (mixedEvent,genDiscrete,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id)
+    case (mixedEvent,genDiscrete,(dae as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_CONSTANT(),cg_id)
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation
         eqn_size = DAELow.equationSize(eqn);
-        (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,genDiscrete,d, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
+        (s1,cg_id_1,f1) = generateOdeSystem2(mixedEvent,genDiscrete,dae, SOME(jac), DAELow.JAC_TIME_VARYING(), cg_id) "NOTE: Not impl. yet, use time_varying..." ;
       then
         (s1,cg_id_1,f1);
 
 	/* Time varying jacobian. Linear system of equations that needs to
 		  be solved during runtime. */
-    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)
+    case (mixedEvent,_,(DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)
       local list<tuple<Integer, Integer, DAELow.Equation>> jac;
       equation
         //print("linearSystem of equations:");
@@ -4712,6 +4755,139 @@ algorithm
         fail();
   end matchcontinue;
 end generateOdeSystem2;
+
+protected function generateTearingSystem "function: generateTearingSystem
+  author: Frenkel TUD
+
+  Generates the actual simulation code for the teared system of equation
+"
+  input DAE.DAElist inDAElist1;
+  input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray3; 
+  input list<Integer> inIntegerLst4;
+  input list<Integer> inIntegerLst5;
+  input list<Integer> inIntegerLst6; 
+  input Boolean mixedEvent "true if generating the mixed system event code";
+  input Boolean genDiscrete;
+  input DAELow.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input DAELow.JacobianType inJacobianType;
+  input Integer inInteger;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output list<CFunction> outCFunctionLst;
+algorithm
+  (outCFunction,outInteger,outCFunctionLst):=
+  matchcontinue (inDAElist1,inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,inInteger)
+    local
+      DAE.DAElist dae;
+      Integer[:] ass1,ass2;
+      list<Integer> block_,block_1,r,t;
+      Codegen.CFunction s1,s2;
+      Codegen.CFunction res_func,func,f2,f3,f4,f1,f5,res,feqn;
+      Integer cg_id,eqn_size,cg_id1,cg_id2,cg_id3,cg_id4,id;
+      DAELow.DAELow daelow,daelow1;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      DAELow.JacobianType jac_tp;
+      DAELow.Variables v,kv,exv;
+      DAELow.EquationArray eqn,eqn1,reeqn,ineq;
+      list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
+      list<DAELow.Var> var_lst;
+      list<DAE.ComponentRef> crefs,crefs1,tcrs;
+      DAELow.MultiDimEquation[:] ae;
+      Boolean genDiscrete;
+      list<list<Integer>> eqnlstlst;
+      String str_id,size_str,func_name,start_stmt,end_stmt;
+      VarTransform.VariableReplacements repl;
+      DAE.Algorithm[:] algorithms;
+      DAELow.EventInfo eventInfo;
+      DAELow.ExternalObjectClasses extObjClasses;       
+    case (dae,ass1,ass2,block_,r,t,mixedEvent,_,
+          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp,cg_id) /* no analythic jacobian available. Generate non-linear system */
+      equation
+        // get equations and variables
+        eqn_lst = DAELow.equationList(eqn);
+        var_lst = DAELow.varList(v);
+        // get names from variables
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
+        // get Tearingvar from crs
+        // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
+        crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
+        eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.SOURCE({},{},{},{})),eqn_lst);
+        tcrs = Util.listMap1r(t,listNth,crefs1); 
+        repl = makeResidualReplacements(tcrs);
+        // get residual eqns and other eqns 
+        reqns = Util.listMap1r(r,listNth,eqn_lst1);
+        // remove residual equation from list of other equtions
+        block_1 = Util.listSelect1(block_,r,Util.listNotContains);
+        eqnlstlst = Util.listMap(block_1,Util.listCreate);
+        // replace tearing variables in other equations with x_loc[..]
+        eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
+        eqn1 = DAELow.listEquation(eqn_lst2);
+        daelow1=DAELow.DAELOW(v,kv,exv,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        // generade code for other equations
+        (feqn,cg_id2,_) = buildSolvedBlocks(dae,daelow1,ass1,ass2,eqnlstlst,cg_id);
+        // generade code for nonlinear solver for tearing system
+        (s1,cg_id1) = generateOdeSystem2NonlinearResiduals2(reqns, ae, 0, repl, cg_id2);
+        s2 = Codegen.cMergeFns({feqn,s1});
+        id = tick();
+        str_id = intString(id);
+        eqn_size = listLength(reqns);
+        size_str = intString(eqn_size);
+        func_name = stringAppend("residualFunc", str_id);
+        res_func = Codegen.cMakeFunction("void", func_name, {},
+          {"int *n","double* xloc","double* res","int* iflag"});
+        func = Codegen.cMergeFns({res_func,s2});
+        func = addMemoryManagement(func);
+        (f2,cg_id2) = generateOdeSystem2NonlinearSetvector(tcrs, 0, cg_id1);
+        (f3,cg_id3) = generateOdeSystem2NonlinearCall(mixedEvent,str_id, cg_id2);
+        (f4,cg_id4) = generateOdeSystem2NonlinearStoreResults(tcrs, 0, cg_id3);
+        start_stmt = Util.stringAppendList({"start_nonlinear_system(",size_str,");"});
+        end_stmt = "end_nonlinear_system();";
+        f1 = Codegen.cAddStatements(Codegen.cEmptyFunction, {start_stmt});
+        f5 = Codegen.cAddStatements(Codegen.cEmptyFunction, {end_stmt});
+        res = Codegen.cMergeFns({f1,f2,f3,f4,f5});
+      then
+        (res,cg_id4,{func});    
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprint("failtrace", "-generateTearingSystem failed \n");
+      then
+        fail();        
+  end matchcontinue;
+end generateTearingSystem;
+
+protected function generateTearingSystem1
+ "function: generateTearingSystem1
+  author: Frenkel TUD
+  Helper function to generateTearingSystem1"
+  input list<DAELow.Equation> inDAELowEquationLst;
+  input VarTransform.VariableReplacements inVariableReplacements;
+  output list<DAELow.Equation> outDAELowEquationLst;
+algorithm
+  outDAELowEquationLst := matchcontinue (inDAELowEquationLst,inVariableReplacements)
+    local
+      DAE.Exp e1,e2,e1_1,e2_1;
+      list<DAELow.Equation> rest,rest2;
+      DAELow.MultiDimEquation[:] aeqns;
+      VarTransform.VariableReplacements repl;
+      DAE.ElementSource source;
+    case ({},_) then {};
+    case ((DAELow.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
+      equation
+        rest2 = generateTearingSystem1(rest,repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        e2_1 = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
+      then
+        DAELow.EQUATION(e1_1,e2_1,source) :: rest2;
+    case ((DAELow.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
+      equation
+        rest2 = generateTearingSystem1(rest,repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+      then
+        DAELow.RESIDUAL_EQUATION(e1_1,source) :: rest2;
+  end matchcontinue;
+end generateTearingSystem1;
 
 protected function generateSingleAlgorithmCode "function: generateSingleAlgorithmCode
   author: PA
@@ -6000,7 +6176,7 @@ protected function generateOdeEquation "function: generateOdeEquation
 "
 	input Boolean genDiscrete "if true generate discrete equations";
   input DAELow.DAELow inDAELow1;
- input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input Integer inInteger4;
   input Integer inInteger5;
@@ -6169,7 +6345,7 @@ protected function generateOdeEquation_new "function: generateOdeEquation
 "
 	input Boolean genDiscrete "if true generate discrete equations";
   input DAELow.DAELow inDAELow1;
- input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray2;
   input Integer[:] inIntegerArray3;
   input Integer inInteger4;
   input Integer inInteger5;
@@ -7082,7 +7258,7 @@ algorithm
       
     case (cname,dae,(dlow as DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(zeroCrossingLst = zc))),ass1,ass2,blocks,helpVarInfo)
       equation
-        (cfunc,cg_id,extra_funcs2) = generateOdeBlocks(true,dlow, ass1, ass2, blocks, 0);
+        (cfunc,cg_id,extra_funcs2) = generateOdeBlocks(dae,true,dlow, ass1, ass2, blocks, 0);
         (func_zc,cg_id1,func_handle_zc,cg_id2,extra_funcs1) = generateZeroCrossing2(zc, 0, dae, dlow, ass1, ass2, blocks, helpVarInfo, 0, 0); // testing here
         (cfuncHelpvars,cg_id) = generateHelpVarAssignments(helpVarInfo,cg_id);
         extra_funcs = listAppend(extra_funcs1, extra_funcs2);
@@ -7234,7 +7410,7 @@ algorithm
       list<DAELow.ZeroCrossing> zc;
     case (dae,(dlow as DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(zeroCrossingLst = zc))),ass1,ass2,blocks,helpVarInfo)
       equation
-        (cfunc,cg_id,extra_funcs) = generateOdeBlocks_new(true,dlow, ass1, ass2, blocks, 0,helpVarInfo);
+        (cfunc,cg_id,extra_funcs) = generateOdeBlocks_new(dae, true,dlow, ass1, ass2, blocks, 0,helpVarInfo);
         (func_zc,cg_id2,func_handle_zc,cg_id3,extra_funcs1) = generateZeroCrossing2(zc, 0, dae, dlow, ass1, ass2, blocks, helpVarInfo, cg_id, cg_id); // testing here
         (cfunc_reinit, cg_id) = generateReinitStatmt(cg_id2, dlow, helpVarInfo );
 
@@ -8455,7 +8631,7 @@ algorithm
         
     case (dae,dlow,ass1,ass2,(block_ :: blocks),cg_id)
       equation
-        (fcn1,cg_id_1,f1) = generateOdeSystem(false,dlow, ass1, ass2, block_, cg_id) "for blocks" ;
+        (fcn1,cg_id_1,f1) = generateOdeSystem(dae,false,dlow, ass1, ass2, block_, cg_id) "for blocks" ;
         (fcn2,cg_id_2,f2) = buildSolvedBlocks(dae, dlow, ass1, ass2, blocks, cg_id_1);
         fcn = Codegen.cMergeFns({fcn1,fcn2});
         f = listAppend(f1, f2);
