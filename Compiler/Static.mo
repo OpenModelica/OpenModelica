@@ -8407,7 +8407,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, restype, vect_dims, slots2, prop);
                 
         /* Instantiate the function and add to dae function tree*/        
-        (cache,dae2) = instantiateDaeFunction(cache,env,fn_1,builtin,NONE);
+        (cache,dae2) = instantiateDaeFunction(cache,env,fn,builtin,NONE);
         dae = DAEUtil.joinDaes(dae1,dae2);       
       then
         (cache,call_exp,prop_1,dae);
