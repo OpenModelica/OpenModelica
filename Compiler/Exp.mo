@@ -3036,12 +3036,12 @@ algorithm
         coeff_2 = 0.0 -. coeff_1;
       then
         (e1,coeff_1);
-    case (DAE.BINARY(exp1 = DAE.ICONST(integer = coeff),operator = DAE.POW(ty = _),exp2 = e1))
-      local Integer coeff;
-      equation 
-        coeff_1 = intReal(coeff);
-      then
-        (e1,coeff_1);
+		case (DAE.BINARY(exp1 = e1, operator = DAE.POW(ty = _), exp2 = DAE.ICONST(integer = coeff)))
+			local Integer coeff;
+			equation
+				coeff_1 = intReal(coeff);
+			then
+				(e1, coeff_1);
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2))
       equation 
         true = expEqual(e1, e2);
