@@ -37,7 +37,7 @@
 int modelica_string_ok(modelica_string_t* a)
 {
 	/* Since a modelica string is a char* check that it is not null.*/
-    return (int)a;
+    return (a != NULL ? 1 : 0);
 }
 
 int modelica_string_length(modelica_string_t* a)

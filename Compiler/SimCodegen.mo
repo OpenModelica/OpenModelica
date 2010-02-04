@@ -7272,8 +7272,8 @@ algorithm
         cfunc_2 = Codegen.cMergeFns({cfunc0,cfunc,cfuncHelpvars});
 
         func_zc0 = Codegen.cMakeFunction("int", "function_zeroCrossing", {},
-          {"long *neqm","double *t","double *x","long *ng",
-          "double *gout","double *rpar","long* ipar"});
+          {"fortran_integer *neqm","double *t","double *x","fortran_integer *ng",
+          "double *gout","double *rpar","fortran_integer* ipar"});
         func_zc0 = Codegen.cAddVariables(func_zc0,{"double timeBackup;"});
         func_zc0 = Codegen.cAddStatements(func_zc0,{"timeBackup = localData->timeValue;",
                                                     "localData->timeValue = *t;"
@@ -8286,7 +8286,7 @@ algorithm
       equation
         cfn1 = Codegen.cMakeFunction("int", "functionDAE_res", {},
           {"double *t","double *x","double *xd","double *delta",
-          "long int *ires","double *rpar","long int* ipar"}) "build_residual_blocks(dae,dlow,ass1,ass2,blocks,0) => (cfn2,_) &" ;
+          "fortran_integer *ires","double *rpar","fortran_integer* ipar"}) "build_residual_blocks(dae,dlow,ass1,ass2,blocks,0) => (cfn2,_) &" ;
         cfn2 = Codegen.cAddVariables(cfn1, {"int i;",
                                             "double temp_xd[NX];",
                                              "double* statesBackup;",

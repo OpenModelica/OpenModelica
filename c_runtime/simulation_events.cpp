@@ -101,7 +101,7 @@ void deinitializeEventData() {
  * This function checks such initial events and calls the event handling for this. The function is called after the first
  * step is taken by DASSRT (a small tiny step just to check these events)
  * */
-void checkForInitialZeroCrossings(long*jroot) {
+void checkForInitialZeroCrossings(fortran_integer* jroot) {
   int i;
   if (sim_verbose) {
     cout << "checkForIntialZeroCrossings" << endl;
@@ -252,7 +252,7 @@ void StartEventIteration(double *t) {
   //  cout << "EventIteration done" << endl;
 }
 
-void StateEventHandler(long* jroot, double *t) {
+void StateEventHandler(fortran_integer* jroot, double *t) {
   inSample = 1;
   for (int i = 0; i < globalData->nZeroCrossing; i++) {
     if (jroot[i]) {

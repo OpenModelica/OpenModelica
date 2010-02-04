@@ -44,10 +44,10 @@ using namespace std;
 
 #define MAXORD 5
 
-bool continue_with_dassl(long* idid, double* atol, double *rtol);
+bool continue_with_dassl(fortran_integer* idid, double* atol, double *rtol);
 
 // dummy Jacobian
-int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, long *cj, double *rpar, long* ipar)
+int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, fortran_integer *cj, double *rpar, fortran_integer* ipar)
 {
   return 0;
   //provides a dummy Jacobian to be used with DASSL
@@ -69,7 +69,7 @@ double calcTinyStep(double tout)
   }
 }
 /* Returns the index of the first root that is active*/
-int activeEvent(int nRoots, long *jroot)
+int activeEvent(int nRoots, fortran_integer *jroot)
 {
   int i;
   for (i=0; i < nRoots; i++) {
@@ -84,26 +84,26 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 {
   int status=0;
 
-  long info[15];
+  fortran_integer info[15];
   status = 0;
   double tout;
   double rtol = 1.0e-5;
   double atol = 1.0e-5;
   double uround = dlamch_("P",1);
-  long idid = 0;
+  fortran_integer idid = 0;
 
 
   //double rpar = 0.0;
-  long ipar = 0;
+  fortran_integer ipar = 0;
   int i;
 
   // work arrays for dassl
-  long liw = 20+globalData->nStates;
-  long lrw = 52+(MAXORD+4)*globalData->nStates+
+  fortran_integer liw = 20+globalData->nStates;
+  fortran_integer lrw = 52+(MAXORD+4)*globalData->nStates+
     globalData->nStates*globalData->nStates+3*globalData->nZeroCrossing;
-  long *iwork = new long[liw];
+  fortran_integer *iwork = new fortran_integer[liw];
   double *rwork = new double[lrw];
-  long *jroot = new long[globalData->nZeroCrossing];
+  fortran_integer *jroot = new fortran_integer[globalData->nZeroCrossing];
 
 
   // Used when calculating residual for its side effects. (alg. var calc)
@@ -414,7 +414,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 }
 
 
-bool continue_with_dassl(long* idid, double* atol, double *rtol)
+bool continue_with_dassl(fortran_integer* idid, double* atol, double *rtol)
 {
   static int atolZeroIterations=0;
   bool retValue = true;

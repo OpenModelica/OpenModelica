@@ -137,13 +137,13 @@ typedef struct sim_DATA {
   int init; // =1 during initialization, 0 otherwise.
   void** extObjs; // External objects
   /* nStatesDerivatives == states */
-  long nStates,nAlgebraic,nParameters;
+  fortran_integer nStates,nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
-  long nZeroCrossing/*NG*/;
+  fortran_integer nZeroCrossing/*NG*/;
   long nInitialResiduals/*NR*/;
   long nHelpVars/* NHELP */;
   //extern char init_fixed[];
-    DATA_STRING stringVariables;
+  DATA_STRING stringVariables;
 
   char*  modelName;
   char** statesNames;
@@ -216,7 +216,7 @@ functionDAE_output2();
 // function for calculating state values on residual form
 /*used in DDASRT fortran function*/
 int
-functionDAE_res(double *t, double *x, double *xprime, double *delta, long int *ires, double *rpar, long int* ipar);
+functionDAE_res(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
 
 int

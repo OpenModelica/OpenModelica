@@ -39,6 +39,8 @@
 #ifndef _SOLVER_DASRT_H
 #define _SOLVER_DASRT_H
 
+#include "fortran_types.h"
+
 int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, long &outputSteps,
                 double &tolerance);
 
@@ -48,26 +50,26 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
 extern "C" {
   void  DDASRT(
-	       int (*res) (double *t, double *y, double *yprime, double *delta, long *ires, double *rpar, long* ipar),
-	       long *neq,
+	       int (*res) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
+	       fortran_integer *neq,
 	       double *t,
 	       double *y,
 	       double *yprime,
 	       double *tout,
-	       long *info,
+	       fortran_integer *info,
 	       double *rtol,
 	       double *atol,
-	       long *idid,
+	       fortran_integer *idid,
 	       double *rwork,
-	       long *lrw,
-	       long *iwork,
-	       long *liw,
+	       fortran_integer *lrw,
+	       fortran_integer *iwork,
+	       fortran_integer *liw,
 	       double *rpar,
-	       long *ipar,
-	       int (*jac) (double *t, double *y, double *yprime, double *delta, long *ires, double *rpar, long* ipar),
-	       int (*g) (long *neqm, double *t, double *y, long *ng, double *gout, double *rpar, long* ipar),
-	       long *ng,
-	       long *jroot
+	       fortran_integer *ipar,
+	       int (*jac) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
+	       int (*g) (fortran_integer *neqm, double *t, double *y, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar),
+	       fortran_integer *ng,
+	       fortran_integer *jroot
 	       );
 
 	       double dlamch_(char*,int);

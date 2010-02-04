@@ -37,6 +37,8 @@
 #ifndef _SIMULATION_EVENTS_H
 #define _SIMULATION_EVENTS_H
 
+#include "fortran_types.h"
+
 int initializeEventData();
 void deinitializeEventData();
 
@@ -44,9 +46,9 @@ int checkForDiscreteVarChanges();
 void calcEnabledZeroCrossings();
 void CheckForNewEvents(double *t);
 void CheckForInitialEvents(double *t);
-void checkForInitialZeroCrossings(long*jroot);
+void checkForInitialZeroCrossings(fortran_integer* jroot);
 void StartEventIteration(double *t);
-void StateEventHandler(long jroot[], double *t);
+void StateEventHandler(fortran_integer jroot[], double *t);
 void AddEvent(long);
 
 void saveall();
@@ -108,7 +110,7 @@ extern long inUpdate;
 #define initial() localData->init
 
 int
-function_zeroCrossing(long *neqm, double *t, double *x, long *ng, double *gout, double *rpar, long* ipar);
+function_zeroCrossing(fortran_integer *neqm, double *t, double *x, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar);
 
 int
 handleZeroCrossing(long index);

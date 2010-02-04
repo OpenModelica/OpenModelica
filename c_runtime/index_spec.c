@@ -120,7 +120,7 @@ void print_size_array(int size, size_t* arr)
 	int i;
 	printf("{");
 	for(i = 0; i < size; ++i) {
-		printf("%d", arr[i]);
+		printf("%d", (int) arr[i]);
 		if (i != (size - 1)) printf(",");
 	}
 	printf("}\n");

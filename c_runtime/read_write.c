@@ -68,7 +68,7 @@ void puttype(const type_description *desc)
     break;
   case TYPE_DESC_TUPLE: {
     size_t e;
-    fprintf(stderr, "TUPLE (%u):\n", desc->data.tuple.elements);
+    fprintf(stderr, "TUPLE (%u):\n", (unsigned) desc->data.tuple.elements);
     for (e = 0; e < desc->data.tuple.elements; ++e) {
       fprintf(stderr, "\t");
       puttype(desc->data.tuple.element + e);
