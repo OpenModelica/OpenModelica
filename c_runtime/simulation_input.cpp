@@ -63,7 +63,7 @@ void read_commented_value(ifstream &f, char **str);
 
   ifstream file(filename->c_str());
   if (!file) {
-    cerr << "Error, can not read file " << filename
+    cerr << "Error, can not read file " << *filename
 	 << " as indata to simulation." << endl;
     exit(-1);
   }
