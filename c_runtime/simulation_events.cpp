@@ -334,7 +334,11 @@ double sample(double start, double interval) {
    * below should be: if (tmp >= -0.0001 && tmp < 0.0001) but needs more testing as some models from
    * testsuite fail.
    */
-  if (tmp >= -0.0001 && tmp < 0.0001) {
+  static double eps = 0.0001;
+  /*
+   * sjoelund - do not sample before the start value !
+   */
+  if (globalData->timeValue >= start-eps && tmp >= -eps && tmp < eps) {
     if (sim_verbose)
       cout << "Calling sample(" << start << ", " << interval << ")\n"
           << "+generating an event at time:" << globalData->timeValue
