@@ -3729,8 +3729,7 @@ public function listReduce "function: listReduce
     output Type_a outTypeA;
   end FuncTypeType_aType_aToType_a;
 algorithm 
-  outTypeA:=
-  matchcontinue (inTypeALst,inFuncTypeTypeATypeAToTypeA)
+  outTypeA := matchcontinue (inTypeALst,inFuncTypeTypeATypeAToTypeA)
     local
       Type_a e,res,a,b,res1,res2;
       FuncTypeType_aType_aToType_a r;
@@ -3744,12 +3743,17 @@ algorithm
     case ((a :: (b :: (xs as (_ :: _)))),r)
       equation 
         res1 = r(a, b);
-        res = listReduce_tail(xs, r, res1);
+        // res = listReduce_tail(xs, r, res1);
+        res = listReduce(res1::xs, r);        
       then
         res;
+    // failure, we can't reduce an empty list!
+    case ({},r)
+      equation
+        Debug.fprintln("failtrace", "- Util.listReduce failed on empty list!"); 
+      then fail();
   end matchcontinue;
 end listReduce;
-
 
 public function listReduce_tail 
 "function: listReduce_tail
