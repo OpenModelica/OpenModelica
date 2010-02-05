@@ -4932,10 +4932,12 @@ algorithm
       Env.Cache cache;
       DAE.Properties prop;
       DAE.DAElist dae;
-      
+      DAE.Type ty;
+			String exp_str;
     case (cache,env,{s1},_,impl) 
       equation 
-        (cache,s1_1,prop,dae) = verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isRealOrSubTypeReal,"integer");
+        (cache,s1_1,prop,dae) =
+					verifyBuiltInHandlerType(cache,env,{s1},impl,Types.isIntegerOrRealOrSubTypeOfEither,"integer");
       then
         (cache,s1_1,prop,dae);
   end matchcontinue;

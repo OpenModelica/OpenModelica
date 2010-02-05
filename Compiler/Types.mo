@@ -597,6 +597,18 @@ algorithm b := matchcontinue(inType)
 end matchcontinue; 
 end isIntegerOrSubTypeInteger;
 
+public function isIntegerOrRealOrSubTypeOfEither
+	"Checks if a type is either some Integer or Real type."
+	input Type t;
+	output Boolean b;
+algorithm
+	b := matchcontinue(t)
+		case(_) equation true = isRealOrSubTypeReal(t); then true;
+		case(_) equation true = isIntegerOrSubTypeInteger(t); then true;
+		case(_) then false;
+	end matchcontinue;
+end isIntegerOrRealOrSubTypeOfEither;
+
 public function isInteger "Returns true if type is Integer"
 input Type tp;
 output Boolean res;
