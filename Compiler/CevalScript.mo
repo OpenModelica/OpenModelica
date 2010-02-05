@@ -1731,17 +1731,19 @@ algorithm
         System.setDataPort(i);
       then
         (cache,Values.BOOL(true),st);
-        //{DAE.ARRAY(array = strings)}
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setVariableFilter"),expLst = {DAE.ARRAY(array=strings)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+    // {DAE.ARRAY(array = exps)}
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setVariableFilter"),expLst = {DAE.ARRAY(array=vars)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
-        list<DAE.Exp> strings;
+        list<DAE.Exp> vars;
+        list<String> strings;
       equation
-        vars_1 = Util.listMap(strings, Exp.printExpStr);
-//        print("setVariableFilter\n");
-//        print(Util.stringAppendList(vars_1));
- //       print("\n");
-//        _ = ValuesUtil.setVariableFilter(vars_1);
-        _=System.setVariableFilter(Util.stringAppendList(vars_1));
+        vars = Util.listMap(vars,Exp.CodeVarToCref);
+        strings = Util.listMap(vars, Exp.printExpStr);
+        // print("setVariableFilter\n");
+        // print(Util.stringAppendList(vars_1));
+        // print("\n");
+        // _ = ValuesUtil.setVariableFilter(vars_1);
+        _ = System.setVariableFilter(Util.stringDelimitList(strings, "|"));
       then
         (cache,Values.BOOL(true),st);
 

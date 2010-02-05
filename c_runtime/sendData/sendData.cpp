@@ -187,7 +187,7 @@ QTcpSocket* Connection::newConnection(bool graphics)
 
   socket = new QTcpSocket;
   socket->connectToHost(QHostAddress::LocalHost, Static::port1);
-  if(socket->waitForConnected(500))
+  if(socket->waitForConnected(5000))
   {
     return socket;
   }
@@ -242,7 +242,7 @@ bool Static::connect(bool graphics)
     socket2.connectToHost(QHostAddress::LocalHost, Static::port2);
     //	ofs << 4 << endl;
 
-    if(socket2.waitForConnected(500))
+    if(socket2.waitForConnected(5000))
       return true;
 
     if (c->startExternalViewer())
@@ -661,8 +661,11 @@ bool Static::enabled_ = false;
 
 void setVariableFilter(const char* variables)
 {
+  // fprintf(stderr,"variable filters:%s\n", variables);
+  // fflush(stderr);
   QString var(variables);
-  var = var.replace("\"", " ");
+  var = "time|" + var; // always add time!
+  var = var.replace("|", " ");
   stringstream ss;
   ss << var.toStdString();
   if(!Static::filterVariables)
@@ -673,6 +676,8 @@ void setVariableFilter(const char* variables)
   while(ss.good() && ss >> str)
   {
     Static::filterVariables->push_back(QString(str.c_str()));
+    // fprintf(stderr,"variable filter:%s\n", str.c_str());
+    // fflush(stderr);
   }
 }
 

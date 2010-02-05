@@ -6436,18 +6436,15 @@ algorithm
 end elabBuiltinHandler;
 
 protected function isBuiltinFunc "function: isBuiltinFunc
- 
   Returns true if the function name given as argument
-  is a builtin function, which either has a elab_builtin_handler function
-  or can be found in the builtin environment.
-"
+  is a builtin function, which either has a elabBuiltinHandler function
+  or can be found in the builtin environment."
 	input Env.Cache inCache;
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output Boolean outBoolean;
 algorithm 
-  (outCache,outBoolean):=
-  matchcontinue (inCache,inPath)
+  (outCache,outBoolean) := matchcontinue (inCache,inPath)
     local
       Ident id;
       Absyn.Path path;
@@ -6641,7 +6638,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st)
       equation 
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- elabCall failed\n");
+        Debug.fprint("failtrace", "- Static.elabCall failed\n");
         Debug.fprint("failtrace", " function: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprint("failtrace", fnstr);
@@ -7327,7 +7324,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         list<Absyn.Exp> strings;
         equation
           vars_1 = elabVariablenames(strings);
-       then (cache, DAE.CALL(Absyn.IDENT("setVariableFilter"),{DAE.ARRAY(DAE.ET_STRING(), false, vars_1)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+       then (cache, DAE.CALL(Absyn.IDENT("setVariableFilter"),{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
 
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st))
@@ -8423,7 +8420,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with -one- candidate */ 
       local list<DAE.Exp> args1; String argStr; DAE.Type tp1;
       equation 
-        (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn);
         (cache,args_1,constlist,restype,functype,vect_dims,slots,_) = 
           elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl);
         argStr = Exp.printExpListStr(args_1);
@@ -8443,6 +8440,17 @@ algorithm
         Error.addMessage(Error.NO_MATCHING_FUNCTION_FOUND, {fn_str,types_str});
       then
         fail();
+
+    /*// lookup failure -> not needed is caught below
+    case (cache,env,fn,args,nargs,impl,st)  
+      equation 
+        failure((_,_) = Lookup.lookupFunctionsInEnv(cache, env, fn));
+        fn_str = Absyn.pathString(fn);
+        scope = Env.printEnvPathStr(env);
+        Error.addMessage(Error.LOOKUP_ERROR, {fn_str,scope});
+      then
+        fail(); */
+
     case (cache,env,fn,args,nargs,impl,st)
       local 
         list<Absyn.Exp> t4;
@@ -8454,9 +8462,11 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {fn_str,scope});
       then
         fail();
+
     case (cache,env,fn,args,nargs,impl,st)
-      equation 
-        Debug.fprint("failtrace", "- elabCallArgs failed\n") ;
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& Env.printEnvPathStr(env));
       then
         fail();
   end matchcontinue;
@@ -9890,7 +9900,7 @@ function: elabCref
   output SCode.Accessibility outAccessibility;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outExp,outProperties,outAccessibility,outDae):=
+  (outCache,outExp,outProperties,outAccessibility,outDae) :=
   matchcontinue (inCache,inEnv,inComponentRef,inBoolean,performVectorization)
     local
       DAE.ComponentRef c_1;
@@ -9909,6 +9919,15 @@ algorithm
       DAE.ExpType et;
       Absyn.InnerOuter io;
       DAE.DAElist dae;
+      String str,fn_str,scope;
+      DAE.Properties props;
+      Option<DAE.Exp> splicedExp;
+      Absyn.Path path,fpath;
+      list<DAE.Type> typelist;
+      list<String> typelistStr;
+      String typeStr;
+      DAE.ComponentRef expCref;
+      DAE.ExpType expType;
 
     // wildcard      
     case (cache,env,c as Absyn.WILD(),impl,doVect) /* impl */   
@@ -9917,11 +9936,9 @@ algorithm
         et = Types.elabType(t);
       then
         (cache,DAE.CREF(DAE.WILD(),et),DAE.PROP(t, DAE.C_VAR()),SCode.WO(),DAEUtil.emptyDae);
+
     // a normal cref 
     case (cache,env,c,impl,doVect) /* impl */ 
-      local String str;
-        DAE.Properties props;
-        Option<DAE.Exp> splicedExp;
       equation 
         (cache,c_1,_,dae) = elabCrefSubs(cache,env, c, Prefix.NOPRE(), impl);
         (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,splicedExp,_) = Lookup.lookupVar(cache, env, c_1);
@@ -9932,15 +9949,6 @@ algorithm
 
     // MetaModelica Partial Function. sjoelund 
     case (cache,env,c,impl,doVect)  
-      local String str;
-        DAE.Properties props;
-        Option<DAE.Exp> splicedExp;
-        Absyn.Path path,fpath;
-        list<DAE.Type> typelist;
-        list<String> typelistStr;
-        String typeStr;
-        DAE.ComponentRef expCref;
-        DAE.ExpType expType;
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
@@ -9954,7 +9962,17 @@ algorithm
       then
         (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO(),DAEUtil.emptyDae); 
         
-    
+    case (cache,env,c,impl,doVect)  
+      equation
+        //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
+        path = Absyn.crefToPath(c);
+        failure((_,_) = Lookup.lookupFunctionsInEnv(cache,env,path));
+        fn_str = Absyn.pathString(path);
+        scope = Env.printEnvPathStr(env);
+        Error.addMessage(Error.LOOKUP_ERROR, {fn_str,scope});        
+      then
+        fail();
+
     case (cache,env,c,impl,doVect)
       equation 
         failure((_,_,_,_) = elabCrefSubs(cache,env, c, Prefix.NOPRE(),impl));
@@ -9963,6 +9981,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {s,scope});
       then
         fail();
+
     case (cache,env,c,impl,doVect)
       equation 
         // enabled with +d=failtrace
