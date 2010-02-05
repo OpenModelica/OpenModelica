@@ -14319,6 +14319,13 @@ algorithm
 		case (DAE.T_REAL(_)) then ClassInf.TYPE_REAL(Absyn.IDENT(""));
 		case (DAE.T_STRING(_)) then ClassInf.TYPE_STRING(Absyn.IDENT(""));
 		case (DAE.T_BOOL(_)) then ClassInf.TYPE_BOOL(Absyn.IDENT(""));
+		case (DAE.T_ARRAY(arrayType = (t, _)))
+		  local
+		    DAE.TType t;
+		    ClassInf.State cs;
+		  equation
+		    cs = arrayTTypeToClassInfState(t);
+		  then cs;
 	end matchcontinue;
 end arrayTTypeToClassInfState;
 
