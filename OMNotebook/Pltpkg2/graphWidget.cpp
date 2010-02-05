@@ -615,9 +615,11 @@ void GraphWidget::getData()
       compoundwidget->hideVis();
       emit newMessage("Receiving streaming data...");
       disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
-
+      // adrpo: change these to the ones below
       connect(activeSocket, SIGNAL(readyRead()), this, SLOT(receiveDataStream()));
       connect(activeSocket, SIGNAL(disconnected()), this, SLOT(dataStreamClosed()));
+      // connect(activeSocket, SIGNAL(readyRead()), this, SLOT(plotPtolemyDataStream()));
+      // connect(activeSocket, SIGNAL(disconnected()), this, SLOT(ptolemyDataStreamClosed()));
 
       variableCount = 0;
       packetSize = 0;
@@ -720,7 +722,7 @@ void GraphWidget::resetZoom()
   zoomStr = "";
 
   bool visible;
-  if(visible = graphicsScene->gridVisible)
+  if((visible = graphicsScene->gridVisible))
   {
     showGrid(false);
   }
@@ -1903,18 +1905,24 @@ void GraphWidget::plotPtolemyDataStream()
 
 void GraphWidget::receiveDataStream()
 {
+
+  emit showGraphics();
   QString tmp;
+  QColor color = QColor(Qt::color0);
   double d;
   quint32 it = 0;
+
+  bool visible;
+  visible = graphicsScene->gridVisible;
+  // hide grid so otherwise the bounding rectangle will be wrong.
+  showGrid(false);
 
   do
   {
     if(packetSize == 0)
     {
       if(ds.device()->bytesAvailable() >= sizeof(quint32))
-      {
         ds >> packetSize;
-      }
       else
         return;
     }
@@ -1924,17 +1932,53 @@ void GraphWidget::receiveDataStream()
 
     if(variableCount == 0)
     {
+      variables.clear();
+      temporaryCurves.clear();
+      QString title("Plot by OpenModelica"), xLabel("time"), yLabel("y");
+      compoundwidget->plotTitle->setText(title);
+      compoundwidget->xLabel->setText(xLabel);
+      compoundwidget->yLabel->setText(yLabel);
+      compoundwidget->legendFrame->setVisible(true);
+      int points = 1; // show points
+      range.setRect(0,0,0,0);
+      yVars.clear();
       ds >> variableCount;
+      LegendLabel* ll;
+      legendFrame->setMinimumWidth(0);
 
       for(quint32 i = 0; i < variableCount; ++i)
       {
         ds >> tmp;
+        int colorInt = curves.size() - 1 + variables.size();
+        color = generateColor(colorInt);
         tmp = tmp.trimmed();
         if(variables.find(tmp) != variables.end())
           delete variables[tmp];
-        variables[tmp] = new VariableData(tmp);
-      }
+        variables[tmp] = new VariableData(tmp, color);
 
+        if(i == 0)
+          currentXVar = tmp;
+        else
+        {
+          if(yVars.indexOf(tmp) == -1)
+          {
+            int interpolation_ = INTERPOLATION_LINEAR;
+
+            yVars.push_back(tmp);
+            ll = new LegendLabel(color, tmp,legendFrame, !(interpolation_ == INTERPOLATION_NONE), points, 12);
+            ll->graphWidget = this;
+            legendFrame->setMinimumWidth(max(ll->fontMetrics().width(tmp)+41+4, legendFrame->minimumWidth()));
+            legendLayout->addWidget(ll);
+            ll->show();
+
+            temporaryCurves[tmp] = (new Curve(variables[currentXVar], variables[tmp], color, ll));
+            ll->setCurve(temporaryCurves[tmp]);
+
+            temporaryCurves[tmp]->drawPoints = points;
+            temporaryCurves[tmp]->interpolation = interpolation_;
+          }
+        }
+      }
       packetSize = 0;
       continue;
     }
@@ -1946,10 +1990,126 @@ void GraphWidget::receiveDataStream()
       variables[tmp]->push_back(d);
     }
 
+    double y0, y1, x0, x1;
+    double y0_, y1_, x0_, x1_;
+    QPen color;
+
+    for(quint32 k=0; k < quint32(yVars.size()); ++k)
+    {
+      currentYVar=yVars[k];
+      color = temporaryCurves[currentYVar]->color_;
+      color.setWidth(PLOT_LINE_WIDTH);
+      color.setCosmetic(true);
+
+      int maxIndex = min(variables[currentXVar]->size()-1, variables[currentYVar]->size()-1);
+
+      if(int(variables[currentYVar]->currentIndex) < maxIndex)
+      {
+        int i = int(variables[currentYVar]->currentIndex);
+        bool truncated = false;
+        while(i < maxIndex)
+        {
+          x1=x1_ = (*variables[currentXVar])[i];
+          y1=y1_ = (*variables[currentYVar])[i];
+          break;
+        }
+
+        ++i;
+
+        for(; i <= maxIndex; ++i)
+        {
+          variables[currentYVar]->currentIndex++;
+
+          x0_ = x1_;
+          x0 = x1;
+          y0_ = y1_;
+          y0 = y1;
+
+          x1 =x1_ = (*variables[currentXVar])[i];
+          y1= y1_ = (*variables[currentYVar])[i];
+
+          if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_LINEAR)
+          {
+            Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
+            temporaryCurves[currentYVar]->line->addToGroup(l);
+            l->show();
+			graphicsScene->addItem(l);
+          }
+          else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_CONSTANT)
+          {
+            Line2D* l = new Line2D(x0, y0,x1,y0,color, PLOT_LINE_WIDTH, true);
+			l->setVisible(true);
+			graphicsScene->addItem(l);
+            temporaryCurves[currentYVar]->line->addToGroup(l);
+            l = new Line2D(x1, y0,x1,y1,color, PLOT_LINE_WIDTH, true);
+			l->setVisible(true);
+			graphicsScene->addItem(l);
+            temporaryCurves[currentYVar]->line->addToGroup(l);
+          }
+          else if(temporaryCurves[currentYVar]->interpolation == INTERPOLATION_NONE)
+          {
+            Line2D* l = new Line2D(x0, y0, x1, y1,color, PLOT_LINE_WIDTH, true);
+			graphicsScene->addItem(l);
+            l->setVisible(true);
+            temporaryCurves[currentYVar]->line->addToGroup(l);
+          }
+
+          // Point* p = new Point(x0, y0, .02, .02, color.color(), this, 0, graphicsScene);
+          // p->setVisible(true);
+          // temporaryCurves[currentYVar]->dataPoints.append(p);
+        }
+
+        // The last point
+        Point* p = new Point(x1, y1, .02, .02, color.color(), this, 0, graphicsScene);
+        p->setVisible(true);
+        temporaryCurves[currentYVar]->dataPoints.append(p);
+      }
+    }
+
     packetSize = 0;
     ++it;
+
+	graphicsScene->setSceneRect(graphicsScene->itemsBoundingRect());
+    range = graphicsScene->sceneRect();
+    setArea(graphicsScene->sceneRect());
+	legendFrame->update();
+    graphicsScene->update();
   }
   while(activeSocket->bytesAvailable() >= sizeof(quint32));
+
+  showGrid(visible);
+
+  cerr << "tempCurves size: " << temporaryCurves.size() << endl;
+  for(map<QString, Curve*>::iterator i = temporaryCurves.begin(); i != temporaryCurves.end(); ++i)
+  {
+	curves.append(i->second);
+	graphicsScene->addItem(i->second->line);
+  }
+  cerr << "variables size: " << variables.size() << endl;
+  // clear the variable data!
+  variableData.clear();
+  for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
+	variableData.append(i->second);
+
+  bool b;
+
+  if(b = graphicsScene->gridVisible)
+	showGrid(false);
+
+  if(range.width() == 0)
+  {
+	range.setLeft(graphicsScene->itemsBoundingRect().left());
+	range.setWidth(graphicsScene->itemsBoundingRect().width());
+  }
+  if(range.height() == 0)
+  {
+	range.setTop(graphicsScene->itemsBoundingRect().top());
+	range.setHeight(graphicsScene->itemsBoundingRect().height());
+  }
+
+  setArea(range);
+  updatePointSizes();
+  showGrid(b);
 
   if(activeSocket->state() != QAbstractSocket::ConnectedState)
     dataStreamClosed();
