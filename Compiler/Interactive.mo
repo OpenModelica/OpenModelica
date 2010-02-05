@@ -2115,6 +2115,26 @@ algorithm
       then
         (resstr,st);
 
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClassIconMapAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      equation
+        ErrorExt.setCheckpoint();        
+        resstr = getNthInheritedClassIconMapAnnotation(cr, n, p);
+        ErrorExt.rollBack();
+      then
+        (resstr,st);
+
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClassDiagramMapAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
+      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+      equation
+        ErrorExt.setCheckpoint();        
+        resstr = getNthInheritedClassDiagramMapAnnotation(cr, n, p);
+        ErrorExt.rollBack();
+      then
+        (resstr,st);
+
      case (ISTMTS(interactiveStmtLst =
        {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
        (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
@@ -10132,9 +10152,9 @@ algorithm
 end getInheritanceCount;
 
 protected function getNthInheritedClass 
-"function: get_inheritance_count
-  This function takes a ComponentRef and a Program and returns the
-  number of inherited classes in the class referenced by the ComponentRef."
+"function: getNthInheritedClass
+  This function takes a ComponentRef, an integer and a Program and returns 
+  the nth inherited class in the class referenced by the ComponentRef."
   input Absyn.ComponentRef inComponentRef;
   input Integer inInteger;
   input Absyn.Program inProgram;
@@ -10179,6 +10199,207 @@ algorithm
     case (_,_,_) then "Error";
   end matchcontinue;
 end getNthInheritedClass;
+
+protected function getNthInheritedClassAnnotationOpt 
+"function: getNthInheritedClassAnnotation
+  This function takes a ComponentRef, an integer and a Program and returns 
+  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
+  input Absyn.ComponentRef inComponentRef;
+  input Integer inInteger;
+  input Absyn.Program inProgram;
+  output String outString;
+  output Option<Absyn.Annotation> annotationOpt;
+algorithm
+  (outString, annotationOpt) := matchcontinue (inComponentRef,inInteger,inProgram)
+    local
+      Absyn.Path modelpath,path;
+      Absyn.Class cdef;
+      list<SCode.Class> p_1;
+      list<Env.Frame> env,env_1;
+      SCode.Class c;
+      String id,str,s;
+      Boolean encflag;
+      SCode.Restriction restr;
+      Absyn.ComponentRef model_;
+      Integer n,n_1;
+      Absyn.Program p;
+      list<Absyn.ElementSpec> extends_;
+      Env.Cache cache;
+      Option<Absyn.Annotation> annOpt;
+      
+    /* adrpo: fixme, handle this case too!
+    case (model_,n,p)
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        cdef = getPathedClassInProgram(modelpath, p);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
+        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache, env, modelpath, false);
+        str = getNthInheritedClass2(c, cdef, n, env_1);
+      then
+        (str, annOpt);
+    */
+
+    case (model_,n,p) /* if above fails, baseclass not defined. return its name */
+      equation
+        modelpath = Absyn.crefToPath(model_);
+        cdef = getPathedClassInProgram(modelpath, p);
+        extends_ = getExtendsInClass(cdef);
+        n_1 = n - 1;
+        Absyn.EXTENDS(path,_,annOpt) = listNth(extends_, n_1);
+        s = Absyn.pathString(path);
+      then
+        (s, annOpt);
+
+    case (_,_,_) then ("Error", NONE());
+  end matchcontinue;
+end getNthInheritedClassAnnotationOpt;
+
+protected function getIconMapAnnotationStr 
+"function: getIconMapAnnotationStr"
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAbsynElementArgLst)
+    local
+      String str;
+      Absyn.ElementArg ann;
+      Option<Absyn.Modification> mod;
+      list<Absyn.ElementArg> xs;
+      Absyn.Program iconMapProgram;      
+
+    case ({}) then "{}";
+
+    case (((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "IconMap"),modification = mod)) :: _))
+      equation
+        iconMapProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+        str = getAnnotationString(iconMapProgram, Absyn.ANNOTATION({ann}));
+      then
+        str;
+        
+    case ((_ :: xs))
+      equation
+        str = getIconMapAnnotationStr(xs);
+      then
+        str;
+  end matchcontinue;
+end getIconMapAnnotationStr;
+
+protected function getDiagramMapAnnotationStr 
+"function: getDiagramMapAnnotationStr"
+  input list<Absyn.ElementArg> inAbsynElementArgLst;
+  output String outString;
+algorithm
+  outString := matchcontinue (inAbsynElementArgLst)
+    local
+      String str;
+      Absyn.ElementArg ann;
+      Option<Absyn.Modification> mod;
+      list<Absyn.ElementArg> xs;
+      Absyn.Program diagramMapProgram;      
+
+    case ({}) then "{}";
+
+    case (((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "DiagramMap"),modification = mod)) :: _))
+      equation
+        diagramMapProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+        str = getAnnotationString(diagramMapProgram, Absyn.ANNOTATION({ann}));
+      then
+        str;
+        
+    case ((_ :: xs))
+      equation
+        str = getDiagramMapAnnotationStr(xs);
+      then
+        str;
+  end matchcontinue;
+end getDiagramMapAnnotationStr;
+
+protected function getNthInheritedClassIconMapAnnotation 
+"function: getNthInheritedClassIconMapAnnotation
+  This function takes a ComponentRef, an integer and a Program and returns 
+  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
+  input Absyn.ComponentRef inComponentRef;
+  input Integer inInteger;
+  input Absyn.Program inProgram;
+  output String outString;
+algorithm
+  outString := matchcontinue (inComponentRef,inInteger,inProgram)
+    local
+      Absyn.Path modelpath,path;
+      Absyn.Class cdef;
+      list<SCode.Class> p_1;
+      list<Env.Frame> env,env_1;
+      SCode.Class c;
+      String id,str,s,annStr;
+      Boolean encflag;
+      SCode.Restriction restr;
+      Absyn.ComponentRef model_;
+      Integer n,n_1;
+      Absyn.Program p;
+      list<Absyn.ElementSpec> extends_;
+      Env.Cache cache;
+      list<Absyn.ElementArg> elArgs;
+      
+    case (model_,n,p)
+      equation
+        (s, SOME(Absyn.ANNOTATION(elArgs))) = getNthInheritedClassAnnotationOpt(model_, n, p);
+        annStr = getIconMapAnnotationStr(elArgs);
+        s = "{" +& s +& ", " +& annStr +& "}";  
+      then
+        s;
+    case (model_,n,p)
+      equation
+        (s, NONE()) = getNthInheritedClassAnnotationOpt(model_, n, p);
+        s = "{" +& s +& ",{}}";  
+      then
+        s;        
+    case (_,_,_) then "Error";
+  end matchcontinue;
+end getNthInheritedClassIconMapAnnotation;
+
+protected function getNthInheritedClassDiagramMapAnnotation 
+"function: getNthInheritedClassDiagramMapAnnotation
+  This function takes a ComponentRef, an integer and a Program and returns 
+  the ANNOTATION on the extends of the nth inherited class in the class referenced by the ComponentRef."
+  input Absyn.ComponentRef inComponentRef;
+  input Integer inInteger;
+  input Absyn.Program inProgram;
+  output String outString;
+algorithm
+  outString := matchcontinue (inComponentRef,inInteger,inProgram)
+    local
+      Absyn.Path modelpath,path;
+      Absyn.Class cdef;
+      list<SCode.Class> p_1;
+      list<Env.Frame> env,env_1;
+      SCode.Class c;
+      String id,str,s,annStr;
+      Boolean encflag;
+      SCode.Restriction restr;
+      Absyn.ComponentRef model_;
+      Integer n,n_1;
+      Absyn.Program p;
+      list<Absyn.ElementSpec> extends_;
+      Env.Cache cache;
+      list<Absyn.ElementArg> elArgs;
+      
+    case (model_,n,p)
+      equation
+        (s, SOME(Absyn.ANNOTATION(elArgs))) = getNthInheritedClassAnnotationOpt(model_, n, p);
+        annStr = getDiagramMapAnnotationStr(elArgs);
+        s = "{" +& s +& ", " +& annStr +& "}";  
+      then
+        s;
+    case (model_,n,p)
+      equation
+        (s, NONE()) = getNthInheritedClassAnnotationOpt(model_, n, p);
+        s = "{" +& s +& ",{}}";  
+      then
+        s;        
+    case (_,_,_) then "Error";
+  end matchcontinue;
+end getNthInheritedClassDiagramMapAnnotation;
 
 protected function getExtendsInClass 
 "function: getExtendsInClass
@@ -10574,20 +10795,17 @@ algorithm
 end getComponents;
 
 protected function getComponentAnnotations "function: getComponentAnnotations
-
    This function takes a `ComponentRef\', a `Program\' and
    returns a list of all component annotations, as returned by
    get_nth_component_annotation.
    Both public and protected components are returned, but they need to
    be in the same order as get_componentsfunctions, i.e. first public
-   components then protected ones.
-"
+   components then protected ones."
   input Absyn.ComponentRef inComponentRef;
   input Absyn.Program inProgram;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef,inProgram)
+  outString := matchcontinue (inComponentRef,inProgram)
     local
       Absyn.Path modelpath;
       Absyn.Class cdef;
@@ -10595,6 +10813,7 @@ algorithm
       String s1,s2,str;
       Absyn.ComponentRef model_;
       Absyn.Program p;
+
     case (model_,p)
       equation
         modelpath = Absyn.crefToPath(model_);
@@ -12431,8 +12650,7 @@ protected function getDiagramAnnotationInClass
   input Absyn.Class inClass;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inClass)
+  outString := matchcontinue (inClass)
     local
       list<Absyn.ElementItem> publst,protlst,lst;
       String str,res;
