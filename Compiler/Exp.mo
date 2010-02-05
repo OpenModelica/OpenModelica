@@ -329,6 +329,48 @@ algorithm outSubscriptLst:= matchcontinue (inComponentRef)
   end matchcontinue;
 end crefIdent;
 
+public function stripCrefIdentSliceSubs "
+Author BZ
+"
+  input ComponentRef inCref;
+  output ComponentRef outCref;
+algorithm 
+  outCref := matchcontinue(inCref)
+    local
+      Ident id;
+      ComponentRef cr;
+      Type ty;
+      list<Subscript> subs;
+    case (DAE.CREF_IDENT(ident = id,subscriptLst=subs, identType = ty)) 
+      equation
+        subs = removeSliceSubs(subs);
+    then DAE.CREF_IDENT(id,ty,subs);
+    case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
+      equation 
+        outCref = crefStripSubs(cr);
+      then
+        DAE.CREF_QUAL(id,ty,subs,outCref);
+  end matchcontinue;
+end stripCrefIdentSliceSubs;
+
+protected function removeSliceSubs "
+helper function for stripCrefIdentSliceSubs
+"
+input list<Subscript> subs;
+output list<Subscript> osubs;
+algorithm 
+  osubs := matchcontinue(subs)
+    local Subscript s;
+    case({}) then {};
+    case(DAE.SLICE(exp=_)::subs) then removeSliceSubs(subs);
+    case(s::subs)
+      equation
+        osubs = removeSliceSubs(subs);
+        then
+          s::osubs;
+  end matchcontinue;
+end removeSliceSubs;
+
 public function crefStripSubs "
 Removes all subscript of a componentref
 "

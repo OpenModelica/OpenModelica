@@ -5560,6 +5560,26 @@ algorithm
   out := (a,b);
 end makeTuple2;
 
+public function makeTupleList
+  input list<Type_a> al;
+  input list<Type_b> bl;
+  output list<tuple<Type_a,Type_b>> out;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  out := matchcontinue(al,bl)
+    local
+      Type_a a;
+      Type_b b;
+    case({},_) then {};
+    case(a::al,b::bl)
+      equation
+      out = makeTupleList(al,bl);
+    then
+      (a,b)::out;
+  end matchcontinue;
+end makeTupleList;
+
 public function listAppendNoCopy
 "author: adrpo
  this function handles special cases
