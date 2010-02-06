@@ -73,6 +73,7 @@ public
 uniontype VarKind "- Variabile kind"
   record VARIABLE end VARIABLE;
   record STATE end STATE;
+  record STATE_DER end STATE_DER;
   record DUMMY_DER end DUMMY_DER;
   record DUMMY_STATE end DUMMY_STATE;
   record DISCRETE end DISCRETE;
@@ -2269,6 +2270,7 @@ algorithm
     case (DUMMY_DER()) then true;
     case (DUMMY_STATE()) then true;
     case (DISCRETE()) then true;
+    case (STATE_DER()) then true;
     case (_) then false;
   end matchcontinue;
 end isNonState;
@@ -4102,6 +4104,7 @@ algorithm
     local Absyn.Path path;
     case VARIABLE()    equation print("VARIABLE");    then ();
     case STATE()       equation print("STATE");       then ();
+    case STATE_DER()   equation print("STATE_DER");   then ();
     case DUMMY_DER()   equation print("DUMMY_DER");   then ();
     case DUMMY_STATE() equation print("DUMMY_STATE"); then ();
     case DISCRETE()    equation print("DISCRETE");    then ();
@@ -6480,7 +6483,12 @@ algorithm
 	       index reduction using dummy derivatives" ;
         p_1 = Util.listMap1r(p, int_sub, 0);
       then
-        p_1;        
+        p_1; 
+    case (DAE.CREF(componentRef = cr),vars)
+      equation
+        ((VAR(varKind = STATE_DER(),flowPrefix = flowPrefix) :: _),p) = getVar(cr, vars);
+      then
+        p;               
     case (DAE.CREF(componentRef = cr),vars)
       equation
         ((VAR(_,VARIABLE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,_) :: _),p) = getVar(cr, vars);
@@ -15563,8 +15571,6 @@ algorithm
       list<list<Integer>> r,t;
     case (dlow,m,mT,v1,v2,comps)
       equation 
-        // add flag her if no tearing is desired
-        true = RTOpts.debugFlag("tearing");
         Debug.fcall("tearingdump", print, "Tearing\n==========\n");
         // get residual eqn and tearing var for each block
         // copy dlow
@@ -15711,16 +15717,11 @@ algorithm
         tvars = getTearingVars(m,v1,v2,comp);
         // try tearing
         (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},{},{},{});
-        // add tearing equations
-        // comp_2 = listAppend(comp_1,tearingeqns);
         // clean v1,v2,m,mT
         v2_2 = fill(0, ll);      
         v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);       
         v1_2 = fill(0, ll);      
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);       
-//        l2 = arrayList(v1_1);
-//        l2_1 = Util.listDeletePositions(l2,tearingvars);
-//        v1_2 = listArray(l2_1);
         m_3 = incidenceMatrix(dlow1_1);
         mT_3 = transposeMatrix(m_3);                 
         // next Block
@@ -15808,7 +15809,7 @@ algorithm
     case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns)
       equation 
         // get from eqn equation with most variables
-        residualeqn = getMaxfromListList(m,comp,tvars,0,0,exclude);
+        (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
         true = residualeqn > 0; 
         str = intString(residualeqn);
         str1 = stringAppend("ResidualEqn: ", str);
@@ -15816,24 +15817,24 @@ algorithm
          // get from mT variable with most equations
         vars = m[residualeqn];
         vars_1 = Util.listSelect1(vars,tvars,Util.listContains);
-        (tearingvars_1,residualeqns_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns);
         // only succeed if tearing need less equations than system size is
-        true = listLength(tearingvars_1) < listLength(comp_1);
-      then
-        (residualeqn::residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
+//        true = listLength(tearingvars_1) < systemsize;  
+    then
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
     case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns)
       equation 
         // get from eqn equation with most variables
-        residualeqn = getMaxfromListList(m,comp,tvars,0,0,exclude);
+        (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
         true = residualeqn > 0;         
         // try next equation
-        (tearingvars_1,residualeqns_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,residualeqn::exclude,residualeqns,tearingvars,tearingeqns);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,residualeqn::exclude,residualeqns,tearingvars,tearingeqns);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);        
     case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns)
       equation 
         // get from eqn equation with most variables
-        residualeqn = getMaxfromListList(m,comp,tvars,0,0,exclude);
+        (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
         false = residualeqn > 0;         
         Debug.fcall("tearingdump", print, "Select Residual Equation failed\n");
       then
@@ -15860,8 +15861,8 @@ protected function tearingSystem3
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
   input list<Integer> inTearEqns;
-  output list<Integer> outTearVars;
   output list<Integer> outResEqns;
+  output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
   output DAELow outDlow;
   output DAELow outDlow1;
@@ -15871,15 +15872,15 @@ protected function tearingSystem3
   output Integer[:] outV2;
   output list<Integer> outComp;  
 algorithm 
-  (outTearVars,outResEqns,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
+  (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
   matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns)
     local
       DAELow dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
-      IncidenceMatrix m,m_1,m_2,m_3,m_1p;
+      IncidenceMatrix m,m_1,m_2,m_3;
       IncidenceMatrixT mT,mT_1,mT_2,mT_3;
       Integer[:] v1,v2,v1_1,v2_1,v1_2,v2_2;
-      list<list<Integer>> comps,comps_1,lstm,lstmp;
-      list<Integer> vars,comp,comp_1,comp_2,r,t,exclude,b,cmops_flat;
+      list<list<Integer>> comps,comps_1,lstm,lstmp,onecomp,morecomps;
+      list<Integer> vars,comp,comp_1,comp_2,r,t,exclude,b,cmops_flat,onecomp_flat,othereqns,resteareqns;
       String str,str1,str2; 
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
       list<Integer> residualeqns,residualeqns_1,tearingvars,tearingvars_1,tearingeqns,tearingeqns_1,tearingeqns_2;
@@ -15889,7 +15890,7 @@ algorithm
       Value nvars,neqns,memsize;
       Variables ordvars,vars_1,knvars,exobj,ordvars1;
       Assignments assign1,assign2,assign1_1,assign2_1,ass1,ass2;
-      EquationArray eqns, eqns_1, eqns_2, removedEqs,remeqns,inieqns,eqns1,eqns1_1;
+      EquationArray eqns, eqns_1, eqns_2,removedEqs,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
       MultiDimEquation[:] arreqns;
       DAE.Algorithm[:] algorithms;
       EventInfo einfo;
@@ -15901,7 +15902,7 @@ algorithm
       Integer replace,replace1;
     case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
       equation 
-        tearingvar = getMaxfromListList(mT,vars,comp,0,0,exclude);
+        (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
         true = tearingvar > 0; 
         str = intString(tearingvar);
@@ -15931,18 +15932,15 @@ algorithm
         eqns1_1 = equationSetnth(eqns1,residualeqn-1,EQUATION(DAE.BINARY(eqn,DAE.SUB(DAE.ET_REAL()),scalar),DAE.RCONST(0.0),source));
         // add equation to calc org var
         eqns_2 = equationAdd(eqns_1,EQUATION(DAE.CALL(Absyn.IDENT("tearing"),
-                          {DAE.CREF(cr,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
-                          DAE.RCONST(0.0), DAE.emptyElementSource));
+                          {},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
+                          DAE.CREF(cr,DAE.ET_REAL()), DAE.emptyElementSource));
         tearingeqnid = equationSize(eqns_2);                 
         dlow_1 = DAELOW(vars_1,knvars,exobj,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         dlow1_1 = DAELOW(ordvars1,knvars,exobj,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
         m_1 = incidenceMatrix(dlow_1);
-        lstm = arrayList(m_1);
-        lstmp = Util.listListMap(lstm, intAbs);
-        m_1p = listArray(lstmp); 
-        mT_1 = transposeMatrix(m_1p);
-        nvars = arrayLength(m_1p);
+        mT_1 = transposeMatrix(m_1);
+        nvars = arrayLength(m_1);
         neqns = arrayLength(mT_1);
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
@@ -15952,16 +15950,22 @@ algorithm
         Debug.fcall("tearingdump", dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", dumpIncidenceMatrixT, mT_1);
         Debug.fcall("tearingdump", dump, dlow_1);
-        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1p, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
+        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
         v1_1 = assignmentsVector(ass1);
         v2_1 = assignmentsVector(ass2);        
         (comps) = strongComponents(m_2, mT_2, v1_1, v2_1);
         Debug.fcall("tearingdump", dumpMatching, v1_1);        
         Debug.fcall("tearingdump", dumpComponents, comps);         
-         // check strongComponents (simply start again with tearingSystems4)
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_1,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps,residualeqns,tearingvars,tearingeqns,comp,0);
-        // Add Tearing Equation
-        tearingeqns_2 = listAppend({tearingeqnid},tearingeqns_1);
+        // check strongComponents and split it into two lists: len(comp)==1 and len(comp)>1
+        (morecomps,onecomp) = splitComps(comps);
+        // try to solve the equations 
+        onecomp_flat = Util.listFlatten(onecomp);
+        // remove residual equations and tearing eqns
+        resteareqns = listAppend(tearingeqnid::tearingeqns,residualeqn::residualeqns);
+        othereqns = Util.listSelect1(onecomp_flat,resteareqns,Util.listNotContains);  
+        eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1); 
+         // if we have not make alle equations causal select next residual equation
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_1,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0);
         // check 
         true = ((listLength(residualeqns_1) > listLength(residualeqns)) and
                 (listLength(tearingvars_1) > listLength(tearingvars)) ) or (compcount == 0);
@@ -15969,23 +15973,25 @@ algorithm
         cmops_flat = Util.listFlatten(comps_1);
         comp_2 = Util.listSelect1(cmops_flat,comp,Util.listContains);
       then
-        (tearingvar::tearingvars_1,residualeqns_1,tearingeqns_2,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
     case (dlow as DAELOW(orderedVars = VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
       equation 
-        tearingvar = getMaxfromListList(mT,vars,comp,0,0,exclude);
+        (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
         true = tearingvar > 0;
         // clear errors
         Error.clearMessages();
         // try next TearingVar
-        (tearingvars_1,residualeqns_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns);
       then
-        (tearingvars_1,residualeqns_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);   
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);   
     case (dlow as DAELOW(orderedVars = VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
       equation 
-        tearingvar = getMaxfromListList(mT,vars,comp,0,0,exclude);
+        (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
         false = tearingvar > 0;
+        // clear errors
+        Error.clearMessages();
         Debug.fcall("tearingdump", print, "Select Tearing Var failed\n");  
       then
         fail();
@@ -16090,35 +16096,141 @@ protected function getMaxfromListList
   input Value inEqn;
   input list<Value> inExclude;
   output Value outEqn;
+  output Value outMax;
 algorithm 
-  outEqn:=
+  (outEqn,outMax):=
   matchcontinue (inM,inLst,inComp,inMax,inEqn,inExclude)
     local
       IncidenceMatrixT m;
-      list<Value> rest,eqn,eqn_1,eqn_2,comp,exclude;
-      Value v,v1,v2,max,en,en_1,en_2;
-    case (m,{},comp,max,en,exclude) then en;
+      list<Value> rest,eqn,eqn_1,eqn_2,eqn_3,comp,exclude;
+      Value v,v1,v2,max,max_1,en,en_1,en_2;
+    case (m,{},comp,max,en,exclude) then (en,max);
     case (m,v::rest,comp,max,en,exclude)
       equation 
+        (en_1,max_1) = getMaxfromListList(m,rest,comp,max,en,exclude);     
         true = v > 0;
         false = Util.listContains(v,exclude);
         eqn = m[v];
-        // remove 
+        // remove negative
         eqn_1 = removeNegative(eqn);
+        // select entries
         eqn_2 = Util.listSelect1(eqn_1,comp,Util.listContains);
-        v1 = listLength(eqn_1);
-        v2 = intMax(v1,max);
-        en_1 = Util.if_(v1>max,v,en);
-        en_2 = getMaxfromListList(m,rest,comp,v2,en_1,exclude);     
+        // remove multiple entries
+        eqn_3 = removeMultiple(eqn_2);
+        v1 = listLength(eqn_3);
+        v2 = intMax(v1,max_1);
+        en_2 = Util.if_(v1>max_1,v,en_1);
       then
-        en_2;
+        (en_2,v2);
     case (m,v::rest,comp,max,en,exclude)
       equation 
-        en_2 = getMaxfromListList(m,rest,comp,max,en,exclude);     
+        (en_2,v2) = getMaxfromListList(m,rest,comp,max,en,exclude);     
       then
-        en_2;        
+        (en_2,v2);        
   end matchcontinue;
 end getMaxfromListList;
+
+protected function removeMultiple
+" function: removeMultiple
+  remove mulitple entries from the list"
+  input list<Value> inLst;
+  output list<Value> outLst;
+algorithm 
+  outLst:=
+  matchcontinue (inLst)
+    local
+      list<Value> rest,lst;
+      Value v;
+    case ({}) then {};
+    case (v::{})
+      then
+        {v};
+    case (v::rest)
+      equation 
+        lst = removeMultiple(rest);     
+        false = Util.listContains(v,lst);
+      then
+        (v::lst);
+    case (v::rest)
+      equation 
+        lst = removeMultiple(rest);     
+        true = Util.listContains(v,lst);
+      then
+        lst;
+  end matchcontinue;
+end removeMultiple;
+
+protected function splitComps
+" function: splitComps
+  splits the comp in two list
+  1: len(comp) == 1
+  2: len(comp) > 1"
+  input list<list<Integer>> inComps;
+  output list<list<Integer>> outComps;
+  output list<list<Integer>> outComps1;
+algorithm 
+  (outComps,outComps1):=
+  matchcontinue (inComps)
+    local
+      list<list<Integer>> rest,comps,comps1;
+      list<Integer> comp;
+      Integer v;
+    case ({}) then ({},{});
+    case (comp::rest)
+      equation 
+        (comps,comps1) = splitComps(rest);
+        v = listLength(comp);     
+        true = v > 1;
+      then
+        (comp::comps,comps1);
+    case (comp::rest)
+      equation 
+        (comps,comps1) = splitComps(rest);
+        v = listLength(comp);     
+        true = Util.isEqual(v,1);
+      then
+        (comps,comp::comps1);
+  end matchcontinue;
+end splitComps;
+
+protected function solveEquations
+" function: solveEquations
+  try to solve the equations"
+  input EquationArray inEqnArray;
+  input list<Integer> inEqns;
+  input Integer[:] inAssigments;
+  input Variables inVars;
+  output EquationArray outEqnArray;
+algorithm 
+  outEqnArray:=
+  matchcontinue (inEqnArray,inEqns,inAssigments,inVars)
+    local
+      EquationArray eqns,eqns_1,eqns_2;
+      list<Integer> rest;
+      Integer e,e_1,v,v_1;
+      Integer[:] ass;
+      Variables vars;
+      DAE.Exp e1,e2,varexp,expr,simplify_exp;
+      DAE.ComponentRef cr;
+      DAE.ElementSource source;
+      VariableArray varr;
+    case (eqns,{},ass,vars) then eqns;
+    case (eqns,e::rest,ass,vars as VARIABLES(varArr=varr))
+      equation 
+        eqns_1 = solveEquations(eqns,rest,ass,vars);
+        e_1 = e - 1;
+        EQUATION(e1,e2,source) = equationNth(eqns_1, e_1);
+        v = ass[e_1 + 1];
+        v_1 = v - 1;
+        VAR(varName=cr) = vararrayNth(varr, v_1);
+        varexp = DAE.CREF(cr,DAE.ET_REAL());
+        expr = Exp.solve(e1, e2, varexp);
+        simplify_exp = Exp.simplify(expr); 
+        eqns_2 = equationSetnth(eqns_1,e_1,EQUATION(simplify_exp,varexp,source));       
+      then
+        eqns_2;
+  end matchcontinue;
+end solveEquations;
 
 protected function transformDelayExpression
 "Insert a unique index into the arguments of a delay() expression.
