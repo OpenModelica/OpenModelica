@@ -4,9 +4,9 @@ using System;
 using Physiome.Solvers;
 namespace Physiome.Models
 {
-    public class RightHeartStarling : DAESystem
-    {
-    
+  public class RightHeartStarling : DAESystem
+  {
+  
     const int
       NHELP = 0, NG = 1,
       NX = 1, NY = 8, NP = 6,
@@ -27,58 +27,6 @@ namespace Physiome.Models
     public override int MaximumOrder { get { return 5; } }
     public override int StringVarsCount { get { return NYSTR; } }
     public override int StringParametersCount { get { return NPSTR; } }
-    
-    
-    public RightHeartStarling() {
-        states = new double[NX];
-        statesDerivatives = new double[NX];
-        algebraics = new double[NY];
-        parameters = new double[NP];
-        initialResiduals = new double[NR];
-        helpVars = new double[NHELP];
-    
-        oldStates = new double[NX];
-        oldStatesDerivatives = new double[NX];
-        oldAlgebraics = new double[NY];
-    
-        oldStates2 = new double[NX];
-        oldStatesDerivatives2 = new double[NX];
-        oldAlgebraics2 = new double[NY];
-    
-        tempStatesDerivatives = new double[NX];
-    
-        gout                    = new double[NG];    //array of length zerocrossingcount
-        savedHelpVars           = new double[NHELP]; //array of length HelpVarsCount
-        savedStates             = new double[NX];    //length StatesCount
-        savedStatesDerivatives  = new double[NX];    //length StetesCount
-        savedAlgebraics         = new double[NY];     //length AlgebraicsCount
-    
-        //TODO: ?? how many events are there ?
-        eventQueue = new EventQueue(NG + NHELP);
-    
-        initialFixed = new bool[NX+NX+NY+NP] {
-           //states
-           true /* volume */,
-           //derivatives
-           true /* der(volume) */,
-           //algebraics
-           false /* bloodFlow */,
-           false /* EDV */,
-           false /* ESV */,
-           false /* inflow */,
-           false /* outflow */,
-           false /* delta */,
-           false /* ventricleSteadyStateVolume */,
-           false /* Pi */,
-           //parameters
-           true /* K */,
-           true /* HR */,
-           true /* PericardiumPressure */,
-           true /* stiffnes */,
-           true /* contractility */,
-           true /* Po */
-        };
-    }
     
     public double volume { get { return states[0]; } set { states[0] = value; }}
     public double Der_volume { get { return statesDerivatives[0]; } set { statesDerivatives[0] = value; }}
@@ -106,6 +54,57 @@ namespace Physiome.Models
     public double contractility { get { return parameters[4]; } set { parameters[4] = value; }}
     public double Po { get { return parameters[5]; } set { parameters[5] = value; }}
     
+    private static readonly SimVarInfo[] VariableInfosStatic = new[] {
+        new SimVarInfo( "volume", "average ventricle volume", SimVarType.State, 0, false),
+        
+        new SimVarInfo( "der(volume)", "average ventricle volume", SimVarType.StateDer, 0, false),
+        
+        new SimVarInfo( "bloodFlow", "", SimVarType.Algebraic, 0, false),
+        new SimVarInfo( "EDV", "end diastolic volume", SimVarType.Algebraic, 1, false),
+        new SimVarInfo( "ESV", "end systolic volume", SimVarType.Algebraic, 2, false),
+        new SimVarInfo( "inflow", "", SimVarType.Algebraic, 3, false),
+        new SimVarInfo( "outflow", "", SimVarType.Algebraic, 4, false),
+        new SimVarInfo( "delta", "", SimVarType.Algebraic, 5, false),
+        new SimVarInfo( "ventricleSteadyStateVolume", "", SimVarType.Algebraic, 6, false),
+        new SimVarInfo( "Pi", "atrium pressure", SimVarType.Algebraic, 7, false),
+        
+        new SimVarInfo( "K", "time adaptation coeficient of average ventricle blood volume", SimVarType.Parameter, 0, true),
+        new SimVarInfo( "HR", "heart rate", SimVarType.Parameter, 1, true),
+        new SimVarInfo( "PericardiumPressure", "", SimVarType.Parameter, 2, true),
+        new SimVarInfo( "stiffnes", "", SimVarType.Parameter, 3, true),
+        new SimVarInfo( "contractility", "", SimVarType.Parameter, 4, true),
+        new SimVarInfo( "Po", "artery pressure", SimVarType.Parameter, 5, true)
+    };
+    public override SimVarInfo[] VariableInfos { get { return VariableInfosStatic; } }
+    
+    private static readonly bool[] InitialFixedStatic = new bool[NX + NX + NY + NP] {
+        //states
+        true /* volume */,
+        //derivatives
+        true /* der(volume) */,
+        //algebraics
+        false /* bloodFlow */,
+        false /* EDV */,
+        false /* ESV */,
+        false /* inflow */,
+        false /* outflow */,
+        false /* delta */,
+        false /* ventricleSteadyStateVolume */,
+        false /* Pi */,
+        //parameters
+        true /* K */,
+        true /* HR */,
+        true /* PericardiumPressure */,
+        true /* stiffnes */,
+        true /* contractility */,
+        true /* Po */
+    };
+    public override bool[] InitialFixed { get { return InitialFixedStatic; } }
+    
+    public RightHeartStarling() {
+        CreateData();
+    }
+    
     
 
     /* for continuous time variables */
@@ -113,25 +112,20 @@ namespace Physiome.Models
     {
       bloodFlow = (HR * (EDV - ESV));
       // RELATION( delta < 0.0 ) macro expansion
-      bool _tmp1;
-      if (isInUpdate) {
-         _tmp1 = delta < 0.0;
-         if(!_tmp1 && (delta <= 0.0)) {
-           var timeBackup = time; var statesBackup = states; var statesDerivativesBackup = statesDerivatives; var algebraicsBackup = algebraics;
-           time = oldTime; states = oldStates; statesDerivatives = oldStatesDerivatives; algebraics = oldAlgebraics;
-           double res1 = delta - 0.0;  time = oldTime2; states = oldStates2; statesDerivatives = oldStatesDerivatives2; algebraics = oldAlgebraics2;
-           double res2 = delta - 0.0;  time = timeBackup; states = statesBackup; statesDerivatives = statesDerivativesBackup; algebraics = algebraicsBackup;
-           _tmp1 = res1 <= res2;
-         }
-      } else
-         _tmp1 = delta < 0.0;
-      inflow = (_tmp1 ? bloodFlow : (bloodFlow + delta));
+      bool _tmp1 = delta < 0.0; if (!_tmp1 && isInUpdate && (delta <= 0.0)) { SwapOldVars(); double res1 = delta - 0.0;  SwapOldVars12(); _tmp1 = res1 <= (delta - 0.0); SwapOldVars2(); }
+      double _tmp2;
+      if (_tmp1) {
+        _tmp2 = bloodFlow;
+      } else {
+        _tmp2 = (bloodFlow + delta);
+      }
+      inflow = _tmp2;
       outflow = (delta - inflow);
       Pi = time;
     }
 
     /* for discrete time variables */
-     public override void FunDAEOutput2()
+    public override void FunDAEOutput2()
     {
       Pi = time;
     }
@@ -142,22 +136,22 @@ namespace Physiome.Models
 
     public override void OutputFun()
     {
+      /* not yet
+      */
     }
 
-    public override void FunZeroCrossing(double t, double[] x, double[] xd, double[] gout)
+    public override void FunZeroCrossing(double time, double[] x, double[] xd, double[] gout)
     {
-      var timeBackup = time;
-      time = t;
+      var timeBackup = this.time;
+      this.time = time;
     
       FunODE();
       FunDAEOutput();
     
-      {//ZEROCROSSING(0, Less(delta, 0.0));
-       var _zen = zeroCrossingEnabled[0];
-       gout[0] = (_zen != 0) ? _zen * (delta-0.0) : 1.0;
-      }
+      {var _zen = zeroCrossingEnabled[0]; //ZEROCROSSING(0, Less(delta, 0.0));
+      gout[0] = (_zen != 0) ? _zen * (delta-0.0) : 1.0; }
       
-      time = timeBackup;
+      this.time = timeBackup;
     }
 
     public override void FunHandleZeroCrossing(int index)
@@ -183,19 +177,14 @@ namespace Physiome.Models
       Der_volume = (delta / 60.0);
       bloodFlow = (HR * (EDV - ESV));
       // RELATION( delta < 0.0 ) macro expansion
-      bool _tmp1;
-      if (isInUpdate) {
-         _tmp1 = delta < 0.0;
-         if(!_tmp1 && (delta <= 0.0)) {
-           var timeBackup = time; var statesBackup = states; var statesDerivativesBackup = statesDerivatives; var algebraicsBackup = algebraics;
-           time = oldTime; states = oldStates; statesDerivatives = oldStatesDerivatives; algebraics = oldAlgebraics;
-           double res1 = delta - 0.0;  time = oldTime2; states = oldStates2; statesDerivatives = oldStatesDerivatives2; algebraics = oldAlgebraics2;
-           double res2 = delta - 0.0;  time = timeBackup; states = statesBackup; statesDerivatives = statesDerivativesBackup; algebraics = algebraicsBackup;
-           _tmp1 = res1 <= res2;
-         }
-      } else
-         _tmp1 = delta < 0.0;
-      inflow = (_tmp1 ? bloodFlow : (bloodFlow + delta));
+      bool _tmp1 = delta < 0.0; if (!_tmp1 && isInUpdate && (delta <= 0.0)) { SwapOldVars(); double res1 = delta - 0.0;  SwapOldVars12(); _tmp1 = res1 <= (delta - 0.0); SwapOldVars2(); }
+      double _tmp2;
+      if (_tmp1) {
+        _tmp2 = bloodFlow;
+      } else {
+        _tmp2 = (bloodFlow + delta);
+      }
+      inflow = _tmp2;
       outflow = (delta - inflow);
       
       isInUpdate = false;
@@ -212,30 +201,27 @@ namespace Physiome.Models
       Der_volume = (delta / 60.0);
       bloodFlow = (HR * (EDV - ESV));
       // RELATION( delta < 0.0 ) macro expansion
-      bool _tmp1;
-      if (isInUpdate) {
-         _tmp1 = delta < 0.0;
-         if(!_tmp1 && (delta <= 0.0)) {
-           var timeBackup = time; var statesBackup = states; var statesDerivativesBackup = statesDerivatives; var algebraicsBackup = algebraics;
-           time = oldTime; states = oldStates; statesDerivatives = oldStatesDerivatives; algebraics = oldAlgebraics;
-           double res1 = delta - 0.0;  time = oldTime2; states = oldStates2; statesDerivatives = oldStatesDerivatives2; algebraics = oldAlgebraics2;
-           double res2 = delta - 0.0;  time = timeBackup; states = statesBackup; statesDerivatives = statesDerivativesBackup; algebraics = algebraicsBackup;
-           _tmp1 = res1 <= res2;
-         }
-      } else
-         _tmp1 = delta < 0.0;
-      inflow = (_tmp1 ? bloodFlow : (bloodFlow + delta));
+      bool _tmp1 = delta < 0.0; if (!_tmp1 && isInUpdate && (delta <= 0.0)) { SwapOldVars(); double res1 = delta - 0.0;  SwapOldVars12(); _tmp1 = res1 <= (delta - 0.0); SwapOldVars2(); }
+      double _tmp2;
+      if (_tmp1) {
+        _tmp2 = bloodFlow;
+      } else {
+        _tmp2 = (bloodFlow + delta);
+      }
+      inflow = _tmp2;
       outflow = (delta - inflow);
       
       isInUpdate = false;
     }
 
-    public override void FunOnlyZeroCrossings(double t, double[] gout)
+    public override void FunOnlyZeroCrossings(double time, double[] gout) //TODO:??time in original is *t only ... how is it called?
     {
-      {//ZEROCROSSING(0, Less(delta, 0.0));
-       var _zen = zeroCrossingEnabled[0];
-       gout[0] = (_zen != 0) ? _zen * (delta-0.0) : 1.0;
-      }
+      {var _zen = zeroCrossingEnabled[0]; //ZEROCROSSING(0, Less(delta, 0.0));
+      gout[0] = (_zen != 0) ? _zen * (delta-0.0) : 1.0; }
+    }
+
+    public override void FunStoreDelayed()
+    {
     }
 
     public override void FunWhen(int i)
@@ -273,19 +259,14 @@ namespace Physiome.Models
       initialResiduals[_i++] = (delta - ((ventricleSteadyStateVolume - volume) * K));
       initialResiduals[_i++] = ((inflow + outflow) - delta);
       // RELATION( delta < 0.0 ) macro expansion
-      bool _tmp1;
-      if (isInUpdate) {
-         _tmp1 = delta < 0.0;
-         if(!_tmp1 && (delta <= 0.0)) {
-           var timeBackup = time; var statesBackup = states; var statesDerivativesBackup = statesDerivatives; var algebraicsBackup = algebraics;
-           time = oldTime; states = oldStates; statesDerivatives = oldStatesDerivatives; algebraics = oldAlgebraics;
-           double res1 = delta - 0.0;  time = oldTime2; states = oldStates2; statesDerivatives = oldStatesDerivatives2; algebraics = oldAlgebraics2;
-           double res2 = delta - 0.0;  time = timeBackup; states = statesBackup; statesDerivatives = statesDerivativesBackup; algebraics = algebraicsBackup;
-           _tmp1 = res1 <= res2;
-         }
-      } else
-         _tmp1 = delta < 0.0;
-      initialResiduals[_i++] = (inflow - (_tmp1 ? bloodFlow : (bloodFlow + delta)));
+      bool _tmp1 = delta < 0.0; if (!_tmp1 && isInUpdate && (delta <= 0.0)) { SwapOldVars(); double res1 = delta - 0.0;  SwapOldVars12(); _tmp1 = res1 <= (delta - 0.0); SwapOldVars2(); }
+      double _tmp2;
+      if (_tmp1) {
+        _tmp2 = bloodFlow;
+      } else {
+        _tmp2 = (bloodFlow + delta);
+      }
+      initialResiduals[_i++] = (inflow - _tmp2);
       initialResiduals[_i++] = (Der_volume - (delta / 60.0));
       initialResiduals[_i++] = (Pi - time);
       initialResiduals[_i++] = (volume - 95.7);
@@ -298,7 +279,7 @@ namespace Physiome.Models
 
     public override bool CheckForDiscreteVarChanges()
     {
-      var needToIterate = false;
+      //var needToIterate = false;
     
       //edge(helpVars[i])
       
@@ -313,8 +294,8 @@ namespace Physiome.Models
           return true; //needToIterate=true;
       }
       
-      return needToIterate;
+      return false; //needToIterate;
     }
-    
-    }
+
+  }
 }

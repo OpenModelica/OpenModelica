@@ -1,0 +1,26 @@
+0.0 // start value
+5.0 // stop value
+0.01 // step value
+1e-06 // tolerance
+"dassl" // method
+1 // n states
+8 // n alg vars
+6 //n parameters
+0 // n string-parameters
+0 // n string variables
+95.7 // volume
+0.0
+0.0 // bloodFlow
+0.0 // EDV
+0.0 // ESV
+0.0 // inflow
+0.0 // outflow
+0.0 // delta
+0.0 // ventricleSteadyStateVolume
+0.0 // Pi
+1 // K
+70 // HR
+-3 // PericardiumPressure
+1 // stiffnes
+1 // contractility
+12.7 // Po

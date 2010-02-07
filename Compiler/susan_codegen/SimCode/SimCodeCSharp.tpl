@@ -24,8 +24,8 @@ using System;
 using Physiome.Solvers;
 namespace Physiome.Models
 {
-    public class <modelInfo.name> : DAESystem
-    {
+  public class <modelInfo.name> : DAESystem
+  {
          
     <modelDataMembers(modelInfo)>
 
@@ -47,6 +47,8 @@ namespace Physiome.Models
 
     <functionOnlyZeroCrossing(zeroCrossings)>
 
+    <functionStoreDelayed()>
+    
     <functionWhen(whenClauses)>
 
     <functionOde(stateContEquations)>
@@ -61,7 +63,7 @@ namespace Physiome.Models
 
     <functionCheckForDiscreteVarChanges(sc.helpVarInfo, sc.discreteModelVars)>
     
-    }
+  }
 }
 >>
 
@@ -89,43 +91,6 @@ public override int MaximumOrder { get { return 5; } }
 public override int StringVarsCount { get { return NYSTR; } }
 public override int StringParametersCount { get { return NPSTR; } }
 
-
-public <name>() {
-    states = new double[NX];
-    statesDerivatives = new double[NX];
-    algebraics = new double[NY];
-    parameters = new double[NP];
-    initialResiduals = new double[NR];
-    helpVars = new double[NHELP];
-
-    oldStates = new double[NX];
-    oldStatesDerivatives = new double[NX];
-    oldAlgebraics = new double[NY];
-
-    oldStates2 = new double[NX];
-    oldStatesDerivatives2 = new double[NX];
-    oldAlgebraics2 = new double[NY];
-
-    tempStatesDerivatives = new double[NX];
-    
-    gout                    = new double[NG];    //array of length zerocrossingcount 
-    savedHelpVars           = new double[NHELP]; //array of length HelpVarsCount
-    savedStates             = new double[NX];    //length StatesCount
-    savedStatesDerivatives  = new double[NX];    //length StetesCount
-    savedAlgebraics         = new double[NY];     //length AlgebraicsCount
-    
-    //TODO: ?? how many events are there ?
-    eventQueue = new EventQueue(NG + NHELP);
-    
-    initialFixed = new bool[NX+NX+NY+NP] {
-       <[ if vars.stateVars      then "//states\n" + initFixed(vars.stateVars),
-          if vars.derivativeVars then "//derivatives\n" + initFixed(vars.derivativeVars),
-          if vars.algVars        then "//algebraics\n" + initFixed(vars.algVars), 
-          if vars.paramVars      then "//parameters\n" + initFixed(vars.paramVars)
-        ] ",\n">
-    };
-}
-
 <vars.stateVars of SIMVAR: <<
 public double <cref(name)> { get { return states[<index>]; } set { states[<index>] = value; }}
 >> \n>
@@ -140,6 +105,37 @@ public double Pre_<cref(name)> { get { return savedAlgebraics[<index>]; } set { 
 <vars.paramVars of SIMVAR: <<
 public double <cref(name)> { get { return parameters[<index>]; } set { parameters[<index>] = value; }}
 >> \n>
+
+private static readonly SimVarInfo[] VariableInfosStatic = new[] {
+	<[  
+		(vars.stateVars of SIMVAR: <<
+		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.State, <index>, false)
+		>> ",\n"),
+		(vars.derivativeVars of SIMVAR: <<
+		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.StateDer, <index>, false)
+		>> ",\n"),
+		(vars.algVars of SIMVAR: <<
+		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Algebraic, <index>, false)
+		>> ",\n"),
+		(vars.paramVars of SIMVAR: <<
+		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Parameter, <index>, true)
+		>> ",\n")
+	] ",\n\n">
+};
+public override SimVarInfo[] VariableInfos { get { return VariableInfosStatic; } }
+
+private static readonly bool[] InitialFixedStatic = new bool[NX + NX + NY + NP] {
+    <[ if vars.stateVars      then "//states\n" + initFixed(vars.stateVars),
+       if vars.derivativeVars then "//derivatives\n" + initFixed(vars.derivativeVars),
+       if vars.algVars        then "//algebraics\n" + initFixed(vars.algVars), 
+       if vars.paramVars      then "//parameters\n" + initFixed(vars.paramVars)
+     ] ",\n">
+};
+public override bool[] InitialFixed { get { return InitialFixedStatic; } }
+
+public <name>() {
+    CreateData();
+}
 
 </*
     //a kind of SimulationVarInfo list will be created here
@@ -185,7 +181,7 @@ functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
 # System.tmpTickReset(1)
 <<
 /* for discrete time variables */
- public override void FunDAEOutput2()
+public override void FunDAEOutput2()
 {
   <nonStateDiscEquations : equation_(it,contextSimulationDescrete) \n>
   <removedEquations      : equation_(it,contextSimulationDescrete) \n>
@@ -199,7 +195,7 @@ public override void InputFun()
 {
   <vars.inputVars of SIMVAR : 
   <<
-  <cref(origName)> = inputVars[<i0>];
+  <cref(name)> = inputVars[<i0>];
   >> \n>
 }
 >>
@@ -209,10 +205,12 @@ case MODELINFO(varInfo = VARINFO, vars = SIMVARS) then
 <<
 public override void OutputFun()
 {
+  /* not yet
   <vars.outputVars of SIMVAR :
   <<
-  outputVars[<i0>] = <cref(origName)>;
+  outputVars[<i0>] = <cref(name)>;
   >> \n>
+  */
 }
 >>
 
@@ -220,17 +218,17 @@ public override void OutputFun()
 functionZeroCrossing(list<ZeroCrossing> zeroCrossingLst) ::=
 # System.tmpTickReset(1)
 <<
-public override void FunZeroCrossing(double t, double[] x, double[] xd, double[] gout)
+public override void FunZeroCrossing(double time, double[] x, double[] xd, double[] gout)
 {
-  var timeBackup = time;
-  time = t;
+  var timeBackup = this.time;
+  this.time = time;
 
   FunODE();
   FunDAEOutput();
   
   <zeroCrossingLst of ZERO_CROSSING : zeroCrossing(relation_, i0) \n>  
 
-  time = timeBackup;
+  this.time = timeBackup;
 }
 >>
 
@@ -267,7 +265,7 @@ public override void FunUpdateDependents()
       # expPart = daeExp(exp, contextSimulationDescrete, preExp)
       <<
       <preExp>
-      helpVars[<in1>] = <expPart>;
+      helpVars[<in1>] = <expPart> ? 1.0 : 0.0;</*???TODO: ? 1.0 : 0.0;*/>
       >>
   \n>
 
@@ -290,7 +288,7 @@ public override void FunUpdateDepend()
       # expPart = daeExp(exp, contextSimulationDescrete, preExp)
       <<
       <preExp>
-      helpVars[<in1>] = <expPart>;
+      helpVars[<in1>] = <expPart> ? 1.0 : 0.0;</*???TODO: ? 1.0 : 0.0;*/>
       >>
   \n>
 
@@ -301,7 +299,7 @@ public override void FunUpdateDepend()
 functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossingLst) ::=
 # System.tmpTickReset(1)
 <<
-public override void FunOnlyZeroCrossings(double t, double[] gout)
+public override void FunOnlyZeroCrossings(double time, double[] gout) //TODO:??time in original is *t only ... how is it called?
 {
   <zeroCrossingLst of ZERO_CROSSING : zeroCrossing(relation_, i0) \n>  
 }
@@ -313,27 +311,21 @@ zeroCrossing(Exp, Integer index) ::=
     # e1 = daeExp(exp1, contextOther, preExp)
     # e2 = daeExp(exp2, contextOther, preExp)
     <<
-    {//ZEROCROSSING(<index>, <zeroCrossingOpFunc(operator)>(<e1>, <e2>));
-     <preExp>
-     var _zen = zeroCrossingEnabled[<index>];
-     gout[<index>] = (_zen != 0) ? _zen * (<match operator
-                                            case LESS
-                                            case LESSEQ    then '<e1>-<e2>'
-                                            case GREATER
-                                            case GREATEREQ then '<e2>-<e1>'
-                                           >) : 1.0;
-    }
+    {<preExp>var _zen = zeroCrossingEnabled[<index>]; //ZEROCROSSING(<index>, <zeroCrossingOpFunc(operator)>(<e1>, <e2>));
+    gout[<index>] = (_zen != 0) ? _zen * (<match operator
+                                           case LESS
+                                           case LESSEQ    then '<e1>-<e2>'
+                                           case GREATER
+                                           case GREATEREQ then '<e2>-<e1>'
+                                          >) : 1.0; }
     >>    
   case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
     # preExp = ""
-    # e1 = daeExp(start, contextOther, preExp)
-    # e2 = daeExp(interval, contextOther, preExp)
+    # eStart = daeExp(start, contextOther, preExp)
+    # eInterval = daeExp(interval, contextOther, preExp)
     <<
-    {//ZEROCROSSING(<index>, Sample(*t, <e1>, <e2>));
-     <preExp>
-     var _zen = zeroCrossingEnabled[<index>];
-     gout[<index>] = (_zen != 0) ? _zen * Sample(t, e1, e2) : 1.0;
-    }
+    {<preExp>var _zen = zeroCrossingEnabled[<index>]; //ZEROCROSSING(<index>, Sample(*t, <eStart>, <eInterval>));
+    gout[<index>] = (_zen != 0) ? _zen * Sample(time, <eStart>, <eInterval>) : 1.0; }
     >> 
   case _ then
     <<
@@ -345,6 +337,16 @@ zeroCrossingOpFunc(Operator) ::=
   case GREATER   then "Greater"
   case LESSEQ    then "LessEq"
   case GREATEREQ then "GreaterEq"
+
+// New runtime function. What should it do?
+functionStoreDelayed() ::=
+# System.tmpTickReset(1)
+<<
+public override void FunStoreDelayed()
+{  
+}
+>>
+
 
 
 functionWhen(list<SimWhenClause> whenClauses) ::=
@@ -393,6 +395,7 @@ public override void FunODE()
 }
 >>
 
+//TODO:??there is st more in the trunk
 functionInitial(list<SimEqSystem> initialEquations) ::=
 # System.tmpTickReset(1)
 <<
@@ -463,20 +466,20 @@ functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfoLst,
 <<
 public override bool CheckForDiscreteVarChanges()
 {
-  var needToIterate = false;
+  //var needToIterate = false;
 
   //edge(helpVars[i])
   <helpVarInfoLst of (id1, exp, id2):
   if id2 is not -1 then
   <<
-  if (helpVars[<id1>]!=0.0 && savedHelpVars[<id1>]==0.0) AddEvent(<id2> + NG);
+  if (helpVars[<id1>]!=0.0 && savedHelpVars[<id1>]==0.0) EventQueue.Add(<id2> + NG);
   >> \n>
 
   //TODO: changeDiscreteVar(i) and to get the i from ComponentRef
   //if change()
   <discreteModelVars :
   <<
-  if (Pre_<cref(it)> != <cref(it)>)) return true; /*needToIterate = true; */
+  if (Pre_<cref(it)> != <cref(it)>) return true; /*needToIterate = true; */
   >> \n>
   
   var _hvs = helpVars;
@@ -487,7 +490,7 @@ public override bool CheckForDiscreteVarChanges()
       return true; //needToIterate=true;
   }
 
-  return needToIterate;
+  return false; //needToIterate;
 }
 >>
 
@@ -796,39 +799,13 @@ daeExpUnary(Operator, Exp exp, Context context, Text preExp) ::=
   case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
   case _          then "daeExpUnary:ERR"
 
+
 daeExpRelation(Operator op, Exp exp1, Exp exp2, Context context, Text preExp) ::=
   # e1 = daeExp(exp1, context, preExp)
   # e2 = daeExp(exp2, context, preExp)
-  if context is SIMULATION then
-	# op1 = match op
-            case LESS      then " < "
-            case LESSEQ    then " <= "
-            case GREATER   then " > "
-            case GREATEREQ then " >= "
-            case _ then " daeExpRelation:ERR1 "
-	# op2 = match op
-	        case LESS     case LESSEQ    then " <"
-	        case GREATER  case GREATEREQ then " >"
-	        case _ then "daeExpRelation:ERR2" 
-	# res = ""    
-	# preExp += 
-	    <<
-	    // RELATION( <e1><op1><e2> ) macro expansion
-	    <tempDecl("bool", res)>; 
-	    if (isInUpdate) {
-	       <res> = <e1><op2> <e2>;
-	       if(!<res> && (<e1><op2>= <e2>)) {
-	         var timeBackup = time; var statesBackup = states; var statesDerivativesBackup = statesDerivatives; var algebraicsBackup = algebraics;
-	         time = oldTime; states = oldStates; statesDerivatives = oldStatesDerivatives; algebraics = oldAlgebraics;
-	         double res1 = <e1> - <e2>;  time = oldTime2; states = oldStates2; statesDerivatives = oldStatesDerivatives2; algebraics = oldAlgebraics2;
-	         double res2 = <e1> - <e2>;  time = timeBackup; states = statesBackup; statesDerivatives = statesDerivativesBackup; algebraics = algebraicsBackup;
-	         <res> = res1<op2>= res2;
-	       }
-	    } else
-	       <res> = <e1><op1><e2>;
-	    >>
-	res  
-  else 
+  if  daeExpSimRelation(context, op, e1, e2, preExp) then 
+    it
+  else //non-SIMULATION context or precise equality 
     match op
     case LESS(ty = ET_BOOL)        then '(!<e1> && <e2>)'
     case LESS(ty = ET_STRING)      then "# string comparison not supported\n"
@@ -856,11 +833,56 @@ daeExpRelation(Operator op, Exp exp1, Exp exp2, Context context, Text preExp) ::
     case NEQUAL(ty = ET_REAL)      then '(<e1> != <e2>)'
     case _                         then "daeExpRelation:ERR"
 
+daeExpSimRelation(Context, Operator op, Text e1, Text e2, Text preExp) ::=
+	case SIMULATION then
+	   match op
+	   case LESS      then SimRelationSimple(e1, e2, " <", preExp)
+	   case LESSEQ    then SimRelationEqual(e1, e2, " <", preExp)
+	   case GREATER   then SimRelationSimple(e1, e2, " >", preExp)
+	   case GREATEREQ then SimRelationEqual(e1, e2, " >", preExp)
+
+SimRelationSimple(Text e1, Text e2, String op, Text preExp) ::=
+  # res = ""    
+  # preExp += 
+    <<
+    // RELATION( <e1><op> <e2> ) macro expansion
+    <tempDecl("bool", res)> = <e1><op> <e2>; if (!<res> && isInUpdate && (<e1><op>= <e2>)) { SwapOldVars(); double res1 = <e1> - <e2>;  SwapOldVars12(); <res> = res1<op>= (<e1> - <e2>); SwapOldVars2(); }<\n>
+    >>
+  res 
+
+SimRelationEqual(Text e1, Text e2, String op, Text preExp) ::=
+  # res = ""    
+  # preExp += 
+    <<
+    // RELATION( <e1><op>= <e2> ) macro expansion
+    <tempDecl("bool", res)>;  if (isInUpdate) { <res> = <e1><op> <e2>;  if(!<res> && (<e1><op>= <e2>)) {  SwapOldVars(); double res1 = <e1> - <e2>;  SwapOldVars12(); <res> = res1<op>= (<e1> - <e2>); SwapOldVars2(); }  } else <res> = <e1><op>= <e2>;<\n>
+    >>
+  res
+
 daeExpIf(Exp cond, Exp then_, Exp else_, Context context, Text preExp) ::=
-<<
+  # condExp = daeExp(cond, context, preExp)
+  # resVar = ""
+  # preExpThen = ""
+  # eThen = daeExp(then_, context, preExpThen)
+  # preExpElse = ""
+  # eElse = daeExp(else_, context, preExpElse)
+  # preExp +=  
+  <<
+  <tempDecl(expTypeFromExpArrayIf(then_), resVar)>;
+  if (<condExp>) {
+    <preExpThen>
+    <resVar> = <eThen>;
+  } else {
+    <preExpElse>
+    <resVar> = <eElse>;
+  }<\n>
+  >>
+  resVar
+
+/*<<
 (<daeExp(cond, context, preExp)
   > ? <daeExp(then_, context, preExp)> : <daeExp(else_, context, preExp)>)
->>
+>>*/
 
 daeExpCall(Exp, Context context, Text preExp) ::=
   // special builtins
@@ -885,7 +907,7 @@ daeExpCall(Exp, Context context, Text preExp) ::=
     # funName = underscorePath(path)
     <<
     <underscorePrefix(builtin)
-    ><funName>(argStr)<if not builtin then '!!!TODO:.<funName>_rettype_1'>
+    ><funName>(<argStr>)<if not builtin then '!!!TODO:.<funName>_rettype_1'>
     >>
   case _ then "daeExpCall:NOT_YET_IMPLEMENTED"
     
@@ -921,6 +943,71 @@ expTypeArray(DAE.ExpType ty) ::=
 <<
 <expShortType(ty)>[]
 >>
+
+expTypeFromExpArrayIf(Exp exp) ::=
+  expTypeFromExp(exp)
+
+expTypeFromExp(Exp) ::=
+  case ICONST    then "int"
+  case RCONST    then "double"
+  case SCONST    then "string"
+  case BCONST    then "bool"
+  case BINARY
+  case UNARY
+  case LBINARY
+  case LUNARY
+  case RELATION   then expTypeFromOp(operator)
+  case IFEXP      then expTypeFromExp(expThen)
+  case CALL       then expShortType(ty)
+  case ARRAY
+  case MATRIX
+  case RANGE
+  case CAST
+  case CREF
+  case CODE       then expShortType(ty)
+  case ASUB       then expTypeFromExp(exp)
+  case REDUCTION  then expTypeFromExp(expr)
+  case _          then "expTypeFromExp:ERROR"
+
+
+expTypeFromOp(Operator) ::=
+  case ADD
+  case SUB
+  case MUL
+  case DIV
+  case POW
+  case UMINUS
+  case UPLUS
+  case UMINUS_ARR
+  case UPLUS_ARR
+  case ADD_ARR
+  case SUB_ARR
+  case MUL_ARR
+  case DIV_ARR
+  case MUL_SCALAR_ARRAY
+  case MUL_ARRAY_SCALAR
+  case ADD_SCALAR_ARRAY
+  case ADD_ARRAY_SCALAR
+  case SUB_SCALAR_ARRAY
+  case SUB_ARRAY_SCALAR
+  case MUL_SCALAR_PRODUCT
+  case MUL_MATRIX_PRODUCT
+  case DIV_ARRAY_SCALAR
+  case DIV_SCALAR_ARRAY
+  case POW_ARRAY_SCALAR
+  case POW_SCALAR_ARRAY
+  case POW_ARR
+  case POW_ARR2
+  case LESS
+  case LESSEQ
+  case GREATER
+  case GREATEREQ
+  case EQUAL
+  case NEQUAL       then  expShortType(ty)
+  case AND
+  case OR
+  case NOT then "bool"
+  case _ then "expTypeFromOp:ERROR"
 
 /*
 // TODO: Check with Codegen
