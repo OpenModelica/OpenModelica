@@ -1,0 +1,3 @@
+loadFile("TestRedCellsTotal.mo");
+simulate(QHP_test_TestRedCells, stopTime=1000);
+getErrorString();

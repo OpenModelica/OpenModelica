@@ -25,6 +25,9 @@ cppOrig :
 	(cd TrapezUnderground && ../$(OMC) +d=no_tplmode simulate.mos)
 	@echo " ** Simulate RightHeartStarling original C/C++   ** "
 	(cd RightHeartStarling && ../$(OMC) +d=no_tplmode simulate.mos)
+	@echo " ** Simulate QHP TestRedCellsTotal original C/C++   ** "
+	(cd QHP && ../$(OMC) +d=no_tplmode simulate.mos)
+
     
 #RightHeartStarling/RightHeartStarling.cpp :  RightHeartStarling/RightHeartStarling.mo 
 #	@echo " ** Generate RightHeartStarling original cpps  ** "

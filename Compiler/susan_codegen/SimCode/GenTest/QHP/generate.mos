@@ -1,0 +1,3 @@
+loadFile("TestRedCellsTotal.mo.mo");
+translateModel(QHP_test_TestRedCells);
+getErrorString();
