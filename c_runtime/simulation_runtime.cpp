@@ -33,6 +33,7 @@
 #include <list>
 #include <math.h>
 #include <iomanip>
+#include <time.h>  
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
@@ -224,6 +225,10 @@ int main(int argc, char**argv)
   int verbose_flags = verboseLevel(argc,argv);
   sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
 
+  /* mesure time option is set : -mt */
+  int measure_time_flag = (int)flagSet("mt",argc,argv);
+  double measure_start_time = 0;
+
   double start = 0.0;
   double stop = 5.0;
   double stepSize = 0.05;
@@ -238,6 +243,8 @@ int main(int argc, char**argv)
 
   initDelay(start);
 
+  if (measure_time_flag) 
+	  measure_start_time = clock();
   /* the main method identifies which solver to use and then calls
      respecive solver main function*/
   if (method == "") {
@@ -256,6 +263,8 @@ int main(int argc, char**argv)
 	 if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
 	 retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
   }
+  if (measure_time_flag) 
+     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
   deInitializeDataStruc(globalData,ALL);
   return retVal;
 }
