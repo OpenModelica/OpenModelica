@@ -6143,7 +6143,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean)
     local
       DAE.Exp exp;
-      tuple<DAE.TType, Option<Absyn.Path>> tp,arr_tp;
+      DAE.Type tp,arr_tp;
       DAE.Const c;
       DAE.ExpType tp_1,etp;
       list<Env.Frame> env;
@@ -6173,13 +6173,18 @@ algorithm
         (cache,DAE.ARRAY(etp,scalar,expl),DAE.PROP(tp,c),dae);
         
     case (cache,env,{e},_,impl) /* vector of multi dimensional array, at most one dim > 1 */ 
-      local tuple<DAE.TType, Option<Absyn.Path>> tp_1;
+      local 
+        DAE.Type tp_1;
+        Integer dim;
       equation 
         (cache,DAE.ARRAY(_,_,expl),DAE.PROP(tp,c),_,dae) = elabExp(cache,env, e, impl, NONE,true);
         tp_1 = Types.arrayElementType(tp);
         etp = Types.elabType(tp_1);
         dims = Types.getDimensionSizes(tp);                
-        expl_1 = elabBuiltinVector2(expl, dims);
+				checkBuiltinVectorDims(e, env, dims);
+				expl_1 = flattenArray(expl);
+				dim = listLength(expl_1);
+				tp = (DAE.T_ARRAY(DAE.DIM(SOME(dim)), tp_1), NONE);
       then        
         (cache,DAE.ARRAY(etp,true,expl_1),DAE.PROP(tp,c),dae);
       
@@ -6193,7 +6198,7 @@ algorithm
         etp = Types.elabType(tp_1);
         dims = Types.getDimensionSizes(tp);        
         expl_2 = Util.listMap(Util.listFlatten(explm),Util.tuple21);   
-        expl_1 = elabBuiltinVector4(expl_2, dims);
+        expl_1 = elabBuiltinVector2(expl_2, dims);
         dimtmp = listLength(expl_1);
         tp_1 = Types.liftArray(tp_1, SOME(dimtmp));
       then        
@@ -6201,6 +6206,80 @@ algorithm
   end matchcontinue;
 end elabBuiltinVector;
 
+protected function checkBuiltinVectorDims
+	input Absyn.Exp expr;
+	input Env.Env env;
+	input list<Integer> dimensions;
+algorithm
+	_ := matchcontinue(expr, env, dimensions)
+		local
+			Integer dims_larger_than_one;
+		case (_, _, _)
+			equation
+				dims_larger_than_one = countDimsLargerThanOne(dimensions);
+				(dims_larger_than_one > 1) = false;
+			then ();
+		case (_, _, _)
+			local
+				String arg_str, scope_str, dim_str;
+			equation
+				scope_str = Env.printEnvPathStr(env);
+				arg_str = "vector(" +& Dump.printExpStr(expr) +& ")";
+				dim_str = "[" +& Util.stringDelimitList(Util.listMap(dimensions, intString), ", ") +& "]";
+				Error.addMessage(Error.BUILTIN_VECTOR_INVALID_DIMENSIONS, {scope_str, dim_str, arg_str});
+			then fail();
+	end matchcontinue;
+end checkBuiltinVectorDims;
+
+protected function countDimsLargerThanOne
+	input list<Integer> dimensions;
+	output Integer dimsLargerThanOne;
+algorithm
+	dimsLargerThanOne := matchcontinue(dimensions)
+		local
+			Integer dim, dims_larger_than_one;
+			list<Integer> rest_dims;
+		case ({}) then 0;
+		case ((dim :: rest_dims))
+			equation
+				(dim > 1) = true;
+				dims_larger_than_one = 1 + countDimsLargerThanOne(rest_dims);
+			then
+				dims_larger_than_one;
+		case ((dim :: rest_dims))
+			equation
+				dims_larger_than_one = countDimsLargerThanOne(rest_dims);
+			then dims_larger_than_one;
+	end matchcontinue;
+end countDimsLargerThanOne;
+
+protected function flattenArray
+	input list<DAE.Exp> arr;
+	output list<DAE.Exp> flattenedExpl;
+algorithm
+	flattenedExpl := matchcontinue(arr)
+		local
+			DAE.Exp e;
+			list<DAE.Exp> expl, expl2, rest_expl;
+		case ({}) then {};
+		case ((DAE.ARRAY(array = expl) :: rest_expl))
+			equation
+				expl = flattenArray(expl);
+				expl2 = flattenArray(rest_expl);
+				expl = listAppend(expl, expl2);
+			then expl;
+		case ((DAE.MATRIX(scalar = {{(e,_)}}) :: rest_expl))
+			equation
+				expl = flattenArray(rest_expl);
+			then
+				(e :: expl);
+		case ((e :: expl))
+			equation
+				expl = flattenArray(expl);
+			then
+				(e :: expl);
+	end matchcontinue;
+end flattenArray;
 
 protected function dimensionListMaxOne "function: elabBuiltinVector2
  
@@ -6235,64 +6314,6 @@ end dimensionListMaxOne;
 
 protected function elabBuiltinVector2 "function: elabBuiltinVector2
  
-  Helper function to elab_builtin_vector.
-"
-  input list<DAE.Exp> inExpExpLst;
-  input list<Integer> inIntegerLst;
-  output list<DAE.Exp> outExpExpLst;
-algorithm 
-  outExpExpLst:=
-  matchcontinue (inExpExpLst,inIntegerLst)
-    local
-      list<DAE.Exp> expl_1,expl;
-      Integer dim;
-      list<Integer> dims;
-      DAE.Exp e;
-    case (expl,(dim :: dims))
-      equation 
-        (dim > 1) = true;
-        (1 > dimensionListMaxOne(dims)) = true;
-        expl_1 = elabBuiltinVector3(expl);/* "Util.list_map_1(dims,int_gt,1) => b_lst &
-	Util.bool_or_list(b_lst) => false &" ;*/
-	      then
-        expl_1;
-    case ({e as DAE.ARRAY(array = expl)},(dim :: dims))      
-      equation 
-        (1 > dimensionListMaxOne(dims) ) = false;
-        expl_1 = elabBuiltinVector2(expl, dims);
-      then
-        expl_1;
-  end matchcontinue;
-end elabBuiltinVector2;
-
-protected function elabBuiltinVector3
-  input list<DAE.Exp> inExpExpLst;
-  output list<DAE.Exp> outExpExpLst;
-algorithm 
-  outExpExpLst:=
-  matchcontinue (inExpExpLst)
-    local
-      DAE.Exp e,expl;
-      list<DAE.Exp> es,es_1;
-    case ({}) then {}; 
-    case ((DAE.ARRAY(array = {expl}) :: es))
-      equation 
-        {e} = elabBuiltinVector3({expl});
-        es = elabBuiltinVector3(es);
-      then  
-        (e :: es);
-    case ((e :: es))
-      local 
-        String str2 ;
-      equation
-        es_1 = elabBuiltinVector3(es);
-      then
-        (e :: es_1);
-  end matchcontinue;
-end elabBuiltinVector3;
-
-protected function elabBuiltinVector4 "function: elabBuiltinVector2
- 
   Helper function to elabBuiltinVector, for matrix expressions.
 "
   input list<DAE.Exp> inExpExpLst;
@@ -6315,11 +6336,11 @@ algorithm
     case (expl,(dim :: dims))      
       equation 
         (1 > dimensionListMaxOne(dims) ) = false;
-        expl_1 = elabBuiltinVector4(expl, dims);
+        expl_1 = elabBuiltinVector2(expl, dims);
       then
         expl_1;
   end matchcontinue;
-end elabBuiltinVector4;
+end elabBuiltinVector2;
 
 public function elabBuiltinHandlerGeneric "function: elabBuiltinHandlerGeneric
  
