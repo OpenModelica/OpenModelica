@@ -133,7 +133,7 @@ void read_commented_value(ifstream &f, char **str);
   for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
     read_commented_value(file,&simData->stringVariables.parameters[i]);
     if (sim_verbose) {
-    cout << "read " <<simData->stringVariables.parameters[i] << " from init file." << endl;
+    cout << "read " << getName((double*)&simData->stringVariables.parameters[i]) << " = \"" << simData->stringVariables.parameters[i] << "\" from init file." << endl;
     }
   }
   for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string parameter values
