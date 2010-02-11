@@ -5697,6 +5697,11 @@ algorithm
       Ident s;
       list<Subscript> subs;
       ComponentRef cr;
+    case DAE.WILD()
+      equation 
+        Print.printBuf("_");
+      then
+        ();
     case DAE.CREF_IDENT(ident = s,subscriptLst = subs)
       equation 
         printComponentRef2(s, subs);
@@ -6089,6 +6094,12 @@ algorithm
       then
         ();
     
+    case (DAE.VALUEBLOCK(_,_,_,_),_)
+      equation
+        Print.printBuf("#VALUEBLOCK#");
+      then
+        ();
+
     case (_,_)
       equation 
         Print.printBuf("#UNKNOWN EXPRESSION# ----eee ");
