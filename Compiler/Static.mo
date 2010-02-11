@@ -262,26 +262,15 @@ algorithm
         e_1 = Exp.simplify(e);
       then
         (cache,e_1,prop);
-    case (cache,e,prop,DAE.C_CONST(),(impl as true),_)
+
+    case (cache,e,prop,DAE.C_CONST(),impl as false,env)
       equation 
-        e_1 = Exp.simplify(e);
+        (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
+        e_1 = valueExp(v);
       then
         (cache,e_1,prop);
-    case (cache,e,(prop as DAE.PROP(constFlag = c,type_=tp)),DAE.C_CONST(),impl,env) /* as false */ 
-      equation 
-        (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
-        e_1 = valueExp(v);
-      then
-        (cache,e_1,DAE.PROP(tp,c));
-       
-    case (cache,e,(prop as DAE.PROP_TUPLE(tupleConst = c,type_=tp)),DAE.C_CONST(),impl,env) /* as false */ 
-      local DAE.TupleConst c;
-      equation 
-        (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
-        e_1 = valueExp(v);
-      then
-        (cache,e_1,DAE.PROP_TUPLE(tp,c));
-    case (cache,e,prop,const,impl,env)
+
+    case (cache,e,prop,_,_,_)
       equation 
         e_1 = Exp.simplify(e);
       then
@@ -5296,7 +5285,7 @@ algorithm
       then
         (cache,DAE.CALL(Absyn.IDENT("edge"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
   
-    case (cache,env,{exp},_,impl) /* constness: C_PARAM & C_CONST */ 
+    case (cache,env,{exp},_,impl) 
       equation 
         (cache,exp_1,DAE.PROP((DAE.T_BOOL({}),_),c),_,dae) = elabExp(cache,env, exp, impl, NONE,true);
         exp_2 = valueExp(Values.BOOL(false));
@@ -5532,6 +5521,7 @@ algorithm
     local
       DAE.Exp exp_1;
       DAE.ComponentRef cr_1;
+      DAE.Const c;
       tuple<DAE.TType, Option<Absyn.Path>> tp1;
       list<Env.Frame> env;
       Absyn.Exp exp;
@@ -5558,14 +5548,8 @@ algorithm
         
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, constant variability */ 
       equation 
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,DAE.C_CONST()),_,dae) = elabExp(cache,env, exp, impl, NONE,true);
-        Types.simpleType(tp1);
-      then
-        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
-        
-    case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, param variability */ 
-      equation 
-        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,DAE.C_PARAM()),_,dae) = elabExp(cache,env, exp, impl, NONE,true);
+        (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,c),_,dae) = elabExp(cache,env, exp, impl, NONE,true);
+        true = Types.isParameterOrConstant(c);
         Types.simpleType(tp1);
       then
         (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
