@@ -4594,7 +4594,7 @@ algorithm
         short_type_str = expShortTypeStr(t);
         (tdecl,tvar,tnr2) = generateTempDecl(array_type_str, tnr1);
         scalar = Util.if_(a, "scalar_", "");
-        scalar_ref = Util.if_(a, "", "&");
+        scalar_ref = Util.if_(a, "(modelica_" +& short_type_str +& ")" /* Else modelica_real doesn't get converted into modelica_boolean, etc */, "&");
         scalar_delimit = stringAppend(", ", scalar_ref);
         args_str = Util.stringDelimitList(vars1, scalar_delimit);
         stmt = Util.stringAppendList({"array_alloc_",scalar,array_type_str,"(&",tvar,", ",nvars_str,", ",scalar_ref,args_str,");"});
