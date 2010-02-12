@@ -2821,6 +2821,35 @@ algorithm
         Print.printBuf(");\n");         
       then
         ();
+    case (DAE.STMT_TRY(stmts),i)
+      equation 
+        indent(i);
+        Print.printBuf("try\n");
+        ppStmtList(stmts, i+2);
+        Print.printBuf("end try;\n");
+      then
+        ();
+    case (DAE.STMT_CATCH(stmts),i)
+      equation 
+        indent(i);
+        Print.printBuf("catch\n");
+        ppStmtList(stmts, i+2);
+        Print.printBuf("end catch;\n");
+      then
+        ();
+    case (DAE.STMT_MATCHCASES(expl),i)
+      equation 
+        indent(i);
+        Print.printBuf("matchcases ");
+        s1 = indentStr(i+2);
+        Print.printBuf(s1);
+        es = Util.listMap(expl, Exp.printExpStr);
+        s2 = Util.stringDelimitList(es, "\n" +& s1);
+        Print.printBuf(s2);
+        indent(i);
+        Print.printBuf("end matchcases;");
+      then
+        ();
     case (_,i)
       equation 
         indent(i);
