@@ -4064,8 +4064,7 @@ algorithm
         tf = Util.listFlatten(t);
         jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
-        (s1,cg_id_1,f1) = generateTearingSystem(dae,v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, cg_id) "	print \"generating subsystem :\" &
-	DAELow.dump subsystem_dae &" ;
+        (s1,cg_id_1,f1) = generateTearingSystem(dae,v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, cg_id);
       then
         (s1,cg_id_1,f1);
 

@@ -611,6 +611,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         s = Util.stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
@@ -629,6 +633,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         s = Util.stringAppendList({s1," = ",s2,"\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
@@ -638,6 +646,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");       
         s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
@@ -660,6 +672,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");      
         s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
@@ -1342,6 +1358,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");       
         res = Util.stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -1360,6 +1380,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");       
         res = Util.stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -1372,7 +1396,7 @@ algorithm
         dumpStrOpenTagAttr(ADDITIONAL_INFO, stringAppend(ARRAY_OF_EQUATIONS,ID_), intString(indx));
         dumpStrOpenTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrOpenTag(VARIABLE);
-        var_str=Util.stringDelimitList(Util.listMap(expl,Exp.printExpStr),Util.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
+        var_str=Util.stringDelimitList(Util.listMap(expl,printExpStr),Util.stringAppendList({"</",VARIABLE,">\n<",VARIABLE,">"}));
         dumpStrCloseTag(VARIABLE);
         dumpStrCloseTag(stringAppend(INVOLVED,VARIABLES_));
         dumpStrCloseTag(ADDITIONAL_INFO);
@@ -1382,6 +1406,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1400,6 +1426,7 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1409,6 +1436,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");       
         is = intString(i);
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -1429,6 +1458,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");       
         is = intString(i);
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -1439,6 +1470,8 @@ algorithm
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
         res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1456,6 +1489,8 @@ algorithm
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
         res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -2371,6 +2406,8 @@ algorithm
     case ((e :: es),inContent,addMathMLCode)
       equation
         s = Exp.printExpStr(e);
+        s = Util.stringReplaceChar(s,"<","&lt;");
+        s = Util.stringReplaceChar(s,">","&gt;");        
         dumpStrOpenTagAttr(inContent, EXP_STRING, s);
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(inContent);
@@ -3873,6 +3910,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");                
         res = Util.stringAppendList({s1," ( ",s2,") = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -3895,6 +3936,10 @@ algorithm
       equation
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         res = Util.stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -3917,6 +3962,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         res = Util.stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3939,6 +3986,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         res = Util.stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3948,6 +3997,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         is = intString(i);
         res = Util.stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -3972,6 +4023,8 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
+        s2 = Util.stringReplaceChar(s2,"<","&lt;");
+        s2 = Util.stringReplaceChar(s2,">","&gt;");        
         is = intString(i);
         res = Util.stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -3982,6 +4035,8 @@ algorithm
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=true))
       equation
         s1 = Exp.printExpStr(e);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");        
         res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3999,6 +4054,8 @@ algorithm
     case (DAELow.RESIDUAL_EQUATION(exp = e),indexS,DAE.BCONST(bool=false))
       equation
         s1 = Exp.printExpStr(e);
+        s1 = Util.stringReplaceChar(s1,"<","&lt;");
+        s1 = Util.stringReplaceChar(s1,">","&gt;");         
         res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);

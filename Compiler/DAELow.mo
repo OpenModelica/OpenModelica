@@ -15705,6 +15705,7 @@ algorithm
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,tearingeqns,l2,l2_1;
       list<list<Integer>> r,t;
       Integer ll;
+      list<DAE.ComponentRef> crlst;
     case (dlow,dlow1,m,mT,v1,v2,{})
       then
         ({},{},dlow,dlow1,m,mT,v1,v2,{});
@@ -15714,9 +15715,9 @@ algorithm
         ll = listLength(comp);
         true = ll > 1;
         // get all interesting vars
-        tvars = getTearingVars(m,v1,v2,comp);
+        (tvars,crlst) = getTearingVars(m,v1,v2,comp,dlow);
         // try tearing
-        (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},{},{},{});
+        (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},{},{},{},crlst);
         // clean v1,v2,m,mT
         v2_2 = fill(0, ll);      
         v2_2 = Util.arrayNCopy(v2_1, v2_2,ll);       
@@ -15747,22 +15748,30 @@ protected function getTearingVars
   input Value[:] inV1;
   input Value[:] inV2;
   input list<Value> inComp;
+  input DAELow inDlow;
   output list<Value> outVarLst;
+  output list<DAE.ComponentRef> outCrLst;
 algorithm 
-  outVarLst:=
-  matchcontinue (inM,inV1,inV2,inComp)
+  (outVarLst,outCrLst):=
+  matchcontinue (inM,inV1,inV2,inComp,inDlow)
     local
       IncidenceMatrix m;
       Value[:] v1,v2;
       Value c,v;
       list<Value> comp,varlst;
-    case (m,v1,v2,{}) then {};
-    case (m,v1,v2,c::comp)
+      DAELow dlow;
+      DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crlst;
+      Variables ordvars;
+      VariableArray varr;
+    case (m,v1,v2,{},dlow) then ({},{});
+    case (m,v1,v2,c::comp,dlow as DAELOW(orderedVars = ordvars as VARIABLES(varArr=varr)))
       equation 
         v = v2[c];
-        varlst = getTearingVars(m,v1,v2,comp);
+        VAR(varName = cr) = vararrayNth(varr, v-1);
+        (varlst,crlst) = getTearingVars(m,v1,v2,comp,dlow);
       then
-        v::varlst;
+        (v::varlst,cr::crlst);
   end matchcontinue;
 end getTearingVars;
 
@@ -15784,6 +15793,7 @@ protected function tearingSystem2
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
   input list<Integer> inTearEqns;
+  input list<DAE.ComponentRef> inCrlst;
   output list<Integer> outResEqns;
   output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
@@ -15796,7 +15806,7 @@ protected function tearingSystem2
   output list<Integer> outComp;   
 algorithm 
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
-  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqns,inTearVars,inTearEqns)
+  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
       DAELow dlow,dlow_1,dlow1,dlow1_1;
       IncidenceMatrix m,m_1;
@@ -15806,7 +15816,8 @@ algorithm
       String str,str1; 
       Integer residualeqn;
       list<Integer> tearingvars,residualeqns,tearingvars_1,residualeqns_1,tearingeqns,tearingeqns_1;
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns)
+      list<DAE.ComponentRef> crlst;
+    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
       equation 
         // get from eqn equation with most variables
         (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
@@ -15817,21 +15828,21 @@ algorithm
          // get from mT variable with most equations
         vars = m[residualeqn];
         vars_1 = Util.listSelect1(vars,tvars,Util.listContains);
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars_1,{},residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
         // only succeed if tearing need less equations than system size is
 //        true = listLength(tearingvars_1) < systemsize;  
     then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns)
+    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,crlst)
       equation 
         // get from eqn equation with most variables
         (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
         true = residualeqn > 0;         
         // try next equation
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,residualeqn::exclude,residualeqns,tearingvars,tearingeqns);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,residualeqn::exclude,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);        
-    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns)
+    case (dlow,dlow1,m,mT,v1,v2,comp,tvars,exclude,residualeqns,tearingvars,tearingeqns,_)
       equation 
         // get from eqn equation with most variables
         (residualeqn,_) = getMaxfromListList(m,comp,tvars,0,0,exclude);
@@ -15861,6 +15872,7 @@ protected function tearingSystem3
   input list<Integer> inResEqns;
   input list<Integer> inTearVars;
   input list<Integer> inTearEqns;
+  input list<DAE.ComponentRef> inCrlst;
   output list<Integer> outResEqns;
   output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
@@ -15873,7 +15885,7 @@ protected function tearingSystem3
   output list<Integer> outComp;  
 algorithm 
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp):=
-  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns)
+  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComp,inTVars,inExclude,inResEqn,inResEqns,inTearVars,inTearEqns,inCrlst)
     local
       DAELow dlow,dlow_1,dlow_2,dlow_3,dlow1,dlow1_1,dlow1,dlow1_1,dlow1_2,dlowc,dlowc1;
       IncidenceMatrix m,m_1,m_2,m_3;
@@ -15885,6 +15897,7 @@ algorithm
       Integer tearingvar,residualeqn,compcount,tearingeqnid;
       list<Integer> residualeqns,residualeqns_1,tearingvars,tearingvars_1,tearingeqns,tearingeqns_1,tearingeqns_2;
       DAE.ComponentRef cr,crt;
+      list<DAE.ComponentRef> crlst;
       DAE.Ident ident,ident_t;
       VariableArray varr;
       Value nvars,neqns,memsize;
@@ -15900,7 +15913,7 @@ algorithm
       DAE.ExpType identType;
       list<DAE.Subscript> subscriptLst;
       Integer replace,replace1;
-    case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
+    case (dlow,dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation 
         (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
@@ -15963,9 +15976,9 @@ algorithm
         // remove residual equations and tearing eqns
         resteareqns = listAppend(tearingeqnid::tearingeqns,residualeqn::residualeqns);
         othereqns = Util.listSelect1(onecomp_flat,resteareqns,Util.listNotContains);  
-        eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1); 
+        eqns1_2 = solveEquations(eqns1_1,othereqns,v2_1,vars_1,crlst); 
          // if we have not make alle equations causal select next residual equation
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_1,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comps_1,compcount) = tearingSystem4(dlow_2,dlow1_1,m_2,mT_2,v1_1,v2_1,comps,residualeqn::residualeqns,tearingvar::tearingvars,tearingeqnid::tearingeqns,comp,0,crlst);
         // check 
         true = ((listLength(residualeqns_1) > listLength(residualeqns)) and
                 (listLength(tearingvars_1) > listLength(tearingvars)) ) or (compcount == 0);
@@ -15974,7 +15987,7 @@ algorithm
         comp_2 = Util.listSelect1(cmops_flat,comp,Util.listContains);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_3,dlow1_2,m_3,mT_3,v1_2,v2_2,comp_2);
-    case (dlow as DAELOW(orderedVars = VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
+    case (dlow as DAELOW(orderedVars = VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst)
       equation 
         (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
@@ -15982,10 +15995,10 @@ algorithm
         // clear errors
         Error.clearMessages();
         // try next TearingVar
-        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns);
+        (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem3(dlow,dlow1,m,mT,v1,v2,comp,vars,tearingvar::exclude,residualeqn,residualeqns,tearingvars,tearingeqns,crlst);
       then
         (residualeqns_1,tearingvars_1,tearingeqns_1,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1);   
-    case (dlow as DAELOW(orderedVars = VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns)
+    case (dlow as DAELOW(orderedVars = VARIABLES(varArr=varr)),dlow1,m,mT,v1,v2,comp,vars,exclude,residualeqn,residualeqns,tearingvars,tearingeqns,_)
       equation 
         (tearingvar,_) = getMaxfromListList(mT,vars,comp,0,0,exclude);
         // check if tearing var is found
@@ -16015,6 +16028,7 @@ protected function tearingSystem4
   input list<Integer> inTearEqns;
   input list<Integer> inComp;
   input Integer inCompCount;
+  input list<DAE.ComponentRef> inCrlst;
   output list<Integer> outResEqns;
   output list<Integer> outTearVars;
   output list<Integer> outTearEqns;
@@ -16028,7 +16042,7 @@ protected function tearingSystem4
   output Integer outCompCount;
 algorithm 
   (outResEqns,outTearVars,outTearEqns,outDlow,outDlow1,outM,outMT,outV1,outV2,outComp,outCompCount):=
-  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps,inResEqns,inTearVars,inTearEqns,inComp,inCompCount)
+  matchcontinue (inDlow,inDlow1,inM,inMT,inV1,inV2,inComps,inResEqns,inTearVars,inTearEqns,inComp,inCompCount,inCrlst)
     local
       DAELow dlow,dlow_1,dlow_2,dlow1,dlow1_1,dlow1_2;
       IncidenceMatrix m,m_1,m_2;
@@ -16038,10 +16052,11 @@ algorithm
       list<Integer> tvars,comp,comp_1,tearingvars,residualeqns,ccomp,r,t,r_1,t_1,te,te_1,tearingeqns;
       Integer ll,compcount,compcount_1,compcount_2;
       list<Boolean> checklst;
-    case (dlow,dlow1,m,mT,v1,v2,{},r,t,te,ccomp,compcount)
+      list<DAE.ComponentRef> crlst;
+    case (dlow,dlow1,m,mT,v1,v2,{},r,t,te,ccomp,compcount,crlst)
       then
         (r,t,te,dlow,dlow1,m,mT,v1,v2,{},compcount);
-    case (dlow,dlow1,m,mT,v1,v2,comp::comps,r,t,te,ccomp,compcount)
+    case (dlow,dlow1,m,mT,v1,v2,comp::comps,r,t,te,ccomp,compcount,crlst)
       equation 
         // block ?
         ll = listLength(comp);
@@ -16052,14 +16067,14 @@ algorithm
         // this is a block
         compcount_1 = compcount + 1;
         // get all interesting vars
-        tvars = getTearingVars(m,v1,v2,comp);
+        (tvars,_) = getTearingVars(m,v1,v2,comp,dlow);
         // try tearing
-        (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},r,t,te);
+        (residualeqns,tearingvars,tearingeqns,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp_1) = tearingSystem2(dlow,dlow1,m,mT,v1,v2,comp,tvars,{},r,t,te,crlst);
         // next Block
-        (r_1,t_1,te_1,dlow_2,dlow1_2,m_2,mT_2,v1_2,v2_2,comps_1,compcount_2) = tearingSystem4(dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comps,residualeqns,tearingvars,tearingeqns,ccomp,compcount_1);
+        (r_1,t_1,te_1,dlow_2,dlow1_2,m_2,mT_2,v1_2,v2_2,comps_1,compcount_2) = tearingSystem4(dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comps,residualeqns,tearingvars,tearingeqns,ccomp,compcount_1,crlst);
       then
         (r_1,t_1,te_1,dlow_2,dlow1_2,m_2,mT_2,v1_2,v2_2,comp_1::comps_1,compcount_2);
-    case (dlow,dlow1,m,mT,v1,v2,comp::comps,r,t,te,ccomp,compcount)
+    case (dlow,dlow1,m,mT,v1,v2,comp::comps,r,t,te,ccomp,compcount,crlst)
       equation 
         // block ?
         ll = listLength(comp);
@@ -16070,13 +16085,13 @@ algorithm
         // this is a block
         compcount_1 = compcount + 1;
         // next Block
-        (r_1,t_1,tearingeqns,dlow_2,dlow1_1,m_2,mT_2,v1_2,v2_2,comps_1,compcount_2) = tearingSystem4(dlow,dlow1,m,mT,v1,v2,comps,r,t,te,ccomp,compcount_1);
+        (r_1,t_1,tearingeqns,dlow_2,dlow1_1,m_2,mT_2,v1_2,v2_2,comps_1,compcount_2) = tearingSystem4(dlow,dlow1,m,mT,v1,v2,comps,r,t,te,ccomp,compcount_1,crlst);
       then
         (r_1,t_1,tearingeqns,dlow_2,dlow1_1,m_2,mT_2,v1_2,v2_2,comp::comps_1,compcount_2);        
-    case (dlow,dlow1,m,mT,v1,v2,comp::comps,r,t,te,ccomp,compcount)
+    case (dlow,dlow1,m,mT,v1,v2,comp::comps,r,t,te,ccomp,compcount,crlst)
       equation 
         // next Block
-        (r_1,t_1,te_1,dlow_2,dlow1_1,m_2,mT_2,v1_2,v2_2,comps_1,compcount_1) = tearingSystem4(dlow,dlow1,m,mT,v1,v2,comps,r,t,te,ccomp,compcount);
+        (r_1,t_1,te_1,dlow_2,dlow1_1,m_2,mT_2,v1_2,v2_2,comps_1,compcount_1) = tearingSystem4(dlow,dlow1,m,mT,v1,v2,comps,r,t,te,ccomp,compcount,crlst);
       then
         (r_1,t_1,te_1,dlow_2,dlow1_1,m_2,mT_2,v1_2,v2_2,comp::comps_1,compcount_1);        
   end matchcontinue;
@@ -16176,20 +16191,16 @@ algorithm
       list<Integer> comp;
       Integer v;
     case ({}) then ({},{});
+    case ({v}::rest)
+      equation 
+        (comps,comps1) = splitComps(rest);
+      then
+        (comps,{v}::comps1);
     case (comp::rest)
       equation 
         (comps,comps1) = splitComps(rest);
-        v = listLength(comp);     
-        true = v > 1;
       then
         (comp::comps,comps1);
-    case (comp::rest)
-      equation 
-        (comps,comps1) = splitComps(rest);
-        v = listLength(comp);     
-        true = Util.isEqual(v,1);
-      then
-        (comps,comp::comps1);
   end matchcontinue;
 end splitComps;
 
@@ -16200,37 +16211,81 @@ protected function solveEquations
   input list<Integer> inEqns;
   input Integer[:] inAssigments;
   input Variables inVars;
+  input list<DAE.ComponentRef> inCrlst;
   output EquationArray outEqnArray;
 algorithm 
   outEqnArray:=
-  matchcontinue (inEqnArray,inEqns,inAssigments,inVars)
+  matchcontinue (inEqnArray,inEqns,inAssigments,inVars,inCrlst)
     local
       EquationArray eqns,eqns_1,eqns_2;
       list<Integer> rest;
       Integer e,e_1,v,v_1;
       Integer[:] ass;
       Variables vars;
-      DAE.Exp e1,e2,varexp,expr,simplify_exp;
+      DAE.Exp e1,e2,varexp,expr;
+      list<DAE.Exp> divexplst,constexplst,nonconstexplst,tfixedexplst,tnofixedexplst;
       DAE.ComponentRef cr;
+      list<DAE.ComponentRef> crlst;
+      list<list<DAE.ComponentRef>> crlstlst;
       DAE.ElementSource source;
       VariableArray varr;
-    case (eqns,{},ass,vars) then eqns;
-    case (eqns,e::rest,ass,vars as VARIABLES(varArr=varr))
+      list<Boolean> blst,blst_1;
+      list<list<Boolean>> blstlst;
+      list<String> s;
+    case (eqns,{},ass,vars,crlst) then eqns;
+    case (eqns,e::rest,ass,vars as VARIABLES(varArr=varr),crlst)
       equation 
-        eqns_1 = solveEquations(eqns,rest,ass,vars);
         e_1 = e - 1;
-        EQUATION(e1,e2,source) = equationNth(eqns_1, e_1);
+        EQUATION(e1,e2,source) = equationNth(eqns, e_1);
         v = ass[e_1 + 1];
         v_1 = v - 1;
         VAR(varName=cr) = vararrayNth(varr, v_1);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
-        simplify_exp = Exp.simplify(expr); 
-        eqns_2 = equationSetnth(eqns_1,e_1,EQUATION(simplify_exp,varexp,source));       
+/*        (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Exp.isConst);
+        // check constexplst if equal 0 
+        blst = Util.listMap(constexplst, Exp.expCanBeZero);
+        false = Util.boolOrList(blst);
+        // check nonconstexplst if tearing variables or variables which will be
+        // changed during solving process inside
+        crlstlst = Util.listMap(nonconstexplst,Exp.extractCrefsFromExp);
+        // add explst with variables which will not be changed during solving prozess
+        blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,Exp.crefEqual);
+        blst_1 = Util.listMap(blstlst,Util.boolOrList);
+        (tnofixedexplst,tfixedexplst) = listSplitOnTrue(nonconstexplst,blst_1);
+//        false = listLength(tnofixedexplst) > 0;
+        print("\ntfixedexplst DivExpLst:\n");
+        s = Util.listMap(tfixedexplst, Exp.printExpStr);
+        Util.listMap0(s,print);
+        print("\n===============================\n");
+        print("\ntnofixedexplst DivExpLst:\n");
+        s = Util.listMap(tnofixedexplst, Exp.printExpStr);
+        Util.listMap0(s,print);
+        print("\n===============================\n");
+*/        eqns_1 = equationSetnth(eqns,e_1,EQUATION(expr,varexp,source));       
+        eqns_2 = solveEquations(eqns_1,rest,ass,vars,crlst);
       then
         eqns_2;
   end matchcontinue;
 end solveEquations;
+
+protected function listSplitOnTrue "Splits a list into two sublists depending on second list of bools"
+  input list<Type_a> lst;
+  input list<Boolean> blst;
+  output list<Type_a> tlst;
+  output list<Type_a> flst;
+algorithm
+  (tlst,flst) := matchcontinue(lst,blst)
+  local Type_a l;
+    case({},{}) then ({},{});
+    case(l::lst,true::blst) equation
+      (tlst,flst) = listSplitOnTrue(lst,blst);
+    then (l::tlst,flst);
+    case(l::lst,false::blst) equation
+      (tlst,flst) = listSplitOnTrue(lst,blst);
+    then (tlst,l::flst);      
+  end matchcontinue;
+end listSplitOnTrue;  
 
 protected function transformDelayExpression
 "Insert a unique index into the arguments of a delay() expression.
@@ -16303,5 +16358,131 @@ public function findDelaySubExpressions
 algorithm
   ((_, outExps)) := Exp.traverseExp(inExp, collectDelayExpressions, {});
 end findDelaySubExpressions;
+
+public function checkEquationBecomesZero
+" function checkEquationBecomesZero
+  autor: Frenkel TUD
+  check if a division by zero occurd 
+  because of solving equations"
+  input tuple<Equation, list<DAE.Exp>> inEqns;
+  input DAELow indlow;
+  output DAELow outdlow;
+algorithm
+  outdlow:=matchcontinue(inEqns,indlow)
+    local
+      Equation eqn;
+      DAE.Exp exp;
+      list<DAE.Exp> explst;
+    case((_,{}),indlow) then indlow;
+    case((eqn,exp::explst),indlow)
+      equation
+        print(Exp.printExp2Str(exp));
+        print("\n");
+        outdlow = checkEquationBecomesZero((eqn,explst),indlow);
+    then 
+      outdlow;
+    case((eqn,exp::explst),indlow)
+      equation
+        outdlow = checkEquationBecomesZero((eqn,explst),indlow);
+    then 
+      outdlow;
+  end matchcontinue;  
+end checkEquationBecomesZero;
+
+public function extractDivExpFromEquation
+"function extractDivExpFromEquation
+  Traverses all subexpressions of an expression of an equation.
+  Extracts all Division Exp from an equation."
+  input Equation inEqn;
+  output tuple<Equation, list<DAE.Exp>> outTplEqnExplst;
+algorithm 
+  outTplEqnExplst:=
+  matchcontinue (inEqn)
+    local
+      list<Type_a> ext_arglst,ext_arglst_1;
+      Equation eq;
+      DAE.Exp e,s;
+      list<DAE.Exp> elst,elst1,elst_1,elst1_1,elst2;
+      list<list<DAE.Exp>> tlst,tlst_1;
+      DAE.ElementSource source;
+      Integer index;
+      tuple<WhenEquation, list<DAE.Exp>> tweexplst;
+    case ((eq as EQUATION(exp = e,scalar = s,source=source))) 
+      equation 
+        elst = Exp.extractDivExpFromExp(e);
+        elst1 = Exp.extractDivExpFromExp(s);
+        elst_1 = listAppend(elst,elst1);
+      then
+        ((eq,elst_1));      
+    case ((eq as ARRAY_EQUATION(index=index,crefOrDerCref = elst,source=source))) 
+      equation 
+        tlst = Util.listMap(elst,Exp.extractDivExpFromExp);
+        elst1 = Util.listFlatten(tlst);
+      then
+        ((eq,elst1));     
+    case ((eq as RESIDUAL_EQUATION(exp = e,source=source)))  
+      equation 
+        elst = Exp.extractDivExpFromExp(e);
+      then
+        ((eq,elst));      
+    case ((eq as ALGORITHM(index=index,in_=elst,out=elst_1,source=source))) 
+      equation 
+        tlst = Util.listMap(elst,Exp.extractDivExpFromExp);
+        elst1 = Util.listFlatten(tlst);
+        tlst_1 = Util.listMap(elst_1,Exp.extractDivExpFromExp);
+        elst1_1 = Util.listFlatten(tlst_1);
+        elst2 = listAppend(elst1,elst1_1);
+      then
+        ((eq,elst2));  
+    case ((eq as COMPLEX_EQUATION(index=index,lhs = e,rhs = s,source=source)))  
+      equation 
+        elst = Exp.extractDivExpFromExp(e);
+        elst1 = Exp.extractDivExpFromExp(s);
+        elst_1 = listAppend(elst,elst1);
+      then
+        ((eq,elst_1)); 
+    case ((eq as WHEN_EQUATION(whenEquation=whenEquation,source=source))) 
+      local WhenEquation whenEquation; 
+      equation 
+        elst = extractDivExpFromWhenEquation(whenEquation);
+      then
+        ((WHEN_EQUATION(whenEquation,source),elst)); 
+    case (eq)
+      then
+        ((eq,{}));
+  end matchcontinue;
+end extractDivExpFromEquation;
+
+public function extractDivExpFromWhenEquation
+"function extractDivExpFromWhenEquation
+  Extracts all Division Exp from a whenequation."
+  input WhenEquation inEqn;
+  output list<DAE.Exp> outTplEqnExplst;
+algorithm 
+  outTplEqnExplst:=
+  matchcontinue (inEqn)
+    local
+      WhenEquation eq,es,es1;
+      DAE.Exp right,right1;
+      list<DAE.Exp> elst,elst1,elst2;
+      Integer index;
+      DAE.ComponentRef left;
+   case (WHEN_EQ(right=right,elsewhenPart=SOME(es)))  
+      equation 
+        elst = Exp.extractDivExpFromExp(right);
+        elst1 = extractDivExpFromWhenEquation(es);
+        elst2 = listAppend(elst,elst1);
+      then
+        elst2;      
+    case (WHEN_EQ(right=right,elsewhenPart=NONE())) 
+      equation 
+        elst = Exp.extractDivExpFromExp(right);
+      then
+        elst; 
+     case (eq)
+      then
+        {};
+  end matchcontinue;
+end extractDivExpFromWhenEquation;
 
 end DAELow;

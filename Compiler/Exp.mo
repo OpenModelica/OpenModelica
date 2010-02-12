@@ -8491,7 +8491,6 @@ algorithm
     local
       Exp crexp,crexp2,rhs,lhs,res,res_1,cr,e1,e2,e3;
       ComponentRef cr1,cr2;
-      
     /*case(debuge1,debuge2,debuge3) // FOR DEBBUGING... 
       local Exp debuge1,debuge2,debuge3;
       equation
@@ -8509,8 +8508,9 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = crefEqual(cr1, cr2);
         false = expContains(rhs, crexp);
+        res_1 = simplify1(rhs);
       then
-        rhs;
+        res_1;
 
         /* Special case when already solved, lhs = cr1	
  	  otherwise division by zero  when dividing with derivative */         
@@ -8520,8 +8520,9 @@ algorithm
         cr2 = crOrDerCr(crexp2);
         true = crefEqual(cr1, cr2);
         false = expContains(lhs, crexp);
+        res_1 = simplify1(lhs);
       then
-        lhs;
+        res_1;
 
       /* Solving linear equation system using newton iteration (converges directly )*/
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
@@ -8582,7 +8583,8 @@ algorithm
         ({invCr},factors) = Util.listSplitOnTrue1(listAppend(factors(e1),factors(e2)),isInverseCref,cr);      
         rhs_1 = makeProductLst(inverseFactors(factors));
         false = expContains(rhs_1, crexp);
-      then rhs_1;
+      then 
+        rhs_1;
         
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
       equation 
@@ -10763,6 +10765,44 @@ algorithm outExp := matchcontinue(inExp)
   case(inExp) then inExp;
 end matchcontinue;
 end traversingComponentRefFinder;
+
+public function extractDivExpFromExp "
+Author: Frenkel TUD 2010-02, Extracts all Division Exp from an exp. 
+"
+input Exp inExp;
+output list<Exp> outExps;
+algorithm outExps := matchcontinue(inExp) 
+  case(inExp)
+    local list<Exp> exps;
+    equation
+      ((_,exps)) = traverseExp(inExp, traversingDivExpFinder, {});
+      then
+        exps;
+  end matchcontinue;
+end extractDivExpFromExp;
+
+protected function traversingDivExpFinder "
+Author: Frenkel TUD 2010-02
+Returns a list containing, all division exp in an exp.
+"
+  input tuple<Exp, list<Exp> > inExp;
+  output tuple<Exp, list<Exp> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local 
+    list<Exp> exps;
+    Exp e,e2;
+    Type ty;
+  case( (e as DAE.BINARY(operator = DAE.DIV(ty),exp2 = e2), exps) )
+    then ((e, e2::exps ));
+  case( ( e as DAE.BINARY(operator = DAE.DIV_ARR(ty),exp2 = e2), exps) )
+    then ((e, e2::exps ));
+  case( ( e as DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), exps) )
+    then ((e, e2::exps ));
+  case( ( e as DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), exps) )
+    then ((e, e2::exps ));
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingDivExpFinder;
 
 public function containsExp 
 "function containsExp

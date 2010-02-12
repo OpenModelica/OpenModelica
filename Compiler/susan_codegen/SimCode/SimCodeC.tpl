@@ -922,6 +922,8 @@ int initial_residual()
 functionExtraResudials(list<SimEqSystem> allEquations) ::=
 (allEquations of eq as SES_NONLINEAR:
    # varDecls = ""
+   # prebody = (eq.eqs of eq2 as SES_SIMPLE_ASSIGN:
+     '<equation_(it, contextOther, varDecls)>' "\n")   
    # body = (eq.eqs of eq2 as SES_RESIDUAL:
        # preExp = ""
        # expPart = daeExp(eq2.exp, contextSimulationDescrete, preExp, varDecls)
@@ -933,6 +935,7 @@ functionExtraResudials(list<SimEqSystem> allEquations) ::=
      state mem_state;
      <varDecls>
      mem_state = get_memory_state();
+     <prebody>
      <body>
      restore_memory_state(mem_state);
    }

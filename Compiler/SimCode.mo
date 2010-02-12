@@ -941,6 +941,7 @@ algorithm
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
+      list<list<SimEqSystem>> divExpEquations;
       list<Algorithm.Statement> algorithmAndEquationAsserts;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
@@ -1723,7 +1724,7 @@ algorithm
     /* single equation */
     case (skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, {index} :: restComps)
       equation
-        equation_ = createEquation(dae, dlow, ass1, ass2, index);
+        equation_ = createEquation(index, dlow, ass1, ass2);
         equations = createEquations(skipDiscInZc, genDiscrete, dae, dlow, ass1, ass2, restComps);
       then
         equation_ :: equations;
@@ -1743,15 +1744,14 @@ algorithm
 end createEquations;
 
 protected function createEquation
-  input DAE.DAElist dae;
+  input Integer eqNum;
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
   input Integer[:] ass2;
-  input Integer eqNum;
   output SimEqSystem equation_;
 algorithm
   equation_ :=
-  matchcontinue (dae, dlow, ass1, ass2, eqNum)
+  matchcontinue (eqNum, dlow, ass1, ass2)
     local
       list<Integer> restEqNums;
       list<DAELow.Equation> eqnsList;
@@ -1786,8 +1786,9 @@ algorithm
       VarTransform.VariableReplacements repl;
       list<SimEqSystem> resEqs;
     /* single equation: non-state */
-    case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, eqNum)
+    case (eqNum,
+          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
+          ass1, ass2)
       equation
         (DAELow.EQUATION(e1, e2,_),
          v as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,
@@ -1799,8 +1800,9 @@ algorithm
       then
         SES_SIMPLE_ASSIGN(cr, exp_);
     /* single equation: state */
-    case (dae, DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
-          ass1, ass2, eqNum)
+    case (eqNum,
+          DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
+          ass1, ass2)
       equation
         (DAELow.EQUATION(e1, e2,_),
          v as DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,
@@ -1814,8 +1816,9 @@ algorithm
       then
         SES_SIMPLE_ASSIGN(cr_1, exp_);
     /* non-state non-linear */
-    case (dae, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
-          ass1, ass2, e)
+    case (e,
+          DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          ass1, ass2)
       equation
         ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2);
@@ -1831,8 +1834,9 @@ algorithm
       then
         SES_NONLINEAR(index, resEqs, {cr});
     /* state nonlinear */
-    case (dae, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
-          ass1, ass2, e)
+    case (e,
+          DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
+          ass1, ass2)
       equation
         ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
         getEquationAndSolvedVar(e, eqns, vars, ass2);
@@ -1861,7 +1865,7 @@ algorithm
     //    SES_ALGORITHM(algStatements);
 
     /* Algorithm for single variable. */
-    case (dae, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2, e)
+    case (e, DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,algorithms=alg), ass1, ass2)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
@@ -1882,7 +1886,7 @@ algorithm
         SES_ALGORITHM(algStatements);
 
     /* inverse Algorithm for single variable . */
-    case (dae,DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2,e)
+    case (e, DAELow.DAELOW(orderedVars = vars, orderedEqs = eqns,algorithms=alg),ass1,ass2)
       local
         Integer indx;
         list<DAE.Exp> algInputs,algOutputs;
@@ -1981,7 +1985,6 @@ algorithm
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       String s;
-      Integer cg_id_1,cg_id,cg_id3,cg_id1,cg_id2,cg_id4,cg_id5;
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
@@ -2047,6 +2050,41 @@ algorithm
         (values, value_dims) = extractValuesAndDims(cont_eqn, cont_var, disc_eqn, disc_var);
       then
         SES_MIXED(equation_, simVarsDisc, discEqs, values, value_dims);
+        /* continuous system of equations try tearing algorithm*/
+    case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_)
+      local
+        DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
+        Integer[:] v1,v2,v1_1,v2_1;
+        DAELow.IncidenceMatrix m_2,m_3;
+        DAELow.IncidenceMatrixT mT_2,mT_3;
+        list<list<Integer>> comps,comps_1;
+        list<Integer> comps_flat;
+        list<list<Integer>> r,t;
+        list<Integer> rf,tf;
+      equation
+        // check tearing
+        true = RTOpts.debugFlag("tearing");
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
+        var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
+        vars_1 = DAELow.listVar(var_lst_1);
+        eqns_1 = DAELow.listEquation(eqn_lst);
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
+        m = DAELow.incidenceMatrix(subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(subsystem_dae, m_1, mt_1, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()));
+        (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
+        (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
+        true = listLength(r) > 0;
+        true = listLength(t) > 0;
+        comps_flat = Util.listFlatten(comps_1);
+        rf = Util.listFlatten(r);
+        tf = Util.listFlatten(t);
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
+        equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp);
+      then
+        equation_;      
     /* continuous system of equations */
     case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_)
       equation
@@ -2073,6 +2111,115 @@ algorithm
         fail();
   end matchcontinue;
 end createOdeSystem;
+
+protected function generateTearingSystem "function: generateTearingSystem
+  author: Frenkel TUD
+
+  Generates the actual simulation code for the teared system of equation
+"
+  input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray3; 
+  input list<Integer> inIntegerLst4;
+  input list<Integer> inIntegerLst5;
+  input list<Integer> inIntegerLst6; 
+  input Boolean mixedEvent "true if generating the mixed system event code";
+  input Boolean genDiscrete;
+  input DAELow.DAELow inDAELow;
+  input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
+  input DAELow.JacobianType inJacobianType;
+  output SimEqSystem equation_;
+algorithm
+  equation_:=
+  matchcontinue (inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType)
+    local
+      Integer[:] ass1,ass2;
+      list<Integer> block_,block_1,r,t;
+      Integer index;
+      DAELow.DAELow daelow,daelow1;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      DAELow.JacobianType jac_tp;
+      DAELow.Variables v,kv,exv;
+      DAELow.EquationArray eqn,eqn1,reeqn,ineq;
+      list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
+      list<DAELow.Var> var_lst;
+      list<DAE.ComponentRef> crefs,crefs1,tcrs;
+      DAELow.MultiDimEquation[:] ae;
+      Boolean genDiscrete;
+      String str_id,size_str,func_name,start_stmt,end_stmt;
+      VarTransform.VariableReplacements repl;
+      DAE.Algorithm[:] algorithms;
+      DAELow.EventInfo eventInfo;
+      DAELow.ExternalObjectClasses extObjClasses;   
+      list<SimEqSystem> simeqnsystem,simeqnsystem1,resEqs;    
+    case (ass1,ass2,block_,r,t,mixedEvent,_,
+          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp)
+           /* no analythic jacobian available. Generate non-linear system */
+      equation
+        // get equations and variables
+        eqn_lst = DAELow.equationList(eqn);
+        var_lst = DAELow.varList(v);
+        // get names from variables
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
+        // get Tearingvar from crs
+        // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
+        crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
+        eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.SOURCE({},{},{},{})),eqn_lst);
+        tcrs = Util.listMap1r(t,listNth,crefs1); 
+        repl = makeResidualReplacements(tcrs);
+        // get residual eqns and other eqns 
+        reqns = Util.listMap1r(r,listNth,eqn_lst1);
+        // remove residual equation from list of other equtions
+        block_1 = Util.listSelect1(block_,r,Util.listNotContains);
+        // replace tearing variables in other equations with x_loc[..]
+        eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
+        eqn1 = DAELow.listEquation(eqn_lst2);
+        daelow1=DAELow.DAELOW(v,kv,exv,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        // generade code for other equations
+        simeqnsystem = Util.listMap3(block_1,createEquation,daelow1, ass1, ass2);
+        resEqs = createNonlinearResidualEquations(reqns, ae, repl);
+        index = Util.listFirst(block_); // use first equation nr as index
+        simeqnsystem1 = listAppend(simeqnsystem,resEqs);
+      then
+        SES_NONLINEAR(index, simeqnsystem1, tcrs);        
+    case (_,_,_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprint("failtrace", "-generateTearingSystem failed \n");
+      then
+        fail();        
+  end matchcontinue;
+end generateTearingSystem;
+
+protected function generateTearingSystem1
+ "function: generateTearingSystem1
+  author: Frenkel TUD
+  Helper function to generateTearingSystem1"
+  input list<DAELow.Equation> inDAELowEquationLst;
+  input VarTransform.VariableReplacements inVariableReplacements;
+  output list<DAELow.Equation> outDAELowEquationLst;
+algorithm
+  outDAELowEquationLst := matchcontinue (inDAELowEquationLst,inVariableReplacements)
+    local
+      DAE.Exp e1,e2,e1_1,e2_1;
+      list<DAELow.Equation> rest,rest2;
+      DAELow.MultiDimEquation[:] aeqns;
+      VarTransform.VariableReplacements repl;
+      DAE.ElementSource source;
+    case ({},_) then {};
+    case ((DAELow.EQUATION(exp = e1,scalar = e2,source = source) :: rest),repl)
+      equation
+        rest2 = generateTearingSystem1(rest,repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+        e2_1 = VarTransform.replaceExp(e2, repl, SOME(skipPreOperator));
+      then
+        DAELow.EQUATION(e1_1,e2_1,source) :: rest2;
+    case ((DAELow.RESIDUAL_EQUATION(exp = e1,source = source) :: rest),repl)
+      equation
+        rest2 = generateTearingSystem1(rest,repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, SOME(skipPreOperator));
+      then
+        DAELow.RESIDUAL_EQUATION(e1_1,source) :: rest2;
+  end matchcontinue;
+end generateTearingSystem1;
 
 protected function extractDiscEqs
   input list<DAELow.Equation> disc_eqn;
@@ -2491,6 +2638,7 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
+      list<tuple<DAELow.Equation, list<DAE.Exp>>> divexplst;
     case ((dlow as DAELow.DAELOW(orderedVars=vars,
                                  knownVars=knvars,
                                  orderedEqs=eqns,
@@ -2520,6 +2668,8 @@ algorithm
         residualEquationsTmp = Util.listFilter(residualEquationsTmp,
                                                failUnlessResidual);
 
+//        divexplst = Util.listMap(residualEquationsTmp,DAELow.extractDivExpFromEquation);
+//        _ = Util.listMap1(divexplst,DAELow.checkEquationBecomesZero,dlow);
         residualEquations = Util.listMap(residualEquationsTmp,
                                          dlowEqToSimEqSystem);
       then
@@ -4437,7 +4587,7 @@ algorithm
         c_name = name; // adrpo: 2009-09-07 this doubles $!! c_name = Util.modelicaStringToCStr(name,true);
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
-        DAELow.VAR(DAE.CREF_IDENT(res,DAE.ET_REAL(),{}),DAELow.STATE(),dir,tp,exp,v,dim,index,cr,source,attr,comment,flowPrefix,streamPrefix);
+        DAELow.VAR(DAE.CREF_IDENT(res,DAE.ET_REAL(),{}),DAELow.STATE_DER(),dir,tp,exp,v,dim,index,cr,source,attr,comment,flowPrefix,streamPrefix);
         
     case (v)
       local DAELow.Var v;
@@ -4941,6 +5091,7 @@ algorithm
     case (DAELow.DUMMY_DER()) then ();
     case (DAELow.DUMMY_STATE()) then ();
     case (DAELow.DISCRETE()) then ();
+    case (DAELow.STATE_DER()) then ();  
   end matchcontinue;
 end isNonState;
 
@@ -4980,6 +5131,7 @@ algorithm
       list<DAELow.Var> vs;
     case ((DAELow.VAR(varKind=DAELow.VARIABLE()) :: _)) then true;
     case ((DAELow.VAR(varKind=DAELow.STATE()) :: _)) then true;
+    case ((DAELow.VAR(varKind=DAELow.STATE_DER()) :: _)) then true;
     case ((DAELow.VAR(varKind=DAELow.DUMMY_DER()) :: _)) then true;
     case ((DAELow.VAR(varKind=DAELow.DUMMY_STATE()) :: _)) then true;
     case ((v :: vs))
