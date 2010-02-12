@@ -3466,6 +3466,7 @@ algorithm
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2real);
       */
+      env = Env.extendFrameT(env, "print", string2void);
       env = initialEnvMetaModelica(env);
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
@@ -3587,7 +3588,6 @@ algorithm
 
         // Misc Operations
         env = Env.extendFrameT(env, "if_exp", boolBoxedBoxed2boxed);
-        env = Env.extendFrameT(env, "print", string2void);
         env = Env.extendFrameT(env, "printAny", a2void);
         env = Env.extendFrameT(env, "tick", void2int);
         env = Env.extendFrameT(env, "equality", AA2void);
