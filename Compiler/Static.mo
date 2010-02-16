@@ -6804,6 +6804,44 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache, DAE.CALL(Absyn.IDENT("instantiateModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
 
+		/* Special case for Parham Vaseles OpenModelica Interactive, where buildModel 
+		   takes stepSize instead of startTime, stopTime and numberOfIntervals */
+		case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
+			local 
+				Absyn.Path className;
+				DAE.Exp noClean, tolerance, storeInTemp;
+				Real stepTime;
+				Integer intervals;
+			equation
+				// An ICONST is used as the default value of stepSize so that this case
+				// fails if stepSize isn't given as argument to buildModel.
+				(cache, DAE.RCONST(stepTime)) = getOptionalNamedArg(cache, env, SOME(st), impl, "stepSize", 
+					(DAE.T_REAL({}), NONE), args, DAE.ICONST(0));
+				startTime = DAE.RCONST(0.0);
+				stopTime = DAE.RCONST(1.0);
+				intervals = realInt(1.0 /. stepTime);
+				numberOfIntervals = DAE.ICONST(intervals);
+				className = Absyn.crefToPath(cr);
+				(cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
+          args, DAE.RCONST(1e-6));  
+        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
+          args, DAE.SCONST("dassl"));
+        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
+          args, DAE.SCONST(""));
+        cname_str = Absyn.pathString(className);
+        (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
+          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+        (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
+          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+        (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", 
+          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+			then
+				(cache, DAE.CALL(Absyn.IDENT("buildModel"),
+				{DAE.CODE(Absyn.C_TYPENAME(className), DAE.ET_OTHER()), startTime, stopTime,
+				numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},
+				false,true,DAE.ET_OTHER(),DAE.NO_INLINE),
+				DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
+
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
