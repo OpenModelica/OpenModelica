@@ -12685,8 +12685,8 @@ algorithm
   end matchcontinue;
 end instAlgorithmitems;
 
-protected function instStatement 
-"function: instStatement 
+protected function instStatement "
+function: instStatement 
   This function Looks at an algorithm statement and uses functions
   in the Algorithm module to build a representation of it that can
   be used in the DAE output."
@@ -12753,7 +12753,7 @@ algorithm
 
         (cache,e_2) = Prefix.prefixExp(cache,env, e_1, pre);
         stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_);
-      then
+      then 
         (cache,stmt,DAEUtil.emptyDae);
     //-----------------------------------------//
 

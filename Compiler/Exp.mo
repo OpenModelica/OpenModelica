@@ -4205,6 +4205,31 @@ algorithm
   end matchcontinue;
 end unliftArray;
 
+public function isWholeDim ""
+  input DAE.Subscript s;
+  output Boolean b;
+algorithm 
+  b := matchcontinue(s)
+    case(DAE.WHOLEDIM) then true;
+    case(_) then false;
+  end matchcontinue;
+end isWholeDim;
+
+public function isInt ""
+  input Type it;
+  output Boolean re;
+algorithm
+  re := matchcontinue(it)
+    local
+      Type t1,t2;
+    case(DAE.ET_ARRAY(ty=t2))
+      then 
+        isReal(t2);
+    case(DAE.ET_INT) then true;
+    case(_) then false;
+  end matchcontinue;
+end isInt;
+
 public function isReal ""
   input Type it;
   output Boolean re;

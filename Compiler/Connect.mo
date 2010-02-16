@@ -1861,7 +1861,7 @@ algorithm
   end matchcontinue;
 end printOuterConnectsStr;
 
-protected function printSetStr
+protected function printSetStr ""
   input Set inSet;
   output String outString;
 algorithm 

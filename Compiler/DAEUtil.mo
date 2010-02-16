@@ -594,7 +594,8 @@ algorithm
   end matchcontinue;
 end dumpOperatorString;
 
-public function dump2str ""
+public function dump2str " 
+printDAEString daeString "
 input DAE.DAElist inDAElist;
 output String str;
 algorithm 
@@ -610,7 +611,7 @@ algorithm
   _ := matchcontinue (inDAElist)
     local
       String comment_str,ident,str,extdeclstr,s1;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cr2;
       DAE.Exp e,e1,e2;
       DAE.InstDims dims;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -765,7 +766,18 @@ algorithm
         dump2(DAE.DAE(xs,funcs));
       then
         ();
-    case (DAE.DAE(elementLst = {})) then (); 
+    case(DAE.DAE((DAE.EQUEQUATION(cr1 = cr, cr2 = cr2) :: xs),funcs))
+      equation
+        Print.printBuf("EQUEQUATION(");
+        Exp.printComponentRef(cr);
+        Print.printBuf(" = ");
+        Exp.printComponentRef(cr2);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs,funcs));
+      then
+        ();
+    case (DAE.DAE(elementLst = {})) then ();
+      
     case (_)
       equation
         Print.printBuf("dump2 failed\n");
