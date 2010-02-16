@@ -27,7 +27,7 @@ MACRO(SHOW_VARIABLE var type doc default)
 ENDMACRO(SHOW_VARIABLE)
 
 # MACRO BUILDMODEL
-MACRO(BUILDMODEL model dir Flags)
+MACRO(BUILDMODEL model dir Flags CSRC)
 
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
@@ -44,7 +44,7 @@ MACRO(BUILDMODEL model dir Flags)
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
 
-  ADD_EXECUTABLE(${model} ${OMC_OUTPUT})
+  ADD_EXECUTABLE(${model} ${OMC_OUTPUT} ${CSRC})
   TARGET_LINK_LIBRARIES(${model} sim c_runtime f2c sendData)
 
   # Dependencies

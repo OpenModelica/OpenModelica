@@ -9,7 +9,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/c_runtime)
 
 # OMC Compiler
 SET(OMC ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/omcd.exe)
-
+MESSAGE(" omc is " ${OMC})
 # Subdirectorys
 ADD_SUBDIRECTORY(c_runtime)
 
@@ -18,6 +18,8 @@ ADD_SUBDIRECTORY(c_runtime)
 # -------------------------------------------------------------
 # add here your models to compile (add filename without ".mo")
 # Example:
-#    BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump)
+#    BUILDMODEL(model dir Flags CSRC)
 
-BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump)
+BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump "")
+BUILDMODEL(ExternalFunction1 ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles/ExternalFunction1_f.c)
+
