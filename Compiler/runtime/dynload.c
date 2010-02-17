@@ -475,7 +475,7 @@ static int value_to_type_desc(void *value, type_description *desc)
   case Values__ARRAY_3dBOX2: {
     void *data = RML_STRUCTDATA(value)[0];
     void *dimLst = RML_STRUCTDATA(value)[1];
-    if (parse_array(desc, dims)) {
+    if (parse_array(desc, data, dimLst)) {
       printf("Parsing of array failed\n");
       return -1;
     }
