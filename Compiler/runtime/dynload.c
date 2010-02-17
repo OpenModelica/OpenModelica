@@ -43,7 +43,7 @@ void *type_desc_to_value(type_description *desc);
 static int execute_function(void *in_arg, void **out_arg,
                             int (* func)(type_description *,
                                          type_description *));
-int parse_array(type_description *desc, void *arrdata);
+int parse_array(type_description *desc, void *arrdata, void *dimLst);
 
 void DynLoad_5finit(void)
 {
@@ -474,7 +474,8 @@ static int value_to_type_desc(void *value, type_description *desc)
   }; break;
   case Values__ARRAY_3dBOX2: {
     void *data = RML_STRUCTDATA(value)[0];
-    if (parse_array(desc, data)) {
+    void *dimLst = RML_STRUCTDATA(value)[1];
+    if (parse_array(desc, dims)) {
       printf("Parsing of array failed\n");
       return -1;
     }
@@ -666,26 +667,15 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
   }
 }
 
-static int get_array_sizes(int curdim, int dims, int *dim_size, void *arrdata)
+static int get_array_sizes(int dims, int *dim_size, void *dimLst)
 {
-  int size = 0;
-  void *ptr = arrdata;
+  int i;
+  void *ptr = dimLst;
 
-  assert(curdim > 0 && curdim <= dims);
-
-  while (RML_GETHDR(ptr) != RML_NILHDR) {
-    ++size;
+  for (i = 0; i < dims; i++) {
+    assert(RML_GETHDR(ptr) != RML_NILHDR);
+    dim_size[i] = RML_UNTAGFIXNUM(RML_CAR(ptr));
     ptr = RML_CDR(ptr);
-  }
-
-  dim_size[curdim - 1] = size;
-
-  if (size > 0) {
-    void *item = RML_CAR(arrdata);
-    if (RML_HDRCTOR(RML_GETHDR(item)) == Values__ARRAY_3dBOX2) {
-      return get_array_sizes(curdim + 1, dims, dim_size,
-                             RML_STRUCTDATA(item)[0]);
-    }
   }
 
   return 0;
@@ -758,7 +748,7 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
   return 0;
 }
 
-int parse_array(type_description *desc, void *arrdata)
+int parse_array(type_description *desc, void *arrdata, void *dimLst)
 {
   int dims, *dim_size;
   void *data;
@@ -790,7 +780,7 @@ int parse_array(type_description *desc, void *arrdata)
     assert(0);
     return -1;
   }
-  if (get_array_sizes(1, dims, dim_size, arrdata))
+  if (get_array_sizes(dims, dim_size, dimLst))
     return -1;
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
