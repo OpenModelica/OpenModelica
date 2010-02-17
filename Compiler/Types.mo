@@ -1007,6 +1007,13 @@ algorithm
   end matchcontinue;
 end printDimensionStr;
 
+protected function makeDim
+  input Option<Integer> iOpt;
+  output DAE.ArrayDim dim;
+algorithm
+  dim := DAE.DIM(iOpt);
+end makeDim;
+
 public function valuesToMods 
 "function: valuesToMods
   author: PA
@@ -1110,7 +1117,7 @@ algorithm
           DAE.TYPED(exp,SOME(v),
           DAE.PROP(ty,DAE.C_CONST()))))) :: res),NONE);
                     
-    case ((v as Values.ARRAY(vals)) :: rest,(id :: ids))
+    case ((v as Values.ARRAY(valueLst = vals)) :: rest,(id :: ids))
       equation 
         exp = Static.valueExp(v);
         ty = typeOfValue(v);
@@ -1892,7 +1899,7 @@ end dimensionStr;
 public function liftArray "function: liftArray
  
   This function turns a type into an array of that type.  If the
-  type already is an array, aonther dimension is simply added.
+  type already is an array, another dimension is simply added.
 "
   input Type inType;
   input Option<Integer> inIntegerOption;
@@ -1908,6 +1915,24 @@ algorithm
     then ((DAE.T_ARRAY(DAE.DIM(i),ty),NONE));  /* PR  axiom	lift_array (ty,i) => DAE.T_ARRAY(DAE.DIM(i),ty) */ 
   end matchcontinue;
 end liftArray;
+
+public function liftArrayListDims "
+  This function turns a type into an array of that type.
+"
+  input Type inType;
+  input list<Option<Integer>> inIntegerOptionLst;
+  output Type outType;
+algorithm 
+  outType:=
+  matchcontinue (inType,inIntegerOptionLst)
+    local
+      Type ty;
+      Option<Integer> i;
+      list<Option<Integer>> rest;
+    case (ty,{}) then ty;
+    case (ty,i::rest) then liftArray(liftArrayListDims(ty,rest),i);
+  end matchcontinue;
+end liftArrayListDims;
 
 public function liftArrayRight "function: liftArrayRight
  
@@ -3792,36 +3817,52 @@ public function vectorizableType "function: vectorizableType
   For instance and argument of type Integer{:} can be vectorized to an
   argument type Real, using type coersion and vectorization of one dimension.
 "
-  input DAE.Exp inExp1;
-  input Type inType2;
-  input Type inType3;
+  input DAE.Exp inExp;
+  input Type inExpType;
+  input Type inExpectedType;
   output DAE.Exp outExp;
   output Type outType;
   output list<ArrayDim> outArrayDimLst;
   output PolymorphicBindings outBindings;
 algorithm 
-  (outExp,outType,outArrayDimLst,outBindings):=
-  matchcontinue (inExp1,inType2,inType3)
+  (outExp,outType,outArrayDimLst,outBindings) := vectorizableType2(inExp,inExpType,inExpType,{},inExpectedType);
+end vectorizableType;
+
+protected function vectorizableType2
+  input DAE.Exp inExp;
+  input Type inExpType;
+  input Type inCurrentType;
+  input list<Option<Integer>> inArrayDimLst;
+  input Type inExpectedType;
+  output DAE.Exp outExp;
+  output Type outType;
+  output list<ArrayDim> outArrayDimLst;
+  output PolymorphicBindings outBindings;
+algorithm 
+  (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType)
     local
       DAE.Exp e_1,e;
-      Type e_type_1,e_type,expected_type,e_type_elt;
+      Type e_type_1,e_type,expected_type,expected_type_vectorized,e_type_elt,current_type;
       list<ArrayDim> ds;
       ArrayDim ad;
       PolymorphicBindings polymorphicBindings;
-    case (e,e_type,expected_type)
-      equation 
-        (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type, {}, true);
+      Option<Integer> iOpt;
+      list<Option<Integer>> iOptLst;
+    case (e,e_type,current_type,iOptLst,expected_type)
+      equation
+        expected_type_vectorized = liftArrayListDims(expected_type, iOptLst);
+        (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type_vectorized, {}, true);
+        ds = Util.listMap(iOptLst, makeDim);
       then
-        (e_1,e_type_1,{},polymorphicBindings);
-    case (e,e_type,expected_type)
-      equation 
-        e_type_elt = unliftArray(e_type);
-        (e_1,e_type_1,ds,polymorphicBindings) = vectorizableType(e, e_type_elt, expected_type);
-        ad = typeArraydim(e_type);
+        (e_1,e_type_1,ds,polymorphicBindings);
+    case (e,e_type,(DAE.T_ARRAY(arrayType = current_type, arrayDim = DAE.DIM(iOpt)),_),iOptLst,expected_type)
+      equation
+        iOptLst = listAppend(iOptLst, {iOpt});
+        (e_1,e_type_1,ds,polymorphicBindings) = vectorizableType2(e, e_type, current_type, iOptLst, expected_type);
       then
-        (e_1,e_type_1,(ad :: ds),polymorphicBindings);
+        (e_1,e_type_1,ds,polymorphicBindings);
   end matchcontinue;
-end vectorizableType;
+end vectorizableType2;
 
 protected function typeConvert "function: typeConvert
  
@@ -3859,7 +3900,7 @@ algorithm
       DAE.ExpType at,t;
       Boolean a,sc;
       Integer dim1,dim2,nmax,dim11,dim22;
-      Type ty1,ty2,t1,t2,t_1,ty0;
+      Type ty1,ty2,t1,t2,t_1,t_2,ty0;
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
@@ -3957,11 +3998,12 @@ algorithm
     case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
       	ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation 
-        (dim1 == dim2) = true ;
+        (dim1 == dim2) = true;
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         e_1 = liftExpType(e_1,SOME(dim1));
+        t_2 = (DAE.T_ARRAY(DAE.DIM(SOME(dim2)),t_1),p2);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM(SOME(dim2)),t_1),p2),polymorphicBindings);
+        (e_1,t_2,polymorphicBindings);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
     case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
@@ -5267,8 +5309,8 @@ algorithm
     case (flag, source, e, e_type, expected_type)
       equation
         true = RTOpts.debugFlag(flag);
-        Debug.fprint("types", "- Types." +& source +& " failed on:" +& Exp.printExpStr(e));
-        Debug.fprintln("types", "  type:" +& printTypeStr(e_type) +& " differs from expected\n  type:" +& printTypeStr(expected_type));
+        Debug.traceln("- Types." +& source +& " failed on:" +& Exp.printExpStr(e));
+        Debug.traceln("  type:" +& unparseType(e_type) +& " differs from expected\n  type:" +& unparseType(expected_type));
       then ();
     case (flag, source, e, e_type, expected_type)
       equation
