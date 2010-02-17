@@ -1319,7 +1319,7 @@ algorithm
     case (NONE,_) then NONE; 
     case (e,{}) then e; 
       /* Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) */
-    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY({})),_)),xs) then NONE;      
+    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_)),xs) then NONE;      
       
       /* For modifiers with value, retrieve nth element*/
     case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c))),(x :: xs))

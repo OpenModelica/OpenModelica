@@ -79,6 +79,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
                      int *dim_size, void **data)
 {
   void *lst = (void *) mk_nil();
+  void *dimLst = (void*) mk_nil();
   int i, cur_dim_size = dim_size[curdim - 1];
 
   if (curdim == ndims) {
@@ -128,8 +129,11 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
                                             data), lst);
     }
   }
+  for (i = ndims; i >= curdim; i--) {
+    dimLst = (void *) mk_cons(mk_icon(dim_size[i-1]), dimLst);
+  }
 
-  return Values__ARRAY(lst);
+  return Values__ARRAY(lst, dimLst);
 }
 
 
@@ -359,7 +363,7 @@ void *value_to_mmc(void* value)
     void *data = RML_STRUCTDATA(value)[0];
     return data;
   };
-  case Values__ARRAY_3dBOX1:
+  case Values__ARRAY_3dBOX2:
     printf("Parsing of array inside uniontype failed\n");
     return 0;
   case Values__RECORD_3dBOX4: {
@@ -468,7 +472,7 @@ static int value_to_type_desc(void *value, type_description *desc)
     alloc_modelica_string(&(desc->data.string), len);
     memcpy(desc->data.string, RML_STRINGDATA(data), len + 1);
   }; break;
-  case Values__ARRAY_3dBOX1: {
+  case Values__ARRAY_3dBOX2: {
     void *data = RML_STRUCTDATA(value)[0];
     if (parse_array(desc, data)) {
       printf("Parsing of array failed\n");
@@ -649,7 +653,7 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
   case Values__STRING_3dBOX1:
     desc->type = TYPE_DESC_STRING_ARRAY;
     return 1;
-  case Values__ARRAY_3dBOX1:
+  case Values__ARRAY_3dBOX2:
     return (1 + get_array_type_and_dims(desc, RML_STRUCTDATA(item)[0]));
   case Values__ENUM_3dBOX3:
   case Values__LIST_3dBOX1:
@@ -678,7 +682,7 @@ static int get_array_sizes(int curdim, int dims, int *dim_size, void *arrdata)
 
   if (size > 0) {
     void *item = RML_CAR(arrdata);
-    if (RML_HDRCTOR(RML_GETHDR(item)) == Values__ARRAY_3dBOX1) {
+    if (RML_HDRCTOR(RML_GETHDR(item)) == Values__ARRAY_3dBOX2) {
       return get_array_sizes(curdim + 1, dims, dim_size,
                              RML_STRUCTDATA(item)[0]);
     }
@@ -740,7 +744,7 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
   } else {
     while (RML_GETHDR(ptr) != RML_NILHDR) {
       void *item = RML_CAR(ptr);
-      if (RML_HDRCTOR(RML_GETHDR(item)) != Values__ARRAY_3dBOX1)
+      if (RML_HDRCTOR(RML_GETHDR(item)) != Values__ARRAY_3dBOX2)
         return -1;
 
       if (get_array_data(curdim + 1, dims, dim_size, RML_STRUCTDATA(item)[0],
@@ -854,6 +858,7 @@ static int execute_function(void *in_arg, void **out_arg,
 
   retarg.retval = 1;
 
+  if (debugFlag) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
   /* call our function pointer! */
   retval = func(arglst, &retarg);
 
@@ -869,11 +874,12 @@ static int execute_function(void *in_arg, void **out_arg,
   if (retval) {
     return 1;
   } else {
+    if (debugFlag) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
+
     (*out_arg) = type_desc_to_value(&retarg);
     /* out_arg doesn't seem to get freed, something we can do anything about?
      * adrpo: 2009-09. it shouldn't be freed!
      */
-    if (debugFlag) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
 
     free_type_description(&retarg);
 

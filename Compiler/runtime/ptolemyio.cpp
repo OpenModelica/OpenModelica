@@ -57,8 +57,7 @@ void print_error_buf_impl(char*str);
 void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
 {
   char buf[255];
-  void *lst;
-  void *olst;
+  void *lst,*olst,*dimLst,*odimLst;
   ifstream stream(filename);
     
   if (!stream) {
@@ -86,6 +85,8 @@ void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
       return NULL;
     }
   }
+  dimLst = mk_cons(mk_icon(datasize),mk_nil());
+  odimLst = mk_cons(mk_icon(size),dimLst);
   olst = mk_nil();
   for (int i=0; i<size; i++) {
     string readstr;
@@ -122,9 +123,9 @@ void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
       j++;
     }
 
-    olst = (void*)mk_cons(Values__ARRAY(lst),olst);
+    olst = (void*)mk_cons(Values__ARRAY(lst, dimLst),olst);
   }
-  olst = Values__ARRAY(olst);
+  olst = Values__ARRAY(olst, odimLst);
   return olst;
 }
 

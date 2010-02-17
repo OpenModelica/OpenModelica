@@ -69,6 +69,7 @@ algorithm
       Real rval,r;
       DAE.ExpType from,to;
       Integer i,ival;
+      list<Integer> dims;
     case (_,_,{}) then {}; 
     case ((from as DAE.ET_INT()),(to as DAE.ET_REAL()),(Values.INTEGER(integer = i) :: vrest))
       equation 
@@ -82,12 +83,12 @@ algorithm
         ival = realInt(r);
       then
         (Values.INTEGER(ival) :: vallst);
-    case (from,to,(Values.ARRAY(valueLst = vals) :: vrest))
+    case (from,to,(Values.ARRAY(valueLst = vals, dimLst = dims) :: vrest))
       equation 
         vallst = typeConvert(from, to, vals);
         vallst2 = typeConvert(from, to, vrest);
       then
-        (Values.ARRAY(vallst) :: vallst2);
+        (Values.ARRAY(vallst,dims) :: vallst2);
   end matchcontinue;
 end typeConvert;
 
@@ -629,12 +630,13 @@ algorithm
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
-    case ((Values.ARRAY(valueLst = v1lst) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
+      list<Integer> dims;
+    case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
       equation 
         reslst = addElementwiseArrayelt(v1lst, v2lst);
         res2 = addElementwiseArrayelt(rest1, rest2);
       then
-        (Values.ARRAY(reslst) :: res2);
+        (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
       equation 
         res = v1 + v2;
@@ -672,12 +674,13 @@ algorithm
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
-    case ((Values.ARRAY(valueLst = v1lst) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
+      list<Integer> dims;
+    case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
       equation 
         reslst = subElementwiseArrayelt(v1lst, v2lst);
         res2 = subElementwiseArrayelt(rest1, rest2);
       then
-        (Values.ARRAY(reslst) :: res2);
+        (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
       equation 
         res = v1 - v2;
@@ -708,12 +711,13 @@ algorithm
     local
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer res,v1,v2;
-    case ((Values.ARRAY(valueLst = v1lst) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
+      list<Integer> dims;
+    case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
       equation 
         reslst = mulElementwiseArrayelt(v1lst, v2lst);
         res2 = mulElementwiseArrayelt(rest1, rest2);
       then
-        (Values.ARRAY(reslst) :: res2);
+        (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
       equation 
         res = v1 * v2;
@@ -745,12 +749,13 @@ algorithm
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Real res;
       Integer v1,v2;
-    case ((Values.ARRAY(valueLst = v1lst) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
+      list<Integer> dims;
+    case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
       equation 
         reslst = divElementwiseArrayelt(v1lst, v2lst);
         res2 = divElementwiseArrayelt(rest1, rest2);
       then
-        (Values.ARRAY(reslst) :: res2);
+        (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
       local Real v1_1,v2_1;
       equation 
@@ -785,12 +790,13 @@ algorithm
       list<Value> reslst,res2,v1lst,rest1,v2lst,rest2;
       Integer v1,v2;
       Real res;
-    case ((Values.ARRAY(valueLst = v1lst) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
+      list<Integer> dims;
+    case ((Values.ARRAY(valueLst = v1lst, dimLst = dims) :: rest1),(Values.ARRAY(valueLst = v2lst) :: rest2))
       equation 
         reslst = powElementwiseArrayelt(v1lst, v2lst);
         res2 = powElementwiseArrayelt(rest1, rest2);
       then
-        (Values.ARRAY(reslst) :: res2);
+        (Values.ARRAY(reslst,dims) :: res2);
     case ((Values.INTEGER(integer = v1) :: rest1),(Values.INTEGER(integer = v2) :: rest2))
       local Real v1_1,v2_1;
       equation 
@@ -915,6 +921,7 @@ algorithm
       Real r_1,r;
       Integer i_1,i;
       list<Value> vlst_1,vlst;
+      list<Integer> dims;
     case (Values.REAL(real = r))
       equation 
         r_1 = -.r;
@@ -925,11 +932,11 @@ algorithm
         i_1 = -i;
       then
         Values.INTEGER(i_1);
-    case Values.ARRAY(valueLst = vlst)
+    case Values.ARRAY(valueLst = vlst, dimLst = dims)
       equation 
         vlst_1 = Util.listMap(vlst, valueNeg);
       then
-        Values.ARRAY(vlst);
+        Values.ARRAY(vlst_1,dims);
   end matchcontinue;
 end valueNeg;
 
@@ -945,15 +952,16 @@ algorithm
     local
       Integer v1,v3,v2;
       list<Value> xs,arr;
+      list<Integer> dims;
     case ({Values.INTEGER(integer = v1)}) then Values.INTEGER(v1); 
     case ({Values.REAL(real = v1)})
       local Real v1;
       then
         Values.REAL(v1);
-    case ({Values.ARRAY(valueLst = v1)})
+    case ({Values.ARRAY(valueLst = v1, dimLst = dims)})
       local list<Value> v1;
       then
-        Values.ARRAY(v1);
+        Values.ARRAY(v1,dims);
     case ((Values.INTEGER(integer = v2) :: xs))
       equation 
         Values.INTEGER(v1) = sumArrayelt(xs);
@@ -970,10 +978,10 @@ algorithm
     case ((arr as (Values.ARRAY(valueLst = v2) :: _)))
       local list<Value> v1,v3,v2;
       equation 
-        Values.ARRAY(v1) = sumArrayelt(arr);
+        Values.ARRAY(v1,dims) = sumArrayelt(arr);
         v3 = addElementwiseArrayelt(v1, v2);
       then
-        Values.ARRAY(v3);
+        Values.ARRAY(v3,dims);
   end matchcontinue;
 end sumArrayelt;
 
@@ -992,12 +1000,13 @@ algorithm
       Value sval;
       Integer v1,v2;
       Real v2_1,v1_1;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = multScalarArrayelt(sval, vals);
         r2 = multScalarArrayelt(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Integer r1;
       equation 
@@ -1047,12 +1056,13 @@ algorithm
       Value sval;
       Integer v1,v2;
       Real v2_1,v1_1;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = addScalarArrayelt(sval, vals);
         r2 = addScalarArrayelt(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Integer r1;
       equation 
@@ -1110,12 +1120,13 @@ algorithm
       Integer v1,v2;
       Real v2_1,v1_1;
       String s2;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = divScalarArrayelt(sval, vals);
         r2 = divScalarArrayelt(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case (sval ,(Values.INTEGER(integer = v2) :: rest))
       equation 
         equality(v2 = 0);
@@ -1181,12 +1192,13 @@ algorithm
       Value sval;
       Integer v1,v2;
       Real v2_1,v1_1;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = subScalarArrayelt(sval, vals);
         r2 = subScalarArrayelt(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Integer r1;
       equation 
@@ -1236,12 +1248,13 @@ algorithm
       Value sval;
       Integer v1,v2;
       Real v2_1,v1_1;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = powScalarArrayelt(sval, vals);
         r2 = powScalarArrayelt(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Real r1;
       equation
@@ -1293,12 +1306,13 @@ algorithm
       Value sval;
       Integer v1,v2;
       Real v2_1,v1_1;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = subArrayeltScalar(sval, vals);
         r2 = subArrayeltScalar(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Integer r1;
       equation 
@@ -1348,12 +1362,13 @@ algorithm
       Value sval;
       Integer v1,v2;
       Real v2_1,v1_1;
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+      list<Integer> dims;
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = powArrayeltScalar(sval, vals);
         r2 = powArrayeltScalar(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Real r1;
       equation
@@ -1401,10 +1416,11 @@ algorithm
   outValue:=
   matchcontinue (inValueLst1,inValueLst2)
     local
-      Integer r1,r2,res,v1,v2,len,len2;
+      Integer r1,r2,res,v1,v2,len,len2,dim;
       list<Value> v1lst,v2lst,vres,rest,vlst,col,mat_1,vals,mat,lst1,lst2;
       Value sres,v;
       String lenstr,len2str;
+      list<Integer> dims;
     case ((Values.INTEGER(integer = v1) :: (v1lst as (_ :: _))),(Values.INTEGER(integer = v2) :: (v2lst as (_ :: _))))
       equation 
         r1 = v1*v2;
@@ -1434,56 +1450,51 @@ algorithm
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER(integer = _) :: _)))
       equation 
         sres = multScalarProduct(v2lst, vlst);
-        Values.ARRAY(vres) = multScalarProduct(rest, vlst);
+        Values.ARRAY(vres,dim::dims) = multScalarProduct(rest, vlst);
+        dim = dim+1;
       then
-        Values.ARRAY((sres :: vres));
-    case ({},(Values.INTEGER(integer = _) :: _)) then Values.ARRAY({}); 
+        Values.ARRAY(sres :: vres, dim::dims);
+    case ({},(Values.INTEGER(integer = _) :: _)) then makeArray({}); 
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.REAL(real = _) :: _)))
       equation 
         sres = multScalarProduct(v2lst, vlst);
-        Values.ARRAY(vres) = multScalarProduct(rest, vlst);
+        Values.ARRAY(vres,dim::dims) = multScalarProduct(rest, vlst);
+        dim = dim+1;
       then
-        Values.ARRAY((sres :: vres));
-    case ({},(Values.REAL(real = _) :: _)) then Values.ARRAY({}); 
+        Values.ARRAY(sres :: vres,dim::dims);
+    case ({},(Values.REAL(real = _) :: _)) then makeArray({}); 
     case ((vlst as (Values.INTEGER(integer = _) :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       equation 
-        (Values.ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
+        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
         v = multScalarProduct(vlst, col);
-        Values.ARRAY(vals) = multScalarProduct(vlst, mat_1);
+        Values.ARRAY(vals,dim::dims) = multScalarProduct(vlst, mat_1);
       then
-        Values.ARRAY((v :: vals));
+        Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.INTEGER(integer = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
       local Integer v;
       equation 
-        (Values.ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
+        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
         Values.INTEGER(v) = multScalarProduct(vlst, col);
       then
-        Values.ARRAY({Values.INTEGER(v)});
+        makeArray({Values.INTEGER(v)});
     case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = (_ :: (_ :: _))) :: _)))
       equation 
-        (Values.ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
+        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
         v = multScalarProduct(vlst, col);
-        Values.ARRAY(vals) = multScalarProduct(vlst, mat_1);
+        Values.ARRAY(valueLst = vals, dimLst = dim::dims) = multScalarProduct(vlst, mat_1);
+        dim = dim+1;
       then
-        Values.ARRAY((v :: vals));
+        Values.ARRAY(v :: vals, dim::dims);
     case ((vlst as (Values.REAL(real = _) :: _)),(mat as (Values.ARRAY(valueLst = {_}) :: _)))
       local Real v;
       equation 
-        (Values.ARRAY(col),mat_1) = matrixStripFirstColumn(mat);
+        (Values.ARRAY(valueLst = col),mat_1) = matrixStripFirstColumn(mat);
         Values.REAL(v) = multScalarProduct(vlst, col);
       then
-        Values.ARRAY({Values.REAL(v)});
+        makeArray({Values.REAL(v)});
     case (lst1,lst2)
-      equation 
-        Print.printBuf("mult_scalar_product failed\n lst1 len:");
-        len = listLength(lst1);
-        lenstr = intString(len);
-        Print.printBuf(lenstr);
-        Print.printBuf("lst2 len:");
-        len2 = listLength(lst2);
-        len2str = intString(len2);
-        Print.printBuf(len2str);
-        Print.printBuf("\n");
+      equation
+        Debug.fprintln("failtrace", "Values.multScalarProduct failed");
       then
         fail();
   end matchcontinue;
@@ -1508,7 +1519,7 @@ algorithm
         z2 = realSub(realMul(x3,y1),realMul(x1,y3));
         z3 = realSub(realMul(x1,y2),realMul(x2,y1));
       then
-        Values.ARRAY({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
+        makeArray({Values.REAL(z1),Values.REAL(z2),Values.REAL(z3)});
     case ({Values.INTEGER(x1),Values.INTEGER(x2),Values.INTEGER(x3)},
           {Values.INTEGER(y1),Values.INTEGER(y2),Values.INTEGER(y3)})
       local
@@ -1518,10 +1529,10 @@ algorithm
         z2 = intSub(intMul(x3,y1),intMul(x1,y3));
         z3 = intSub(intMul(x1,y2),intMul(x2,y1));
       then
-        Values.ARRAY({Values.INTEGER(z1),Values.INTEGER(z2),Values.INTEGER(z3)});
+        makeArray({Values.INTEGER(z1),Values.INTEGER(z2),Values.INTEGER(z3)});
     case (_,_)
       equation 
-        Print.printBuf("- ValuesUtil.crossProduct failed\n");
+        Debug.fprintln("failtrace", "- ValuesUtil.crossProduct failed");
       then
         fail();
   end matchcontinue;
@@ -1566,6 +1577,7 @@ algorithm
       Real v1,v2_1,v1_1;
       list<Value> vlst,r1,r2,vals,rest;
       Integer v2;
+      list<Integer> dims;
     case ((sval as Values.REAL(real = v1)),vlst)
       equation 
         equality(v1 = 0.0);
@@ -1581,12 +1593,12 @@ algorithm
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
       then
         fail();
-    case (sval,(Values.ARRAY(valueLst = vals) :: rest))
+    case (sval,(Values.ARRAY(valueLst = vals, dimLst = dims) :: rest))
       equation 
         r1 = divArrayeltScalar(sval, vals);
         r2 = divArrayeltScalar(sval, rest);
       then
-        (Values.ARRAY(r1) :: r2);
+        (Values.ARRAY(r1,dims) :: r2);
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Integer r1,v1;
       equation 
@@ -1638,12 +1650,15 @@ algorithm
     local
       list<Value> resl,resl2,vrest,rest;
       Value v1;
-    case ((Values.ARRAY(valueLst = (v1 :: vrest)) :: rest))
+      Integer i;
+      list<Integer> dims,dims2;
+    case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = _::dims) :: rest))
       equation 
-        (Values.ARRAY(resl),resl2) = matrixStripFirstColumn(rest);
+        (Values.ARRAY(resl,i::dims2),resl2) = matrixStripFirstColumn(rest);
+        i = i+1;
       then
-        (Values.ARRAY((v1 :: resl)),(Values.ARRAY(vrest) :: resl2));
-    case ({}) then (Values.ARRAY({}),{}); 
+        (Values.ARRAY((v1 :: resl),i::dims2),(Values.ARRAY(vrest,dims) :: resl2));
+    case ({}) then (Values.ARRAY({},{0}),{}); 
   end matchcontinue;
 end matrixStripFirstColumn;
 
@@ -1659,14 +1674,15 @@ algorithm
   matchcontinue (inIntegerLst)
     local
       list<Value> res;
-      Integer i;
+      Integer i,len;
       list<Integer> lst;
-    case ({}) then Values.ARRAY({}); 
+    case ({}) then Values.ARRAY({},{0});
     case ((i :: lst))
       equation 
-        Values.ARRAY(res) = intlistToValue(lst);
+        Values.ARRAY(res,{len}) = intlistToValue(lst);
+        len = len+1;
       then
-        Values.ARRAY((Values.INTEGER(i) :: res));
+        Values.ARRAY((Values.INTEGER(i) :: res),{len});
   end matchcontinue;
 end intlistToValue;
 
@@ -1700,8 +1716,18 @@ public function makeArray "function: makeArray
 algorithm 
   outValue:=
   matchcontinue (inValueLst)
-    local list<Value> vlst;
-    case (vlst) then Values.ARRAY(vlst); 
+    local
+      Integer i1;
+      list<Integer> il;
+      list<Value> vlst;
+    case (vlst as (Values.ARRAY(dimLst = il)::_))
+      equation
+        i1 = listLength(vlst);
+      then Values.ARRAY(vlst,i1::il);
+    case (vlst)
+      equation
+        i1 = listLength(vlst);
+      then Values.ARRAY(vlst,{i1}); 
   end matchcontinue;
 end makeArray;
 
@@ -1856,7 +1882,7 @@ algorithm
   end matchcontinue;
 end valRecordString;
 
-protected function valListString "function: valListString
+public function valListString "function: valListString
  
   This function returns a textual representation of a list of
   values, separating each value with a comman.
@@ -1886,7 +1912,7 @@ algorithm
         s_3;
     case _
       equation 
-        Debug.fprintln("failtrace", "- ValuesUtil.valListString failed\n");
+        Debug.fprintln("failtrace", "- ValuesUtil.valListString failed");
       then
         fail();
   end matchcontinue;
@@ -2020,12 +2046,13 @@ algorithm
       String s1,s2,res,res_1;
       Value v1,v2;
       list<Value> v1s,v2s;
+      list<Integer> dims1,dims2;
     case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ""; 
-    case (Values.ARRAY(valueLst = (v1 :: v1s)),Values.ARRAY(valueLst = (v2 :: v2s)))
+    case (Values.ARRAY(valueLst = (v1 :: v1s), dimLst = _::dims1),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _::dims2))
       equation 
         s1 = valString(v1);
         s2 = valString(v2);
-        res = unparsePtolemySet2(Values.ARRAY(v1s), Values.ARRAY(v2s));
+        res = unparsePtolemySet2(Values.ARRAY(v1s,dims1), Values.ARRAY(v2s,dims2));
         res_1 = Util.stringAppendList({s1,",",s2,"\n",res});
       then
         res_1;
@@ -2045,12 +2072,13 @@ algorithm
     local
       list<Value> lst_1,lst_2,lst;
       Value value;
-    case (Values.ARRAY(valueLst = lst))
+      list<Integer> dims;
+    case (Values.ARRAY(valueLst = lst, dimLst = dims))
       equation 
         lst_1 = Util.listMap(lst, reverseMatrix);
         lst_2 = listReverse(lst_1);
       then
-        Values.ARRAY(lst_2);
+        Values.ARRAY(lst_2,dims);
     case (value) then value; 
   end matchcontinue;
 end reverseMatrix;

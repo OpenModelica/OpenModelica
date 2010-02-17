@@ -11518,7 +11518,7 @@ algorithm
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph);
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals,{len}), el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
@@ -11540,7 +11540,7 @@ algorithm
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals), el, initial_, impl,graph);
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals,{len}), el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
@@ -12203,14 +12203,14 @@ algorithm
         print(" implement assignComplexConstantConstruct for records of records\n");
       then fail();
 
-    case(Values.RECORD(p, (v as Values.ARRAY(arrVals))::vals, n::names, index),cr,source)
+    case(Values.RECORD(p, (v as Values.ARRAY(valueLst = arrVals))::vals, n::names, index),cr,source)
       equation
         cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_OTHER,{}));
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqnsArray = assignComplexConstantConstructToArray(arrVals,cr2,source,1);
         eqns = listAppend(eqns,eqnsArray);
-        then 
-          eqns;
+      then
+        eqns;
     case(Values.RECORD(p, v::vals, n::names, index),cr,source)
       equation
         cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_INT,{}));
@@ -12256,7 +12256,7 @@ algorithm eqns := matchcontinue(arr,assigned,source,subPos)
     list<Values.Value> arrVals; 
     list<DAE.Element> eqns2;
   case({},_,_,_) then {};
-  case((v  as Values.ARRAY(arrVals))::arr,assigned,source,subPos)
+  case((v  as Values.ARRAY(valueLst = arrVals))::arr,assigned,source,subPos)
     equation      
       eqns = assignComplexConstantConstructToArray(arr,assigned,source,subPos+1);
       assigned = Exp.addSubscriptsLast(assigned,subPos);
@@ -12446,38 +12446,42 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
+      list<Integer> dims;
+      Integer dim;
     case (cache,_,_,_,csets,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph) 
     then (cache,DAEUtil.emptyDae,csets,graph);  /* impl */ 
     
     /* array equation, use instEEquation */
-    case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest)),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
-      equation 
+    case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
+      equation
+        dim = dim-1;
+        dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
 				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
 				/* use instEEquation*/ 
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl,graph);
-        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest), eqs, initial_, impl,graph);
+        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,dae,csets_2,graph);
         
      /* initial array equation, use instEInitialequation */
-    case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest)),eqs,(initial_ as SCode.INITIAL()),impl,graph)
+    case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.INITIAL()),impl,graph)
       equation 
+        dim = dim-1;
+        dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
 				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
 				/* Use instEInitialequation*/
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InstanceHierarchy.emptyInstHierarchy, mods, pre, csets, ci_state, instEInitialequation, eqs, impl,graph);
-        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest), eqs, initial_, impl,graph);
+        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,dae,csets_2,graph);
     case (_,_,_,_,_,_,_,v,_,_,_,_)
       equation 
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- Inst.unroll ");
-        Debug.fcall("failtrace", ValuesUtil.printVal, v);
-        Debug.fprint("failtrace", " failed\n");
+        Debug.fprintln("failtrace", "- Inst.unroll failed: " +& ValuesUtil.valString(v));
       then
         fail();
   end matchcontinue;

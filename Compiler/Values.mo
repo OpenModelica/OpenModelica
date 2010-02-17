@@ -71,6 +71,7 @@ uniontype Value
 
   record ARRAY
     list<Value> valueLst;
+    list<Integer> dimLst;
   end ARRAY;
 
   record LIST "MetaModelica list"

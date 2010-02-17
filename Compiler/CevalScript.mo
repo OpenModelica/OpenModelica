@@ -490,7 +490,7 @@ algorithm
       equation 
         (cache,executable,method_str,st,initfilename) = buildModel(cache,env, exp, st_1, msg);
       then
-        (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
+        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
         
     case (cache,env,(exp as 
       DAE.CALL(
@@ -512,7 +512,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg) /* failing build_model */  
-    then (cache,Values.ARRAY({Values.STRING(""),Values.STRING("")}),st_1); 
+    then (cache,ValuesUtil.makeArray({Values.STRING(""),Values.STRING("")}),st_1); 
 
     case (cache,env,(exp as 
       DAE.CALL( path = Absyn.IDENT(name = "buildModelBeast"), expLst = {DAE.CODE(Absyn.C_TYPENAME(className),_), starttime,
@@ -521,7 +521,7 @@ algorithm
       equation 
         (cache,executable,method_str,st,initfilename) = buildModelBeast(cache,env, exp, st_1, msg);
       then
-        (cache,Values.ARRAY({Values.STRING(executable),Values.STRING(initfilename)}),st);
+        (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
     /* adrpo: see if the model exists before simulation! */
     case (cache,env,(exp as
@@ -1456,7 +1456,7 @@ algorithm
       equation         
         varName = Exp.CodeVarToCref(varName);
         varNameStr = Exp.printExpStr(varName);        
-        (cache,Values.ARRAY(vals),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);               
+        (cache,Values.ARRAY(valueLst = vals),SOME(st)) = Ceval.ceval(cache,env, varTimeStamp, true, SOME(st), NONE, msg);               
          timeStamps = Util.listMap(vals,ValuesUtil.valueReal);
         (cache,val) = cevalValArray(cache,env,SOME(st),timeStamps,varNameStr);                       
       then
@@ -2093,7 +2093,7 @@ algorithm
       equation
         (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env, exp, st_1, msg);
       then
-        (cache,Values.ARRAY({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
+        (cache,ValuesUtil.makeArray({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
 
     case (cache,env,(exp as
       DAE.CALL(
@@ -2114,7 +2114,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg) /* failing build_model */
-    then (cache,Values.ARRAY({Values.STRING("Xml dump error"),Values.STRING("")}),st_1);
+    then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error"),Values.STRING("")}),st_1);
   end matchcontinue;
 end cevalInteractiveFunctions;
 
@@ -2147,13 +2147,18 @@ protected function cevalValArray "Help function to cevalInteractiveFunctions. Ha
   output Values.Value value;
 algorithm
   (outCache,value) := matchcontinue(cache,env,st,timeStamps,varName)
-  local list<Values.Value> vals;
-    Real v,timeStamp;
-    case(cache,env,st,{},varName) then (cache,Values.ARRAY({}));
-    case(cache,env,st,timeStamp::timeStamps,varName) equation
-      (cache,v) = cevalVal(cache,env,st,timeStamp,varName);
-      (cache,Values.ARRAY(vals)) = cevalValArray(cache,env,st,timeStamps,varName);
-    then (cache,Values.ARRAY(Values.REAL(v)::vals));
+    local
+      list<Values.Value> vals;
+      Real v,timeStamp;
+      Integer i;
+      list<Integer> dims;
+    case(cache,env,st,{},varName) then (cache,Values.ARRAY({},{0}));
+    case(cache,env,st,timeStamp::timeStamps,varName)
+      equation
+        (cache,v) = cevalVal(cache,env,st,timeStamp,varName);
+        (cache,Values.ARRAY(vals,i::dims)) = cevalValArray(cache,env,st,timeStamps,varName);
+        i = i+1;
+      then (cache,Values.ARRAY(Values.REAL(v)::vals,i::dims));
   end matchcontinue;
 end cevalValArray;
 
@@ -2174,13 +2179,13 @@ algorithm
       (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env, 
         DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG());
       
-      Values.ARRAY({Values.ARRAY(varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
-      Values.ARRAY({Values.ARRAY(timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0); 
+      Values.ARRAY(valueLst = {Values.ARRAY(valueLst = varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
+      Values.ARRAY(valueLst = {Values.ARRAY(valueLst = timeValues)}) = SimulationResults.readPtolemyplotDataset(filename, {"time"}, 0); 
       
       tV = ValuesUtil.valueReals(timeValues);
       vV = ValuesUtil.valueReals(varValues);  
       val = System.getVariableValue(timeStamp, tV, vV);                
-      then (cache,val);       
+    then (cache,val);       
   end matchcontinue;
 end cevalVal;
 

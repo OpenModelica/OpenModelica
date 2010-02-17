@@ -621,7 +621,7 @@ algorithm
         env2;
     case(env, Absyn.ALG_FOR({(varName, SOME(ae1))},forBody = algitemlst),ht2)
       equation 
-        (Values.ARRAY(values)) = evaluateSingleExpression(ae1, env,NONE,ht2);
+        (Values.ARRAY(valueLst = values)) = evaluateSingleExpression(ae1, env,NONE,ht2);
         start = listNth(values,0);
 				env1 = addForLoopScope(env,varName,start);
         env2 = evaluateForLoopArray(env1, varName, values, algitemlst, ht2);
@@ -1243,7 +1243,7 @@ algorithm
         true = (listLength(inDims)>0);
         value = instFunctionArray2(dims, ty,optVal);
         values = Util.listFill(value,dim);
-        value = Values.ARRAY(values);
+        value = Values.ARRAY(values, dim::dims);
         then
           value;
     case({}, ty , SOME(value))
@@ -1426,26 +1426,27 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
     DAE.Exp e1;
     Integer x;
     Absyn.Exp exp;
+    list<Integer> dims;
     case(_,newVal,{},_,ty) 
       equation 
         (ty,_) = Types.flattenArrayType(ty); 
         value = checkValueTypes(newVal,ty);
         then value;
 
-  case((oldVal as Values.ARRAY(valueLst = values1)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
+  case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
       (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false); 
       (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);
       values2 = Util.listReplaceAt(val2,(x-1),values1);
-      val3 = Values.ARRAY(values2);
+      val3 = Values.ARRAY(values2,dims);
     then
       val3;
-  case((oldVal as Values.ARRAY(valueLst = values1)),(newVal as Values.ARRAY(valueLst = values2)),((sub as Absyn.NOSUB)::subs),env,ty)
+  case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),(newVal as Values.ARRAY(valueLst = values2)),((sub as Absyn.NOSUB)::subs),env,ty)
     equation
       values3 = mergeValues2(values1,values2,subs,env,ty);
-      val3 = Values.ARRAY(values3);
+      val3 = Values.ARRAY(values3,dims);
     then
       val3;
   end matchcontinue;
@@ -1484,18 +1485,19 @@ algorithm outVal := matchcontinue(val,ty)
   local
     list<Values.Value> vals1,vals2;
     Values.Value val1,val2;
+    list<Integer> dims;
     Integer ix;
     Real rx;
-  case(Values.ARRAY(vals1), ty as (DAE.T_REAL(_),_)) 
+  case(Values.ARRAY(vals1,dims), ty as (DAE.T_REAL(_),_)) 
     equation 
       vals2 = Util.listMap1(vals1,checkValueTypes,ty) ;
-      val1 = Values.ARRAY(vals2); 
+      val1 = Values.ARRAY(vals2,dims);
     then
       val1;
-  case(Values.ARRAY(vals1), ty as (DAE.T_INTEGER(_),_)) 
+  case(Values.ARRAY(vals1,dims), ty as (DAE.T_INTEGER(_),_)) 
     equation 
       vals2 = Util.listMap1(vals1,checkValueTypes,ty);
-      val1 = Values.ARRAY(vals2); 
+      val1 = Values.ARRAY(vals2,dims); 
     then
       val1;
   case(Values.INTEGER(ix), ty as (DAE.T_REAL(_),_))
@@ -1612,7 +1614,7 @@ algorithm res := matchcontinue(v,inRef)
     Real r;
     Boolean b;
     String str;
-  case(Values.ARRAY(vals),inRef)
+  case(Values.ARRAY(valueLst = vals),inRef)
     equation
       res = createReplacementRulesRecordArray(vals,{},inRef,0);
     then
@@ -1654,8 +1656,8 @@ algorithm res := matchcontinue(inVals,subs,inCref,offset)
     list<tuple<DAE.ComponentRef, DAE.Exp>> res1,res2;
     DAE.ComponentRef cref;
   case({},_,_,_) then {};
-  case(Values.ARRAY({})::{},_,_,_) then {};    
-  case((v as Values.ARRAY(vals2))::vals1,subs,inCref,offset)
+  case(Values.ARRAY(valueLst = {})::{},_,_,_) then {};
+  case((v as Values.ARRAY(valueLst = vals2))::vals1,subs,inCref,offset)
     equation
       offset=offset+1;
       res2 = createReplacementRulesRecordArray(vals1,subs,inCref,offset);

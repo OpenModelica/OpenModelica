@@ -576,7 +576,7 @@ algorithm
       local
         input list<Values.Value> valList;
       equation
-        (Values.ARRAY(valList),st_1) = evaluateExpr(exp, st);
+        (Values.ARRAY(valueLst = valList),st_1) = evaluateExpr(exp, st);
         st_2 = evaluateForStmt(iter, valList, algItemList, st_1);
       then
         ("",st_2);
