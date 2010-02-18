@@ -59,7 +59,7 @@ public import Values;
 protected import DAEUtil;
 protected import ErrorExt;
 protected import HashTable2;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import MetaUtil;
 protected import Types;
 protected import UnitAbsyn;
@@ -354,7 +354,7 @@ algorithm
         env = buildEnvFromSymboltable(st);
         scode_class = SCodeUtil.translateClass(absyn_class);
         (_,env_1,_,d) = 
-          Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InstanceHierarchy.emptyInstHierarchy, 
+          Inst.implicitFunctionInstantiation(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy, 
                                              DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, scode_class, {});
       then
         ();
@@ -4428,7 +4428,7 @@ algorithm
       
     case (pa,Absyn.COMPONENTS(typeSpec = Absyn.TPATH(path_1,_),components = comp_items),comps,env) /* the QUALIFIED path for the class */
       equation
-        (cache,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
         (cache,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         comps_1 = extractComponentsFromComponentitems(pa, path, comp_items, comps, env);
@@ -4819,7 +4819,7 @@ algorithm
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        (cache,(cl as SCode.CLASS(id,_,encflag,restr,SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = 
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr,classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(tp,_)))),env_1) = 
         Lookup.lookupClass(cache,env, p_class, false);
       then env_1;
 
@@ -4827,11 +4827,11 @@ algorithm
       equation
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
+        (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, p_class, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(cache,env2,InstanceHierarchy.emptyInstHierarchy,
+          Inst.partialInstClassIn(cache,env2,InnerOuter.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, cl, false, {});
       then env_2;
     case (p,p_class) then {};
@@ -7416,7 +7416,7 @@ algorithm
                       body = Absyn.DERIVED(typeSpec=Absyn.TPATH(path_1,subscripts),attributes = attrs,arguments = elementarg,comment = co),
                       info = file_info),old_comp,new_comp,env)
       equation
-        (cache,SCode.CLASS(name,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache(), env, path_1, false);
+        (cache,SCode.CLASS(name=name),cenv) = Lookup.lookupClass(Env.emptyCache(), env, path_1, false);
         path_1 = Absyn.IDENT(name);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
@@ -7541,7 +7541,7 @@ algorithm
       
     case (Absyn.COMPONENTS(attributes = a,typeSpec = Absyn.TPATH(path_1,x),components = comp_items),old_comp,new_comp,env) /* the old name for the component signal if something in class have been changed rule  Absyn.path_string(old_comp) => old_str & Absyn.path_string(new_comp) => new_str & Util.string_append_list({old_str,\" ==> \", new_str,\"\\n\"}) => print_str & print print_str & int_eq(1,2) => true --------- rename_class_in_element_spec(A,old_comp,new_comp,env) => (A,false) */
       equation
-        (cache,SCode.CLASS(id,_,_,_,_),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
+        (cache,SCode.CLASS(name=id),cenv) = Lookup.lookupClass(Env.emptyCache(),env, path_1, false);
         path_1 = Absyn.IDENT(id);
         (_,path) = Inst.makeFullyQualified(cache, cenv, path_1);
         true = ModUtil.pathEqual(path, old_comp);
@@ -10182,7 +10182,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (_,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         str = getNthInheritedClass2(c, cdef, n, env_1);
       then
         str;
@@ -10533,7 +10533,7 @@ algorithm
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstHierarchy, 
+          Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy, 
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         lst = getBaseClasses(cdef, env_2);
         n_1 = n - 1;
@@ -10693,7 +10693,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        (_,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (_,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         cdef = getPathedClassInProgram(modelpath, p);
         str = getNthComponent2(c, cdef, n, env_1);
       then
@@ -10728,7 +10728,7 @@ algorithm
         env2 = Env.openScope(env, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(Env.emptyCache(),env2,InstanceHierarchy.emptyInstHierarchy,
+          Inst.partialInstClassIn(Env.emptyCache(),env2,InnerOuter.emptyInstHierarchy,
                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
                                   ci_state, c, false, {});
         comp = getNthComponentInClass(cdef, n);
@@ -10776,11 +10776,11 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(cache,env, modelpath, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (_,env_2,_,_) = 
-          Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), 
+          Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), 
                                   Prefix.NOPRE(), Connect.emptySet, ci_state, c, false, {});
         comps1 = getPublicComponentsInClass(cdef);
         s1 = getComponentsInfo(comps1, "\"public\"", env_2);
@@ -13654,7 +13654,7 @@ algorithm
         (cache,mod_2,_) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstHierarchy,
+          Inst.instClass(cache,env_1,InnerOuter.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet, 
                          c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13885,7 +13885,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
+          Inst.instClass(cache,env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(), 
                          Connect.emptySet,placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false) "impl" ;
@@ -13909,7 +13909,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
+          Inst.instClass(cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
                          ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13928,7 +13928,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, 
+          Inst.instClass(cache,env, InnerOuter.emptyInstHierarchy, 
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13950,7 +13950,7 @@ algorithm
         placementclass = SCodeUtil.translateClass(placementc);
         (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) = 
-          Inst.instClass(cache,env, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore, 
+          Inst.instClass(cache,env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore, 
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(), 
                          ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -18997,18 +18997,18 @@ algorithm
   env_2 := matchcontinue(p,p_class,env)
 /* First try partial instantiation */
     case(p,p_class,env) equation
-      (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
+      (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-      (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InstanceHierarchy.emptyInstHierarchy, 
+      (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy, 
                                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                   ci_state, cl, false, {});
     then env_2;
     case(p,p_class,env) equation
-      (cache,(cl as SCode.CLASS(id,_,encflag,restr,_)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
+      (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
       env2 = Env.openScope(env_1, encflag, SOME(id));
       ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-      (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InstanceHierarchy.emptyInstHierarchy, 
+      (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy, 
                                                        UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
                                                        ci_state, cl, false, {},false, ConnectionGraph.EMPTY,NONE);
     then env_2;

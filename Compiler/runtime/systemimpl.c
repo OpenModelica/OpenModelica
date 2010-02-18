@@ -3656,7 +3656,7 @@ RML_END_LABEL
 
 char          rml_external_roots_trail_names[1024][200];
 void         *rml_external_roots_trail[1024] = {0};
-unsigned long rml_external_roots_trail_size = 1024;
+rml_uint_t    rml_external_roots_trail_size = 1024;
 
 /* forward my external roots */
 void rml_user_gc(struct rml_xgcstate *state)
@@ -3666,14 +3666,17 @@ void rml_user_gc(struct rml_xgcstate *state)
 
 RML_BEGIN_LABEL(System__addToRoots)
 {
-    char* name = RML_STRINGDATA(rmlA0);
+    rml_uint_t i = RML_UNTAGFIXNUM(rmlA0);
 
     if (rml_trace_enabled)
     {
       fprintf(stderr, "System__addToRoots\n"); fflush(stderr);
     }
 
-    rml_external_roots_trail[0] = rmlA1;
+    if (i >= rml_external_roots_trail_size)
+      RML_TAILCALLK(rmlFC);
+
+    rml_external_roots_trail[i] = rmlA1;
 
     RML_TAILCALLK(rmlSC);
 }
@@ -3681,14 +3684,17 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getFromRoots)
 {
-    char* name = RML_STRINGDATA(rmlA0);
+    rml_uint_t i = RML_UNTAGFIXNUM(rmlA0);
 
     if (rml_trace_enabled)
     {
       fprintf(stderr, "System__getFromRoots\n"); fflush(stderr);
     }
 
-    rmlA0 = rml_external_roots_trail[0];
+    if (i >= rml_external_roots_trail_size)
+      RML_TAILCALLK(rmlFC);
+
+    rmlA0 = rml_external_roots_trail[i];
 
     RML_TAILCALLK(rmlSC);
 }

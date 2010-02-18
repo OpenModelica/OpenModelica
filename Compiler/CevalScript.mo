@@ -73,7 +73,7 @@ protected import Error;
 protected import Exp;
 protected import Inline;
 protected import Inst;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import Lookup;
 protected import ModUtil;
 protected import Prefix;
@@ -252,7 +252,7 @@ algorithm
         ptot = Interactive.getTotalProgram(path,p);        
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_, dae) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1, path);
+        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1, path);
         dae  = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
@@ -650,7 +650,7 @@ algorithm
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
+        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         str = DAEUtil.dumpStr(dae);
       then
@@ -683,7 +683,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         str = Print.getErrorString() "we do not want error msg twice.." ;
         failure((_,_,_,_) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,path));
+        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,path));
         Print.clearErrorBuf();
         Print.printErrorBuf(str);
         str = Print.getErrorString();
@@ -2235,7 +2235,7 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
+        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         dae  = DAEUtil.transformIfEqToExpr(dae_1,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
@@ -2318,7 +2318,7 @@ algorithm
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = 
-        Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
+        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
@@ -3282,7 +3282,7 @@ algorithm
         //UnitParserExt.commit();
         
         (cache, env, _, dae) = 
-        Inst.instantiateClass(inCache, InstanceHierarchy.emptyInstHierarchy, p_1, className);        
+        Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);        
         dae  = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
@@ -3318,7 +3318,7 @@ algorithm
         //UnitParserExt.commit();
 
         (cache, env, _, dae) = 
-        Inst.instantiateFunctionImplicit(inCache, InstanceHierarchy.emptyInstHierarchy, p_1, className);
+        Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
       
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         classNameStr = Absyn.pathString(className);
@@ -3425,10 +3425,10 @@ algorithm
         ptot = Interactive.getTotalProgram(classname_1,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
         (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
@@ -3466,10 +3466,10 @@ algorithm
         ptot = Interactive.getTotalProgram(classname_1,p);          
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
-        (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
         env3 = Env.openScope(env_1, encflag, SOME(n));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
+        (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
         (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
@@ -3629,7 +3629,7 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstHierarchy, p_1, classname);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformIfEqToExpr(dae_1,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);
@@ -3672,7 +3672,7 @@ algorithm
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InstanceHierarchy.emptyInstHierarchy, p_1, classname);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformIfEqToExpr(dae_1,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);
@@ -4186,7 +4186,7 @@ algorithm
         Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs instantiating*/");
         (cache,env_2,_,d1) = 
         Inst.implicitFunctionInstantiation(
-           cache, env_1, InstanceHierarchy.emptyInstHierarchy,
+           cache, env_1, InnerOuter.emptyInstHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs getting functions: ");
         calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, d1);

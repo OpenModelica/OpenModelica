@@ -29,17 +29,17 @@ protected import Debug;
 protected import Lookup;
 protected import Static;
 protected import Inst;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import Types;
 protected import UnitAbsyn;
 protected import ValuesUtil;
 protected import ErrorExt;
 protected import OptManager;
+protected import Dump;
 
 public function cevalUserFunc "Function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
-evaluate it. This is to prevent multiple compilation of c files.
-"
+evaluate it. This is to prevent multiple compilation of c files."
   input Env.Env env "enviroment for the user-function";
   input DAE.Exp callExp "DAE.CALL(userFunc)"; 
   input list<Values.Value> inArgs; 
@@ -61,8 +61,8 @@ algorithm
         HashTable2.HashTable ht2;
         list<tuple<DAE.ComponentRef, DAE.Exp>> replacements;
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
-         sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
-                           SCode.PARTS(elementLst=elementList) ),daeList)
+         sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
+                           classDef=SCode.PARTS(elementLst=elementList) ),daeList)
       equation
         ErrorExt.setCheckpoint();
         true = OptManager.setOption("envCache",false);
@@ -77,32 +77,32 @@ algorithm
         retVal = convertOutputVarValues(retVals);
         ErrorExt.rollBack();
         true = OptManager.setOption("envCache",true); 
-        then 
-          retVal;
+      then 
+        retVal;
     
     /* Reset sideeffects */
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
-        sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
-          SCode.PARTS(elementLst=elementList) ),daeList)
+        sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
+          classDef=SCode.PARTS(elementLst=elementList) ),daeList)
       equation
           ErrorExt.rollBack();
           _ = OptManager.setOption("envCache",true);
       then fail();
             
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
-         sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
-                           SCode.PARTS(elementLst=elementList) ),daeList)
+         sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
+                           classDef=SCode.PARTS(elementLst=elementList) ),daeList)
       equation
 				true = RTOpts.debugFlag("failtrace");
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable());
         str = Absyn.pathString(funcpath);
         str = Util.stringAppendList({"- Cevalfunc.evaluateStatements failed for function /* ",str," */\n"});
         Debug.fprint("failtrace", str);
-        then
-          fail();
+      then
+        fail();
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs, 
-              sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
-                                SCode.PARTS(elementLst=elementList) ),daeList)
+              sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
+                                classDef=SCode.PARTS(elementLst=elementList) ),daeList)
       equation        
 				true = RTOpts.debugFlag("failtrace");
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable()));
@@ -147,12 +147,14 @@ algorithm
       DAE.ExpType ety;
       DAE.Exp e1;
       list<DAE.Exp> restExps;      
-      Absyn.ArrayDim adim;
+      Absyn.ArrayDim adim,ad;
       Absyn.ComponentRef cr;
       Absyn.Path apath;
       ClassInf.State recordconst; // for complex env construction
       list<DAE.Var> typeslst;
       Option<DAE.Type> cto; // for complex env construction, to here
+      Option<Absyn.ArrayDim> optAD;
+      
     case(env,{},_,_, ht2) then env;
     case(env, (ele1 as SCode.EXTENDS(_,_,_))::eles1, vals1,restExps, ht2)
       equation
@@ -198,18 +200,41 @@ algorithm
       then
         env2;
         
-    case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim), typeSpec = Absyn.TPATH(path = apath), modifications = mod1)) ::eles1), (vals1),restExps, ht2)
+    case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim), typeSpec = Absyn.TPATH(path = apath,arrayDim = SOME(ad)), modifications = mod1)) ::eles1), (vals1),restExps, ht2)
       local Values.Value vv;
       equation
         tty = getTypeFromName(apath,env);
         tty = addDims(tty,adim,env, ht2);
         (binding as DAE.VALBOUND(vv)) = makeBinding(mod1,env,tty, ht2); 
+        
+        // print("extendEnvWithInputArgs -> SOME component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(ad) +& "\n");        
+        
         env1 = Env.extendFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,tty,binding), NONE, Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
+        
+    case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim), typeSpec = Absyn.TPATH(path = apath,arrayDim = NONE()), modifications = mod1)) ::eles1), (vals1),restExps, ht2)
+      local Values.Value vv;
+      equation
+        
+        // print("extendEnvWithInputArgs -> NONE component: " +& Absyn.pathString(apath) +& "\n");
+        
+        tty = getTypeFromName(apath,env);
+        tty = addDims(tty,adim,env, ht2);
+        (binding as DAE.VALBOUND(vv)) = makeBinding(mod1,env,tty, ht2);
+        
+        // print("extendEnvWithInputArgs -> NONE component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(adim) +& "\n");        
+        
+        env1 = Env.extendFrameV(env, 
+          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+            false,tty,binding), NONE, Env.VAR_TYPED(), {});
+        env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
+      then
+        env2;        
+        
     case(env, (_::eles1), (vals1),restExps, ht2)
       equation
         //print(" FAILURE !!!! \n"); 
@@ -338,17 +363,21 @@ local
   String name;// matching
   DAE.Attributes attr;
   Boolean prot;
-  DAE.Type ty;
+  DAE.Type ty,bc_ty;
   DAE.Binding bind;  
   Values.Value val;
   list<DAE.Var> vars;// matching end 
   DAE.Var tv;
   Env.Env env1,env2,complexEnv;
+  
   case(env,{}) then env;
   case(env, (tv as DAE.TYPES_VAR(name,attr,prot,ty,bind ))::vars)
     equation
       (ty,_) = Types.flattenArrayType(ty);
       Types.simpleType(ty);
+      
+      // print("makeComplexEnv -> 1 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");      
+      
       env1 = Env.extendFrameV(env, tv, NONE, Env.VAR_TYPED(), {});
       env2 = makeComplexEnv(env1, vars);
       then 
@@ -368,6 +397,9 @@ local
        complexEnv = Env.newFrame(false);
        //typeslst = Util.listMap1(typeslst,addbindingtodaevar,bind); 
        complexEnv = makeComplexEnv({complexEnv},typeslst);
+       
+       // print("makeComplexEnv -> 2 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");       
+       
         env1 = Env.extendFrameV(env,
         DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
         false,ty,bind), NONE, Env.VAR_TYPED(), complexEnv);
@@ -376,16 +408,27 @@ local
       then 
         env2;
         
+  // type X = Real[x];
+  case(env, (tv as DAE.TYPES_VAR(name,attr,prot,(ty as (DAE.T_COMPLEX(_,typeslst,SOME(bc_ty),_),_)), bind))::vars)
+    equation      
+      env2 = makeComplexEnv(env, DAE.TYPES_VAR(name,attr,prot,bc_ty,bind)::vars);
+    then 
+      env2;        
+
   case(env, (tv as DAE.TYPES_VAR(name,attr,prot,(ty as (DAE.T_COMPLEX(_,typeslst,_,_),_)) , _))::vars)
     equation
        complexEnv = Env.newFrame(false); 
        complexEnv = makeComplexEnv({complexEnv},typeslst);
+       
+       // print("makeComplexEnv -> 3 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
+              
         env1 = Env.extendFrameV(env,
         DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
         false,ty,DAE.UNBOUND), NONE, Env.VAR_TYPED(), complexEnv);
       env2 = makeComplexEnv(env1, vars);
       then 
         env2;
+        
       case(_,_) 
         equation 
         Debug.fprint("failtrace", "- Cevalfunc.makeComplexEnv failed\n");
@@ -462,12 +505,12 @@ algorithm outVal := matchcontinue(env,sc,ht2)
     list<SCode.Algorithm> algs1,algs2;
     Env.Env env1;
     HashTable2.HashTable ht2;
-  case(env, SCode.CLASS(_,false,_,SCode.R_FUNCTION(),
-                        SCode.PARTS(normalEquationLst=eqs1,
-                                    initialEquationLst=eqs2,
-                                    normalAlgorithmLst=algs1,
-                                    initialAlgorithmLst=algs2)),
-                                    ht2)
+  case(env, SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
+                        classDef=SCode.PARTS(normalEquationLst=eqs1,
+                                             initialEquationLst=eqs2,
+                                             normalAlgorithmLst=algs1,
+                                             initialAlgorithmLst=algs2)),
+       ht2)
     equation
       
       env1 = evaluateAlgorithmsList(env,algs1,ht2);
@@ -541,9 +584,9 @@ algorithm
         (env2) = evaluateAlgorithms(env1,algs, ht2);
         then
           env2;
-    case(env,_::algs, ht2)
+    case(env,alg::algs, ht2)
       equation
-        Debug.fprint("failtrace", "- Cevalfunc.evaluateAlgorithms failed\n");
+        Debug.fprintln("failtrace", "- Cevalfunc.evaluateAlgorithms failed on algorithm:" +& Dump.unparseAlgorithmStr(0, Absyn.ALGORITHMITEM(alg, NONE())));
         then 
           fail();          
   end matchcontinue;  
@@ -574,7 +617,6 @@ algorithm
         list<Absyn.AlgorithmItem> algitemlst;
         String varName;
 
-        
     case(env, Absyn.ALG_ASSIGN(ae1 as Absyn.CREF(_), ae2),ht2)
       equation
        (_,e1,DAE.PROP(t,_),_,_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false);
@@ -604,7 +646,7 @@ algorithm
     case(env, Absyn.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE, stop=ae2)))},forBody = algitemlst),ht2)
       equation 
         start = evaluateSingleExpression(ae1,env,NONE,ht2); 
-				env1 = addForLoopScope(env,varName,start);
+        env1 = addForLoopScope(env,varName,start,SCode.VAR());
         stop = evaluateSingleExpression(ae2,env1,NONE,ht2);
         step = Values.INTEGER(1);
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
@@ -613,7 +655,7 @@ algorithm
     case(env, Absyn.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1, step=SOME(ae2), stop=ae3)))},forBody = algitemlst),ht2)
       equation 
         start = evaluateSingleExpression(ae1,env,NONE,ht2);
-				env1 = addForLoopScope(env,varName,start);
+        env1 = addForLoopScope(env,varName,start,SCode.VAR());
         stop = evaluateSingleExpression(ae3,env1,NONE,ht2);
         step = evaluateSingleExpression(ae2,env1,NONE,ht2);
         env2 = evaluateForLoopRange(env1, varName, algitemlst, start, step, stop, ht2);
@@ -623,7 +665,7 @@ algorithm
       equation 
         (Values.ARRAY(valueLst = values)) = evaluateSingleExpression(ae1, env,NONE,ht2);
         start = listNth(values,0);
-				env1 = addForLoopScope(env,varName,start);
+        env1 = addForLoopScope(env,varName,start,SCode.VAR());
         env2 = evaluateForLoopArray(env1, varName, values, algitemlst, ht2);
       then
         env2;
@@ -953,6 +995,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false); 
       complexEnv = makeComplexEnv({fr},nlist);
+      // print("setValue -> component: " +& str +& " ty: " +& Types.printTypeStr(t) +& "\n");
       env1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(str,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,t,DAE.VALBOUND(value)), Env.VAR_TYPED(), complexEnv);
@@ -983,7 +1026,8 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       local String dbgString; Absyn.ComponentRef dbgcr;
       equation     
 				true = RTOpts.debugFlag("failtrace");
-        (Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
+        //(Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
+        dbgString = Dump.printComponentRefStr(dbgcr);
         dbgString = Util.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
         Debug.fprint("failtrace", dbgString);
       then fail();
@@ -991,10 +1035,14 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
 end setValue;
 
 protected function addForLoopScope
-	"Adds a scope in the environment used in for loops."
+"Adds a scope in the environment used in for loops.
+ adrpo NOTE: 
+   The variability of the iterator SHOULD 
+   be determined by the range constantness!"
 	input Env.Env env;
 	input String iterName;
 	input Values.Value startValue;
+	input SCode.Variability iterVariability;
 	output Env.Env newEnv;
 	DAE.Type baseType;
 	Values.Value baseValue;
@@ -1002,7 +1050,7 @@ algorithm
 	baseType := Types.typeOfValue(startValue);
 	baseValue := typeOfValue(baseType);
 	newEnv := Env.openScope(env, false, SOME(Env.forScopeName));
-	newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue), SCode.VAR); 
+	newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue), iterVariability); 
 end addForLoopScope;
 
 protected function setQualValue "Function: setQualValue
@@ -1120,10 +1168,15 @@ on the identifier \"varName\". If the variable is not there, extend the envirome
 algorithm
   outEnv := 
   matchcontinue(env,varName,newVal,ty)
-    local Env.Env env1;
+    local 
+      Env.Env env1;
+      DAE.Type t;
+      
     case(env,varName,newVal,ty) 
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        (_,_,t,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        // print("updateVarinEnv -> component: " +& varName +& " ty: " +& Types.printTypeStr(ty) +& "\n");
+        // print("updateVarinEnv -> component: " +& varName +& " ACTUAL ty: " +& Types.printTypeStr(t) +& "\n");
         env1 = Env.updateFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,ty,DAE.VALBOUND(newVal)), Env.VAR_TYPED(), {}); 
@@ -1314,6 +1367,8 @@ algorithm
       Absyn.Path rest,p;
       SCode.Class typeClass;
       Env.Env env1,env2;
+      list<Inst.DimExp> dims;
+      
     case (Absyn.IDENT(typeName),env)
       equation
         ty = getBuiltInTypeFromName(typeName);
@@ -1327,8 +1382,10 @@ algorithm
     case(p ,env) 
       equation
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
+        (_,dims,typeClass,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);        
         (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
-          Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+          Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
+        ty = Inst.makeArrayType(dims, ty);
       then
         ty;
     case (_,_) 

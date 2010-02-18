@@ -87,7 +87,7 @@ protected import Types;
 protected import Util;
 protected import ValuesUtil;
 protected import Cevalfunc;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import Prefix;
 protected import Connect;
 
@@ -1077,7 +1077,8 @@ algorithm
       list<SCode.Element> elementList;
       SCode.ClassDef cdef;
       DAE.DAElist daeList;
-      String error_Str;      
+      String error_Str;
+      CevalHashTable cevalHashTable;      
 
       /* Try cevalFunction first */
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl)),vallst,impl,st,_,msg)
@@ -1109,13 +1110,13 @@ algorithm
         false = RTOpts.debugFlag("noevalfunc"); 
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         // make sure is NOT used for records !
-        (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef ),env1) = 
+        (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef,_),env1) = 
         Lookup.lookupClass(cache,env,funcpath,true);
         (garbageCache,env1,_,daeList) = 
         Inst.implicitFunctionInstantiation(
           cache, 
           env1,
-          InstanceHierarchy.emptyInstHierarchy,
+          InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), 
           Prefix.NOPRE(), 
           Connect.emptySet, 
@@ -1151,7 +1152,11 @@ algorithm
         false = RTOpts.debugFlag("nogen");
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
+        // Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(funcpath, p);
+        // adrpo: 2010-01-22
+        // see if we don't have it in env!
+        (_,SCode.CLASS(restriction=SCode.R_FUNCTION(),info=Absyn.INFO(fileName = fNew)),_) = 
+          Lookup.lookupClass(cache, env, funcpath, true);
         // see if the build time from the class is the same as the build time from the compiled functions list
         false = stringEqual(fNew,""); // see if the WE have a file or not!
         false = Static.needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
@@ -1168,9 +1173,11 @@ algorithm
         false = RTOpts.debugFlag("nogen");
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         (true, funcHandle, buildTime, fOld) = Static.isFunctionInCflist(cflist, funcpath);        
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = 
-           Interactive.getPathedClassInProgram(funcpath, p);
-        
+        // Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(funcpath, p);
+        // adrpo: 2010-01-22
+        // see if we don't have it in env!
+        (_,SCode.CLASS(restriction=SCode.R_FUNCTION(),info=Absyn.INFO(fileName = fNew, buildTimes= Absyn.TIMESTAMP(build,_))),_) = 
+           Lookup.lookupClass(cache, env, funcpath, true);
         // note, this should only work for classes that have no file name!
         true = stringEqual(fNew,""); // see that we don't have a file!
         
@@ -1178,7 +1185,7 @@ algorithm
         //debug_print("edit",edit);  
         true = (buildTime >=. build);
         true = (buildTime >. edit);        
-        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_")        ;
+        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
         Debug.fprintln("dynload", "CALL: About to execute function present in CF list: " +& funcstr);
         newval = DynLoad.executeFunction(funcHandle, vallst);
       then
@@ -1192,7 +1199,7 @@ algorithm
           SOME(Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cf,lf)),dim,msg) // yeha! we have a symboltable!
       equation
         false = RTOpts.debugFlag("nogen");
- 				failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         newCF = Interactive.removeCf(funcpath, cf); // remove it as it might be there with an older build time.        
         (cache, funcstr) = CevalScript.cevalGenerateFunction(cache, env, funcpath);
         Debug.fprintln("dynload", "cevalCallFunction: about to execute " +& funcstr);
@@ -1200,10 +1207,11 @@ algorithm
         funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
         newval = DynLoad.executeFunction(funcHandle, vallst);
         System.freeLibrary(libHandle);
-        buildTime = System.getCurrentTime();        
+        buildTime = System.getCurrentTime();
         // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
         // update the build time in the class!
         Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(funcpath, p);
+        
         info = Absyn.setBuildTimeInInfo(buildTime,info);
         ts = Absyn.setTimeStampBuild(ts, buildTime);
         w = Interactive.buildWithin(funcpath);
@@ -1213,6 +1221,22 @@ algorithm
       then
         (cache,newval,SOME(Interactive.SYMBOLTABLE(p, aDep, a, b, c, 
           Interactive.CFunction(funcpath,(DAE.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,f)::newCF, lf)));
+
+    /*/ crap! we have no symboltable!, see in ceval cache
+      // adrpo: TODO! FIXME! this is disabled for now as we need to remove the deletion of .dll/.so from the mos files in the testsuite.
+    case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,NONE(),dim,msg) 
+      equation
+        false = RTOpts.debugFlag("nogen");
+        failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
+        // we might actually have a function loaded here already!
+        cevalHashTable = System.getFromRoots(1);
+        // see if we have it in the ceval cache
+        Interactive.CFunction(funcHandle=funcHandle, buildTime=buildTime, loadedFromFile=fOld) = get(funcpath, cevalHashTable);        
+        funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
+        Debug.fprintln("dynload", "CALL: About to execute function present in CevalCache list: " +& funcstr);        
+        newval = DynLoad.executeFunction(funcHandle, vallst);
+      then
+        (cache,newval,NONE());*/
 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,NONE(),dim,msg) // crap! we have no symboltable!
       equation
@@ -1228,6 +1252,11 @@ algorithm
         newval = DynLoad.executeFunction(funcHandle, vallst);
         System.freeFunction(funcHandle);
         System.freeLibrary(libHandle);
+        // add to cache!
+        //cevalHashTable = System.getFromRoots(1);
+        //buildTime = System.getCurrentTime();
+        //cevalHashTable = add((funcpath,Interactive.CFunction(funcpath,(DAE.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,"")), cevalHashTable);
+        //System.addToRoots(1, cevalHashTable); 
       then
         (cache,newval,NONE());
 
@@ -1276,7 +1305,7 @@ protected function cevalKnownExternalFuncs "function: cevalKnownExternalFuncs
   list<Absyn.Exp> args;
 algorithm 
   (outCache,cdef,env_1) := Lookup.lookupClass(inCache,env, funcpath, false);
-  SCode.CLASS(fid,_,_,SCode.R_EXT_FUNCTION(),SCode.PARTS(externalDecl=extdecl)) := cdef;
+  SCode.CLASS(name=fid,restriction = SCode.R_EXT_FUNCTION(), classDef=SCode.PARTS(externalDecl=extdecl)) := cdef;
   SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) := extdecl;
   isKnownExternalFunc(fid, id);
   res := cevalKnownExternalFuncs2(fid, id, vals, msg);
@@ -1424,7 +1453,7 @@ algorithm
         (cache,c,env_1) = Lookup.lookupClass(cache,env, funcname, false);
         compnames = SCode.componentNames(c);
         mod = Types.valuesToMods(vallst, compnames);
-        (cache,env_2,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
+        (cache,env_2,_,_,dae,_,_,_,_,_) = Inst.instClass(cache,env_1,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore, mod, Prefix.NOPRE(), Connect.emptySet, c, {}, impl, 
           Inst.TOP_CALL(),ConnectionGraph.EMPTY);
         (cache, value) = DAE.daeToRecordValue(cache, env_2, funcname, dae, impl) "adrpo: We need the env here as we need to do variable Lookup!"; 
       then
@@ -1704,6 +1733,7 @@ algorithm
     case (cache,env,exp,dim,impl,st,MSG())
       local DAE.Exp dim;
       equation 
+        // true = RTOpts.debugFlag("failtrace");
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
         expstr = Exp.printExpStr(exp);
         Print.printErrorBuf(expstr);
@@ -5080,6 +5110,529 @@ algorithm
 		case "sum" then valueAdd;
 	end matchcontinue;
 end lookupReductionOp;
+
+
+// ************************************************************************
+//    hash table implementation for storing function pointes for DLLs/SOs  
+// ************************************************************************
+constant Option<CevalHashTable> cevalHashTable = NONE();
+
+public
+type Key = Absyn.Path "the function path";
+type Value = Interactive.CompiledCFunction "the compiled function";
+
+public function hashFunc 
+"author: PA
+  Calculates a hash value for Absyn.Path"
+  input Absyn.Path p;
+  output Integer res;
+algorithm 
+  res := System.hash(Absyn.pathString(p));
+end hashFunc;
+
+public function keyEqual
+  input Key key1;
+  input Key key2;
+  output Boolean res;
+algorithm
+     res := stringEqual(Absyn.pathString(key1),Absyn.pathString(key2));
+end keyEqual;
+
+public function dumpCevalHashTable ""
+  input CevalHashTable t;
+algorithm
+  print("CevalHashTable:\n");
+  print(Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n"));
+  print("\n");
+end dumpCevalHashTable;
+
+public function dumpTuple
+  input tuple<Key,Value> tpl;
+  output String str;
+algorithm
+  str := matchcontinue(tpl)
+    local 
+      Absyn.Path p; Interactive.CompiledCFunction i;
+    case((p,i)) equation
+      str = "{" +& Absyn.pathString(p) +& ", OPAQUE_VALUE}";
+    then str;
+  end matchcontinue;
+end dumpTuple;
+
+/* end of CevalHashTable instance specific code */
+
+/* Generic hashtable code below!! */
+public  
+uniontype CevalHashTable
+  record HASHTABLE
+    list<tuple<Key,Integer>>[:] hashTable " hashtable to translate Key to array indx" ;
+    ValueArray valueArr "Array of values" ;
+    Integer bucketSize "bucket size" ;
+    Integer numberOfEntries "number of entries in hashtable" ;   
+  end HASHTABLE;
+end CevalHashTable; 
+
+uniontype ValueArray 
+"array of values are expandable, to amortize the 
+ cost of adding elements in a more efficient manner"
+  record VALUE_ARRAY
+    Integer numberOfElements "number of elements in hashtable" ;
+    Integer arrSize "size of crefArray" ;
+    Option<tuple<Key,Value>>[:] valueArray "array of values";
+  end VALUE_ARRAY;
+end ValueArray;
+
+public function cloneCevalHashTable 
+"Author BZ 2008-06
+ Make a stand-alone-copy of hashtable."
+input CevalHashTable inHash;
+output CevalHashTable outHash;
+algorithm outHash := matchcontinue(inHash)
+  local 
+    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
+    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
+    equation
+      arg1_2 = arrayCopy(arg1);
+      arg21_2 = arg21;
+      arg22_2 = arg22;
+      arg23_2 = arrayCopy(arg23);
+      arg3_2 = arg3;
+      arg4_2 = arg4;
+      then
+        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
+end matchcontinue;
+end cloneCevalHashTable;
+
+public function emptyCevalHashTable 
+"author: PA
+  Returns an empty CevalHashTable.
+  Using the bucketsize 100 and array size 10."
+  output CevalHashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+algorithm 
+  arr := fill({}, 1000);
+  emptyarr := fill(NONE(), 100);
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
+end emptyCevalHashTable;
+
+public function isEmpty "Returns true if hashtable is empty"
+  input CevalHashTable hashTable;
+  output Boolean res;
+algorithm
+  res := matchcontinue(hashTable)
+    case(HASHTABLE(_,_,_,0)) then true;
+    case(_) then false;  
+  end matchcontinue;
+end isEmpty;
+
+public function add 
+"author: PA
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple already exists, the function updates the Value."
+  input tuple<Key,Value> entry;
+  input CevalHashTable hashTable;
+  output CevalHashTable outHahsTable;
+algorithm 
+  outVariables:=
+  matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+      /* Adding when not existing previously */
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        failure((_) = get(key, hashTable));
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+      
+      /* adding when already present => Updating value */
+    case ((newv as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        (_,indx) = get1(key, hashTable);
+        //print("adding when present, indx =" );print(intString(indx));print("\n");
+        indx_1 = indx - 1;
+        varr_1 = valueArraySetnth(varr, indx, newv);
+      then HASHTABLE(hashvec,varr_1,bsize,n);
+    case (_,_)
+      equation 
+        print("-CevalHashTable.add failed\n");
+      then
+        fail();
+  end matchcontinue;
+end add;
+
+public function addNoUpdCheck 
+"author: PA
+  Add a Key-Value tuple to hashtable.
+  If the Key-Value tuple already exists, the function updates the Value."
+  input tuple<Key,Value> entry;
+  input CevalHashTable hashTable;
+  output CevalHashTable outHahsTable;
+algorithm 
+  outVariables := matchcontinue (entry,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;
+    // Adding when not existing previously
+    case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        indx = intMod(hval, bsize);
+        newpos = valueArrayLength(varr);
+        varr_1 = valueArrayAdd(varr, v);
+        indexes = hashvec[indx + 1];
+        hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
+        n_1 = valueArrayLength(varr_1);        
+      then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
+    case (_,_)
+      equation 
+        print("-CevalHashTable.addNoUpdCheck failed\n");
+      then
+        fail();
+  end matchcontinue;
+end addNoUpdCheck;
+
+public function delete 
+"author: PA
+  delete the Value associatied with Key from the CevalHashTable.
+  Note: This function does not delete from the index table, only from the ValueArray.
+  This means that a lot of deletions will not make the CevalHashTable more compact, it 
+  will still contain a lot of incices information."
+  input Key key;
+  input CevalHashTable hashTable;
+  output CevalHashTable outHahsTable;
+algorithm 
+  outVariables := matchcontinue (key,hashTable)
+    local     
+      Integer hval,indx,newpos,n,n_1,bsize,indx_1;
+      ValueArray varr_1,varr;
+      list<tuple<Key,Integer>> indexes;
+      list<tuple<Key,Integer>>[:] hashvec_1,hashvec;
+      String name_str;      
+      tuple<Key,Value> v,newv;
+      Key key;
+      Value value;     
+    // adding when already present => Updating value
+    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        (_,indx) = get1(key, hashTable);
+        indx_1 = indx - 1;
+        varr_1 = valueArrayClearnth(varr, indx);
+      then HASHTABLE(hashvec,varr_1,bsize,n);
+    case (_,hashTable)
+      equation 
+        print("-CevalHashTable.delete failed\n");
+        print("content:"); dumpCevalHashTable(hashTable);
+      then
+        fail();
+  end matchcontinue;
+end delete;
+
+public function get 
+"author: PA 
+  Returns a Value given a Key and a CevalHashTable."
+  input Key key;
+  input CevalHashTable hashTable;
+  output Value value;
+algorithm 
+  (value,_):= get1(key,hashTable);
+end get;
+
+public function get1 "help function to get"
+  input Key key;
+  input CevalHashTable hashTable;
+  output Value value;
+  output Integer indx;
+algorithm 
+  (value,indx):= matchcontinue (key,hashTable)
+    local
+      Integer hval,hashindx,indx,indx_1,bsize,n;
+      list<tuple<Key,Integer>> indexes;
+      Value v;      
+      list<tuple<Key,Integer>>[:] hashvec;     
+      ValueArray varr;
+      Key key2;
+    case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
+      equation 
+        hval = hashFunc(key);
+        hashindx = intMod(hval, bsize);
+        indexes = hashvec[hashindx + 1];
+        indx = get2(key, indexes);
+        v = valueArrayNth(varr, indx);
+      then
+        (v,indx);
+  end matchcontinue;
+end get1;
+
+public function get2 
+"author: PA 
+  Helper function to get"
+  input Key key;
+  input list<tuple<Key,Integer>> keyIndices;
+  output Integer index;
+algorithm 
+  index := matchcontinue (key,keyIndices)
+    local
+      Key key2;
+      Value res;
+      list<tuple<Key,Integer>> xs;
+    case (key,((key2,index) :: _))
+      equation 
+        true = keyEqual(key, key2);
+      then
+        index;
+    case (key,(_ :: xs))      
+      equation 
+        index = get2(key, xs);
+      then
+        index;
+  end matchcontinue;
+end get2;
+
+public function hashTableValueList "return the Value entries as a list of Values"
+  input CevalHashTable hashTable;
+  output list<Value> valLst;
+algorithm
+   valLst := Util.listMap(hashTableList(hashTable),Util.tuple22);
+end hashTableValueList;
+
+public function hashTableKeyList "return the Key entries as a list of Keys"
+  input CevalHashTable hashTable;
+  output list<Key> valLst;
+algorithm
+   valLst := Util.listMap(hashTableList(hashTable),Util.tuple21);
+end hashTableKeyList;
+
+public function hashTableList "returns the entries in the hashTable as a list of tuple<Key,Value>"
+  input CevalHashTable hashTable;
+  output list<tuple<Key,Value>> tplLst;
+algorithm
+  tplLst := matchcontinue(hashTable)
+  local ValueArray varr;
+    case(HASHTABLE(valueArr = varr)) equation
+      tplLst = valueArrayList(varr);
+    then tplLst; 
+  end matchcontinue;
+end hashTableList;
+
+public function valueArrayList 
+"author: PA
+  Transforms a ValueArray to a tuple<Key,Value> list"
+  input ValueArray valueArray;
+  output list<tuple<Key,Value>> tplLst;
+algorithm 
+  tplLst := matchcontinue (valueArray)
+    local
+      Option<tuple<Key,Value>>[:] arr;
+      tuple<Key,Value> elt;
+      Integer lastpos,n,size;
+      list<tuple<Key,Value>> lst;
+    case (VALUE_ARRAY(numberOfElements = 0,valueArray = arr)) then {}; 
+    case (VALUE_ARRAY(numberOfElements = 1,valueArray = arr))
+      equation 
+        SOME(elt) = arr[0 + 1];
+      then
+        {elt};
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr))
+      equation 
+        lastpos = n - 1;
+        lst = valueArrayList2(arr, 0, lastpos);
+      then
+        lst;
+  end matchcontinue;
+end valueArrayList;
+
+public function valueArrayList2 "Helper function to valueArrayList"
+  input Option<tuple<Key,Value>>[:] inVarOptionArray1;
+  input Integer inInteger2;
+  input Integer inInteger3;
+  output list<tuple<Key,Value>> outVarLst;
+algorithm 
+  outVarLst := matchcontinue (inVarOptionArray1,inInteger2,inInteger3)
+    local
+      tuple<Key,Value> v;
+      Option<tuple<Key,Value>>[:] arr;
+      Integer pos,lastpos,pos_1;
+      list<tuple<Key,Value>> res;
+    case (arr,pos,lastpos)
+      equation 
+        (pos == lastpos) = true;
+        SOME(v) = arr[pos + 1];
+      then
+        {v};
+    case (arr,pos,lastpos)
+      equation 
+        pos_1 = pos + 1;
+        SOME(v) = arr[pos + 1];
+        res = valueArrayList2(arr, pos_1, lastpos);
+      then
+        (v :: res);
+    case (arr,pos,lastpos)
+      equation 
+        pos_1 = pos + 1;
+        NONE = arr[pos + 1];
+        res = valueArrayList2(arr, pos_1, lastpos);
+      then
+        (res);
+  end matchcontinue;
+end valueArrayList2;
+
+public function valueArrayLength 
+"author: PA
+  Returns the number of elements in the ValueArray"
+  input ValueArray valueArray;
+  output Integer size;
+algorithm 
+  size := matchcontinue (valueArray)
+    case (VALUE_ARRAY(numberOfElements = size)) then size; 
+  end matchcontinue;
+end valueArrayLength;
+
+public function valueArrayAdd 
+"function: valueArrayAdd
+  author: PA 
+  Adds an entry last to the ValueArray, increasing 
+  array size if no space left by factor 1.4"
+  input ValueArray valueArray;
+  input tuple<Key,Value> entry;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,entry)
+    local
+      Integer n_1,n,size,expandsize,expandsize_1,newsize;
+      Option<tuple<Key,Value>>[:] arr_1,arr,arr_2;
+      Real rsize,rexpandsize;
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
+      equation 
+        (n < size) = true "Have space to add array elt." ;
+        n_1 = n + 1;
+        arr_1 = arrayUpdate(arr, n + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n_1,size,arr_1);
+        
+    case (VALUE_ARRAY(numberOfElements = n,arrSize = size,valueArray = arr),entry)
+      equation 
+        (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
+        rsize = intReal(size);
+        rexpandsize = rsize*.0.4;
+        expandsize = realInt(rexpandsize);
+        expandsize_1 = intMax(expandsize, 1);
+        newsize = expandsize_1 + size;
+        arr_1 = Util.arrayExpand(expandsize_1, arr, NONE);
+        n_1 = n + 1;
+        arr_2 = arrayUpdate(arr_1, n + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n_1,newsize,arr_2);
+    case (_,_)
+      equation 
+        print("-CevalHashTable.valueArrayAdd failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArrayAdd;
+
+public function valueArraySetnth 
+"function: valueArraySetnth
+  author: PA 
+  Set the n:th variable in the ValueArray to value."
+  input ValueArray valueArray;
+  input Integer pos;
+  input tuple<Key,Value> entry;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,pos,entry)
+    local
+      Option<tuple<Key,Value>>[:] arr_1,arr;
+      Integer n,size,pos;      
+    case (VALUE_ARRAY(n,size,arr),pos,entry)
+      equation 
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, SOME(entry));
+      then
+        VALUE_ARRAY(n,size,arr_1);
+    case (_,_,_)
+      equation 
+        print("-CevalHashTable.valueArraySetnth failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArraySetnth;
+
+public function valueArrayClearnth 
+"author: PA
+  Clears the n:th variable in the ValueArray (set to NONE)."
+  input ValueArray valueArray;
+  input Integer pos;
+  output ValueArray outValueArray;
+algorithm 
+  outValueArray := matchcontinue (valueArray,pos)
+    local
+      Option<tuple<Key,Value>>[:] arr_1,arr;
+      Integer n,size,pos;      
+    case (VALUE_ARRAY(n,size,arr),pos)
+      equation 
+        (pos < size) = true;
+        arr_1 = arrayUpdate(arr, pos + 1, NONE);
+      then
+        VALUE_ARRAY(n,size,arr_1);
+    case (_,_)
+      equation 
+        print("-CevalHashTable.valueArrayClearnth failed\n");
+      then
+        fail();
+  end matchcontinue;
+end valueArrayClearnth;
+
+public function valueArrayNth 
+"function: valueArrayNth
+  author: PA 
+  Retrieve the n:th Vale from ValueArray, index from 0..n-1."
+  input ValueArray valueArray;
+  input Integer pos;
+  output Value value;
+algorithm 
+  value := matchcontinue (valueArray,pos)
+    local
+      Value v;
+      Integer n,pos,len;
+      Option<tuple<Key,Value>>[:] arr;
+      String ps,lens,ns;
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
+      equation 
+        (pos < n) = true;
+        SOME((_,v)) = arr[pos + 1];
+      then
+        v;
+    case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
+      equation 
+        (pos < n) = true;
+        NONE = arr[pos + 1];
+      then
+        fail();
+  end matchcontinue;
+end valueArrayNth;
 
 end Ceval;
 

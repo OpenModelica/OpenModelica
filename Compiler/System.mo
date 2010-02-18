@@ -597,18 +597,26 @@ end listAppendUnsafe;
 
 public function addToRoots 
 "@author: adrpo
- this function binds a name to an external root"
+ this function binds a name to an external root.
+ BEWARE! this is a side effect!
+         addToRoots(0, value) should match 
+         value = getToRoots(0) and the type
+         of the value should be the same!"
   replaceable type Type_a subtypeof Any;
-  input String name;
+  input Integer index "index in the external hash, starting from 0";
   input Type_a anyValue;
   external "C" ;
 end addToRoots;
 
 public function getFromRoots
 "@author: adrpo
- this function returns an external root for a name"
+ this function returns an external root for a name
+ BEWARE! this is a side effect!
+         addToRoots(0, value) should match 
+         value = getToRoots(0) and the type
+         of the value should be the same!"
   replaceable type Type_a subtypeof Any;
-  input String name;
+  input Integer index "index in the external hash, starting from 0";
   output Type_a anyValue;
   external "C" ;
 end getFromRoots;

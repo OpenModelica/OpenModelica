@@ -61,19 +61,19 @@ protected import Values;
   `Real\', `Integer\' etc. 
 */
 public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
-          SCode.PARTS({},{},{},{},{},NONE,{},NONE)) " real type ";
+          SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) " real type ";
 
 public constant SCode.Class intType=SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT(),
-          SCode.PARTS({},{},{},{},{},NONE,{},NONE));
+          SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
 public constant SCode.Class strType=SCode.CLASS("StringType",false,false,SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({},{},{},{},{},NONE,{},NONE));
+          SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
 public constant SCode.Class boolType=SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOL(),
-          SCode.PARTS({},{},{},{},{},NONE,{},NONE));
+          SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
 protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUM(),
-          SCode.PARTS({},{},{},{},{},NONE,{},NONE));
+          SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
 protected constant SCode.Element unit=SCode.COMPONENT("unit",Absyn.UNSPECIFIED(),true,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("StringType"),NONE),
@@ -140,23 +140,23 @@ protected constant list<SCode.Element> stateSelectComps={
           SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,NONE,NONE,NONE,NONE)} "The StateSelect enumeration" ;
 
 protected constant SCode.Class stateSelectType=SCode.CLASS("StateSelect",false,false,SCode.R_ENUMERATION(),
-          SCode.PARTS(stateSelectComps,{},{},{},{},NONE,{},NONE)) "The State Select Type";
+          SCode.PARTS(stateSelectComps,{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "The State Select Type";
 
 public constant SCode.Class ExternalObjectType=SCode.CLASS("ExternalObject",false,false,SCode.R_CLASS(),
-          SCode.PARTS({},{},{},{},{},NONE,{},NONE)) "ExternalObject type" ;
+          SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "ExternalObject type" ;
 
 public constant SCode.Class realType=SCode.CLASS("Real",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
-          stateSelect},{},{},{},{},NONE,{},NONE)) "- The `Real\' type" ;
+          stateSelect},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Real\' type" ;
 
 protected constant SCode.Class integerType=SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT(),
-          SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE,{},NONE)) "- The `Integer\' type" ;
+          SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Class stringType=SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING(),
-          SCode.PARTS({quantity,stringStart},{},{},{},{},NONE,{},NONE)) "- The `String\' type" ;
+          SCode.PARTS({quantity,stringStart},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `String\' type" ;
 
 protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL(),
-          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE,{},NONE)) "- The `Boolean\' type" ;
+          SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_REAL({}),NONE),DAE.UNBOUND()) "- The `time\' variable" ;

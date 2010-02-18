@@ -71,7 +71,7 @@ protected import RTOpts;
 protected import Debug;
 protected import Lookup;
 protected import Inst;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import Prefix;
 protected import Connect;
 protected import Print;

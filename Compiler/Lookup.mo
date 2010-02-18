@@ -58,7 +58,7 @@ protected import Debug;
 protected import Error;
 protected import Exp;
 protected import Inst;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import Mod;
 protected import ModUtil;
 protected import Prefix;
@@ -173,7 +173,7 @@ algorithm
         (cache,t,env_1);
         
     // lookup of an enumeration type 
-    case (cache,env_1,path,c as SCode.CLASS(id,_,encflag,r as SCode.R_ENUMERATION(),_))
+    case (cache,env_1,path,c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION()))
       local
         SCode.Restriction r; 
         list<Types.Var> types;
@@ -185,7 +185,7 @@ algorithm
         ci_state = ClassInf.start(r, Env.getEnvName(env_2));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env_2,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
+          cache,env_2,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         // build names
@@ -197,7 +197,7 @@ algorithm
         (cache,t,env_3);        
 
     // Metamodelica extension, Uniontypes
-    case (cache,env_1,path,c as SCode.CLASS(id,_,_,SCode.R_METARECORD(_,index),SCode.PARTS(elementLst = els))) 
+    case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_METARECORD(_,index),classDef=SCode.PARTS(elementLst = els))) 
       local
         Integer index;
         list<SCode.Element> els;
@@ -206,7 +206,7 @@ algorithm
         (cache,path) = Inst.makeFullyQualified(cache,env_1,Absyn.IDENT(id));
         elsModList = Util.listMap1(els,Util.makeTuple2,DAE.NOMOD);
         (cache,env_2,_,_,_,_,_,varlst,_) = Inst.instElementList(
-            cache,env_1,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
+            cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
             DAE.NOMOD,Prefix.NOPRE, Connect.emptySet, ClassInf.FUNCTION(Absyn.IDENT("")), elsModList, {}, false, ConnectionGraph.EMPTY);
         t = (DAE.T_METARECORD(index,varlst),SOME(path));
       then
@@ -219,7 +219,7 @@ algorithm
         true = Inst.classIsExternalObject(c);
         (cache,_::env_1,_,_,_,_,_,_,_,_) = 
         Inst.instClass(
-          cache,env_1,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
+          cache,env_1,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, 
           {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         SCode.CLASS(name=id) = c;
@@ -234,7 +234,7 @@ algorithm
       equation 
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,env_2,_) = 
-        Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstHierarchy,c);
+        Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
       then
         (cache,t,env_3);        
@@ -418,7 +418,7 @@ algorithm
     // Simple names
     case (cache,env,(path as Absyn.IDENT(name = name)),msgflag)
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClassInEnv(cache,env, path, msgflag);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClassInEnv(cache,env, path, msgflag);
       then
         (cache,c,env_1);       
         
@@ -437,12 +437,12 @@ algorithm
     case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
         (false,_) = scopePrefixOf(env,p);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env4,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstHierarchy, 
+          cache,env2,InnerOuter.emptyInstHierarchy, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
          ClassInf.valid(cistate1, SCode.R_PACKAGE());
@@ -454,12 +454,12 @@ algorithm
     case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
         (false,_) = scopePrefixOf(env,p);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstHierarchy,
+          cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
@@ -680,12 +680,12 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation  
         fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
          (cache,(f :: _),_,_) = 
          Inst.partialInstClassIn(
-           cache,env2,InstanceHierarchy.emptyInstHierarchy,
+           cache,env2,InnerOuter.emptyInstHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
            ci_state, c, false, {}); 
         (cache,_,_,_,_) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
@@ -753,12 +753,12 @@ algorithm
        equation 
         fr = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,(f :: _),_,_,_,_,_,_,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env2,InstanceHierarchy.emptyInstHierarchy, UnitAbsyn.noStore,
+          cache,env2,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
@@ -899,12 +899,12 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation 
         fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
        (cache,(f :: _),_,_) = 
        Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstHierarchy,
+          cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,_,_) = lookupClass2(cache,{f}, Absyn.IDENT(ident), false);
@@ -961,12 +961,12 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
         fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,{fr}, path, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,{fr}, path, false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,(f :: fs_1),_,cistate1) = 
         Inst.partialInstClassIn(
-          cache,env2,InstanceHierarchy.emptyInstHierarchy,
+          cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
         // Restrict import to the imported scope only, not its parents, thus {f} below
@@ -1206,17 +1206,17 @@ algorithm
       // Lookup of enumeration variables
     case (cache,env,DAE.CREF_QUAL(ident = id1,subscriptLst = {},componentRef = (id2 as DAE.CREF_IDENT(ident = _))))
       equation 
-        (cache,(c as SCode.CLASS(n,_,encflag,(r as SCode.R_ENUMERATION()),_)),env2) 
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION())),env2) 
         	= lookupClass2(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
+          cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
  //       (cache,env5,_,_,_,_,_,_,_,_) = 
-//        Inst.instClass(cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
+//        Inst.instClass(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL() ,ConnectionGraph.EMPTY);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache,env5, id2);
       then
         (cache,p_env,attr,ty,bind);
@@ -1255,13 +1255,13 @@ algorithm
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */
       local Option<DAE.ComponentRef> filterCref; 
       equation 
-        (cache,(c as SCode.CLASS(n,_,encflag,r,_)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2) = lookupClass2(cache,env, Absyn.IDENT(id), false);
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         filterCref = makeOptIdentOrNone(cref);
         (cache,env5,_,_,_,_,_,types,_,_,_,_) = 
         Inst.instClassIn(
-          cache,env3,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore, 
+          cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY, filterCref);
         (cache,p_env,attr,ty,bind) = lookupVarInPackages(cache, env5, cref);
@@ -1431,7 +1431,7 @@ algorithm
       // Try to find in cache.
     case(cache,env,path,mod,msg) /* Should we only lookup if it is SCode.NOMOD? */
       equation
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env,path,msg);
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass2(cache,env,path,msg);
         SOME(scope) = Env.getEnvPath(cenv);
         ident = Absyn.pathLastIdent(path);
        classEnv = Env.cacheGet(scope,Absyn.IDENT(ident),cache);
@@ -1440,13 +1440,13 @@ algorithm
       // Not found in cache, lookup and instantiate.
     case(cache,env,path,mod,msg)
       equation
-        (cache,(c as SCode.CLASS(cn2,_,enc2,r,_)),cenv) = lookupClass2(cache,env, path, msg);
+        (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass2(cache,env, path, msg);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         (cache,classEnv,_,_) = 
         Inst.partialInstClassIn(
-          cache,cenv_2,InstanceHierarchy.emptyInstHierarchy,
+          cache,cenv_2,InnerOuter.emptyInstHierarchy,
           dmod, Prefix.NOPRE(), Connect.emptySet, 
           new_ci_state, c, false, {});
       then (cache,classEnv);
@@ -1558,10 +1558,10 @@ algorithm
         //        just search in {f} not f::fs as otherwise we might get us in an infinite loop
         // Bjozac: Readded the f::fs search frame, otherwise we might get caught in a inifinite loop! 
         //           Did not investigate this further then that it can crasch the kernel.
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache,f::fs, iid, false);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,f::fs, iid, false);
         true = SCode.isFunctionOrExtFunction(restr);
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_) 
-           = Inst.implicitFunctionTypeInstantiation(cache,env_1,InstanceHierarchy.emptyInstHierarchy, c);
+           = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
         (cache,c1 as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, id);
       then
         (cache,c1);
@@ -1570,7 +1570,7 @@ algorithm
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),(iid as Absyn.QUALIFIED(name = pack,path = path)))
       local String id,s;
       equation 
-        (cache,(c as SCode.CLASS(id,_,encflag,restr,_)),env_1) = lookupClass2(cache, env, Absyn.IDENT(pack), false) ;
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache, env, Absyn.IDENT(pack), false) ;
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         
@@ -1578,7 +1578,7 @@ algorithm
         //   ci_state, c, false/*FIXME:prot*/, {}, false, ConnectionGraph.EMPTY);
         (cache,env_2,_,cistate1) = 
         Inst.partialInstClassIn(
-          cache, env2, InstanceHierarchy.emptyInstHierarchy,
+          cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {});
         (cache,reslist) = lookupFunctionsInEnv(cache, env_2, path);
@@ -1727,14 +1727,14 @@ algorithm
       then
         fail();
         /* Record constructor function*/
-    case (cache,Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv),env,id)
       equation
         (env_3,ty) = buildRecordType(env,cdef);
       then
         (cache,ty,env_3);
 
         /* Found function */
-    case (cache,Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv),env,id)
+    case (cache,Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv),env,id)
       local SCode.Restriction restr; Env.Cache garbageCache;
       equation 
         true = SCode.isFunctionOrExtFunction(restr);
@@ -1742,7 +1742,7 @@ algorithm
         /* Since function is added to cache, but dae here is not propagated, throw away cache from this call */
         (garbageCache ,env_1,_,_) = 
         Inst.implicitFunctionInstantiation(
-          cache,cenv,InstanceHierarchy.emptyInstHierarchy,
+          cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});        
         (cache,ty,env_3) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
       then 
@@ -1799,7 +1799,7 @@ algorithm
     /* Records, create record constructor function*/
     case (cache,ht,httypes,env,id) 
       equation 
-        Env.CLASS((cdef as SCode.CLASS(n,_,_,SCode.R_RECORD(),_)),cenv) = Env.avlTreeGet(ht, id);
+        Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv) = Env.avlTreeGet(ht, id);
         (_,ftype) = buildRecordType(env,cdef);
       then
         (cache,{ftype});
@@ -1807,10 +1807,10 @@ algorithm
     /* Found class that is function, instantiate to get type*/
     case (cache,ht,httypes,env,id) local SCode.Restriction restr;
       equation 
-        Env.CLASS((cdef as SCode.CLASS(_,_,_,restr,_)),cenv) = Env.avlTreeGet(ht, id);        
+        Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);        
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
         (cache,env_1,_) = 
-        Inst.implicitFunctionTypeInstantiation(cache,cenv,InstanceHierarchy.emptyInstHierarchy,cdef);
+        Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef);
         (cache,tps) = lookupFunctionsInEnv(cache,env_1, Absyn.IDENT(id));
       then
         (cache,tps);
@@ -1823,7 +1823,7 @@ algorithm
 	        true = Inst.classIsExternalObject(cdef);
 	        (cache,env_1,_,_,_,_,t,_,_,_) = 
 	        Inst.instClass(
-	          cache,cenv,InstanceHierarchy.emptyInstHierarchy,UnitAbsyn.noStore,
+	          cache,cenv,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
 	          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, 
          	  {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
           (cache,t,_) = lookupTypeInEnv(cache,env_1, Absyn.IDENT(id));
@@ -1845,7 +1845,7 @@ protected
 algorithm
   (_,cdef) := buildRecordConstructorClass(env,cdef);
   (_,outEnv,_,_) := Inst.implicitFunctionInstantiation(
-     Env.emptyCache(),env,InstanceHierarchy.emptyInstHierarchy,
+     Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,
      DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
   name := SCode.className(cdef);
   (_,ftype,_) := lookupTypeInEnv(Env.emptyCache(),outEnv,Absyn.IDENT(name));
@@ -1873,11 +1873,13 @@ algorithm
       list<Env.Frame> env;
       list<SCode.Algorithm> initStmts;
       list<Absyn.Algorithm> initAbsynStmts;
-    case (env,cl as SCode.CLASS(name=id)) /* record class function class */ 
+      Absyn.Info info;
+      
+    case (env,cl as SCode.CLASS(name=id,info=info)) /* record class function class */ 
       equation
         (env,funcelts,elts) = buildRecordConstructorClass2(env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env);
-        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE));        
+        cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE),info);
       then
         (env,cl);
     case (env,cl)
@@ -1909,10 +1911,10 @@ algorithm
         env = Env.openScope(env, false, SOME(name));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
-        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InstanceHierarchy.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true);
+        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
-        (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InstanceHierarchy.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
+        (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,cdefelts,false,NONE);
+        (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (env1,funcelts,elts);
     /* adrpo: TODO! handle also the case model extends x end x;
@@ -1921,7 +1923,7 @@ algorithm
     case(cache,env,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods)
       equation
         (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InstanceHierarchy.emptyInstHierarchy,cdefelts,false,NONE);
+        (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,cdefelts,false,NONE);
         funcelts = buildRecordConstructorElts(restElts,mods,env1);
       then (cache,funcelts,elts);
       */
@@ -2480,6 +2482,10 @@ algorithm
       local        
       equation 
         (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind),_,_,compenv) = lookupVar2(cache,ht, id);
+        // outer variables are not local!
+        // this doesn't work yet!
+        // false = Absyn.isOuter(io);
+        // 
         (cache,attr,ty,binding,texp,_) = lookupVar(cache,compenv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp)); 
         ty1 = checkSubscripts(ty2, ss);

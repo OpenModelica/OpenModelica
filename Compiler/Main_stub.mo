@@ -63,7 +63,7 @@ protected import Error;
 protected import CevalScript;
 protected import Env;
 protected import Settings;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 
 protected function checkClassdef
   input String inString;

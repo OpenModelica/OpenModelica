@@ -67,7 +67,7 @@ protected import Error;
 protected import CevalScript;
 protected import Env;
 protected import Settings;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import ClassLoader;
 protected import Inline;
 protected import TplMain;
@@ -543,7 +543,7 @@ algorithm
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
         (cache,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
-                                            InstanceHierarchy.emptyInstHierarchy,
+                                            InnerOuter.emptyInstHierarchy,
                                             scode);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
@@ -573,6 +573,8 @@ algorithm
         Debug.bcall(notsilent, print, str);
         Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
         optimizeDae(cache, Env.emptyEnv, scode, p, d, d, cname);
+        // show any errors or warnings if there are any!
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
         ();        
        
@@ -596,7 +598,7 @@ algorithm
         Absyn.CLASS(name=lastClassName) = Util.listLast(cls);
         lastClassPath = Absyn.IDENT(lastClassName);
 
-        p = Interactive.updateProgram(p, pLibs); // merge our program with possible libs
+        p = Interactive.updateProgram(pLibs, p); // merge our program with possible libs
 
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
@@ -615,7 +617,7 @@ algorithm
         //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
         (cache,env,_,d_1) = Inst.instantiateClass(Env.emptyCache(),
-                                            InstanceHierarchy.emptyInstHierarchy,
+                                            InnerOuter.emptyInstHierarchy,
                                             scode,
                                             lastClassPath);
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
@@ -646,6 +648,8 @@ algorithm
         Debug.bcall(notsilent, print, str);
         Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
         optimizeDae(cache, env, scode, p, d, d, cname);
+        // show any errors or warnings if there are any!
+        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
         ();
         

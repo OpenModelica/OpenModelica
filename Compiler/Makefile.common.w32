@@ -46,6 +46,7 @@ SRCMO= Absyn.mo \
 	PartFn.mo \
 	Patternm.mo \
 	Prefix.mo \
+	PrefixUtil.mo \
 	Static.mo \
 	SimCodegen.mo \
 	Types.mo \
@@ -62,6 +63,8 @@ SRCMO= Absyn.mo \
 	Refactor.mo \
 	InstanceHierarchy.mo \
 	XMLDump.mo \
+	InnerOuter.mo \
+	ConnectUtil.mo
 	SimCode.mo \
 	SimCodeC.mo \
 	SimCodeCSharp.mo \

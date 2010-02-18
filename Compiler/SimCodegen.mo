@@ -85,7 +85,7 @@ protected import Error;
 protected import Exp;
 protected import Inline;
 protected import Inst;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 protected import Lookup;
 protected import ModUtil;
 protected import RTOpts;
@@ -6651,7 +6651,7 @@ algorithm
       
     case (p,(path :: paths),allpaths)
       equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
         DAE.DAE({DAE.FUNCTION(functions = 
           DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;        
         patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)},funcs);
@@ -6664,7 +6664,7 @@ algorithm
         
     case (p,(path :: paths),allpaths)
       equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
         DAE.DAE({DAE.FUNCTION(functions=
           DAE.FUNCTION_EXT(daeElts,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)},funcs);
@@ -6677,7 +6677,7 @@ algorithm
         
     case (p,(path :: paths),allpaths)
       equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
         DAE.DAE({DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)},funcs) = fdae;
         patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
@@ -9561,15 +9561,12 @@ algorithm
 end printExp2Str;
 
 public function crefModelicaStr "function: crefModelicaStr
-
   Converts DAE.ComponentRef, i.e. variables, to Modelica friendly variables.
-  This means that dots are converted to underscore, etc.
-"
+  This means that dots are converted to underscore, etc."
   input DAE.ComponentRef inComponentRef;
   output String outString;
 algorithm
-  outString:=
-  matchcontinue (inComponentRef)
+  outString := matchcontinue (inComponentRef)
     local
       String res_1,res_2,res_3,s,ns,ss;
       DAE.ComponentRef n;

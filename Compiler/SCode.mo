@@ -148,6 +148,7 @@ uniontype Class "- Classes"
     Boolean encapsulatedPrefix "the encapsulated prefix" ;
     Restriction restriction "the restriction of the class" ;
     ClassDef classDef "the class specification" ;
+    Absyn.Info info "the class information";
   end CLASS;
 end Class;
 
@@ -1325,8 +1326,10 @@ algorithm
       Boolean enc,partialPrefix;
       Restriction restr;
       ClassDef def;
-    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def),partialPrefix) 
-      then CLASS(id,partialPrefix,enc,restr,def); 
+      Absyn.Info info;
+      
+    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def, info = info),partialPrefix) 
+      then CLASS(id,partialPrefix,enc,restr,def,info); 
   end matchcontinue;
 end classSetPartial;
 
@@ -1414,12 +1417,13 @@ protected function classEqual
   output Boolean equal;
 algorithm
   equal := matchcontinue(class1,class2)
-    case (CLASS(name1,p1,e1,restr1,parts1), CLASS(name2,p2,e2,restr2,parts2))
-      local
-        Ident name1,name2;
-        Boolean p1,e1,p2,e2,b1,b2,b3,b4,b5;
-        Restriction restr1,restr2;
-        ClassDef parts1,parts2;
+    local
+      Ident name1,name2;
+      Boolean p1,e1,p2,e2,b1,b2,b3,b4,b5;
+      Restriction restr1,restr2;
+      ClassDef parts1,parts2;
+      Absyn.Info info1,info2;
+    case (CLASS(name1,p1,e1,restr1,parts1,info1), CLASS(name2,p2,e2,restr2,parts2,info2))
         equation
           b1 = stringEqual(name1,name2);
           b2 = Util.boolEqual(p1,p2);
@@ -1466,7 +1470,7 @@ function enumEqual
 algorithm
   isEqual := matchcontinue(e1, e2)
     local
-      String s1, s2;    
+      String s1, s2;
       Boolean b1, b2;
     
     case (ENUM(s1,_), ENUM(s2,_))
@@ -2019,9 +2023,8 @@ input Class cl;
 output Class outCl;
 algorithm
   outCl := matchcontinue(r,cl)
-  local ClassDef parts; Boolean p,e;
-    Ident id;
-    case(r,CLASS(id,p,e,_,parts)) then CLASS(id,p,e,r,parts);
+  local ClassDef parts; Boolean p,e; Ident id; Absyn.Info info;
+    case(r,CLASS(id,p,e,_,parts,info)) then CLASS(id,p,e,r,parts,info);
   end matchcontinue;
 end setClassRestriction;
 

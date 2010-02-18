@@ -194,6 +194,7 @@ algorithm
       DAE.VarProtection prot;
       DAE.Stream st;
       Boolean partialPrefix;
+      DAE.ExternalDecl extdecl;
       
       // if no replacements, return dae, no need to traverse.
     case(dae,REPLACEMENTS(HashTable2.HASHTABLE(numberOfEntries=0),_),condExpFunc) then dae;
@@ -203,8 +204,8 @@ algorithm
     case(DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp),dims,fl,st,source,attr,cmt,io)::dae,repl,condExpFunc) 
       equation
         (bindExp2) = replaceExp(bindExp, repl, condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        attr = applyReplacementsVarAttr(attr,repl,condExpFunc);
+        dae2 = applyReplacementsDAEElts(dae, repl, condExpFunc);
+        attr = applyReplacementsVarAttr(attr, repl, condExpFunc);
       then DAE.VAR(cr,kind,dir,prot,tp,SOME(bindExp2),dims,fl,st,source,attr,cmt,io)::dae2;
         
     case(DAE.VAR(cr,kind,dir,prot,tp,NONE,dims,fl,st,source,attr,cmt,io)::dae,repl,condExpFunc) 
@@ -318,6 +319,15 @@ algorithm
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
         then 
           DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2;
+     // adrpo 2010-02-16: apply also replacements to the external function DAE. 
+     case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source)::dae,repl,condExpFunc)
+       local list<DAE.FunctionDefinition> derFuncs;
+         DAE.InlineType inlineType;
+      equation
+        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+        then 
+          DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2;
         
     case(DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae,repl,condExpFunc) 
       equation

@@ -5828,8 +5828,7 @@ protected function printExp2
   input Exp inExp;
   input Integer inInteger;
 algorithm 
-  _:=
-  matchcontinue (inExp,inInteger)
+  _ := matchcontinue (inExp,inInteger)
     local
       Ident s,sym,fs,rstr,str;
       Integer x,pri2_1,pri2,pri3,pri1,i;
@@ -5973,8 +5972,7 @@ algorithm
       
     case (DAE.ARRAY(array = es),_)
       equation 
-        Print.printBuf("{") 
-        "Print.printBuf \"This an array: \" &" ;
+        Print.printBuf("{") "Print.printBuf \"This an array: \" &" ;
         printList(es, printExp, ",");
         Print.printBuf("}");
       then
@@ -6024,15 +6022,17 @@ algorithm
         Print.printBuf(rstr);
       then
         ();
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e),_)
+    case (DAE.CAST(ty = t,exp = e),_)
+      local DAE.ExpType t;
       equation 
         false = RTOpts.modelicaOutput();
-        Print.printBuf("Real(");
+        s = "/*" +& typeString(t) +& "*/";
+        Print.printBuf(s +& "(");
         printExp(e);
         Print.printBuf(")");
       then
         ();
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e),_)
+    case (DAE.CAST(ty = _,exp = e),_)
       equation 
         true = RTOpts.modelicaOutput();
         printExp(e);
@@ -6125,9 +6125,10 @@ algorithm
       then
         ();
 
-    case (_,_)
+    case (e,_)
       equation 
-        Print.printBuf("#UNKNOWN EXPRESSION# ----eee ");
+        // debug_print("unknown expression - printExp2: ", e);
+        Print.printBuf("#UNKNOWN EXPRESSION# ----eee " +& printExp2Str(e));
       then
         ();
   end matchcontinue;
@@ -6889,7 +6890,7 @@ algorithm
     case (DAE.ARRAY(array = es,ty=tp))
       local Type tp; String s3; 
       equation 
-        s3 = typeString(tp);
+        // s3 = typeString(tp); // adrpo: not used!
         s = printListStr(es, printExpStr, ",");
         s_2 = Util.stringAppendList({"{",s,"}"});
       then
@@ -6905,7 +6906,7 @@ algorithm
       local list<list<tuple<Exp, Boolean>>> es;
         Type tp; String s3;        
       equation 
-        s3 = typeString(tp);
+        // s3 = typeString(tp); // adrpo: not used!
         s = printListStr(es, printRowStr, "},{");
         s_2 = Util.stringAppendList({"{{",s,"}}"}); 
       then
@@ -7056,7 +7057,7 @@ algorithm
 
     case (e)
       equation
-        //debug_print("unknown expression: ", e);
+        // debug_print("unknown expression - printExp2Str: ", e);
       then 
         "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
@@ -7072,8 +7073,7 @@ public function parenthesize
   input Boolean rightOpParenthesis "true for right hand side operators";
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inString1,inInteger2,inInteger3,rightOpParenthesis)
+  outString := matchcontinue (inString1,inInteger2,inInteger3,rightOpParenthesis)
     local
       Ident str_1,str;
       Integer pparent,pexpr;
@@ -9949,12 +9949,11 @@ algorithm
   end matchcontinue;
 end isEven;
 
-public function realIfRealInArray "Function: realIfRealInArray
+public function realIfRealInArray "function: realIfRealInArray
 this function takes a list of numbers. If one of them is a real, type real is returned.
-Otherwise Inteteger. Fails on other types.
-"
-input list<Exp> inExps;
-output Type otype;
+Otherwise Inteteger. Fails on other types."
+  input list<Exp> inExps;
+  output Type otype;
 algorithm otype := matchcontinue(inExps)
   local
     Exp e1,e2;
@@ -9982,8 +9981,8 @@ algorithm otype := matchcontinue(inExps)
 end realIfRealInArray;
 
 protected function crOrDerCr "returns the component reference of CREF or der(CREF)"
-input Exp exp;
-output ComponentRef cr;
+  input Exp exp;
+  output ComponentRef cr;
 algorithm
   cr := matchcontinue(exp)
     case(DAE.CREF(cr,_)) then cr;
@@ -9993,30 +9992,32 @@ end crOrDerCr;
 
 public function replaceCrefSliceSub "
 Go trough ComponentRef searching for a slice eighter in 
-qual's or finaly ident. if none find, add dimension to DAE.CREF_IDENT(,ss:INPUTARG,)
-"
-input ComponentRef inCr;
-input list<Subscript> newSub;
-output ComponentRef outCr;
+qual's or finaly ident. if none find, add dimension to DAE.CREF_IDENT(,ss:INPUTARG,)"
+  input ComponentRef inCr;
+  input list<Subscript> newSub;
+  output ComponentRef outCr;
 algorithm outCr := matchcontinue(inCr,newSub) 
   local
     Type t2,identType;
     ComponentRef child;
     list<Subscript> subs;
     String name;
-    /* Case where we try to find a Exp.DAE.SLICE() */
+  
+  // Case where we try to find a Exp.DAE.SLICE()
   case(DAE.CREF_IDENT(name,identType,subs),newSub)
     equation
       subs = replaceSliceSub(subs, newSub);
-      then
-        DAE.CREF_IDENT(name,identType,subs);
-      /*case where there is not existant Exp.DAE.SLICE() as subscript*/
+    then
+      DAE.CREF_IDENT(name,identType,subs);
+  
+  // case where there is not existant Exp.DAE.SLICE() as subscript
   case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
     equation
       true = (listLength(arrayTypeDimensions(t2)) >= (listLength(subs)+1));
       child = subscriptCref(child,newSub);
     then
       child;
+  
   case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
     equation      
       false = (listLength(arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
@@ -10024,18 +10025,29 @@ algorithm outCr := matchcontinue(inCr,newSub)
       Debug.fprint("failtrace", "WARNING - Exp.replaceCref_SliceSub setting subscript last, not containing dimension\n ");
     then
       child;
-      /* Try DAE.CREF_QUAL with DAE.SLICE subscript */
+
+  // Try DAE.CREF_QUAL with DAE.SLICE subscript 
   case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
     equation
       subs = replaceSliceSub(subs, newSub);
     then
       DAE.CREF_QUAL(name,identType,subs,child);
-      /* DAE.CREF_QUAL without DAE.SLICE, search child */
+      
+  // case where there is not existant Exp.DAE.SLICE() as subscript in CREF_QUAL
+  case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
+    equation
+      true = (listLength(arrayTypeDimensions(identType)) >= (listLength(subs)+1));
+      subs = listAppend(subs,newSub);
+    then
+      DAE.CREF_QUAL(name,identType,subs,child);
+
+  // DAE.CREF_QUAL without DAE.SLICE, search child
   case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
     equation
       child = replaceCrefSliceSub(child,newSub);
     then
       DAE.CREF_QUAL(name,identType,subs,child);
+
   case(_,_)
     equation      
       Debug.fprint("failtrace", "- Exp.replaceCref_SliceSub failed\n ");

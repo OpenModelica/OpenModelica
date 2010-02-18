@@ -56,6 +56,8 @@ public import Ceval;
 public import Tpl;
 public import SCode;
 public import DAE;
+
+// protected imports
 protected import DAEUtil;
 protected import SCodeUtil;
 protected import ClassInf;
@@ -65,7 +67,7 @@ protected import Util;
 protected import Debug;
 protected import Error;
 protected import Inst;
-protected import InstanceHierarchy;
+protected import InnerOuter;
 // protected import Print;
 protected import Settings;
 protected import RTOpts;
@@ -451,7 +453,7 @@ algorithm
         (cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
         ptot = Interactive.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env,_,dae) = Inst.instantiateClass(cache,InstanceHierarchy.emptyInstHierarchy,p_1,className);
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
@@ -5429,7 +5431,7 @@ algorithm
       
     case (p,(path :: paths),allpaths)
       equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
         DAE.DAE({DAE.FUNCTION(functions = 
           DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;        
         patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)},funcs);
@@ -5442,7 +5444,7 @@ algorithm
         
     case (p,(path :: paths),allpaths)
       equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
         DAE.DAE({DAE.FUNCTION(functions=
           DAE.FUNCTION_EXT(daeElts,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)},funcs);
@@ -5455,7 +5457,7 @@ algorithm
         
     case (p,(path :: paths),allpaths)
       equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InstanceHierarchy.emptyInstHierarchy, p, path);
+        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
         DAE.DAE({DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)},funcs) = fdae;
         patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);

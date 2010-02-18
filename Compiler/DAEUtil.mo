@@ -408,8 +408,7 @@ end compareUniquedVarWithNonUnique;
 
 public function nameInnerouterUniqueCref "
 Author: BZ, 2008-11
-Renames a var to unique name
-"
+Renames a var to unique name"
   input DAE.ComponentRef inCr;
   output DAE.ComponentRef outCr;
 algorithm outCr := matchcontinue(inCr)
@@ -461,6 +460,7 @@ algorithm ocr := matchcontinue(cr,removalString)
       then fail(); 
   end matchcontinue;
 end unNameInnerouterUniqueCref;
+
 protected function getOuterBinding "
 Author: BZ, 2008-11
 Aquire the binding on the outer/innerouter variable, to transfer to inner variable.
@@ -787,13 +787,10 @@ algorithm
 end dump2;
 
 protected function dumpStartValue "function: dumpStartValue
- 
-  Dumps the StartValue for a variable.
-"
+  Dumps the StartValue for a variable."
   input DAE.StartValue inStartValue;
 algorithm 
-  _:=
-  matchcontinue (inStartValue)
+  _ := matchcontinue (inStartValue)
     local
       DAE.Exp e;
     case (SOME(e))
@@ -808,21 +805,18 @@ algorithm
 end dumpStartValue;
 
 public function dumpStartValueStr "function: dumpStartValueStr
- 
-  Dumps the start value for a variable to a string.
-"
+  Dumps the start value for a variable to a string."
   input DAE.StartValue inStartValue;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inStartValue)
+  outString := matchcontinue (inStartValue)
     local
       String s,res;
       DAE.Exp e;
     case (SOME(e))
       equation 
         s = Exp.printExpStr(e);
-        res = Util.stringAppendList({"(peterstart=",s,")"});
+        res = Util.stringAppendList({"(start=",s,")"});
       then
         res;
     case (_) then ""; 
@@ -830,14 +824,11 @@ algorithm
 end dumpStartValueStr;
 
 public function dumpExtDeclStr "function: dumpExtDeclStr
- 
-  Dumps the external declaration to a string.
-"
+  Dumps the external declaration to a string."
   input DAE.ExternalDecl inExternalDecl;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inExternalDecl)
+  outString := matchcontinue (inExternalDecl)
     local
       String extargsstr,rettystr,str,id,lang;
       list<DAE.ExtArg> extargs;
@@ -856,14 +847,11 @@ algorithm
 end dumpExtDeclStr;
 
 public function dumpExtArgStr "function: dumpExtArgStr
- 
-  Helper function to dump_ext_decl_str
-"
+  Helper function to dumpExtDeclStr"
   input DAE.ExtArg inExtArg;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inExtArg)
+  outString := matchcontinue (inExtArg)
     local
       String crstr,dirstr,tystr,str,dimstr;
       DAE.ComponentRef cr;
@@ -901,14 +889,11 @@ algorithm
 end dumpExtArgStr;
 
 public function dumpStr "function: dumpStr
-  
-  This function prints the DAE to a string.
-"
+  This function prints the DAE to a string."
   input DAE.DAElist inDAElist;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inDAElist)
+  outString := matchcontinue (inDAElist)
     local
       list<String> flist,clist,slist,extlist;
       String str;
@@ -1008,12 +993,10 @@ algorithm
 end dumpCompElementStr;
 
 public function dumpElements "function: dumpElements
- 
-  Dump elements. 
-"
+  Dump elements."
   input list<DAE.Element> l;
 algorithm 
-  dumpVars(l);
+  dumpVars(l, false);
   Util.listMap0(l, dumpExtObjectClass);
   Print.printBuf("initial equation\n");
   Util.listMap0(l, dumpInitialequation);
@@ -1022,29 +1005,24 @@ algorithm
   Util.listMap0(l, dumpInitialalgorithm);
   Util.listMap0(l, dumpAlgorithm);
   Util.listMap0(l, dumpCompElement);
-  
 end dumpElements;
 
 public function dumpFunctionElements "function: dumpElements
- 
-  Dump function elements. 
-"
+  Dump function elements."
   input list<DAE.Element> l;
 algorithm 
-  dumpVars(l);
+  dumpVars(l, true);
   Util.listMap0(l, dumpAlgorithm);  
 end dumpFunctionElements;
 
 public function dumpElementsStr "function: dumpElementsStr
- 
-  Dump elements to a string
-"
+  Dump elements to a string"
   input list<DAE.Element> l;
   output String str;
   String s0,s1,s2,s3,s4,s5,initeqstr,initalgstr,eqstr,algstr;
   Boolean noiniteq,noinitalg,noeq,noalg;
 algorithm 
-  s1 := dumpVarsStr(l);
+  s1 := dumpVarsStr(l, false);
   s2 := dumpInitialequationsStr(l);
   s3 := dumpEquationsStr(l);
   s4 := dumpInitialalgorithmsStr(l);
@@ -1062,14 +1040,11 @@ algorithm
 end dumpElementsStr;
 
 public function dumpAlgorithmsStr "function: dumpAlgorithmsStr
- 
-  Dump algorithms to a string.
-"
+  Dump algorithms to a string."
   input list<DAE.Element> inElementLst;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inElementLst)
+  outString := matchcontinue (inElementLst)
     local
       String s1,s2,s3,str;
       list<DAE.Statement> stmts;
@@ -1092,14 +1067,11 @@ algorithm
 end dumpAlgorithmsStr;
 
 protected function dumpInitialalgorithmsStr "function: dumpInitialalgorithmsStr
- 
-  Dump initialalgorithms to a string.
-"
+  Dump initialalgorithms to a string."
   input list<DAE.Element> inElementLst;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inElementLst)
+  outString := matchcontinue (inElementLst)
     local
       String s1,s2,s3,str;
       list<DAE.Statement> stmts;
@@ -1371,33 +1343,33 @@ algorithm
 end dumpInitialequationsStr;
 
 protected function dumpVars "function: dumpVars
- 
-  Dump variables to Print buffer.
-"
+  Dump variables to Print buffer."
   input list<DAE.Element> lst;
+  input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";  
   String str;
 algorithm 
-  str := dumpVarsStr(lst);
+  str := dumpVarsStr(lst, printTypeDimension);
   Print.printBuf(str);
 end dumpVars;
 
 public function dumpVarsStr "function: dumpVarsStr
- 
-  Dump variables to a string.
-"
+  Dump variables to a string."
   input list<DAE.Element> inElementLst;
+  input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";  
   output String outString;
 algorithm 
-  outString:= matchcontinue (inElementLst)
+  outString := matchcontinue (inElementLst, printTypeDimension)
     local
       String s1,s2,str;
       DAE.Element first;
       list<DAE.Element> rest;
-    case {} then ""; 
-    case (first :: rest)
+    // handle nothingness
+    case ({},_) then "";
+    // the usual case
+    case (first :: rest, printTypeDimension)
       equation 
-        s1 = dumpVarStr(first);
-        s2 = dumpVarsStr(rest);
+        s1 = dumpVarStr(first, printTypeDimension);
+        s2 = dumpVarsStr(rest, printTypeDimension);
         str = stringAppend(s1, s2);
       then
         str;
@@ -1405,13 +1377,10 @@ algorithm
 end dumpVarsStr;
 
 protected function dumpKind "function: dumpKind
- 
-  Dump VarKind.
-"
+  Dump VarKind."
   input DAE.VarKind inVarKind;
 algorithm 
-  _:=
-  matchcontinue (inVarKind)
+  _ := matchcontinue (inVarKind)
     case DAE.CONST()
       equation 
         Print.printBuf(" constant  ");
@@ -1436,14 +1405,11 @@ algorithm
 end dumpKind;
 
 protected function dumpKindStr "function: dumpKindStr 
- 
-  Dump VarKind to a string.
-"
+  Dump VarKind to a string."
   input DAE.VarKind inVarKind;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inVarKind)
+  outString := matchcontinue (inVarKind)
     case DAE.CONST() then "constant "; 
     case DAE.PARAM() then "parameter "; 
     case DAE.DISCRETE() then "discrete "; 
@@ -1452,13 +1418,10 @@ algorithm
 end dumpKindStr;
 
 protected function dumpDirection "function: dumpDirection
- 
-  Dump VarDirection.
-"
+  Dump VarDirection."
   input DAE.VarDirection inVarDirection;
 algorithm 
-  _:=
-  matchcontinue (inVarDirection)
+  _ := matchcontinue (inVarDirection)
     case DAE.INPUT()
       equation 
         Print.printBuf(" input  ");
@@ -1478,14 +1441,11 @@ algorithm
 end dumpDirection;
 
 public function dumpDirectionStr "function: dumpDirectionStr
- 
-  Dump VarDirection to a string
-"
+  Dump VarDirection to a string"
   input DAE.VarDirection inVarDirection;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inVarDirection)
+  outString := matchcontinue (inVarDirection)
     case DAE.INPUT() then "input "; 
     case DAE.OUTPUT() then "output "; 
     case DAE.BIDIR() then ""; 
@@ -1493,14 +1453,11 @@ algorithm
 end dumpDirectionStr;
 
 protected function dumpStateSelectStr "function dumpStateSelectStr
- 
-  Dump StateSelect to a string.
-"
+  Dump StateSelect to a string."
   input DAE.StateSelect inStateSelect;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inStateSelect)
+  outString := matchcontinue (inStateSelect)
     case DAE.NEVER() then "StateSelect.never"; 
     case DAE.AVOID() then "StateSelect.avoid"; 
     case DAE.PREFER() then "StateSelect.prefer"; 
@@ -1510,9 +1467,7 @@ algorithm
 end dumpStateSelectStr;
 
 public function dumpVariableAttributes "function: dumpVariableAttributes 
- 
-  Dump VariableAttributes option.
-"
+  Dump VariableAttributes option."
   input Option<DAE.VariableAttributes> attr;
   String res;
 algorithm 
@@ -1521,13 +1476,11 @@ algorithm
 end dumpVariableAttributes;
 
 public function getUnitAttr "
-  Return the unit attribute
-"
+  Return the unit attribute"
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output DAE.Exp start;
 algorithm 
-  start:=
-  matchcontinue (inVariableAttributesOption)
+  start := matchcontinue (inVariableAttributesOption)
     local
       DAE.Exp u;
     case (SOME(DAE.VAR_ATTR_REAL(_,SOME(u),_,_,_,_,_,_,_,_,_))) then u;
@@ -1536,8 +1489,7 @@ algorithm
 end getUnitAttr;
 
 public function getStartAttrEmpty " 
-  Return the start attribute.
-"
+  Return the start attribute."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   input DAE.Exp optExp;
   output DAE.Exp start;
@@ -1554,8 +1506,7 @@ algorithm
 end getStartAttrEmpty;
 
 public function getMinMax " 
-Author: BZ, returns a list of optional exp, {opt<Min> opt<Max} 
-"
+Author: BZ, returns a list of optional exp, {opt<Min> opt<Max} "
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output list<Option<DAE.Exp>> oExps;
 algorithm oExps := matchcontinue(inVariableAttributesOption)
@@ -1578,13 +1529,11 @@ algorithm oExps := matchcontinue(inVariableAttributesOption)
 end getMinMax;
 
 public function getStartAttr " 
-  Return the start attribute.
-"
+  Return the start attribute."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output DAE.Exp start;
 algorithm 
-  start:=
-  matchcontinue (inVariableAttributesOption)
+  start := matchcontinue (inVariableAttributesOption)
     local
       DAE.Exp r;
     case (SOME(DAE.VAR_ATTR_REAL(initial_ = SOME(r)))) then r;
@@ -1629,8 +1578,7 @@ algorithm
 end setVariableAttributes;
 
 public function setStartAttr " 
-  sets the start attribute. If NONE, assumes Real attributes.
-"
+  sets the start attribute. If NONE, assumes Real attributes."
   input Option<DAE.VariableAttributes> attr;
   input DAE.Exp start;
   output Option<DAE.VariableAttributes> outAttr;  
@@ -2036,8 +1984,9 @@ protected function unparseType "wrapper function for Types.unparseType, so recor
   output String str;
 algorithm
   str := matchcontinue(tp)
-  local String name; Absyn.Path path;
-    Types.Type bc_tp;
+    local 
+      String name; Absyn.Path path;
+      Types.Type bc_tp;
     
     case((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),SOME(path))) equation
       name = Absyn.pathString(path);
@@ -2052,11 +2001,12 @@ end unparseType;
 protected function dumpVarStr "function: dumpVarStr
   Dump var to a string."
   input DAE.Element inElement;
+  input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";
   output String outString;
 algorithm 
-  outString := matchcontinue (inElement)
+  outString := matchcontinue (inElement, printTypeDimension)
     local
-      String s1,s2,s3,s4,comment_str,s5,str,s6,s7;
+      String s1,s2,s3,s4,comment_str,s5,str,s6,s7,s3_subs;
       DAE.ComponentRef id;
       DAE.VarKind kind;
       DAE.VarDirection dir;
@@ -2069,56 +2019,87 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Exp e;
       DAE.VarProtection prot;
+      DAE.InstDims dims;
     // no binding
-    case DAE.VAR(componentRef = id,
+    case (DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
              protection=prot,
              ty = typ,
+             dims = dims,
              binding = NONE,
              flowPrefix = flowPrefix,
              streamPrefix =  streamPrefix,
              source = source,
              variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment)
+             absynCommentOption = comment), printTypeDimension)
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = unparseType(typ);
+        s3_subs = unparseDimensions(dims, printTypeDimension);
         s4 = Exp.printComponentRefStr(id);
         s7 = dumpVarProtectionStr(prot);
         comment_str = dumpCommentOptionStr(comment);
         s5 = dumpVariableAttributesStr(dae_var_attr);
-        str = Util.stringAppendList({s7,s1,s2,s3," ",s4,s5,comment_str,";\n"});
+        str = Util.stringAppendList({s7,s1,s2,s3,s3_subs," ",s4,s5,comment_str,";\n"});
       then
         str;
     // we have a binding
-    case DAE.VAR(componentRef = id,
+    case (DAE.VAR(componentRef = id,
              kind = kind,
              direction = dir,
              protection=prot,
              ty = typ,
+             dims = dims,
              binding = SOME(e),
              flowPrefix = flowPrefix,
              streamPrefix = streamPrefix,
              source = source,
              variableAttributesOption = dae_var_attr,
-             absynCommentOption = comment)
+             absynCommentOption = comment), printTypeDimension)
       equation 
         s1 = dumpKindStr(kind);
         s2 = dumpDirectionStr(dir);
         s3 = unparseType(typ);
+        s3_subs = unparseDimensions(dims, printTypeDimension);
         s4 = Exp.printComponentRefStr(id);
         s5 = Exp.printExpStr(e);
         comment_str = dumpCommentOptionStr(comment);
         s6 = dumpVariableAttributesStr(dae_var_attr);
         s7 = dumpVarProtectionStr(prot);
-        str = Util.stringAppendList({s7,s1,s2,s3," ",s4,s6," = ",s5,comment_str,";\n"})  ;
+        str = Util.stringAppendList({s7,s1,s2,s3,s3_subs," ",s4,s6," = ",s5,comment_str,";\n"});
       then
         str;
-    case (_) then ""; 
+    case (_,_) then ""; 
   end matchcontinue;
 end dumpVarStr;
+
+protected function unparseDimensions
+"prints dimensions to a string"
+  input DAE.InstDims dims;
+  input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false"; 
+  output String dimsStr;
+algorithm
+  dimsStr := matchcontinue(dims, printTypeDimension)
+    local 
+      DAE.InstDims rest;
+      DAE.Subscript dim;
+      String str;
+      
+    // false gives nothing
+    case (_, false) then "";
+
+    // nothing gives nothing
+    case ({}, true) then "";
+    // dims give something
+    case (dims, true)
+     equation
+       str = "[" +& Util.stringDelimitList(Util.listMap(dims, Exp.printSubscriptStr), ", ") +& "]";
+     then
+       str;
+  end matchcontinue;
+end unparseDimensions;
 
 protected function dumpVarProtectionStr "Prints 'protected' to a string for protected variables"
   input DAE.VarProtection prot;
@@ -5292,14 +5273,11 @@ algorithm
 end getAllExpsElement;
 
 protected function getAllExpsSubscript "function: getAllExpsSubscript
-  
-  Get all exps from a Subscript 
-"
+  Get all exps from a Subscript"
   input DAE.Subscript inSubscript;
   output list<DAE.Exp> outExpExpLst;
 algorithm 
-  outExpExpLst:=
-  matchcontinue (inSubscript)
+  outExpExpLst := matchcontinue (inSubscript)
     local DAE.Exp e;
     case DAE.WHOLEDIM() then {}; 
     case DAE.SLICE(exp = e) then {e}; 
@@ -5631,8 +5609,7 @@ end renameTimeToDollarTimeVisitor;
 
 protected function renameTimeToDollarTimeFromCref "
 Author: BZ, 2008-12
-Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit.
-"
+Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm
@@ -5653,23 +5630,21 @@ public function renameUniqueOuterVars "
 Author: BZ, 2008-12
 Rename innerouter(the inner part of innerouter) variables that have been renamed to a.b.$unique$var
 Just remove the $unique$ from the var name.
-This function traverses the entire dae.
-"
+This function traverses the entire dae."
   input DAE.DAElist dae;
   output DAE.DAElist odae;  
 algorithm 
-  (odae,_) := traverseDAE(dae, renameUniqueVisitor,0);
+  (odae,_) := traverseDAE(dae, renameUniqueVisitor, 0);
 end renameUniqueOuterVars;
 
 protected function renameUniqueVisitor "
 Author: BZ, 2008-12
 The visitor function for traverseDAE. 
-calls Exp.traverseExp on the expression.
-"
-input DAE.Exp exp; 
-input Integer arg; 
-output DAE.Exp oexp; 
-output Integer oarg; 
+calls Exp.traverseExp on the expression."
+  input DAE.Exp exp; 
+  input Integer arg; 
+  output DAE.Exp oexp; 
+  output Integer oarg; 
 algorithm (oexp,oarg) := matchcontinue(exp,arg)
   local
     DAE.ExpType ty;
@@ -5684,8 +5659,7 @@ end renameUniqueVisitor;
 
 protected function removeUniqieIdentifierFromCref "
 Author: BZ, 2008-12
-Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit.
-"
+Function for Exp.traverseExp, removes the constant 'UNIQUEIO' from any cref it might visit."
   input tuple<DAE.Exp, Integer> inTplExpExpString;
   output tuple<DAE.Exp, Integer> outTplExpExpString;
 algorithm outTplExpExpString := matchcontinue (inTplExpExpString)

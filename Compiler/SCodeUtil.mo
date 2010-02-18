@@ -46,7 +46,6 @@ package SCodeUtil
 
 public import Absyn;
 public import SCode;
-public import InstanceHierarchy;
 public import RTOpts;
 
 protected import MetaUtil;
@@ -57,6 +56,8 @@ protected import Error;
 protected import System;
 protected import ExpandableConnectors;
 protected import Inst;
+protected import Ceval;
+protected import InstanceHierarchy;
 
 public function translateAbsyn2SCode 
 "function: translateAbsyn2SCode
@@ -77,7 +78,9 @@ algorithm
 
     case (inProgram)
       equation
-        System.addToRoots("instantiationCache", Inst.emptyInstHashTable());
+        System.addToRoots(0, Inst.emptyInstHashTable());
+        // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
+        // System.addToRoots(1, Ceval.emptyCevalHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
         
         // set the external flag that signals the presence of inner/outer components in the model
@@ -87,7 +90,7 @@ algorithm
         sp = translate2(inProgram);
         //print(Util.stringDelimitList(Util.listMap(sp, SCode.printClassStr), "\n"));
         // retrieve the expandable connector presence external flag
-        hasExpandableConnectors = System.getHasExpandableConnectors();        
+        hasExpandableConnectors = System.getHasExpandableConnectors();
         (ih, sp) = ExpandableConnectors.elaborateExpandableConnectors(sp, hasExpandableConnectors);
       then 
         sp;
@@ -158,7 +161,7 @@ algorithm
         r_1 = translateRestriction(c, r); // uniontype will not get translated!
         d_1 = translateClassdef(d);
       then
-        SCode.CLASS(n,p,e,r_1,d_1);
+        SCode.CLASS(n,p,e,r_1,d_1,file_info);
         
     case (c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d,info = file_info))
       equation
@@ -912,7 +915,7 @@ algorithm
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         de_1 = translateClassdef(de);
       then
-        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1),NONE(),cc)};
+        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,file_info),NONE(),cc)};
 
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE),info)
       local Absyn.Path n;
