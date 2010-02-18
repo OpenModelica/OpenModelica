@@ -306,7 +306,7 @@ algorithm
     
     case (_,_,e as DAE.CALL(path = _),_,_,_,_)
       equation
-				true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Ceval.ceval DAE.CALL failed: ");
         str = Exp.printExpStr(e);
         Debug.fprintln("failtrace", str);

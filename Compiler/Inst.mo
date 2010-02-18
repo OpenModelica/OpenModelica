@@ -11912,7 +11912,15 @@ algorithm
       equation
         elabedType = Types.elabType(tt);
         true = Exp.equalTypes(elabedType,ty);        
-        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false, NONE, NONE, Ceval.MSG());
+        // adrpo: 2010-02-18, bug: https://openmodelica.org:8443/cb/issue/1175?navigation=true
+        // DO NOT USE Ceval.MSG() here to generate messages 
+        // as it will print error messages such as:
+        //   Error: Variable body.sequence_start[1] not found in scope <global scope>
+        //   Error: No constant value for variable body.sequence_start[1] in scope <global scope>.
+        //   Error: Variable body.sequence_angleStates[1] not found in scope <global scope>
+        //   Error: No constant value for variable body.sequence_angleStates[1] in scope <global scope>.
+        // These errors happen because WE HAVE NO ENVIRONMENT, so we cannot lookup or ceval any cref!
+        (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false, NONE, NONE, Ceval.NO_MSG());
         dael = assignComplexConstantConstruct(value,assignedCr,source);
         dav = DAEUtil.avlTreeNew();
         //print(" SplitComplex \n ");DAEUtil.printDAE(DAE.DAE(dael,dav)); 
