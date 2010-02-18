@@ -56,7 +56,6 @@ protected import Error;
 protected import System;
 protected import ExpandableConnectors;
 protected import Inst;
-protected import Ceval;
 protected import InstanceHierarchy;
 
 public function translateAbsyn2SCode 

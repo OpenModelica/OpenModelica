@@ -9474,8 +9474,8 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix
       conditionRefs = Util.sort(conditionRefs,DAEUtil.derivativeOrder); 
       defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
       
-      
-      /*print(" adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
+      /*
+      print("\n adding conditions on derivative count: " +& intString(listLength(conditionRefs)) +& "\n");
       dbgString = Absyn.optPathString(defaultDerivative);
       dbgString = Util.if_(stringEqual(dbgString,""),"", "**** Default Derivative: " +& dbgString +& "\n");
       print("**** Function derived: " +& Absyn.pathString(baseFunc) +& " \n");        
@@ -9519,7 +9519,7 @@ algorithm outconds := matchcontinue(subs,elemDecl,inCache,inEnv,inPrefix)
     equation
       name = Absyn.printComponentRefStr(acr);
       outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
-      varPos = setFunctionInputIndex(elemDecl,name,0);
+      varPos = setFunctionInputIndex(elemDecl,name,1);
     then 
       (varPos,DAE.NO_DERIVATIVE(DAE.ICONST(99)))::outconds;
 
@@ -9527,7 +9527,7 @@ algorithm outconds := matchcontinue(subs,elemDecl,inCache,inEnv,inPrefix)
     equation      
       name = Absyn.printComponentRefStr(acr);
       outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
-      varPos = setFunctionInputIndex(elemDecl,name,0);
+      varPos = setFunctionInputIndex(elemDecl,name,1);
     then 
       (varPos,DAE.ZERO_DERIVATIVE)::outconds;
   case(SCode.NAMEMOD("noDerivative",(m as SCode.MOD(absynExpOption=_)))::subs,elemDecl,inCache,inEnv,inPrefix)
@@ -9535,7 +9535,7 @@ algorithm outconds := matchcontinue(subs,elemDecl,inCache,inEnv,inPrefix)
       (inCache,(elabedMod as DAE.MOD(subModLst={sub})),_) = Mod.elabMod(inCache,inEnv, inPrefix, m, false);
       (name,cond) = extractNameAndExp(sub);
       outconds = getDeriveCondition(subs,elemDecl,inCache,inEnv,inPrefix);
-      varPos = setFunctionInputIndex(elemDecl,name,0);
+      varPos = setFunctionInputIndex(elemDecl,name,1);
     then 
       (varPos,cond)::outconds;
       
@@ -11911,10 +11911,11 @@ algorithm
       local DAE.AvlTree dav; 
       equation
         elabedType = Types.elabType(tt);
-        true = Exp.equalTypes(elabedType,ty);
+        true = Exp.equalTypes(elabedType,ty);        
         (_,value,_) = Ceval.ceval(Env.emptyCache(),Env.emptyEnv, e2, false, NONE, NONE, Ceval.MSG());
         dael = assignComplexConstantConstruct(value,assignedCr,source);
         dav = DAEUtil.avlTreeNew();
+        //print(" SplitComplex \n ");DAEUtil.printDAE(DAE.DAE(dael,dav)); 
       then DAE.DAE(dael,dav); 
         
    /* all other COMPLEX equations */

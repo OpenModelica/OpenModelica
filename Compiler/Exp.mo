@@ -3546,8 +3546,8 @@ algorithm
   end matchcontinue;
 end allTerms;
   
-public function terms
-"function: terms
+public function terms "
+function: terms
   author: PA
   Returns the terms of the expression if any as a list of expressions"
   input Exp inExp;
@@ -8573,6 +8573,24 @@ algorithm
         fail();
   end matchcontinue;
 end solve;
+
+protected function printExpIfDiff ""
+input Exp e1,e2;
+output String s;
+algorithm s := matchcontinue(e1,e2)
+  case(e1,e2)
+    equation
+      true = expEqual(e1,e2);
+      then 
+        "";
+  case(e1,e2)
+    equation
+      false = expEqual(e1,e2);
+      s = printExpStr(e1) +& " =!= " +& printExpStr(e2) +& "\n";
+      then 
+        s;
+  end matchcontinue;
+end printExpIfDiff;
 
 protected function solve2 
 "function: solve2 
