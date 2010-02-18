@@ -668,12 +668,9 @@ end Variability;
 
 public 
 uniontype Direction "Direction"
-  record INPUT end INPUT;
-
-  record OUTPUT end OUTPUT;
-
-  record BIDIR end BIDIR;
-
+  record INPUT  "direction is input"                                   end INPUT;
+  record OUTPUT "direction is output"                                  end OUTPUT;
+  record BIDIR  "direction is not specified, neither input nor output" end BIDIR;
 end Direction;
 
 public 
@@ -2693,6 +2690,21 @@ algorithm
   end matchcontinue;
 end joinPathsOpt;
 
+public function selectPathsOpt "function: selectPathsOpt
+  This function selects the second path when the first one 
+  is NONE otherwise it will select the first one."
+  input Option<Path> inPath1;
+  input Path inPath2;
+  output Path outPath;
+algorithm 
+  outPath := matchcontinue (inPath1,inPath2)
+    local
+      Path p;
+    case (NONE(), p) then p;
+    case (SOME(p),_) then p; 
+  end matchcontinue;
+end selectPathsOpt;
+
 public function optPathAppend "
 Author BZ, 2009-01
 Appends a path to optional 'base'-path.
@@ -3160,7 +3172,7 @@ end setClassFilename;
 public function emptyClassInfo ""
 output Info info;
 algorithm
-  info := INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0)); 
+  info := dummyInfo; //INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0)); 
 end emptyClassInfo;
 
 public function setClassName "function setClassFilename
