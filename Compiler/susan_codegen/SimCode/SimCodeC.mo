@@ -9785,7 +9785,7 @@ algorithm
         txt = Tpl.softNewLine(txt);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("if ("));
         txt = Tpl.writeText(txt, i_condExp);
-        txt = Tpl.writeTok(txt, Tpl.ST_LINE(")) {\n"));
+        txt = Tpl.writeTok(txt, Tpl.ST_LINE(") {\n"));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (txt, i_varDecls) = lm_219(txt, i_statementLst, i_varDecls, i_context);
@@ -12885,6 +12885,9 @@ algorithm
         list<DAE.Exp> rest;
         DAE.Exp i_e;
       equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("("));
+        txt = expTypeFromExpModelica(txt, i_e);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
         (txt, i_preExp, i_varDecls) = daeExp(txt, i_e, i_context, i_preExp, i_varDecls);
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls, i_preExp) = lm_269(txt, rest, i_varDecls, i_preExp, i_context);

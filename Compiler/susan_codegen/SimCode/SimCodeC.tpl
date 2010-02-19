@@ -1652,7 +1652,7 @@ case ELSEIF then
   <<
   else {
   <preExp>
-  if (<condExp>)) {
+  if (<condExp>) {
     <statementLst: algStatement(it, context, varDecls) \n>
   }
   <elseExpr(else_, context, varDecls)>
@@ -1998,7 +1998,7 @@ case ARRAY then
 # arrayVar = tempDecl(arrayTypeStr, varDecls)
 # scalarPrefix = if scalar then "scalar_" else ""
 # scalarRef = if scalar then "&" else ""
-# params = '<array of e: daeExp(e, context, preExp, varDecls) ", ">'
+# params = '<array of e: '(<expTypeFromExpModelica(e)>)<daeExp(e, context, preExp, varDecls)>' ", ">'
 # preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLength(array)>, <params>);<\n>'
 '<arrayVar>'
 
