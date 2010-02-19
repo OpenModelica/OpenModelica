@@ -79,11 +79,15 @@ typedef modelica_integer size_integer_array_rettype;
 /* math functions (-lm)*/
 typedef modelica_real cos_rettype;
 typedef modelica_real cosh_rettype;
+typedef modelica_real acos_rettype;
 typedef modelica_real sin_rettype;
 typedef modelica_real sinh_rettype;
+typedef modelica_real asin_rettype;
 typedef modelica_real log_rettype;
+typedef modelica_real log10_rettype;
 typedef modelica_real tan_rettype;
 typedef modelica_real tanh_rettype;
+typedef modelica_real atan_rettype;
 typedef modelica_real exp_rettype;
 typedef modelica_real sqrt_rettype;
 typedef modelica_real abs_rettype;
