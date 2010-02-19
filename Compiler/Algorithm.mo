@@ -380,7 +380,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
     case (e,DAE.PROP(type_ = t),tb,eib,fb)
       equation
-        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE),true);
+        (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);
         else_ = makeElse(eib, fb);
       then
         DAE.STMT_IF(e,tb,else_);
@@ -413,7 +413,7 @@ algorithm
     case ({},fb) then DAE.ELSE(fb); 
     case (((e,DAE.PROP(type_ = t),b) :: xs),fb)
       equation 
-        (e,_) = Types.matchType(e,t,(DAE.T_BOOL({}),NONE),true);
+        (e,_) = Types.matchType(e,t,DAE.T_BOOL_DEFAULT,true);
         else_ = makeElse(xs, fb);
       then
         DAE.ELSEIF(e,b,else_);
@@ -531,8 +531,8 @@ algorithm
       DAE.Type tp1,tp2;
     case (var as DAE.CREF(_,_),val,DAE.PROP(tp1,_),DAE.PROP(tp2,_))
       equation
-        (val_1,_) = Types.matchType(val,tp2,(DAE.T_REAL({}),NONE()),true);
-        (var_1,_) = Types.matchType(var,tp1,(DAE.T_REAL({}),NONE()),true);
+        (val_1,_) = Types.matchType(val,tp2,DAE.T_REAL_DEFAULT,true);
+        (var_1,_) = Types.matchType(var,tp1,DAE.T_REAL_DEFAULT,true);
       then DAE.STMT_REINIT(var_1,val_1);  
   
    case (_,_,prop1,prop2)  equation

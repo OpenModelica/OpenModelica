@@ -356,19 +356,19 @@ algorithm
   local Type ty,ty2;
     case(DAE.ET_INT)
       equation
-        ty = (DAE.T_INTEGER({}),NONE);
+        ty = DAE.T_INTEGER_DEFAULT;
         then ty;
     case(DAE.ET_REAL) 
       equation 
-        ty = (DAE.T_REAL({}),NONE);
+        ty = DAE.T_REAL_DEFAULT;
         then ty;
     case(DAE.ET_BOOL) 
       equation 
-        ty = (DAE.T_BOOL({}),NONE);
+        ty = DAE.T_BOOL_DEFAULT;
         then ty;
     case(DAE.ET_STRING) 
       equation 
-        ty = (DAE.T_STRING({}),NONE);
+        ty = DAE.T_STRING_DEFAULT;
         then ty;
     case(DAE.ET_ENUMERATION(index,path,names,evars)) 
       local
@@ -569,8 +569,8 @@ algorithm b := matchcontinue(inType)
   case(ty)
     equation
       lb1 = isReal(ty);
-      lb2 = subtype(ty, (DAE.T_REAL({}),NONE));
-      lb3 = subtype((DAE.T_REAL({}),NONE),ty);
+      lb2 = subtype(ty, DAE.T_REAL_DEFAULT);
+      lb3 = subtype(DAE.T_REAL_DEFAULT,ty);
       lb1 = boolOr(lb1,boolAnd(lb2,lb3));
     then lb1;
   case(_) then false;
@@ -588,8 +588,8 @@ algorithm b := matchcontinue(inType)
   case(ty)
     equation
       lb1 = isInteger(ty);
-      lb2 = subtype(ty, (DAE.T_INTEGER({}),NONE));
-      lb3 = subtype((DAE.T_INTEGER({}),NONE),ty);
+      lb2 = subtype(ty, DAE.T_INTEGER_DEFAULT);
+      lb3 = subtype(DAE.T_INTEGER_DEFAULT,ty);
       lb1 = boolOr(lb1,boolAnd(lb2,lb3)); 
       //lb1 = boolOr(lb1,lb2); 
     then lb1;
@@ -1059,7 +1059,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.ICONST(i),SOME(Values.INTEGER(i)),
-          DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
           
     case ((Values.REAL(real = r) :: rest),(id :: ids))
       equation 
@@ -1070,7 +1070,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.RCONST(r),SOME(Values.REAL(r)),
-          DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
           
     case ((Values.STRING(string = s) :: rest),(id :: ids))
       equation 
@@ -1081,7 +1081,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.SCONST(s),SOME(Values.STRING(s)),
-          DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
           
     case ((Values.BOOL(boolean = b) :: rest),(id :: ids))
       equation 
@@ -1092,7 +1092,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.BCONST(b),SOME(Values.BOOL(b)),
-          DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
     case (((v as Values.RECORD(index=_)) :: rest),(id :: ids))
       equation 
         ty = typeOfValue(v);
@@ -1196,10 +1196,10 @@ algorithm
       Ident cname_str;
       Absyn.Path cname;
       list<Ident> ids;
-    case (Values.INTEGER(integer = _)) then ((DAE.T_INTEGER({}),NONE)); 
-    case (Values.REAL(real = _)) then ((DAE.T_REAL({}),NONE)); 
-    case (Values.STRING(string = _)) then ((DAE.T_STRING({}),NONE)); 
-    case (Values.BOOL(boolean = _)) then ((DAE.T_BOOL({}),NONE)); 
+    case (Values.INTEGER(integer = _)) then (DAE.T_INTEGER_DEFAULT); 
+    case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT); 
+    case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT); 
+    case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT); 
     case (Values.ENUM(index,path,names))
       local
         Integer index;
@@ -1725,7 +1725,7 @@ algorithm
       then
         v;
    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"quantity") then DAE.TYPES_VAR("quantity",
-          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.VALBOUND(Values.STRING("")));  
+          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING("")));  
 
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"min") then DAE.TYPES_VAR("min",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{}),NONE),DAE.UNBOUND());  /* Should be bound to the first element of
@@ -1734,16 +1734,16 @@ algorithm
           false,(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{}),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
   DAE.T_ENUMERATION list higher up in the call chain */ 
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"start") then DAE.TYPES_VAR("start",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
+          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND());  /* Should be bound to the last element of 
   DAE.T_ENUMERATION list higher up in the call chain */ 
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"fixed") then DAE.TYPES_VAR("fixed",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Needs to be set to true/false higher up the call chain
+          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND());  /* Needs to be set to true/false higher up the call chain
   depending on variability of instance */ 
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"enable") then DAE.TYPES_VAR("enable",
-          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_BOOL({}),NONE),DAE.VALBOUND(Values.BOOL(true))); 
+          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true))); 
         
 //    case ((DAE.T_ENUM(),_),"quantity") then DAE.TYPES_VAR("quantity",
-//          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.VALBOUND(Values.STRING("")));  
+//          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING("")));  
 
 //    case ((DAE.T_ENUM(),_),"min") then DAE.TYPES_VAR("min",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
 //          false,(DAE.T_ENUM(),NONE),DAE.UNBOUND());  /* Should be bound to the first element of
@@ -1752,13 +1752,13 @@ algorithm
 //          false,(DAE.T_ENUM(),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
 //  DAE.T_ENUMERATION list higher up in the call chain */ 
 //    case ((DAE.T_ENUM(),_),"start") then DAE.TYPES_VAR("start",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-//          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Should be bound to the last element of 
+//          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND());  /* Should be bound to the last element of 
 //  DAE.T_ENUMERATION list higher up in the call chain */ 
 //    case ((DAE.T_ENUM(),_),"fixed") then DAE.TYPES_VAR("fixed",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-//          false,(DAE.T_BOOL({}),NONE),DAE.UNBOUND());  /* Needs to be set to true/false higher up the call chain
+//          false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND());  /* Needs to be set to true/false higher up the call chain
 //  depending on variability of instance */ 
 //    case ((DAE.T_ENUM(),_),"enable") then DAE.TYPES_VAR("enable",
-//          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_BOOL({}),NONE),DAE.VALBOUND(Values.BOOL(true))); 
+//          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true))); 
   end matchcontinue;
 end lookupInBuiltin;
 
@@ -4156,28 +4156,28 @@ algorithm
         (_, ty2, polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
       then (e, (DAE.T_META_ARRAY(ty2),p2), polymorphicBindings);
     
-    case (e, t1 as (DAE.T_INTEGER({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_INTEGER(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
       
-    case (e, t1 as (DAE.T_BOOL({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
 
-    case (e, t1 as (DAE.T_REAL({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
       then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
 
-    case (e, t1 as (DAE.T_STRING({}),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
@@ -4639,7 +4639,7 @@ algorithm
       equation 
         c = constAnd(c1, c2) "Have real and both Integer" ;
       then
-        DAE.PROP((DAE.T_REAL({}),p2),c);
+        DAE.PROP(DAE.T_REAL_DEFAULT,c);
     case(_,_,_) equation
       Debug.fprint("failtrace","-matchWithPromote failed\n");
     then fail();

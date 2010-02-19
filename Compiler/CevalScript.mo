@@ -586,7 +586,7 @@ algorithm
         simType = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),
                                    {DAE.TYPES_VAR("resultFile",
                                     DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-                                    false,(DAE.T_STRING({}),NONE),
+                                    false,DAE.T_STRING_DEFAULT,
                                     DAE.UNBOUND())},
                                     NONE,NONE),NONE);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", simValue, simType, st);

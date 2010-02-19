@@ -333,25 +333,25 @@ algorithm
        that interesting to find out.
        */ 
     case (cache,_,Absyn.INTEGER(value = x),impl,st,doVect) 
-    then (cache,DAE.ICONST(x),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()),st,DAEUtil.emptyDae);  
+    then (cache,DAE.ICONST(x),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st,DAEUtil.emptyDae);  
       
     case (cache,_,Absyn.REAL(value = x),impl,st,doVect)
       local Real x;
       then
-        (cache,DAE.RCONST(x),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_CONST()),st,DAEUtil.emptyDae);
+        (cache,DAE.RCONST(x),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()),st,DAEUtil.emptyDae);
         
     case (cache,_,Absyn.STRING(value = x),impl,st,doVect)
       local Ident x;
       then
-        (cache,DAE.SCONST(x),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_CONST()),st,DAEUtil.emptyDae);
+        (cache,DAE.SCONST(x),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST()),st,DAEUtil.emptyDae);
         
     case (cache,_,Absyn.BOOL(value = x),impl,st,doVect)
       local Boolean x;
       then
-        (cache,DAE.BCONST(x),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),st,DAEUtil.emptyDae);
+        (cache,DAE.BCONST(x),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),st,DAEUtil.emptyDae);
         
     case (cache,_,Absyn.END(),impl,st,doVect) 
-    then (cache,DAE.END(),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()),st,DAEUtil.emptyDae); 
+    then (cache,DAE.END(),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st,DAEUtil.emptyDae); 
      
        /*--------------------------------*/
        /* Part of MetaModelica extension. KS */
@@ -1398,7 +1398,7 @@ algorithm
 				(cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _, dae) = elabExp(cache, env, iterexp, impl, st, doVect);
 				exp_1 = reductionDefaultValue(reduction_op);
 			then
-				(cache, exp_1, DAE.PROP((DAE.T_REAL({}), NONE), DAE.C_CONST), st, dae);
+				(cache, exp_1, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST), st, dae);
 
 		/* min, max, sum and product */
 		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect)
@@ -1667,19 +1667,19 @@ algorithm
       list<list<DAE.Properties>> tps;
       list<list<tuple<DAE.TType, Option<Absyn.Path>>>> tps_1;
       Env.Cache cache;
-    case (cache,_,Absyn.INTEGER(value = x),impl) then (cache,DAE.ICONST(x),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()));  /* impl */ 
+    case (cache,_,Absyn.INTEGER(value = x),impl) then (cache,DAE.ICONST(x),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()));  /* impl */ 
     case (cache,_,Absyn.REAL(value = x),impl)
       local Real x;
       then
-        (cache,DAE.RCONST(x),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_CONST()));
+        (cache,DAE.RCONST(x),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_CONST()));
     case (cache,_,Absyn.STRING(value = x),impl)
       local Ident x;
       then
-        (cache,DAE.SCONST(x),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_CONST()));
+        (cache,DAE.SCONST(x),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_CONST()));
     case (cache,_,Absyn.BOOL(value = x),impl)
       local Boolean x;
       then
-        (cache,DAE.BCONST(x),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()));
+        (cache,DAE.BCONST(x),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()));
     case (cache,env,Absyn.CREF(componentRef = cr),impl)
       equation 
         Debug.fprint("tcvt","before Static.elabCref in elabGraphicsExp\n");
@@ -1853,15 +1853,15 @@ algorithm
          then (e1,NONE,e3,et); 
     case ((e1,t1),NONE,(e3,t3))
       equation 
-        ({e1_1,e3_1},_) = elabArglist({(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)}, 
+        ({e1_1,e3_1},_) = elabArglist({DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT}, 
           {(e1,t1),(e3,t3)});
       then
         (e1_1,NONE,e3_1,DAE.ET_REAL());
     case ((e1,t1),SOME((e2,t2)),(e3,t3))
       equation 
         ({e1_1,e2_1,e3_1},_) = elabArglist(
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),
-          (DAE.T_REAL({}),NONE)}, {(e1,t1),(e2,t2),(e3,t3)});
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,
+          DAE.T_REAL_DEFAULT}, {(e1,t1),(e2,t2),(e3,t3)});
       then
         (e1_1,SOME(e2_1),e3_1,DAE.ET_REAL());
   end matchcontinue;
@@ -1903,7 +1903,7 @@ algorithm
         n_1 = n + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),(DAE.T_INTEGER({}),NONE)),NONE));
+          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),DAE.T_INTEGER_DEFAULT),NONE));
     case (cache,env,start,SOME(step),stop,const,_,impl) /* as false */ 
       equation 
         (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache, env, start, impl, NONE, NONE, Ceval.MSG());
@@ -1914,7 +1914,7 @@ algorithm
         n_2 = n_1 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_2)),(DAE.T_INTEGER({}),NONE)),NONE));
+          DAE.T_ARRAY(DAE.DIM(SOME(n_2)),DAE.T_INTEGER_DEFAULT),NONE));
     /* enumeration has no step value */
     case (cache,env,start,NONE,stop,const,_,impl) /* impl as false */
       local list<String> names; Absyn.Path p; 
@@ -1937,7 +1937,7 @@ algorithm
         n_1 = n_3 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),(DAE.T_REAL({}),NONE)),NONE));
+          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),DAE.T_REAL_DEFAULT),NONE));
     case (cache,env,start,SOME(step),stop,const,_,impl) /* as false */ 
       local Real startv,stepv,stopv,n,n_1,n_3;
       equation 
@@ -1951,13 +1951,13 @@ algorithm
         n_2 = n_4 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_2)),(DAE.T_REAL({}),NONE)),NONE));
+          DAE.T_ARRAY(DAE.DIM(SOME(n_2)),DAE.T_REAL_DEFAULT),NONE));
 
 		case (cache,_,_,_,_,const,DAE.ET_INT(),_) 
-  	  then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)), NONE)); 
+  	  then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT), NONE)); 
     
 		case (cache,_,_,_,_,const,DAE.ET_REAL(),_) 
-   	 then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)); 
+   	 then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)); 
       
     case (cache,env,start,step,stop,const,expty,impl)
       local Option<DAE.Exp> step;
@@ -2420,7 +2420,7 @@ algorithm
       DAE.DAElist dae,dae1,dae2;
       
 		case (cache, _, {}, _, _, _) 
-			then (cache, {}, DAE.PROP((DAE.T_REAL({}), NONE), DAE.C_CONST), DAE.DAE({}, DAE.AVLTREENODE(NONE, 0, NONE, NONE)));
+			then (cache, {}, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST), DAE.DAE({}, DAE.AVLTREENODE(NONE, 0, NONE, NONE)));
 
     case (cache,env,{e},impl,st,doVect)  
       equation 
@@ -2999,7 +2999,7 @@ algorithm
       equation 
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_,dae) = elabExp(cache, env, exp, impl, NONE,true);
       then
-        (cache,DAE.CALL(Absyn.IDENT("cardinality"),{exp_1},false,true,DAE.ET_INT(),DAE.NO_INLINE),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_CONST()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("cardinality"),{exp_1},false,true,DAE.ET_INT(),DAE.NO_INLINE),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),dae);
   end matchcontinue;
 end elabBuiltinCardinality;
 
@@ -3137,7 +3137,7 @@ algorithm
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,exp,DAE.PROP((DAE.T_INTEGER({}),NONE),c),dae);
+        (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,c),dae);
         
     // size(A)
     case (cache,env,{arraycr},_,impl)
@@ -3148,7 +3148,7 @@ algorithm
         c_1 = Types.boolConst(c);
         exp = DAE.SIZE(arraycrefe,NONE);
       then
-        (cache,exp,DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),(DAE.T_INTEGER({}),NONE)),NONE),c_1),dae1);
+        (cache,exp,DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_INTEGER_DEFAULT),NONE),c_1),dae1);
     // failure!
     case (cache,env,expl,_,impl)
       equation 
@@ -3194,7 +3194,7 @@ algorithm
         nd = Types.ndims(arrtp);
         exp = DAE.ICONST(nd);
       then
-        (cache,exp,DAE.PROP((DAE.T_INTEGER({}),NONE),c),dae1);
+        (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,c),dae1);
 
     case (cache,env,expl,_,impl)
       equation 
@@ -3518,20 +3518,20 @@ algorithm
       local String str;
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_,dae1) = elabExp(cache,env, arrexp, impl, NONE,true);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_INTEGER({}),NONE), true);
+        (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_INTEGER_DEFAULT, true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,DAE.PROP((DAE.T_INTEGER({}),NONE),c),dae1);
+         (cache,exp_1,DAE.PROP(DAE.T_INTEGER_DEFAULT,c),dae1);
     case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str; 
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_,dae1) = elabExp(cache,env, arrexp, impl, NONE,true);        
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_REAL({}),NONE), true);
+        (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_REAL_DEFAULT, true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,DAE.PROP((DAE.T_REAL({}),NONE),c),dae1);
+         (cache,exp_1,DAE.PROP(DAE.T_REAL_DEFAULT,c),dae1);
     case (cache,env,aexps,_,impl)  
       local 
         DAE.ExpType etp; 
@@ -3607,20 +3607,20 @@ algorithm
       local String str;
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_,dae1) = elabExp(cache,env, arrexp, impl, NONE,true);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_INTEGER({}),NONE), true);
+        (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_INTEGER_DEFAULT, true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,DAE.PROP((DAE.T_INTEGER({}),NONE),c),dae1);
+         (cache,exp_1,DAE.PROP(DAE.T_INTEGER_DEFAULT,c),dae1);
     case (cache,env,{arrexp},_,impl) /* impl */ 
       local String str;
       equation 
         (cache,exp_1,DAE.PROP(ty,c),_,dae1) = elabExp(cache,env, arrexp, impl, NONE,true);
-        (exp_1,ty2) = Types.matchType(exp_1, ty, (DAE.T_REAL({}),NONE), true);
+        (exp_1,ty2) = Types.matchType(exp_1, ty, DAE.T_REAL_DEFAULT, true);
         str = Dump.printExpStr(arrexp);
         Error.addMessage(Error.BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER, {str});
       then
-         (cache,exp_1,DAE.PROP((DAE.T_REAL({}),NONE),c),dae1);
+         (cache,exp_1,DAE.PROP(DAE.T_REAL_DEFAULT,c),dae1);
     case (cache,env,{arrexp},_,impl) /* impl */ 
       local DAE.ExpType etp; DAE.Type t;
       equation 
@@ -3963,7 +3963,7 @@ algorithm
         expList = {s1_1, DAE.ICONST(i), DAE.ICONST(numFields), DAE.SCONST(s)};
         s1_1 = DAE.CALL(Absyn.IDENT("mmc_uniontype_metarecord_typedef_equal"), expList, false, true, DAE.ET_BOOL,DAE.NO_INLINE);
       then
-        (cache,s1_1,DAE.PROP((DAE.T_BOOL({}),NONE),c),dae);
+        (cache,s1_1,DAE.PROP(DAE.T_BOOL_DEFAULT,c),dae);
     case (_,_,_,_,_)
       equation
         Debug.fprintln("failtrace", "- elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal failed");
@@ -4136,7 +4136,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
     case (cache,env,{},{},impl) 
-    then (cache,DAE.CALL(Absyn.IDENT("initial"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),DAEUtil.emptyDae);
+    then (cache,DAE.CALL(Absyn.IDENT("initial"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),DAEUtil.emptyDae);
        
     case (cache,env,_,_,_)
       equation 
@@ -4169,7 +4169,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
     case (cache,env,{},{},impl) 
-    then (cache,DAE.CALL(Absyn.IDENT("terminal"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),DAEUtil.emptyDae);   
+    then (cache,DAE.CALL(Absyn.IDENT("terminal"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),DAEUtil.emptyDae);   
 
     case (cache,env,_,_,impl)
       equation 
@@ -4255,7 +4255,7 @@ algorithm
         tpl_1 = Util.listMap(tpl, Types.getPropType) "If first elt is Integer but arguments contain Real, convert all to Real" ;
         true = Types.containReal(tpl_1);
         (expl_1,tp) = elabBuiltinArray3(expl, tpl, 
-          DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()));
+          DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()));
       then
         (expl_1,tp);
     case (expl,(tpl as (tp :: _)))
@@ -4468,8 +4468,8 @@ algorithm
         (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache, env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_,dae2) = elabExp(cache, env, s2, impl, NONE,true);
         true = Types.isRealOrSubTypeReal(ty1) or Types.isRealOrSubTypeReal(ty2);
-        (s1_1,ty) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
-        (s2_1,ty) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
+        (s1_1,ty) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
+        (s2_1,ty) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
         c = Types.constAnd(c1, c2);
         tp = Types.elabType(ty);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -4532,8 +4532,8 @@ algorithm
         (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache, env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_,dae2) = elabExp(cache, env, s2, impl, NONE,true);
         true = Types.isRealOrSubTypeReal(ty1) or Types.isRealOrSubTypeReal(ty2);
-        (s1_1,ty) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
-        (s2_1,ty) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
+        (s1_1,ty) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
+        (s2_1,ty) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
         c = Types.constAnd(c1, c2);
         tp = Types.elabType(ty);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -4779,12 +4779,12 @@ algorithm
       equation 
         (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache, env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_,dae2) = elabExp(cache, env, s2, impl, NONE,true);
-        (s1_1,_) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
-        (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
+        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
+        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
         true = Types.isParameterOrConstant(c2);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),dae);
         
     case (cache,env,{s1,s2},_,impl)  
       equation
@@ -4800,13 +4800,13 @@ algorithm
         (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache, env, s1, impl, NONE,true);
         (cache,s2_1,DAE.PROP(ty2,c2),_,dae2) = elabExp(cache, env, s2, impl, NONE,true);
         (cache,s3_1,DAE.PROP(ty3,c3),_,dae3) = elabExp(cache, env, s3, impl, NONE,true);
-        (s1_1,_) = Types.matchType(s1_1,ty1,(DAE.T_REAL({}),NONE),true);
-        (s2_1,_) = Types.matchType(s2_1,ty2,(DAE.T_REAL({}),NONE),true);
-        (s3_1,_) = Types.matchType(s3_1,ty3,(DAE.T_REAL({}),NONE),true);
+        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
+        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
+        (s3_1,_) = Types.matchType(s3_1,ty3,DAE.T_REAL_DEFAULT,true);
         true = Types.isParameterOrConstant(c3);
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});                
       then
-        (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),dae);
     case(_,_,_,_,_)
       equation
         errorString = " use of delay: \n delay(real, real, real as parameter/constant)\n or delay(real, real as parameter/constant)."; 
@@ -5111,7 +5111,7 @@ algorithm
         cref_list2 = Absyn.getCrefFromExp(s2,true);
         cref_list = listAppend(cref_list1, cref_list2);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
-          (DAE.T_REAL({}),NONE));
+          DAE.T_REAL_DEFAULT);
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
         (cache,s2_1,st,_,_) = elabExp(cache,gen_env, s2, impl, NONE,true);
@@ -5158,7 +5158,7 @@ algorithm
       equation 
         cref_list = Absyn.getCrefFromExp(s1,true);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
-          (DAE.T_REAL({}),NONE));
+          DAE.T_REAL_DEFAULT);
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
       then
@@ -5167,7 +5167,7 @@ algorithm
       equation 
         cref_list = Absyn.getCrefFromExp(s1,true);
         symbol_table = absynCrefListToInteractiveVarList(cref_list, Interactive.emptySymboltable, 
-          (DAE.T_INTEGER({}),NONE));
+          DAE.T_INTEGER_DEFAULT);
         gen_env = Interactive.buildEnvFromSymboltable(symbol_table);
         (cache,s1_1,st,_,_) = elabExp(cache,gen_env, s1, impl, NONE,true);
       then
@@ -5280,16 +5280,16 @@ algorithm
       DAE.DAElist dae;
     case (cache,env,{exp},_,impl) /* Constness: C_VAR */ 
       equation 
-        (cache,exp_1,DAE.PROP((DAE.T_BOOL({}),_),DAE.C_VAR()),_,dae) = elabExp(cache, env, exp, impl, NONE,true);
+        (cache,exp_1,DAE.PROP((DAE.T_BOOL(_),_),DAE.C_VAR()),_,dae) = elabExp(cache, env, exp, impl, NONE,true);
       then
-        (cache,DAE.CALL(Absyn.IDENT("edge"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("edge"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),dae);
   
     case (cache,env,{exp},_,impl) 
       equation 
-        (cache,exp_1,DAE.PROP((DAE.T_BOOL({}),_),c),_,dae) = elabExp(cache, env, exp, impl, NONE,true);
+        (cache,exp_1,DAE.PROP((DAE.T_BOOL(_),_),c),_,dae) = elabExp(cache, env, exp, impl, NONE,true);
         exp_2 = valueExp(Values.BOOL(false));
       then
-        (cache,exp_2,DAE.PROP((DAE.T_BOOL({}),NONE),c),dae);
+        (cache,exp_2,DAE.PROP(DAE.T_BOOL_DEFAULT,c),dae);
     case (_,env,_,_,_)
       equation 
         Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {"edge"});
@@ -5481,7 +5481,7 @@ algorithm
         Types.integerOrReal(tp2);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,DAE.CALL(Absyn.IDENT("sample"),{start_1,interval_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("sample"),{start_1,interval_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),dae);
 
     case (cache,env,{start,interval},_,impl)
       equation 
@@ -5535,7 +5535,7 @@ algorithm
         Types.simpleType(tp1);
         (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_) = Lookup.lookupVar(cache, env, cr_1);
       then
-        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),dae);
 
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, boolean or integer => discrete variable */ 
       equation 
@@ -5543,7 +5543,7 @@ algorithm
         Types.simpleType(tp1);
         Types.discreteType(tp1);
       then
-        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),dae);
         
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl) /* simple type, constant variability */ 
       equation 
@@ -5551,7 +5551,7 @@ algorithm
         true = Types.isParameterOrConstant(c);
         Types.simpleType(tp1);
       then
-        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),dae);
+        (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),dae);
         
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl)
       equation 
@@ -5712,7 +5712,7 @@ algorithm
       equation 
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_CONST()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
-        ty = (DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
+        ty = (DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_ARRAY(DAE.DIM(SOME(size)),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_CONST()),dae1);
@@ -5721,7 +5721,7 @@ algorithm
       equation 
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
-        ty = (DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
+        ty = (DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_ARRAY(DAE.DIM(SOME(size)),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_PARAM()),dae1);
@@ -5729,7 +5729,7 @@ algorithm
     case (cache,env,{dim},_,impl)
       equation 
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_VAR()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true);
-        ty = (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE);
+        ty = (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_VAR()),dae1);
@@ -5768,7 +5768,7 @@ algorithm
         (cache,
         DAE.CALL(Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), {exp},
              false, true, DAE.ET_BOOL,DAE.NO_INLINE),
-        DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_VAR));
+        DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_VAR));
   end matchcontinue;
 end elabBuiltinIsRoot;
 
@@ -5803,7 +5803,7 @@ algorithm
       equation
         (cache, exp, _, _,dae) = elabExp(cache, env, exp0, false, NONE, false);
       then 
-        (cache, DAE.BCONST(true),DAE.PROP((DAE.T_BOOL({}), NONE), DAE.C_CONST),dae);
+        (cache, DAE.BCONST(true),DAE.PROP(DAE.T_BOOL_DEFAULT, DAE.C_CONST),dae);
   end matchcontinue;
 end elabBuiltinRooted;
 
@@ -6053,16 +6053,16 @@ algorithm
         (cache,exp,DAE.PROP(tp,c),_,dae1) = elabExp(cache, env, e, impl, NONE,true);
 				/* Create argument slots for String function */	
         slots = {SLOT(("x",tp),false,NONE,{}),
-        				 SLOT(("minimumLength",(DAE.T_INTEGER({}),NONE)),false,SOME(DAE.ICONST(0)),{}),
-        				 SLOT(("leftJustified",(DAE.T_BOOL({}),NONE)),false,SOME(DAE.BCONST(true)),{}),
-        				 SLOT(("significantDigits",(DAE.T_INTEGER({}),NONE)),false,SOME(DAE.ICONST(6)),{})};
+        				 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(0)),{}),
+        				 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT),false,SOME(DAE.BCONST(true)),{}),
+        				 SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})};
         (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {});
         c = Util.listReduce(constlist, Types.constAnd);
         dae = DAEUtil.joinDaes(dae1,dae2);         
       then
 				(cache, 
 				DAE.CALL(Absyn.IDENT("String"),args_1,false,true,DAE.ET_STRING(),DAE.NO_INLINE),        
-				DAE.PROP((DAE.T_STRING({}),NONE),c),dae);		
+				DAE.PROP(DAE.T_STRING_DEFAULT,c),dae);		
   end matchcontinue;
 end elabBuiltinString;
   
@@ -6095,8 +6095,8 @@ algorithm
     case (cache,env,{x,y,n},_,impl) equation
       (cache,x1,DAE.PROP(tp1,c1),_,dae1) = elabExp(cache,env, x, impl, NONE,true);
       (cache,y1,DAE.PROP(tp2,c2),_,dae2) = elabExp(cache,env, y, impl, NONE,true);
-      (x2,tp11) = Types.matchType(x1,tp1,(DAE.T_REAL({}),NONE),true);
-      (y2,tp22) = Types.matchType(y1,tp2,(DAE.T_REAL({}),NONE),true);
+      (x2,tp11) = Types.matchType(x1,tp1,DAE.T_REAL_DEFAULT,true);
+      (y2,tp22) = Types.matchType(y1,tp2,DAE.T_REAL_DEFAULT,true);
       (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_,dae3) = elabExp(cache,env, n, impl, NONE,true);
       true = Types.isParameterOrConstant(c3);
       (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, n1, false, NONE, NONE, Ceval.MSG());      
@@ -6109,8 +6109,8 @@ algorithm
     case (cache,env,{x,y,n},_,impl) equation
       (cache,x1,DAE.PROP(tp1,c1),_,dae1) = elabExp(cache,env, x, impl, NONE,true);
       (cache,y1,DAE.PROP(tp2,c2),_,dae2) = elabExp(cache,env, y, impl, NONE,true);
-      (x2,tp11) = Types.matchType(x1,tp1,(DAE.T_REAL({}),NONE),true);
-      (y2,tp22) = Types.matchType(y1,tp2,(DAE.T_REAL({}),NONE),true);
+      (x2,tp11) = Types.matchType(x1,tp1,DAE.T_REAL_DEFAULT,true);
+      (y2,tp22) = Types.matchType(y1,tp2,DAE.T_REAL_DEFAULT,true);
       (cache,n1,DAE.PROP(tp3 as (DAE.T_INTEGER(_),_),c3),_,dae3) = elabExp(cache,env, n, impl, NONE,true);
       false = Types.isParameterOrConstant(c3);           
       c = Types.constAnd(c1,Types.constAnd(c2,c3));
@@ -6717,41 +6717,41 @@ protected function elabCallInteractive "function: elabCallInteractive
       Env.Cache cache;
 
     case (cache,env,Absyn.CREF_IDENT(name = "typeOf"),{Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = varid,subscripts = {}))},{},impl,SOME(st)) then (cache,DAE.CALL(Absyn.IDENT("typeOf"),
-          {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {DAE.CODE(Absyn.C_VARIABLENAME(Absyn.CREF_IDENT(varid,{})),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st)) then (cache,DAE.CALL(Absyn.IDENT("clear"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "clear"),{},{},impl,SOME(st)) then (cache,DAE.CALL(Absyn.IDENT("clear"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "clearVariables"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("clearVariables"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "clearVariables"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("clearVariables"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("list"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "list"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("list"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "list"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
 				className = Absyn.crefToPath(cr);	
       then
-        (cache,DAE.CALL(Absyn.IDENT("list"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,DAE.CALL(Absyn.IDENT("list"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
 		case (cache,env,Absyn.CREF_IDENT(name = "checkModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st)) 
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,DAE.CALL(Absyn.IDENT("checkModel"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
 		case (cache,env,Absyn.CREF_IDENT(name = "checkAllModelsRecursive"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,DAE.CALL(Absyn.IDENT("checkAllModelsRecursive"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
 		case (cache,env,Absyn.CREF_IDENT(name = "translateGraphics"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st)) 
 		  local Absyn.Path className;
 		  equation
 		  className = Absyn.crefToPath(cr);
 		then (cache,DAE.CALL(Absyn.IDENT("translateGraphics"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 		
     case (cache,env,Absyn.CREF_IDENT(name = "translateModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local
@@ -6760,14 +6760,14 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr); 
         cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         recordtype = (
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND()),
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,DAE.CALL(Absyn.IDENT("translateModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6779,14 +6779,14 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr); 
         cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         recordtype = (
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationObject")),
           {
           DAE.TYPES_VAR("flatClass",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND()),
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND()),
           DAE.TYPES_VAR("exeFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,DAE.CALL(Absyn.IDENT("exportDAEtoMatlab"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),filenameprefix},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
@@ -6798,7 +6798,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr_1) = elabUntypedCref(cache, env, cr, impl);
       then
         (cache, DAE.CALL(Absyn.IDENT("instantiateModel"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
 		/* Special case for Parham Vaseles OpenModelica Interactive, where buildModel 
 		   takes stepSize instead of startTime, stopTime and numberOfIntervals */
@@ -6812,121 +6812,121 @@ protected function elabCallInteractive "function: elabCallInteractive
 				// An ICONST is used as the default value of stepSize so that this case
 				// fails if stepSize isn't given as argument to buildModel.
 				(cache, DAE.RCONST(stepTime)) = getOptionalNamedArg(cache, env, SOME(st), impl, "stepSize", 
-					(DAE.T_REAL({}), NONE), args, DAE.ICONST(0));
+					DAE.T_REAL_DEFAULT, args, DAE.ICONST(0));
 				startTime = DAE.RCONST(0.0);
 				stopTime = DAE.RCONST(1.0);
 				intervals = realInt(1.0 /. stepTime);
 				numberOfIntervals = DAE.ICONST(intervals);
 				className = Absyn.crefToPath(cr);
-				(cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
+				(cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1e-6));  
-        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
+        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST("dassl"));
-        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
+        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST(""));
         cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
 			then
 				(cache, DAE.CALL(Absyn.IDENT("buildModel"),
 				{DAE.CODE(Absyn.C_TYPENAME(className), DAE.ET_OTHER()), startTime, stopTime,
 				numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},
 				false,true,DAE.ET_OTHER(),DAE.NO_INLINE),
-				DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
+				DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
-        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (DAE.T_REAL({}),NONE), 
+        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(0.0));
-        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (DAE.T_REAL({}),NONE), 
+        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1.0));
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
-          (DAE.T_INTEGER({}),NONE), args, DAE.ICONST(500));
-        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
+          DAE.T_INTEGER_DEFAULT, args, DAE.ICONST(500));
+        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1e-6));  
-        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
+        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST("dassl"));
-        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
+        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST(""));
         cname_str = Absyn.pathString(className);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
       then
         (cache,DAE.CALL(Absyn.IDENT("buildModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
-        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (DAE.T_REAL({}),NONE), 
+        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(0.0));
-        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (DAE.T_REAL({}),NONE), 
+        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1.0)); 
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
-          (DAE.T_INTEGER({}),NONE), args, DAE.ICONST(500));
-        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
+          DAE.T_INTEGER_DEFAULT, args, DAE.ICONST(500));
+        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1e-6)); 
-        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
+        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST("dassl"));
-        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
+        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST(""));
         cname_str = Absyn.pathString(className); 
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));  
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
       then
         (cache,DAE.CALL(Absyn.IDENT("buildModelBeast"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */ 
       local Absyn.Path className; DAE.Exp storeInTemp,noClean,tolerance;
       equation 
         className = Absyn.crefToPath(cr); 
         (cache,cr_1) = elabUntypedCref(cache, env, cr, impl);
-        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", (DAE.T_REAL({}),NONE), 
+        (cache,startTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "startTime", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(0.0));
-        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", (DAE.T_REAL({}),NONE), 
+        (cache,stopTime) = getOptionalNamedArg(cache,env, SOME(st), impl, "stopTime", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1.0));
         (cache,numberOfIntervals) = getOptionalNamedArg(cache,env, SOME(st), impl, "numberOfIntervals", 
-          (DAE.T_INTEGER({}),NONE), args, DAE.ICONST(500));
-        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", (DAE.T_REAL({}),NONE), 
+          DAE.T_INTEGER_DEFAULT, args, DAE.ICONST(500));
+        (cache,tolerance) = getOptionalNamedArg(cache,env, SOME(st), impl, "tolerance", DAE.T_REAL_DEFAULT, 
           args, DAE.RCONST(1e-6));  
-        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", (DAE.T_STRING({}),NONE), 
+        (cache,method) = getOptionalNamedArg(cache,env, SOME(st), impl, "method", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST("dassl"));
         classname = componentRefToPath(cr_1) "this extracts the fileNamePrefix which is used when generating code and init-file" ;
         cname_str = Absyn.pathString(classname);
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", 
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
          (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));
-        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", (DAE.T_STRING({}),NONE), 
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+        (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, 
           args, DAE.SCONST(""));
           (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", 
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         recordtype = (
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),
           {
           DAE.TYPES_VAR("resultFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,(DAE.T_STRING({}),NONE),DAE.UNBOUND())},NONE,NONE),NONE);
+          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND())},NONE,NONE),NONE);
       then
         (cache,DAE.CALL(Absyn.IDENT("simulate"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
@@ -6937,7 +6937,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr_1) = elabUntypedCref(cache, env, cr, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("jacobian"),{DAE.CREF(cr_1,DAE.ET_OTHER())},false,
-          true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResult"),{Absyn.STRING(value = filename),Absyn.ARRAY(arrayExp = vars),size_absyn},args,impl,SOME(st))
       equation 
@@ -6952,11 +6952,11 @@ protected function elabCallInteractive "function: elabCallInteractive
           (
           DAE.T_ARRAY(DAE.DIM(SOME(var_len)),
           (
-          DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_REAL({}),NONE)),NONE)),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM(SOME(size)),DAE.T_REAL_DEFAULT),NONE)),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResultSize"),{Absyn.STRING(value = filename)},args,impl,SOME(st)) /* elab_variablenames(vars) => vars\' &
 	list_length(vars) => var_len */  then (cache, DAE.CALL(Absyn.IDENT("readSimulationResultSize"),
-          {DAE.SCONST(filename)},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {DAE.SCONST(filename)},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentRef = _))},{},impl,SOME(st))
       local Absyn.Exp cr;
@@ -6964,14 +6964,14 @@ protected function elabCallInteractive "function: elabCallInteractive
         vars_1 = elabVariablenames({cr});
       then
         (cache,DAE.CALL(Absyn.IDENT("plot2"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1)},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{Absyn.ARRAY(arrayExp = vars)},{},impl,SOME(st))
       equation 
         vars_1 = elabVariablenames(vars);
       then
         (cache,DAE.CALL(Absyn.IDENT("plot2"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1)},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 //visualize(model)
   case (cache,env,Absyn.CREF_IDENT(name = "visualize"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
@@ -6982,7 +6982,7 @@ protected function elabCallInteractive "function: elabCallInteractive
 				className = Absyn.crefToPath(cr);
       then
         (cache,DAE.CALL(Absyn.IDENT("visualize"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 
 //plotAll(model)
@@ -6993,34 +6993,34 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
 //        vars_1 = elabVariablenames({cr2});
 				className = Absyn.crefToPath(cr);
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plotAll"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 //plotAll()
   case (cache,env,Absyn.CREF_IDENT(name = "plotAll"),{},args,impl,SOME(st)) /* Fill in rest of defaults here */
@@ -7030,34 +7030,34 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
 //        vars_1 = elabVariablenames({cr2});
 //				className = Absyn.crefToPath(cr);
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plotAll"),{interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 
 //plot2(model, x)
@@ -7068,34 +7068,34 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
         vars_1 = elabVariablenames({cr2});
 				className = Absyn.crefToPath(cr);
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plot"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()), DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 //plot2(model, {x,y})
   case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st)) /* Fill in rest of defaults here */
@@ -7105,35 +7105,35 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
         vars_1 = elabVariablenames(vars);
 				className = Absyn.crefToPath(cr);
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
 
 
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plot"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()), DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 
 
@@ -7144,33 +7144,33 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
         vars_1 = elabVariablenames({cr});
 
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plot"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 //plot2({x,y})
     case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.ARRAY(arrayExp = vars)},args,impl,SOME(st))
@@ -7178,34 +7178,34 @@ protected function elabCallInteractive "function: elabCallInteractive
 						  DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
             equation
         vars_1 = elabVariablenames(vars);
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plot"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentRef = _)),cd},{},impl,SOME(st))
       local 
@@ -7217,7 +7217,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         Types.integerOrReal(Types.arrayElementType(Types.getPropType(ptop)));
       then
         (cache,DAE.CALL(Absyn.IDENT("val"),{cr2,cd1},
-          false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric2"),vars,{},impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
@@ -7226,7 +7226,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         vars_1 = elabVariablenames(vars);
       then
         (cache,DAE.CALL(Absyn.IDENT("plotParametric2"),
-          vars_1,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          vars_1,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{Absyn.CREF(componentRef = cr), cr2 as Absyn.CREF(componentRef = _), cr3 as Absyn.CREF(componentRef = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
    argument as you are plotting at least one variable as a function of another.
@@ -7240,35 +7240,35 @@ protected function elabCallInteractive "function: elabCallInteractive
 				className = Absyn.crefToPath(cr);
         vars_3 = listAppend(vars_1, vars_2);
 
-         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
 
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
 
         (cache,DAE.CALL(Absyn.IDENT("plotParametric"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()), DAE.ARRAY(DAE.ET_OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
-        ,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        ,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 //plotParametric2(x,y)
    case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),{cr2 as Absyn.CREF(componentRef = _), cr3 as Absyn.CREF(componentRef = _)} ,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
@@ -7283,35 +7283,35 @@ protected function elabCallInteractive "function: elabCallInteractive
         vars_2 = elabVariablenames({cr3});
         vars_3 = listAppend(vars_1, vars_2);
 
-         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+         (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
 
-         (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+         (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
 
         (cache,DAE.CALL(Absyn.IDENT("plotParametric"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_3), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange}
-        ,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        ,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 	//plotParametric2(x,y)
     case (cache,env,Absyn.CREF_IDENT(name = "plotParametric"),vars,args,impl,SOME(st)) /* PlotParametric is similar to plot but does not allow a single CREF as an
@@ -7322,57 +7322,57 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation
 
         vars_1 = elabVariablenames(vars);
-        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", (DAE.T_STRING({}),NONE),
+        (cache,interpolation) = getOptionalNamedArg(cache,env, SOME(st), impl, "interpolation", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("linear"));
-        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", (DAE.T_STRING({}),NONE),
+        (cache,title) = getOptionalNamedArg(cache,env, SOME(st), impl, "title", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("Plot by OpenModelica"));
-        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", (DAE.T_BOOL({}),NONE),
+        (cache,legend) = getOptionalNamedArg(cache,env, SOME(st), impl, "legend", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", (DAE.T_BOOL({}),NONE),
+        (cache,grid) = getOptionalNamedArg(cache,env, SOME(st), impl, "grid", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(true));
-        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", (DAE.T_BOOL({}),NONE),
+        (cache,logX) = getOptionalNamedArg(cache,env, SOME(st), impl, "logX", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", (DAE.T_BOOL({}),NONE),
+        (cache,logY) = getOptionalNamedArg(cache,env, SOME(st), impl, "logY", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
-       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", (DAE.T_STRING({}),NONE),
+       (cache,xLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "xLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST("time"));
-        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", (DAE.T_STRING({}),NONE),
+        (cache,yLabel) = getOptionalNamedArg(cache,env, SOME(st), impl, "yLabel", DAE.T_STRING_DEFAULT,
           args, DAE.SCONST(""));
-        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", (DAE.T_BOOL({}),NONE),
+        (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false));
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_REAL({}), NONE)),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}));// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
         (cache,DAE.CALL(Absyn.IDENT("plotParametric"),
-          vars_1,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          vars_1,false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "enableSendData"),{Absyn.BOOL(value = enabled)},{},impl,SOME(st))
       local
         Boolean enabled;
-       then (cache, DAE.CALL(Absyn.IDENT("enableSendData"),{DAE.BCONST(enabled)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+       then (cache, DAE.CALL(Absyn.IDENT("enableSendData"),{DAE.BCONST(enabled)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setDataPort"),{Absyn.INTEGER(value = port)},{},impl,SOME(st))
       local
         Integer port;
-       then (cache, DAE.CALL(Absyn.IDENT("setDataPort"),{DAE.ICONST(port)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+       then (cache, DAE.CALL(Absyn.IDENT("setDataPort"),{DAE.ICONST(port)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setVariableFilter"),{Absyn.ARRAY(arrayExp = strings)},{},impl,SOME(st))
       local
         list<Absyn.Exp> strings;
         equation
           vars_1 = elabVariablenames(strings);
-       then (cache, DAE.CALL(Absyn.IDENT("setVariableFilter"),{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+       then (cache, DAE.CALL(Absyn.IDENT("setVariableFilter"),{DAE.ARRAY(DAE.ET_OTHER(), false, vars_1)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
 
     case (cache,env,Absyn.CREF_IDENT(name = "timing"),{exp},{},impl,SOME(st))
       equation 
         (cache,exp_1,prop,st_1,_) = elabExp(cache, env, exp, impl, SOME(st),true);
       then
-        (cache,DAE.CALL(Absyn.IDENT("timing"),{exp_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),st_1);
+        (cache,DAE.CALL(Absyn.IDENT("timing"),{exp_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),st_1);
 
     case (cache,env,Absyn.CREF_IDENT(name = "generateCode"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -7380,71 +7380,71 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr); 
       then
         (cache,DAE.CALL(Absyn.IDENT("generateCode"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setLinker"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
-    case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setLinkerFlags"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
-    case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setCompiler"),{DAE.SCONST(str)},false, true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "setLinker"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setLinker"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setLinkerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setLinkerFlags"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setCompiler"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setCompiler"),{DAE.SCONST(str)},false, true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
       
       case (cache,env,Absyn.CREF_IDENT(name = "verifyCompiler"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("verifyCompiler"),{},false,
-          true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
       
     case (cache,env,Absyn.CREF_IDENT(name = "setCompilerPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) 
-      then (cache, DAE.CALL(Absyn.IDENT("setCompilerPath"),{DAE.SCONST(str)},false, true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+      then (cache, DAE.CALL(Absyn.IDENT("setCompilerPath"),{DAE.SCONST(str)},false, true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompileCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setCompileCommand"),{DAE.SCONST(str)},false,
-          true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setPlotCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setPlotCommand"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setPlotCommand"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setPlotCommand"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getSettings"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getSettings"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getSettings"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getSettings"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setTempDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setTempDirectoryPath"),{DAE.SCONST(str)},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
           
     case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getTempDirectoryPath"),
-          {},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setInstallationDirectoryPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setInstallationDirectoryPath"),
-          {DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
    
     case (cache,env,Absyn.CREF_IDENT(name = "getInstallationDirectoryPath"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getInstallationDirectoryPath"),
-          {},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
 		case (cache,env,Absyn.CREF_IDENT(name = "setModelicaPath"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setModelicaPath"),
-          {DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          {DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "setCompilerFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setCompilerFlags"),{DAE.SCONST(str)},false,
-          true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+          true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setDebugFlags"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setDebugFlags"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("cd"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("cd"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("cd"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("cd"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getVersion"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getVersion"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getVersion"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getVersion"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getTempDirectoryPath"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getTempDirectoryPath"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getTempDirectoryPath"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "system"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("system"),{DAE.SCONST(str)},false,true,DAE.ET_INT(),DAE.NO_INLINE),DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "system"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("system"),{DAE.SCONST(str)},false,true,DAE.ET_INT(),DAE.NO_INLINE),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "readFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("readFile"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "readFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("readFile"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
       
-    case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("readFileNoNumeric"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("readFileNoNumeric"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("listVariables"),{},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_NOTYPE(),NONE)),NONE),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */ 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getErrorString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getErrorString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesString"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getMessagesString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesString"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getMessagesString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "clearMessages"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("clearMessages"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "clearMessages"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("clearMessages"),{},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
   
-    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesStringInternal"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getMessagesStringInternal"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "getMessagesStringInternal"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("getMessagesStringInternal"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("runScript"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "runScript"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("runScript"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "loadModel"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -7452,11 +7452,11 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr); 
       then
         (cache,DAE.CALL(Absyn.IDENT("loadModel"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},
-          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("deleteFile"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "deleteFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("deleteFile"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("loadFile"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "loadFile"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("loadFile"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -7464,7 +7464,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           className = Absyn.crefToPath(cr); 
       then
         (cache,DAE.CALL(Absyn.IDENT("saveModel"),
-          {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "saveTotalModel"),{Absyn.STRING(value = str),Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
@@ -7472,18 +7472,18 @@ protected function elabCallInteractive "function: elabCallInteractive
           className = Absyn.crefToPath(cr); 
       then
         (cache,DAE.CALL(Absyn.IDENT("saveTotalModel"),
-          {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.SCONST(str),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "save"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st))
       local Absyn.Path className;
       equation 
         className = Absyn.crefToPath(cr); 
       then
-        (cache,DAE.CALL(Absyn.IDENT("save"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+        (cache,DAE.CALL(Absyn.IDENT("save"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "saveAll"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("saveAll"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "saveAll"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("saveAll"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
-    case (cache,env,Absyn.CREF_IDENT(name = "help"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("help"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st)); 
+    case (cache,env,Absyn.CREF_IDENT(name = "help"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("help"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st)); 
 
     case (cache,env,Absyn.CREF_IDENT(name = "getUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7491,7 +7491,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getUnit"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getQuantity"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7499,7 +7499,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getQuantity"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getDisplayUnit"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7507,7 +7507,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getDisplayUnit"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_STRING({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getMin"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7515,7 +7515,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getMin"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getMax"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7523,7 +7523,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getMax"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getStart"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7531,7 +7531,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getStart"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getFixed"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7539,7 +7539,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getFixed"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getNominal"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7547,7 +7547,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,cr2_1) = elabUntypedCref(cache, env, cr2, impl);
       then
         (cache,DAE.CALL(Absyn.IDENT("getNominal"),
-          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_REAL({}),NONE),DAE.C_VAR()),SOME(st));
+          {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getStateSelect"),{Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = cr2)},{},impl,SOME(st))
       equation 
@@ -7563,13 +7563,13 @@ protected function elabCallInteractive "function: elabCallInteractive
       equation 
         (cache,bool_exp_1,prop,st_1,_) = elabExp(cache,env, bool_exp, impl, SOME(st),true);
       then
-        (cache,DAE.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
+        (cache,DAE.CALL(Absyn.IDENT("echo"),{bool_exp_1},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "getClassesInModelicaPath"),{},{},impl,SOME(st))
-      then (cache,DAE.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
+      then (cache,DAE.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
         
     case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},{},impl,SOME(st))
-    then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP((DAE.T_BOOL({}),NONE),DAE.C_CONST()),SOME(st));
+    then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
         
 case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
       local Absyn.Path className; DAE.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
@@ -7577,24 +7577,24 @@ case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef =
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
         (cache,asInSimulationCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "asInSimulationCode",
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,addOriginalIncidenceMatrix) = getOptionalNamedArg(cache,env, SOME(st), impl, "addOriginalIncidenceMatrix",
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));          
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));          
         (cache,addSolvingInfo) = getOptionalNamedArg(cache,env, SOME(st), impl, "addSolvingInfo",
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));          
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));          
         (cache,addMathMLCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "addMathMLCode",
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,dumpResiduals) = getOptionalNamedArg(cache,env, SOME(st), impl, "dumpResiduals",
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));          
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));          
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-          (DAE.T_STRING({}),NONE), args, DAE.SCONST(cname_str));
+          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp",
-          (DAE.T_BOOL({}),NONE), args, DAE.BCONST(false));
+          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
       then
         (cache,DAE.CALL(Absyn.IDENT("dumpXMLDAE"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM(SOME(2)),(DAE.T_STRING({}),NONE)),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
   end matchcontinue;
 end elabCallInteractive;
 
@@ -11644,7 +11644,7 @@ algorithm
         (cache,exp,DAE.PROP(t2,c));
     case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st)
       equation 
-        failure(equality(t1 = (DAE.T_BOOL({}),NONE)));
+        failure(equality(t1 = DAE.T_BOOL_DEFAULT));
         e_str = Exp.printExpStr(e1);
         t_str = Types.unparseType(t1);
         Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
@@ -12497,47 +12497,47 @@ end elementType;
  * The types are a bit hard to read, but they are simply 1 through 9-dimensional
  * arrays of the basic types. */
 protected constant list<DAE.Type> intarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_INTEGER({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
 };
 protected constant list<DAE.Type> realarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_REAL({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
 };
 protected constant list<DAE.Type> stringarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_STRING({}),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
 };
 /* Simply a list of 9 of that basic type; used to match with the array types */
 protected constant list<DAE.Type> inttypes = {
-  (DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)
+  DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT
 };
 protected constant list<DAE.Type> realtypes = {
-  (DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)
+  DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT
 };
 protected constant list<DAE.Type> stringtypes = {
-  (DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)
+  DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT
 };
 
 
@@ -12579,11 +12579,11 @@ algorithm
                        stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.ADD(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
           (DAE.ADD(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_STRING({}),NONE))};
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
         arrays = Util.listFlatten({intarrs,realarrs,stringarrs});
         types = Util.listFlatten({scalars,arrays});
       then
@@ -12598,11 +12598,11 @@ algorithm
                        stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.ADD(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
           (DAE.ADD(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_STRING({}),NONE))};
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
         intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
                           inttypes, intarrtypes, intarrtypes);
         realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12628,9 +12628,9 @@ algorithm
                      realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.SUB(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
         (cache,types);
@@ -12642,9 +12642,9 @@ algorithm
                      realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.SUB(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
         intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
                           inttypes, intarrtypes, intarrtypes);
         realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12666,10 +12666,10 @@ algorithm
         real_mul_sp = DAE.MUL_SCALAR_PRODUCT(DAE.ET_REAL());
         int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_INT());
         real_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_REAL());
-        int_scalar = (DAE.T_INTEGER({}),NONE);
+        int_scalar = DAE.T_INTEGER_DEFAULT;
         int_vector = (DAE.T_ARRAY(DAE.DIM(NONE),int_scalar),NONE);
         int_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),int_vector),NONE);
-        real_scalar = (DAE.T_REAL({}),NONE);
+        real_scalar = DAE.T_REAL_DEFAULT;
         real_vector = (DAE.T_ARRAY(DAE.DIM(NONE),real_scalar),NONE);
         real_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),real_vector),NONE);
         scalars = {(int_mul,{int_scalar,int_scalar},int_scalar),
@@ -12701,9 +12701,9 @@ algorithm
 					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.MUL(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_INTEGER({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.MUL(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
         intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
 					inttypes, intarrtypes, intarrtypes);
         realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12720,7 +12720,7 @@ algorithm
     case (cache,Absyn.DIV(),env,t1,t2)
       equation 
         real_div = DAE.DIV(DAE.ET_REAL());
-        real_scalar = (DAE.T_REAL({}),NONE);
+        real_scalar = DAE.T_REAL_DEFAULT;
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
         realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
 					realarrtypes, realtypes, realarrtypes);
@@ -12733,7 +12733,7 @@ algorithm
 					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.DIV(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
         realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
 					realtypes, realarrtypes, realarrtypes);
         realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12745,9 +12745,9 @@ algorithm
         
     case (cache,Absyn.POW(),env,t1,t2)
       equation 
-        real_scalar = (DAE.T_REAL({}),NONE) "The POW operator. a^b is only defined for integer exponents, i.e. b must
+        real_scalar = DAE.T_REAL_DEFAULT "The POW operator. a^b is only defined for integer exponents, i.e. b must
 	  be of type Integer" ;
-        int_scalar = (DAE.T_INTEGER({}),NONE);
+        int_scalar = DAE.T_INTEGER_DEFAULT;
         real_vector = (DAE.T_ARRAY(DAE.DIM(NONE),real_scalar),NONE);
         real_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),real_vector),NONE);
         real_pow = DAE.POW(DAE.ET_REAL());
@@ -12766,7 +12766,7 @@ algorithm
 					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.POW(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_REAL({}),NONE))};
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
         realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
 					realtypes, realarrtypes, realarrtypes);
         realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12779,10 +12779,10 @@ algorithm
     case (cache,Absyn.UMINUS(),env,t1,t2)
       equation 
         scalars = {
-          (DAE.UMINUS(DAE.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
-          (DAE.T_INTEGER({}),NONE)),
-          (DAE.UMINUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
-          (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
+          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
         intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
 					intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12793,10 +12793,10 @@ algorithm
     case (cache,Absyn.UPLUS(),env,t1,t2)
       equation 
         scalars = {
-          (DAE.UPLUS(DAE.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
-          (DAE.T_INTEGER({}),NONE)),
-          (DAE.UPLUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
-          (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
+          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
         intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
 					intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12807,10 +12807,10 @@ algorithm
     case (cache,Absyn.UMINUS_EW(),env,t1,t2)
       equation 
         scalars = {
-          (DAE.UMINUS(DAE.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
-          (DAE.T_INTEGER({}),NONE)),
-          (DAE.UMINUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
-          (DAE.T_REAL({}),NONE))} "The UMINUS operator, unary minus" ;
+          (DAE.UMINUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
         intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
 					intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12821,10 +12821,10 @@ algorithm
     case (cache,Absyn.UPLUS_EW(),env,t1,t2)
       equation 
         scalars = {
-          (DAE.UPLUS(DAE.ET_INT()),{(DAE.T_INTEGER({}),NONE)},
-          (DAE.T_INTEGER({}),NONE)),
-          (DAE.UPLUS(DAE.ET_REAL()),{(DAE.T_REAL({}),NONE)},
-          (DAE.T_REAL({}),NONE))} "The UPLUS operator, unary plus." ;
+          (DAE.UPLUS(DAE.ET_INT()),{DAE.T_INTEGER_DEFAULT},
+          DAE.T_INTEGER_DEFAULT),
+          (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
+          DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
         intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})), 
 					intarrtypes, intarrtypes);
         realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})), 
@@ -12834,22 +12834,22 @@ algorithm
         (cache,types);
     case (cache,Absyn.AND(),env,t1,t2) then (cache,{
           (DAE.AND(),
-          {(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)},(DAE.T_BOOL({}),NONE))});  /* Logical operators Not considered for overloading yet. */ 
+          {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)});  /* Logical operators Not considered for overloading yet. */ 
     case (cache,Absyn.OR(),env,t1,t2) then (cache,{
-          (DAE.OR(),{(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)},
-          (DAE.T_BOOL({}),NONE))}); 
+          (DAE.OR(),{DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},
+          DAE.T_BOOL_DEFAULT)}); 
     case (cache,Absyn.NOT(),env,t1,t2) then (cache,{
-          (DAE.NOT(),{(DAE.T_BOOL({}),NONE)},(DAE.T_BOOL({}),NONE))}); 
+          (DAE.NOT(),{DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)}); 
     case (cache,Absyn.LESS(),env,t1,t2) /* Relational operators */ 
       equation 
         scalars = {
           (DAE.LESS(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.LESS(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.LESS(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (DAE.LESS(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))};
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.LESS(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
@@ -12857,12 +12857,12 @@ algorithm
       equation 
         scalars = {
           (DAE.LESSEQ(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.LESSEQ(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.LESSEQ(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (DAE.LESSEQ(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))};
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.LESSEQ(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
@@ -12870,12 +12870,12 @@ algorithm
       equation 
         scalars = {
           (DAE.GREATER(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.GREATER(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.GREATER(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (DAE.GREATER(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))};
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.GREATER(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
@@ -12883,12 +12883,12 @@ algorithm
       equation 
         scalars = {
           (DAE.GREATEREQ(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.GREATEREQ(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.GREATEREQ(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (DAE.GREATEREQ(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE))};
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.GREATEREQ(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
 
         types = Util.listFlatten({scalars});
       then
@@ -12898,15 +12898,15 @@ algorithm
         defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
         scalars = {
           (DAE.EQUAL(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.EQUAL(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.EQUAL(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.EQUAL(DAE.ET_BOOL()),
-          {(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (DAE.EQUAL(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE)),          
-          (DAE.EQUAL(defaultExpType),{t1,t2},(DAE.T_BOOL({}),NONE))};
+          {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.EQUAL(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT),          
+          (DAE.EQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
@@ -12915,15 +12915,15 @@ algorithm
         defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
         scalars = {
           (DAE.NEQUAL(DAE.ET_INT()),
-          {(DAE.T_INTEGER({}),NONE),(DAE.T_INTEGER({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.NEQUAL(DAE.ET_REAL()),
-          {(DAE.T_REAL({}),NONE),(DAE.T_REAL({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.NEQUAL(DAE.ET_STRING()),
-          {(DAE.T_STRING({}),NONE),(DAE.T_STRING({}),NONE)},(DAE.T_BOOL({}),NONE)),
+          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.NEQUAL(DAE.ET_BOOL()),
-          {(DAE.T_BOOL({}),NONE),(DAE.T_BOOL({}),NONE)},(DAE.T_BOOL({}),NONE)),
-          (DAE.NEQUAL(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},(DAE.T_BOOL({}),NONE)),
-          (DAE.NEQUAL(defaultExpType),{t1,t2},(DAE.T_BOOL({}),NONE))};
+          {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.NEQUAL(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT),
+          (DAE.NEQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);

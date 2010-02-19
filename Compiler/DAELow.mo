@@ -15483,10 +15483,10 @@ algorithm
     local
       list<String> strLst;
       Absyn.Path path;
-    case REAL() then ((DAE.T_REAL({}),NONE));
-    case INT() then ((DAE.T_INTEGER({}),NONE));
-    case BOOL() then ((DAE.T_BOOL({}),NONE));
-    case STRING() then ((DAE.T_STRING({}),NONE));
+    case REAL() then DAE.T_REAL_DEFAULT;
+    case INT() then DAE.T_INTEGER_DEFAULT;
+    case BOOL() then DAE.T_BOOL_DEFAULT;
+    case STRING() then DAE.T_STRING_DEFAULT;
     case ENUMERATION(strLst) then ((DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),strLst,{}),NONE));
     case EXT_OBJECT(path) then ((DAE.T_COMPLEX(ClassInf.EXTERNAL_OBJ(path),{},NONE,NONE),NONE));
   end matchcontinue;

@@ -5010,8 +5010,7 @@ algorithm
 			Option<Interactive.InteractiveSymbolTable> new_st;
 		case (new_cache, new_env, _, _, _, value :: {}, _, new_st, _, _)
 			equation
-				new_env = Env.extendFrameForIterator(env, iteratorName, 
-					(DAE.T_INTEGER({}), NONE), DAE.VALBOUND(value), SCode.VAR());
+				new_env = Env.extendFrameForIterator(env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR());
 				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
 					implicitInstantiation, new_st, dim, msg);
 				then (new_cache, value, new_st); 
@@ -5019,8 +5018,7 @@ algorithm
 			equation
 				(new_cache, value2, new_st) = cevalReduction(new_cache, new_env, op, exp, 
 					iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
-				new_env = Env.extendFrameForIterator(new_env, iteratorName, 
-					(DAE.T_INTEGER({}), NONE), DAE.VALBOUND(value), SCode.VAR());
+				new_env = Env.extendFrameForIterator(new_env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR());
 				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
 					implicitInstantiation, new_st, dim, msg);
 				reduced_value = op(value, value2);

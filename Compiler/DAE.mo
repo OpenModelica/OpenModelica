@@ -619,25 +619,27 @@ public type Type = tuple<TType, Option<Absyn.Path>> "
 public
 type EqualityConstraint = Option<tuple<Absyn.Path, Integer>>;
  
-public 
-uniontype TType "-TType contains the actual type"
+public constant Type T_REAL_DEFAULT    = (T_REAL({}),NONE());
+public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
+public constant Type T_STRING_DEFAULT  = (T_STRING({}),NONE());
+public constant Type T_BOOL_DEFAULT    = (T_BOOL({}),NONE());
+
+public uniontype TType "-TType contains the actual type"
   record T_INTEGER
-    list<Var> varLstInt "varLstInt" ;
+    list<Var> varLstInt;
   end T_INTEGER;
 
   record T_REAL
-    list<Var> varLstReal "varLstReal" ;
+    list<Var> varLstReal;
   end T_REAL;
 
   record T_STRING
-    list<Var> varLstString "varLstString" ;
+    list<Var> varLstString;
   end T_STRING;
 
   record T_BOOL
-    list<Var> varLstBool "varLstBool" ;
+    list<Var> varLstBool;
   end T_BOOL;
-
-//  record T_ENUM end T_ENUM;
 
   record T_ENUMERATION
     Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;

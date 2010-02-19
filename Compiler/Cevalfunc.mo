@@ -1406,10 +1406,10 @@ algorithm
     local
       String nonBuiltin;
       SCode.Class typeClass;
-    case ("Integer") then ((DAE.T_INTEGER({}),NONE));
-    case ("Real") then ((DAE.T_REAL({}),NONE));
-    case ("String") then ((DAE.T_STRING({}),NONE));
-    case ("Boolean") then ((DAE.T_BOOL({}),NONE));
+    case ("Integer") then DAE.T_INTEGER_DEFAULT;
+    case ("Real") then DAE.T_REAL_DEFAULT;
+    case ("String") then DAE.T_STRING_DEFAULT;
+    case ("Boolean") then DAE.T_BOOL_DEFAULT;
 
   end matchcontinue;
 end getBuiltInTypeFromName;

@@ -1854,42 +1854,42 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("unit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"unit",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"unit",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("displayUnit",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"displayUnit",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"displayUnit",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;  
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_REAL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_REAL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_REAL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
         then v::varLst;                
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,(DAE.T_REAL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_REAL_DEFAULT,p);
         then v::varLst;          
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
@@ -1936,33 +1936,33 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;
      
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_INTEGER({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_INTEGER({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_INTEGER({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
         then v::varLst;                
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("nominal",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instIntegerClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,(DAE.T_INTEGER({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"nominal",optVal,exp,DAE.T_INTEGER_DEFAULT,p);
         then v::varLst;           
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod;
@@ -1993,12 +1993,12 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instStringClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;      
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod; 
@@ -2029,17 +2029,17 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst;                    
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,DAE.T_BOOL_DEFAULT,p);
       then v::varLst;     
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instBooleanClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
       then v::varLst;              
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod; 
@@ -2070,7 +2070,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("quantity",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,(DAE.T_STRING({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"quantity",optVal,exp,DAE.T_STRING_DEFAULT,p);
         then v::varLst; 
    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
@@ -2090,7 +2090,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p))))::submods,eqmod),pre) 
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,(DAE.T_BOOL({}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"fixed",optVal,exp,DAE.T_BOOL_DEFAULT,p);
       then v::varLst;              
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod; 
@@ -10228,7 +10228,7 @@ algorithm
         (cache,arraycrefe,arraycrprop,_,_) = Static.elabExp(cache, env, arraycr, impl, NONE,false);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
       then
-        (cache,exp,DAE.PROP((DAE.T_INTEGER({}),NONE),DAE.C_VAR()),st);
+        (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),st);
     /* For all other expressions, use normal elaboration */
     case (cache,env,absynExp,impl,st) 
       equation 
@@ -10690,28 +10690,28 @@ algorithm
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         funcs = DAEUtil.avlTreeNew();
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,(DAE.T_INTEGER({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
+      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_INTEGER_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
          
     case (vn,ty as(DAE.T_REAL(varLstReal = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         funcs = DAEUtil.avlTreeNew();
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,(DAE.T_REAL({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
+      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_REAL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
          
     case (vn,ty as(DAE.T_BOOL(varLstBool = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         funcs = DAEUtil.avlTreeNew();
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,(DAE.T_BOOL({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
+      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_BOOL_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
          
     case (vn,ty as(DAE.T_STRING(varLstString = _),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
       equation 
         finst_dims = Util.listFlatten(inst_dims);
         dae_var_attr = DAEUtil.setFinalAttr(dae_var_attr,finalPrefix);
         funcs = DAEUtil.avlTreeNew();
-      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,(DAE.T_STRING({}),NONE),e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
+      then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_STRING_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
          
     case (vn,ty as(DAE.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
     then DAEUtil.emptyDae; 
@@ -11284,7 +11284,7 @@ algorithm
         (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
-        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE()));
+        env_1 = addForLoopScope(env, i, DAE.T_INTEGER_DEFAULT);
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
@@ -11306,7 +11306,7 @@ algorithm
         (_, SCode.CLASS(restriction = SCode.R_TYPE(), classDef = SCode.ENUMERATION(enumLst = enumLst)), _) = 
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(enumLst);        
-        env_1 = addForLoopScope(env, i, (DAE.T_INTEGER({}),NONE()));
+        env_1 = addForLoopScope(env, i, DAE.T_INTEGER_DEFAULT);
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
@@ -12236,7 +12236,7 @@ algorithm
         dim = dim-1;
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
-				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
+				env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst), SCode.CONST());
 				/* use instEEquation*/ 
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InnerOuter.emptyInstHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl,graph);
         (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
@@ -12250,7 +12250,7 @@ algorithm
         dim = dim-1;
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
-				env_2 = Env.extendFrameForIterator(env_1, i, (DAE.T_INTEGER({}), NONE), DAE.VALBOUND(fst), SCode.CONST());
+				env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst), SCode.CONST());
 				/* Use instEInitialequation*/
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = instList(cache,env_2,InnerOuter.emptyInstHierarchy, mods, pre, csets, ci_state, instEInitialequation, eqs, impl,graph);
         (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
@@ -14453,14 +14453,14 @@ algorithm
     /* Real */
     case (cache,env,mod,tp as (DAE.T_REAL(varLstReal = varLst),path),index_list)  
       equation 
-        (quantity_str) = instBinding(mod, varLst, (DAE.T_STRING({}),NONE),index_list, "quantity",false);
-        (unit_str) = instBinding( mod, varLst, (DAE.T_STRING({}),NONE), index_list, "unit",false);
-        (displayunit_str) = instBinding(mod, varLst,(DAE.T_STRING({}),NONE), index_list, "displayUnit",false);
-        (min_val) = instBinding( mod, varLst, (DAE.T_REAL({}),NONE),index_list, "min",false);
-        (max_val) = instBinding(mod, varLst, (DAE.T_REAL({}),NONE),index_list, "max",false);
-        (start_val) = instBinding(mod, varLst, (DAE.T_REAL({}),NONE),index_list, "start",false);
-        (fixed_val) = instBinding( mod, varLst, (DAE.T_BOOL({}),NONE),index_list, "fixed",false);
-        (nominal_val) = instBinding(mod, varLst, (DAE.T_REAL({}),NONE),index_list, "nominal",false);
+        (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
+        (unit_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "unit",false);
+        (displayunit_str) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, "displayUnit",false);
+        (min_val) = instBinding( mod, varLst, DAE.T_REAL_DEFAULT,index_list, "min",false);
+        (max_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "max",false);
+        (start_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
+        (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
+        (nominal_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
         (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",true);
         (stateSelect_value) = getStateSelectFromExpOption(exp_bind_select);
         //TODO: check for protected attribute (here and below matches)
@@ -14472,18 +14472,18 @@ algorithm
     case (cache,env,mod,tp as (DAE.T_INTEGER(varLstInt = varLst),_),index_list) 
       local Option<DAE.Exp> min_val,max_val,start_val;
       equation 
-        (quantity_str) = instBinding(mod, varLst, (DAE.T_STRING({}),NONE), index_list, "quantity",false);
-        (min_val) = instBinding(mod, varLst, (DAE.T_INTEGER({}),NONE), index_list, "min",false);
-        (max_val) = instBinding(mod, varLst, (DAE.T_INTEGER({}),NONE), index_list, "max",false);
-        (start_val) = instBinding(mod, varLst, (DAE.T_INTEGER({}),NONE), index_list, "start",false);
-        (fixed_val) = instBinding(mod, varLst, (DAE.T_BOOL({}),NONE),index_list, "fixed",false);
+        (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
+        (min_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "min",false);
+        (max_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "max",false);
+        (start_val) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, "start",false);
+        (fixed_val) = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
       then
         (cache,SOME(DAE.VAR_ATTR_INT(quantity_str,(min_val,max_val),start_val,fixed_val,NONE,NONE,NONE)));
     /* Boolean */
     case (cache,env,mod,tp as (DAE.T_BOOL(varLstBool = varLst),_),index_list) 
       local Option<DAE.Exp> start_val;
       equation 
-        (quantity_str) = instBinding( mod, varLst, (DAE.T_STRING({}),NONE), index_list, "quantity",false);
+        (quantity_str) = instBinding( mod, varLst, DAE.T_STRING_DEFAULT, index_list, "quantity",false);
         (start_val) = instBinding(mod, varLst, tp, index_list, "start",false);
         (fixed_val) = instBinding(mod, varLst, tp, index_list, "fixed",false);
       then
@@ -14499,11 +14499,11 @@ algorithm
     /* Enumeration */
     case (cache,env,mod,(enumtype as (DAE.T_ENUMERATION(names = _,varLst=varLst),_)),index_list) 
       equation  
-        (quantity_str) = instBinding(mod, varLst, (DAE.T_STRING({}),NONE),index_list, "quantity",false);        
+        (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);        
         (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min",false);
         (exp_bind_max) = instBinding(mod, varLst, enumtype, index_list, "max",false);
         (exp_bind_start) = instBinding(mod, varLst, enumtype, index_list, "start",false);
-        (fixed_val) = instBinding( mod, varLst, (DAE.T_BOOL({}),NONE), index_list, "fixed",false);
+        (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT, index_list, "fixed",false);
       then
         (cache,SOME(DAE.VAR_ATTR_ENUMERATION(quantity_str,(exp_bind_min,exp_bind_max),exp_bind_start,fixed_val,NONE,NONE,NONE)));
     case (cache,env,mod,_,_)        
@@ -14537,19 +14537,19 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod,varLst, (DAE.T_BOOL({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod,varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
         (cache,Values.BOOL(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* Non constant expression return NONE */
     case (cache,env,mod,varLst,index_list,bind_name)  
       equation 
-        SOME(e) = instBinding(mod, varLst,(DAE.T_BOOL({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst,DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, varLst, (DAE.T_BOOL({}),NONE), index_list, bind_name,false);
+        NONE = instBinding(mod, varLst, DAE.T_BOOL_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -14584,19 +14584,19 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, varLst, (DAE.T_REAL({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT, index_list, bind_name,false);
         (cache,Values.REAL(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* non constant expression, return NONE */ 
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, varLst,(DAE.T_REAL({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, varLst,(DAE.T_REAL({}),NONE), index_list, bind_name,false);
+        NONE = instBinding(mod, varLst,DAE.T_REAL_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -14631,19 +14631,19 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, varLst, (DAE.T_INTEGER({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst, DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
         (cache,Values.INTEGER(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* got non-constant expression, return NONE */
     case (cache,env,mod,varLst,index_list,bind_name) 
       equation 
-        SOME(e) = instBinding(mod, varLst,(DAE.T_INTEGER({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, varLst,(DAE.T_INTEGER({}),NONE), index_list, bind_name,false);
+        NONE = instBinding(mod, varLst,DAE.T_INTEGER_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
@@ -14678,19 +14678,19 @@ algorithm
       Env.Cache cache;
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        SOME(e) = instBinding(mod, varLst,(DAE.T_STRING({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
         (cache,Values.STRING(result),_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.NO_MSG());
       then
         (cache,SOME(result));
     /* Non constant expression return NONE */
     case (cache,env,mod,varLst,index_list,bind_name) 
       equation 
-        SOME(e) = instBinding(mod, varLst,(DAE.T_STRING({}),NONE), index_list, bind_name,false);
+        SOME(e) = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)
       equation 
-        NONE = instBinding(mod, varLst,(DAE.T_STRING({}),NONE), index_list, bind_name,false);
+        NONE = instBinding(mod, varLst,DAE.T_STRING_DEFAULT, index_list, bind_name,false);
       then
         (cache,NONE);
     case (cache,env,mod,varLst,index_list,bind_name)

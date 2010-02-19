@@ -386,7 +386,7 @@ algorithm
   matchcontinue (id,argTypes)
     local
       Absyn.Ident localId;
-    case (localId,{}) then ((DAE.T_INTEGER({}),NONE())); // Return DUMMIE (this case should not happend)
+    case (localId,{}) then DAE.T_INTEGER_DEFAULT; // Return DUMMIE (this case should not happend)
     case (localId,(localId2,t) :: _)
       local
         DAE.Type t;
@@ -902,22 +902,10 @@ algorithm
   outType := matchcontinue(path)
     local
       DAE.Type t;
-    case(Absyn.IDENT("Integer")) 
-      equation
-        t = (DAE.T_INTEGER({}),NONE());
-    then t;
-    case(Absyn.IDENT("Real"))
-      equation
-        t = (DAE.T_REAL({}),NONE());
-        then t;
-    case(Absyn.IDENT("String"))
-      equation
-        t = (DAE.T_STRING({}),NONE());
-        then t;
-    case(Absyn.IDENT("Boolean"))
-      equation
-        t = (DAE.T_BOOL({}),NONE());
-        then t;
+    case(Absyn.IDENT("Integer")) then DAE.T_INTEGER_DEFAULT;
+    case(Absyn.IDENT("Real")) then DAE.T_REAL_DEFAULT;
+    case(Absyn.IDENT("String")) then DAE.T_STRING_DEFAULT;
+    case(Absyn.IDENT("Boolean")) then DAE.T_BOOL_DEFAULT;
   end matchcontinue;
 end reparseType;
 
