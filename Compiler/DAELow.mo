@@ -16362,8 +16362,27 @@ end findDelaySubExpressions;
 public function checkEquationBecomesZero
 " function checkEquationBecomesZero
   autor: Frenkel TUD
-  check if a division by zero occurd 
-  because of solving equations"
+  Check if a division by zero occurs 
+  because of solving the equation.
+  The main goal is to support the user with as much 
+  information about equations that cannot be solved
+  because of division by zero. Therefore the expressions of
+  the equation which reside below the slash have to be
+  inspect. The analysis is separated in to
+  - expressions which always be zero ( a-b, with a==b)
+    --> only constants and constant variables
+    --> ErrorMsg during compilation
+  - expressions which constant during simulation but depend 
+    on parameters and bound parameters.
+    --> constants and parameters
+    --> check after parameter adjustment but before 
+        calculation (c_runtime error msg)
+  - expressions which become during simulation equal zero
+    --> constants, parameters, time dependent variables
+    --> WarningMsg during compilation and the possibility  
+        (maybe with flag inside c_runtime) to use the division
+        macro from c_runtime for those equations
+        (therefore we need maybe a new API commant \"compileModel\")"
   input tuple<Equation, list<DAE.Exp>> inEqns;
   input DAELow indlow;
   output DAELow outdlow;
@@ -16378,6 +16397,7 @@ algorithm
       equation
         print(Exp.printExp2Str(exp));
         print("\n");
+        // first seperated the expressions 
         outdlow = checkEquationBecomesZero((eqn,explst),indlow);
     then 
       outdlow;

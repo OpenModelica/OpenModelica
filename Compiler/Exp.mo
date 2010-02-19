@@ -2495,7 +2495,7 @@ algorithm
   matchcontinue (inExp)
     local
       list<Exp> e_lst,e_lst_1,e1_lst,e2_lst,e2_lst_1;
-      Exp res,e,e1,e2;
+      Exp res,res1,e,e1,e2;
       Type tp;
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = tp),exp2 = e2)))
       equation 
@@ -2512,8 +2512,9 @@ algorithm
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
         res = makeProductLst(e_lst_1);
+        res1 = simplify1(res);
       then
-        res;
+        res1;
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2)))
       equation 
         e_lst = terms(e);
