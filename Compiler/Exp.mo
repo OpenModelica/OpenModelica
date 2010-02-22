@@ -7690,9 +7690,10 @@ algorithm
         /* Qualified componentreferences, replace subscripts */
     case(DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),source,target) equation
       (subs,c1) = replaceExpSubs(subs,source,target);
-      (DAE.CREF(cr,_),c2) = replaceExp(DAE.CREF(cr,ety),source,target);
+      (DAE.CREF(cr,_),c2) = replaceCrefExpSubs(DAE.CREF(cr,ety),source,target);
+//      (DAE.CREF(cr,_),c2) = replaceExp(DAE.CREF(cr,ety),source,target);
       c = c1+c2;
-    then (DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),c);
+    then (DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),c1);
     
     /* simple componentreference, replace subscripts */
     case(DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),source,target) equation
@@ -7717,12 +7718,46 @@ algorithm
   end matchcontinue;
 end replaceExp;
 
+protected function replaceCrefExpSubs
+"function: replaceCrefExpSubs
+help function to replaceExp. replaces expressions in subscript list
+from all Crefs.
+"
+  input Exp inExp1;
+  input Exp inExp2;
+  input Exp inExp3;
+  output Exp outExp;
+  output Integer outInteger;
+algorithm
+  (outExp,outInteger):=
+  matchcontinue (inExp1,inExp2,inExp3)
+    local
+      Exp source,target;
+      Integer c1,c2,c;
+      Operator op;
+      Type tp,ety;
+      Ident id;
+      ComponentRef cr;
+      list<Subscript> subs;
+    case(DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),source,target) equation
+      (subs,c1) = replaceExpSubs(subs,source,target);
+      (DAE.CREF(cr,_),c2) = replaceCrefExpSubs(DAE.CREF(cr,ety),source,target);
+      c = c1+c2;
+    then (DAE.CREF(DAE.CREF_QUAL(id,tp,subs,cr),ety),c);
+    
+    /* simple componentreference, replace subscripts */
+    case(DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),source,target) equation
+      (subs,c1) = replaceExpSubs(subs,source,target);
+    then (DAE.CREF(DAE.CREF_IDENT(id,tp,subs),ety),c1);
+  end matchcontinue;
+end replaceCrefExpSubs;
+
 protected function replaceExpSubs 
 "function: replaceExpSubs
 help function to replaceExp. replaces expressions in subscript list
 "
-input list<Subscript> subs;
- input Exp source;
+  input list<Subscript> subs;
+  input Exp source;
   input Exp target;
   output list<Subscript> outSubs;
   output Integer cnt;
