@@ -16242,9 +16242,10 @@ algorithm
         VAR(varName=cr) = vararrayNth(varr, v_1);
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
-/*        (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Exp.isConst);
+        divexplst = Exp.extractDivExpFromExp(expr);
+        (constexplst,nonconstexplst) = Util.listSplitOnTrue(divexplst,Exp.isConst);
         // check constexplst if equal 0 
-        blst = Util.listMap(constexplst, Exp.expCanBeZero);
+        blst = Util.listMap(constexplst, Exp.isZero);
         false = Util.boolOrList(blst);
         // check nonconstexplst if tearing variables or variables which will be
         // changed during solving process inside
@@ -16253,8 +16254,8 @@ algorithm
         blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,Exp.crefEqual);
         blst_1 = Util.listMap(blstlst,Util.boolOrList);
         (tnofixedexplst,tfixedexplst) = listSplitOnTrue(nonconstexplst,blst_1);
-//        false = listLength(tnofixedexplst) > 0;
-        print("\ntfixedexplst DivExpLst:\n");
+        true = listLength(tnofixedexplst) < 1;
+/*        print("\ntfixedexplst DivExpLst:\n");
         s = Util.listMap(tfixedexplst, Exp.printExpStr);
         Util.listMap0(s,print);
         print("\n===============================\n");
@@ -16391,13 +16392,19 @@ algorithm
     local
       Equation eqn;
       DAE.Exp exp;
-      list<DAE.Exp> explst;
+      list<DAE.Exp> explst,constexplst,nonconstexplst;
+      String se,seqn;
     case((_,{}),indlow) then indlow;
     case((eqn,exp::explst),indlow)
       equation
-        print(Exp.printExp2Str(exp));
-        print("\n");
+        se = Exp.printExp2Str(exp);
+        print(se);
+        print("\nConst Expressions");
         // first seperated the expressions 
+        // const expressions
+        true = Exp.isZero(exp);
+        seqn = equationStr(eqn);
+        Error.addMessage(Error.DIVISION_BY_ZERO, {se,seqn});
         outdlow = checkEquationBecomesZero((eqn,explst),indlow);
     then 
       outdlow;

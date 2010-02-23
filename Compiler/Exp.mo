@@ -2512,9 +2512,8 @@ algorithm
         e_lst = listAppend(e1_lst, e2_lst_1);
         e_lst_1 = simplifyMul(e_lst);
         res = makeProductLst(e_lst_1);
-        res1 = simplify1(res);
       then
-        res1;
+        res;
     case ((e as DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2)))
       equation 
         e_lst = terms(e);
@@ -4732,14 +4731,29 @@ algorithm
         e = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e3),DAE.DIV(tp2),e2))  ;
       then
         e;
-
         /* (a/b)/c => a/(bc)) */
     case (_,DAE.DIV(ty = tp),DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = tp2),exp2 = e2),e3)
       equation 
         e = simplify1(DAE.BINARY(e1,DAE.DIV(tp2),DAE.BINARY(e2,DAE.MUL(tp),e3)));
       then
         e;
+ 
+        /* a / (b*a)  = 1/b */
+    case (_,DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp2),exp2 = e3))
+      equation
+        true = expEqual(e1,e3);
+        e = simplify1(DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e2));
+      then
+        e;
 
+        /* a / (a*b)  = 1/b */
+    case (_,DAE.DIV(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.MUL(ty = tp2),exp2 = e3))
+      equation
+        true = expEqual(e1,e2);
+        e = simplify1(DAE.BINARY(DAE.RCONST(1.0),DAE.DIV(tp2),e3));
+      then
+        e;
+ 
     case (_,DAE.ADD(ty = ty),e1,e2)
       equation 
         true = isZero(e1);
@@ -4790,7 +4804,7 @@ algorithm
       then
         res;
         /* e1(e2/e3) => (e1e2)/e3 */ 
-    case (_,DAE.MUL(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3)) 
+     case (_,DAE.MUL(ty = tp),e1,DAE.BINARY(exp1 = e2,operator = DAE.DIV(ty = tp2),exp2 = e3)) 
       equation 
         res = simplify1(DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e2),DAE.DIV(tp2),e3));
       then
@@ -4872,6 +4886,13 @@ algorithm
         e = simplify1(DAE.UNARY(DAE.UMINUS(ty),e1));
       then
         e;
+        /* a / a  = 1 */
+    case (_,DAE.DIV(ty = ty),e1,e2)
+      equation
+      true = expEqual(e1,e2);
+      res = createConstOne(ty);
+    then
+       res;
 
     case (_,DAE.DIV(ty = ty),DAE.UNARY(operator = DAE.UMINUS(ty = ty1),exp = e1),DAE.UNARY(operator = DAE.UMINUS(ty = ty2),exp = e2))
       equation 
