@@ -433,7 +433,7 @@ algorithm
       then
         (cache,c,env_1); 
         
-    // Qualified names in package  
+    // Qualified names in package and non-package
     case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
       equation 
         (false,_) = scopePrefixOf(env,p);
@@ -445,27 +445,12 @@ algorithm
           cache,env2,InnerOuter.emptyInstHierarchy, 
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
           ci_state, c, false, {}); 
-         ClassInf.valid(cistate1, SCode.R_PACKAGE());
-        (cache,c_1,env5) = lookupClass2(cache,env4, path, msgflag) "Has NOT to do additional check for encapsulated classes, see rule above" ;
+        // Was 2 cases for package/non-package - all they did was fail or succeed on this
+        // If we comment it out, we get faster code, and less of it to maintain
+        // ClassInf.valid(cistate1, SCode.R_PACKAGE());
+        (cache,c_1,env5) = lookupClass2(cache,env4, path, msgflag);
       then
         (cache,c_1,env5);
-        
-    // Qualified names in non package 
-    case (cache,env,(p as Absyn.QUALIFIED(name = pack,path = path)),msgflag) 
-      equation 
-        (false,_) = scopePrefixOf(env,p);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass2(cache,env, Absyn.IDENT(pack), msgflag);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-        (cache,env_2,_,cistate1) = 
-        Inst.partialInstClassIn(
-          cache,env2,InnerOuter.emptyInstHierarchy,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}); 
-        failure(ClassInf.valid(cistate1, SCode.R_PACKAGE()));
-        (cache,c_1,env_3) = lookupClass2(cache,env_2, path, msgflag) "Has to do additional check for encapsulated classes, see rule below" ;
-      then
-        (cache,c_1,env_3);
         
     case (cache,env,path,true)
       equation 
