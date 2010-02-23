@@ -16392,19 +16392,29 @@ algorithm
     local
       Equation eqn;
       DAE.Exp exp;
-      list<DAE.Exp> explst,constexplst,nonconstexplst;
+      list<DAE.Exp> explst;
+      DAE.ComponentRef cr;
+      list<Var> vars;
+      Variables variables;
       String se,seqn;
     case((_,{}),indlow) then indlow;
+    // const expressions
     case((eqn,exp::explst),indlow)
       equation
-        se = Exp.printExp2Str(exp);
-        print(se);
-        print("\nConst Expressions");
-        // first seperated the expressions 
-        // const expressions
         true = Exp.isZero(exp);
         seqn = equationStr(eqn);
-        Error.addMessage(Error.DIVISION_BY_ZERO, {se,seqn});
+        se = "";
+        Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se});
+        outdlow = checkEquationBecomesZero((eqn,explst),indlow);
+    then 
+      outdlow;
+    // ComponentRef expressions
+    case((eqn,(exp as DAE.CREF(componentRef=cr))::explst),indlow)
+      equation
+        se = Exp.printExp2Str(exp);
+        variables = daeVars(indlow);
+        (vars,_) = getVar(cr,variables);
+        seqn = equationStr(eqn);
         outdlow = checkEquationBecomesZero((eqn,explst),indlow);
     then 
       outdlow;
