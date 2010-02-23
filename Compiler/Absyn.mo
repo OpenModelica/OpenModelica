@@ -2764,6 +2764,29 @@ algorithm
   end matchcontinue;
 end stripLast;
 
+public function stripLastCref "function: stripLast
+  Returns the path given as argument to 
+  the function minus the last ident."
+  input ComponentRef inPath;
+  output ComponentRef outPath;
+algorithm 
+  outPath:=
+  matchcontinue (inPath)
+    local
+      Ident str;
+      ComponentRef p_1,p;
+      list<Subscript> subs;
+    case (CREF_IDENT(name = _)) then fail(); 
+    case (CREF_QUAL(name = str,subScripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs); 
+    case (CREF_QUAL(name = str,subScripts = subs,componentRef = p))
+      equation 
+        p_1 = stripLastCref(p);
+      then
+        CREF_QUAL(str,subs,p_1);
+  end matchcontinue;
+end stripLastCref;
+
+
 public function splitQualAndIdentPath "
 Author BZ 2008-04
 Function for splitting Absynpath into two parts,

@@ -4180,8 +4180,8 @@ algorithm
   */
 end stringAppendList;
 
-public function stringAppendList_tail
-"@author adrpo
+public function stringAppendList_tail "
+@author adrpo
  tail recursive implmentation for stringAppendList"
   input list<String> inStringLst;
   input String accumulator;
