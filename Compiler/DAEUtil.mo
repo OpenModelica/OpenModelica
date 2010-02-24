@@ -48,8 +48,7 @@ public constant DAE.DAElist emptyDae = DAE.DAE({},DAE.AVLTREENODE(NONE,0,NONE,NO
 
 public function derivativeOrder "
 Function to sort derivatives.
-Used for Util.sort
-"
+Used for Util.sort"
 input tuple<Integer,DAE.derivativeCond> e1,e2; //greaterThanFunc
 output Boolean b;
 Integer i1,i2;
@@ -100,7 +99,7 @@ matchcontinue (bindExp,attr)
     then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn));
   case (bindExp,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn)))
     then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn));
-  case(_,_) equation print("-failur DAE.add_Equation_Bound_String\n"); then fail();
+  case(_,_) equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
    end matchcontinue;
 end addEquationBoundString;
 
@@ -5491,7 +5490,7 @@ algorithm
     case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval) // only display failure on if equation  
       equation
         elt_str = dumpElementsStr({elt});
-        Debug.fprintln("failtrace", "- DAE.ifEqToExpr failed " +& elt_str);
+        Debug.fprintln("failtrace", "- DAEUtil.ifEqToExpr failed " +& elt_str);
       then fail();
   end matchcontinue;
 end ifEqToExpr;
@@ -5503,15 +5502,39 @@ algorithm len := matchcontinue(tbs)
   local
     list<DAE.Element> tb;
     Integer recLen;
-  case(tb::{}) then listLength(tb);
+  case(tb::{}) then countEquations(tb);
   case(tb::tbs)
     equation
       recLen = ifEqToExpr2(tbs);
-      recLen = Util.if_(intEq(recLen,listLength(tb)),recLen,-1);
+      recLen = Util.if_(intEq(recLen,countEquations(tb)),recLen,-1);
     then 
       recLen;
 end matchcontinue;
 end ifEqToExpr2;
+
+protected function countEquations
+  input list<DAE.Element> equations;
+  output Integer nrOfEquations;
+algorithm
+  nrOfEquations := matchcontinue(equations)
+    local
+      list<DAE.Element> rest;
+      Integer nr;
+    // empty case
+    case ({}) then 0;
+    // ignore assert!
+    case (DAE.ASSERT(condition = _)::rest)
+      then countEquations(rest);
+    // ignore terminate!
+    case (DAE.TERMINATE(message=_)::rest)
+      then countEquations(rest);       
+    // any other case, just add 1
+    case (_::rest)
+      equation
+        nr = countEquations(rest);
+      then nr + 1;
+  end matchcontinue;
+end countEquations;
 
 protected function makeEquationsFromIf
   input list<DAE.Exp> inExp1;
@@ -5523,10 +5546,10 @@ algorithm
   outElementLst := matchcontinue (inExp1,inElementLst2,inElementLst3,source)
     local 
       list<list<DAE.Element>> tbs,rest1,tbsRest,tbsFirstL;
-      list<DAE.Element> tbsFirst,fbs,rest_res;
+      list<DAE.Element> tbsFirst,fbs,rest_res,tb;
       DAE.Element fb,eq;
       list<DAE.Exp> conds,tbsexp; 
-      DAE.Exp fbexp,ifexp;
+      DAE.Exp fbexp,ifexp, cond;
       DAE.ElementSource source "the origin of the element";
       
     case (_,tbs,{},_)
@@ -5534,8 +5557,13 @@ algorithm
         Util.listMap0(tbs, Util.assertListEmpty);
       then {}; 
 
+    // adrpo: not all equations can be transformed using makeEquationToResidualExp
+    //        for example, assert, terminate, etc. TODO! FIXME!
+    //        if cond then assert(cnd, ...); endif; can be translated to:
+    //        assert(cond AND cnd, ... 
+
     case (conds,tbs,fb::fbs,source)
-      equation 
+      equation
         tbsRest = Util.listMap(tbs,Util.listRest);
         rest_res = makeEquationsFromIf(conds, tbsRest, fbs, source);
         
@@ -5557,11 +5585,72 @@ algorithm
   oExp := matchcontinue(eq)
     local
       DAE.Exp e1,e2;
+      DAE.ComponentRef cr1,cr2;
+      DAE.ExpType ty,ty1,ty2;
+    // normal equation
     case(DAE.EQUATION(e1,e2,_))
       equation
-        oExp = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
+        ty = Exp.typeof(e1);
+        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
       then 
         oExp;
+    // initial equation
+    case(DAE.INITIALEQUATION(e1,e2,_))
+      equation
+        ty = Exp.typeof(e1);
+        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+      then 
+        oExp;        
+    // complex equation
+    case(DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2))
+      equation
+        ty = Exp.typeof(e1);
+        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+      then 
+        oExp;
+    // complex initial equation
+    case(DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2))
+      equation
+        ty = Exp.typeof(e1);
+        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+      then 
+        oExp;
+    // equation from connect 
+    case(DAE.EQUEQUATION(cr1, cr2, _))
+      equation
+        ty1 = Exp.crefType(cr1);
+        ty2 = Exp.crefType(cr2);
+        oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),DAE.CREF(cr2,ty2));
+      then 
+        oExp;
+    // equation from define
+    case(DAE.DEFINE(cr1, e2, _))
+      equation
+        ty1 = Exp.crefType(cr1);
+        oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),e2);
+      then 
+        oExp;
+    // equation from initial define 
+    case(DAE.INITIALDEFINE(cr1, e2, _))
+      equation
+        ty1 = Exp.crefType(cr1);
+        oExp = DAE.BINARY(DAE.CREF(cr1,ty1),DAE.SUB(ty1),e2);
+      then 
+        oExp;
+    // equation from array TODO! check if this works!
+    case(DAE.ARRAY_EQUATION(_, e1, e2, _))
+      equation
+        ty = Exp.typeof(e1);
+        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+      then 
+        oExp;
+    // failure
+    case(eq)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- DAEUtil.makeEquationToResidualExp failed to transform equation: " +& 
+          dumpEquationStr(eq) +& " to residual form!"); 
+      then fail();
   end matchcontinue;
 end makeEquationToResidualExp;
 

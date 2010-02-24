@@ -10076,7 +10076,17 @@ algorithm outCr := matchcontinue(inCr,newSub)
     Type t2,identType;
     ComponentRef child;
     list<Subscript> subs;
-    String name;
+    String name, str1, str2, str;
+  
+  // debugging case, uncomment for enabling
+  // case(child,newSub)
+  //  equation
+  //    str1 = printComponentRefStr(child);
+  //    str2 = Util.stringDelimitList(Util.listMap(newSub, printSubscriptStr), ", ");
+  //    str  = "Exp.replaceCrefSliceSub(" +& str1 +& " subs: [" +& str2 +& "]\n";
+  //    print(str);
+  //  then
+  //    fail();
   
   // Case where we try to find a Exp.DAE.SLICE()
   case(DAE.CREF_IDENT(name,identType,subs),newSub)
@@ -10092,14 +10102,14 @@ algorithm outCr := matchcontinue(inCr,newSub)
       child = subscriptCref(child,newSub);
     then
       child;
-  
+      
   case( child as DAE.CREF_IDENT(identType  = t2, subscriptLst = subs),newSub)
     equation      
       false = (listLength(arrayTypeDimensions(t2)) >= (listLength(subs)+listLength(newSub)));
       child = subscriptCref(child,newSub);
-      Debug.fprint("failtrace", "WARNING - Exp.replaceCref_SliceSub setting subscript last, not containing dimension\n ");
+      Debug.fprintln("failtrace", "WARNING - Exp.replaceCref_SliceSub setting subscript last, not containing dimension");
     then
-      child;
+      child;      
 
   // Try DAE.CREF_QUAL with DAE.SLICE subscript 
   case(DAE.CREF_QUAL(name,identType,subs,child),newSub)
@@ -10124,7 +10134,7 @@ algorithm outCr := matchcontinue(inCr,newSub)
       DAE.CREF_QUAL(name,identType,subs,child);
 
   case(_,_)
-    equation      
+    equation
       Debug.fprint("failtrace", "- Exp.replaceCref_SliceSub failed\n ");
     then
       fail();      
@@ -10132,31 +10142,41 @@ end matchcontinue;
 end replaceCrefSliceSub;
 
 protected function replaceSliceSub "
-A function for replacing any occurance of DAE.SLICE with new sub.
-"
+A function for replacing any occurance of DAE.SLICE or DAE.WHOLEDIM with new sub."
   input list<Subscript> inSubs;
   input list<Subscript> inSub;
   output list<Subscript> osubs;
-algorithm osubs := matchcontinue(inSubs,inSub)
-  local 
-    list<Subscript> subs;
-    Subscript sub;
-  case((sub as DAE.SLICE(_))::subs,inSub)
-    equation
-      subs = listAppend(inSub,subs);
-  then
-    subs;
-  case((sub)::subs,inSub)
-    equation
-      subs = replaceSliceSub(subs,inSub);
+algorithm 
+  osubs := matchcontinue(inSubs,inSub)
+    local 
+      list<Subscript> subs;
+      Subscript sub;
+    case((sub as DAE.SLICE(_))::subs,inSub)
+      equation
+        subs = listAppend(inSub,subs);
+      then
+        subs;
+    // adrpo, 2010-02-23: 
+    //   WHOLEDIM is *also* a special case of SLICE
+    //   that contains the all subscripts, so we need
+    //   to handle that too here!
+    case((sub as DAE.WHOLEDIM())::subs,inSub)
+      equation
+        subs = listAppend(inSub,subs);
+      then
+        subs;        
+    case((sub)::subs,inSub)
+      equation
+        subs = replaceSliceSub(subs,inSub);
       then
         (sub::subs);
-end matchcontinue;
+  end matchcontinue;
 end replaceSliceSub;
 
 protected function dumpSimplifiedExp
-input Exp inExp;
-input Exp outExp;
+"a function to dump simplified expressions"
+  input Exp inExp;
+  input Exp outExp;
 algorithm
   _ := matchcontinue(inExp,outExp)
     case(inExp,outExp) equation
