@@ -8356,7 +8356,7 @@ algorithm
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE),_)),_) 
         	= Lookup.lookupType(cache,env, fn, true);
 //        print(" inst record: " +& name +& " \n");
-        (_,recordCl,recordEnv) = Lookup.lookupClass2(cache,env,fn, false);
+        (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
         lastId = Absyn.pathLastIdent(fn);
         fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
@@ -8394,7 +8394,7 @@ algorithm
        equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
-        (cache,c,env_1) = Lookup.lookupClass2(cache, env_1, fn, false);
+        (cache,c,env_1) = Lookup.lookupClass(cache, env_1, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
         fieldNames = Util.listMap(vars, Types.getVarName);
         tys = Util.listMap(vars, Types.getVarType);
