@@ -5620,5 +5620,30 @@ algorithm
       then iii;
   end matchcontinue;
 end mulListIntegerOpt;
+
+public type StatefulBoolean = Boolean[:] "A single boolean value that can be updated (a destructive operation)";
+
+public function makeStatefulBoolean
+  input Boolean b;
+  output Boolean[:] sb;
+algorithm
+  sb := arrayCreate(1, b);
+end makeStatefulBoolean;
+
+public function getStatefulBoolean
+  input Boolean[:] sb;
+  output Boolean b;
+algorithm
+  b := sb[1];
+end getStatefulBoolean;
+
+public function setStatefulBoolean
+  input Boolean[:] sb;
+  input Boolean b;
+algorithm
+  _ := arrayUpdate(sb,1,b);
+end setStatefulBoolean;
+
+
 end Util;
 
