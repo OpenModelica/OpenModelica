@@ -2764,7 +2764,7 @@ algorithm
   end matchcontinue;
 end stripLast;
 
-public function stripLastCref "function: stripLast
+public function crefStripLast "function: stripLast
   Returns the path given as argument to 
   the function minus the last ident."
   input ComponentRef inPath;
@@ -2780,11 +2780,11 @@ algorithm
     case (CREF_QUAL(name = str,subScripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs); 
     case (CREF_QUAL(name = str,subScripts = subs,componentRef = p))
       equation 
-        p_1 = stripLastCref(p);
+        p_1 = crefStripLast(p);
       then
         CREF_QUAL(str,subs,p_1);
   end matchcontinue;
-end stripLastCref;
+end crefStripLast;
 
 
 public function splitQualAndIdentPath "
