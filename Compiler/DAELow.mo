@@ -16360,6 +16360,41 @@ algorithm
   ((_, outExps)) := Exp.traverseExp(inExp, collectDelayExpressions, {});
 end findDelaySubExpressions;
 
+public function checkExpBecomesZero
+" function checkExpBecomesZero
+  autor: Frenkel TUD
+  "
+  input DAE.Exp inExp;
+  input DAELow indlow;
+  output Boolean outBool;
+  output Boolean outBool1;
+algorithm
+  (outBool,outBool1):=matchcontinue(inExp,indlow)
+    local
+      DAE.Exp exp;
+      list<DAE.Exp> explst;
+      DAE.ComponentRef cr;
+      list<Var> vars;
+      Variables variables;
+    // const expressions
+    case(exp,indlow)
+      equation
+        true = Exp.isZero(exp);
+    then 
+      (true,true);
+    // ComponentRef expressions
+    case(exp as DAE.CREF(componentRef=cr),indlow)
+      equation
+        variables = daeVars(indlow);
+        (vars,_) = getVar(cr,variables);
+    then 
+      (false,false);
+    case(exp,indlow)
+    then 
+      (false,false);
+  end matchcontinue;  
+end checkExpBecomesZero;
+
 public function checkEquationBecomesZero
 " function checkEquationBecomesZero
   autor: Frenkel TUD
@@ -16398,23 +16433,23 @@ algorithm
       Variables variables;
       String se,seqn;
     case((_,{}),indlow) then indlow;
-    // const expressions
+    /* error */
     case((eqn,exp::explst),indlow)
       equation
-        true = Exp.isZero(exp);
+        (true,true) = checkExpBecomesZero(exp,indlow);
         seqn = equationStr(eqn);
         se = "";
         Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se});
         outdlow = checkEquationBecomesZero((eqn,explst),indlow);
     then 
       outdlow;
-    // ComponentRef expressions
-    case((eqn,(exp as DAE.CREF(componentRef=cr))::explst),indlow)
+    /* warning */
+    case((eqn,exp::explst),indlow)
       equation
-        se = Exp.printExp2Str(exp);
-        variables = daeVars(indlow);
-        (vars,_) = getVar(cr,variables);
+        (false,true) = checkExpBecomesZero(exp,indlow);
         seqn = equationStr(eqn);
+        se = "";
+//        Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se});
         outdlow = checkEquationBecomesZero((eqn,explst),indlow);
     then 
       outdlow;
