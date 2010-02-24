@@ -1168,8 +1168,7 @@ algorithm
   end matchcontinue;
 end getReplacement;
 
-
-protected function replaceExpOpt "Similar to replaceExp but takes Option<Exp> instead of Exp"
+public function replaceExpOpt "Similar to replaceExp but takes Option<Exp> instead of Exp"
  input Option<DAE.Exp> inExp;
   input VariableReplacements repl;
   input Option<FuncTypeExp_ExpToBoolean> funcOpt;

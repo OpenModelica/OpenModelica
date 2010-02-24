@@ -2601,7 +2601,7 @@ algorithm
       equation   
         expsl = makeExpIntegerArray(iLst);
         exps = makeExpIntegerArray2(i,1);
-        tmpArray = DAE.ARRAY(DAE.ET_INT(), false, exps);
+        tmpArray = DAE.ARRAY(DAE.ET_INT(), true/*elts are scalars*/, exps);
         exps = DAE.SLICE(tmpArray);
       then
         (exps :: expsl);

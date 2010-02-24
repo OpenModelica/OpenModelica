@@ -1142,60 +1142,60 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
     ExpType ty;
   end DIV_ARR;
 
-  record MUL_SCALAR_ARRAY
-    ExpType ty "a  { b, c }" ;
+  record MUL_SCALAR_ARRAY " s * {a,b,c}"
+    ExpType ty "type of the array" ;
   end MUL_SCALAR_ARRAY;
 
-  record MUL_ARRAY_SCALAR
-    ExpType ty "{a, b}  c" ;
+  record MUL_ARRAY_SCALAR " {a,b,c} * s"
+    ExpType ty "type of the array" ;
   end MUL_ARRAY_SCALAR;
 
-  record ADD_SCALAR_ARRAY
-    ExpType ty "a  { b, c }" ;
+  record ADD_SCALAR_ARRAY "s + {a,b,c}"
+    ExpType ty "type of the array" ;
   end ADD_SCALAR_ARRAY;
 
-  record ADD_ARRAY_SCALAR
-    ExpType ty "{a, b}  c" ;
+  record ADD_ARRAY_SCALAR " {a,b,c} + s"
+    ExpType ty "type of the array";
   end ADD_ARRAY_SCALAR;
 
-  record SUB_SCALAR_ARRAY
-    ExpType ty "a  { b, c }" ;
+  record SUB_SCALAR_ARRAY "s - {a,b,c}"
+    ExpType ty "type of the array" ;
   end SUB_SCALAR_ARRAY;
 
-  record SUB_ARRAY_SCALAR
-    ExpType ty "{a, b}  c" ;
+  record SUB_ARRAY_SCALAR "{a,b,c} - s"
+    ExpType ty "type of the array" ;
   end SUB_ARRAY_SCALAR;
 
-  record MUL_SCALAR_PRODUCT
-    ExpType ty "{a, b}  {c, d}" ;
+  record MUL_SCALAR_PRODUCT " {a,b,c} * {c,d,e} => a*c+b*d+c*e"
+    ExpType ty "type of the array" ;
   end MUL_SCALAR_PRODUCT;
 
-  record MUL_MATRIX_PRODUCT
+  record MUL_MATRIX_PRODUCT "M1 * M2, matrix dot product"
     ExpType ty "{{..},..}  {{..},{..}}" ;
   end MUL_MATRIX_PRODUCT;
 
-  record DIV_ARRAY_SCALAR
-    ExpType ty "{a, b} / c" ;
+  record DIV_ARRAY_SCALAR "{a, b} / c"
+    ExpType ty  "type of the array";
   end DIV_ARRAY_SCALAR;
 
-  record DIV_SCALAR_ARRAY
-    ExpType ty "a  { b, c }" ;
+  record DIV_SCALAR_ARRAY "c / {a,b}"
+    ExpType ty "type of the array" ;
   end DIV_SCALAR_ARRAY;
 
   record POW_ARRAY_SCALAR
-    ExpType ty "{a, b} / c" ;
+    ExpType ty "type of the array" ;
   end POW_ARRAY_SCALAR;
 
   record POW_SCALAR_ARRAY
-    ExpType ty "a  { b, c }" ;
+    ExpType ty "type of the array" ;
   end POW_SCALAR_ARRAY;
 
-  record POW_ARR
-    ExpType ty;  /*Power of a matrix*/
+  record POW_ARR "Power of a matrix"
+    ExpType ty "type of the array";  
   end POW_ARR;
 
-  record POW_ARR2
-    ExpType ty;  /*Elementwise power of arrays*/
+  record POW_ARR2 "elementwise power of arrays"
+    ExpType ty "type of the array";  
   end POW_ARR2;
 
   record AND end AND;

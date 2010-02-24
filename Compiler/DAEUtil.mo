@@ -46,6 +46,64 @@ public import Values;
 
 public constant DAE.DAElist emptyDae = DAE.DAE({},DAE.AVLTREENODE(NONE,0,NONE,NONE));
 
+public function expTypeSimple "returns true if type is simple type"
+  input DAE.ExpType tp;
+  output Boolean isSimple;
+algorithm
+  isSimple := matchcontinue(tp)
+    case(DAE.ET_REAL()) then true;
+    case(DAE.ET_INT()) then true;
+    case(DAE.ET_STRING()) then true;
+    case(DAE.ET_BOOL()) then true;
+    case(DAE.ET_ENUMERATION(path=_)) then true;
+      
+    case(_) then false;
+      
+  end matchcontinue;
+end expTypeSimple;   
+
+public function expTypeElementType "returns the element type of an array"
+  input DAE.ExpType tp;
+  output DAE.ExpType eltTp;
+algorithm
+  eltTp := matchcontinue(tp)
+    case(DAE.ET_ARRAY(ty=tp)) then expTypeElementType(tp);
+    case(tp) then tp;
+  end matchcontinue;
+end expTypeElementType;
+
+public function expTypeComplex "returns true if type is complex type"
+  input DAE.ExpType tp;
+  output Boolean isComplex;
+algorithm
+  isComplex := matchcontinue(tp)
+    case(DAE.ET_COMPLEX(name=_)) then true;      
+    case(_) then false;      
+  end matchcontinue;
+end expTypeComplex;
+
+public function expTypeArray "returns true if type is array type"
+  input DAE.ExpType tp;
+  output Boolean isArray;
+algorithm
+  isArray := matchcontinue(tp)
+    case(DAE.ET_ARRAY(ty=_)) then true;      
+    case(_) then false;
+  end matchcontinue;
+end expTypeArray;
+
+public function expTypeArrayDimensions "returns the array dimensions of an ExpType"
+  input DAE.ExpType tp;
+  output list<Integer> dims;
+algorithm
+  dims := matchcontinue(tp)
+    local list<Option<Integer>> optDims;
+    case(DAE.ET_ARRAY(arrayDimensions=optDims)) equation
+      dims = Util.listMap(optDims,Util.getOption);
+    then dims;
+  end matchcontinue;
+end expTypeArrayDimensions;
+
 public function derivativeOrder "
 Function to sort derivatives.
 Used for Util.sort"
@@ -3609,6 +3667,20 @@ algorithm
     case DAE.RECORD_CONSTRUCTOR(path = _) then (); 
   end matchcontinue;
 end isFunction;
+
+public function isFunctionInlineFalse "function: isFunctionInlineFalse
+  author: PA
+ 
+  Succeeds if Element is a function with Inline=false
+"
+  input DAE.Element inElement;
+  output Boolean res;
+algorithm 
+  res := matchcontinue (inElement)
+    case DAE.FUNCTION(inlineType = DAE.NO_INLINE()) then true; 
+    case _ then false;
+  end matchcontinue;
+end isFunctionInlineFalse;
 
 public function dumpDebug "
 

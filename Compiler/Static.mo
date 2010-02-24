@@ -5996,7 +5996,7 @@ algorithm
   end matchcontinue;
 end elabBuiltinCross;
   
-protected function elabBuiltinCross2 "help function to elabBuiltinCross"
+public function elabBuiltinCross2 "help function to elabBuiltinCross. Public since it used by Exp.simplify1"
 	input list<DAE.Exp> v1;
 	input list<DAE.Exp> v2;
 	output list<DAE.Exp> res;
@@ -9982,10 +9982,8 @@ algorithm
       equation 
         (cache,c_1,_,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
         (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,splicedExp,_) = Lookup.lookupVar(cache, env, c_1);
-        (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, io,t, binding,doVect,splicedExp);
-        // print("Exp:" +& Exp.printExpStr(exp) +& " cr: " +& Dump.printComponentRefStr(c) +& "\n");
-        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExp,true /*doVect*/);
-        // print("AfterExp:" +& Exp.printExpStr(exp) +& " spliced: " +& Exp.printOptExpStr(splicedExp) +& "\n");        
+        (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, io,t, binding,doVect,splicedExp);       
+        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExp,doVect);
       then
         (cache,exp,DAE.PROP(t,const),acc_1,dae); 
 
@@ -10051,7 +10049,7 @@ protected function makeASUBArrayAdressing
   input Boolean inBoolean "implicit instantiation";
   input DAE.Exp inExp;
   input Option<DAE.Exp> spliceExp;
-  input Boolean doVect "do vectorization";
+  input Boolean doVect "if doVect is false, no vectorization and thus no ASUB addressing is performed";
   output DAE.Exp outExp;
 algorithm 
   outComponentRef := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,spliceExp,doVect)
@@ -10067,7 +10065,7 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
-    // return false if no vectorization is to be done
+    // return inExp if no vectorization is to be done
     case(inRef,cache,env,impl,inExp,spliceExp,false) then inExp;      
     
     case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),SOME(DAE.CREF(cr,_)),doVect)
@@ -10714,7 +10712,7 @@ algorithm
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
         
-        exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
+        exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);        
     then exp2;      
   end matchcontinue;
 end mergeQualWithRest;
@@ -10792,10 +10790,11 @@ public function flattenSubscript2
 "function flattenSubscript2 
   This function takes the created 'invalid' subscripts 
   and the name of the CREF and returning the CREFS 
-  Example: a,{1,2}{1} ==> {{a[1,1]},{a[2,1]}}.
+  Example: flattenSubscript2({SLICE({1,2}},SLICE({1}),\"a\",tp) ==> {{a[1,1]},{a[2,1]}}.
   
   This is done in several function calls, this specific 
-  function extracts the numbers ( 1,2 and 1 )."
+  function extracts the numbers ( 1,2 and 1 ). 
+  "
   input list<DAE.Subscript> inSubs;
   input String name;
   input DAE.ExpType inType;
