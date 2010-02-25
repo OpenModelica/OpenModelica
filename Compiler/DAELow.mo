@@ -416,6 +416,7 @@ protected import SimCodegen;
 protected import System;
 protected import Util;
 protected import VarTransform;
+protected import ValuesUtil;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
@@ -15455,6 +15456,17 @@ algorithm
   end matchcontinue;
 end daeVars;
 
+public function daeKnVars
+  input DAELow inDAELow;
+  output Variables vars;
+algorithm
+  vars := matchcontinue (inDAELow)
+    local Variables vars1,vars2;
+    case (DAELOW(orderedVars = vars1, knownVars = vars2))
+      then vars2;
+  end matchcontinue;
+end daeKnVars;
+
 public function makeExpType
 "Transforms a Type to DAE.ExpType
 "
@@ -16374,8 +16386,7 @@ algorithm
       DAE.Exp exp;
       list<DAE.Exp> explst;
       DAE.ComponentRef cr;
-      list<Var> vars;
-      Variables variables;
+      Values.Value val;
     // const expressions
     case(exp,indlow)
       equation
@@ -16385,10 +16396,16 @@ algorithm
     // ComponentRef expressions
     case(exp as DAE.CREF(componentRef=cr),indlow)
       equation
-        variables = daeVars(indlow);
-        (vars,_) = getVar(cr,variables);
+        val = evalVariable(cr,indlow,{});
+        true = ValuesUtil.isZero(val);
     then 
-      (false,false);
+      (true,true);
+    case(exp,indlow)
+      equation
+        val = evalExpression(exp,indlow,{});
+        true = ValuesUtil.isZero(val);
+    then 
+      (true,true);
     case(exp,indlow)
     then 
       (false,false);
@@ -16431,15 +16448,16 @@ algorithm
       DAE.ComponentRef cr;
       list<Var> vars;
       Variables variables;
-      String se,seqn;
+      String se,se1,seqn;
     case((_,{}),indlow) then indlow;
     /* error */
     case((eqn,exp::explst),indlow)
       equation
         (true,true) = checkExpBecomesZero(exp,indlow);
         seqn = equationStr(eqn);
-        se = "";
-        Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se});
+        se = Exp.printExpStr(exp);
+        se1 = stringAppend(se, " = 0");
+        Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se1});
         outdlow = checkEquationBecomesZero((eqn,explst),indlow);
     then 
       outdlow;
@@ -16556,5 +16574,53 @@ algorithm
         {};
   end matchcontinue;
 end extractDivExpFromWhenEquation;
+
+public function evalVariable
+"function evalVariable
+  Evaluate the value of a variable."
+  input DAE.ComponentRef inCref;
+  input DAELow indlow;
+  input list<DAE.ComponentRef> inCrefLst;
+  output Values.Value outVal;
+algorithm 
+  outVal:=
+  matchcontinue (inCref,indlow,inCrefLst)
+   local
+      Variables vars;
+      Var var;  
+      Option<Values.Value> bindValueo;
+      Values.Value bindValue;
+   case (inCref,indlow,inCrefLst)
+     equation
+       vars = daeVars(indlow);
+       ({var as VAR(bindValue=bindValueo)},_) = getVar(inCref,vars); 
+       SOME(bindValue) = bindValueo;
+      then
+        bindValue;      
+   case (inCref,indlow,inCrefLst)
+     equation
+       vars = daeKnVars(indlow);
+       ({var as VAR(bindValue=bindValueo)},_) = getVar(inCref,vars); 
+       SOME(bindValue) = bindValueo;
+      then
+        bindValue;      
+  end matchcontinue;
+end evalVariable;
+
+public function evalExpression
+"function evalExpression
+  Evaluate the value of a expression."
+  input DAE.Exp inExp;
+  input DAELow indlow;
+  input list<DAE.ComponentRef> inCrefLst;
+  output Values.Value outVal;
+algorithm 
+  outVal:=
+  matchcontinue (inExp,indlow,inCrefLst)
+   case (inExp,indlow,inCrefLst)  
+      then
+        Values.REAL(1.0);      
+  end matchcontinue;
+end evalExpression;
 
 end DAELow;
