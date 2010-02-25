@@ -52,18 +52,16 @@ protected import Exp;
 protected import Print;
 protected import System;
 protected import Util;
+protected import RTOpts;
 
 public function typeConvert "function: typeConvert
- 
-  Apply type conversion on a list of Values
-"
+  Apply type conversion on a list of Values"
   input DAE.ExpType inType1;
   input DAE.ExpType inType2;
   input list<Value> inValueLst3;
   output list<Value> outValueLst;
 algorithm 
-  outValueLst:=
-  matchcontinue (inType1,inType2,inValueLst3)
+  outValueLst := matchcontinue (inType1,inType2,inValueLst3)
     local
       list<Value> vallst,vrest,vallst2,vals;
       Real rval,r;
@@ -110,14 +108,11 @@ end isZero;
 
 
 public function isArray "function: isArray
- 
-  Return true if Value is an array.
-"
+  Return true if Value is an array."
   input Value inValue;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
-  matchcontinue (inValue)
+  outBoolean := matchcontinue (inValue)
     case (Values.INTEGER(integer = _)) then false; 
     case (Values.REAL(real = _)) then false; 
     case (Values.STRING(string = _)) then false; 
@@ -131,14 +126,11 @@ algorithm
 end isArray;
 
 public function isRecord "function: isArray
- 
-  Return true if Value is an array.
-"
+  Return true if Value is an array."
   input Value inValue;
   output Boolean outBoolean;
 algorithm 
-  outBoolean:=
-  matchcontinue (inValue)
+  outBoolean := matchcontinue (inValue)
     case (Values.INTEGER(integer = _)) then false; 
     case (Values.REAL(real = _)) then false; 
     case (Values.STRING(string = _)) then false; 
@@ -1961,11 +1953,9 @@ algorithm
 end writePtolemyplotDataset;
 
 public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
-
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
-  The message string will be displayed in the plot window of ptplot.
-"
+  The message string will be displayed in the plot window of ptplot."
   input Value inValue2;
   input list<String> inStringLst3;
   input String inString4;
@@ -1982,8 +1972,7 @@ public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
   input String yRange;
   output Integer outInteger;
 algorithm
-  outInteger:=
-  matchcontinue (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
+  outInteger := matchcontinue (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
     local
       String datasets,str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2;
       Boolean legend2, logX2, logY2, grid2, points2;
@@ -2002,22 +1991,21 @@ algorithm
         0;
   end matchcontinue;
 end sendPtolemyplotDataset;
-protected function unparsePtolemyValues "function: unparsePtolemyValues
- 
-  Helper function to write_ptolemyplot_dataset.
-"
+
+protected function unparsePtolemyValues "function: unparsePtolemyValues 
+  Helper function to writePtolemyplotDataset."
   input Value inValue;
   input list<Value> inValueLst;
   input list<String> inStringLst;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inValue,inValueLst,inStringLst)
+  outString := matchcontinue (inValue,inValueLst,inStringLst)
     local
       String str,str2,res,v1;
       Value time,s1;
       list<Value> xs;
       list<String> vs;
+    
     case (_,{},_) then ""; 
     case (time,(s1 :: xs),(v1 :: vs))
       equation 
@@ -2030,9 +2018,7 @@ algorithm
 end unparsePtolemyValues;
 
 protected function unparsePtolemySet "function: unparsePtolemySet
- 
-  Helper function to unparse_ptolemy_values.
-"
+  Helper function to unparsePtolemyValues."
   input Value v1;
   input Value v2;
   input String varname;
@@ -2044,42 +2030,46 @@ algorithm
 end unparsePtolemySet;
 
 protected function unparsePtolemySet2 "function: unparsePtolemySet2
-  
-  Helper function to unparse_ptolemy_set
-"
+  Helper function to unparsePtolemySet"
   input Value inValue1;
   input Value inValue2;
   output String outString;
 algorithm 
-  outString:=
-  matchcontinue (inValue1,inValue2)
+  outString := matchcontinue (inValue1,inValue2)
     local
       String s1,s2,res,res_1;
       Value v1,v2;
       list<Value> v1s,v2s;
       list<Integer> dims1,dims2;
-    case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ""; 
-    case (Values.ARRAY(valueLst = (v1 :: v1s), dimLst = _::dims1),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _::dims2))
+
+    case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then "";
+    // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.
+    //        TODO! FIXME! see why the dimension list is wrong! 
+    case (Values.ARRAY(valueLst = (v1 :: v1s), dimLst = _),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _))
       equation 
         s1 = valString(v1);
         s2 = valString(v2);
-        res = unparsePtolemySet2(Values.ARRAY(v1s,dims1), Values.ARRAY(v2s,dims2));
+        res = unparsePtolemySet2(Values.ARRAY(v1s,{}), Values.ARRAY(v2s,{}));
         res_1 = Util.stringAppendList({s1,",",s2,"\n",res});
       then
         res_1;
+    case (v1, v2)
+      equation 
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- ValuesUtil.unparsePtolemySet2 failed on v1: " +&
+          printValStr(v1) +& " and v2: " +& printValStr(v1));
+      then 
+        fail();
   end matchcontinue;
 end unparsePtolemySet2;
 
 public function reverseMatrix "function: reverseMatrix
-  
   Reverses each line and each row of a matrix.
-  Implementation reverses all dimensions...
-"
+  Implementation reverses all dimensions..."
   input Value inValue;
   output Value outValue;
 algorithm 
-  outValue:=
-  matchcontinue (inValue)
+  outValue := matchcontinue (inValue)
     local
       list<Value> lst_1,lst_2,lst;
       Value value;
@@ -2095,9 +2085,7 @@ algorithm
 end reverseMatrix;
 
 public function printVal "function: printVal
- 
-  This function prints a value.
-"
+  This function prints a value."
   input Value v;
   String s;
 algorithm 
@@ -2114,19 +2102,16 @@ algorithm
 end printValStr;
 
 public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
-
   This function writes a data set in the pltolemy plot format to a file.
   The first column of the dataset matrix should be the time variable.
-  The message string will be displayed in the plot window of ptplot.
-"
+  The message string will be displayed in the plot window of ptplot."
   input Value inValue2;
   input list<String> inStringLst3;
   input String visInfo;
   input String inString4;
   output Integer outInteger;
 algorithm
-  outInteger:=
-  matchcontinue (inValue2,inStringLst3,visInfo,inString4)
+  outInteger := matchcontinue (inValue2,inStringLst3,visInfo,inString4)
     local
       String datasets,str,filename,timevar,info,message;
       Value time;
