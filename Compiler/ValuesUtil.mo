@@ -861,6 +861,17 @@ algorithm
   end matchcontinue;
 end valueReal;
 
+public function valueIntegerMinusOne "To be able to use listNth"
+  input Value inValue;
+  output Integer outInt;
+algorithm 
+  outInt := matchcontinue (inValue)
+    local
+      Integer i;
+    case (Values.INTEGER(integer = i)) then i-1;
+  end matchcontinue;
+end valueIntegerMinusOne;
+
 public function valueBool "function: valueReal
 Author: BZ, 2008-09
   Return the bool value of a Value. 

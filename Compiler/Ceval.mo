@@ -4787,8 +4787,8 @@ algorithm
       list<Env.Frame> env;
       DAE.Exp exp;
       list<DAE.Subscript> subs;
-      list<Values.Value> lst;
-      list<Integer> dims;
+      list<Values.Value> lst,sliceLst,subvals;
+      list<Integer> dims,slice;
       Boolean impl;
       Msg msg;
       Env.Cache cache;
@@ -4800,6 +4800,15 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache,env, subs, subval, dims, impl, msg);
       then
         (cache,res);
+    case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
+      equation 
+        (cache,subval as Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl, NONE, SOME(dim), msg);
+        slice = Util.listMap(sliceLst, ValuesUtil.valueIntegerMinusOne);
+        subvals = Util.listMap1r(slice, listNth, lst);
+        (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, dims, impl, msg);
+        res = ValuesUtil.makeArray(lst);
+      then
+        (cache,res);
     case (cache,env,{},v,_,_,_) then (cache,v); 
     case (_,_,_,_,_,_,_)
       equation 
@@ -4808,6 +4817,38 @@ algorithm
         fail();
   end matchcontinue;
 end cevalSubscriptValue;
+
+protected function cevalSubscriptValueList "Applies subscripts to array values to extract array elements."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Subscript> inExpSubscriptLst "subscripts to extract";
+  input list<Values.Value> inValue;
+  input list<Integer> inIntegerLst "dimension sizes";
+  input Boolean inBoolean "impl";
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output list<Values.Value> outValue;
+algorithm 
+  (outCache,outValue) :=
+  matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inIntegerLst,inBoolean,inMsg)
+    local
+      Values.Value subval,res;
+      list<Env.Frame> env;
+      list<Values.Value> lst,subvals;
+      Boolean impl;
+      Msg msg;
+      list<Integer> dims;
+      list<DAE.Subscript> subs;
+      Env.Cache cache;
+    case (cache,env,subs,{},dims,impl,msg) then (cache,{});
+    case (cache,env,subs,subval::subvals,dims,impl,msg)
+      equation 
+        (cache,res) = cevalSubscriptValue(cache,env, subs, subval, dims, impl, msg);
+        (cache,lst) = cevalSubscriptValueList(cache,env, subs, subvals, dims, impl, msg);
+      then
+        (cache,res::lst);
+  end matchcontinue;
+end cevalSubscriptValueList;
 
 public function cevalSubscripts "function: cevalSubscripts
   This function relates a list of subscripts to their canonical

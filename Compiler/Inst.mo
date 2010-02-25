@@ -4532,9 +4532,8 @@ algorithm
   outSCodeElementLst := matchcontinue (inSCodeElementLst,inPathMod)
     local
       list<SCode.Element> res,xs;
-      String a;
-      Boolean b,c,d;
-      Boolean o2,i2;
+      String a,name;
+      Boolean b,c,d,o2,i2,partialPrefix,encapsulatedPrefix;
       SCode.Attributes e;
       Absyn.TypeSpec f;
       SCode.BaseClass tp;
@@ -4543,25 +4542,31 @@ algorithm
       SCode.Element x;
       Absyn.InnerOuter io;
       Option<Absyn.Exp> cond;
-      SCode.Class cd;      
-      Option<Absyn.Info> info;
+      SCode.Class cd;
+      Option<Absyn.Info> infoOpt;
       Option<Absyn.ConstrainClass> cc;
-      SCode.Restriction r;
+      SCode.Restriction r,restriction;
+      SCode.ClassDef classDef;
+      Absyn.Info info;
+      
     case ({},_) then {}; 
 
     case ((SCode.COMPONENT(component = a,innerOuter=io,finalPrefix = b,replaceablePrefix = c,
                            protectedPrefix = d,attributes = e,typeSpec = f,modifications = g,
-                           comment = comment,condition=cond,info=info,cc=cc) :: xs),tp)
+                           comment = comment,condition=cond,info=infoOpt,cc=cc) :: xs),tp)
       equation 
         res = addInheritScope(xs, tp);
       then
-        (SCode.COMPONENT(a,io,b,c,d,e,f,g,SOME(tp),comment,cond,info,cc) :: res);
+        (SCode.COMPONENT(a,io,b,c,d,e,f,g,SOME(tp),comment,cond,infoOpt,cc) :: res);
 
-    case ((SCode.CLASSDEF(name = a,finalPrefix = b,replaceablePrefix = c,classDef = cd,cc=cc) :: xs),tp)
-      equation 
+    case ((SCode.CLASSDEF(name = a,finalPrefix = b,replaceablePrefix = c,
+                          classDef = cd as SCode.CLASS(name = name, partialPrefix = partialPrefix, encapsulatedPrefix = encapsulatedPrefix, restriction = restriction, classDef = classDef, info = info),
+                          cc=cc) :: xs),tp)
+      equation
+        classDef = addInheritScopeToClassDef(classDef,tp);
         res = addInheritScope(xs, tp);
       then
-        (SCode.CLASSDEF(a,b,c,cd,SOME(tp),cc) :: res);
+        (SCode.CLASSDEF(a,b,c,SCode.CLASS(name,partialPrefix,encapsulatedPrefix,restriction,classDef,info),SOME(tp),cc) :: res);
         
     case ((x :: xs),tp)
       equation 
@@ -4576,6 +4581,27 @@ algorithm
         fail();
   end matchcontinue;
 end addInheritScope;
+
+protected function addInheritScopeToClassDef
+  input SCode.ClassDef classDef;
+  input SCode.BaseClass bc;
+  output SCode.ClassDef outClassDef;
+algorithm
+  outClassDef := matchcontinue (classDef,bc)
+    local
+      list<SCode.Element> elementLst;
+      list<SCode.Equation> normalEquationLst,initialEquationLst;
+      list<SCode.Algorithm> normalAlgorithmLst,initialAlgorithmLst;
+      Option<Absyn.ExternalDecl> externalDecl;
+      list<SCode.Annotation> annotationLst;
+      Option<SCode.Comment> comment;
+    case (SCode.PARTS(elementLst,normalEquationLst,initialEquationLst,normalAlgorithmLst,initialAlgorithmLst,externalDecl,annotationLst,comment),bc)
+      equation
+        elementLst = addInheritScope(elementLst,bc);
+      then SCode.PARTS(elementLst,normalEquationLst,initialEquationLst,normalAlgorithmLst,initialAlgorithmLst,externalDecl,annotationLst,comment);
+    case (classDef,bc) then classDef;
+  end matchcontinue;
+end addInheritScopeToClassDef;
 
 protected function addEqnInheritScope 
 "function: addEqnInheritScope
@@ -5143,7 +5169,7 @@ protected function addClassdefsToEnv2
 algorithm 
   (outEnv,inIH) := matchcontinue (inEnv,inIH,inSCodeElementLst,inBoolean,redeclareMod)
     local
-      list<Env.Frame> env,env_1,env_2,env1;
+      list<Env.Frame> env,env_1,env_2,env_3,env1;
       SCode.Class cl,cl2;
       SCode.Element sel1;
       list<SCode.Element> xs;
@@ -5151,10 +5177,11 @@ algorithm
       Absyn.Import imp;
       InstanceHierarchy ih;
       Absyn.Info info;
+      SCode.OptBaseClass optBaseClass;
       
     case (env,ih,{},_,_) then (env,ih); 
     // we do have a redeclaration of class. 
-    case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = cl)) :: xs),impl,redeclareMod)
+    case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = cl, baseClassPath = optBaseClass)) :: xs),impl,redeclareMod)
       local String s;
       equation 
         (env1,ih,cl2) = addClassdefsToEnv3(env,ih,redeclareMod,sel1);
@@ -5178,7 +5205,7 @@ algorithm
         (env_2,ih);
         
     // otherwise, extend frame with in class. 
-    case (env,ih,( (sel1 as SCode.CLASSDEF(classDef = cl)) :: xs),impl,redeclareMod)
+    case (env,ih,((sel1 as SCode.CLASSDEF(classDef = cl)) :: xs),impl,redeclareMod)
       equation 
         env_1 = Env.extendFrameC(env, cl);
         (env_2, ih) = addClassdefsToEnv2(env_1, ih, xs, impl,redeclareMod);
@@ -5835,7 +5862,7 @@ algorithm
         (cache,mod_1,fdae2) = Mod.updateMod(cache,cenv, pre, mod_1, impl);
         (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
 				//The environment is extended (updated) with the new variable binding. 
-        (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty) ; 
+        (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty);
         //true in update_frame means the variable is now instantiated. 
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding);
 
