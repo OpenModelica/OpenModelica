@@ -65,7 +65,7 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
 	cp sendData/release/libsendData.a $(builddir_lib)/
-	@$(MAKE) -C java_interface -f Makefile.omdev.mingw || $(MAKE) -C java_interface -f Makefile.omdev.mingw install
+	@$(MAKE) -C java_interface -f Makefile || $(MAKE) -C java_interface -f Makefile.omdev.mingw install
 
 libsim.a : $(SIMOBJS)
 	$(AR) $@ $(SIMOBJS)
