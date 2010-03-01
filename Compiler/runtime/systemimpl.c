@@ -216,22 +216,22 @@ static modelica_integer last_ptr_index = -1;
 
 void System_5finit(void)
 {
-	char* path;
-	char* newPath;
-	char* omhome;
-	char* mingwpath;
-	char* qthome;
+  char* path;
+  char* newPath;
+  char* omhome;
+  char* mingwpath;
+  char* qthome;
 
-    last_ptr_index = -1;
-    memset(ptr_vector, 0, sizeof(ptr_vector));
+  last_ptr_index = -1;
+  memset(ptr_vector, 0, sizeof(ptr_vector));
 
-	set_cc("gcc");
+  set_cc("g++");
   set_cxx("g++");
 #if defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  set_linker("gcc -shared -export-dynamic -fPIC");
+  set_linker("g++ -shared -export-dynamic -fPIC");
 #else
-  set_linker("gcc -shared -export-dynamic");
+  set_linker("g++ -shared -export-dynamic");
 #endif
 
 #if defined(__i386__) || defined(__x86_64__) || defined(_MSC_VER)
@@ -245,27 +245,21 @@ void System_5finit(void)
   set_cflags("${MODELICAUSERCFLAGS}");
 #endif
   set_ldflags("-lc_runtime");
-	path = getenv("PATH");
-	omhome = getenv("OPENMODELICAHOME");
-	if (omhome) {
-		mingwpath = malloc(2*strlen(omhome)+25);
-		sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome);
-		if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
-			newPath = malloc(strlen(path)+strlen(mingwpath)+10);
-			sprintf(newPath,"PATH=%s;%s",mingwpath,path);
-			_putenv(newPath);
-			free(newPath);
-		}
-		free(mingwpath);
-	}
-
-//	qthome = getenv("QTHOME");
-//	if(qthome && strlen(qthome))
-    if (1) {
-//		char senddatalibs[] = "SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui -luuid -lole32 -lws2_32";
-		_putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
-//		_putenv(senddatalibs);
+  path = getenv("PATH");
+  omhome = getenv("OPENMODELICAHOME");
+  if (omhome) {
+    mingwpath = malloc(2*strlen(omhome)+25);
+    sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome);
+    if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
+      newPath = malloc(strlen(path)+strlen(mingwpath)+10);
+      sprintf(newPath,"PATH=%s;%s",mingwpath,path);
+      _putenv(newPath);
+      free(newPath);
     }
+    free(mingwpath);
+  }
+
+  _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
 }
 
 
@@ -1816,22 +1810,22 @@ static modelica_integer last_ptr_index = -1;
 
 void System_5finit(void)
 {
-	char* qthome;
+  char* qthome;
 
-    last_ptr_index = -1;
-    memset(ptr_vector, 0, sizeof(ptr_vector));
+  last_ptr_index = -1;
+  memset(ptr_vector, 0, sizeof(ptr_vector));
 
-	set_cc("gcc");
+  set_cc("g++");
   set_cxx("g++");
 #if defined(__sparc__)
-  set_linker("gcc -G");
+  set_linker("g++ -G");
 #elif defined(__APPLE_CC__)
-  set_linker("gcc -single_module -dynamiclib -flat_namespace");
+  set_linker("g++ -single_module -dynamiclib -flat_namespace");
 #elif defined(__x86_64__)
   /* -fPIC needed on x86_64! */
-  set_linker("gcc -shared -export-dynamic -fPIC");
+  set_linker("g++ -shared -export-dynamic -fPIC");
 #else
-  set_linker("gcc -shared -export-dynamic");
+  set_linker("g++ -shared -export-dynamic");
 #endif
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -1845,16 +1839,16 @@ void System_5finit(void)
 #endif
   set_ldflags("-lc_runtime");
 
-	qthome = getenv("QTHOME");
-	if (qthome && strlen(qthome)) {
+  qthome = getenv("QTHOME");
+  if (qthome && strlen(qthome)) {
 #ifdef __APPLE_CC__
-		putenv("SENDDATALIBS=-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon");
+    putenv("SENDDATALIBS=-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon");
 #else
-		putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
+    putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
 #endif
-	} else {
-		putenv("SENDDATALIBS=-lsendData");
-    }
+  } else {
+    putenv("SENDDATALIBS=-lsendData");
+  }
 }
 
 /**
