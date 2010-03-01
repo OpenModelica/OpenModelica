@@ -2682,7 +2682,7 @@ algorithm
           local list<Mod> tmpModList; 
       equation 
         UnitParserExt.checkpoint();        
-        //Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)); 
+        // Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)); 
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = extractConstantPlusDeps(els,instSingleCref,{},className);
         (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);
@@ -3876,6 +3876,8 @@ algorithm
             normalAlgorithmLst = alg, initialAlgorithmLst = initalg),
             re,partialPrefix,prot,inst_dims,className)
       equation
+        // Debug.traceln(" Partialinstclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods)); 
+        partialPrefix = isPartial(partialPrefix, mods);
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
@@ -3900,6 +3902,7 @@ algorithm
         (cache,env3,ih,_,_,_,ci_state2,_,_) = 
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls, 
                           inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
+        // Debug.traceln("partialInstClassdef OK " +& className);
       then
         (cache,env3,ih,ci_state2);
     /* Short class definition */
@@ -4360,6 +4363,7 @@ algorithm
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath1, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
+        // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
       then (emod,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
     case (emod,name1,classExtendsElt,(compelt,mod)::rest)
       equation
@@ -4703,9 +4707,9 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
   case ({},mod,_) then ({},mod);
     case ((((comp as SCode.COMPONENT(component = id)),cmod) :: xs),mod,env)
       equation 
-       // print(" comp: " +& id +& " " +& Mod.printModStr(mod) +& "\n"); 
+        // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
         cmod2 = Mod.lookupCompModification(mod, id);
-       // print("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2) +& "\n");
+        // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
         mod_1 = Mod.merge(cmod2, cmod, env, Prefix.NOPRE());
         mod_rest = Types.removeMod(mod,id);
         (res,mod_rest) = updateComponents(xs, mod_rest, env);
@@ -6335,7 +6339,7 @@ algorithm
     case (cache,
           (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod)))
       equation 
-        // print("Inst.getDerivedEnv: case 3 " +& Env.printEnvPathStr(env) +& "\n");
+        // print("Inst.getDerivedEnv: case 3 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
         top_frame = Env.topFrame(env);
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,mod,true);
         // print("Inst.getDerivedEnv: case 3 end " +& Env.printEnvPathStr(env) +& "\n");
@@ -17474,4 +17478,16 @@ algorithm
   end matchcontinue;
 end checkModelBalancingFilterByRestriction;
 */
+
+protected function isPartial
+  input Boolean partialPrefix;
+  input Mod mods;
+  output Boolean outPartial;
+algorithm
+  outPartial := matchcontinue (partialPrefix,mods)
+    case (true,DAE.NOMOD()) then true;
+    case (_,_) then false;
+  end matchcontinue;
+end isPartial;
+
 end Inst;

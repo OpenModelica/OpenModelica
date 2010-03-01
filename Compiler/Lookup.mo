@@ -372,7 +372,7 @@ algorithm
     // First look in cache for environment. If found look up class in that environment.
     case (cache,env,path,prevFrames,inState,msg)
       equation
-        false = Util.getStatefulBoolean(inState);
+        // Debug.traceln("lookupClass " +& Absyn.pathString(path) +& " s:" +& Env.printEnvPathStr(env));
         SOME(scope) = Env.getEnvPath(env);
         f::fs = Env.cacheGet(scope,path,cache);
         Util.setStatefulBoolean(inState,true);
@@ -408,7 +408,13 @@ algorithm
         (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,env, id, prevFrames, inState, msg);
       then
         (cache,c,env_1,prevFrames);
-        
+
+    /*
+    case (cache,env,p,_,_,_)
+      equation
+        Debug.traceln("lookupClass failed " +& Absyn.pathString(p) +& " " +& Env.printEnvPathStr(env));
+      then fail();
+    */
   end matchcontinue;
 end lookupClass2;
 
@@ -796,38 +802,44 @@ protected function lookupQualifiedImportedClassInFrame
   input list<Env.Item> inEnvItemLst;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
+  input Util.StatefulBoolean inState;
   output Env.Cache outCache;
   output SCode.Class outClass;
   output Env.Env outEnv;
+  output Env.Env outPrevFrames;
 algorithm 
-  (outCache,outClass,outEnv):=
-  matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnvItemLst,inEnv,inIdent,inState)
     local
       Env.Frame fr;
       SCode.Class c,c2;
-      list<Env.Frame> env_1,env;
+      list<Env.Frame> env_1,env,prevFrames;
       String id,ident,str;
       list<Env.Item> fs;
       Absyn.Path strippath,path;
       Env.Cache cache;
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: fs),env,ident)
+    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: _),env,ident,inState)
       equation 
-        equality(id = ident) "For imported paths A, not possible to assert sub-path package" ;
-        fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, Absyn.IDENT(id), true);
+        false = Util.getStatefulBoolean(inState);
+        true = id ==& ident "For imported paths A, not possible to assert sub-path package";
+        Util.setStatefulBoolean(inState,true);
+        fr::prevFrames = listReverse(env);
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,{fr},Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(false),true);
       then
-        (cache,c,env_1);
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
+        (cache,c,env_1,prevFrames);
+    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident,inState)
       equation 
+        false = Util.getStatefulBoolean(inState);
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
-        assertPackage(c2,Absyn.pathString(strippath));
+        true = id ==& ident;
+        Util.setStatefulBoolean(inState,true);
+
+        fr::prevFrames = listReverse(env);
+        // strippath = Absyn.stripLast(path);
+        // (cache,c2,env_1,_) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
+        // assertPackage(c2,Absyn.pathString(strippath));
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),true);
       then
-        (cache,c,env_1);
+        (cache,c,env_1,prevFrames);
         /* commented since MSL does not follow this rule, instead assertPackage gives warning */
     /*case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident)
       equation 
@@ -842,16 +854,19 @@ algorithm
         Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
       then
         fail();*/
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
+    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident,inState)
       equation 
-        equality(id = ident) "Named imports" ;
-        fr = Env.topFrame(env);
-        (cache,c,env_1) = lookupClass(cache,{fr}, path, true);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
-        assertPackage(c2,Absyn.pathString(strippath));
+        false = Util.getStatefulBoolean(inState);
+        true = id ==& ident "Named imports";
+        Util.setStatefulBoolean(inState,true);
+        fr::prevFrames = listReverse(env);
+        // strippath = Absyn.stripLast(path);
+        // Debug.traceln("named import " +& id +& " is " +& Absyn.pathString(path));
+        // (cache,c2,env_1,prevFrames) = lookupClass2(cache,{fr},strippath,prevFrames,Util.makeStatefulBoolean(false),true);
+        // assertPackage(c2,Absyn.pathString(strippath));
+        (cache,c,env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),true);
       then
-        (cache,c,env_1);
+        (cache,c,env_1,prevFrames);
         /* Error message if named import is not package */
         /* commented since MSL does not follow this rule, instead assertPackage gives warning */
     /*case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
@@ -867,11 +882,12 @@ algorithm
       then
         fail();*/
         
-    case (cache,(_ :: fs),env,ident)
+    case (cache,(_ :: fs),env,ident,inState)
       equation 
-        (cache,c,env_1) = lookupQualifiedImportedClassInFrame(cache,fs, env, ident);
+        false = Util.getStatefulBoolean(inState);
+        (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,fs,env,ident,inState);
       then
-        (cache,c,env_1);
+        (cache,c,env_1,prevFrames);
   end matchcontinue;
 end lookupQualifiedImportedClassInFrame;
 
@@ -940,14 +956,15 @@ protected function lookupUnqualifiedImportedClassInFrame "function: lookupUnqual
 "
 	input Env.Cache inCache;
   input list<Env.Item> inEnvItemLst;
-  input Env.Env inEnv;
+  input Env.Env inEnv; 
   input SCode.Ident inIdent;
   output Env.Cache outCache;
   output SCode.Class outClass;
   output Env.Env outEnv;
+  output Env.Env outPrevFrames;
   output Boolean outBoolean;
 algorithm 
-  (outCache,outClass,outEnv,outBoolean):=
+  (outCache,outClass,outEnv,outPrevFrames,outBoolean):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f,f_1;
@@ -955,7 +972,7 @@ algorithm
       String id,ident;
       Boolean encflag,more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,fs_1,env;
+      list<Env.Frame> env_1,env2,fs_1,env,prevFrames;
       ClassInf.State ci_state,cistate1;
       Absyn.Path path;
       list<Env.Item> fs;
@@ -965,36 +982,36 @@ algorithm
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation
         firstIdent = Absyn.pathFirstIdent(path);
-        f::fs_1 = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,c_1,(f_1 :: _)) = lookupClass(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
+        env2 = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
+        (cache,c_1,env2,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(ident),{},Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
-        (cache,c_1,(f_1 :: fs_1),unique);
+        (cache,c_1,env2,prevFrames,unique);
         
         // Not in cache, instantiate.
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
-        fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
+        fr::prevFrames = listReverse(env);
+        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),false);
         env2 = Env.openScope(env_1, encflag, SOME(id));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-        (cache,(f :: fs_1),_,cistate1) = 
+        (cache,env2,_,cistate1) = 
         Inst.partialInstClassIn(
           cache,env2,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, 
-          ci_state, c, false, {}); 
+          ci_state, c, false, {});
         // Restrict import to the imported scope only, not its parents, thus {f} below
-        (cache,c_1,(f_1 :: _)) = lookupClass(cache,{f}, Absyn.IDENT(ident), false) "Restrict import to the imported scope only, not its parents..." ;
+        (cache,c_1,env2,prevFrames) = lookupClass2(cache,env2,Absyn.IDENT(ident),prevFrames,Util.makeStatefulBoolean(true),false) "Restrict import to the imported scope only, not its parents..." ;
         (cache,more) = moreLookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
-        (cache,c_1,(f_1 :: fs_1),unique);
+        (cache,c_1,env2,prevFrames,unique);
     case (cache,(_ :: fs),env,ident)
       equation 
-        (cache,c,env_1,unique) = lookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
+        (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,fs, env, ident);
       then
-        (cache,c,env_1,unique);
+        (cache,c,env_1,prevFrames,unique);
   end matchcontinue;
 end lookupUnqualifiedImportedClassInFrame;
 
@@ -1455,10 +1472,12 @@ algorithm
       // Not found in cache, lookup and instantiate.
     case(cache,env,path,mod,msg)
       equation
+        // Debug.traceln("lookupAndInstantiate " +& Absyn.pathString(path) +& ", s:" +& Env.printEnvPathStr(env) +& "m:" +& SCode.printModStr(mod));
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache,env, path, msg);
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
+        // Debug.traceln("dmod: " +& Mod.printModStr(dmod));
         (cache,classEnv,_,_) = 
         Inst.partialInstClassIn(
           cache,cenv_2,InnerOuter.emptyInstHierarchy,
@@ -2115,7 +2134,7 @@ algorithm
     
     case (cache,env as (frame::_),id,prevFrames,inState,msg) /* msg */ 
       equation
-        (cache,c,env_1,prevFrames) = lookupClassInFrame(cache,frame,env,id,prevFrames,msg);
+        (cache,c,env_1,prevFrames) = lookupClassInFrame(cache,frame,env,id,prevFrames,inState,msg);
         Util.setStatefulBoolean(inState,true);
       then
         (cache,c,env_1,prevFrames);
@@ -2182,13 +2201,14 @@ protected function lookupClassInFrame "function: lookupClassInFrame
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   input list<Env.Frame> inPrevFrames;
+  input Util.StatefulBoolean inState;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output SCode.Class outClass;
   output Env.Env outEnv;
   output list<Env.Frame> outPrevFrames;
 algorithm 
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inBoolean)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
     local
       SCode.Class c;
       list<Env.Frame> env,totenv,bcframes,env_1,prevFrames;
@@ -2200,34 +2220,36 @@ algorithm
       Env.Item item;
 
       /* Check this scope for class */
-    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,id,prevFrames,_)
+    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,id,prevFrames,_,_)
       equation 
         Env.CLASS(c,_) = Env.avlTreeGet(ht, id);
       then
         (cache,c,totenv,prevFrames);
         
         /* Search base classes */ 
-    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _))),totenv,name,_,_)
-      equation         
-        (cache,c,env) = lookupClass(cache,bcframes, Absyn.IDENT(name), false);
+    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _))),totenv,name,_,_,_)
+      equation
+        (cache,c,env,prevFrames) = lookupClass2(cache,bcframes,Absyn.IDENT(name),{},Util.makeStatefulBoolean(false),true);
       then
-        (cache,c,env,{});
+        (cache,c,env,prevFrames);
         
         /* Search among the qualified imports, e.g. import A.B; or import D=A.B; */
-    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,_)
-      equation 
-        (cache,c,env_1) = lookupQualifiedImportedClassInFrame(cache,items, totenv, name);
+    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,inState,_)
+      equation
+        false = Util.getStatefulBoolean(inState);
+        (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,items,totenv,name,inState);
       then
-        (cache,c,env_1,{});
+        (cache,c,env_1,prevFrames);
         
         /* Search among the unqualified imports, e.g. import A.B.*; */
-    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,_)
+    case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,inState,_)
       local Boolean unique;
       equation 
-        (cache,c,env_1,unique) = lookupUnqualifiedImportedClassInFrame(cache,items, totenv, name) "unique" ;
+        (cache,c,env_1,prevFrames,unique) = lookupUnqualifiedImportedClassInFrame(cache,items,totenv,name) "unique";
+        Util.setStatefulBoolean(inState,true);
         reportSeveralNamesError(unique,name);
       then
-        (cache,c,env_1,{});
+        (cache,c,env_1,prevFrames);
   end matchcontinue;
 end lookupClassInFrame;
 
