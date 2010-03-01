@@ -138,12 +138,14 @@ int next_index(int ndims, int* idx, int* size)
     int d = ndims - 1;
 
     idx[d]++;
+
     while (idx[d] >= size[d]) {
         idx[d] = 0;
         if (!d) { return 1; }
         d--;
         idx[d]++;
     }
+
     return 0;
 }
 

@@ -1733,7 +1733,7 @@ algorithm
     case (cache,env,exp,dim,impl,st,MSG())
       local DAE.Exp dim;
       equation 
-        // true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Print.printErrorBuf("#-- Ceval.cevalBuiltinSize failed: ");
         expstr = Exp.printExpStr(exp);
         Print.printErrorBuf(expstr);

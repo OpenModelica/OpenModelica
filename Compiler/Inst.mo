@@ -7218,6 +7218,23 @@ algorithm
       then
         (cache,env_1,ih,store,dae,csets_1,ty,graph);
     
+    // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_)))),pre,csets,n,cl,attr,prot,
+      ((dim as DIMEXP(subscript = DAE.WHOLEDIM)) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,graph)
+      local
+        Integer deduced_dim;
+      equation
+        // Try to deduce the dimension from the modifier.
+        (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = instWholeDimFromMod(dim, mod);
+        dim = DIMINT(deduced_dim);
+        inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
+        (cache,compenv,ih,store,dae,Connect.SETS(_,crs,dc,oc),ty,graph) = 
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,graph);
+        dimt = instDimType(dim);        
+        ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
+      then
+        (cache,compenv,ih,store,dae,Connect.SETS({},crs,dc,oc),ty_1,graph);
+        
     // Array variables , e.g. Real x[3]
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,(dim :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,graph) 
       equation 
@@ -7229,7 +7246,7 @@ algorithm
         ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,Connect.SETS({},crs,dc,oc),ty_1,graph);
-                 
+     
     case (_,env,ih,_,_,mod,pre,_,n,_,_,_,_,_,_,_,_,_,_,_) 
       equation 
 				true = RTOpts.debugFlag("failtrace");
@@ -7864,6 +7881,27 @@ algorithm
     case (DIMEXP(subscript = (eSubscr as DAE.INDEX(exp = _))),_) then eSubscr;
   end matchcontinue;
 end instDimExp;
+
+protected function instWholeDimFromMod
+	"Tries to determine the size of a WHOLEDIM dimension by looking at a variables
+	modifier."
+	input DimExp dimensionExp;
+	input DAE.Mod modifier;
+	output DAE.Subscript subscript;
+algorithm
+	subscript := matchcontinue(dimensionExp, modifier)
+		local
+			list<Option<Integer>> dims;
+			DAE.Subscript sub;
+		case (DIMEXP(subscript = DAE.WHOLEDIM()), DAE.NOMOD()) 
+		  then fail(); // No modifier, which is ok if the variable has a binding.
+		case (DIMEXP(subscript = DAE.WHOLEDIM()), 
+					DAE.MOD(eqModOption =	SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = DAE.ET_ARRAY(arrayDimensions = dims))))))
+			equation
+				(sub :: _) = Exp.arrayDimensionsToSubscripts(dims);
+			then sub;
+	end matchcontinue;
+end instWholeDimFromMod;
 
 protected function instDimType 
 "function instDimType
@@ -8736,7 +8774,7 @@ algorithm
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
         (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),cnst),_,dae1) = Static.elabExp(cache,env, d, impl, st,doVect);
         failure(equality(cnst = DAE.C_VAR()));
-        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st, NONE, Ceval.MSG());
+        (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st, NONE, Ceval.NO_MSG());
         (cache,l,dae2) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
