@@ -1259,10 +1259,10 @@ end componentNames;
 public function elementName ""
 input Element e;
 output String s;
-algorithm s := matchcontinue(e)
-  case(COMPONENT(component = s)) then s;
-  case(CLASSDEF(name = s)) then s;
-  case(_) then "";
+algorithm
+  s := matchcontinue(e)
+    case(COMPONENT(component = s)) then s;
+    case(CLASSDEF(name = s)) then s;
   end matchcontinue;
 end elementName;
 

@@ -4024,9 +4024,11 @@ algorithm
       Connect.Sets csets;
       SCode.Mod umod;
       list<Absyn.ComponentRef> crefs,crefs_1,crefs2;      
+      Absyn.ComponentRef cref;
       DAE.Mod cmod_1,cmod,localModifiers,cmod2,redMod;
       list<DAE.Mod> ltmod;
       list<tuple<SCode.Element, Mod>> res,xs,newXS,head;
+      tuple<SCode.Element, Mod> elMod;
       SCode.Element comp,redComp;
       ClassInf.State ci_state;
       Boolean impl;
@@ -4034,6 +4036,7 @@ algorithm
       SCode.OptBaseClass bc;
       output InstanceHierarchy ih;
       DAE.DAElist dae,dae1,dae2,fdae1,fdae2,dae3;
+      String name;
       
     case (cache,env,ih,pre,{},_,csets,_) then (cache,env,ih,{},csets,DAEUtil.emptyDae); 
       // Special case for components beeing redeclared, we might instantiate partial classes when instantiating var(-> instVar2->instClass) to update component in env.       
@@ -4043,7 +4046,8 @@ algorithm
         crefs = getCrefFromMod(umod);
         crefs_1 = getCrefFromCompDim(comp) "get crefs from dimension arguments";
         crefs = Util.listUnionOnTrue(crefs,crefs_1,Absyn.crefEqual);
-        crefs2 = getCrefFromComp(comp);
+        name = SCode.elementName(comp);
+        cref = Absyn.CREF_IDENT(name,{});
         ltmod = Util.listMap1(crefs,getModsForDep,xs);
         cmod2 = Util.listFold_3(cmod::ltmod,Mod.merge,DAE.NOMOD,env,pre);
         
@@ -4052,7 +4056,7 @@ algorithm
         
         (cache,env2,ih,csets,dae) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
         ErrorExt.setCheckpoint();
-        (cache,env2,ih,csets,dae1) = updateComponentsInEnv(cache, env2, ih, pre, DAE.NOMOD(), crefs2, ci_state, csets, impl);
+        (cache,env2,ih,csets,dae1) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
         ErrorExt.rollBack() "roll back any errors";
         (cache,cmod_1,dae2) = Mod.updateMod(cache,env2, pre, cmod, impl);
         (cache,env3,ih,res,csets,dae3) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
@@ -4060,16 +4064,26 @@ algorithm
       then
         (cache,env3,ih,((comp,cmod_1) :: res),csets,dae);
       
+      /* Need to update testcases if this is used since the function DAE is a hashtable. */
+      /*
+    case (cache,env,ih,pre,((elMod as (_,DAE.NOMOD())) :: xs),ci_state,csets,impl)
+      equation
+        (cache,env,ih,res,csets,dae) = updateCompeltsMods(cache, env, ih, pre, xs, ci_state, csets, impl);
+      then
+        (cache,env,ih,elMod::res,csets,dae);
+      */
+
     case (cache,env,ih,pre,((comp,cmod) :: xs),ci_state,csets,impl)
       equation 
         umod = Mod.unelabMod(cmod);
         crefs = getCrefFromMod(umod);
         crefs_1 = getCrefFromCompDim(comp);
         crefs = Util.listUnionOnTrue(crefs,crefs_1,Absyn.crefEqual);
-        crefs2 = getCrefFromComp(comp);
+        name = SCode.elementName(comp);
+        cref = Absyn.CREF_IDENT(name,{});
         
         ltmod = Util.listMap1(crefs,getModsForDep,xs);
-        cmod2 = Util.listFold_3(cmod::ltmod,Mod.merge,DAE.NOMOD,env,pre);
+        cmod2 = Util.listFold_3(ltmod,Mod.merge,DAE.NOMOD,env,pre);
         
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
@@ -4077,12 +4091,13 @@ algorithm
         bc=SCode.elementBaseClassPath(comp);
         (cache,env,ih)=getDerivedEnv(cache,env,ih,bc);
         (cache,env2,ih,csets,fdae1) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
-        (cache,env2,ih,csets,fdae2) = updateComponentsInEnv(cache, env2, ih, pre, DAE.NOMOD(), crefs2, ci_state, csets, impl);
+        (cache,env2,ih,csets,fdae2) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
         (cache,cmod_1,dae1) = Mod.updateMod(cache,env2, pre, cmod, impl);
         (cache,env3,ih,res,csets,dae2) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
         dae = DAEUtil.joinDaeLst({dae1,dae2,fdae1,fdae2});
       then
         (cache,env3,ih,((comp,cmod_1) :: res),csets,dae);
+
   end matchcontinue;
 end updateCompeltsMods;
 
@@ -16521,21 +16536,6 @@ algorithm
     then DAE.DAE({DAE.INITIAL_COMPLEX_EQUATION(lhs,rhs,source)},funcs);
   end matchcontinue;
 end makeComplexDaeEquation;
-
-protected function getCrefFromComp "
-Author: BZ"
-  input SCode.Element inEle;
-  output list<Absyn.ComponentRef> cref;
-algorithm cref := matchcontinue(inEle)
-  local String crefName;
-  case(SCode.CLASSDEF(name=crefName)) then {Absyn.CREF_IDENT(crefName,{})};
-  case(SCode.COMPONENT(component=crefName)) then {Absyn.CREF_IDENT(crefName,{})};
-  case(SCode.EXTENDS(_,_,_)) 
-    equation Debug.fprint("inst", "-Inst.get_Cref_From_Comp not implemented for SCode.EXTENDS(_,_)\n"); then {};
-  case(SCode.IMPORT(_)) 
-    equation Debug.fprint("inst", "-Inst.get_Cref_From_Comp not implemented for SCode.IMPORT(_,_)\n"); then {};
-end matchcontinue;
-end getCrefFromComp;
 
 protected function getCrefFromCompDim "
 Author: BZ, 2009-07
