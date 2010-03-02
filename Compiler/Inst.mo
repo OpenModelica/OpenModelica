@@ -4064,14 +4064,12 @@ algorithm
       then
         (cache,env3,ih,((comp,cmod_1) :: res),csets,dae);
       
-      /* Need to update testcases if this is used since the function DAE is a hashtable. */
-      /*
+      /* No need to update a mod unless there's actually anything there. */
     case (cache,env,ih,pre,((elMod as (_,DAE.NOMOD())) :: xs),ci_state,csets,impl)
       equation
         (cache,env,ih,res,csets,dae) = updateCompeltsMods(cache, env, ih, pre, xs, ci_state, csets, impl);
       then
         (cache,env,ih,elMod::res,csets,dae);
-      */
 
     case (cache,env,ih,pre,((comp,cmod) :: xs),ci_state,csets,impl)
       equation 
