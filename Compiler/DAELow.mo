@@ -3407,8 +3407,8 @@ algorithm
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
+      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
       (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
     then
