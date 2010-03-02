@@ -42,22 +42,22 @@ using namespace std;
 void euler_ex_step (double* step, int (*f)() );
 void rungekutta_step (double* step, int (*f)());
 
-double TOL=0;
+int euler_in_use;
 
 /* The main function for the explicit euler solver */
 int euler_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
 		double &tolerance,int flag)
 {
 
+	//Workaround for Ralation in simulation_events
+	euler_in_use = 1;
+
 	//double sim_time;
 	int dideventstep = 0;
 	double laststep = 0;
+	double current_stepsize = step;
+	double offset = 0;
 	globalData->oldTime = start;
-	
-	if (tolerance!=0) TOL = tolerance;
-	//to get debug output with more precision 
-	if (sim_verbose) cout.precision(13);
-
 
 	const string *init_method = getFlagValue("im",argc,argv);
 
@@ -81,51 +81,40 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 	}
 	if (sim_verbose) { cout << "Calculated bound parameters" << endl; }
 
-	// Calculate initial values from (fixed) start attributes
-	// TODO: Check the intialisation
-	
+	// Calculate initial values from initial_function()
+	// saveall() value as pre values
 	globalData->init=1;
 	initial_function();
 	saveall();
 	emit();
 	
+	// Calculate initial values from (fixed) start attributes
 	if (initialize(init_method)) {
 		throw TerminateSimulationException(globalData->timeValue,
 				string("Error in initialization. Storing results and exiting.\n"));
 	}
-	saveall();
-	if(emit()) { printf("Error, not enough space to save data"); return -1; }
 
-	/*
-	//Calculate initial derivatives
-	if(functionODE()) {
-		throw TerminateSimulationException(globalData->timeValue,string("Error calculating initial derivatives\n"));
-	}
-	//Calculate initial output values
-	if(functionDAE_output() || functionDAE_output2()) {
-		throw TerminateSimulationException(globalData->timeValue,
-			string("Error calculating initial derivatives\n"));
-	}
-	cout << "Calculated function_ODE and functionsDAE_output (at time "<< globalData->timeValue << ")." << endl;
-	*/
-	function_updateDepend();
+	// Calculate stable discrete state
+	// and initial ZeroCrossings
 	saveall();
-	if(emit()) { printf("Error, not enough space to save data"); return -1; }
-	
+	function_updateDepend();
+	if(sim_verbose) { emit(); }
+	InitialZeroCrossings();
+	while(checkForDiscreteChanges()) {
+		if (sim_verbose) cout << "Discrete Var Changed!" << endl;
+		saveall();
+		function_updateDepend();
+	}
+	if(sim_verbose) {emit();}
+
 	// Put initial values to delayed expression buffers
 	function_storeDelayed();
-
-	//Enable all Events
-	for (int i = 0; i < globalData->nZeroCrossing; i++) {
-	   zeroCrossingEnabled[i] = 1;
-	}
-	
 	// check for Event at Initial
 	if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
 	if (CheckForNewEvent(NOINTERVAL)){
-		saveall();
-		if(emit()) { printf("Error, not enough space to save data"); return -1; }
-	}	
+		if(sim_verbose) { emit(); }
+	}
+	saveall();
 	globalData->init=0;
 	
 	
@@ -134,40 +123,52 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 		cout << "Start numerical solver from "<< globalData->timeValue << " to "<< stop << endl; 
 	}
 
-	while( globalData->timeValue <= stop){
-	//for(globalData->timeValue=start; globalData->timeValue<= stop; globalData->timeValue+=step,pt++) {
-	
-		//TODO: calc new step size here
+	while( globalData->timeValue < stop){
+
+		/*
+		 * Calculate new step size after an event
+		 */
 		if (dideventstep == 1){
-			globalData->timeValue += (step-globalData->timeValue+laststep);
+			offset = globalData->timeValue-laststep;
 			dideventstep = 0;
 			if (globalData->timeValue == globalData->oldTime)
-				globalData->timeValue += step;
+				globalData->timeValue += step - offset;
 		}else{
-			globalData->timeValue+=step;
+			offset = 0;
+			globalData->timeValue += step;
 		}
-		// do one integration step
-		if (flag == 1) euler_ex_step(&step,functionODE);
-		else if (flag == 2) rungekutta_step(&step,functionODE);
-		else euler_ex_step(&step,functionODE);
-		
+		current_stepsize = step-offset;
+
+
+		/* do one integration step
+		 *
+		 * one step means:
+		 * determine all states by Integration-Method
+		 * update continuous part with
+		 * functionODE() and functionDAE_output();
+		 *
+		 */
+		if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
+		else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
+		else euler_ex_step(&current_stepsize,functionODE);
 		functionDAE_output();
-	function_storeDelayed();
+
+		// functionDAE_output2() contains all discrete Values
+		// should executed for noEvent() operator, but then
+		// avoid all relation that are in function_updateDepend
+		//functionDAE_output2();
+		
+		function_storeDelayed();
 
 		//Check for Events
-		//if (sim_verbose) { cout << "Checking for new events (at time "<< globalData->timeValue << ")." << endl; }
 		if (CheckForNewEvent(INTERVAL) == 2){
 			dideventstep = 1;
-			//if (sim_verbose) cout << "Go to Event time h_e" << endl;
 		}else{
 			laststep = globalData->timeValue;
-			//if (sim_verbose) cout << "Did Odinary step" << endl;
 		}
-			
 		
-		//if (sim_verbose) { cout << "Check for new events done." << endl; }
-		
-		// Emit this timestep
+		// Emit this time step
+		// TODO: check if time step equal to output point
 		emit();
 
 	}

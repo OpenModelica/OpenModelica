@@ -442,26 +442,28 @@ bool change(double& var) {
 //
 int CheckForNewEvent(int flag) {
 	
-	//if (flag != INTERVAL){
-	//   while(checkForDiscreteVarChanges()) {
-	//	   saveall();
-	//	   function_updateDepend();
-	//	   if (sim_verbose) cout << "Discrete Var Changed!" << endl;
-	//   }
-	//}
-	
+	if (flag != INTERVAL){
+		while(checkForDiscreteChanges()) {
+			saveall();
+			function_updateDepend();
+			if (sim_verbose) {
+				cout << "Discrete Variable changed -> event iteration." << endl;
+				emit();
+			}
+	  }
+	}
+
 	function_onlyZeroCrossings(gout,&globalData->timeValue);
 
 	for (long i = 0; i < globalData->nZeroCrossing; i++) {
-		//if (sim_verbose) cout << "gout[" << i << "] = " << gout[i] << endl;
-		if (gout[i] < 0) { // check also zero crossings that are on zero.
-			
+		if (gout[i] < 0) {
 			if (sim_verbose) {
 				cout << "adding event " << i << " at time: "
 				<< globalData->timeValue << endl;
 			}
 			AddEvent(i);
 		}
+		// TODO: check also zero crossings that are on zero.
 	}
 	if (!EventQueue.empty() && flag == INTERVAL){
 		FindRoot();
@@ -490,12 +492,11 @@ void EventHandle(){
 			zeroCrossingEnabled[event_id] = -1;}
 		else if (zeroCrossingEnabled[event_id] == -1){
 			zeroCrossingEnabled[event_id] = 1;}
-		else{
-			zeroCrossingEnabled[event_id] = -1;}
 		
+		if (sim_verbose) { emit();}
 		saveall();
 		function_updateDepend();
-	    saveall();
+	    if (sim_verbose) { emit();}
 	    
 		EventQueue.pop_front();
 	}
@@ -508,7 +509,14 @@ void EventHandle(){
 //
 void FindRoot(){
 	double EventTime = 0;
-	
+
+	//Empty EventQueue, because we search only for one event
+	while (!EventQueue.empty())
+	{
+	    if (sim_verbose) cout << "Search for current event. Events in queue: : " << EventQueue.front() << endl;
+	    EventQueue.pop_front();
+	}
+
 	long int event_id =0;
 	
 	double *states_right = new double[globalData->nStates];
@@ -517,13 +525,13 @@ void FindRoot(){
 	double time_left = globalData->oldTime;
 	double time_right = globalData->timeValue;
 
-	//write states to work and backup Array
+	//write states to work arrays
 	for(int i=0;i<globalData->nStates;i++){
 		states_left[i] = globalData->oldStates[i];
 		states_right[i] = globalData->states[i];
 	}
 
-	// Search for event time with Bisection method
+	// Search for event time and event_id with Bisection method
 	EventTime = BiSection(&time_left,&time_right, states_left, states_right, &event_id);
 	
 	
@@ -533,19 +541,27 @@ void FindRoot(){
 		cout << "Time at Point right: " << time_right << endl;
 	}
 	AddEvent(event_id);
+
+	//determined system at t_e - epsilon
 	globalData->timeValue = time_left;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_left[i];
 	}
+	//determined continuous system
 	functionODE();
 	functionDAE_output();
 	emit();
+	saveall();
 
+	//determined system at t_e + epsilon
 	globalData->timeValue = time_right;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_right[i];
 	}
-	
+	//determined complete system
+	function_updateDepend();
+    if (sim_verbose) {emit();}
+    
 	delete[] states_left;
 	delete[] states_right;
 	
@@ -558,9 +574,8 @@ void FindRoot(){
 double BiSection(double* a, double* b, double* states_a, double* states_b,long int* event_id )	
 {
 	
-	//double TTOL =  DBL_EPSILON;//*fabs(2*b-a)*100;
+	//double TTOL =  DBL_EPSILON*fabs(2*b-a)*100;
 	double TTOL = 1e-06;
-	if(TOL!=0) TTOL = TOL;
 	double c;
 
 	if (sim_verbose){
@@ -584,14 +599,12 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 	
 		if ( CheckZeroCrossings(event_id)){ //If Zerocrossing in left Section
 			
-			//if (sim_verbose) cout << "  Search in the left section" << endl;
 			for(int i=0;i<globalData->nStates;i++){
 				states_b[i] = globalData->states[i];
 			}
 			*b = c;
-		}else{   //If Zerocrossing in right Section
+		}else{   //else Zerocrossing in right Section
 			
-			//if (sim_verbose) cout << "\t\tSearch in the right section" << endl;
 			for(int i=0;i<globalData->nStates;i++){
 				states_a[i] = globalData->states[i];
 			}
@@ -619,3 +632,42 @@ int CheckZeroCrossings(long int *eventid) {
   }
   return 0;
 }
+
+void InitialZeroCrossings() {
+  int i;
+  if (sim_verbose) {
+    cout << "checkForIntialZeroCrossings" << endl;
+  }
+  //Enable all Events
+  for (int i = 0; i < globalData->nZeroCrossing; i++) {
+    zeroCrossingEnabled[i] = 1;
+  }
+  
+  function_onlyZeroCrossings(gout,&globalData->timeValue);
+  for (i = 0; i < globalData->nZeroCrossing; i++) {
+    if (gout[i] < 0) {
+      zeroCrossingEnabled[i] = -1;
+      if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i] << " so it's set to 1" << endl;}
+    } else {
+      zeroCrossingEnabled[i] = 1;
+      if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i] << " so it's set to -1" << endl;}
+    }
+    //if gout[i] == 0 then ZC[i] will step in next step
+    // TODO: check where ZC will move to handle correct
+  }
+  function_onlyZeroCrossings(gout,&globalData->timeValue);
+  for (i = 0; i < globalData->nZeroCrossing; i++) {
+      if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i]  << endl;}
+      if (gout[i] < 0 ) {
+    	  if (sim_verbose) {
+    	  	cout << "adding initial event : " << i << endl;
+    	  }
+    	  AddEvent(i);  
+      }
+  }
+  EventHandle();
+  if (sim_verbose) {
+    cout << "checkForIntialZeroCrossings done." << endl;
+  }
+}
+

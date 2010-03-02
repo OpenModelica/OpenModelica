@@ -222,7 +222,7 @@ algorithm
         s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
         czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
-        updatedepend = generateUpdateDepended(dae, dlow2, ass1, ass2, comps, helpVarInfo);
+        updatedepend = generateUpdateDepended(dae, dlow2, ass1, ass2, comps, helpVarInfo,m,mt);
         storedelayed = generateStoreDelayed(dlow2);
         (extObjIncludes,_) = generateExternalObjectIncludes(dlow2);
         extObjInclude = Util.stringDelimitList(extObjIncludes,"\n");
@@ -6397,7 +6397,7 @@ algorithm
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
-        Codegen.generateExpression_new(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+        Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
         cr_str = Exp.printComponentRefStr(cr);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -6417,7 +6417,7 @@ algorithm
         varexp = DAE.CREF(cr_1,DAE.ET_REAL());
         expr = Exp.solve(e1, e2, varexp);
         (exp_func,var,cg_id_1) = 
-        Codegen.generateExpression_new(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
+        Codegen.generateExpression(expr, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
         cr_str = Exp.printComponentRefStr(cr_1);
         stmt = Util.stringAppendList({cr_str," = ",var,";"});
         res = Codegen.cAddStatements(exp_func, {stmt});
@@ -6735,7 +6735,7 @@ end appendNonpresentPaths;
 
 public function generateInitData 
 "function generateInitData
-  This function generates initial values for the generateExpression_new
+  This function generates initial values for the generateExpression
   simulation by investigating values of variables."
   input DAELow.DAELow inDAELow1;
   input Absyn.Path inPath2;
@@ -7394,10 +7394,12 @@ protected function generateUpdateDepended
   input Integer[:] inIntegerArray2;
   input list<list<Integer>> inIntegerLstLst;
   input list<HelpVarInfo> helpVarLst;
+  input DAELow.IncidenceMatrix inIncidenceMatrix;
+  input DAELow.IncidenceMatrixT inIncidenceMatrixT;
   output String outString;
 algorithm 
   outString :=
-  matchcontinue (inDAElist,inDAELow,inIntegerArray1,inIntegerArray2,inIntegerLstLst,helpVarLst)
+  matchcontinue (inDAElist,inDAELow,inIntegerArray1,inIntegerArray2,inIntegerLstLst,helpVarLst,inIncidenceMatrix,inIncidenceMatrixT)
     local
       Codegen.CFunction cfunc,cfunc_reinit,func_uD,cfunc_uD_0, func_zc,func_handle_zc,func_ozc;
       Integer cg_id,cg_id2,cg_id3;
@@ -7409,7 +7411,10 @@ algorithm
       list<list<Integer>> blocks;
       list<HelpVarInfo> helpVarInfo;
       list<DAELow.ZeroCrossing> zc;
-    case (dae,(dlow as DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(zeroCrossingLst = zc))),ass1,ass2,blocks,helpVarInfo)
+      list<Integer>[:] m,mt;
+      Boolean usezc;
+      String res,check_code2,check_code2_1;
+    case (dae,(dlow as DAELow.DAELOW(eventInfo = DAELow.EVENT_INFO(zeroCrossingLst = zc))),ass1,ass2,blocks,helpVarInfo,m,mt)
       equation
         (cfunc,cg_id,extra_funcs) = generateOdeBlocks_new(dae, true,dlow, ass1, ass2, blocks, 0,helpVarInfo);
         (func_zc,cg_id2,func_handle_zc,cg_id3,extra_funcs1) = generateZeroCrossing2(zc, 0, dae, dlow, ass1, ass2, blocks, helpVarInfo, cg_id, cg_id); // testing here
@@ -7425,15 +7430,25 @@ algorithm
         func_ozc = addMemoryManagement(func_ozc);
         func_ozc = Codegen.cMergeFns({func_ozc,func_zc});
         func_ozc = Codegen.cAddCleanups(func_ozc, {"return 0;"});
+      
+        usezc = useZerocrossing();     
+        // The eventChecking consist of checking if discrete variables in the model has changed.
+        check_code2 = buildDiscreteVarChanges(dlow,blocks,ass1,ass2,m,mt);
+        check_code2_1 = Util.if_(usezc,check_code2, "");
+        res = Util.stringAppendList(
+          {"int checkForDiscreteChanges()\n{\n",
+          "  int needToIterate=0;\n",
+          check_code2_1,"\n",
+          "  return needToIterate;\n","}\n"});
 
         func_str = Codegen.cPrintFunctionsStr({func_uD,func_ozc});
         func_str1 = Codegen.cPrintFunctionsStr(extra_funcs);
         func_str2 = Codegen.cPrintFunctionsStr(extra_funcs1);
-        res = Util.stringAppendList({func_str1,func_str,func_str2});
+        res = Util.stringAppendList({func_str1,func_str,func_str2,res});
       then
         res;
         
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"generate_update_depended failed"});
       then
@@ -7784,7 +7799,7 @@ algorithm
       equation
         expl = getConditionList(wc,cidx);
         (cfn,tnr2,helpvar) = generateHelpVarAssignTempHelp(varhelpinfo1,tnr,expl);
-        (cfn3,var1,tnr3) = Codegen.generateExpression_new(ex2,tnr2,context);
+        (cfn3,var1,tnr3) = Codegen.generateExpression(ex2,tnr2,context);
         cr_str = Exp.printComponentRefStr(cpr);   
         ifExprStr = Util.stringAppendList({"if (",helpvar,") {"});
         ifExprStr2 = Util.stringAppendList({cr_str,"=",var1,";"});
@@ -7889,7 +7904,7 @@ algorithm
       equation
         true = Exp.expEqual(e1, e);
         ind_str = intString(helpVarIndex);
-        (cfunc1,var,cg_id_1) = Codegen.generateExpression_new(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(true),Codegen.NORMAL(),Codegen.NO_LOOP));
+        (cfunc1,var,cg_id_1) = Codegen.generateExpression(e, cg_id, Codegen.CONTEXT(Codegen.SIMULATION(true),Codegen.NORMAL(),Codegen.NO_LOOP));
         helpvar = Util.stringAppendList({"edge(localData->helpVars[",ind_str,"])"});
         assign = Util.stringAppendList({"localData->helpVars[",ind_str,"] = ",var,";"});
         cfunc = Codegen.cAddStatements(cfunc1, {assign});
