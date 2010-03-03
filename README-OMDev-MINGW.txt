@@ -18,7 +18,7 @@ Adrian Pop, adrpo@ida.liu.se, date above.
 
 3. You should have an OpenModelica directory you got
    from OpenModelica Subversion repository:
-   svn co svn://mir20.ida.liu.se/modelica/OpenModelica/trunk/ OpenModelica
+   svn co svn://www.openmodelica.org/svn/OpenModelica/trunk/ OpenModelica
 
 4. inside the OpenModelica directory you will find a .project-sample file
    which you should rename to OpenModelica/.project and do whatever modifications
@@ -78,7 +78,7 @@ Adrian Pop, adrpo@ida.liu.se, date above.
      then create a directory called OpenModelica/build/ModelicaLibrary
     in which you unpack the Modelica Standard Library you
     can take from another directory in Subversion : 
-    https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
+    https://www.openmodelica.org/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
     To run the testsuite from Eclipse:
     - Ctrl+B and type: test
     To run the testsuite from MSYS terminal:
