@@ -6329,22 +6329,6 @@ algorithm
       then 
         (cache,Env.FRAME(id,cl,tps,imps,{},crs,enc,defineUnits)::fs,ih);
  
-    /* Special case to avoid infinite recursion.
-     * If in scope A.B and searching for A.B.C.D, look for C.D directly in the scope. Otherwise, A.B 
-     * will be instantiated over and over again, see testcase packages2.mo
-     */      		
-    case (cache,
-          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod))) 
-      equation        
-				SOME(envpath) = Env.getEnvPath(env);
-				// print("Inst.getDerivedEnv: case 2 " +& Env.printEnvPathStr(env) +& "\n");
-				true = Absyn.pathPrefixOf(envpath,tp);
-				newTp = Absyn.removePrefix(envpath,tp);
-				(cache,env_2) = Lookup.lookupAndInstantiate(cache,env,newTp,mod,true);
-        // print("Inst.getDerivedEnv: case 2 end " +& Env.printEnvPathStr(env) +& "\n");
-      then
-        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs,ih);
-            
     /* Base classes are fully qualified names, search from top scope.
     * This is needed since the environment can be encapsulated, but inherited classes are not affected 
     * by this and therefore should search from top scope directly. 
@@ -6353,8 +6337,7 @@ algorithm
           (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod)))
       equation 
         // print("Inst.getDerivedEnv: case 3 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
-        top_frame = Env.topFrame(env);
-        (cache,env_2) = Lookup.lookupAndInstantiate(cache,{top_frame},tp,mod,true);
+        (cache,env_2) = Lookup.lookupAndInstantiate(cache,env,tp,mod,true);
         // print("Inst.getDerivedEnv: case 3 end " +& Env.printEnvPathStr(env) +& "\n");
       then
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs,ih);
