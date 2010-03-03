@@ -8868,14 +8868,15 @@ algorithm
         res_1 = simplify1(res);
       then
         res_1;
-    /*
-    case (e1,DAE.IFEXP(cond,tb,fb),e2)
+    
+    case (lhs,DAE.IFEXP(e1,e2,e3),(cr as DAE.CREF(componentRef = _)))
       equation
-        res = solve(e1,tb,e2);
-        res_1 = solve(e1,fb,e2);
+        rhs = solve(lhs,e2,cr);
+        res = solve(lhs,e3,cr);
+        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
         then
-          DAE.IFEXP(cond,res,res_1);
-    */
+          res_1;
+   
     case (e1,e2,e3)
       equation
         Debug.fprint("failtrace", "-Exp.solve failed\n");
