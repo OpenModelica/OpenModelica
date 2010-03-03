@@ -1068,7 +1068,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     Env.AvlTree farg2,farg22;
     Env.AvlTree farg3;
     list<Env.Item> farg4;
-    list<Env.Frame> farg5;
+    Env.BCEnv farg5;
     tuple<list<DAE.ComponentRef>,DAE.ComponentRef> farg6;
     Boolean farg7;
     list<SCode.Element> defineUnits;

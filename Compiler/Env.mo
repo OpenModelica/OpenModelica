@@ -85,8 +85,9 @@ public import DAE;
 public import SCode;
 public import HashTable5;
 
-public 
-type Ident = String " An identifier is just a string " ;
+public type Ident = String " An identifier is just a string " ;
+public type BCEnv = list<Frame> "The environment of inherited classes";
+public type Env = list<Frame> "an environment is a list of frames";
 
 public uniontype Cache
   record CACHE 
@@ -121,7 +122,7 @@ uniontype Frame
     AvlTree             clsAndVars        "List of uniquely named classes and variables";
     AvlTree             types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
     list<Item>          imports           "list of unnamed items (imports)";
-    list<Frame>         inherited         "list of frames for inherited elements";
+    BCEnv               inherited         "list of environments for inherited elements";
     CSetsType           connectionSet     "current connection set crefs";
     Boolean             isEncapsulated    "encapsulated bool=true means that FRAME is created due to encapsulated class";
     list<SCode.Element> defineUnits "list of units defined in the frame";
@@ -167,10 +168,6 @@ uniontype Item
   end IMPORT;
 
 end Item;
-
-public 
-type Env = list<Frame> 
-  "an environment is a list of frames";
 
 protected import Dump;
 protected import Exp;
@@ -278,7 +275,8 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      Env bcframes,res;
+      BCEnv bcframes;
+      Env res;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Ident id;
@@ -343,7 +341,8 @@ algorithm
   local   Option<Ident> optName;
     AvlTree clsAndVars, types ;   
     list<Item> imports;
-    list<Frame> inherited,fs;
+    BCEnv inherited;
+    list<Frame> fs;
     tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
     Boolean enc; 
     list<SCode.Element> defineUnits;
@@ -412,7 +411,8 @@ algorithm
     local
       AvlTree httypes;
       AvlTree ht,ht_1;
-      Env env,bcframes,fs;
+      Env env,fs;
+      BCEnv bcframes;
       Option<Ident> id;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
@@ -471,7 +471,8 @@ algorithm
       AvlTree ht,ht_1;
       Option<Ident> id;
       list<AvlValue> imps;
-      Env bcframes,fs,env,remember;
+      Env fs,env,remember;
+      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       InstStatus i;
@@ -516,7 +517,8 @@ algorithm
       AvlTree ht,ht_1;
       Option<Ident> sid;
       list<AvlValue> imps;
-      Env bcframes,fs,env,frames;
+      BCEnv bcframes;
+      Env fs,env,frames;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       DAE.Var v;
       Ident n,id;
@@ -572,7 +574,8 @@ algorithm
       AvlTree ht;
       Option<Ident> sid;
       list<AvlValue> imps;
-      Env bcframes,fs;
+      BCEnv bcframes;
+      Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Ident n;
@@ -606,11 +609,11 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      Env bcframes,fs;
+      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Absyn.Import imp;
-      Env env;
+      Env fs,env;
       list<SCode.Element> defineUnits;
       
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),imp) 
@@ -634,10 +637,10 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      Env bcframes,fs;
+      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
-      Env env;
+      Env fs;
       list<SCode.Element> defineUnits;
       
     case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),defunit) 
@@ -704,6 +707,7 @@ algorithm
    end matchcontinue;
 end memberImportList;
 
+/*
 public function addBcFrame "function: addBcFrame
   author: PA
   Adds a baseclass frame to the environment from the baseclass environment
@@ -725,9 +729,10 @@ algorithm
       list<SCode.Element> defineUnits;
       
     case ((FRAME(sid,cls,tps,imps,bc,crefs,enc,defineUnits) :: fs),(f :: _)) 
-      then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc,defineUnits) :: fs);  /* env bc env */ 
+      then (FRAME(sid,cls,tps,imps,(f :: bc),crefs,enc,defineUnits) :: fs);
   end matchcontinue;
 end addBcFrame;
+*/
 
 public function topFrame "function: topFrame
   Returns the top frame."
@@ -747,6 +752,7 @@ algorithm
   end matchcontinue;
 end topFrame;
 
+/*
 public function enclosingScopeEnv "function: enclosingScopeEnv
 @author: adrpo 
  Returns the environment with the current scope frame removed."
@@ -762,6 +768,7 @@ algorithm
         rest;
   end matchcontinue;
 end enclosingScopeEnv;
+*/
 
 public function getClassName
   input Env inEnv;
@@ -933,34 +940,26 @@ algorithm
   outString := matchcontinue (inFrame)
     local
       Ident s1,s2,s3,encflag_str,s4,res,sid;
+      Option<Ident> optName;
+      list<Ident> bcstrings;
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      Env bcframes;
+      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
-      equation 
-        s1 = printAvlTreeStr(ht);
-        s2 = printAvlTreeStr(httypes);
-        s3 = printImportsStr(imps);
-        encflag_str = Util.boolString(encflag);
-        s4 = printEnvStr(bcframes);
-        res = Util.stringAppendList(
-          {"FRAME: ",sid," (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
-      then
-        res;
-    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
-      equation 
+    case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
+      equation
+        sid = Util.getOptionOrDefault(optName, "unnamed");
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
         s4 = printEnvStr(bcframes);
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
-          {"FRAME: unnamed (enc=",encflag_str,
-          ") \nclasses and vars:\n=============\n",s1,"   Types:\n======\n",s2,"   Imports:\n=======\n",s3,"baseclass:\n======\n",s4,"end baseclass\n"});
+          "FRAME: " :: sid :: " (enc=" :: encflag_str ::
+          ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 ::
+          "baseclass:\n======\n" :: s4 :: "end baseclass\n" :: {});
       then
         res;
   end matchcontinue;
@@ -980,10 +979,9 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      Env bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
+    case FRAME(optName = SOME(sid),clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);
@@ -992,7 +990,7 @@ algorithm
           ") \nclasses and vars:\n=============\n",s1,"\n\n\n"});
       then
         res;
-    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
+    case FRAME(optName = NONE,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation 
         s1 = printAvlTreeStr(ht);
         encflag_str = Util.boolString(encflag);

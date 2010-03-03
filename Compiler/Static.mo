@@ -11192,8 +11192,10 @@ algorithm
     // IDENT 
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl)  
       equation 
+        // Debug.traceln("Try elabSucscriptsDims " +& id);
         cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         (cache,_,t,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.elabType(t);
         sl = Types.getDimensions(t);
         /*Constant evaluate subscripts on form x[1,p,q] where p,q are constants or parameters*/

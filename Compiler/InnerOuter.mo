@@ -1300,7 +1300,7 @@ algorithm
       AvlTree clsAndVars "List of uniquely named classes and variables" ;
       AvlTree types "List of types, which DOES NOT need to be uniquely named, eg. size may have several types" ;
       list<Item> imports "list of unnamed items (imports)" ;
-      list<Frame> inherited "list of frames for inherited elements" ;
+      Env.BCEnv inherited "list of frames for inherited elements" ;
       CSetsType connectionSet "current connection set crefs" ;
       Boolean isEncapsulated "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
       list<SCode.Element> defineUnits "list of units defined in the frame" ;

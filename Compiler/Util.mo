@@ -4930,7 +4930,21 @@ algorithm
   end matchcontinue;
 end getOption;
 
-public function genericOption "function: stringOption
+public function getOptionOrDefault
+"Returns an option value if SOME, otherwise the default"
+  input Option<Type_a> inOption;
+  input Type_a default;
+  output Type_a unOption;
+  replaceable type Type_a subtypeof Any;
+algorithm 
+  unOption := matchcontinue (inOption,default)
+    local Type_a item;
+    case (SOME(item),_) then item;
+    case (_,default) then default;
+  end matchcontinue;
+end getOptionOrDefault;
+
+public function genericOption "function: genericOption
   author: BZ
   Returns a list with single value or an empty list if there is no optional value."
   input Option<Type_a> inOption;

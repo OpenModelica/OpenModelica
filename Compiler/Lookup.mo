@@ -1223,11 +1223,12 @@ algorithm
       String n,id1,id;
       Boolean encflag;
       SCode.Restriction r;
-      list<Env.Frame> env2,env3,env5,env,fs,bcframes,p_env;
+      list<Env.Frame> env2,env3,env5,env,fs,p_env;
+      Env.BCEnv bcframes;
       ClassInf.State ci_state;
       list<DAE.Var> types;
       DAE.Attributes attr;
-      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      DAE.Type ty;
       DAE.Binding bind;
       DAE.ComponentRef id2,cref,cr;
       list<DAE.Subscript> sb;
@@ -1310,13 +1311,11 @@ algorithm
         (cache,env,attr,ty,bind);
         
         /* Search base classes */
-    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _)))::fs,cref)
-       local
-         Env.Env dbgEnv; // BZ: Added(2008-11), did not affect test suite. Added duo to correctness.
+    case (cache,Env.FRAME(inherited = bcframes)::fs,cref)
       equation 
-        (cache,attr,ty,bind,_,dbgEnv) = lookupVar(cache,bcframes, cref);
+        (cache,attr,ty,bind,_,env) = lookupVar(cache,bcframes,cref);
       then
-        (cache,dbgEnv,attr,ty,bind);
+        (cache,env,attr,ty,bind);
 
         /* Search among qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
@@ -2211,7 +2210,8 @@ algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
     local
       SCode.Class c;
-      list<Env.Frame> env,totenv,bcframes,env_1,prevFrames;
+      Env.BCEnv bcframes;
+      list<Env.Frame> bcenv,env,totenv,env_1,prevFrames;
       Option<String> sid;
       Env.AvlTree ht;
       String id,name;
@@ -2227,7 +2227,7 @@ algorithm
         (cache,c,totenv,prevFrames);
         
         /* Search base classes */ 
-    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _))),totenv,name,_,_,_)
+    case (cache,Env.FRAME(inherited = bcframes),totenv,name,_,_,_)
       equation
         (cache,c,env,prevFrames) = lookupClass2(cache,bcframes,Absyn.IDENT(name),{},Util.makeStatefulBoolean(false),true);
       then

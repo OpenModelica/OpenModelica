@@ -3707,7 +3707,8 @@ algorithm
       Env.AvlTree bt1;
       list<Env.Item> imp;
       DAE.ComponentRef prefix_cr;
-      list<Env.Frame> bc,fs;
+      Env.BCEnv bc;
+      list<Env.Frame> fs;
       Boolean enc;
       InstanceHierarchy ih;
       list<SCode.Element> defineUnits;
@@ -3716,7 +3717,7 @@ algorithm
       (Env.FRAME( n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs),ih)
       equation
         prefix_cr = PrefixUtil.prefixToCref(prefix);
-    then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc,defineUnits) :: fs,ih); 
+      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc,defineUnits) :: fs,ih); 
     case (Connect.SETS(connection = crs),prefix,
         (Env.FRAME(n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs),ih)
       equation
@@ -6302,43 +6303,36 @@ algorithm
   (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inAbsynPathOption)
     local
       list<Env.Frame> env,cenv,cenv_2,env_2,fs;
-      Env.Frame top_frame;
+      Env.BCEnv bcenv;
       SCode.Class c;
-      String cn2;
-      Boolean enc2,enc;
-      SCode.Restriction r;
-      ClassInf.State new_ci_state,new_ci_state_1;
+      Boolean enc;
       Option<String> id;
       Env.AvlTree tps;
       Env.AvlTree cl;
       list<Env.Item> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      SCode.BaseClass bc;
       Absyn.Path tp,envpath,newTp;
       Env.Cache cache;
       InstanceHierarchy ih;
       list<SCode.Element> defineUnits;
       SCode.Mod mod;
 
-    /* case (cache,env,NONE,ih) then (cache,env,ih); adrpo: CHECK if needed! */
-
-    case (cache,
-          (env as (Env.FRAME(id, cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,NONE) 
+    case (cache,env,ih,NONE) 
       equation
         // print("Inst.getDerivedEnv: case 1 " +& Env.printEnvPathStr(env) +& "\n");
       then 
-        (cache,Env.FRAME(id,cl,tps,imps,{},crs,enc,defineUnits)::fs,ih);
+        (cache,env,ih);
  
     /* Base classes are fully qualified names, search from top scope.
     * This is needed since the environment can be encapsulated, but inherited classes are not affected 
     * by this and therefore should search from top scope directly. 
     */ 
     case (cache,
-          (env as (Env.FRAME(id,cl,tps,imps,_,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod)))
+          (env as (Env.FRAME(id,cl,tps,imps,bcenv,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod)))
       equation 
-        // print("Inst.getDerivedEnv: case 3 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
+        // print("Inst.getDerivedEnv: case 2 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,env,tp,mod,true);
-        // print("Inst.getDerivedEnv: case 3 end " +& Env.printEnvPathStr(env) +& "\n");
+        // print("Inst.getDerivedEnv: case 2 end " +& Env.printEnvPathStr(env) +& "\n");
       then
         (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs,ih);
         
