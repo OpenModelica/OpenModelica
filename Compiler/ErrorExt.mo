@@ -43,13 +43,13 @@ package ErrorExt
 public import Error;
 
 public function updateCurrentComponent
-  input String str; 
+  input String str;
   input Boolean writeable;
   input String fileName;
   input Integer rowstart;
   input Integer rowend;
   input Integer colstart;
-  input Integer colend; 
+  input Integer colend;
   external "C";
 end updateCurrentComponent;
 
@@ -87,13 +87,13 @@ end printMessagesStr;
 
 public function getNumMessages
   output Integer num;
-  
+
   external "C";
 end getNumMessages;
 
 public function getNumErrorMessages
   output Integer num;
-  
+
   external "C";
 end getNumErrorMessages;
 

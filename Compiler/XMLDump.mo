@@ -94,7 +94,7 @@ protected import Algorithm;
 protected import DAEUtil;
 protected import Dump;
 protected import Exp;
-protected import ModUtil;  
+protected import ModUtil;
 protected import Print;
 protected import Util;
 
@@ -304,13 +304,13 @@ protected import Util;
   protected constant String FUNCTIONS               = "functions";
   protected constant String FUNCTION                = "function";
   protected constant String FUNCTION_NAME           = "name";
-  protected constant String FUNCTION_ORIGNAME       = VAR_ORIGNAME;  
+  protected constant String FUNCTION_ORIGNAME       = VAR_ORIGNAME;
   protected constant String NAME_BINDINGS           = "nameBindings";
-  protected constant String C_NAME                  = "cName";  
+  protected constant String C_NAME                  = "cName";
   protected constant String C_IMPLEMENTATIONS       = "cImplementations";
   protected constant String MODELICA_IMPLEMENTATION = "ModelicaImplementation";
-  
-  
+
+
   /*This strings here below are used for printing additionalInfo
   concerning the DAE system of equations, such as:
    - the original incidence matrix (before performing matching and BLT
@@ -649,7 +649,7 @@ algorithm
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
         s1 = Util.stringReplaceChar(s1,">","&gt;");
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");       
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrOpenTag(MathML);
@@ -675,12 +675,12 @@ algorithm
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
         s1 = Util.stringReplaceChar(s1,">","&gt;");
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");      
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         s = Util.stringAppendList({s1," - (",s2,") = 0\n"});
         dumpStrOpenTagAttr(ARRAY_EQUATION, EXP_STRING, s);
         dumpStrCloseTag(ARRAY_EQUATION);
         dumpArrayEqns2(es,DAE.BCONST(false),DAE.BCONST(true));
-      then ();        
+      then ();
   end matchcontinue;
 end dumpArrayEqns2;
 
@@ -1060,10 +1060,10 @@ algorithm
       DAELow.MultiDimEquation[:] ae;
       DAE.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
-      
+
       list<Absyn.Path> inFunctionNames;
       list<DAE.Element> inFunctions;
-      
+
       DAE.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
 
@@ -1144,8 +1144,8 @@ sudh as:
        DAE.Exp addMMLCode;
        Option<DAE.Exp> equationBound;
        Option<Boolean> isProtected;
-       Option<Boolean> finalPrefix;       
-       
+       Option<Boolean> finalPrefix;
+
    case (SOME(DAE.VAR_ATTR_REAL(NONE(),NONE(),NONE(),(NONE(),NONE()),NONE(),NONE(),NONE(),NONE(),_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_INT(NONE(),(NONE(),NONE()),NONE(),NONE(),_,_,_)),_,_) then ();
    case (SOME(DAE.VAR_ATTR_BOOL(NONE(),NONE(),NONE(),_,_,_)),_,_) then ();
@@ -1305,7 +1305,7 @@ algorithm
         //will be substituted with:
         //dumpEquation(DAELow.equationToResidualForm(eqn), intString(index),addMMLCode);
         dumpEqns2(eqns, index+1,addMMLCode,DAE.BCONST(true));
-      then ();        
+      then ();
   end matchcontinue;
 end dumpEqns2;
 
@@ -1361,7 +1361,7 @@ algorithm
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
         s1 = Util.stringReplaceChar(s1,">","&gt;");
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");       
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -1383,7 +1383,7 @@ algorithm
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
         s1 = Util.stringReplaceChar(s1,">","&gt;");
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");       
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," = ",s2});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -1407,7 +1407,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1426,7 +1426,7 @@ algorithm
       equation
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -1437,7 +1437,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");       
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         is = intString(i);
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -1459,7 +1459,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");       
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         is = intString(i);
         res = Util.stringAppendList({s1," := ",s2});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -1538,8 +1538,8 @@ algorithm
       then();
     case(_,DAE.BCONST(bool=false))
       then();
-    case(_,_) then();   
-  end matchcontinue; 
+    case(_,_) then();
+  end matchcontinue;
 end dumpExp;
 
 
@@ -1887,7 +1887,7 @@ end dumpExp2;
 
 public function dumpExp3
 "function: dumpExp3
-  This function is an auxiliary function for dumpExp2 function. 
+  This function is an auxiliary function for dumpExp2 function.
 "
   input DAE.Exp e;
   //output String s;
@@ -1953,7 +1953,7 @@ algorithm
      Absyn.Path path;
      String c;
      DAE.ElementSource source "the origin of the element";
-     
+
     case ({},_) then ();
     case (DAELow.EXTOBJCLASS(path,constr,destr,source)::xs,c)
       equation
@@ -2004,8 +2004,8 @@ algorithm
     case (names,funcelems)
       equation
         dumpStrOpenTag(FUNCTIONS);
-				dumpFunctions2(inFunctionNames,funcelems);				
-				dumpStrCloseTag(FUNCTIONS);        
+				dumpFunctions2(inFunctionNames,funcelems);
+				dumpStrCloseTag(FUNCTIONS);
   then();
   end matchcontinue;
 end dumpFunctions;
@@ -2015,7 +2015,7 @@ public function dumpFunctions2 "
 Help function for dumpFunctions
 "
   input list<Absyn.Path> inFunctionNames;
-  input list<DAE.Element> funcelems;  
+  input list<DAE.Element> funcelems;
 algorithm
   _:=
   matchcontinue (inFunctionNames,funcelems)
@@ -2029,7 +2029,7 @@ algorithm
     case (name::rem_names, fun :: rem_fun)
       equation
         dumpFunctions3(name,fun);
-        dumpFunctions2(rem_names,rem_fun);        
+        dumpFunctions2(rem_names,rem_fun);
   then();
   end matchcontinue;
 end dumpFunctions2;
@@ -2039,7 +2039,7 @@ protected function dumpFunctions3 "
 Help function to dumpFunctions2
 "
   input Absyn.Path name;
-  input DAE.Element fun;  
+  input DAE.Element fun;
 algorithm
   _:=
   matchcontinue (name,fun)
@@ -2050,13 +2050,13 @@ algorithm
       Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEUtil.dumpFunctionStr(fun));
       Print.printBuf("\"/>");
     then();
-    case (_,_) then();      
+    case (_,_) then();
 /*
         dumpStrOpenTag(Function)
         dumpAttribute(name= Absyn.pathString(name));
         dumpAttribute(Modelica implementation = DAEUtil.dumpFunctionStr(fun));
         dumpStrCloseTag(Function)
-*/        
+*/
    end matchcontinue;
 end dumpFunctions3;
 
@@ -2075,7 +2075,7 @@ algorithm
   case ({}) then ();
   case (s)
     equation
-      dumpStrOpenTag(NAME_BINDINGS);      
+      dumpStrOpenTag(NAME_BINDINGS);
       dumpFunctionNames2(s);
       dumpStrCloseTag(NAME_BINDINGS);
     then();
@@ -2113,7 +2113,7 @@ end dumpFunctionNames2;
 
 
 function dumpFunctionsStr "
-This function returns the code of all the functions 
+This function returns the code of all the functions
 that are used in the DAELow model.
 The functions are printed as Modelica code.
 "
@@ -2141,7 +2141,7 @@ This function dumps a matrix using an xml representation.
           <cn> 1 </cn>
           <cn> 0 </cn>
      </matrixrow>
-     <matrixrow> 
+     <matrixrow>
      ...
 </matrix>
 "
@@ -2191,7 +2191,7 @@ algorithm
         dumpIncidenceMatrix2(rows,rowIndex+1);
       then ();
   end matchcontinue;
-end dumpIncidenceMatrix2;    
+end dumpIncidenceMatrix2;
 
 
 public function dumpLibs
@@ -2231,7 +2231,7 @@ algorithm
         s = intString(x);
         dumpStrOpenTag(MathMLVariable);
         Print.printBuf(s);
-        dumpStrCloseTag(MathMLVariable);        
+        dumpStrCloseTag(MathMLVariable);
         dumpMatrixIntegerRow(xs);
       then ();
   end matchcontinue;
@@ -2407,7 +2407,7 @@ algorithm
       equation
         s = Exp.printExpStr(e);
         s = Util.stringReplaceChar(s,"<","&lt;");
-        s = Util.stringReplaceChar(s,">","&gt;");        
+        s = Util.stringReplaceChar(s,">","&gt;");
         dumpStrOpenTagAttr(inContent, EXP_STRING, s);
         dumpExp(e,addMathMLCode);
         dumpStrCloseTag(inContent);
@@ -2507,7 +2507,7 @@ algorithm
 end dumpLstStr;
 
 
-public function dumpMatching 
+public function dumpMatching
 "function: dumpMatching
   author: PA
   prints the matching information on stdout."
@@ -2528,11 +2528,11 @@ algorithm
       dumpMatching2(v, 0);
       dumpStrCloseTag(MATCHING_ALGORITHM);
   then();
-    end matchcontinue;    
+    end matchcontinue;
 end dumpMatching;
 
 
-protected function dumpMatching2 
+protected function dumpMatching2
 "function: dumpMatching2
   Helper function to dumpMatching."
   input Integer[:] inIntegerArray;
@@ -2553,7 +2553,7 @@ algorithm
         eqn = v[i + 1];
         s2 = intString(eqn);
         Print.printBuf("\n<");Print.printBuf(SOLVED_IN);Print.printBuf(" ");
-        Print.printBuf(stringAppend(VARIABLE,ID_));Print.printBuf("=\"");Print.printBuf(s);Print.printBuf("\" ");        
+        Print.printBuf(stringAppend(VARIABLE,ID_));Print.printBuf("=\"");Print.printBuf(s);Print.printBuf("\" ");
         Print.printBuf(stringAppend(EQUATION,ID_));Print.printBuf("=\"");Print.printBuf(s2);Print.printBuf("\" ");
         Print.printBuf("/>");
       then
@@ -2724,7 +2724,7 @@ algorithm
       dumpStrCloseTag(ORIGINAL_INCIDENCE_MATRIX);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);
-      dumpComponents(comps);      
+      dumpComponents(comps);
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
@@ -2756,7 +2756,7 @@ algorithm
       dumpStrOpenTag(ADDITIONAL_INFO);
       dumpStrOpenTag(SOLVING_INFO);
       dumpMatching(v1);
-      dumpComponents(comps);      
+      dumpComponents(comps);
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
@@ -2807,7 +2807,7 @@ algorithm
       equation
         dumpStrOpenTag(FUNCTIONS);
 				dumpFunctionNames(inFunctionNames);
-        dumpStrTagContent(C_IMPLEMENTATIONS, inFunctions);				
+        dumpStrTagContent(C_IMPLEMENTATIONS, inFunctions);
 				dumpStrCloseTag(FUNCTIONS);
 			then();
 	end matchcontinue;
@@ -3339,13 +3339,13 @@ algorithm
       Integer var_1;
       DAE.Exp addMMLCode;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({},_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
                             varType = var_type,
-                            bindExp = e, 
+                            bindExp = e,
                             bindValue = b,
                             arryDim = arry_Dim,
                             index = indx,
@@ -3409,13 +3409,13 @@ algorithm
       Integer var_1;
       DAE.Exp addMMLCode;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({},_,_,_,_) then ();
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
                             varDirection = dir,
                             varType = var_type,
-                            bindExp = e, 
+                            bindExp = e,
                             bindValue = b,
                             arryDim = arry_Dim,
                             index = indx,
@@ -3663,7 +3663,7 @@ algorithm
    case ((e as DAE.RELATION(e1,op,e2)))
       equation
         sym = Exp.relopSymbol(op);
-        // replace < and > with W3C standart &lt; and &gt; 
+        // replace < and > with W3C standart &lt; and &gt;
         sym = Util.stringReplaceChar(sym,"<","&lt;");
         sym = Util.stringReplaceChar(sym,">","&gt;");
         s1 = printExpStr(e1);
@@ -3913,7 +3913,7 @@ algorithm
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
         s1 = Util.stringReplaceChar(s1,">","&gt;");
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");                
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," ( ",s2,") = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -3939,7 +3939,7 @@ algorithm
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
         s1 = Util.stringReplaceChar(s1,">","&gt;");
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," - ( ",s2, " ) = 0"});
         dumpStrOpenTagAttr(EQUATION,ID,indexS);
         Print.printBuf(res);
@@ -3963,7 +3963,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," - ( ",s2," ) := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3987,7 +3987,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         res = Util.stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(SOLVED,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -3998,7 +3998,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         is = intString(i);
         res = Util.stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -4024,7 +4024,7 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         s2 = Util.stringReplaceChar(s2,"<","&lt;");
-        s2 = Util.stringReplaceChar(s2,">","&gt;");        
+        s2 = Util.stringReplaceChar(s2,">","&gt;");
         is = intString(i);
         res = Util.stringAppendList({s1," - (",s2,") := 0"});
         dumpStrOpenTagAttr(stringAppend(WHEN,EQUATION_),ID,indexS);
@@ -4036,7 +4036,7 @@ algorithm
       equation
         s1 = Exp.printExpStr(e);
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
-        s1 = Util.stringReplaceChar(s1,">","&gt;");        
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
         res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);
@@ -4055,7 +4055,7 @@ algorithm
       equation
         s1 = Exp.printExpStr(e);
         s1 = Util.stringReplaceChar(s1,"<","&lt;");
-        s1 = Util.stringReplaceChar(s1,">","&gt;");         
+        s1 = Util.stringReplaceChar(s1,">","&gt;");
         res = Util.stringAppendList({s1," = 0"});
         dumpStrOpenTagAttr(stringAppend(RESIDUAL,EQUATION_),ID,indexS);
         Print.printBuf(res);

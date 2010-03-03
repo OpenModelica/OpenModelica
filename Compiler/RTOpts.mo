@@ -81,9 +81,9 @@ end debugFlag;
 
 public function setDebugFlag
   input String inString;
-  input Integer value; 
+  input Integer value;
   output Boolean str;
-  
+
   external "C" ;
 end setDebugFlag;
 
@@ -140,7 +140,7 @@ end silent;
 
 public function versionRequest
   output Boolean outBoolean;
-  
+
   external "C";
   end versionRequest;
 
@@ -155,10 +155,10 @@ end acceptMetaModelicaGrammar;
 
 public function getAnnotationVersion
 "@author adrpo 2008-11-28
-   returns what flag was given at start 
-     omc [+annotationVersion=3.x] 
+   returns what flag was given at start
+     omc [+annotationVersion=3.x]
    or via the API
-     setAnnotationVersion(\"3.x\"); 
+     setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   output String annotationVersion;
   external "C";
@@ -166,7 +166,7 @@ end getAnnotationVersion;
 
 public function setAnnotationVersion
 "@author adrpo 2008-11-28
-   setAnnotationVersion(\"3.x\"); 
+   setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input String annotationVersion;
   external "C";
@@ -174,8 +174,8 @@ end setAnnotationVersion;
 
 public function getNoSimplify
 "@author adrpo 2008-12-13
-   returns what flag was given at start 
-     omc [+noSimplify] 
+   returns what flag was given at start
+     omc [+noSimplify]
    or via the API
      setNoSimplify(true|false);"
   output Boolean noSimplify;
@@ -184,7 +184,7 @@ end getNoSimplify;
 
 public function setNoSimplify
 "@author adrpo 2008-12-13
-   setAnnotationVersion(\"3.x\"); 
+   setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input Boolean noSimplify;
   external "C";

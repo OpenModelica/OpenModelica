@@ -47,94 +47,94 @@ protected import RTOpts;
 protected import Print;
 protected import Util;
 
-public function print 
+public function print
 "function: print
-  author: PR 
+  author: PR
   This function is used for debug printing."
   input String s;
-algorithm 
+algorithm
   fprint("olddebug", s);
 end print;
 
-public function trace 
+public function trace
 "function: print
-  author: adrpo 
+  author: adrpo
   used for debug printing."
   input String s;
-algorithm 
+algorithm
   Print.printErrorBuf(s);
 end trace;
 
-public function traceln 
+public function traceln
 "function: traceln
-  author: adrpo 
+  author: adrpo
   printing with newline."
   input String str;
-algorithm 
+algorithm
   Print.printErrorBuf(str);
   Print.printErrorBuf("\n");
 end traceln;
 
-public function fprint 
+public function fprint
 "function: fprint
-  author: LS  
+  author: LS
   Flag controlled debugging"
   input String inString1;
   input String inString2;
-algorithm 
+algorithm
   _ := matchcontinue (inString1,inString2)
     local String flag,str;
     case (flag,str)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         Print.printErrorBuf(str);
       then
         ();
-    case (_,_) then (); 
+    case (_,_) then ();
   end matchcontinue;
 end fprint;
 
-public function fprintln 
-"function: fprintln  
+public function fprintln
+"function: fprintln
   Flag controlled debugging, printing with newline."
   input String inString1;
   input String inString2;
-algorithm 
+algorithm
   _ := matchcontinue (inString1,inString2)
     local String flag,str;
     case (flag,str)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         Print.printErrorBuf(str);
         Print.printErrorBuf("\n");
       then
         ();
-    case (_,_) then (); 
+    case (_,_) then ();
   end matchcontinue;
 end fprintln;
 
-public function fprintl 
-"function: fprintl 
+public function fprintl
+"function: fprintl
   flag controlled debugging, printing of string list."
   input String inString;
   input list<String> inStringLst;
-algorithm 
+algorithm
   _ := matchcontinue (inString,inStringLst)
     local
       String str,flag;
       list<String> strlist;
     case (flag,strlist)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         str = Util.stringAppendList(strlist);
         Print.printErrorBuf(str);
       then
         ();
-    case (_,_) then (); 
+    case (_,_) then ();
   end matchcontinue;
 end fprintl;
 
-public function fcall2 
+public function fcall2
 "function: fcall2
   Flag controlled calling of the given function (2nd arg)"
   input String inString;
@@ -146,25 +146,25 @@ public function fcall2
     input Type_b inTypeB;
   end FuncTypeTypeATypeB;
   replaceable type Type_a subtypeof Any;
-  replaceable type Type_b subtypeof Any;  
-algorithm 
+  replaceable type Type_b subtypeof Any;
+algorithm
   _ := matchcontinue (inString,func,inTypeA,inTypeB)
     local
       Type_a arg1;
       Type_b arg2;
       String flag;
     case (flag,func,arg1,arg2)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         func(arg1,arg2);
       then
         ();
-    case (_,_,_,_) then (); 
+    case (_,_,_,_) then ();
   end matchcontinue;
 end fcall2;
 
-public function fcall 
-"function: fcall  
+public function fcall
+"function: fcall
   Flag controlled calling of the given function (2nd arg)"
   input String inString;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -173,46 +173,46 @@ public function fcall
     input Type_a inTypeA;
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   _ := matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
     local
       String flag;
       FuncTypeType_aTo func;
       Type_a str;
     case (flag,func,str)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         func(str);
       then
         ();
-    case (_,_,_) then (); 
+    case (_,_,_) then ();
   end matchcontinue;
 end fcall;
 
-public function fcall0 
-"function: fcall0 
+public function fcall0
+"function: fcall0
   Flag controlled calling of given function  (2nd arg)"
   input String inString;
   input FuncTypeTo inFuncTypeTo;
   partial function FuncTypeTo
   end FuncTypeTo;
-algorithm 
+algorithm
   _ := matchcontinue (inString,inFuncTypeTo)
     local
       String flag;
       FuncTypeTo func;
     case (flag,func)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         func();
       then
         ();
-    case (_,_) then (); 
+    case (_,_) then ();
   end matchcontinue;
 end fcall0;
 
-public function fcallret 
-"function: fcallret 
+public function fcallret
+"function: fcallret
   Flag controlled calling of given function (2nd arg).
   The passed functions return value is returned."
   input String inString;
@@ -226,7 +226,7 @@ public function fcallret
   end FuncTypeType_aToType_b;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
-algorithm 
+algorithm
   outTypeB := matchcontinue (inString,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
     local
       Type_b res,def;
@@ -234,17 +234,17 @@ algorithm
       FuncTypeType_aToType_b func;
       Type_a arg;
     case (flag,func,arg,def)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         res = func(arg);
       then
         res;
-    case (_,_,_,def) then def; 
+    case (_,_,_,def) then def;
   end matchcontinue;
 end fcallret;
 
-public function bcall 
-"function: bcall 
+public function bcall
+"function: bcall
   bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -253,22 +253,22 @@ public function bcall
     input Type_a inTypeA;
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   _ := matchcontinue (inBoolean,inFuncTypeTypeATo,inTypeA)
     local
       FuncTypeType_aTo func;
       Type_a str;
     case (true,func,str)
-      equation 
+      equation
         func(str);
       then
         ();
-    case (false,_,_) then (); 
+    case (false,_,_) then ();
   end matchcontinue;
 end bcall;
 
-public function bcall2 
-"function: bcall2 
+public function bcall2
+"function: bcall2
   bool controlled calling of function."
   input Boolean inBoolean;
   input FuncTypeType_aType_bTo inFuncTypeTypeATypeBTo;
@@ -280,25 +280,25 @@ public function bcall2
   end FuncTypeType_aType_bTo;
   replaceable type Type_a subtypeof Any;
   replaceable type Type_b subtypeof Any;
-algorithm 
+algorithm
   _ := matchcontinue (inBoolean,inFuncTypeTypeATypeBTo,inTypeA,inTypeB)
     local
       FuncTypeType_aType_bTo func;
       Type_a a;
       Type_b b;
     case (true,func,a,b)
-      equation 
+      equation
         func(a, b);
       then
         ();
-    case (false,_,_,_) then (); 
+    case (false,_,_,_) then ();
   end matchcontinue;
 end bcall2;
 
-public function notfcall 
-"function: notfcall 
-  Call the given function (2nd arg) 
-  if the flag given in 1st arg is 
+public function notfcall
+"function: notfcall
+  Call the given function (2nd arg)
+  if the flag given in 1st arg is
   NOT set"
   input String inString;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -307,25 +307,25 @@ public function notfcall
     input Type_a inTypeA;
   end FuncTypeType_aTo;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   _ := matchcontinue (inString,inFuncTypeTypeATo,inTypeA)
     local
       String flag;
       FuncTypeType_aTo func;
       Type_a str;
     case (flag,func,str)
-      equation 
+      equation
         false = RTOpts.debugFlag(flag);
         func(str);
       then
         ();
-    case (_,_,_) then (); 
+    case (_,_,_) then ();
   end matchcontinue;
 end notfcall;
 
-public function fprintList 
-"function: fprintList 
-  If flag is set, print the elements in 
+public function fprintList
+"function: fprintList
+  If flag is set, print the elements in
   the list, using the passed function."
   input String inString1;
   input list<Type_a> inTypeALst2;
@@ -335,25 +335,25 @@ public function fprintList
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
-algorithm 
+algorithm
   _ := matchcontinue (inString1,inTypeALst2,inFuncTypeTypeATo3,inString4)
     local
       String flag,sep;
       list<Type_a> lst;
       FuncTypeType_aTo func;
     case (flag,lst,func,sep)
-      equation 
+      equation
         true = RTOpts.debugFlag(flag);
         printList(lst, func, sep);
       then
         ();
-    case (_,_,_,_) then (); 
+    case (_,_,_,_) then ();
   end matchcontinue;
 end fprintList;
 
-protected function printList 
-"function: fprintList 
-  If flag is set, print the elements in 
+protected function printList
+"function: fprintList
+  If flag is set, print the elements in
   the list, using the passed function."
   input list<Type_a> inTypeALst;
   input FuncTypeType_aTo inFuncTypeTypeATo;
@@ -362,21 +362,21 @@ protected function printList
   partial function FuncTypeType_aTo
     input Type_a inTypeA;
   end FuncTypeType_aTo;
-algorithm 
+algorithm
   _ := matchcontinue (inTypeALst,inFuncTypeTypeATo,inString)
     local
       Type_a h;
       FuncTypeType_aTo r;
       list<Type_a> t;
       String sep;
-    case ({},_,_) then (); 
+    case ({},_,_) then ();
     case ({h},r,_)
-      equation 
+      equation
         r(h);
       then
         ();
     case ((h :: t),r,sep)
-      equation 
+      equation
         r(h);
         Print.printErrorBuf(sep);
         printList(t, r, sep);

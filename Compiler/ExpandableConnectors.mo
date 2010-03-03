@@ -32,32 +32,32 @@ package ExpandableConnectors
 " file:	       ExpandableConnectors.mo
   package:     ExpandableConnectors
   description: ExpandableConnectors translates Absyn to SCode intermediate form
- 
+
   RCS: $Id$
- 
+
   This module contains functions to handle expandable connectors:
-  
+
 PHASE_1
   A partial instantiation (only components) from all classes appearing in
   connect(expandable, non-expandable) should be done first in their correct
   environment. This should be done without flattening of arrays or structural
   components because you need to go from an instantiated component in the environment
   back to an SCode.COMPONENT definition.
-  
-PHASE_2  
+
+PHASE_2
   The connect equations referring to expandable connectors should be collected.
-  The expandable connectors should be patched with the new components from connects 
+  The expandable connectors should be patched with the new components from connects
   (that connect(expandable, non-expandable))
-  
+
 PHASE_3
   The expandable connectors should be patched so that a union of all expandable connectors
   connected via connect(expandable, expandable) is achieved.
-  
-PHASE_4  
+
+PHASE_4
   The expandable connectors should be patched so that a union of all expandable connectors
   connected via inner-outer is achieved.
 
-PHASE_5  
+PHASE_5
   Generate a new program that has the new expandable connectors."
 
 public import SCode;
@@ -76,14 +76,14 @@ algorithm
    local
      InstanceHierarchy.InstanceHierarchy ih;
      SCode.Program programWithPatchedExpandableConnectors;
-     
-   case (inProgram, /* false */_) 
+
+   case (inProgram, /* false */_)
      then (InstanceHierarchy.emptyInstanceHierarchy, inProgram);
-       
-   case (inProgram, true) 
+
+   case (inProgram, true)
      equation
-        (ih, programWithPatchedExpandableConnectors) = elaborate(InstanceHierarchy.emptyInstanceHierarchy, inProgram);        
-     then 
+        (ih, programWithPatchedExpandableConnectors) = elaborate(InstanceHierarchy.emptyInstanceHierarchy, inProgram);
+     then
        (ih, programWithPatchedExpandableConnectors);
   end matchcontinue;
 end elaborateExpandableConnectors;
@@ -95,17 +95,17 @@ protected function elaborate
   output SCode.Program outProgram;
 algorithm
   (outIH, outProgram) := matchcontinue(inIH, inProgram)
-    local 
+    local
       InstanceHierarchy.InstanceHierarchy ih;
       SCode.Program program;
-      
-    case (inIH, inProgram)         
+
+    case (inIH, inProgram)
       equation
         // PHASE_1
         // build the instance hierarchy
-        ih = InstanceHierarchy.createInstanceHierarchyFromProgram(inIH, NONE(), inProgram); 
+        ih = InstanceHierarchy.createInstanceHierarchyFromProgram(inIH, NONE(), inProgram);
         Debug.fcall2("dumpIH", InstanceHierarchy.dumpInstanceHierarchy, ih, 0);
-        Debug.fcall("dumpIH", print, "\n\n");        
+        Debug.fcall("dumpIH", print, "\n\n");
         // PHASE_2
         // add components from connect(expandable, non-expandable)
         ih = addComponentsFromNonExpandableConnectors(ih);
@@ -127,10 +127,10 @@ function addComponentsFromNonExpandableConnectors
  add components from connect(expandable, non-expandable)"
   input InstanceHierarchy.InstanceHierarchy inIH;
   output InstanceHierarchy.InstanceHierarchy outIH;
-algorithm  
+algorithm
   outIH := matchcontinue(inIH)
-    local 
-      InstanceHierarchy.InstanceHierarchy ih; 
+    local
+      InstanceHierarchy.InstanceHierarchy ih;
     case inIH
       equation
         ih = inIH;
@@ -143,10 +143,10 @@ function makeUnionOfConnectedExpandableConnectors
  make union of components from connect(expandable, expandable)"
   input InstanceHierarchy.InstanceHierarchy inIH;
   output InstanceHierarchy.InstanceHierarchy outIH;
-algorithm  
+algorithm
   outIH := matchcontinue(inIH)
-    local 
-      InstanceHierarchy.InstanceHierarchy ih; 
+    local
+      InstanceHierarchy.InstanceHierarchy ih;
     case inIH
       equation
         ih = inIH;
@@ -159,10 +159,10 @@ function makeUnionOfInnerOuterExpandableConnectors
  make union of components from inner expandable outer expandable"
   input InstanceHierarchy.InstanceHierarchy inIH;
   output InstanceHierarchy.InstanceHierarchy outIH;
-algorithm  
+algorithm
   outIH := matchcontinue(inIH)
-    local 
-      InstanceHierarchy.InstanceHierarchy ih; 
+    local
+      InstanceHierarchy.InstanceHierarchy ih;
     case inIH
       equation
         ih = inIH;
@@ -178,15 +178,15 @@ function replaceExpandableConnectorsInProgram
   input SCode.Program inProgram;
   output InstanceHierarchy.InstanceHierarchy outIH;
   output SCode.Program outProgram;
-algorithm  
+algorithm
   (outIH, outProgram) := matchcontinue(inIH, inProgram)
-    local 
+    local
       InstanceHierarchy.InstanceHierarchy ih;
-      SCode.Program prg; 
-      
+      SCode.Program prg;
+
     case (ih, prg)
       equation
-        
+
       then (ih, prg);
   end matchcontinue;
 end replaceExpandableConnectorsInProgram;

@@ -73,7 +73,7 @@ algorithm
   print("--------------------\n");
 end dumpExp;
 
-public function dump 
+public function dump
 "function: dump
   Prints a program, i.e. the whole AST, to the Print buffer."
   input Absyn.Program inProgram;
@@ -94,7 +94,7 @@ algorithm
   end matchcontinue;
 end dump;
 
-public function unparseStr 
+public function unparseStr
 "function: unparseStr
   Prettyprints the Program, i.e. the whole AST, to a string."
   input Absyn.Program inProgram;
@@ -119,7 +119,7 @@ algorithm
   end matchcontinue;
 end unparseStr;
 
-public function unparseClassList 
+public function unparseClassList
 "function: unparseClassList
   Prettyprints a list of classes"
   input Integer inInteger;
@@ -143,7 +143,7 @@ algorithm
   end matchcontinue;
 end unparseClassList;
 
-public function unparseWithin 
+public function unparseWithin
 "function: unparseWithin
   Prettyprints a within statement."
   input Integer inInteger;
@@ -166,7 +166,7 @@ algorithm
   end matchcontinue;
 end unparseWithin;
 
-protected function dumpWithin 
+protected function dumpWithin
 "function: dumpWithin
   Dumps within to the Print buffer."
   input Absyn.Within inWithin;
@@ -188,7 +188,7 @@ algorithm
   end matchcontinue;
 end dumpWithin;
 
-public function unparseClassStr 
+public function unparseClassStr
 "function: unparseClassStr
   Prettyprints a Class.
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
@@ -242,7 +242,7 @@ algorithm
                              body = Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = m,comment = optcmt)),fi,re,io)
       local Option<Absyn.Comment> optcmt;
       equation
-        is = indentStr(indent);        
+        is = indentStr(indent);
         partialStr = selectString(p, "partial ", "");
         finalStr = selectString(f, "final ", fi);
         encapsulatedStr = selectString(e, "encapsulated ", "");
@@ -251,7 +251,7 @@ algorithm
         s6 = unparseTypeSpec(tspec);
         s8 = unparseMod1Str(m);
         s9 = unparseCommentOption(optcmt);
-        // the prefix keywords MUST be in the order below given below! See the function comment.        
+        // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = ",s4,s6,s8,s9});
       then
@@ -259,28 +259,28 @@ algorithm
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = Absyn.ENUMLITERALS(enumLiterals = l),comment = cmt)),fi,re,io)
       equation
-        is = indentStr(i);        
+        is = indentStr(i);
         partialStr = selectString(p, "partial ", "");
         finalStr = selectString(f, "final ", fi);
         encapsulatedStr = selectString(e, "encapsulated ", "");
         restrictionStr = unparseRestrictionStr(r);
         s4 = unparseEnumliterals(l);
         s5 = unparseCommentOption(cmt);
-        // the prefix keywords MUST be in the order below given below! See the function comment.        
-        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
+        // the prefix keywords MUST be in the order below given below! See the function comment.
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(",s4,")",s5});
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.ENUMERATION(enumLiterals = ENUM_COLON,comment = cmt)),fi,re,io)
       equation
-        is = indentStr(i);        
+        is = indentStr(i);
         partialStr = selectString(p, "partial ", "");
         finalStr = selectString(f, "final ", fi);
         encapsulatedStr = selectString(e, "encapsulated ", "");
         restrictionStr = unparseRestrictionStr(r);
         s5 = unparseCommentOption(cmt);
-        // the prefix keywords MUST be in the order below given below! See the function comment.        
+        // the prefix keywords MUST be in the order below given below! See the function comment.
         prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = enumeration(:)",s5});
       then
@@ -288,7 +288,7 @@ algorithm
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
                         body = Absyn.CLASS_EXTENDS(baseClassName = baseClassName,modifications = cmod,comment = optcmt,parts = parts)),fi,re,io)
       equation
-        is = indentStr(i);        
+        is = indentStr(i);
         partialStr = selectString(p, "partial ", "");
         finalStr = selectString(f, "final ", fi);
         encapsulatedStr = selectString(e, "encapsulated ", "");
@@ -297,15 +297,15 @@ algorithm
         s4 = unparseClassPartStrLst(i_1, parts, true);
         s5 = unparseMod1Str(cmod);
         s6 = unparseStringCommentOption(optcmt);
-        // the prefix keywords MUST be in the order below given below! See the function comment.        
-        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
+        // the prefix keywords MUST be in the order below given below! See the function comment.
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         str = Util.stringAppendList({is,prefixKeywords,restrictionStr," extends ",baseClassName,s5,s6,"\n",s4,is,"end ",baseClassName});
       then
         str;
     case (i,Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
           body = Absyn.PDER(functionName = fname,vars = vars,comment=cmt)),fi,re,io)
       equation
-        is = indentStr(i);        
+        is = indentStr(i);
         partialStr = selectString(p, "partial ", "");
         finalStr = selectString(f, "final ", fi);
         encapsulatedStr = selectString(e, "encapsulated ", "");
@@ -313,14 +313,14 @@ algorithm
         s4 = Absyn.pathString(fname);
         s5 = Util.stringDelimitList(vars, ", ");
         s6 = unparseCommentOption(cmt);
-        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);        
+        prefixKeywords = unparseElementPrefixKeywords(re, finalStr, innerouterStr, encapsulatedStr, partialStr);
         str = Util.stringAppendList({is,prefixKeywords,restrictionStr," ",n," = der(",s4,", ",s5,")", s6});
       then
         str;
   end matchcontinue;
 end unparseClassStr;
 
-public function unparseClassAttributesStr 
+public function unparseClassAttributesStr
 "function: unparseClassAttributesStr
   Prettyprints Class attributes."
   input Absyn.Class inClass;
@@ -354,7 +354,7 @@ algorithm
   end matchcontinue;
 end unparseClassAttributesStr;
 
-public function unparseCommentOption 
+public function unparseCommentOption
 "function: unparseCommentOption
   Prettyprints a Comment."
   input Option<Absyn.Comment> inAbsynCommentOption;
@@ -379,7 +379,7 @@ algorithm
   end matchcontinue;
 end unparseCommentOption;
 
-public function unparseCommentOptionNoAnnotation 
+public function unparseCommentOptionNoAnnotation
 "function: unparseCommentOptionNoAnnotation
   Prettyprints a Comment without printing the annotation part."
   input Option<Absyn.Comment> inAbsynCommentOption;
@@ -396,7 +396,7 @@ algorithm
   end matchcontinue;
 end unparseCommentOptionNoAnnotation;
 
-protected function dumpCommentOption 
+protected function dumpCommentOption
 "function: dumpCommentOption
   Prints a Comment to the Print buffer."
   input Option<Absyn.Comment> inAbsynCommentOption;
@@ -428,7 +428,7 @@ algorithm
   end matchcontinue;
 end dumpCommentOption;
 
-protected function dumpAnnotationOption 
+protected function dumpAnnotationOption
 "function: dumpAnnotationOption
   Dumps an annotation option to the Print buffer."
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
@@ -450,7 +450,7 @@ algorithm
   end matchcontinue;
 end dumpAnnotationOption;
 
-protected function unparseEnumliterals 
+protected function unparseEnumliterals
 "function: unparseEnumliterals
   Prettyprints enumeration literals, each consisting of an identifier and an optional comment."
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
@@ -480,9 +480,9 @@ algorithm
   end matchcontinue;
 end unparseEnumliterals;
 
-protected function printEnumliterals 
+protected function printEnumliterals
 "function: printEnumliterals
-  Prints enumeration literals, each consisting of an 
+  Prints enumeration literals, each consisting of an
   identifier and an optional comment to the Print buffer."
   input list<Absyn.EnumLiteral> lst;
 algorithm
@@ -491,7 +491,7 @@ algorithm
   Print.printBuf("]");
 end printEnumliterals;
 
-protected function printEnumliterals2 
+protected function printEnumliterals2
 "function: printEnumliterals2
   Helper function to printEnumliterals"
   input list<Absyn.EnumLiteral> inAbsynEnumLiteralLst;
@@ -529,7 +529,7 @@ algorithm
   end matchcontinue;
 end printEnumliterals2;
 
-public function unparseRestrictionStr 
+public function unparseRestrictionStr
 "function: unparseRestrictionStr
   Prettyprints the class restriction."
   input Absyn.Restriction inRestriction;
@@ -553,7 +553,7 @@ algorithm
   end matchcontinue;
 end unparseRestrictionStr;
 
-public function dumpIstmt 
+public function dumpIstmt
 "function: dumpIstmt
   Dumps an interactive statement to the Print buffer."
   input Interactive.InteractiveStmts inInteractiveStmts;
@@ -598,7 +598,7 @@ algorithm
   end matchcontinue;
 end dumpIstmt;
 
-public function printInfo 
+public function printInfo
 "function: printInfo
   author: adrpo, 2006-02-05
   Dumps an Info to the Print buffer."
@@ -635,7 +635,7 @@ algorithm
   end matchcontinue;
 end printInfo;
 
-public function unparseInfoStr 
+public function unparseInfoStr
 "function: unparseInfoStr
   author: adrpo, 2006-02-05
   Translates Info to a string representation"
@@ -663,7 +663,7 @@ algorithm
   end matchcontinue;
 end unparseInfoStr;
 
-protected function printClass 
+protected function printClass
 "function: printClass
   Dumps a Class to the Print buffer.
   changed by adrpo, 2006-02-05 to use printInfo."
@@ -682,7 +682,7 @@ algorithm
         Print.printBuf("\", ");           printBool(p);
         Print.printBuf(", ");             printBool(f);
         Print.printBuf(", ");             printBool(e);
-        Print.printBuf(", ");             printClassRestriction(r);       
+        Print.printBuf(", ");             printClassRestriction(r);
         Print.printBuf(", ");             printClassdef(cdef);
         Print.printBuf(", ");             printInfo(info);
         Print.printBuf(")\n");
@@ -691,7 +691,7 @@ algorithm
   end matchcontinue;
 end printClass;
 
-protected function printClassdef 
+protected function printClassdef
 "function: printClassdef
   Prints a ClassDef to the Print buffer."
   input Absyn.ClassDef inClassDef;
@@ -700,7 +700,7 @@ algorithm
     local
       list<Absyn.ClassPart> parts;
       Option<Ident> commentStr;
-      Option<Absyn.Comment> comment;      
+      Option<Absyn.Comment> comment;
       Ident s,baseClassName;
       Absyn.TypeSpec tspec;
       Absyn.ElementAttributes attr;
@@ -725,12 +725,12 @@ algorithm
         printList(modifications, printElementArg, ",");
         Print.printBuf("], ");
         printStringCommentOption(commentStr);
-        Print.printBuf(", ");        
+        Print.printBuf(", ");
         Print.printBuf("Absyn.PARTS([");
         printListDebug("print_classdef", parts, printClassPart, ", ");
         Print.printBuf("]))");
       then
-        ();        
+        ();
     case (Absyn.DERIVED(typeSpec = tspec,attributes = attr,arguments = earg,comment = comment))
       equation
         Print.printBuf("Absyn.DERIVED(");
@@ -770,7 +770,7 @@ algorithm
   end matchcontinue;
 end printClassdef;
 
-protected function printClassRestriction 
+protected function printClassRestriction
 "function: printClassRestriction
   Prints the class restriction to the Print buffer."
   input Absyn.Restriction inRestriction;
@@ -796,7 +796,7 @@ algorithm
   end matchcontinue;
 end printClassRestriction;
 
-protected function printClassModification 
+protected function printClassModification
 "function: printClassModification
   Prints a class modification to a print buffer."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
@@ -814,7 +814,7 @@ algorithm
   end matchcontinue;
 end printClassModification;
 
-protected function unparseClassModificationStr 
+protected function unparseClassModificationStr
 "function: unparseClassModificationStr
   Prettyprints a class modification to a string."
   input Absyn.Modification inModification;
@@ -842,7 +842,7 @@ algorithm
   end matchcontinue;
 end unparseClassModificationStr;
 
-protected function printElementArg 
+protected function printElementArg
 "function: printElementArg
   Prints an ElementArg to the Print buffer."
   input Absyn.ElementArg inElementArg;
@@ -882,7 +882,7 @@ algorithm
   end matchcontinue;
 end printElementArg;
 
-public function unparseElementArgStr 
+public function unparseElementArgStr
 "function: unparseElementArgStr
   Prettyprints an ElementArg to a string."
   input Absyn.ElementArg inElementArg;
@@ -900,7 +900,7 @@ algorithm
       Absyn.ElementSpec spec;
       Option<Absyn.ConstrainClass> constr;
       String redeclareStr, replaceableStr;
-      
+
     case (Absyn.MODIFICATION(finalItem = f,each_ = each_,componentRef = r,modification = optm,comment = optstr))
       equation
         s1 = unparseEachStr(each_);
@@ -918,7 +918,7 @@ algorithm
         ((redeclareStr, replaceableStr)) = unparseRedeclarekeywords(keywords);
         // append each after redeclare because we need this order:
         // [redeclare] [each] [final] [replaceable]
-        redeclareStr = redeclareStr +& s1; 
+        redeclareStr = redeclareStr +& s1;
         s4 = unparseElementspecStr(0, spec, s2, (redeclareStr,replaceableStr), "");
         s5 = unparseConstrainclassOptStr(constr);
         str = Util.stringAppendList({s4,s5});
@@ -927,7 +927,7 @@ algorithm
   end matchcontinue;
 end unparseElementArgStr;
 
-protected function unparseRedeclarekeywords 
+protected function unparseRedeclarekeywords
 "function: unparseRedeclarekeywords
   Prettyprints the redeclare keywords, i.e replaceable and redeclare"
   input Absyn.RedeclareKeywords inRedeclareKeywords;
@@ -940,7 +940,7 @@ algorithm
   end matchcontinue;
 end unparseRedeclarekeywords;
 
-public function unparseEachStr 
+public function unparseEachStr
 "function: unparseEachStr
   Prettyprints the each keyword."
   input Absyn.Each inEach;
@@ -952,7 +952,7 @@ algorithm
   end matchcontinue;
 end unparseEachStr;
 
-protected function dumpEach 
+protected function dumpEach
 "function: dumpEach
   Print the each keyword to the Print buffer"
   input Absyn.Each inEach;
@@ -963,7 +963,7 @@ algorithm
   end matchcontinue;
 end dumpEach;
 
-protected function printClassPart 
+protected function printClassPart
 "function: printClassPart
   Prints the ClassPart to the Print buffer."
   input Absyn.ClassPart inClassPart;
@@ -1026,7 +1026,7 @@ algorithm
   end matchcontinue;
 end printClassPart;
 
-protected function printExternalDecl 
+protected function printExternalDecl
 "function: printExternalDecl
   Prints an external declaration to the Print buffer."
   input Absyn.ExternalDecl inExternalDecl;
@@ -1058,7 +1058,7 @@ algorithm
   end matchcontinue;
 end printExternalDecl;
 
-public function unparseClassPartStrLst 
+public function unparseClassPartStrLst
 "function: unparseClassPartStrLst
   Prettyprints a ClassPart list to a string."
   input Integer inInteger;
@@ -1210,7 +1210,7 @@ algorithm
   end matchcontinue;
 end unparseClassPartStr;
 
-protected function getExtlangStr 
+protected function getExtlangStr
 "function: getExtlangStr
   Prettyprints the external function language string to a string."
   input Option<String> inStringOption;
@@ -1223,7 +1223,7 @@ algorithm
   end matchcontinue;
 end getExtlangStr;
 
-protected function printElementitems 
+protected function printElementitems
 "function: printElementitems
   Print a list of ElementItems to the Print buffer."
   input list<Absyn.ElementItem> elts;
@@ -1233,7 +1233,7 @@ algorithm
   Print.printBuf("]");
 end printElementitems;
 
-protected function printElementitems2 
+protected function printElementitems2
 "function: printElementitems2
   Helper function to printElementitems"
   input list<Absyn.ElementItem> inAbsynElementItemLst;
@@ -1282,7 +1282,7 @@ algorithm
   end matchcontinue;
 end printElementitems2;
 
-protected function printAnnotation 
+protected function printAnnotation
 "function: printAnnotation
   Prints an annotation to the Print buffer."
   input Absyn.Annotation inAnnotation;
@@ -1299,7 +1299,7 @@ algorithm
   end matchcontinue;
 end printAnnotation;
 
-public function unparseElementitemStrLst 
+public function unparseElementitemStrLst
 "function: unparseElementitemStrLst
   Prettyprints a list of ElementItem to a string."
   input Integer inInteger;
@@ -1323,7 +1323,7 @@ algorithm
   end matchcontinue;
 end unparseElementitemStrLst;
 
-public function unparseElementitemStr 
+public function unparseElementitemStr
 "function: unparseElementitemStr
   Prettyprints and ElementItem."
   input Integer inInteger;
@@ -1350,7 +1350,7 @@ algorithm
   end matchcontinue;
 end unparseElementitemStr;
 
-protected function unparseAnnotationOptionSemi 
+protected function unparseAnnotationOptionSemi
 "function: unparseAnnotationOptionSemi
   Prettyprint an annotation and a semicolon if annoation present."
   input Integer inInteger;
@@ -1372,7 +1372,7 @@ algorithm
   end matchcontinue;
 end unparseAnnotationOptionSemi;
 
-public function unparseAnnotationOption 
+public function unparseAnnotationOption
 "function: unparseAnnotationOption
   Prettyprint an annotation."
   input Integer inInteger;
@@ -1501,7 +1501,7 @@ algorithm
       Option<Absyn.ConstrainClass> constr;
       list<Absyn.NamedArg> nargs;
       tuple<String,String> redeclareKeywords;
-      
+
     case (i,Absyn.ELEMENT(finalPrefix = finalPrefix,redeclareKeywords = SOME(repl),innerOuter = inout,specification = spec,info = info,constrainClass = constr))
       equation
         s1 = selectString(finalPrefix, "final ", "");
@@ -1524,12 +1524,12 @@ algorithm
     case(i,Absyn.DEFINEUNIT(name,{})) equation
       s1 = indentStr(i)+&"defineunit "+&name+&";";
     then s1;
-        
+
     case(i,Absyn.DEFINEUNIT(name,nargs)) equation
       s1 = printListStr(nargs, printNamedArgStr, ", ");
-      s2 = indentStr(i)+&"defineunit "+&name+&" ("+&s1+&");"; 
+      s2 = indentStr(i)+&"defineunit "+&name+&" ("+&s1+&");";
     then s2;
-      
+
     case (i,Absyn.TEXT(optName = SOME(name),string = text,info = info))
       equation
         s1 = unparseInfoStr(info);
@@ -1550,7 +1550,7 @@ algorithm
   end matchcontinue;
 end unparseElementStr;
 
-protected function unparseConstrainclassOptStr 
+protected function unparseConstrainclassOptStr
 "function: unparseConstrainclassOptStr
   author: PA
   This function prettyprints a ConstrainClass option to a string."
@@ -1571,7 +1571,7 @@ algorithm
   end matchcontinue;
 end unparseConstrainclassOptStr;
 
-protected function unparseConstrainclassStr 
+protected function unparseConstrainclassStr
 "function: unparseConstrainclassStr
   author: PA
   This function prettyprints a ConstrainClass to a string."
@@ -1594,7 +1594,7 @@ algorithm
   end matchcontinue;
 end unparseConstrainclassStr;
 
-protected function printInnerouter 
+protected function printInnerouter
 "function: printInnerouter
   Prints the inner or outer keyword to the Print buffer."
   input Absyn.InnerOuter inInnerOuter;
@@ -1642,10 +1642,10 @@ end unparseInnerouterStr;
 
 function unparseElementPrefixKeywords
 "adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
- ([final] | [redeclare] [final] [inner] [outer]) [replaceable] followed by: 
+ ([final] | [redeclare] [final] [inner] [outer]) [replaceable] followed by:
  - class:    [encapsulated] [partial] [restriction] name
  - component
- For the component give empty encapsulated and partial strings to this function. 
+ For the component give empty encapsulated and partial strings to this function.
  if the order is not the one above on re-parse will give errors!"
   input tuple<String,String> redeclareKeywords;
   input String finalStr;
@@ -1656,11 +1656,11 @@ function unparseElementPrefixKeywords
   protected
     String redeclareStr,replaceableStr;
 algorithm
-   (redeclareStr,replaceableStr) := redeclareKeywords; 
+   (redeclareStr,replaceableStr) := redeclareKeywords;
    prefixKeywords := redeclareStr +& finalStr +& innerouterStr +& replaceableStr +& encapsulatedStr +& partialStr;
 end unparseElementPrefixKeywords;
 
-public function printElementspec 
+public function printElementspec
 "function: printElementspec
   Prints the ElementSpec to the Print buffer."
   input Absyn.ElementSpec inElementSpec;
@@ -1678,7 +1678,7 @@ algorithm
       list<Absyn.ComponentItem> cs;
       Absyn.Import i;
       Absyn.Annotation ann;
-      
+
     case (Absyn.CLASSDEF(replaceable_ = repl,class_ = cl))
       equation
         Print.printBuf("Absyn.CLASSDEF(");
@@ -1706,7 +1706,7 @@ algorithm
         printListDebug("print_elementspec", l, printElementArg, ",");
         Print.printBuf("])");
       then
-        ();        
+        ();
     case (Absyn.COMPONENTS(attributes = attr,typeSpec = t,components = cs))
       equation
         Print.printBuf("Absyn.COMPONENTS(");
@@ -1734,13 +1734,13 @@ algorithm
   end matchcontinue;
 end printElementspec;
 
-protected function unparseElementspecStr 
+protected function unparseElementspecStr
 "function: unparseElementspecStr
   Prettyprints the ElementSpec to a string."
   input Integer indent "indent";
   input Absyn.ElementSpec elementSpec "element specification";
   input String finalStr;
-  input tuple<String,String> redeclareKeywords "redeclare replaceable";  
+  input tuple<String,String> redeclareKeywords "redeclare replaceable";
   input String innerouterKeywords;
   output String outString;
 algorithm
@@ -1759,7 +1759,7 @@ algorithm
       list<Absyn.ComponentItem> cs;
       String prefixKeywords;
       Option<Absyn.Annotation> annOpt;
-      
+
     case (i,Absyn.CLASSDEF(replaceable_ = repl,class_ = cl),f,r,io) /* indent */
       equation
         str = unparseClassStr(i, cl, f, r, io);
@@ -1782,7 +1782,7 @@ algorithm
         s3 = getStringList(l, unparseElementArgStr, ", ");
         is = indentStr(i);
         s4 = unparseAnnotationOption(0, annOpt);
-        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!        
+        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for extends!
         str = Util.stringAppendList({is,s2,"(",s3,")",s4});
       then
         str;
@@ -1803,7 +1803,7 @@ algorithm
         s1 = unparseImportStr(i);
         s2 = stringAppend("import ", s1);
         is = indentStr(indent);
-        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for import!        
+        // adrpo: NOTE final, replaceable/redeclare, inner/outer should NOT be used for import!
         str = Util.stringAppendList({is,s2});
       then
         str;
@@ -1815,7 +1815,7 @@ algorithm
   end matchcontinue;
 end unparseElementspecStr;
 
-public function printImport 
+public function printImport
 "function: printImport
   Prints an Import to the Print buffer."
   input Absyn.Import inImport;
@@ -1846,7 +1846,7 @@ algorithm
   end matchcontinue;
 end printImport;
 
-public function unparseImportStr 
+public function unparseImportStr
 "function: unparseImportStr
   Prettyprints an Import to a string."
   input Absyn.Import inImport;
@@ -2495,7 +2495,7 @@ algorithm
     case Absyn.EQ_FAILURE(equItem)
       equation
         Print.printBuf("FAILURE(");
-        printEquationitem(equItem);        
+        printEquationitem(equItem);
         Print.printBuf(")");
       then
         ();
@@ -2531,7 +2531,7 @@ algorithm
   end matchcontinue;
 end printEquationitem;
 
-public function unparseEquationStr 
+public function unparseEquationStr
 "function: unparseEquationStr
   Prettyprints an Equation to a string."
   input Integer inInteger;
@@ -2616,7 +2616,7 @@ algorithm
       then
         str;
     case (i,Absyn.EQ_FAILURE(equItem))
-      equation        
+      equation
         s1 = unparseEquationitemStr(0, equItem);
         is = indentStr(i);
         str = Util.stringAppendList({is,"failure(",s1,")"});
@@ -2821,7 +2821,7 @@ algorithm
       Absyn.AlgorithmItem algItem;
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
-         
+
     case (Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp))
       equation
         Print.printBuf("ALG_ASSIGN(");
@@ -2833,10 +2833,10 @@ algorithm
         ();
     case (Absyn.ALG_NORETCALL(functionCall = cr,functionArgs = fargs)) /* ALG_NORETCALL */
       equation
-        Print.printBuf("ALG_NORETCALL(");        
+        Print.printBuf("ALG_NORETCALL(");
         Print.printBuf(printComponentRefStr(cr) +& "(");
         Print.printBuf(printFunctionArgsStr(fargs));
-        Print.printBuf(")");        
+        Print.printBuf(")");
       then
         ();
     case (Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eb,elseBranch = fb))
@@ -2868,7 +2868,7 @@ algorithm
         Print.printBuf("}");
       then
         ();
-    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = el) 
+    case Absyn.ALG_WHEN_A(boolExpr = e,whenBody = al,elseWhenAlgorithmBranch = el)
       /* rule	Print.print_buf \"WHEN_E \" & print_exp(e) &
 	       Print.print_buf \" {\" & print_list_debug(\"print_algorithm\",al, print_algorithmitem, \";\") & Print.print_buf \"}\"
 	       ----------------------------------------------------------
@@ -2899,7 +2899,7 @@ algorithm
         printAlgorithmitem(algItem);
         Print.printBuf(")");
       then
-        ();        
+        ();
     case (_)
       equation
         Print.printBuf(" ** UNKNOWN ALGORITHM CLAUSE ** ");
@@ -2981,7 +2981,7 @@ algorithm
       Absyn.Annotation ann;
       Absyn.ForIterators iterators;
       Absyn.AlgorithmItem algItem;
-      
+
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_ASSIGN(assignComponent = assignComp,value = exp),comment = optcmt)) /* ALG_ASSIGN */
       equation
         s1 = printExpStr(assignComp);
@@ -3072,12 +3072,12 @@ algorithm
         str;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FAILURE(algItem),comment = optcmt)) /* ALG_FAILURE */
       equation
-        s1 = unparseAlgorithmStr(0, algItem); 
+        s1 = unparseAlgorithmStr(0, algItem);
         s3 = unparseCommentOption(optcmt);
         is = indentStr(i);
         str = is +& "failure(" +& s1 +& ")" +& s3 +& ";";
       then
-        str;        
+        str;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(explist), comment = optcmt))
       local
         list<Absyn.Exp> explist;
@@ -3960,7 +3960,7 @@ algorithm
   end matchcontinue;
 end printNamedArg;
 
-public function printNamedArgStr 
+public function printNamedArgStr
 "function: printNamedArgStr
   Prettyprint NamedArg to a string."
   input Absyn.NamedArg inNamedArg;
@@ -4014,22 +4014,22 @@ algorithm
     case (Absyn.ARRAY(arrayExp = _)) then 0;
     case (Absyn.MATRIX(matrix = _)) then 0;
     /* arithmetic operators */
-    case (Absyn.BINARY(op = Absyn.POW())) then 1;      
+    case (Absyn.BINARY(op = Absyn.POW())) then 1;
     case (Absyn.BINARY(op = Absyn.DIV())) then 2;
-    case (Absyn.BINARY(op = Absyn.MUL())) then 3;      
+    case (Absyn.BINARY(op = Absyn.MUL())) then 3;
     case (Absyn.UNARY(op = Absyn.UPLUS())) then 4;
     case (Absyn.UNARY(op = Absyn.UMINUS())) then 4;
     case (Absyn.BINARY(op = Absyn.ADD())) then 5;
     case (Absyn.BINARY(op = Absyn.SUB())) then 5;
     /* the new arithmetic operators element-wise from Modelica 3.0  */
-    case (Absyn.BINARY(op = Absyn.POW_EW())) then 1;      
+    case (Absyn.BINARY(op = Absyn.POW_EW())) then 1;
     case (Absyn.BINARY(op = Absyn.DIV_EW())) then 2;
     case (Absyn.BINARY(op = Absyn.MUL_EW())) then 3;
     case (Absyn.UNARY(op = Absyn.UPLUS_EW())) then 4;
-    case (Absyn.UNARY(op = Absyn.UMINUS_EW())) then 4;           
+    case (Absyn.UNARY(op = Absyn.UMINUS_EW())) then 4;
     case (Absyn.BINARY(op = Absyn.ADD_EW())) then 5;
     case (Absyn.BINARY(op = Absyn.SUB_EW())) then 5;
-    /* relational operators */    
+    /* relational operators */
     case (Absyn.RELATION(op = Absyn.LESS())) then 6;
     case (Absyn.RELATION(op = Absyn.LESSEQ())) then 6;
     case (Absyn.RELATION(op = Absyn.GREATER())) then 6;
@@ -4047,9 +4047,9 @@ algorithm
   end matchcontinue;
 end expPriority;
 
-protected function parenthesize 
+protected function parenthesize
 "function: parenthesize
-  Adds parentheisis to a string if expression 
+  Adds parentheisis to a string if expression
   and parent expression priorities requires it."
   input String inString1;
   input Integer inInteger2;
@@ -4072,12 +4072,12 @@ algorithm
 end parenthesize;
 
 public function printExpLstStr "exp
- 
+
 Prints a list of expressions to a string
 "
   input list<Absyn.Exp> expl;
   output String outString;
-algorithm 
+algorithm
   outString := Util.stringDelimitList(Util.listMap(expl,printExpStr),", ");
 end printExpLstStr;
 
@@ -4319,7 +4319,7 @@ algorithm
         Absyn.Exp result;
         list<Absyn.ElementItem> els; list<Absyn.AlgorithmItem> algs;
       equation
-        s1 = printExpStr(result);        
+        s1 = printExpStr(result);
         s2 = unparseAlgorithmStrLst(4 /* Exp doesn't get i input  make a guess :( */, algs, "\n");
         s = "valueblock(\n  " +& s2 +& ", result=" +& s1 +& ")";
       then s;
@@ -4344,8 +4344,8 @@ end printExpStr;
 function unparseLocalElements
 "function: unparseLocalElements
   @author: adrpo
-  unparses the local declarations of elements 
-  (they can appear only in MetaModelica)"  
+  unparses the local declarations of elements
+  (they can appear only in MetaModelica)"
   input Integer indent;
   input list<Absyn.ElementItem> localDecls;
   output String outStr;
@@ -4364,8 +4364,8 @@ end unparseLocalElements;
 function unparseLocalEquations
 "function: unparseLocalElements
   @author: adrpo
-  unparses the local declarations of elements 
-  (they can appear only in MetaModelica)"  
+  unparses the local declarations of elements
+  (they can appear only in MetaModelica)"
   input Integer indent;
   input list<Absyn.EquationItem> localEqs;
   output String outStr;
@@ -4381,8 +4381,8 @@ algorithm
   end matchcontinue;
 end unparseLocalEquations;
 
-public function printCaseStr 
-"@author: adrpo 
+public function printCaseStr
+"@author: adrpo
   MetaModelica case construct printing"
   input Absyn.Case cas;
   output String out;
@@ -4400,7 +4400,7 @@ algorithm
         s1 = printExpStr(p);
         s4 = printExpStr(r);
         s = Util.stringAppendList({"\tcase (", s1, ") then ", s4, ";"});
-      then s;            
+      then s;
     case Absyn.CASE(p, l, eq, r, c)
       equation
         s1 = printExpStr(p);
@@ -4413,7 +4413,7 @@ algorithm
       equation
         s4 = printExpStr(r);
         s = Util.stringAppendList({"\telse then ", s4, ";"});
-      then s;            
+      then s;
     case Absyn.ELSE(l, eq, r, c)
       equation
         s2 = unparseLocalElements(3, l);
@@ -4424,7 +4424,7 @@ algorithm
   end matchcontinue;
 end printCaseStr;
 
-public function printCodeStr 
+public function printCodeStr
 "function: printCodeStr
   Prettyprint Code to a string."
   input Absyn.CodeNode inCode;
@@ -4483,7 +4483,7 @@ algorithm
   end matchcontinue;
 end printCodeStr;
 
-protected function printElseifStr 
+protected function printElseifStr
 "function: printEleseifStr
   Prettyprint elseif to a string"
   input list<tuple<Absyn.Exp, Absyn.Exp>> inTplAbsynExpAbsynExpLst;
@@ -4506,7 +4506,7 @@ algorithm
   end matchcontinue;
 end printElseifStr;
 
-protected function printRowStr 
+protected function printRowStr
 "function: printRowStr
   Prettyprint a list of expressions to a string."
   input list<Absyn.Exp> es;
@@ -4515,7 +4515,7 @@ algorithm
   s := printListStr(es, printExpStr, ",");
 end printRowStr;
 
-protected function printListStr 
+protected function printListStr
 "function: printListStr
   Same as printList, except it returns a string instead of printing"
   input list<Type_a> inTypeALst;
@@ -4551,7 +4551,7 @@ algorithm
   end matchcontinue;
 end printListStr;
 
-public function opSymbol 
+public function opSymbol
 "function: opSymbol
   Make a string describing different operators."
   input Absyn.Operator inOperator;
@@ -4588,7 +4588,7 @@ algorithm
   end matchcontinue;
 end opSymbol;
 
-protected function dumpOpSymbol 
+protected function dumpOpSymbol
 "function: dumpOpSymbol
   Make a string describing different operators."
   input Absyn.Operator inOperator;
@@ -4632,7 +4632,7 @@ end dumpOpSymbol;
  *
  */
 
-public function selectString 
+public function selectString
 "function: selectString
   Select one of the two strings depending on boolean value."
   input Boolean inBoolean1;
@@ -5112,7 +5112,7 @@ algorithm
         Print.printBuf(s);
         Print.printBuf("\", path = ");
         printPathAsCorbaString(p);
-        Print.printBuf(" end Absyn.QUALIFIED;");        
+        Print.printBuf(" end Absyn.QUALIFIED;");
       then ();
     case Absyn.IDENT(name = s)
       equation
@@ -5146,7 +5146,7 @@ algorithm
         printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",");
         Print.printBuf(", componentRef = ");
         printComponentRefAsCorbaString(p);
-        Print.printBuf(" end Absyn.CREF_QUAL;");        
+        Print.printBuf(" end Absyn.CREF_QUAL;");
       then ();
     case Absyn.CREF_IDENT(name = s, subscripts = subscripts)
       equation
@@ -5154,7 +5154,7 @@ algorithm
         Print.printBuf(s);
         Print.printBuf("\", subscripts = ");
         printListAsCorbaString(subscripts, printSubscriptAsCorbaString, ",");
-        Print.printBuf(" end Absyn.CREF_IDENT;");        
+        Print.printBuf(" end Absyn.CREF_IDENT;");
       then ();
     case Absyn.WILD()
       equation
@@ -5238,7 +5238,7 @@ algorithm
       String fileName;
       Boolean isReadOnly;
       Integer lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd;
-      Absyn.TimeStamp buildTimes;   
+      Absyn.TimeStamp buildTimes;
     case Absyn.INFO(fileName,isReadOnly,lineNumberStart,columnNumberStart,lineNumberEnd,columnNumberEnd,buildTimes)
       equation
         Print.printBuf("record Absyn.INFO fileName = \"");
@@ -5256,7 +5256,7 @@ algorithm
         Print.printBuf(", buildTimes = ");
         printTimeStampAsCorbaString(buildTimes);
         Print.printBuf(" end Absyn.INFO;");
-      then ();   
+      then ();
   end matchcontinue;
 end printInfoAsCorbaString;
 
@@ -5376,7 +5376,7 @@ end printEnumLiteralAsCorbaString;
 
 protected function printRestrictionAsCorbaString
   input Absyn.Restriction r;
-algorithm 
+algorithm
   _ := matchcontinue r
     case Absyn.R_CLASS()
       equation
@@ -5546,7 +5546,7 @@ algorithm
         printListAsCorbaString(args,printExpAsCorbaString,",");
         Print.printBuf(", annotation_ = ");
         printOption(annotation_, printAnnotationAsCorbaString);
-        Print.printBuf(" end Absyn.EXTERNALDECL;");      
+        Print.printBuf(" end Absyn.EXTERNALDECL;");
       then ();
   end matchcontinue;
 end printExternalDeclAsCorbaString;
@@ -5836,7 +5836,7 @@ algorithm
       Absyn.ForIterators iterators;
       list<Absyn.EquationItem> equationTrueItems,equationElseItems,forEquations,whenEquations;
       Absyn.FunctionArgs functionArgs;
-      Absyn.EquationItem equ;      
+      Absyn.EquationItem equ;
     case Absyn.EQ_IF(ifExp,equationTrueItems,elseIfBranches,equationElseItems)
       equation
         Print.printBuf("record Absyn.EQ_IF ifExp = ");
@@ -6075,7 +6075,7 @@ algorithm
       list<Absyn.ElementArg> elementArgs;
     case Absyn.ANNOTATION(elementArgs)
       equation
-        Print.printBuf("record Absyn.ANNOTATION elementArgs = "); 
+        Print.printBuf("record Absyn.ANNOTATION elementArgs = ");
         printListAsCorbaString(elementArgs, printElementArgAsCorbaString, ",");
         Print.printBuf(" end Absyn.ANNOTATION;");
       then ();
@@ -6197,7 +6197,7 @@ algorithm
     case Absyn.ATTR(flowPrefix,streamPrefix,variability,direction,arrayDim)
       equation
         Print.printBuf("record Absyn.ATTR flowPrefix = ");
-        Print.printBuf(Util.if_(flowPrefix, "true", "false"));        
+        Print.printBuf(Util.if_(flowPrefix, "true", "false"));
         Print.printBuf(", streamPrefix = ");
         Print.printBuf(Util.if_(streamPrefix, "true", "false"));
         Print.printBuf(", variability = ");
@@ -6206,7 +6206,7 @@ algorithm
         printDirectionAsCorbaString(direction);
         Print.printBuf(", arrayDim = ");
         printArrayDimAsCorbaString(arrayDim);
-        Print.printBuf(" end Absyn.ATTR;");        
+        Print.printBuf(" end Absyn.ATTR;");
       then ();
   end matchcontinue;
 end printElementAttributesAsCorbaString;
@@ -6305,7 +6305,7 @@ algorithm
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> argNames;
       Absyn.Exp exp;
-      Absyn.ForIterators iterators;      
+      Absyn.ForIterators iterators;
     case Absyn.FUNCTIONARGS(args,argNames)
       equation
         Print.printBuf("record Absyn.FUNCTIONARGS args = ");
@@ -6320,7 +6320,7 @@ algorithm
         printExpAsCorbaString(exp);
         Print.printBuf(", iterators = ");
         printListAsCorbaString(iterators, printForIteratorAsCorbaString, ",");
-        Print.printBuf(" end Absyn.FOR_ITER_FARG;");  
+        Print.printBuf(" end Absyn.FOR_ITER_FARG;");
       then ();
   end matchcontinue;
 end printFunctionArgsAsCorbaString;
@@ -6382,7 +6382,7 @@ algorithm
       Absyn.MatchType matchTy;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.Case> cases;
-      Option<String> comment;		
+      Option<String> comment;
     case Absyn.INTEGER(value = i)
       equation
         Print.printBuf("record Absyn.INTEGER value = ");
@@ -6579,7 +6579,7 @@ protected function printCaseAsCorbaString
 algorithm
   _ := matchcontinue case_
     local
-      Absyn.Exp pattern; 
+      Absyn.Exp pattern;
       list<Absyn.ElementItem> localDecls;
       list<Absyn.EquationItem>  equations;
       Absyn.Exp result;
@@ -6597,7 +6597,7 @@ algorithm
         Print.printBuf(", comment = ");
         printStringCommentOption(comment);
         Print.printBuf(" end Absyn.CASE;");
-      then ();    
+      then ();
     case Absyn.ELSE(localDecls,equations,result,comment)
       equation
         Print.printBuf("record Absyn.ELSE localDecls = ");

@@ -75,7 +75,7 @@ algorithm
       Real rval;
       DAE.ComponentRef cr,crx,tv;
       DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
-      DAE.ExpType tp; 
+      DAE.ExpType tp;
       Absyn.Path a,fname;
       Boolean b,c;
       DAE.Operator op,rel;

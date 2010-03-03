@@ -32,16 +32,16 @@ package Connect
 " file:	 Connect.mo
   package:      Connect
   description: Connection set management
- 
+
   RCS: $Id$
- 
+
   Connections generate connection sets (datatype SET is described below)
-  which are constructed during instantiation.  When a connection 
-  set is generated, it is used to create a number of equations. 
-  The kind of equations created depends on the type of the set. 
-  
-  Connect.mo is called from Inst.mo and is responsible for 
-  creation of all connect-equations later passed to the DAE module 
+  which are constructed during instantiation.  When a connection
+  set is generated, it is used to create a number of equations.
+  The kind of equations created depends on the type of the set.
+
+  Connect.mo is called from Inst.mo and is responsible for
+  creation of all connect-equations later passed to the DAE module
   in DAE.mo."
 
 
@@ -49,18 +49,18 @@ public import DAE;
 public import Prefix;
 public import Absyn;
 
-public 
-uniontype Face"This type indicates whether a connector is an inside or an outside connector. 
- Note: this is not the same as inner and outer references. 
-       A connector is inside if it connects from the outside into a 
-       component and it is outside if it connects out from the component. 
+public
+uniontype Face"This type indicates whether a connector is an inside or an outside connector.
+ Note: this is not the same as inner and outer references.
+       A connector is inside if it connects from the outside into a
+       component and it is outside if it connects out from the component.
        This is important when generating equations for flow variables,
        where outside connectors are multiplied with -1 (since flow is always into a component)."
   record INSIDE "This is an inside connection" end INSIDE;
   record OUTSIDE "This is an outside connection" end OUTSIDE;
 end Face;
- 
-public 
+
+public
 uniontype Set "A connection set is represented using the Set type."
 
   record EQU "a list of component references"
@@ -73,24 +73,24 @@ uniontype Set "A connection set is represented using the Set type."
 
 end Set;
 
-public 
-uniontype Sets "The connection \'Sets\' contains 
-   - the connection set 
+public
+uniontype Sets "The connection \'Sets\' contains
+   - the connection set
 	 - a list of component references occuring in connect statemens
 	 - a list of deleted components
 	 - connect statements to propagate upwards in instance hierachy (inner/outer connectors)
-	 
-	The list of componentReferences are used only when evaluating the cardinality operator. 
+
+	The list of componentReferences are used only when evaluating the cardinality operator.
 	It is passed -into- classes to be instantiated, while the Set list is returned -from-
-  instantiated classes. 
+  instantiated classes.
   The list of deleted components is required to be able to remove connections to them."
   record SETS
     list<Set> setLst "the connection set";
-    list<DAE.ComponentRef> connection "connection_set connect_refs - list of 
-					      crefs in connect statements. This is used to be able to evaluate cardinality. 
+    list<DAE.ComponentRef> connection "connection_set connect_refs - list of
+					      crefs in connect statements. This is used to be able to evaluate cardinality.
 					      It is registered in env by Inst.addConnnectionSetToEnv.";
-		list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";			      
-		list<OuterConnect> outerConnects "connect statements to propagate upwards"; 
+		list<DAE.ComponentRef> deletedComponents "list of components with conditional declaration = false";
+		list<OuterConnect> outerConnects "connect statements to propagate upwards";
   end SETS;
 end Sets;
 
@@ -105,7 +105,7 @@ uniontype OuterConnect
     Face f2 "the face of the rhs component";
     DAE.ElementSource source "the element origin";
   end OUTERCONNECT;
-end OuterConnect;    
+end OuterConnect;
 
 public constant Sets emptySet=SETS({},{},{},{});
 

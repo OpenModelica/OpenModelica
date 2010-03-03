@@ -68,7 +68,7 @@ type Arrow= enumeration(None, Open, Filled , Half );
 type FillPattern= enumeration(None, Solid, Horizontal, Vertical, Cross, Forward, Backward, CrossDiag, HorizontalCylinder, VerticalCylinder, Sphere );
 type BorderPattern= enumeration(None, Raised, Sunken, Engraved );
 type TextStyle= enumeration(Bold, Italic, Underline );
-  
+
 record Line
   Boolean visible=true;
   Real points[:,2];
@@ -176,7 +176,7 @@ package GraphicalAnnotationsProgram____ end     GraphicalAnnotationsProgram____;
 // type Point = DrawingUnit[2] \"{x, y}\";
 // type Extent = Point[2] \"Defines a rectangular area {{x1, y1}, {x2, y2}}\";
 
-//partial 
+//partial
 record GraphicItem
   Boolean visible = true;
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
@@ -190,7 +190,7 @@ record CoordinateSystem
   Real grid[2](each final unit=\"mm\") = {1.0, 1.0};
 end CoordinateSystem;
 
-// example 
+// example
 // CoordinateSystem(extent = {{-10, -10}, {10, 10}});
 // i.e. a coordinate system with width 20 units and height 20 units.
 
@@ -250,9 +250,9 @@ record Line
   //extends GraphicItem;
   Boolean visible = true;
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
-  Real rotation(quantity=\"angle\", unit=\"deg\")=0;  
+  Real rotation(quantity=\"angle\", unit=\"deg\")=0;
   // end GraphicItem
-  
+
   Real points[2,:](each final unit=\"mm\");
   Integer color[3] = {0, 0, 0};
   LinePattern pattern = LinePattern.Solid;
@@ -268,7 +268,7 @@ record Polygon
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
   Real rotation(quantity=\"angle\", unit=\"deg\")=0;
   // end GraphicItem
-  
+
   //extends FilledShape;
   Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
   Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
@@ -276,7 +276,7 @@ record Polygon
   FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
-    
+
   Real points[2,:](each final unit=\"mm\");
   Smooth smooth = Smooth.None \"Spline outline\";
 end Polygon;
@@ -287,7 +287,7 @@ record Rectangle
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
   Real rotation(quantity=\"angle\", unit=\"deg\")=0;
   // end GraphicItem
-  
+
   //extends FilledShape;
   Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
   Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
@@ -295,7 +295,7 @@ record Rectangle
   FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
   Real lineThickness = 0.25 \"Line thickness\";
   // end FilledShape
-  
+
   BorderPattern borderPattern = BorderPattern.None;
   Real extent[2,2](each final unit=\"mm\");
   Real radius(final unit=\"mm\") = 0 \"Corner radius\";
@@ -307,15 +307,15 @@ record Ellipse
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
   Real rotation(quantity=\"angle\", unit=\"deg\")=0;
   // end GraphicItem
-  
+
   //extends FilledShape;
   Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
   Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
   LinePattern pattern = LinePattern.Solid \"Border line pattern\";
   FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
   Real lineThickness = 0.25 \"Line thickness\";
-  // end FilledShape  
-  
+  // end FilledShape
+
   Real extent[2,2](each final unit=\"mm\");
   Real startAngle(quantity=\"angle\", unit=\"deg\")=0;
   Real endAngle(quantity=\"angle\", unit=\"deg\")=360;
@@ -327,15 +327,15 @@ record Text
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
   Real rotation(quantity=\"angle\", unit=\"deg\")=0;
   // end GraphicItem
-  
+
   //extends FilledShape;
   Integer lineColor[3] = {0, 0, 0} \"Color of border line\";
   Integer fillColor[3] = {0, 0, 0} \"Interior fill color\";
   LinePattern pattern = LinePattern.Solid \"Border line pattern\";
   FillPattern fillPattern = FillPattern.None \"Interior fill pattern\";
   Real lineThickness = 0.25 \"Line thickness\";
-  // end FilledShape  
-  
+  // end FilledShape
+
   Real extent[2,2](each final unit=\"mm\");
   String textString;
   Real fontSize = 0 \"unit pt\";
@@ -350,7 +350,7 @@ record Bitmap
   Real origin[2](each final unit=\"mm\") = {0.0, 0.0};
   Real rotation(quantity=\"angle\", unit=\"deg\")=0;
   // end GraphicItem
-  
+
   Real extent[2,2](each final unit=\"mm\");
   String fileName \"Name of bitmap file\";
   String imageSource \"Base64 representation of bitmap\";
@@ -375,47 +375,47 @@ end Bitmap;
 //   Real minValue;
 //   Real maxValue;
 // end OnMouseMoveXSetReal;
-// 
+//
 // record OnMouseMoveYSetReal
 //   Real yVariable \"Name of variable to change when cursor moved in y direction\";
 //   Real minValue;
 //   Real maxValue;
 // end OnMouseMoveYSetReal;
-// 
+//
 // record OnMouseDownEditInteger
 //   Integer variable \"Name of variable to change\";
 // end OnMouseDownEditInteger;
-// 
+//
 // record OnMouseDownEditReal
 //   Real variable \"Name of variable to change\";
 // end OnMouseDownEditReal;
-// 
+//
 // record OnMouseDownEditString
 //   String variable \"Name of variable to change\";
 // end OnMouseDownEditString;
-// 
+//
 // annotation(defaultComponentName = \"name\")
 // annotation(missingInnerMessage = \"message\")
-// 
+//
 // model World
 //   annotation(defaultComponentName = \"world\",
 //   defaultComponentPrefixes = \"inner replaceable\",
 //   missingInnerMessage = \"The World object is missing\");
 // ...
 // end World;
-// 
+//
 // inner replaceable World world;
-// 
+//
 // annotation(unassignedMessage = \"message\");
-// 
+//
 // annotation(Dialog(enable = parameter-expression, tab = \"tab\", group = \"group\"));
-// 
+//
 // record Dialog
 //   parameter String tab = \"General\";
 //   parameter String group = \"Parameters\";
 //   parameter Boolean enable = true;
 // end Dialog;
-//  
+//
 // connector Frame \"Frame of a mechanical system\"
 //   ...
 //   flow Modelica.SIunits.Force f[3] annotation(unassignedMessage =
@@ -424,7 +424,7 @@ end Bitmap;
 //      For planar loops, use in one revolute joint per loop the option
 //      PlanarCutJoint=true in the Advanced menu.\");
 // end Frame;
-// 
+//
 // model BodyShape
 //   ...
 //   parameter Boolean animation = true;
@@ -450,7 +450,7 @@ record CoordinateSystem
   DrawingUnit grid[2];
 end CoordinateSystem;
 
-// example 
+// example
 // CoordinateSystem(extent = {{-10, -10}, {10, 10}});
 // i.e. a coordinate system with width 20 units and height 20 units.
 

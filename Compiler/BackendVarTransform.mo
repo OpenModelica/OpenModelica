@@ -40,14 +40,14 @@ package BackendVarTransform
 
 public import DAE;
 public import DAELow;
-public import VarTransform; 
+public import VarTransform;
 
 protected import Exp;
 protected import Util;
 
-public function replaceEquations 
+public function replaceEquations
 "function: replaceEquations
-  This function takes a list of equations ana a set of variable 
+  This function takes a list of equations ana a set of variable
   replacements and applies the replacements on all equations.
   The function returns the updated list of equations"
   input list<DAELow.Equation> inDAELowEquationLst;
@@ -66,7 +66,7 @@ algorithm
       list<DAE.Exp> expl,expl1,expl2;
       DAELow.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({},_) then {};
     case ((DAELow.ARRAY_EQUATION(indx,expl,source)::es),repl)
       equation
@@ -168,7 +168,7 @@ end replaceWhenEquation;
 
 /*
 public function replaceEquations "function: replaceEquations
- 
+
   This function takes a list of equations ana a set of variable replacements
   and applies the replacements on all equations.
   The function returns the updated list of equations
@@ -176,7 +176,7 @@ public function replaceEquations "function: replaceEquations
   input list<DAELow.Equation> inDAELowEquationLst;
   input VarTransform.VariableReplacements inVariableReplacements;
   output list<DAELow.Equation> outDAELowEquationLst;
-algorithm 
+algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
@@ -188,16 +188,16 @@ algorithm
       Integer indx;
       list<DAE.Exp> expl,expl1,expl2;
       DAELow.WhenEquation whenEqn,whenEqn1;
-    case ({},_) then {}; 
+    case ({},_) then {};
     case ((DAELow.ARRAY_EQUATION(indx,expl)::es),repl)
       equation
         expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
         expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es,repl);
       then
-         (DAELow.ARRAY_EQUATION(indx,expl2)::es_1); 
+         (DAELow.ARRAY_EQUATION(indx,expl2)::es_1);
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: es),repl)
-      equation 
+      equation
         e1_1 = VarTransform.replaceExp(e1, repl, NONE);
         e2_1 = VarTransform.replaceExp(e2, repl, NONE);
         e1_2 = Exp.simplify(e1_1);
@@ -206,7 +206,7 @@ algorithm
       then
         (DAELow.EQUATION(e1_2,e2_2) :: es_1);
      case ((DAELow.EQUEQUATION(cr1,cr2) :: es),repl)
-      equation 
+      equation
         DAE.CREF(cr1,_) = VarTransform.replaceExp(DAE.CREF(cr1,DAE.ET_OTHER()), repl, NONE);
         DAE.CREF(cr2,_) = VarTransform.replaceExp(DAE.CREF(cr2,DAE.ET_OTHER()), repl, NONE);
         es_1 = replaceEquations(es, repl);
@@ -214,7 +214,7 @@ algorithm
         (DAELow.EQUEQUATION(cr1,cr2) :: es_1);
     case (((a as DAELow.ALGORITHM(index = id,in_ = expl1,out = expl2)) :: es),repl)
       local Integer id;
-      equation 
+      equation
         expl1 = Util.listMap2(expl1,VarTransform.replaceExp,repl,NONE);
         expl1 = Util.listMap(expl1,Exp.simplify);
         expl2 = Util.listMap2(expl2,VarTransform.replaceExp,repl,NONE);
@@ -223,14 +223,14 @@ algorithm
       then
         (DAELow.ALGORITHM(id,expl1,expl2) :: es_1);
     case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e) :: es),repl)
-      equation 
+      equation
         e_1 = VarTransform.replaceExp(e, repl, NONE);
         e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
       then
         (DAELow.SOLVED_EQUATION(cr,e_2) :: es_1);
     case ((DAELow.RESIDUAL_EQUATION(exp = e) :: es),repl)
-      equation 
+      equation
         e_1 = VarTransform.replaceExp(e, repl, NONE);
         e_2 = Exp.simplify(e_1);
         es_1 = replaceEquations(es, repl);
@@ -238,23 +238,23 @@ algorithm
         (DAELow.RESIDUAL_EQUATION(e_2) :: es_1);
 
     case ((DAELow.WHEN_EQUATION(whenEqn) :: es),repl)
-      equation 
+      equation
 				whenEqn1 = replaceWhenEquation(whenEqn,repl);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.WHEN_EQUATION(whenEqn1) :: es_1);    
-        
+        (DAELow.WHEN_EQUATION(whenEqn1) :: es_1);
+
    case ((DAELow.IF_EQUATION(indx,eindx,expl) :: es),repl)
      local Integer indx,eindx;
-      equation 
+      equation
         expl1 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
         expl2 = Util.listMap(expl1,Exp.simplify);
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.IF_EQUATION(indx,eindx,expl2) :: es_1);                
-        
+        (DAELow.IF_EQUATION(indx,eindx,expl2) :: es_1);
+
     case ((a :: es),repl)
-      equation 
+      equation
         es_1 = replaceEquations(es, repl);
       then
         (a :: es_1);
@@ -272,7 +272,7 @@ algorithm
     DAE.Exp e,e1,e2,cond;
     DAELow.WhenEquation elsePart,elsePart2;
     DAELow.Equation eq;
-    case (DAELow.WHEN_EQ(i,_,cond,eq,NONE),repl) 
+    case (DAELow.WHEN_EQ(i,_,cond,eq,NONE),repl)
       equation
         {eq as DAELow.EQUATION(e1,e2)} = replaceEquations({eq},repl);
         (e1,e2) = shiftUnaryMinusToRHS(e1,e2);
@@ -307,20 +307,20 @@ end matchcontinue;
 end shiftUnaryMinusToRHS;
 
 /*
-public function replaceIfEquations "This function takes a list of if-equations and a set of 
+public function replaceIfEquations "This function takes a list of if-equations and a set of
 variable replacement sand applies the replacements on all if-equations.
 The function returns the updated list of if-equations."
   input list<DAELow.IfEquation> ifeqns;
   input VarTransform.VariableReplacements repl;
   output list<DAELow.IfEquation> outIfeqns;
-algorithm 
+algorithm
   outIfeqns := matchcontinue(ifeqns,repl)
   local list<DAE.Exp> conds,conds1;
     list<DAELow.Equation> fb,fb1;
     list<list<DAELow.Equation>> tbs,tbs1;
     list<DAELow.IfEquation> es;
-    case ({},_) then {}; 
-      
+    case ({},_) then {};
+
     case(DAELow.IFEQUATION(conds,tbs,fb) :: es,repl) equation
        conds1 = Util.listMap2(conds, VarTransform.replaceExp, repl, NONE);
         tbs1 = Util.listMap1(tbs,replaceEquations,repl);
@@ -337,7 +337,7 @@ end replaceIfEquations;
 */
 
 public function replaceMultiDimEquations "function: replaceMultiDimEquations
- 
+
   This function takes a list of equations ana a set of variable replacements
   and applies the replacements on all array equations.
   The function returns the updated list of array equations
@@ -345,7 +345,7 @@ public function replaceMultiDimEquations "function: replaceMultiDimEquations
   input list<DAELow.MultiDimEquation> inDAELowEquationLst;
   input VarTransform.VariableReplacements inVariableReplacements;
   output list<DAELow.MultiDimEquation> outDAELowEquationLst;
-algorithm 
+algorithm
   outDAELowEquationLst:=
   matchcontinue (inDAELowEquationLst,inVariableReplacements)
     local
@@ -356,10 +356,10 @@ algorithm
       DAE.ComponentRef cr;
       list<Integer> dims;
       DAE.ElementSource source "the origin of the element";
-      
-    case ({},_) then {}; 
+
+    case ({},_) then {};
     case ((DAELow.MULTIDIM_EQUATION(left = e1,right = e2,dimSize = dims,source=source) :: es),repl)
-      equation 
+      equation
         e1_1 = VarTransform.replaceExp(e1, repl, NONE);
         e2_1 = VarTransform.replaceExp(e2, repl, NONE);
         e1_2 = Exp.simplify(e1_1);

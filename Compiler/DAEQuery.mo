@@ -387,7 +387,7 @@ algorithm
       list<DAELow.Var> xs;
       DAELow.Type var_type;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({},_) then "";
     case (((v as DAELow.VAR(varName = cr,
                             varKind = kind,
@@ -426,7 +426,7 @@ algorithm
         str = Util.stringAppendList({"'", str1, "'"});
       then
         str;
-        
+
       case (((v as DAELow.VAR(varName = cr,
                               varKind = kind,
                               varDirection = dir,
@@ -469,10 +469,10 @@ algorithm
   end matchcontinue;
 end dumpVars2;
 
-public function incidenceMatrix 
+public function incidenceMatrix
 "function: incidenceMatrix
   author: PA
-  Calculates the incidence matrix, i.e. which 
+  Calculates the incidence matrix, i.e. which
   variables are present in each equation."
   input DAELow.DAELow inDAELow;
   output list<String>[:] outIncidenceMatrix;
@@ -718,7 +718,7 @@ algorithm
       list<DAE.Exp> expl;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = 
+        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) =
         DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
 	                               x is inserted as negative value, since it is needed by debugging and index
 	                               reduction using dummy derivatives" ;

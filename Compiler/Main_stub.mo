@@ -68,7 +68,7 @@ protected import InnerOuter;
 protected function checkClassdef
   input String inString;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean:=
   matchcontinue (inString)
     local
@@ -76,8 +76,8 @@ algorithm
       String str_1,str;
       Boolean res;
     case (str) /* Need to check for a whitespace after as well to get the keyword,
-	e.g typeOf function would be taken as a type definition otherwise */ 
-      equation 
+	e.g typeOf function would be taken as a type definition otherwise */
+      equation
         true = Util.strncmp(" ", str, 1);
         clst = string_list_string_char(str);
         clst_1 = listDelete(clst, 0);
@@ -86,8 +86,8 @@ algorithm
       then
         res;
     case str /* Need to check for a whitespace after as well to get the keyword,
-	e.g typeOf function would be taken as a type definition otherwise */ 
-      equation 
+	e.g typeOf function would be taken as a type definition otherwise */
+      equation
         false = Util.strncmp("end ", str, 4);
         false = Util.strncmp("type ", str, 5);
         false = Util.strncmp("class ", str, 6);
@@ -102,7 +102,7 @@ algorithm
         false = Util.strncmp("encapsulated ", str, 12);
       then
         false;
-    case _ then true; 
+    case _ then true;
   end matchcontinue;
 end checkClassdef;
 
@@ -112,7 +112,7 @@ protected function makeDebugResult
   output String res_1;
   String debugstr,res_with_debug,res_1;
   Boolean dumpflag;
-algorithm 
+algorithm
   debugstr := Print.getString();
   res_with_debug := Util.stringAppendList(
           {res,"\n---DEBUG(",flagstr,")---\n",debugstr,"\n---/DEBUG(",
@@ -138,29 +138,29 @@ algorithm
     case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())) equation
       names = Util.listMap(cls,Absyn.className);
       res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
-    then res;      
+    then res;
   end matchcontinue;
 end makeClassDefResult;
 
-protected function isModelicaFile 
-"function: isModelicaFile 
+protected function isModelicaFile
+"function: isModelicaFile
   Succeeds if filename ends with .mo or .mof"
   input String inString;
-algorithm 
+algorithm
   _:=
   matchcontinue (inString)
     local
       list<String> lst;
       String last,filename;
     case (filename)
-      equation 
+      equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
         equality(last = "mo");
       then
         ();
     case (filename)
-      equation 
+      equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
         equality(last = "mof");
@@ -175,7 +175,7 @@ protected function isFlatModelicaFile
   input String filename;
   list<String> lst;
   String last;
-algorithm 
+algorithm
   lst := System.strtok(filename, ".");
   (last :: _) := listReverse(lst);
   equality(last := "mof");
@@ -183,7 +183,7 @@ end isFlatModelicaFile;
 
 protected function versionRequest
 algorithm
-  _:= matchcontinue() 
+  _:= matchcontinue()
     case () equation
       true = RTOpts.versionRequest();
     then ();
@@ -212,12 +212,12 @@ algorithm
  end matchcontinue;
 end showErrors;
 
-protected function translateFile 
+protected function translateFile
 "function: translateFile
   This function invokes the translator on a source file.  The
   argument should be a list with a single file name."
   input list<String> inStringLst;
-algorithm 
+algorithm
   _:=
   matchcontinue (inStringLst)
     local
@@ -236,11 +236,11 @@ algorithm
         versionRequest();
         print(Settings.getVersionNr());
       then ();
-       
-    case {f} /* A Modelica file .mo */ 
+
+    case {f} /* A Modelica file .mo */
       local String s;
         AbsynDep.Depends dep;
-      equation         
+      equation
         Debug.fcall("execstat",print, "*** Main -> entering at time: " +& realString(clock()) +& "\n" );
         isModelicaFile(f);
         p = Parser.parse(f);
@@ -252,9 +252,9 @@ algorithm
         Debug.fcall("dump", Dump.dump, p);
         s = Print.getString();
         Debug.fcall("dump",print,s);
-        p = transformFlatProgram(p,f);  
+        p = transformFlatProgram(p,f);
         p = Interactive.getTotalProgramLastClass(p);
-        
+
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
@@ -276,7 +276,7 @@ algorithm
         Debug.fcall("flatmodelica", Print.printBuf, s);
         Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
         s = Debug.fcallret("none", DAEUtil.dumpStr, d, "");
-        Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );        
+        Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
         Debug.fcall("none", Print.printBuf, s);
         Debug.fcall("daedump", DAEUtil.dump, d);
         Debug.fcall("daedump2", DAEUtil.dump2, d);
@@ -287,7 +287,7 @@ algorithm
         silent = RTOpts.silent();
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
-        Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );        
+        Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
       then
         ();
     case {f}
@@ -300,7 +300,7 @@ algorithm
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
       then
         fail();
-    case {f}  
+    case {f}
       local Integer r;
       equation
         r = System.regularFileExists(f);
@@ -311,13 +311,13 @@ algorithm
       then
         fail();
     case (_ :: (_ :: _))
-      equation 
+      equation
         Print.printErrorBuf("# Too many arguments\n");
       then
         fail();
     case {}
-      equation 
-        print("not enough arguments given to omc!\n"); 
+      equation
+        print("not enough arguments given to omc!\n");
         printUsage();
       then
         fail();
@@ -346,20 +346,20 @@ protected function fixModelicaOutput
   equations."
   input DAE.DAElist inDAElist;
   output DAE.DAElist outDAElist;
-algorithm 
+algorithm
   outDAElist:=
   matchcontinue (inDAElist)
     local
       list<DAE.Element> dae_1,dae;
       DAE.DAElist d;
     case DAE.DAE(elementLst = dae)
-      equation 
+      equation
         true = RTOpts.modelicaOutput();
         dae_1 = Inst.initVarsModelicaOutput(dae);
       then
         DAE.DAE(dae_1);
     case ((d as DAE.DAE(elementLst = dae)))
-      equation 
+      equation
         false = RTOpts.modelicaOutput();
       then
         d;
@@ -376,22 +376,22 @@ algorithm
   print("* omcOptions:\n");
   print("\t++v|+version               will print the version and exit\n");
   print("\t+q                         run in quiet mode, output nothing\n");
-  print("\t+showErrorMessages         show error messages while they happen; default to no. \n");  
-  print("\t+d=flags                   set debug flags: \n");  
-  print("\t+d=failtrace               print what function fail\n");  
+  print("\t+showErrorMessages         show error messages while they happen; default to no. \n");
+  print("\t+d=flags                   set debug flags: \n");
+  print("\t+d=failtrace               print what function fail\n");
   print("\t+d=parsedump               dump the parsing tree\n");
-  print("\t+d=parseonly               will only parse the givn file and exit\n");    
+  print("\t+d=parseonly               will only parse the givn file and exit\n");
   print("* Examples:\n");
   print("\tomc Model.mo         will produce flattened Model on standard output\n");
-  print("\t*.mo (Modelica files) \n");  
+  print("\t*.mo (Modelica files) \n");
 end printUsage;
 
-public function main 
+public function main
 "function: main
   This is the main function that the MetaModelica Compiler (MMC) runtime system calls to
   start the translation."
   input list<String> inStringLst;
-algorithm 
+algorithm
   _ := matchcontinue (inStringLst)
     local
       String ver_str,errstr;
@@ -400,14 +400,14 @@ algorithm
       String s,str;
       Interactive.InteractiveSymbolTable symbolTable;
     case args as _::_
-      equation 
+      equation
         args_1 = RTOpts.args(args);
         // non of the interactive mode was set, flatten the file
         translateFile(args_1);
       then
         ();
     case args as _::_
-      local Absyn.Program prg; 
+      local Absyn.Program prg;
       equation
         failure(_ = RTOpts.args(args));
         printUsage();
@@ -415,9 +415,9 @@ algorithm
     case {}
       equation
         printUsage();
-      then ();      
+      then ();
     case _
-      equation 
+      equation
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();

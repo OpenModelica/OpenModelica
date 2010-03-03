@@ -34,10 +34,10 @@ package BackendVarTransform
   description: BackendVarTransform is only a stub.
 
   RCS: $Id$
-  
+
   This file is a stub!"
 
-public import VarTransform; 
+public import VarTransform;
 protected import Exp;
 protected import Util;
 

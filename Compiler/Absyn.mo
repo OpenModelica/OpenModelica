@@ -38,11 +38,11 @@ package Absyn
 
   This file defines the abstract syntax for Modelica in MetaModelica Compiler (MMC).  It mainly
   contains uniontypes for constructing the abstract syntax tree
-  (AST), functions for building and altering AST nodes and a few functions 
+  (AST), functions for building and altering AST nodes and a few functions
   for printing the AST:
-  
+
   * Abstract Syntax Tree (Close to Modelica)
-     � Complete Modelica 2.2 
+     � Complete Modelica 2.2
      � Including annotations and comments
   * Primary AST for e.g. the Interactive module
      - Model editor related representations (must use annotations)
@@ -51,28 +51,28 @@ package Absyn
        - pathToCref(Path) => ComponentRef
        - joinPaths(Path, Path) => (Path)
        - etc.
-  
-   
-  Absyn.mo\'s constructors are primarily used by the walker 
+
+
+  Absyn.mo\'s constructors are primarily used by the walker
   (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
   converts it into an MetaModelica Compiler (MMC) abstract syntax tree.
- 
+
   When the AST has been built, it is normally used by SCode.mo in order to
-  build the SCode (See SCode.mo). It is also possile to send the AST do 
+  build the SCode (See SCode.mo). It is also possile to send the AST do
   the unparser (Dump.mo) in order to print it.
-  
-  For details regarding the abstract syntax tree, check out the grammar in 
+
+  For details regarding the abstract syntax tree, check out the grammar in
   the Modelica language specification.
-  
-  
+
+
   The following are the types and uniontypes that are used for the AST:"
 
 protected import System;
 
-public 
+public
 type Ident = String "An identifier, for example a variable name" ;
 
-public 
+public
 type ForIterator = tuple<Ident, Option<Exp>>
 "For Iterator -
    these are used in:
@@ -91,7 +91,7 @@ public type ForIterators = list<ForIterator>
      see 3.4.4.2 Array constructor with iterators from Specification";
 
 public
-uniontype Program 
+uniontype Program
 "- Programs, the top level construct
    A program is simply a list of class definitions declared at top
    level in the source file, combined with a within statement that
@@ -102,13 +102,13 @@ uniontype Program
     TimeStamp    globalBuildTimes "";
   end PROGRAM;
 
-   /* 
+   /*
    adrpo: 2008-11-30 !THESE SEEMS NOT TO BE USED ANYMORE!
 
    ModExtension: The following 3 nodes are not standard Modelica
-   Nodes such as BEGIN_DEFINITION and END_DEFINITION 
-   can be used for representing packages and classes that are entered piecewise, 
-   e.g., first entering the package head (as BEGIN_DEFINITION), 
+   Nodes such as BEGIN_DEFINITION and END_DEFINITION
+   can be used for representing packages and classes that are entered piecewise,
+   e.g., first entering the package head (as BEGIN_DEFINITION),
    then the contained definitions, then an end package repesented as END_DEFINITION.
 
   record BEGIN_DEFINITION
@@ -135,19 +135,19 @@ uniontype Program
 
 end Program;
 
-public 
+public
 uniontype Within "Within Clauses"
-  record WITHIN "the within clause" 
-    Path path "the path for within"; 
+  record WITHIN "the within clause"
+    Path path "the path for within";
   end WITHIN;
 
   record TOP end TOP;
 
 end Within;
 
-public 
-uniontype Info 
-"@author adrpo 
+public
+uniontype Info
+"@author adrpo
  added 2005-10-29, changed 2006-02-05
  The Info attribute provides location information for elements and classes."
   record INFO
@@ -157,7 +157,7 @@ uniontype Info
     Integer columnNumberStart "columnNumberStart" ;
     Integer lineNumberEnd "lineNumberEnd" ;
     Integer columnNumberEnd "columnNumberEnd" ;
-    TimeStamp buildTimes "Build and edit times";   
+    TimeStamp buildTimes "Build and edit times";
   end INFO;
 
 end Info;
@@ -169,10 +169,10 @@ uniontype TimeStamp
   end TIMESTAMP;
 end TimeStamp;
 
-public 
-uniontype Class 
- "A class definition consists of a name, a flag to indicate 
-  if this class is declared as partial, the declared class restriction, 
+public
+uniontype Class
+ "A class definition consists of a name, a flag to indicate
+  if this class is declared as partial, the declared class restriction,
   and the body of the declaration."
  record CLASS
     Ident name;
@@ -181,7 +181,7 @@ uniontype Class
     Boolean     encapsulatedPrefix "true if encapsulated" ;
     Restriction restriction  "Restriction" ;
     ClassDef    body;
-    Info       info    "Information: FileName is the class is defined in + 
+    Info       info    "Information: FileName is the class is defined in +
                isReadOnly bool + start line no + start column no +
                end line no + end column no";
   end CLASS;
@@ -189,12 +189,12 @@ uniontype Class
 end Class;
 
 public
-uniontype ClassDef 
-"The ClassDef type contains the definition part of a class declaration. 
- The definition is either explicit, with a list of parts 
+uniontype ClassDef
+"The ClassDef type contains the definition part of a class declaration.
+ The definition is either explicit, with a list of parts
  (public, protected, equation, and algorithm), or it is a definition
- derived from another class or an enumeration type. 
- For a derived type, the  type contains the name of the derived class 
+ derived from another class or an enumeration type.
+ For a derived type, the  type contains the name of the derived class
  and an optional array dimension and a list of modifications.
  "
   record PARTS
@@ -234,7 +234,7 @@ uniontype ClassDef
 
 end ClassDef;
 
-public 
+public
 uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
   record TPATH
     Path path;
@@ -249,8 +249,8 @@ uniontype TypeSpec "ModExtension: new MetaModelica type specification!"
 
 end TypeSpec;
 
-public 
-uniontype EnumDef 
+public
+uniontype EnumDef
   "The definition of an enumeration is either a list of literals
      or a colon, \':\', which defines a supertype of all enumerations"
   record ENUMLITERALS
@@ -261,7 +261,7 @@ uniontype EnumDef
 
 end EnumDef;
 
-public 
+public
 uniontype EnumLiteral "EnumLiteral, which is a name in an enumeration and an optional
    Comment."
   record ENUMLITERAL
@@ -271,7 +271,7 @@ uniontype EnumLiteral "EnumLiteral, which is a name in an enumeration and an opt
 
 end EnumLiteral;
 
-public 
+public
 uniontype ClassPart "A class definition contains several parts.  There are public and
   protected component declarations, type definitions and `extends\'
   clauses, collectively called elements.  There are also equation
@@ -308,7 +308,7 @@ uniontype ClassPart "A class definition contains several parts.  There are publi
 
 end ClassPart;
 
-public 
+public
 uniontype ElementItem "An element item is either an element or an annotation"
   record ELEMENTITEM
     Element  element;
@@ -320,7 +320,7 @@ uniontype ElementItem "An element item is either an element or an annotation"
 
 end ElementItem;
 
-public 
+public
 uniontype Element "Elements
   The basic element type in Modelica"
   record ELEMENT
@@ -332,10 +332,10 @@ uniontype Element "Elements
     Info                      info  "File name the class is defined in + line no + column no" ;
     Option<ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
   end ELEMENT;
-  
-  record DEFINEUNIT 
+
+  record DEFINEUNIT
     Ident name;
-    list<NamedArg> args; 
+    list<NamedArg> args;
   end DEFINEUNIT;
 
   record TEXT
@@ -347,7 +347,7 @@ uniontype Element "Elements
 
 end Element;
 
-public 
+public
 uniontype ConstrainClass "Constraining type, must be extends"
   record CONSTRAINCLASS
     ElementSpec elementSpec "elementSpec ; must be extends" ;
@@ -356,13 +356,13 @@ uniontype ConstrainClass "Constraining type, must be extends"
 
 end ConstrainClass;
 
-public 
+public
 uniontype ElementSpec "An element is something that occurs in a public or protected
     section in a class definition.  There is one constructor in the
     `ElementSpec\' type for each possible element type.  There are
     class definitions (`CLASSDEF\'), `extends\' clauses (`EXTENDS\')
     and component declarations (`COMPONENTS\').
-    
+
     As an example, if the element `extends TwoPin;\' appears
     in the source, it is represented in the AST as
     `EXTENDS(IDENT(\"TwoPin\"),{})\'.
@@ -391,7 +391,7 @@ uniontype ElementSpec "An element is something that occurs in a public or protec
 
 end ElementSpec;
 
-public 
+public
 uniontype InnerOuter "One of the keyword inner and outer CAN be given to reference an inner or
       outer component. Thus there are three disjoint possibilities."
   record INNER "an inner component"                    end INNER;
@@ -400,7 +400,7 @@ uniontype InnerOuter "One of the keyword inner and outer CAN be given to referen
   record UNSPECIFIED "a component without inner/outer" end UNSPECIFIED;
 end InnerOuter;
 
-public 
+public
 uniontype Import "Import statements, different kinds"
   // A named import is a import statement to a variable ex;
   // NAMED_IMPORT("SI",Absyn.QUALIFIED("Modelica",Absyn.IDENT("SIunits")));
@@ -410,7 +410,7 @@ uniontype Import "Import statements, different kinds"
   end NAMED_IMPORT;
 
   record QUAL_IMPORT
-    Path path "path" ; 
+    Path path "path" ;
   end QUAL_IMPORT;
 
   record UNQUAL_IMPORT
@@ -419,7 +419,7 @@ uniontype Import "Import statements, different kinds"
 
 end Import;
 
-public 
+public
 uniontype ComponentItem "Collection of component and an optional comment"
   record COMPONENTITEM
     Component component "component" ;
@@ -429,12 +429,12 @@ uniontype ComponentItem "Collection of component and an optional comment"
 
 end ComponentItem;
 
-public 
+public
 type ComponentCondition = Exp "A componentItem can have a condition that must be fulfilled if
   the component should be instantiated.
 " ;
 
-public 
+public
 uniontype Component "Some kind of Modelica entity (object or variable)"
   record COMPONENT
     Ident name "name" ;
@@ -444,7 +444,7 @@ uniontype Component "Some kind of Modelica entity (object or variable)"
 
 end Component;
 
-public 
+public
 uniontype EquationItem "Several component declarations can be grouped together in one
   `ElementSpec\' by writing them on the same line in the source.
   This type contains the information specific to one component."
@@ -459,7 +459,7 @@ uniontype EquationItem "Several component declarations can be grouped together i
 
 end EquationItem;
 
-public 
+public
 uniontype AlgorithmItem "Info specific for an algorithm item."
   record ALGORITHMITEM
     Algorithm algorithm_ "algorithm" ;
@@ -472,7 +472,7 @@ uniontype AlgorithmItem "Info specific for an algorithm item."
 
 end AlgorithmItem;
 
-public 
+public
 uniontype Equation "Information on one (kind) of equation, different constructors for different
      kinds of equations"
   record EQ_IF
@@ -507,14 +507,14 @@ uniontype Equation "Information on one (kind) of equation, different constructor
     ComponentRef functionName "functionName" ;
     FunctionArgs functionArgs "functionArgs; fcalls without return value" ;
   end EQ_NORETCALL;
-  
+
   record EQ_FAILURE
     EquationItem equ;
   end EQ_FAILURE;
 
 end Equation;
 
-public 
+public
 uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   algorithm section.  It does not describe a whole algorithm.  The
   reason this type is named like this is that the name of the
@@ -569,7 +569,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 
   record ALG_THROW
   end ALG_THROW;
-  
+
   record ALG_MATCHCASES
     list<Exp> switchCases;
   end ALG_MATCHCASES;
@@ -589,7 +589,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
 
 end Algorithm;
 
-public 
+public
 uniontype Modification "Modifications are described by the `Modification\' type.  There
   are two forms of modifications: redeclarations and component
   modifications.
@@ -601,7 +601,7 @@ uniontype Modification "Modifications are described by the `Modification\' type.
 
 end Modification;
 
-public 
+public
 uniontype ElementArg "Wrapper for things that modify elements, modifications and redeclarations"
   record MODIFICATION
     Boolean finalItem "finalItem" ;
@@ -621,7 +621,7 @@ uniontype ElementArg "Wrapper for things that modify elements, modifications and
 
 end ElementArg;
 
-public 
+public
 uniontype RedeclareKeywords "The keywords redeclare and replacable can be given in three different kombinations, each one by themself or the both combined."
   record REDECLARE end REDECLARE;
 
@@ -631,7 +631,7 @@ uniontype RedeclareKeywords "The keywords redeclare and replacable can be given 
 
 end RedeclareKeywords;
 
-public 
+public
 uniontype Each "The each keyword can be present in both MODIFICATION\'s and REDECLARATION\'s.
   - Each attribute"
   record EACH end EACH;
@@ -640,7 +640,7 @@ uniontype Each "The each keyword can be present in both MODIFICATION\'s and REDE
 
 end Each;
 
-public 
+public
 uniontype ElementAttributes "- Component attributes"
   record ATTR
     Boolean flowPrefix "flow" ;
@@ -654,7 +654,7 @@ uniontype ElementAttributes "- Component attributes"
 
 end ElementAttributes;
 
-public 
+public
 uniontype Variability "Variability"
   record VAR end VAR;
 
@@ -666,14 +666,14 @@ uniontype Variability "Variability"
 
 end Variability;
 
-public 
+public
 uniontype Direction "Direction"
   record INPUT  "direction is input"                                   end INPUT;
   record OUTPUT "direction is output"                                  end OUTPUT;
   record BIDIR  "direction is not specified, neither input nor output" end BIDIR;
 end Direction;
 
-public 
+public
 type ArrayDim = list<Subscript> "Component attributes are
   properties of components which are applied by type prefixes.
   As an example, declaring a component as `input Real x;\' will
@@ -683,7 +683,7 @@ type ArrayDim = list<Subscript> "Component attributes are
   of a component or a type definition.
 - Array dimensions" ;
 
-public 
+public
 uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   - Expressions"
   record INTEGER
@@ -706,7 +706,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Boolean value;
   end BOOL;
 
-  record BINARY   "Binary operations, e.g. a*b" 
+  record BINARY   "Binary operations, e.g. a*b"
     Exp exp1;
     Operator op;
     Exp exp2;
@@ -723,7 +723,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Exp exp2 ;
   end LBINARY;
 
-  record LUNARY  "Logical unary operations: not" 
+  record LUNARY  "Logical unary operations: not"
     Operator op "op" ;
     Exp exp "exp Relations, e.g. a >= 0" ;
   end LUNARY;
@@ -745,22 +745,22 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     ComponentRef function_ "function" ;
     FunctionArgs functionArgs ;
   end CALL;
-  
+
   // stefan
   record PARTEVALFUNCTION "Partially evaluated function"
     ComponentRef function_ "function" ;
     FunctionArgs functionArgs ;
   end PARTEVALFUNCTION;
 
-  record ARRAY   "Array construction using {, }, or array" 
+  record ARRAY   "Array construction using {, }, or array"
     list<Exp> arrayExp ;
   end ARRAY;
 
-  record MATRIX  "Matrix construction using {, } " 
+  record MATRIX  "Matrix construction using {, } "
     list<list<Exp>> matrix ;
   end MATRIX;
 
-  record RANGE  "Range expressions, e.g. 1:10 or 1:0.5:10" 
+  record RANGE  "Range expressions, e.g. 1:10 or 1:0.5:10"
     Exp start "start" ;
     Option<Exp> step "step" ;
     Exp stop "stop";
@@ -770,11 +770,11 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     list<Exp> expressions "comma-separated expressions" ;
   end TUPLE;
 
-  record END "array access operator for last element, e.g. a{end}:=1;" 
+  record END "array access operator for last element, e.g. a{end}:=1;"
   end END;
 
 
-  record CODE  "Modelica AST Code constructors - MetaModelica extension" 
+  record CODE  "Modelica AST Code constructors - MetaModelica extension"
     CodeNode code;
   end CODE;
 
@@ -784,7 +784,7 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
     Ident id " only an id " ;
     Exp exp  " expression to bind to the id ";
   end AS;
-  
+
   record CONS  "list cons or :: operator"
     Exp head " head of the list ";
     Exp rest " rest of the list ";
@@ -795,9 +795,9 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
 		Exp inputExp                 " match expression of         ";
 		list<ElementItem> localDecls " local declarations          ";
 		list<Case> cases             " case list + else in the end ";
-		Option<String> comment       " match expr comment_optional ";		
+		Option<String> comment       " match expr comment_optional ";
   end MATCHEXP;
-  
+
     // The following two are only used internaly in the compiler
   record LIST "Part of MetaModelica extension"
     list<Exp> exps;
@@ -805,20 +805,20 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
 
   record VALUEBLOCK "valueblock expression"
     list<ElementItem> localDecls "local decls";
-    ValueblockBody body "block body"; 
-    Exp result "block end result"; 
-  end VALUEBLOCK; 
-  
+    ValueblockBody body "block body";
+    Exp result "block end result";
+  end VALUEBLOCK;
+
 end Exp;
 
-public 
+public
 uniontype ValueblockBody "body of a valueblock"
    record VALUEBLOCKALGORITHMS
-      list<AlgorithmItem> algorithmBody "algorithm body";	
+      list<AlgorithmItem> algorithmBody "algorithm body";
    end VALUEBLOCKALGORITHMS;
 
    record VALUEBLOCKMATCHCASE "a case in a {match,matchcontinue} expression"
-      list<AlgorithmItem> patternMatching "does pattern matching against the input variables";	
+      list<AlgorithmItem> patternMatching "does pattern matching against the input variables";
       list<EquationItem>  equationBody "need to be translated from equations to algorithms";
       list<AlgorithmItem> resultAssignments "assigns the result to the result variables";
    end VALUEBLOCKMATCHCASE;
@@ -826,8 +826,8 @@ end ValueblockBody;
 
 
 uniontype Case "case in match or matchcontinue"
-  record CASE 
-    Exp pattern " patterns to be matched "; 
+  record CASE
+    Exp pattern " patterns to be matched ";
 		list<ElementItem> localDecls " local decls ";
 		list<EquationItem>  equations " equations [] for no equations ";
 		Exp result " result ";
@@ -840,12 +840,12 @@ uniontype Case "case in match or matchcontinue"
 		Exp result " result ";
 		Option<String> comment " comment after case like: case pattern string_comment ";
   end ELSE;
-end Case;           
+end Case;
 
 
 uniontype MatchType
   record MATCH end MATCH;
-  record MATCHCONTINUE end MATCHCONTINUE;	       
+  record MATCHCONTINUE end MATCHCONTINUE;
 end MatchType;
 
 
@@ -1023,7 +1023,7 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_PACKAGE end R_PACKAGE;
   record R_FUNCTION end R_FUNCTION;
   record R_OPERATOR "an operator" end R_OPERATOR;
-  record R_OPERATOR_FUNCTION "an operator function" end R_OPERATOR_FUNCTION;    
+  record R_OPERATOR_FUNCTION "an operator function" end R_OPERATOR_FUNCTION;
   record R_ENUMERATION end R_ENUMERATION;
   record R_PREDEFINED_INT end R_PREDEFINED_INT;
   record R_PREDEFINED_REAL end R_PREDEFINED_REAL;
@@ -1036,11 +1036,11 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_METARECORD "Metamodelica record"  //MetaModelica extension, added by simbj
     Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
-  end R_METARECORD; 
+  end R_METARECORD;
   record R_UNKNOWN "Helper restriction" end R_UNKNOWN; /* added by simbj */
 end Restriction;
 
-public 
+public
 uniontype Annotation "An Annotation is a class_modification.
   - Annotation"
   record ANNOTATION
@@ -1049,7 +1049,7 @@ uniontype Annotation "An Annotation is a class_modification.
 
 end Annotation;
 
-public 
+public
 uniontype Comment "Comment"
   record COMMENT
     Option<Annotation> annotation_ "annotation" ;
@@ -1058,7 +1058,7 @@ uniontype Comment "Comment"
 
 end Comment;
 
-public 
+public
 uniontype ExternalDecl "Declaration of an external function call - ExternalDecl"
   record EXTERNALDECL
     Option<Ident>        funcName "The name of the external function" ;
@@ -1072,7 +1072,7 @@ end ExternalDecl;
 
 
 
-/* "From here down, only Absyn helper functions should be present. 
+/* "From here down, only Absyn helper functions should be present.
  Thus, no actual absyn uniontype definitions." */
 
 protected import Util;
@@ -1083,7 +1083,7 @@ public constant TimeStamp dummyTimeStamp = TIMESTAMP(0.0,0.0);
 
 public constant Info dummyInfo = INFO("",false,0,0,0,0,dummyTimeStamp);
 
-public function getNewTimeStamp "Function: getNewTimeStamp 
+public function getNewTimeStamp "Function: getNewTimeStamp
 generate a new timestamp with edittime>buildtime.
 "
 output TimeStamp ts;
@@ -1109,7 +1109,7 @@ algorithm ots := matchcontinue(its,which)
       its = setTimeStampBuild(its,timer);
     then
       its;
-end matchcontinue;  
+end matchcontinue;
 end setTimeStampBool;
 
 // stefan
@@ -1437,7 +1437,7 @@ algorithm
   end matchcontinue;
 end traverseExpAlgItemTupleList;
 
-public function traverseExp 
+public function traverseExp
 " Traverses all subexpressions of an Exp expression.
   Takes a function and an extra argument passed through the traversal.
   NOTE:This function was copied from Exp.traverseExp."
@@ -1451,7 +1451,7 @@ public function traverseExp
     replaceable type Type_a subtypeof Any;
   end FuncTypeTplExpType_aToTplExpType_a;
   replaceable type Type_a subtypeof Any;
-algorithm 
+algorithm
   outTplExpTypeA:=
   matchcontinue (inExp,inFuncTypeTplExpTypeAToTplExpTypeA,inTypeA)
     local
@@ -1464,43 +1464,43 @@ algorithm
       Boolean t_1,b_1,t,b,scalar_1,scalar;
       Integer i_1,i;
       Ident id_1,id;
-    case ((e as UNARY(op,e1)),rel,ext_arg) /* unary */ 
-      equation 
+    case ((e as UNARY(op,e1)),rel,ext_arg) /* unary */
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((UNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((UNARY(op_1,e1_1),ext_arg_2));
-    case ((e as BINARY(e1,op,e2)),rel,ext_arg) /* binary */ 
-      equation 
+    case ((e as BINARY(e1,op,e2)),rel,ext_arg) /* binary */
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((BINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((BINARY(e1_1,op_1,e2_1),ext_arg_3));
-    case ((e as LUNARY(op,e1)),rel,ext_arg) /* logic unary */ 
-      equation 
+    case ((e as LUNARY(op,e1)),rel,ext_arg) /* logic unary */
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((LUNARY(op_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((LUNARY(op_1,e1_1),ext_arg_2));
-    case ((e as LBINARY(e1,op,e2)),rel,ext_arg) /* logic binary */ 
-      equation 
+    case ((e as LBINARY(e1,op,e2)),rel,ext_arg) /* logic binary */
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((LBINARY(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((LBINARY(e1_1,op_1,e2_1),ext_arg_3));
-    case ((e as RELATION(e1,op,e2)),rel,ext_arg) /* RELATION */ 
-      equation 
+    case ((e as RELATION(e1,op,e2)),rel,ext_arg) /* RELATION */
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((RELATION(_,op_1,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((RELATION(e1_1,op_1,e2_1),ext_arg_3));
 
-    case ((e as IFEXP(e1,e2,e3,elseIfBranch)),rel,ext_arg) /* if expression */ 
+    case ((e as IFEXP(e1,e2,e3,elseIfBranch)),rel,ext_arg) /* if expression */
       local list<tuple<Exp,Exp>> elseIfBranch,elseIfBranch1;
-      equation 
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
@@ -1508,16 +1508,16 @@ algorithm
         ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
-   
+
     case ((e as CALL(cfn,fargs)),rel,ext_arg)
       local FunctionArgs fargs,fargs1,fargs2; ComponentRef cfn,cfn_1; Exp e_temp;
-      equation 
+      equation
         ((fargs1,ext_arg_1)) = traverseExpFunctionArgs(fargs, rel, ext_arg);
         e_temp = CALL(cfn,fargs1);
         ((CALL(cfn_1,fargs2),ext_arg_2)) = rel((e_temp,ext_arg_1));
       then
         ((CALL(cfn_1,fargs2),ext_arg_2));
-        
+
     //stefan
     case ((e as PARTEVALFUNCTION(cfn,fargs)),rel,ext_arg)
       local
@@ -1528,31 +1528,31 @@ algorithm
         ((PARTEVALFUNCTION(cfn_1,_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((PARTEVALFUNCTION(cfn_1,fargs1),ext_arg_2));
-        
+
     case ((e as ARRAY(expl)),rel,ext_arg)
-      equation 
+      equation
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
         ((ARRAY(_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((ARRAY(expl_1),ext_arg_2));
-        
+
     case ((e as MATRIX(mexpl)),rel,ext_arg)
       local list<list<Exp>> mexpl,mexpl1;
-      equation 
+      equation
         (mexpl1,ext_arg_1) = Util.listlistFoldMap(mexpl,rel,ext_arg);
         ((MATRIX(_),ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((MATRIX(mexpl1),ext_arg_2));
-        
+
     case ((e as RANGE(e1,NONE,e2)),rel,ext_arg)
-      equation 
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((RANGE(_,_,_),ext_arg_3)) = rel((e,ext_arg_2));
       then
         ((RANGE(e1_1,NONE,e2_1),ext_arg_3));
     case ((e as RANGE(e1,SOME(e2),e3)),rel,ext_arg)
-      equation 
+      equation
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
@@ -1560,13 +1560,13 @@ algorithm
       then
         ((RANGE(e1_1,SOME(e3),e2_1),ext_arg_4));
     case ((e as TUPLE(expl)),rel,ext_arg)
-      equation 
+      equation
         (expl_1,ext_arg_1) = Util.listFoldMap(expl, rel, ext_arg);
         ((e_1,ext_arg_2)) = rel((e,ext_arg_1));
       then
         ((TUPLE(expl_1),ext_arg_2));
     case (e,rel,ext_arg)
-      equation 
+      equation
         ((e_1,ext_arg_1)) = rel((e,ext_arg));
       then
         ((e_1,ext_arg_1));
@@ -1604,7 +1604,7 @@ algorithm
   end matchcontinue;
 end traverseExpList;
 
-public function traverseExpElseIfBranch  
+public function traverseExpElseIfBranch
 "function traverseExpElseIfBranch
   Help function for traverseExp"
   input list<tuple<Exp,Exp>> inLst;
@@ -1630,7 +1630,7 @@ algorithm
   end matchcontinue;
 end traverseExpElseIfBranch;
 
-public function traverseExpFunctionArgs  
+public function traverseExpFunctionArgs
 "function traverseExpFunctionArgs
   Help function for traverseExp"
   input FunctionArgs inArgs;
@@ -1649,17 +1649,17 @@ algorithm
       list<NamedArg> nargs;
       list<Exp> expl,expl_1;
       ForIterators iterators;
-    case(FUNCTIONARGS(expl,nargs),rel,ext_arg) 
+    case(FUNCTIONARGS(expl,nargs),rel,ext_arg)
       equation
         ((expl_1,ext_arg)) = traverseExpPosArgs(expl,rel,ext_arg);
         ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
       then ((FUNCTIONARGS(expl_1,nargs),ext_arg));
- 	      
+
     case(inArgs as FOR_ITER_FARG(exp = forExp,iterators=iterators),rel,ext_arg)
       equation
         ((e1,ext_arg)) = traverseExp(forExp, rel, ext_arg);
         /* adrpo: TODO! travese iterators! */
-      then((FOR_ITER_FARG(e1,iterators),ext_arg)); 	    
+      then((FOR_ITER_FARG(e1,iterators),ext_arg));
   end matchcontinue;
 end traverseExpFunctionArgs;
 
@@ -1677,7 +1677,7 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
 algorithm
   outTplExpTypeA:= matchcontinue(nargs,rel,ext_arg)
  	local Exp e1,e2,e11,e21;
- 	 	Ident id; 	  
+ 	 	Ident id;
  	  list<NamedArg> nargs;
  	  case({},rel,ext_arg)
 		then (({},ext_arg));
@@ -1702,7 +1702,7 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
 algorithm
   outTplExpTypeA:= matchcontinue(pargs,rel,ext_arg)
  	local Exp e1,e2,e11,e21;
- 	 	Ident id; 	  
+ 	 	Ident id;
  	  list<Exp> pargs;
  	  case({},rel,ext_arg)
 		then (({},ext_arg));
@@ -1716,10 +1716,10 @@ end traverseExpPosArgs;
 public function makeIdentPathFromString ""
 input String s;
 output Path p;
-algorithm p := IDENT(s);  
+algorithm p := IDENT(s);
 end makeIdentPathFromString;
 
-public function setTimeStampEdit "Function: getNewTimeStamp 
+public function setTimeStampEdit "Function: getNewTimeStamp
 Update current TimeStamp with a new Edit-time.
 "
 input TimeStamp its;
@@ -1734,10 +1734,10 @@ algorithm ots := matchcontinue(its,editTime)
       ts = TIMESTAMP(buildTime,editTime);
     then
       ts;
-end matchcontinue;  
+end matchcontinue;
 end setTimeStampEdit;
 
-public function setTimeStampBuild "Function: getNewTimeStamp 
+public function setTimeStampBuild "Function: getNewTimeStamp
 Update current TimeStamp with a new Build-time.
 "
 input TimeStamp its;
@@ -1752,7 +1752,7 @@ algorithm ots := matchcontinue(its,buildTime)
       ts = TIMESTAMP(buildTime,editTime);
     then
       ts;
-end matchcontinue;  
+end matchcontinue;
 end setTimeStampBuild;
 
 public function className "returns the class name of a Class as a Path"
@@ -1770,14 +1770,14 @@ public function elementSpecName "function: elementSpecName
   function extracts this name."
   input ElementSpec inElementSpec;
   output Ident outIdent;
-algorithm 
+algorithm
   outIdent:=
   matchcontinue (inElementSpec)
     local Ident n;
-    case CLASSDEF(class_ = CLASS(name = n)) then n; 
-    case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n; 
+    case CLASSDEF(class_ = CLASS(name = n)) then n;
+    case COMPONENTS(components = {COMPONENTITEM(component = COMPONENT(name = n))}) then n;
     case EXTENDS(path = _)
-      equation 
+      equation
         print("#- Absyn.elementSpecName EXTENDS\n");
       then
         fail();
@@ -1789,18 +1789,18 @@ This function takes a Absyn.Import and prints it as a flat-string.
 "
   input Import imp;
   output String ostring;
-algorithm ostring := matchcontinue(imp) 
+algorithm ostring := matchcontinue(imp)
   local Path path; String name;
   case(NAMED_IMPORT(name,_)) then name;
   case(QUAL_IMPORT(path))
     equation
       name = pathString(path);
-    then name; 
+    then name;
   case(UNQUAL_IMPORT(path))
     equation
       name = pathString(path);
     then name;
-end matchcontinue; 
+end matchcontinue;
 end printImportString;
 
 public function expCref "returns the componentRef of an expression if matches."
@@ -1825,23 +1825,23 @@ public function expComponentRefStr ""
 algorithm outString := matchcontinue(aexp)
   local ComponentRef cr;
   case(CREF(cr)) then printComponentRefStr(cr);
-  case(_) equation print("Error input for exp_Component_Ref_Str was not a string\n"); then fail();   
-end matchcontinue; 
+  case(_) equation print("Error input for exp_Component_Ref_Str was not a string\n"); then fail();
+end matchcontinue;
 end expComponentRefStr;
 
 public function printComponentRefStr ""
 input ComponentRef cr;
 output String ostring;
 algorithm ostring := matchcontinue(cr)
-  local 
-  String s1,s2; 
+  local
+  String s1,s2;
   ComponentRef child;
   case(CREF_IDENT(s1,_)) then s1;
   case(CREF_QUAL(s1,_,child))
-    equation 
+    equation
     s2 = printComponentRefStr(child);
     s1 = s1 +& "." +& s2;
-then s1;    
+then s1;
 end matchcontinue;
 end printComponentRefStr;
 
@@ -1865,16 +1865,16 @@ algorithm ob := matchcontinue(a,b)
     equation
       true = ModUtil.pathEqual(p1,p2);
       true = Util.isListEqualWithCompareFunc(lst1,lst2,typeSpecEqual);
-      true = optArrayDimEqual(oad1,oad2);      
+      true = optArrayDimEqual(oad1,oad2);
       then
         true;
-  case(_,_) then false;  
-end matchcontinue; 
+  case(_,_) then false;
+end matchcontinue;
 end typeSpecEqual;
 
 public function optArrayDimEqual "
-Author BZ 
-helperfunction for typeSpecEqual 
+Author BZ
+helperfunction for typeSpecEqual
 "
   input Option<ArrayDim> oad1,oad2;
   output Boolean b;
@@ -1882,7 +1882,7 @@ algorithm b:= matchcontinue(oad1,oad2)
   local
     list<Subscript> ad1,ad2;
   case(SOME(ad1),SOME(ad2))
-    equation 
+    equation
     true = Util.isListEqualWithCompareFunc(ad1,ad2,subscriptEqual);
     then true;
   case(NONE,NONE) then true;
@@ -1892,9 +1892,9 @@ end optArrayDimEqual;
 
 public function typeSpecPathString "function: pathString
   This function simply converts a Path to a string."
-  input TypeSpec tp;  
+  input TypeSpec tp;
   output String s;
-algorithm s := matchcontinue(tp)  
+algorithm s := matchcontinue(tp)
   local Path p;
   case(TCOMPLEX(path = p)) then pathString(p);
   case(TPATH(path = p)) then pathString(p);
@@ -1905,8 +1905,8 @@ public function typeSpecPath
 "convert TypeSpec to Path"
   input TypeSpec tp;
   output Path p;
-algorithm   
-  p := matchcontinue(tp)  
+algorithm
+  p := matchcontinue(tp)
     local Path p;
     case(TCOMPLEX(path = p)) then p;
     case(TPATH(path = p)) then p;
@@ -1917,7 +1917,7 @@ public function pathString "function: pathString
   This function simply converts a Path to a string."
   input Path path;
   output String s;
-algorithm 
+algorithm
   s := pathString2(path, ".");
 end pathString;
 
@@ -1925,35 +1925,35 @@ public function optPathString "function: optPathString
   Returns a path converted to string or an empty string if nothing exist"
   input Option<Path> inPathOption;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inPathOption)
     local
       Ident str;
       Path p;
-    case (NONE) then ""; 
+    case (NONE) then "";
     case (SOME(p))
-      equation 
+      equation
         str = pathString(p);
       then
         str;
   end matchcontinue;
 end optPathString;
 
-public function pathString2 "function: 
+public function pathString2 "function:
   Helper function to pathString"
   input Path inPath;
   input String inString;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inPath,inString)
     local
       Ident s,ns,s1,ss,str;
       Path n;
-    case (IDENT(name = s),_) then s; 
+    case (IDENT(name = s),_) then s;
     case (QUALIFIED(name = s,path = n),str)
-      equation 
+      equation
         ns = pathString2(n, str);
         s1 = stringAppend(s, str);
         ss = stringAppend(s1, ns);
@@ -1976,28 +1976,28 @@ algorithm
   id1 := pathLastIdent(stripLast(p));
   twoLast := QUALIFIED(id1,IDENT(id2));
 end pathTwoLastIdents;
-  
+
 public function pathLastIdent "function: pathLastIdent
   Returns the last ident (After last dot) in a path"
   input Path inPath;
   output Ident outIdent;
-algorithm 
+algorithm
   outIdent:=
   matchcontinue (inPath)
     local
       Ident res,n;
       Path p;
      case (FULLYQUALIFIED(path = p))
-      equation 
+      equation
         res = pathLastIdent(p);
       then
         res;
     case (QUALIFIED(path = p))
-      equation 
+      equation
         res = pathLastIdent(p);
       then
         res;
-    case (IDENT(name = n)) then n; 
+    case (IDENT(name = n)) then n;
   end matchcontinue;
 end pathLastIdent;
 
@@ -2005,15 +2005,15 @@ public function pathFirstIdent "function: pathFirstIdent
   Returns the first ident (before first dot) in a path"
   input Path inPath;
   output Ident outIdent;
-algorithm 
+algorithm
   outIdent:=
   matchcontinue (inPath)
     local
       Ident n;
       Path p;
-    case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p); 
-    case (QUALIFIED(name = n,path = p)) then n; 
-    case (IDENT(name = n)) then n; 
+    case (FULLYQUALIFIED(path = p)) then pathFirstIdent(p);
+    case (QUALIFIED(name = n,path = p)) then n;
+    case (IDENT(name = n)) then n;
   end matchcontinue;
 end pathFirstIdent;
 
@@ -2024,13 +2024,13 @@ public function pathSuffixOf "returns true if suffix_path is a suffix of path"
 algorithm
   res := matchcontinue(suffix_path,path)
   local Path p;
-    case(suffix_path,path) 
+    case(suffix_path,path)
       equation
       true = ModUtil.pathEqual(suffix_path,path);
       then true;
-    case(suffix_path,FULLYQUALIFIED(path = p)) 
+    case(suffix_path,FULLYQUALIFIED(path = p))
       then pathSuffixOf(suffix_path,p);
-    case(suffix_path,QUALIFIED(name=_,path = p)) 
+    case(suffix_path,QUALIFIED(name=_,path = p))
       then pathSuffixOf(suffix_path,p);
     case(_,_) then false;
   end matchcontinue;
@@ -2043,15 +2043,15 @@ algorithm outPaths := matchcontinue(path)
     local
       String n;
       Path p;
-      list<String> strings; 
-    case (FULLYQUALIFIED(path = p)) then pathToStringList(p); 
-    case (QUALIFIED(name = n,path = p)) 
+      list<String> strings;
+    case (FULLYQUALIFIED(path = p)) then pathToStringList(p);
+    case (QUALIFIED(name = n,path = p))
       equation
         strings = pathToStringList(p);
         strings = listAppend(strings,{n});
-        then 
-          strings; 
-    case (IDENT(name = n)) then {n}; 
+        then
+          strings;
+    case (IDENT(name = n)) then {n};
 end matchcontinue;
 end pathToStringList;
 
@@ -2062,11 +2062,11 @@ public function pathPrefixOf "returns true if prefix_path is a prefix of path"
 algorithm
   res := matchcontinue(prefix_path,path)
   local Path p;
-    case(prefix_path,path) 
+    case(prefix_path,path)
       equation
       true = ModUtil.pathEqual(prefix_path,path);
       then true;
-    case(prefix_path,path) 
+    case(prefix_path,path)
       then pathPrefixOf(prefix_path,stripLast(path));
     case(_,_) then false;
   end matchcontinue;
@@ -2080,19 +2080,19 @@ public function removePrefix "removes the prefix_path from path, and returns the
 algorithm
   newPath := matchcontinue(prefix_path,path)
   local Path p,p2; Ident id1,id2;
-    case (p,FULLYQUALIFIED(p2)) 
+    case (p,FULLYQUALIFIED(p2))
       then removePrefix(p,p2);
     case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) equation
       equality(id1=id2);
       then removePrefix(p,p2);
       case(IDENT(id1),QUALIFIED(name=id2,path=p2)) equation
         equality(id1=id2);
-        then p2;          
+        then p2;
   end matchcontinue;
 end removePrefix;
 
 public function pathContains "
-Author BZ, 
+Author BZ,
 checks if one Absyn.IDENT(..) is contained in path.
 "
 input Path p1,p2;
@@ -2104,12 +2104,12 @@ algorithm b := matchcontinue(p1,p2)
     Boolean b1,b2;
   case(IDENT(str1),IDENT(str2))
       then stringEqual(str1,str2);
-  case(QUALIFIED(str1,qp),(p2 as IDENT(str2))) 
+  case(QUALIFIED(str1,qp),(p2 as IDENT(str2)))
     equation
       b1 = stringEqual(str1,str2);
       b2 = pathContains(qp,p2);
       b1 = boolOr(b1,b2);
-      then 
+      then
         b1;
   case(FULLYQUALIFIED(qp),p2) then pathContains(qp,p2);
   end matchcontinue;
@@ -2138,16 +2138,16 @@ algorithm
       equation
         ident = pathLastIdent(path);
         newPath = stripLast(path);
-        newPath=pathContainedIn(subPath,newPath);    
+        newPath=pathContainedIn(subPath,newPath);
       then joinPaths(newPath,IDENT(ident));
-       
+
         // strip last ident of subpath and recursively check if suffix.
     case (subPath,path)
       local Ident ident; Path newSubPath;
       equation
         ident = pathLastIdent(subPath);
         newSubPath = stripLast(subPath);
-        newSubPath=pathContainedIn(newSubPath,path);    
+        newSubPath=pathContainedIn(newSubPath,path);
       then joinPaths(newSubPath,IDENT(ident));
   end matchcontinue;
 end pathContainedIn;
@@ -2176,12 +2176,12 @@ end matchcontinue;
 end getCrefsFromSubs;
 
 public function getCrefFromExp "
-  Returns a flattened list of the 
+  Returns a flattened list of the
   component references in an expression"
   input Exp inExp;
   input Boolean checkSubs;
   output list<ComponentRef> outComponentRefLst;
-algorithm 
+algorithm
   outComponentRefLst:=
   matchcontinue (inExp,checkSubs)
     local
@@ -2194,54 +2194,54 @@ algorithm
       list<list<ComponentRef>> res2;
       list<ComponentCondition> expl;
       list<list<ComponentCondition>> expll;
-    case (INTEGER(value = _),checkSubs) then {}; 
-    case (REAL(value = _),checkSubs) then {}; 
-    case (STRING(value = _),checkSubs) then {}; 
-    case (BOOL(value = _),checkSubs) then {}; 
-    case (CREF(componentRef = cr),false) then {cr}; 
+    case (INTEGER(value = _),checkSubs) then {};
+    case (REAL(value = _),checkSubs) then {};
+    case (STRING(value = _),checkSubs) then {};
+    case (BOOL(value = _),checkSubs) then {};
+    case (CREF(componentRef = cr),false) then {cr};
     case (CREF(componentRef = (cr as WILD)),_) then {};
-      
-      case (CREF(componentRef = (cr)),true) 
+
+      case (CREF(componentRef = (cr)),true)
         local
           list<Subscript> subs;
         equation
           subs = getSubsFromCref(cr);
-          l1 = getCrefsFromSubs(subs);          
+          l1 = getCrefsFromSubs(subs);
       then cr::l1;
-      
+
     case (BINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
-      equation 
+      equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
     case (UNARY(op = op,exp = e1),checkSubs)
-      equation 
+      equation
         res = getCrefFromExp(e1,checkSubs);
       then
         res;
     case (LBINARY(exp1 = e1,op = op,exp2 = e2),checkSubs)
-      equation 
+      equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
     case (LUNARY(op = op,exp = e1),checkSubs)
-      equation 
+      equation
         res = getCrefFromExp(e1,checkSubs);
       then
         res;
     case (RELATION(exp1 = e1,op = op,exp2 = e2),checkSubs)
-      equation 
+      equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
     case (IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3,elseIfBranch = e4),checkSubs)
-      equation 
+      equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res1 = listAppend(l1, l2);
@@ -2250,7 +2250,7 @@ algorithm
       then
         res;
     case (CALL(functionArgs = farg),checkSubs)
-      equation 
+      equation
         res = getCrefFromFarg(farg,checkSubs) "res = Util.listMap(expl,get_cref_from_exp)" ;
       then
         res;
@@ -2261,21 +2261,21 @@ algorithm
         res;
     case (ARRAY(arrayExp = expl),checkSubs)
       local list<list<ComponentRef>> res1;
-      equation 
+      equation
         res1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
         res = Util.listFlatten(res1);
       then
         res;
     case (MATRIX(matrix = expll),checkSubs)
       local list<list<list<ComponentRef>>> res1;
-      equation 
+      equation
         res1 = Util.listListMap1(expll, getCrefFromExp,checkSubs);
         res2 = Util.listFlatten(res1);
         res = Util.listFlatten(res2);
       then
         res;
     case (RANGE(start = e1,step = SOME(e3),stop = e2),checkSubs)
-      equation 
+      equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res1 = listAppend(l1, l2);
@@ -2284,17 +2284,17 @@ algorithm
       then
         res;
     case (RANGE(start = e1,step = NONE,stop = e2),checkSubs)
-      equation 
+      equation
         l1 = getCrefFromExp(e1,checkSubs);
         l2 = getCrefFromExp(e2,checkSubs);
         res = listAppend(l1, l2);
       then
         res;
     case (END,checkSubs) then {};
-        
+
     case (TUPLE(expressions = expl),checkSubs)
       local list<list<ComponentRef>> crefll;
-      equation 
+      equation
         crefll = Util.listMap1(expl,getCrefFromExp,checkSubs);
         res = Util.listFlatten(crefll);
       then
@@ -2303,7 +2303,7 @@ algorithm
 end getCrefFromExp;
 
 public function getCrefFromFarg "function: getCrefFromFarg
-  Returns the flattened list of all component references 
+  Returns the flattened list of all component references
   present in a list of function arguments."
   input FunctionArgs inFunctionArgs;
   input Boolean checkSubs;
@@ -2315,7 +2315,7 @@ algorithm outComponentRefLst := matchcontinue (inFunctionArgs,checkSubs)
       list<ComponentCondition> expl;
       list<NamedArg> nargl;
     case (FUNCTIONARGS(args = expl,argNames = nargl),checkSubs)
-      equation 
+      equation
         l1 = Util.listMap1(expl, getCrefFromExp,checkSubs);
         fl1 = Util.listFlatten(l1);
         l2 = Util.listMap1(nargl, getCrefFromNarg,checkSubs);
@@ -2585,7 +2585,7 @@ algorithm
         cdr_1 = setAlgorithmItems2(algs,cdr);
       then part_1 :: cdr_1;
   end matchcontinue;
-end setAlgorithmItems2;      
+end setAlgorithmItems2;
 
 // stefan
 public function extractArgs
@@ -2629,7 +2629,7 @@ algorithm
 end getNamedFuncArgNamesAndValues;
 
 protected function getCrefFromNarg "function: getCrefFromNarg
-  Returns the flattened list of all component references 
+  Returns the flattened list of all component references
   present in a list of named function arguments."
   input NamedArg inNamedArg;
   input Boolean checkSubs;
@@ -2639,7 +2639,7 @@ algorithm outComponentRefLst := matchcontinue (inNamedArg,checkSubs)
       list<ComponentRef> res;
       ComponentCondition exp;
     case (NAMEDARG(argValue = exp),checkSubs)
-      equation 
+      equation
         res = getCrefFromExp(exp,checkSubs);
       then
         res;
@@ -2651,15 +2651,15 @@ public function joinPaths "function: joinPaths
   input Path inPath1;
   input Path inPath2;
   output Path outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inPath1,inPath2)
     local
       Ident str;
       Path p2,p_1,p;
-    case (IDENT(name = str),p2) then QUALIFIED(str,p2); 
+    case (IDENT(name = str),p2) then QUALIFIED(str,p2);
     case (QUALIFIED(name = str,path = p),p2)
-      equation 
+      equation
         p_1 = joinPaths(p, p2);
       then
         QUALIFIED(str,p_1);
@@ -2673,15 +2673,15 @@ public function joinPathsOpt "function: joinPathsOpt
   input Option<Path> inPath1;
   input Path inPath2;
   output Path outPath;
-algorithm 
+algorithm
   outPath := matchcontinue (inPath1,inPath2)
     local
       Ident str;
       Path p2,p_1,p;
     case (NONE(), p2) then p2;
-    case (SOME(IDENT(name = str)),p2) then QUALIFIED(str,p2); 
+    case (SOME(IDENT(name = str)),p2) then QUALIFIED(str,p2);
     case (SOME(QUALIFIED(name = str,path = p)),p2)
-      equation 
+      equation
         p_1 = joinPaths(p, p2);
       then
         QUALIFIED(str,p_1);
@@ -2691,17 +2691,17 @@ algorithm
 end joinPathsOpt;
 
 public function selectPathsOpt "function: selectPathsOpt
-  This function selects the second path when the first one 
+  This function selects the second path when the first one
   is NONE otherwise it will select the first one."
   input Option<Path> inPath1;
   input Path inPath2;
   output Path outPath;
-algorithm 
+algorithm
   outPath := matchcontinue (inPath1,inPath2)
     local
       Path p;
     case (NONE(), p) then p;
-    case (SOME(p),_) then p; 
+    case (SOME(p),_) then p;
   end matchcontinue;
 end selectPathsOpt;
 
@@ -2714,7 +2714,7 @@ Appends a path to optional 'base'-path.
   output Path mergedPath;
 algorithm mergedPath := matchcontinue(basePath, lastPath)
   case(NONE,lastPath) then lastPath;
-  case(SOME(mergedPath), lastPath) then pathAppendList({mergedPath,lastPath}); 
+  case(SOME(mergedPath), lastPath) then pathAppendList({mergedPath,lastPath});
 end matchcontinue;
 end optPathAppend;
 
@@ -2723,16 +2723,16 @@ public function pathAppendList "function: pathAppendList
   This function joins a path list"
   input list<Path> inPathLst;
   output Path outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inPathLst)
     local
       Path path,res_path,first;
       list<Path> rest;
-    case ({}) then IDENT(""); 
-    case ((path :: {})) then path; 
+    case ({}) then IDENT("");
+    case ((path :: {})) then path;
     case ((first :: rest))
-      equation 
+      equation
         path = pathAppendList(rest);
         res_path = joinPaths(first, path);
       then
@@ -2741,20 +2741,20 @@ algorithm
 end pathAppendList;
 
 public function stripLast "function: stripLast
-  Returns the path given as argument to 
+  Returns the path given as argument to
   the function minus the last ident."
   input Path inPath;
   output Path outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inPath)
     local
       Ident str;
       Path p_1,p;
-    case (IDENT(name = _)) then fail(); 
-    case (QUALIFIED(name = str,path = IDENT(name = _))) then IDENT(str); 
+    case (IDENT(name = _)) then fail();
+    case (QUALIFIED(name = str,path = IDENT(name = _))) then IDENT(str);
     case (QUALIFIED(name = str,path = p))
-      equation 
+      equation
         p_1 = stripLast(p);
       then
         QUALIFIED(str,p_1);
@@ -2765,21 +2765,21 @@ algorithm
 end stripLast;
 
 public function crefStripLast "function: stripLast
-  Returns the path given as argument to 
+  Returns the path given as argument to
   the function minus the last ident."
   input ComponentRef inPath;
   output ComponentRef outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inPath)
     local
       Ident str;
       ComponentRef p_1,p;
       list<Subscript> subs;
-    case (CREF_IDENT(name = _)) then fail(); 
-    case (CREF_QUAL(name = str,subScripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs); 
+    case (CREF_IDENT(name = _)) then fail();
+    case (CREF_QUAL(name = str,subScripts = subs, componentRef = CREF_IDENT(name = _))) then CREF_IDENT(str,subs);
     case (CREF_QUAL(name = str,subScripts = subs,componentRef = p))
-      equation 
+      equation
         p_1 = crefStripLast(p);
       then
         CREF_QUAL(str,subs,p_1);
@@ -2796,17 +2796,17 @@ qualified part, and ident part (all_but_last, last);
   output Path outPath1;
   output Path outPath2;
 algorithm (outPath1,outPath2) := matchcontinue(inPath)
-  local 
+  local
     Path qPath,curPath,identPath;
     String s1,s2;
   case (QUALIFIED(name = s1,path = IDENT(name = s2))) then(IDENT(s1),IDENT(s2));
   case(QUALIFIED(name=s1, path=qPath)) equation
     (curPath,identPath) = splitQualAndIdentPath(qPath);
   then (QUALIFIED(s1,curPath),identPath);
-  case(FULLYQUALIFIED(qPath)) 
+  case(FULLYQUALIFIED(qPath))
     equation
     (curPath,identPath) = splitQualAndIdentPath(qPath);
-    then 
+    then
        (curPath,identPath);
   case(qPath)
     equation
@@ -2814,20 +2814,20 @@ algorithm (outPath1,outPath2) := matchcontinue(inPath)
     then
       fail();
   case(_) equation print(" failure in splitQualAndIdentPath\n"); then fail();
-end matchcontinue; 
+end matchcontinue;
 end splitQualAndIdentPath;
 
 public function stripFirst "function: stripFirst
-  Returns the path given as argument 
+  Returns the path given as argument
   to the function minus the first ident."
   input Path inPath;
   output Path outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inPath)
     local
       Path p;
-    case (QUALIFIED(name = _,path = p)) then p; 
+    case (QUALIFIED(name = _,path = p)) then p;
     case(FULLYQUALIFIED(p)) then stripFirst(p);
   end matchcontinue;
 end stripFirst;
@@ -2837,16 +2837,16 @@ public function crefToPath "function: crefToPath
   If the component reference contains subscripts, it will silently fail."
   input ComponentRef inComponentRef;
   output Path outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inComponentRef)
     local
       Ident i;
       Path p;
       ComponentRef c;
-    case CREF_IDENT(name = i,subscripts = {}) then IDENT(i); 
+    case CREF_IDENT(name = i,subscripts = {}) then IDENT(i);
     case CREF_QUAL(name = i,subScripts = {},componentRef = c)
-      equation 
+      equation
         p = crefToPath(c);
       then
         QUALIFIED(i,p);
@@ -2857,26 +2857,26 @@ public function pathToCref "function: pathToCref
   This function converts a Path to a ComponentRef."
   input Path inPath;
   output ComponentRef outComponentRef;
-algorithm 
+algorithm
   outComponentRef:=
   matchcontinue (inPath)
     local
       Ident i;
       ComponentRef c;
       Path p;
-    case IDENT(name = i) then CREF_IDENT(i,{}); 
+    case IDENT(name = i) then CREF_IDENT(i,{});
     case QUALIFIED(name = i,path = p)
-      equation 
+      equation
         c = pathToCref(p);
       then
         CREF_QUAL(i,{},c);
-    case(FULLYQUALIFIED(p)) 
+    case(FULLYQUALIFIED(p))
       then pathToCref(p);
   end matchcontinue;
 end pathToCref;
 
 public function crefFirstIdent "
-Returns the base-name of the Absyn.componentReference" 
+Returns the base-name of the Absyn.componentReference"
   input ComponentRef inComponentRef;
   output String str;
 algorithm str := matchcontinue(inComponentRef)
@@ -2887,7 +2887,7 @@ end matchcontinue;
 end crefFirstIdent;
 
 public function crefIsIdent "
-Returns the base-name of the Absyn.componentReference" 
+Returns the base-name of the Absyn.componentReference"
   input ComponentRef inComponentRef;
   output Boolean bol;
 algorithm bol := matchcontinue(inComponentRef)
@@ -2900,16 +2900,16 @@ public function crefLastSubs "function: crefLastSubs
   Return the last subscripts of an Absyn.ComponentRef"
   input ComponentRef inComponentRef;
   output list<Subscript> outSubscriptLst;
-algorithm 
+algorithm
   outSubscriptLst:=
   matchcontinue (inComponentRef)
     local
       Ident id;
       list<Subscript> subs,res;
       ComponentRef cr;
-    case (CREF_IDENT(name = id,subscripts= subs)) then subs; 
+    case (CREF_IDENT(name = id,subscripts= subs)) then subs;
     case (CREF_QUAL(componentRef = cr))
-      equation 
+      equation
         res = crefLastSubs(cr);
       then
         res;
@@ -2922,11 +2922,11 @@ Author: BZ, 2009-09
 "
   input ComponentRef cr;
   output list<Subscript> subscripts;
-  
+
 algorithm subscripts := matchcontinue(cr)
   local
     list<Subscript> subs2;
-    ComponentRef child;    
+    ComponentRef child;
   case(CREF_IDENT(_,subs2)) then subs2;
   case(CREF_QUAL(_,subs2,child))
     equation
@@ -2934,7 +2934,7 @@ algorithm subscripts := matchcontinue(cr)
       subscripts = Util.listUnionOnTrue(subscripts,subs2, subscriptEqual);
     then
       subscripts;
-end matchcontinue; 
+end matchcontinue;
 end getSubsFromCref;
 
 // stefan
@@ -3043,16 +3043,16 @@ public function crefStripLastSubs "function: crefStripLastSubs
   Strips the last subscripts of a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
-algorithm 
+algorithm
   outComponentRef:=
   matchcontinue (inComponentRef)
     local
       Ident id;
       list<Subscript> subs,s;
       ComponentRef cr_1,cr;
-    case (CREF_IDENT(name = id,subscripts= subs)) then CREF_IDENT(id,{}); 
+    case (CREF_IDENT(name = id,subscripts= subs)) then CREF_IDENT(id,{});
     case (CREF_QUAL(name= id,subScripts= s,componentRef = cr))
-      equation 
+      equation
         cr_1 = crefStripLastSubs(cr);
       then
         CREF_QUAL(id,s,cr_1);
@@ -3064,16 +3064,16 @@ public function joinCrefs "function: joinCrefs
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output ComponentRef outComponentRef;
-algorithm 
+algorithm
   outComponentRef:=
   matchcontinue (inComponentRef1,inComponentRef2)
     local
       Ident id;
       list<Subscript> sub;
       ComponentRef cr2,cr_1,cr;
-    case (CREF_IDENT(name = id,subscripts = sub),cr2) then CREF_QUAL(id,sub,cr2); 
+    case (CREF_IDENT(name = id,subscripts = sub),cr2) then CREF_QUAL(id,sub,cr2);
     case (CREF_QUAL(name = id,subScripts = sub,componentRef = cr),cr2)
-      equation 
+      equation
         cr_1 = joinCrefs(cr, cr2);
       then
         CREF_QUAL(id,sub,cr_1);
@@ -3084,12 +3084,12 @@ public function crefGetFirst "function: crefGetFirst
   Returns first ident from a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
-algorithm 
+algorithm
   outComponentRef:=
   matchcontinue (inComponentRef)
     local Ident i;
-    case (CREF_IDENT(name = i)) then CREF_IDENT(i,{}); 
-    case (CREF_QUAL(name = i)) then CREF_IDENT(i,{}); 
+    case (CREF_IDENT(name = i)) then CREF_IDENT(i,{});
+    case (CREF_QUAL(name = i)) then CREF_IDENT(i,{});
   end matchcontinue;
 end crefGetFirst;
 
@@ -3097,7 +3097,7 @@ public function crefStripFirst "function: crefStripFirst
   Strip the first ident from a ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outComponentRef;
-algorithm 
+algorithm
   outComponentRef:=
   matchcontinue (inComponentRef)
     local ComponentRef cr;
@@ -3109,25 +3109,25 @@ public function restrString "function: restrString
   Maps a class restriction to the corresponding string for printing"
   input Restriction inRestriction;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inRestriction)
-    case R_CLASS() then "CLASS"; 
-    case R_MODEL() then "MODEL"; 
-    case R_RECORD() then "RECORD"; 
-    case R_BLOCK() then "BLOCK"; 
-    case R_CONNECTOR() then "CONNECTOR"; 
+    case R_CLASS() then "CLASS";
+    case R_MODEL() then "MODEL";
+    case R_RECORD() then "RECORD";
+    case R_BLOCK() then "BLOCK";
+    case R_CONNECTOR() then "CONNECTOR";
     case R_EXP_CONNECTOR() then "EXPANDABLE CONNECTOR";
-    case R_TYPE() then "TYPE"; 
-    case R_PACKAGE() then "PACKAGE"; 
-    case R_FUNCTION() then "FUNCTION"; 
-    case R_PREDEFINED_INT() then "PREDEFINED_INT"; 
-    case R_PREDEFINED_REAL() then "PREDEFINED_REAL"; 
-    case R_PREDEFINED_STRING() then "PREDEFINED_STRING"; 
-    case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL"; 
-      
+    case R_TYPE() then "TYPE";
+    case R_PACKAGE() then "PACKAGE";
+    case R_FUNCTION() then "FUNCTION";
+    case R_PREDEFINED_INT() then "PREDEFINED_INT";
+    case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
+    case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
+    case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL";
+
     /* MetaModelica restriction */
-    case R_UNIONTYPE() then "UNIONTYPE";             
+    case R_UNIONTYPE() then "UNIONTYPE";
   end matchcontinue;
 end restrString;
 
@@ -3135,7 +3135,7 @@ public function printRestr "function: printRestr
   This is a utility function for printing an Absyn.Restriction."
   input Restriction restr;
   Ident str;
-algorithm 
+algorithm
   str := restrString(restr);
   Print.printBuf(str);
 end printRestr;
@@ -3144,14 +3144,14 @@ public function lastClassname "function: lastClassname
   Returns the path (=name) of the last class in a program"
   input Program inProgram;
   output Path outPath;
-algorithm 
+algorithm
   outPath:=
   matchcontinue (inProgram)
     local
       Ident id;
       list<Class> lst;
     case (PROGRAM(classes = lst))
-      equation 
+      equation
         CLASS(id,_,_,_,_,_,_) = Util.listLast(lst);
       then
         IDENT(id);
@@ -3163,11 +3163,11 @@ public function classFilename "function classFilename
   Retrieves the filename where the class is stored."
   input Class inClass;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inClass)
     local Ident filename;
-    case (CLASS(info = INFO(fileName = filename))) then filename; 
+    case (CLASS(info = INFO(fileName = filename))) then filename;
   end matchcontinue;
 end classFilename;
 
@@ -3178,7 +3178,7 @@ public function setClassFilename "function setClassFilename
   input String inString;
   input TimeStamp build1;
   output Class outClass;
-algorithm 
+algorithm
   outClass:=
   matchcontinue (inClass,inString,build1)
     local
@@ -3187,15 +3187,15 @@ algorithm
       Restriction r;
       ClassDef body;
       TimeStamp build;
-    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),filename,build) 
-      then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0, build)  ); 
+    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),filename,build)
+      then CLASS(n,p,f,e,r,body,INFO(filename,false,0,0,0,0, build)  );
   end matchcontinue;
 end setClassFilename;
 
 public function emptyClassInfo ""
 output Info info;
 algorithm
-  info := dummyInfo; //INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0)); 
+  info := dummyInfo; //INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0));
 end emptyClassInfo;
 
 public function setClassName "function setClassFilename
@@ -3204,7 +3204,7 @@ public function setClassName "function setClassFilename
   input Class inClass;
   input String newName;
   output Class outClass;
-algorithm 
+algorithm
   outClass:=
   matchcontinue (inClass,newName)
     local
@@ -3213,39 +3213,39 @@ algorithm
       Restriction r;
       ClassDef body;
       Info nfo;
-    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),newName) 
-      then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  ); 
+    case (CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = body),newName)
+      then CLASS(newName,p,f,e,r,body,INFO("",false,0,0,0,0, TIMESTAMP(0.0,0.0))  );
   end matchcontinue;
 end setClassName;
 
 public function crefEqual "function: crefEqual
-  Checks if the name of a ComponentRef is 
+  Checks if the name of a ComponentRef is
   equal to the name of another ComponentRef, including subscripts.
  See also crefEqualNoSubs.
  "
   input ComponentRef cr1;
   input ComponentRef cr2;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean:=
   matchcontinue (cr1,cr2)
     local
       Ident id,id2;
       list<Subscript> ss1,ss2;
     case (CREF_IDENT(name = id,subscripts=ss1),CREF_IDENT(name = id2,subscripts = ss2))
-      equation 
+      equation
         equality(id = id2);
         true = subscriptsEqual(ss1,ss2);
       then
         true;
     case (CREF_QUAL(name = id,subScripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subScripts = ss2, componentRef = cr2))
-      equation 
+      equation
         equality(id = id2);
         true = subscriptsEqual(ss1,ss2);
         true = crefEqual(cr1, cr2);
       then
         true;
-    case (_,_) then false; 
+    case (_,_) then false;
   end matchcontinue;
 end crefEqual;
 
@@ -3264,34 +3264,34 @@ algorithm
     case(SUBSCRIPT(e1)::ss1,SUBSCRIPT(e2)::ss2) equation
       true = expEqual(e1,e2);
     then subscriptsEqual(ss1,ss2);
-    case(_,_) then false;      
+    case(_,_) then false;
   end matchcontinue;
 end subscriptsEqual;
 
 public function crefEqualNoSubs "
-  Checks if the name of a ComponentRef is 
+  Checks if the name of a ComponentRef is
   equal to the name of another ComponentRef without checking subscripts.
   See also crefEqual."
   input ComponentRef cr1;
   input ComponentRef cr2;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean:=
   matchcontinue (cr1,cr2)
     local
       Ident id,id2;
     case (CREF_IDENT(name = id),CREF_IDENT(name = id2))
-      equation 
+      equation
         equality(id = id2);
       then
         true;
     case (CREF_QUAL(name = id,componentRef = cr1),CREF_QUAL(name = id2,componentRef = cr2))
-      equation 
+      equation
         equality(id = id2);
         true = crefEqualNoSubs(cr1, cr2);
       then
         true;
-    case (_,_) then false; 
+    case (_,_) then false;
   end matchcontinue;
 end crefEqualNoSubs;
 
@@ -3299,16 +3299,16 @@ public function isPackageRestriction "function isPackageRestriction
   checks if the provided parameter is a package or not"
   input Restriction inRestriction;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean:=
   matchcontinue (inRestriction)
-    case (R_PACKAGE()) then true; 
-    case (_) then false; 
+    case (R_PACKAGE()) then true;
+    case (_) then false;
   end matchcontinue;
 end isPackageRestriction;
 
 public function subscriptEqual "
-Author BZ, 2009-01 
+Author BZ, 2009-01
 Check if two subscripts are equal.
 "
 input Subscript ss1,ss2;
@@ -3346,7 +3346,7 @@ algorithm
 end eachEqual;
 
 
-/* adrpo - 2007-02-20 equality can be implemented using structural equality! 
+/* adrpo - 2007-02-20 equality can be implemented using structural equality!
 public function expEqual "Returns true if two expressions are equal"
   input Exp exp1;
   input Exp exp2;
@@ -3365,7 +3365,7 @@ algorithm
     case(STRING(s1),STRING(s2))
       local String s1,s2;
         then stringEqual(s1,s2);
-    case (BOOL(b1),BOOL(b2)) 
+    case (BOOL(b1),BOOL(b2))
       local Boolean b1,b2;
         then Util.boolEqual(b1,b2);
     case (BINARY(e11,_,e12),BINARY(e21,_,e22))
@@ -3381,7 +3381,7 @@ algorithm
       local Exp e1,e2;
         then expEqual(e1,e2);
     case (RELATION(e11,_,e12),RELATION(e21,_,e22))
-      local Exp e12,e11,e21,e22; 
+      local Exp e12,e11,e21,e22;
         then boolAnd(expEqual(e11,e21),expEqual(e12,e22));
     case (IFEXP(e11,e12,e13,_),IFEXP(e21,e22,e23,_))
       local  Exp e12,e11,e13,e21,e22,e23; Boolean b1,b2,b3; equation
@@ -3407,7 +3407,7 @@ algorithm
         blst = Util.listListThreadMap(args1,args2,expEqual);
         equal = Util.boolAndList(Util.listFlatten(blst));
       then equal;
-        
+
     case (RANGE(e11,SOME(e12),e13),RANGE(e21,SOME(e22),e23))
       local Exp e11,e12,e13,e21,e22,e23;
       Boolean b1,b2,b3;
@@ -3417,7 +3417,7 @@ algorithm
          b3 = expEqual(e13,e23);
          equal = Util.boolAndList({b1,b2,b3});
       then equal;
-        
+
     case (RANGE(e11,_,e13),RANGE(e21,_,e23))
       local Exp e11,e12,e13,e21,e22,e23;
       Boolean b1,b2,b3;
@@ -3448,13 +3448,13 @@ protected function functionArgsEqual "Returns true if two FunctionArgs are equal
 algorithm
  equal := matchcontinue(args1,args2)
    case (FUNCTIONARGS(expl1,_),FUNCTIONARGS(expl2,_))
-      local ComponentRef cref1,cref2; list<Exp> expl1,expl2; Boolean b1; list<Boolean> blst; 
+      local ComponentRef cref1,cref2; list<Exp> expl1,expl2; Boolean b1; list<Boolean> blst;
         equation
         blst = Util.listThreadMap(expl1,expl2,expEqual);
         equal = Util.boolAndList(blst);
       then equal;
-        
-   case(_,_) then false;       
+
+   case(_,_) then false;
  end matchcontinue;
 end functionArgsEqual;
 
@@ -3478,13 +3478,13 @@ end getClassName;
 
 public function mergeElementAttributes "
 Author BZ 2008-05
-Function that is used with Derived classes, 
-merge the derived ElementAttributes with the optional ElementAttributes returned from ~instClass~. 
+Function that is used with Derived classes,
+merge the derived ElementAttributes with the optional ElementAttributes returned from ~instClass~.
 "
   input ElementAttributes ele;
   input Option<ElementAttributes> oEle;
   output Option<ElementAttributes> outoEle;
-algorithm outoEle := matchcontinue(ele, oEle) 
+algorithm outoEle := matchcontinue(ele, oEle)
   local
     Boolean b1,b2,bStream1,bStream2,bStream;
     Variability v1,v2;
@@ -3527,21 +3527,21 @@ algorithm v3 := matchcontinue(v1,v2)
     equation
       equality(v1 = v2);
     then v1;
-  case(_,_) 
-    equation 
+  case(_,_)
+    equation
       print(" failure in propagateAbsynDirection, inner outer mismatch");
-    then 
+    then
       fail();
 end matchcontinue;
 end propagateAbsynDirection;
 
-protected function findIteratorInAlgorithmItem 
+protected function findIteratorInAlgorithmItem
   input String inString;
   input AlgorithmItem inAlgItem;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inAlgItem)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst;
       Algorithm alg;
       String id;
@@ -3553,13 +3553,13 @@ algorithm
   end matchcontinue;
 end findIteratorInAlgorithmItem;
 
-protected function findIteratorInAlgorithm  
+protected function findIteratorInAlgorithm
   input String inString;
-  input Algorithm inAlg;               
+  input Algorithm inAlg;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inAlg)
-    local 
+    local
       String id;
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
       Exp e_1,e_2;
@@ -3569,16 +3569,16 @@ algorithm
       FunctionArgs funcArgs;
       AlgorithmItem algItem;
       Boolean bool;
-      
+
       case (id,ALG_ASSIGN(e_1,e_2))
         equation
-          lst_1=findIteratorInExp(id,e_1);  
+          lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,ALG_IF(e_1,algLst_1,elseIfBranch,algLst_2))
-        equation        
-          lst_1=findIteratorInExp(id,e_1);  
+        equation
+          lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
           lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
           lst_4=findIteratorInAlgorithmItemLst(id,algLst_2);
@@ -3588,7 +3588,7 @@ algorithm
         equation
           true=iteratorPresentAmongIterators(id,forIterators);
           lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;        
+        then lst;
       case (id, ALG_FOR(forIterators,algLst_1))
         equation
           false=iteratorPresentAmongIterators(id,forIterators);
@@ -3604,44 +3604,44 @@ algorithm
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id, ALG_WHILE(e_1,algLst_1))
-        equation            
-          lst_1=findIteratorInExp(id,e_1);  
+        equation
+          lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,ALG_WHEN_A(e_1,algLst_1,elseIfBranch))
-        equation        
-          lst_1=findIteratorInExp(id,e_1);  
+        equation
+          lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
           lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-      case (id,ALG_NORETCALL(_,funcArgs))          
-        equation        
+      case (id,ALG_NORETCALL(_,funcArgs))
+        equation
           lst=findIteratorInFunctionArgs(id,funcArgs);
         then lst;
       case (id,ALG_TRY(algLst_1))
-        equation        
+        equation
           lst=findIteratorInAlgorithmItemLst(id,algLst_1);
         then lst;
       case (id,ALG_CATCH(algLst_1))
-        equation        
+        equation
           lst=findIteratorInAlgorithmItemLst(id,algLst_1);
         then lst;
       case (_,_) then {};
   end matchcontinue;
 end findIteratorInAlgorithm;
-        
+
 public function findIteratorInAlgorithmItemLst"
 Used by Inst.instForStatement
 "
-//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+//This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<AlgorithmItem> inAlgItemLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inAlgItemLst)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<AlgorithmItem> rest;
@@ -3655,14 +3655,14 @@ algorithm
         then lst;
   end matchcontinue;
 end findIteratorInAlgorithmItemLst;
-               
-protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb              
+
+protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<tuple<Exp, list<AlgorithmItem>>> inElseIfBranch;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inElseIfBranch)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id;
       list<tuple<Exp, list<AlgorithmItem>>> rest;
@@ -3677,15 +3677,15 @@ algorithm
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
   end matchcontinue;
-end findIteratorInElseIfBranch; 
+end findIteratorInElseIfBranch;
 
-protected function findIteratorInElseIfExpBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb              
+protected function findIteratorInElseIfExpBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<tuple<Exp, Exp>> inElseIfBranch;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inElseIfBranch)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id;
       list<tuple<Exp, Exp>> rest;
@@ -3699,15 +3699,15 @@ algorithm
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
   end matchcontinue;
-end findIteratorInElseIfExpBranch; 
+end findIteratorInElseIfExpBranch;
 
-public function findIteratorInFunctionArgs           
+public function findIteratorInFunctionArgs
   input String inString;
   input FunctionArgs inFunctionArgs;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inFunctionArgs)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<Exp> expLst;
@@ -3725,21 +3725,21 @@ algorithm
         equation
           true=iteratorPresentAmongIterators(id,forIterators);
           lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;                  
+        then lst;
       case (id, FOR_ITER_FARG(exp,forIterators))
         equation
           false=iteratorPresentAmongIterators(id,forIterators);
           lst_1=findIteratorInExp(id,exp);
           lst_2=findIteratorInForIteratorsBounds(id,forIterators);
           lst=listAppend(lst_1,lst_2);
-        then lst;    */              
+        then lst;    */
       case (id, FOR_ITER_FARG(exp,forIterators))
         equation
           lst_1=findIteratorInExp(id,exp);
           (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
           lst_1=Util.if_(bool, {}, lst_1);
           lst=listAppend(lst_1,lst_2);
-        then lst;                  
+        then lst;
   end matchcontinue;
 end findIteratorInFunctionArgs;
 
@@ -3749,7 +3749,7 @@ end findIteratorInFunctionArgs;
   output Boolean outBool;
 algorithm
     outBool:=matchcontinue(inString,inForIterators)
-    local 
+    local
       String id,id1;
       Boolean bool;
       list<ForIterator> rest;
@@ -3764,15 +3764,15 @@ algorithm
           bool=iteratorPresentAmongIterators(id,rest);
         then bool;
   end matchcontinue;
-end iteratorPresentAmongIterators;      */      
-              
-public function findIteratorInExpLst//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+end iteratorPresentAmongIterators;      */
+
+public function findIteratorInExpLst//This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<Exp> inExpLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inExpLst)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<Exp> rest;
@@ -3786,14 +3786,14 @@ algorithm
         then lst;
   end matchcontinue;
 end findIteratorInExpLst;
-               
-protected function findIteratorInExpLstLst//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+
+protected function findIteratorInExpLstLst//This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<list<Exp>> inExpLstLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inExpLstLst)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<list<Exp>> rest;
@@ -3807,14 +3807,14 @@ algorithm
         then lst;
   end matchcontinue;
 end findIteratorInExpLstLst;
-               
-protected function findIteratorInNamedArgs  
+
+protected function findIteratorInNamedArgs
   input String inString;
   input list<NamedArg> inNamedArgs;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inNamedArgs)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<NamedArg> rest;
@@ -3827,21 +3827,21 @@ algorithm
           lst=listAppend(lst_1,lst_2);
         then lst;
   end matchcontinue;
-end findIteratorInNamedArgs;      
-          
-/*protected function findIteratorInForIteratorsBounds  
+end findIteratorInNamedArgs;
+
+/*protected function findIteratorInForIteratorsBounds
   input String inString;
   input list<ForIterator> inForIterators;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inForIterators)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<ForIterator> rest;
       Exp exp;
       case (id,{}) then {};
-      case (id,(_,NONE)::rest)   
+      case (id,(_,NONE)::rest)
         equation
           lst=findIteratorInForIteratorsBounds(id,rest);
         then lst;
@@ -3855,15 +3855,15 @@ algorithm
 end findIteratorInForIteratorsBounds; */
 
 protected function findIteratorInForIteratorsBounds2 "
-This is a fixed version of the function; it stops looking for the iterator when it finds another iterator 
-with the same name. It also returns information about whether it has found such an iterator"  
+This is a fixed version of the function; it stops looking for the iterator when it finds another iterator
+with the same name. It also returns information about whether it has found such an iterator"
   input String inString;
   input list<ForIterator> inForIterators;
   output Boolean outBool;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     (outBool,outLst):=matchcontinue(inString,inForIterators)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       Boolean bool;
       String id, id_1;
@@ -3874,8 +3874,8 @@ algorithm
         equation
           equality(id=id_1);
         then
-          (true,{});    
-      case (id,(_,NONE)::rest)   
+          (true,{});
+      case (id,(_,NONE)::rest)
         equation
           (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
         then (bool,lst);
@@ -3888,13 +3888,13 @@ algorithm
   end matchcontinue;
 end findIteratorInForIteratorsBounds2;
 
-public function findIteratorInExp      
+public function findIteratorInExp
   input String inString;
   input Exp inExp;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inExp)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
       String id;
       Exp e_1,e_2,e_3;
@@ -3904,7 +3904,7 @@ algorithm
       list<tuple<Exp, Exp>> elseIfBranch;
       FunctionArgs funcArgs;
       Option<Exp> expOpt;
-      
+
       case(id, CREF(cref))
         equation
           lst=findIteratorInCRef(id,cref);
@@ -3941,10 +3941,10 @@ algorithm
           lst_2=findIteratorInExp(id,e_2);
           lst_3=findIteratorInExp(id,e_3);
           lst_4=findIteratorInElseIfExpBranch(id,elseIfBranch);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});          
+          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
         then lst;
-      case (id,CALL(_,funcArgs))          
-        equation        
+      case (id,CALL(_,funcArgs))
+        equation
           lst=findIteratorInFunctionArgs(id,funcArgs);
         then lst;
       // stefan
@@ -3952,12 +3952,12 @@ algorithm
         equation
           lst=findIteratorInFunctionArgs(id,funcArgs);
         then lst;
-      case (id, ARRAY(expLst))          
-        equation        
+      case (id, ARRAY(expLst))
+        equation
           lst=findIteratorInExpLst(id,expLst);
         then lst;
-      case (id, MATRIX(expLstLst))          
-        equation        
+      case (id, MATRIX(expLstLst))
+        equation
           lst=findIteratorInExpLstLst(id,expLstLst);
         then lst;
       case(id, RANGE(e_1,expOpt,e_2))
@@ -3965,27 +3965,27 @@ algorithm
           lst_1=findIteratorInExp(id,e_1);
           lst_2=findIteratorInExpOpt(id,expOpt);
           lst_3=findIteratorInExp(id,e_2);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});          
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-      case (id, TUPLE(expLst))          
-        equation        
+      case (id, TUPLE(expLst))
+        equation
           lst=findIteratorInExpLst(id,expLst);
         then lst;
-      case (id, LIST(expLst))          
-        equation        
+      case (id, LIST(expLst))
+        equation
           lst=findIteratorInExpLst(id,expLst);
         then lst;
-      case(_,_) then {};    
-  end matchcontinue;    
-end findIteratorInExp;     
-              
-protected function findIteratorInExpOpt 
+      case(_,_) then {};
+  end matchcontinue;
+end findIteratorInExp;
+
+protected function findIteratorInExpOpt
   input String inString;
   input Option<Exp> inExpOpt;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inExpOpt)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst;
       String id;
       Exp exp;
@@ -3999,13 +3999,13 @@ end findIteratorInExpOpt;
 
 public function findIteratorInCRef "
 The most important among \"findIteratorIn...\" functions -- they all use this one in the end
-" 
+"
   input String inString;
   input ComponentRef inCref;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inCref)
-    local 
+    local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id,name;
       list<Subscript> subLst;
@@ -4024,7 +4024,7 @@ algorithm
         lst_3=qualifyCRefIntLst(name,subLst,lst_2);
         lst=listAppend(lst_1,lst_3);
         then lst;
-      case (_,WILD()) then {};    
+      case (_,WILD()) then {};
   end matchcontinue;
 end findIteratorInCRef;
 
@@ -4035,7 +4035,7 @@ protected function findIteratorInSubscripts
   output list<Integer> outIntLst;
 algorithm
     outLst:=matchcontinue(inString,inSubLst,inInt)
-    local 
+    local
       list<Integer> lst;
       Integer n, n_1;
       String id,name;
@@ -4048,21 +4048,21 @@ algorithm
           n_1=n+1;
           lst=findIteratorInSubscripts(id,rest,n_1);
         then n::lst;
-      case (id,_::rest,n)    
+      case (id,_::rest,n)
         equation
           n_1=n+1;
           lst=findIteratorInSubscripts(id,rest,n_1);
         then lst;
   end matchcontinue;
-end findIteratorInSubscripts;   
+end findIteratorInSubscripts;
 
 protected function combineCRefAndIntLst
   input ComponentRef inCRef;
-  input list<Integer> inIntLst;     
+  input list<Integer> inIntLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inCRef,inIntLst)
-    local 
+    local
       ComponentRef cref;
       list<Integer> rest;
       Integer i;
@@ -4073,7 +4073,7 @@ algorithm
           lst=combineCRefAndIntLst(cref,rest);
         then (cref,i)::lst;
   end matchcontinue;
-end combineCRefAndIntLst;  
+end combineCRefAndIntLst;
 
 protected function qualifyCRefIntLst
   input String inString;
@@ -4082,7 +4082,7 @@ protected function qualifyCRefIntLst
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inSubLst,inLst)
-    local 
+    local
       ComponentRef cref;
       String name;
       list<Subscript> subLst;
@@ -4092,10 +4092,10 @@ algorithm
       case (name,subLst,(cref,i)::rest)
         equation
           lst=qualifyCRefIntLst(name,subLst,rest);
-        then (CREF_QUAL(name,subLst,cref),i)::lst;    
+        then (CREF_QUAL(name,subLst,cref),i)::lst;
   end matchcontinue;
-end qualifyCRefIntLst;                        
-          
+end qualifyCRefIntLst;
+
 public function pathReplaceIdent
   input Path path;
   input String last;
@@ -4124,9 +4124,9 @@ algorithm
       Integer columnNumberEnd "columnNumberEnd";
       Real lastBuildTime "Last Build Time";
       Real lastEditTime "Last Edit Time";
-    case (buildTime, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, 
-                          lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))      
-    then 
+    case (buildTime, INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart,
+                          lineNumberEnd, columnNumberEnd, TIMESTAMP(lastBuildTime,lastEditTime)))
+    then
       (INFO(fileName, isReadOnly, lineNumberStart, columnNumberStart, lineNumberEnd, columnNumberEnd, TIMESTAMP(buildTime,lastEditTime)));
   end matchcontinue;
 end setBuildTimeInInfo;
@@ -4143,7 +4143,7 @@ end getFileNameFromInfo;
 
 public function isOuter
 "@author: adrpo
- this function returns true if the given Absyn.InnerOuter 
+ this function returns true if the given Absyn.InnerOuter
  is one of Absyn.INNEROUTER() or Absyn.OUTER()"
  input InnerOuter io;
  output Boolean isItAnOuter;
@@ -4157,7 +4157,7 @@ end isOuter;
 
 public function isInner
 "@author: adrpo
- this function returns true if the given Absyn.InnerOuter 
+ this function returns true if the given Absyn.InnerOuter
  is one of Absyn.INNEROUTER() or Absyn.INNER()"
  input InnerOuter io;
  output Boolean isItAnInner;

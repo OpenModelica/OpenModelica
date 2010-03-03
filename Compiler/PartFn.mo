@@ -32,9 +32,9 @@ package PartFn
 " file:	       PartFn.mo
   package:     PartFn
   description: partially evaluated functions
-  
+
   RCS: $Id$
-  
+
   This module contains data structures and functions for partially evaulated functions.
   entry point: createPartEvalFunctions, partEvalDAELow, partEvalDAE
   "
@@ -172,7 +172,7 @@ algorithm
       list<Integer> ds;
       DAE.Exp e1,e1_1,e2,e2_1;
       DAE.ElementSource source "the origin of the element";
-      
+
     case({},dae) then (listArray({}),dae);
     case(DAELow.MULTIDIM_EQUATION(ds,e1,e2,source) :: cdr,dae)
       equation
@@ -249,7 +249,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       DAE.ElementSource source "the origin of the element";
-      
+
     case({},dae) then ({},dae);
     case(NONE :: cdr,dae)
       equation
@@ -320,7 +320,7 @@ algorithm
       DAE.ComponentRef cref;
       DAELow.WhenEquation we,we_1;
       DAE.ElementSource source "the origin of the element";
-      
+
     case({},dae) then ({},dae);
     case(NONE :: cdr,dae)
       equation
@@ -538,7 +538,7 @@ algorithm
       DAE.VarDirection direction;
       DAE.VarProtection protection;
       DAE.Type ty;
-      Option<DAE.Exp> binding; 
+      Option<DAE.Exp> binding;
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -558,7 +558,7 @@ algorithm
       DAE.InlineType inlineType;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
-      
+
     case({},dae) then ({},dae);
     case(DAE.VAR(cref,kind,direction,protection,ty,binding,dims,flowPrefix,streamPrefix,source,
                  variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae)
@@ -1366,7 +1366,7 @@ algorithm
       DAE.VarDirection direction "input, output or bidir" ;
       DAE.VarProtection protection "if protected or public";
       DAE.Type ty "Full type information required";
-      DAE.Exp binding "Binding expression e.g. for parameters ; value of start attribute" ; 
+      DAE.Exp binding "Binding expression e.g. for parameters ; value of start attribute" ;
       DAE.InstDims  dims "dimensions";
       DAE.Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
       DAE.Stream streamPrefix "Stream variables in connectors" ;
@@ -1375,7 +1375,7 @@ algorithm
       Option<SCode.Comment> absynCommentOption;
       Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
       DAE.ElementSource source "the origin of the element";
-      
+
     case({},_,_,_,_) then {};
     case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,source,
                  variableAttributesOption,absynCommentOption,innerOuter) :: cdr,dae,p,inputs,current)

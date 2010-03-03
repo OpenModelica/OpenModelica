@@ -357,7 +357,7 @@ end regularFileExists;
 public function removeFile "Removes a file, returns 0 if suceeds, implemented using remove() in stdio.h"
   input String fileName;
   output Integer res;
-  
+
   external "C";
 end removeFile;
 
@@ -365,7 +365,7 @@ public function getPackageFileNames
   input String inString1;
   input String inString2;
   output String outString;
-  
+
   external "C" ;
 end getPackageFileNames;
 
@@ -469,18 +469,18 @@ end setClassnamesForSimulation;
 public function getVariableValue
   input Real timeStamp;
   input list<Real> timeValues;
-  input list<Real> varValues; 
+  input list<Real> varValues;
   output Real outValue;
 
   external "C" ;
 end getVariableValue;
 
-public function getFileModificationTime 
+public function getFileModificationTime
 "@author adrpo
- this system function returns the modification time of a file as a 
- SOME(Real) which represents the time elapsed since the 
+ this system function returns the modification time of a file as a
+ SOME(Real) which represents the time elapsed since the
  Epoch (00:00:00 UTC, January 1, 1970).
- If the file does not exist or if there is an error the returned value 
+ If the file does not exist or if there is an error the returned value
  will be NONE.
 "
   input  String       fileName;
@@ -489,9 +489,9 @@ public function getFileModificationTime
   external "C" ;
 end getFileModificationTime;
 
-public function getCurrentTime 
+public function getCurrentTime
 "@author adrpo
- this system function returns current time elapsed 
+ this system function returns current time elapsed
  since the Epoch (00:00:00 UTC, January 1, 1970)."
   output Real outValue;
 
@@ -510,12 +510,12 @@ public function isSameFile "Checks if two filenames points to the same file"
   input String fileName1;
   input String fileName2;
   external "C";
-end isSameFile; 
+end isSameFile;
 
 public function isIdenticalFile "Checks if two filenames points to the exact same file"
   input String fileName1;
   input String fileName2;
-  output Boolean same; 
+  output Boolean same;
   external "C";
 end isIdenticalFile;
 
@@ -545,7 +545,7 @@ end readFileNoNumeric;
 
 public function setHasExpandableConnectors
 "@author: adrpo
- sets the external flag that signals the 
+ sets the external flag that signals the
  presence of expandable connectors in a model"
   input Boolean hasExpandable;
   external "C" ;
@@ -553,7 +553,7 @@ end setHasExpandableConnectors;
 
 public function getHasExpandableConnectors
 "@author: adrpo
- retrieves the external flag that signals the 
+ retrieves the external flag that signals the
  presence of expandable connectors in a model"
   output Boolean hasExpandable;
   external "C" ;
@@ -561,7 +561,7 @@ end getHasExpandableConnectors;
 
 public function setHasInnerOuterDefinitions
 "@author: adrpo
- sets the external flag that signals the presence 
+ sets the external flag that signals the presence
  of inner/outer comoponent definitions in a model"
   input Boolean hasInnerOuterDefinitions;
   external "C" ;
@@ -569,7 +569,7 @@ end setHasInnerOuterDefinitions;
 
 public function getHasInnerOuterDefinitions
 "@author: adrpo
- retrieves the external flag that signals the presence 
+ retrieves the external flag that signals the presence
  of inner/outer comoponent definitions in a model"
   output Boolean hasInnerOuterDefinitions;
   external "C" ;
@@ -591,15 +591,15 @@ public function listAppendUnsafe
   input list<Type_a> firstList;
   input list<Type_a> secondList;
   output list<Type_a> appendedList;
-  
+
   external "C" ;
 end listAppendUnsafe;
 
-public function addToRoots 
+public function addToRoots
 "@author: adrpo
  this function binds a name to an external root.
  BEWARE! this is a side effect!
-         addToRoots(0, value) should match 
+         addToRoots(0, value) should match
          value = getToRoots(0) and the type
          of the value should be the same!"
   replaceable type Type_a subtypeof Any;
@@ -612,7 +612,7 @@ public function getFromRoots
 "@author: adrpo
  this function returns an external root for a name
  BEWARE! this is a side effect!
-         addToRoots(0, value) should match 
+         addToRoots(0, value) should match
          value = getToRoots(0) and the type
          of the value should be the same!"
   replaceable type Type_a subtypeof Any;
@@ -624,14 +624,14 @@ end getFromRoots;
 public function enableTrace
 "@author: adrpo
  this function enables the stderr tracing"
- 
+
   external "C" ;
 end enableTrace;
 
 public function disableTrace
 "@author: adrpo
  this function disables the stderr tracing"
- 
+
   external "C" ;
 end disableTrace;
 

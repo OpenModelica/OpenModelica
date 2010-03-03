@@ -762,7 +762,7 @@ algorithm
         localAccList = listAppend(localAccList,{elem});
         localAccList = createLastAssignments(restLhs,restRhs,localAccList);
       then localAccList;
-    
+
     case (_,_,_)
       equation
         Debug.fprintln("matchcase", "- DFA.createLastAssignments failed");
@@ -936,13 +936,13 @@ algorithm
         assignList = createPathVarAssignments(pathVar,pathVarList,{},{},1);
         elemList = createPathVarDeclarations(pathVarList,fieldTypes,{});
       then (localCache,localDfaEnv,elemList,assignList);
-      
+
     case (_,localCache,localEnv,localDfaEnv)
       then (localCache,localDfaEnv,{},{});
   end matchcontinue;
 end generatePathVarDeclarations;
 
-public function extractFieldNamesAndTypes 
+public function extractFieldNamesAndTypes
 "function: extractFieldNamesAndTypes
 	author: KS"
   input SCode.Class sClass;
@@ -968,7 +968,7 @@ algorithm
   end matchcontinue;
 end extractFieldNamesAndTypes;
 
-public function extractFieldName 
+public function extractFieldName
 "function: extractFieldName
 	author: KS"
   input SCode.Element elem;
@@ -980,19 +980,19 @@ algorithm
   end matchcontinue;
 end extractFieldName;
 
-public function extractFieldType 
+public function extractFieldType
 "function: extractFieldType
 	author: KS"
   input SCode.Element elem;
   output Absyn.TypeSpec typeSpec;
 algorithm
   typeSpec := matchcontinue (elem)
-    local Absyn.TypeSpec t;    
+    local Absyn.TypeSpec t;
     case (SCode.COMPONENT(typeSpec = t)) then t;
   end matchcontinue;
 end extractFieldType;
 
-protected function createPathVarDeclarations 
+protected function createPathVarDeclarations
 "function: createPathVarAssignments
 	author: KS
 	Used when we have a record constructor call in a pattern and we need to
@@ -1026,7 +1026,7 @@ algorithm
 end createPathVarDeclarations;
 
 /*
-protected function generateIfElseifAndElse 
+protected function generateIfElseifAndElse
 "function: generateIfElseifAndElse
 	author: KS
 	Generate if-statements."
@@ -1068,12 +1068,12 @@ algorithm
       list<Absyn.AlgorithmItem> eIfBranch;
       Absyn.Ident recordName;
       list<Absyn.Exp> tempList;
-      Absyn.ComponentRef cRef;              
+      Absyn.ComponentRef cRef;
     case({},_,_,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,_,_,localAccNewVars,_)
       equation
         algList = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(localTrueStatement,localTrueBranch,localElseIfBranch,{}),NONE())};
       then (localCache,algList,localAccNewVars);
-        
+
     // DummieState
     case(ARC(DUMMIESTATE(),_,_,_) :: _,_,_,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,_,_,localAccNewVars,_)
       equation
@@ -1083,7 +1083,7 @@ algorithm
 
     // Else case
     case(ARC(localState,_,NONE(),caseNumbers) :: _,localStateVar,_,localTrueStatement,localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
-      
+
       equation
         // For the catch handling
         branchCheck = generateBranchCheck(caseNumbers,Absyn.BOOL(true),localLightVs);
@@ -1151,7 +1151,7 @@ algorithm
           ,Absyn.STRING(recordName)},{})),Absyn.AND(),branchCheck);
         (localCache,algList,localAccNewVars) = generateIfElseifAndElse(rest,localStateVar,false,exp,localTrueBranch,{},localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs);
       then (localCache,algList,localAccNewVars);
-        
+
     //Elseif, wildcard
     case(ARC(localState,_,SOME(pat as RP_WILDCARD(_)),caseNumbers) :: rest,localStateVar,false,localTrueStatement,
         localTrueBranch,localElseIfBranch,localCache,localEnv,localDfaEnv,localAccNewVars,localLightVs)
@@ -2195,7 +2195,7 @@ algorithm
       equation
         dfaEnv = initialDfaEnv;
         checkShadowing(firstDecls,invalidDecls);
-        
+
         exp2 = createListFromExpression(result);
 
         // Create the assignments that assign the return variables
@@ -2217,7 +2217,7 @@ protected function getMatchContinueInvalidDeclsAndInitialEnv
   input list<Absyn.Exp> resVarList;
   input Env.Cache inCache;
   input Env.Env localEnv;
-  output list<tuple<String,Absyn.TypeSpec>> dfaEnv;      
+  output list<tuple<String,Absyn.TypeSpec>> dfaEnv;
   output list<String> invalidDecls;
   output Env.Cache cache;
 protected
@@ -2425,7 +2425,7 @@ algorithm
   end matchcontinue;
 end getPatternComp;
 
-protected function uniontypeComp        
+protected function uniontypeComp
   input Absyn.Ident pathVar;
   input SCode.Restriction restriction;
   input Integer numFields;
@@ -2495,10 +2495,10 @@ algorithm
 
         firstPathVar = extractPathVar(first);
         secondPathVar = extractPathVar(second);
-        
+
         firstCref = identToCrefExp(firstPathVar);
         secondCref = identToCrefExp(secondPathVar);
-        
+
         elem1 = {Absyn.ELEMENTITEM(Absyn.ELEMENT(
           false,NONE(),Absyn.UNSPECIFIED(),"component",
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
@@ -2533,7 +2533,7 @@ algorithm
         (localCache, localDfaEnv, elem1, algs1) = generatePathVarDeclarationsList({first}, {firstCref}, localCache, localEnv, localDfaEnv);
         (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList({second}, {secondCref}, localCache, localEnv, localDfaEnv);
         // algs3 = getPatternComp(RP_EMPTYLIST("dummy"), cref, false);
-        
+
         elem = listAppend(elem, elem1);
         elem = listAppend(elem, elem2);
         algs = listAppend(assign1::algs1,assign2::algs2);
@@ -2588,7 +2588,7 @@ algorithm
         (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList(argList, crefs, localCache, localEnv, localDfaEnv);
         elem = listAppend(elem1, elem2);
         algs = listAppend(algs1,algs2);
-        
+
         numFields = listLength(argList);
         algs2 = uniontypeComp(pathVar, restriction, numFields, classPathStr);
         algs = listAppend(algs2,algs);
@@ -2619,9 +2619,9 @@ algorithm
 
         algs1 = createPathVarAssignments(pathVar,pathVarList,{},{},1);
         elem1 = createPathVarDeclarations(pathVarList,fieldTypes,{});
-        
+
         crefs = Util.listMap(pathVarList, identToCrefExp);
-        (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList(argList, crefs, localCache, localEnv, localDfaEnv);        
+        (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList(argList, crefs, localCache, localEnv, localDfaEnv);
         elem = listAppend(elem1, elem2);
         algs = listAppend(algs1,algs2);
       then (localCache,localDfaEnv,elem,algs);
@@ -2644,17 +2644,17 @@ algorithm
         pathVar2=extractPathVar(arg);
         cref = identToCrefExp(pathVar);
         cref2 = identToCrefExp(pathVar2);
-        
+
         pathVarList = {pathVar2};
         dfaEnvElem = mergeLists(pathVarList,fieldTypes,{});
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);
 
         algs1 = createPathVarAssignments(pathVar,pathVarList,{},{},1);
         elem1 = createPathVarDeclarations(pathVarList,fieldTypes,{});
-        
+
         (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList({arg}, {cref2}, localCache, localEnv, localDfaEnv);
         algs3 = getPatternComp(RP_NONE("dummy"), cref, false); // Check if it is, in fact, SOME
-        
+
         algs = listAppend(algs1, algs2);
         algs = listAppend(algs3, algs);
         elem = listAppend(elem1, elem2);
@@ -2669,7 +2669,7 @@ algorithm
   out := Absyn.CREF(Absyn.CREF_IDENT(id,{}));
 end identToCrefExp;
 
-protected function createPathVarAssignments 
+protected function createPathVarAssignments
 "function: createPathVarAssignments
 	author: KS
 	Used when we have a record constructor call in a pattern and need to

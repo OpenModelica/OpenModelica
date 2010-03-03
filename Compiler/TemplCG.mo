@@ -12,70 +12,70 @@ uniontype TemplateTree
     list<KeyBody> cond_bodies;
     TemplateTreeSequence else_body;
   end TEMPLATE_COND;
-  
+
   record TEMPLATE_FOR_EACH
     String key;
     String separator;
     TemplateTreeSequence body;
   end TEMPLATE_FOR_EACH;
-  
+
   record TEMPLATE_RECURSION
     String key;
     String indent;
   end TEMPLATE_RECURSION;
-  
+
   record TEMPLATE_ADD_INDENTATION
     String indent;
     TemplateTreeSequence body;
   end TEMPLATE_ADD_INDENTATION;
-  
+
   record TEMPLATE_LOOKUP_KEY
     String key;
   end TEMPLATE_LOOKUP_KEY;
-  
+
   record TEMPLATE_CURRENT_VALUE
   end TEMPLATE_CURRENT_VALUE;
-  
+
   record TEMPLATE_TEXT
     String text;
   end TEMPLATE_TEXT;
-  
+
   record TEMPLATE_INDENT
   end TEMPLATE_INDENT;
-  
+
 end TemplateTree;
 
 uniontype Environment
-  
+
   record ENV_STRING_LIST
     list<String> strings;
   end ENV_STRING_LIST;
-  
+
   record ENV_DICT_LIST
     list<DictItemList> dicts;
   end ENV_DICT_LIST;
-  
+
   record ENV_NULL
   end ENV_NULL;
-  
+
 end Environment;
 
 uniontype Dict
   record ENABLED
   end ENABLED;
-  
+
   record STRING_LIST
     list<String> strings;
   end STRING_LIST;
-  
+
   record STRING
     String string;
   end STRING;
-  
+
   record DICTIONARY
     DictItemList dict;
   end DICTIONARY;
-  
+
   record DICTIONARY_LIST
     list<DictItemList> dict;
   end DICTIONARY_LIST;
@@ -325,13 +325,13 @@ algorithm
     error = Util.if_(error ==& "", "", "\nError: " +& error);
     print(error);
     true = error ==& "";
-    
+
     (out,error) = CompileTemplate_Angles(templateNoComments, includes);
     error = Util.if_(error ==& "", "", "\nError: " +& error);
     print(error);
     true = error ==& "";
   then out;
-  
+
   case (templateFileName,_) equation
     print("Parsing template " +& templateFileName +& " failed");
   then fail();
@@ -373,7 +373,7 @@ algorithm
     case (char::rest,numNested) equation
        (out,error) = RemoveComments(rest,numNested);
     then (out, error);
-    
+
   end matchcontinue;
 end RemoveComments;
 
@@ -390,16 +390,16 @@ algorithm
       String char;
       list<String> rest, afterBody, out;
     case ({},_,_,_) then fail();
-    
+
     case ("\\"::char::rest, numNested, opener, closer) equation
       (out,afterBody) = FindAngleBody(rest, numNested, opener, closer);
     then ("\\"::char::out,afterBody);
-    
+
     case (char::rest, 0, _, closer) equation
       true = char ==& closer;
       //print("\nFound closer: " +& char);
     then ({},rest);
-    
+
     case (char::rest,numNested, opener, closer) equation
       false = char ==& "\\";
       //print("\n" +& intString(numNested));
@@ -430,7 +430,7 @@ algorithm
     case ("\n"::rest) equation
       ({},afterKey) = FindAngleBodyKey(rest);
     then ({},afterKey);
-    
+
     case (char::rest) equation
       false = char ==& "<"; false = char ==& ">";
       false = char ==& "{"; false = char ==& "}";
@@ -518,14 +518,14 @@ algorithm
       TemplateTreeSequence elseBody, bodySeq;
       list<KeyBody> condBodies;
       Boolean negateValue;
-    case ({},includes) then (TEMPLATE_COND({},{}),"");  
+    case ({},includes) then (TEMPLATE_COND({},{}),"");
     case ("\n" :: rest,includes) equation
       (out,error) = CompileTemplate_Angles_CondBody(rest,includes);
     then (out,error);
     case (" " :: rest,includes) equation
       (out,error) = CompileTemplate_Angles_CondBody(rest,includes);
     then (out,error);
-      
+
     case ("c"::"a"::"s"::"e"::rest,includes) equation
       (keyList1 as firstChar::keyList2,caseBody) = FindAngleBodyKey(SkipWhitespace(rest));
       negateValue = firstChar ==& "!";
@@ -538,7 +538,7 @@ algorithm
       (TEMPLATE_COND(condBodies,elseBody),error2) = CompileTemplate_Angles_CondBody(afterBody,includes);
       error1 = Util.if_(error1 ==& "", error2, error1);
     then (TEMPLATE_COND(KeyBody(key,negateValue,bodySeq)::condBodies,elseBody),error1);
-    
+
     case ("c"::"a"::"s"::"e"::rest,includes) equation
       ({"_"},caseBody) = FindAngleBodyKey(SkipWhitespace(rest));
       "{"::caseBody = SkipWhitespace(caseBody);
@@ -547,7 +547,7 @@ algorithm
       (TEMPLATE_COND({},{}),error2) = CompileTemplate_Angles_CondBody(afterBody,includes);
       error1 = Util.if_(error1 ==& "", error2, error1);
     then (TEMPLATE_COND({},bodySeq),error1);
-    
+
     case ("e"::"l"::"s"::"e"::rest,includes) equation
       "{"::caseBody = SkipWhitespace(rest);
       (caseBody,afterBody) = FindAngleBody(caseBody, 0, "{", "}");
@@ -555,12 +555,12 @@ algorithm
       (TEMPLATE_COND({},{}),error2) = CompileTemplate_Angles_CondBody(afterBody,includes);
       error1 = Util.if_(error1 ==& "", error2, error1);
     then (TEMPLATE_COND({},bodySeq),error1);
-    
+
     case (rest as "c"::"a"::"s"::"e"::_,_)
     then (TEMPLATE_COND({},{}),flattenStringList(rest));
     case (rest as "e"::"l"::"s"::"e"::_,_)
     then (TEMPLATE_COND({},{}),flattenStringList(rest));
-    
+
     case (rest,_)
     then (TEMPLATE_COND({},{}),flattenStringList(rest));
   end matchcontinue;
@@ -590,7 +590,7 @@ algorithm
       sep = FindAngleSep(afterBody);
       (bodySeq,error) = CompileTemplate_Angles(body,includes);
     then ({TEMPLATE_FOR_EACH(key, sep, bodySeq)},error);
-    case (key, (rest as "{" :: _), includes) 
+    case (key, (rest as "{" :: _), includes)
     then ({},flattenStringList(rest));
     case (key, " " :: rest, includes) equation
       (out,error) = CompileTemplate_Angles_Body(key, rest, includes);
@@ -616,7 +616,7 @@ algorithm
       TemplateTree condBody,newBody;
       list<TemplateInclude> includes;
     case ({},_) then ({},"");
-    
+
     case ("<"::"c"::"o"::"n"::"d"::rest,includes) equation
       (body,afterBody) = FindAngleBody(rest, 0, "<", ">");
       (condBody,error) = CompileTemplate_Angles_CondBody(body,includes);
@@ -625,7 +625,7 @@ algorithm
     then (condBody::out,error);
     case (rest as "<"::"c"::"o"::"n"::"d"::_,includes) equation
     then ({},flattenStringList(rest));
-      
+
     case ("<"::"i"::"n"::"c"::"l"::"u"::"d"::"e"::rest,includes) equation
       (body,afterBody) = FindAngleBody(rest, 0, "<", ">");
       key = FindAngleSep(body);
@@ -634,7 +634,7 @@ algorithm
     then (listAppend(out,out2),error);
     case (rest as "<"::"i"::"n"::"c"::"l"::"u"::"d"::"e"::_,includes) equation
     then ({},flattenStringList(rest));
-      
+
     case ("<"::rest,includes) equation
       (body,afterBody) = FindAngleBody(rest, 0, "<", ">");
       //print("\nForEach full body=");
@@ -655,11 +655,11 @@ algorithm
 
     case ("\\" :: "n" :: rest, includes) equation
       (out,error) = CompileTemplate_Angles(rest,includes);
-    then (TEMPLATE_TEXT("\n") :: TEMPLATE_INDENT() :: out,error);  
+    then (TEMPLATE_TEXT("\n") :: TEMPLATE_INDENT() :: out,error);
     case ("\n" :: rest, includes) equation
     (out,error) = CompileTemplate_Angles(rest,includes);
     then (out,error);
-    
+
     case ("\\" :: char :: rest, includes) equation
       (TEMPLATE_TEXT(text = textBody) :: nextBody,error) = CompileTemplate_Angles(rest, includes);
       newTextBody = char +& textBody;
@@ -668,7 +668,7 @@ algorithm
     case ("\\" :: char :: rest, includes) equation
     (out,error) = CompileTemplate_Angles(rest,includes);
     then (TEMPLATE_TEXT(char)::out,error);
-      
+
     case (char :: rest, includes) equation
       false = char ==& "<"; false = char ==& ">";
       false = char ==& "{"; false = char ==& "}";
@@ -682,7 +682,7 @@ algorithm
       (nextBody,error) = CompileTemplate_Angles(rest, includes);
     then
       (TEMPLATE_TEXT(char) :: nextBody,error);
-    
+
     case (rest, _) equation
       error = flattenStringList(rest);
     then ({},error);
@@ -746,13 +746,13 @@ algorithm
       newBody = CompileTemplate_Old(afterBody, includes);
     then
       TEMPLATE_LOOKUP_KEY(key) :: newBody;
-    
+
     case ((rest as "$" :: _), includes) equation
       textBody = flattenStringList(rest);
       textBody = "Couldn't match $: " +& textBody;
       Error.addMessage(Error.TEMPLCG_INVALID_TEMPLATE, {textBody});
     then fail();
-    
+
     case ("\\" :: "n" :: rest, includes) equation
       newBody = CompileTemplate_Old(rest, includes);
     then
@@ -925,7 +925,7 @@ algorithm
       Lookup2({newDict}, rest);
   end matchcontinue;
 end Lookup2;
-  
+
 protected function GetDictItem_
   input TemplDict dict;
   input String key;
@@ -1000,14 +1000,14 @@ algorithm
     case (dict, {}, elseBody, curEnv, sep, indent) equation
       ApplyCompiledTemplate_(dict,elseBody,ENV_NULL(),elseBody,sep,indent);
     then ();
-      
+
     /* IF_EXIST */
     case (dict, KeyBody(key,false,body)::restBodies, elseBody, curEnv, sep, indent) equation
       value = Lookup(dict,key,curEnv);
       false = IsEmpty(value);
       ApplyCompiledTemplate_(dict,body,ENV_NULL(),body,sep,indent);
-    then ();    
-      
+    then ();
+
     /* IF_NOT_EXIST */
     case (dict, KeyBody(key,true,body)::restBodies, elseBody, curEnv, sep, indent) equation
       failure(_ = Lookup(dict,key,curEnv));
@@ -1018,7 +1018,7 @@ algorithm
       true = IsEmpty(value);
       ApplyCompiledTemplate_(dict,body,ENV_NULL(),body,sep,indent);
     then ();
-    
+
     case (dict, _::restBodies, elseBody, curEnv, sep, indent) equation
       ApplyCompiledTemplate_Cond(dict,restBodies,elseBody,curEnv,sep,indent);
     then ();
@@ -1077,7 +1077,7 @@ algorithm
       Dict value;
       TemplDict dicts, dictEnvRest, restCurDict;
       list<KeyBody> restBodies;
-      
+
       Boolean isEmpty;
       // Looping over ENV_STRING_LIST
     case (_, _, ENV_STRING_LIST( {} ), _, _, _) then ();
@@ -1086,7 +1086,7 @@ algorithm
       Print.printBuf(sep);
       ApplyCompiledTemplate_(dict, treeCopy, ENV_STRING_LIST(envRest), treeCopy, sep, indent);
     then ();
-      
+
       // Looping over ENV_DICT_LIST
     case (_, {}, ENV_DICT_LIST( {} ), _, _, _) then ();
     case (_, {}, ENV_DICT_LIST( dictEnv :: {} ), _, _, _) then ();
@@ -1094,10 +1094,10 @@ algorithm
       Print.printBuf(sep);
       ApplyCompiledTemplate_(dictEnvNext :: restCurDict, treeCopy, ENV_DICT_LIST(dictEnvNext :: dictEnvRest), treeCopy, sep, indent);
     then ();
-      
+
       // Looping over ENV_NULL
     case (_, {}, ENV_NULL(), _, _, _) then ();
-      
+
       // Input for current iteration
     case (dict, TEMPLATE_TEXT(text = string) :: rest, curEnv, treeCopy, sep, indent) equation
       Print.printBuf(string);
@@ -1118,7 +1118,7 @@ algorithm
       Print.printBuf(string);
       ApplyCompiledTemplate_(dict,rest,curEnv,treeCopy,sep, indent);
     then ();
-    
+
     case (dict, TEMPLATE_INDENT() :: rest, curEnv, treeCopy, sep, indent) equation
       Print.printBuf(indent);
       ApplyCompiledTemplate_(dict,rest,curEnv,treeCopy,sep, indent);
@@ -1128,14 +1128,14 @@ algorithm
       ApplyCompiledTemplate_Cond(dict,restBodies,else_body,curEnv,sep,indent);
       ApplyCompiledTemplate_(dict,rest,curEnv,treeCopy,sep,indent);
     then ();
-    
+
     case (dict, TEMPLATE_FOR_EACH(key = key, separator = separator, body = body) :: rest, curEnv, treeCopy, sep, indent) equation
       value = Lookup(dict,key,curEnv);
       separator = Unescape(separator, indent);
       ApplyCompiledTemplate_ForEach(value,dict,body,curEnv,separator,indent);
       ApplyCompiledTemplate_(dict,rest,curEnv,treeCopy,sep, indent);
     then ();
-  
+
     case (topCurDict :: dict, TEMPLATE_RECURSION(key = key, indent = string) :: rest, curEnv, treeCopy, sep, indent) equation
       DICTIONARY(dict = dictionary) = Lookup(topCurDict::dict,key,curEnv);
       ApplyCompiledTemplate_(dictionary :: dict,treeCopy,ENV_NULL(),treeCopy,sep, indent+&string);
@@ -1177,7 +1177,7 @@ algorithm
       string = "RECURSION(" +& key +& ")";
       Error.addMessage(Error.TEMPLCG_FAILED_TO_APPLY_TEMPLATE, {string});
     then fail();
-    
+
     /*case (dict, tree, _, _, _, _) equation
       print("Failed to apply compiled template: \n");
       PrintTemplateTreeSequence(tree);

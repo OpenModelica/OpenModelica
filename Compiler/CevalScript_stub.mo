@@ -36,14 +36,14 @@ package CevalScript
   RCS: $Id$
 
   This module handles scripting.
- 
-  Input: 
+
+  Input:
  	Env: Environment with bindings
  	Exp: Expression to evaluate
  	Bool flag determines whether the current instantiation is implicit
  	InteractiveSymbolTable is optional, and used in interactive mode,
  	e.g. from OMShell
- 	
+
   Output:
  	Value: The evaluated value
       InteractiveSymbolTable: Modified symbol table
@@ -81,9 +81,9 @@ protected import Error;
 protected import Static;
 protected import ValuesUtil;
 
-public function cevalInteractiveFunctions 
+public function cevalInteractiveFunctions
 "function cevalInteractiveFunctions
-  This function evaluates the functions 
+  This function evaluates the functions
   defined in the interactive environment."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -93,27 +93,27 @@ public function cevalInteractiveFunctions
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm 
+algorithm
   (outCache,outValue,outInteractiveSymbolTable):=(inCache,Values.STRING("CevalScript is a stub!"),inInteractiveSymbolTable);
 end cevalInteractiveFunctions;
 
-protected function setEcho 
+protected function setEcho
   input Boolean echo;
 algorithm
   _:=
   matchcontinue (echo)
     local
     case (true)
-      equation 
+      equation
         Settings.setEcho(1);
       then
         ();
     case (false)
-      equation 
+      equation
         Settings.setEcho(0);
       then
         ();
-  end matchcontinue; 
+  end matchcontinue;
 end setEcho;
 
 protected function cevalValArray "Help function to cevalInteractiveFunctions. Handles val(var,{timestamps})"
@@ -125,7 +125,7 @@ protected function cevalValArray "Help function to cevalInteractiveFunctions. Ha
 	output Env.Cache outCache;
 	output Values.Value value;
 algorithm
-  (outCache,value) := (cache, Values.STRING("CevalScript is a stub!")); 
+  (outCache,value) := (cache, Values.STRING("CevalScript is a stub!"));
 end cevalValArray;
 
 protected function cevalVal "Help function to cevalInteractiveFunctions. Handles val(var,timestamp)"
@@ -153,7 +153,7 @@ public function buildModel "function buildModel
   output String outString2 "method";
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
-algorithm 
+algorithm
   (outCache,outString1,outString2,outInteractiveSymbolTable3,outString4):=
   (inCache,"","",inInteractiveSymbolTable,"");
 end buildModel;
@@ -165,9 +165,9 @@ protected function compileModel "function: compileModel
   input list<String> inLibsList;
   input String inFileDir;
   input String noClean;
-algorithm 
+algorithm
   _:= matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean)
-    case (inFilePrefix,inLibsList,inFileDir,noClean) 
+    case (inFilePrefix,inLibsList,inFileDir,noClean)
       then
         ();
   end matchcontinue;
@@ -175,27 +175,27 @@ end compileModel;
 
 protected function winCitation "function: winCitation
   author: PA
-  Returns a citation mark if platform is windows, otherwise empty string. 
+  Returns a citation mark if platform is windows, otherwise empty string.
   Used by simulate to make whitespaces work in filepaths for WIN32"
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue ()
     case ()
-      equation 
+      equation
         "WIN32" = System.platform();
       then
         "\"";
-    case () then ""; 
+    case () then "";
   end matchcontinue;
 end winCitation;
 
-public function cevalAstExp 
+public function cevalAstExp
 "function: cevalAstExp
   Part of meta-programming using CODE.
   This function evaluates a piece of Expression AST, replacing Eval(variable)
   with the value of the variable, given that it is of type \"Expression\".
-  
+
   Example: y = Code(1 + x)
            2 + 5  ( x + Eval(y) )  =>   2 + 5  ( x + 1 + x )"
 	input Env.Cache inCache;
@@ -206,7 +206,7 @@ public function cevalAstExp
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Exp outExp;
-algorithm 
+algorithm
   (outCache,outExp) :=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -221,41 +221,41 @@ algorithm
       Absyn.FunctionArgs fa;
       list<Absyn.Exp> expl_1,expl;
       Env.Cache cache;
-    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_) then (cache,e); 
-    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_) then (cache,e); 
-    case (cache,_,(e as Absyn.CREF(componentReg = _)),_,_,_) then (cache,e); 
-    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_) then (cache,e); 
-    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_) then (cache,e); 
+    case (cache,_,(e as Absyn.INTEGER(value = _)),_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.REAL(value = _)),_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.CREF(componentReg = _)),_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.STRING(value = _)),_,_,_) then (cache,e);
+    case (cache,_,(e as Absyn.BOOL(value = _)),_,_,_) then (cache,e);
     case (cache,env,Absyn.BINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
-      equation 
+      equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
       then
         (cache,Absyn.BINARY(e1_1,op,e2_1));
     case (cache,env,Absyn.UNARY(op = op,exp = e),impl,st,msg)
-      equation 
+      equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
       then
         (cache,Absyn.UNARY(op,e_1));
     case (cache,env,Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
-      equation 
+      equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
       then
         (cache,Absyn.LBINARY(e1_1,op,e2_1));
     case (cache,env,Absyn.LUNARY(op = op,exp = e),impl,st,msg)
-      equation 
+      equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
       then
         (cache,Absyn.LUNARY(op,e_1));
     case (cache,env,Absyn.RELATION(exp1 = e1,op = op,exp2 = e2),impl,st,msg)
-      equation 
+      equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
       then
         (cache,Absyn.RELATION(e1_1,op,e2_1));
     case (cache,env,Absyn.IFEXP(ifExp = cond,trueBranch = then_,elseBranch = else_,elseIfBranch = nest),impl,st,msg)
-      equation 
+      equation
         (cache,cond_1) = cevalAstExp(cache,env, cond, impl, st, msg);
         (cache,then_1) = cevalAstExp(cache,env, then_, impl, st, msg);
         (cache,else_1) = cevalAstExp(cache,env, else_, impl, st, msg);
@@ -264,47 +264,47 @@ algorithm
         (cache,Absyn.IFEXP(cond_1,then_1,else_1,nest_1));
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
       local DAE.Exp e_1;
-      equation 
+      equation
         (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true);
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache,env, e_1, impl, st, NONE, msg);
       then
         (cache,exp);
-    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg) then (cache,e); 
+    case (cache,env,(e as Absyn.CALL(function_ = cr,functionArgs = fa)),_,_,msg) then (cache,e);
     case (cache,env,Absyn.ARRAY(arrayExp = expl),impl,st,msg)
-      equation 
+      equation
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg);
       then
         (cache,Absyn.ARRAY(expl_1));
     case (cache,env,Absyn.MATRIX(matrix = expl),impl,st,msg)
       local list<list<Absyn.Exp>> expl_1,expl;
-      equation 
+      equation
         (cache,expl_1) = cevalAstExpListList(cache,env, expl, impl, st, msg);
       then
         (cache,Absyn.MATRIX(expl_1));
     case (cache,env,Absyn.RANGE(start = e1,step = SOME(e2),stop = e3),impl,st,msg)
-      equation 
+      equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg);
       then
         (cache,Absyn.RANGE(e1_1,SOME(e2_1),e3_1));
     case (cache,env,Absyn.RANGE(start = e1,step = NONE,stop = e3),impl,st,msg)
-      equation 
+      equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e3_1) = cevalAstExp(cache,env, e3, impl, st, msg);
       then
         (cache,Absyn.RANGE(e1_1,NONE,e3_1));
     case (cache,env,Absyn.TUPLE(expressions = expl),impl,st,msg)
-      equation 
+      equation
         (cache,expl_1) = cevalAstExpList(cache,env, expl, impl, st, msg);
       then
         (cache,Absyn.TUPLE(expl_1));
-    case (cache,env,Absyn.END(),_,_,msg) then (cache,Absyn.END()); 
-    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg) then (cache,e); 
+    case (cache,env,Absyn.END(),_,_,msg) then (cache,Absyn.END());
+    case (cache,env,(e as Absyn.CODE(code = _)),_,_,msg) then (cache,e);
   end matchcontinue;
 end cevalAstExp;
 
-public function cevalAstExpList 
+public function cevalAstExpList
 "function: cevalAstExpList
   List version of cevalAstExp"
 	input Env.Cache inCache;
@@ -315,7 +315,7 @@ public function cevalAstExpList
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output list<Absyn.Exp> outAbsynExpLst;
-algorithm 
+algorithm
   (outCache,outAbsynExpLst) :=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -326,9 +326,9 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{}); 
+    case (cache,env,{},_,_,msg) then (cache,{});
     case (cache,env,(e :: es),impl,st,msg)
-      equation 
+      equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
         (cache,res) = cevalAstExpList(cache,env, es, impl, st, msg);
       then
@@ -345,7 +345,7 @@ protected function cevalAstExpListList "function: cevalAstExpListList"
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output list<list<Absyn.Exp>> outAbsynExpLstLst;
-algorithm 
+algorithm
   (outCache,outAbsynExpLstLst) :=
   matchcontinue (inCache,inEnv,inAbsynExpLstLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -356,9 +356,9 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{}); 
+    case (cache,env,{},_,_,msg) then (cache,{});
     case (cache,env,(e :: es),impl,st,msg)
-      equation 
+      equation
         (cache,e_1) = cevalAstExpList(cache,env, e, impl, st, msg);
         (cache,res) = cevalAstExpListList(cache,env, es, impl, st, msg);
       then
@@ -366,7 +366,7 @@ algorithm
   end matchcontinue;
 end cevalAstExpListList;
 
-protected function cevalAstExpexpList 
+protected function cevalAstExpexpList
 "function: cevalAstExpexpList
   For IFEXP"
 	input Env.Cache inCache;
@@ -377,7 +377,7 @@ protected function cevalAstExpexpList
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output list<tuple<Absyn.Exp, Absyn.Exp>> outTplAbsynExpAbsynExpLst;
-algorithm 
+algorithm
   (outCache,outTplAbsynExpAbsynExpLst) :=
   matchcontinue (inCache,inEnv,inTplAbsynExpAbsynExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -388,9 +388,9 @@ algorithm
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Env.Cache cache;
-    case (cache,_,{},_,_,msg) then (cache,{}); 
+    case (cache,_,{},_,_,msg) then (cache,{});
     case (cache,env,((e1,e2) :: xs),impl,st,msg)
-      equation 
+      equation
         (cache,e1_1) = cevalAstExp(cache,env, e1, impl, st, msg);
         (cache,e2_1) = cevalAstExp(cache,env, e2, impl, st, msg);
         (cache,res) = cevalAstExpexpList(cache,env, xs, impl, st, msg);
@@ -399,9 +399,9 @@ algorithm
   end matchcontinue;
 end cevalAstExpexpList;
 
-public function cevalAstElt 
+public function cevalAstElt
 "function: cevalAstElt
-  Evaluates an ast constructor for Element nodes, e.g. 
+  Evaluates an ast constructor for Element nodes, e.g.
   Code(parameter Real x=1;)"
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -411,7 +411,7 @@ public function cevalAstElt
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Element outElement;
-algorithm 
+algorithm
   (outCache,outElement) :=
   matchcontinue (inCache,inEnv,inElement,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -430,14 +430,14 @@ algorithm
       Ceval.Msg msg;
       Env.Cache cache;
     case (cache,env,Absyn.ELEMENT(finalPrefix = f,redeclareKeywords = r,innerOuter = io,name = id,specification = Absyn.COMPONENTS(attributes = attr,typeSpec = tp,components = citems),info = (info as Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scolumn,lineNumberEnd = eline,columnNumberEnd = ecolumn)),constrainClass = c),impl,st,msg)
-      equation 
+      equation
         (cache,citems_1) = cevalAstCitems(cache,env, citems, impl, st, msg);
       then
         (cache,Absyn.ELEMENT(f,r,io,id,Absyn.COMPONENTS(attr,tp,citems_1),info,c));
   end matchcontinue;
 end cevalAstElt;
 
-protected function cevalAstCitems 
+protected function cevalAstCitems
 "function: cevalAstCitems
   Helper function to cevalAstElt."
  	input Env.Cache inCache;
@@ -448,7 +448,7 @@ protected function cevalAstCitems
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output list<Absyn.ComponentItem> outAbsynComponentItemLst;
-algorithm 
+algorithm
   (outCache,outAbsynComponentItemLst) :=
   matchcontinue (inCache,inEnv,inAbsynComponentItemLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -464,23 +464,23 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Absyn.ComponentItem x;
       Env.Cache cache;
-    case (cache,_,{},_,_,msg) then (cache,{}); 
-    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */ 
-      equation 
+    case (cache,_,{},_,_,msg) then (cache,{});
+    case (cache,env,(Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = id,arrayDim = ad,modification = modopt),condition = cond,comment = cmt) :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */
+      equation
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg);
         (cache,modopt_1) = cevalAstModopt(cache,env, modopt, impl, st, msg);
         (cache,ad_1) = cevalAstArraydim(cache,env, ad, impl, st, msg);
       then
         (cache,Absyn.COMPONENTITEM(Absyn.COMPONENT(id,ad_1,modopt_1),cond,cmt) :: res);
-    case (cache,env,(x :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */ 
-      equation 
+    case (cache,env,(x :: xs),impl,st,msg) /* If one component fails, the rest should still succeed */
+      equation
         (cache,res) = cevalAstCitems(cache,env, xs, impl, st, msg);
       then
         (cache,x :: res);
   end matchcontinue;
 end cevalAstCitems;
 
-protected function cevalAstModopt 
+protected function cevalAstModopt
 "function: cevalAstModopt"
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -490,7 +490,7 @@ protected function cevalAstModopt
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Option<Absyn.Modification> outAbsynModificationOption;
-algorithm 
+algorithm
   (outCache,outAbsynModificationOption) :=
   matchcontinue (inCache,inEnv,inAbsynModificationOption,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -501,16 +501,16 @@ algorithm
       Ceval.Msg msg;
       Env.Cache cache;
     case (cache,env,SOME(mod),st,impl,msg)
-      equation 
+      equation
         (cache,res) = cevalAstModification(cache,env, mod, st, impl, msg);
       then
         (cache,SOME(res));
-    case (cache,env,NONE,_,_,msg) then (cache,NONE); 
+    case (cache,env,NONE,_,_,msg) then (cache,NONE);
   end matchcontinue;
 end cevalAstModopt;
 
 protected function cevalAstModification "function: cevalAstModification
-  This function evaluates Eval(variable) inside an AST Modification  and replaces 
+  This function evaluates Eval(variable) inside an AST Modification  and replaces
   the Eval operator with the value of the variable if it has a type \"Expression\""
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -520,7 +520,7 @@ protected function cevalAstModification "function: cevalAstModification
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.Modification outModification;
-algorithm 
+algorithm
   (outCache,outModification) :=
   matchcontinue (inCache,inEnv,inModification,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -532,13 +532,13 @@ algorithm
       Ceval.Msg msg;
       Env.Cache cache;
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = SOME(e)),impl,st,msg)
-      equation 
+      equation
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,SOME(e_1)));
     case (cache,env,Absyn.CLASSMOD(elementArgLst = eltargs,expOption = NONE),impl,st,msg)
-      equation 
+      equation
         (cache,eltargs_1) = cevalAstEltargs(cache,env, eltargs, impl, st, msg);
       then
         (cache,Absyn.CLASSMOD(eltargs_1,NONE));
@@ -555,7 +555,7 @@ protected function cevalAstEltargs "function: cevalAstEltargs
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
-algorithm 
+algorithm
   (outCache,outAbsynElementArgLst):=
   matchcontinue (inCache,inEnv,inAbsynElementArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -570,16 +570,16 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Absyn.ElementArg m;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{}); 
-    /* TODO: look through redeclarations for Eval(var) as well */   
-    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg) 
-      equation 
+    case (cache,env,{},_,_,msg) then (cache,{});
+    /* TODO: look through redeclarations for Eval(var) as well */
+    case (cache,env,(Absyn.MODIFICATION(finalItem = b,each_ = e,componentReg = cr,modification = SOME(mod),comment = stropt) :: args),impl,st,msg)
+      equation
         (cache,mod_1) = cevalAstModification(cache,env, mod, impl, st, msg);
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg);
       then
         (cache,Absyn.MODIFICATION(b,e,cr,SOME(mod_1),stropt) :: res);
-    case (cache,env,(m :: args),impl,st,msg) /* TODO: look through redeclarations for Eval(var) as well */ 
-      equation 
+    case (cache,env,(m :: args),impl,st,msg) /* TODO: look through redeclarations for Eval(var) as well */
+      equation
         (cache,res) = cevalAstEltargs(cache,env, args, impl, st, msg);
       then
         (cache,m :: res);
@@ -596,7 +596,7 @@ protected function cevalAstArraydim "function: cevalAstArraydim
   input Ceval.Msg inMsg;
   output Env.Cache outCache;
   output Absyn.ArrayDim outArrayDim;
-algorithm 
+algorithm
   (outCache,outArrayDim) :=
   matchcontinue (inCache,inEnv,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
@@ -607,14 +607,14 @@ algorithm
       Option<Interactive.InteractiveSymbolTable> st;
       Absyn.Exp e_1,e;
       Env.Cache cache;
-    case (cache,env,{},_,_,msg) then (cache,{}); 
+    case (cache,env,{},_,_,msg) then (cache,{});
     case (cache,env,(Absyn.NOSUB() :: xs),impl,st,msg)
-      equation 
+      equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg);
       then
         (cache,Absyn.NOSUB() :: res);
     case (cache,env,(Absyn.SUBSCRIPT(subScript = e) :: xs),impl,st,msg)
-      equation 
+      equation
         (cache,res) = cevalAstArraydim(cache,env, xs, impl, st, msg);
         (cache,e_1) = cevalAstExp(cache,env, e, impl, st, msg);
       then
@@ -632,12 +632,12 @@ public function checkModel "function: checkModel
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
-algorithm 
-  (outCache,outValue,outInteractiveSymbolTable) := (inCache,Values.STRING("CevalScript is only a stub!"),inInteractiveSymbolTable);  
-end checkModel; 
+algorithm
+  (outCache,outValue,outInteractiveSymbolTable) := (inCache,Values.STRING("CevalScript is only a stub!"),inInteractiveSymbolTable);
+end checkModel;
 
 public function getValueString "
-Constant evaluates Expression and returns a string representing value. 
+Constant evaluates Expression and returns a string representing value.
 "
   input DAE.Exp e1;
   output String ostring;
@@ -657,7 +657,7 @@ algorithm ostring := matchcontinue( e1)
       ret = ValuesUtil.printValStr(val);
     then
       ret;
-      
+
 end matchcontinue;
 end getValueString;
 
@@ -695,7 +695,7 @@ end generateMakefileHeader;
 protected function generateMakefilename "function generateMakefilename"
   input String filenameprefix;
   output String makefilename;
-algorithm 
+algorithm
   makefilename := Util.stringAppendList({filenameprefix,".makefile"});
 end generateMakefilename;
 
@@ -705,19 +705,19 @@ public function cevalGenerateFunction "function: cevalGenerateFunction
   input Env.Env inEnv;
   input Absyn.Path inPath;
   output Env.Cache outCache;
-  output String functionName; 
-algorithm 
+  output String functionName;
+algorithm
   outCache := inCache;
 end cevalGenerateFunction;
 
 public function getFileDir "function: getFileDir
   author: x02lucpo
-  returns the dir where class file (.mo) was saved or 
+  returns the dir where class file (.mo) was saved or
   $OPENMODELICAHOME/work if the file was not saved yet"
   input Absyn.ComponentRef inComponentRef "class";
   input Absyn.Program inProgram;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inComponentRef,inProgram)
     local
@@ -729,7 +729,7 @@ algorithm
       Absyn.ComponentRef class_;
       Absyn.Program p;
     case (class_,p)
-      equation 
+      equation
         p_class = Absyn.crefToPath(class_) "change to the saved files directory" ;
         cdef = Interactive.getPathedClassInProgram(p_class, p);
         filename = Absyn.classFilename(cdef);
@@ -741,7 +741,7 @@ algorithm
       then
         dir_1;
     case (class_,p)
-      equation 
+      equation
         omhome = Settings.getInstallationDirectoryPath() "model not yet saved! change to $OPENMODELICAHOME/work" ;
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
@@ -749,7 +749,7 @@ algorithm
         dir_1 = Util.stringAppendList({cit,omhome_1,pd,"work",cit});
       then
         dir_1;
-    case (_,_) then "";  /* this function should never fail */ 
+    case (_,_) then "";  /* this function should never fail */
   end matchcontinue;
 end getFileDir;
 

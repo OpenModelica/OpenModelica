@@ -49,8 +49,8 @@ uniontype Severity "severity of message"
 				     actions tool has taken to succed in translation" end NOTIFICATION;
 end Severity;
 
-public 
-uniontype MessageType "runtime scripting /interpretation error" 
+public
+uniontype MessageType "runtime scripting /interpretation error"
   record SYNTAX "syntax errors" end SYNTAX;
 
   record GRAMMAR "grammar errors" end GRAMMAR;
@@ -67,21 +67,21 @@ uniontype MessageType "runtime scripting /interpretation error"
 
 end MessageType;
 
-public 
-type ErrorID = Integer "Unique error id. Used to 
+public
+type ErrorID = Integer "Unique error id. Used to
 			  look up message string and type and severity";
 
-public 
-type MessageTokens = list<String>   "\"Tokens\" to insert into message at 
-				    positions identified by 
-				    - %s for string 
+public
+type MessageTokens = list<String>   "\"Tokens\" to insert into message at
+				    positions identified by
+				    - %s for string
 				    - %l for line no.
 				    - %c for col. no." ;
 
 public import Absyn;
 
 /*
-"Errors WARNINGS Notifications" 
+"Errors WARNINGS Notifications"
 */
 
 public constant ErrorID SYNTAX_ERROR=1 "module" ;
@@ -175,7 +175,7 @@ public constant ErrorID MODIFIER_TYPE_MISMATCH_ERROR=88;
 public constant ErrorID ERROR_FLATTENING=89;
 public constant ErrorID DUPLICATE_ELEMENTS_NOT_IDENTICAL=90;
 public constant ErrorID PACKAGE_VARIABLE_NOT_CONSTANT=91;
-public constant ErrorID RECURSIVE_DEFINITION=92; 
+public constant ErrorID RECURSIVE_DEFINITION=92;
 public constant ErrorID NOT_ARRAY_TYPE_IN_FOR_STATEMENT= 93;
 public constant ErrorID BREAK_OUT_OF_LOOP= 94;
 public constant ErrorID DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN= 95;
@@ -310,7 +310,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Too many equations, overdetermined system. The model has %s equation(s) and %s variable(s)"),
           (STRUCT_SINGULAR_SYSTEM,SYMBOLIC(),ERROR(),
           "Model is structurally singular, error found sorting equations %s for variables %s"),
-          (STRUCT_SINGULAR_SYSTEM_CONNECTORS,SYMBOLIC(),ERROR(),  
+          (STRUCT_SINGULAR_SYSTEM_CONNECTORS,SYMBOLIC(),ERROR(),
           "Model is structurally singular, the following connectors are not connected from the outside: %s"),
           (NON_EXISTING_DERIVATIVE,SYMBOLIC(),ERROR(),
           "Derivative of expression %s is non-existent"),
@@ -348,7 +348,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal connecting two outer connectors in statement connect(%s, %s)"),
           (CONNECTOR_ARRAY_NONCONSTANT,TRANSLATION(),ERROR(),
           "in statement %s, subscript %s is not a parameter or constant"),
-          
+
           (CONNECTOR_ARRAY_DIFFERENT,TRANSLATION(),ERROR(),
           "Unmatched dimension in equation connect(%s, %s)"),
 					(MODIFIER_NON_ARRAY_TYPE_WARNING,TRANSLATION(),WARNING(),
@@ -436,9 +436,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
-		      "Expression %s in for-statement must be an array type"),  
+		      "Expression %s in for-statement must be an array type"),
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
-		      "A break statement not inside a loop"),  
+		      "A break statement not inside a loop"),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
@@ -448,12 +448,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
           "Function \"sum\" has scalar as argument in sum(%s)"),
           (BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
-          "Function \"product\" has scalar as argument in sum(%s)"),       
+          "Function \"product\" has scalar as argument in sum(%s)"),
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Differentiated equation %s to %s for index reduction"),
           (SELECTED_STATE_DUE_TO_START_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Selecting %s as state since it has a start value and a potential state variable (appearing inside der()) was found in the same scope without start value."),
-          
+
           (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
           "The same variables must me solved in elsewhen clause as in the when clause"),
           (ASSERT_CONSTANT_FALSE_ERROR,SYMBOLIC(),ERROR(),
@@ -461,11 +461,11 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (SETTING_FIXED_ATTRIBUTE,TRANSLATION(),WARNING(),
           "Using overdeterimed solver for initialization. Setting fixed=false to the following variables: %s"),
           (PROPAGATE_START_VALUE,TRANSLATION(),WARNING(),
-          "Failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),  
+          "Failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),
           (SEMI_SUPPORTED_FUNCTION,TRANSLATION(),WARNING(),
           "Using non-standardized function %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
-          "Error, %s"),  
+          "Error, %s"),
           (ARRAY_INDEX_OUT_OF_BOUNDS(),TRANSLATION(),ERROR(),
           "Index out of bounds. Adressing position: %s, while array length is: %s"),
           (SELF_REFERENCE_EQUATION(),TRANSLATION(), WARNING(),
@@ -473,7 +473,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 /*   ******* INACTIVE FOR NOW
           (CLASS_NAME_VARIABLE(), TRANSLATION(),ERROR(),
           "Declared a variable with name %s while having a class named %s"),
-*/          
+*/
           (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
           (COMPONENT_CONDITION_VARIABILITY,TRANSLATION(),ERROR(),
           "Component condition must be parameter or constant expression (in %s)."),
@@ -491,36 +491,36 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           /* Warning about package restriction, since MSL does not follow standard */
           (FINAL_OVERRIDE,TRANSLATION(),ERROR(),
           "trying to override final variable in class: %s"),
-          (WARNING_IMPORT_PACKAGES_ONLY,TRANSLATION(),WARNING(),  
+          (WARNING_IMPORT_PACKAGES_ONLY,TRANSLATION(),WARNING(),
           "%s is not a package, imports is only allowed for packages."),
-          (WARNING_RELATION_ON_REAL,TRANSLATION(),WARNING(),  
+          (WARNING_RELATION_ON_REAL,TRANSLATION(),WARNING(),
           "In %s, %s on Reals is only allowed inside functions."),
-          (ERROR_BUILTIN_DELAY,TRANSLATION(),ERROR(),  
+          (ERROR_BUILTIN_DELAY,TRANSLATION(),ERROR(),
           "Builtin function delay(expr,delayTime,delayMax*) failed: %s"),
-          (When_With_IF,TRANSLATION(),ERROR(),  
+          (When_With_IF,TRANSLATION(),ERROR(),
           "When equations using if-statements on form 'if a then b=c else b = d' not implemented yet, use 'b=if a then c else d' as work around\n%s"),
-          (OUTER_MODIFICATION,TRANSLATION(),WARNING(),  
-          "Ignoring the modification on outer element: %s"),          
-          (REDUNDANT_GUESS,TRANSLATION(),WARNING(),  
+          (OUTER_MODIFICATION,TRANSLATION(),WARNING(),
+          "Ignoring the modification on outer element: %s"),
+          (REDUNDANT_GUESS,TRANSLATION(),WARNING(),
           "Start value is assigned for variable: %s, but not used since %s"),
-          (UNUSED_MODIFIER,TRANSLATION(),ERROR(),   
+          (UNUSED_MODIFIER,TRANSLATION(),ERROR(),
           "In modifier %s"),
           (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
           "No corresponding 'inner' declaration found for component %s declared as '%s'."),
-          (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
+          (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
-          (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),  
+          (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
-          
-          
+
+
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
           "While deriving %s to %s, types of inputs: %s and type of %s: %s did not match"),
-          
+
           (MULTIPLE_MODIFIER,TRANSLATION(),ERROR(),
           "Multiple modifers in same scope for element %s, %s"),
-          
+
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
           (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),
@@ -532,24 +532,24 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
           (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
-          
+
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix.")
-          
+
           };
-          
+
 protected import ErrorExt;
 protected import Util;
 protected import Print;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
-This function takes a String and set the global var to which the current variable the 
-compiler is working with. 
+This function takes a String and set the global var to which the current variable the
+compiler is working with.
 "
   input String component;
   input Option<Absyn.Info> info;
-algorithm _ := 
+algorithm _ :=
   matchcontinue (component, info)
       local String s1; Integer i1,i2,i3,i4; Boolean b1;
   case(component,SOME(Absyn.INFO(s1,b1,i1,i2,i3,i4,_)))
@@ -559,20 +559,20 @@ algorithm _ :=
   case(component,NONE)
         equation
       ErrorExt.updateCurrentComponent(component,false,"",-1,-1,-1,-1);
-      then ();    
-end matchcontinue;      
+      then ();
+end matchcontinue;
 
 end updateCurrentComponent;
 
 public function addMessage "Implementation of Relations
   function: addMessage
- 
+
   Adds a message given ID and tokens. The rest of the info
   is looked up in the message table.
 "
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
-algorithm 
+algorithm
   _:=
   matchcontinue (inErrorID,inMessageTokens)
     local
@@ -582,7 +582,7 @@ algorithm
       ErrorID error_id;
       MessageTokens tokens;
     case (error_id,tokens)
-      equation 
+      equation
         //print(" adding message: " +& intString(error_id) +& "\n");
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
@@ -592,7 +592,7 @@ algorithm
       then
         ();
     case (error_id,tokens)
-      equation 
+      equation
         failure((_,_,_) = lookupMessage(error_id));
         Print.printErrorBuf("#Internal error, error message with id ");
         id_str = intString(error_id);
@@ -604,14 +604,14 @@ algorithm
 end addMessage;
 
 public function addSourceMessage "function: addSourceMessage
- 
+
   Adds a message given ID, tokens and source file info.
   The rest of the info is looked up in the message table.
 "
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
   input Absyn.Info inInfo;
-algorithm 
+algorithm
   _:=
   matchcontinue (inErrorID,inMessageTokens,inInfo)
     local
@@ -623,16 +623,16 @@ algorithm
       Boolean isReadOnly;
       Absyn.Info sinfo;
     case (error_id,tokens,Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
-      equation 
+      equation
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
         severity_string = severityStr(severity);
-        ErrorExt.addSourceMessage(error_id, msg_type_str, severity_string, sline, scol, 
+        ErrorExt.addSourceMessage(error_id, msg_type_str, severity_string, sline, scol,
           eline, ecol, isReadOnly, file, msg, tokens);
       then
         ();
     case (error_id,tokens,sinfo)
-      equation 
+      equation
         failure((_,_,_) = lookupMessage(error_id));
         Print.printErrorBuf("#Internal error, error message with id ");
         id_str = intString(error_id);
@@ -645,11 +645,11 @@ end addSourceMessage;
 
 public function printMessagesStr "Relations for pretty printing.
   function: printMessagesStr
- 
+
   Prints messages to a string.
 "
   output String res;
-algorithm 
+algorithm
   res := ErrorExt.printMessagesStr();
 end printMessagesStr;
 
@@ -657,47 +657,47 @@ public function printErrorsNoWarning "
   Prints errors only to a string.
 "
   output String res;
-algorithm 
-  res := ErrorExt.printErrorsNoWarning(); 
+algorithm
+  res := ErrorExt.printErrorsNoWarning();
 end printErrorsNoWarning;
 
 public function printMessagesStrLst "function: print_messages_str
- 
+
   Returns all messages as a list of strings, one for each message.
 "
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue ()
-    case () then {"Not impl. yet"}; 
+    case () then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLst;
 
 public function printMessagesStrLstType "function: printMessagesStrLstType
- 
+
    Returns all messages as a list of strings, one for each message.
    Filters out messages of certain type.
 "
   input MessageType inMessageType;
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue (inMessageType)
-    case (_) then {"Not impl. yet"}; 
+    case (_) then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLstType;
 
 public function printMessagesStrLstSeverity "function: printMessagesStrLstSeverity
-  
+
    Returns all messages as a list of strings, one for each message.
   Filters out messages of certain severity
 "
   input Severity inSeverity;
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst:=
   matchcontinue (inSeverity)
-    case (_) then {"Not impl. yet"}; 
+    case (_) then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLstSeverity;
 
@@ -718,59 +718,59 @@ algorithm
   num := ErrorExt.getNumErrorMessages();
 end getNumErrorMessages;
 
-public function getMessagesStr "Relations for interactive comm. These returns the messages as an array 
+public function getMessagesStr "Relations for interactive comm. These returns the messages as an array
   of strings, suitable for sending to clients like model editor, MDT, etc.
 
   function getMessagesStr
- 
-  Return all messages in a matrix format, vector of strings for each 
+
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
 "
   output String res;
-algorithm 
+algorithm
   res := ErrorExt.getMessagesStr();
 end getMessagesStr;
 
 public function getMessagesStrType "function getMessagesStrType
- 
-  Return all messages in a matrix format, vector of strings for each 
+
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
   Filtered by a specific MessageType.
 "
   input MessageType inMessageType;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inMessageType)
-    case (_) then "not impl yet."; 
+    case (_) then "not impl yet.";
   end matchcontinue;
 end getMessagesStrType;
 
 public function getMessagesStrSeverity "function getMessagesStrSeverity
- 
-  Return all messages in a matrix format, vector of strings for each 
+
+  Return all messages in a matrix format, vector of strings for each
   message, written out as a string.
   Filtered by a specific MessageType.
 "
   input Severity inSeverity;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inSeverity)
-    case (_) then "not impl yet."; 
+    case (_) then "not impl yet.";
   end matchcontinue;
 end getMessagesStrSeverity;
 
 protected function lookupMessage "Private Relations
   function: lookupMessage
- 
+
   Finds a message given ErrorID by looking in the message list.
 "
   input ErrorID inErrorID;
   output MessageType outMessageType;
   output Severity outSeverity;
   output String outString;
-algorithm 
+algorithm
   (outMessageType,outSeverity,outString):=
   matchcontinue (inErrorID)
     local
@@ -779,7 +779,7 @@ algorithm
       String msg;
       ErrorID error_id;
     case (error_id)
-      equation 
+      equation
         (msg_tp,severity,msg) = lookupMessage2(errorTable, error_id);
       then
         (msg_tp,severity,msg);
@@ -792,7 +792,7 @@ protected function lookupMessage2
   output MessageType outMessageType;
   output Severity outSeverity;
   output String outString;
-algorithm 
+algorithm
   (outMessageType,outSeverity,outString):=
   matchcontinue (inTplErrorIDMessageTypeSeverityStringLst,inErrorID)
     local
@@ -802,12 +802,12 @@ algorithm
       String msg;
       list<tuple<ErrorID, MessageType, Severity, String>> rest;
     case (((id1,msg_type,severity,msg) :: _),id2)
-      equation 
+      equation
         equality(id1 = id2);
       then
         (msg_type,severity,msg);
     case ((_ :: rest),id)
-      equation 
+      equation
         (msg_type,severity,msg) = lookupMessage2(rest, id);
       then
         (msg_type,severity,msg);
@@ -815,35 +815,35 @@ algorithm
 end lookupMessage2;
 
 protected function messageTypeStr "function: messageTypeStr
- 
+
   Converts a MessageType to a string.
 "
   input MessageType inMessageType;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inMessageType)
-    case (SYNTAX()) then "SYNTAX"; 
-    case (GRAMMAR()) then "GRAMMAR"; 
-    case (TRANSLATION()) then "TRANSLATION"; 
-    case (SYMBOLIC()) then "SYMBOLIC"; 
-    case (SIMULATION()) then "SIMULATION"; 
-    case (SCRIPTING()) then "SCRIPTING"; 
+    case (SYNTAX()) then "SYNTAX";
+    case (GRAMMAR()) then "GRAMMAR";
+    case (TRANSLATION()) then "TRANSLATION";
+    case (SYMBOLIC()) then "SYMBOLIC";
+    case (SIMULATION()) then "SIMULATION";
+    case (SCRIPTING()) then "SCRIPTING";
   end matchcontinue;
 end messageTypeStr;
 
 protected function severityStr "function: severityStr
- 
+
   Converts a Severity to a string.
 "
   input Severity inSeverity;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inSeverity)
-    case (ERROR()) then "Error"; 
-    case (WARNING()) then "Warning"; 
-    case (NOTIFICATION()) then "Notification"; 
+    case (ERROR()) then "Error";
+    case (WARNING()) then "Warning";
+    case (NOTIFICATION()) then "Notification";
   end matchcontinue;
 end severityStr;
 
@@ -855,24 +855,24 @@ protected function selectString "function selectString
   input String inString2;
   input String inString3;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inBoolean1,inString2,inString3)
     local String s1,s2;
-    case (true,s1,_) then s1; 
-    case (false,_,s2) then s2; 
+    case (true,s1,_) then s1;
+    case (false,_,s2) then s2;
   end matchcontinue;
 end selectString;
 
 protected function infoStr "function: infoStr
- 
+
   Converts a Absyn.Info to a string.
   adrpo changed 2006-02-05 to match the new Absyn.INFO specification
-  
+
 "
   input Absyn.Info inInfo;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inInfo)
     local
@@ -880,7 +880,7 @@ algorithm
       Boolean isReadOnly;
       ErrorID sline,scol,eline,ecol;
     case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
-      equation 
+      equation
         s1 = selectString(isReadOnly, "readonly", "writable");
         sline_str = intString(sline);
         scol_str = intString(scol);

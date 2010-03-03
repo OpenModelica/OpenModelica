@@ -2,7 +2,7 @@
  * Auto-generated file containing pre-compiled templates for
  * fast code generation. Do not edit manually.
  */
-  
+
 package CompiledTemplates
 
 import TemplCG;
@@ -102,7 +102,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_TEXT("#ifdef __cplusplus\n"),
       TemplCG.TEMPLATE_INDENT(),
@@ -110,7 +110,7 @@ CompiledTemplateSet("C89",{
       TemplCG.TEMPLATE_INDENT(),
       TemplCG.TEMPLATE_TEXT("#endif\n"),
       TemplCG.TEMPLATE_INDENT()
-    } 
+    }
     ),
     TemplCG.TEMPLATE_TEXT(" ")
   }),
@@ -156,7 +156,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_FOR_EACH("InitStatement","",{
         TemplCG.TEMPLATE_TEXT("\n"),
@@ -172,7 +172,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_FOR_EACH("StatementList","",{
         TemplCG.TEMPLATE_TEXT("\n"),
@@ -188,7 +188,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_FOR_EACH("Cleanup","",{
         TemplCG.TEMPLATE_TEXT("\n"),
@@ -201,7 +201,7 @@ CompiledTemplateSet("C89",{
       TemplCG.TEMPLATE_INDENT(),
       TemplCG.TEMPLATE_TEXT("\n"),
       TemplCG.TEMPLATE_INDENT()
-    } 
+    }
     )
   }),
   TemplCG.TEMPLATE_TEXT("/* End Body */\n"),
@@ -251,7 +251,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_FOR_EACH("InitStatement","",{
         TemplCG.TEMPLATE_TEXT("\n"),
@@ -267,7 +267,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_FOR_EACH("StatementList","",{
         TemplCG.TEMPLATE_TEXT("\n"),
@@ -283,7 +283,7 @@ CompiledTemplateSet("C89",{
       })
       }, /* else */ {
 
-      } 
+      }
       ),
       TemplCG.TEMPLATE_FOR_EACH("Cleanup","",{
         TemplCG.TEMPLATE_TEXT("\n"),
@@ -296,7 +296,7 @@ CompiledTemplateSet("C89",{
       TemplCG.TEMPLATE_INDENT(),
       TemplCG.TEMPLATE_TEXT("\n"),
       TemplCG.TEMPLATE_INDENT()
-    } 
+    }
     )
   })
 })

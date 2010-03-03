@@ -35,11 +35,11 @@ package ConnectionGraph
 
   RCS: $Id$
 
-  This module contains a connection breaking algorithm and  
+  This module contains a connection breaking algorithm and
   related data structures. The input of the algorithm is
   collected to ConnectionGraph record during instantiation.
-  The entry point to the algorithm is findResultGraph. 
-  
+  The entry point to the algorithm is findResultGraph.
+
   The algorithm is implemented using a disjoint-set
   data structure that represents the components of
   elements so far connected. Each component has
@@ -48,24 +48,24 @@ package ConnectionGraph
   for each non-canonical element so that a path beginning
   from some element eventually ends to the canonical element
   of the same component.
-  
+
   Roots are represented as connections to dummy root
   element. In this way, all elements will be in the
   same component after the algorithm finishes assuming
   that the model is valid."
-      
+
 public import Absyn;
 public import DAE;
 public import DAEUtil;
 public import HashTableCG;
 public import Util;
 
-/* A list of edges 
+/* A list of edges
  */
 type Edges = list<tuple<DAE.ComponentRef,DAE.ComponentRef>>;
 /* A list of edges, each edge associated with two lists of DAE elements
  * (these elements represent equations to be added if the edge
- * is preserved or broken) 
+ * is preserved or broken)
  */
 type DaeEdges = list<tuple<DAE.ComponentRef,DAE.ComponentRef,list<DAE.Element>>>;
 
@@ -79,11 +79,11 @@ uniontype ConnectionGraph "Input structure for connection breaking algorithm. It
     end GRAPH;
 end ConnectionGraph;
 
-/* 
+/*
  * Initial connection graph with no edges in it.
  */
 public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
-/* 
+/*
  * Initial connection graph with updateGraph set to false.
  */
 public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
@@ -102,7 +102,7 @@ algorithm
       DAE.ComponentRef c1, c2;
       Edges tail;
 
-    case ({}) then ();            
+    case ({}) then ();
     case ((c1, c2) :: tail)
       equation
         print("    ");
@@ -163,7 +163,7 @@ function getDefiniteRoots
   output list<DAE.ComponentRef> outResult;
 algorithm
   outResult := matchcontinue(inGraph)
-    local 
+    local
       list<DAE.ComponentRef> result;
     case (GRAPH(_,result,_,_,_)) then result;
   end matchcontinue;
@@ -203,7 +203,7 @@ algorithm
   end matchcontinue;
 end getConnections;
 
-function addDefiniteRoot 
+function addDefiniteRoot
 "Adds a new definite root to ConnectionGraph"
   input ConnectionGraph inGraph;
   input DAE.ComponentRef inRoot;
@@ -215,7 +215,7 @@ algorithm
                     getConnections(inGraph));
 */
   outGraph := matchcontinue(inGraph, inRoot)
-    local 
+    local
       Boolean updateGraph;
       ConnectionGraph graph;
       DAE.ComponentRef root;
@@ -223,17 +223,17 @@ algorithm
       list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
-      
+
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root)
       equation
-        Debug.fprintln("cgraph", "- ConnectionGraph.addDefiniteRoot(" +& 
+        Debug.fprintln("cgraph", "- ConnectionGraph.addDefiniteRoot(" +&
             Exp.printComponentRefStr(root) +& ")");
-      then 
+      then
         GRAPH(updateGraph,root::definiteRoots,potentialRoots,branches,connections);
   end matchcontinue;
 end addDefiniteRoot;
 
-function addPotentialRoot 
+function addPotentialRoot
 "Adds a new potential root to ConnectionGraph"
   input ConnectionGraph inGraph;
   input DAE.ComponentRef inRoot;
@@ -246,7 +246,7 @@ algorithm
                     inGraph.connections);
 */
   outGraph := matchcontinue(inGraph, inRoot, inPriority)
-    local 
+    local
       Boolean updateGraph;
       ConnectionGraph graph;
       DAE.ComponentRef root;
@@ -258,9 +258,9 @@ algorithm
 
     case (GRAPH(updateGraph = updateGraph,definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), root, priority)
       equation
-        Debug.fprintln("cgraph", "- ConnectionGraph.addPotentialRoot(" +& 
+        Debug.fprintln("cgraph", "- ConnectionGraph.addPotentialRoot(" +&
             Exp.printComponentRefStr(root) +& ", " +& realString(priority) +& ")");
-      then 
+      then
         GRAPH(updateGraph,definiteRoots,(root,priority)::potentialRoots,branches,connections);
   end matchcontinue;
 end addPotentialRoot;
@@ -278,7 +278,7 @@ algorithm
                     inGraph.connections);
 */
   outGraph := matchcontinue(inGraph, inRef1, inRef2)
-    local 
+    local
       Boolean updateGraph;
       ConnectionGraph graph;
       DAE.ComponentRef ref1;
@@ -290,10 +290,10 @@ algorithm
 
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2)
       equation
-        Debug.fprintln("cgraph", "- ConnectionGraph.addBranch(" +& 
-            Exp.printComponentRefStr(ref1) +& ", " +& 
+        Debug.fprintln("cgraph", "- ConnectionGraph.addBranch(" +&
+            Exp.printComponentRefStr(ref1) +& ", " +&
             Exp.printComponentRefStr(ref2) +& ")");
-      then 
+      then
         GRAPH(updateGraph, definiteRoots,potentialRoots,(ref1,ref2)::branches,connections);
   end matchcontinue;
 end addBranch;
@@ -312,7 +312,7 @@ algorithm
                     (inRef1,inRef2)::inGraph.connections);
 */
   outGraph := matchcontinue(inGraph, inRef1, inRef2,inDae)
-    local 
+    local
       Boolean updateGraph;
       ConnectionGraph graph;
       DAE.ComponentRef ref1;
@@ -322,18 +322,18 @@ algorithm
       list<tuple<DAE.ComponentRef,Real>> potentialRoots;
       Edges branches;
       DaeEdges connections;
-      
+
     case (GRAPH(updateGraph = updateGraph, definiteRoots = definiteRoots,potentialRoots = potentialRoots,branches = branches,connections = connections), ref1, ref2, dae)
       equation
-        Debug.fprintln("cgraph", "- ConnectionGraph.addConnection(" +& 
-            Exp.printComponentRefStr(ref1) +& ", " +& 
+        Debug.fprintln("cgraph", "- ConnectionGraph.addConnection(" +&
+            Exp.printComponentRefStr(ref1) +& ", " +&
             Exp.printComponentRefStr(ref2) +& ")");
     then GRAPH(updateGraph, definiteRoots,potentialRoots,branches,(ref1,ref2,dae)::connections);
   end matchcontinue;
 end addConnection;
 
 function canonical
-"Returns the canonical element of the component where input element belongs to. 
+"Returns the canonical element of the component where input element belongs to.
  See explanation at the top of file."
   input HashTableCG.HashTable inPartition;
   input DAE.ComponentRef inRef;
@@ -351,13 +351,13 @@ algorithm
         parentCanonical = canonical(partition, parent);
         //partition2 = HashTableCG.add((ref, parentCanonical), partition);
       then parentCanonical;
-         
+
     case (partition,ref) then ref;
   end matchcontinue;
 end canonical;
 
 function areInSameComponent
-"Tells whether the elements belong to the same component. 
+"Tells whether the elements belong to the same component.
  See explanation at the top of file."
   input HashTableCG.HashTable inPartition;
   input DAE.ComponentRef inRef1;
@@ -400,20 +400,20 @@ algorithm
       HashTableCG.HashTable partition;
       DAE.ComponentRef ref1, ref2, canon1, canon2;
       list<DAE.Element> dae, breakDAE;
-      
+
     // leave the DAE as it is as we already added the equations from connect(ref1,ref2)
     case(partition,ref1,ref2,_,dae)
       equation
         failure(canon1 = canonical(partition,ref1)); // no parent
       then (partition, dae);
-      
+
     // leave the DAE as it is as we already added the equations from connect(ref1,ref2)
     case(partition,ref1,ref2,_,dae)
       equation
         failure(canon2 = canonical(partition,ref2)); // no parent
-      then (partition, dae);      
-      
-    // leave the DAE as it is as we already added the equations from connect(ref1,ref2)    
+      then (partition, dae);
+
+    // leave the DAE as it is as we already added the equations from connect(ref1,ref2)
     case(partition,ref1,ref2,_,dae)
       equation
         canon1 = canonical(partition,ref1);
@@ -421,8 +421,8 @@ algorithm
         //print(Exp.printComponentRefStr(canon1));
         //print(" -cc- ");
         //print(Exp.printComponentRefStr(canon2));
-        //print("\n");        
-        (partition, true) = connectCanonicalComponents(partition,canon1,canon2);        
+        //print("\n");
+        (partition, true) = connectCanonicalComponents(partition,canon1,canon2);
         //print(Exp.printComponentRefStr(ref1));
         //print(" -- ");
         //print(Exp.printComponentRefStr(ref2));
@@ -455,11 +455,11 @@ algorithm
       DAE.ComponentRef ref1, ref2;
 
     case(partition,ref1,ref2)
-      equation 
+      equation
         true = Exp.crefEqual(ref1, ref2);
       then (partition, false);
     case(partition,ref1,ref2)
-      equation 
+      equation
         partition = HashTableCG.add((ref1,ref2), partition);
       then (partition, true);
   end matchcontinue;
@@ -482,7 +482,7 @@ algorithm
       equation
         table = HashTableCG.add((root,firstRoot), table);
         table = addRootsToTable(table, tail, firstRoot);
-      then table; 
+      then table;
     case(table, {}, _) then table;
   end matchcontinue;
 end addRootsToTable;
@@ -525,7 +525,7 @@ function ord
   input tuple<DAE.ComponentRef,Real> inEl1;
   input tuple<DAE.ComponentRef,Real> inEl2;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean := matchcontinue(inEl1, inEl2)
     local Real r1, r2;
     case((_,r1), (_,r2))
@@ -568,7 +568,7 @@ function addConnections
 "Adds all connections to graph."
   input HashTableCG.HashTable inTable;
   input DaeEdges inConnections;
-  input list<DAE.Element> inDae;  
+  input list<DAE.Element> inDae;
   output HashTableCG.HashTable outTable;
   output list<DAE.Element> outDae;
 algorithm
@@ -584,7 +584,7 @@ algorithm
     equation
       (table,dae) = connectComponents(table, ref1, ref2,breakDAE,dae);
       (table,dae) = addConnections(table, tail, dae);
-    then (table,dae); 
+    then (table,dae);
   end matchcontinue;
 end addConnections;
 
@@ -608,9 +608,9 @@ algorithm
 
     // deal with empty connection graph
     case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {})) then ({}, {});
-      
+
     // we have something in the connection graph
-    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots, 
+    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
                    branches = branches, connections = connections))
       equation
         table = resultGraphWithRoots(definiteRoots);
@@ -618,12 +618,12 @@ algorithm
         orderedPotentialRoots = Util.sort(potentialRoots, ord);
         dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
         (table, dae) = addConnections(table, connections, {});
-        (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);  
+        (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
       then (finalRoots, dae);
   end matchcontinue;
 end findResultGraph;
 
-function evalIsRoot  
+function evalIsRoot
 "Replaces all Connections.isRoot calls by true or false depending on wheter the parameter is in the list of roots."
   input list<DAE.ComponentRef> inRoots;
   input list<DAE.Element> inDae;
@@ -632,45 +632,45 @@ algorithm
   outDae := matchcontinue(inRoots, inDae)
     case ({}, {}) then {};
     case ({}, inDae) then inDae;
-    case (inRoots, inDae) 
-      equation 
+    case (inRoots, inDae)
+      equation
         (outDae, _) = DAEUtil.traverseDAE2(inDae, evalIsRootHelper, inRoots);
-      then outDae; 
+      then outDae;
   end matchcontinue;
 end evalIsRoot;
 
 function evalIsRootHelper
 "Helper function for evalIsRoot."
-  input DAE.Exp inExp; 
-  input list<DAE.ComponentRef> inRoots; 
-  output DAE.Exp outExp; 
+  input DAE.Exp inExp;
+  input list<DAE.ComponentRef> inRoots;
+  output DAE.Exp outExp;
   output list<DAE.ComponentRef> outRoots;
-algorithm  
+algorithm
   (outExp,outRoots) := matchcontinue(inExp,inRoots)
-    local  
-      DAE.Exp exp; 
+    local
+      DAE.Exp exp;
       list<DAE.ComponentRef> roots;
       DAE.ComponentRef cref;
       Boolean result;
-    
+
     // no roots, same exp
-    case (exp, {}) then (exp, {});    
+    case (exp, {}) then (exp, {});
     // deal with Connections.isRoot
-    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
+    case (DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)}), roots)
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
         //Debug.fprintln("cgraph", Exp.printExpStr(inExp) +& " is found in roots:");
       then (DAE.BCONST(result), roots);
     // deal with NOT Connections.isRoot
-    case (DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")), 
+    case (DAE.LUNARY(DAE.NOT(), DAE.CALL(path=Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),
           expLst={DAE.CREF(componentRef = cref)})), roots)
       equation
         result = Util.listContainsWithCompareFunc(cref, roots, Exp.crefEqual);
         result = boolNot(result);
         //Debug.fprintln("cgraph", Exp.printExpStr(inExp) +& " is found in roots!");
       then (DAE.BCONST(result), roots);
-    // no replacement needed        
+    // no replacement needed
     case (exp, roots)
       equation
         //Debug.fprintln("cgraph", Exp.printExpStr(exp) +& " not found in roots!");
@@ -695,7 +695,7 @@ algorithm
       DAE.AvlTree funcs;
       list<DAE.ComponentRef> roots;
       DAE.DAElist dae;
-      
+
     // empty graph gives you the same dae
     case (GRAPH(_, {}, {}, {}, {}), dae) then dae;
     // no dae
@@ -713,12 +713,12 @@ algorithm
         elts = Util.listAppendNoCopy(elts, daeConnections);
       then
         DAE.DAE(elts,funcs);
-    // handle the connection braking 
+    // handle the connection braking
     case (graph, dae)
       equation
         Debug.fprintln("cgraph", "- ConnectionGraph.handleOverconstrainedConnections failed");
-      then 
-        fail();        
+      then
+        fail();
   end matchcontinue;
 end handleOverconstrainedConnections;
 

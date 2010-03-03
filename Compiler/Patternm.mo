@@ -632,7 +632,7 @@ algorithm
         // Fetch the names of the fields
         (localCache,sClass,_) = Lookup.lookupClass(localCache,localEnv,recName,true);
         (fieldNameList,_) = DFA.extractFieldNamesAndTypes(sClass);
-        
+
         numPosArgs = listLength(funcArgs);
         (_,fieldNamesNamed) = Util.listSplit(fieldNameList, numPosArgs);
 
@@ -825,7 +825,7 @@ algorithm
         (localCache, expr) = DFA.matchContinueToSwitch(patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,localCache,localEnv);
       then (localCache, expr);
     /*
-    
+
     case (localMatchCont,localResultVarList,localCache,localEnv)
       local
         RightHandList rhList,rhList2; // Light version and normal version

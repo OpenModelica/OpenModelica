@@ -33,11 +33,11 @@ package Inline
 " file:	       Inline.mo
   package:     Inline
   description: inline functions
-  
+
   RCS: $Id$
-  
+
   This module contains data structures and functions for inline functions.
-  
+
   The entry point is the inlineCalls function, or inlineCallsInFunctions
   "
 
@@ -261,7 +261,7 @@ algorithm
       DAE.Stream streamPrefix;
       Option<DAELow.Var> var;
       DAE.ElementSource source "the origin of the element";
-      
+
     case(NONE,_) then NONE;
     case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,origVarName,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
@@ -285,7 +285,7 @@ algorithm
       list<Integer> ilst;
       DAE.Exp e1,e1_1,e2,e2_1;
       DAE.ElementSource source "the origin of the element";
-      
+
     case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
@@ -349,7 +349,7 @@ algorithm
       DAE.Exp e,e_1;
       list<DAELow.ReinitStatement> rslst,rslst_1;
       Option<Integer> io;
-      
+
     case(DAELow.WHEN_CLAUSE(e,rslst,io),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -373,7 +373,7 @@ algorithm
       DAE.Exp e,e_1;
       DAELow.ReinitStatement rs;
       DAE.ElementSource source "the origin of the element";
-      
+
     case(DAELow.REINIT(cref,e,source),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -398,7 +398,7 @@ algorithm
       Absyn.Path p;
       DAE.Element e1,e1_1,e2,e2_1;
       DAE.ElementSource source "the origin of the element";
-      
+
     case({},_) then {};
     case(DAELow.EXTOBJCLASS(p,e1,e2,source) :: cdr,fns)
       equation
@@ -436,7 +436,7 @@ algorithm
       DAE.VarDirection direction;
       DAE.VarProtection protection;
       DAE.Type ty,t;
-      DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1; 
+      DAE.Exp binding,binding_1,exp,exp_1,exp1,exp1_1,exp2,exp2_1;
       DAE.InstDims dims;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -454,7 +454,7 @@ algorithm
       DAE.InlineType inlineType;
       list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source "the origin of the element";
-       
+
     case({},_) then {};
     case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
                  source,variableAttributesOption,absynCommentOption,innerOuter) :: cdr,fns)
@@ -848,7 +848,7 @@ algorithm
       DAE.ExpType t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      DAE.Exp newExp; 
+      DAE.Exp newExp;
       DAE.InlineType inlineType;
     case((DAE.CALL(p,args,tup,built,t,inlineType),fns))
       equation

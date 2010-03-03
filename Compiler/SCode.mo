@@ -32,36 +32,36 @@ package SCode
 " file:	       SCode.mo
   package:     SCode
   description: SCode intermediate form
- 
+
   RCS: $Id$
- 
-  This module contains data structures to describe a Modelica 
-  model in a more convenient (canonical) way than the Absyn module does.  
+
+  This module contains data structures to describe a Modelica
+  model in a more convenient (canonical) way than the Absyn module does.
   Also local functions for printing and query of SCode are defined.
-  
-  See also SCodeUtil.mo for translation functions 
+
+  See also SCodeUtil.mo for translation functions
   from Absyn representation to SCode representation.
- 
+
   The SCode representation is used as input to the Inst module"
 
 public import Absyn;
 
-public 
+public
 type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'" ;
 
-public 
+public
 type Path = Absyn.Path;
 
-public 
+public
 type Subscript = Absyn.Subscript;
-  
+
 public
 type BaseClass = tuple<Absyn.Path,Mod>;
 
 public
 type OptBaseClass = Option<BaseClass>;
 
-public 
+public
 uniontype Restriction
   record R_CLASS end R_CLASS;
   record R_MODEL end R_MODEL;
@@ -87,16 +87,16 @@ uniontype Restriction
   record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
 
   // MetaModelica extensions
-  record R_METARECORD "Metamodelica extension" 
+  record R_METARECORD "Metamodelica extension"
     Absyn.Path name; //Name of the uniontype
     Integer index; //Index in the uniontype
   end R_METARECORD; /* added by x07simbj */
 
-  record R_UNIONTYPE "Metamodelica extension" 
+  record R_UNIONTYPE "Metamodelica extension"
   end R_UNIONTYPE; /* added by simbj */
 end Restriction;
 
-public 
+public
 uniontype Mod "- Modifications"
 
   record MOD
@@ -104,9 +104,9 @@ uniontype Mod "- Modifications"
     Absyn.Each eachPrefix;
     list<SubMod> subModLst;
     Option<tuple<Absyn.Exp,Boolean>> absynExpOption "The binding expression of a modification
-    has an expression and a Boolean delayElaboration which is true if elaboration(type checking) 
-    should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be 
-    type checked -before- a is instantiated, which is the current design in instantiation process."; 
+    has an expression and a Boolean delayElaboration which is true if elaboration(type checking)
+    should be delayed. This can for instance be used when having A a(x = a.y) where a.y can not be
+    type checked -before- a is instantiated, which is the current design in instantiation process.";
   end MOD;
 
   record REDECL
@@ -118,8 +118,8 @@ uniontype Mod "- Modifications"
 
 end Mod;
 
-public 
-uniontype SubMod "Modifications are represented in an more structured way than in 
+public
+uniontype SubMod "Modifications are represented in an more structured way than in
     the `Absyn\' module.  Modifications using qualified names
     (such as in `x.y =  z\') are normalized (to `x(y = z)\').  And a
     special case when arrays are subscripted in a modification.
@@ -136,11 +136,11 @@ uniontype SubMod "Modifications are represented in an more structured way than i
 
 end SubMod;
 
-public 
+public
 type Program = list<Class> "- Programs
 As in the AST, a program is simply a list of class definitions." ;
 
-public 
+public
 uniontype Class "- Classes"
   record CLASS "the simplified SCode class"
     Ident name "the name of the class" ;
@@ -152,7 +152,7 @@ uniontype Class "- Classes"
   end CLASS;
 end Class;
 
-public 
+public
 uniontype Enum "Enum, which is a name in an enumeration and an optional Comment."
   record ENUM
     Ident           literal;
@@ -160,8 +160,8 @@ uniontype Enum "Enum, which is a name in an enumeration and an optional Comment.
   end ENUM;
 end Enum;
 
-public 
-uniontype ClassDef 
+public
+uniontype ClassDef
 "The major difference between these types and their Absyn
  counterparts is that the PARTS constructor contains separate
  lists for elements, equations and algorithms.
@@ -183,7 +183,7 @@ uniontype ClassDef
     list<Equation>             normalEquationLst   "the list of equations";
     list<Equation>             initialEquationLst  "the list of initial equations";
     list<Algorithm>            normalAlgorithmLst  "the list of algorithms";
-    list<Algorithm>            initialAlgorithmLst "the list of initial algorithms";    
+    list<Algorithm>            initialAlgorithmLst "the list of initial algorithms";
     Option<Absyn.ExternalDecl> externalDecl        "used by external functions" ;
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
@@ -229,7 +229,7 @@ end ClassDef;
 // stefan
 public
 uniontype Comment
-  
+
   record COMMENT
     Option<Annotation> annotation_;
     Option<String> comment;
@@ -240,27 +240,27 @@ end Comment;
 // stefan
 public
 uniontype Annotation
-  
+
   record ANNOTATION
     Mod modification;
   end ANNOTATION;
-  
+
 end Annotation;
 
-public 
+public
 uniontype Equation "- Equations"
   record EQUATION "an equation"
     EEquation eEquation "an equation";
-    OptBaseClass baseClassPath 
+    OptBaseClass baseClassPath
     "the baseClassPath is present if the equation originates from a base class" ;
   end EQUATION;
-  
+
 end Equation;
 
-public 
-uniontype EEquation 
-"These represent equations and are almost identical to their Absyn versions.  
- In EQ_IF the elseif branches are represented as normal else branches with 
+public
+uniontype EEquation
+"These represent equations and are almost identical to their Absyn versions.
+ In EQ_IF the elseif branches are represented as normal else branches with
  a single if statement in them."
   record EQ_IF
     list<Absyn.Exp> condition "conditional" ;
@@ -305,26 +305,26 @@ uniontype EEquation
     Absyn.Exp message "the terminate message";
     Option<Comment> comment;
   end EQ_TERMINATE;
-  
+
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
     Absyn.Exp          expReinit "the new value" ;
     Option<Comment> comment;
   end EQ_REINIT;
-  
+
   record EQ_NORETCALL "function calls without return value"
     Absyn.ComponentRef functionName "the function nanme";
     Absyn.FunctionArgs functionArgs "the function arguments";
     Option<Comment> comment;
-  end EQ_NORETCALL;  
+  end EQ_NORETCALL;
 
 end EEquation;
 
-public 
+public
 uniontype Algorithm "- Algorithms
-  The Absyn module uses the terminology from the 
-  grammar, where algorithm means an algorithmic 
-  statement. But here, an Algorithm means a whole 
+  The Absyn module uses the terminology from the
+  grammar, where algorithm means an algorithmic
+  statement. But here, an Algorithm means a whole
   algorithm section."
   record ALGORITHM "the algorithm section"
     list<Absyn.Algorithm> statements "the algorithm statements" ;
@@ -333,15 +333,15 @@ uniontype Algorithm "- Algorithms
 
 end Algorithm;
 
-public 
+public
 uniontype Element "- Elements
-  There are four types of elements in a declaration, represented by the constructors: 
+  There are four types of elements in a declaration, represented by the constructors:
   EXTENDS   (for extends clauses),
-  CLASSDEF  (for local class definitions)  
-  COMPONENT (for local variables). and 
+  CLASSDEF  (for local class definitions)
+  COMPONENT (for local variables). and
   IMPORT    (for import clauses)
   The baseclass name is initially NONE in the translation,
-  and if an element is inherited from a base class it is 
+  and if an element is inherited from a base class it is
   filled in during the instantiation process."
   record EXTENDS "the extends element"
     Path baseClassPath "the extends path";
@@ -375,9 +375,9 @@ uniontype Element "- Elements
     Option<Comment> comment "this if for extraction of comments and annotations from Absyn" ;
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
-    Option<Absyn.ConstrainClass> cc "The constraining class for the component"; 
+    Option<Absyn.ConstrainClass> cc "The constraining class for the component";
   end COMPONENT;
-  
+
   record DEFINEUNIT "a unit defintion has a name and the two optional parameters exp, and weight"
     Ident name;
     Option<String> exp;
@@ -385,7 +385,7 @@ uniontype Element "- Elements
   end DEFINEUNIT;
 end Element;
 
-public 
+public
 uniontype Attributes "- Attributes"
   record ATTR "the attributes of the component"
     Absyn.ArrayDim arrayDims "the array dimensions of the component";
@@ -397,7 +397,7 @@ uniontype Attributes "- Attributes"
   end ATTR;
 end Attributes;
 
-public 
+public
 uniontype Variability "the variability of a component"
   record VAR      "a variable"          end VAR;
   record DISCRETE "a discrete variable" end DISCRETE;
@@ -405,7 +405,7 @@ uniontype Variability "the variability of a component"
   record CONST    "a constant"          end CONST;
 end Variability;
 
-public 
+public
 uniontype Accessibility "These are attributes that apply to a declared component."
   record RW "read/write" end RW;
   record RO "read-only" end RO;
@@ -415,7 +415,7 @@ end Accessibility;
 
 public /* adrpo: previously present in Inst.mo */
 uniontype Initial "the initial attribute of an algorithm or equation
- Intial is used as argument to instantiation-function for 
+ Intial is used as argument to instantiation-function for
  specifying if equations or algorithms are initial or not."
   record INITIAL "an initial equation or algorithm" end INITIAL;
   record NON_INITIAL "a normal equation or algorithm" end NON_INITIAL;
@@ -428,13 +428,13 @@ protected import Dump;
 protected import ModUtil;
 protected import Print;
 
-public function equationStr 
+public function equationStr
 "function: equationStr
   author: PA
   Return the equation as a string."
   input EEquation inEEquation;
   output String outString;
-algorithm 
+algorithm
   outString := matchcontinue (inEEquation)
     local
       String s1,s2,s3,s4,res,id;
@@ -446,48 +446,48 @@ algorithm
       Absyn.ComponentRef cr1,cr2,cr;
       Absyn.FunctionArgs fargs;
     case (EQ_IF(condition = e1::ifexp,thenBranch = ttb::tb,elseBranch = fb))
-      equation 
+      equation
         s1 = Dump.printExpStr(e1);
         tb_strs = Util.listMap(ttb, equationStr);
         fb_strs = Util.listMap(fb, equationStr);
-        s2 = Util.stringDelimitList(tb_strs, "\n");        
+        s2 = Util.stringDelimitList(tb_strs, "\n");
         s3 = Util.stringDelimitList(fb_strs, "\n");
         s4 = elseIfEquationStr(ifexp,tb);
         res = Util.stringAppendList({"if ",s1," then ",s2,s4,"else ",s3,"end if;"});
       then
         res;
     case (EQ_EQUALS(expLeft = e1,expRight = e2))
-      equation 
+      equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
         res = Util.stringAppendList({s1," = ",s2,";"});
       then
         res;
     case (EQ_CONNECT(crefLeft = cr1,crefRight = cr2))
-      equation 
+      equation
         s1 = Dump.printComponentRefStr(cr1);
         s2 = Dump.printComponentRefStr(cr2);
         res = Util.stringAppendList({"connect(",s1,", ",s2,");"});
       then
         res;
     case (EQ_FOR(index = id,range = exp,eEquationLst = eqn_lst))
-      equation 
+      equation
         s1 = Dump.printExpStr(exp);
         str_lst = Util.listMap(eqn_lst, equationStr);
         s2 = Util.stringDelimitList(str_lst, "\n");
         res = Util.stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
       then
         res;
-    case (EQ_WHEN(condition = _)) then "EQ_WHEN(... not impl ...)"; 
+    case (EQ_WHEN(condition = _)) then "EQ_WHEN(... not impl ...)";
     case (EQ_ASSERT(condition = e1,message = e2))
-      equation 
+      equation
         s1 = Dump.printExpStr(e1);
         s2 = Dump.printExpStr(e2);
         res = Util.stringAppendList({"assert(",s1,", ",s2,");"});
       then
         res;
     case (EQ_REINIT(cref = cr,expReinit = e1))
-      equation 
+      equation
         s1 = Dump.printComponentRefStr(cr);
         s2 = Dump.printExpStr(e1);
         res = Util.stringAppendList({"reinit(",s1,", ",s2,");"});
@@ -517,7 +517,7 @@ algorithm str := matchcontinue(oam,comp)
     equation
       str = prettyPrintModifier(m,comp);
       then
-        str; 
+        str;
   end matchcontinue;
 end prettyPrintOptModifier;
 
@@ -533,7 +533,7 @@ algorithm str := matchcontinue(oam,comp)
     Absyn.Modification m;
     Absyn.Exp exp;
     list<Absyn.ElementArg> laea;
-    Absyn.ElementArg aea; 
+    Absyn.ElementArg aea;
   case(Absyn.CLASSMOD(_,SOME(exp)),comp)
     equation
       str = comp +& " = " +&Dump.printExpStr(exp);
@@ -543,7 +543,7 @@ algorithm str := matchcontinue(oam,comp)
     equation
     str = comp +& "(" +&prettyPrintElementModifier(aea) +&")";
     then
-      str; 
+      str;
   case(Absyn.CLASSMOD((laea as _::{}),NONE),comp)
     equation
       str = comp +& "({" +& Util.stringDelimitList(Util.listMap(laea,prettyPrintElementModifier),", ") +& "})";
@@ -567,7 +567,7 @@ algorithm str := matchcontinue(aea)
     Absyn.ElementSpec spec;
     Absyn.ComponentRef cr;
   case(Absyn.MODIFICATION(modification = oam,componentRef=cr))
-    equation  
+    equation
       compName = Absyn.printComponentRefStr(cr);
     then prettyPrintOptModifier(oam,compName);
   case(Absyn.REDECLARATION(elementSpec=spec))
@@ -578,13 +578,13 @@ algorithm str := matchcontinue(aea)
 end matchcontinue;
 end prettyPrintElementModifier;
 
-public function stripSubmod 
+public function stripSubmod
 "function: stripSubmod
   author: PA
   Removes all submodifiers from the Mod."
   input Mod inMod;
   output Mod outMod;
-algorithm 
+algorithm
   outMod := matchcontinue (inMod)
     local
       Boolean f;
@@ -592,25 +592,25 @@ algorithm
       list<SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> e;
       Mod m;
-    case (MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,absynExpOption = e)) then MOD(f,each_,{},e); 
-    case (m) then m; 
+    case (MOD(finalPrefix = f,eachPrefix = each_,subModLst = subs,absynExpOption = e)) then MOD(f,each_,{},e);
+    case (m) then m;
   end matchcontinue;
 end stripSubmod;
 
-public function getElementNamed 
+public function getElementNamed
 "function: getElementNamed
   Return the Element with the name given as first argument from the Class."
   input Ident inIdent;
   input Class inClass;
   output Element outElement;
-algorithm 
+algorithm
   outElement := matchcontinue (inIdent,inClass)
     local
       Element elt;
       String id;
       list<Element> elts;
     case (id,CLASS(classDef = PARTS(elementLst = elts)))
-      equation 
+      equation
         elt = getElementNamedFromElts(id, elts);
       then
         elt;
@@ -623,71 +623,71 @@ algorithm
   end matchcontinue;
 end getElementNamed;
 
-protected function getElementNamedFromElts 
-"function: getElementNamedFromElts 
+protected function getElementNamedFromElts
+"function: getElementNamedFromElts
   Helper function to getElementNamed."
   input Ident inIdent;
   input list<Element> inElementLst;
   output Element outElement;
-algorithm 
+algorithm
   outElement := matchcontinue (inIdent,inElementLst)
     local
       Element elt,comp,cdef;
       String id2,id1;
       list<Element> xs;
     case (id2,((comp as COMPONENT(component = id1)) :: _))
-      equation 
+      equation
         equality(id1 = id2);
       then
         comp;
     case (id2,(COMPONENT(component = id1) :: xs))
-      equation 
+      equation
         failure(equality(id1 = id2));
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
     case (id2,(CLASSDEF(name = id1) :: xs))
-      equation 
+      equation
         failure(equality(id1 = id2));
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
     case (id2,(EXTENDS(baseClassPath = _) :: xs))
-      equation 
+      equation
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
     case (id2,((cdef as CLASSDEF(name = id1)) :: _))
-      equation 
+      equation
         equality(id1 = id2);
       then
         cdef;
     // Try next.
     case (id2, _:: xs)
-      equation 
+      equation
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
   end matchcontinue;
 end getElementNamedFromElts;
 
-public function printMod 
+public function printMod
 "function: printMod
-  This function prints a modification.  
+  This function prints a modification.
   The code is excluded from the report for brevity."
   input Mod m;
   String s;
-algorithm 
+algorithm
   s := printModStr(m);
   Print.printBuf(s);
 end printMod;
 
-public function printModStr 
-"function: printModStr 
+public function printModStr
+"function: printModStr
   Prints Mod to a string."
   input Mod inMod;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inMod)
     local
@@ -698,9 +698,9 @@ algorithm
       Absyn.Each each_;
       list<SubMod> subs;
       Option<tuple<Absyn.Exp,Boolean>> ass;
-    case (NOMOD()) then ""; 
+    case (NOMOD()) then "";
     case REDECL(finalPrefix = b,elementLst = elist)
-      equation 
+      equation
         Print.printBuf("redeclare(");
         finalPrefixstr = Util.if_(b, "final", "");
         strs = Util.listMap(elist, printElementStr);
@@ -709,7 +709,7 @@ algorithm
       then
         res;
     case MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = ass)
-      equation 
+      equation
         finalPrefixstr = Util.if_(finalPrefix, "final", "");
         each_str = Dump.unparseEachStr(each_);
         subs_str = printSubs1Str(subs);
@@ -718,32 +718,32 @@ algorithm
       then
         res;
     case _
-      equation 
+      equation
         Print.printBuf("#-- Inst.printModStr failed\n");
       then
         fail();
   end matchcontinue;
 end printModStr;
 
-public function restrString 
-"function: restrString 
+public function restrString
+"function: restrString
   Prints Restriction to a string."
   input Restriction inRestriction;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inRestriction)
-    case R_CLASS() then "CLASS"; 
-    case R_MODEL() then "MODEL"; 
-    case R_RECORD() then "RECORD"; 
-    case R_BLOCK() then "BLOCK"; 
+    case R_CLASS() then "CLASS";
+    case R_MODEL() then "MODEL";
+    case R_RECORD() then "RECORD";
+    case R_BLOCK() then "BLOCK";
     case R_CONNECTOR(false) then "CONNECTOR";
     case R_CONNECTOR(true) then "EXPANDABLE_CONNECTOR";
     case R_OPERATOR(false) then "OPERATOR";
-    case R_OPERATOR(true) then "OPERATOR_FUNCTION";      
-    case R_TYPE() then "TYPE"; 
-    case R_PACKAGE() then "PACKAGE"; 
-    case R_FUNCTION() then "FUNCTION"; 
+    case R_OPERATOR(true) then "OPERATOR_FUNCTION";
+    case R_TYPE() then "TYPE";
+    case R_PACKAGE() then "PACKAGE";
+    case R_FUNCTION() then "FUNCTION";
     case R_EXT_FUNCTION() then "EXTFUNCTION";
     case R_ENUMERATION() then "ENUMERATION";
     case R_METARECORD(_,_) then "METARECORD";
@@ -757,66 +757,66 @@ algorithm
   end matchcontinue;
 end restrString;
 
-public function printRestr 
-"function: printRestr 
+public function printRestr
+"function: printRestr
   Prints Restriction to the Print buffer."
   input Restriction restr;
   String str;
-algorithm 
+algorithm
   str := restrString(restr);
   Print.printBuf(str);
 end printRestr;
 
-protected function printFinal 
-"function: printFinal 
+protected function printFinal
+"function: printFinal
   Prints \"final\" to the Print buffer."
   input Boolean inBoolean;
-algorithm 
+algorithm
   _ := matchcontinue (inBoolean)
-    case false then (); 
+    case false then ();
     case true
-      equation 
+      equation
         Print.printBuf(" final ");
       then
         ();
   end matchcontinue;
 end printFinal;
 
-protected function printSubsStr 
-"function: printSubsStr  
+protected function printSubsStr
+"function: printSubsStr
   Prints a SubMod list to a string."
   input list<SubMod> inSubModLst;
   output String outString;
-algorithm 
+algorithm
   outString := matchcontinue (inSubModLst)
     local
       String s,res,n,mod_str,str,sub_str;
       Mod mod;
       list<SubMod> subs;
       list<Subscript> ss;
-    case {} then ""; 
+    case {} then "";
     case {NAMEMOD(ident = n,A = mod)}
-      equation 
+      equation
         s = printModStr(mod);
         res = n +& " " +& s;
       then
         res;
     case (NAMEMOD(ident = n,A = mod) :: subs)
-      equation 
+      equation
         mod_str = printModStr(mod);
         str = printSubsStr(subs);
         res = Util.stringAppendList({n, " ", mod_str, ", ", str});
       then
         res;
     case {IDXMOD(subscriptLst = ss,an = mod)}
-      equation 
+      equation
         str = Dump.printSubscriptsStr(ss);
         mod_str = printModStr(mod);
         res = stringAppend(str, mod_str);
       then
         res;
     case (IDXMOD(subscriptLst = ss,an = mod) :: subs)
-      equation 
+      equation
         str = Dump.printSubscriptsStr(ss);
         mod_str = printModStr(mod);
         sub_str = printSubsStr(subs);
@@ -826,20 +826,20 @@ algorithm
   end matchcontinue;
 end printSubsStr;
 
-public function printSubs1Str 
-"function: printSubs1Str 
+public function printSubs1Str
+"function: printSubs1Str
   Helper function to printSubsStr."
   input list<SubMod> inSubModLst;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inSubModLst)
     local
       String s,res;
       list<SubMod> l;
-    case {} then ""; 
+    case {} then "";
     case l
-      equation 
+      equation
         s = printSubsStr(l);
         res = Util.stringAppendList({"(",s,")"});
       then
@@ -847,21 +847,21 @@ algorithm
   end matchcontinue;
 end printSubs1Str;
 
-protected function printEqmodStr 
-"function: printEqmodStr 
+protected function printEqmodStr
+"function: printEqmodStr
   Helper function to printModStr."
   input Option<tuple<Absyn.Exp,Boolean>> inAbsynExpOption;
   output String outString;
-algorithm 
+algorithm
   outString:=
   matchcontinue (inAbsynExpOption)
     local
       String str,res;
       Absyn.Exp e;
       Boolean b;
-    case NONE then ""; 
+    case NONE then "";
     case SOME((e,b))
-      equation 
+      equation
         str = Dump.printExpStr(e);
         res = stringAppend(" = ", str);
       then
@@ -869,18 +869,18 @@ algorithm
   end matchcontinue;
 end printEqmodStr;
 
-public function printElementList 
-"function: printElementList 
+public function printElementList
+"function: printElementList
   Print Element list to Print buffer."
   input list<Element> inElementLst;
-algorithm 
+algorithm
   _ := matchcontinue (inElementLst)
     local
       Element x;
       list<Element> xs;
-    case ({}) then (); 
+    case ({}) then ();
     case ((x :: xs))
-      equation 
+      equation
         printElement(x);
         printElementList(xs);
       then
@@ -901,22 +901,22 @@ algorithm
   end matchcontinue;
 end unparseOptPath;
 
-public function printElement 
-"function: printElement 
+public function printElement
+"function: printElement
   Print Element to Print buffer."
   input Element elt;
   String str;
-algorithm 
+algorithm
   str := printElementStr(elt);
   Print.printBuf(str);
 end printElement;
 
-public function printElementStr 
-"function: printElementStr 
+public function printElementStr
+"function: printElementStr
   Print Element to a string."
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString :=  matchcontinue (inElement)
     local
       String str,str2,res,n,mod_str,s,vs;
@@ -935,14 +935,14 @@ algorithm
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
-      equation 
+      equation
         str = Absyn.pathString(path);
         modStr = printModStr(mod);
         res = Util.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = SOME((path,mod)))
-      equation 
+      equation
         str = Absyn.pathString(path);
         modStr = printModStr(mod);
         res = Util.stringAppendList({"CLASSDEF(",n,", from baseclass: ",str," with mod: ",modStr,")"});
@@ -951,7 +951,7 @@ algorithm
     case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
                    protectedPrefix = prot, attributes = ATTR(variability = var),typeSpec = tySpec,
                    modifications = mod,baseClassPath = pathOpt,comment = comment)
-      equation 
+      equation
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
@@ -969,16 +969,16 @@ algorithm
     case (IMPORT(imp = imp))
       equation
          str = "IMPORT("+& Absyn.printImportString(imp) +& ");";
-      then str; 
+      then str;
   end matchcontinue;
 end printElementStr;
 
-public function unparseElementStr 
+public function unparseElementStr
 "function: unparseElementStr
   Print Element to a string."
   input Element inElement;
   output String outString;
-algorithm 
+algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs,ioStr;
@@ -992,15 +992,15 @@ algorithm
       Attributes attr;
       Absyn.Path path;
       Absyn.Import imp;
-      Absyn.InnerOuter io;      
-      
+      Absyn.InnerOuter io;
+
     case EXTENDS(baseClassPath = path,modifications = mod)
-      equation 
+      equation
         str = Absyn.pathString(path);
         res = Util.stringAppendList({"extends ",str,";"});
       then
         res;
-        
+
     case COMPONENT(component = n,innerOuter = io,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                    attributes = ATTR(variability = var),typeSpec = typath,modifications = mod,
                    baseClassPath = pathOpt,comment = comment)
@@ -1013,18 +1013,18 @@ algorithm
         res = Util.stringAppendList({ioStr,vs," ",s," ",n,mod_str,"; // from baseclass: ",str,"\n"});
       then
         res;
-        
+
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = _)
-      equation 
+      equation
         str = printClassStr(cl);
         res = Util.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
       then
         res;
-        
-    case (IMPORT(imp = imp)) 
+
+    case (IMPORT(imp = imp))
       equation
          str = "import "+& Absyn.printImportString(imp) +& ";";
-      then str; 
+      then str;
   end matchcontinue;
 end unparseElementStr;
 
@@ -1032,7 +1032,7 @@ public function printClassStr "
   prints a class to a string"
   input Class inClass;
   output String outString;
-algorithm 
+algorithm
   outString := matchcontinue (inClass)
     local
       String s,res,id,re;
@@ -1040,7 +1040,7 @@ algorithm
       Restriction rest;
       ClassDef def;
     case (CLASS(name = id,partialPrefix = p,encapsulatedPrefix = en,restriction = rest,classDef = def))
-      equation 
+      equation
         s = printClassdefStr(def);
         re = restrString(rest);
         res = Util.stringAppendList({"CLASS(",id,",_,_,",re,",",s,")\n"});
@@ -1054,7 +1054,7 @@ public function printClassdefStr
   prints the class definition to a string"
   input ClassDef inClassDef;
   output String outString;
-algorithm 
+algorithm
   outString := matchcontinue (inClassDef)
     local
       list<String> elts_str;
@@ -1071,7 +1071,7 @@ algorithm
                 normalAlgorithmLst = alg,
                 initialAlgorithmLst = ial,
                 externalDecl = ext))
-      equation 
+      equation
         elts_str = Util.listMap(elts, printElementStr);
         s1 = Util.stringDelimitList(elts_str, ",\n");
         res = Util.stringAppendList({"PARTS(\n",s1,",_,_,_,_,_)"});
@@ -1093,7 +1093,7 @@ algorithm
       then
         res;
     case (DERIVED(typeSpec = typeSpec,modifications = mod))
-      equation 
+      equation
         s2 = Dump.unparseTypeSpec(typeSpec);
         s3 = printModStr(mod);
         res = Util.stringAppendList({"DERIVED(",s2,",",s3,")"});
@@ -1102,19 +1102,19 @@ algorithm
   end matchcontinue;
 end printClassdefStr;
 
-public function attrVariability 
+public function attrVariability
 "function attrVariability
   Return the variability attribute from Attributes"
   input Attributes attr;
   output Variability var;
 algorithm
-  var := matchcontinue (attr) 
+  var := matchcontinue (attr)
     local Variability v;
     case	ATTR(variability = v) then v;
   end matchcontinue;
 end attrVariability;
 
-public function variabilityString 
+public function variabilityString
 "function: variabilityString
   Print Variability to a string."
   input Variability inVariability;
@@ -1128,8 +1128,8 @@ algorithm
   end matchcontinue;
 end variabilityString;
 
-public function innerouterString 
-"function: innerouterString 
+public function innerouterString
+"function: innerouterString
   Print a inner outer info to a string."
   input Absyn.InnerOuter innerOuter;
   output String outString;
@@ -1142,7 +1142,7 @@ algorithm
   end matchcontinue;
 end innerouterString;
 
-public function unparseVariability 
+public function unparseVariability
 "function: variabilityString
   Print Variability to a string."
   input Variability inVariability;
@@ -1157,8 +1157,8 @@ algorithm
 end unparseVariability;
 
 public function isElementExtends "
-Author BZ, 2009-01 
-check if an element is of type EXTENDS or not. 
+Author BZ, 2009-01
+check if an element is of type EXTENDS or not.
 "
   input Element ele;
   output Boolean isExtend;
@@ -1169,7 +1169,7 @@ end matchcontinue;
 end isElementExtends;
 
 public function isNotElementClassExtends "
-check if an element is not of type CLASS_EXTENDS. 
+check if an element is not of type CLASS_EXTENDS.
 "
   input Element ele;
   output Boolean isExtend;
@@ -1180,35 +1180,35 @@ algorithm
   end matchcontinue;
 end isNotElementClassExtends;
 
-public function isParameterOrConst 
+public function isParameterOrConst
 "function: isParameterOrConst
   Returns true if Variability indicates a parameter or constant."
   input Variability inVariability;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inVariability)
-    case (VAR()) then false; 
-    case (DISCRETE()) then false; 
-    case (PARAM()) then true; 
-    case (CONST()) then true; 
+    case (VAR()) then false;
+    case (DISCRETE()) then false;
+    case (PARAM()) then true;
+    case (CONST()) then true;
   end matchcontinue;
 end isParameterOrConst;
 
-public function isConstant 
+public function isConstant
 "function: isConstant
   Returns true if Variability is constant, otherwise false"
   input Variability inVariability;
   output Boolean outBoolean;
 algorithm
   outBoolean := matchcontinue (inVariability)
-    case (VAR()) then false; 
-    case (DISCRETE()) then false; 
+    case (VAR()) then false;
+    case (DISCRETE()) then false;
     case (PARAM()) then false;
-   case (CONST()) then true; 
+   case (CONST()) then true;
   end matchcontinue;
 end isConstant;
 
-public function countParts 
+public function countParts
 "function: countParts
   Counts the number of ClassParts of a Class."
   input Class inClass;
@@ -1219,7 +1219,7 @@ algorithm
       Integer res;
       list<Element> elts;
     case CLASS(classDef = PARTS(elementLst = elts))
-      equation 
+      equation
         res = listLength(elts);
       then
         res;
@@ -1229,16 +1229,16 @@ algorithm
         res = listLength(elts);
       then
         res;
-    case _ then 0; 
+    case _ then 0;
   end matchcontinue;
 end countParts;
 
-public function componentNames 
+public function componentNames
 "function: componentNames
   Return a string list of all component names of a class."
   input Class inClass;
   output list<String> outStringLst;
-algorithm 
+algorithm
   outStringLst := matchcontinue (inClass)
     local list<String> res; list<Element> elts;
     case (CLASS(classDef = PARTS(elementLst = elts)))
@@ -1252,7 +1252,7 @@ algorithm
         res = componentNamesFromElts(elts);
       then
         res;
-    case (_) then {}; 
+    case (_) then {};
   end matchcontinue;
 end componentNames;
 
@@ -1266,7 +1266,7 @@ algorithm
   end matchcontinue;
 end elementName;
 
-public function componentNamesFromElts 
+public function componentNamesFromElts
 "function: componentNamesFromElts
   Helper function to componentNames."
   input list<Element> inElementLst;
@@ -1274,9 +1274,9 @@ public function componentNamesFromElts
 algorithm
   outStringLst := matchcontinue (inElementLst)
     local list<String> res; String id; list<Element> rest;
-    case ({}) then {}; 
+    case ({}) then {};
     case ((COMPONENT(component = id) :: rest))
-      equation 
+      equation
         res = componentNamesFromElts(rest);
       then
         (id :: res);
@@ -1285,41 +1285,41 @@ algorithm
   end matchcontinue;
 end componentNamesFromElts;
 
-public function isFunction 
+public function isFunction
 "function: isFunction
   Return true if Class is a function."
   input Class inClass;
   output Boolean outBoolean;
-algorithm 
+algorithm
   outBoolean := matchcontinue (inClass)
     local String n; ClassDef def;
     case CLASS(name = n,restriction = R_FUNCTION(),classDef = def) then true;
     case CLASS(name = n,restriction = R_EXT_FUNCTION(),classDef = def) then true;
-    case _ then false; 
+    case _ then false;
   end matchcontinue;
 end isFunction;
 
-public function className 
+public function className
 "function: className
   Returns the class name of a Class."
   input Class inClass;
   output String outString;
-algorithm 
+algorithm
   outString := matchcontinue (inClass)
     local String n;
-    case CLASS(name = n) then n; 
-    case _ then "Not a class"; 
+    case CLASS(name = n) then n;
+    case _ then "Not a class";
   end matchcontinue;
 end className;
 
-public function classSetPartial 
+public function classSetPartial
 "function: classSetPartial
   author: PA
   Sets the partial attribute of a Class"
   input Class inClass;
   input Boolean inBoolean;
   output Class outClass;
-algorithm 
+algorithm
   outClass := matchcontinue (inClass,inBoolean)
     local
       String id;
@@ -1327,15 +1327,15 @@ algorithm
       Restriction restr;
       ClassDef def;
       Absyn.Info info;
-      
-    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def, info = info),partialPrefix) 
-      then CLASS(id,partialPrefix,enc,restr,def,info); 
+
+    case (CLASS(name = id,encapsulatedPrefix = enc,restriction = restr,classDef = def, info = info),partialPrefix)
+      then CLASS(id,partialPrefix,enc,restr,def,info);
   end matchcontinue;
 end classSetPartial;
 
-public function isFunctionOrExtFunction 
+public function isFunctionOrExtFunction
 "function isFunctionOrExtFunction
-  This function returns true if the class 
+  This function returns true if the class
   restriction is function or external function.
   Otherwise false is returned."
   input Restriction r;
@@ -1347,23 +1347,23 @@ algorithm
     case(_) then false;
   end matchcontinue;
  end isFunctionOrExtFunction;
- 
-public function elementEqual 
+
+public function elementEqual
 "function elementEqual
   returns true if two elements are equal,
-  i.e. for a component have the same type, 
+  i.e. for a component have the same type,
   name, and attributes, etc."
    input Element element1;
    input Element element2;
    output Boolean equal;
  algorithm
    equal := matchcontinue(element1,element2)
-     local 
+     local
       Ident name1,name2;
       Class cl1,cl2;
       Boolean b1,b1a,b1b,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2;
       Absyn.InnerOuter io,io2;
-      Attributes attr1,attr2; Mod mod1,mod2; 
+      Attributes attr1,attr2; Mod mod1,mod2;
       Absyn.TypeSpec tp1,tp2;
      case (CLASSDEF(name1,f1,r1,cl1,_,_),CLASSDEF(name2,f2,r2,cl2,_,_))
        equation
@@ -1387,7 +1387,7 @@ public function elementEqual
      case(_,_) then false;
    end matchcontinue;
  end elementEqual;
- 
+
 // stefan
 public function annotationEqual
 "function: annotationEqual
@@ -1409,7 +1409,7 @@ algorithm
   end matchcontinue;
 end annotationEqual;
 
-protected function classEqual 
+protected function classEqual
 "function classEqual
   returns true if two classes are equal"
   input Class class1;
@@ -1427,14 +1427,14 @@ algorithm
         equation
           b1 = stringEqual(name1,name2);
           b2 = Util.boolEqual(p1,p2);
-          b3 = Util.boolEqual(e1,e2); 
+          b3 = Util.boolEqual(e1,e2);
           b4 = restrictionEqual(restr1,restr2);
           b5 = classDefEqual(parts1,parts2);
           equal = Util.boolAndList({b1,b2,b3,b4,b5});
         then equal;
   end matchcontinue;
 end classEqual;
- 
+
 protected function restrictionEqual "Returns true if two Restriction's are equal."
   input Restriction restr1;
   input Restriction restr2;
@@ -1448,7 +1448,7 @@ algorithm
      case (R_CONNECTOR(true),R_CONNECTOR(true)) then true; // expandable connectors
      case (R_CONNECTOR(false),R_CONNECTOR(false)) then true; // non expandable connectors
      case (R_OPERATOR(true),R_OPERATOR(true)) then true; // operator
-     case (R_OPERATOR(false),R_OPERATOR(false)) then true; // operator function     
+     case (R_OPERATOR(false),R_OPERATOR(false)) then true; // operator function
      case (R_TYPE(),R_TYPE()) then true;
      case (R_PACKAGE(),R_PACKAGE()) then true;
      case (R_FUNCTION(),R_FUNCTION()) then true;
@@ -1472,16 +1472,16 @@ algorithm
     local
       String s1, s2;
       Boolean b1, b2;
-    
+
     case (ENUM(s1,_), ENUM(s2,_))
       equation
         b1 = stringEqual(s1, s2);
-        // ignore comments here. 
+        // ignore comments here.
       then b1;
   end matchcontinue;
 end enumEqual;
- 
-protected function classDefEqual 
+
+protected function classDefEqual
 "function classDefEqual
   Returns true if Two ClassDef's are equal"
  input ClassDef cdef1;
@@ -1489,13 +1489,13 @@ protected function classDefEqual
  output Boolean equal;
  algorithm
    equal := matchcontinue(cdef1,cdef2)
-       local  
+       local
          list<Element> elts1,elts2;
          list<Annotation> anns1,anns2;
          list<Equation> eqns1,eqns2;
          list<Equation> ieqns1,ieqns2;
          list<Algorithm> algs1,algs2;
-         list<Algorithm> ialgs1,ialgs2; 
+         list<Algorithm> ialgs1,ialgs2;
          list<Boolean> blst1,blst2,blst3,blst4,blst5,blst6,blst;
          Absyn.ElementAttributes attr1,attr2;
          Absyn.TypeSpec tySpec1, tySpec2;
@@ -1506,7 +1506,7 @@ protected function classDefEqual
          list<Ident> ilst1,ilst2;
          list<Boolean> blst;
          String bcName1, bcName2;
-         
+
      case(PARTS(elts1,eqns1,ieqns1,algs1,ialgs1,_,anns1,_),
           PARTS(elts2,eqns2,ieqns2,algs2,ialgs2,_,anns2,_))
        equation
@@ -1520,7 +1520,7 @@ protected function classDefEqual
          blst = Util.listFlatten({blst1,blst2,blst3,blst4,blst5/*,blst6*/});
          equal = Util.boolAndList(blst);
        then equal;
-         
+
      case (DERIVED(tySpec1,mod1,attr1,_),
            DERIVED(tySpec2,mod2,attr2,_))
        equation
@@ -1529,7 +1529,7 @@ protected function classDefEqual
          b3 = Util.isEqual(attr1,attr2);
          equal = Util.boolAndList({b1,b2,b3});
        then equal;
-         
+
      case (ENUMERATION(elst1,_),ENUMERATION(elst2,_))
        equation
          blst = Util.listThreadMap(elst1,elst2,enumEqual);
@@ -1550,17 +1550,17 @@ protected function classDefEqual
          // blst6 = Util.listThreadMap(anns1,anns2,annotationEqual);
          blst = Util.listFlatten({{b1,b2},blst1,blst2,blst3,blst4,blst5/*,blst6*/});
          equal = Util.boolAndList(blst);
-      then 
+      then
         equal;
-        
-    case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_)) 
+
+    case (cdef1 as PDER(p1,ilst1,_),cdef2 as PDER(p2,ilst2,_))
       equation
          blst = Util.listThreadMap(ilst1,ilst2,stringEqual);
          equal = Util.boolAndList(blst);
        then equal;
     // adrpo: TODO! FIXME! are these below really needed??!!
-    // as far as I can tell we handle all the cases.         
-    case(cdef1, cdef2) 
+    // as far as I can tell we handle all the cases.
+    case(cdef1, cdef2)
       equation
         equality(cdef1=cdef2);
       then true;
@@ -1571,16 +1571,16 @@ protected function classDefEqual
       then false;
    end matchcontinue;
 end classDefEqual;
- 
-protected function arraydimOptEqual 
-"function arraydimOptEqual 
+
+protected function arraydimOptEqual
+"function arraydimOptEqual
   Returns true if two Option<ArrayDim> are equal"
    input Option<Absyn.ArrayDim> adopt1;
    input Option<Absyn.ArrayDim> adopt2;
    output Boolean equal;
  algorithm
   equal := matchcontinue(adopt1,adopt2)
-    local 
+    local
       list<Absyn.Subscript> lst1,lst2;
       list<Boolean> blst;
     case(NONE(),NONE()) then true;
@@ -1592,7 +1592,7 @@ protected function arraydimOptEqual
   end matchcontinue;
 end arraydimOptEqual;
 
-protected function subscriptEqual 
+protected function subscriptEqual
 "function subscriptEqual
   Returns true if two Absyn.Subscript are equal"
 input Absyn.Subscript sub1;
@@ -1611,7 +1611,7 @@ algorithm
   end matchcontinue;
 end subscriptEqual;
 
-protected function algorithmEqual 
+protected function algorithmEqual
 "function algorithmEqual
   Returns true if two Algorithm's are equal."
   input Algorithm alg1;
@@ -1629,20 +1629,20 @@ algorithm
       then equal;
   end matchcontinue;
 end algorithmEqual;
- 
-protected function algorithmEqual2 
+
+protected function algorithmEqual2
 "function algorithmEqual2
   Returns true if two Absyn.Algorithm are equal."
   input Absyn.Algorithm a1;
   input Absyn.Algorithm a2;
   output Boolean equal;
-algorithm 
+algorithm
   equal := matchcontinue(a1,a2)
     local
       Absyn.ComponentRef cr1,cr2;
       Absyn.Exp e1,e2,e11,e12,e21,e22;
-      Boolean b1,b2; 
-      
+      Boolean b1,b2;
+
     case(Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1),Absyn.ALG_ASSIGN(Absyn.CREF(cr2),e2))
       equation
         b1 = Absyn.crefEqual(cr1,cr2);
@@ -1659,15 +1659,15 @@ algorithm
     case(a1, a2)
       equation
         equality(a1 = a2);
-      then 
+      then
         true;
     case(a1, a2)
       equation
         failure(equality(a1 = a2));
-      then 
+      then
         false;
     // maybe replace failure/equality with these:
-    case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false; // TODO: ALG_IF 
+    case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false; // TODO: ALG_IF
     case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false; // TODO: ALG_FOR
     case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false; // TODO: ALG_WHILE
     case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; //TODO: ALG_WHILE
@@ -1675,8 +1675,8 @@ algorithm
     case(_,_) then false;
    end matchcontinue;
  end algorithmEqual2;
- 
-protected function equationEqual 
+
+protected function equationEqual
 "function equationEqual
   Returns true if two equations are equal."
   input Equation eqn1;
@@ -1685,14 +1685,14 @@ protected function equationEqual
 algorithm
   equal := matchcontinue(eqn1,eqn2)
     local EEquation eq1,eq2;
-    case (EQUATION(eq1,_),EQUATION(eq2,_)) 
+    case (EQUATION(eq1,_),EQUATION(eq2,_))
       equation
         equal = equationEqual2(eq1,eq2);
         then equal;
   end matchcontinue;
 end equationEqual;
- 
-protected function equationEqual2 
+
+protected function equationEqual2
 "function equationEqual2
   Helper function to equationEqual"
   input EEquation eq1;
@@ -1700,7 +1700,7 @@ protected function equationEqual2
   output Boolean equal;
 algorithm
   equal := matchcontinue(eq1,eq2)
-    local 
+    local
       list<list<EEquation>> tb1,tb2;
       Absyn.Exp cond1,cond2;
       list<Absyn.Exp> ifcond1,ifcond2;
@@ -1710,8 +1710,8 @@ algorithm
       Absyn.ComponentRef cr11,cr12,cr21,cr22,cr1,cr2;
       Absyn.Ident id1,id2;
       list<EEquation> fb1,fb2,eql1,eql2,elst1,elst2;
-  
-    case (EQ_IF(ifcond1,tb1,fb1,_),EQ_IF(ifcond2,tb2,fb2,_)) 
+
+    case (EQ_IF(ifcond1,tb1,fb1,_),EQ_IF(ifcond2,tb2,fb2,_))
       equation
         blst1 = equationEqual22(tb1,tb2);//Util.listThreadMap(tb1,tb2,equationEqual2);
         blst2 = Util.listThreadMap(fb1,fb2,equationEqual2);
@@ -1719,7 +1719,7 @@ algorithm
         blst = Util.listFlatten({blst1,blst2,blst3});
         equal = Util.boolAndList(blst);
       then equal;
-    case(EQ_EQUALS(e11,e12,_),EQ_EQUALS(e21,e22,_)) 
+    case(EQ_EQUALS(e11,e12,_),EQ_EQUALS(e21,e22,_))
       equation
         b1 = Absyn.expEqual(e11,e21);
         b2 = Absyn.expEqual(e21,e22);
@@ -1743,7 +1743,7 @@ algorithm
         blst1 = Util.listThreadMap(elst1,elst2,equationEqual2);
         b1 = Absyn.expEqual(cond1,cond2);
         equal = Util.boolAndList(b1::blst1);
-      then equal;        
+      then equal;
     case (EQ_ASSERT(c1,m1,_),EQ_ASSERT(c2,m2,_))
       equation
         b1 = Absyn.expEqual(c1,c2);
@@ -1756,50 +1756,50 @@ algorithm
         b2 = Absyn.crefEqual(cr1,cr2);
         equal = boolAnd(b1,b2);
       then equal;
-    case(_,_) then false;         
+    case(_,_) then false;
   end matchcontinue;
 end equationEqual2;
- 
-protected function equationEqual22 
+
+protected function equationEqual22
 "Author BZ
  Helper function for equationEqual2, does compare list<list<equation>> (else ifs in ifequations.)"
   input list<list<EEquation>> tb1;
   input list<list<EEquation>> tb2;
   output list<Boolean> blist;
-algorithm 
+algorithm
   blist := matchcontinue(tb1,tb2)
     local list<Boolean> blist1,blist2;
     case({},{}) then {};
     case(_,{}) then {false};
     case({},_) then {false};
     case(tb_1::tb1,tb_2::tb2)
-      local 
+      local
         list<EEquation> tb_1,tb_2;
       equation
         blist1 = Util.listThreadMap(tb_1,tb_2,equationEqual2);
         blist2 = equationEqual22(tb1,tb2);
         blist1 = listAppend(blist1,blist2);
-      then 
+      then
         blist1;
-end matchcontinue; 
-end equationEqual22; 
-  
-public function modEqual 
+end matchcontinue;
+end equationEqual22;
+
+public function modEqual
 "Return true if two Mod:s are equal"
   input Mod mod1;
   input Mod mod2;
   output Boolean equal;
 algorithm
   equal := matchcontinue(mod1,mod2)
-    local 
-      Boolean f1,f2,b1,b2,b3,b4; 
+    local
+      Boolean f1,f2,b1,b2,b3,b4;
       Absyn.Each each1,each2;
       list<SubMod> submodlst1,submodlst2;
       Absyn.Exp e1,e2;
       list<Element> elts1,elts2;
       list<Boolean> blst;
 
-    case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))  
+    case (MOD(f1,each1,submodlst1,SOME((e1,_))),MOD(f2,each2,submodlst2,SOME((e2,_))))
       equation
         b1 = Util.boolEqual(f1,f2);
         b2 = Absyn.eachEqual(each1,each2);
@@ -1807,15 +1807,15 @@ algorithm
         b4 = Absyn.expEqual(e1,e2);
         equal = Util.boolAndList({b1,b2,b3,b4});
       then equal;
-    case (MOD(f1,each1,submodlst1,_),MOD(f2,each2,submodlst2,_))   
-      equation 
+    case (MOD(f1,each1,submodlst1,_),MOD(f2,each2,submodlst2,_))
+      equation
         b1 = Util.boolEqual(f1,f2);
         b2 = Absyn.eachEqual(each1,each2);
         b3 = subModsEqual(submodlst1,submodlst2);
         equal = Util.boolAndList({b1,b2,b3});
       then equal;
     case (NOMOD(),NOMOD()) then true;
-    case (REDECL(f1,elts1),REDECL(f2,elts2)) 
+    case (REDECL(f1,elts1),REDECL(f2,elts2))
       equation
         b1 = Util.boolEqual(f1,f2);
         blst = Util.listThreadMap(elts1,elts2,elementEqual);
@@ -1825,7 +1825,7 @@ algorithm
   end matchcontinue;
 end modEqual;
 
-protected function subModsEqual 
+protected function subModsEqual
 "function subModsEqual
   Return true if two subModifier lists are equal"
   input list<SubMod>  subModLst1;
@@ -1833,12 +1833,12 @@ protected function subModsEqual
   output Boolean equal;
 algorithm
   equal := matchcontinue(subModLst1,subModLst2)
-    local 
-      Ident id1,id2; 
-      Mod mod1,mod2; 
-      Boolean b1,b2,b3; 
+    local
+      Ident id1,id2;
+      Mod mod1,mod2;
+      Boolean b1,b2,b3;
       list<Subscript> ss1,ss2;
-      
+
     case ({},{}) then true;
     case (NAMEMOD(id1,mod1)::subModLst1,NAMEMOD(id2,mod2)::subModLst2)
         equation
@@ -1858,32 +1858,32 @@ algorithm
   end matchcontinue;
 end subModsEqual;
 
-protected function subscriptsEqual 
+protected function subscriptsEqual
 "function subscriptsEqual
   Returns true if two subscript lists are equal"
   input list<Subscript> ss1;
   input list<Subscript> ss2;
   output Boolean equal;
-algorithm 
+algorithm
   equal := matchcontinue(ss1,ss2)
-    local 
-      Boolean b1,b2; 
+    local
+      Boolean b1,b2;
       Absyn.Exp e1,e2;
-        
+
     case({},{}) then true;
-    case(Absyn.NOSUB()::ss1,Absyn.NOSUB()::ss2) 
+    case(Absyn.NOSUB()::ss1,Absyn.NOSUB()::ss2)
       then subscriptsEqual(ss1,ss2);
     case(Absyn.SUBSCRIPT(e1)::ss1,Absyn.SUBSCRIPT(e2)::ss2)
-      equation 
+      equation
         b1 = Absyn.expEqual(e1,e2);
         b2 = subscriptsEqual(ss1,ss2);
         equal = Util.boolAndList({b1,b2});
         then equal;
     case(_,_) then false;
-  end matchcontinue;  
+  end matchcontinue;
 end subscriptsEqual;
-  
-protected function attributesEqual 
+
+protected function attributesEqual
 "function attributesEqual
 	Returns true if two Atributes are equal"
    input Attributes attr1;
@@ -1896,20 +1896,20 @@ algorithm
         Variability var1,var2;
         Boolean fl1,fl2,st1,st2,b1,b2,b3,b4,b5,b6;
         Absyn.ArrayDim ad1,ad2;
-        Absyn.Direction dir1,dir2;      
+        Absyn.Direction dir1,dir2;
       equation
         	b1 = arrayDimEqual(ad1,ad2);
         	b2 = Util.boolEqual(fl1,fl2);
         	b3 = accessibilityEqual(acc1,acc2);
         	b4 = variabilityEqual(var1,var2);
         	b5 = directionEqual(dir1,dir2);
-            b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors 
+            b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors
         	equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
         then equal;
   end matchcontinue;
 end attributesEqual;
 
-protected function accessibilityEqual 
+protected function accessibilityEqual
 "function accessibilityEqual
   Returns true if two  Accessibliy properties are equal"
   input Accessibility acc1;
@@ -1924,13 +1924,13 @@ algorithm
   end matchcontinue;
 end accessibilityEqual;
 
-protected function variabilityEqual 
+protected function variabilityEqual
 "function variabilityEqual
   Returns true if two Variablity prefixes are equal"
   input Variability var1;
   input Variability var2;
   output Boolean equal;
-algorithm 
+algorithm
   equal := matchcontinue(var1,var2)
     case(VAR(),VAR()) then true;
     case(DISCRETE(),DISCRETE()) then true;
@@ -1940,13 +1940,13 @@ algorithm
   end matchcontinue;
 end variabilityEqual;
 
-protected function directionEqual 
+protected function directionEqual
 "function directionEqual
   Returns true if two Direction prefixes are equal"
   input Absyn.Direction dir1;
   input Absyn.Direction dir2;
   output Boolean equal;
-algorithm 
+algorithm
   equal := matchcontinue(dir1,dir2)
     case(Absyn.INPUT(),Absyn.INPUT()) then true;
     case(Absyn.OUTPUT(),Absyn.OUTPUT()) then true;
@@ -1955,7 +1955,7 @@ algorithm
   end matchcontinue;
 end directionEqual;
 
-protected function arrayDimEqual 
+protected function arrayDimEqual
 "function arrayDimEqual
   Return true if two arraydims are equal"
  input Absyn.ArrayDim ad1;
@@ -1964,7 +1964,7 @@ protected function arrayDimEqual
  algorithm
    equal := matchcontinue(ad1,ad2)
       local Boolean b1; Absyn.Exp e1,e2;
-     case({},{}) then true;       
+     case({},{}) then true;
      case (Absyn.NOSUB()::ad1, Absyn.NOSUB()::ad2) equation
        equal = arrayDimEqual(ad1,ad2);
        then equal;
@@ -1979,27 +1979,27 @@ protected function arrayDimEqual
    end matchcontinue;
 end arrayDimEqual;
 
-public function equationStr2 
+public function equationStr2
 "Takes a SCode.Equation rather then EEquation as equationStr does."
   input Equation eqns;
   output String s;
-algorithm 
+algorithm
   s := matchcontinue(eqns)
     local EEquation e;
     case(EQUATION(eEquation=e)) then equationStr(e);
   end matchcontinue;
 end equationStr2;
 
-protected function elseIfEquationStr 
+protected function elseIfEquationStr
 "Author BZ, 2008-09
  Function for printing elseif statements to string."
   input list<Absyn.Exp> conditions;
   input list<list<EEquation>> elseIfBodies;
   output String elseIfString;
-algorithm 
+algorithm
   elseIfString := matchcontinue(conditions,elseIfBodies)
-    local 
-      Absyn.Exp cond; 
+    local
+      Absyn.Exp cond;
       list<EEquation> eib;
       String conString, bodyString,recString,resString;
       list<String> bodyStrings;
@@ -2013,8 +2013,8 @@ algorithm
         recString = Util.if_(Util.isEmptyString(recString), "", "\n" +& recString);
         resString = " elseif " +& conString +& " then\n" +& bodyString +& recString;
       then
-        resString; 
-  end matchcontinue; 
+        resString;
+  end matchcontinue;
 end elseIfEquationStr;
 
 public function setClassRestriction "Sets the restriction of a class"
@@ -2028,13 +2028,13 @@ algorithm
   end matchcontinue;
 end setClassRestriction;
 
-protected function findIteratorInEEquation  
+protected function findIteratorInEEquation
   input String inString;
-  input EEquation inEEq;               
+  input EEquation inEEq;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inEEq)
-    local 
+    local
       String id, id_1;
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
       Absyn.Exp e_1,e_2;
@@ -2044,58 +2044,58 @@ algorithm
       list<list<EEquation>> eeqLstLst;
       Absyn.FunctionArgs fArgs;
       list<tuple<Absyn.Exp, list<EEquation>>> ew;
-      
+
       case (id,EQ_IF(eLst,eeqLstLst,eeqLst,_))
         equation
-          lst_1=Absyn.findIteratorInExpLst(id,eLst);  
+          lst_1=Absyn.findIteratorInExpLst(id,eLst);
           lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
           lst_3=findIteratorInEEquationLst(id,eeqLst);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
       case (id,EQ_EQUALS(e_1,e_2,_))
         equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,EQ_CONNECT(cr_1,cr_2,_))
         equation
-          lst_1=Absyn.findIteratorInCRef(id,cr_1);  
+          lst_1=Absyn.findIteratorInCRef(id,cr_1);
           lst_2=Absyn.findIteratorInCRef(id,cr_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,EQ_FOR(id_1,e_1,eeqLst,_))
         equation
           failure(equality(id=id_1));
-          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,EQ_FOR(id_1,e_1,eeqLst,_))
         equation
           equality(id=id_1);
-          lst=Absyn.findIteratorInExp(id,e_1);  
+          lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
       case (id,EQ_WHEN(e_1,eeqLst,ew,_))
         equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst_3=findIteratorInElsewhen(id,ew);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
       case (id,EQ_ASSERT(e_1,e_2,_))
         equation
-          lst_1=Absyn.findIteratorInExp(id,e_1);  
+          lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,EQ_TERMINATE(e_1,_))
         equation
-          lst=Absyn.findIteratorInExp(id,e_1);  
+          lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
       case (id,EQ_REINIT(cr_1,e_2,_))
         equation
-          lst_1=Absyn.findIteratorInCRef(id,cr_1);  
+          lst_1=Absyn.findIteratorInCRef(id,cr_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
@@ -2103,18 +2103,18 @@ algorithm
         equation
           lst=Absyn.findIteratorInFunctionArgs(id,fArgs);
         then lst;
-      
+
   end matchcontinue;
 end findIteratorInEEquation;
 
 public function findIteratorInEEquationLst "Used by Inst.instEquationCommon for EQ_FOR with implicit range"
-//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+//This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<EEquation> inEEqLst;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inEEqLst)
-    local 
+    local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<EEquation> rest;
@@ -2129,14 +2129,14 @@ algorithm
   end matchcontinue;
 end findIteratorInEEquationLst;
 
-protected function findIteratorInEEquationLstLst 
-//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+protected function findIteratorInEEquationLstLst
+//This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<list<EEquation>> inEEqLstLst;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inEEqLstLst)
-    local 
+    local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<list<EEquation>> rest;
@@ -2151,14 +2151,14 @@ algorithm
   end matchcontinue;
 end findIteratorInEEquationLstLst;
 
-protected function findIteratorInElsewhen 
-//This function is not tail-recursive, and I don't know how to fix it -- alleb 
+protected function findIteratorInElsewhen
+//This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<tuple<Absyn.Exp, list<EEquation>>> inElsewhen;
   output list<tuple<Absyn.ComponentRef, Integer>> outLst;
 algorithm
     outLst:=matchcontinue(inString,inElsewhen)
-    local 
+    local
       list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
       String id;
       list<tuple<Absyn.Exp, list<EEquation>>> rest;
@@ -2176,12 +2176,12 @@ algorithm
 end findIteratorInElsewhen;
 
 
-protected function filterComponents 
+protected function filterComponents
 "This function returns the components from a class"
   input list<Element> elts;
   output list<Element> compElts;
   output list<String> compNames;
-algorithm 
+algorithm
   (compElts,compNames) := matchcontinue (elts)
     local
       list<Element> rest, comps;
@@ -2189,15 +2189,15 @@ algorithm
       list<String> names;
     // handle the empty things
     case ({}) then ({},{});
-    // collect components       
+    // collect components
     case (( comp as COMPONENT(component=name)) :: rest)
       equation
-        (comps, names) = filterComponents(rest);  
+        (comps, names) = filterComponents(rest);
       then (comp::comps,name::names);
     // ignore others
-    case (_ :: rest) 
+    case (_ :: rest)
       equation
-        (comps, names) = filterComponents(rest);  
+        (comps, names) = filterComponents(rest);
       then (comps, names);
   end matchcontinue;
 end filterComponents;
@@ -2207,19 +2207,19 @@ public function getClassComponents
   input Class cl;
   output list<Element> compElts;
   output list<String> compNames;
-algorithm 
+algorithm
   (compElts,compNames) := matchcontinue (cl)
     local
       list<Element> elts, comps;
       list<String> names;
-             
+
     case (CLASS(classDef = PARTS(elementLst = elts)))
       equation
-        (comps, names) = filterComponents(elts);  
+        (comps, names) = filterComponents(elts);
       then (comps,names);
     case (CLASS(classDef = CLASS_EXTENDS(elementLst = elts)))
       equation
-        (comps, names) = filterComponents(elts);  
+        (comps, names) = filterComponents(elts);
       then (comps,names);
   end matchcontinue;
 end getClassComponents;
@@ -2233,12 +2233,12 @@ algorithm
   outBaseClassPath:= matchcontinue(inElement)
   local
     OptBaseClass optPath;
-    
-    case COMPONENT(baseClassPath=optPath) then optPath; 
+
+    case COMPONENT(baseClassPath=optPath) then optPath;
     case CLASSDEF(baseClassPath=optPath) then optPath;
     case _ then NONE();
   end matchcontinue;
-end elementBaseClassPath;         
+end elementBaseClassPath;
 
 end SCode;
 

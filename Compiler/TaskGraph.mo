@@ -72,7 +72,7 @@ algorithm
       DAELow.VariableArray vararr,knvararr;
       Integer[:] ass1,ass2;
       list<list<Integer>> blocks;
-      
+
     case ((dae as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),knownVars = DAELow.VARIABLES(varArr = knvararr))),ass1,ass2,blocks)
       equation
         print("starting buildtaskgraph\n");
@@ -94,7 +94,7 @@ algorithm
         print("leaving TaskGraph.buildTaskgraph\n");
       then
         ();
-        
+
     case (_,_,_,_)
       equation
         print("-TaskGraph.buildTaskgraph failed\n");
@@ -813,9 +813,9 @@ algorithm
   end matchcontinue;
 end buildAssignment;
 
-protected function buildExpression 
+protected function buildExpression
 "function buildExpression
-  Builds the task graph for the expression and returns 
+  Builds the task graph for the expression and returns
   the task no that calculates the result of the expr"
   input DAE.Exp inExp;
   output Integer outInteger;
@@ -840,34 +840,34 @@ algorithm
         tid = TaskGraphExt.newTask(is) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
       then
         (tid,"");
-        
+
     case (DAE.RCONST(real = r))
       equation
         rs = realString(r);
         tid = TaskGraphExt.newTask(rs) "& TaskGraphExt.getStartTask() => st & TaskGraphExt.addEdge(st,tid,\"\") & TaskGraphExt.setCommCost(st,tid,0)" ;
       then
         (tid,"");
-        
+
     case (DAE.CREF(componentRef = cr))
       equation
         crs = Exp.crefStr(cr) "for state variables and alg. variables" ;
         tid = TaskGraphExt.getTask(crs);
       then
         (tid,crs);
-        
+
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time")))
       equation
         tid = TaskGraphExt.getTask("sim_time") "for state variables and alg. variables" ;
       then
         (tid,"sim_time");
-        
+
     case (DAE.CREF(componentRef = cr))
       equation
         crs = Exp.crefStr(cr) "for constants and parameters, no data to send from proc0" ;
         tid = TaskGraphExt.newTask(crs);
       then
         (tid,crs);
-        
+
     case (DAE.BINARY(exp1 = e1,operator = DAE.POW(ty = _),exp2 = DAE.RCONST(real = rval)))
       equation
         (t1,s1) = buildExpression(e1) "special case for pow" ;
@@ -878,7 +878,7 @@ algorithm
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
         (t,"");
-        
+
     case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         (t1,s1) = buildExpression(e1);
@@ -890,7 +890,7 @@ algorithm
         TaskGraphExt.addEdge(t2, t, s2, 1);
       then
         (t,"");
-        
+
     case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
       equation
         (t1,s1) = buildExpression(e1);
@@ -902,7 +902,7 @@ algorithm
         TaskGraphExt.addEdge(t2, t, s2, 1);
       then
         (t,"");
-        
+
     case (DAE.UNARY(operator = op,exp = e1))
       equation
         (t1,s1) = buildExpression(e1);
@@ -912,7 +912,7 @@ algorithm
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
         (t,"");
-        
+
     case (DAE.LUNARY(operator = op,exp = e1))
       equation
         (t1,s1) = buildExpression(e1);
@@ -922,7 +922,7 @@ algorithm
         TaskGraphExt.addEdge(t1, t, s1, 0);
       then
         (t,"");
-        
+
     case (DAE.RELATION(exp1 = e1,operator = relop,exp2 = e2))
       equation
         (t1,s1) = buildExpression(e1);
@@ -934,7 +934,7 @@ algorithm
         TaskGraphExt.addEdge(t2, t, s2, 1);
       then
         (t,"");
-        
+
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
       equation
         (t1,s1) = buildExpression(e1);
@@ -947,7 +947,7 @@ algorithm
         TaskGraphExt.addEdge(t3, t, s3, 2);
       then
         (t,"");
-        
+
     case (DAE.CALL(path = func,expLst = expl))
       equation
         funcstr = Absyn.pathString(func);
@@ -958,7 +958,7 @@ algorithm
         addPredecessors(t, tasks, strs, 0);
       then
         (t,"");
-        
+
     case (DAE.ARRAY(ty = _))
       equation
         print("TaskGraph.buildExpression(ARRAY) not impl. yet\n");

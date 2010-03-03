@@ -167,11 +167,11 @@ uniontype SimVar
 end SimVar;
 
 uniontype Function
-  record FUNCTION    
+  record FUNCTION
     Absyn.Path name;
     Variables inVars;
     Variables outVars;
-    list<RecordDeclaration> recordDecls; 
+    list<RecordDeclaration> recordDecls;
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
     list<Statement> body;
@@ -194,11 +194,11 @@ end Function;
 uniontype RecordDeclaration
   record RECORD_DECL_FULL
     Ident name; // struct (record) name ? encoded
-    Absyn.Path defPath; //definition path   
+    Absyn.Path defPath; //definition path
     Variables variables; //only name and type
   end RECORD_DECL_FULL;
   record RECORD_DECL_DEF
-    Absyn.Path path; //definition path .. encoded ?    
+    Absyn.Path path; //definition path .. encoded ?
     list<Ident> fieldNames;
   end RECORD_DECL_DEF;
 end RecordDeclaration;
@@ -235,7 +235,7 @@ uniontype Variable
     Type          ty    "variable type";
     Option<Exp.Exp> value "variable default value";
     list<DAE.Exp> instDims;
-  end VARIABLE;  
+  end VARIABLE;
 end Variable;
 
 // TODO: Replace this with just list<Algorithm.Statement>?
@@ -387,20 +387,20 @@ public function buildCrefExpFromAsub
   output DAE.Exp cRefOut;
 algorithm
   cRefOut := matchcontinue(cref, subs)
-    local 
-      DAE.Exp sub; 
-      DAE.ExpType ty; 
-      list<DAE.Exp> rest; 
+    local
+      DAE.Exp sub;
+      DAE.ExpType ty;
+      list<DAE.Exp> rest;
       DAE.ComponentRef crNew;
       list<DAE.Subscript> indexes;
     case (cref, {}) then cref;
     case (DAE.CREF(componentRef=crNew, ty=ty), subs)
       equation
         indexes = Util.listMap(subs, Exp.makeIndexSubscript);
-        crNew = Exp.subscriptCref(crNew, indexes); 
+        crNew = Exp.subscriptCref(crNew, indexes);
       then
         DAE.CREF(crNew, ty);
-  end matchcontinue; 
+  end matchcontinue;
 end buildCrefExpFromAsub;
 
 public function translateModel
@@ -418,7 +418,7 @@ public function translateModel
   output DAELow.DAELow outDAELow;
   output list<String> outStringLst;
   output String outString;
-algorithm 
+algorithm
   (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp,addDummy)
     local
@@ -448,7 +448,7 @@ algorithm
       SimCode simCode;
       list<Function> functions;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy)
-      equation 
+      equation
         /* calculate stuff that we need to create SimCode data structure */
         (cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
         ptot = Interactive.getTotalProgram(className,p);
@@ -472,7 +472,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
         cname_str = Absyn.pathString(className);
         filename = Util.stringAppendList({filenameprefix,".cpp"});
-        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");       
+        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
         makefilename = Util.stringAppendList({filenameprefix,".makefile"});
         a_cref = Absyn.pathToCref(className);
@@ -483,7 +483,7 @@ algorithm
         simCode = createSimCode(dae, indexed_dlow_1, ass1, ass2, m, mT, comps,
                                 className, filename, funcfilename,file_dir,
                                 functions, libs);
-        
+
         callTargetTemplates(simCode);
       then
         (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
@@ -493,7 +493,7 @@ end translateModel;
 
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */
-protected function createFunctions 
+protected function createFunctions
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input DAELow.DAELow inDAELow;
@@ -515,7 +515,7 @@ algorithm
       Absyn.Path path;
       list<Function> fns;
       SimCode sc;
-    case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filenameprefix) 
+    case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filenameprefix)
       equation
         funcpaths = getCalledFunctions(dae, dlow);
         //Debug.fprint("info", "Found called functions: ") "debug" ;
@@ -543,7 +543,7 @@ algorithm
   end matchcontinue;
 end createFunctions;
 
-protected function getCalledFunctions 
+protected function getCalledFunctions
 "Goes through the DAELow structure, finds all function calls, and returns them
 in a list. Removes duplicates."
   input DAE.DAElist dae;
@@ -560,7 +560,7 @@ algorithm
   res := removeDuplicatePaths(calledfuncs);
 end getCalledFunctions;
 
-protected function generateExternalObjectIncludes 
+protected function generateExternalObjectIncludes
 "Generates the library paths for external objects"
   input DAELow.DAELow daelow;
   output list<String> includes;
@@ -580,7 +580,7 @@ algorithm
   end matchcontinue;
 end generateExternalObjectIncludes;
 
-protected function generateExternalObjectInclude 
+protected function generateExternalObjectInclude
 "Helper function to generateExteralObjectInclude"
   input DAELow.ExternalObjectClass extObjCls;
   output list<String> includes;
@@ -602,17 +602,17 @@ algorithm
   end matchcontinue;
 end generateExternalObjectInclude;
 
-protected function elaborateFunctions 
+protected function elaborateFunctions
   input list<DAE.Element> daeElements;
   output list<Function> functions;
 protected
-  list<Function> fns;  
+  list<Function> fns;
 algorithm
   (fns, _) := elaborateFunctions2(daeElements, {},{});
   functions := listReverse(fns); // Is there a reason why we reverse here?
 end elaborateFunctions;
 
-protected function elaborateFunctions2 
+protected function elaborateFunctions2
   input list<DAE.Element> daeElements;
   input list<Function> inFunctions;
   input list<String> inRecordTypes;
@@ -638,14 +638,14 @@ algorithm
     case ((fel :: rest), accfns, rt)
       equation
         (fn, rt_1) = elaborateFunction(fel, rt);
-        (fns, rt_2) = elaborateFunctions2(rest, (fn :: accfns), rt_1);        
+        (fns, rt_2) = elaborateFunctions2(rest, (fn :: accfns), rt_1);
       then
         (fns, rt_2);
   end matchcontinue;
 end elaborateFunctions2;
 
 /* Does the actual work of transforming a DAE.FUNCTION to a Function. */
-protected function elaborateFunction 
+protected function elaborateFunction
   input DAE.Element inElement;
   input list<String> inRecordTypes;
   output Function outFunction;
@@ -674,12 +674,12 @@ algorithm
       list<Statement> body;
       DAE.InlineType inl;
       list<DAE.Element> daeElts;
-      
+
     /* Modelica functions. */
     case (DAE.FUNCTION(path = fpath,
                        functions = {DAE.FUNCTION_DEF(body = daeElts)},
                        type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
-                       partialPrefix=false), rt) 
+                       partialPrefix=false), rt)
       equation
         outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
@@ -695,7 +695,7 @@ algorithm
     /* External functions. */
     case (DAE.FUNCTION(path = fpath,
                        functions = {DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)},
-                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt) 
+                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
       equation
         DAE.EXTERNALDECL(ident=extfnname, external_=extargs,
                          parameters=extretarg, returnType=lang, language=ann) = extdecl;
@@ -722,7 +722,7 @@ algorithm
   end matchcontinue;
 end elaborateFunction;
 
-protected function typesSimFunctionArg 
+protected function typesSimFunctionArg
 "function: generateFunctionArgs
   Generates code from a function argument."
   input Types.FuncArg inFuncArg;
@@ -736,7 +736,7 @@ algorithm
       String name;
     case ((name,tty))
       equation
-        expType = Types.elabType(tty);        
+        expType = Types.elabType(tty);
       then
         VARIABLE(DAE.CREF_IDENT(name, expType, {}),expType,NONE,{});
   end matchcontinue;
@@ -754,7 +754,7 @@ algorithm
       Exp.ComponentRef id;
       list<Exp.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
-    //TODO: componentRef ?? can it be something other than CREF_IDENT here ?     
+    //TODO: componentRef ?? can it be something other than CREF_IDENT here ?
     case (DAE.VAR(componentRef = id,
                   kind = DAE.VARIABLE(),
                   ty = daeType,
@@ -773,7 +773,7 @@ algorithm
   end matchcontinue;
 end daeInOutSimVar;
 
-protected function extArgsToSimExtArgs 
+protected function extArgsToSimExtArgs
   input DAE.ExtArg extArg;
   output SimExtArg simExtArg;
 algorithm
@@ -881,7 +881,7 @@ algorithm
   end matchcontinue;
 end fixOutputIndex;
 
-protected function elaborateStatement 
+protected function elaborateStatement
   input DAE.Element inElement;
   output Statement outStatement;
 algorithm
@@ -1184,19 +1184,19 @@ end crefNotInWhenEquation;
 protected function callTargetTemplates
 "Generate target code by passing the SimCode data structure to templates."
   input SimCode simCode;
-algorithm 
+algorithm
   (_) :=
   matchcontinue (simCode)
     case (simCode)
-      equation 
+      equation
         true = RTOpts.debugFlag("CSharp");
         _ = Tpl.tplString(SimCodeCSharp.translateModel, simCode);
-      then (); 
+      then ();
     case (simCode)
       equation
-        false = RTOpts.debugFlag("CSharp"); 
+        false = RTOpts.debugFlag("CSharp");
         _ = Tpl.tplString(SimCodeC.translateModel, simCode);
-      then ();        
+      then ();
   end matchcontinue;
 end callTargetTemplates;
 
@@ -1225,7 +1225,7 @@ algorithm
   end matchcontinue;
 end extractLibs;
 
-protected function elaborateRecordDeclarations 
+protected function elaborateRecordDeclarations
 "function elaborateRecordDeclarations
   Translate all records used by varlist to structs."
   input list<DAE.Element> inVars;
@@ -1242,15 +1242,15 @@ algorithm
       Types.Type ft;
       list<String> rt, rt_1, rt_2;
       list<RecordDeclaration> accRecDecls;
-      
-    case ({}, accRecDecls, rt) 
-      equation 
-        accRecDecls = listReverse(accRecDecls); 
+
+    case ({}, accRecDecls, rt)
+      equation
+        accRecDecls = listReverse(accRecDecls);
       then (accRecDecls,rt);
     case (((var as DAE.VAR(ty = ft)) :: rest), accRecDecls, rt)
       equation
         (accRecDecls,rt_1) = elaborateRecordDeclarationsForRecord(ft, accRecDecls, rt);
-        (accRecDecls,rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1);        
+        (accRecDecls,rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_1);
       then
         (accRecDecls,rt_2);
     case ((DAE.ALGORITHM(algorithm_ = algorithm_) :: rest), accRecDecls, rt)
@@ -1291,31 +1291,31 @@ algorithm
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
       list<RecordDeclaration> accRecDecls;
       Variables vars;
-      
+
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
       local  String sname;
       equation
         sname = Absyn.pathString(name);
         sname = ModUtil.pathStringReplaceDot(name, "_");
         failure(_ = Util.listGetMember(sname,rt));
-        
+
         vars = Util.listMap(varlst, typesVar);
-        
-        accRecDecls = RECORD_DECL_FULL(sname, path, vars) :: accRecDecls;        
-        rt_1 = sname :: rt;        
+
+        accRecDecls = RECORD_DECL_FULL(sname, path, vars) :: accRecDecls;
+        rt_1 = sname :: rt;
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
       then (accRecDecls,rt_2);
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),_), accRecDecls, rt)
       then (accRecDecls,rt);
     case ((_,_), accRecDecls, rt)
       then (accRecDecls,rt);
-    case ((_,_), accRecDecls, rt) then 
+    case ((_,_), accRecDecls, rt) then
       (RECORD_DECL_FULL("#an odd record#", Absyn.IDENT("?noname?"), {}) :: accRecDecls ,rt);
   end matchcontinue;
 end elaborateRecordDeclarationsForRecord;
 
 
-protected function elaborateNestedRecordDeclarations 
+protected function elaborateNestedRecordDeclarations
 "function elaborateNestedRecordDeclarations
   Helper function to elaborateRecordDeclarations."
   input list<Types.Var> inRecordTypes;
@@ -1360,7 +1360,7 @@ algorithm
       String name;
       Absyn.Path path;
       list<RecordDeclaration> accRecDecls;
-      
+
     case ({},accRecDecls,rt) then (accRecDecls,rt);
     case (DAE.METARECORDCALL(path=path,fieldNames=fieldNames)::rest, accRecDecls, rt)
       equation
@@ -1483,7 +1483,7 @@ protected function createAlgorithmAndEquationAsserts
 algorithm
   algorithmAndEquationAsserts :=
   matchcontinue (dlow)
-    case(DAELow.DAELOW(algorithms=algs)) 
+    case(DAELow.DAELOW(algorithms=algs))
       local
         Algorithm.Algorithm[:] algs;
         list<Algorithm.Statement> res;
@@ -1509,7 +1509,7 @@ algorithm
       equation
         restStmt = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
       then (stmt :: restStmt);
-    case(_ :: restAlgs) 
+    case(_ :: restAlgs)
       equation
         restStmt = createAlgorithmAndEquationAssertsFromAlgs(restAlgs);
       then (restStmt);
@@ -1822,7 +1822,7 @@ algorithm
           DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
+        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(cr,kind,_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         isNonState(kind);
         //indxs = intString(indx);
@@ -1840,7 +1840,7 @@ algorithm
           DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
           ass1, ass2)
       equation
-        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) = 
+        ((eqn as DAELow.EQUATION(e1,e2,_)),DAELow.VAR(cr,DAELow.STATE(),_,_,_,_,_,indx,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix)) =
         getEquationAndSolvedVar(e, eqns, vars, ass2);
         //indxs = intString(indx);
         name = Exp.printComponentRefStr(cr) "	Util.string_append_list({\"xd{\",indxs,\"}\"}) => id &" ;
@@ -1881,7 +1881,7 @@ algorithm
         // section.
         true = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
-        //(cfunc,cg_id_1) = 
+        //(cfunc,cg_id_1) =
         //Codegen.generateAlgorithm(DAE.ALGORITHM(alg,source), cg_id, Codegen.CONTEXT(Codegen.SIMULATION(genDiscrete),Codegen.NORMAL(),Codegen.NO_LOOP));
         DAE.ALGORITHM_STMTS(algStatements) = alg;
       then
@@ -2086,7 +2086,7 @@ algorithm
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
         equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp);
       then
-        equation_;      
+        equation_;
     /* continuous system of equations */
     case (genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_)
       equation
@@ -2120,10 +2120,10 @@ protected function generateTearingSystem "function: generateTearingSystem
   Generates the actual simulation code for the teared system of equation
 "
   input Integer[:] inIntegerArray2;
-  input Integer[:] inIntegerArray3; 
+  input Integer[:] inIntegerArray3;
   input list<Integer> inIntegerLst4;
   input list<Integer> inIntegerLst5;
-  input list<Integer> inIntegerLst6; 
+  input list<Integer> inIntegerLst6;
   input Boolean mixedEvent "true if generating the mixed system event code";
   input Boolean genDiscrete;
   input DAELow.DAELow inDAELow;
@@ -2151,8 +2151,8 @@ algorithm
       VarTransform.VariableReplacements repl;
       DAE.Algorithm[:] algorithms;
       DAELow.EventInfo eventInfo;
-      DAELow.ExternalObjectClasses extObjClasses;   
-      list<SimEqSystem> simeqnsystem,simeqnsystem1,resEqs;    
+      DAELow.ExternalObjectClasses extObjClasses;
+      list<SimEqSystem> simeqnsystem,simeqnsystem1,resEqs;
     case (ass1,ass2,block_,r,t,mixedEvent,_,
           daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp)
            /* no analythic jacobian available. Generate non-linear system */
@@ -2166,9 +2166,9 @@ algorithm
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
         crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
         eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.SOURCE({},{},{},{})),eqn_lst);
-        tcrs = Util.listMap1r(t,listNth,crefs1); 
+        tcrs = Util.listMap1r(t,listNth,crefs1);
         repl = makeResidualReplacements(tcrs);
-        // get residual eqns and other eqns 
+        // get residual eqns and other eqns
         reqns = Util.listMap1r(r,listNth,eqn_lst1);
         // remove residual equation from list of other equtions
         block_1 = Util.listSelect1(block_,r,Util.listNotContains);
@@ -2182,12 +2182,12 @@ algorithm
         index = Util.listFirst(block_); // use first equation nr as index
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
       then
-        SES_NONLINEAR(index, simeqnsystem1, tcrs);        
+        SES_NONLINEAR(index, simeqnsystem1, tcrs);
     case (_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "-generateTearingSystem failed \n");
       then
-        fail();        
+        fail();
   end matchcontinue;
 end generateTearingSystem;
 
@@ -2457,7 +2457,7 @@ algorithm
   end matchcontinue;
 end dlowEqToExp;
 
-protected function createSingleArrayEqnCode 
+protected function createSingleArrayEqnCode
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   output SimEqSystem equation_;
@@ -2476,7 +2476,7 @@ algorithm
       DAELow.EventInfo ev;
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAE.ElementSource source "the origin of the element";
-      
+
     case (DAELow.DAELOW(orderedVars = vars,
                         knownVars = knvars,
                         orderedEqs = eqns,
@@ -2507,7 +2507,7 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode;
 
-protected function createSingleAlgorithmCode 
+protected function createSingleAlgorithmCode
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
   output SimEqSystem equation_;
@@ -2530,7 +2530,7 @@ algorithm
       String message,algStr;
       list<DAE.Statement> algStatements;
       DAE.ElementSource source "the origin of the element";
-      
+
     case (DAELow.DAELOW(orderedVars = vars,knownVars = knvars,orderedEqs = eqns,removedEqs = se,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = ev),jac)
       equation
         (DAELow.ALGORITHM(indx,_,algOutExpVars,_) :: _) = DAELow.equationList(eqns);
@@ -2569,7 +2569,7 @@ algorithm
 end createSingleAlgorithmCode;
 
 // TODO: are the cases really correct?
-protected function createSingleArrayEqnCode2 
+protected function createSingleArrayEqnCode2
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
   input DAE.Exp inExp3;
@@ -2623,7 +2623,7 @@ algorithm
   end matchcontinue;
 end createSingleArrayEqnCode2;
 
-protected function createResidualEquations 
+protected function createResidualEquations
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
   input Integer[:] ass2;
@@ -2710,7 +2710,7 @@ algorithm
   end matchcontinue;
 end failUnlessResidual;
 
-protected function createInitialEquations 
+protected function createInitialEquations
   input DAELow.DAELow dlow;
   output list<SimEqSystem> initialEquations;
 algorithm
@@ -2748,7 +2748,7 @@ algorithm
   end matchcontinue;
 end createInitialEquations;
 
-protected function createParameterEquations 
+protected function createParameterEquations
   input DAELow.DAELow dlow;
   output list<SimEqSystem> parameterEquations;
 algorithm
@@ -2794,7 +2794,7 @@ algorithm
       DAE.ComponentRef name;
       DAE.Exp startv;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({}) then {};
     case (DAELow.VAR(values=attr, varName=name, source=source) :: restVars)
       /* also add an assignment for variables that have non-constant
@@ -2830,7 +2830,7 @@ algorithm
       DAE.Exp startv;
       DAE.Exp e;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({}) then {};
     case (DAELow.VAR(varName=cr, bindExp=SOME(e), source = source) :: restVars)
       equation
@@ -2847,7 +2847,7 @@ algorithm
   end matchcontinue;
 end createInitialParamAssignments;
 
-protected function createZeroCrossings 
+protected function createZeroCrossings
   input DAELow.DAELow dlow;
   output list<DAELow.ZeroCrossing> zc;
 algorithm
@@ -2864,7 +2864,7 @@ algorithm
   end matchcontinue;
 end createZeroCrossings;
 
-protected function createZeroCrossingsNeedSave 
+protected function createZeroCrossingsNeedSave
   input list<DAELow.ZeroCrossing> zeroCrossings;
   input DAE.DAElist dae;
   input DAELow.DAELow dlow;
@@ -2931,10 +2931,10 @@ algorithm
       SimVar simvar;
     case (_,_,_,_,{},_)
       then {};
-    /* zero crossing for mixed system */      
+    /* zero crossing for mixed system */
     case (dae, (dlow as DAELow.DAELOW(vars, knvars, exvars, eqns, se, ie, ae,
                                       al, ev, eoc)),
-          ass1, ass2, (eqn :: rest), blocks) 
+          ass1, ass2, (eqn :: rest), blocks)
       equation
         true = isPartOfMixedSystem(dlow, eqn, blocks, ass2);
         block_ = getZcMixedSystem(dlow, eqn, blocks, ass2);
@@ -2947,7 +2947,7 @@ algorithm
         (simvar :: crs);
     /* zero crossing for single equation */
     case (dae, (dlow as DAELow.DAELOW(orderedVars = vars)), ass1, ass2,
-          (eqn :: rest), blocks) 
+          (eqn :: rest), blocks)
       local
         DAELow.Variables vars;
       equation
@@ -3014,7 +3014,7 @@ algorithm
       Integer nx, ny, np, ng, next, ny_string, np_string, ng_1;
     case (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
       equation
-        (nx, ny, np, ng, next, ny_string, np_string) = 
+        (nx, ny, np, ng, next, ny_string, np_string) =
           DAELow.calculateSizes(dlow);
         ng_1 = filterNg(ng);
       then
@@ -3261,7 +3261,7 @@ algorithm
         stringAlgVars = listAppend(stringAlgVars1, stringAlgVars2);
         stringParamVars = listAppend(stringParamVars1, stringParamVars2);
         extObjVars = listAppend(extObjVars1, extObjVars2);
-      then 
+      then
         SIMVARS(stateVars, derivativeVars, algVars, inputVars, outputVars,
                 paramVars, stringAlgVars, stringParamVars, extObjVars);
     case (_,_)
@@ -3621,7 +3621,7 @@ algorithm
   end matchcontinue;
 end generateHelpVarsInArrayCondition;
 
-protected function changeNameForDerivative 
+protected function changeNameForDerivative
 "function changeNameForDerivative
   author: x02lucpo
   helper function to generateVarNamesAndComments.
@@ -3634,10 +3634,10 @@ algorithm
     local
       String var_name,der_var_name_1,origname,prefix,ret_str,origname_1;
       list<String> origname_lst,origname_lst_1;
-    case (origname_1) /* print \"change_name_for_derivative FAILED\" */  
+    case (origname_1) /* print \"change_name_for_derivative FAILED\" */
       then "der("+& origname_1 +& ")";
-/*            
-    case (origname) // catch the variable names a 
+/*
+    case (origname) // catch the variable names a
       equation
         {var_name} = Util.stringSplitAtChar(origname, ".");
         der_var_name_1 = Util.stringAppendList({"der(",var_name,")"});
@@ -3653,13 +3653,13 @@ algorithm
         ret_str = Util.stringAppendList({prefix,".",der_var_name_1});
       then
         ret_str;
-    case (origname_1) // print \"change_name_for_derivative FAILED\"   
+    case (origname_1) // print \"change_name_for_derivative FAILED\"
       then origname_1;
 */
   end matchcontinue;
 end changeNameForDerivative;
 
-protected function selectContinuousEquations 
+protected function selectContinuousEquations
 "function selectContinuousEquations
   Returns only the equations that are solved for a continous variable."
   input list<DAELow.Equation> eqnLst;
@@ -3709,7 +3709,7 @@ algorithm
       Option<DAE.VariableAttributes> attr;
       list<DAELow.Var> vars;
       DAE.ElementSource source "the origin of the element";
-      
+
     case ({}) then {};
     case (((v as DAELow.VAR(varName = cr,varKind = kind,values = attr,source=source)) :: vars)) /* add equations for variables with fixed = true */
       equation
@@ -3986,7 +3986,7 @@ end addMissingEquations;
 
 
 
-protected function buildDiscreteVarChangesVar2 
+protected function buildDiscreteVarChangesVar2
 "Help relation to buildDiscreteVarChangesVar
  For an equation e  (not a when equation) containing a discrete variable v, if e contains a
  ZeroCrossing(i) generate 'if change(v) needToIterate=1;)'"
@@ -4307,7 +4307,7 @@ algorithm
   end matchcontinue;
 end isMixedSystem;
 
-protected function solveTrivialArrayEquation 
+protected function solveTrivialArrayEquation
 "Solves some trivial array equations, like v+v2=foo(...), w.r.t. v is v=foo(...)-v2"
 	input Exp.ComponentRef v;
 	input Exp.Exp e1;
@@ -4316,13 +4316,13 @@ protected function solveTrivialArrayEquation
 	output Exp.Exp outE2;
 algorithm
   (outE1,outE2) := matchcontinue(v,e1,e2)
-    local 
+    local
       Exp.Exp e12,e22,vTerm,res,rhs;
       list<Exp.Exp> terms;
       Exp.Type tp;
-      
+
     // Solve simple linear equations.
-    case(v,e1,e2) 
+    case(v,e1,e2)
       equation
         tp = Exp.typeof(e1);
         res = Exp.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
@@ -4337,7 +4337,7 @@ algorithm
   end matchcontinue;
 end solveTrivialArrayEquation;
 
-protected function getVectorizedCrefFromExp 
+protected function getVectorizedCrefFromExp
 "function: getVectorizedCrefFromExp
   author: PA
   Returns the component ref v if expression is on form
@@ -4376,7 +4376,7 @@ algorithm
   end matchcontinue;
 end getVectorizedCrefFromExp;
 
-protected function getVectorizedCrefFromExpMatrix 
+protected function getVectorizedCrefFromExpMatrix
 "function: getVectorizedCrefFromExpMatrix
   author: KN
   Helper function for the 2D part of getVectorizedCrefFromExp
@@ -4410,7 +4410,7 @@ algorithm
   end matchcontinue;
 end getVectorizedCrefFromExpMatrix;
 
-protected function singleAlgorithmSection 
+protected function singleAlgorithmSection
 "function: singleAlgorithmSection
   author: PA
   Checks if a dae (subsystem) consists of a single algorithm section."
@@ -4446,7 +4446,7 @@ algorithm
   end matchcontinue;
 end singleAlgorithmSection2;
 
-protected function singleArrayEquation 
+protected function singleArrayEquation
 "function: singleArrayEquation
   author: PA
   Checks if a dae (subsystem) consists of a single array equation."
@@ -4568,7 +4568,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       DAE.ElementSource source "the origin of the element";
-      
+
     case (DAELow.VAR(varName = cr,
                      varKind = DAELow.STATE(),
                      varDirection = dir,
@@ -4590,7 +4590,7 @@ algorithm
         res = Util.stringAppendList({DAELow.derivativeNamePrefix,c_name}) "	Util.string_append_list({\"xd{\",index_str, \"}\"}) => res" ;
       then
         DAELow.VAR(DAE.CREF_IDENT(res,DAE.ET_REAL(),{}),DAELow.STATE_DER(),dir,tp,exp,v,dim,index,cr,source,attr,comment,flowPrefix,streamPrefix);
-        
+
     case (v)
       local DAELow.Var v;
       then
@@ -4598,7 +4598,7 @@ algorithm
   end matchcontinue;
 end transformXToXd;
 
-protected function getEquationAndSolvedVar 
+protected function getEquationAndSolvedVar
 "function: getEquationAndSolvedVar
   author: PA
   Retrieves the equation and the variable solved in that equation
@@ -4632,13 +4632,13 @@ algorithm
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "SimCode.getEquationAndSolvedVar failed at index: " +& intString(e));
       then
-        fail();        
+        fail();
   end matchcontinue;
 end getEquationAndSolvedVar;
 
-protected function isPartOfMixedSystem 
+protected function isPartOfMixedSystem
 "function: isPartOfMixedSystem
-  Helper function to generateZeroCrossing2, returns true if any equation 
+  Helper function to generateZeroCrossing2, returns true if any equation
   in the equation list of a zero-crossing is part of a mixed system."
   input DAELow.DAELow inDAELow;
   input Integer inInteger;
@@ -4670,10 +4670,10 @@ algorithm
   end matchcontinue;
 end isPartOfMixedSystem;
 
-protected function getZcMixedSystem 
+protected function getZcMixedSystem
 "function: getZcMixedSystem
   Helper function to generateZeroCrossing2,
-  returns true if any equation in the equation list 
+  returns true if any equation in the equation list
   of a zero-crossing is part of a mixed system."
   input DAELow.DAELow inDAELow;
   input Integer inInteger;
@@ -4703,10 +4703,10 @@ algorithm
   end matchcontinue;
 end getZcMixedSystem;
 
-protected function splitOutputBlocks 
-"Splits the output blocks into two 
-  parts, one for continous output variables and one for discrete output values. 
-  This must be done to ensure that discrete variables are calculated before and 
+protected function splitOutputBlocks
+"Splits the output blocks into two
+  parts, one for continous output variables and one for discrete output values.
+  This must be done to ensure that discrete variables are calculated before and
   after a discrete event."
   input DAELow.DAELow dlow;
   input Integer[:] ass1;
@@ -4730,7 +4730,7 @@ algorithm
   end matchcontinue;
 end splitOutputBlocks;
 
-protected function splitOutputBlocks2 
+protected function splitOutputBlocks2
   input DAELow.Variables discVars;
   input DAELow.Variables vars;
   input DAELow.Variables knvars;
@@ -4746,9 +4746,9 @@ protected function splitOutputBlocks2
 algorithm
   (contBlocks,discBlocks,discVars) := matchcontinue(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks)
     local list<Integer> blck;
-      
+
     /* discrete block */
-    case(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blck::blocks)  
+    case(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blck::blocks)
       equation
         discVars = blockSolvesDiscrete(discVars,vars,knvars,eqns,blck,ass2,mT);
         (contBlocks,discBlocks,discVars) = splitOutputBlocks2(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks);
@@ -4759,12 +4759,12 @@ algorithm
       equation
         (contBlocks,discBlocks,discVars) = splitOutputBlocks2(discVars,vars,knvars,eqns,ass1,ass2,m,mT,blocks);
       then (blck::contBlocks,discBlocks,discVars);
-        
+
     case(discVars,vars,knvars,eqns,ass1,ass2,m,mT,{}) then ({},{},discVars);
   end matchcontinue;
 end splitOutputBlocks2;
 
-protected function blockSolvesDiscrete 
+protected function blockSolvesDiscrete
 "Help function to splitOutputBlocks
  succeds if the block solves for any discrete variable."
   input DAELow.Variables discVars;
@@ -4797,9 +4797,9 @@ algorithm
   end matchcontinue;
 end blockSolvesDiscrete;
 
-protected function getCalledFunctionsInFunctions 
+protected function getCalledFunctionsInFunctions
 "function: getCalledFunctionsInFunctions
-  Goes through the given DAE, finds the given functions and collects 
+  Goes through the given DAE, finds the given functions and collects
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
   input list<Absyn.Path> accumulated;
@@ -4820,9 +4820,9 @@ algorithm
   end matchcontinue;
 end getCalledFunctionsInFunctions;
 
-protected function getCalledFunctionsInFunction 
+protected function getCalledFunctionsInFunction
 "function: getCalledFunctionsInFunction
-  Goes through the given DAE, finds the given function and collects 
+  Goes through the given DAE, finds the given function and collects
   the names of the functions called from within those functions"
   input Absyn.Path inPath;
   input list<Absyn.Path> accumulated;
@@ -4840,7 +4840,7 @@ algorithm
       list<Absyn.Path> calledfuncs,res1,res2,res,acc;
       list<String> debugpathstrs;
       DAE.DAElist dae;
-      
+
     case (path,acc,DAE.DAE(elementLst = elements)) /* Don\'t fail here, ceval will generate the function later */
       equation
         {} = DAEUtil.getNamedFunction(path, elements);
@@ -4848,7 +4848,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {pathstr,"global scope"});
       then
         path::acc;
-        
+
     case (path,acc,(dae as DAE.DAE(elementLst = elements)))
       local
         list<DAE.Element> varlist;
@@ -4861,26 +4861,26 @@ algorithm
         fcallexps = getMatchingExpsList(explist, matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
-        
+
         /*-- MetaModelica Partial Function. sjoelund --*/
-        
+
         // stefan - get all arguments of constant T_FUNCTION type and add to list
         fnrefs = getMatchingExpsList(explist, matchFnRefs);
         crefs = Util.listMap(fnrefs, getCrefFromExp);
         reffuncs = Util.listMap(crefs, Absyn.crefToPath);
-        
+
         //fns = removeDuplicatePaths(fnpaths);
         calledfuncs = listAppend(reffuncs, calledfuncs);
         calledfuncs = removeDuplicatePaths(calledfuncs);
-        
+
         varlistlist = Util.listMap(funcelems, getFunctionElementsList);
         varlist = Util.listFlatten(varlistlist);
         varlist = Util.listSelect(varlist, DAEUtil.isFunctionRefVar);
         varfuncs = Util.listMap(varlist, getFunctionRefVarPath);
         calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
-        /*--                                           --*/ 
+        /*--                                           --*/
         res = getCalledFunctionsInFunctions(calledfuncs, path::acc, dae);
-        
+
         Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
         debugpathstrs = Util.listMap(varfuncs, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
@@ -4891,12 +4891,12 @@ algorithm
         Debug.fprintln("info", debugpathstr) "debug" ;
       then
         res;
-    
+
     case (path,acc,_)
       equation
         true = listMember(path,acc);
       then acc;
-    
+
     case(_,_,_)
       equation
         Debug.fprint("failtrace", "SimCode.getCalledFunctionsInFunction failed\n");
@@ -4904,7 +4904,7 @@ algorithm
   end matchcontinue;
 end getCalledFunctionsInFunction;
 
-protected function getCallPath 
+protected function getCallPath
 "function: getCallPath
   Retrive the function name from a CALL expression."
   input Exp.Exp inExp;
@@ -4917,7 +4917,7 @@ algorithm
   end matchcontinue;
 end getCallPath;
 
-protected function getFunctionRefVarPath 
+protected function getFunctionRefVarPath
 "function: getFunctionRefVarFunctionPath
   Retrive the function name from a function variable."
   input DAE.Element inElem;
@@ -4944,7 +4944,7 @@ algorithm
   end matchcontinue;
 end getFunctionElementsList;
 
-protected function removeDuplicatePaths 
+protected function removeDuplicatePaths
 "Remove duplicate Paths in a list of Paths."
   input list<Absyn.Path> inAbsynPathLst;
   output list<Absyn.Path> outAbsynPathLst;
@@ -4964,7 +4964,7 @@ algorithm
   end matchcontinue;
 end removeDuplicatePaths;
 
-protected function removePathFromList 
+protected function removePathFromList
   input list<Absyn.Path> inAbsynPathLst;
   input Absyn.Path inPath;
   output list<Absyn.Path> outAbsynPathLst;
@@ -5019,7 +5019,7 @@ algorithm
   end matchcontinue;
 end generateEquationOrder;
 
-protected function isVarQ 
+protected function isVarQ
 "Succeeds if inElement is a variable or constant that is not input."
   input DAE.Element inElement;
 algorithm
@@ -5036,7 +5036,7 @@ algorithm
   end matchcontinue;
 end isVarQ;
 
-protected function isVarVarOrConstant 
+protected function isVarVarOrConstant
   input DAE.VarKind inVarKind;
 algorithm
   _ :=
@@ -5093,7 +5093,7 @@ algorithm
     case (DAELow.DUMMY_DER()) then ();
     case (DAELow.DUMMY_STATE()) then ();
     case (DAELow.DISCRETE()) then ();
-    case (DAELow.STATE_DER()) then ();  
+    case (DAELow.STATE_DER()) then ();
   end matchcontinue;
 end isNonState;
 
@@ -5160,15 +5160,15 @@ algorithm
         crefa = Exp.unelabCref(crefe);
       then
         crefa;
-    case(e) 
+    case(e)
       equation
         print("SimCode.getCrefFromExp failed: input was not of type DAE.CREF");
-      then 
+      then
         fail();
   end matchcontinue;
 end getCrefFromExp;
 
-protected function isVarDiscrete 
+protected function isVarDiscrete
   input DAELow.Type tp;
   input DAELow.VarKind kind;
   output Boolean res;
@@ -5289,7 +5289,7 @@ algorithm
   end matchcontinue;
 end indexSubscriptToExp;
 
-protected function isNotBuiltinCall 
+protected function isNotBuiltinCall
 "Return true if the given DAE.CALL is a call but not to a builtin function."
   input Exp.Exp inExp;
   output Boolean outBoolean;
@@ -5328,7 +5328,7 @@ protected function dlowvarToSimvar
   input DAELow.Var dlowVar;
   output SimVar simVar;
 algorithm
-  simVar := 
+  simVar :=
   matchcontinue (dlowVar)
     local
       Exp.ComponentRef cr, origname;
@@ -5391,7 +5391,7 @@ algorithm
   end matchcontinue;
 end subsToScalar;
 
-protected function generateFunctions2 
+protected function generateFunctions2
 "function: generateFunctions2
   author: PA
   Helper function to generateFunctions."
@@ -5402,7 +5402,7 @@ algorithm
   dae := generateFunctions3(p, paths, paths);
 end generateFunctions2;
 
-protected function generateFunctions3 
+protected function generateFunctions3
 "function: generateFunctions3
   Helper function to generateFunctions2"
   input SCode.Program inProgram1;
@@ -5426,14 +5426,14 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
       list<DAE.Element> daeElts;
-      
+
     case (_,{},allpaths) then {};  /* iterated over complete list */
-      
+
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
-        DAE.DAE({DAE.FUNCTION(functions = 
-          DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;        
+        DAE.DAE({DAE.FUNCTION(functions =
+          DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
         patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)},funcs);
         subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
         (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
@@ -5441,7 +5441,7 @@ algorithm
         res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)});
       then
         res;
-        
+
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
@@ -5454,7 +5454,7 @@ algorithm
         res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)});
       then
         res;
-        
+
     case (p,(path :: paths),allpaths)
       equation
         (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
@@ -5466,7 +5466,7 @@ algorithm
         res = listAppend(elts, {DAE.RECORD_CONSTRUCTOR(path,t,source)});
       then
         res;
-        
+
     case (_,(path :: paths),_)
       equation
         s = Absyn.pathString(path);
@@ -5477,7 +5477,7 @@ algorithm
   end matchcontinue;
 end generateFunctions3;
 
-protected function appendNonpresentPaths 
+protected function appendNonpresentPaths
 "function: appendNonpresentPaths
   Appends the paths in first argument to the two path lists given as second
   and third argument, given that the path is not present in the second path list."
@@ -5492,16 +5492,16 @@ algorithm
     local
       list<Absyn.Path> allpaths,iterpaths,paths,allpaths_1,iterpaths_1,allpaths_2,iterpaths_2;
       Absyn.Path path;
-      
+
     case ({},allpaths,iterpaths) then (allpaths,iterpaths);  /* paths to append all paths iterated paths updated all paths update iterated paths */
-      
+
     case ((path :: paths),allpaths,iterpaths)
       equation
         _ = Util.listGetMemberOnTrue(path, allpaths, ModUtil.pathEqual);
         (allpaths,iterpaths) = appendNonpresentPaths(paths, allpaths, iterpaths);
       then
         (allpaths,iterpaths);
-        
+
     case ((path :: paths),allpaths,iterpaths)
       equation
         failure(_ = Util.listGetMemberOnTrue(path, allpaths, ModUtil.pathEqual));
@@ -5522,7 +5522,7 @@ public function getMatchingExpsList
     output list<DAE.Exp> outExprLst;
   end MatchFn;
   list<list<DAE.Exp>> explists;
-algorithm 
+algorithm
   explists := Util.listMap1(inExps, getMatchingExps, inFn);
   outExpLst := Util.listFlatten(explists);
 end getMatchingExpsList;
@@ -5530,8 +5530,8 @@ end getMatchingExpsList;
 protected function getMatchingExps
 "function: getMatchingExps
   Return all exps that match the given function.
-  Inner exps may be returned separately but not 
-  extracted from the exp they are in, e.g. 
+  Inner exps may be returned separately but not
+  extracted from the exp they are in, e.g.
     CALL(foo, {CALL(bar)}) will return
     {CALL(foo, {CALL(bar)}), CALL(bar,{})}
 Implementation note: DAE.Exp contains VALUEBLOCKS,
@@ -5544,7 +5544,7 @@ Implementation note: DAE.Exp contains VALUEBLOCKS,
     input DAE.Exp inExpr;
     output list<DAE.Exp> outExprLst;
   end MatchFn;
-algorithm 
+algorithm
   outExpLst:=
   matchcontinue (inExp,inFn)
     local
@@ -5556,16 +5556,16 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> explst;
       Option<DAE.Exp> optexp;
       MatchFn fn;
-    
+
     // First we check if the function matches
     case (e, fn)
       equation
         res = fn(e);
       then res;
-    
+
     // Else: Traverse all Exps
     case ((e as DAE.CALL(path = path,expLst = args,tuple_ = tuple_,builtin = builtin)),fn)
-      equation 
+      equation
         exps = getMatchingExpsList(args,fn);
       then
         exps;
@@ -5574,75 +5574,75 @@ algorithm
         res = getMatchingExpsList(args,fn);
       then
         res;
-    case (DAE.BINARY(exp1 = e1,exp2 = e2),fn) /* Binary */ 
-      equation 
+    case (DAE.BINARY(exp1 = e1,exp2 = e2),fn) /* Binary */
+      equation
         a = getMatchingExps(e1,fn);
         b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (DAE.UNARY(exp = e),fn) /* Unary */ 
-      equation 
+    case (DAE.UNARY(exp = e),fn) /* Unary */
+      equation
         res = getMatchingExps(e,fn);
       then
         res;
-    case (DAE.LBINARY(exp1 = e1,exp2 = e2),fn) /* LBinary */ 
-      equation 
+    case (DAE.LBINARY(exp1 = e1,exp2 = e2),fn) /* LBinary */
+      equation
         a = getMatchingExps(e1,fn);
         b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
-    case (DAE.LUNARY(exp = e),fn) /* LUnary */ 
-      equation 
+    case (DAE.LUNARY(exp = e),fn) /* LUnary */
+      equation
         res = getMatchingExps(e,fn);
       then
         res;
-    case (DAE.RELATION(exp1 = e1,exp2 = e2),fn) /* Relation */ 
-      equation 
+    case (DAE.RELATION(exp1 = e1,exp2 = e2),fn) /* Relation */
+      equation
         a = getMatchingExps(e1,fn);
         b = getMatchingExps(e2,fn);
         res = listAppend(a, b);
       then
         res;
     case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),fn)
-      equation 
+      equation
         res = getMatchingExpsList({e1,e2,e3},fn);
       then
         res;
-    case (DAE.ARRAY(array = elts),fn) /* Array */ 
-      equation 
+    case (DAE.ARRAY(array = elts),fn) /* Array */
+      equation
         res = getMatchingExpsList(elts,fn);
       then
         res;
-    case (DAE.MATRIX(scalar = explst),fn) /* Matrix */ 
-      equation 
+    case (DAE.MATRIX(scalar = explst),fn) /* Matrix */
+      equation
         flatexplst = Util.listFlatten(explst);
         elst = Util.listMap(flatexplst, Util.tuple21);
         res = getMatchingExpsList(elst,fn);
       then
         res;
-    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */ 
+    case (DAE.RANGE(exp = e1,expOption = optexp,range = e2),fn) /* Range */
       local list<DAE.Exp> e3;
-      equation 
+      equation
         e3 = Util.optionToList(optexp);
         elist = listAppend({e1,e2}, e3);
         res = getMatchingExpsList(elist,fn);
       then
         res;
-    case (DAE.TUPLE(PR = exps),fn) /* Tuple */ 
-      equation 
+    case (DAE.TUPLE(PR = exps),fn) /* Tuple */
+      equation
         res = getMatchingExpsList(exps,fn);
       then
         res;
     case (DAE.CAST(exp = e),fn)
-      equation 
+      equation
         res = getMatchingExps(e,fn);
       then
         res;
-    case (DAE.SIZE(exp = e1,sz = e2),fn) /* Size */ 
+    case (DAE.SIZE(exp = e1,sz = e2),fn) /* Size */
       local Option<DAE.Exp> e2;
-      equation 
+      equation
         a = Util.optionToList(e2);
         elist = e1 :: a;
         res = getMatchingExpsList(elist,fn);
@@ -5660,7 +5660,7 @@ algorithm
       equation
         res = getMatchingExpsList(elist,fn);
       then res;
-    
+
     case (e as DAE.METARECORDCALL(args = elist),fn)
       equation
         res = getMatchingExpsList(elist,fn);
@@ -5681,9 +5681,9 @@ algorithm
         res = getMatchingExps(e1,fn);
         then
           res;
-    
+
     case(DAE.CREF(_,_),_) then {};
-    
+
     case (DAE.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
       local
     		list<DAE.Element> ld;
@@ -5694,7 +5694,7 @@ algorithm
         exps = listAppend(exps,exps2);
         res = getMatchingExpsList(e::exps,fn);
       then res;
-        
+
     case (DAE.ICONST(_),_) then {};
     case (DAE.RCONST(_),_) then {};
     case (DAE.BCONST(_),_) then {};
@@ -5702,12 +5702,12 @@ algorithm
     case (DAE.CODE(_,_),_) then {};
     case (DAE.END(),_) then {};
     case (DAE.META_OPTION(NONE),_) then {};
-        
+
     case (e,_)
       equation
         Debug.fprintln("failtrace", "- SimCodegen.getMatchingExps failed: " +& Exp.printExpStr(e));
       then fail();
-        
+
   end matchcontinue;
 end getMatchingExps;
 
@@ -5719,16 +5719,16 @@ algorithm
   outExprLst := matchcontinue (inExpr)
     local list<DAE.Exp> args, exps; DAE.Exp e;
     case (e as DAE.CALL(expLst = args))
-      equation 
+      equation
         exps = getMatchingExpsList(args,matchCalls);
       then
         e::exps;
   end matchcontinue;
 end matchCalls;
 
-protected function generateExtFunctionIncludes 
+protected function generateExtFunctionIncludes
 "function: generateExtFunctionIncludes
-  Collects the includes and libs for an external function 
+  Collects the includes and libs for an external function
   by investigating the annotation of an external function."
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
   output list<String> outStringLst1;
@@ -5760,7 +5760,7 @@ algorithm
       list<Absyn.ElementArg> eltarg;
     case (eltarg)
       equation
-        Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) = 
+        Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{})) "System.stringReplace(lib,\"\\\"\",\"\"\") => lib\'" ;
       then
         {lib};

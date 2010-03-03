@@ -28,17 +28,17 @@
  *
  */
 
-package DAE 
+package DAE
 " file:	 DAE.mo
   package:     DAE
   description: DAE management and output
- 
+
   RCS: $Id$
-  
+
   This module defines data structures for DAE equations and declarations of
   variables and functions. The DAE data structure is the result of flattening,
   containing only flat modelica, i.e. equations, algorithms, variables and
-  functions. 
+  functions.
 "
 
 public import Absyn;
@@ -54,7 +54,7 @@ public type InstDims = list<Subscript>;
 public type StartValue = Option<Exp>;
 
 public constant String UNIQUEIO = "$unique$outer$";
-  
+
 
 public uniontype VarKind
   record VARIABLE end VARIABLE;
@@ -70,7 +70,7 @@ end VarKind;
 public uniontype Flow "The Flow of a variable indicates if it is a Flow variable or not, or if
    it is not a connector variable at all."
   record FLOW end FLOW;
- 
+
   record NON_FLOW end NON_FLOW;
 
   record NON_CONNECTOR end NON_CONNECTOR;
@@ -84,7 +84,7 @@ public uniontype Stream "The Stream of a variable indicates if it is a Stream va
   record NON_STREAM end NON_STREAM;
 
   record NON_STREAM_CONNECTOR end NON_STREAM_CONNECTOR;
-    
+
 end Stream;
 
 
@@ -98,33 +98,33 @@ public uniontype VarDirection
 end VarDirection;
 
 public uniontype VarProtection
-  record PUBLIC "public variables" end PUBLIC; 
+  record PUBLIC "public variables" end PUBLIC;
   record PROTECTED "protected variables" end PROTECTED;
 end VarProtection;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
-    list<Absyn.Within> partOfLst "the model(s) this element came from";    
+    list<Absyn.Within> partOfLst "the model(s) this element came from";
     list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
-    list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";    
+    list<Absyn.Path> typeLst "the classes where the type(s) of the element is defined";
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE({},{},{},{}); 
+public constant ElementSource emptyElementSource = SOURCE({},{},{},{});
 
 public uniontype Element
-  record VAR 
+  record VAR
     ComponentRef componentRef " The variable name";
     VarKind kind "varible kind: variable, constant, parameter, discrete etc." ;
     VarDirection direction "input, output or bidir" ;
     VarProtection protection "if protected or public";
     Type ty "Full type information required";
-    Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ; 
+    Option<Exp> binding "Binding expression e.g. for parameters ; value of start attribute" ;
     InstDims  dims "dimensions";
     Flow flowPrefix "Flow of connector variable. Needed for unconnected flow variables" ;
     Stream streamPrefix "Stream variables in connectors" ;
-    ElementSource source "the origins of the component/equation/algorithm";    
+    ElementSource source "the origins of the component/equation/algorithm";
     Option<VariableAttributes> variableAttributesOption;
     Option<SCode.Comment> absynCommentOption;
     Absyn.InnerOuter innerOuter "inner/outer required to 'change' outer references";
@@ -141,7 +141,7 @@ public uniontype Element
     Exp exp;
     ElementSource source "the origin of the component/equation/algorithm";
   end INITIALDEFINE;
-  
+
   record EQUATION "Scalar equation"
     Exp exp;
     Exp scalar;
@@ -166,13 +166,13 @@ public uniontype Element
     Exp rhs;
     ElementSource source "the origin of the component/equation/algorithm";
   end COMPLEX_EQUATION;
-  
+
   record INITIAL_COMPLEX_EQUATION "an initial equation of complex type, e.g. record = func(..)"
     Exp lhs;
     Exp rhs;
     ElementSource source "the origin of the component/equation/algorithm";
   end INITIAL_COMPLEX_EQUATION;
-  
+
   record WHEN_EQUATION " a when equation"
     Exp condition "Condition" ;
     list<Element> equations "Equations" ;
@@ -224,7 +224,7 @@ public uniontype Element
     InlineType inlineType;
     ElementSource source "the origin of the component/equation/algorithm";
   end FUNCTION;
-  
+
   record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
     Absyn.Path path;
     Type type_;
@@ -237,7 +237,7 @@ public uniontype Element
     Element destructor "destructor is an EXTFUNCTION";
     ElementSource source "the origin of the component/equation/algorithm";
   end EXTOBJECTCLASS;
-  
+
   record ASSERT " The Modelica builtin assert"
     Exp condition;
     Exp message;
@@ -255,9 +255,9 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm";
   end REINIT;
 
-  record NORETCALL "call with no return value, i.e. no equation. 
+  record NORETCALL "call with no return value, i.e. no equation.
 	  Typically sideeffect call of external function but also
-	  Connections.* i.e. Connections.root(...) functions."  
+	  Connections.* i.e. Connections.root(...) functions."
     Absyn.Path functionName;
     list<Exp> functionArgs;
     ElementSource source "the origin of the component/equation/algorithm";
@@ -265,12 +265,12 @@ public uniontype Element
 end Element;
 
 public uniontype InlineType
-  record NORM_INLINE "Normal inline, inline as soon as possible"     
+  record NORM_INLINE "Normal inline, inline as soon as possible"
   end NORM_INLINE;
-  
+
   record NO_INLINE "Avoid inline, this is default behaviour but is also possible to set with Inline=false"
   end NO_INLINE;
-  
+
   record AFTER_INDEX_RED_INLINE "Try to inline after index reduction"
   end AFTER_INDEX_RED_INLINE;
 end InlineType;
@@ -296,13 +296,13 @@ public uniontype FunctionDefinition
   end FUNCTION_DER_MAPPER;
 end FunctionDefinition;
 
-public 
+public
 uniontype derivativeCond "Different conditions on derivatives"
   record ZERO_DERIVATIVE end ZERO_DERIVATIVE;
   record NO_DERIVATIVE Exp binding; end NO_DERIVATIVE;
 end derivativeCond;
 
-public 
+public
 uniontype VariableAttributes
   record VAR_ATTR_REAL
     Option<Exp> quantity "quantity" ;
@@ -401,7 +401,7 @@ public uniontype ExternalDecl
   end EXTERNALDECL;
 end ExternalDecl;
 
-public uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions, 
+public uniontype DAElist "A DAElist is a list of Elements. Variables, equations, functions,
   algorithms, etc. are all found in this list.
 "
   record DAE
@@ -417,7 +417,7 @@ public type AvlValue = Element;
 
 public type FunctionTree = AvlTree;
 
-public 
+public
 uniontype AvlTree "The binary tree data structure
  "
   record AVLTREENODE
@@ -429,7 +429,7 @@ uniontype AvlTree "The binary tree data structure
 
 end AvlTree;
 
-public 
+public
 uniontype AvlTreeValue "Each node in the binary tree can have a value associated with it."
   record AVLTREEVALUE
     AvlKey key "Key" ;
@@ -439,7 +439,7 @@ uniontype AvlTreeValue "Each node in the binary tree can have a value associated
 end AvlTreeValue;
 
 /* -- Algorithm.mo -- */
-public 
+public
 uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm section.
   It is simple a list of algorithm statements."
   record ALGORITHM_STMTS
@@ -448,7 +448,7 @@ uniontype Algorithm "The `Algorithm\' type corresponds to a whole algorithm sect
 
 end Algorithm;
 
-public 
+public
 uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\'),
     if statements (`if A then B; elseif C; else D;\'), for loops
     (`for i in 1:10 loop ...; end for;\') and when statements
@@ -501,24 +501,24 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Exp cond;
     Exp msg;
   end STMT_ASSERT;
-  
+
   record STMT_TERMINATE "terminate(msg)"
     Exp msg;
   end STMT_TERMINATE;
 
-  record STMT_REINIT 
-    Exp var "Variable"; 
-    Exp value "Value "; 
+  record STMT_REINIT
+    Exp var "Variable";
+    Exp value "Value ";
   end STMT_REINIT;
-  
-  record STMT_NORETCALL "call with no return value, i.e. no equation. 
-		   Typically sideeffect call of external function."  
+
+  record STMT_NORETCALL "call with no return value, i.e. no equation.
+		   Typically sideeffect call of external function."
     Exp exp;
-  end STMT_NORETCALL;    
-  
+  end STMT_NORETCALL;
+
   record STMT_RETURN
   end STMT_RETURN;
-  
+
   record STMT_BREAK
   end STMT_BREAK;
 
@@ -541,16 +541,16 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
   record STMT_LABEL
     String labelName;
   end STMT_LABEL;
-  
+
   record STMT_MATCHCASES "matchcontinue helper"
     list<Exp> caseStmt;
   end STMT_MATCHCASES;
-  
+
   //-----
 
 end Statement;
 
-public 
+public
 uniontype Else "An if statements can one or more `elseif\' branches and an
     optional `else\' branch."
   record NOELSE end NOELSE;
@@ -569,7 +569,7 @@ end Else;
 /* -- End Algorithm.mo -- */
 
 /* -- Start Types.mo -- */
-public 
+public
 uniontype Var "- Variables"
   record TYPES_VAR
     Ident name "name" ;
@@ -581,7 +581,7 @@ uniontype Var "- Variables"
 
 end Var;
 
-public 
+public
 uniontype Attributes "- Attributes"
   record ATTR
     Boolean flowPrefix "flow" ;
@@ -594,7 +594,7 @@ uniontype Attributes "- Attributes"
 
 end Attributes;
 
-public 
+public
 uniontype Binding "- Binding"
   record UNBOUND end UNBOUND;
 
@@ -618,7 +618,7 @@ public type Type = tuple<TType, Option<Absyn.Path>> "
 
 public
 type EqualityConstraint = Option<tuple<Absyn.Path, Integer>>;
- 
+
 public constant Type T_REAL_DEFAULT    = (T_REAL({}),NONE());
 public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
 public constant Type T_STRING_DEFAULT  = (T_STRING({}),NONE());
@@ -660,7 +660,7 @@ public uniontype TType "-TType contains the actual type"
   record T_ANYTYPE
     Option<ClassInf.State> anyClassType "anyClassType - used for generic types. When class state present the type is assumed to be a complex type which has that restriction." ;
   end T_ANYTYPE;
-  
+
   // MetaModelica extensions
   record T_LIST "MetaModelica list type"
     Type listType "listType";
@@ -677,12 +677,12 @@ public uniontype TType "-TType contains the actual type"
   record T_UNIONTYPE "MetaModelica Uniontype, added by simbj"
     list <Absyn.Path> records;
   end T_UNIONTYPE;
-  
+
   record T_METARECORD "MetaModelica Record, used by Uniontypes. added by simbj"
     Integer index; //The index in the uniontype
     list<Var> fields;
   end T_METARECORD;
-  
+
   record T_COMPLEX
     ClassInf.State complexClassType "complexClassType ; The type of. a class" ;
     list<Var> complexVarLst "complexVarLst ; The variables of a complex type" ;
@@ -703,18 +703,18 @@ public uniontype TType "-TType contains the actual type"
   record T_BOXED "Used for MetaModelica generic types"
     Type ty;
   end T_BOXED;
-  
+
   record T_POLYMORPHIC
     String name;
   end T_POLYMORPHIC;
-  
+
   record T_META_ARRAY
     Type ty;
   end T_META_ARRAY;
-  
+
 end TType;
 
-public 
+public
 uniontype ArrayDim "- Array Dimensions"
   record DIM
     Option<Integer> integerOption;
@@ -722,11 +722,11 @@ uniontype ArrayDim "- Array Dimensions"
 
 end ArrayDim;
 
-public 
+public
 type FuncArg = tuple<Ident, Type> "- Function Argument" ;
 
-public 
-uniontype Const "The degree of constantness of an expression is determined by the Const 
+public
+uniontype Const "The degree of constantness of an expression is determined by the Const
     datatype. Variables declared as \'constant\' will get C_CONST constantness.
     Variables declared as \'parameter\' will get C_PARAM constantness and
     all other variables are not constant and will get C_VAR constantness.
@@ -740,7 +740,7 @@ uniontype Const "The degree of constantness of an expression is determined by th
 
 end Const;
 
-public 
+public
 uniontype TupleConst "A tuple is added to the Types. This is used by functions whom returns multiple arguments.
   Used by split_props
   - Tuple constants"
@@ -754,29 +754,29 @@ uniontype TupleConst "A tuple is added to the Types. This is used by functions w
 
 end TupleConst;
 
-public 
-uniontype Properties "P.R 1.1 for multiple return arguments from functions, 
-    one constant flag for each return argument. 
+public
+uniontype Properties "P.R 1.1 for multiple return arguments from functions,
+    one constant flag for each return argument.
 
   The datatype `Properties\' contain information about an
     expression.  The properties are created by analyzing the
     expressions.
   - Expression properties"
-  record PROP 
+  record PROP
     Type type_ "type" ;
-    Const constFlag "constFlag; if the type is a tuple, each element 
+    Const constFlag "constFlag; if the type is a tuple, each element
 				          have a const flag." ;
   end PROP;
 
   record PROP_TUPLE
     Type type_;
-    TupleConst tupleConst "tupleConst; The elements might be 
+    TupleConst tupleConst "tupleConst; The elements might be
 							    tuple themselfs." ;
   end PROP_TUPLE;
 
 end Properties;
 
-public 
+public
 uniontype EqMod "To generate the correct set of equations, the translator has to
   differentiate between the primitive types `Real\', `Integer\',
   `String\', `Boolean\' and types directly derived from then from
@@ -799,7 +799,7 @@ uniontype EqMod "To generate the correct set of equations, the translator has to
 
 end EqMod;
 
-public 
+public
 uniontype SubMod "-Sub Modification"
   record NAMEMOD
     Ident ident;
@@ -813,7 +813,7 @@ uniontype SubMod "-Sub Modification"
 
 end SubMod;
 
-public 
+public
 uniontype Mod "Modification"
   record MOD
     Boolean finalPrefix "final" ;
@@ -834,7 +834,7 @@ end Mod;
 /* -- End Types.mo -- */
 
 /* -- Start Exp.mo -- */
-public 
+public
 uniontype ExpType "- Basic types
     These types are not used as expression types (see the `Types\'
     module for expression types).  They are used to parameterize
@@ -848,7 +848,7 @@ uniontype ExpType "- Basic types
   record ET_STRING end ET_STRING;
 
  // record ENUM end ENUM;
- 
+
   record ET_ENUMERATION
     Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
     Absyn.Path path "enumeration path" ;
@@ -856,12 +856,12 @@ uniontype ExpType "- Basic types
     list<ExpVar> varLst "varLst, empty for elements" ;
   end ET_ENUMERATION;
 
-  record ET_COMPLEX "Complex types" 
+  record ET_COMPLEX "Complex types"
     Absyn.Path name;
-    list<ExpVar> varLst; 
+    list<ExpVar> varLst;
     ClassInf.State complexClassType;
   end ET_COMPLEX;
-  
+
   record ET_OTHER "e.g. complex types, etc." end ET_OTHER;
 
   record ET_ARRAY
@@ -881,15 +881,15 @@ uniontype ExpType "- Basic types
   record ET_METAOPTION
     ExpType ty;
   end ET_METAOPTION;
-  
+
   record ET_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
   end ET_FUNCTION_REFERENCE_VAR;
   record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
   end ET_FUNCTION_REFERENCE_FUNC;
-  
+
   //MetaModelica Uniontype, MetaModelica extension, simbj
   record ET_UNIONTYPE end ET_UNIONTYPE;
-  
+
   record ET_BOXED "Tag for any boxed data type (useful for equality operations)"
     ExpType ty;
   end ET_BOXED;
@@ -911,7 +911,7 @@ uniontype ExpVar "A variable is used to describe a complex type which contains a
   end COMPLEX_VAR;
 end ExpVar;
 
-public 
+public
 uniontype Exp "Expressions
     The `Exp\' datatype closely corresponds to the `Absyn.Exp\'
     datatype, but is used for statically analyzed expressions.  It
@@ -940,35 +940,35 @@ uniontype Exp "Expressions
     ExpType ty;
   end CREF;
 
-  record BINARY "Binary operations, e.g. a+4" 
+  record BINARY "Binary operations, e.g. a+4"
     Exp exp1;
     Operator operator;
-    Exp exp2; 
+    Exp exp2;
   end BINARY;
 
   record UNARY "Unary operations, -(4x)"
     Operator operator;
-    Exp exp; 
+    Exp exp;
   end UNARY;
 
   record LBINARY "Logical binary operations: and, or"
     Exp exp1;
     Operator operator;
-    Exp exp2; 
+    Exp exp2;
   end LBINARY;
 
   record LUNARY "Logical unary operations: not"
     Operator operator;
-    Exp exp; 
+    Exp exp;
   end LUNARY;
 
   record RELATION "Relation, e.g. a <= 0"
     Exp exp1;
     Operator operator;
-    Exp exp2; 
+    Exp exp2;
   end RELATION;
 
-  record IFEXP "If expressions" 
+  record IFEXP "If expressions"
     Exp expCond;
     Exp expThen;
     Exp expElse;
@@ -982,7 +982,7 @@ uniontype Exp "Expressions
     ExpType ty "The type of the return value, if several return values this is undefined";
     InlineType inlineType;
   end CALL;
-  
+
   record PARTEVALFUNCTION
     Absyn.Path path;
     list<Exp> expList;
@@ -1009,7 +1009,7 @@ uniontype Exp "Expressions
   end RANGE;
 
   record TUPLE
-    list<Exp> PR "PR. Tuples, used in func calls returning several 
+    list<Exp> PR "PR. Tuples, used in func calls returning several
 								  arguments" ;
   end TUPLE;
 
@@ -1046,9 +1046,9 @@ uniontype Exp "Expressions
 	  ExpType ty;
     list<Element> localDecls; // TODO: Do this in a better way
     list<Statement> body;
-		Exp result;	
-  end VALUEBLOCK;  
-  
+		Exp result;
+  end VALUEBLOCK;
+
   /* Part of MetaModelica extension. KS */
   record LIST "MetaModelica list"
     ExpType ty;
@@ -1068,24 +1068,24 @@ uniontype Exp "Expressions
   record META_OPTION
     Option<Exp> exp;
   end META_OPTION;
-  
+
   /*
   	Holds a metarecord call
    	<metarecord>(<args>)
   */
   record METARECORDCALL //Metamodelica extension, simbj
-    Absyn.Path path;    
+    Absyn.Path path;
     list<Exp> args;
     list<String> fieldNames;
     // SCode.Path name; //Name of the uniontype - removed 2009-09-18 /sjoelund
     Integer index; //Index in the uniontype
   end METARECORDCALL;
-  
+
   /* --- */
 
 end Exp;
 
-public 
+public
 uniontype Operator "Operators which are overloaded in the abstract syntax are here
     made type-specific.  The integer addition operator (`ADD(INT)\')
     and the real addition operator (`ADD(REAL)\') are two distinct
@@ -1191,11 +1191,11 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
   end POW_SCALAR_ARRAY;
 
   record POW_ARR "Power of a matrix"
-    ExpType ty "type of the array";  
+    ExpType ty "type of the array";
   end POW_ARR;
 
   record POW_ARR2 "elementwise power of arrays"
-    ExpType ty "type of the array";  
+    ExpType ty "type of the array";
   end POW_ARR2;
 
   record AND end AND;
@@ -1234,10 +1234,10 @@ uniontype Operator "Operators which are overloaded in the abstract syntax are he
 
 end Operator;
 
-public 
+public
 uniontype ComponentRef "- Component references
     CREF_QUAL(...) is used for qualified component names, e.g. a.b.c
-    CREF_IDENT(..) is used for non-qualifed component names, e.g. x 
+    CREF_IDENT(..) is used for non-qualifed component names, e.g. x
 "
   record CREF_QUAL
     Ident ident;
@@ -1256,7 +1256,7 @@ uniontype ComponentRef "- Component references
 
 end ComponentRef;
 
-public 
+public
 uniontype Subscript "The `Subscript\' and `ComponentRef\' datatypes are simple
   translations of the corresponding types in the `Absyn\' module."
   record WHOLEDIM "a{:,1}" end WHOLEDIM;

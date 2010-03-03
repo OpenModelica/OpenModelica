@@ -38,10 +38,10 @@ package Builtin
   This module defines the builtin types, variables and functions in
   Modelica.  The only exported functions are `initial_env\' and
   simple_initial_env.
-  
+
   There are several builtin attributes defined in the builtin types, such as
-  unit, start, etc. 
-  
+  unit, start, etc.
+
 "
 
 public import Absyn;
@@ -56,9 +56,9 @@ protected import Values;
 
 
 /*
-- The primitive types 
+- The primitive types
   These are the primitive types that are used to build the types
-  `Real\', `Integer\' etc. 
+  `Real\', `Integer\' etc.
 */
 public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) " real type ";
@@ -161,7 +161,7 @@ protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCo
 protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND()) "- The `time\' variable" ;
 
-protected 
+protected
 replaceable type Type_a subtypeof Any;
 constant tuple<DAE.TType, Option<Type_a>> nil2real=(DAE.T_FUNCTION({},DAE.T_REAL_DEFAULT,DAE.NO_INLINE),NONE);
 
@@ -176,12 +176,12 @@ protected constant tuple<DAE.TType, Option<Type_a>> real2string=(
 
 protected constant tuple<DAE.TType, Option<Type_a>> int2string =(
           DAE.T_FUNCTION({("x",DAE.T_INTEGER_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> bool2string =(
           DAE.T_FUNCTION({("x",DAE.T_BOOL_DEFAULT)},DAE.T_STRING_DEFAULT,DAE.NO_INLINE),NONE);
 
 /* type for builtin operator der has unit type parameter to be able to express that derivative of expression
- means an addition of 1/s on the unit dimension */          
+ means an addition of 1/s on the unit dimension */
 protected constant tuple<DAE.TType, Option<Type_a>> derType=(
           DAE.T_FUNCTION({("x",(DAE.T_REAL(
           {
@@ -191,7 +191,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> derType=(
               false,
               DAE.T_STRING_DEFAULT,
               DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
-              )          
+              )
           }
           ),NONE))},
           /* Return type*/
@@ -203,7 +203,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> derType=(
               DAE.T_STRING_DEFAULT,
               DAE.EQBOUND(DAE.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST)
               )
-          }),NONE),DAE.NO_INLINE),NONE);                    
+          }),NONE),DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> dimesionlessReal2DimensionlessReal=(
           DAE.T_FUNCTION({("x",(DAE.T_REAL(
@@ -214,7 +214,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> dimesionlessReal2Dimensionle
               false,
               DAE.T_STRING_DEFAULT,
               DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
-              )          
+              )
           }
           ),NONE))},
           /* Return type*/
@@ -227,7 +227,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> dimesionlessReal2Dimensionle
               DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST)
               )
           }),NONE),DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> sqrtint2real=(
           DAE.T_FUNCTION({("x",(DAE.T_INTEGER(
           {
@@ -237,7 +237,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtint2real=(
               false,
               DAE.T_STRING_DEFAULT,
               DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
-              )          
+              )
           }
           ),NONE))},
           /* Return type*/
@@ -260,7 +260,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtreal2real=(
               false,
               DAE.T_STRING_DEFAULT,
               DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST)
-              )          
+              )
           }
           ),NONE))},
           /* Return type*/
@@ -273,7 +273,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtreal2real=(
               DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST)
               )
           }),NONE),DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> real2real=(
           DAE.T_FUNCTION({("x",DAE.T_REAL_DEFAULT)},DAE.T_REAL_DEFAULT,DAE.NO_INLINE),NONE);
 
@@ -2242,14 +2242,14 @@ protected constant tuple<DAE.TType, Option<Type_a>> intInt2vectorreal=(
           ("y",DAE.T_INTEGER_DEFAULT)},
           (DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_REAL_DEFAULT),
           NONE),DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> realRealInt2vectorreal=(
           DAE.T_FUNCTION(
           {("x",DAE.T_REAL_DEFAULT),
           ("y",DAE.T_REAL_DEFAULT),
           ("n",DAE.T_INTEGER_DEFAULT)},
           (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),
-          NONE),DAE.NO_INLINE),NONE);          
+          NONE),DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> array1dimint2array3dimint=(
           DAE.T_FUNCTION(
@@ -2268,7 +2268,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> array1dimreal2array3dimreal=
           NONE))},
           (DAE.T_ARRAY(DAE.DIM(SOME(3)),DAE.T_REAL_DEFAULT),
           NONE),DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> array3dimrealArray3dimreal2array3dimreal = (
           DAE.T_FUNCTION(
           {
@@ -2641,14 +2641,14 @@ protected constant tuple<DAE.TType, Option<Type_a>> anyAnyString2any=(
           DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",(DAE.T_NOTYPE(),NONE)),("x3",DAE.T_STRING_DEFAULT)},(DAE.T_NOTYPE(),NONE),DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> anyIntegerIntegerString2boolean=(
-          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_STRING_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);          
+          DAE.T_FUNCTION({("x1",(DAE.T_NOTYPE(),NONE)),("x2",DAE.T_INTEGER_DEFAULT),("x3",DAE.T_INTEGER_DEFAULT),("x4",DAE.T_STRING_DEFAULT)},DAE.T_BOOL_DEFAULT,DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> string2void =(
           DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT)},(DAE.T_NORETCALL(),NONE),DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> a2void =(
           DAE.T_FUNCTION({("x1",typeA)},(DAE.T_NORETCALL(),NONE),DAE.NO_INLINE),NONE);
-          
+
 protected constant tuple<DAE.TType, Option<Type_a>> void2int =(
           DAE.T_FUNCTION({},DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
 
@@ -2751,12 +2751,12 @@ protected constant tuple<DAE.TType, Option<Type_a>> array1dimrealarray1dimrealar
           ("y",(DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_REAL_DEFAULT),NONE)),
           ("z",(DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_REAL_DEFAULT),NONE))
           },
-          (DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_REAL_DEFAULT),NONE),DAE.NO_INLINE),NONE);          
+          (DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_REAL_DEFAULT),NONE),DAE.NO_INLINE),NONE);
 protected constant tuple<DAE.TType, Option<Type_a>> realrealreal2real=(
           DAE.T_FUNCTION(
           {
           ("x",DAE.T_REAL_DEFAULT),
-          ("y",DAE.T_REAL_DEFAULT), 
+          ("y",DAE.T_REAL_DEFAULT),
           ("z",DAE.T_REAL_DEFAULT)
           },DAE.T_REAL_DEFAULT,DAE.NO_INLINE),NONE);
 protected constant tuple<DAE.TType, Option<Type_a>> intintint2int =(
@@ -2766,157 +2766,157 @@ protected constant tuple<DAE.TType, Option<Type_a>> intintint2int =(
           ("y",DAE.T_INTEGER_DEFAULT),
           ("z",DAE.T_INTEGER_DEFAULT)
           },DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
-          
+
 public function isTanh
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "tanh")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tanh")))) then (); 
+    case (Absyn.IDENT(name = "tanh")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tanh")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isTanh(inPath); then ();
   end matchcontinue;
 end isTanh;
 
 public function isCosh
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "cosh")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cosh")))) then (); 
+    case (Absyn.IDENT(name = "cosh")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cosh")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isCosh(inPath); then ();
   end matchcontinue;
 end isCosh;
 
 public function isACos
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arccos")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then (); 
+    case (Absyn.IDENT(name = "arccos")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isACos(inPath); then ();
   end matchcontinue;
 end isACos;
 
 public function isASin
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arcsin")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then (); 
+    case (Absyn.IDENT(name = "arcsin")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isASin(inPath); then ();
   end matchcontinue;
 end isASin;
 
 public function isATan
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arctan")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then (); 
+    case (Absyn.IDENT(name = "arctan")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isATan(inPath); then ();
   end matchcontinue;
 end isATan;
 
 public function isATan2
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arctan2")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then (); 
+    case (Absyn.IDENT(name = "arctan2")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isATan2(inPath); then ();
   end matchcontinue;
 end isATan2;
 
 public function isSinh
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "sinh")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sinh")))) then (); 
+    case (Absyn.IDENT(name = "sinh")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sinh")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isSinh(inPath); then ();
   end matchcontinue;
 end isSinh;
 
 public function isSin
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "sin")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sin")))) then (); 
+    case (Absyn.IDENT(name = "sin")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sin")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isSin(inPath); then ();
   end matchcontinue;
 end isSin;
 
 public function isCos ""
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "cos")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cos")))) then (); 
+    case (Absyn.IDENT(name = "cos")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cos")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isCos(inPath); then ();
   end matchcontinue;
 end isCos;
 
 public function isExp ""
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
-  matchcontinue (inPath) 
-    case (Absyn.IDENT(name = "exp")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "exp")))) then (); 
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "exp")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "exp")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isExp(inPath);  then ();
   end matchcontinue;
 end isExp;
 
 public function isLog ""
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "log")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then ();    
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog(inPath); then ();  
+    case (Absyn.IDENT(name = "log")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog(inPath); then ();
   end matchcontinue;
 end isLog;
 
 public function isLog10 ""
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "log10")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log10")))) then (); 
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog10(inPath); then ();    
+    case (Absyn.IDENT(name = "log10")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log10")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog10(inPath); then ();
   end matchcontinue;
 end isLog10;
 
 public function isSqrt ""
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "sqrt")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sqrt")))) then (); 
+    case (Absyn.IDENT(name = "sqrt")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sqrt")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isSqrt(inPath); then ();
   end matchcontinue;
 end isSqrt;
 
 public function isTan ""
   input Absyn.Path inPath;
-algorithm 
+algorithm
   _:=
   matchcontinue (inPath)
-    case (Absyn.IDENT(name = "tan")) then (); 
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tan")))) then (); 
+    case (Absyn.IDENT(name = "tan")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tan")))) then ();
     case (Absyn.FULLYQUALIFIED(inPath)) equation isTan(inPath); then ();
   end matchcontinue;
 end isTan;
@@ -2930,22 +2930,22 @@ val array_array2array=
 val int2array= (DAE.T_FUNCTION(\"x\",(DAE.T_ARRAY(1,_)),NONE)
   Specifierar en vector, array of dimension one
   zeroes, ones, fill?
-  
+
 val real_real_int2array
 val array2real
 val array_array2int
 
   - Initial environment
   function: simpleInitialEnv
-  
+
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in types to it.
- 
+
   This only creates a minimal environment, useful for debugging purposes.
 "
   output list<Env.Frame> env;
-algorithm 
+algorithm
   env := Env.openScope(Env.emptyEnv, false, NONE) "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
   env := Env.extendFrameC(env, rlType);
   env := Env.extendFrameC(env, intType);
@@ -2961,7 +2961,7 @@ algorithm
 end simpleInitialEnv;
 
 public function initialEnv "function: initialEnv
-  
+
   The initial environment where instantiation takes place is built
   up using this function.  It creates an empty environment and adds
   all the built-in definitions to it.
@@ -2970,7 +2970,7 @@ public function initialEnv "function: initialEnv
     the type system, since they e.g. have arbitrary arguments, etc.
 	- fill
 	- cat
-    These operators are catched in the elabBuiltinHandler, along with all 
+    These operators are catched in the elabBuiltinHandler, along with all
     others.
 "
   input Env.Cache inCache;
@@ -2978,9 +2978,9 @@ public function initialEnv "function: initialEnv
   output list<Env.Frame> env;
   list<Env.Frame> envb;
   Env.Cache cache;
-algorithm 
-  env := matchcontinue(cache) 
-  	
+algorithm
+  env := matchcontinue(cache)
+
   	// First look for cached version
     case (cache) equation
       env = Env.getCachedInitialEnv(cache);
@@ -3007,14 +3007,14 @@ algorithm
       env = Env.extendFrameT(env, "switch", bool2bool);
       env = Env.extendFrameT(env, "timeEvent", realReal2bool);
       env = Env.extendFrameT(env, "sample", realReal2bool);
-      env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);      
+      env = Env.extendFrameT(env, "semiLinear", realRealReal2Real);
       env = Env.extendFrameT(env, "change", real2bool);
       env = Env.extendFrameT(env, "edge", bool2bool);
       env = Env.extendFrameT(env, "der", derType);
       /* Removed due to handling in static.mo
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2Real);
-      */      
+      */
       env = Env.extendFrameT(env, "cardinality", anyNonExpandableConnector2int);
       env = Env.extendFrameT(env, "cardinality", anyExpandableConnector2int);
       env = Env.extendFrameT(env, "div", realReal2real) "non-differentiable functions" ;
@@ -3031,9 +3031,9 @@ algorithm
       env = Env.extendFrameT(env, "sin", real2real) "Not in the report" ;
       env = Env.extendFrameT(env, "cos", real2real);
       env = Env.extendFrameT(env, "tan", real2real);
-      env = Env.extendFrameT(env, "tanh", real2real);      
+      env = Env.extendFrameT(env, "tanh", real2real);
       env = Env.extendFrameT(env, "sinh", real2real);
-      env = Env.extendFrameT(env, "cosh", real2real);      
+      env = Env.extendFrameT(env, "cosh", real2real);
       env = Env.extendFrameT(env, "arcsin", real2real);
       env = Env.extendFrameT(env, "arccos", real2real);
       env = Env.extendFrameT(env, "arctan", real2real);
@@ -3043,7 +3043,7 @@ algorithm
       env = Env.extendFrameT(env, "atan2", realReal2real);
       env = Env.extendFrameT(env, "exp", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "log", dimesionlessReal2DimensionlessReal);
-      env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);      
+      env = Env.extendFrameT(env, "ln", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "log10", dimesionlessReal2DimensionlessReal);
       env = Env.extendFrameT(env, "ndims", array1dimint2int) "PR. Add the built in array functions here. Also do it for real, string and bool" ;
       env = Env.extendFrameT(env, "ndims", array2dimint2int);
@@ -3313,7 +3313,7 @@ algorithm
       env = Env.extendFrameT(env, "diagonal", array1dimreal2matrixreal);
       env = Env.extendFrameT(env, "diagonal", array1dimbool2matrixbool);
       env = Env.extendFrameT(env, "diagonal", array1dimstring2matrixstring);
-      env = Env.extendFrameT(env, "zeros", n1int2arrayint) "There is a problem to represents these functions where you do not 
+      env = Env.extendFrameT(env, "zeros", n1int2arrayint) "There is a problem to represents these functions where you do not
  know how many arguments they will take. In this implementation up to 8 arguments are supported." ;
       env = Env.extendFrameT(env, "zeros", n2int2arrayint);
       env = Env.extendFrameT(env, "zeros", n3int2arrayint);
@@ -3476,7 +3476,7 @@ end initialEnv;
 protected function initialEnvMetaModelica
   input list<Env.Frame> inEnv;
   output list<Env.Frame> outEnv;
-  
+
 algorithm
   out := matchcontinue(inEnv)
     local
@@ -3488,12 +3488,12 @@ algorithm
         env = Env.extendFrameT(env, "mmc_get_field", anyAnyString2any);
         env = Env.extendFrameT(env, "mmc_uniontype_metarecord_typedef_equal", anyIntegerIntegerString2boolean);
         env = Env.extendFrameT(env, "mmc_boxes_equal", AA2bool);
-        
+
         // Boolean Operations
         env = Env.extendFrameT(env, "boolAnd", boolBool2bool);
         env = Env.extendFrameT(env, "boolOr", boolBool2bool);
         env = Env.extendFrameT(env, "boolNot", bool2bool);
-        
+
         // Integer Operations
         env = Env.extendFrameT(env, "intAdd", intInt2int);
         env = Env.extendFrameT(env, "intSub", intInt2int);
@@ -3502,10 +3502,10 @@ algorithm
         env = Env.extendFrameT(env, "intMod", intInt2int);
         env = Env.extendFrameT(env, "intMax", intInt2int);
         env = Env.extendFrameT(env, "intMin", intInt2int);
-        
+
         env = Env.extendFrameT(env, "intAbs", int2int);
         env = Env.extendFrameT(env, "intNeg", int2int);
-        
+
         env = Env.extendFrameT(env, "intLt", intInt2bool);
         env = Env.extendFrameT(env, "intLe", intInt2bool);
         env = Env.extendFrameT(env, "intEq", intInt2bool);
@@ -3515,7 +3515,7 @@ algorithm
 
         env = Env.extendFrameT(env, "intReal", int2real);
         env = Env.extendFrameT(env, "intString", int2string);
-        
+
         // Real Operations
         env = Env.extendFrameT(env, "realAdd", realReal2real);
         env = Env.extendFrameT(env, "realSub", realReal2real);
@@ -3525,7 +3525,7 @@ algorithm
         env = Env.extendFrameT(env, "realPow", realReal2real);
         env = Env.extendFrameT(env, "realMax", realReal2real);
         env = Env.extendFrameT(env, "realMin", realReal2real);
-        
+
         env = Env.extendFrameT(env, "realAbs", real2real);
         env = Env.extendFrameT(env, "realNeg", real2real);
         env = Env.extendFrameT(env, "realCos", real2real);
@@ -3535,7 +3535,7 @@ algorithm
         env = Env.extendFrameT(env, "realLn", real2real);
         env = Env.extendFrameT(env, "realFloor", real2real);
         env = Env.extendFrameT(env, "realSqrt", real2real);
-        
+
         env = Env.extendFrameT(env, "realLt", realReal2bool);
         env = Env.extendFrameT(env, "realLe", realReal2bool);
         env = Env.extendFrameT(env, "realEq", realReal2bool);
@@ -3545,11 +3545,11 @@ algorithm
 
         env = Env.extendFrameT(env, "realInt", real2int);
         env = Env.extendFrameT(env, "realString", real2string);
-        
+
         // String Character Conversion Operations
         env = Env.extendFrameT(env, "stringCharInt", string2int);
         env = Env.extendFrameT(env, "intStringChar", int2string);
-        
+
         // String Operations
         env = Env.extendFrameT(env, "stringInt", string2int);
         env = Env.extendFrameT(env, "stringListStringChar", string2listOfString);
@@ -3560,8 +3560,8 @@ algorithm
         env = Env.extendFrameT(env, "stringAppend", stringString2string);
         env = Env.extendFrameT(env, "stringUpdateStringChar", stringStringInteger2string);
         env = Env.extendFrameT(env, "stringEqual", stringString2boolean);
-        env = Env.extendFrameT(env, "stringCompare", stringString2int);        
-        
+        env = Env.extendFrameT(env, "stringCompare", stringString2int);
+
         // List Operations
         env = Env.extendFrameT(env, "listAppend", listAListA2listA);
         env = Env.extendFrameT(env, "listReverse", listA2listA);
@@ -3572,14 +3572,14 @@ algorithm
         env = Env.extendFrameT(env, "listRest", listA2listA);
         env = Env.extendFrameT(env, "listDelete", listAint2listA);
         env = Env.extendFrameT(env, "listEmpty", list2boolean);
-        
+
         // Array Operations
         env = Env.extendFrameT(env, "arrayLength", marrayAny2int);
-        env = Env.extendFrameT(env, "arrayGet", marrayAInt2A);        
+        env = Env.extendFrameT(env, "arrayGet", marrayAInt2A);
         env = Env.extendFrameT(env, "arrayCreate", intA2marrayA);
         env = Env.extendFrameT(env, "arrayList", marrayA2listA);
         env = Env.extendFrameT(env, "listArray", listA2marrayA);
-        env = Env.extendFrameT(env, "arrayUpdate", marrayAIntA2marrayA);        
+        env = Env.extendFrameT(env, "arrayUpdate", marrayAIntA2marrayA);
         env = Env.extendFrameT(env, "arrayCopy", marrayA2marrayA);
         env = Env.extendFrameT(env, "arrayAdd", marrayAA2marrayA);
 
@@ -3594,7 +3594,7 @@ algorithm
         // There is a C function called clock which does not return a double...
         env = Env.extendFrameT(env, "mmc_clock", void2real);
         env = Env.extendFrameT(env, "clock", void2real);
-        
+
       then env;
     case env then env;
   end matchcontinue;

@@ -27,17 +27,17 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
- 
-package OptManager 
+
+package OptManager
 " file:	       OptManager.mo
   Author:      BZ
   module:      OptManager
   description: Runtime options
- 
 
-  This module takes care of command line options. It is possible to 
+
+  This module takes care of command line options. It is possible to
   ask it what flags are set, what arguments were given etc.
-   
+
   This module is used pretty much everywhere where debug calls are made."
 
 public function dumpOptions "
@@ -58,7 +58,7 @@ This is done in runtime/OptManager.cpp->OptManager_5finit.
 end setOption;
 
 public function getOption "
-Author: BZ 2008-06 
+Author: BZ 2008-06
 Get option as String.
 "
   input String option;

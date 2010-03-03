@@ -172,9 +172,9 @@ algorithm
         types = Util.listMap(varLst, Exp.varType);
         outStr = listToBoxes(vars1,types,-1,Absyn.pathString(path));
       then outStr;
-    
+
     case (_,localInExp) then localInExp;
-    
+
   end matchcontinue;
 end createConstantCExp2;
 
@@ -593,8 +593,8 @@ algorithm
       equation
         slst = getListOfStrings(rest);
         then n::slst;
-    case(_) then fail();     
-  end matchcontinue; 
+    case(_) then fail();
+  end matchcontinue;
 end getListOfStrings;
 
 //Check if a class has a certain restriction, added by simbj
@@ -761,7 +761,7 @@ end setElementItemClass;
 //Analyze the AST, find union type and extend the AST with metarecords
 public function createMetaClasses
 input Absyn.Class cl;
-output list<Absyn.Class> clstout;  
+output list<Absyn.Class> clstout;
 algorithm
 clstout := matchcontinue(cl)
   local
@@ -794,7 +794,7 @@ end createMetaClasses;
 //Helper function
 function convertElementsToClasses
   input list<Absyn.ElementItem> els;
-  
+
   output list<Absyn.Class> outcls;
   algorithm
     outcls := matchcontinue(els)
@@ -926,17 +926,17 @@ algorithm
 end mmc_mk_box;
 
 //Generates the mk_box<size>(<index>,<data>::<data>)
-public function listToBoxes "function: listToBoxes 
+public function listToBoxes "function: listToBoxes
 MetaModelica extension, added by simbj
 "
-  input list<String> varList; 
-  input list<DAE.ExpType> expList;  
+  input list<String> varList;
+  input list<DAE.ExpType> expList;
   input Integer index;
   input String name;
   output String outString;
-algorithm  
-  outString := 
-  matchcontinue (varList,expList,index,name) 
+algorithm
+  outString :=
+  matchcontinue (varList,expList,index,name)
     local
       String boxStr,expStr;
       list<String> varList;
@@ -959,8 +959,8 @@ algorithm
       equation
         Debug.fprint("failtrace", "- MetaUtil.listToBoxes failed\n");
       then fail();
-  end matchcontinue;  
-end listToBoxes;  
+  end matchcontinue;
+end listToBoxes;
 
 public function createExpStr
   input list<String> varList;
@@ -1005,7 +1005,7 @@ function fixRestriction
     input String name;
     input Integer index;
     output Absyn.Restriction resout;
-    
+
   algorithm
     resout := matchcontinue(resin,name,index)
     local
@@ -1022,8 +1022,8 @@ function fixRestriction
       then resin;
     end matchcontinue;
   end fixRestriction;
-  
-  
+
+
   function fixClass
     input Absyn.Class classin;
     input String name;
@@ -1041,7 +1041,7 @@ function fixRestriction
         Absyn.Info i;
         String name;
         Integer index;
-        
+
       case(Absyn.CLASS(n,p,f,e,res,b,i),name,index)
         equation
           res = fixRestriction(res,name,index);
@@ -1050,15 +1050,15 @@ function fixRestriction
       then classin;
     end matchcontinue;
   end fixClass;
-  
-  
+
+
 function fixElementSpecification
   input Absyn.ElementSpec specin;
   input String name;
   input Integer index;
   output Absyn.ElementSpec specout;
-  
-    
+
+
 algorithm
   specout := matchcontinue(specin,name,index)
     local
@@ -1072,7 +1072,7 @@ algorithm
       then Absyn.CLASSDEF(rep,c);
     case(_,_,_)
     then specin;
-  end matchcontinue;       
+  end matchcontinue;
 end fixElementSpecification;
 
 function fixElement
@@ -1080,13 +1080,13 @@ function fixElement
   input String name;
   input Integer index;
   output Absyn.Element elementout;
-  
+
 algorithm
   elementout := matchcontinue(elementin,name,index)
     local
       Boolean f;
       Option<Absyn.RedeclareKeywords> r;
-      Absyn.InnerOuter i;  
+      Absyn.InnerOuter i;
       Absyn.Ident n;
       Absyn.ElementSpec spec;
       Absyn.Info inf;
@@ -1099,14 +1099,14 @@ algorithm
       then Absyn.ELEMENT(f,r,i,n,spec,inf,con);
   end matchcontinue;
 end fixElement;
-  
-  
+
+
 function fixElementItem
   input Absyn.ElementItem elementItemin;
   input String name;
   input Integer index;
   output Absyn.ElementItem elementItemout;
-  
+
 algorithm
   elementItemout := matchcontinue(elementItemin,name,index)
     local
@@ -1119,8 +1119,8 @@ algorithm
       then Absyn.ELEMENTITEM(element);
   end matchcontinue;
 end fixElementItem;
-  
-  
+
+
 function fixElementItems
   input list<Absyn.ElementItem> elementItemsin;
   input String name;
@@ -1136,7 +1136,7 @@ algorithm
     case(element::rest,name,index)
       equation
         element = fixElementItem(element,name,index);
-        rest = fixElementItems(rest,name,index+1);   
+        rest = fixElementItems(rest,name,index+1);
       then (element::rest);
     case(element::nil,name,index)
       equation
@@ -1144,9 +1144,9 @@ algorithm
       then (element::nil);
   end matchcontinue;
 end fixElementItems;
-  
 
-function fixClassPart	  
+
+function fixClassPart
   input Absyn.ClassPart clpartin;
   input String name;
   input Integer index;
@@ -1167,12 +1167,12 @@ algorithm
       equation
         elementsFixed = fixElementItems(elements,name,index);
       then (Absyn.PROTECTED(elements),elementsFixed);
-  end matchcontinue; 
+  end matchcontinue;
 end fixClassPart;
-  
-  
+
+
 function fixClassParts
-  
+
   input list<Absyn.ClassPart> clin;
   input String name;
   input Integer index;
@@ -1197,41 +1197,41 @@ algorithm
       then ((clpart::nil),els);
   end matchcontinue;
 end fixClassParts;
- 
+
 
 public function fixAstForUniontype
   input Absyn.Element element;
   input Absyn.Restriction re;
   output Absyn.Element elementout;
-  output list<Absyn.ElementItem> elLst;  
+  output list<Absyn.ElementItem> elLst;
 algorithm
   (elementout,elLst) := matchcontinue(element,re)
-    local  
+    local
       Absyn.ElementSpec spec;
       Absyn.Class cl;
       Absyn.ClassDef b;
       list<Absyn.ClassPart> clp;
       list<Absyn.ElementItem> elmnts;
       Option<String>  comment;
-      
+
       Boolean replaceable_ "replaceable" ;
       Absyn.Class class_ "class" ;
-      
+
       Absyn.Ident name;
       Boolean     partial_   "true if partial" ;
       Boolean     final_     "true if final" ;
       Boolean     encapsulated_ "true if encapsulated" ;
       Absyn.Info       info;
-      
+
       Boolean                   final_2;
       Option<Absyn.RedeclareKeywords> redeclareKeywords "replaceable, redeclare" ;
       Absyn.InnerOuter                innerOuter "inner/outer" ;
       Absyn.Ident                     name2;
-      
+
       Absyn.Info                      info2  "File name the class is defined in + line no + column no" ;
       Option<Absyn.ConstrainClass> constrainClass "constrainClass ; only valid for classdef and component" ;
-      
-    case(Absyn.ELEMENT(final_2,redeclareKeywords,innerOuter,name2,spec as 
+
+    case(Absyn.ELEMENT(final_2,redeclareKeywords,innerOuter,name2,spec as
       Absyn.CLASSDEF(replaceable_,cl as Absyn.CLASS(name,partial_,final_,encapsulated_,Absyn.R_UNIONTYPE,b as Absyn.PARTS(clp,comment),info))
       ,info2,constrainClass),Absyn.R_UNIONTYPE)
       equation
@@ -1334,12 +1334,12 @@ algorithm
       equation
         tSpecList = Util.listMap(tList,typeConvert);
       then Absyn.TCOMPLEX(Absyn.IDENT("tuple"),tSpecList,NONE());
-    
+
     case ((DAE.T_POLYMORPHIC(id),_))
       local
         String id;
       then Absyn.TPATH(Absyn.IDENT(id),NONE);
-    
+
     case ((DAE.T_META_ARRAY(t),_))
       local
         Absyn.TypeSpec tSpec;
@@ -1349,7 +1349,7 @@ algorithm
         tSpec = typeConvert(t);
         tSpecList = {tSpec};
       then Absyn.TCOMPLEX(Absyn.IDENT("array"),tSpecList,NONE());
-    
+
     case ((_,SOME(p)))
       local
         Absyn.Path p;

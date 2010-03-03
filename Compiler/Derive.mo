@@ -65,7 +65,7 @@ algorithm
       DAELow.Variables timevars;
       DAELow.Equation dae_equation;
       DAE.ElementSource source "the origin of the element";
-      
+
     case (DAELow.EQUATION(exp = e1,scalar = e2,source=source),timevars) /* time varying variables */
       equation
         e1_1 = differentiateExpTime(e1, timevars);
@@ -119,7 +119,7 @@ algorithm
       Integer i;
       Absyn.Path fname;
       DAE.ExpType ty;
-      
+
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then DAE.RCONST(1.0);
@@ -131,13 +131,13 @@ algorithm
         cr_str_1 = SimCodegen.changeNameForDerivative(cr_str);
       then
         DAE.CREF(DAE.CREF_IDENT(cr_str_1,ty,{}),DAE.ET_REAL());
-        
+
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),timevars)
       equation
         (_,_) = DAELow.getVar(cr, timevars);
       then
         DAE.CALL(Absyn.IDENT("der"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
-        
+
     case (DAE.CALL(path = fname,expLst = {e}),timevars)
       equation
         isSin(fname);
@@ -355,7 +355,7 @@ algorithm
       Real rval;
       DAE.ComponentRef cr,crx,tv;
       DAE.Exp e,e1_1,e2_1,e1,e2,const_one,d_e1,d_e2,exp,e_1,exp_1,e3_1,e3,cond;
-      DAE.ExpType tp; 
+      DAE.ExpType tp;
       Absyn.Path a,fname;
       Boolean b,c;
       DAE.InlineType inl;
@@ -638,7 +638,7 @@ algorithm
         DAE.RELATION(e1_1,rel,e2_1);
 
         /* der(x) */
-    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst = 
+    case (DAE.CALL(path = (a as Absyn.IDENT(name = "der")),expLst =
           {(exp as DAE.CREF(componentRef = cr))},tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation

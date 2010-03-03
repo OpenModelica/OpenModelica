@@ -1539,21 +1539,21 @@ protected function getExtentModification
   output Absyn.Exp x1;
   output Absyn.Exp y1;
   output Absyn.Exp x2;
-  output Absyn.Exp y2;  
+  output Absyn.Exp y2;
 algorithm
   (x1,y1,x2,y2) := matchcontinue (elementArgLst)
     local list<Absyn.ElementArg> rest;
     case (Absyn.MODIFICATION(
-      componentRef = Absyn.CREF_IDENT(name = "extent"), 
+      componentRef = Absyn.CREF_IDENT(name = "extent"),
       modification = SOME(Absyn.CLASSMOD(expOption = SOME(Absyn.ARRAY({Absyn.ARRAY({x1,y1}	),Absyn.ARRAY({x2,y2})}))) )):: rest)
       equation
       then (x1,y1,x2,y2);
-        
+
     case (_:: rest)
       equation
         (x1,y1,x2,y2) = getExtentModification(rest);
       then (x1,y1,x2,y2);
-  end matchcontinue;         
+  end matchcontinue;
 end getExtentModification ;
 
 protected function getCoordsFromLayerArgs
@@ -1979,34 +1979,34 @@ algorithm
 
       /* Special case for Line, need to add default color={0,0,255} if no color given */
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Line"), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
-      
-      equation 
-        c = addContext(context,"Line");			                    
+
+      equation
+        c = addContext(context,"Line");
         argRes = transAnnLstToNamedArgs(args,c);
         {} = Util.listSelect1(argRes, "color",nameArgWithName);
-				restRes = transAnnLstToCalls(rest,context);            				
-      then 
+				restRes = transAnnLstToCalls(rest,context);
+      then
         Absyn.CALL(Absyn.CREF_IDENT("Line",{}), Absyn.FUNCTIONARGS({},
-        Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;		        
+        Absyn.NAMEDARG("color",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
 
       /* Special case for Rectangle Ellipse, Polygon, Text, need to add default lineColor={0,0,255} if no color given */
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
-      
-      equation 
-        c = addContext(context,n);			                    
+
+      equation
+        c = addContext(context,n);
         true = isLinebasedGraphic(c);
         argRes = transAnnLstToNamedArgs(args,c);
         {} = Util.listSelect1(argRes, "lineColor",nameArgWithName);
-				restRes = transAnnLstToCalls(rest,context);            				
-      then 
+				restRes = transAnnLstToCalls(rest,context);
+      then
         Absyn.CALL(Absyn.CREF_IDENT(n,{}), Absyn.FUNCTIONARGS({},
-        Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;		        
+        Absyn.NAMEDARG("lineColor",Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)}))::argRes)) :: restRes;
 
-      
+
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = n), modification = SOME(Absyn.CLASSMOD(elementArgLst = args))) :: rest,context as ("Layer" :: c))
-      
-      equation 
-        c = addContext(context,n);			                    
+
+      equation
+        c = addContext(context,n);
         argRes = transAnnLstToNamedArgs(args,c);
 				restRes = transAnnLstToCalls(rest,context);
 
@@ -2020,12 +2020,12 @@ algorithm
         res = transAnnLstToCalls(rest,context);
 
       then res;
-        
+
   end matchcontinue;
-  
+
 end transAnnLstToCalls;
 
-protected function nameArgWithName 
+protected function nameArgWithName
   input Absyn.NamedArg narg;
   input String argName;
   output Boolean res;
@@ -2205,40 +2205,40 @@ algorithm
       then Absyn.NAMEDARG("font",exp) :: restRes;
 
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "string"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Text" :: c))
-      
-      equation 
-        
-        restRes = transAnnLstToNamedArgs(rest,context);			
-        
-      then Absyn.NAMEDARG("textString",exp) :: restRes;	
-        
+
+      equation
+
+        restRes = transAnnLstToNamedArgs(rest,context);
+
+      then Absyn.NAMEDARG("textString",exp) :: restRes;
+
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "name"), modification = SOME(Absyn.CLASSMOD(expOption =  SOME(exp)   ))) :: rest,context as ("Bitmap" :: c))
-      
-      equation 
-        
-        restRes = transAnnLstToNamedArgs(rest,context);			
-      
-      then Absyn.NAMEDARG("fileName",exp) :: restRes;	
-        
+
+      equation
+
+        restRes = transAnnLstToNamedArgs(rest,context);
+
+      then Absyn.NAMEDARG("fileName",exp) :: restRes;
+
     case(Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "points"), modification = SOME(Absyn.CLASSMOD( expOption =  SOME(Absyn.MATRIX(matrix = expMatrix ))  ))) :: rest,context)
-      
-      equation 
-                
+
+      equation
+
         expLst = Util.listMap(expMatrix,matrixToArray);
         restRes = transAnnLstToNamedArgs(rest,context);
-       
-      then Absyn.NAMEDARG("points",Absyn.ARRAY(expLst)) :: restRes;	
-        
+
+      then Absyn.NAMEDARG("points",Absyn.ARRAY(expLst)) :: restRes;
+
     case(_ :: rest,context)
-      
+
       equation
-        
+
         res = transAnnLstToNamedArgs(rest,context);
-        
+
       then res;
-        
+
   end matchcontinue;
-  
+
 end transAnnLstToNamedArgs;
 
 protected function cleanStyleAttrs "function: cleanStyleAttrs
@@ -2246,19 +2246,19 @@ protected function cleanStyleAttrs "function: cleanStyleAttrs
 	Helperfunction to the transform functions. The old style attribute and it's
 	contents needs to be adjusted according to priorities before beeing transformed.
 	See also cleanStyleAttrs2.
-"	
-  
+"
+
   input list<Absyn.ElementArg> inArgs;
   input list<Absyn.ElementArg > resultList;
   input Context inCon;
   output list<Absyn.ElementArg> outArgs;
-  
+
 algorithm
   outArgs := matchcontinue(inArgs,resultList,inCon)
     local Context context;
 
       /* If is Rectangle, Ellipse, Polygon or Text and no color attribute, set default to lineColor={0,0,255} */
-    case(inArgs,resultList, context) 
+    case(inArgs,resultList, context)
       equation
         true = isLinebasedGraphic(context);
         {} = Util.listSelect(inArgs,isLineColorModifier);
@@ -2267,7 +2267,7 @@ algorithm
         then outArgs;
 
       /* If is Line and no color attribute, set default to color={0,0,255} */
-    case(inArgs,resultList, context) 
+    case(inArgs,resultList, context)
       equation
         true = isLineGraphic(context);
         {} = Util.listSelect(inArgs,isLineColorModifier);
@@ -2275,11 +2275,11 @@ algorithm
         SOME(Absyn.CLASSMOD({},SOME(Absyn.ARRAY({Absyn.INTEGER(0),Absyn.INTEGER(0),Absyn.INTEGER(255)})))),NONE)::inArgs,resultList,context);
         then outArgs;
 
-    case(inArgs,resultList, context) 
+    case(inArgs,resultList, context)
       equation
         outArgs = cleanStyleAttrs2(inArgs,resultList,context);
-        then outArgs;          
-  end matchcontinue;  
+        then outArgs;
+  end matchcontinue;
 end cleanStyleAttrs;
 
 protected function isLineColorModifier
@@ -2287,11 +2287,11 @@ protected function isLineColorModifier
   output Boolean res;
 algorithm
   res := matchcontinue(arg)
-  local 
+  local
     list<Absyn.ElementArg> eltargs;
     case(Absyn.MODIFICATION(_,_,Absyn.CREF_IDENT("color",{}),SOME(Absyn.CLASSMOD(eltargs,_)),_))
-    then true; 
-    case(_) then false;     
+    then true;
+    case(_) then false;
   end matchcontinue;
 end isLineColorModifier;
 
@@ -2310,10 +2310,10 @@ protected function isLinebasedGraphic "Returns true if context string is a line 
   output Boolean res;
 algorithm
   res := matchcontinue(context)
-    case("Rectangle"::_) then true;  
-    case("Ellipse"::_) then true;  
-    case("Polygon"::_) then true;        
-    case("Text"::_) then true;  
+    case("Rectangle"::_) then true;
+    case("Ellipse"::_) then true;
+    case("Polygon"::_) then true;
+    case("Text"::_) then true;
     case(_) then false;
   end matchcontinue;
 end isLinebasedGraphic;
@@ -2323,7 +2323,7 @@ protected function isLineGraphic "Returns true if context string is a Line"
   output Boolean res;
 algorithm
   res := matchcontinue(context)
-    case("Line"::_) then true;  
+    case("Line"::_) then true;
     case(_) then false;
   end matchcontinue;
 end isLineGraphic;

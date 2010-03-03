@@ -32,21 +32,21 @@ package Values
 " file:        Values.mo
   package:     Values
   description: Evaluated expression values
- 
+
   RCS: $Id$
-  
+
   The package Values contains data structures for representing
   constant Modelica values.  These include integer, real, string and
   boolean values, and also arrays of any dimensionality and type.
   Multidimensional arrays are represented as arrays of arrays.
- 
+
   The code is excluded from the report, since they convey no
   semantic information."
 
 public import Absyn;
 
-public 
-uniontype Value 
+public
+uniontype Value
   record INTEGER
     Integer integer;
   end INTEGER;
@@ -96,15 +96,15 @@ uniontype Value
     list<String> comp "comp names for each value" ;
     Integer index "-1 for regular records, 0..n-1 for uniontypes containing n records";
   end RECORD;
-  
+
   record OPTION
     Option<Value> some;
   end OPTION;
-  
+
   record CODE
     Absyn.CodeNode A "A record consist of value  Ident pairs" ;
   end CODE;
-  
+
   record NORETCALL
   end NORETCALL;
 

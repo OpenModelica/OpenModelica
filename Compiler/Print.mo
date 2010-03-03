@@ -40,18 +40,18 @@ package Print
   some other place. It also contains print functions for error messages, to be
   used in interactive mode."
 
-public function setBufSize 
+public function setBufSize
   input Integer newSize;
 
   external "C" ;
 end setBufSize;
 
-public function unSetBufSize 
-  input Integer newSize "not used, this is a debuging func"; 
+public function unSetBufSize
+  input Integer newSize "not used, this is a debuging func";
 
   external "C" ;
 end unSetBufSize;
-  
+
 public function printErrorBuf
   input String inString;
 

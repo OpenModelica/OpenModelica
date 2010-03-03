@@ -14,9 +14,9 @@ public function unit2str"Translate a unit to a string"
   input list<Integer> tpdenoms;
   input list<String> tpstrs;
   input Real scaleFactor;
-  input Real offset;     
+  input Real offset;
   output String res;
-  external "C";  
+  external "C";
 end unit2str;
 
 public function str2unit "Translate a unit string to a unit"
@@ -62,7 +62,7 @@ end checkpoint;
 
 public function rollback "rollback the copy made in checkPoint call"
   external "C";
-end rollback;  
+end rollback;
 
 public function clear "clears the unitparser from stored units"
   external "C";

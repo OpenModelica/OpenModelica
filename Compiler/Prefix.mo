@@ -41,26 +41,26 @@ package Prefix
 
   A prefix for a variable x could be for example a.b.c so that the
   fully qualified name is a.b.c.x.
-  
+
   For utility function, see PrefixUtil.mo "
 
 
 public import SCode;
 
-public 
-uniontype Prefix "A Prefix has a component prefix and a class prefix. 
+public
+uniontype Prefix "A Prefix has a component prefix and a class prefix.
 The component prefix consist of a name an a list of constant valued subscripts.
 The class prefix contains the variability of the class, i.e unspecified, parameter or constant."
 
   record NOPRE "No prefix information" end NOPRE ;
 
-  record PREFIX 
+  record PREFIX
        ComponentPrefix compPre;
        ClassPrefix classPre;
   end PREFIX;
 end Prefix;
 
-uniontype ComponentPrefix "Prefix for component name, e.g. a.b[2].c" 
+uniontype ComponentPrefix "Prefix for component name, e.g. a.b[2].c"
   record PRE
     String prefix "prefix name" ;
     list<Integer> subscripts "subscripts" ;

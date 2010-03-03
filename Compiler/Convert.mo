@@ -47,11 +47,11 @@ public function fromDAEEqsToAbsynAlg "function: fromDAEEqsToAbsynAlgElts"
   output DAE.DAElist outLd;
 algorithm
   (outList,outLd) := matchcontinue (ld)
-  local list<DAE.Element> elts; DAE.FunctionTree funcs; 
+  local list<DAE.Element> elts; DAE.FunctionTree funcs;
     case(DAE.DAE(elts,funcs)) equation
-      (outList, elts) = fromDAEEqsToAbsynAlgElts(elts,{},{});    
-    
-    then (outList,DAE.DAE(elts,funcs)); 
+      (outList, elts) = fromDAEEqsToAbsynAlgElts(elts,{},{});
+
+    then (outList,DAE.DAE(elts,funcs));
  end matchcontinue;
 end fromDAEEqsToAbsynAlg;
 
@@ -121,7 +121,7 @@ algorithm
         list<DAE.Subscript> subScriptList;
         list<Absyn.Subscript> subScriptList2;
         DAE.ComponentRef cRef;
-        Absyn.ComponentRef elem,cRef2;  
+        Absyn.ComponentRef elem,cRef2;
     case (DAE.CREF_QUAL(id,_,subScriptList,cRef))
       equation
         cRef2 = fromExpCrefToAbsynCref(cRef);
