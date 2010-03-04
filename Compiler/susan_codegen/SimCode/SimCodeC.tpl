@@ -80,6 +80,8 @@ extern "C" {
 
 <functionStoreDelayed()>
 
+<functionCheckForDiscreteChanges()>
+
 <functionWhen(whenClauses)>
 
 <functionOde(stateContEquations)>
@@ -798,6 +800,15 @@ functionStoreDelayed() ::=
 int function_storeDelayed()
 {
   return 0;
+}
+>>
+
+functionCheckForDiscreteChanges() ::=
+<<
+int checkForDiscreteChanges()
+{
+  int needToIterate = 0;
+  return needToIterate;
 }
 >>
 
@@ -1705,6 +1716,7 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case CAST       then daeExpCast(it, context, preExp, varDecls)
   case ASUB       then daeExpAsub(it, context, preExp, varDecls)
   case SIZE       then daeExpSize(it, context, preExp, varDecls)
+  case REDUCTION  then daeExpReduction(it, context, preExp, varDecls)
   case VALUEBLOCK then daeExpValueblock(it, context, preExp, varDecls)
   case _          then "UNKNOWN_EXP"
 
@@ -2099,6 +2111,75 @@ case SIZE(exp=CREF, sz=SOME(dim)) then
   # preExp += '<resVar> = size_of_dimension_<typeStr>(<expPart>, <dimPart>);<\n>'
   resVar
 case _ then "size(X) not implemented"
+
+daeExpReduction(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case REDUCTION(path=IDENT(name=op), range=RANGE) then
+  # stateVar = tempDecl("state", varDecls)
+  # identType = expTypeModelica(range.ty)
+  # accFun = daeExpReductionFnName(op, identType)
+  # startValue = daeExpReductionStartValue(op, identType)
+  # res = tempDecl(identType, varDecls)
+  # tmpExpPre = ""
+  # tmpExpVar = daeExp(expr, context, tmpExpPre, varDecls)
+  # cast = if accFun is "max" then "(modelica_real)"
+           else if accFun is "min" then "(modelica_real)"
+           else ""
+  # r1 = tempDecl(identType, varDecls)
+  # r2 = tempDecl(identType, varDecls)
+  # r3 = tempDecl(identType, varDecls)
+  # er1 = daeExp(range.exp, context, preExp, varDecls)
+  # er2 = if range.expOption is SOME(eo) 
+          then daeExp(eo, context, preExp, varDecls)
+          else "(1)"
+  # er3 = daeExp(range.range, context, preExp, varDecls) 
+  # preExp +=
+    <<
+    <res> = <startValue>;
+    <r1> = <er1>; <r2> = <er2>; <r3> = <er3>;
+    {
+      <identType> <ident>;
+
+      for (<ident> = <r1>; in_range_<expTypeFromExpShort(expr)>(<ident>, <r1>, <r3>); <ident> += <r2>) {
+        <stateVar> = get_memory_state();
+        <tmpExpPre>
+        <res> = <accFun>(<cast>(<res>), <cast>(<tmpExpVar>));
+        restore_memory_state(<stateVar>);
+      }
+    }
+    >>
+  res
+
+daeExpReductionFnName(String reduction_op, String type) ::=
+  case "sum" then (
+    match type
+    case "modelica_integer" then "intAdd"
+    case "modelica_real" then "realAdd"
+    case _ then "INVALID_TYPE"
+  )
+  case "product" then (
+    match type
+    case "modelica_integer" then "intMul"
+    case "modelica_real" then "realMul"
+    case _ then "INVALID_TYPE"
+  )
+  case _ then reduction_op
+
+daeExpReductionStartValue(String reduction_op, String type) ::=
+  case "min" then (
+    match type
+    case "modelica_integer" then "1073741823"
+    case "modelica_real" then "1.e60"
+    case _ then "INVALID_TYPE"
+  )
+  case "max" then (
+    match type
+    case "modelica_integer" then "-1073741823"
+    case "modelica_real" then "-1.e60"
+    case _ then "INVALID_TYPE"
+  )
+  case "sum" then "0"
+  case "product" then "1"
+  case _ then "UNKNOWN_REDUCTION"
 
 daeExpValueblock(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case VALUEBLOCK then

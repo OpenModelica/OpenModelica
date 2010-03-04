@@ -5688,6 +5688,12 @@ algorithm
 
     case(DAE.CREF(_,_),_) then {};
 
+		case (DAE.REDUCTION(expr = e1), fn)
+			equation
+				res = getMatchingExps(e1, fn);
+			then
+				res;
+
     case (DAE.VALUEBLOCK(localDecls = ld,body = body,result = e),fn)
       local
     		list<DAE.Element> ld;
@@ -5709,7 +5715,7 @@ algorithm
 
     case (e,_)
       equation
-        Debug.fprintln("failtrace", "- SimCodegen.getMatchingExps failed: " +& Exp.printExpStr(e));
+        Debug.fprintln("failtrace", "- SimCode.getMatchingExps failed: " +& Exp.printExpStr(e));
       then fail();
 
   end matchcontinue;
