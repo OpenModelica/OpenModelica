@@ -1,9 +1,9 @@
 /*
  * This file is a  part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linkï¿½pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linkï¿½ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * This program is distributed  WITHOUT ANY WARRANTY; without
  * even the implied warranty of  MERCHANTABILITY or FITNESS
@@ -20,7 +20,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkï¿½pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -75,7 +75,7 @@ within the equation element.
 
 
 package XMLDump
-" file:	       XMLDump.mo
+" file:         XMLDump.mo
   package:     XMLDump
   description: Dumping of DAE as XML
 
@@ -101,9 +101,9 @@ protected import Util;
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
   protected constant String DAE_OPEN      = "dae xmlns:p1=\"http://www.w3.org/1998/Math/MathML\"
-	                                              xmlns:xlink=\"http://www.w3.org/1999/xlink\"
-	                                              xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
-	                                              xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\"";
+                                                xmlns:xlink=\"http://www.w3.org/1999/xlink\"
+                                                xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"
+                                                xsi:noNamespaceSchemaLocation=\"http://home.dei.polimi.it/donida/Projects/AutoEdit/Images/DAE.xsd\"";
   protected constant String DAE_CLOSE      = "dae";
 
   protected constant String LABEL          = "label";
@@ -1102,7 +1102,7 @@ algorithm
         dumpAlgorithms(arrayList(algs));
         dumpFunctions(inFunctionNames,inFunctions);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
-				dumpStrCloseTag(DAE_CLOSE);
+        dumpStrCloseTag(DAE_CLOSE);
       then ();
   end matchcontinue;
 end dumpDAELow;
@@ -2004,8 +2004,8 @@ algorithm
     case (names,funcelems)
       equation
         dumpStrOpenTag(FUNCTIONS);
-				dumpFunctions2(inFunctionNames,funcelems);
-				dumpStrCloseTag(FUNCTIONS);
+        dumpFunctions2(inFunctionNames,funcelems);
+        dumpStrCloseTag(FUNCTIONS);
   then();
   end matchcontinue;
 end dumpFunctions;
@@ -2612,26 +2612,26 @@ input, that defines the element's name, the
 element is something like:
 <Content=StateSelection/>,
 "
-	input Option<DAE.StateSelect> ss;
-	input String Content;
+  input Option<DAE.StateSelect> ss;
+  input String Content;
 algorithm
-	_ :=
-	matchcontinue (ss,Content)
-	  case (NONE(),_)
-	    equation
-	      Print.printBuf("");
-	    then ();
-	  case (SOME(DAE.NEVER()),_)
-	    equation dumpStrTagContent(Content, STATE_SELECT_NEVER);   then ();
-	  case (SOME(DAE.AVOID()),_)
-	    equation dumpStrTagContent(Content, STATE_SELECT_AVOID);   then ();
-	  case (SOME(DAE.DEFAULT()),_)
-	    equation dumpStrTagContent(Content, STATE_SELECT_DEFAULT); then ();
-	  case (SOME(DAE.PREFER()),_)
-	    equation dumpStrTagContent(Content, STATE_SELECT_PREFER);  then ();
-	  case (SOME(DAE.ALWAYS()),_)
-	    equation dumpStrTagContent(Content, STATE_SELECT_ALWAYS);  then ();
-	end matchcontinue;
+  _ :=
+  matchcontinue (ss,Content)
+    case (NONE(),_)
+      equation
+        Print.printBuf("");
+      then ();
+    case (SOME(DAE.NEVER()),_)
+      equation dumpStrTagContent(Content, STATE_SELECT_NEVER);   then ();
+    case (SOME(DAE.AVOID()),_)
+      equation dumpStrTagContent(Content, STATE_SELECT_AVOID);   then ();
+    case (SOME(DAE.DEFAULT()),_)
+      equation dumpStrTagContent(Content, STATE_SELECT_DEFAULT); then ();
+    case (SOME(DAE.PREFER()),_)
+      equation dumpStrTagContent(Content, STATE_SELECT_PREFER);  then ();
+    case (SOME(DAE.ALWAYS()),_)
+      equation dumpStrTagContent(Content, STATE_SELECT_ALWAYS);  then ();
+  end matchcontinue;
 end dumpOptionDAEStateSelect;
 
 
@@ -2760,7 +2760,7 @@ algorithm
       dumpStrCloseTag(SOLVING_INFO);
       dumpStrCloseTag(ADDITIONAL_INFO);
     then ();
-	end matchcontinue;
+  end matchcontinue;
 end dumpSolvingInfo;
 
 
@@ -2783,7 +2783,7 @@ algorithm
     equation
       Print.printBuf("\n</");Print.printBuf(inString);Print.printBuf(">");
     then ();
-	end matchcontinue;
+  end matchcontinue;
 end dumpStrCloseTag;
 
 
@@ -2806,11 +2806,11 @@ algorithm
     case (s,names)
       equation
         dumpStrOpenTag(FUNCTIONS);
-				dumpFunctionNames(inFunctionNames);
+        dumpFunctionNames(inFunctionNames);
         dumpStrTagContent(C_IMPLEMENTATIONS, inFunctions);
-				dumpStrCloseTag(FUNCTIONS);
-			then();
-	end matchcontinue;
+        dumpStrCloseTag(FUNCTIONS);
+      then();
+  end matchcontinue;
 end dumpStrFunctions;
 
 
@@ -2981,7 +2981,7 @@ algorithm
     equation
       Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(">");
     then ();
-	end matchcontinue;
+  end matchcontinue;
 end dumpStrOpenTag;
 
 
@@ -3010,7 +3010,7 @@ algorithm
     equation
       Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\">");
     then();
-	end matchcontinue;
+  end matchcontinue;
 end dumpStrOpenTagAttr;
 
 
@@ -3039,7 +3039,7 @@ algorithm
     equation
       Print.printBuf("\n<");Print.printBuf(inString);Print.printBuf(" ");Print.printBuf(Attribute);Print.printBuf("=\"");Print.printBuf(inAttributeContent);Print.printBuf("\" />");
     then();
-	end matchcontinue;
+  end matchcontinue;
 end dumpStrTagAttrNoChild;
 
 
@@ -3065,7 +3065,7 @@ algorithm
       Print.printBuf("\n");Print.printBuf(inTagContent);
       dumpStrCloseTag(inTagString);
     then ();
-	end matchcontinue;
+  end matchcontinue;
 end dumpStrTagContent;
 
 

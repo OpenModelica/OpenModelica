@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linkï¿½pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Linkï¿½ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linkï¿½pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -1161,11 +1161,11 @@ algorithm
       equation
         print("visualize(model)\n");
 
-        //Hï¿½r ska jag komma in, bygga en vettig argumentlista till readptol...
+        //Här ska jag komma in, bygga en vettig argumentlista till readptol...
 
-        //Jag mï¿½ste fï¿½ readptol att skicka alla variabler i .plt-filen, och en idï¿½ ï¿½r
-        //att gï¿½ra en egen enkel funktion som i princip ï¿½r en grep pï¿½ DataSet: i filen..
-        //Kolla pï¿½ senddata:emulateStreamData
+        //Jag måste få readptol att skicka alla variabler i .plt-filen, och en ide är
+        //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
+        //Kolla på senddata:emulateStreamData
 
         //vars = Util.listMap(vars,Exp.CodeVarToCref);
         //vars = Util.listMap(vars, Exp.printExpStr) "plot" ;
@@ -1232,7 +1232,7 @@ algorithm
         Boolean legend, logX, logY, points;
         Boolean grid;
       equation
-        print("hittaderï¿½ttigen\n");
+        print("hittaderättigen\n");
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
