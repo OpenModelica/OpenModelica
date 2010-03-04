@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -989,6 +989,32 @@ algorithm
         invHt_1;
   end matchcontinue;
 end addReplacementInv2;
+
+public function addReplacementIfNot "function: addReplacementIf
+  Calls addReplacement() if condition (first argument) is true, 
+  otherwise does nothing.
+  
+  Author: asodja, 2010-03-03  
+"
+  input Boolean condition;
+  input VariableReplacements repl;
+  input DAE.ComponentRef inSrc;
+  input DAE.Exp inDst;  
+  output VariableReplacements outRepl;
+algorithm 
+  outRepl:=  matchcontinue (condition,repl,inSrc,inDst)    
+    local
+      DAE.ComponentRef src;
+      DAE.Exp dst;
+      VariableReplacements repl, repl_1;
+    case (false,repl,src,dst) /* source dest */
+      equation
+        repl_1 = addReplacement(repl,src,dst);
+      then repl_1;
+    case (true,repl,src,dst)
+      then repl;
+  end matchcontinue;
+end addReplacementIfNot;
 
 protected function makeTransitive "function: makeTransitive
 

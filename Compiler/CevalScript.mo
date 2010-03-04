@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -256,7 +256,7 @@ algorithm
         dae  = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
-        ((daelow as DAELow.DAELOW(vars,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
+        ((daelow as DAELow.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
         m = DAELow.incidenceMatrix(daelow);
         mt = DAELow.transposeMatrix(m);
         /* jac = DAELow.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
@@ -1161,11 +1161,11 @@ algorithm
       equation
         print("visualize(model)\n");
 
-        //Här ska jag komma in, bygga en vettig argumentlista till readptol...
+        //Hï¿½r ska jag komma in, bygga en vettig argumentlista till readptol...
 
-        //Jag måste få readptol att skicka alla variabler i .plt-filen, och en idé är
-        //att göra en egen enkel funktion som i princip är en grep på DataSet: i filen..
-        //Kolla på senddata:emulateStreamData
+        //Jag mï¿½ste fï¿½ readptol att skicka alla variabler i .plt-filen, och en idï¿½ ï¿½r
+        //att gï¿½ra en egen enkel funktion som i princip ï¿½r en grep pï¿½ DataSet: i filen..
+        //Kolla pï¿½ senddata:emulateStreamData
 
         //vars = Util.listMap(vars,Exp.CodeVarToCref);
         //vars = Util.listMap(vars, Exp.printExpStr) "plot" ;
@@ -1232,7 +1232,7 @@ algorithm
         Boolean legend, logX, logY, points;
         Boolean grid;
       equation
-        print("hittaderättigen\n");
+        print("hittaderï¿½ttigen\n");
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);

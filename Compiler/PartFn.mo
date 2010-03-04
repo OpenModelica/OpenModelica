@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -50,6 +50,7 @@ protected import DAEUtil;
 protected import Exp;
 protected import Types;
 protected import Util;
+protected import VarTransform;
 
 type Ident = String;
 
@@ -68,6 +69,7 @@ algorithm
       DAELow.Variables orderedVars;
       DAELow.Variables knownVars;
       DAELow.Variables externalObjects;
+      VarTransform.VariableReplacements aliasVars "alias-variables' hashtable";
       DAELow.EquationArray orderedEqs;
       DAELow.EquationArray removedEqs;
       DAELow.EquationArray initialEqs;
@@ -80,7 +82,7 @@ algorithm
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dae,dlow);*/
-    case(dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case(dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         (orderedVars,dae) = partEvalVars(orderedVars,dae);
         (knownVars,dae) = partEvalVars(knownVars,dae);
@@ -91,7 +93,7 @@ algorithm
         (arrayEqs,dae) = partEvalArrEqs(arrayList(arrayEqs),dae);
         (algorithms,dae) = partEvalAlgs(algorithms,dae);
       then
-        (dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
+        (dae,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses));
     case(_,_)
       equation
         Debug.fprintln("failtrace","- PartFn.partEvalDAELow failed");

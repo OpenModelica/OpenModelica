@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -54,6 +54,7 @@ protected import Algorithm;
 protected import Debug;
 protected import DAEUtil;
 protected import Exp;
+protected import VarTransform;
 
 public function inlineCalls
 "function: inlineCalls
@@ -68,6 +69,7 @@ algorithm
       DAELow.Variables orderedVars;
       DAELow.Variables knownVars;
       DAELow.Variables externalObjects;
+      VarTransform.VariableReplacements aliasVars "alias-variables' hashtable";
       DAELow.EquationArray orderedEqs;
       DAELow.EquationArray removedEqs;
       DAELow.EquationArray initialEqs;
@@ -77,7 +79,7 @@ algorithm
       list<Algorithm.Algorithm> alglst;
       DAELow.EventInfo eventInfo;
       DAELow.ExternalObjectClasses extObjClasses;
-    case(fns,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case(fns,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         orderedVars = inlineVariables(orderedVars,fns);
         knownVars = inlineVariables(knownVars,fns);
@@ -92,7 +94,7 @@ algorithm
         eventInfo = inlineEventInfo(eventInfo,fns);
         extObjClasses = inlineExtObjClasses(extObjClasses,fns);
       then
-        DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
+        DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
     case(_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");

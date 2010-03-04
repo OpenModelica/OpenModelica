@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -83,24 +83,17 @@ algorithm
   strEqs:=
   matchcontinue (inDAELow)
     local
-      list<DAELow.Var> vars,knvars,extvars;
-      Integer varlen,eqnlen;
-      String varlen_str,eqnlen_str,s,s1,s2,s3;
-      list<String> ls1,ls2,ls3;
-      list<DAELow.Equation> eqnsl,reqnsl,ieqnsl;
+      String s,s1;
+      list<String> ls1;
+      list<DAELow.Equation> eqnsl;
       list<String> ss;
-      list<DAELow.MultiDimEquation> ae_lst;
-      DAELow.Variables vars1,vars2,vars3;
-      DAELow.EquationArray eqns,reqns,ieqns;
-      DAELow.MultiDimEquation[:] ae;
-      Algorithm.Algorithm[:] algs;
-      list<DAELow.ZeroCrossing> zc;
-      DAELow.ExternalObjectClasses extObjCls;
+      DAELow.EquationArray eqns;
       list<DAELow.WhenClause> wcLst;
-    case (DAELow.DAELOW(vars1,vars2,vars3,eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(whenClauseLst = wcLst),extObjCls))
+    case (DAELow.DAELOW(orderedEqs = eqns, eventInfo = DAELow.EVENT_INFO(whenClauseLst = wcLst)))
       equation
         eqnsl = DAELow.equationList(eqns);
-        ls1 = Util.listMap1(eqnsl, equationStr, wcLst);  s1 = Util.stringDelimitList(ls1, ",");
+        ls1 = Util.listMap1(eqnsl, equationStr, wcLst);
+        s1 = Util.stringDelimitList(ls1, ",");
         s = "EqStr = {" +& s1 +& "};";
       then
         s;
@@ -249,19 +242,10 @@ algorithm
   strVars:=
   matchcontinue (inDAELow)
     local
-      list<DAELow.Var> vars,knvars,extvars;
-      Integer varlen,eqnlen;
-      String varlen_str,eqnlen_str,s;
-      list<DAELow.Equation> eqnsl,reqnsl,ieqnsl;
-      list<String> ss;
-      list<DAELow.MultiDimEquation> ae_lst;
-      DAELow.Variables vars1,vars2,vars3;
-      DAELow.EquationArray eqns,reqns,ieqns;
-      DAELow.MultiDimEquation[:] ae;
-      Algorithm.Algorithm[:] algs;
-      list<DAELow.ZeroCrossing> zc;
-      DAELow.ExternalObjectClasses extObjCls;
-    case (DAELow.DAELOW(vars1,vars2,vars3,eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls))
+      list<DAELow.Var> vars;
+      String s;
+      DAELow.Variables vars1;
+    case (DAELow.DAELOW(orderedVars = vars1))
       equation
         vars = varList(vars1);
         s = dumpVars(vars);

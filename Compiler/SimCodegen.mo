@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -266,6 +266,7 @@ algorithm
       DAELow.Variables orderedVars;
       DAELow.Variables knownVars;
       DAELow.Variables externalObjects;
+      VarTransform.VariableReplacements aliasVars "alias-variables' hashtable";      
       DAELow.EquationArray orderedEqs;
       DAELow.EquationArray removedEqs;
       DAELow.EquationArray initialEqs;
@@ -274,12 +275,12 @@ algorithm
       list<Algorithm.Algorithm> algLst;
       DAELow.EventInfo eventInfo;
       DAELow.ExternalObjectClasses extObjClasses;
-    case	(helpvars,DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,
+    case	(helpvars,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
       removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
         (helpvars1,algLst,_) = generateHelpVarsInAlgorithms(listLength(helpvars),arrayList(algorithms));
         algorithms2 = listArray(algLst);
-      then (listAppend(helpvars,helpvars1),DAELow.DAELOW(orderedVars,knownVars,externalObjects,orderedEqs,
+      then (listAppend(helpvars,helpvars1),DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,
         removedEqs,initialEqs,arrayEqs,algorithms2,eventInfo,extObjClasses));
     case (_,_)
       equation
@@ -3956,6 +3957,7 @@ algorithm
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
       DAELow.Variables vars_1,vars,knvars,exvars;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       DAELow.EquationArray eqns_1,eqns,se,ie;
       DAELow.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
       list<Integer>[:] m,m_1,mt_1;
@@ -3974,7 +3976,7 @@ algorithm
       list<String> retrec,arg,locvars,init,locvars,stmts,cleanups,stmts_1,stmts_2;
 
       /* Mixed system of equations, continuous part only */
-    case (dae,false,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,false,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         true = isMixedSystem(var_lst,eqn_lst);
@@ -3982,7 +3984,7 @@ algorithm
  				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(cont_var1);
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
         //print("subsystem dae:"); DAELow.dump(cont_subsystem_dae);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
@@ -4004,7 +4006,7 @@ algorithm
         (s2,cg_id_1,f1);
 
         /* Mixed system of equations, both continous and discrete eqns*/
-    case (dae,true,(dlow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,true,(dlow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al, ev,eoc)),ass1,ass2,block_,cg_id)
       local Integer numValues;
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
@@ -4013,7 +4015,7 @@ algorithm
 				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(cont_var1);
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
         //print("subsystem dae:"); DAELow.dump(cont_subsystem_dae);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
@@ -4033,7 +4035,7 @@ algorithm
         (cfn,cg_id5,extra_funcs1);
 
         /* continuous system of equations try tearing algorithm*/
-    case (dae,genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
       local
         DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
         Integer[:] v1,v2,v1_1,v2_1;
@@ -4050,7 +4052,7 @@ algorithm
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(var_lst_1);
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -4069,13 +4071,13 @@ algorithm
         (s1,cg_id_1,f1);
 
         /* continuous system of equations */
-    case (dae,genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
+    case (dae,genDiscrete,(daelow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,block_,cg_id)
       equation
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(var_lst_1);
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -4791,6 +4793,7 @@ algorithm
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       DAELow.Variables v,kv,exv;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       DAELow.EquationArray eqn,eqn1,reeqn,ineq;
       list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
       list<DAELow.Var> var_lst;
@@ -4804,7 +4807,7 @@ algorithm
       DAELow.EventInfo eventInfo;
       DAELow.ExternalObjectClasses extObjClasses;
     case (dae,ass1,ass2,block_,r,t,mixedEvent,_,
-          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp,cg_id) /* no analythic jacobian available. Generate non-linear system */
+          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),jac,jac_tp,cg_id) /* no analythic jacobian available. Generate non-linear system */
       equation
         // get equations and variables
         eqn_lst = DAELow.equationList(eqn);
@@ -4825,7 +4828,7 @@ algorithm
         // replace tearing variables in other equations with x_loc[..]
         eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
         eqn1 = DAELow.listEquation(eqn_lst2);
-        daelow1=DAELow.DAELOW(v,kv,exv,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        daelow1=DAELow.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
         // generade code for other equations
         (feqn,cg_id2,_) = buildSolvedBlocks(dae,daelow1,ass1,ass2,eqnlstlst,cg_id);
         // generade code for nonlinear solver for tearing system
@@ -8074,6 +8077,7 @@ algorithm
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<DAELow.Var> var_lst,cont_var,disc_var,cont_var1;
       DAELow.Variables vars, vars_1,knvars,exvars;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       DAELow.EquationArray eqns_1,eqns,se,ie;
       DAELow.DAELow cont_subsystem_dae,dlow;
       list<Integer>[:] m,m_1,mt_1;
@@ -8092,8 +8096,8 @@ algorithm
 
     case (_,_,_,_,{},_,cg_id) then (Codegen.cEmptyFunction,{},cg_id,{});  /* ass1 ass2 eqns blocks cg var_id cg var_id */
 
-    /* Zero crossing for mixed system */
-    case (dae,(dlow as DAELow.DAELOW(vars,knvars,exvars,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,(eqn :: rest),blocks,cg_id)
+    /* Zero crossing for mixed system */      
+    case (dae,(dlow as DAELow.DAELOW(vars,knvars,exvars,av,eqns,se,ie,ae,al,ev,eoc)),ass1,ass2,(eqn :: rest),blocks,cg_id) 
       equation
         true = isPartOfMixedSystem(dlow, eqn, blocks, ass2);
         block_ = getZcMixedSystem(dlow, eqn, blocks, ass2);
@@ -8110,7 +8114,7 @@ algorithm
 				cont_var1 = Util.listMap(cont_var, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(cont_var1);
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,eqns_1,se,ie,ae,al,ev,eoc);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
         /*
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);

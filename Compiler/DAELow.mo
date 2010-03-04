@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -51,6 +51,7 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import Values;
+public import VarTransform;
 
 public uniontype Type "
 Once we are in DAELow, the Type can be only basic types or enumeration.
@@ -217,6 +218,7 @@ uniontype DAELow "THE LOWERED DAE consist of variables and equations. The variab
     Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
+    VarTransform.VariableReplacements aliasVars "Hash table with alias variables and their replacements"; // added asodja 2010-03-03
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
     EquationArray initialEqs "initialEqs ; Initial equations" ;
@@ -415,7 +417,7 @@ protected import RTOpts;
 protected import SimCodegen;
 protected import System;
 protected import Util;
-protected import VarTransform;
+//protected import VarTransform; // since it is imported as public
 protected import ValuesUtil;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
@@ -577,12 +579,14 @@ public function lower
   input DAE.DAElist lst;
   input Boolean addDummyDerivativeIfNeeded;
   input Boolean simplify;
+//  input Boolean removeTrivEqs "temporal input, for legacy purposes; doesn't add trivial equations to removed equations";
   output DAELow outDAELow;
 algorithm
   outDAELow := matchcontinue(lst, addDummyDerivativeIfNeeded, simplify)
     local
       BinTree s;
       Variables vars,knvars,vars_1,extVars;
+      VarTransform.VariableReplacements aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
       list<Equation> eqns,reqns,ieqns,algeqns,multidimeqns,eqns_1;
       list<MultiDimEquation> aeqns,aeqns1;
       list<DAE.Algorithm> algs;
@@ -614,7 +618,7 @@ algorithm
         multidimeqns = lowerMultidimeqns(vars, aeqns);
         eqns = listAppend(algeqns, eqns);
         eqns = listAppend(multidimeqns, eqns);
-        (vars,knvars,eqns,reqns,ieqns,aeqns1) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
+        (vars,knvars,eqns,reqns,ieqns,aeqns1,aliasVars) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
         (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
@@ -624,7 +628,7 @@ algorithm
         ieqnarr = listEquation(ieqns);
         arr_md_eqns = listArray(aeqns1);
         algarr = listArray(algs);
-      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+      then DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
 
     case(lst, addDummyDerivativeIfNeeded, false) // do not simplify
       equation
@@ -647,6 +651,7 @@ algorithm
         eqns = listAppend(algeqns, eqns);
         eqns = listAppend(multidimeqns, eqns);
         // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
+        aliasVars = VarTransform.emptyReplacements();
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
         // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
@@ -656,7 +661,7 @@ algorithm
         ieqnarr = listEquation(ieqns);
         arr_md_eqns = listArray(aeqns);
         algarr = listArray(algs);
-      then DAELOW(vars_1,knvars,extVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
+      then DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,EVENT_INFO(whenclauses_1,zero_crossings),extObjCls);
   end matchcontinue;
 end lower;
 
@@ -2303,12 +2308,13 @@ algorithm
       list<String> ss;
       list<MultiDimEquation> ae_lst;
       Variables vars1,vars2,vars3;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns,reqns,ieqns;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] algs;
       list<ZeroCrossing> zc;
       ExternalObjectClasses extObjCls;
-    case (DAELOW(vars1,vars2,vars3,eqns,reqns,ieqns,ae,algs,EVENT_INFO(zeroCrossingLst = zc),extObjCls))
+    case (DAELOW(vars1,vars2,vars3,av,eqns,reqns,ieqns,ae,algs,EVENT_INFO(zeroCrossingLst = zc),extObjCls))
       equation
         print("Variables (");
         vars = varList(vars1);
@@ -3151,11 +3157,12 @@ protected function removeSimpleEquations
   output list<Equation> outEquationLst4;
   output list<Equation> outEquationLst5;
   output list<MultiDimEquation> outArrayEquationLst;
+  output VarTransform.VariableReplacements aliasVars; // hash tables of alias-variables' replacement (a = b or a = -b)
 algorithm
   (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst):=
   matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inBinTree6)
     local
-      VarTransform.VariableReplacements repl,vartransf;
+      VarTransform.VariableReplacements repl,vartransf, aliasVarsRepl;
       list<Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
       list<MultiDimEquation> arreqns,arreqns1,arreqns2;
       BinTree movedvars_1,states;
@@ -3163,7 +3170,8 @@ algorithm
     case (vars,knvars,eqns,reqns,ieqns,arreqns,states)
       equation
         repl = VarTransform.emptyReplacements();
-        (eqns_1,seqns,movedvars_1,vartransf) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl);
+        aliasVarsRepl = VarTransform.emptyReplacements();
+        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl, aliasVarsRepl);
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf);
         eqns_2 = BackendVarTransform.replaceEquations(eqns_1, vartransf);
         seqns_1 = BackendVarTransform.replaceEquations(seqns, vartransf);
@@ -3176,7 +3184,7 @@ algorithm
         arreqns2 = renameMultiDimDerivatives(arreqns1);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
       then
-        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2);
+        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, aliasVarsRepl);
     case (_,_,_,_,_,_,_)
       equation
         print("-remove_simple_equations failed\n");
@@ -3370,16 +3378,19 @@ protected function removeSimpleEquations2
   input BinTree mvars;
   input BinTree states;
   input VarTransform.VariableReplacements repl;
+  input VarTransform.VariableReplacements inAliasVarRepl "replacement of alias variables (a=b or a=-b)";
   output list<Equation> outEqns;
   output list<Equation> outSimpleEqns;
   output BinTree outMvars;
   output VarTransform.VariableReplacements outRepl;
+  output VarTransform.VariableReplacements outAliasVarRepl "replacement of alias variables (a=b or a=-b)";
 algorithm
-  (outEqns,outSimpleEqns,outMvars,outRepl) := matchcontinue (eqns,vars,knvars,mvars,states,repl)
+  (outEqns,outSimpleEqns,outMvars,outRepl) := matchcontinue (eqns,vars,knvars,mvars,states,repl,aliasRepl)
     local
       Variables vars,knvars;
       BinTree mvars,states,mvars_1,mvars_2;
       VarTransform.VariableReplacements repl,repl_1,repl_2;
+      VarTransform.VariableReplacements aliasRepl, aliasRepl_1, aliasRepl_2;
       DAE.ComponentRef cr1,cr2;
       list<Equation> eqns_1,seqns_1,eqns;
       Equation e;
@@ -3387,43 +3398,45 @@ algorithm
       DAE.Exp e1,e2;
       DAE.ElementSource source "the element source";
 
-    case ({},vars,knvars,mvars,states,repl) then ({},{},mvars,repl);
+    case ({},vars,knvars,mvars,states,repl,aliasRepl) then ({},{},mvars,repl,aliasRepl);
 
-    case (e::eqns,vars,knvars,mvars,states,repl) equation
+    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
       {e} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+      aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2);
 
       // Swapped args
-    case (e::eqns,vars,knvars,mvars,states,repl) equation
+    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
       {EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+      aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1);
+      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2);
 
       // try next equation.
-    case ((e :: eqns),vars,knvars,mvars,states,repl)
+    case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl)
       local Equation eq1;
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},repl);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
-        (eqns_1,seqns_1,mvars_1,repl_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl, aliasRepl) "Not a simple variable, check rest" ;
       then
-        ((e :: eqns_1),seqns_1,mvars_1,repl_1);
+        ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1);
   end matchcontinue;
 end removeSimpleEquations2;
 
@@ -6333,13 +6346,6 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    case (vars,SOLVED_EQUATION(componentRef = cr,exp = e),_) /* SOLVED_EQUATION */
-      equation
-        lst1 = incidenceRowExp(DAE.CREF(cr,DAE.ET_REAL()), vars);
-        lst2 = incidenceRowExp(e, vars);
-        res = listAppend(lst1, lst2);
-      then
-        res;
     case (vars,RESIDUAL_EQUATION(exp = e),_) /* RESIDUAL_EQUATION */
       equation
         res = incidenceRowExp(e, vars);
@@ -7795,6 +7801,7 @@ algorithm
       Assignments assign1,assign2,ass1,ass2;
       DAELow dae,dae_1,dae_2;
       Variables v,kv,v_1,kv_1,vars,exv;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray e,re,ie,e_1,re_1,ie_1,eqns;
       MultiDimEquation[:] ae,ae1;
       DAE.Algorithm[:] al;
@@ -7820,7 +7827,7 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,(dae as DAELOW(v,kv,exv,e,re,ie,ae,al,ev,eoc)),m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts);
+        (ass1,ass2,(dae as DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts);
 				/* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
 				could potentially be removed after a index reduction has been done. However, removing equations here
 				also require that e.g. zero crossings, array equations, etc. must be recalculated. */
@@ -8121,7 +8128,7 @@ algorithm
 
     case (dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION(),eq_cons,r_simple))
       equation
-        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i)
+        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i) 
         "path_found failed, Try index reduction using dummy derivatives.
 	       When a constraint exist between states and index reduction is needed
 	       the dummy derivative will select one of the states as a dummy state
@@ -8350,6 +8357,7 @@ algorithm
       Value indx,indx_1,dummy_no;
       Boolean dummy_fixed;
       Variables vars_1,vars,kv,ev;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";      
       DAELow dae;
       EquationArray e,se,ie;
       MultiDimEquation[:] ae;
@@ -8358,7 +8366,7 @@ algorithm
       ExternalObjectClasses eoc;
 
    /* eqns dummy state */
-    case ((dae as DAELOW(vars,kv,ev,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
+    case ((dae as DAELOW(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
@@ -8371,10 +8379,10 @@ algorithm
         v_2 = setVarFixed(v_1, dummy_fixed);
         vars_1 = addVar(v_2, vars);
       then
-        DAELOW(vars_1,kv,ev,e,se,ie,ae,al,ei,eoc);
+        DAELOW(vars_1,kv,ev,av,e,se,ie,ae,al,ei,eoc);
 
     // Never propagate fixed=true
-    case ((dae as DAELOW(vars,kv,ev,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
+    case ((dae as DAELOW(vars,kv,ev,av,e,se,ie,ae,al,ei,eoc)),eqns,dummy,dummy_no)
       equation
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
@@ -8655,18 +8663,19 @@ algorithm
     local
       list<Var> var_lst,var_lst_1;
       Variables vars_1,vars,knvar,evar;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns,reqns,ieqns;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
       EventInfo ev;
       ExternalObjectClasses eoc;
-    case (DAELOW(vars,knvar,evar,eqns,reqns,ieqns,ae,al,ev,eoc))
+    case (DAELOW(vars,knvar,evar,av,eqns,reqns,ieqns,ae,al,ev,eoc))
       equation
         var_lst = varList(vars);
         var_lst_1 = makeAllStatesAlgebraic2(var_lst);
         vars_1 = listVar(var_lst_1);
       then
-        DAELOW(vars_1,knvar,evar,eqns,reqns,ieqns,ae,al,ev,eoc);
+        DAELOW(vars_1,knvar,evar,av,eqns,reqns,ieqns,ae,al,ev,eoc);
   end matchcontinue;
 end makeAllStatesAlgebraic;
 
@@ -8753,18 +8762,20 @@ algorithm
       DAE.Stream streamPrefix;
       list<Value> indx;
       Variables vars_1,vars,kv,ev;
+      VarTransform.VariableReplacements av "alias variables' hashtale";
       EquationArray e,se,ie;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses eoc;
+      DAELow daelow, daelow_1;
 
-    case (DAELOW(vars,kv,ev,e,se,ie,ae,al,wc,eoc),cr)
+    case (DAELOW(vars,kv,ev,av,e,se,ie,ae,al,wc,eoc),cr)
       equation
         ((VAR(cr,kind,d,t,b,value,dim,idx,name,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),indx) = getVar(cr, vars);
-        vars_1 = addVar(VAR(cr,DUMMY_STATE(),d,t,b,value,dim,idx,name,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);
+        vars_1 = addVar(VAR(cr,DUMMY_STATE(),d,t,b,value,dim,idx,name,source,dae_var_attr,comment,flowPrefix,streamPrefix), vars);        
       then
-        DAELOW(vars_1,kv,ev,e,se,ie,ae,al,wc,eoc);
+        DAELOW(vars_1,kv,ev,av,e,se,ie,ae,al,wc,eoc);
 
     case (_,_)
       equation
@@ -8808,6 +8819,7 @@ algorithm
       Value e_1,e;
       Equation eqn,eqn_1;
       Variables v_1,v,kv,ev;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns_1,eqns,seqns,ie,ie1;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
@@ -8818,7 +8830,7 @@ algorithm
 
     case (state,dummy,dae,m,mt,{}) then (dae,m,mt);
 
-    case (state,dummyder,DAELOW(v,kv,ev,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
+    case (state,dummyder,DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc),m,mt,(e :: rest))
       equation
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
@@ -8831,7 +8843,7 @@ algorithm
          "incidence_row(v\'\',eqn\') => row\' &
 	        Util.list_replaceat(row\',e\',m) => m\' &
 	        transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,eqns_1,seqns,ie1,ae,al,wc,eoc), m, mt, rest);
+        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,av,eqns_1,seqns,ie1,ae,al,wc,eoc), m, mt, rest);
       then
         (dae,m,mt);
 
@@ -9201,6 +9213,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Variables vars_1,vars,kv,ev;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";      
       EquationArray eqns,seqns,ie;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
@@ -9208,7 +9221,7 @@ algorithm
       ExternalObjectClasses eoc;
       Var dummyvar;
 
-    case (var,DAELOW(vars, kv, ev, eqns, seqns, ie, ae, al, wc,eoc))
+    case (var,DAELOW(vars, kv, ev, av, eqns, seqns, ie, ae, al, wc,eoc))
       equation
         ((VAR(_,kind,dir,tp,bind,value,dim,idx,name,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(var, vars);
         dummyvar_cr = createDummyVar(var);
@@ -9217,7 +9230,7 @@ algorithm
         dummyvar = setVarFixed(dummyvar,false);
         vars_1 = addVar(dummyvar, vars);
       then
-        (dummyvar_cr,DAELOW(vars_1,kv,ev,eqns,seqns,ie,ae,al,wc,eoc));
+        (dummyvar_cr,DAELOW(vars_1,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc));
 
     case (_,_)
       equation
@@ -9696,17 +9709,19 @@ algorithm
       Value e_1,e;
       Equation eqn;
       list<Var> varlst;
-      Variables vars,kv,ev;
-      EquationArray eqns,seqns,ie;
-      MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
-      EventInfo wc;
+      Variables vars; //,kv,ev;
+      EquationArray eqns; //,seqns,ie;
+      //MultiDimEquation[:] ae;
+      //DAE.Algorithm[:] al;
+      //EventInfo wc;
       list<Value>[:] m,mt;
-      ExternalObjectClasses eoc;
+      //ExternalObjectClasses eoc;
+      //VarTransform.VariableReplacements av "alias vars' hashtable";
+      DAELow daelow;
     case ({},_,_,_) then ({},{});
-    case ((e :: rest),DAELOW(vars,kv,ev,eqns,seqns,ie,ae,al,wc,eoc),m,mt)
+    case ((e :: rest),daelow as DAELOW(orderedVars = vars,orderedEqs = eqns),m,mt)
       equation
-        (res1,res2) = statesInEqns(rest, DAELOW(vars,kv,ev,eqns,seqns,ie,ae,al,wc,eoc), m, mt);
+        (res1,res2) = statesInEqns(rest, daelow, m, mt);
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
         vars2 = statesInEqn(eqn, vars);
@@ -9809,12 +9824,13 @@ algorithm
       EquationArray eqns_1,eqns,seqns,ie;
       list<Value> reqns,es;
       Variables v,kv,ev;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses eoc;
     case (dae,m,mt,nv,nf,{}) then (dae,m,mt,nv,nf,{});
-    case ((dae as DAELOW(v,kv,ev,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es))
+    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es))
       equation
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
@@ -9835,7 +9851,7 @@ algorithm
         eqns_1 = equationAdd(eqns, eqn_1);
         leneqns = equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,eqns_1,seqns,ie,ae,al,wc,eoc), m, mt, nv, nf, es);
+        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al,wc,eoc), m, mt, nv, nf, es);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)));
     case (_,_,_,_,_,_)
@@ -11138,10 +11154,11 @@ algorithm
       list<WhenClause> wc_1,wc_2,wc;
       list<ZeroCrossing> zc_1,zc_2,zc;
       Variables vars_1,knvars_1,vars_2,knvars_2,vars,knvars,extVars,extvars_1,extvars_2;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns_1,seqns_1,ieqns_1,eqns,seqns,ieqns;
       DAELow trans_dae;
       ExternalObjectClasses extObjCls;
-    case (DAELOW(vars,knvars,extVars, eqns,seqns,ieqns,ae,al,EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls),_)
+    case (DAELOW(vars,knvars,extVars,av,eqns,seqns,ieqns,ae,al,EVENT_INFO(whenClauseLst = wc,zeroCrossingLst = zc),extObjCls),_)
       equation
         varlst = varList(vars);
         knvarlst = varList(knvars);
@@ -11173,7 +11190,7 @@ algorithm
         eqns_1 = listEquation(eqnsl_2);
         seqns_1 = listEquation(seqnsl_2);
         ieqns_1 = listEquation(ieqnsl_2);
-        trans_dae = DAELOW(vars_2,knvars_2,extvars_2,eqns_1,seqns_1,ieqns_1,ae_2,al_2,
+        trans_dae = DAELOW(vars_2,knvars_2,extvars_2,av,eqns_1,seqns_1,ieqns_1,ae_2,al_2,
           EVENT_INFO(wc_2,zc_2),extObjCls);
         Debug.fcall("dumpindxdae", dump, trans_dae);
       then
@@ -12345,18 +12362,19 @@ algorithm
       list<Equation> eqn_lst,eqn_lst2;
       EquationArray eqns2,eqns,seqns,ieqns;
       Variables vars,knvars,extVars;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] ialg;
       EventInfo wc;
       ExternalObjectClasses extobjcls;
 
-    case (DAELOW(vars,knvars,extVars,eqns,seqns,ieqns,ae,ialg,wc,extobjcls))
+    case (DAELOW(vars,knvars,extVars,av,eqns,seqns,ieqns,ae,ialg,wc,extobjcls))
       equation
         eqn_lst = equationList(eqns);
         eqn_lst2 = Util.listMap(eqn_lst, equationToResidualForm);
         eqns2 = listEquation(eqn_lst2);
       then
-        DAELOW(vars,knvars,extVars,eqns2,seqns,ieqns,ae,ialg,wc,extobjcls);
+        DAELOW(vars,knvars,extVars,av,eqns2,seqns,ieqns,ae,ialg,wc,extobjcls);
   end matchcontinue;
 end toResidualForm;
 
@@ -12703,12 +12721,13 @@ algorithm
       list<Env.Frame> env,env_1;
       list<Var> knvarlst,knvarlst_1;
       Variables knvars,knvars_1,vars,extVars;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns,seqns,ie;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses extObjCls;
-    case (DAELOW(orderedVars = vars,knownVars = knvars,externalObjects=extVars,orderedEqs = eqns,
+    case (DAELOW(orderedVars = vars,knownVars = knvars,externalObjects=extVars,aliasVars = av, orderedEqs = eqns,
       removedEqs = seqns,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls))
       equation
         (_,env) = Builtin.initialEnv(Env.emptyCache());
@@ -12718,7 +12737,7 @@ algorithm
         knvars = emptyVars();
         knvars_1 = addVars(knvarlst_1, knvars);
       then
-        DAELOW(vars,knvars_1,extVars,eqns,seqns,ie,ae,al,wc,extObjCls);
+        DAELOW(vars,knvars_1,extVars,av,eqns,seqns,ie,ae,al,wc,extObjCls);
   end matchcontinue;
 end calculateValues;
 
@@ -15651,6 +15670,7 @@ algorithm
   matchcontinue (inDlow)
     local
       Variables ordvars,knvars,exobj,ordvars1;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns,remeqns,inieqns,eqns1;
       MultiDimEquation[:] arreqns;
       DAE.Algorithm[:] algorithms;
@@ -15664,7 +15684,7 @@ algorithm
       Integer bucketSize;
       Integer numberOfVars;
       Option<Var>[:] varOptArr,varOptArr1;
-    case (DAELOW(ordvars,knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
+    case (DAELOW(ordvars,knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc))
       equation
         VARIABLES(crefIdxLstArr,strIdxLstArr,varArr,bucketSize,numberOfVars) = ordvars;
         VARIABLE_ARRAY(n1,size1,varOptArr) = varArr;
@@ -15680,7 +15700,7 @@ algorithm
         arr_1 = Util.arrayCopy(arr, arr_1);
         eqns1 = EQUATION_ARRAY(n,size,arr_1);
       then
-        DAELOW(ordvars1,knvars,exobj,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        DAELOW(ordvars1,knvars,exobj,av,eqns1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
   end matchcontinue;
 end copyDaeLowforTearing;
 
@@ -15914,6 +15934,7 @@ algorithm
       VariableArray varr;
       Value nvars,neqns,memsize;
       Variables ordvars,vars_1,knvars,exobj,ordvars1;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
       Assignments assign1,assign2,assign1_1,assign2_1,ass1,ass2;
       EquationArray eqns, eqns_1, eqns_2,removedEqs,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
       MultiDimEquation[:] arreqns;
@@ -15936,7 +15957,7 @@ algorithm
         Debug.fcall("tearingdump", print, str2);
         // copy dlow
         dlowc = copyDaeLowforTearing(dlow);
-        DAELOW(ordvars as VARIABLES(varArr=varr),knvars,exobj,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc) = dlowc;
+        DAELOW(ordvars as VARIABLES(varArr=varr),knvars,exobj,av,eqns,remeqns,inieqns,arreqns,algorithms,einfo,eoc) = dlowc;
         dlowc1 = copyDaeLowforTearing(dlow1);
         DAELOW(orderedVars = ordvars1,orderedEqs = eqns1) = dlowc1;
         // add Tearing Var
@@ -15960,8 +15981,8 @@ algorithm
                           {},false,true,DAE.ET_REAL(),DAE.NO_INLINE()),
                           DAE.CREF(cr,DAE.ET_REAL()), DAE.emptyElementSource));
         tearingeqnid = equationSize(eqns_2);
-        dlow_1 = DAELOW(vars_1,knvars,exobj,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
-        dlow1_1 = DAELOW(ordvars1,knvars,exobj,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        dlow_1 = DAELOW(vars_1,knvars,exobj,av,eqns_2,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
+        dlow1_1 = DAELOW(ordvars1,knvars,exobj,av,eqns1_1,remeqns,inieqns,arreqns,algorithms,einfo,eoc);
         // try causalisation
         m_1 = incidenceMatrix(dlow_1);
         mT_1 = transposeMatrix(m_1);
