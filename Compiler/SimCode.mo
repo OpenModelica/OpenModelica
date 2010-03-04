@@ -111,6 +111,7 @@ uniontype SimCode
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;
     MakefileParams makefileParams;
+    list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
   end SIMCODE;
 end SimCode;
 
@@ -951,6 +952,7 @@ algorithm
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
+      list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir,functions,libs)
       equation
         cname = Absyn.pathString(class_);
@@ -994,13 +996,15 @@ algorithm
         whenClauses = createSimWhenClauses(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         makefileParams = createMakefileParams(libs);
+        delayedExps = extractDelayedExpressions(dlow2);
         simCode = SIMCODE(modelInfo, functions, allEquations, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
                           parameterEquations, removedEquations,
                           algorithmAndEquationAsserts, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
-                          discreteModelVars, extObjInfo, makefileParams);
+                          discreteModelVars, extObjInfo, makefileParams,
+                          delayedExps);
       then
         simCode;
     case (_,_,_,_,_,_,_,_,_,_,_,_,_)
@@ -1010,6 +1014,38 @@ algorithm
         fail();
   end matchcontinue;
 end createSimCode;
+
+protected function extractDelayedExpressions
+  input DAELow.DAELow dlow;
+  output list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
+algorithm
+  delayedExps := matchcontinue(dlow)
+    local
+      list<DAE.Exp> exps;
+      list<list<DAE.Exp>> subexps;
+    case (dlow)
+      equation
+        exps = DAELow.getAllExps(dlow);
+        subexps = Util.listMap(exps, DAELow.findDelaySubExpressions);
+        exps = Util.listFlatten(subexps);
+        delayedExps = Util.listMap(exps, extractIdAndExpFromDelayExp);
+      then
+        delayedExps;
+  end matchcontinue;
+end extractDelayedExpressions;
+
+function extractIdAndExpFromDelayExp
+  input DAE.Exp delayCallExp;
+  output tuple<DAE.Exp, DAE.Exp> delayedExp;
+algorithm
+  delayedExp :=
+  matchcontinue (delayCallExp)
+    local
+      DAE.Exp id, e, delay, delayMax;
+    case (DAE.CALL(path=Absyn.IDENT("delay"), expLst={id,e,delay,delayMax}))
+      then ((id, e));
+  end matchcontinue;
+end extractIdAndExpFromDelayExp;
 
 protected function createMakefileParams
   input list<String> libs;

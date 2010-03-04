@@ -88,6 +88,7 @@ package SimCode
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
+      list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
     end SIMCODE;
   end SimCode;
 

@@ -78,7 +78,7 @@ extern "C" {
 
 <functionOnlyZeroCrossing(zeroCrossings)>
 
-<functionStoreDelayed()>
+<functionStoreDelayed(delayedExps)>
 
 <functionCheckForDiscreteChanges()>
 
@@ -794,11 +794,25 @@ int function_onlyZeroCrossings(double *gout,double *t)
 }
 >>
 
-// New runtime function. What should it do?
-functionStoreDelayed() ::=
+functionStoreDelayed(list<tuple<DAE.Exp, DAE.Exp>> delayedExps) ::=
+# varDecls = ""
+# storePart = (delayedExps of (id, e):
+    # preExp = ""
+    # idRes = daeExp(id, contextSimulationNonDescrete, preExp, varDecls)
+    # eRes = daeExp(e, contextSimulationNonDescrete, preExp, varDecls)
+    <<
+    <preExp>
+    storeDelayedExpression(<idRes>, <eRes>);
+    >>
+  )
 <<
 int function_storeDelayed()
 {
+  state mem_state;
+  <varDecls>
+  mem_state = get_memory_state();
+  <storePart>
+  restore_memory_state(mem_state);
   return 0;
 }
 >>
@@ -1976,6 +1990,13 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # signdigExp = daeExp(signdig, context, preExp, varDecls)
     # typeStr = expTypeFromExpModelica(s)
     # preExp += '<typeStr>_to_modelica_string(&<tvar>, <sExp>, <minlenExp>, <leftjustExp>, <signdigExp>);<\n>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="delay"), expLst={ICONST(integer=index), e, d, delayMax}) then
+    # tvar = tempDecl("modelica_real", varDecls)
+    # var1 = daeExp(e, context, preExp, varDecls)
+    # var2 = daeExp(d, context, preExp, varDecls)
+    # preExp += '<tvar> = delayImpl(<index>, <var1>, time, <var2>);<\n>'
     tvar
   // no return calls
   case CALL(tuple_=false, ty=ET_NORETCALL) then
