@@ -151,10 +151,10 @@ int omcTable2DIni(int ipoType,
 }
 
 extern "C"
-double omcTable2DIpo(int tableID,int icol, double irow)
+double omcTable2DIpo(int tableID,double u1_, double u2_)
 {
     if ((int)interpolationTables2D.size() != 0 && tableID >= 0 && tableID < (int)interpolationTables2D.size()) {
-    	return interpolationTables2D[tableID]->Interpolate(icol,irow-1);
+    	return interpolationTables2D[tableID]->Interpolate(u1_,u2_);
     } else { // error, unvalid tableID
     	if (acceptedStep) {
     		cerr << "in omcTable2DIpo, tableID " << tableID << " is not a valid table ID." << endl;
@@ -481,12 +481,12 @@ double InterpolationTable2D::Interpolate(double u1_, double u2_)
 /* test if u1 and u2 are strict growing */
 bool InterpolationTable2D::check_data(double u1_, double u2_)
 {
-	for(unsigned int i=1;i<nRows_-2;i++)
+	for(unsigned int i=1;i<nRows_-1;i++)
 	{
 		if(!(getElt(i,0)<getElt(i+1,0))) throw "u1 nicht streng monoton";
 	}
 
-	for(unsigned int i=1;i<nCols_-2;i++)
+	for(unsigned int i=1;i<nCols_-1;i++)
 	{
 		if(!(getElt(0,i)<getElt(0,i+1))) throw "u2 nicht streng monoton";
 	}

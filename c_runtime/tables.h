@@ -59,7 +59,7 @@ double omcTableTimeTmin(int tableID);
 
 int omcTable2DIni(int ipoType,char *tableName,char* fileName, double *table,int tableDim1,int tableDim2,int colWise);
 
-double omcTable2DIpo(int tableID,int icol, double irow);
+double omcTable2DIpo(int tableID,double u1_, double u2_);
 
 
 #ifdef __cplusplus
