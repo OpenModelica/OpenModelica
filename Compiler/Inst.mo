@@ -4034,7 +4034,7 @@ algorithm
       ClassInf.State ci_state;
       Boolean impl;
       Env.Cache cache;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       output InstanceHierarchy ih;
       DAE.DAElist dae,dae1,dae2,fdae1,fdae2,dae3;
       String name;
@@ -4353,7 +4353,7 @@ algorithm
       list<tuple<SCode.Element, Mod>> rest,elsAndMods;
       SCode.Mod mods;
       Mod mod,mod1,mod2,emod;
-      SCode.OptBaseClass baseClassPath1,baseClassPath2;
+      SCode.BaseClassList baseClassPath1,baseClassPath2;
       Option<Absyn.ConstrainClass> cc1,cc2;
       Absyn.Info info1, info2;
 
@@ -4566,25 +4566,26 @@ algorithm
       SCode.Restriction r,restriction;
       SCode.ClassDef classDef;
       Absyn.Info info;
+      SCode.BaseClassList bc;
 
     case ({},_) then {};
 
     case ((SCode.COMPONENT(component = a,innerOuter=io,finalPrefix = b,replaceablePrefix = c,
                            protectedPrefix = d,attributes = e,typeSpec = f,modifications = g,
-                           comment = comment,condition=cond,info=infoOpt,cc=cc) :: xs),tp)
+                           comment = comment,condition=cond,info=infoOpt,cc=cc,baseClassPath = bc) :: xs),tp)
       equation
         res = addInheritScope(xs, tp);
       then
-        (SCode.COMPONENT(a,io,b,c,d,e,f,g,SOME(tp),comment,cond,infoOpt,cc) :: res);
+        (SCode.COMPONENT(a,io,b,c,d,e,f,g,tp::bc,comment,cond,infoOpt,cc) :: res);
 
     case ((SCode.CLASSDEF(name = a,finalPrefix = b,replaceablePrefix = c,
                           classDef = cd as SCode.CLASS(name = name, partialPrefix = partialPrefix, encapsulatedPrefix = encapsulatedPrefix, restriction = restriction, classDef = classDef, info = info),
-                          cc=cc) :: xs),tp)
+                          cc=cc,baseClassPath = bc) :: xs),tp)
       equation
         classDef = addInheritScopeToClassDef(classDef,tp);
         res = addInheritScope(xs, tp);
       then
-        (SCode.CLASSDEF(a,b,c,SCode.CLASS(name,partialPrefix,encapsulatedPrefix,restriction,classDef,info),SOME(tp),cc) :: res);
+        (SCode.CLASSDEF(a,b,c,SCode.CLASS(name,partialPrefix,encapsulatedPrefix,restriction,classDef,info),tp::bc,cc) :: res);
 
     case ((x :: xs),tp)
       equation
@@ -4637,12 +4638,13 @@ algorithm
       list<SCode.Equation> res,xs;
       SCode.EEquation e;
       SCode.BaseClass tp;
+      SCode.BaseClassList bc;
     case ({},_) then {};
-    case ((SCode.EQUATION(eEquation = e) :: xs),tp)
+    case ((SCode.EQUATION(eEquation = e, baseClassPath = bc) :: xs),tp)
       equation
         res = addEqnInheritScope(xs, tp);
       then
-        (SCode.EQUATION(e,SOME(tp)) :: res);
+        (SCode.EQUATION(e,tp::bc) :: res);
   end matchcontinue;
 end addEqnInheritScope;
 
@@ -4662,12 +4664,13 @@ algorithm
       list<SCode.Algorithm> res,xs;
       list<Absyn.Algorithm> a;
       SCode.BaseClass tp;
+      SCode.BaseClassList bc;
     case ({},_) then {};
-    case ((SCode.ALGORITHM(statements = a) :: xs),tp)
+    case ((SCode.ALGORITHM(statements = a, baseClassPath = bc) :: xs),tp)
       equation
         res = addAlgInheritScope(xs, tp);
       then
-        (SCode.ALGORITHM(a,SOME(tp)) :: res);
+        (SCode.ALGORITHM(a,tp::bc) :: res);
   end matchcontinue;
 end addAlgInheritScope;
 
@@ -5195,7 +5198,7 @@ algorithm
       Absyn.Import imp;
       InstanceHierarchy ih;
       Absyn.Info info;
-      SCode.OptBaseClass optBaseClass;
+      SCode.BaseClassList optBaseClass;
 
     case (env,ih,{},_,_) then (env,ih);
     // we do have a redeclaration of class.
@@ -5381,7 +5384,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,allcomps,comps;
       list<SCode.Equation> eqns;
@@ -5528,7 +5531,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,comps;
       InstDims inst_dims;
@@ -5698,7 +5701,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       Option<DAE.EqMod> eq;
       list<DimExp> dims;
@@ -6266,7 +6269,7 @@ algorithm
       SCode.Attributes attr;
       Absyn.TypeSpec ts ;
       SCode.Mod mod;
-      SCode.OptBaseClass bcp1, bcp2;
+      SCode.BaseClassList bcp1, bcp2;
       Option<SCode.Comment> comment;
       Option<Absyn.Exp> condition;
       Option<Absyn.Info> info;
@@ -6297,12 +6300,12 @@ protected function getDerivedEnv
   input Env.Cache inCache;
   input Env inEnv;
   input InstanceHierarchy inIH;
-  input SCode.OptBaseClass inAbsynPathOption;
+  input SCode.BaseClassList bc;
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
 algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inAbsynPathOption)
+  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,bc)
     local
       list<Env.Frame> env,cenv,cenv_2,env_2,fs;
       Env.BCEnv bcenv;
@@ -6319,7 +6322,7 @@ algorithm
       list<SCode.Element> defineUnits;
       SCode.Mod mod;
 
-    case (cache,env,ih,NONE)
+    case (cache,env,ih,{})
       equation
         // print("Inst.getDerivedEnv: case 1 " +& Env.printEnvPathStr(env) +& "\n");
       then
@@ -6329,14 +6332,15 @@ algorithm
     * This is needed since the environment can be encapsulated, but inherited classes are not affected
     * by this and therefore should search from top scope directly.
     */
-    case (cache,
-          (env as (Env.FRAME(id,cl,tps,imps,bcenv,crs,enc,defineUnits) :: fs)),ih,SOME((tp,mod)))
+    case (cache,(env as (Env.FRAME(id,cl,tps,imps,bcenv,crs,enc,defineUnits) :: fs)),ih,(tp,mod)::bc)
       equation
         // print("Inst.getDerivedEnv: case 2 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,env,tp,mod,true);
+        env = Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs;
+        (cache,env,ih) = getDerivedEnv(cache,env,ih,bc);
         // print("Inst.getDerivedEnv: case 2 end " +& Env.printEnvPathStr(env) +& "\n");
       then
-        (cache,Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs,ih);
+        (cache,env,ih);
 
     case (_,env,_,_)
       equation
@@ -6418,7 +6422,7 @@ algorithm
       Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment,comment2;
       list<tuple<SCode.Element, Mod>> rest;
       Prefix.Prefix pre;
@@ -7658,7 +7662,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
       SCode.Class cl;
@@ -8440,7 +8444,7 @@ algorithm
       SCode.Variability param;
       Absyn.Direction dir;
       SCode.Mod m,m_1;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       DAE.Mod cmod,cmod_1,m_2,mod_2;
       DAE.EqMod eq;
@@ -10500,14 +10504,14 @@ algorithm
     case ({SCode.ENUM(str,cmt)})
       then {SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
             SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,cmt,NONE,NONE,NONE)};
+            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),{},cmt,NONE,NONE,NONE)};
     case ((SCode.ENUM(str,cmt) :: (x as (_ :: _))))
       equation
         els = makeEnumComponents(x);
       then
         (SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),NONE,cmt,NONE,NONE,NONE) :: els);
+         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),{},cmt,NONE,NONE,NONE) :: els);
   end matchcontinue;
 end makeEnumComponents;
 
@@ -10895,7 +10899,7 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -11000,7 +11004,7 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
@@ -12364,7 +12368,7 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -12427,7 +12431,7 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -15009,7 +15013,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod mod;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       SCode.Element elt;
       Env.Cache cache;
@@ -15911,7 +15915,7 @@ algorithm oltuple := matchcontinue(ltuple)
       Ident c1;
       Absyn.InnerOuter c2;
       Boolean c3,c4,c5;
-      SCode.OptBaseClass c9;
+      SCode.BaseClassList c9;
       Option<SCode.Comment> c10;
       Option<Absyn.Exp> c11;
       Option<Absyn.Info> c12;

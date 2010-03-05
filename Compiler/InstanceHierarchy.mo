@@ -129,7 +129,7 @@ algorithm
       equation
         path = makePath(scope, n);
         fullCr = Absyn.pathToCref(path);
-        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, c, NONE(), NONE()), NONE(), NONE()));
+        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, c, {}, NONE()), NONE(), NONE()));
         ih = createInstanceHierarchyFromProgram(i::ih, scope, cs);
       then
         ih;
@@ -637,7 +637,7 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs;
-      SCode.OptBaseClass pathOpt;
+      SCode.BaseClassList paths;
       Absyn.TypeSpec typath;
       SCode.Mod mod;
       Boolean finalPrefix,repl,prot;
@@ -657,17 +657,17 @@ algorithm
 
     case SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
                    attributes = SCode.ATTR(variability = var),typeSpec = typath,modifications = mod,
-                   baseClassPath = pathOpt,comment = comment)
+                   baseClassPath = paths,comment = comment)
       equation
         mod_str = SCode.printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = SCode.unparseVariability(var);
-        str = SCode.unparseOptPath(pathOpt);
+        str = SCode.unparsePathList(paths);
         res = Util.stringAppendList({vs," ",s," ",n,mod_str,"; baseclass: ",str,";"});
       then
         res;
 
-    case SCode.CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = _)
+    case SCode.CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
         //str = printClassStr(cl);
         res = Util.stringAppendList({"class ",n," ... end ",n,";"});

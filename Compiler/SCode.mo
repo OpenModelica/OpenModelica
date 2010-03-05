@@ -46,20 +46,15 @@ package SCode
 
 public import Absyn;
 
-public
-type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'" ;
+public type Ident = Absyn.Ident "Some definitions are borrowed from `Absyn\'";
 
-public
-type Path = Absyn.Path;
+public type Path = Absyn.Path;
 
-public
-type Subscript = Absyn.Subscript;
+public type Subscript = Absyn.Subscript;
 
-public
-type BaseClass = tuple<Absyn.Path,Mod>;
+public type BaseClass = tuple<Absyn.Path,Mod>;
 
-public
-type OptBaseClass = Option<BaseClass>;
+public type BaseClassList = list<BaseClass>;
 
 public
 uniontype Restriction
@@ -251,7 +246,7 @@ public
 uniontype Equation "- Equations"
   record EQUATION "an equation"
     EEquation eEquation "an equation";
-    OptBaseClass baseClassPath
+    BaseClassList baseClassPath
     "the baseClassPath is present if the equation originates from a base class" ;
   end EQUATION;
 
@@ -328,7 +323,7 @@ uniontype Algorithm "- Algorithms
   algorithm section."
   record ALGORITHM "the algorithm section"
     list<Absyn.Algorithm> statements "the algorithm statements" ;
-    OptBaseClass baseClassPath "the baseclass name if these algorithms are from a baseclass" ;
+    BaseClassList baseClassPath "the baseclass name if these algorithms are from a baseclass" ;
   end ALGORITHM;
 
 end Algorithm;
@@ -354,7 +349,7 @@ uniontype Element "- Elements
     Boolean finalPrefix        "final prefix" ;
     Boolean replaceablePrefix  "replaceable prefix" ;
     Class   classDef           "the class definition" ;
-    OptBaseClass baseClassPath "the base class path if this class definition originates from a base class" ;
+    BaseClassList baseClassPath "the base class path if this class definition originates from a base class" ;
     Option<Absyn.ConstrainClass> cc;
   end CLASSDEF;
 
@@ -371,8 +366,8 @@ uniontype Element "- Elements
     Attributes attributes         "the component attributes";
     Absyn.TypeSpec typeSpec       "the type specification" ;
     Mod modifications             "the modifications to be applied to the component";
-    OptBaseClass baseClassPath    "the base class path if this component originates from a base class" ;
-    Option<Comment> comment "this if for extraction of comments and annotations from Absyn" ;
+    BaseClassList baseClassPath "the base class path if this component originates from a base class";
+    Option<Comment> comment       "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
     Option<Absyn.ConstrainClass> cc "The constraining class for the component";
@@ -888,18 +883,19 @@ algorithm
   end matchcontinue;
 end printElementList;
 
-public function unparseOptPath
-  input  OptBaseClass optPath;
+public function unparsePathList
+  input  BaseClassList paths;
   output String str;
 algorithm
-  str := matchcontinue (optPath)
+  str := matchcontinue paths
     local
       Absyn.Path path;
       Mod mod;
-    case (SOME((path,mod))) then Absyn.pathString(path) +& " with mod: " +& printModStr(mod);
-    case (NONE) then "<nothing>";
+    case {} then "<nothing>";
+    case {(path,mod)} then Absyn.pathString(path) +& " with mod: " +& printModStr(mod);
+    case ((path,mod)::paths) then Absyn.pathString(path) +& " with mod: " +& printModStr(mod) +& " and " +& unparsePathList(paths);
   end matchcontinue;
-end unparseOptPath;
+end unparsePathList;
 
 public function printElement
 "function: printElement
@@ -931,7 +927,7 @@ algorithm
       Attributes attr;
       String modStr;
       Absyn.Path path;
-      OptBaseClass pathOpt;
+      BaseClassList pathLst;
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
@@ -941,26 +937,26 @@ algorithm
         res = Util.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = SOME((path,mod)))
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = pathLst)
       equation
-        str = Absyn.pathString(path);
-        modStr = printModStr(mod);
-        res = Util.stringAppendList({"CLASSDEF(",n,", from baseclass: ",str," with mod: ",modStr,")"});
+        str = printClassStr(cl);
+        str2 = unparsePathList(pathLst);
+        res = Util.stringAppendList({"CLASSDEF(",n,",",str,", from baseclass: ",str2,")"});
       then
         res;
     case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
                    protectedPrefix = prot, attributes = ATTR(variability = var),typeSpec = tySpec,
-                   modifications = mod,baseClassPath = pathOpt,comment = comment)
+                   modifications = mod,baseClassPath = pathLst,comment = comment)
       equation
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
-        str = unparseOptPath(pathOpt);
+        str = unparsePathList(pathLst);
         str2 = innerouterString(io);
         res = Util.stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,", baseClass: ", str,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = pathOpt)
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
       equation
         str = printClassStr(cl);
         res = Util.stringAppendList({"CLASSDEF(",n,",...,",str,")"});
@@ -982,10 +978,9 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs,ioStr;
-      OptBaseClass pathOpt;
+      BaseClassList paths;
       Absyn.TypeSpec typath;
       Mod mod;
-      Boolean finalPrefix,repl,prot;
       Class cl;
       Variability var;
       Option<Comment> comment;
@@ -1001,20 +996,20 @@ algorithm
       then
         res;
 
-    case COMPONENT(component = n,innerOuter = io,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                   attributes = ATTR(variability = var),typeSpec = typath,modifications = mod,
-                   baseClassPath = pathOpt,comment = comment)
+    case COMPONENT(component = n,innerOuter = io,attributes = ATTR(variability = var),
+                   typeSpec = typath,modifications = mod,
+                   baseClassPath = paths,comment = comment)
       equation
         ioStr = Dump.unparseInnerouterStr(io);
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
-        str = unparseOptPath(pathOpt);
+        str = unparsePathList(paths);
         res = Util.stringAppendList({ioStr,vs," ",s," ",n,mod_str,"; // from baseclass: ",str,"\n"});
       then
         res;
 
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = _)
+    case CLASSDEF(name = n,classDef = cl)
       equation
         str = printClassStr(cl);
         res = Util.stringAppendList({"class ",n,"\n",str,"end ",n,";\n"});
@@ -2228,15 +2223,16 @@ public function elementBaseClassPath "
 This function returns baseClassPath from COMPONENT and CLASDEF,
   NONE() from other Elements"
   input Element inElement;
-  output OptBaseClass outBaseClassPath;
+  output BaseClassList outBaseClassPath;
 algorithm
   outBaseClassPath:= matchcontinue(inElement)
   local
-    OptBaseClass optPath;
+    BaseClassList optPath;
+    BaseClass path;
 
     case COMPONENT(baseClassPath=optPath) then optPath;
     case CLASSDEF(baseClassPath=optPath) then optPath;
-    case _ then NONE();
+    case _ then {};
   end matchcontinue;
 end elementBaseClassPath;
 

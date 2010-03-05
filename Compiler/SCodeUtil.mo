@@ -585,7 +585,7 @@ algorithm
       equation
         al_1 = translateClassdefAlgorithmitems(al);
         als = translateClassdefAlgorithms(rest);
-        als_1 = (SCode.ALGORITHM(al_1,NONE) :: als);
+        als_1 = (SCode.ALGORITHM(al_1,{}) :: als);
       then
         als_1;
     case (_ :: rest) /* ignore everthing other than algorithms */
@@ -613,7 +613,7 @@ algorithm
       equation
         al_1 = translateClassdefAlgorithmitems(al);
         als = translateClassdefInitialalgorithms(rest);
-        als_1 = (SCode.ALGORITHM(al_1,NONE) :: als);
+        als_1 = (SCode.ALGORITHM(al_1,{}) :: als);
       then
         als_1;
     case (_ :: rest) /* ignore everthing other than algorithms */
@@ -914,7 +914,7 @@ algorithm
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         de_1 = translateClassdef(de);
       then
-        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,file_info),NONE(),cc)};
+        {SCode.CLASSDEF(n,finalPrefix,rp,SCode.CLASS(n,pa,e,re_1,de_1,file_info),{},cc)};
 
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE),info)
       local Absyn.Path n;
@@ -951,7 +951,7 @@ algorithm
         repl_1 = translateRedeclarekeywords(repl);
         comment_1 = translateComment(comment);
       then
-        (SCode.COMPONENT(n,io,finalPrefix,repl_1,prot,SCode.ATTR(tot_dim,fl,st,SCode.RW(),pa_1,di),t,mod,NONE,comment_1,cond,info,cc) :: xs_1);
+        (SCode.COMPONENT(n,io,finalPrefix,repl_1,prot,SCode.ATTR(tot_dim,fl,st,SCode.RW(),pa_1,di),t,mod,{},comment_1,cond,info,cc) :: xs_1);
 
     case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_)
       equation
@@ -1032,7 +1032,7 @@ algorithm
         e_1 = translateEquation(e,com);
         es_1 = translateEquations(es);
       then
-        (SCode.EQUATION(e_1,NONE) :: es_1);
+        (SCode.EQUATION(e_1,{}) :: es_1);
 
     case (Absyn.EQUATIONITEMANN(annotation_ = _) :: es)
       equation
@@ -1233,7 +1233,7 @@ algorithm
       SCode.Attributes a6;
       Absyn.TypeSpec a7;
       SCode.Mod a8;
-      SCode.OptBaseClass a9;
+      SCode.BaseClassList a9;
       Option<SCode.Comment> a10;
       Option<Absyn.Exp> a11;
       Option<Absyn.Info> a12;

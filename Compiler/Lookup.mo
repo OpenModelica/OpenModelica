@@ -2008,7 +2008,7 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
       SCode.Mod mod;
-      SCode.OptBaseClass bc;
+      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<Env.Frame> env_1;
       Option<Absyn.Exp> cond;
@@ -2068,7 +2068,7 @@ algorithm
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
           SCode.NOMOD,
-          NONE,NONE,NONE,NONE,NONE);
+          {},NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv

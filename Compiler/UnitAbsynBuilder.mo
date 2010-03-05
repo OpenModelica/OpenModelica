@@ -656,21 +656,26 @@ variable names to store locations."
   output UnitAbsyn.UnitTerms terms;
 algorithm
   (outStore,terms) := matchcontinue(env,dae,compDae,store)
-  local UnitAbsyn.Store st; HashTable.HashTable ht; UnitAbsyn.UnitTerms terms2;
-    Option<UnitAbsyn.UnitCheckResult> res;
-    case(env,dae,compDae,store) equation
-      false = OptManager.getOption("unitChecking");
-    then(UnitAbsyn.noStore,{});
+    local
+      UnitAbsyn.Store st;
+      HashTable.HashTable ht;
+      UnitAbsyn.UnitTerms terms2;
+      Option<UnitAbsyn.UnitCheckResult> res;
+    case(env,dae,compDae,store)
+      equation
+        false = OptManager.getOption("unitChecking");
+      then(UnitAbsyn.noStore,{});
     case(env,dae,compDae,UnitAbsyn.NOSTORE()) then  (UnitAbsyn.NOSTORE(),{});
-    case(env,dae,compDae,UnitAbsyn.INSTSTORE(st,ht,res)) equation
-     (terms,st) = buildTerms(env,dae,ht,st);
-     (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
-     terms = listAppend(terms,terms2);
-     //print("built terms, store :"); printStore(st);
-     //print("ht =");HashTable.dumpHashTable(ht);
-      st = createTypeParameterLocations(st);
-     // print("built type param, store :"); printStore(st);
-     terms = listReverse(terms);
+    case(env,dae,compDae,UnitAbsyn.INSTSTORE(st,ht,res))
+      equation
+        (terms,st) = buildTerms(env,dae,ht,st);
+        (terms2,st) = buildTerms(env,compDae,ht,st) "to get bindings of scalar variables";
+        terms = listAppend(terms,terms2);
+        //print("built terms, store :"); printStore(st);
+        //print("ht =");HashTable.dumpHashTable(ht);
+        st = createTypeParameterLocations(st);
+        // print("built type param, store :"); printStore(st);
+        terms = listReverse(terms);
      then (UnitAbsyn.INSTSTORE(st,ht,res),terms);
     case(_,_,_,_) equation
       print("instBuildUnitTerms failed!!\n");
