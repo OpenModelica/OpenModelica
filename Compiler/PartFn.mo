@@ -601,6 +601,14 @@ algorithm
       then
         (DAE.ARRAY_EQUATION(ilst,e1_1,e2_1,source) :: cdr_1,dae);
 
+    case(DAE.INITIAL_ARRAY_EQUATION(ilst,e1,e2,source) :: cdr,dae)
+      equation
+        ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
+        ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
+        (cdr_1,dae) = elabElements(cdr,dae);
+      then
+        (DAE.INITIAL_ARRAY_EQUATION(ilst,e1_1,e2_1,source) :: cdr_1,dae);
+
     case(DAE.COMPLEX_EQUATION(e1,e2,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
@@ -1417,6 +1425,14 @@ algorithm
         cdr_1 = fixCalls(cdr,dae,p,inputs,current);
       then
         DAE.ARRAY_EQUATION(ilst,e1_1,e2_1,source) :: cdr_1;
+
+    case(DAE.INITIAL_ARRAY_EQUATION(ilst,e1,e2,source) :: cdr,dae,p,inputs,current)
+      equation
+        ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
+        ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
+        cdr_1 = fixCalls(cdr,dae,p,inputs,current);
+      then
+        DAE.INITIAL_ARRAY_EQUATION(ilst,e1_1,e2_1,source) :: cdr_1;
 
     case(DAE.COMPLEX_EQUATION(e1,e2,source) :: cdr,dae,p,inputs,current)
       equation

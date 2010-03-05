@@ -250,6 +250,11 @@ algorithm
 	      (DAE.DAE(elts2,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts,funcs));
 	    then (DAE.DAE(elts2,funcs),DAE.DAE(e::elts3,funcs));
 
+		case(DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension=_))::elts,funcs))
+			equation
+				(DAE.DAE(elts2,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts,funcs));
+			then (DAE.DAE(elts2,funcs),DAE.DAE(e::elts3,funcs));
+
 	  case(DAE.DAE((e as DAE.COMPLEX_EQUATION(lhs=_))::elts,funcs))
 	    equation
 	      (DAE.DAE(elts2,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts,funcs));
@@ -1352,6 +1357,18 @@ algorithm
         str = stringAppend(s5, s6);
       then
         str;
+		case ((DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2) :: xs))
+			equation
+				s1 = Exp.printExpStr(e1);
+        s2 = stringAppend("  ", s1);
+        s3 = stringAppend(s2, " = ");
+        s4 = Exp.printExpStr(e2);
+        s4_1 = stringAppend(s3, s4);
+        s5 = stringAppend(s4_1, ";\n");
+        s6 = dumpEquationsStr(xs);
+        str = stringAppend(s5, s6);
+      then
+				str;
     case ((DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2) :: xs))
       equation
         s1 = Exp.printExpStr(e1);
@@ -2306,6 +2323,15 @@ algorithm
         Print.printBuf(";\n");
       then
         ();
+		case (DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2))
+			equation
+        Print.printBuf("  ");
+        Exp.printExp(e1);
+        Print.printBuf(" = ");
+        Exp.printExp(e2);
+        Print.printBuf(";\n");
+      then
+        ();
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2))
       equation
         Print.printBuf("  ");
@@ -2369,6 +2395,12 @@ algorithm
         str;
 
     case(DAE.ARRAY_EQUATION(exp=e1,array=e2)) equation
+      s1 = Exp.printExpStr(e1);
+      s2 = Exp.printExpStr(e2);
+      str = s1 +& " = " +& s2;
+    then str;
+
+    case(DAE.INITIAL_ARRAY_EQUATION(exp=e1,array=e2)) equation
       s1 = Exp.printExpStr(e1);
       s2 = Exp.printExpStr(e2);
       str = s1 +& " = " +& s2;
@@ -5716,6 +5748,13 @@ algorithm
         oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
       then
         oExp;
+		// initial array equation
+		case(DAE.INITIAL_ARRAY_EQUATION(_, e1, e2, _))
+      equation
+        ty = Exp.typeof(e1);
+        oExp = DAE.BINARY(e1,DAE.SUB(ty),e2);
+      then
+        oExp;
     // failure
     case(eq)
       equation
@@ -6091,6 +6130,13 @@ algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
       (e22, extraArg) = func(e2, extraArg);
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
     then (DAE.ARRAY_EQUATION(idims,e11,e22,source)::dae2,extraArg);
+
+  case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)::dae,func,extraArg)
+    equation
+      (e11, extraArg) = func(e1, extraArg);
+      (e22, extraArg) = func(e2, extraArg);
+      (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
+    then (DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source)::dae2,extraArg);
 
   case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,func,extraArg)
     equation

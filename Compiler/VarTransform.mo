@@ -249,6 +249,13 @@ algorithm
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.ARRAY_EQUATION(idims,e11,e22,source)::dae2;
 
+    case(DAE.INITIAL_ARRAY_EQUATION(idims,e1,e2,source)::dae,repl,condExpFunc)
+      equation
+        (e11) = replaceExp(e1, repl, condExpFunc);
+        (e22) = replaceExp(e2, repl, condExpFunc);
+        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
+      then DAE.INITIAL_ARRAY_EQUATION(idims,e11,e22,source)::dae2;
+
     case(DAE.WHEN_EQUATION(e1,elist,SOME(elt),source)::dae,repl,condExpFunc)
       equation
         (e11) = replaceExp(e1, repl, condExpFunc);

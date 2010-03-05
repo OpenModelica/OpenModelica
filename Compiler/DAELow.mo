@@ -4194,6 +4194,14 @@ algorithm
       then
         bt;
 
+		case (DAE.DAE(DAE.INITIAL_ARRAY_EQUATION(exp = e1, array = e2) :: xs, funcs), bt)
+			equation
+				bt = states(DAE.DAE(xs, funcs), bt);
+				bt = statesExp(e1, bt);
+				bt = statesExp(e2, bt);
+			then
+				bt;
+
     case (DAE.DAE(DAE.COMP(dAElist = daeElts) :: xs,funcs),bt)
       equation
         bt = states(DAE.DAE(daeElts,funcs), bt);
@@ -4844,6 +4852,18 @@ algorithm
         e_1 = lowerArrEqn(e);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),algs,whenclauses_1,extObjCls);
+
+		/* initial array equations */
+		case (DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2)) :: xs, funcs), 
+				states, vars, knvars, extVars, whenclauses)
+			local 
+				MultiDimEquation e_1;
+			equation
+				(vars, knvars, extVars, eqns, reqns, ieqns, aeqns, algs, whenclauses_1, extObjCls)
+				= lower2(DAE.DAE(xs, funcs), states, vars, knvars, extVars, whenclauses);
+				e_1 = lowerArrEqn(e);
+			then
+				(vars, knvars, extVars, eqns, reqns, ieqns, (e_1 :: aeqns), algs, whenclauses_1, extObjCls);
 
     /* When equations */
     case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
@@ -5790,18 +5810,27 @@ protected function lowerArrEqn
 algorithm
   outMultiDimEquation := matchcontinue (inElement)
     local
-      DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
+			DAE.Exp e1, e2;
       list<Value> ds;
       DAE.ElementSource source "the element source";
 
-    case (DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2,source = source))
+    case (DAE.ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source))
       equation
-        e1_1 = Exp.simplify(e1);
-        e2_1 = Exp.simplify(e2);
-        e1_2 = Exp.stringifyCrefs(e1_1);
-        e2_2 = Exp.stringifyCrefs(e2_1);
+        e1 = Exp.simplify(e1);
+        e2 = Exp.simplify(e2);
+        e1 = Exp.stringifyCrefs(e1);
+        e2 = Exp.stringifyCrefs(e2);
       then
-        MULTIDIM_EQUATION(ds,e1_2,e2_2,source);
+        MULTIDIM_EQUATION(ds,e1,e2,source);
+
+		case (DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source))
+			equation
+				e1 = Exp.simplify(e1);
+				e2 = Exp.simplify(e2);
+				e1 = Exp.stringifyCrefs(e1);
+				e2 = Exp.stringifyCrefs(e2);
+			then
+				MULTIDIM_EQUATION(ds, e1, e2, source);
   end matchcontinue;
 end lowerArrEqn;
 

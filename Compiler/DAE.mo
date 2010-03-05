@@ -161,6 +161,13 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm";
   end ARRAY_EQUATION;
 
+	record INITIAL_ARRAY_EQUATION "An initial array equation"
+		list<Integer> dimension "dimension sizes";
+		Exp exp;
+		Exp array;
+		ElementSource source "the origin of the component/equation/algorithm";
+	end INITIAL_ARRAY_EQUATION;
+
   record COMPLEX_EQUATION "an equation of complex type, e.g. record = func(..)"
     Exp lhs;
     Exp rhs;

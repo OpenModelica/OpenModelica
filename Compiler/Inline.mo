@@ -502,6 +502,15 @@ algorithm
       then
         res :: cdr_1;
 
+    case(DAE.INITIAL_ARRAY_EQUATION(dimension,exp1,exp2,source) :: cdr,fns)
+      equation
+        exp1_1 = inlineExp(exp1,fns);
+        exp2_1 = inlineExp(exp2,fns);
+        res = DAE.INITIAL_ARRAY_EQUATION(dimension,exp1_1,exp2_1,source);
+        cdr_1 = inlineDAEElements(cdr,fns);
+      then
+        res :: cdr_1;
+
     case(DAE.COMPLEX_EQUATION(exp1,exp2,source) :: cdr,fns)
       equation
         exp1_1 = inlineExp(exp1,fns);

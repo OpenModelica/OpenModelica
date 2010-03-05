@@ -11896,26 +11896,13 @@ algorithm
         dae;
 
     /* arrays with function calls => array equations */
-    case (e1,e2,(t as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
-      local tuple<DAE.TType, Option<Absyn.Path>> t; Boolean b1,b2;
-      equation
-        b1 = Exp.containVectorFunctioncall(e2);
-        b2 = Exp.containVectorFunctioncall(e2);
-        true = boolOr(b1,b2);
-        ds = Types.getDimensionSizes(t);
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
-        funcs = DAEUtil.avlTreeNew();
-      then
-        DAE.DAE({DAE.ARRAY_EQUATION(ds,e1,e2,source)},funcs);
-    /* arrays that are splitted */
-    case (e1,e2,(DAE.T_ARRAY(arrayDim = ad,arrayType = t),_),source,initial_)
-      local
-        tuple<DAE.TType, Option<Absyn.Path>> t;
-      equation
-        dae = instArrayEquation(e1, e2, ad, t, source, initial_);
-      then
-        dae;
+		/* array equations */
+		case (e1,e2,(t as (DAE.T_ARRAY(arrayDim = _),_)),source,initial_)
+				local DAE.Type t;
+			equation
+				dae = instArrayEquation(e1, e2, t, source, initial_);
+			then dae;
+
     /* tuples */
     case (e1,e2,(DAE.T_TUPLE(tupleType = _),_),source,initial_)
       equation
@@ -12170,44 +12157,73 @@ algorithm
 end makeDaeDefine;
 
 protected function instArrayEquation
-"function: instArrayEquation
-  This checks the array size and creates an array equation in DAE."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.ArrayDim inArrayDim3;
-  input DAE.Type inType4;
-  input DAE.ElementSource source "the origin of the element";
-  input SCode.Initial inInitial5;
-  output DAE.DAElist outDae;
+	"Instantiates an array equation, i.e. an equation where both sides are arrays."
+	input DAE.Exp lhs;
+	input DAE.Exp rhs;
+	input DAE.Type tp;
+	input DAE.ElementSource source;
+	input SCode.Initial initial_;
+	output DAE.DAElist dae;
 algorithm
-  outDae := matchcontinue (inExp1,inExp2,inArrayDim3,inType4,source,inInitial5)
-    local
-      String e1_str,e2_str,s1; DAE.Exp e1,e2;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
-      SCode.Initial initial_; DAE.DAElist dae; Integer sz;
+	dae := matchcontinue(lhs, rhs, tp, source, initial_)
+		local
+			Boolean b1, b2;
+			list<Integer> ds;
+			DAE.FunctionTree funcs;
+		/* Initial array equations with function calls => initial array equations */
+		case (lhs, rhs, tp, source, initial_ = SCode.INITIAL())
+			equation
+				b1 = Exp.containVectorFunctioncall(lhs);
+				b2 = Exp.containVectorFunctioncall(rhs);
+				true = boolOr(b1, b2);
+				ds = Types.getDimensionSizes(tp);
+				lhs = Exp.simplify(lhs);
+				rhs = Exp.simplify(rhs);
+				funcs = DAEUtil.avlTreeNew();
+			then
+				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
 
-    /* Array equation of unknown size, e.g. Real x[:],y[:]; equation x=y; */
-    case (e1,e2,DAE.DIM(integerOption = NONE),t,source,initial_)
-      equation
-        e1_str = Exp.printExpStr(e1);
-        e2_str = Exp.printExpStr(e1);
-        s1 = Util.stringAppendList({e1_str,"=",e2_str});
-        Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {s1});
-      then
-        fail();
+		/* Arrays with function calls => array equations */
+		case (lhs, rhs, tp, source, initial_ = SCode.NON_INITIAL())
+			equation
+				b1 = Exp.containVectorFunctioncall(lhs);
+				b2 = Exp.containVectorFunctioncall(rhs);
+				true = boolOr(b1, b2);
+				ds = Types.getDimensionSizes(tp);
+				lhs = Exp.simplify(lhs);
+				rhs = Exp.simplify(rhs);
+				funcs = DAEUtil.avlTreeNew();
+			then
+				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
+				
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE)), _), _, _)
+			local
+				String lhs_str, rhs_str, eq_str;
+			equation
+				lhs_str = Exp.printExpStr(lhs);
+				rhs_str = Exp.printExpStr(rhs);
+				eq_str = Util.stringAppendList({lhs_str, "=", rhs_str});
+				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
+			then 
+				fail();
 
-      /* Array equation of size sz */
-    case (e1,e2,DAE.DIM(integerOption = SOME(sz)),t,source,initial_)
-      equation
-        dae = instArrayElEq(e1, e2, t, 1, sz, source, initial_);
-      then
-        dae;
-    case (_,_,_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- Inst.instArrayEquation failed");
-      then
-        fail();
-  end matchcontinue;
+		/* Array equation of size sz */
+		case (lhs, rhs, (DAE.T_ARRAY(DAE.DIM(integerOption = SOME(sz)), t), _), source, initial_)
+			local
+				Integer sz;
+				DAE.Type t;
+			equation
+				dae = instArrayElEq(lhs, rhs, t, 1, sz, source, initial_);
+			then
+				dae;
+
+		case (_, _, _, _, _)
+			equation
+				Debug.fprintln("failtrace", "- Inst.instArrayEquation failed");
+			then
+				fail();
+	end matchcontinue;
 end instArrayEquation;
 
 protected function instArrayElEq
