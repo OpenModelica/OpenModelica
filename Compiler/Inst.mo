@@ -5686,7 +5686,7 @@ algorithm
       String n,n2,s,scope_str,ns;
       Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
       SCode.Class cls2,c,cl;
-      DAE.DAElist dae,dae2,fdae,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6;
+      DAE.DAElist dae,dae2,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6;
       DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
@@ -5822,7 +5822,7 @@ algorithm
         (cache,env2,ih,csets,fdae3) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
 				//Update the untyped modifiers to typed ones, and extract class and
 				//component modifiers again.
-        (cache,mods_1,fdae1) = Mod.updateMod(cache, env2, pre, mods, impl) ;
+        //(cache,mods_1,fdae1) = Mod.updateMod(cache, env2, pre, mods, impl) ;
         //Refetch the component from environment, since attributes, etc.
 		  	//might have changed.. comp used in redeclare_type below...
 
@@ -5832,8 +5832,11 @@ algorithm
 		  	// The line below is commented out due to that it does not seem to have any effect on the system.
 		  	// It will stay here until this can be confirmed.
         //(cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
-        classmod_1 = Mod.lookupModificationP(mods_1, t);
-
+        //classmod_1 = Mod.lookupModificationP(mods_1, t);
+        //mm_1 = Mod.lookupCompModification(mods_1, n);
+        (cache,classmod_1,fdae0) = Mod.updateMod(cache, env2, pre, classmod, impl);
+        (cache,mm_1,fdae1) = Mod.updateMod(cache, env2, pre, mm, impl);
+        
         /* (BZ part:1/2)
          * If we have a redeclaration of a inner model, we have lowest priority on it.
          * This is while if we instantiate an instance of this redeclared class with a
@@ -5841,7 +5844,6 @@ algorithm
          */
         (variableClassMod,classmod_1) = modifyInstantiateClass(classmod_1,t);
 
-        mm_1 = Mod.lookupCompModification(mods_1, n);
         //(cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
         //print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " component mod: " +& SCode.printModStr(m) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
         (cache,m_1,fdae6) = Mod.elabMod(cache,env2, pre, m, impl);
@@ -5894,7 +5896,7 @@ algorithm
 
         /* if declaration condition is true, remove dae elements and connections */
         (cache,dae,csets_1,graph,fdae) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre,graph);
-        dae = DAEUtil.joinDaeLst({dae,fdae,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6});
+        dae = DAEUtil.joinDaeLst({dae,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6});
       then
         (cache,env_1,ih,store,dae,csets_1,ci_state,vars,graph);
 
