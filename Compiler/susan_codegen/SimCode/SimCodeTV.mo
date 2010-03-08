@@ -73,6 +73,7 @@ package SimCode
       ModelInfo modelInfo;
       list<Function> functions;
       list<SimEqSystem> allEquations;
+      list<SimEqSystem> allEquationsPlusWhen;
       list<SimEqSystem> stateContEquations;
       list<SimEqSystem> nonStateContEquations;
       list<SimEqSystem> nonStateDiscEquations;
@@ -152,6 +153,11 @@ package SimCode
       list<String> values;
       list<Integer> value_dims;
     end SES_MIXED;
+    record SES_WHEN
+      DAE.ComponentRef left;
+      DAE.Exp right;
+      list<tuple<DAE.Exp, Integer>> conditions;
+    end SES_WHEN;
   end SimEqSystem;
 
   uniontype SimWhenClause

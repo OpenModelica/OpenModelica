@@ -74,13 +74,13 @@ extern "C" {
 
 <functionUpdateDependents(allEquations, helpVarInfo)>
 
-<functionUpdateDepend(allEquations, helpVarInfo)>
+<functionUpdateDepend(allEquationsPlusWhen)>
 
 <functionOnlyZeroCrossing(zeroCrossings)>
 
-<functionStoreDelayed(delayedExps)>
+<functionCheckForDiscreteChanges(discreteModelVars)>
 
-<functionCheckForDiscreteChanges()>
+<functionStoreDelayed(delayedExps)>
 
 <functionWhen(whenClauses)>
 
@@ -744,16 +744,9 @@ int function_updateDependents()
 //
 // All when equations should go in here too according to Willi. And something
 // about if-eqs being sorted and not just added to end.
-functionUpdateDepend(list<SimEqSystem> allEquations,
-                     list<HelpVarInfo> helpVarInfo) ::=
+functionUpdateDepend(list<SimEqSystem> allEquationsPlusWhen) ::=
 # varDecls = ""
-# eqs = (allEquations:
-  '<equation_(it, contextSimulationDescrete, varDecls)>' "\n")
-# hvars = (helpVarInfo of (hindex, exp, _):
-    # preExp = ""
-    # expPart = daeExp(exp, contextSimulationDescrete, preExp, varDecls)
-    '<preExp>localData->helpVars[<hindex>] = <expPart>;'
-  "\n")
+# eqs = (allEquationsPlusWhen: '<equation_(it, contextSimulationDescrete, varDecls)>' "\n")
 <<
 int function_updateDepend()
 {
@@ -763,10 +756,7 @@ int function_updateDepend()
   inUpdate=initial()?0:1;
 
   mem_state = get_memory_state();
-
   <eqs>
-  <hvars>
-
   restore_memory_state(mem_state);
 
   inUpdate=0;
@@ -794,6 +784,19 @@ int function_onlyZeroCrossings(double *gout,double *t)
 }
 >>
 
+functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) ::=
+<<
+int checkForDiscreteChanges()
+{
+  int needToIterate = 0;
+
+  <discreteModelVars of var:
+    'if (change(<cref(var)>)) { needToIterate=1; }' "\n">
+  
+  return needToIterate;
+}
+>>
+
 functionStoreDelayed(list<tuple<DAE.Exp, DAE.Exp>> delayedExps) ::=
 # varDecls = ""
 # storePart = (delayedExps of (id, e):
@@ -814,15 +817,6 @@ int function_storeDelayed()
   <storePart>
   restore_memory_state(mem_state);
   return 0;
-}
->>
-
-functionCheckForDiscreteChanges() ::=
-<<
-int checkForDiscreteChanges()
-{
-  int needToIterate = 0;
-  return needToIterate;
 }
 >>
 
@@ -1001,7 +995,7 @@ int checkForDiscreteVarChanges()
   "\n">
 
   <discreteModelVars of var:
-    'if (change(<cref(var)>)) { needToIterate = 1; }' "\n">
+    'if (change(<cref(var)>)) { needToIterate=1; }' "\n">
   
   for (long i = 0; i \< localData-\>nHelpVars; i++) {
     if (change(localData-\>helpVars[i])) {
@@ -1128,6 +1122,27 @@ start_nonlinear_system(<size>);
 solve_nonlinear_system(residualFunc<index>, <index>);
 <crefs: '<cref(it)> = nls_x[<i0>];' "\n">
 end_nonlinear_system();
+>>
+case SES_WHEN then
+# preExp = ""
+# helpInits = ""
+# helpIf = (conditions of (e, hidx):
+  # helpInit = daeExp(e, context, preExp, varDecls)
+  # helpInits += 'localData-\>helpVars[<hidx>] = <helpInit>;'
+  'edge(localData-\>helpVars[<hidx>])'
+  " || "
+)
+# preExp2 = ""
+# exp = daeExp(right, context, preExp2, varDecls)
+<<
+<preExp>
+<helpInits>
+if (<helpIf>) {
+  <preExp2>
+  <cref(left)> = <exp>;
+} else {
+  <cref(left)> = pre(<cref(left)>);
+}
 >>
 case _ then
 <<
