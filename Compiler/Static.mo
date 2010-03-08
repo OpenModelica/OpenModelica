@@ -3251,6 +3251,25 @@ algorithm
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,exp,prop,dae);
+    
+		/* If the previous case failed we probably couldn't constant evaluate the
+		 * dimensions. Create a function call to fill instead, and let the compiler
+		 * sort it out later. */
+    case (cache, env, (s :: dims), _, impl)
+			local
+				DAE.ExpType exp_type;
+      equation
+        (cache, s_1, prop, _, dae1) = elabExp(cache, env, s, impl, NONE, true);
+        (cache, dims_1, dimprops, _, dae2) = elabExpList(cache, env, dims, impl, NONE, true);
+        sty = Types.getPropType(prop);
+        sty = makeFillArgListType(sty, dimprops);
+				exp_type = Types.elabType(sty);
+        dae = DAEUtil.joinDaes(dae1, dae2);
+        prop = DAE.PROP(sty, DAE.C_VAR());
+				exp = DAE.CALL(Absyn.IDENT("fill"), s_1 :: dims_1, false, true, exp_type, DAE.NORM_INLINE);
+     then
+       (cache, exp, prop, dae);
+      
     case (cache,env,dims,_,impl)
       equation
 				true = RTOpts.debugFlag("failtrace");
@@ -3321,6 +3340,29 @@ algorithm
         fail();
   end matchcontinue;
 end elabBuiltinFill2;
+
+protected function makeFillArgListType
+	"Helper function to elabBuiltinFill. Takes the type of the fill expression and
+		the properties of the dimensions, and constructs the result type of the fill
+		function."
+	input DAE.Type fillType;
+	input list<DAE.Properties> dimProps;
+	output DAE.Type resType;
+algorithm
+	resProp := matchcontinue(fillType, dimProps)
+		local
+			DAE.Properties prop;
+			list<DAE.Properties> rest_props;
+			DAE.Type t, t2;
+		case (_, {}) then fillType;
+		case (_, prop :: rest_props)
+			equation
+				t = makeFillArgListType(fillType, rest_props);
+				t = (DAE.T_ARRAY(DAE.DIM(NONE), t), NONE);
+			then
+				t;
+	end matchcontinue;
+end makeFillArgListType;
 
 protected function elabBuiltinTranspose "function: elabBuiltinTranspose
 
