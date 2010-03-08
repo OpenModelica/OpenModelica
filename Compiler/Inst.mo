@@ -4376,6 +4376,7 @@ algorithm
         elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
         classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
         cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
+        baseClassPath1 = listAppend(baseClassPath1,baseClassPath2);
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath1, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
@@ -6337,11 +6338,20 @@ algorithm
       equation
         // print("Inst.getDerivedEnv: case 2 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
         (cache,env_2) = Lookup.lookupAndInstantiate(cache,env,tp,mod,true);
-        env = Env.FRAME(id,cl,tps,imps,env_2,crs,enc,defineUnits) :: fs;
+        env = Env.FRAME(id,cl,tps,imps,env_2::bcenv,crs,enc,defineUnits) :: fs;
         (cache,env,ih) = getDerivedEnv(cache,env,ih,bc);
         // print("Inst.getDerivedEnv: case 2 end " +& Env.printEnvPathStr(env) +& "\n");
       then
         (cache,env,ih);
+
+      /*
+    case (cache,(env as (Env.FRAME(id,cl,tps,imps,bcenv,crs,enc,defineUnits) :: fs)),ih,_::bc)
+      equation
+        Debug.traceln("Ooops... Something blew, but it's ok... We can be oblivious to that fact and just keep going. Nothing bad can come from this. No sir.");
+        (cache,env,ih) = getDerivedEnv(cache,env,ih,bc);
+      then
+        (cache,env,ih);
+       */
 
     case (_,env,_,_)
       equation

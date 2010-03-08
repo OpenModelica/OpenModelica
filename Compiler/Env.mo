@@ -87,7 +87,7 @@ public import SCode;
 public import HashTable5;
 
 public type Ident = String " An identifier is just a string " ;
-public type BCEnv = list<Frame> "The environment of inherited classes";
+public type BCEnv = list<Env> "The environment of inherited classes";
 public type Env = list<Frame> "an environment is a list of frames";
 
 public uniontype Cache
@@ -955,7 +955,7 @@ algorithm
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
-        s4 = printEnvStr(bcframes);
+        s4 = Util.stringAppendList(Util.listMap(bcframes,printEnvStr));
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::

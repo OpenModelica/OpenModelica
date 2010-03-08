@@ -1314,7 +1314,7 @@ algorithm
         /* Search base classes */
     case (cache,Env.FRAME(inherited = bcframes)::fs,cref)
       equation
-        (cache,attr,ty,bind,_,env) = lookupVar(cache,bcframes,cref);
+        (cache,env,attr,ty,bind) = lookupVarInBaseClasses(cache,bcframes,cref);
       then
         (cache,env,attr,ty,bind);
 
@@ -1346,6 +1346,30 @@ algorithm
 	Debug.fprint(\"failtrace\", \"\\n\") */  then fail();
   end matchcontinue;
 end lookupVarInPackages;
+
+protected function lookupVarInBaseClasses
+  input Env.Cache cache;
+  input Env.BCEnv bcEnv;
+  input DAE.ComponentRef cref;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output DAE.Attributes attr;
+  output DAE.Type ty;
+  output DAE.Binding bind;
+algorithm
+  (outCache,outEnv,attr,ty,bind) := matchcontinue (cache,bcEnv,cref)
+    local
+      Env.Env env;
+    case (cache,env::_,cref)
+      equation
+        (outCache,attr,ty,bind,_,env) = lookupVar(cache,env,cref);
+      then (outCache,env,attr,ty,bind);
+    case (cache,_::bcEnv,cref)
+      equation
+        (outCache,env,attr,ty,bind) = lookupVarInBaseClasses(cache,bcEnv,cref);
+      then (outCache,env,attr,ty,bind);
+  end matchcontinue;          
+end lookupVarInBaseClasses;
 
 protected function makeOptIdentOrNone "
 Author: BZ, 2009-04
@@ -1477,6 +1501,7 @@ algorithm
         cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
+        //(cache,dmod,_ /* Return fn's here */) = Mod.elabMod(cache,env,Prefix.NOPRE(),mod,true); - breaks things but is needed for other things... bleh
         // Debug.traceln("dmod: " +& Mod.printModStr(dmod));
         (cache,classEnv,_,_) =
         Inst.partialInstClassIn(
@@ -2230,7 +2255,7 @@ algorithm
         /* Search base classes */
     case (cache,Env.FRAME(inherited = bcframes),totenv,name,_,_,_)
       equation
-        (cache,c,env,prevFrames) = lookupClass2(cache,bcframes,Absyn.IDENT(name),{},Util.makeStatefulBoolean(false),true);
+        (cache,c,env,prevFrames) = lookupClassInBaseClasses(cache,bcframes,name);
       then
         (cache,c,env,prevFrames);
 
@@ -2253,6 +2278,29 @@ algorithm
         (cache,c,env_1,prevFrames);
   end matchcontinue;
 end lookupClassInFrame;
+
+protected function lookupClassInBaseClasses
+  input Env.Cache cache;
+  input Env.BCEnv bcEnv;
+  input String name;
+  output Env.Cache outCache;
+  output SCode.Class outClass;
+  output Env.Env outEnv;
+  output list<Env.Frame> outPrevFrames;
+algorithm
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (cache,bcEnv,name)
+    local
+      Env.Env env;
+    case (cache,env::_,name)
+      equation
+        (outCache,outClass,outEnv,outPrevFrames) = lookupClass2(cache,env,Absyn.IDENT(name),{},Util.makeStatefulBoolean(false),true);
+      then (outCache,outClass,outEnv,outPrevFrames);
+    case (cache,_::bcEnv,name)
+      equation
+        (outCache,outClass,outEnv,outPrevFrames) = lookupClassInBaseClasses(cache,bcEnv,name);
+      then (outCache,outClass,outEnv,outPrevFrames);
+  end matchcontinue;
+end lookupClassInBaseClasses;
 
 protected function lookupClassAssertClass "Asserts that item is Class (which is returned.
 If component is found, this is reported as an error"
