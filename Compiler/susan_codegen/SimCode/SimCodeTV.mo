@@ -1,4 +1,3 @@
-
 package builtin
   
   function listLength "Return the length of the list"
@@ -92,6 +91,15 @@ package SimCode
       list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
     end SIMCODE;
   end SimCode;
+
+  uniontype FunctionCode
+    record FUNCTIONCODE
+      String name;
+      list<Function> functions;
+      MakefileParams makefileParams;
+    end FUNCTIONCODE;
+  end FunctionCode;
+
 
   uniontype MakefileParams
     record MAKEFILE_PARAMS

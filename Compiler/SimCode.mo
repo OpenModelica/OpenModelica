@@ -117,6 +117,14 @@ uniontype SimCode
   end SIMCODE;
 end SimCode;
 
+uniontype FunctionCode
+  record FUNCTIONCODE
+    String name;
+    list<Function> functions;
+    MakefileParams makefileParams;
+  end FUNCTIONCODE;
+end FunctionCode;
+
 uniontype ModelInfo
   record MODELINFO
     String name;
@@ -498,6 +506,31 @@ algorithm
   end matchcontinue;
 end translateModel;
 
+public function translateFunctions
+"One of the entry points."
+  input String name;
+  input list<DAE.Element> daeElements;
+algorithm
+  _ :=
+  matchcontinue (name, daeElements)
+    local
+      list<Function> fns;
+      list<String> libs;
+      MakefileParams makefileParams;
+      FunctionCode fnCode;
+    case (name, daeElements)
+      equation
+        // Create FunctionCode
+        fns = elaborateFunctions(daeElements);
+        libs = extractLibs(fns);
+        makefileParams = createMakefileParams(libs);
+        fnCode = FUNCTIONCODE(name, fns, makefileParams);
+        // Generate code
+        _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
+      then
+        ();
+  end matchcontinue;
+end translateFunctions;
 
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */
