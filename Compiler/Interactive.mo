@@ -201,6 +201,11 @@ uniontype ComponentReplacementRules
 
 end ComponentReplacementRules;
 
+protected uniontype AnnotationType
+	record ICON_ANNOTATION end ICON_ANNOTATION;
+	record DIAGRAM_ANNOTATION end DIAGRAM_ANNOTATION;
+end AnnotationType;
+
 protected import Connect;
 protected import Dump;
 protected import Debug;
@@ -2223,7 +2228,7 @@ algorithm
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
-        resstr = getIconAnnotationInClass(refactoredClass);
+        resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION);
       then
         (resstr,SYMBOLTABLE(p,aDep,s,ic,iv,cf,lf));
 
@@ -2237,7 +2242,7 @@ algorithm
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
-        resstr = getDiagramAnnotationInClass(refactoredClass);
+        resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION);
       then
         (resstr,SYMBOLTABLE(p,aDep,s,ic,iv,cf,lf));
 
@@ -11697,7 +11702,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getDiagramAnnotationInClass(cdef);
+				str = getAnnotationInClass(cdef, DIAGRAM_ANNOTATION);
       then
         str;
     case (_,_) then "get_diagram_annotation failed!";
@@ -11755,7 +11760,7 @@ algorithm
     case (modelpath,p)
       equation
         cdef = getPathedClassInProgram(modelpath, p);
-        str = getIconAnnotationInClass(cdef);
+				str = getAnnotationInClass(cdef, ICON_ANNOTATION);
       then
         str;
     case (_,_) then "";
@@ -12459,234 +12464,240 @@ algorithm
   end matchcontinue;
 end countBaseClassesFromElts;
 
-protected function getIconAnnotationInClass
-"function: getIconAnnotationInClass
-  Helper function to getIconAnnotation."
-  input Absyn.Class inClass;
-  output String outString;
+protected function getAnnotationInClass
+	"Helper function to getIconAnnotation."
+	input Absyn.Class inClass;
+	input AnnotationType annotationType;
+	output String annotationStr;
 algorithm
-  outString:=
-  matchcontinue (inClass)
-    local
-      list<Absyn.ElementArg> annlst;
-      String s1,s2,str;
-      list<Absyn.ClassPart> parts;
+	annotationStr := matchcontinue(inClass, annotationType)
+		local
+			list<Absyn.ElementArg> annlst;
+			String s1, s2, str;
+			list<Absyn.ClassPart> parts;
 
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
-      equation
-        annlst = getIconAnnotationFromParts(parts) "class definitions" ;
-        s1 = getIconAnnotationStr(annlst);
-        s2 = stringAppend("{", s1);
-        str = stringAppend(s2, "}");
-      then
-        str;
+		case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)), _)
+			equation
+				annlst = getAnnotationFromParts(parts, annotationType) "class definitions";
+				s1 = getAnnotationStr(annlst, annotationType);
+				s2 = stringAppend("{", s1);
+				str = stringAppend(s2, "}");
+			then
+				str;
 
-    /* adrpo: add the case for
+		/* adrpo: add the case for
      *  model extends name
      *    annotation ...
      *  end name;
      */
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        annlst = getIconAnnotationFromParts(parts) "class definitions" ;
-        s1 = getIconAnnotationStr(annlst);
-        s2 = stringAppend("{", s1);
-        str = stringAppend(s2, "}");
-      then
-        str;
+		case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)), _)
+			equation
+				annlst = getAnnotationFromParts(parts, annotationType) "class definitions";
+				s1 = getAnnotationStr(annlst, annotationType);
+				s2 = stringAppend("{", s1);
+				str = stringAppend(s2, "}");
+			then
+				str;
 
-    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_))))) /* short class definitions */
-      equation
-        s1 = getIconAnnotationStr(annlst);
-        s2 = stringAppend("{", s1);
-        str = stringAppend(s2, "}");
-      then
-        str;
+		case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))), _) /* short class definition */
+			equation
+				s1 = getAnnotationStr(annlst, annotationType);
+				s2 = stringAppend("{", s1);
+				str = stringAppend(s2, "}");
+			then
+				str;
+	end matchcontinue;
+end getAnnotationInClass;
 
-  end matchcontinue;
-end getIconAnnotationInClass;
-
-protected function getIconAnnotationFromParts
-"function: getIconAnnotationFromParts
-  Helper function to getIconAnnotationInClass."
+protected function getAnnotationFromParts
+"function: getAnnotationFromParts
+  Helper function to getAnnotationInClass."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
+	input AnnotationType annotationType;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
   outAbsynElementArgLst:=
-  matchcontinue (inAbsynClassPartLst)
+	matchcontinue (inAbsynClassPartLst, annotationType)
     local
       list<Absyn.ElementArg> res;
       list<Absyn.ElementItem> elts;
       list<Absyn.ClassPart> rest;
       list<Absyn.EquationItem> eqns;
       list<Absyn.AlgorithmItem> algs;
-    case {} then {};
-    case ((Absyn.PUBLIC(contents = elts) :: rest)) equation res = getIconAnnotationFromElts(elts); then res;
-    case ((Absyn.PROTECTED(contents = elts) :: rest)) equation res = getIconAnnotationFromElts(elts); then res;
-    case ((Absyn.EQUATIONS(contents = eqns) :: rest)) equation res = getIconAnnotationFromEqns(eqns); then res;
-    case ((Absyn.INITIALEQUATIONS(contents = eqns) :: rest)) equation res = getIconAnnotationFromEqns(eqns); then res;
-    case ((Absyn.ALGORITHMS(contents = algs) :: rest)) equation res = getIconAnnotationFromAlgs(algs); then res;
-    case ((Absyn.INITIALALGORITHMS(contents = algs) :: rest)) equation res = getIconAnnotationFromAlgs(algs); then res;
-    case ((_ :: rest)) equation res = getIconAnnotationFromParts(rest); then res;
+    case ({}, _) then {};
+    case ((Absyn.PUBLIC(contents = elts) :: rest), _) 
+			equation 
+				res = getAnnotationFromElts(elts, annotationType); 
+			then 
+				res;
+    case ((Absyn.PROTECTED(contents = elts) :: rest), _) 
+			equation 
+				res = getAnnotationFromElts(elts, annotationType); 
+			then 
+				res;
+    case ((Absyn.EQUATIONS(contents = eqns) :: rest), _) 
+			equation 
+				res = getAnnotationFromEqns(eqns, annotationType); 
+			then 
+				res;
+    case ((Absyn.INITIALEQUATIONS(contents = eqns) :: rest), _) 
+			equation 
+				res = getAnnotationFromEqns(eqns, annotationType); 
+			then 
+				res;
+    case ((Absyn.ALGORITHMS(contents = algs) :: rest), _) 
+			equation 
+				res = getAnnotationFromAlgs(algs, annotationType);
+			then 
+				res;
+    case ((Absyn.INITIALALGORITHMS(contents = algs) :: rest), _) 
+			equation
+				res = getAnnotationFromAlgs(algs, annotationType); 
+			then
+				res;
+    case ((_ :: rest), _) 
+			equation 
+				res = getAnnotationFromParts(rest, annotationType); 
+			then 
+				res;
   end matchcontinue;
-end getIconAnnotationFromParts;
+end getAnnotationFromParts;
 
-protected function getIconAnnotationFromElts
-"function: getIconAnnotationFromElts
-  Helper function to getIconAnnotationFromParts."
+protected function getAnnotationFromElts
+"function: getAnnotationFromElts
+  Helper function to getAnnotationFromParts."
   input list<Absyn.ElementItem> inAbsynElementItemLst;
+	input AnnotationType annotationType;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
   outAbsynElementArgLst:=
-  matchcontinue (inAbsynElementItemLst)
+	matchcontinue (inAbsynElementItemLst, annotationType)
     local
       list<Absyn.ElementArg> lst,res;
       list<Absyn.ElementItem> rest;
-    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest))
-      equation containIconAnnotation(lst); then lst;
-    case ((_ :: rest))
-      equation res = getIconAnnotationFromElts(rest); then res;
+    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest), _)
+			equation containAnnotation(lst, annotationType); then lst;
+    case ((_ :: rest), _)
+			equation res = getAnnotationFromElts(rest, annotationType); then res;
   end matchcontinue;
-end getIconAnnotationFromElts;
+end getAnnotationFromElts;
 
-protected function containIconAnnotation
-"function: containIconAnnotation
-  Helper function to getIconAnnotationFromElts."
+protected function isAnnotationType
+	"Checks if the name of an annotation matches the annotation type given."
+	input String annotationStr;
+	input AnnotationType annotationType;
+algorithm
+	res := matchcontinue(annotationStr, annotationType)
+		case ("Icon", ICON_ANNOTATION) then ();
+		case ("Diagram", DIAGRAM_ANNOTATION) then ();
+	end matchcontinue;
+end isAnnotationType;
+
+protected function containAnnotation
+"function: containAnnotation
+  Helper function to getAnnotationFromElts."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
+	input AnnotationType annotationType;
 algorithm
   _:=
-  matchcontinue (inAbsynElementArgLst)
-    local list<Absyn.ElementArg> lst;
-    case ((Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon")) :: _)) then ();
-    case ((_ :: lst))
-      equation
-        containIconAnnotation(lst);
-      then
-        ();
-  end matchcontinue;
-end containIconAnnotation;
+	matchcontinue (inAbsynElementArgLst, annotationType)
+    local 
+			list<Absyn.ElementArg> lst;
+			String ann_name;
+		case ((Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = ann_name)) :: _), _) 
+			equation
+				isAnnotationType(ann_name, annotationType);
+			then 
+				();
+		case ((_ :: lst), _)
+			equation
+				containAnnotation(lst, annotationType);
+			then
+				();
+	end matchcontinue;
+end containAnnotation;
 
-protected function getIconAnnotationFromEqns
-"function: getIconAnnotationFromEqns
-  Helper function to getIconAnnotationFromParts."
+protected function getAnnotationFromEqns
+"function: getAnnotationFromEqns
+  Helper function to getAnnotationFromParts."
   input list<Absyn.EquationItem> inAbsynEquationItemLst;
+	input AnnotationType annotationType;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
   outAbsynElementArgLst:=
-  matchcontinue (inAbsynEquationItemLst)
+	matchcontinue (inAbsynEquationItemLst, annotationType)
     local
       list<Absyn.ElementArg> lst,res;
       list<Absyn.EquationItem> rest;
-    case {} then {};
-    case ((Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest))
+    case ({}, _) then {};
+    case ((Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest), _)
       equation
-        containIconAnnotation(lst);
+				containAnnotation(lst, annotationType);
       then
         lst;
-    case ((_ :: rest))
+		case ((_ :: rest), _)
       equation
-        res = getIconAnnotationFromEqns(rest);
+				res = getAnnotationFromEqns(rest, annotationType);
       then
         res;
   end matchcontinue;
-end getIconAnnotationFromEqns;
+end getAnnotationFromEqns;
 
-protected function getIconAnnotationFromAlgs
+protected function getAnnotationFromAlgs
 "function: getIconAnnotationFromAlgs
   Helper function to getIconAnnotationFromParts"
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+	input AnnotationType annotationType;
   output list<Absyn.ElementArg> outAbsynElementArgLst;
 algorithm
   outAbsynElementArgLst:=
-  matchcontinue (inAbsynAlgorithmItemLst)
+	matchcontinue (inAbsynAlgorithmItemLst, annotationType)
     local
       list<Absyn.ElementArg> lst,res;
       list<Absyn.AlgorithmItem> rest;
-    case {} then {};
-    case ((Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest))
+    case ({}, _) then {};
+    case ((Absyn.ALGORITHMITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = lst)) :: rest), _)
       equation
-        containIconAnnotation(lst);
+				containAnnotation(lst, annotationType);
       then
         lst;
-    case ((_ :: rest))
+    case ((_ :: rest), _)
       equation
-        res = getIconAnnotationFromAlgs(rest);
+				res = getAnnotationFromAlgs(rest, annotationType);
       then
         res;
   end matchcontinue;
-end getIconAnnotationFromAlgs;
+end getAnnotationFromAlgs;
 
-protected function getIconAnnotationStr
+protected function getAnnotationStr
 "function: getIconAnnotationStr
   Helper function to getIconAnnotationInClass."
   input list<Absyn.ElementArg> inAbsynElementArgLst;
+	input AnnotationType annotationType;
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inAbsynElementArgLst)
+	matchcontinue (inAbsynElementArgLst, annotationType)
     local
-      String str;
+			String str, ann_name;
       Absyn.ElementArg ann;
       Option<Absyn.Modification> mod;
       list<Absyn.ElementArg> xs;
-    case (((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Icon"),modification = mod)) :: _))
-      local Absyn.Program iconProgram;
+		case (((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = ann_name),modification = mod)) :: _), _)
+      local Absyn.Program program;
       equation
-        iconProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
-        str = getAnnotationString(iconProgram, Absyn.ANNOTATION({ann}));
+				isAnnotationType(ann_name, annotationType);
+        program = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
+				str = getAnnotationString(program, Absyn.ANNOTATION({ann}));
       then
         str;
-    case ((_ :: xs))
+    case ((_ :: xs), _)
       equation
-        str = getIconAnnotationStr(xs);
+				str = getAnnotationStr(xs, annotationType);
       then
         str;
   end matchcontinue;
-end getIconAnnotationStr;
-
-protected function getDiagramAnnotationInClass
-"function: getDiagramAnnotationInClass
-  Retrieve the diagram annotation as a
-  string from the class passed as argument."
-  input Absyn.Class inClass;
-  output String outString;
-algorithm
-  outString := matchcontinue (inClass)
-    local
-      list<Absyn.ElementItem> publst,protlst,lst;
-      String str,res;
-      list<Absyn.ClassPart> parts;
-      list<Absyn.ElementArg> annlst;
-
-    case (Absyn.CLASS(body = Absyn.PARTS(classParts = parts)))
-      equation
-        publst = getPublicList(parts) "class def." ;
-        protlst = getProtectedList(parts);
-        lst = listAppend(publst, protlst);
-        str = getDiagramAnnotationInElementitemlist(lst);
-      then
-        str;
-
-    case (Absyn.CLASS(body = Absyn.CLASS_EXTENDS(parts = parts)))
-      equation
-        publst = getPublicList(parts) "class def." ;
-        protlst = getProtectedList(parts);
-        lst = listAppend(publst, protlst);
-        str = getDiagramAnnotationInElementitemlist(lst);
-      then
-        str;
-
-    case (Absyn.CLASS(body = Absyn.DERIVED(comment = SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annlst)),_)))))
-      equation
-        str = getDiagramAnnotationStr(annlst);
-        res = Util.stringAppendList({"{",str,"}"});
-      then
-        res;
-
-    case (_) then "";
-
-  end matchcontinue;
-end getDiagramAnnotationInClass;
+end getAnnotationStr;
 
 protected function getNamedAnnotationInClass
 "function: getNamedAnnotationInClass
@@ -12737,35 +12748,6 @@ algorithm
 
   end matchcontinue;
 end getNamedAnnotationInClass;
-
-protected function getDiagramAnnotationInElementitemlist
-"function: getDiagramAnnotationInElementitemlist
-  Retrieve the diagram annotation from an
-  element item list passed as argument."
-  input list<Absyn.ElementItem> inAbsynElementItemLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inAbsynElementItemLst)
-    local
-      String s1,s2,str;
-      list<Absyn.ElementArg> annlst;
-      list<Absyn.ElementItem> xs;
-    case {} then "";
-    case ((Absyn.ANNOTATIONITEM(annotation_ = Absyn.ANNOTATION(elementArgs = annlst)) :: _))
-      equation
-        s1 = getDiagramAnnotationStr(annlst);
-        s2 = stringAppend("{", s1);
-        str = stringAppend(s2, "}");
-      then
-        str;
-    case ((_ :: xs))
-      equation
-        str = getDiagramAnnotationInElementitemlist(xs);
-      then
-        str;
-  end matchcontinue;
-end getDiagramAnnotationInElementitemlist;
 
 protected function getNamedAnnotationInElementitemlist
 "function: getNamedAnnotationInElementitemlist
@@ -12847,34 +12829,6 @@ algorithm
       then compName;
   end matchcontinue;
 end getDefaultComponentPrefixes;
-
-protected function getDiagramAnnotationStr
-"function: getDiagramAnnotationStr
-  Helper function to getDiagramAnonotationInElementitemlist."
-  input list<Absyn.ElementArg> inAbsynElementArgLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inAbsynElementArgLst)
-    local
-      String str;
-      Absyn.ElementArg ann;
-      Option<Absyn.Modification> mod;
-      list<Absyn.ElementArg> xs;
-    case (((ann as Absyn.MODIFICATION(componentRef = Absyn.CREF_IDENT(name = "Diagram"),modification = mod)) :: _))
-      local Absyn.Program diagramProgram;
-      equation
-        diagramProgram = modelicaAnnotationProgram(RTOpts.getAnnotationVersion());
-        str = getAnnotationString(diagramProgram, Absyn.ANNOTATION({ann}));
-      then
-        str;
-    case ((_ :: xs))
-      equation
-        str = getDiagramAnnotationStr(xs);
-      then
-        str;
-  end matchcontinue;
-end getDiagramAnnotationStr;
 
 protected function getNamedAnnotationStr
 "function: getNamedAnnotationStr
