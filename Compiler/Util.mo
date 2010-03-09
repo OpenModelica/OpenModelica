@@ -5551,6 +5551,7 @@ algorithm
       list<list<Type_a>> rest;
       list<list<Type_a>> res;
       list<Boolean> boolLst;
+    case {} then {{}};
     case (inLst)
       equation
         first = listMap(inLst, listFirst);

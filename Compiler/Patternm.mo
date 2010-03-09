@@ -105,7 +105,8 @@ algorithm
         varList = extractListFromTuple(varList2,0);
         varListLength = listLength(varList);
 
-        false = (varListLength == 0); // If there are no input variables, the function will fail
+        // It is actually allowed to have 0 input
+        //false = (varListLength == 0); // If there are no input variables, the function will fail
 
         // Create pattern matrix. The as-bindings (  ... case (var1 as 3) ...)
         // are first collected in the fillMatrix function and then
@@ -118,11 +119,14 @@ algorithm
                                                                  // to the right hand-sides.
 
       then (localCache,varList,declList,rhsList,rhsListLight,patMat,elseRhSide);
-    case (exp,_,_) local Absyn.Exp exp; String expStr;
+    case (exp,_,_)
+      local
+        Absyn.Exp exp;
+        String expStr;
       equation
-				true = RTOpts.debugFlag("matchcase");
+        true = RTOpts.debugFlag("matchcase");
         expStr = Dump.printExpStr(exp);
-        Debug.fprintln("matchcase", "- Patternm.ASTtoMatrixForm failed, non-matching patterns in matchcase or zero input variables: " +& expStr);
+        Debug.traceln("- Patternm.ASTtoMatrixForm failed: Non-matching patterns in matchcase: " +& expStr);
       then fail();
   end matchcontinue;
 end ASTtoMatrixForm;
