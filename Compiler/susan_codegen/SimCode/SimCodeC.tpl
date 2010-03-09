@@ -1476,6 +1476,16 @@ case EXTERNAL_FUNCTION then
   # callPart = extFunCall(fn, preExp, varDecls)
   # _ = (outVars: varInit(it, "out", i1, varDecls, outputAlloc))
   <<
+  int in_<fname>(type_description * inArgs, type_description * outVar)
+  {
+    <funArgs of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>;' "\n">
+    <retType> out;
+    <funArgs of VARIABLE: 'if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;' "\n">
+    out = _<fname>(<funArgs of VARIABLE: cref(name) ", ">);
+    <outVars of VARIABLE: 'write_<varType(it)>(outVar, &out.targ<i1>);' "\n">
+    return 0;
+  }
+
   <retType> _<fname>(<funArgs of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>' ", ">)
   {
     <varDecls>
