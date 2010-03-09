@@ -3611,6 +3611,7 @@ algorithm
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},inSCodeElementLst3,mods,inst_dims)
       equation
         true = (listLength(inSCodeElementLst3) > 0);
+        ErrorExt.setCheckpoint();
         instBasictypeBaseclass2(cache,env,ih,store,inSCodeElementLst2,inSCodeElementLst3,mods,inst_dims);
       then
         fail();
@@ -3679,7 +3680,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors.
         b2 = Types.arrayType(ty);
         true = boolOr(b1, b2);
         classname = Env.printEnvPathStr(env);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack();        
         Error.addMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname});
       then
         ();
