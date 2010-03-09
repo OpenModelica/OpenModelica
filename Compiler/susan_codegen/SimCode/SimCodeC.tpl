@@ -1853,6 +1853,8 @@ daeExpSconst(String string, Text preExp, Text varDecls) ::=
   strVar  
 
 daeExpCrefRhs(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case cref as CREF(componentRef=cr, ty=ET_ENUMERATION) then
+  getEnumIndexfromCref(cr)
 case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
   if daeExpCrefRhsArrayBox(exp, context, preExp, varDecls) then
     it

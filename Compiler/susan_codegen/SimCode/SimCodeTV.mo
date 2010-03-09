@@ -834,3 +834,13 @@ package Util
   end escapeModelicaStringToCString;
 
 end Util;
+
+
+package Exp
+
+  function getEnumIndexfromCref
+    input DAE.ComponentRef inComponentRef;
+    output Integer outEnumIndex;
+  end getEnumIndexfromCref;
+
+end Exp;
