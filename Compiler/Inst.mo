@@ -3591,7 +3591,7 @@ algorithm
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
         ErrorExt.setCheckpoint();
-        (cache,m_1,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, true) "impl" ;
+        (cache,m_1,_) = Mod.elabModOrRollback(cache,env, Prefix.NOPRE(), mod, true);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         (cache,env_1,ih,store,dae,_,ty,tys,st) = instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), Connect.emptySet, cdef, inst_dims, false, INNER_CALL());

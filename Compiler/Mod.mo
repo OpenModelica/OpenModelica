@@ -55,20 +55,21 @@ public import RTOpts;
 
 public type Ident = String;
 
+protected import Ceval;
+protected import DAEUtil;
 protected import Dump;
 protected import Debug;
+protected import Error;
+protected import ErrorExt;
 protected import Exp;
 protected import Inst;
-protected import Static;
-protected import Util;
-protected import Ceval;
-protected import Error;
+protected import PrefixUtil;
 protected import Print;
+protected import Static;
 protected import Types;
+protected import Util;
 protected import Values;
 protected import ValuesUtil;
-protected import DAEUtil;
-protected import PrefixUtil;
 
 public function elabMod "
   This function elaborates on the expressions in a modification and
@@ -157,6 +158,29 @@ algorithm
         fail();
   end matchcontinue;
 end elabMod;
+
+public function elabModOrRollback "
+  Same as elabMod, but if it fails it will rollback error messages."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Prefix.Prefix inPrefix;
+  input SCode.Mod inMod;
+  input Boolean inBoolean;
+  output Env.Cache outCache;
+  output DAE.Mod outMod;
+  output DAE.DAElist outDae "contain functions";
+algorithm
+  (outCache,outMod,outDae) := matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
+    case (inCache,inEnv,inPrefix,inMod,inBoolean)
+      equation
+        (outCache,outMod,outDae) = elabMod(inCache,inEnv,inPrefix,inMod,inBoolean); 
+      then (outCache,outMod,outDae);
+    case (inCache,inEnv,inPrefix,inMod,inBoolean)
+      equation
+        ErrorExt.rollBack();
+      then fail();
+  end matchcontinue;
+end elabModOrRollback;
 
 protected function elabModRedeclareElements
   input Env.Cache inCache;
