@@ -1357,12 +1357,19 @@ algorithm
     local
       Lib lib;
       list<Absyn.ElementArg> eltarg;
+      list<Absyn.Exp> arr;
     case (eltarg)
       equation
         Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{})) "System.stringReplace(lib,\"\\\"\",\"\"\") => lib\'" ;
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
       then
         {lib};
+    case (eltarg)
+      equation
+        Absyn.CLASSMOD(_,SOME(Absyn.ARRAY(arr))) =
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+      then
+        Util.listMap(arr, Absyn.expString);
     case (_) then {};
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;

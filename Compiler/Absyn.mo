@@ -1804,6 +1804,15 @@ algorithm ostring := matchcontinue(imp)
 end matchcontinue;
 end printImportString;
 
+public function expString "returns the string of an expression if it is a string constant."
+  input Exp exp;
+  output String str;
+algorithm
+  str := matchcontinue(exp)
+    case(STRING(str)) then str;
+  end matchcontinue;
+end expString;
+
 public function expCref "returns the componentRef of an expression if matches."
   input Exp exp;
   output ComponentRef cr;
