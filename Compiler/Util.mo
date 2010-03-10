@@ -2073,7 +2073,35 @@ algorithm
   end matchcontinue;
 end listListMap2;
 
-public function listFold "function: listFold
+public function listFoldList "
+Author BZ
+apply a function on the heads of two equally length list of generic type.
+"
+input list<Type_a> lst1;
+input list<Type_a> lst2;
+input listAddFunc func;
+output list<Type_a> mergedList;
+  partial function listAddFunc
+    input Type_a ia1;
+    input Type_a ia2;
+    output Type_a oa1;
+  end listAddFunc;
+  replaceable type Type_a subtypeof Any;
+  algorithm
+    mergedList := matchcontinue(lst1,lst2,func)
+    local
+      Type_a a1,a2,aRes;
+      case({},{},_) then {};
+      case(a1::lst1,a2::lst2,func)
+        equation
+          aRes = func(a1,a2);
+          mergedList = listFoldList(lst1,lst2,func);
+          then
+            aRes::mergedList; 
+      end matchcontinue;
+end listFoldList;
+
+public function listFold "function: listFold 
   Takes a list and a function operating on list elements having an extra argument that is \'updated\'
   thus returned from the function. The third argument is the startvalue for the updated value.
   listFold will call the function for each element in a sequence, updating the startvalue

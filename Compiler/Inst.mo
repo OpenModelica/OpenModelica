@@ -394,7 +394,127 @@ algorithm
   end matchcontinue;
 end instantiateClass;
 
-public function instantiatePartialClass
+protected function reEvaluateInitialIfEqns "
+Author BZ 
+This is a backpatch to fix the case of 'connection.isRoot' in initial if equations. 
+After the class is instantiated a second sweep is done to check the initial if equations conditions.
+If all conditions are constand, we return only the 'correct' branch equations. 
+"
+input Env.Cache cache;
+input Env.Env env;
+input DAE.DAElist dae;
+input Boolean isTopCall;
+output DAE.DAElist odae;
+algorithm odae := matchcontinue(cache,env,dae,isTopCall)
+  local
+    DAE.FunctionTree funcs;
+    list<DAE.Element> elems;
+  case(cache,env,DAE.DAE(elementLst = elems,functions = funcs),true)
+    equation
+      elems = reEvaluateInitialIfEqns2(cache,env,elems);
+      then
+        DAE.DAE(elems,funcs);
+  case(_,_,dae,false) then dae;
+  end matchcontinue;
+end reEvaluateInitialIfEqns;
+
+protected function reEvaluateInitialIfEqns2 ""
+input Env.Cache cache;
+input Env.Env env;
+input list<DAE.Element> elems;
+output list<DAE.Element> oelems;
+algorithm oelems := matchcontinue(cache,env,elems)
+  local
+    list<DAE.Exp> conds;
+    list<Values.Value> valList;
+    list<list<DAE.Element>> tbs; 
+    list<DAE.Element> fb,selectedBranch;
+    DAE.Element elem;
+    DAE.ElementSource source;
+    list<Boolean> blist;
+    case(_,_,{}) then {};
+  case(cache,env,(elem as DAE.INITIAL_IF_EQUATION(condition1 = conds, equations2=tbs, equations3=fb, source=source))::elems)
+    equation
+      //print(" (Initial if)To ceval: " +& Util.stringDelimitList(Util.listMap(conds,Exp.printExpStr),", ") +& "\n");
+      (cache,valList) = Ceval.cevalList(cache,env, conds, true, NONE, Ceval.NO_MSG());
+      //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
+
+      blist = Util.listMap(valList,ValuesUtil.valueBool);
+      selectedBranch = selectList(blist, tbs, fb);
+      selectedBranch = makeDAEElementInitial(selectedBranch); 
+      oelems = reEvaluateInitialIfEqns2(cache,env,elems);
+      oelems = listAppend(selectedBranch,oelems);
+      
+      //print("RETURN _INITIAL_ DAE: " +& DAEUtil.dumpDAEElementsStr(DAE.DAE(selectedBranch,DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& "\n");
+      //print(" INSTEAD OF: " +& DAEUtil.dumpDAEElementsStr(DAE.DAE({elem},DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& "\n");
+    then
+      oelems;
+  case(cache,env,elem::elems)
+    equation
+      oelems = reEvaluateInitialIfEqns2(cache,env,elems);
+    then
+      elem::oelems;    
+  end matchcontinue;
+end reEvaluateInitialIfEqns2;
+
+protected function makeDAEElementInitial "
+Author BZ
+Helper function for reEvaluateInitialIfEqns, makes the contenst of an initial if equation initial.  
+"
+input list<DAE.Element> inElems;
+output list<DAE.Element> outElems;
+algorithm 
+  outElems := matchcontinue(inElems)
+  local
+    DAE.Element elem;
+    DAE.ComponentRef cr;
+    DAE.Exp e1,e2,e3;
+    DAE.ElementSource s;
+    list<DAE.Exp> expl;
+    list<list<DAE.Element>> tbs ;
+    list<DAE.Element> fb;
+    DAE.Algorithm al;
+    list<Integer> dims;
+    case({}) then {};
+    case(DAE.DEFINE(cr,e1,s)::inElems)
+      equation
+        outElems = makeDAEElementInitial(inElems);
+        then
+          DAE.INITIALDEFINE(cr,e1,s)::outElems;
+    case(DAE.ARRAY_EQUATION(dims,e1,e2,s)::_)
+      equation
+        outElems = makeDAEElementInitial(inElems);        
+        then
+          DAE.INITIAL_ARRAY_EQUATION(dims,e1,e2,s)::outElems;
+    case(DAE.EQUATION(e1,e2,s)::inElems)
+      equation
+        outElems = makeDAEElementInitial(inElems);
+        then
+          DAE.INITIALEQUATION(e1,e2,s)::outElems;
+    case(DAE.IF_EQUATION(expl,tbs,fb,s)::inElems)
+      equation
+        outElems = makeDAEElementInitial(inElems);
+        then
+          DAE.INITIAL_IF_EQUATION(expl,tbs,fb,s)::outElems;
+    case(DAE.ALGORITHM(al,s)::inElems)
+      equation
+        outElems = makeDAEElementInitial(inElems);
+        then
+          DAE.INITIALALGORITHM(al,s)::outElems;
+    case(DAE.COMPLEX_EQUATION(e1,e2,s)::inElems)
+      equation
+        outElems = makeDAEElementInitial(inElems);        
+        then
+          DAE.INITIAL_COMPLEX_EQUATION(e1,e2,s)::outElems;
+    case(elem::inElems) // safe "last case" since we can not fail in cases above.
+      equation
+        outElems = makeDAEElementInitial(inElems);
+        then
+          elem::outElems;      
+  end matchcontinue;
+end makeDAEElementInitial;
+
+public function instantiatePartialClass 
 "Author: BZ, 2009-07
  This is a function for instantiating partial 'top' classes.
  It does so by converting the partial class into a non partial class.
@@ -626,6 +746,10 @@ algorithm
         (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+
+        //print(" ********************** backpatch 2 **********************\n");         
+        dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
+        
         // check the models for balancing
         //Debug.fcall2("checkModel",checkModelBalancing,SOME(inPath),dae);
       then
@@ -911,6 +1035,9 @@ algorithm
         Debug.fcall("execstat",print, "*** Inst -> instClass finished at time: " +& realString(clock()) +& "\n" );
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        //print(" ********************** backpatch 3 **********************\n"); 
+        dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
+        
         // check the models for balancing
         //Debug.fcall2("checkModel",checkModelBalancing,containedInOpt,dae);
 
@@ -920,7 +1047,8 @@ algorithm
         // finish with the execution statistics
         Debug.fcall("execstat",print, "*** Inst -> exit at time: " +& realString(clock()) +& "\n" );
 
-        daeElts = DAEUtil.daeElements(dae); funcs = DAEUtil.daeFunctionTree(dae);
+        daeElts = DAEUtil.daeElements(dae); 
+        funcs = DAEUtil.daeFunctionTree(dae);
         dae = DAE.DAE({DAE.COMP(n,daeElts,source)},funcs);
       then
         (cache,ih,dae);

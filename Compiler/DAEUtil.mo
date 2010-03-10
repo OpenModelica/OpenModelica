@@ -840,7 +840,14 @@ algorithm
       then
         ();
     case (DAE.DAE(elementLst = {})) then ();
-
+    
+    //BZ Could be nice to know when this failes (when new elements are introduced) 
+    case(DAE.DAE((_ :: xs),funcs))
+      equation
+        Print.printBuf("\n\ndump2 failed to print element\n");
+        dump2(DAE.DAE(xs,funcs));
+      then
+        ();  
     case (_)
       equation
         Print.printBuf("dump2 failed\n");
@@ -1077,6 +1084,18 @@ algorithm
   dumpVars(l, true);
   Util.listMap0(l, dumpAlgorithm);
 end dumpFunctionElements;
+
+public function dumpDAEElementsStr "
+Author BZ
+print a DAE.DAEList to a string
+"
+input DAE.DAElist d;
+output String str;
+algorithm str := matchcontinue(d)
+  local list<DAE.Element> l;
+  case(DAE.DAE(elementLst=l)) then dumpElementsStr(l);
+    end matchcontinue;
+end dumpDAEElementsStr;
 
 public function dumpElementsStr "function: dumpElementsStr
   Dump elements to a string"
@@ -1366,7 +1385,7 @@ algorithm
         s4 = Exp.printExpStr(e2);
         s4_1 = stringAppend(s3, s4);
         s5 = stringAppend(s4_1, ";\n");
-        s6 = dumpEquationsStr(xs);
+        s6 = dumpInitialequationsStr(xs);
         str = stringAppend(s5, s6);
       then
 				str;
@@ -2396,12 +2415,6 @@ algorithm
         str;
 
     case(DAE.ARRAY_EQUATION(exp=e1,array=e2)) equation
-      s1 = Exp.printExpStr(e1);
-      s2 = Exp.printExpStr(e2);
-      str = s1 +& " = " +& s2;
-    then str;
-
-    case(DAE.INITIAL_ARRAY_EQUATION(exp=e1,array=e2)) equation
       s1 = Exp.printExpStr(e1);
       s2 = Exp.printExpStr(e2);
       str = s1 +& " = " +& s2;
