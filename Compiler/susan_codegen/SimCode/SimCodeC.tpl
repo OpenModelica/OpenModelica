@@ -1393,8 +1393,8 @@ case SIMEXTARG(cref=c, isInput=ii, isArray=ia, type_=t) then
   # name = cref(c)
   # typeStr = if ii then
       if ia then
-        if t is ET_STRING then
-          '<extType(t)> const *'
+        if extType(t) is "const char*" then // For string arrays
+          '<it> const *'
         else
           'const <extType(t)> *'
       else

@@ -6905,28 +6905,30 @@ end extType;
 
 protected function fun_163
   input Tpl.Text in_txt;
+  input String in_it;
   input DAE.ExpType in_i_t;
 
   output Tpl.Text out_txt;
 algorithm
   out_txt :=
-  matchcontinue(in_txt, in_i_t)
+  matchcontinue(in_txt, in_it, in_i_t)
     local
       Tpl.Text txt;
+      DAE.ExpType i_t;
 
     case ( txt,
-           (i_t as DAE.ET_STRING()) )
+           (str_1 as "const char*"),
+           _ )
       local
-        DAE.ExpType i_t;
+        String str_1;
       equation
-        txt = extType(txt, i_t);
+        txt = Tpl.writeStr(txt, str_1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" const *"));
       then txt;
 
     case ( txt,
+           _,
            i_t )
-      local
-        DAE.ExpType i_t;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("const "));
         txt = extType(txt, i_t);
@@ -6958,8 +6960,13 @@ algorithm
     case ( txt,
            _,
            i_t )
+      local
+        String str_1;
+        Tpl.Text txt_0;
       equation
-        txt = fun_163(txt, i_t);
+        txt_0 = extType(emptyTxt, i_t);
+        str_1 = Tpl.textString(txt_0);
+        txt = fun_163(txt, str_1, i_t);
       then txt;
   end matchcontinue;
 end fun_164;
