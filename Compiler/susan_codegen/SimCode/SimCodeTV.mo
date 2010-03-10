@@ -776,7 +776,7 @@ package ClassInf
       String string;
     end MODEL;
     record RECORD
-      String string;
+        Absyn.Path path;
     end RECORD;
     record BLOCK
       String string;

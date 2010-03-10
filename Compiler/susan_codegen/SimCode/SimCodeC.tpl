@@ -1460,9 +1460,9 @@ case FUNCTION then
   {
     <functionArguments of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>;' "\n">
     <retType> out;
-    <functionArguments of VARIABLE: 'if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;' "\n">
+    <functionArguments of VARIABLE: readInVar(it) "\n">
     out = _<fname>(<functionArguments of VARIABLE: cref(name) ", ">);
-    <outVars of VARIABLE: 'write_<varType(it)>(outVar, &out.targ<i1>);' "\n">
+    <outVars of VARIABLE: writeOutVar(it, i1) "\n">
     return 0;
   }
   >>
@@ -1480,9 +1480,9 @@ case EXTERNAL_FUNCTION then
   {
     <funArgs of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>;' "\n">
     <retType> out;
-    <funArgs of VARIABLE: 'if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;' "\n">
+    <funArgs of VARIABLE: readInVar(it) "\n">
     out = _<fname>(<funArgs of VARIABLE: cref(name) ", ">);
-    <outVars of VARIABLE: 'write_<varType(it)>(outVar, &out.targ<i1>);' "\n">
+    <outVars of VARIABLE: writeOutVar(it, i1) "\n">
     return 0;
   }
 
@@ -1496,6 +1496,29 @@ case EXTERNAL_FUNCTION then
     return out;
   }
   >>
+
+readInVar(Variable var) ::=
+case VARIABLE(name=cr, ty=ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD)) then
+# args = (vl of COMPLEX_VAR: '&(<cref(cr)>.<name>)' ", ")
+<<
+if (read_modelica_record(&inArgs, <args>)) return 1;
+>>
+case VARIABLE then
+<<
+if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;
+>>
+
+writeOutVar(Variable var, Integer index) ::=
+case VARIABLE(ty=ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD)) then
+# basename = underscorePath(n)
+# args = (vl of COMPLEX_VAR: '<expTypeRW(tp)>, &(out.targ<index>.<name>)' ", ")
+<<
+write_modelica_record(outVar, &<basename>__desc, <args>, TYPE_DESC_NONE);
+>>
+case VARIABLE then
+<<
+write_<varType(it)>(outVar, &out.targ<index>);
+>>
 
 varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
@@ -2373,6 +2396,13 @@ varType(Variable) ::=
       expTypeArray(var.ty)
     else
       expTypeArrayIf(var.ty)
+
+expTypeRW(DAE.ExpType) ::=
+  case ET_INT     then "TYPE_DESC_INT"
+  case ET_REAL    then "TYPE_DESC_REAL"
+  case ET_STRING  then "TYPE_DESC_STRING"
+  case ET_BOOL    then "TYPE_DESC_BOOL"
+  //case ET_ARRAY   then expTypeShort(ty)   
 
 expTypeShort(DAE.ExpType) ::=
   case ET_INT     then "integer"
