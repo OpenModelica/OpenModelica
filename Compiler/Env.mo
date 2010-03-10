@@ -1359,6 +1359,12 @@ algorithm
          //print("found qualified (1) ");print(id);print("\n");
          env = cacheGetEnv2(path2,path,CACHETREE(id2,env2,children2));
        then env;
+     
+     // for qualified name, try next.
+     case (Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, _ :: children))
+       equation
+         env = cacheGetEnv2(Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, children));
+       then env;
    end matchcontinue;
 end cacheGetEnv2;
 
@@ -1653,6 +1659,18 @@ algorithm
       Integer rhval,h;
       AvlTree t_1,t,right_1,left_1,bt;
 
+   
+    case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key as "lskf",value)
+    	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
+
+		/* Replace this node */
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key as "lskf",value)
+      equation
+        equality(rkey = key);
+        bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
+      then
+        bt;
+        
       /* empty tree*/
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
     	then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
@@ -1664,7 +1682,7 @@ algorithm
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
       then
         bt;
-
+     
         /* Insert to right  */
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
@@ -1684,6 +1702,7 @@ algorithm
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
       then
         bt;
+      
     case (_,_,_)
       equation
         print("avlTreeAdd failed\n");
