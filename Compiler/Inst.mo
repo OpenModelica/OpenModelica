@@ -12183,7 +12183,7 @@ algorithm
 			list<Integer> ds;
 			DAE.FunctionTree funcs;
 		/* Initial array equations with function calls => initial array equations */
-		case (lhs, rhs, tp, source, initial_ = SCode.INITIAL())
+		case (lhs, rhs, tp, source, SCode.INITIAL())
 			equation
 				b1 = Exp.containVectorFunctioncall(lhs);
 				b2 = Exp.containVectorFunctioncall(rhs);
@@ -12196,7 +12196,7 @@ algorithm
 				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
 
 		/* Arrays with function calls => array equations */
-		case (lhs, rhs, tp, source, initial_ = SCode.NON_INITIAL())
+		case (lhs, rhs, tp, source, SCode.NON_INITIAL())
 			equation
 				b1 = Exp.containVectorFunctioncall(lhs);
 				b2 = Exp.containVectorFunctioncall(rhs);
