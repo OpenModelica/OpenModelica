@@ -1632,8 +1632,7 @@ algorithm
   end matchcontinue;
 end instClassBasictype;
 
-public function instClassIn
-"function: instClassIn
+public function instClassIn "
   This rule instantiates the contents of a class definition, with a new
   environment already setup.
   The *implicitInstantiation* boolean indicates if the class should be
@@ -2680,8 +2679,7 @@ algorithm
   end matchcontinue;
 end  handleUnitChecking;
 
-protected function instClassdef
-"function: instClassdef
+protected function instClassdef "
   There are two kinds of class definitions, either explicit
   definitions SCode.PARTS() or
   derived definitions SCode.DERIVED() or
@@ -3719,7 +3717,7 @@ algorithm
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
         ErrorExt.setCheckpoint();
-        (cache,m_1,_) = Mod.elabModOrRollback(cache,env, Prefix.NOPRE(), mod, true);
+        (cache,m_1,_) = Mod.elabModForBasicType(cache,env, Prefix.NOPRE(), mod, true);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         (cache,env_1,ih,store,dae,_,ty,tys,st) = instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), Connect.emptySet, cdef, inst_dims, false, INNER_CALL());
@@ -3800,7 +3798,7 @@ Handles the fail case rollbacks/deleteCheckpoint of errors.
       InstanceHierarchy ih;
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},(_ :: _),mods,inst_dims) /* Inherits baseclass -and- has components */
       equation
-        (cache,m_1,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod, true) "impl" ;
+        (cache,m_1,_) = Mod.elabModForBasicType(cache,env, Prefix.NOPRE(), mod, true);
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         cdef_1 = SCode.classSetPartial(cdef, false);
         (cache,env_1,ih,_,dae,_,ty,st,_,_) = instClass(cache,cenv,ih,store, m_1, Prefix.NOPRE(), Connect.emptySet, cdef_1, inst_dims, false, INNER_CALL(), ConnectionGraph.EMPTY) "impl" ;
@@ -3813,8 +3811,10 @@ Handles the fail case rollbacks/deleteCheckpoint of errors.
       then
         ();
     // if not error above, then do not report error at all, try another case in instClassdef.
-    case (_,_,_,_,_,_,_,_) equation
-      ErrorExt.rollBack(); then ();
+    case (_,_,_,_,_,_,_,_)
+      equation
+        ErrorExt.rollBack();
+      then ();
     end matchcontinue;
 end instBasictypeBaseclass2;
 
@@ -4698,12 +4698,13 @@ algorithm
       SCode.ClassDef classDef;
       Absyn.Info info;
       SCode.BaseClassList bc;
+      Absyn.Path p;
 
     case ({},_) then {};
 
     case ((SCode.COMPONENT(component = a,innerOuter=io,finalPrefix = b,replaceablePrefix = c,
                            protectedPrefix = d,attributes = e,typeSpec = f,modifications = g,
-                           comment = comment,condition=cond,info=infoOpt,cc=cc,baseClassPath = bc) :: xs),tp)
+                           comment = comment,condition=cond,info=infoOpt,cc=cc,baseClassPath = bc) :: xs),tp as (p,_))
       equation
         res = addInheritScope(xs, tp);
       then
@@ -7595,10 +7596,12 @@ algorithm
                                                                 initialAlgorithmLst={},
                                                                 externalDecl=_)),
           dims,impl)
-      local list<SCode.Element> els, extendsels; SCode.Path path;
+      local
+        list<SCode.Element> els, extendsels;
+        SCode.Path path;
       equation
         (_,_,{SCode.EXTENDS(path, mod,_)},{}) = splitElts(els); // ONLY ONE extends!
-        (cache,mod_1,fdae) = Mod.elabMod(cache,env, pre, mod, impl);
+        (cache,mod_1,fdae) = Mod.elabModForBasicType(cache,env, pre, mod, impl);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, true);
         (cache,res,cl,fdae2) = getUsertypeDimensions(cache,env,mods_2,pre,cl,{},impl);

@@ -60,7 +60,6 @@ protected import DAEUtil;
 protected import Dump;
 protected import Debug;
 protected import Error;
-protected import ErrorExt;
 protected import Exp;
 protected import Inst;
 protected import PrefixUtil;
@@ -159,8 +158,8 @@ algorithm
   end matchcontinue;
 end elabMod;
 
-public function elabModOrRollback "
-  Same as elabMod, but if it fails it will rollback error messages."
+public function elabModForBasicType "
+  Same as elabMod, but if a named Mod is not part of a basic type, fail instead."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
@@ -173,14 +172,64 @@ algorithm
   (outCache,outMod,outDae) := matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
     case (inCache,inEnv,inPrefix,inMod,inBoolean)
       equation
-        (outCache,outMod,outDae) = elabMod(inCache,inEnv,inPrefix,inMod,inBoolean); 
+        checkIfModsAreBasicTypeMods(inMod);
+        (outCache,outMod,outDae) = elabMod(inCache,inEnv,inPrefix,inMod,inBoolean);
       then (outCache,outMod,outDae);
-    case (inCache,inEnv,inPrefix,inMod,inBoolean)
-      equation
-        ErrorExt.rollBack();
-      then fail();
   end matchcontinue;
-end elabModOrRollback;
+end elabModForBasicType;
+
+protected constant list<String> basicTypeMods = {
+  "quantity",
+  "unit",
+  "displayUnit",
+  "min",
+  "max",
+  "start",
+  "fixed",
+  "nominal",
+  "stateSelect"  
+};
+
+protected function checkIfModsAreBasicTypeMods "
+  Verifies that a list of submods only have named modifications that could be
+  used for basic types.
+"
+  input SCode.Mod mod;
+algorithm
+  _ := matchcontinue mod
+    local
+      list<SCode.SubMod> subs;
+    case SCode.NOMOD() then ();
+    case SCode.MOD(subModLst = subs)
+      equation
+        checkIfSubmodsAreBasicTypeMods(subs);
+      then ();
+  end matchcontinue;
+end checkIfModsAreBasicTypeMods;
+
+protected function checkIfSubmodsAreBasicTypeMods "
+  Verifies that a list of submods only have named modifications that could be
+  used for basic types.
+"
+  input list<SCode.SubMod> subs;
+algorithm
+  _ := matchcontinue subs
+    local
+      SCode.Mod mod;
+      String ident;
+    case {} then ();
+    case SCode.NAMEMOD(ident = ident)::subs
+      equation
+        true = listMember(ident,basicTypeMods);
+        checkIfSubmodsAreBasicTypeMods(subs);
+      then ();
+    case SCode.IDXMOD(an = mod)::subs
+      equation
+        checkIfModsAreBasicTypeMods(mod);
+        checkIfSubmodsAreBasicTypeMods(subs);
+      then ();
+  end matchcontinue;
+end checkIfSubmodsAreBasicTypeMods;
 
 protected function elabModRedeclareElements
   input Env.Cache inCache;
