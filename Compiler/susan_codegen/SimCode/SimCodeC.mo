@@ -9962,6 +9962,16 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
+           i_STMT__RETURN,
+           _,
+           i_varDecls )
+      local
+        DAE.Statement i_STMT__RETURN;
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("goto _return;"));
+      then (txt, i_varDecls);
+
+    case ( txt,
            _,
            _,
            i_varDecls )

@@ -1721,6 +1721,13 @@ case STMT_ASSERT then
 case when as STMT_WHEN then if context is SIMULATION(genDiscrete=true)
                        then algStatementWhen(when, context, varDecls)
                        else ""
+// If this case is put before 'when as STMT_WHEN' it seems that a return
+// statement is generated instead of a when statement. Having it after seems to
+// generate correct code.
+case STMT_RETURN then
+  <<
+  goto _return;
+  >>
 case _ then "/* not implemented alg statement*/"
 
 algStatementWhen(DAE.Statement, Context context, Text varDecls) ::=
