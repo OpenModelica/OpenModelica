@@ -1523,7 +1523,8 @@ algorithm
         Inst.partialInstClassIn(
           cache,cenv_2,InnerOuter.emptyInstHierarchy,
           dmod, Prefix.NOPRE(), Connect.emptySet,
-          new_ci_state, c, false, {});
+          new_ci_state, c,
+          false, {});
       then (cache,classEnv);
     case(cache,env,path,mod,msg)
       equation
@@ -2160,9 +2161,13 @@ algorithm
   end matchcontinue;
 end isInBuiltinEnv;
 
-protected function lookupClassInEnv "function: lookupClassInEnv
-
-  Helper function to lookup_class. Searches the environment for the class.
+protected function lookupClassInEnv "
+  Helper function to lookupClass2. Searches the environment for the class.
+  It first checks the current scope, and then base classes. The specification
+  says that we first search elements in the current scope (+ the ones inherited
+  from base classes), but this does not include derived environment. All elements
+  are already part of the current scope. Thus, we need to make sure that the derived
+  environment is searched last.
 "
   input Env.Cache inCache;
   input Env.Env inEnv;
@@ -2175,7 +2180,36 @@ protected function lookupClassInEnv "function: lookupClassInEnv
   output Env.Env outEnv;
   output list<Env.Frame> outPrevFrames;
 algorithm
-  (outCache,outClass,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inMsg)
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue(inCache,inEnv,id,inPrevFrames,inState,inMsg)
+    case (inCache,inEnv,id,inPrevFrames,inState,inMsg)
+      equation
+        (outCache,outClass,outEnv,outPrevFrames) = lookupClassInEnvCurrentScope(inCache,inEnv,id,inPrevFrames,inState,inMsg);
+        Util.setStatefulBoolean(inState,true);
+      then (outCache,outClass,outEnv,outPrevFrames);
+    case (inCache,inEnv,id,inPrevFrames,inState,inMsg)
+      equation
+        (outCache,outClass,outEnv,outPrevFrames) = lookupClassInEnvDerivedScopes(inCache,inEnv,id,inPrevFrames,inState,inMsg);
+        Util.setStatefulBoolean(inState,true);
+      then (outCache,outClass,outEnv,outPrevFrames);
+  end matchcontinue;
+end lookupClassInEnv;
+
+protected function lookupClassInEnvCurrentScope "
+  Helper function to lookupClassInEnv. Searches the environment for the class.
+  Does not search base classes.
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input String id;
+  input list<Env.Frame> inPrevFrames;
+  input Util.StatefulBoolean inState;
+  input Boolean inMsg;
+  output Env.Cache outCache;
+  output SCode.Class outClass;
+  output Env.Env outEnv;
+  output list<Env.Frame> outPrevFrames;
+algorithm
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inMsg)
     local
       SCode.Class c;
       list<Env.Frame> env_1,env,fs,i_env,prevFrames;
@@ -2188,22 +2222,72 @@ algorithm
     case (cache,env as (frame::_),id,prevFrames,inState,msg) /* msg */
       equation
         (cache,c,env_1,prevFrames) = lookupClassInFrame(cache,frame,env,id,prevFrames,inState,msg);
-        Util.setStatefulBoolean(inState,true);
       then
         (cache,c,env_1,prevFrames);
+    
     case (cache,(env as ((frame as Env.FRAME(optName = SOME(sid),isEncapsulated = true)) :: fs)),id,prevFrames,inState,_)
       equation
         equality(id = sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
-        (cache,c,env,prevFrames) = lookupClassInEnv(cache,fs, id, frame::prevFrames, inState, true);
+        (cache,c,env,prevFrames) = lookupClassInEnvCurrentScope(cache,fs, id, frame::prevFrames, inState, true);
       then
         (cache,c,env,prevFrames);
 
-        /* lookup stops at encapsulated classes except for builtin
-	    scope, if not found in builtin scope, error */
+    case (cache,(frame as Env.FRAME(optName = SOME(_), isEncapsulated = false)) :: fs,id,prevFrames,inState,msgflag) /* if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope */
+      equation
+        false = Util.getStatefulBoolean(inState);
+        (cache,c,env_1,prevFrames) = lookupClassInEnvCurrentScope(cache,fs, id, frame::prevFrames, inState, msgflag);
+      then
+        (cache,c,env_1,prevFrames);
+
+  end matchcontinue;
+end lookupClassInEnvCurrentScope;
+
+protected function lookupClassInEnvDerivedScopes "
+  Helper function to lookupClassInEnv. Searches the environment for the class.
+  Only searches search base classes.
+"
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input String id;
+  input list<Env.Frame> inPrevFrames;
+  input Util.StatefulBoolean inState;
+  input Boolean inMsg;
+  output Env.Cache outCache;
+  output SCode.Class outClass;
+  output Env.Env outEnv;
+  output list<Env.Frame> outPrevFrames;
+algorithm
+  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inEnv,id,inPrevFrames,inState,inMsg)
+    local
+      SCode.Class c;
+      list<Env.Frame> env_1,env,fs,i_env,prevFrames;
+      Env.BCEnv bcframes;
+      Env.Frame frame,f;
+      String id,sid,scope;
+      Boolean msg,msgflag;
+      Absyn.Path aid,path;
+      Env.Cache cache;
+
+        /* Search base classes */
+    case (cache,Env.FRAME(inherited = bcframes)::_,id,_,_,_)
+      equation
+        (cache,c,env,prevFrames) = lookupClassInBaseClasses(cache,bcframes,id);
+      then
+        (cache,c,env,prevFrames);
+
+    case (cache,(env as ((frame as Env.FRAME(optName = SOME(sid),isEncapsulated = true)) :: fs)),id,prevFrames,inState,_)
+      equation
+        equality(id = sid) "Special case if looking up the class that -is- encapsulated. That must be allowed." ;
+        (cache,c,env,prevFrames) = lookupClassInEnvDerivedScopes(cache,fs, id, frame::prevFrames, inState, true);
+      then
+        (cache,c,env,prevFrames);
+
+      /* lookup stops at encapsulated classes except for builtin
+	       scope, if not found in builtin scope, error */
     case (cache,(env as (Env.FRAME(optName = SOME(sid),isEncapsulated = true) :: fs)),id,prevFrames,inState,true)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        failure((_,_,_,_) = lookupClassInEnv(cache,i_env, id, {}, inState, false));
+        failure((_,_,_,_) = lookupClassInEnvCurrentScope(cache,i_env, id, {}, inState, false));
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_ERROR, {id,scope});
       then
@@ -2214,36 +2298,19 @@ algorithm
         Option<String> sid;
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,i_env, id, {}, inState, msgflag);
+        (cache,c,env_1,prevFrames) = lookupClassInEnvCurrentScope(cache,i_env, id, {}, inState, msgflag);
       then
         (cache,c,env_1,prevFrames);
-    /*case (cache,((f as Env.FRAME(optName = sid,isEncapsulated = false)) :: fs),id,msgflag)
-      local
-        Option<String> sid;
-        Absyn.Path id;
-      equation
-        "thermoRoot_der" =Absyn.pathString(id);
-        ("Utilities"::_) = Env.getScopeNames(fs);
-        print(" looking for: " +& Absyn.pathString(id) +& " in scope " +& Util.stringDelimitList(Env.getScopeNames(fs),", ") +& "\n");
-        print("***************\n\n\n env:\n"+& Env.printEnvStr(fs) +& "\n\n**************");
-        (cache,c,env_1) = lookupClassInEnv(cache,fs, id, msgflag);
-      then
-        (cache,c,env_1);
-        */
+
     case (cache,(frame as Env.FRAME(optName = SOME(_), isEncapsulated = false)) :: fs,id,prevFrames,inState,msgflag) /* if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope */
       equation
         false = Util.getStatefulBoolean(inState);
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,fs, id, frame::prevFrames, inState, msgflag);
+        (cache,c,env_1,prevFrames) = lookupClassInEnvDerivedScopes(cache,fs, id, frame::prevFrames, inState, msgflag);
       then
         (cache,c,env_1,prevFrames);
-    case (cache,Env.FRAME(optName = NONE(), isEncapsulated = false) :: fs,id,prevFrames,inState,msgflag) /* if not found and not encapsulated, and no ident has been previously found, look in next enclosing scope */
-      equation
-        false = Util.getStatefulBoolean(inState);
-        (cache,c,env_1,prevFrames) = lookupClassInEnv(cache,fs, id, {}, inState, msgflag);
-      then
-        (cache,c,env_1,prevFrames);
+
   end matchcontinue;
-end lookupClassInEnv;
+end lookupClassInEnvDerivedScopes;
 
 protected function lookupClassInFrame "function: lookupClassInFrame
 
@@ -2274,18 +2341,11 @@ algorithm
       Env.Item item;
 
       /* Check this scope for class */
-    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,id,prevFrames,_,_)
+    case (cache,Env.FRAME(optName = sid,clsAndVars = ht),totenv,name,prevFrames,inState,_)
       equation
-        Env.CLASS(c,_) = Env.avlTreeGet(ht, id);
+        Env.CLASS(c,_) = Env.avlTreeGet(ht, name);
       then
         (cache,c,totenv,prevFrames);
-
-        /* Search base classes */
-    case (cache,Env.FRAME(inherited = bcframes),totenv,name,_,_,_)
-      equation
-        (cache,c,env,prevFrames) = lookupClassInBaseClasses(cache,bcframes,name);
-      then
-        (cache,c,env,prevFrames);
 
         /* Search among the qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,inState,_)
