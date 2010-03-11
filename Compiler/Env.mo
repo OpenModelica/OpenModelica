@@ -1361,10 +1361,10 @@ algorithm
        then env;
      
      // for qualified name, try next.
-     case (Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, _ :: children))
+   /*  case (Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, _ :: children))
        equation
          env = cacheGetEnv2(Absyn.QUALIFIED(id, path2), path, CACHETREE(id2, env2, children));
-       then env;
+       then env;*/
    end matchcontinue;
 end cacheGetEnv2;
 
