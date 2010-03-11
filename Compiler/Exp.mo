@@ -1585,7 +1585,6 @@ algorithm
       local Exp ae1;Type t2;
       equation
         DAE.CREF(DAE.CREF_IDENT(idn,t2,s),t) = simplify1(e);
-        t2 = unliftArray(t2);
         t = unliftArray(t);
         s_1 = subscriptsAppend(s, i);
       then
@@ -2086,7 +2085,7 @@ algorithm
         s1 = simplify(s1);
         tp = typeof(s1);
         atp = typeof(a1);
-        atp2 = unliftArray(atp);
+        atp2 = unliftArray(atp);        
         b = typeBuiltin(atp2);
         op2 = Util.if_(b,DAE.MUL(tp),DAE.MUL_SCALAR_ARRAY(atp2));
         res = simplifyVectorScalar(s1, op2, a1);
@@ -3372,6 +3371,7 @@ algorithm
       then
         exp;
 
+     /* For Matrix product M1 * M2 */
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),indx)
      local Exp e;
       equation
@@ -3379,7 +3379,14 @@ algorithm
         e = simplifyAsub(e, indx);
       then
         e;
-
+    /* For scalar product v1 * v2, M * v1 and v1 * M */
+    case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),indx)
+     local Exp e;
+      equation
+        e = simplifyScalarProduct(e1,e2);
+        e = simplifyAsub(e, indx);
+      then
+        e;
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.DIV_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
       equation
         e2_1 = simplifyAsub(e2, indx);
@@ -6650,6 +6657,41 @@ algorithm
   end matchcontinue;
 end binopSymbol1;
 
+public function debugBinopSymbol 
+"function: binopSymbol1 
+  Helper function to binopSymbol"
+  input Operator inOperator;
+  output String outString;
+algorithm 
+  outString:=
+  matchcontinue (inOperator)
+    case (DAE.ADD(ty = _)) then " + "; 
+    case (DAE.SUB(ty = _)) then " - ";       
+    case (DAE.MUL(ty = _)) then " * "; 
+    case (DAE.DIV(ty = _)) then " / "; 
+    case (DAE.POW(ty = _)) then " ^ ";
+    case (DAE.EQUAL(ty = _)) then " = ";  
+    case (DAE.ADD_ARR(ty = _)) then " +ARR "; 
+    case (DAE.SUB_ARR(ty = _)) then " -ARR "; 
+    case (DAE.MUL_ARR(ty = _)) then " *ARR "; 
+    case (DAE.DIV_ARR(ty = _)) then " /ARR "; 
+    case (DAE.POW_ARR(ty = _)) then " ^ARR "; 
+    case (DAE.POW_ARR2(ty = _)) then " ^ARR2 "; 
+    case (DAE.MUL_SCALAR_ARRAY(ty = _)) then " S*ARR "; 
+    case (DAE.MUL_ARRAY_SCALAR(ty = _)) then " ARR*S "; 
+    case (DAE.ADD_SCALAR_ARRAY(ty = _)) then " S+ARR "; 
+    case (DAE.ADD_ARRAY_SCALAR(ty = _)) then " ARR+S "; 
+    case (DAE.SUB_SCALAR_ARRAY(ty = _)) then " - "; 
+    case (DAE.SUB_ARRAY_SCALAR(ty = _)) then " ARR-S "; 
+    case (DAE.POW_SCALAR_ARRAY(ty = _)) then " S^ARR "; 
+    case (DAE.POW_ARRAY_SCALAR(ty = _)) then " ARR^S "; 
+    case (DAE.MUL_SCALAR_PRODUCT(ty = _)) then " Dot "; 
+    case (DAE.MUL_MATRIX_PRODUCT(ty = _)) then " MatrixProd "; 
+    case (DAE.DIV_SCALAR_ARRAY(ty = _)) then " S/ARR "; 
+    case (DAE.DIV_ARRAY_SCALAR(ty = _)) then " ARR/S "; 
+  end matchcontinue;
+end debugBinopSymbol;
+
 protected function binopSymbol2
 "function: binopSymbol2
   Helper function to binopSymbol."
@@ -8555,7 +8597,7 @@ algorithm
   outString:=
   matchcontinue (inExp,inInteger)
     local
-      Ident gen_str,res_str,s,s_1,s_2,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,tystr,istr,crt,dimt,expt,itert,id;
+      Ident gen_str,res_str,s,s_1,s_2,sym,lt,rt,ct,tt,ft,fs,argnodes_1,nodes_1,t1,t2,t3,tystr,istr,crt,dimt,expt,itert,id,tpStr;
       Integer level,x,new_level1,new_level2,new_level3,i;
       ComponentRef c;
       Exp e1,e2,e,t,f,start,stop,step,cr,dim,exp,iterexp;
@@ -8605,11 +8647,12 @@ algorithm
         res_str = Util.stringAppendList({gen_str,"BCONST ","true","\n"});
       then
         res_str;
-    case (DAE.CREF(componentRef = c),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
+    case (DAE.CREF(componentRef = c,ty=ty),level) /* Graphviz.LNODE(\"CREF\",{s},{},{}) */
       equation
         gen_str = genStringNTime("   |", level);
         s = /*printComponentRefStr*/debugPrintComponentRefTypeStr(c);
-        res_str = Util.stringAppendList({gen_str,"CREF ",s,"\n"});
+        tpStr= typeString(ty);
+        res_str = Util.stringAppendList({gen_str,"CREF ",s,"\nCREFTYPE:",tpStr,"\n"});
       then
         res_str;
     case (exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"BINARY\",{sym},{},{lt,rt}) */
@@ -8619,7 +8662,7 @@ algorithm
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         new_level2 = level + 1;
-        sym = binopSymbol(op);
+        sym = debugBinopSymbol(op);
         tp = typeof(exp);
         str = typeString(tp);
         lt = dumpExpStr(e1, new_level1);
@@ -8702,15 +8745,16 @@ algorithm
         res_str = Util.stringAppendList({gen_str,"CALL ",fs,"\n",argnodes_1,""});
       then
         res_str;
-    case (DAE.ARRAY(array = es,scalar=b),level)
-      local Boolean b; String s;
+    case (DAE.ARRAY(array = es,scalar=b,ty=tp),level)
+      local Boolean b; String s,tpStr; DAE.ExpType tp;
       equation
         gen_str = genStringNTime("   |", level);
         new_level1 = level + 1;
         nodes = Util.listMap1(es, dumpExpStr, new_level1);
         nodes_1 = Util.stringAppendList(nodes);
         s = Util.boolString(b);
-        res_str = Util.stringAppendList({gen_str,"ARRAY scalar:",s,"\n",nodes_1});
+        tpStr = typeString(tp);
+        res_str = Util.stringAppendList({gen_str,"ARRAY scalar:",s," tp: ",tpStr,"\n",nodes_1});
       then
         res_str;
     case (DAE.TUPLE(PR = es),level) /* Graphviz.NODE(\"TUPLE\",{},nodes) */
@@ -9393,7 +9437,7 @@ public function makeCrefExpNoType "similar to makeCrefExp but picks type from co
 input ComponentRef cref;
 output Exp e;
 algorithm
-  e := makeCrefExp(cref,crefType(cref));
+  e := makeCrefExp(cref,crefTypeConsiderSubs(cref));
 end makeCrefExpNoType;
 
 public function makeCrefExp
@@ -10860,6 +10904,53 @@ algorithm
 end matchcontinue;
 end arrayContainZeroDimension;
 
+public function crefHasScalarSubscripts "returns true if the subscripts of the cref results in a scalar variable.
+For example given Real x[3,3]
+  x[1,2] has scalar subscripts
+  x[1] has not scalar subscripts
+  x[:,1] has not scalar subscripts
+  x[{1,2},1] has not scalar subscripts
+"
+  input ComponentRef cr;
+  output Boolean hasScalarSubs;
+algorithm
+  hasScalarSubs := matchcontinue(cr)
+  local 
+    list<Subscript> subs;
+    DAE.ExpType tp;
+    list<Option<Integer>> dims;
+    
+    /* No subscripts */
+    case(cr) equation {} = crefLastSubs(cr); then true;
+      
+      /* constant Subscripts that match type => true */ 
+    case(cr) equation
+      (subs as (_::_))= crefLastSubs(cr);
+      true = subscriptConstants(subs);
+      tp = crefLastType(cr);
+      dims = arrayDimension(tp);
+      // Since all subscripts are constants, sufficient to compare length of dimensions
+      true = listLength(dims) ==listLength(subs);
+    then true;
+      
+      /* All other cases are false */
+    case(cr) then false;
+  end matchcontinue;
+end crefHasScalarSubscripts;
+
+protected function subscriptConstants "returns true if all subscripts are constant values (no slice or wholedim "
+  input list<Subscript> subs;
+  output Boolean areConstant;
+algorithm
+  areConstant := matchcontinue(subs)
+    case({}) then true;
+    case(DAE.INDEX(DAE.ICONST(_)):: subs) equation
+      areConstant = subscriptConstants(subs);
+    then areConstant;
+    case(_) then false;
+  end matchcontinue;
+end subscriptConstants;
+
 public function containWholeDim " A function to check if a cref contains a [:] wholedim element in the subscriptlist.
 "
   input ComponentRef inRef;
@@ -11025,8 +11116,21 @@ algorithm outRef := matchcontinue (inRef,newType)
   end matchcontinue;
 end crefSetLastType;
 
-public function crefType "Function: crefType
-Function for extracting the type out of a componentReference.
+public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
+Author: PA
+Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
+For exampele. If the last cref type is Real[3,3] and the subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
+one dimension is lifted.
+See also, crefType.
+"
+  input ComponentRef cr;
+  output Type res;
+algorithm 
+ res := unliftArrayTypeWithSubs(crefLastSubs(cr),crefType(cr));
+end crefTypeConsiderSubs;
+
+public function crefType "Function: crefType 
+Function for extracting the type out of a componentReference. 
 "
   input ComponentRef inRef;
   output Type res;
@@ -11035,12 +11139,8 @@ algorithm
   matchcontinue (inRef)
     local
       Type t2;
-      case(inRef as DAE.CREF_IDENT(_,t2,_))
-        then
-          t2;
-      case(inRef as DAE.CREF_QUAL(_,t2,_,_))
-        then
-          t2;
+      case(inRef as DAE.CREF_IDENT(_,t2,_)) then t2;
+      case(inRef as DAE.CREF_QUAL(_,t2,_,_)) then t2;
       case(cr)
         local ComponentRef cr;String s;
         equation

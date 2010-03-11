@@ -210,7 +210,7 @@ algorithm
       equation
         fn2 = Absyn.crefToPath(fn);
 
-        (cache,typeList1)
+        (cache,typeList1,_)
         = Lookup.lookupFunctionsInEnv(cache,env, fn2);
 
         typeList2 = extractFuncTypes(typeList1);

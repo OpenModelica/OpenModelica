@@ -2612,8 +2612,8 @@ algorithm
       equation
         SOME(path) = Env.getEnvPath(env);
         path = Absyn.joinPaths(path, Absyn.IDENT("equalityConstraint"));
-        /*(cache, env) = implicitFunctionTypeInstantiation(cache, env, classDef);
-        (cache, types) = Lookup.lookupFunctionsInEnv(cache, env, path);
+        /*(cache, env,_) = implicitFunctionTypeInstantiation(cache, env, classDef);
+        (cache, types,_) = Lookup.lookupFunctionsInEnv(cache, env, path);
         length = listLength(types);
         print("type count: ");
         print(intString(length));
@@ -9314,7 +9314,7 @@ algorithm
 
     /* A type can exist without a class (i.e. builtin functions) */
     case (cache,env,Absyn.IDENT(s))
-      equation
+      equation         
          (cache,_,env_1) = Lookup.lookupType(cache,env, Absyn.IDENT(s), false);
          path_2 = makeFullyQualified2(env_1,s);
       then
@@ -9336,7 +9336,7 @@ algorithm
       local String s; SCode.Class cl; Absyn.Path path3; DAE.ComponentRef crPath;
       equation
           crPath = Exp.pathToCref(path);
-         (cache,env,_,_,_) = Lookup.lookupVarInPackages(cache,env, crPath);
+         (cache,env,_,_,_,_) = Lookup.lookupVarInPackages(cache,env, crPath);
           path3 = makeFullyQualified2(env,Absyn.pathLastIdent(path));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));
@@ -9396,7 +9396,7 @@ algorithm
       list<DAE.Element> daeElts;
       list<DAE.FunctionDefinition> derFuncs;
       Absyn.Info info;
-
+    
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
       equation
         (c,cenv) = Lookup.lookupRecordConstructorClass(env,Absyn.IDENT(n));
@@ -9429,6 +9429,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefix,inlineType,source)},funcs),dae1);
+        
       then
         (cache,env_1,ih,dae);
 
@@ -9977,8 +9978,9 @@ public function implicitFunctionTypeInstantiation
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
+  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,inClass)
+  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inClass)
     local
       SCode.Class stripped_class;
       list<Env.Frame> env_1,env;
@@ -9992,17 +9994,18 @@ algorithm
       list<SCode.Annotation> annotationLst;
       Absyn.Info info;
       Env.Cache garbageCache;
+      DAE.DAElist dae;
 
     /* The function type can be determined without the body. Annotations need to be preserved though. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info))
       equation
         stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
-        (garbageCache,env_1,ih,_) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
+        (garbageCache,env_1,ih,dae) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
       then
-        (cache,env_1,ih);
+        (cache,env_1,ih,dae);
 
-    /* The function type canNOT be determined without the body. */
+    /* Short class definitions. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(path = cn,arrayDim = ad),
                                                             modifications = mod1),info = info))
@@ -10024,7 +10027,7 @@ algorithm
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, id, ty1);
       then
-        (cache,env_1,ih);
+        (cache,env_1,ih,DAEUtil.emptyDae);
 
     case (_,_,_,_)
       equation
@@ -10552,12 +10555,12 @@ algorithm
       Env.Cache cache;
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        (cache,attr,ty,bnd) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,attr,ty,bnd,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,DAE.EXTARG(cref,attr,ty));
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        failure((_,attr,ty,bnd) = Lookup.lookupVarLocal(cache,env, cref));
+        failure((_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref));
         crefstr = Exp.printComponentRefStr(cref);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
@@ -10565,7 +10568,7 @@ algorithm
         fail();
     case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        (cache,attr,varty,bnd) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,attr,varty,bnd,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,DAE.EXTARGSIZE(cref,attr,varty,dim));
     case (cache,env,exp,DAE.PROP(type_ = ty,constFlag = cnst)) then (cache,DAE.EXTARGEXP(exp,ty));
@@ -11113,6 +11116,10 @@ algorithm
         instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
+    case(cache,env,ih,mods,pre,csets,ci_state,eq,impl,graph) 
+      equation
+        Debug.fprint("failtrace","instEEquation failed for "+&SCode.equationStr(eq)+&"\n");
+    then fail(); 
   end matchcontinue;
 end instEEquation;
 

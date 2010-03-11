@@ -1249,14 +1249,14 @@ uniontype ComponentRef "- Component references
 "
   record CREF_QUAL
     Ident ident;
-    ExpType identType;
+    ExpType identType "type of the identifier, without considering the subscripts";
     list<Subscript> subscriptLst;
     ComponentRef componentRef;
   end CREF_QUAL;
 
   record CREF_IDENT
     Ident ident;
-    ExpType identType;
+    ExpType identType "type of the identifier, without considering the subscripts";
     list<Subscript> subscriptLst;
   end CREF_IDENT;
 

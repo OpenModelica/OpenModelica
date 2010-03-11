@@ -404,7 +404,7 @@ algorithm
     case (cache,env,(e as DAE.ASUB(exp = e1 as DAE.CREF(componentRef = p,ty = t), sub = expl)),pre)
       local list<DAE.Exp> expl;
         equation
-          (cache,_,_,_) = Lookup.lookupVarLocal(cache ,env, p);
+          (cache,_,_,_,_) = Lookup.lookupVarLocal(cache ,env, p);
           (cache,es_1) = prefixExpList(cache,env, expl, pre);
            p_1 = prefixCref(pre, p);
           e2 = DAE.ASUB(DAE.CREF(p_1,t),es_1);
@@ -420,14 +420,14 @@ algorithm
 
     case (cache,env,DAE.CREF(componentRef = p,ty = t),pre)
       equation
-        (cache,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
+        (cache,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
         p_1 = prefixCref(pre, p);
       then
         (cache,DAE.CREF(p_1,t));
 
     case (cache,env,(e as DAE.CREF(componentRef = p)),pre)
       equation
-        failure((_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
+        failure((_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
       then
         (cache,e);
 

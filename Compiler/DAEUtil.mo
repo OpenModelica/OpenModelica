@@ -6741,6 +6741,17 @@ algorithm
   end matchcontinue;
 end elementIsFunction;
 
+public function elementIsExtFunction "returns true if element matches an external function"
+  input DAE.Element elt;
+  output Boolean res;
+algorithm
+  res := matchcontinue(elt)
+    case(DAE.FUNCTION(functions=DAE.FUNCTION_EXT(body=_)::_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end elementIsExtFunction;
+
+
 protected function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
   input DAE.Element elt;
   output Absyn.Path name;
@@ -6775,6 +6786,41 @@ algorithm
     then DAE.DAE(elt::elts,funcs);
   end matchcontinue;
 end addDaeFunction;
+
+public function addDaeExtFunction "add extermaö functions present in the element list to the function tree
+Note: normal functions are skipped.
+See also addDaeFunction
+"
+  input DAE.DAElist dae;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(dae)
+  local DAE.FunctionTree funcs;
+    list<DAE.Element> elts;
+    DAE.Element elt;
+
+    case(DAE.DAE({},funcs)) then DAE.DAE({},funcs);
+
+      /* is external function */
+    case(DAE.DAE(elt::elts,funcs)) equation
+        true = elementIsExtFunction(elt);
+        //print("adding external function "+&Absyn.pathString(functionName(elt))+&"\n");
+        funcs = avlTreeAdd(funcs,functionName(elt),elt);
+        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
+    then DAE.DAE(elts,funcs);
+      
+      /* Other functions removed*/
+    case(DAE.DAE(elt::elts,funcs)) equation
+      true = elementIsFunction(elt);     
+      DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
+    then DAE.DAE(elts,funcs);
+        
+      /* Not external or normal function, keep */
+    case(DAE.DAE(elt::elts,funcs)) equation
+        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
+    then DAE.DAE(elt::elts,funcs);
+  end matchcontinue;
+end addDaeExtFunction;
 
 public function mergeSources
   input DAE.ElementSource src1;

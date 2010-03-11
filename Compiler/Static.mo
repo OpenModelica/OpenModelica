@@ -388,7 +388,7 @@ algorithm
         c = Types.constAnd(c1, c2);
 
         (cache,ops) = operators(cache,op, env, t1, t2);
-        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp);
+        (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp);                
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
         prop = DAE.PROP(rtype,c);
         (cache,exp_2,prop_1) = cevalIfConstant(cache,exp_1, prop, c, impl, env);
@@ -8295,7 +8295,7 @@ algorithm
       SCode.Class cl;
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
-      DAE.DAElist dae,dae1,dae2,outDae;
+      DAE.DAElist dae,dae1,dae2,dae3,outDae;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -8462,7 +8462,7 @@ algorithm
         list<DAE.Type> ltypes;
         list<String> lstr;
       equation
-        (cache,typelist as _::_) = Lookup.lookupFunctionsInEnv(cache, env, fn)
+        (cache,typelist as _::_,dae1) = Lookup.lookupFunctionsInEnv(cache, env, fn)
         "PR. A function can have several types. Taking an array with
          different dimensions as parameter for example. Because of this we
          cannot just lookup the function name and trust that it
@@ -8470,7 +8470,7 @@ algorithm
          functiontype of several possibilites. The solution is to send
          in the function type of the user function and check both the
          function name and the function\'s type." ;
-        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots,dae1) =
+        (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots,dae2) =
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl)
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
         fn_1 = deoverloadFuncname(fn, functype);
@@ -8490,14 +8490,14 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop);
 
         /* Instantiate the function and add to dae function tree*/
-        (cache,dae2) = instantiateDaeFunction(cache,env,fn,builtin,NONE);
-        dae = DAEUtil.joinDaes(dae1,dae2);
+        (cache,dae3) = instantiateDaeFunction(cache,env,fn,builtin,NONE);
+        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
         (cache,call_exp,prop_1,dae);
 
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found, no candidates. */
       equation
-        (cache,{}) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,{},_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
         fn_str = Absyn.pathString(fn);
         Error.addMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {fn_str});
       then
@@ -8506,7 +8506,7 @@ algorithm
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with -one- candidate */
       local list<DAE.Exp> args1; String argStr; DAE.Type tp1;
       equation
-        (cache,typelist as {tp1}) = Lookup.lookupFunctionsInEnv(cache, env, fn);
+        (cache,typelist as {tp1},_) = Lookup.lookupFunctionsInEnv(cache, env, fn);
         (cache,args_1,constlist,restype,functype,vect_dims,slots,_) =
           elabTypes(cache, env, args, nargs, typelist, false/* Do not check types*/, impl);
         argStr = Exp.printExpListStr(args_1);
@@ -8518,7 +8518,7 @@ algorithm
 
     case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with candidates */
       equation
-        (cache,typelist as _::_::_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
+        (cache,typelist as _::_::_,_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
 
         t_lst = Util.listMap(typelist, Types.unparseType);
         fn_str = Absyn.pathString(fn);
@@ -8530,7 +8530,7 @@ algorithm
     /*// lookup failure -> not needed is caught below
     case (cache,env,fn,args,nargs,impl,st)
       equation
-        failure((_,_) = Lookup.lookupFunctionsInEnv(cache, env, fn));
+        failure((_,_,_) = Lookup.lookupFunctionsInEnv(cache, env, fn));
         fn_str = Absyn.pathString(fn);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_ERROR, {fn_str,scope});
@@ -8706,8 +8706,8 @@ protected function vectorizeCall "function: vectorizeCall
   Takes an expression and a list of array dimensions and the Slot list.
   It will vectorize the expression over the dimension given as array dim
   for the slots which have that dimension.
-  For example foo:(Real,Real{:})=> Real
-  foo(1:2,{1,2;3,4}) vectorizes with arraydim {2} to
+  For example foo:(Real,Real[:])=> Real
+  foo(1:2,{1,2;3,4}) vectorizes with arraydim [2] to 
   {foo(1,{1,2}),foo(2,{3,4})}
 "
   input DAE.Exp inExp;
@@ -8733,8 +8733,8 @@ algorithm
       list<Slot> slots;
       DAE.ExpType etp;
     case (e,{},_,prop) then (e,prop);
-    case (DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) /* Scalar expression, i.e function call */
-      equation
+    case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) /* Scalar expression, i.e function call */
+      equation 
         exp_type = Types.elabType(Types.liftArray(tp, SOME(dim)));
         vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, dim, slots);
         (vect_exp_1,DAE.PROP(tp,c)) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
@@ -10004,7 +10004,7 @@ algorithm
       DAE.DAElist dae;
       String str,fn_str,scope;
       DAE.Properties props;
-      Option<DAE.Exp> splicedExp;
+      Lookup.SplicedExpData splicedExpData;
       Absyn.Path path,fpath;
       list<DAE.Type> typelist;
       list<String> typelistStr;
@@ -10024,9 +10024,9 @@ algorithm
     case (cache,env,c,impl,doVect) /* impl */
       equation
         (cache,c_1,_,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
-        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,splicedExp,_) = Lookup.lookupVar(cache, env, c_1);
-        (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, io,t, binding,doVect,splicedExp);
-        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExp,doVect);
+        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,splicedExpData,_) = Lookup.lookupVar(cache, env, c_1);
+        (cache,exp,const,acc_1) = elabCref2(cache,env, c_1, acc, variability, io,t, binding,doVect,splicedExpData);
+        exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect);        
       then
         (cache,exp,DAE.PROP(t,const),acc_1,dae);
 
@@ -10035,7 +10035,7 @@ algorithm
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
-        (cache,typelist) = Lookup.lookupFunctionsInEnv(cache,env,path);
+        (cache,typelist,dae) = Lookup.lookupFunctionsInEnv(cache,env,path);
         t :: _ = typelist;
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
@@ -10043,13 +10043,13 @@ algorithm
         expCref = Exp.toExpCref(c);
         exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC());
       then
-        (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO(),DAEUtil.emptyDae);
+        (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO(),dae);
 
     case (cache,env,c,impl,doVect)
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
-        failure((_,_) = Lookup.lookupFunctionsInEnv(cache,env,path));
+        failure((_,_,_) = Lookup.lookupFunctionsInEnv(cache,env,path));
         fn_str = Absyn.pathString(path);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_ERROR, {fn_str,scope});
@@ -10091,11 +10091,11 @@ protected function makeASUBArrayAdressing
   input Env.Env inEnv;
   input Boolean inBoolean "implicit instantiation";
   input DAE.Exp inExp;
-  input Option<DAE.Exp> spliceExp;
+  input Lookup.SplicedExpData splicedExpData;
   input Boolean doVect "if doVect is false, no vectorization and thus no ASUB addressing is performed";
   output DAE.Exp outExp;
 algorithm
-  outComponentRef := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,spliceExp,doVect)
+  outComponentRef := matchcontinue (inRef,inCache,inEnv,inBoolean,inExp,splicedExpData,doVect)
     local
       DAE.Exp exp1, exp2, aexp1,aexp2;
       Absyn.ComponentRef cref, crefChild;
@@ -10108,10 +10108,11 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       Env.Cache cache;
+      Types.Type idTp;
     // return inExp if no vectorization is to be done
-    case(inRef,cache,env,impl,inExp,spliceExp,false) then inExp;
-
-    case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),SOME(DAE.CREF(cr,_)),doVect)
+    case(inRef,cache,env,impl,inExp,splicedExpData,false) then inExp;      
+    
+    case(Absyn.CREF_IDENT(id,assl),cache,env,impl, exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect)
       local DAE.Exp tmpExp;
       equation
         (_,_,const as DAE.C_VAR,_) = elabSubscripts(cache,env, assl ,impl);
@@ -10127,7 +10128,7 @@ algorithm
         exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ty),exp1);
       then
         exp1;
-    case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),SOME(DAE.CREF(cr,_)),doVect)
+    case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_IDENT(id2,_,essl),ty)),Lookup.SPLICEDEXPDATA(SOME(DAE.CREF(cr,_)),idTp),doVect)
       local
         DAE.ExpType tty2;
       equation
@@ -10137,7 +10138,7 @@ algorithm
         exp1;
     // adrpo: return exp1 here instead of exp2
     //        returning exp2 generates x.y[{1,2,3}] for  x.Real[3].y;
-    case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_QUAL(id2,_,essl,crr2),ty)), SOME(exp2 as DAE.CREF(cr,_)),doVect)
+    case(_,_,_,_, (exp1 as DAE.CREF(DAE.CREF_QUAL(id2,_,essl,crr2),ty)), Lookup.SPLICEDEXPDATA(SOME(exp2 as DAE.CREF(cr,_)),idTp),doVect)
       local
         DAE.ComponentRef crr2;
         DAE.ExpType tty2;
@@ -10265,6 +10266,7 @@ algorithm
       DAE.ExpType ty2;
     // no subscripts
     case ((e as DAE.CREF_IDENT(subscriptLst = {})),t) then e;
+    
     // simple ident with non-empty subscripts
     case ((e as DAE.CREF_IDENT(ident = id, identType = ty2, subscriptLst = subs)),t)
       equation
@@ -10333,19 +10335,19 @@ protected function elabCref2
   input DAE.Type inType;
   input DAE.Binding inBinding;
   input Boolean performVectorization "true => vectorized expressions";
-  input Option<DAE.Exp> splicedExp;
+  input Lookup.SplicedExpData splicedExpData;
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Const outConst;
   output SCode.Accessibility outAccessibility;
 algorithm
   (outCache,outExp,outConst,outAccessibility) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,io,inType,inBinding,performVectorization,splicedExp)
+  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,io,inType,inBinding,performVectorization,splicedExpData)
     local
       DAE.ExpType t_1, expTy;
       DAE.ComponentRef cr,cr_1,cref;
       SCode.Accessibility acc,acc_1;
-      tuple<DAE.TType, Option<Absyn.Path>> t,tt,et,tp;
+      tuple<DAE.TType, Option<Absyn.Path>> t,tt,et,tp,idTp;
       DAE.Exp e,e_1,exp,exp1;
       Option<DAE.Exp> sexp;
       Values.Value v;
@@ -10357,7 +10359,8 @@ algorithm
       DAE.Binding binding;
       Env.Cache cache;
       Boolean doVect;
-      Option<DAE.Exp> splicedExp;
+      Lookup.SplicedExpData splicedExpData;     
+      DAE.ExpType expIdTy; 
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
@@ -10368,20 +10371,24 @@ algorithm
         (cache,DAE.CREF(cr,expTy),DAE.C_VAR(),acc);
 
     // a variable
-    case (cache,_,cr,acc,SCode.VAR(),io,tt,_,doVect,sexp) //case (cache,_,_,acc,SCode.VAR(),io,tt,_,doVect,sexp as SOME(DAE.CREF(cr,_)))
+    case (cache,_,cr,acc,SCode.VAR(),io,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
+      local DAE.ExpType expIdTy; 
       equation
         expTy = Types.elabType(tt);
+        expIdTy = Types.elabType(idTp);
+        //print("cr ="+&Exp.printComponentRefStr(cr)+&" has type "+&Exp.typeString(expTy)+&"\n");
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp) "PA: added2006-01-11" ;
+        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy);        
       then
         (cache,e,DAE.C_VAR(),acc);
 
     // a discrete variable
-    case (cache,_,cr,acc,SCode.DISCRETE(),io,tt,_,doVect,_)
+    case (cache,_,cr,acc,SCode.DISCRETE(),io,tt,_,doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE);
+        expIdTy = Types.elabType(idTp);
+        e = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
       then
         (cache,e,DAE.C_VAR(),acc);
 
@@ -10396,12 +10403,13 @@ algorithm
         (cache,e_1,DAE.C_CONST(),SCode.RO());
 
     // evaluate parameters only if "evalparam" is set; TODO! also ceval if annotation Evaluate=true.
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,_)
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation
         true = RTOpts.debugFlag("evalparam");
         expTy = Types.elabType(tt);
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
@@ -10410,15 +10418,16 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
 
     // a binding equation and evalparam
-    case (cache,env,cr,acc,var,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_)
-      equation
+    case (cache,env,cr,acc,var,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp)) 
+      equation 
         true = SCode.isParameterOrConst(var);
         true = RTOpts.debugFlag("evalparam");
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on.";
+        expIdTy = Types.elabType(idTp);                            
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
@@ -10427,40 +10436,44 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
 
     // vectorization of parameters with valuebound
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,_)
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation
         expTy = Types.elabType(tt);
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
     // a constant with a binding
-    case (cache,env,cr,acc,SCode.CONST(),io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_)
-      equation
+    case (cache,env,cr,acc,SCode.CONST(),io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
+      equation 
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
                                     This must be caught later on." ;
+        expIdTy = Types.elabType(idTp);                                    
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
       then
         (cache,e_1,const,acc);
 
     // vectorization of parameters with binding equations
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,sexp)
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
       equation
         expTy = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,sexp);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,sexp,expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
     // variables with constant binding
-    case (cache,env,cr,acc,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,_)
+    case (cache,env,cr,acc,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
       equation
         expTy = Types.elabType(tt) "..the rest should be non constant, even if they have a constant binding." ;
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
       then
         (cache,e_1,DAE.C_VAR(),acc);
 
@@ -10472,10 +10485,10 @@ algorithm
         (cache,DAE.CREF(cr,expTy),DAE.C_CONST(),acc);
 
     // if value not constant, but references another parameter, which has a value perform value propagation.
-    case (cache,env,cr,acc,variability,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExp)
+    case (cache,env,cr,acc,variability,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData)
       equation
-        (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t,binding_1,splicedExp,_) = Lookup.lookupVar(cache, env, cref);
-        (cache,e,const,acc) = elabCref2(cache, env, cref, acc_1, variability_1, io, t, binding_1,doVect,splicedExp);
+        (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t,binding_1,_,_) = Lookup.lookupVar(cache, env, cref);
+        (cache,e,const,acc) = elabCref2(cache, env, cref, acc_1, variability_1, io, t, binding_1,doVect,splicedExpData);
       then
         (cache,e,const,acc);
 
@@ -10518,14 +10531,15 @@ algorithm
       then
         (cache,DAE.CREF(cr_1,expTy),DAE.C_PARAM(),acc);
 
-    // parameters without value with fixed=true or no fixed attribute set produce warning
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,_)
+    // parameters without value with fixed=true or no fixed attribute set produce warning                  
+    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp)) 
       equation
         s = Exp.printComponentRefStr(cr);
         Error.addMessage(Error.UNBOUND_PARAMETER_WARNING, {s});
         expTy = Types.elabType(tt);
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE,expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
@@ -10553,9 +10567,10 @@ protected function crefVectorize
   input DAE.Exp inExp;
   input DAE.Type inType;
   input Option<DAE.Exp> splicedExp;
+  input DAE.ExpType crefIdType "the type of the last cref ident, without considering subscripts. picked up from splicedExpData and used for crefs in vectorized exp"; 
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (performVectorization,inExp,inType,splicedExp)
+  outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType)
     local
       Boolean b1,b2,doVect;
       DAE.ExpType elt_tp,exptp,t2;
@@ -10571,59 +10586,55 @@ algorithm
       DAE.ComponentRef testCREF;
 
     // no vectorization
-    case(false, e, _, _) then e;
+    case(false, e, _, _,_) then e;
 
     // types extending basictype
-    case (doVect,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_)
+    case (doVect,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_,crefIdType)
       equation
-        e = crefVectorize(doVect,e,t,NONE);
+        e = crefVectorize(doVect,e,t,NONE,crefIdType);
       then e;
 
     // component reference and an array type with dimensions less than 20
     case (_,DAE.CREF(componentRef = cr_2,ty = t2),
            (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType =
                                  (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_)),
-           SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)))
+           SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType)
       equation
         b1 = (ds < 20);
         b2 = (ds2 < 20);
         true = boolAnd(b1, b2);
-        (t,_) = Types.flattenArrayType(t);
-        ety = Types.elabType(t);
-        e = elabCrefSlice(cr,ety);
+        e = elabCrefSlice(cr,crefIdType);
         e = tryToConvertArrayToMatrix(e);
       then
         e;
 
-    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)))
+    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType)
       equation
         false = Types.isArray(t);
         (ds < 20) = true;
-        (t,_) = Types.flattenArrayType(t);
-        ety = Types.elabType(t);
-        e = elabCrefSlice(cr,ety);
+        e = elabCrefSlice(cr,crefIdType);
       then
         e;
 
     /* matrix sizes > 20 is not vectorized */
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_),_)
-      equation
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_),_,crefIdType) 
+      equation 
         b1 = (ds < 20);
         b2 = (ds2 < 20);
         true = boolAnd(b1, b2);
-        e = createCrefArray2d(cr, 1, ds, ds2, exptp, t);
+        e = createCrefArray2d(cr, 1, ds, ds2, exptp, t,crefIdType);
       then
         e;
-
-    /* vectorsizes > 20 is not vectorized */
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_),_)
-      equation
+        
+    /* vectorsizes > 20 is not vectorized */ 
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_),_,crefIdType) 
+      equation 
         false = Types.isArray(t);
         (ds < 20) = true;
-        e = createCrefArray(cr, 1, ds, exptp, t);
+        e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
-    case (_,e,_,_) then e;
+    case (_,e,_,_,_) then e; 
   end matchcontinue;
 end crefVectorize;
 
@@ -10708,7 +10719,7 @@ algorithm
       DAE.ExpType ety;
 
     case( cref as DAE.CREF_IDENT(ident = id,subscriptLst = ssl),ety)
-      equation
+      equation       
         exp1 = flattenSubscript(ssl,id,ety);
       then
         exp1;
@@ -10754,7 +10765,7 @@ algorithm
 
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
-
+        ety = Exp.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
     then exp2;
   end matchcontinue;
@@ -10790,6 +10801,7 @@ algorithm
         expl1 = Util.listMap1(expl1,mergeQualWithRest2,exp2);
         exp1 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
         (iLst, scalar) = extractDimensionOfChild(exp1);
+        ety = Exp.arrayEltType(ety);
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp1;
   end matchcontinue;
@@ -10855,11 +10867,14 @@ algorithm
 
     // empty subscript
     case({},_,_) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
-    // first subscript integer
+    
+    // first subscript integer, ety
     case( ( (sub1 as DAE.INDEX(exp = exp1 as DAE.ICONST(_))) :: subs1),id,ety)
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
-        exp2 = applySubscript(exp1, exp2 ,id,ety);
+        //print("1. flattened rest into "+&Exp.dumpExpStr(exp2,0)+&"\n");
+        exp2 = applySubscript(exp1, exp2 ,id,Exp.unliftArray(ety));
+        //print("1. applied this subscript into "+&Exp.dumpExpStr(exp2,0)+&"\n");
       then
         exp2;
     // special case for zero dimension...
@@ -10884,6 +10899,7 @@ algorithm
         expl2 = Util.listMap3(expl1,applySubscript,exp2,id,ety);
         exp3 = DAE.ARRAY(DAE.ET_INT(),false,expl2);
         (iLst, scalar) = extractDimensionOfChild(exp3);
+        ety = Exp.arrayEltType(ety);
         exp3 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl2);
         exp3 = removeDoubleEmptyArrays(exp3);
       then
@@ -10939,7 +10955,7 @@ algorithm
       String id;
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1,expl2;
-      DAE.ExpType ety,tmpy;
+      DAE.ExpType ety,tmpy,crty;
       list<Option<Integer>> arrDim;
 
     case(exp2,exp1 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
@@ -10947,7 +10963,8 @@ algorithm
         true = Exp.arrayContainZeroDimension(arrDim);
       then exp1;
 
-    case(exp1 as DAE.ICONST(integer=0),exp2 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,_),id ,ety) /* add dimensions */
+        /* add dimensions */       
+    case(exp1 as DAE.ICONST(integer=0),exp2 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,_),id ,ety) 
       equation
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,SOME(0)::arrDim),true,{});
       then exp1;
@@ -10959,7 +10976,8 @@ algorithm
 
     case(exp1 as DAE.ICONST(integer=_),DAE.ARRAY(_,_,{}),id ,ety)
       equation
-        exp1 = DAE.CREF(DAE.CREF_IDENT(id,ety,{DAE.INDEX(exp1)}),ety);
+        crty = Exp.unliftArray(ety) "only subscripting one dimension, unlifting once ";
+        exp1 = DAE.CREF(DAE.CREF_IDENT(id,ety,{DAE.INDEX(exp1)}),crty);
       then exp1;
 
     case(exp1 as DAE.ICONST(integer=_), (exp2), id ,ety)
@@ -10984,13 +11002,14 @@ algorithm
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1,expl2;
       list<DAE.Subscript> subs;
-      DAE.ExpType ety,ty2;
+      DAE.ExpType ety,ty2,crty;
       list<Option<Integer>> iLst;
       Boolean scalar;
 
     case(exp1 as DAE.ICONST(integer=_),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
       equation
-        exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),ety);
+        crty = Exp.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
+        exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),crty);
       then exp2;
 
     case(exp1 as DAE.ICONST(integer=_), exp2 as DAE.ARRAY(_,_,expl1),ety )
@@ -10998,6 +11017,7 @@ algorithm
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
+        ety = Exp.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
@@ -11018,13 +11038,14 @@ algorithm
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1,expl2;
       list<DAE.Subscript> subs;
-      DAE.ExpType ety,ty2;
+      DAE.ExpType ety,ty2,crty;
       list<Option<Integer>> iLst;
       Boolean scalar;
 
     case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1 as DAE.ICONST(integer=_),ety )
       equation
-        exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),ety);
+        crty = Exp.unliftArrayTypeWithSubs(DAE.INDEX(exp1)::subs,ty2);
+        exp2 = DAE.CREF(DAE.CREF_IDENT(id,ty2,(DAE.INDEX(exp1)::subs)),crty);
       then exp2;
 
     case( exp2 as DAE.ARRAY(_,_,expl1), exp1 as DAE.ICONST(integer=_),ety)
@@ -11032,6 +11053,7 @@ algorithm
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
        (iLst, scalar) = extractDimensionOfChild(exp2);
+       ety = Exp.unliftArray(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
@@ -11086,9 +11108,10 @@ protected function createCrefArray
   input Integer inInteger3;
   input DAE.ExpType inType4;
   input DAE.Type inType5;
+  input DAE.ExpType crefIdType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inComponentRef1,inInteger2,inInteger3,inType4,inType5)
+  outExp := matchcontinue (inComponentRef1,inInteger2,inInteger3,inType4,inType5,crefIdType)
     local
       DAE.ComponentRef cr,cr_1;
       Integer indx,ds,indx_1;
@@ -11098,46 +11121,46 @@ algorithm
       DAE.Exp e_1;
       list<DAE.Subscript> ss;
     // index iterator dimension size
-    case (cr,indx,ds,et,t)
-      equation
+    case (cr,indx,ds,et,t,crefIdType)  
+      equation 
         (indx > ds) = true;
       then
         DAE.ARRAY(et,true,{});
     // for crefs with wholedim
-    case (cr,indx,ds,et,t)
-      equation
+    case (cr,indx,ds,et,t,crefIdType)  
+      equation 
         indx_1 = indx + 1;
-        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t);
+        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         DAE.WHOLEDIM()::ss = Exp.crefLastSubs(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
         elt_tp = Exp.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE);
+        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // no subscript
-    case (cr,indx,ds,et,t)
-      equation
+    case (cr,indx,ds,et,t,crefIdType) 
+      equation 
         indx_1 = indx + 1;
         {} = Exp.crefLastSubs(cr);
-        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t);
+        DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE);
+        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // index
-    case (cr,indx,ds,et,t)
-      equation
+    case (cr,indx,ds,et,t,crefIdType) 
+      equation 
         (DAE.INDEX(e_1) :: ss) = Exp.crefLastSubs(cr);
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1,ss);
-        DAE.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t);
+        DAE.ARRAY(_,_,expl) = createCrefArray(cr_1, indx, ds, et, t,crefIdType);
         expl = Util.listMap1(expl,Exp.prependSubscriptExp,DAE.INDEX(e_1));
       then
         DAE.ARRAY(et,true,expl);
     // failure
-    case (cr,indx,ds,et,t)
+    case (cr,indx,ds,et,t,crefIdType)
       equation
         Debug.fprintln("failtrace", "createCrefArray failed on:" +& Exp.printComponentRefStr(cr));
       then
@@ -11155,9 +11178,10 @@ protected function createCrefArray2d
   input Integer inInteger4;
   input DAE.ExpType inType5;
   input DAE.Type inType6;
+  input DAE.ExpType crefIdType;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inComponentRef1,inInteger2,inInteger3,inInteger4,inType5,inType6)
+  outExp := matchcontinue (inComponentRef1,inInteger2,inInteger3,inInteger4,inType5,inType6,crefIdType)
     local
       DAE.ComponentRef cr,cr_1;
       Integer indx,ds,ds2,indx_1;
@@ -11169,25 +11193,25 @@ algorithm
       list<Boolean> scs;
       list<tuple<DAE.Exp, Boolean>> row;
     // index iterator dimension size 1 dimension size 2
-    case (cr,indx,ds,ds2,et,t)
-      equation
+    case (cr,indx,ds,ds2,et,t,crefIdType) 
+      equation 
         (indx > ds) = true;
       then
         DAE.MATRIX(et,0,{});
     // increase the index dimension
-    case (cr,indx,ds,ds2,et,t)
+    case (cr,indx,ds,ds2,et,t,crefIdType)
       equation
         indx_1 = indx + 1;
-        DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t);
+        DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
-        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE);
+        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType);
         scs = Util.listFill(sc, ds2);
         row = Util.listThreadTuple(expl, scs);
       then
         DAE.MATRIX(et,ds,(row :: ms));
     //
-    case (cr,indx,ds,ds2,et,t)
+    case (cr,indx,ds,ds2,et,t,crefIdType)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Static.createCrefArray2d failed on: " +& Exp.printComponentRefStr(cr));
