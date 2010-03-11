@@ -750,7 +750,7 @@ algorithm
         (includes, libs) = generateExtFunctionIncludes(ann);
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
-        (simextargs, extReturn) = fixOutputIndexOuter(simextargs, extReturn);
+        (simextargs, extReturn) = fixOutputIndex(outVars, simextargs, extReturn);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
                            inVars, outVars, biVars, includes, libs, lang),
@@ -854,73 +854,88 @@ algorithm
   end matchcontinue;
 end extArgsToSimExtArgs;
 
-protected function fixOutputIndexOuter
+protected function fixOutputIndex
+  input list<Variable> outVars;
   input list<SimExtArg> simExtArgsIn;
   input SimExtArg extReturnIn;
   output list<SimExtArg> simExtArgsOut;
   output SimExtArg extReturnOut;
 algorithm
   (simExtArgsOut, extReturnOut) :=
-  matchcontinue (simExtArgsIn, extReturnIn)
+  matchcontinue (outVars, simExtArgsIn, extReturnIn)
     local
       DAE.ComponentRef cref;
       Boolean isInput;
       Integer outputIndex;
       Boolean isArray;
       DAE.ExpType type_;
-    case (simExtArgsIn, SIMEXTARG(cref, isInput, outputIndex, isArray, type_))
+      Integer newOutputIndex;
+    case (outVars, simExtArgsIn, extReturnIn)
       equation
-        simExtArgsOut = fixOutputIndex(simExtArgsIn, 1);
-        extReturnOut = SIMEXTARG(cref, isInput, 1, isArray, type_);
+        simExtArgsOut = Util.listMap1(simExtArgsIn, assignOutputIndex, outVars);
+        extReturnOut = assignOutputIndex(extReturnIn, outVars);
       then
         (simExtArgsOut, extReturnOut);
-    case (simExtArgsIn, extReturnIn)
-      equation
-        simExtArgsOut = fixOutputIndex(simExtArgsIn, 0);
-      then
-        (simExtArgsOut, extReturnIn);
   end matchcontinue;
-end fixOutputIndexOuter;
+end fixOutputIndex;
 
-protected function fixOutputIndex
-  input list<SimExtArg> simExtArgsIn;
-  input Integer newOutputIndex;
-  output list<SimExtArg> simExtArgsOut;
+protected function assignOutputIndex
+  input SimExtArg simExtArgIn;
+  input list<Variable> outVars;
+  output SimExtArg simExtArgOut;
 algorithm
-  simExtArgsOut :=
-  matchcontinue (simExtArgsIn, newOutputIndex)
+  simExtArgOut :=
+  matchcontinue (simExtArgIn, outVars)
     local
-      list<SimExtArg> rest;
-      SimExtArg simExtArg;
-      Integer nextNewOutputIndex;
       DAE.ComponentRef cref;
       Boolean isInput;
-      Integer outputIndex;
+      Integer outputIndex; // > 0 if output
       Boolean isArray;
       DAE.ExpType type_;
       DAE.Exp exp;
-    case ({}, _)
-      then {};
-    // outputIndex of -1 means it is an output with unassigned output index
-    case ((SIMEXTARG(cref, isInput, outputIndex, isArray, type_) :: rest), newOutputIndex)
+      Integer newOutputIndex;
+    case (SIMEXTARG(cref, isInput, outputIndex, isArray, type_), outVars)
       equation
         true = outputIndex == -1;
-        nextNewOutputIndex = newOutputIndex + 1;
-        simExtArg = SIMEXTARG(cref, isInput, nextNewOutputIndex, isArray, type_);
-        rest = fixOutputIndex(rest, nextNewOutputIndex);
-      then (simExtArg :: rest);
-    case ((SIMEXTARGSIZE(cref, isInput, outputIndex, type_, exp) :: rest), newOutputIndex)
+        newOutputIndex = findIndexInList(cref, outVars, 1);
+      then SIMEXTARG(cref, isInput, newOutputIndex, isArray, type_);
+    case (SIMEXTARGSIZE(cref, isInput, outputIndex, type_, exp), outVars)
       equation
         true = outputIndex == -1;
-        simExtArg = SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
-        rest = fixOutputIndex(rest, newOutputIndex);
-      then (simExtArg :: rest);
-    case ((simExtArg :: rest), newOutputIndex)
-      equation
-        rest = fixOutputIndex(rest, newOutputIndex);
-      then (simExtArg :: rest);
+        newOutputIndex = findIndexInList(cref, outVars, 1);
+      then SIMEXTARGSIZE(cref, isInput, newOutputIndex, type_, exp);
+    case (simExtArgIn, _)
+      then simExtArgIn;
   end matchcontinue;
-end fixOutputIndex;
+end assignOutputIndex;
+
+protected function findIndexInList
+  input DAE.ComponentRef cref;
+  input list<Variable> outVars;
+  input Integer currentIndex;
+  output Integer crefIndexInOutVars;
+algorithm
+  crefIndexInOutVars :=
+  matchcontinue (cref, outVars, currentIndex)
+    local
+      DAE.ComponentRef name;
+      list<Variable> restOutVars;
+      String crefStr;
+      String nameStr;
+    case (cref, {}, currentIndex)
+      then -1;
+    case (cref, VARIABLE(name=name) :: restOutVars, currentIndex)
+      equation
+        crefStr = Exp.crefStr(cref);
+        nameStr = Exp.crefStr(name);
+        true = stringEqual(crefStr, nameStr);
+      then currentIndex;
+    case (cref, _ :: restOutVars, currentIndex)
+      equation
+        currentIndex = currentIndex + 1;
+      then findIndexInList(cref, restOutVars, currentIndex);
+  end matchcontinue;
+end findIndexInList;
 
 protected function elaborateStatement
   input DAE.Element inElement;
