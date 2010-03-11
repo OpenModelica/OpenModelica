@@ -375,6 +375,8 @@ algorithm
         (cache,env_2,ih,_,dae,_,_,_,_,graph) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl";
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        //print(" ********************** backpatch 1 **********************\n");         
+        dae = reEvaluateInitialIfEqns(cache,env_2,dae,true);
         // check the model for balancing
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
 
