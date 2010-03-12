@@ -41,6 +41,7 @@ double* h_saved = 0;
 double* x_saved = 0;
 double* xd_saved = 0;
 double* y_saved = 0;
+char** str_saved = 0;
 
 double* gout = 0;
 long* zeroCrossingEnabled = 0;
@@ -60,9 +61,10 @@ int initializeEventData() {
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
   y_saved = new double[globalData->nAlgebraic];
+  str_saved = new char*[globalData->stringVariables.nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
   if (!y_saved || !gout || !h_saved || !x_saved || !xd_saved
-      || !zeroCrossingEnabled) {
+       || !str_saved || !zeroCrossingEnabled) {
     cerr << "Could not allocate memory for global event data structures"
         << endl;
     return -1;
@@ -73,6 +75,7 @@ int initializeEventData() {
   memset(x_saved, 0, sizeof(double) * globalData->nStates);
   memset(xd_saved, 0, sizeof(double) * globalData->nStates);
   memset(y_saved, 0, sizeof(double) * globalData->nAlgebraic);
+  memset(str_saved, 0, sizeof(char*) * globalData->stringVariables.nAlgebraic);
   memset(zeroCrossingEnabled, 0, sizeof(long) * globalData->nZeroCrossing);
   return 0;
 }
@@ -365,6 +368,9 @@ void saveall() {
   for (i = 0; i < globalData->nHelpVars; i++) {
     h_saved[i] = globalData->helpVars[i];
   }
+  for (i = 0; i < globalData->stringVariables.nAlgebraic; i++) {
+    str_saved[i] = globalData->stringVariables.algebraics[i];
+  }
 }
 
 /* save(v) saves the previous value of a discrete variable v, which can be accessed
@@ -400,6 +406,20 @@ void save(double & var) {
   return;
 }
 
+void save(char* & var) {
+  char** pvar = &var;
+  long ind;
+  if (sim_verbose) {
+    printf("save %s = %s\n", getName((double*)pvar), var);
+  }
+  ind = long(pvar - globalData->stringVariables.nAlgebraic);
+  if (ind >= 0 && ind < globalData->nHelpVars) {
+    str_saved[ind] = var;
+    return;
+  }
+  return;
+}
+
 double pre(double & var) {
   double* pvar = &var;
   long ind;
@@ -422,6 +442,18 @@ double pre(double & var) {
   }
   return var;
 }
+
+char* pre(char* & var) {
+  char** pvar = &var;
+  long ind;
+
+  ind = long(pvar - globalData->stringVariables.nAlgebraic);
+  if (ind >= 0 && ind < globalData->nHelpVars) {
+    return str_saved[ind];
+  }
+  return var;
+}
+
 bool edge(double& var) {
   return var && !pre(var);
 }

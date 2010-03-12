@@ -53,8 +53,12 @@ void StateEventHandler(fortran_integer jroot[], double *t);
 void AddEvent(long);
 
 void saveall();
+
 void save(double & var);
+void save(char* & var);
 double pre(double & var);
+char* pre(char* & var);
+
 bool edge(double& var);
 bool change(double& var);
 
