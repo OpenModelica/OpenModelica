@@ -507,10 +507,10 @@ void GraphWidget::getData()
   {
     if (blockSize == 0)
     {
-      cerr << "getData: blockSize = 0" << endl;
+      // cerr << "getData: blockSize = 0" << endl;
       if (activeSocket->bytesAvailable() < sizeof(quint32))
       {
-        cerr << "getData: returning due to bytesAvailable() < sizeof(quint32)" << endl;
+        // cerr << "getData: returning due to bytesAvailable() < sizeof(quint32)" << endl;
         return;
       }
       ds >> blockSize;
@@ -518,17 +518,17 @@ void GraphWidget::getData()
 
     if (activeSocket->bytesAvailable() < blockSize)
     {
-      cerr << "getData: returning due to bytesAvailable() < blockSize:" << blockSize << endl;
+      // cerr << "getData: returning due to bytesAvailable() < blockSize:" << blockSize << endl;
       return;
     }
 
     QString commandV, command, version;
 
     ds >> commandV;
-    cerr << "getData: got command: " << commandV.toStdString() << endl;
+    // cerr << "getData: got command: " << commandV.toStdString() << endl;
     command = commandV.section("-", 0, 0);
     version = commandV.section("-", 1, 1);
-    cout << "getData: got command: " << command.toStdString() <<  " version: " << version.toStdString() << endl;
+    // cout << "getData: got command: " << command.toStdString() <<  " version: " << version.toStdString() << endl;
 
     if(command == QString("clear"))
       // clear(in);
@@ -591,7 +591,7 @@ void GraphWidget::getData()
       packetSize = 0;
       plotPtolemyDataStream();
 
-      cerr << "getData: returning after data was received. block size: " << blockSize << endl;
+      // cerr << "getData: returning after data was received. block size: " << blockSize << endl;
       return;
     }
     else if(command == QString("graphicsStream"))
@@ -607,7 +607,7 @@ void GraphWidget::getData()
 
       packetSize2 = 0;
       drawGraphics();
-      cerr << "getData: returning after graphics data was received" << endl;
+      // cerr << "getData: returning after graphics data was received" << endl;
       return;
     }
     else if (command == QString("simulationDataStream"))
@@ -625,13 +625,13 @@ void GraphWidget::getData()
       packetSize = 0;
 
       receiveDataStream();
-      cerr << "getData: returning after streaming data was received" << endl;
+      // cerr << "getData: returning after streaming data was received" << endl;
       return;
     }
     blockSize = 0;
   }
 
-  cerr << "getData: outside while and returning." << endl;  
+  // cerr << "getData: outside while and returning." << endl;  
 
   connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
   connect(activeSocket, SIGNAL(disconnected()), this, SLOT(getData()));
@@ -666,7 +666,7 @@ void GraphWidget::acCon()
       graphicsSocket = graphicsServer->nextPendingConnection();
       ds2.setDevice(graphicsSocket);
       ds2.setVersion(QDataStream::Qt_4_2);
-      cerr << "acCon: graphics server -> connecting readyRead to getData!" << endl;
+      // cerr << "acCon: graphics server -> connecting readyRead to getData!" << endl;
       connect(graphicsSocket, SIGNAL(readyRead()), this, SLOT(drawGraphics()));
       connect(graphicsSocket, SIGNAL(disconnected()), this, SLOT(graphicsStreamClosed()));
       packetSize2 = 0;
@@ -1445,21 +1445,21 @@ void GraphWidget::graphicsStreamClosed()
 
 void GraphWidget::ptolemyDataStreamClosed()
 {
-  cerr << "tempCurves size: " << temporaryCurves.size() << endl;
+  // cerr << "tempCurves size: " << temporaryCurves.size() << endl;
   for(map<QString, Curve*>::iterator i = temporaryCurves.begin(); i != temporaryCurves.end(); ++i)
   {
     curves.append(i->second);
     graphicsScene->addItem(i->second->line);
   }
-  cerr << "variables size: " << variables.size() << endl;
+  // cerr << "variables size: " << variables.size() << endl;
   // clear the variable data!
   variableData.clear();
   for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
     variableData.append(i->second);
 
-  bool b;
+  bool b = graphicsScene->gridVisible;
 
-  if(b = graphicsScene->gridVisible)
+  if(b)
     showGrid(false);
 
   if(range.width() == 0)
@@ -1477,12 +1477,6 @@ void GraphWidget::ptolemyDataStreamClosed()
   updatePointSizes();
   showGrid(b);
 
-  emit newMessage("Connection closed");
-}
-
-void GraphWidget::dataStreamClosed()
-{
-  emit showVariableButton(true);
   emit newMessage("Connection closed");
 }
 
@@ -1730,7 +1724,7 @@ void GraphWidget::plotPtolemyDataStream()
         if(color == Qt::color0)
         {
           int colorInt = curves.size() - 1 + variables.size();
-          cerr << "graphWidget.plorPtolemyDataStream: setting color: " << colorInt << endl;
+          // cerr << "graphWidget.plorPtolemyDataStream: setting color: " << colorInt << endl;
           color = generateColor(colorInt);
         }
         tmp = tmp.trimmed();
@@ -1939,7 +1933,7 @@ void GraphWidget::receiveDataStream()
       compoundwidget->xLabel->setText(xLabel);
       compoundwidget->yLabel->setText(yLabel);
       compoundwidget->legendFrame->setVisible(true);
-      int points = 1; // show points
+      int points = 0; // not show points
       range.setRect(0,0,0,0);
       yVars.clear();
       ds >> variableCount;
@@ -2074,27 +2068,37 @@ void GraphWidget::receiveDataStream()
     setArea(graphicsScene->sceneRect());
 	legendFrame->update();
     graphicsScene->update();
+	update();
   }
   while(activeSocket->bytesAvailable() >= sizeof(quint32));
 
-  showGrid(visible);
+  if(activeSocket->state() != QAbstractSocket::ConnectedState)
+    dataStreamClosed();
+}
 
-  cerr << "tempCurves size: " << temporaryCurves.size() << endl;
+void GraphWidget::dataStreamClosed()
+{
+  emit showVariableButton(true);
+  emit newMessage("Connection closed");
+
+  // visible = graphicsScene->gridVisible;
+  // showGrid(visible);
+
+  // cerr << "tempCurves size: " << temporaryCurves.size() << endl;
   for(map<QString, Curve*>::iterator i = temporaryCurves.begin(); i != temporaryCurves.end(); ++i)
   {
 	curves.append(i->second);
 	graphicsScene->addItem(i->second->line);
   }
-  cerr << "variables size: " << variables.size() << endl;
+  // cerr << "variables size: " << variables.size() << endl;
   // clear the variable data!
   variableData.clear();
   for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)
 	variableData.append(i->second);
 
-  bool b;
+  bool b = graphicsScene->gridVisible;
 
-  if(b = graphicsScene->gridVisible)
-	showGrid(false);
+  if (b) showGrid(false);
 
   if(range.width() == 0)
   {
@@ -2110,11 +2114,7 @@ void GraphWidget::receiveDataStream()
   setArea(range);
   updatePointSizes();
   showGrid(b);
-
-  if(activeSocket->state() != QAbstractSocket::ConnectedState)
-    dataStreamClosed();
 }
-
 
 /*
 void GraphWidget::saveImage()
