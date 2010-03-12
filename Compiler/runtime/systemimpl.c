@@ -222,8 +222,8 @@ void System_5finit(void)
   char* mingwpath;
   char* qthome;
 
-  last_ptr_index = -1;
-  memset(ptr_vector, 0, sizeof(ptr_vector));
+    last_ptr_index = -1;
+    memset(ptr_vector, 0, sizeof(ptr_vector));
 
   set_cc("g++");
   set_cxx("g++");
@@ -259,8 +259,8 @@ void System_5finit(void)
     free(mingwpath);
   }
 
-  _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
-}
+    _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
+    }
 
 
 RML_BEGIN_LABEL(System__isSameFile)
@@ -274,10 +274,10 @@ RML_BEGIN_LABEL(System__isSameFile)
   DWORD size=MAX_PATH;
   DWORD size2=MAX_PATH;
   if (UrlCanonicalize(fileName1,canonName1,&size,0) != S_OK ||
-  	UrlCanonicalize(fileName2,canonName2,&size2,0) != S_OK) {
-  		printf("Error, fileName1 =%s, fileName2 = %s couldn't be canonicalized\n",fileName1,fileName2);
-  		RML_TAILCALLK(rmlFC);
-  	};
+    UrlCanonicalize(fileName2,canonName2,&size2,0) != S_OK) {
+      printf("Error, fileName1 =%s, fileName2 = %s couldn't be canonicalized\n",fileName1,fileName2);
+      RML_TAILCALLK(rmlFC);
+    };
   //printf("Canonicalized f1:%s, \nf2:%s\n",canonName1,canonName2);
   fn1_2 = _replace(canonName1,"//","/");
   fn2_2 = _replace(canonName2,"//","/");
@@ -304,9 +304,9 @@ RML_BEGIN_LABEL(System__strtok)
   s=strtok(str,delimit);
   if (s == NULL)
   {
-	  /* adrpo added 2004-10-27 */
-	  free(str);
-	  rmlA0=res; RML_TAILCALLK(rmlFC);
+    /* adrpo added 2004-10-27 */
+    free(str);
+    rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
   while (s=strtok(NULL,delimit))
@@ -376,18 +376,18 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
   fp1 = fopen(fileName1, "r");
 
   if(!fp1){
-	  //printf("Error opening the file: %s, creating it\n",fileName1);
-	  d1 = fopen(fileName1,"w+");
-	  for(i=0;i<5;++i)
-		  fputc(emptyString[i],d1);
-	  fclose(d1);
+    //printf("Error opening the file: %s, creating it\n",fileName1);
+    d1 = fopen(fileName1,"w+");
+    for(i=0;i<5;++i)
+      fputc(emptyString[i],d1);
+    fclose(d1);
   }
   fp1 = fopen(fileName1, "r");
   fp2 = fopen(fileName2, "r");
   if(!fp2){
-  	  //printf("Error opening the file(#2): %s\n",fileName2);
- 	  rmlA0 = RML_FALSE;
-  	  RML_TAILCALLK(rmlSC);
+      //printf("Error opening the file(#2): %s\n",fileName2);
+     rmlA0 = RML_FALSE;
+      RML_TAILCALLK(rmlSC);
     }
 
   fseek(fp1 , 0 , SEEK_END);
@@ -400,8 +400,8 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
     res=-1;
   else
     for(i=0;i<fileSize1;++i)
-    	if(fgetc(fp1) != fgetc(fp2))
-    		res=-1;
+      if(fgetc(fp1) != fgetc(fp2))
+        res=-1;
   fclose(fp1);fclose(fp2);
   rmlA0 = res?RML_TRUE:RML_FALSE; //mk_bcon(res);
   RML_TAILCALLK(rmlSC);
@@ -422,13 +422,13 @@ int str_contain_char( const char* chars, const char chr)
 
 RML_BEGIN_LABEL(System__os)
 {
-	char *envvalue;
-	envvalue = getenv("OS");
-	if (envvalue == NULL) {
-	   rmlA0 = (void*) mk_scon("Windows_NT");
-	} else {
+  char *envvalue;
+  envvalue = getenv("OS");
+  if (envvalue == NULL) {
+     rmlA0 = (void*) mk_scon("Windows_NT");
+  } else {
       rmlA0 = (void*) mk_scon(envvalue);
-	}
+  }
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -497,10 +497,10 @@ RML_BEGIN_LABEL(System__stringFind)
   int i,retVal=-1;
 
   for (i=0; i< strLen - strSearchLen+1; i++) {
-  	if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
-  		retVal = i;
-  		break;
-  	}
+    if (strncmp(&str[i],searchStr,strSearchLen) == 0) {
+      retVal = i;
+      break;
+    }
   }
   rmlA0 = (void*) mk_icon(retVal);
   RML_TAILCALLK(rmlSC);
@@ -536,7 +536,7 @@ RML_BEGIN_LABEL(System__stringReplace)
    */
   /*
    if (!strcmp(source, target))
-   	RML_TAILCALLK(rmlSC);
+     RML_TAILCALLK(rmlSC);
   */
   /* end adrpo */
 
@@ -764,7 +764,7 @@ RML_BEGIN_LABEL(System__compileCFile)
   _putenv("GCC_EXEC_PREFIX=");
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
-	  _putenv("MODELICAUSERCFLAGS=  ");
+    _putenv("MODELICAUSERCFLAGS=  ");
   }
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);
@@ -776,12 +776,12 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__systemCall)
 {
-	int ret_val;
-	char* str = RML_STRINGDATA(rmlA0);
-	ret_val	= system(str);
-	rmlA0 = (void*) mk_icon(ret_val);
+  int ret_val;
+  char* str = RML_STRINGDATA(rmlA0);
+  ret_val  = system(str);
+  rmlA0 = (void*) mk_icon(ret_val);
 
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -839,11 +839,11 @@ RML_BEGIN_LABEL(System__writeFile)
   if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
-		  "SCRIPTING",
-		  "ERROR",
-		  "Error writing to file %s.",
-		  c_tokens,
-		  1);
+      "SCRIPTING",
+      "ERROR",
+      "Error writing to file %s.",
+      c_tokens,
+      1);
     RML_TAILCALLK(rmlFC);
   }
   /* adrpo changed 2006-10-06
@@ -869,11 +869,11 @@ RML_BEGIN_LABEL(System__readFile)
   {
     char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-		  "SCRIPTING",
-		  "ERROR",
-		  "Error opening file %s.",
-		  c_tokens,
-		  1);
+      "SCRIPTING",
+      "ERROR",
+      "Error opening file %s.",
+      c_tokens,
+      1);
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }
@@ -883,8 +883,8 @@ RML_BEGIN_LABEL(System__readFile)
 
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
-	/* adrpo added 2004-10-26 */
-	free(buf);
+  /* adrpo added 2004-10-26 */
+  free(buf);
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
@@ -900,51 +900,51 @@ RML_BEGIN_LABEL(System__readFile)
 RML_END_LABEL
 
 int stringContains(char *str,char c){
-	int i;
-	for(i=0;i<strlen(str);++i)
-		if(str[i]==c){
-			//printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
-			return 1;
-		}
-	return 0;
+  int i;
+  for(i=0;i<strlen(str);++i)
+    if(str[i]==c){
+      //printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
+      return 1;
+    }
+  return 0;
 }
 int filterString(char* buf,char* bufRes){
-	  int res,i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
-	  char preChar,cc;
-	  char filterChars[12] = "0123456789.\0";
-	  char numeric[11] = "0123456789\0";
-	  slen = strlen(buf);
-	  preChar = '\0';
-	  for(i=0;i<slen;++i){
-		  cc = buf[i];
-		  if((stringContains(filterChars,buf[i])))
-		  {
-			  if(buf[i]=='.'){
-				if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
-					if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-					//printf("skipping_1: '%c'\n",buf[i]);
-				}
-				else{
-					bufRes[bufPointer++] = buf[i];
-					isNumeric=0;
-				}
-			  }
-			  else
-			  {
-				  if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-				  //printf("skipping_2: '%c'\n",buf[i]);
-			  }
-		  }
-		  else
-		  {
-			  bufRes[bufPointer++] = buf[i];
-			  isNumeric=0;
-		  }
-		  preChar = buf[i];
-		  //isNumeric=0;
-	  }
-	  bufRes[bufPointer++] = '\0';
-	  return numericEncounter;
+    int res,i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
+    char preChar,cc;
+    char filterChars[12] = "0123456789.\0";
+    char numeric[11] = "0123456789\0";
+    slen = strlen(buf);
+    preChar = '\0';
+    for(i=0;i<slen;++i){
+      cc = buf[i];
+      if((stringContains(filterChars,buf[i])))
+      {
+        if(buf[i]=='.'){
+        if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
+          if(isNumeric == 0){isNumeric=1;numericEncounter++;}
+          //printf("skipping_1: '%c'\n",buf[i]);
+        }
+        else{
+          bufRes[bufPointer++] = buf[i];
+          isNumeric=0;
+        }
+        }
+        else
+        {
+          if(isNumeric == 0){isNumeric=1;numericEncounter++;}
+          //printf("skipping_2: '%c'\n",buf[i]);
+        }
+      }
+      else
+      {
+        bufRes[bufPointer++] = buf[i];
+        isNumeric=0;
+      }
+      preChar = buf[i];
+      //isNumeric=0;
+    }
+    bufRes[bufPointer++] = '\0';
+    return numericEncounter;
 }
 
 RML_BEGIN_LABEL(System__readFileNoNumeric)
@@ -960,11 +960,11 @@ RML_BEGIN_LABEL(System__readFileNoNumeric)
   {
     char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-		  "SCRIPTING",
-		  "ERROR",
-		  "Error opening file %s.",
-		  c_tokens,
-		  1);
+      "SCRIPTING",
+      "ERROR",
+      "Error opening file %s.",
+      c_tokens,
+      1);
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }
@@ -974,8 +974,8 @@ RML_BEGIN_LABEL(System__readFileNoNumeric)
   bufRes = malloc((statstr.st_size+70)*sizeof(char));
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
-	/* adrpo added 2004-10-26 */
-	free(buf);
+  /* adrpo added 2004-10-26 */
+  free(buf);
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
@@ -1038,83 +1038,83 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__subDirectories)
 {
-	void *res;
-	WIN32_FIND_DATA FileData;
-	BOOL more = TRUE;
-	char* directory = RML_STRINGDATA(rmlA0);
-	char pattern[1024];
-	HANDLE sh;
-	if (directory == NULL)
-		RML_TAILCALLK(rmlFC);
+  void *res;
+  WIN32_FIND_DATA FileData;
+  BOOL more = TRUE;
+  char* directory = RML_STRINGDATA(rmlA0);
+  char pattern[1024];
+  HANDLE sh;
+  if (directory == NULL)
+    RML_TAILCALLK(rmlFC);
 
 
-	sprintf(pattern, "%s\\*.*", directory);
+  sprintf(pattern, "%s\\*.*", directory);
 
-	res = (void*)mk_nil();
-	sh = FindFirstFile(pattern, &FileData);
-	if (sh != INVALID_HANDLE_VALUE) {
-		while(more) {
-			if (strcmp(FileData.cFileName,"..") != 0 &&
-				strcmp(FileData.cFileName,".") != 0 &&
-				(FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
-			{
-			    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
-			}
-			more = FindNextFile(sh, &FileData);
-		}
-		if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
-	}
-	rmlA0 = (void*)res;
-	RML_TAILCALLK(rmlSC);
+  res = (void*)mk_nil();
+  sh = FindFirstFile(pattern, &FileData);
+  if (sh != INVALID_HANDLE_VALUE) {
+    while(more) {
+      if (strcmp(FileData.cFileName,"..") != 0 &&
+        strcmp(FileData.cFileName,".") != 0 &&
+        (FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0)
+      {
+          res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+      }
+      more = FindNextFile(sh, &FileData);
+    }
+    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
+  }
+  rmlA0 = (void*)res;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 
 RML_BEGIN_LABEL(System__moFiles)
 {
-	void *res;
-	WIN32_FIND_DATA FileData;
-	BOOL more = TRUE;
-	char* directory = RML_STRINGDATA(rmlA0);
-	char pattern[1024];
-	HANDLE sh;
-	if (directory == NULL)
-		RML_TAILCALLK(rmlFC);
+  void *res;
+  WIN32_FIND_DATA FileData;
+  BOOL more = TRUE;
+  char* directory = RML_STRINGDATA(rmlA0);
+  char pattern[1024];
+  HANDLE sh;
+  if (directory == NULL)
+    RML_TAILCALLK(rmlFC);
 
 
-	sprintf(pattern, "%s\\*.mo", directory);
+  sprintf(pattern, "%s\\*.mo", directory);
 
-	res = (void*)mk_nil();
-	sh = FindFirstFile(pattern, &FileData);
-	if (sh != INVALID_HANDLE_VALUE) {
-		while(more) {
-			if (strcmp(FileData.cFileName,"package.mo") != 0)
-			{
-			    res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
-			}
-			more = FindNextFile(sh, &FileData);
-		}
-		if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
-	}
-	rmlA0 = (void*)res;
-	RML_TAILCALLK(rmlSC);
+  res = (void*)mk_nil();
+  sh = FindFirstFile(pattern, &FileData);
+  if (sh != INVALID_HANDLE_VALUE) {
+    while(more) {
+      if (strcmp(FileData.cFileName,"package.mo") != 0)
+      {
+          res = (void*)mk_cons(mk_scon(FileData.cFileName),res);
+      }
+      more = FindNextFile(sh, &FileData);
+    }
+    if (sh != INVALID_HANDLE_VALUE) FindClose(sh);
+  }
+  rmlA0 = (void*)res;
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getVariableNames)
 {
-	char* model = RML_STRINGDATA(rmlA0);
-	int size = getVariableListSize(model);
-	char* lst = 0;
+  char* model = RML_STRINGDATA(rmlA0);
+  int size = getVariableListSize(model);
+  char* lst = 0;
 
-	if(!size)
-		RML_TAILCALLK(rmlFC);
+  if(!size)
+    RML_TAILCALLK(rmlFC);
 
-	lst = (char*)malloc(sizeof(char)*size +1);
+  lst = (char*)malloc(sizeof(char)*size +1);
 
-	getVariableList(model, lst);
-	rmlA0 = (void*)mk_scon(lst);
-	RML_TAILCALLK(rmlSC);
+  getVariableList(model, lst);
+  rmlA0 = (void*)mk_scon(lst);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -1147,29 +1147,29 @@ RML_BEGIN_LABEL(System__hash)
 RML_END_LABEL
 
 int fileExistsLocal(char * s){
-	int ret=-1;
-	WIN32_FIND_DATA FileData;
-	HANDLE sh;
-	sh = FindFirstFile(s, &FileData);
-	if (sh == INVALID_HANDLE_VALUE) {
-		ret = -1;
-	}
-	else {
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			ret = -1;
-		}
-		else {
-			ret = 0;
-		}
-		FindClose(sh);
-	}
+  int ret=-1;
+  WIN32_FIND_DATA FileData;
+  HANDLE sh;
+  sh = FindFirstFile(s, &FileData);
+  if (sh == INVALID_HANDLE_VALUE) {
+    ret = -1;
+  }
+  else {
+    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+      ret = -1;
+    }
+    else {
+      ret = 0;
+    }
+    FindClose(sh);
+  }
 return ret;
 }
 
 RML_BEGIN_LABEL(System__getPackageFileNames)
 {
-	char* dir = RML_STRINGDATA(rmlA0);
-	char* fileName = RML_STRINGDATA(rmlA1);
+  char* dir = RML_STRINGDATA(rmlA0);
+  char* fileName = RML_STRINGDATA(rmlA1);
     char * strSearch = (char*)malloc(sizeof(char*)*(strlen(dir)+strlen(fileName)+10));
     char * tmpSearchString = (char*)malloc(sizeof(char*)*MAX_PATH);
     int mallocSize = MAX_PATH,current=0;
@@ -1180,124 +1180,124 @@ RML_BEGIN_LABEL(System__getPackageFileNames)
     HANDLE sh;
 
     sprintf(strSearch,"%s\\*\0",dir);
-	sh = FindFirstFile(strSearch, &FileData);
+  sh = FindFirstFile(strSearch, &FileData);
 
-	if (sh == INVALID_HANDLE_VALUE) {
-		printf(" invalid\n");
-	}
-	else {
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
-			if(fileExistsLocal(tmpSearchString)==0){
-				if(strlen(FileData.cFileName)+current>mallocSize){
-					mallocSize *= 2;
-					retString = (char *)realloc(retString,mallocSize);
-				}
-				if(current==0){
-					sprintf(retString,"%s",FileData.cFileName);
-				}
-				else{
-					sprintf(retString,",%s",FileData.cFileName);
-				}
-				current +=strlen(FileData.cFileName)+1;
-			}
-		}
-	}
-	while(FindNextFile(sh, &FileData) != 0){
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
-			if(fileExistsLocal(tmpSearchString)==0){
-				if(strlen(FileData.cFileName)+current>mallocSize){
-					mallocSize *= 2;
-					retString = (char *)realloc(retString,mallocSize);
-				}
-				if(current==0){
-					sprintf(retString,"%s",FileData.cFileName);
-				}
-				else{
-					sprintf(retString,"%s,%s",retString,FileData.cFileName);
-				}
-				current +=strlen(FileData.cFileName)+1;
-			}
-		}
-	}
-	FindClose(sh);
-	//printf(" to return: %s\n",retString);
-	rmlA0 = (void*) mk_scon(retString);
-	free(strSearch);
-	free(tmpSearchString);
-	free(retString);
-	RML_TAILCALLK(rmlSC);
+  if (sh == INVALID_HANDLE_VALUE) {
+    printf(" invalid\n");
+  }
+  else {
+    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+      sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
+      if(fileExistsLocal(tmpSearchString)==0){
+        if(strlen(FileData.cFileName)+current>mallocSize){
+          mallocSize *= 2;
+          retString = (char *)realloc(retString,mallocSize);
+        }
+        if(current==0){
+          sprintf(retString,"%s",FileData.cFileName);
+        }
+        else{
+          sprintf(retString,",%s",FileData.cFileName);
+        }
+        current +=strlen(FileData.cFileName)+1;
+      }
+    }
+  }
+  while(FindNextFile(sh, &FileData) != 0){
+    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+      sprintf(tmpSearchString,"%s\\%s\\%s",dir,FileData.cFileName,fileName);
+      if(fileExistsLocal(tmpSearchString)==0){
+        if(strlen(FileData.cFileName)+current>mallocSize){
+          mallocSize *= 2;
+          retString = (char *)realloc(retString,mallocSize);
+        }
+        if(current==0){
+          sprintf(retString,"%s",FileData.cFileName);
+        }
+        else{
+          sprintf(retString,"%s,%s",retString,FileData.cFileName);
+        }
+        current +=strlen(FileData.cFileName)+1;
+      }
+    }
+  }
+  FindClose(sh);
+  //printf(" to return: %s\n",retString);
+  rmlA0 = (void*) mk_scon(retString);
+  free(strSearch);
+  free(tmpSearchString);
+  free(retString);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__directoryExists)
 {
-	char* str = RML_STRINGDATA(rmlA0);
-	int ret_val;
-	void *res;
-	WIN32_FIND_DATA FileData;
-	HANDLE sh;
-	if (str == NULL)
-		RML_TAILCALLK(rmlFC);
-	sh = FindFirstFile(str, &FileData);
-	if (sh == INVALID_HANDLE_VALUE) {
-		ret_val = 1;
-	}
-	else {
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
-			ret_val = 1;
-		}
-		else {
-			ret_val = 0;
-		}
-		FindClose(sh);
-	}
-	rmlA0 = (void*) mk_icon(ret_val);
-	RML_TAILCALLK(rmlSC);
+  char* str = RML_STRINGDATA(rmlA0);
+  int ret_val;
+  void *res;
+  WIN32_FIND_DATA FileData;
+  HANDLE sh;
+  if (str == NULL)
+    RML_TAILCALLK(rmlFC);
+  sh = FindFirstFile(str, &FileData);
+  if (sh == INVALID_HANDLE_VALUE) {
+    ret_val = 1;
+  }
+  else {
+    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+      ret_val = 1;
+    }
+    else {
+      ret_val = 0;
+    }
+    FindClose(sh);
+  }
+  rmlA0 = (void*) mk_icon(ret_val);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__regularFileExists)
 {
-	char* str = RML_STRINGDATA(rmlA0);
-	int ret_val;
-	void *res;
-	WIN32_FIND_DATA FileData;
-	HANDLE sh;
+  char* str = RML_STRINGDATA(rmlA0);
+  int ret_val;
+  void *res;
+  WIN32_FIND_DATA FileData;
+  HANDLE sh;
 
-	if (str == NULL)
-		RML_TAILCALLK(rmlFC);
+  if (str == NULL)
+    RML_TAILCALLK(rmlFC);
 
-	sh = FindFirstFile(str, &FileData);
-	if (sh == INVALID_HANDLE_VALUE) {
-		ret_val = 1;
-	}
-	else {
-		if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			ret_val = 1;
-		}
-		else {
-			ret_val = 0;
-		}
-		FindClose(sh);
-	}
+  sh = FindFirstFile(str, &FileData);
+  if (sh == INVALID_HANDLE_VALUE) {
+    ret_val = 1;
+  }
+  else {
+    if ((FileData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+      ret_val = 1;
+    }
+    else {
+      ret_val = 0;
+    }
+    FindClose(sh);
+  }
 
-	rmlA0 = (void*) mk_icon(ret_val);
+  rmlA0 = (void*) mk_icon(ret_val);
 
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__removeFile)
 {
-	char* str = RML_STRINGDATA(rmlA0);
-	int ret_val;
-	ret_val = remove(str);
+  char* str = RML_STRINGDATA(rmlA0);
+  int ret_val;
+  ret_val = remove(str);
 
-	rmlA0 = (void*) mk_icon(ret_val);
+  rmlA0 = (void*) mk_icon(ret_val);
 
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -1357,7 +1357,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__atan2)
 {
   rmlA0 = rml_prim_mkreal(atan2(rml_prim_get_real(rmlA0),
-				rml_prim_get_real(rmlA1)));
+        rml_prim_get_real(rmlA1)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1435,18 +1435,18 @@ int next_intelt(int *arr)
 //    {
 //      if (type == 'r')
 //      {
-//	    rval = next_realelt((double*)data);
-//	    lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
+//      rval = next_realelt((double*)data);
+//      lst = (void*)mk_cons(Values__REAL(mk_rcon(rval)),lst);
 //      }
 //      else if (type == 'i')
 //      {
-//	    ival = next_intelt((int*)data);
-//	    lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
+//      ival = next_intelt((int*)data);
+//      lst = (void*)mk_cons(Values__INTEGER(mk_icon(ival)),lst);
 //      }
 //      else if (type == 'b')
 //      {
-//	    rval = next_realelt((double*)data);
-//	    lst = (void*)mk_cons(Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/),lst);
+//      rval = next_realelt((double*)data);
+//      lst = (void*)mk_cons(Values__BOOL(rval?RML_TRUE:RML_FALSE/*mk_bcon(rval)*/),lst);
 //      }
 //    }
 //  }
@@ -1484,21 +1484,21 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getVariableValue)
 {
-  double timeStamp 	= rml_prim_get_real(rmlA0);
-  void *timeValues 	= rmlA1;
-  void *varValues 	= rmlA2;
+  double timeStamp   = rml_prim_get_real(rmlA0);
+  void *timeValues   = rmlA1;
+  void *varValues   = rmlA2;
 
   // values to find the correct range
-  double preValue 	= 0.0;
-  double preTime 	= 0.0;
-  double nowValue 	= 0.0;
-  double nowTime 	= 0.0;
+  double preValue   = 0.0;
+  double preTime   = 0.0;
+  double nowValue   = 0.0;
+  double nowTime   = 0.0;
 
   // linjear interpolation data
-  double timedif 			= 0.0;
-  double valuedif			= 0.0;
-  double valueSlope			= 0.0;
-  double timeDifTimeStamp	= 0.0;
+  double timedif       = 0.0;
+  double valuedif      = 0.0;
+  double valueSlope      = 0.0;
+  double timeDifTimeStamp  = 0.0;
 
   // break loop and return value
   int valueFound = 0;
@@ -1507,58 +1507,58 @@ RML_BEGIN_LABEL(System__getVariableValue)
 for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
 
 
-    nowValue 	= rml_prim_get_real(RML_CAR(varValues));
-  	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));
+    nowValue   = rml_prim_get_real(RML_CAR(varValues));
+    nowTime   =  rml_prim_get_real(RML_CAR(timeValues));
 
 
-	if(timeStamp == nowTime){
-    	valueFound 	= 1;
-    	returnValue = nowValue;
+  if(timeStamp == nowTime){
+      valueFound   = 1;
+      returnValue = nowValue;
 
     } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
-    	valueFound 			= 1;
-    	timedif 			= nowTime - preTime;
-    	valuedif			= nowValue - preValue;
-    	valueSlope 			= valuedif / timedif;
-    	timeDifTimeStamp 	= timeStamp - preTime;
-    	returnValue 		= preValue + (valueSlope*timeDifTimeStamp);
-    	/*
-    	printf("\t ### Interpolation ###");
-    	printf("nowTime: %f", nowTime);
-    	printf("\n");
-    	printf("preTime: %f", preTime);
-    	printf("\n");
-    	printf("nowValue: %f", nowValue);
-    	printf("\n");
-    	printf("preValue: %f", preValue);
-    	printf("\n");
+      valueFound       = 1;
+      timedif       = nowTime - preTime;
+      valuedif      = nowValue - preValue;
+      valueSlope       = valuedif / timedif;
+      timeDifTimeStamp   = timeStamp - preTime;
+      returnValue     = preValue + (valueSlope*timeDifTimeStamp);
+      /*
+      printf("\t ### Interpolation ###");
+      printf("nowTime: %f", nowTime);
+      printf("\n");
+      printf("preTime: %f", preTime);
+      printf("\n");
+      printf("nowValue: %f", nowValue);
+      printf("\n");
+      printf("preValue: %f", preValue);
+      printf("\n");
 
-		printf("timedif: %f", timedif);
-    	printf("\n");
-    	printf("valuedif: %f", valuedif);
-    	printf("\n");
-    	printf("valueSlope: %f", valueSlope);
-    	printf("\n");
-    	printf("timeDifTimeStamp: %f", timeDifTimeStamp);
-    	printf("\n");
-    	printf("returnValue: %f", returnValue);
-    	printf("\n");
-		*/
-	} else {
-		preValue 	= nowValue;
-  		preTime 	= nowTime;
+    printf("timedif: %f", timedif);
+      printf("\n");
+      printf("valuedif: %f", valuedif);
+      printf("\n");
+      printf("valueSlope: %f", valueSlope);
+      printf("\n");
+      printf("timeDifTimeStamp: %f", timeDifTimeStamp);
+      printf("\n");
+      printf("returnValue: %f", returnValue);
+      printf("\n");
+    */
+  } else {
+    preValue   = nowValue;
+      preTime   = nowTime;
 
-	}
+  }
 
   }
   if(valueFound == 0){
-		// value could not be found in the dataset, what do we do?
-	    printf("\n WARNING: timestamp(%f) outside simulation timeline \n",timeStamp);
-		RML_TAILCALLK(rmlFC);
-	} else {
+    // value could not be found in the dataset, what do we do?
+      printf("\n WARNING: timestamp(%f) outside simulation timeline \n",timeStamp);
+    RML_TAILCALLK(rmlFC);
+  } else {
 
-  		rmlA0 = (void*)mk_rcon(returnValue);
-  		RML_TAILCALLK(rmlSC);
+      rmlA0 = (void*)mk_rcon(returnValue);
+      RML_TAILCALLK(rmlSC);
   }
 }
 RML_END_LABEL
@@ -1591,7 +1591,7 @@ RML_BEGIN_LABEL(System__sendData)
 //  emulateStreamData(data, 7778, title, "time", "", legend, grid, 0, 0, 0, 0, logX, logY, interpolation, 1);
   emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
 
-//	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
+//  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
 
   RML_TAILCALLK(rmlSC);
 }
@@ -1599,39 +1599,39 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__enableSendData)
 {
-	int enable = RML_UNTAGFIXNUM(rmlA0);
-	if(enable)
-		_putenv("enableSendData=1");
-	else
-		_putenv("enableSendData=0");
+  int enable = RML_UNTAGFIXNUM(rmlA0);
+  if(enable)
+    _putenv("enableSendData=1");
+  else
+    _putenv("enableSendData=0");
 
 
-//	enableSendData(enable);
-	  RML_TAILCALLK(rmlSC);
+//  enableSendData(enable);
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setDataPort)
 {
-	int port = RML_UNTAGFIXNUM(rmlA0);
+  int port = RML_UNTAGFIXNUM(rmlA0);
 
-		char* dataport = malloc(25);
-		sprintf(dataport,"sendDataPort=%s", port);
-		_putenv(dataport);
-		free(dataport);
-//	setDataPort(port);
-	  RML_TAILCALLK(rmlSC);
+    char* dataport = malloc(25);
+    sprintf(dataport,"sendDataPort=%s", port);
+    _putenv(dataport);
+    free(dataport);
+//  setDataPort(port);
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 RML_BEGIN_LABEL(System__setVariableFilter)
 {
-	char * variables = RML_STRINGDATA(rmlA0);
-	char* filter=malloc(strlen(variables)+20);
-	sprintf(filter, "sendDataFilter=%s",variables);
-	_putenv(filter);
-	free(filter);
-//	setVariableFilter(variables);
-	RML_TAILCALLK(rmlSC);
+  char * variables = RML_STRINGDATA(rmlA0);
+  char* filter=malloc(strlen(variables)+20);
+  sprintf(filter, "sendDataFilter=%s",variables);
+  _putenv(filter);
+  free(filter);
+//  setVariableFilter(variables);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -1648,15 +1648,15 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
-  struct _stat attrib;			  // create a file attribute structure
+  struct _stat attrib;        // create a file attribute structure
   double elapsedTime;             // the time elapsed as double
-  int result;					  // the result of the function call
+  int result;            // the result of the function call
 
   result = _stat( fileName, &attrib );
 
   if( result != 0 )
   {
-  	rmlA0 = mk_none();     // we couldn't get the time, return NONE
+    rmlA0 = mk_none();     // we couldn't get the time, return NONE
   }
   else
   {
@@ -1742,8 +1742,8 @@ typedef int _file_compar_func_type(const struct dirent **, const struct dirent *
 
 
 void reallocdirents(struct dirent ***entries,
-		    unsigned int oldsize,
-		    unsigned int newsize) {
+        unsigned int oldsize,
+        unsigned int newsize) {
   struct dirent **newentries;
   if (newsize<=oldsize)
     return;
@@ -1765,9 +1765,9 @@ void reallocdirents(struct dirent ***entries,
  * compar function is ignored
  */
 int scandir(const char* dirname,
-	    struct dirent ***entries,
-	    _file_select_func_type select,
-	    _file_compar_func_type compar)
+      struct dirent ***entries,
+      _file_select_func_type select,
+      _file_compar_func_type compar)
 {
   DIR *dir = opendir(dirname);
   struct dirent *entry;
@@ -1782,9 +1782,9 @@ int scandir(const char* dirname,
     if (select == NULL || select(entry)) {
       struct dirent *entcopy = (struct dirent*)malloc(sizeof(struct dirent));
       if (count >= maxents) {
-	unsigned int oldmaxents = maxents;
-	maxents = maxents * 2;
-	reallocdirents(entries, oldmaxents, maxents);
+  unsigned int oldmaxents = maxents;
+  maxents = maxents * 2;
+  reallocdirents(entries, oldmaxents, maxents);
       }
       (*entries)[count] = entcopy;
       count++;
@@ -1811,6 +1811,7 @@ static modelica_integer last_ptr_index = -1;
 void System_5finit(void)
 {
   char* qthome;
+  char sendDataLibs[3000] = {0};
 
   last_ptr_index = -1;
   memset(ptr_vector, 0, sizeof(ptr_vector));
@@ -1835,20 +1836,32 @@ void System_5finit(void)
    */
   set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
 #else
-	set_cflags("${MODELICAUSERCFLAGS}");
+  set_cflags("${MODELICAUSERCFLAGS}");
 #endif
   set_ldflags("-lc_runtime");
 
   qthome = getenv("QTHOME");
   if (qthome && strlen(qthome)) {
+     /* use QTHOME if is set! */
 #ifdef __APPLE_CC__
-    putenv("SENDDATALIBS=-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon");
+    sprintf(
+        sendDataLibs,
+        "SENDDATALIBS=-L%s/lib -lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon",
+        qthome);
 #else
-    putenv("SENDDATALIBS=-lsendData -lQtNetwork -lQtCore -lQtGui");
+    sprintf(
+        sendDataLibs,
+        "SENDDATALIBS=-L%s/lib -lsendData -lQtNetwork -lQtCore -lQtGui",
+        qthome);
 #endif
   } else {
-    putenv("SENDDATALIBS=-lsendData");
+    /* no QTHOME was set! */
+    sprintf(
+        sendDataLibs,
+        "SENDDATALIBS=-lsendData");
   }
+  /* set the SENDDATALIBS environment variable */
+  putenv(strdup(sendDataLibs));
 }
 
 /**
@@ -1861,7 +1874,7 @@ char *mergePathWithLink(char *path,char *linkPath)
     char *newPath = (char *) malloc(sizeof(char)*MAXPATHLEN);
     //printf(" entered mergePathWithLink, path: %s, link: %s\n",path,linkPath);
     if(linkPath[0] =='/') // if link is non relative
-	return linkPath;
+  return linkPath;
     // else; replace ......./link with ..../link_result
     lastSlash = strrchr(path,'/')+1;
     *lastSlash = '\0';
@@ -1887,30 +1900,30 @@ char *getSymbolicLinkPath(char* path)
     err = lstat(path,&ss);
     //printf(" check existence %s\n",path);
     if(err==0){ // file exists
-    	//printf("okay succ %s, %d\n",path,ss.st_mode);
-    	if(S_ISLNK(ss.st_mode))
-    	{
-    	    //printf("*** is link *** %s\n",path);
-    	    buffer = (char *) malloc(sizeof(char)*MAXPATHLEN);
-    	    readChars = readlink (path, buffer, MAXPATHLEN);
-    	    if(readChars >0){
-    	    	buffer[readChars]='\0';
-    	    	buffer = mergePathWithLink(path,buffer);
-    	    	free(path);
-    	    	path = buffer;
-    	    	//printf(" have %s from symolic link\n",path);
-    	    	path = getSymbolicLinkPath(path);
-    	    	//printf(" after recursive call, terminating; %s\n\n",path);
-    	    }
-    	    else if(readChars==-1){
-    	    	free(buffer);
-    	    }
-    	}
-    	return path;
+      //printf("okay succ %s, %d\n",path,ss.st_mode);
+      if(S_ISLNK(ss.st_mode))
+      {
+          //printf("*** is link *** %s\n",path);
+          buffer = (char *) malloc(sizeof(char)*MAXPATHLEN);
+          readChars = readlink (path, buffer, MAXPATHLEN);
+          if(readChars >0){
+            buffer[readChars]='\0';
+            buffer = mergePathWithLink(path,buffer);
+            free(path);
+            path = buffer;
+            //printf(" have %s from symolic link\n",path);
+            path = getSymbolicLinkPath(path);
+            //printf(" after recursive call, terminating; %s\n\n",path);
+          }
+          else if(readChars==-1){
+            free(buffer);
+          }
+      }
+      return path;
     }
     else{
         //printf(" no existing: %s\n",path);
-    	return path;
+      return path;
     }
 }
 /**
@@ -1932,30 +1945,30 @@ char* findSymbolicLinks(char* path)
     curRes[0]='\0';
     curPos = path;
     if(path[0]=='/'){
-	curRes = strcat(curRes,"/");
+  curRes = strcat(curRes,"/");
         curPos = &path[1]; // skip first slash, will add when finished.
     }
 
     for(i=0;i<100;++i){
         endPos = strchr(curPos,'/');
         if(endPos==NULL){ // End OF String
-	    endPos = strrchr(curPos,'\0');
-	    strncat(curRes,curPos,endPos-curPos); // add filename
-	    //printf(" check: %s ==> " ,curRes);
-	    curRes = getSymbolicLinkPath(curRes);
-	    //printf("\tbecame: %s\n",curRes);
-	    free(path);
-    	    return curRes;
-	}
-	strncat(curRes,curPos,endPos-curPos);
-	curRes = getSymbolicLinkPath(curRes);
-	if(curRes[strlen(curRes)-1] != '/')
-    	    strcat(curRes,"/");
-	//printf("path: %s\n",curRes);
-	curPos = endPos+1;
+      endPos = strrchr(curPos,'\0');
+      strncat(curRes,curPos,endPos-curPos); // add filename
+      //printf(" check: %s ==> " ,curRes);
+      curRes = getSymbolicLinkPath(curRes);
+      //printf("\tbecame: %s\n",curRes);
+      free(path);
+          return curRes;
+  }
+  strncat(curRes,curPos,endPos-curPos);
+  curRes = getSymbolicLinkPath(curRes);
+  if(curRes[strlen(curRes)-1] != '/')
+          strcat(curRes,"/");
+  //printf("path: %s\n",curRes);
+  curPos = endPos+1;
     }
     if(strchr(path,'/')!=NULL)
-	fprintf(stderr,"possible error in save-function\n");
+  fprintf(stderr,"possible error in save-function\n");
     free(path);
     return curRes;
 }
@@ -2090,9 +2103,9 @@ RML_BEGIN_LABEL(System__strtok)
   s=strtok(str,delimit);
   if (s == NULL)
   {
-	  /* adrpo added 2004-10-27 */
-	  free(str);
-	  rmlA0=res; RML_TAILCALLK(rmlFC);
+    /* adrpo added 2004-10-27 */
+    free(str);
+    rmlA0=res; RML_TAILCALLK(rmlFC);
   }
   res = (void*)mk_cons(mk_scon(s),res);
   while (s=strtok(NULL,delimit))
@@ -2265,18 +2278,18 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
   fp1 = fopen(fileName1, "r");
 
   if(!fp1){
-	  //printf("Error opening the file: %s, creating it\n",fileName1);
-	  d1 = fopen(fileName1,"w+");
-	  for(i=0;i<5;++i)
-		  fputc(emptyString[i],d1);
-	  fclose(d1);
+    //printf("Error opening the file: %s, creating it\n",fileName1);
+    d1 = fopen(fileName1,"w+");
+    for(i=0;i<5;++i)
+      fputc(emptyString[i],d1);
+    fclose(d1);
   }
   fp1 = fopen(fileName1, "r");
   fp2 = fopen(fileName2, "r");
   if(!fp2){
-  	  //printf("Error opening the file(#2): %s\n",fileName2);
- 	  rmlA0 = RML_FALSE/*mk_bcon(-1)*/;
-  	  RML_TAILCALLK(rmlSC);
+      //printf("Error opening the file(#2): %s\n",fileName2);
+     rmlA0 = RML_FALSE/*mk_bcon(-1)*/;
+      RML_TAILCALLK(rmlSC);
     }
   fseek(fp1 , 0 , SEEK_END);
   fileSize1 = ftell(fp1);
@@ -2288,8 +2301,8 @@ RML_BEGIN_LABEL(System__isIdenticalFile)
     res=-1;
   else
     for(i=0;i<fileSize1;++i)
-    	if(fgetc(fp1) != fgetc(fp2))
-    		res=-1;
+      if(fgetc(fp1) != fgetc(fp2))
+        res=-1;
   fclose(fp1);fclose(fp2);
   rmlA0 = res?RML_FALSE:RML_TRUE/*mk_bcon(res)*/;
   RML_TAILCALLK(rmlSC);
@@ -2312,7 +2325,7 @@ RML_BEGIN_LABEL(System__stringReplace)
    */
   /*
    if (!strcmp(source, target))
-   	RML_TAILCALLK(rmlSC);
+     RML_TAILCALLK(rmlSC);
   */
   /* end adrpo */
 
@@ -2539,7 +2552,7 @@ RML_BEGIN_LABEL(System__compileCFile)
 #endif
   tmp = getenv("MODELICAUSERCFLAGS");
   if (tmp == NULL || tmp[0] == '\0'  ) {
-	  putenv("MODELICAUSERCFLAGS=  ");
+    putenv("MODELICAUSERCFLAGS=  ");
   }
   if (system(command) != 0) {
     RML_TAILCALLK(rmlFC);
@@ -2596,11 +2609,11 @@ RML_BEGIN_LABEL(System__writeFile)
   if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FIvalue_to_type_descLE_ERROR */
-		  "SCRIPTING",
-		  "ERROR",
-		  "Error writing to file %s.",
-		  c_tokens,
-		  1);
+      "SCRIPTING",
+      "ERROR",
+      "Error writing to file %s.",
+      c_tokens,
+      1);
     RML_TAILCALLK(rmlFC);
   }
   /* adrpo changed 2006-10-06
@@ -2626,11 +2639,11 @@ RML_BEGIN_LABEL(System__readFile)
   {
     char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-		  "SCRIPTING",
-		  "ERROR",
-		  "Error opening file %s.",
-		  c_tokens,
-		  1);
+      "SCRIPTING",
+      "ERROR",
+      "Error opening file %s.",
+      c_tokens,
+      1);
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }
@@ -2640,8 +2653,8 @@ RML_BEGIN_LABEL(System__readFile)
 
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
-	/* adrpo added 2004-10-26 */
-	free(buf);
+  /* adrpo added 2004-10-26 */
+  free(buf);
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
@@ -2657,51 +2670,51 @@ RML_BEGIN_LABEL(System__readFile)
 RML_END_LABEL
 
 int stringContains(char *str,char c){
-	int i;
-	for(i=0;i<strlen(str);++i)
-		if(str[i]==c){
-			//printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
-			return 1;
-		}
-	return 0;
+  int i;
+  for(i=0;i<strlen(str);++i)
+    if(str[i]==c){
+      //printf(" (#%d / %d)contained '%c' ('%c', __%s__)\t",i,strlen(str),str[i],c,str);
+      return 1;
+    }
+  return 0;
 }
 int filterString(char* buf,char* bufRes){
-	  int res,i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
-	  char preChar,cc;
-	  char filterChars[12] = "0123456789.\0";
-	  char numeric[11] = "0123456789\0";
-	  slen = strlen(buf);
-	  preChar = '\0';
-	  for(i=0;i<slen;++i){
-		  cc = buf[i];
-		  if((stringContains(filterChars,buf[i])))
-		  {
-			  if(buf[i]=='.'){
-				if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
-					if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-					//printf("skipping_1: '%c'\n",buf[i]);
-				}
-				else{
-					bufRes[bufPointer++] = buf[i];
-					isNumeric=0;
-				}
-			  }
-			  else
-			  {
-				  if(isNumeric == 0){isNumeric=1;numericEncounter++;}
-				  //printf("skipping_2: '%c'\n",buf[i]);
-			  }
-		  }
-		  else
-		  {
-			  bufRes[bufPointer++] = buf[i];
-			  isNumeric=0;
-		  }
-		  preChar = buf[i];
-		  //isNumeric=0;
-	  }
-	  bufRes[bufPointer++] = '\0';
-	  return numericEncounter;
+    int res,i,bufPointer = 0,slen,isNumeric=0,numericEncounter=0;
+    char preChar,cc;
+    char filterChars[12] = "0123456789.\0";
+    char numeric[11] = "0123456789\0";
+    slen = strlen(buf);
+    preChar = '\0';
+    for(i=0;i<slen;++i){
+      cc = buf[i];
+      if((stringContains(filterChars,buf[i])))
+      {
+        if(buf[i]=='.'){
+        if(stringContains(numeric,preChar) || (( i < slen+1) && stringContains(numeric,buf[i+1])) ){
+          if(isNumeric == 0){isNumeric=1;numericEncounter++;}
+          //printf("skipping_1: '%c'\n",buf[i]);
+        }
+        else{
+          bufRes[bufPointer++] = buf[i];
+          isNumeric=0;
+        }
+        }
+        else
+        {
+          if(isNumeric == 0){isNumeric=1;numericEncounter++;}
+          //printf("skipping_2: '%c'\n",buf[i]);
+        }
+      }
+      else
+      {
+        bufRes[bufPointer++] = buf[i];
+        isNumeric=0;
+      }
+      preChar = buf[i];
+      //isNumeric=0;
+    }
+    bufRes[bufPointer++] = '\0';
+    return numericEncounter;
 }
 
 RML_BEGIN_LABEL(System__readFileNoNumeric)
@@ -2717,11 +2730,11 @@ RML_BEGIN_LABEL(System__readFileNoNumeric)
   {
     char *c_tokens[1]={filename};
     c_add_message(85, /* ERROR_OPENING_FILE */
-		  "SCRIPTING",
-		  "ERROR",
-		  "Error opening file %s.",
-		  c_tokens,
-		  1);
+      "SCRIPTING",
+      "ERROR",
+      "Error opening file %s.",
+      c_tokens,
+      1);
     rmlA0 = (void*) mk_scon("No such file");
     RML_TAILCALLK(rmlSC);
   }
@@ -2731,8 +2744,8 @@ RML_BEGIN_LABEL(System__readFileNoNumeric)
   bufRes = malloc((statstr.st_size+70)*sizeof(char));
   if( (res = fread(buf, sizeof(char), statstr.st_size, file)) != statstr.st_size)
   {
-	/* adrpo added 2004-10-26 */
-	free(buf);
+  /* adrpo added 2004-10-26 */
+  free(buf);
     rmlA0 = (void*) mk_scon("Failed while reading file");
     RML_TAILCALLK(rmlSC);
   }
@@ -2830,7 +2843,7 @@ RML_BEGIN_LABEL(System__subDirectories)
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
     /* adrpo added 2004-10-28 */
     //free(files[i]->d_name);
-	free(files[i]);
+  free(files[i]);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
@@ -2849,7 +2862,7 @@ int file_select_mo(const struct dirent *entry)
   } else {
     ptr = (char*)rindex(entry->d_name, '.');
     if ((ptr != NULL) &&
-	((strcmp(ptr, ".mo") == 0))) {
+  ((strcmp(ptr, ".mo") == 0))) {
       return (1);
     } else {
       return (0);
@@ -2873,7 +2886,7 @@ RML_BEGIN_LABEL(System__moFiles)
     res = (void*)mk_cons(mk_scon(files[i]->d_name),res);
     /* adrpo added 2004-10-28 */
     //free(files[i]->d_name);
-	free(files[i]);
+  free(files[i]);
   }
   rmlA0 = (void*) res;
   RML_TAILCALLK(rmlSC);
@@ -2882,17 +2895,17 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__getVariableNames)
 {
-	char* model = RML_STRINGDATA(rmlA0);
-	int size = getVariableListSize(model);
+  char* model = RML_STRINGDATA(rmlA0);
+  int size = getVariableListSize(model);
 
-	if(!size)
-		RML_TAILCALLK(rmlFC);
+  if(!size)
+    RML_TAILCALLK(rmlFC);
 
-	char* lst = (char*)malloc(sizeof(char)*size +1);
+  char* lst = (char*)malloc(sizeof(char)*size +1);
 
-	getVariableList(model, lst);
-	rmlA0 = (void*)mk_scon(lst);
-	RML_TAILCALLK(rmlSC);
+  getVariableList(model, lst);
+  rmlA0 = (void*)mk_scon(lst);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -2999,7 +3012,7 @@ RML_BEGIN_LABEL(System__directoryExists)
   struct stat buf;
 
   if (str == NULL)
-  	RML_TAILCALLK(rmlFC);
+    RML_TAILCALLK(rmlFC);
 
   ret_val = stat(str, &buf);
   if (ret_val != 0 ) {
@@ -3041,13 +3054,13 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__removeFile)
 {
-	char* str = RML_STRINGDATA(rmlA0);
-	int ret_val;
-	ret_val = remove(str);
+  char* str = RML_STRINGDATA(rmlA0);
+  int ret_val;
+  ret_val = remove(str);
 
-	rmlA0 = (void*) mk_icon(ret_val);
+  rmlA0 = (void*) mk_icon(ret_val);
 
-	RML_TAILCALLK(rmlSC);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -3105,7 +3118,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__atan2)
 {
   rmlA0 = rml_prim_mkreal(atan2(rml_prim_get_real(rmlA0),
-				rml_prim_get_real(rmlA1)));
+        rml_prim_get_real(rmlA1)));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -3195,21 +3208,21 @@ char* compile_command = NULL;
 
 RML_BEGIN_LABEL(System__getVariableValue)
 {
-  double timeStamp 	= rml_prim_get_real(rmlA0);
-  void *timeValues 	= rmlA1;
-  void *varValues 	= rmlA2;
+  double timeStamp   = rml_prim_get_real(rmlA0);
+  void *timeValues   = rmlA1;
+  void *varValues   = rmlA2;
 
   // values to find the correct range
-  double preValue 	= 0.0;
-  double preTime 	= 0.0;
-  double nowValue 	= 0.0;
-  double nowTime 	= 0.0;
+  double preValue   = 0.0;
+  double preTime   = 0.0;
+  double nowValue   = 0.0;
+  double nowTime   = 0.0;
 
   // linjear interpolation data
-  double timedif 			= 0.0;
-  double valuedif			= 0.0;
-  double valueSlope			= 0.0;
-  double timeDifTimeStamp	= 0.0;
+  double timedif       = 0.0;
+  double valuedif      = 0.0;
+  double valueSlope      = 0.0;
+  double timeDifTimeStamp  = 0.0;
 
   // break loop and return value
   int valueFound = 0;
@@ -3218,58 +3231,58 @@ RML_BEGIN_LABEL(System__getVariableValue)
 for(; RML_GETHDR(timeValues) == RML_CONSHDR && valueFound == 0; timeValues = RML_CDR(timeValues), varValues = RML_CDR(varValues)) {
 
 
-    nowValue 	= rml_prim_get_real(RML_CAR(varValues));
-  	nowTime 	=  rml_prim_get_real(RML_CAR(timeValues));
+    nowValue   = rml_prim_get_real(RML_CAR(varValues));
+    nowTime   =  rml_prim_get_real(RML_CAR(timeValues));
 
 
-	if(timeStamp == nowTime){
-    	valueFound 	= 1;
-    	returnValue = nowValue;
+  if(timeStamp == nowTime){
+      valueFound   = 1;
+      returnValue = nowValue;
 
     } else if (timeStamp >= preTime && timeStamp <= nowTime) { // need to do interpolation
-    	valueFound 			= 1;
-    	timedif 			= nowTime - preTime;
-    	valuedif			= nowValue - preValue;
-    	valueSlope 			= valuedif / timedif;
-    	timeDifTimeStamp 	= timeStamp - preTime;
-    	returnValue 		= preValue + (valueSlope*timeDifTimeStamp);
-    	/*
-    	printf("\t ### Interpolation ###");
-    	printf("nowTime: %f", nowTime);
-    	printf("\n");
-    	printf("preTime: %f", preTime);
-    	printf("\n");
-    	printf("nowValue: %f", nowValue);
-    	printf("\n");
-    	printf("preValue: %f", preValue);
-    	printf("\n");
+      valueFound       = 1;
+      timedif       = nowTime - preTime;
+      valuedif      = nowValue - preValue;
+      valueSlope       = valuedif / timedif;
+      timeDifTimeStamp   = timeStamp - preTime;
+      returnValue     = preValue + (valueSlope*timeDifTimeStamp);
+      /*
+      printf("\t ### Interpolation ###");
+      printf("nowTime: %f", nowTime);
+      printf("\n");
+      printf("preTime: %f", preTime);
+      printf("\n");
+      printf("nowValue: %f", nowValue);
+      printf("\n");
+      printf("preValue: %f", preValue);
+      printf("\n");
 
-		printf("timedif: %f", timedif);
-    	printf("\n");
-    	printf("valuedif: %f", valuedif);
-    	printf("\n");
-    	printf("valueSlope: %f", valueSlope);
-    	printf("\n");
-    	printf("timeDifTimeStamp: %f", timeDifTimeStamp);
-    	printf("\n");
-    	printf("returnValue: %f", returnValue);
-    	printf("\n");
-		*/
-	} else {
-		preValue 	= nowValue;
-  		preTime 	= nowTime;
+    printf("timedif: %f", timedif);
+      printf("\n");
+      printf("valuedif: %f", valuedif);
+      printf("\n");
+      printf("valueSlope: %f", valueSlope);
+      printf("\n");
+      printf("timeDifTimeStamp: %f", timeDifTimeStamp);
+      printf("\n");
+      printf("returnValue: %f", returnValue);
+      printf("\n");
+    */
+  } else {
+    preValue   = nowValue;
+      preTime   = nowTime;
 
-	}
+  }
 
   }
   if(valueFound == 0){
-		// value could not be found in the dataset, what do we do?
-		printf("\n WARNING: timestamp outside simulation timeline \n");
-		RML_TAILCALLK(rmlFC);
-	} else {
+    // value could not be found in the dataset, what do we do?
+    printf("\n WARNING: timestamp outside simulation timeline \n");
+    RML_TAILCALLK(rmlFC);
+  } else {
 
-  		rmlA0 = (void*)mk_rcon(returnValue);
-  		RML_TAILCALLK(rmlSC);
+      rmlA0 = (void*)mk_rcon(returnValue);
+      RML_TAILCALLK(rmlSC);
   }
 }
 RML_END_LABEL
@@ -3300,7 +3313,7 @@ RML_BEGIN_LABEL(System__sendData)
 
   emulateStreamData(data, title, xLabel, yLabel , interpolation, legend, grid, logX, logY, points, range);
 
-//	emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
+//  emulateStreamData(data, 7778, "Plot by OpenModelica", "time", "", 1, 1, 0, 0, 0, 0, 0, 0, "linear");
 
   RML_TAILCALLK(rmlSC);
 }
@@ -3308,33 +3321,33 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__enableSendData)
 {
-	int enable = RML_UNTAGFIXNUM(rmlA0);
-	if(enable)
-		setenv("enableSendData", "1", 1 /* overwrite */);
-	else
-		setenv("enableSendData", "0", 1 /* overwrite */);
-//	enableSendData(enable);
-	  RML_TAILCALLK(rmlSC);
+  int enable = RML_UNTAGFIXNUM(rmlA0);
+  if(enable)
+    setenv("enableSendData", "1", 1 /* overwrite */);
+  else
+    setenv("enableSendData", "0", 1 /* overwrite */);
+//  enableSendData(enable);
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__setDataPort)
 {
-	int port = RML_UNTAGFIXNUM(rmlA0);
-	char* p = malloc(10);
-	sprintf(p, "%s", port);
-	setenv("sendDataPort", p, 1 /* overwrite */);
-	free(p);
-	setDataPort(port);
-	  RML_TAILCALLK(rmlSC);
+  int port = RML_UNTAGFIXNUM(rmlA0);
+  char* p = malloc(10);
+  sprintf(p, "%s", port);
+  setenv("sendDataPort", p, 1 /* overwrite */);
+  free(p);
+  setDataPort(port);
+    RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 RML_BEGIN_LABEL(System__setVariableFilter)
 {
-	char * variables = RML_STRINGDATA(rmlA0);
-	setenv("sendDataFilter", variables, 1 /* overwrite */);
-//	setVariableFilter(variables);
-	RML_TAILCALLK(rmlSC);
+  char * variables = RML_STRINGDATA(rmlA0);
+  setenv("sendDataFilter", variables, 1 /* overwrite */);
+//  setVariableFilter(variables);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -3351,15 +3364,15 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__getFileModificationTime)
 {
   char* fileName = RML_STRINGDATA(rmlA0);
-  struct stat attrib;			      // create a file attribute structure
+  struct stat attrib;            // create a file attribute structure
   double elapsedTime;                 // the time elapsed as double
-  int result;					      // the result of the function call
+  int result;                // the result of the function call
 
   result =   stat(fileName, &attrib); // get the attributes of the file
 
   if( result != 0 )
   {
-  	rmlA0 = mk_none();     // we couldn't get the time, return NONE
+    rmlA0 = mk_none();     // we couldn't get the time, return NONE
   }
   else
   {
@@ -3569,14 +3582,14 @@ static modelica_integer tmp_tick_no = 0;
 
 RML_BEGIN_LABEL(System__tmpTick)
 {
-	rmlA0 = (void*) mk_icon(tmp_tick_no++);
-	RML_TAILCALLK(rmlSC);
+  rmlA0 = (void*) mk_icon(tmp_tick_no++);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__tmpTickReset)
 {
-	tmp_tick_no = RML_UNTAGFIXNUM(rmlA0);
+  tmp_tick_no = RML_UNTAGFIXNUM(rmlA0);
     RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

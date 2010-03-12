@@ -48,7 +48,7 @@
 #include <QVector>
 #include <QDir>
 //#include <string>
-//#include <QTime>
+//#include <QDateTime>
 #include <QProcess>
 #include <QThread>
 #include <QTemporaryFile>
@@ -116,6 +116,7 @@ const char* Connection::getExternalViewerFileName()
   return viewerPath;
 }
 
+#include <time.h>
 
 bool Connection::startExternalViewer()
 {
@@ -124,13 +125,14 @@ bool Connection::startExternalViewer()
   {
     QProcess *plotViewerProcess = new QProcess();
     QString tempPath(QDir::tempPath());
-    QString tempFile = tempPath + "/OpenModelica-PlotViewer.log";
+    QString uniq; uniq.sprintf("%05.4f", (double)clock());
+    // fprintf(stderr, "uniq %s\n", uniq.toStdString().c_str());
+    QString tempFile = tempPath + "/OpenModelica-PlotViewer-" + uniq + "-.log";
     plotViewerProcess->setWorkingDirectory(tempPath);
     // cerr << "simulation runtime: redirecting the output to: " << tempFile.toStdString() << endl;
     plotViewerProcess->setStandardErrorFile(tempFile, QIODevice::Truncate);
     plotViewerProcess->setStandardOutputFile(tempFile, QIODevice::Truncate);
     plotViewerProcess->setProcessChannelMode(QProcess::MergedChannels);
-
 
     // 2006-03-14 AF, start viewer
     plotViewerProcess->start( path );
