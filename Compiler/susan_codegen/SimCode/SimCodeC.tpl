@@ -1515,14 +1515,26 @@ if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;
 
 writeOutVar(Variable var, Integer index) ::=
 case VARIABLE(ty=ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD)) then
-# basename = underscorePath(n)
-# args = (vl of COMPLEX_VAR: '<expTypeRW(tp)>, &(out.targ<index>.<name>)' ", ")
 <<
-write_modelica_record(outVar, &<basename>__desc<if args then ', <args>'>, TYPE_DESC_NONE);
+write_modelica_record(outVar, <writeOutVarRecordMembers(ty, index, "")>);
 >>
 case VARIABLE then
 <<
 write_<varType(it)>(outVar, &out.targ<index>);
+>>
+
+writeOutVarRecordMembers(ExpType type, Integer index, String prefix) ::=
+case ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD) then
+# basename = underscorePath(n)
+# args = (vl of subvar as COMPLEX_VAR:
+    if tp is ET_COMPLEX then
+      # newPrefix = '.<subvar.name>'
+      '<expTypeRW(tp)>, <writeOutVarRecordMembers(tp, index, newPrefix)>'
+    else
+      '<expTypeRW(tp)>, &(out.targ<index><prefix>.<subvar.name>)'
+  ", ")
+<<
+&<basename>__desc<if args then ', <args>'>, TYPE_DESC_NONE
 >>
 
 varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
@@ -2407,6 +2419,7 @@ expTypeRW(DAE.ExpType) ::=
   case ET_REAL    then "TYPE_DESC_REAL"
   case ET_STRING  then "TYPE_DESC_STRING"
   case ET_BOOL    then "TYPE_DESC_BOOL"
+  case ET_COMPLEX(complexClassType=RECORD) then "TYPE_DESC_RECORD"
   //case ET_ARRAY   then expTypeShort(ty)   
 
 expTypeShort(DAE.ExpType) ::=

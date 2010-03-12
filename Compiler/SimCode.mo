@@ -1340,8 +1340,6 @@ algorithm
       list<RecordDeclaration> accRecDecls;
 
     case ({}, accRecDecls, rt)
-      equation
-        accRecDecls = listReverse(accRecDecls);
       then (accRecDecls,rt);
     case (((var as DAE.VAR(ty = ft)) :: rest), accRecDecls, rt)
       equation
@@ -1358,6 +1356,7 @@ algorithm
         expl = getMatchingExpsList(expl, matchCalls);
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
         //TODO: ? what about rest ? , can be there something else after the ALGORITHM
+        (accRecDecls,rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_2);
       then
         (accRecDecls,rt_2);
     case ((_ :: rest), accRecDecls, rt)
@@ -1388,6 +1387,7 @@ algorithm
       list<RecordDeclaration> accRecDecls;
       Variables vars;
 
+      RecordDeclaration recDecl;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
       local  String sname;
       equation
@@ -1397,9 +1397,10 @@ algorithm
 
         vars = Util.listMap(varlst, typesVar);
 
-        accRecDecls = RECORD_DECL_FULL(sname, path, vars) :: accRecDecls;
         rt_1 = sname :: rt;
         (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+        recDecl = RECORD_DECL_FULL(sname, path, vars);
+        accRecDecls = Util.listAppendElt(recDecl, accRecDecls);
       then (accRecDecls,rt_2);
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),_), accRecDecls, rt)
       then (accRecDecls,rt);
