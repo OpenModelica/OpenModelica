@@ -250,6 +250,7 @@ package SimCode
       list<String> includes;
       Libs libs;
       String language;
+      list<RecordDeclaration> recordDecls;
     end EXTERNAL_FUNCTION;
   end Function;
   

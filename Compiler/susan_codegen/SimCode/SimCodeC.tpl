@@ -1323,6 +1323,7 @@ functionHeaders(list<Function> functions) ::=
     >> 
   case EXTERNAL_FUNCTION then
     <<
+    <recordDecls: recordDeclaration(it) \n>
     <functionHeader(underscorePath(name), funArgs, outVars)>
 
     <extFunDef(it)>
@@ -1385,6 +1386,10 @@ extType(Type) ::=
   case ET_BOOL then "int"
   case ET_ARRAY then extType(ty)
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ) then "void *"
+  case ET_COMPLEX(complexClassType=RECORD(path=rname)) then
+    <<
+    struct <underscorePath(rname)>
+    >>
   case _ then "OTHER_EXT_TYPE"
 
 // Assume that language is C for now.
@@ -1513,7 +1518,7 @@ case VARIABLE(ty=ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD)) then
 # basename = underscorePath(n)
 # args = (vl of COMPLEX_VAR: '<expTypeRW(tp)>, &(out.targ<index>.<name>)' ", ")
 <<
-write_modelica_record(outVar, &<basename>__desc, <args>, TYPE_DESC_NONE);
+write_modelica_record(outVar, &<basename>__desc<if args then ', <args>'>, TYPE_DESC_NONE);
 >>
 case VARIABLE then
 <<
@@ -1522,7 +1527,7 @@ write_<varType(it)>(outVar, &out.targ<index>);
 
 varInit(Variable, String outStruct, Integer i, Text varDecls, Text varInits) ::=
 case var as VARIABLE then
-  # varDecls += '<varType(var)> <cref(var.name)>;<\n>'
+  # varDecls += if outStruct then "" else '<varType(var)> <cref(var.name)>;<\n>'
   # varName = if outStruct then '<outStruct>.targ<i>' else '<cref(var.name)>'
   # instDimsInit = (instDims of exp: daeExp(exp, contextOther, varInits, varDecls) ", ")
   if instDims then

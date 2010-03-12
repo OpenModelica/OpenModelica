@@ -199,6 +199,7 @@ uniontype Function
     list<String> includes;
     list<String> libs;
     String language "C or Fortran";
+    list<RecordDeclaration> recordDecls;
   end EXTERNAL_FUNCTION;
 end Function;
 
@@ -747,14 +748,16 @@ algorithm
         outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = Util.listMap(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
+        (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, {}, rt);
         (includes, libs) = generateExtFunctionIncludes(ann);
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndex(outVars, simextargs, extReturn);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-                           inVars, outVars, biVars, includes, libs, lang),
-         rt);
+                           inVars, outVars, biVars, includes, libs, lang,
+                           recordDecls),
+         rt_1);
     case (comp,rt)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.elaborateFunction failed"});
