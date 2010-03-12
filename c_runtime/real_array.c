@@ -279,7 +279,7 @@ void indexed_assign_real_array(real_array_t* source,
     int* idx_vec2;
     int* idx_size;
 		int quit;
-		int i,j;
+		int i/*,j*/;
 		state mem_state;
 
 		assert(base_array_ok(source));

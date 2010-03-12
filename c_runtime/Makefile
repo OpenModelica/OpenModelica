@@ -53,10 +53,11 @@ endif
 
 all : $(SIMOBJS) $(OBJS) libc_runtime.a libsim.a libf2c/libf2c.a libsendData.a install
 
-#$(SIMOBJS) : $(HFILES) *.c*
-#$(OBJS) : $(HFILES) *.c*
+# recompile all if a header changes!
+$(SIMOBJS) : $(HFILES) *.c*
+$(OBJS) : $(HFILES) *.c*
 
-libc_runtime.a : $(OBJS)
+libc_runtime.a : $(OBJS) $(HFILES)
 	$(AR) $@ $(OBJS)
 
 
@@ -67,7 +68,7 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp sendData/release/libsendData.a $(builddir_lib)/
 	@$(MAKE) -C java_interface -f Makefile || $(MAKE) -C java_interface -f Makefile.omdev.mingw install
 
-libsim.a : $(SIMOBJS)
+libsim.a : $(SIMOBJS) $(HFILES)
 	$(AR) $@ $(SIMOBJS)
 
 libf2c/libf2c.a :

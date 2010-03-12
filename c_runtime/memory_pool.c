@@ -98,13 +98,12 @@ m_real* real_alloc(int n)
   _index_t start;
 
   assert(n>=0);
-  assert(current_state.real_buffer_ptr +n < NR_REAL_ELEMENTS);
+  assert(current_state.real_buffer_ptr + n < NR_REAL_ELEMENTS);
 
   start = current_state.real_buffer_ptr;
   current_state.real_buffer_ptr += n;
   return real_buffer+start;
   /*return start;*/
-
 }
 
 /* allocates n integers in the integer_buffer */
@@ -174,7 +173,7 @@ int** index_alloc(int n)
   _index_t start;
 
   assert(n>=0);
-  assert(n + current_state.index_buffer_ptr < NR_SIZE_ELEMENTS);
+  assert(n + current_state.index_buffer_ptr < NR_INDEX_ELEMENTS);
 
   start = current_state.index_buffer_ptr;
   current_state.index_buffer_ptr += n;
