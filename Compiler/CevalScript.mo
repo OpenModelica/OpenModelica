@@ -4173,8 +4173,9 @@ algorithm
           pathstr,": ",cfilename,"\n","\t $(LINK)",
           " $(CFLAGS)",
           " -o ",pathstr,"$(DLLEXT) ",cfilename,
+          " ",libsstr,
           " $(LDFLAGS)",
-          " ",libsstr," -lm \n"});
+          " -lm \n"});
         System.writeFile(makefilename, str);
         compileModel(pathstr, {}, "", "");
       then

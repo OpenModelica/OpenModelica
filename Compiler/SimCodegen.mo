@@ -8490,7 +8490,7 @@ algorithm
       /* Solves a discrete variable, typically in when-clause */
     case(discVars,vars,knvars,eqns,blck,ass2,mT)
       equation
-      (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, vars, ass2);
+        (eqn_lst,var_lst) = Util.listMap32(blck, getEquationAndSolvedVar, eqns, vars, ass2);
         _::_ = Util.listSelect(var_lst,DAELow.isVarDiscrete);
         discVars = DAELow.addVars(var_lst,discVars);
       then discVars;
@@ -9242,6 +9242,7 @@ algorithm
 
     case (DAE.SCONST(string = s),_)
       equation
+        s = Util.escapeModelicaStringToCString(s);
         s_1 = stringAppend("\"", s);
         s_2 = stringAppend(s_1, "\"");
       then
