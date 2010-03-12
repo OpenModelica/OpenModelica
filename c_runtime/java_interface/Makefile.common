@@ -106,6 +106,9 @@ ifeq ($(TARGET),install)
 	@echo "* To compile, set JAVA_HOME to a JDK or add javac to the PATH."
 endif
 
+clean:
+	rm -rf bin-jar modelica_java.jar
+
 %Lexer.java: %.g
 	$(antlr_compile) $<
 %Parser.java: %.g

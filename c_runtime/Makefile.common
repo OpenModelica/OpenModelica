@@ -1,0 +1,71 @@
+CC = gcc
+FC = g77
+AR = ar -ru
+CFLAGS = -Wall -O3 $(FPUFLAGS) -ansi -pedantic -I. $(EXTRA_CFLAGS)
+CPPFLAGS = $(CFLAGS)
+FFLAGS  = -O -fexceptions
+# P.A: before, g77 had -O3 or -O2 but that caused a bug in DDASRT, giving infinite loop.
+
+OBJS = $(FOBJS) boolean_array.o index_spec.o integer_array.o memory_pool.o \
+base_array.o real_array.o string_array.o read_write.o utility.o \
+modelica_string.o bigden.o \
+ddasrt.o  dlinpk.o  enorm.o   hybrd1.o  nelmead.o  qform.o   r1updt.o \
+biglag.o  ddassl.o  dogleg.o  fdjac1.o  hybrj.o   newuoa.o   qrfac.o   trsapp.o \
+daux.o    dlamch.o  dpmpar.o  hybrd.o   lsame.o   newuob.o   r1mpyq.o  update.o \
+java_interface.o meta_modelica.o meta_modelica_builtin.o $(EXTRA_OBJS)
+
+SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
+solver_dasrt.o solver_euler.o simulation_result.o simulation_delay.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
+
+HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
+  base_array.h inline.h real_array.h string_array.h boolean_array.h \
+  index_spec.h matrix.h \
+  modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h \
+  simulation_init.h simulation_input.h solver_dasrt.h solver_euler.h simulation_result.h \
+  meta_modelica.h meta_modelica_builtin.h sendData/sendData.h sendData/humbug.h \
+  java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h \
+  simulation_delay.h fortran_types.h
+
+LIBS = libc_runtime.a libsim.a
+
+all : libc_runtime.a libsim.a libf2c/libf2c.a libsendData.a install
+
+#recompile all if a header changes!
+$(SIMOBJS) : $(HFILES)
+$(OBJS) : $(HFILES)
+
+libc_runtime.a : $(OBJS) $(HFILES)
+	$(AR) $@ $(OBJS)
+
+libsim.a : $(SIMOBJS) $(HFILES)
+	$(AR) $@ $(SIMOBJS)
+
+libf2c/libf2c.a :
+	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
+
+libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro
+	$(PLTPKGCMD)
+
+install: libc_runtime.a libsim.a libf2c/libf2c.a
+	cp $(HFILES) $(builddir_inc)/
+	cp $(LIBS) $(builddir_lib)/
+	cp libf2c/libf2c.* $(builddir_lib)/
+	cp sendData/release/libsendData.a $(builddir_lib)/
+	@make -C java_interface -f $(JAVAMAKEFILE) || make -C java_interface -f $(JAVAMAKEFILE) install
+
+clean :
+	$(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
+	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) clean
+	rm -f libc_runtime.a
+	rm -f libsim.a
+	rm -f $(OBJS)
+	rm -f $(SIMOBJS)
+	rm -f $(builddir_lib)/libc_runtime.a
+	rm -f $(builddir_lib)/libsim.a
+	rm -f $(builddir_lib)/libf2c.*
+	rm -f $(builddir_lib)/libsendData.a
+	cd $(builddir_inc)/ && rm -f $(HFILES)
+	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
+	rm -rf sendData/release sendData/debug
+	rm -f sendData.o sendData.a sendData/releasesendData.o
+
