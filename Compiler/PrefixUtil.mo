@@ -395,62 +395,79 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> xs_1,xs;
       String id,s;
       Env.Cache cache;
+      list<DAE.Exp> expl;
+      
+    // no prefix, return the input expression
     case (cache,_,e,Prefix.NOPRE()) then (cache,e);
-    case (cache,_,(e as DAE.ICONST(integer = _)),_) then (cache,e);
-    case (cache,_,(e as DAE.RCONST(real = _)),_) then (cache,e);
-    case (cache,_,(e as DAE.SCONST(string = _)),_) then (cache,e);
+      
+    // handle literal constants       
+    case (cache,_,(e as DAE.ICONST(integer = _)),_) then (cache,e); 
+    case (cache,_,(e as DAE.RCONST(real = _)),_) then (cache,e); 
+    case (cache,_,(e as DAE.SCONST(string = _)),_) then (cache,e); 
     case (cache,_,(e as DAE.BCONST(bool = _)),_) then (cache,e);
 
-    case (cache,env,(e as DAE.ASUB(exp = e1 as DAE.CREF(componentRef = p,ty = t), sub = expl)),pre)
-      local list<DAE.Exp> expl;
-        equation
-          (cache,_,_,_,_) = Lookup.lookupVarLocal(cache ,env, p);
-          (cache,es_1) = prefixExpList(cache,env, expl, pre);
-           p_1 = prefixCref(pre, p);
-          e2 = DAE.ASUB(DAE.CREF(p_1,t),es_1);
-    then (cache,e2);
-
-    case (cache,env,(e as DAE.ASUB(exp = e1, sub = expl)),pre)
-      local list<DAE.Exp> expl;
+    /*/ handle array subscripts 
+    case (cache,env,(e as DAE.ASUB(exp = e1 as DAE.CREF(componentRef = p, ty = t), sub = expl)),pre)
+      equation
+        // adrpo: ask for NONE() here as if we have SOME(...) it means 
+        //        this is a for iterator and WE SHOULD NOT PREFIX IT!
+        (cache,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
+        (cache,es_1) = prefixExpList(cache,env, expl, pre);
+        p_1 = prefixCref(pre, p);
+        e2 = DAE.ASUB(DAE.CREF(p_1,t),es_1);
+      then
+        (cache,e2);*/ 
+      
+    case (cache,env,(e as DAE.ASUB(exp = e1, sub = expl)),pre) 
       equation
         (cache,es_1) = prefixExpList(cache, env, expl, pre);
         (cache,e1) = prefixExp(cache,env,e1,pre);
         e2 = DAE.ASUB(e1,es_1);
-      then (cache,e2);
+      then 
+        (cache,e2);
 
     case (cache,env,DAE.CREF(componentRef = p,ty = t),pre)
       equation
-        (cache,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
+        // adrpo: ask for NONE() here as if we have SOME(...) it means 
+        //        this is a for iterator and WE SHOULD NOT PREFIX IT!
+        (cache,_,_,_,NONE(),_) = Lookup.lookupVarLocal(cache, env, p);
         p_1 = prefixCref(pre, p);
       then
         (cache,DAE.CREF(p_1,t));
 
-    case (cache,env,(e as DAE.CREF(componentRef = p)),pre)
+    case (cache,env,e as DAE.CREF(componentRef = p,ty = t),pre)
       equation
-        failure((_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
+        // adrpo: do NOT prefix if we have a for iterator!
+        (cache,_,_,_,SOME(_),_) = Lookup.lookupVarLocal(cache, env, p);
       then
         (cache,e);
 
+    case (cache,env,e as DAE.CREF(componentRef = p),pre)
+      equation 
+        failure((_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
+      then
+        (cache,e);
+    
     case (cache,env,DAE.BINARY(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation
-        (cache,e1_1) = prefixExp(cache,env, e1, p);
-        (cache,e2_1) = prefixExp(cache,env, e2, p);
+        (cache,e1_1) = prefixExp(cache, env, e1, p);
+        (cache,e2_1) = prefixExp(cache, env, e2, p);
       then
         (cache,DAE.BINARY(e1_1,o,e2_1));
 
     case (cache,env,DAE.UNARY(operator = o,exp = e1),p)
       local Prefix p;
       equation
-        (cache,e1_1) = prefixExp(cache,env, e1, p);
+        (cache,e1_1) = prefixExp(cache, env, e1, p);
       then
         (cache,DAE.UNARY(o,e1_1));
 
     case (cache,env,DAE.LBINARY(exp1 = e1,operator = o,exp2 = e2),p)
       local Prefix p;
       equation
-        (cache,e1_1) = prefixExp(cache,env, e1, p);
-        (cache,e2_1) = prefixExp(cache,env, e2, p);
+        (cache,e1_1) = prefixExp(cache, env, e1, p);
+        (cache,e2_1) = prefixExp(cache, env, e2, p);
       then
         (cache,DAE.LBINARY(e1_1,o,e2_1));
 
@@ -496,7 +513,7 @@ algorithm
     case (cache,env,DAE.CALL(path = f,expLst = es,tuple_ = b,builtin = bi,ty = tp,inlineType = inl),p)
       local Prefix p; DAE.ExpType tp;
       equation
-        (cache,es_1) = prefixExpList(cache,env, es, p);
+        (cache,es_1) = prefixExpList(cache, env, es, p);
       then
         (cache,DAE.CALL(f,es_1,b,bi,tp,inl));
 
@@ -639,10 +656,7 @@ algorithm
 end prefixExp;
 
 public function prefixExpList "function: prefixExpList
-
-  This function prefixes a list of expressions using the
-  `prefix_exp\' function.
-"
+  This function prefixes a list of expressions using the prefixExp function."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
@@ -650,15 +664,18 @@ public function prefixExpList "function: prefixExpList
   output Env.Cache outCache;
   output list<DAE.Exp> outExpExpLst;
 algorithm
-  (outCache,outExpExpLst) :=
-  matchcontinue (inCache,inEnv,inExpExpLst,inPrefix)
+  (outCache,outExpExpLst) := matchcontinue (inCache,inEnv,inExpExpLst,inPrefix)
     local
       DAE.Exp e_1,e;
       list<DAE.Exp> es_1,es;
       list<Env.Frame> env;
       Prefix p;
       Env.Cache cache;
-    case (cache,_,{},_) then (cache,{});
+
+    // handle empty case
+    case (cache,_,{},_) then (cache,{}); 
+
+    // yuppie! we have a list of expressions
     case (cache,env,(e :: es),p)
       equation
         (cache,e_1) = prefixExp(cache,env, e, p);
@@ -669,21 +686,19 @@ algorithm
 end prefixExpList;
 
 public function prefixCrefList "function: prefixCrefList
-
-  This function prefixes a list of component references using the
-  `prefix_cref function.
-"
+  This function prefixes a list of component 
+  references using the prefixCref function."
   input Prefix inPrefix;
   input list<DAE.ComponentRef> inExpComponentRefLst;
   output list<DAE.ComponentRef> outExpComponentRefLst;
 algorithm
-  outExpComponentRefLst:=
-  matchcontinue (inPrefix,inExpComponentRefLst)
+  outExpComponentRefLst := matchcontinue (inPrefix,inExpComponentRefLst)
     local
       DAE.ComponentRef cr_1,cr;
       list<DAE.ComponentRef> crlist_1,crlist;
       Prefix p;
-    case (_,{}) then {};
+
+    case (_,{}) then {}; 
     case (p,(cr :: crlist))
       equation
         cr_1 = prefixCref(p, cr);

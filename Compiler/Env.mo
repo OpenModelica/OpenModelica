@@ -152,7 +152,7 @@ uniontype Item
     DAE.Var instantiated "instantiated component" ;
     Option<tuple<SCode.Element, DAE.Mod>> declaration "declaration if not fully instantiated.";
     InstStatus instStatus "if it untyped, typed or fully instantiated (dae)";
-    Env env "The environment of the instantiated component. Contains e.g. all sub components";
+    Env env "The environment of the instantiated component. Contains e.g. all sub components";    
   end VAR;
 
   record CLASS
@@ -656,12 +656,13 @@ public function extendFrameForIterator
 	input DAE.Type type_;
 	input DAE.Binding binding;
 	input SCode.Variability variability;
+	input Option<DAE.Const> constOfForIteratorRange;
 	output Env new_env;
 algorithm
-	new_env := matchcontinue(env, name, type_, binding, variability)
+	new_env := matchcontinue(env, name, type_, binding, variability, constOfForIteratorRange)
 		local
 			Env new_env_1;
-		case (_, _, _, _, SCode.VAR())
+		case (_, _, _, _, SCode.VAR(),constOfForIteratorRange)
 			equation
 				new_env_1 = extendFrameV(env,
 					DAE.TYPES_VAR(
@@ -669,10 +670,11 @@ algorithm
 						DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
 						false,
 						type_,
-						binding),
+						binding,
+						constOfForIteratorRange),
 					NONE, VAR_UNTYPED(), {});
 			then new_env_1;
-		case (_, _, _, _, SCode.CONST())
+		case (_, _, _, _, SCode.CONST(),constOfForIteratorRange)
 			equation
 				new_env_1 = extendFrameV(env,
 					DAE.TYPES_VAR(
@@ -680,7 +682,8 @@ algorithm
 						DAE.ATTR(false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
 						true,
 						type_,
-						binding),
+						binding,
+						constOfForIteratorRange),
 					NONE, VAR_UNTYPED(), {});
 			then new_env_1;
 	end matchcontinue;
@@ -1590,7 +1593,8 @@ algorithm
   str := matchcontinue(v)
   local String name; DAE.Type tp; Absyn.Import imp;
     case(VAR(instantiated=DAE.TYPES_VAR(name=name,type_=tp))) equation
-      str = "v: " +& name +& " " +& Types.unparseType(tp);
+      str = "v: " +& name +& " " +& Types.unparseType(tp) +& "("
+      +& Types.printTypeStr(tp) +& ")";
     then str;
     case(CLASS(class_=SCode.CLASS(name=name))) equation
       str = "c: " +& name;

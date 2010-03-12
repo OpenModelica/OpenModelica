@@ -585,6 +585,7 @@ uniontype Var "- Variables"
     Boolean protected_ "protected" ;
     Type type_ "type" ;
     Binding binding "binding ; equation modification" ;
+    Option<Const> constOfForIteratorRange "the constant-ness of the range if this is a for iterator, NONE if is NOT a for iterator";
   end TYPES_VAR;
 
 end Var;

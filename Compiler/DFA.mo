@@ -1239,8 +1239,7 @@ protected function generateBranchCheck "function: generateBranchCheck"
   input Boolean lightVs;
   output Absyn.Exp outExp;
 algorithm
-  outExp :=
-  matchcontinue (inList,inExp,lightVs)
+  outExp := matchcontinue (inList,inExp,lightVs)
     local
       Absyn.Exp localInExp;
 
@@ -1275,14 +1274,12 @@ end generateBranchCheck;
 
 protected function createConstCompareExp "function: createConstCompareExp
 Used by generateIfElseifAndElse
-when we want two write an expression for comparing constants
-"
+when we want two write an expression for comparing constants"
   input Absyn.Exp constVal;
   input Absyn.Ident stateVar;
   output Absyn.Exp outExp;
 algorithm
-  outExp :=
-  matchcontinue (constVal,stateVar)
+  outExp := matchcontinue (constVal,stateVar)
     local
       Integer i;
       Real r;
@@ -1328,8 +1325,7 @@ protected function createListFromExpression "function: createListFromExpression"
   input Absyn.Exp exp;
   output list<Absyn.Exp> outList;
 algorithm
-  outList :=
-  matchcontinue (exp)
+  outList := matchcontinue (exp)
     local
       list<Absyn.Exp> l;
       Absyn.Exp e;
@@ -1345,8 +1341,7 @@ public function boolString "function:: boolString"
   input Boolean bool;
   output String str;
 algorithm
-  str :=
-  matchcontinue (bool)
+  str := matchcontinue (bool)
     case (true) equation then "true";
     case (false) equation then "false";
   end matchcontinue;
@@ -1356,8 +1351,7 @@ protected function getConstantValue "function: getConstantValue"
   input RenamedPat pat;
   output Absyn.Exp val;
 algorithm
-  val :=
-  matchcontinue (pat)
+  val := matchcontinue (pat)
     case (RP_INTEGER(_,val))
       local
         Integer val;
@@ -1388,8 +1382,7 @@ public function extractPathVar "function: extractPathVar"
   input RenamedPat pat;
   output Absyn.Ident pathVar;
 algorithm
-  pathVar :=
-  matchcontinue (pat)
+  pathVar := matchcontinue (pat)
     local
       Absyn.Ident localPathVar;
     case (RP_INTEGER(localPathVar,_)) equation then localPathVar;
@@ -1411,8 +1404,7 @@ protected function constructorOrNot "function: constructorOrNot"
   input RenamedPat pat;
   output Boolean val;
 algorithm
-  val :=
-  matchcontinue (pat)
+  val := matchcontinue (pat)
     case (RP_CONS(_,_,_)) then true;
     case (RP_TUPLE(_,_)) then true;
     case (RP_CALL(_,_,_)) then true;
@@ -1420,7 +1412,6 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end constructorOrNot;
-
 
 protected function lookupTypeOfVar "function: lookupTypeOfVar"
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnv;
@@ -1455,8 +1446,7 @@ protected function mergeLists "function: mergeLists"
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> accList;
   output list<tuple<Absyn.Ident,Absyn.TypeSpec>> outList;
 algorithm
-  outTypeSpec :=
-  matchcontinue (idList,tList,accList)
+  outTypeSpec := matchcontinue (idList,tList,accList)
     local
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localAccList;
     case ({},_,localAccList) then localAccList;
@@ -1484,8 +1474,7 @@ protected function addVarsToDfaEnv "function: addVarsToDfaEnv"
   output list<tuple<Absyn.Ident,Absyn.TypeSpec>> outDfaEnv;
   output Env.Cache outCache;
 algorithm
-  (outDfaEnv,outCache) :=
-  matchcontinue (expList,dfaEnv,cache,env)
+  (outDfaEnv,outCache) := matchcontinue (expList,dfaEnv,cache,env)
     local
       list<tuple<Absyn.Ident,Absyn.TypeSpec>> localDfaEnv;
       Env.Cache localCache;
@@ -1505,7 +1494,7 @@ algorithm
         Absyn.TypeSpec t2;
         list<tuple<Absyn.Ident,Absyn.TypeSpec>> dfaEnvElem;
       equation
-        (localCache,DAE.TYPES_VAR(_,_,_,t,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
+        (localCache,DAE.TYPES_VAR(_,_,_,t,_,_),_,_) = Lookup.lookupIdent(localCache,localEnv,firstId);
         t2 = MetaUtil.typeConvert(t);
         dfaEnvElem = {(firstId,t2)};
         localDfaEnv = listAppend(localDfaEnv,dfaEnvElem);

@@ -2237,5 +2237,16 @@ algorithm
   end matchcontinue;
 end elementBaseClassPath;
 
+public function printInitialStr
+"prints SCode.Initial to a string"
+  input Initial initial_;
+  output String str;
+algorithm
+  str := matchcontinue(initial_)
+    case (INITIAL()) then "initial";
+    case (NON_INITIAL()) then "non initial";
+  end matchcontinue;
+end printInitialStr;
+
 end SCode;
 

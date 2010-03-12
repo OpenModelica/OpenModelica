@@ -271,13 +271,15 @@ algorithm
     local
       list<DAE.Const> bvals;
       list<Ident> sl;
-      Ident s,lhs_str,rhs_str;
+      Ident s,lhs_str,rhs_str,str1,str2,strInitial;
       list<DAE.Exp> lhs,expl;
       list<DAE.Properties> lprop,lhprops;
       DAE.Exp rhs,rhs_1;
       DAE.Properties rprop;
       list<tuple<DAE.TType, Option<Absyn.Path>>> lhrtypes,tpl;
       list<DAE.TupleConst> clist;
+      DAE.Const const;
+      
     case (lhs,lprop,rhs,rprop,initial_)
       equation
         bvals = Util.listMap(lprop, Types.propAnyConst);
@@ -300,23 +302,41 @@ algorithm
         Error.addMessage(Error.ASSIGN_PARAM_ERROR, {lhs_str,rhs_str});
       then
         fail();
+    // a normal prop in rhs that contains a T_TUPLE!
+    case (expl,lhprops,rhs,DAE.PROP(type_ = (DAE.T_TUPLE(tupleType = tpl),_)),_)
+      equation         
+        bvals = Util.listMap(lhprops, Types.propAnyConst);
+        DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
+        lhrtypes = Util.listMap(lhprops, Types.getPropType);        
+        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);        
+         /* Don\'t use new rhs\', since type conversions of 
+            several output args are not clearly defined. */ 
+      then
+        DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs);
+    // a tuple in rhs        
     case (expl,lhprops,rhs,DAE.PROP_TUPLE(type_ = (DAE.T_TUPLE(tupleType = tpl),_),tupleConst = DAE.TUPLE_CONST(tupleConstLst = clist)),_)
       equation
         bvals = Util.listMap(lhprops, Types.propAnyConst);
         DAE.C_VAR() = Util.listReduce(bvals, Types.constOr);
-        lhrtypes = Util.listMap(lhprops, Types.getPropType);
-        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);
+        lhrtypes = Util.listMap(lhprops, Types.getPropType);        
+        Types.matchTypeTupleCall(rhs, tpl, lhrtypes);        
          /* Don\'t use new rhs\', since type conversions of several output args are not clearly defined. */
       then
         DAE.STMT_TUPLE_ASSIGN(DAE.ET_OTHER(),expl,rhs);
-    case (lhs,lprop,rhs,rprop,_)
+    case (lhs,lprop,rhs,rprop,initial_)
       equation
         true = RTOpts.debugFlag("failtrace");
         sl = Util.listMap(lhs, Exp.printExpStr);
         s = Util.stringDelimitList(sl, ", ");
         lhs_str = Util.stringAppendList({"(",s,")"});
         rhs_str = Exp.printExpStr(rhs);
-        Debug.traceln("- Algorithm.makeTupleAssignment failed on: " +& lhs_str +& " = " +& rhs_str);
+        str1 = Util.stringDelimitList(Util.listMap(lprop, Types.printPropStr), ", ");
+        str2 = Types.printPropStr(rprop);
+        strInitial = SCode.printInitialStr(initial_);
+        Debug.traceln("- Algorithm.makeTupleAssignment failed on: \n\t" +& 
+          lhs_str +& " = " +& rhs_str +& 
+          "\n\tprops lhs: (" +& str1 +& ") =  props rhs: " +& str2 +&
+          "\n\tin " +& strInitial +& " section");
       then
         fail();
   end matchcontinue;

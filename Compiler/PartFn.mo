@@ -1232,7 +1232,7 @@ algorithm
     case(DAE.VAR(componentRef = cref,ty = ty))
       equation
         i = Exp.printComponentRefStr(cref);
-        res = DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.INPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND()); // TODO: FIXME: binding?
+        res = DAE.TYPES_VAR(i,DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.INPUT(),Absyn.UNSPECIFIED()),false,ty,DAE.UNBOUND(),NONE()); // TODO: FIXME: binding?
       then
         res;
     case(_)

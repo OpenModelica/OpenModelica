@@ -588,7 +588,7 @@ algorithm
                                    {DAE.TYPES_VAR("resultFile",
                                     DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
                                     false,DAE.T_STRING_DEFAULT,
-                                    DAE.UNBOUND())},
+                                    DAE.UNBOUND(),NONE())},
                                     NONE,NONE),NONE);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", simValue, simType, st);
       then
@@ -3407,7 +3407,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env, cref_1);
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),st);
@@ -3432,7 +3432,7 @@ algorithm
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_) = Lookup.lookupVar(cache,env4, cref_1);
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
         str = Exp.printExpStr(exp);
       then
@@ -3449,7 +3449,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname);
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v),_,_,_) = Lookup.lookupVar(cache, env, cref_1);
       then
         (cache,v,st);
 
@@ -3473,7 +3473,7 @@ algorithm
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.VALBOUND(v),_,_) = Lookup.lookupVar(cache,env4, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v),_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
         (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
@@ -3481,8 +3481,9 @@ algorithm
   end matchcontinue;
 end getBuiltinAttribute;
 
-protected function setBuildTime " sets the build time of a class. This is done using traverseClasses and not using updateProgram, because updateProgram updates
-edit times"
+protected function setBuildTime "sets the build time of a class. 
+ This is done using traverseClasses and not using updateProgram, 
+ because updateProgram updates edit times"
   input Absyn.Program p;
   input Absyn.Path path;
   output Absyn.Program outP;

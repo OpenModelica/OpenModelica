@@ -3077,11 +3077,12 @@ public function equationStr
 algorithm
   outString := matchcontinue (inEquation)
     local
-      String s1,s2,res,indx_str,is,var_str;
+      String s1,s2,res,indx_str,is,var_str,intsStr,outsStr;
       DAE.Exp e1,e2,e;
       Value indx,i;
-      list<DAE.Exp> expl;
+      list<DAE.Exp> expl,inps,outs;
       DAE.ComponentRef cr;
+      
     case (EQUATION(exp = e1,scalar = e2))
       equation
         s1 = Exp.printExpStr(e1);
@@ -3124,10 +3125,14 @@ algorithm
         res = Util.stringAppendList({s1,"= 0"});
       then
         res;
-    case (ALGORITHM(index = i))
+    case (ALGORITHM(index = i, in_ = inps, out = outs))
       equation
         is = intString(i);
-        res = Util.stringAppendList({"Algorithm no: ",is /*,"\n"*/});
+        intsStr = Util.stringDelimitList(Util.listMap(inps, Exp.printExpStr), ", ");
+        outsStr = Util.stringDelimitList(Util.listMap(outs, Exp.printExpStr), ", ");        
+        res = Util.stringAppendList({"Algorithm no: ", is, " for inputs: (", 
+                                      intsStr, ") => outputs: (", 
+                                      outsStr, ")" /*,"\n"*/});
       then
         res;
   end matchcontinue;
@@ -5374,8 +5379,7 @@ algorithm
 				// Split the output variables into variables that depend on the loop
 				// variable and variables that don't.
 				iteratorExp = DAE.CREF(DAE.CREF_IDENT(iteratorName, DAE.ET_INT(), {}), DAE.ET_INT());
-				(arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1,
-					isLoopDependent, iteratorExp);
+				(arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, isLoopDependent, iteratorExp);
 				// Explode array variables into their array elements.
 				// I.e. var[i] => var[1], var[2], var[3] etc.
 				arrayElements = Util.listMap3(arrayVars, explodeArrayVars, iteratorExp, e, vars);
@@ -12816,7 +12820,7 @@ algorithm
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(crn,
           DAE.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-                     t_1,DAE.EQBOUND(e,NONE,DAE.C_CONST())),
+                     t_1,DAE.EQBOUND(e,NONE,DAE.C_CONST()),NONE()), 
                      NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVariablesToEnv(rest, env_1);
       then
@@ -12839,7 +12843,7 @@ algorithm
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(crn,
           DAE.ATTR(false,false,SCode.RW(),SCode.CONST(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-                     t_1,DAE.UNBOUND()), NONE, Env.VAR_UNTYPED(), {});
+                     t_1,DAE.UNBOUND(),NONE()), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVariablesToEnv(rest, env_1);
       then
         env_2;

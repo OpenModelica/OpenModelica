@@ -698,8 +698,8 @@ algorithm
 
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2)
       equation
-        (cache,DAE.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (cache,DAE.ATTR(_,_,_,vt2,_,_),t2,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(_,_,_,vt2,_,_),t2,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
@@ -756,8 +756,7 @@ algorithm
 
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2)
       equation
-        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_) =
-        Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
         t2 = t1;
         vt2 = vt1;
@@ -773,8 +772,7 @@ algorithm
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2)
       equation
         pre = Prefix.NOPRE();
-        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_) =
-        Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         t1 = t2;
         vt1 = vt2;
         io1 = removeOuter(io1);
@@ -822,8 +820,8 @@ algorithm
     /* Search for both */
     case(cache,env,ih,cr1,cr2)
       equation
-        (_,DAE.ATTR(innerOuter=io1),_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (_,DAE.ATTR(innerOuter=io2),_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner1,isOuter1) = innerOuterBooleans(io1);
         (isInner2,isOuter2) = innerOuterBooleans(io2);
         isInner = isInner1 or isInner2;
@@ -833,14 +831,14 @@ algorithm
     /* try to find var cr1 (lookup can fail for one of them) */
     case(cache,env,ih,cr1,cr2)
       equation
-        (_,DAE.ATTR(innerOuter=io),_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (isInner,isOuter) = innerOuterBooleans(io);
       then
         (isInner,isOuter);
      /* ..else try cr2 (lookup can fail for one of them) */
     case(cache,env,ih,cr1,cr2)
       equation
-        (_,DAE.ATTR(innerOuter=io),_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner,isOuter) = innerOuterBooleans(io);
       then (isInner,isOuter);
   end matchcontinue;
@@ -1387,13 +1385,14 @@ algorithm
       SCode.Variability parameter_ "parameter" ;
       Absyn.Direction direction "direction" ;
       Absyn.InnerOuter innerOuter "inner, outer,  inner outer or unspecified";
-
-    case (Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding), declaration, instStatus, env), cr)
+      Option<DAE.Const> cnstForRange;
+    
+    case (Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env), cr)
       equation
         DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, Absyn.INNER()) = attributes;
         attributes = DAE.ATTR(flowPrefix, streamPrefix, accessibility, parameter_, direction, Absyn.OUTER());
         // env = switchInnerToOuterInEnv(env, inCr);
-      then Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding), declaration, instStatus, env);
+      then Env.VAR(DAE.TYPES_VAR(name, attributes, protected_, type_, binding, cnstForRange), declaration, instStatus, env);
 
     // leave unchanged
     case (inItem, _) then inItem;

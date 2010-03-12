@@ -207,6 +207,7 @@ public constant ErrorID CONNECTOR_ARRAY_NONCONSTANT=119;
 public constant ErrorID CONNECTOR_ARRAY_DIFFERENT=120;
 public constant ErrorID MODIFIER_NON_ARRAY_TYPE_WARNING=121;
 public constant ErrorID BUILTIN_VECTOR_INVALID_DIMENSIONS=122;
+public constant ErrorID UNROLL_LOOP_CONTAINING_WHEN=123;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -356,6 +357,10 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 					"Non-array modification '%s' for array component, possibly due to missing 'each'.\n"),
 					(BUILTIN_VECTOR_INVALID_DIMENSIONS,TRANSLATION(),ERROR(),
 					"In scope %s: Invalid dimensions %s in %s, no more than one dimension may have size > 1."),
+
+					(UNROLL_LOOP_CONTAINING_WHEN,TRANSLATION(),ERROR(),
+					"Unable to unroll for loop containing when statements or equations: %s\n"),
+					
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),
           "Cannot connect stream component %s to non-stream component %s"),

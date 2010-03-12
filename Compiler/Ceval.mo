@@ -1591,10 +1591,10 @@ algorithm
         (cache,Values.INTEGER(v),st);
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,impl,st,msg)
       equation
-        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
+        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
         sizelst = Types.getDimensionSizes(tp);
-        (cache,Values.INTEGER(dim),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
+        (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dim, impl, st, NONE, msg);
         dim_1 = dim - 1;
         v = listNth(sizelst, dim_1);
       then
@@ -1619,14 +1619,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as true),st,msg)
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
+        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
+        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
 
         false = Types.dimensionsKnown(tp);
         cr_str = Exp.printComponentRefStr(cr);
@@ -1638,14 +1638,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,NO_MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,bind,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr);
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
+        (cache,attr,tp,DAE.UNBOUND(),_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
         expstr = Exp.printExpStr(exp);
         Error.addMessage(Error.UNBOUND_VALUE, {expstr});
       then
@@ -1653,24 +1653,23 @@ algorithm
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,NO_MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,attr,tp,DAE.UNBOUND(),_,_,_) = Lookup.lookupVar(cache,env, cr);
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as true),st,msg)
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
+        (cache,attr,tp,DAE.UNBOUND(),_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
         fail();
 
-		/* For crefs with value binding
-		e.g. size(x,1) when Real x[:]=fill(0,1); */
+		// For crefs with value binding e.g. size(x,1) when Real x[:]=fill(0,1);
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,impl,st,msg)
       local
         Values.Value v;
         DAE.Exp dim;
-      equation
-        (cache,attr,tp,binding,_,_) = Lookup.lookupVar(cache,env, cr)  ;
+      equation 
+        (cache,attr,tp,binding,_,_,_) = Lookup.lookupVar(cache,env, cr)  ;     
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         (cache,v) = cevalCrefBinding(cache,env, cr, binding, impl, msg);
         v2 = cevalBuiltinSize2(v, dimv);
@@ -1705,9 +1704,9 @@ algorithm
       then
         (cache,Values.INTEGER(len),st_1);
 
-       /* For expressions with value binding that can not determine type
-		e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of
-		knowing that from the value. Must investigate the expression itself.*/
+    // For expressions with value binding that can not determine type
+		// e.g. size(x,2) when Real x[:,:]=fill(0.0,0,2); empty array with second dimension == 2, no way of 
+		// knowing that from the value. Must investigate the expression itself.
     case (cache,env,exp,dim,impl,st,msg)
       local
         Values.Value v;
@@ -1750,8 +1749,7 @@ protected function cevalBuiltinSize2 "function: cevalBultinSize2
   input Integer inInteger;
   output Values.Value outValue;
 algorithm
-  outValue:=
-  matchcontinue (inValue,inInteger)
+  outValue := matchcontinue (inValue,inInteger)
     local
       Integer dim,ind_1,ind;
       list<Values.Value> lst;
@@ -4154,7 +4152,7 @@ protected function cevalBuiltinSizeMatrix "function: cevalBuiltinSizeMatrix
   output Values.Value outValue;
   output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
 algorithm
-  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption) :=
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
     local
       tuple<DAE.TType, Option<Absyn.Path>> tp;
@@ -4167,16 +4165,17 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Exp.Exp exp;
-      /* size(cr) */
+
+    // size(cr)
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)
       equation
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);
         v = ValuesUtil.intlistToValue(sizelst);
       then
         (cache,v,st);
-
-     /* For matrix expressions: [1,2;3,4] */
+        
+    // For matrix expressions: [1,2;3,4]
 		case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
 			local
 				list<Option<Integer>> dims;
@@ -4185,7 +4184,7 @@ algorithm
 				v = ValuesUtil.intlistToValue(sizelst);
 			then
 				(cache, v, st);
-			/* For other matrix expressions e.g. on array form: {{1,2},{3,4}}	*/
+	  // For other matrix expressions e.g. on array form: {{1,2},{3,4}}
 		case (cache,env,exp,impl,st,msg)
       equation
         (cache,v,st) = ceval(cache,env, exp, impl, st, NONE, msg);
@@ -4204,8 +4203,7 @@ protected function cevalRelation "function: cevalRelation
   input Values.Value inValue3;
   output Values.Value outValue;
 algorithm
-  outValue:=
-  matchcontinue (inValue1,inOperator2,inValue3)
+  outValue := matchcontinue (inValue1,inOperator2,inValue3)
     local
       Values.Value v,v1,v2;
       DAE.ExpType t;
@@ -4601,33 +4599,40 @@ algorithm
          path = Exp.crefToPath(c);
       then
         (cache,Values.ENUM(idx,path,names));
-    /* Search in env for binding. */
+
+    // Search in env for binding.
     case (cache,env,c,impl,msg)
       equation
-        (cache,attr,ty,binding,_,_) = Lookup.lookupVar(cache,env, c);
+        (cache,attr,ty,binding,_,_,_) = Lookup.lookupVar(cache,env, c);
         false = crefEqualValue(c,binding);
         (cache,v) = cevalCrefBinding(cache,env, c, binding, impl, msg);
       then
         (cache,v);
+
+    // failure in lookup and we have the MSG go-ahead to print the error
     case (cache,env,c,(impl as false),MSG())
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
+        failure((_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
         str = Exp.printComponentRefStr(c);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str});
       then
         fail();
+    
+    // failure in lookup but NO_MSG, silently fail and move along
     case (cache,env,c,(impl as false),NO_MSG())
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
+        failure((_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
         fail();
-    case (cache,env,c,(impl as false),MSG()) /* No binding found. */
-      equation
+
+    // No binding found.
+    case (cache,env,c,(impl as false),MSG())  
+      equation 
         str = Exp.printComponentRefStr(c);
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.NO_CONSTANT_BINDING, {str,scope_str});
-        Debug.fprintln("ceval","-Ceval.cevalCref on: " +& str +& " failed with no constant binding in scope: " +& scope_str);
+        Debug.fprintln("ceval","- Ceval.cevalCref on: " +& str +& " failed with no constant binding in scope: " +& scope_str); 
       then
         fail();
   end matchcontinue;
@@ -4645,8 +4650,7 @@ public function cevalCrefBinding "function: cevalCrefBinding
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
+  (outCache,outValue) := matchcontinue (inCache,inEnv,inComponentRef,inBinding,inBoolean,inMsg)
     local
       DAE.ComponentRef cr_1,cr,e1;
       list<DAE.Subscript> subsc;
@@ -4659,92 +4663,96 @@ algorithm
       String rfn,iter,id,expstr,s1,s2,str;
       DAE.Exp elexp,iterexp,exp;
       Env.Cache cache;
-    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) /* DAE.CREF_IDENT(id,subsc) */
-      equation
+
+    case (cache,env,cr,DAE.VALBOUND(valBound = v),impl,msg) /* DAE.CREF_IDENT(id,subsc) */ 
+      equation 
         Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache, env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
-        (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG())
-      then fail();
+
+    case (cache,env,_,DAE.UNBOUND(),(impl as false),MSG()) then fail();
+
     case (cache,env,_,DAE.UNBOUND(),(impl as true),MSG())
       equation
         Debug.fprint("ceval", "#- Ceval.cevalCrefBinding: Ignoring unbound when implicit");
       then
         fail();
 
-        /* REDUCTION bindings */
-    case (cache,env,DAE.CREF_IDENT(ident = id,subscriptLst = subsc),DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,MSG())
-      equation
+    // REDUCTION bindings  
+    case (cache,env,DAE.CREF_IDENT(ident = id,subscriptLst = subsc),DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,MSG()) 
+      equation 
         DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         equality(rfn = "array");
         Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
       then
         fail();
 
-        /* REDUCTION bindings DAE.CREF_IDENT(id,subsc) */
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)
-      equation
+    // REDUCTION bindings DAE.CREF_IDENT(id,subsc) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
+      equation 
         DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
         failure(equality(rfn = "array"));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
-        (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
-        (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
+        (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
-
-        /* arbitrary expressions, C_VAR, value exists. DAE.CREF_IDENT(id,subsc) */
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg)
-      equation
+        
+    // arbitrary expressions, C_VAR, value exists. DAE.CREF_IDENT(id,subsc)
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_VAR()),impl,msg) 
+      equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
       then
         (cache,res);
 
-        /* arbitrary expressions, C_PARAM, value exists. DAE.CREF_IDENT(id,subsc) */
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg)
-      equation
+    // arbitrary expressions, C_PARAM, value exists. DAE.CREF_IDENT(id,subsc) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,evaluatedExp = SOME(e_val),constant_ = DAE.C_PARAM()),impl,msg) 
+      equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
       then
         (cache,res);
 
-        /* arbitrary expressions. When binding has optional value. DAE.CREF_IDENT(id,subsc) */
+    // arbitrary expressions. When binding has optional value. DAE.CREF_IDENT(id,subsc)
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg)
       equation
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
 
-        /* arbitrary expressions. When binding has optional value. DAE.CREF_IDENT(id,subsc) */
-    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg)
-      equation
+    // arbitrary expressions. When binding has optional value. DAE.CREF_IDENT(id,subsc) 
+    case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_PARAM()),impl,msg) 
+      equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
-        (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
-        (cache,res)= cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
+        (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
         (cache,res);
+
+    // if the binding has constant-ness DAE.C_VAR we cannot constant evaluate.
     case (cache,env,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),impl,MSG())
       equation
 				true = RTOpts.debugFlag("ceval");
@@ -4754,6 +4762,7 @@ algorithm
         Debug.fprintln("ceval", "))");
       then
         fail();
+
     case (cache,_,e1,DAE.EQBOUND(exp = exp),_,_)
       equation
         /* FAILTRACE REMOVE
@@ -4793,12 +4802,14 @@ algorithm
       Boolean impl;
       Msg msg;
       Env.Cache cache;
+
+    // we have a subscript which is an index, try to constant evaluate it
     case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
       equation
-        (cache,Values.INTEGER(n),_) = ceval(cache,env, exp, impl, NONE, SOME(dim), msg);
+        (cache,Values.INTEGER(n),_) = ceval(cache, env, exp, impl, NONE, SOME(dim), msg);
         n_1 = n - 1;
         subval = listNth(lst, n_1);
-        (cache,res) = cevalSubscriptValue(cache,env, subs, subval, dims, impl, msg);
+        (cache,res) = cevalSubscriptValue(cache, env, subs, subval, dims, impl, msg);
       then
         (cache,res);
     case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
@@ -4810,7 +4821,11 @@ algorithm
         res = ValuesUtil.makeArray(lst);
       then
         (cache,res);
-    case (cache,env,{},v,_,_,_) then (cache,v);
+
+    // we have no subscripts but we have a value, return it
+    case (cache,env,{},v,_,_,_) then (cache,v); 
+
+    // failtrace
     case (_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- Ceval.cevalSubscriptValue failed\n");
@@ -4856,8 +4871,7 @@ public function cevalSubscripts "function: cevalSubscripts
   forms, which is when all expressions are evaluated to constant
   values. For instance
   the subscript list {1,p,q} (as in x[1,p,q]) where p and q have constant values 2,3 respectively will become
-  {1,2,3} (resulting in x[1,2,3]).
-  "
+  {1,2,3} (resulting in x[1,2,3])."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Subscript> inExpSubscriptLst;
@@ -4878,11 +4892,15 @@ algorithm
       Boolean impl;
       Msg msg;
       Env.Cache cache;
-    case (cache,_,{},_,_,_) then (cache,{});
+
+    // empty case
+    case (cache,_,{},_,_,_) then (cache,{}); 
+
+    // we have subscripts
     case (cache,env,(sub :: subs),(dim :: dims),impl,msg)
       equation
-        (cache,sub_1) = cevalSubscript(cache,env, sub, dim, impl, msg);
-        (cache,subs_1) = cevalSubscripts(cache,env, subs, dims, impl, msg);
+        (cache,sub_1) = cevalSubscript(cache, env, sub, dim, impl, msg);
+        (cache,subs_1) = cevalSubscripts(cache, env, subs, dims, impl, msg);
       then
         (cache,sub_1 :: subs_1);
   end matchcontinue;
@@ -4911,7 +4929,11 @@ algorithm
       Msg msg;
       Env.Cache cache;
       Integer indx;
+
+    // the entire dimension, nothing to do
     case (cache,env,DAE.WHOLEDIM(),_,_,_) then (cache,DAE.WHOLEDIM());
+      
+    // an expression index that can be constant evaluated
     case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
       equation
         (cache,v1 as Values.INTEGER(indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
@@ -4919,7 +4941,8 @@ algorithm
         true = indx <= dim;
       then
         (cache,DAE.INDEX(e1_1));
-    /* indexing using enum! */
+
+    // indexing using enum! 
     case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
       equation
         (cache,v1 as Values.ENUM(index = indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
@@ -4927,6 +4950,8 @@ algorithm
         true = indx <= dim;
       then
         (cache,DAE.INDEX(e1_1));
+
+    // an expression slice that can be constant evaluated
     case (cache,env,DAE.SLICE(exp = e1),dim,impl,msg)
       equation
         (cache,v1,_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
@@ -5052,15 +5077,17 @@ algorithm
 			Option<Interactive.InteractiveSymbolTable> new_st;
 		case (new_cache, new_env, _, _, _, value :: {}, _, new_st, _, _)
 			equation
-				new_env = Env.extendFrameForIterator(env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR());
+			  // range is constant!
+				new_env = Env.extendFrameForIterator(env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
 				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
 					implicitInstantiation, new_st, dim, msg);
 				then (new_cache, value, new_st);
 		case (new_cache, new_env, _, _, _, value :: rest_values, _, new_st, _, _)
 			equation
-				(new_cache, value2, new_st) = cevalReduction(new_cache, new_env, op, exp,
+			  // range is constant!
+				(new_cache, value2, new_st) = cevalReduction(new_cache, new_env, op, exp, 
 					iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
-				new_env = Env.extendFrameForIterator(new_env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR());
+				new_env = Env.extendFrameForIterator(new_env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
 				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
 					implicitInstantiation, new_st, dim, msg);
 				reduced_value = op(value, value2);

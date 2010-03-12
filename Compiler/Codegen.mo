@@ -138,7 +138,77 @@ public constant Context
    simContext = CONTEXT(SIMULATION(true),NORMAL(),NO_LOOP()),
    extContext = CONTEXT(SIMULATION(true),EXP_EXTERNAL(),NO_LOOP());
 
-public function cMakeFunction
+public function printContextStr
+  input Context context;
+  output String strContext;
+algorithm
+  strContext := matchcontinue(context)
+    local
+      CodeContext codeContext;
+      ExpContext expContext;
+      LoopContext loopContext;
+      String s1,s2,s3,s;
+      
+    case CONTEXT(codeContext, expContext, loopContext)
+      equation
+        s1 = printCodeContextStr(codeContext);
+        s2 = printExpContextStr(expContext);
+        s3 = printLoopContextStr(loopContext);
+        s = "code: " +& s1 +& " exp: " +& s2 +& " loop: " +& s3;
+      then s;
+  end matchcontinue;
+end printContextStr; 
+
+public function printCodeContextStr
+  input CodeContext context;
+  output String strCodeContext;
+algorithm
+  strCodeContext := matchcontinue(context)
+    local
+      String s1,s2,s3,s;
+      Boolean genDiscrete;      
+    case SIMULATION(genDiscrete)
+      equation
+        s1 = Util.if_(genDiscrete, "true", "false");
+        s = "simulation(discrete=" +& s1 +& ")";
+      then s;
+    case FUNCTION() then "function";
+  end matchcontinue;
+end printCodeContextStr; 
+
+public function printExpContextStr
+  input ExpContext context;
+  output String strExpContext;
+algorithm
+  strExpContext := matchcontinue(context)
+    local
+    case NORMAL() then "normal";
+    case EXP_EXTERNAL() then "external";
+  end matchcontinue;
+end printExpContextStr; 
+
+public function printLoopContextStr
+  input LoopContext context;
+  output String strLoopContext;
+algorithm
+  strLoopContext := matchcontinue(context)
+    local
+      LoopContext lp;
+      String s;
+
+    case NO_LOOP() then "no loop";
+    case IN_FOR_LOOP(lp) 
+      equation
+        s = "for loop(" +& printLoopContextStr(lp) +& ")";
+      then s;
+    case IN_WHILE_LOOP(lp)
+      equation
+        s = "while loop(" +& printLoopContextStr(lp) +& ")";
+      then s;
+  end matchcontinue;
+end printLoopContextStr;
+
+public function cMakeFunction 
 "function: cMakeFunction
   Helper function to generate_function. Creates a C-function from a
   ReturnType, FunctionName, ReturnTypeStruct and a list of ArgumentDeclarations"
@@ -3345,11 +3415,18 @@ algorithm
     case (DAE.STMT_WHILE(exp = e,statementLst = stmts),tnr,
                         context as CONTEXT(codeContext,expContext,loopContext))
       equation
-        cfn1 = cAddStatements(cEmptyFunction, {"while (1) {"});
+        cfn1 = cAddStatements(cEmptyFunction, {"while (1) {"});        
         (cfn2,var2,tnr2) = generateExpression(e, tnr, context);
         crit_stmt = Util.stringAppendList({"if (!",var2,") break;"});
+        (sdecl,svar,tnr3) = generateTempDecl("state", tnr2);
         cfn2_1 = cAddStatements(cfn2, {crit_stmt});
-        (cfn3,tnr3) = generateAlgorithmStatements(stmts, tnr2, CONTEXT(codeContext,expContext,IN_WHILE_LOOP(loopContext)));
+        cfn2_1 = cAddVariables(cfn2_1, {sdecl}); // add the state                
+        (cfn3,tnr3) = generateAlgorithmStatements(stmts, tnr3, CONTEXT(codeContext,expContext,IN_WHILE_LOOP(loopContext)));
+        mem_begin = Util.stringAppendList({svar," = get_memory_state();"});        
+        mem_end = Util.stringAppendList({"restore_memory_state(",svar,");"});
+        // add memory checkpoint/restore
+        cfn3 = cPrependStatements(cfn3, {mem_begin}); // add checkpoint
+        cfn3 = cAddStatements(cfn3, {mem_end}); // restore from checkpoint
         cfn3_1 = cAddStatements(cfn3, {"}"});
         cfn = cMergeFns({cfn1,cfn2_1,cfn3_1});
       then
@@ -4396,6 +4473,7 @@ algorithm
       Lib istr,rstr,sstr,s,var,var1,decl,tvar,b_stmt,if_begin,var2,var3,ret_type,fn_name,tdecl,args_str,underscore,stmt,var_not_bi,typestr,nvars_str,array_type_str,short_type_str,scalar,scalar_ref,scalar_delimit,type_string,var_1,msg;
       Lib tvar1, tvar2, tvar3, decl1, decl2, decl3, decl4;
       Lib assign_str;
+      String strContext;
       Integer i,j,tnr,tnr_1,tnr1,tnr1_1,tnr2,tnr3,nvars,maxn,tnr4,tnr5,tnr6;
       Context context;
       Real r;
@@ -4974,13 +5052,14 @@ algorithm
       then
         (cfn,tvar,tnr1_1);
 
-    case (e,_,_)
+    case (e,_,context)
       equation
         Debug.fprintln("failtrace", "# generateExpression failed");
         s = Exp.printExpStr(e);
-        Debug.fprintln("failtrace", s);
-        Debug.fprintln("failtrace", "");
-        msg = Util.stringAppendList({"code  generation of expression ",s," failed"});
+        strContext = printContextStr(context);
+        Debug.fprintln("failtrace", s +& " in context: " +& strContext);
+        Debug.fprintln("failtrace", ""); 
+        msg = Util.stringAppendList({"code  generation of expression ",s," failed in context: ",strContext});
         Error.addMessage(Error.INTERNAL_ERROR, {msg});
       then
         fail();
@@ -5858,8 +5937,7 @@ protected function generateScalarLhsCref
   output String outString;
   output Integer outInteger;
 algorithm
-  (outCFunction,outString,outInteger):=
-  matchcontinue (inType,inComponentRef,inInteger,inContext)
+  (outCFunction,outString,outInteger) := matchcontinue (inType,inComponentRef,inInteger,inContext)
     local
       Lib cref_str,var,ndims_str,idxs_str,type_str,cref1,id;
       DAE.ExpType t;
@@ -5930,13 +6008,11 @@ algorithm
 end generateScalarLhsCref;
 
 protected function generateRhsCref "function: generateRhsCref
-
-  Helper function to generate_expression. Generates code
+  Helper function to generateExpression. Generates code
   for a component reference. It can either be a scalar valued component
   reference or an array valued component reference. In the later case,
   special code that constructs the runtime object of the array must
-  be generated.
-"
+  be generated."
   input DAE.ComponentRef inComponentRef;
   input DAE.ExpType inType;
   input Integer inInteger;
@@ -5945,7 +6021,7 @@ protected function generateRhsCref "function: generateRhsCref
   output String outString;
   output Integer outInteger;
 algorithm
-  (outCFunction,outString,outInteger):=
+  (outCFunction,outString,outInteger) :=
   matchcontinue (inComponentRef,inType,inInteger,inContext)
     local
       Lib e_tp_str,e_sh_tp_str,vdecl,vstr,ndims_str,dims_str,cref_str,stmt,var;
@@ -5957,10 +6033,11 @@ algorithm
       list<Option<Integer>> dims;
       Context context;
       list<DAE.Subscript> subs;
-      /* For context simulation array variables must be boxed
-	    into a real_array object since they are represented only
-	    in a double array. */
-		case (cref,DAE.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,context as CONTEXT(SIMULATION(_),_,_))
+
+    // For context simulation array variables must be wrapped
+	// into a real_array object since they are represented only
+	// in a double array.
+    case (cref,DAE.ET_ARRAY(ty = t,arrayDimensions = dims),tnr,context as CONTEXT(SIMULATION(_),_,_))
       equation
         e_tp_str = expTypeStr(t, true);
         e_sh_tp_str = expShortTypeStr(t);
@@ -5971,15 +6048,13 @@ algorithm
         dims_strs = Util.listMap(Util.listMap1(dims,Util.applyOption, int_string),Util.stringOption);
         dims_str = Util.stringDelimitListNonEmptyElts(dims_strs, ", ");
         (cref_str, _) = compRefCstr(cref);
-        stmt = Util.stringAppendList(
-          {e_sh_tp_str,"_array_create(&",vstr,", ","&",cref_str,", ",
-          ndims_str,", ",dims_str,");"});
+        stmt = Util.stringAppendList({e_sh_tp_str,"_array_create(&",vstr,", ","&",cref_str,", ",ndims_str,", ",dims_str,");"});
         cfunc = cAddStatements(cEmptyFunction, {stmt});
         cfunc = cAddInits(cfunc, {vdecl});
       then
         (cfunc,vstr,tnr1);
 
-        /* Cast integers to doubles in simulation context */
+    // Cast integers to doubles in simulation context 
     case (cref,DAE.ET_INT(),tnr,context)
       equation
         (cref_str,{}) = compRefCstr(cref);
@@ -5987,7 +6062,7 @@ algorithm
       then
         (cEmptyFunction,cref_str,tnr);
 
-        /* function pointer variable reference - stefan */
+    // function pointer variable reference - stefan
     case (cref,DAE.ET_FUNCTION_REFERENCE_VAR(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
@@ -5997,7 +6072,7 @@ algorithm
       then
         (cEmptyFunction,fn_name,tnr);
 
-       /* function pointer direct reference - sjoelund */
+    // function pointer direct reference - sjoelund 
     case (cref,DAE.ET_FUNCTION_REFERENCE_FUNC(),tnr,context)
         local String fn_name; Absyn.Path path;
       equation
@@ -6008,17 +6083,22 @@ algorithm
       then
         (cEmptyFunction,cref_str,tnr);
 
+    // handle enumerations
     case (cref,DAE.ET_ENUMERATION(_,_,_,_),tnr,context)
       local Integer idx;
       equation
         idx = Exp.getEnumIndexfromCref(cref);
         cref_str = intString(idx);
       then (cEmptyFunction,cref_str,tnr);
+    
+    // handle component without subscripts      
     case (cref,crt,tnr,context)
       equation
         (cref_str,{}) = compRefCstr(cref);
       then
         (cEmptyFunction,cref_str,tnr);
+    
+    // handle component with subscripts
     case (cref,crt,tnr,context)
       equation
         (cref_str,subs) = compRefCstr(cref);
@@ -6026,7 +6106,9 @@ algorithm
         (cfn,var,tnr_1) = generateScalarRhsCref(cref_str, crt, subs, tnr, context);
       then
         (cfn,var,tnr_1);
-    case (cref,crt,tnr,context) /* array expressions */
+        
+    // array expressions
+    case (cref,crt,tnr,context) 
       equation
         (cref_str,subs) = compRefCstr(cref);
         false = subsToScalar(subs);
@@ -6061,9 +6143,7 @@ algorithm
 end subsToScalar;
 
 protected function generateScalarRhsCref "function: generateScalarRhsCref
-
-  Helper function to generate_algorithm_statement.
-"
+  Helper function to generateAlgorithmStatement."
   input String inString;
   input DAE.ExpType inType;
   input list<DAE.Subscript> inExpSubscriptLst;
@@ -6128,9 +6208,7 @@ algorithm
 end generateScalarRhsCref;
 
 protected function generateArrayRhsCref "function: generateArrayRhsCref
-
-  Helper function to generate_rhs_cref.
-"
+  Helper function to generateRhsCref."
   input String inString;
   input DAE.ExpType inType;
   input list<DAE.Subscript> inExpSubscriptLst;
@@ -6741,9 +6819,9 @@ algorithm
         cfn = cMergeFn(cfn1, cfn2);
       then
         (cfn,var,tnr2);
-    case (e1,DAE.EQUAL(ty = DAE.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
+    case (e1,DAE.EQUAL(ty = DAE.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION()))
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        // true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
         var = Util.stringAppendList({"(",var1," == ",var2,")"});
@@ -6752,7 +6830,7 @@ algorithm
         (cfn,var,tnr);
     case (e1,DAE.EQUAL(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
-        Print.printErrorBuf("# Reals can't be compared with ==\n");
+        Print.printErrorBuf("# Reals can't be compared with ==\n in context: " +& printContextStr(context));
       then
         fail();
     case (e1,DAE.EQUAL(ty = DAE.ET_BOXED(_)),e2,tnr,context)
@@ -6798,7 +6876,7 @@ algorithm
         (cfn,var,tnr2);
     case (e1,DAE.NEQUAL(ty = DAE.ET_REAL()),e2,tnr,context as CONTEXT(codeContext = FUNCTION))
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
+        // true = RTOpts.acceptMetaModelicaGrammar();
         (cfn1,var1,tnr1) = generateExpression(e1, tnr, context);
         (cfn2,var2,tnr2) = generateExpression(e2, tnr1, context);
         var = Util.stringAppendList({"(",var1," != ",var2,")"});
@@ -6807,7 +6885,7 @@ algorithm
         (cfn,var,tnr);
     case (e1,DAE.NEQUAL(ty = DAE.ET_REAL()),e2,tnr,context)
       equation
-        Debug.fprint("failtrace", "# Reals can't be compared with <>\n");
+        Print.printErrorBuf("# Reals can't be compared with <> in context: " +& printContextStr(context));
       then
         fail();
     case (e1,DAE.NEQUAL(ty = DAE.ET_BOXED(_)),e2,tnr,context)

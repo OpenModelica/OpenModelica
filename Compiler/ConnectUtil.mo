@@ -1403,7 +1403,7 @@ algorithm
     case (cache,{},_,_,_) then (cache,DAEUtil.emptyDae);
     case (cache,(cr :: xs),env,prefix,deletedComponents)
       equation
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
         dimSizes = Types.getDimensionSizes(tp);
         (_,dimSizesOpt) = Types.flattenArrayTypeOpt(tp);
@@ -1418,7 +1418,7 @@ algorithm
         (cache,res);
     case (cache,(cr :: xs),env,prefix,deletedComponents) // For scalars.
       equation
-        (cache,_,tp,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
         (cache,DAE.DAE(elts,funcs)) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = PrefixUtil.prefixCref(prefix,cr);
@@ -1887,7 +1887,7 @@ algorithm
       InnerOuter.InstHierarchy ih;
 
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) equation
-       (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_)
+       (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_) 
          = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
     then Connect.OUTSIDE();
     case (env,ih,DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE();
@@ -1903,8 +1903,7 @@ public function componentFaceType
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
 algorithm
-  outFace:=
-  matchcontinue (inComponentRef)
+  outFace := matchcontinue (inComponentRef)
     case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))
       then Connect.OUTSIDE();
     case (DAE.CREF_QUAL(componentRef =_))
@@ -1999,7 +1998,7 @@ algorithm
       Absyn.InnerOuter io;
     case (NONE) then {};
     case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(id,DAE.ATTR(innerOuter=io),_,
-          (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),vars,_,_),_),_),_,_,_))),_,l,r)))
+          (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),vars,_,_),_),_,_),_,_,_))),_,l,r)))
       equation
         lst1 = localOutsideConnectorFlowvars2(l);
         lst2 = localOutsideConnectorFlowvars2(r);
@@ -2050,24 +2049,24 @@ algorithm
       list<DAE.Var> vars;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       Absyn.InnerOuter io;
-
+      DAE.ArrayDim ad;
+      DAE.Type at,tmpty,flatArrayType;
+      DAE.Attributes tatr;
+      Boolean b3;
+      DAE.Binding bind;
+      list<Integer> adims;
+      list<DAE.Var> tvars;
+      list<list<Integer>> indexIntegerLists;
+      list<list<DAE.Subscript>> indexSubscriptLists;
+      //list<DAE.ComponentRef> arrayComplex;
+    
     // empty
     case (NONE) then {};
 
     // Case where we have an array, assumed indexed which contains complex types.
-    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(id,(tatr as DAE.ATTR(innerOuter=io)),b3,
-          (tmpty as (DAE.T_ARRAY(ad,at),_)),bind),_,_,_))),_,l,r)))
-      local
-        DAE.ArrayDim ad;
-        DAE.Type at,tmpty,flatArrayType;
-        DAE.Attributes tatr;
-        Boolean b3;
-        DAE.Binding bind;
-        list<Integer> adims;
-        list<DAE.Var> tvars;
-        list<list<Integer>> indexIntegerLists;
-        list<list<DAE.Subscript>> indexSubscriptLists;
-        //list<DAE.ComponentRef> arrayComplex;
+    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,
+            Env.VAR(DAE.TYPES_VAR(id,(tatr as DAE.ATTR(innerOuter=io)),b3,
+                    (tmpty as (DAE.T_ARRAY(ad,at),_)),bind,_),_,_,_))),_,l,r)))
       equation
         (_,false) = InnerOuter.innerOuterBooleans(io);
         ((flatArrayType as (DAE.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
@@ -2084,9 +2083,9 @@ algorithm
         res;
 
     // If CONNECTOR then  outside and not inside, skip..
-    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(id,_,_,
-          (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_),_),_,_,_))),_,l,r)))
-      equation
+    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(name=id,
+          type_ = (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_)),_,_,_))),_,l,r)))  
+      equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
         res = listAppend(lst1, lst2);
@@ -2094,8 +2093,9 @@ algorithm
         res;
 
     // If OUTER, skip..
-    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(id,DAE.ATTR(innerOuter=io),_,
-          (DAE.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))
+    case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(
+          DAE.TYPES_VAR(name=id,attributes = DAE.ATTR(innerOuter=io),
+          type_ = (DAE.T_COMPLEX(_,vars,_,_),_)),_,_,_))),_,l,r)))  
       equation
         (_,true) = InnerOuter.innerOuterBooleans(io);
         lst1 = localInsideConnectorFlowvars2(l);
@@ -2106,16 +2106,17 @@ algorithm
 
     // ... else retrieve connectors as subcomponents
     case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(id,_,_,
-          (DAE.T_COMPLEX(_,vars,_,_),_),_),_,_,_))),_,l,r)))
-      equation
+          (DAE.T_COMPLEX(_,vars,_,_),_),_,_),_,_,_))),_,l,r)))  
+      equation 
         lst1 = localInsideConnectorFlowvars3(vars, id);
         lst2 = localInsideConnectorFlowvars2(l);
         lst3 = localInsideConnectorFlowvars2(r);
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
+
     case (SOME(Env.AVLTREENODE(_,_,l,r)))
-      equation
+      equation 
         lst1 = localInsideConnectorFlowvars2(l);
         lst2 = localInsideConnectorFlowvars2(r);
         res = listAppend(lst1, lst2);
@@ -2138,7 +2139,18 @@ algorithm
       Absyn.InnerOuter io;
       Boolean isExpandable;
       Absyn.Path path;
-    case ({},_) then {};
+      DAE.ArrayDim ad;
+      list<Integer> adims;
+      list<DAE.Var> tvars;
+      DAE.Type tmpty,flatArrayType;
+      list<list<DAE.Subscript>> indexSubscriptLists;
+      DAE.ComponentRef connectorRef;
+      Boolean isExpandable;
+
+    // empty case
+    case ({},_) then {}; 
+
+    // not outer connector
     case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),
            type_ = (DAE.T_COMPLEX(complexClassType = ClassInf.CONNECTOR(path= path, isExpandable = isExpandable),
                     complexVarLst = vars),_)) :: xs),oid)
@@ -2152,17 +2164,9 @@ algorithm
         res = listAppend(lst1, lst2);
       then
         res;
-    case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),type_ = (tmpty as (DAE.T_ARRAY(ad,_),_))) :: xs),oid)
-      local
-        DAE.ArrayDim ad;
-        list<Integer> adims;
-        list<DAE.Var> tvars;
-        DAE.Type tmpty,flatArrayType;
-        list<list<DAE.Subscript>> indexSubscriptLists;
-        DAE.ComponentRef connectorRef;
-        Boolean isExpandable;
 
-      equation
+    case ((DAE.TYPES_VAR(name = id,attributes=DAE.ATTR(innerOuter=io),type_ = (tmpty as (DAE.T_ARRAY(ad,_),_))) :: xs),oid)        
+      equation 
         ((flatArrayType as (DAE.T_COMPLEX(ClassInf.CONNECTOR(path=path,isExpandable=isExpandable),tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
         (_,false) = InnerOuter.innerOuterBooleans(io);
         true = Types.isComplexConnector(flatArrayType);

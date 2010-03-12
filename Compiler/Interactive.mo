@@ -260,6 +260,7 @@ algorithm
       Boolean echo,semicolon,verbose;
       InteractiveStmt x;
       list<InteractiveStmt> xs;
+
     case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
       equation
         (res,newst) = evaluate2(ISTMTS({x},verbose), st);
@@ -267,6 +268,7 @@ algorithm
         res_1 = selectResultstr(res, semicolon, verbose, echo);
       then
         (res_1,newst);
+
     case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
         (res,newst) = evaluate2(ISTMTS({x},semicolon), st);
@@ -1228,19 +1230,19 @@ algorithm
       list<InteractiveVariable> rest;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        (_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         env_1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v)), Env.VAR_TYPED(), {});
+          false,tp,DAE.VALBOUND(v),NONE()), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
     case ((IVAR(varIdent = id,value = v,type_ = tp) :: rest),env)
       equation
-        failure((_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{})));
+        failure((_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v)), NONE, Env.VAR_UNTYPED(), {});
+          false,tp,DAE.VALBOUND(v),NONE()), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
