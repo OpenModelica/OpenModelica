@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
