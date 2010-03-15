@@ -54,6 +54,7 @@ protected import Print;
 protected import System;
 protected import Util;
 protected import RTOpts;
+protected import ClassInf;
 
 public function typeConvert "function: typeConvert
   Apply type conversion on a list of Values"
@@ -91,6 +92,47 @@ algorithm
   end matchcontinue;
 end typeConvert;
 
+public function valueExpType "creates a DAE.ExpType from a Value"
+  input Value inValue;
+  output DAE.ExpType tp;
+algorithm
+  tp := matchcontinue(inValue)
+  local Absyn.Path path; Integer indx; list<String> nameLst; DAE.ExpType eltTp;
+    list<Option<Integer>> dimsOpt;
+    list<Values.Value> valLst;
+    list<DAE.ExpType> eltTps;
+    list<DAE.ExpVar> varLst;
+    list<Integer> dims;
+    
+    case(Values.INTEGER(_)) then DAE.ET_INT();
+    case(Values.REAL(_)) then DAE.ET_REAL();
+    case(Values.BOOL(_)) then DAE.ET_BOOL();
+    case(Values.STRING(_)) then DAE.ET_STRING();
+    case(Values.ENUM(indx,path,nameLst)) then DAE.ET_ENUMERATION(SOME(indx),path,nameLst,{});
+    case(Values.ARRAY(valLst,dims)) equation
+      eltTp=valueExpType(Util.listFirst(valLst));
+      dimsOpt = Util.listMap(dims,Util.makeOption);
+    then DAE.ET_ARRAY(eltTp,dimsOpt);
+    
+    case(Values.RECORD(path,valLst,nameLst,indx)) equation
+      eltTps = Util.listMap(valLst,valueExpType);
+      varLst = Util.listThreadMap(eltTps,nameLst,valueExpTypeExpVar);
+    then DAE.ET_COMPLEX(path,varLst,ClassInf.RECORD(path));
+    
+    case(inValue) equation
+      print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
+    then fail();
+  end matchcontinue;  
+end valueExpType;
+
+protected function valueExpTypeExpVar "help function to valueExpType"
+  input DAE.ExpType etp;
+  input String name;
+  output DAE.ExpVar expVar;
+algorithm
+  expVar := DAE.COMPLEX_VAR(name,etp);
+end valueExpTypeExpVar;
+   
 public function isZero "Returns true if value is zero"
   input Value inValue;
   output Boolean isZero;

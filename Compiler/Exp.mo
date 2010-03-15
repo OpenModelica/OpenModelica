@@ -254,7 +254,7 @@ algorithm
     case (Absyn.FULLYQUALIFIED(p)) then pathToCref(p);
     case Absyn.QUALIFIED(name = i,path = p)
       equation
-        c = pathToCref(p);
+        c = pathToCref(p);        
       then
         DAE.CREF_QUAL(i,DAE.ET_OTHER(),{},c);
   end matchcontinue;
@@ -8022,7 +8022,7 @@ algorithm
           String name,id;
           list<Subscript> ssl;
       equation
-        true = containWholeDim(cr);
+        false = crefHasScalarSubscripts(cr);
         name = printComponentRefStr(cr);
         false = Util.stringContainsChar(name,"$");
         id = Util.stringAppendList({"$",id});
@@ -11119,14 +11119,14 @@ end crefSetLastType;
 public function crefTypeConsiderSubs "Function: crefTypeConsiderSubs 
 Author: PA
 Function for extracting the type out of a componentReference and consider the influence of the last subscript list. 
-For exampele. If the last cref type is Real[3,3] and the subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
+For exampel. If the last cref type is Real[3,3] and the last subscript list is {Exp.INDEX(1)}, the type becomes Real[3], i.e
 one dimension is lifted.
 See also, crefType.
 "
   input ComponentRef cr;
   output Type res;
 algorithm 
- res := unliftArrayTypeWithSubs(crefLastSubs(cr),crefType(cr));
+ res := unliftArrayTypeWithSubs(crefLastSubs(cr),crefLastType(cr));
 end crefTypeConsiderSubs;
 
 public function crefType "Function: crefType 

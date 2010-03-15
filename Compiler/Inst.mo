@@ -12271,8 +12271,10 @@ algorithm
       then fail();
 
     case(Values.RECORD(p, (v as Values.ARRAY(valueLst = arrVals))::vals, n::names, index),cr,source)
+      local DAE.ExpType tp;
       equation
-        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,DAE.ET_OTHER,{}));
+        tp = ValuesUtil.valueExpType(v);
+        cr2 = Exp.crefAppend(cr,DAE.CREF_IDENT(n,tp,{}));
         eqns = assignComplexConstantConstruct(Values.RECORD(p,vals,names,index),cr,source);
         eqnsArray = assignComplexConstantConstructToArray(arrVals,cr2,source,1);
         eqns = listAppend(eqns,eqnsArray);
