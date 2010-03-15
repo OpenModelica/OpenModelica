@@ -694,6 +694,13 @@ package DAE
       Exp cond;
       Exp msg;
     end STMT_ASSERT;
+    record STMT_RETURN
+    end STMT_RETURN;
+    record STMT_MATCHCASES
+      list<Exp> caseStmt;
+    end STMT_MATCHCASES;
+    record STMT_BREAK
+    end STMT_BREAK;
   end Statement;
 
   uniontype Else
