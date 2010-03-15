@@ -701,6 +701,8 @@ package DAE
     end STMT_MATCHCASES;
     record STMT_BREAK
     end STMT_BREAK;
+    record STMT_THROW
+    end STMT_THROW;
   end Statement;
 
   uniontype Else

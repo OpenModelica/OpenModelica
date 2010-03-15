@@ -1802,6 +1802,10 @@ case STMT_BREAK then
   <<
   break;
   >>
+case STMT_THROW then
+  <<
+  throw 1;
+  >>
 case STMT_RETURN then
   <<
   goto _return;

@@ -10537,6 +10537,14 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
+           DAE.STMT_THROW(),
+           _,
+           i_varDecls )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("throw 1;"));
+      then (txt, i_varDecls);
+
+    case ( txt,
            DAE.STMT_RETURN(),
            _,
            i_varDecls )
