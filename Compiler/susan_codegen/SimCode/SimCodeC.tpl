@@ -1503,18 +1503,27 @@ case EXTERNAL_FUNCTION then
   >>
 
 readInVar(Variable var) ::=
-case VARIABLE(name=cr, ty=ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD)) then
-# args = (vl of COMPLEX_VAR: '&(<cref(cr)>.<name>)' ", ")
+case VARIABLE(name=cr, ty=ET_COMPLEX(complexClassType=RECORD)) then
 <<
-if (read_modelica_record(&inArgs, <args>)) return 1;
+if (read_modelica_record(&inArgs, <readInVarRecordMembers(ty, cref(cr))>)) return 1;
 >>
 case VARIABLE then
 <<
 if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;
 >>
 
+readInVarRecordMembers(ExpType type, String prefix) ::=
+case ET_COMPLEX(varLst=vl) then
+  (vl of subvar as COMPLEX_VAR:
+    if tp is ET_COMPLEX then
+      # newPrefix = '<prefix>.<subvar.name>'
+      '<readInVarRecordMembers(tp, newPrefix)>'
+    else
+      '&(<prefix>.<subvar.name>)'
+  ", ")
+
 writeOutVar(Variable var, Integer index) ::=
-case VARIABLE(ty=ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD)) then
+case VARIABLE(ty=ET_COMPLEX(complexClassType=RECORD)) then
 <<
 write_modelica_record(outVar, <writeOutVarRecordMembers(ty, index, "")>);
 >>
@@ -1524,11 +1533,11 @@ write_<varType(it)>(outVar, &out.targ<index>);
 >>
 
 writeOutVarRecordMembers(ExpType type, Integer index, String prefix) ::=
-case ET_COMPLEX(varLst=vl, name=n, complexClassType=RECORD) then
+case ET_COMPLEX(varLst=vl, name=n) then
 # basename = underscorePath(n)
 # args = (vl of subvar as COMPLEX_VAR:
     if tp is ET_COMPLEX then
-      # newPrefix = '.<subvar.name>'
+      # newPrefix = '<prefix>.<subvar.name>'
       '<expTypeRW(tp)>, <writeOutVarRecordMembers(tp, index, newPrefix)>'
     else
       '<expTypeRW(tp)>, &(out.targ<index><prefix>.<subvar.name>)'
