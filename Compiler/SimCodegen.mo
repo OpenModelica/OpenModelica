@@ -128,12 +128,13 @@ algorithm
           cname,": ",cpp_file,"\n","\t $(CXX)",
           " $(CFLAGS)",
           " -I.",
-          " -o ",cname,"$(EXEEXT) ",cpp_file,
+          " -o ",cname,"$(EXEEXT) ",
+          cpp_file,
+          " ",libs_1,
           " -lsim",
           " $(LDFLAGS)",
           " -lf2c",
           " ${SENDDATALIBS} ",
-          libs_1,
           "\n"});
         System.writeFile(filename, str);
       then
