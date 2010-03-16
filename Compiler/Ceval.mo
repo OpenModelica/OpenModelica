@@ -276,7 +276,7 @@ algorithm
         (cache,v) = cevalCref(cache,env, c, impl, msg);
       then
         (cache,v,st);
-
+        
     //Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
     case (cache,env,expExp,impl,st,dimOpt,msg)
       equation
@@ -4587,27 +4587,27 @@ algorithm
       String scope_str,str;
       Env.Cache cache;
       DAE.ExpType expTy;
+			Option<DAE.Const> const_for_range;
 
-    /* Enumerationtyp -> no lookup necesery */
-    case (cache,env,c,impl,msg)
-      local
-        Absyn.Path path;
-        Integer idx;
-        list<String> names;
-      equation
-         DAE.ET_ENUMERATION(SOME(idx), _, names, {}) = Exp.getEnumTypefromCref(c);
-         path = Exp.crefToPath(c);
-      then
-        (cache,Values.ENUM(idx,path,names));
+		// Enumeration -> no lookup necessary
+		case (cache, env, c, impl, msg)
+			local
+				Absyn.Path path;
+				Integer idx;
+				list<String> names;
+			equation
+				DAE.ET_ENUMERATION(SOME(idx), _, names, {}) = Exp.getEnumTypefromCref(c);
+				path = Exp.crefToPath(c);
+			then
+				(cache, Values.ENUM(idx, path, names));
 
-    // Search in env for binding.
-    case (cache,env,c,impl,msg)
-      equation
-        (cache,attr,ty,binding,_,_,_) = Lookup.lookupVar(cache,env, c);
-        false = crefEqualValue(c,binding);
-        (cache,v) = cevalCrefBinding(cache,env, c, binding, impl, msg);
-      then
-        (cache,v);
+		// Try to lookup the variables binding and constant evaluate it.
+		case (cache, env, c, impl, msg)
+			equation
+				(cache, _, _, binding, const_for_range, _, _) = Lookup.lookupVar(cache, env, c);
+				(cache, v) = cevalCref2(cache, env, c, binding, const_for_range, impl, msg);
+			then
+				(cache, v);
 
     // failure in lookup and we have the MSG go-ahead to print the error
     case (cache,env,c,(impl as false),MSG())
@@ -4625,18 +4625,52 @@ algorithm
         failure((_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
         fail();
-
-    // No binding found.
-    case (cache,env,c,(impl as false),MSG())  
-      equation 
-        str = Exp.printComponentRefStr(c);
-        scope_str = Env.printEnvPathStr(env);
-        Error.addMessage(Error.NO_CONSTANT_BINDING, {str,scope_str});
-        Debug.fprintln("ceval","- Ceval.cevalCref on: " +& str +& " failed with no constant binding in scope: " +& scope_str); 
-      then
-        fail();
   end matchcontinue;
 end cevalCref;
+
+public function cevalCref2
+	"Helper function to cevalCref2"
+	input Env.Cache inCache;
+	input Env.Env inEnv;
+	input DAE.ComponentRef inCref;
+	input DAE.Binding inBinding;
+	input Option<DAE.Const> constForRange;
+	input Boolean inImpl;
+	input Msg inMsg;
+	output Env.Cache outCache;
+	output Values.Value outValue;
+algorithm
+	(outCache, outValue) := matchcontinue(inCache, inEnv, inCref, inBinding, constForRange, inImpl, inMsg)
+		local
+			Env.Cache cache;
+			Values.Value v;
+
+		// A variable with no binding and SOME for range constness -> a for iterator
+		case (_, _, _, DAE.UNBOUND(), SOME(_), _, _) then fail();
+
+		// A variable without a binding -> error
+		case (_, _, _, DAE.UNBOUND(), NONE(), false, MSG())
+			local
+				String str, scope_str;
+			equation
+				str = Exp.printComponentRefStr(inCref);
+				scope_str = Env.printEnvPathStr(inEnv);
+				Error.addMessage(Error.NO_CONSTANT_BINDING, {str, scope_str});
+				Debug.fprintln("ceval", "- Ceval.cevalCref on: " +& str +& 
+					" failed with no constant binding in scope: " +& scope_str);
+			then
+				fail();
+
+		// A variable with a binding -> constant evaluate the binding
+		case (_, _, _, _, _, _, _)
+			equation
+				failure(equality(inBinding = DAE.UNBOUND()));
+				false = crefEqualValue(inCref, inBinding);
+				(cache, v) = cevalCrefBinding(inCache, inEnv, inCref, inBinding, inImpl, inMsg);
+			then
+				(cache, v);
+	end matchcontinue;	
+end cevalCref2;
 
 public function cevalCrefBinding "function: cevalCrefBinding
   Helper function to cevalCref.

@@ -5387,7 +5387,7 @@ algorithm
 				inputs = Util.listUnion(inputs1, inputs2);
 				outputs = Util.listUnion(nonArrayVars, flattenedElements);
 			then (inputs, outputs);
-
+			  
 		case(vars, DAE.STMT_WHILE(e, stmts))
 			equation
 				(inputs1,outputs) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
@@ -5590,162 +5590,204 @@ algorithm
 end statesAndVarsMatrixExp;
 
 protected function isLoopDependent
-	"Checks if an expression is a variable that depends on a loop iterator,
-	ie. for i loop
-				V[i] = ...	// V depends on i
-			end for;
-	Used by lowerStatementInputsOutputs in STMT_FOR case."
-	input DAE.Exp varExp;
-	input DAE.Exp iteratorExp;
-	output Boolean isDependent;
+  "Checks if an expression is a variable that depends on a loop iterator,
+  ie. for i loop
+        V[i] = ...  // V depends on i
+      end for;
+  Used by lowerStatementInputsOutputs in STMT_FOR case."
+  input DAE.Exp varExp;
+  input DAE.Exp iteratorExp;
+  output Boolean isDependent;
 algorithm
-	isDependent := matchcontinue(varExp, iteratorExp)
-		local
-			list<DAE.Exp> subscripts;
-			Boolean b;
-		case (DAE.ASUB(_, subscripts), _)
-			equation
-				true = isLoopDependentHelper(subscripts, iteratorExp);
-			then true;
-		case (_,_)
-			then false;
-	end matchcontinue;
+  isDependent := matchcontinue(varExp, iteratorExp)
+    local
+      list<DAE.Exp> subscript_exprs;
+      list<DAE.Subscript> subscripts;
+      DAE.ComponentRef cr;
+    case (DAE.CREF(componentRef = cr), _)
+      equation
+        subscripts = Exp.crefSubs(cr);
+        subscript_exprs = Util.listMap(subscripts, Exp.subscriptExp);
+        true = isLoopDependentHelper(subscript_exprs, iteratorExp);
+      then true;
+    case (DAE.ASUB(sub = subscript_exprs), _)
+      equation
+        true = isLoopDependentHelper(subscript_exprs, iteratorExp);
+      then true;
+    case (_,_)
+      then false;
+  end matchcontinue;
 end isLoopDependent;
 
 protected function isLoopDependentHelper
-	"Helper for isLoopDependent.
-	Checks if a list of subscripts contains a certain iterator expression."
-	input list<DAE.Exp> subscripts;
-	input DAE.Exp iteratorExp;
-	output Boolean isDependent;
+  "Helper for isLoopDependent.
+  Checks if a list of subscripts contains a certain iterator expression."
+  input list<DAE.Exp> subscripts;
+  input DAE.Exp iteratorExp;
+  output Boolean isDependent;
 algorithm
-	isDependent := matchcontinue(subscripts, iteratorExp)
-		local
-			DAE.Exp subscript;
-			list<DAE.Exp> rest;
-		case ({}, _) then false;
-		case (subscript :: rest, _)
-			equation
-				true = Exp.expContains(subscript, iteratorExp);
-			then true;
-		case (subscript :: rest, _)
-			equation
-				true = isLoopDependentHelper(rest, iteratorExp);
-			then true;
-		case (_, _) then false;
-	end matchcontinue;
+  isDependent := matchcontinue(subscripts, iteratorExp)
+    local
+      DAE.Exp subscript;
+      list<DAE.Exp> rest;
+    case ({}, _) then false;
+    case (subscript :: rest, _)
+      equation
+        true = Exp.expContains(subscript, iteratorExp);
+      then true;
+    case (subscript :: rest, _)
+      equation
+        true = isLoopDependentHelper(rest, iteratorExp);
+      then true;
+    case (_, _) then false;
+  end matchcontinue;
 end isLoopDependentHelper;
 
 protected function explodeArrayVars
-	"Explodes an array variable into its elements. Takes a variable that is an
-	ASUB, the name of the iterator variable and a range expression that the
-	iterator iterates over."
-	input DAE.Exp arrayVar;
-	input DAE.Exp iteratorExp;
-	input DAE.Exp rangeExpr;
-	input Variables vars;
-	output list<DAE.Exp> arrayElements;
+  "Explodes an array variable into its elements. Takes a variable that is a CREF
+  or ASUB, the name of the iterator variable and a range expression that the
+  iterator iterates over."
+  input DAE.Exp arrayVar;
+  input DAE.Exp iteratorExp;
+  input DAE.Exp rangeExpr;
+  input Variables vars;
+  output list<DAE.Exp> arrayElements;
 algorithm
-	arrayElements := matchcontinue(arrayVar, iteratorExp, rangeExpr, vars)
-	  local
-	    list<DAE.Exp> subs;
-	    list<DAE.Exp> clonedElements, newElements;
-	    list<DAE.Exp> indices;
-	    DAE.ComponentRef cref;
-	    list<Var> arrayElements;
-	    list<DAE.ComponentRef> varCrefs;
-	    list<DAE.Exp> varExprs;
+  arrayElements := matchcontinue(arrayVar, iteratorExp, rangeExpr, vars)
+    local
+      list<DAE.Exp> subs;
+      list<DAE.Exp> clonedElements, newElements;
+      list<DAE.Exp> indices;
+      DAE.ComponentRef cref;
+      list<Var> arrayElements;
+      list<DAE.ComponentRef> varCrefs;
+      list<DAE.Exp> varExprs;
 
-	  case ((DAE.ASUB(_, subs)), _, _, _)
-			equation
-				// If the range is constant, then we can use it to generate only those
-				// array elements that are actually used.
-				indices = rangeIntExprs(rangeExpr, arrayVar);
-				clonedElements = Util.listFill(arrayVar, listLength(indices));
-				newElements = generateArrayElements(clonedElements, indices, iteratorExp);
-			then newElements;
+    case (DAE.CREF(componentRef = _), _, _, _)
+      equation
+        indices = rangeIntExprs(rangeExpr);
+        clonedElements = Util.listFill(arrayVar, listLength(indices));
+        newElements = generateArrayElements(clonedElements, indices, iteratorExp);
+      then newElements;
+        
+    case (DAE.ASUB(exp = _), _, _, _)
+      equation
+        // If the range is constant, then we can use it to generate only those
+        // array elements that are actually used.
+        indices = rangeIntExprs(rangeExpr);
+        clonedElements = Util.listFill(arrayVar, listLength(indices));
+        newElements = generateArrayElements(clonedElements, indices, iteratorExp);
+      then newElements;
 
-		case ((DAE.ASUB(DAE.CREF(cref, _), _)), _, _, _)
-			equation
-				// If the range is not constant, then we just extract all array elements
-				// of the array.
-				(arrayElements, _) = getVar(cref, vars);
-				varCrefs = Util.listMap(arrayElements, varCref);
-				varExprs = Util.listMap(varCrefs, Exp.crefExp);
-			then varExprs;
-	end matchcontinue;
+    case (DAE.CREF(componentRef = cref), _, _, _)
+      equation
+        (arrayElements, _) = getVar(cref, vars);
+        varCrefs = Util.listMap(arrayElements, varCref);
+        varExprs = Util.listMap(varCrefs, Exp.crefExp);
+      then varExprs;
+
+    case (DAE.ASUB(DAE.CREF(cref, _), _), _, _, _)
+      equation
+        // If the range is not constant, then we just extract all array elements
+        // of the array.
+        (arrayElements, _) = getVar(cref, vars);
+        varCrefs = Util.listMap(arrayElements, varCref);
+        varExprs = Util.listMap(varCrefs, Exp.crefExp);
+      then varExprs;
+  end matchcontinue;
 end explodeArrayVars;
 
 protected function rangeIntExprs
-	"Tries to convert a range to a list of integer expressions. This is only
-	possible if the range already is an DAE.ARRAY. Returns a list of integer
-	expressions if possible, or fails. Used by explodeArrayVars."
-	input DAE.Exp range;
-	input DAE.Exp arrayVar;
-	output list<DAE.Exp> integers;
+  "Tries to convert a range to a list of integer expressions. This is only
+  possible if the range already is an DAE.ARRAY. Returns a list of integer
+  expressions if possible, or fails. Used by explodeArrayVars."
+  input DAE.Exp range;
+  output list<DAE.Exp> integers;
 algorithm
-	integers := matchcontinue(range, arrayVar)
-		local
-			list<DAE.Exp> arrayElements;
-		case (DAE.ARRAY(_, _, arrayElements), _)
-			then arrayElements;
-		case (_, _) then fail();
-	end matchcontinue;
+  integers := matchcontinue(range)
+    local
+      list<DAE.Exp> arrayElements;
+    case (DAE.ARRAY(_, _, arrayElements))
+      then arrayElements;
+    case (_) then fail();
+  end matchcontinue;
 end rangeIntExprs;
 
 protected function generateArrayElements
-	"Takes a list of identical ASUB expressions, a list of ICONST indices and a
-	loop iterator expression, and recursively replaces the loop iterator with a
-	constant index. Ex:
-		generateArrayElements(cref[i,j], {1,2,3}, j) =>
-			{cref[i,1], cref[i,2], cref[i,3]}"
-	input list<DAE.Exp> clones;
-	input list<DAE.Exp> indices;
-	input DAE.Exp iteratorExp;
-	output list<DAE.Exp> newElements;
+  "Takes a list of identical CREF or ASUB expressions, a list of ICONST indices
+  and a loop iterator expression, and recursively replaces the loop iterator
+  with a constant index. Ex:
+    generateArrayElements(cref[i,j], {1,2,3}, j) =>
+      {cref[i,1], cref[i,2], cref[i,3]}"
+  input list<DAE.Exp> clones;
+  input list<DAE.Exp> indices;
+  input DAE.Exp iteratorExp;
+  output list<DAE.Exp> newElements;
 algorithm
-	newElements := matchcontinue(clones, indices, iteratorExp)
-		local
-			DAE.Exp clone, newElement, newElement2, index;
-			list<DAE.Exp> restClones, restIndices, elements;
-		case ({}, {}, _) then {};
-		case (clone :: restClones, index :: restIndices, _)
-			equation
-				(newElement, _) = Exp.replaceExp(clone, iteratorExp, index);
-				newElement2 = tryAsubToCref(newElement);
-				elements = generateArrayElements(restClones, restIndices, iteratorExp);
-			then (newElement2 :: elements);
-	end matchcontinue;
+  newElements := matchcontinue(clones, indices, iteratorExp)
+    local
+      DAE.Exp clone, newElement, newElement2, index;
+      list<DAE.Exp> restClones, restIndices, elements;
+    case ({}, {}, _) then {};
+    case (clone :: restClones, index :: restIndices, _)
+      equation
+        (newElement, _) = Exp.replaceExp(clone, iteratorExp, index);
+        newElement2 = simplifySubscripts(newElement);
+        elements = generateArrayElements(restClones, restIndices, iteratorExp);
+      then (newElement2 :: elements);
+  end matchcontinue;
 end generateArrayElements;
 
-protected function tryAsubToCref
-	"Tries to transform an ASUB to a CREF. This needs to be done if an ASUB only
-	contains constant subscripts, such as cref[1,4]. If the ASUB contains any
-	non-constant subscripts, then the variable is returned unchanged."
-	input DAE.Exp asub;
-	output DAE.Exp maybeCref;
+protected function simplifySubscripts
+  "Tries to simplify the subscripts of a CREF or ASUB. If an ASUB only contains
+  constant subscripts, such as cref[1,4], then it also needs to be converted to
+  a CREF."
+  input DAE.Exp asub;
+  output DAE.Exp maybeCref;
 algorithm
-	maybeCref := matchcontinue(asub)
-	  local
-	    DAE.Ident varIdent;
-	    DAE.ExpType arrayType, varType;
-	    list<DAE.Exp> subExprs, subExprsSimplified;
-	    list<Exp.Subscript> subscripts;
+  maybeCref := matchcontinue(asub)
+    local
+      DAE.Ident varIdent;
+      DAE.ExpType arrayType, varType;
+      list<DAE.Exp> subExprs, subExprsSimplified;
+      list<DAE.Subscript> subscripts;
+      DAE.Exp newCref;
 
-		case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
-			equation
-				{} = Util.listSelect(subExprs, Exp.isNotConst);
-				// If a subscript is not a single constant value it needs to be
-				// simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
-				// might be counted twice, such as cref[3+4] and cref[2+5], even though
-				// they reference the same element.
-				subExprsSimplified = Util.listMap(subExprs, Exp.simplify);
-				subscripts = Util.listMap(subExprsSimplified, Exp.makeIndexSubscript);
-			then DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType);
-		case (_) then asub;
-	end matchcontinue;
-end tryAsubToCref;
+    // A CREF => just simplify the subscripts.
+    case (DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType))
+      equation
+        subscripts = Util.listMap(subscripts, simplifySubscript);
+      then DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType);
+        
+    // An ASUB => convert to CREF if only constant subscripts.
+    case (DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, _), varType), subExprs))
+      equation
+        {} = Util.listSelect(subExprs, Exp.isNotConst);
+        // If a subscript is not a single constant value it needs to be
+        // simplified, e.g. cref[3+4] => cref[7], otherwise some subscripts
+        // might be counted twice, such as cref[3+4] and cref[2+5], even though
+        // they reference the same element.
+        subExprsSimplified = Util.listMap(subExprs, Exp.simplify);
+        subscripts = Util.listMap(subExprsSimplified, Exp.makeIndexSubscript);
+      then DAE.CREF(DAE.CREF_IDENT(varIdent, arrayType, subscripts), varType);
+    case (_) then asub;
+  end matchcontinue;
+end simplifySubscripts;
 
+protected function simplifySubscript
+  input DAE.Subscript sub;
+  output DAE.Subscript simplifiedSub;
+algorithm
+  simplifiedSub := matchcontinue(sub)
+    case (DAE.INDEX(exp = e))
+      local
+        DAE.Exp e;
+      equation
+        e = Exp.simplify(e);
+      then DAE.INDEX(e);
+    case (_) then sub;
+  end matchcontinue;
+end simplifySubscript;
 
 protected function lowerEqn
 "function: lowerEqn
@@ -11205,7 +11247,7 @@ algorithm
         eqnsl = equationList(eqns);
         seqnsl = equationList(seqns);
         ieqnsl = equationList(ieqns);
-        (s,t) = variableReplacements(totvars, eqnsl);
+				(s,t) = variableReplacements(totvars, eqnsl, al);
         (eqnsl_1,seqnsl_1,ieqnsl_1,ae_1,al_1,wc_1,zc_1,varlst_2,knvarlst_2,extvarlst_2)
         = translateDaeReplace(s, t, eqnsl, seqnsl, ieqnsl, ae, al, wc, zc, varlst_1, knvarlst_1,extvarlst_1, "%");
         (s1,t1) = variableReplacementsNoDollar(varlst_2, knvarlst_2,extvarlst_2) "remove dollar sign" ;
@@ -11691,6 +11733,238 @@ algorithm
         a;
   end matchcontinue;
 end replaceVariablesInStmt;
+
+protected function variableReplacementsInForStmts
+  "Applies variableReplacementsInForStmt to a list of Statements."
+  input list<Algorithm.Statement> statements;
+  input list<DAE.Exp> iterators;
+  output list<DAE.Exp> sources;
+  output list<DAE.Exp> targets;
+
+  list<list<DAE.Exp>> source_lists, target_lists;
+algorithm
+  (source_lists, target_lists) := Util.listMap12(statements,
+    variableReplacementsInForStmt, iterators);
+  sources := Util.listFlatten(source_lists);
+  targets := Util.listFlatten(target_lists);
+end variableReplacementsInForStmts;
+
+protected function variableReplacementsInForStmt
+  "Extracts replacement rules for variables in for loops that depend in the for
+  iterator."
+	input Algorithm.Statement statement;
+	input list<DAE.Exp> iterators;
+	output list<DAE.Exp> sources;
+	output list<DAE.Exp> targets;
+algorithm
+	(sources, targets) := matchcontinue(statement, iterators)
+		local
+			DAE.Exp e1, e2;
+      list<DAE.Exp> expl, s, t, s1, s2, s3, t1, t2, t3;
+      DAE.ComponentRef cref;
+			DAE.Statement stmt;
+			list<DAE.Statement> stmts;
+		case (DAE.STMT_ASSIGN(exp1 = e1, exp = e2), _)
+			equation
+				(s1, t1) = iteratorDependentVariableReplacements(e1, iterators);
+				(s2, t2) = iteratorDependentVariableReplacements(e2, iterators);
+				s = listAppend(s1, s2);
+				t = listAppend(t1, t2);
+			then
+				(s, t);
+		case (DAE.STMT_TUPLE_ASSIGN(expExpLst = expl, exp = e1), _)
+			equation
+        (s1, t1) = iteratorDependentVariableReplacementsList(expl, iterators);
+        (s2, t2) = iteratorDependentVariableReplacements(e1, iterators);
+        s = listAppend(s1, s2);
+        t = listAppend(t1, t2);
+      then
+        (s, t);
+    case (DAE.STMT_ASSIGN_ARR(componentRef = cref, exp = e1), _)
+      equation
+        e2 = Exp.crefExp(cref);
+        (s1, t1) = iteratorDependentVariableReplacements(e1, iterators);
+        (s2, t2) = iteratorDependentVariableReplacements(e2, iterators);
+        s = listAppend(s1, s2);
+        t = listAppend(t1, t2);
+      then
+        (s, t);
+		case (DAE.STMT_IF(exp = e1, statementLst = stmts, else_ = else_), _)
+			local
+				DAE.Else else_;
+			equation
+				(s1, t1) = iteratorDependentVariableReplacements(e1, iterators);
+        (s2, t2) = variableReplacementsInForStmts(stmts, iterators);
+        (s3, t3) = variableReplacementsInForStmtElse(else_, iterators);
+        s = Util.listListUnion({s1, s2, s3});
+        t = Util.listListUnion({s1, s2, s3});
+			then 
+				(s, t);
+		case (stmt as DAE.STMT_FOR(type_ = iter_type, ident = iter_id, statementLst = stmts), _)
+			local
+				DAE.ExpType iter_type;
+				String iter_id;
+				DAE.Exp iterator_exp;
+			equation
+				iterator_exp = DAE.CREF(DAE.CREF_IDENT(iter_id, iter_type, {}), iter_type);
+        (s, t) = variableReplacementsInForStmts(stmts, iterator_exp :: iterators);
+			then 
+				(s, t);
+    case (DAE.STMT_WHILE(exp = e1, statementLst = stmts), _)
+      equation
+        (s1, t1) = iteratorDependentVariableReplacements(e1, iterators);
+        (s2, t2) = variableReplacementsInForStmts(stmts, iterators);
+        s = Util.listUnion(s1, s2);
+        t = Util.listUnion(t1, t2);
+      then
+        (s, t);
+    case (DAE.STMT_WHEN(exp = e1, statementLst = stmts, elseWhen = SOME(stmt)), _)
+      equation
+        (s1, t1) = iteratorDependentVariableReplacements(e1, iterators);
+        (s2, t2) = variableReplacementsInForStmts(stmts, iterators);
+        (s3, t3) = variableReplacementsInForStmt(stmt, iterators);
+        s = Util.listListUnion({s1, s2, s3});
+        t = Util.listListUnion({s1, s2, s3});
+      then
+        (s, t);
+    case (DAE.STMT_ASSERT(cond = e1), _)
+      equation
+        (s, t) = iteratorDependentVariableReplacements(e1, iterators);
+      then
+        (s, t);
+    case (_, _)
+      equation
+        Debug.fprint("failtrace", "-variableReplacementsInForStmt failed\n");
+      then
+        fail();
+	end matchcontinue;
+end variableReplacementsInForStmt;
+
+protected function variableReplacementsInForStmtElse
+  "Helper function to variableReplacementsInForStmt that processes the else part
+    of an if statement."
+  input DAE.Else else_branch;
+  input list<DAE.Exp> iterators;
+  output list<DAE.Exp> sources;
+  output list<DAE.Exp> targets;
+algorithm
+  (sources, targets) := matchcontinue(else_branch, iterators)
+    local
+      DAE.Exp e1;
+      list<DAE.Statement> stmts;
+      DAE.Else else_;
+      list<DAE.Exp> s1, s2, s3, t1, t2, t3;
+    case (DAE.NOELSE, _) then ({}, {});
+    case (DAE.ELSEIF(exp = e1, statementLst = stmts, else_ = else_), _)
+      equation
+        (s1, t1) = iteratorDependentVariableReplacements(e1, iterators);
+        (s2, t2) = variableReplacementsInForStmts(stmts, iterators);
+        (s3, t3) = variableReplacementsInForStmtElse(else_, iterators);
+        s1 = Util.listListUnion({s1, s2, s3});
+        t1 = Util.listListUnion({t1, t2, t3});
+      then
+        (s1, t1);
+    case (DAE.ELSE(statementLst = stmts), _)
+      equation
+        (s1, t1) = variableReplacementsInForStmts(stmts, iterators);
+      then
+        (s1, t1);
+  end matchcontinue;
+end variableReplacementsInForStmtElse;
+
+protected function isCrefLoopDependent
+  "Succeedes if any subscript of a cref is a loop variable, otherwise fails."
+	input DAE.ComponentRef cref;
+	input list<DAE.Exp> iterators;
+
+	list<DAE.Subscript> subscripts;
+	list<DAE.Exp> subscript_exprs;
+algorithm
+	subscripts := Exp.crefSubs(cref);
+	subscript_exprs := Util.listMap(subscripts, Exp.subscriptExp);
+	isCrefLoopDependentHelper(subscript_exprs, iterators);
+end isCrefLoopDependent;
+
+protected function isCrefLoopDependentHelper
+  "Helper function to isCrefLoopDependent."
+	input list<DAE.Exp> subscripts;
+	input list<DAE.Exp> iterators;
+algorithm
+	_ := matchcontinue(subscripts, iterators)
+		local
+			DAE.Exp iter;
+			list<DAE.Exp> iter_rest;
+		case (_, {}) then fail();
+		case (_, iter :: _)
+			equation
+				true = isLoopDependentHelper(subscripts, iter);
+			then ();
+		case (_, _ :: iter_rest)
+			equation
+				isCrefLoopDependentHelper(subscripts, iter_rest);
+			then ();
+	end matchcontinue;
+end isCrefLoopDependentHelper;
+
+protected function iteratorDependentVariableReplacementsList
+  "Applies iteratorDependentVariableReplacements to a list of Exps."
+  input list<DAE.Exp> expl;
+  input list<DAE.Exp> iterators;
+  output list<DAE.Exp> sources;
+  output list<DAE.Exp> targets;
+
+  list<list<DAE.Exp>> s, t;
+algorithm
+  (s, t) := Util.listMap12(expl, iteratorDependentVariableReplacements, iterators);
+  sources := Util.listFlatten(s);
+  targets := Util.listFlatten(t);
+end iteratorDependentVariableReplacementsList;
+
+protected function iteratorDependentVariableReplacements
+  "Creates substitution rules for variables in a for loop that depends on the
+  for loop iterator."
+	input DAE.Exp exp;
+	input list<DAE.Exp> iterators;
+	output list<DAE.Exp> sources;
+	output list<DAE.Exp> targets;
+
+	list<DAE.ComponentRef> crefs;
+algorithm
+	crefs := Exp.extractCrefsFromExp(exp);
+	crefs := Util.listFilter1(crefs, isCrefLoopDependent, iterators);
+	(sources, targets) := iteratorDependentVariableReplacements2(crefs);
+end iteratorDependentVariableReplacements;
+
+protected function iteratorDependentVariableReplacements2
+  "Helper function to iteratorDependentVariableReplacements."
+	input list<DAE.ComponentRef> crefs;
+	output list<DAE.Exp> sources;
+	output list<DAE.Exp> targets;
+algorithm
+	(sources, targets) := matchcontinue(crefs)
+		local
+			DAE.ComponentRef cref;
+			list<DAE.ComponentRef> crefs_rest;
+			DAE.Exp cref_s, cref_t;
+			list<DAE.Exp> s, t, subs;
+			String cref_id, c_name;
+			DAE.ExpType cref_type;
+			list<DAE.Subscript> cref_subs;
+		case ({}) then ({}, {});
+		case (cref :: crefs_rest)
+			equation
+				(cref_id, cref_type) = Exp.crefNameType(cref);
+				cref_subs = Exp.crefSubs(cref);
+				c_name = Util.modelicaStringToCStr(cref_id, true);
+				//c_name = Util.stringAppendList({"%", c_name});
+				(s, t) = iteratorDependentVariableReplacements2(crefs_rest);
+				cref_s = DAE.CREF(cref, cref_type);
+				subs = Util.listMap(cref_subs, Exp.subscriptExp);
+				cref_t = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(c_name, cref_type, {}), cref_type), subs);
+			then
+				(cref_s :: s, cref_t :: t);
+	end matchcontinue;
+end iteratorDependentVariableReplacements2;
 
 protected function replaceVariablesInElseBranch
 "function: replaceVariablesInElseBranch
@@ -12966,31 +13240,35 @@ protected function variableReplacements
         variable like der(%x[5])"
   input list<Var> inVarLst;
   input list<Equation> inEquationLst;
+	input DAE.Algorithm[:] algorithms;
   output list<DAE.Exp> outExpExpLst1;
   output list<DAE.Exp> outExpExpLst2;
 algorithm
   (outExpExpLst1,outExpExpLst2):=
-  matchcontinue (inVarLst,inEquationLst)
+	matchcontinue (inVarLst,inEquationLst, algorithms)
     local
       BinTree bt;
       list<Key> states;
-      list<DAE.Exp> s1,t1,s2,t2,s3,t3,s,t;
+			list<DAE.Exp> s1,t1,s2,t2,s3,t3,s4,t4,s,t;
       list<String> ss;
       String str;
       list<Var> vars;
       list<Equation> eqns;
-    case (vars,eqns)
+			list<DAE.Algorithm> algs;
+    case (vars,eqns, _)
       equation
         bt = statesEqns(eqns, emptyBintree);
         (states,_) = bintreeToList(bt);
         (s1,t1) = derivativeReplacements(states);
         (s2,t2) = algVariableReplacements(vars);
         (s3,t3) = algVariableArrayReplacements(vars);
-        s = Util.listFlatten({s1,s2,s3});
-        t = Util.listFlatten({t1,t2,t3});
+				algs = arrayList(algorithms);
+				(s4,t4) = algVariableForReplacements(algs);
+        s = Util.listFlatten({s1,s2,s3,s4});
+				t = Util.listFlatten({t1,t2,t3,t4});
       then
         (s,t);
-    case (vars,eqns)
+    case (vars,eqns, _)
       equation
         print("-variableReplacements failed\n");
       then
@@ -13185,6 +13463,55 @@ algorithm
         fail();
   end matchcontinue;
 end algVariableArrayReplacements;
+
+protected function algVariableForReplacements
+  input list<DAE.Algorithm> algorithms;
+  output list<DAE.Exp> sources;
+  output list<DAE.Exp> targets;
+algorithm
+  (sources, targets) := matchcontinue(algorithms)
+    local
+      list<DAE.Algorithm> algs_rest;
+      list<DAE.Statement> stmts;
+      list<DAE.Exp> s1, s2, t1, t2;
+    case ({}) then ({}, {});
+    case (DAE.ALGORITHM_STMTS(statementLst = stmts) :: algs_rest)
+      equation
+        (s1, t1) = algVariableForReplacements2(stmts);
+        (s2, t2) = algVariableForReplacements(algs_rest);
+        s1 = listAppend(s1, s2);
+        t1 = listAppend(t1, t2);
+      then
+        (s1, t1);
+  end matchcontinue;
+end algVariableForReplacements;
+
+protected function algVariableForReplacements2
+  input list<DAE.Statement> statements;
+  output list<DAE.Exp> sources;
+  output list<DAE.Exp> targets;
+algorithm
+  (sources, targets) := matchcontinue(statements)
+    local
+      DAE.Statement stmt;
+      list<DAE.Statement> rest_stmts;
+      list<DAE.Exp> s1, t1, s2, t2, s, t;
+    case ({}) then ({}, {});
+    case ((stmt as DAE.STMT_FOR(ident = _)) :: rest_stmts)
+      equation
+        (s1, t1) = variableReplacementsInForStmt(stmt, {});
+        (s2, t2) = algVariableForReplacements2(rest_stmts);
+        s = listAppend(s1, s2);
+        t = listAppend(t1, t2);
+      then
+        (s, t);
+    case (_ :: rest_stmts)
+      equation
+        (s, t) = algVariableForReplacements2(rest_stmts);
+      then
+        (s, t);
+  end matchcontinue;
+end algVariableForReplacements2;
 
 protected function statesEqns "function: statesEqns
   author: PA
