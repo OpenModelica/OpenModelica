@@ -1934,6 +1934,9 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case SIZE       then daeExpSize(it, context, preExp, varDecls)
   case REDUCTION  then daeExpReduction(it, context, preExp, varDecls)
   case VALUEBLOCK then daeExpValueblock(it, context, preExp, varDecls)
+  case LIST       then daeExpList(it, context, preExp, varDecls)
+  case META_TUPLE then daeExpMetaTuple(it, context, preExp, varDecls)
+  case META_OPTION then daeExpMetaOption(it, context, preExp, varDecls)
   case _          then "UNKNOWN_EXP"
 
 daeExpSconst(String string, Text preExp, Text varDecls) ::=
@@ -2202,6 +2205,13 @@ daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
     # var2 = daeExp(d, context, preExp, varDecls)
     # preExp += '<tvar> = delayImpl(<index>, <var1>, time, <var2>);<\n>'
     tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="mmc_get_field"),
+            expLst={s1, ICONST(integer=i)}) then
+    # tvar = tempDecl("modelica_metatype", varDecls)
+    # expPart = daeExp(s1, context, preExp, varDecls)
+    # preExp += '<tvar> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<expPart>), <i>));<\n>'
+    tvar
   // no return calls
   case CALL(tuple_=false, ty=ET_NORETCALL) then
     # argStr = (expLst of exp: '<daeExp(exp, context, preExp, varDecls)>' ", ")
@@ -2440,6 +2450,54 @@ arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
   (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
   >>
 
+daeExpList(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case LIST then
+  # tmp = tempDecl("modelica_metatype", varDecls)
+  # expPart = daeExpListToCons(valList, context, preExp, varDecls)
+  # preExp += '<tmp> = <expPart>;<\n>'
+  tmp
+
+daeExpListToCons(list<Exp> listItems, Context context, Text preExp,
+                 Text varDecls) ::=
+case {} then "mmc_mk_nil()"
+case e :: rest then
+  # expPart = daeExpMetaHelperConstant(e, context, preExp, varDecls)
+  # restList = daeExpListToCons(rest, context, preExp, varDecls)
+  <<
+  mmc_mk_cons(<expPart>, <restList>)
+  >>
+
+daeExpMetaTuple(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case META_TUPLE then
+  # len = listLength(listExp)
+  //# start = if len>9 then '<len>(' else '(<len>, '
+  # start = '(<len>, '
+  # args = (listExp of e: daeExpMetaHelperConstant(e, context, preExp, varDecls) ", ")
+  # tmp = tempDecl("modelica_metatype", varDecls)
+  # preExp += '<tmp> = mmc_mk_box<start>0, <args>);<\n>'
+  tmp
+
+daeExpMetaOption(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case META_OPTION(exp=NONE) then "mmc_mk_none()"
+case META_OPTION(exp=SOME(e)) then
+  # expPart = daeExpMetaHelperConstant(e, context, preExp, varDecls)
+  'mmc_mk_some(<expPart>)'
+
+daeExpMetaHelperConstant(Exp e, Context context, Text preExp,
+                         Text varDecls) ::=
+# expPart = daeExp(e, context, preExp, varDecls)
+match Exp.typeof(e)
+  case ET_INT     then 'mmc_mk_icon(<expPart>)'
+  case ET_BOOL    then 'mmc_mk_icon(<expPart>)'
+  case ET_REAL    then 'mmc_mk_rcon(<expPart>)'
+  case ET_STRING  then 'mmc_mk_scon(<expPart>)'
+  case ET_COMPLEX then
+    # varNames = (varLst of COMPLEX_VAR: '<expPart>.<name>' ", ")
+    <<
+    mmc_mk_box...(<varNames>)
+    >>
+  case _          then expPart
+
 // SECTION: GENERAL TEMPLATES, TEMPORARY VARIABLES
 
 tempDecl(String ty, Text varDecls) ::=
@@ -2473,6 +2531,13 @@ expTypeShort(DAE.ExpType) ::=
   case ET_ARRAY   then expTypeShort(ty)   
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ) then "complex"
   case ET_COMPLEX then 'struct <underscorePath(name)>'  
+  case ET_LIST
+  case ET_METATUPLE
+  case ET_METAOPTION
+  case ET_UNIONTYPE
+  case ET_POLYMORPHIC
+  case ET_META_ARRAY
+  case ET_BOXED   then "metatype"
   case _          then "expTypeShort:ERROR"
 
 expType(DAE.ExpType ty, Boolean array) ::=

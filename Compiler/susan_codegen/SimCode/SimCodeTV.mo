@@ -527,6 +527,12 @@ package DAE
       Exp car;
       Exp cdr;
     end CONS;
+    record META_TUPLE
+      list<Exp> listExp;
+    end META_TUPLE;
+    record META_OPTION
+      Option<Exp> exp;
+    end META_OPTION;
   end Exp;
   
   uniontype ComponentRef
@@ -852,5 +858,10 @@ package Exp
     input DAE.ComponentRef inComponentRef;
     output Integer outEnumIndex;
   end getEnumIndexfromCref;
+
+  function typeof
+    input DAE.Exp inExp;
+    output DAE.ExpType outType;
+  end typeof;
 
 end Exp;
