@@ -2071,5 +2071,15 @@ algorithm
   end matchcontinue;
 end getHeight;
 
+public function isTopScope "Returns true if we are in the top-most scope"
+  input Env env;
+  output Boolean isTop;
+algorithm
+  isTop := matchcontinue env
+    case {FRAME(optName = NONE())} then true;
+    case _ then false;
+  end matchcontinue;
+end isTopScope;
+
 end Env;
 

@@ -8536,42 +8536,48 @@ algorithm
     case(cache,env,name,true,_) then (cache,DAEUtil.emptyDae);
 
     /* External object functions skipped*/
-    case(cache,env,name,_,_) equation
-      (_,true) = isExternalObjectFunction(cache,env,name);
-    then (cache,DAEUtil.emptyDae);
+    case(cache,env,name,_,_)
+      equation
+        (_,true) = isExternalObjectFunction(cache,env,name);
+      then (cache,DAEUtil.emptyDae);
 
       /* Recursive calls (by looking at envinronment) skipped */
-    case(cache,env,name,false,NONE) equation
-      // TODO! FIXME! getEnvName can fail on top level!     
-      true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
-    then (cache,DAEUtil.emptyDae);
+    case(cache,env,name,false,NONE)
+      equation
+        false = Env.isTopScope(env);
+        true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
+      then (cache,DAEUtil.emptyDae);
 
     /* Recursive calls (by looking in cache) skipped */
-    case(cache,env,name,false,_) equation
-      (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
-      (cache,name) = Inst.makeFullyQualified(cache,env,name);
-      _ = Env.getCachedInstFunc(cache,name);
-    then (cache,DAEUtil.emptyDae);
+    case(cache,env,name,false,_)
+      equation
+        (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
+        (cache,name) = Inst.makeFullyQualified(cache,env,name);
+        _ = Env.getCachedInstFunc(cache,name);
+      then (cache,DAEUtil.emptyDae);
 
     /* Class must be looked up*/
-    case(cache,env,name,false,NONE) equation
-      (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
-      (cache,name) = Inst.makeFullyQualified(cache,env,name);
-      cache = Env.addCachedInstFunc(cache,name);
-      (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
-      dae = DAEUtil.addDaeFunction(dae);
-    then (cache,dae);
+    case(cache,env,name,false,NONE)
+      equation
+        (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
+        (cache,name) = Inst.makeFullyQualified(cache,env,name);
+        cache = Env.addCachedInstFunc(cache,name);
+        (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+        dae = DAEUtil.addDaeFunction(dae);
+      then (cache,dae);
 
     /* class already available*/
-    case(cache,env,name,false,SOME(cl)) equation
-      (cache,name) = Inst.makeFullyQualified(cache,env,name);
-      (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
-      dae = DAEUtil.addDaeFunction(dae);
-    then (cache,dae);
-
-    case(cache,env,name,_,_) equation
-      print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&"\n");
-    then fail();
+    case(cache,env,name,false,SOME(cl))
+      equation
+        (cache,name) = Inst.makeFullyQualified(cache,env,name);
+        (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
+        dae = DAEUtil.addDaeFunction(dae);
+      then (cache,dae);
+        
+    case(cache,env,name,_,_)
+      equation
+        print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&"\n");
+      then fail();
   end matchcontinue;
 end instantiateDaeFunction;
 
