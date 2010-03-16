@@ -237,7 +237,7 @@ algorithm
         fail();//(cache,e,DAE.PROP_TUPLE(tp,DAE.C_VAR()));
 
 
-    case (cache,e,prop,DAE.C_VAR(),_,_) /* impl */
+    case (cache,e,prop,DAE.C_VAR(),_,_)
       equation
         e_1 = Exp.simplify(e);
       then
@@ -8010,23 +8010,6 @@ algorithm
   end matchcontinue;
 end isFunctionInCflist;
 
-protected function calculateConstantness
-"@author adrpo
- not always you get a list of constantness as function might not have any parameters.
- this function deals with that case"
-  input list<DAE.Const> constlist;
-  output DAE.Const out;
-algorithm
-  out := matchcontinue (constlist)
-    case ({}) then DAE.C_CONST();
-    case (constlist)
-      equation
-        out = Util.listReduce(constlist, Types.constAnd);
-      then out;
-  end matchcontinue;
-end calculateConstantness;
-
-
 /*
 public function getComponentsWithUnkownArraySizes
 "This function returns true if a class
@@ -8296,7 +8279,7 @@ algorithm
         fargs = Util.listMap(names, createDummyFarg);
         slots = makeEmptySlots(fargs);
         (cache,args_1,newslots,constlist,_,_) = elabInputArgs(cache, env, args, nargs, slots, false /*checkTypes*/ ,impl,{});
-        const = calculateConstantness(constlist);
+        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
         tp = complexTypeFromSlots(newslots2,ClassInf.UNKNOWN(Absyn.IDENT("")));
@@ -8386,7 +8369,7 @@ algorithm
         (cache,args_1,newslots,constlist,_,dae1) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl, {});
         //print(" args: " +& Util.stringDelimitList(Util.listMap(args_1,Exp.printExpStr), ", ") +& "\n");
         vect_dims = slotsVectorizable(newslots);
-        const = calculateConstantness(constlist);
+        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
         (env_2,cl) = Lookup.buildRecordConstructorClass(recordEnv, recordCl);
@@ -8454,8 +8437,7 @@ algorithm
         fn_1 = deoverloadFuncname(fn, functype);
         tuple_ = isTuple(restype);
         (cache,builtin) = isBuiltinFunc(cache,fn_1);
-        /* const = Util.listReduce(constlist, Types.constAnd); */
-        const = calculateConstantness(constlist);
+        const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         (cache,const) = determineConstSpecialFunc(cache,env,const,fn);
         tyconst = elabConsts(restype, const);
         prop = getProperties(restype, tyconst);
