@@ -2020,6 +2020,7 @@ algorithm
     case ((DAE.T_REAL(varLstReal = _),_)) then "double";
     case ((DAE.T_STRING(varLstString = _),_)) then "const char*";
     case ((DAE.T_BOOL(varLstBool = _),_)) then "int";
+    case ((DAE.T_ENUMERATION(index = _),_)) then "int";
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_))
       local Absyn.Path name;
       equation
@@ -2043,7 +2044,8 @@ algorithm
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.EXTERNAL_OBJ(_)),_)) then "void *";
     case ty
       equation
-        Debug.fprint("failtrace", "#-- Codegen.generateTypeExternal failed\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("#-- Codegen.generateTypeExternal failed: " +& Types.unparseType(ty));
       then
         fail();
   end matchcontinue;
