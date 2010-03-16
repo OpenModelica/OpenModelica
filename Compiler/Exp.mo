@@ -1437,7 +1437,7 @@ algorithm
         Absyn.Path fn;
      equation
        expl = Util.listMap(expl,simplify1);
-       true = Util.listReduce(Util.listMap(expl,isConst),boolAnd);
+       true = Util.listFold(Util.listMap(expl,isConst),boolAnd,true);
        e2 = simplifyBuiltinConstantCalls(DAE.CALL(fn,expl,tpl,builtin,tp,inline));
      then e2;
 
