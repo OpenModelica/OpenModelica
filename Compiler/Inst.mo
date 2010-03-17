@@ -2494,7 +2494,8 @@ algorithm
 
     case (cache,env,ih,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims)
       equation
-        Debug.fprintln("insttr", "- Inst.partialInstClassIn failed on class:" +&
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.partialInstClassIn failed on class:" +&
            n +& " in environment: " +& Env.printEnvPathStr(env));
       then
         fail();
@@ -4039,11 +4040,11 @@ algorithm
 	       to the environment here.
 	      */
         (cdefelts2,extcomps) = classdefElts2(extcomps, partialPrefix);
-        // lst_constantEls = listAppend(extcomps,lst_constantEls); // Adding this line breaks mofiles/ClassExtends3.mo
         (env2,ih) = addClassdefsToEnv(env2,ih,cdefelts2,true,NONE); // Add inherited classes to env
         (cache,env3,ih,_/*Skip collecting functions here, since partial */) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false);
+        lst_constantEls = listAppend(extcomps,lst_constantEls);
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls,
                           inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
