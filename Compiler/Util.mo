@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from LinkÃ¶ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -255,7 +255,24 @@ algorithm isequal := matchcontinue(input1,input2,equalLength)
   end matchcontinue;
 end isListEqual;
 
-public function isListNotEmpty
+public function isListEmpty
+"
+  function: isListEmpty
+  Author: DH 2010-03
+  
+  Returns true if the given list is empty, false otherwise.
+" 
+  input list<Type_a> inList;
+  output Boolean out;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  out := matchcontinue(inList)
+  case({}) then true; 
+  case(_) then false;
+  end matchcontinue;
+end isListEmpty;
+
+public function isListNotEmpty 
   input list<Type_a> input1;
   output Boolean isempty;
   replaceable type Type_a subtypeof Any;
@@ -4985,6 +5002,36 @@ algorithm unOption := matchcontinue (inOption)
     case (SOME(item)) then {item};
   end matchcontinue;
 end genericOption;
+
+public function isNone
+"
+  function: isNone
+  Author: DH, 2010-03
+"
+  input Option<Type_a> inOption;
+  output Boolean out;
+  replaceable type Type_a subtypeof Any;
+algorithm out := matchcontinue (inOption)
+    local Type_a item;
+    case (NONE) then true;
+    case (_) then false;
+  end matchcontinue;
+end isNone;
+
+public function isSome
+"
+  function: isSome
+  Author: DH, 2010-03
+"
+  input Option<Type_a> inOption;
+  output Boolean out;
+  replaceable type Type_a subtypeof Any;
+algorithm out := matchcontinue (inOption)
+    local Type_a item;
+    case (NONE) then false;
+    case (_) then true;
+  end matchcontinue;
+end isSome;
 
 public function makeOptIfNonEmptyList "function: stringOption
   author: BZ

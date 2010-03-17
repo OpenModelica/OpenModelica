@@ -2065,23 +2065,51 @@ algorithm outPaths := matchcontinue(path)
 end matchcontinue;
 end pathToStringList;
 
-public function pathPrefixOf "returns true if prefix_path is a prefix of path"
-	input Path prefix_path;
+public function pathPrefixOf
+"
+  funcion: pathPrefixOf
+  Alternative names: isPrefixOf, pathIsPrefixOf, prefixOf 
+  
+  Returns true if prefixPath is a prefix of path, false otherwise.
+"
+	input Path prefixPath;
 	input Path path;
-	output Boolean res;
+	output Boolean out;
 algorithm
-  res := matchcontinue(prefix_path,path)
-  local Path p;
-    case(prefix_path,path)
+  out := matchcontinue(prefixPath, path)
+    case(prefixPath, path) 
       equation
-      true = ModUtil.pathEqual(prefix_path,path);
+        true = ModUtil.pathEqual(prefixPath, path);
       then true;
-    case(prefix_path,path)
-      then pathPrefixOf(prefix_path,stripLast(path));
-    case(_,_) then false;
+    case(prefixPath, path) 
+      then pathPrefixOf(prefixPath, stripLast(path));
+    case(_, _) then false;
   end matchcontinue;
 end pathPrefixOf;
 
+public function crefPrefixOf
+"
+  function: crefPrefixOf
+  Alternative names: crefIsPrefixOf, isPrefixOf, prefixOf
+  Author: DH 2010-03
+
+  Returns true if prefixCr is a prefix of cr, i.e., false otherwise.
+  Subscripts are NOT checked.
+"
+	input ComponentRef prefixCr;
+	input ComponentRef cr;
+	output Boolean out;
+algorithm
+  out := matchcontinue(prefixCr, cr)
+    case(prefixCr, cr) 
+      equation
+        true = crefEqualNoSubs(prefixCr, cr);
+      then true;
+    case(prefixCr, cr)
+      then crefPrefixOf(prefixCr, crefStripLast(cr));
+    case(_, _) then false;
+  end matchcontinue;
+end crefPrefixOf;
 
 public function removePrefix "removes the prefix_path from path, and returns the rest of path"
 	input Path prefix_path;
@@ -2100,6 +2128,38 @@ algorithm
         then p2;
   end matchcontinue;
 end removePrefix;
+
+public function crefRemovePrefix
+"
+  function: crefRemovePrefix
+  Alternative names: removePrefix
+  Author: DH 2010-03
+
+  If prefixCr is a prefix of cr, removes prefixCr from cr and returns the remaining reference,
+  otherwise fails. Subscripts are NOT checked.
+"
+	input ComponentRef prefixCr;
+	input ComponentRef cr;
+	output ComponentRef out;
+algorithm
+  out := matchcontinue(prefixCr, cr)
+    local
+      Ident prefixIdent, ident;
+      ComponentRef prefixRestCr, restCr;
+    case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr)) 
+      equation
+        equality(prefixIdent = ident);
+      then crefRemovePrefix(prefixRestCr, restCr);
+    case(CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr)) 
+      equation
+        equality(prefixIdent = ident);
+      then restCr;
+    case(CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident)) 
+      equation
+        equality(prefixIdent = ident);
+      then CREF_IDENT("", {});
+  end matchcontinue;
+end crefRemovePrefix;
 
 public function pathContains "
 Author BZ,
