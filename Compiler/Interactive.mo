@@ -1936,9 +1936,9 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getComponentAnnotations");
         resstr = getComponentAnnotations(cr, p);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getComponentAnnotations");
       then
         (resstr,st);
 
@@ -1949,9 +1949,9 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getNthComponentAnnotation");
         resstr = getNthComponentAnnotation(cr, p, n);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getNthComponentAnnotation");
       then
         (resstr,st);
 
@@ -2052,9 +2052,9 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getNthConnectionAnnotation");
         resstr = getNthConnectionAnnotation(cr, p, n);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getNthConnectionAnnotation");
       then
         (resstr,st);
 
@@ -2087,9 +2087,9 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)))
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
         resstr = getNthConnectorIconAnnotation(cr, p, n);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getNthConnectorIconAnnotation");
       then
         (resstr,st);
 
@@ -2102,9 +2102,9 @@ algorithm
       local Absyn.Path path;
       equation
         path = Absyn.crefToPath(cr);
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getIconAnnotation");
         resstr = getIconAnnotation(path, p);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getIconAnnotation");
       then
         (resstr,st);
 
@@ -2117,9 +2117,9 @@ algorithm
       local Absyn.Path path;
       equation
         path = Absyn.crefToPath(cr);
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getDiagramAnnotation");
         resstr = getDiagramAnnotation(path, p);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getDiagramAnnotation");
       then
         (resstr,st);
 
@@ -2127,9 +2127,9 @@ algorithm
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClassIconMapAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
         resstr = getNthInheritedClassIconMapAnnotation(cr, n, p);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
       then
         (resstr,st);
 
@@ -2137,9 +2137,9 @@ algorithm
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClassDiagramMapAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
       (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
         resstr = getNthInheritedClassDiagramMapAnnotation(cr, n, p);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
       then
         (resstr,st);
 
@@ -2149,9 +2149,9 @@ algorithm
       local Absyn.Path path;
       equation
         path = Absyn.crefToPath(cr);
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("getDocumentationAnnotation");
         resstr = getNamedAnnotation(path, p,"Documentation",getDocumentationAnnotationString);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("getDocumentationAnnotation");
       then
         (resstr,st);
 

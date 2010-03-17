@@ -91,6 +91,7 @@ protected import Cevalfunc;
 protected import InnerOuter;
 protected import Prefix;
 protected import Connect;
+protected import ErrorExt;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -289,13 +290,20 @@ algorithm
       /* Call functions FIXME: functions are always generated. Put back the check
 	  and write another rule for the false case that generates the function */
       equation
+        ErrorExt.setCheckpoint("cevalCall");
         // do not handle Connection.isRoot here!
         false = stringEqual("Connection.isRoot", Absyn.pathString(funcpath));
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
         (cache,newval,st)= cevalCallFunction(cache, env, e, vallst, impl, st, dimOpt, msg);
+        ErrorExt.rollBack("cevalCall");
       then
         (cache,newval,st);
-
+        // make rollback for case above
+    case(_,_,DAE.CALL(path = funcpath,expLst = expl,builtin = builtin),_,_,_,_) equation
+        ErrorExt.rollBack("cevalCall");
+    then fail();
+      
+      
         /* Try Interactive functions last */
     case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),_,msg)
       local

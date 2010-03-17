@@ -64,7 +64,7 @@ algorithm
          sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
                            classDef=SCode.PARTS(elementLst=elementList) ),daeList)
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("cevalUserFunc");
         true = OptManager.setOption("envCache",false);
         str = Absyn.pathString(funcpath);
         replacements = createReplacementRules(inArgs,elementList);
@@ -77,7 +77,7 @@ algorithm
         env2 = evaluateStatements(env1,sc,ht2);
         retVals = getOutputVarValues(elementList, env2);
         retVal = convertOutputVarValues(retVals);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("cevalUserFunc");
         true = OptManager.setOption("envCache",true);
       then
         retVal;
@@ -87,7 +87,7 @@ algorithm
         sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
           classDef=SCode.PARTS(elementLst=elementList) ),daeList)
       equation
-          ErrorExt.rollBack();
+          ErrorExt.rollBack("cevalUserFunc");
           _ = OptManager.setOption("envCache",true);
       then fail();
 

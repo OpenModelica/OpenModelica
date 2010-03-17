@@ -118,13 +118,18 @@ public function errorOn
   external "C" ;
 end errorOn;
 
-public function setCheckpoint
-
+public function setCheckpoint "sets a checkpoint for the error messages, so error messages can be rolled back (i.e. deleted) up to this point
+A unique identifier for this checkpoint must be provided. It is checked when doing rollback or deletion"
+  input String id "uniqe identifier for the checkpoint (up to the programmer to guarantee uniqueness)";
   external "C" ;
 end setCheckpoint;
 
-public function delCheckpoint
+public function delCheckpoint "deletes the checkpoint at the top of the stack without 
+removing the error messages issued since that checkpoint.
+If the checkpoint id doesn't match, the application exits with -1.
+"
 
+  input String id "unique identifier";
   external "C" ;
 end delCheckpoint;
 
@@ -133,7 +138,11 @@ public function printErrorsNoWarning
   external "C" ;
 end printErrorsNoWarning;
 
-public function rollBack
+public function rollBack "rolls back error messages until the latest checkpoint, 
+deleting all error messages added since that point in time. A unique identifier for the checkpoint must be provided
+The application will exit with return code -1 if this identifier does not match.
+"
+  input String id "unique identifier";
   external "C" ;
 end rollBack;
 

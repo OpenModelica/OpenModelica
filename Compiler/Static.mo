@@ -6671,13 +6671,11 @@ algorithm
         Debug.fprintln("sei", "elab_call 3");
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop,dae) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st);
-        // adrpo: for function calls DO NOT GENERATE CODE during static elaboration!
-        st_1 = st; // (cache,st_1) = generateCompiledFunction(cache,env, fn, e, prop, st);
         Debug.fprint("sei", "elab_call 3 succeeded: ");
         fnstr = Dump.printComponentRefStr(fn);
         Debug.fprintln("sei", fnstr);
       then
-        (cache,e,prop,st_1,dae);
+        (cache,e,prop,st,dae);
 
     /* Non-interactive mode */
     case (cache,env,fn,args,nargs,(impl as false),st)
@@ -6688,12 +6686,10 @@ algorithm
         Debug.fprintln("sei", fnstr);
         fn_1 = Absyn.crefToPath(fn);
         (cache,e,prop,dae) = elabCallArgs(cache,env, fn_1, args, nargs, impl, st);
-        // adrpo: for non-interactive function calls DO NOT GENERATE CODE or DLL!
-        st_1 = st; /* (cache,st_1) = generateCompiledFunction(cache,env, fn, e, prop, st); */
         Debug.fprint("sei", "elab_call 4 succeeded: ");
         Debug.fprintln("sei", fnstr);
       then
-        (cache,e,prop,st_1,dae);
+        (cache,e,prop,st,dae);
     case (cache,env,fn,args,nargs,impl,st)
       equation
 				true = RTOpts.debugFlag("failtrace");
@@ -7806,172 +7802,6 @@ algorithm
     case (_,_,_) then true;
   end matchcontinue;
 end needToRebuild;
-
-protected function generateCompiledFunction
-"function: generateCompiledFunction
-  TODO: This currently only works for top level functions. For functions inside packages
-  we need to reimplement without using lookup functions, since we can not build
-  correct env for packages containing functions."
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input Absyn.ComponentRef inComponentRef;
-  input DAE.Exp inExp;
-  input DAE.Properties inProperties;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
-  output Env.Cache outCache;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
-algorithm
-  (outCache,outInteractiveInteractiveSymbolTableOption) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inExp,inProperties,inInteractiveInteractiveSymbolTableOption)
-    local
-      Absyn.Path pfn,path;
-      list<Env.Frame> env,env_1,env_2;
-      Absyn.ComponentRef fn,cr;
-      DAE.Exp e,exp;
-      DAE.Properties prop;
-      Interactive.InteractiveSymbolTable st;
-      Absyn.Program p;
-      AbsynDep.Depends aDep;
-      list<Interactive.CompiledCFunction> cflist;
-      SCode.Class cdef,cls;
-      Ident fid,pathstr,filename,str1,str2;
-      Option<Absyn.ExternalDecl> extdecl;
-      Option<Ident> id,lan;
-      Option<Absyn.ComponentRef> out;
-      list<Absyn.Exp> args;
-      list<SCode.Class> p_1,a;
-      DAE.DAElist d,d_1;
-      list<Ident> libs;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
-      list<Interactive.InstantiatedClass> b;
-      list<Interactive.InteractiveVariable> c;
-      Env.Cache cache;
-      list<Interactive.LoadedFile> lf;
-      Real buildTime;
-      Real fileLoadTime;
-      String fNew,fOld;
-      Real edit, build;
-
-    case (cache,env,fn,e,prop,st) /* Do not compile if the function is a \"known\" external function, e.g. math lib. */
-      local Option<Interactive.InteractiveSymbolTable> st;
-      equation
-        path = Absyn.crefToPath(fn);
-        (cache,cdef,env_1) = Lookup.lookupClass(cache,env, path, false);
-        SCode.CLASS(name = fid,restriction = SCode.R_EXT_FUNCTION(),classDef = SCode.PARTS(externalDecl = extdecl)) = cdef;
-        SOME(Absyn.EXTERNALDECL(id,lan,out,args,_)) = extdecl;
-        Ceval.isKnownExternalFunc(fid, id);
-        Debug.fprintln("sei", "function is known external func");
-      then
-        (cache,st);
-
-    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
-    // see if we have the function and we dont'e need to rebuild!
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p,_,_,_,_,cflist,_))))
-      equation
-        Debug.fprintln("sei", "generate_compiled_function: start1");
-        pfn = Absyn.crefToPath(fn);
-        (true, _, buildTime, fOld) = isFunctionInCflist(cflist, pfn);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName = fNew)) = Interactive.getPathedClassInProgram(pfn, p);
-        false = stringEqual(fNew,""); // see if the WE have a file or not!
-        false = needToRebuild(fNew,fOld,buildTime); // we don't need to rebuild!
-        Debug.fprintln("sei", "function is in Cflist");
-      then
-        (cache,SOME(st));
-    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
-    // see if we have the function and we dont'e need to rebuild based on ast build times
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),_,_,_,_,cflist,_))))
-      equation
-        Debug.fprintln("sei", "generate_compiled_function: start1.5");
-        pfn = Absyn.crefToPath(fn);
-        (true, _, buildTime, fOld) = isFunctionInCflist(cflist, pfn);
-        Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,Absyn.INFO(fileName=fNew, buildTimes=Absyn.TIMESTAMP(build,_))) = Interactive.getPathedClassInProgram(pfn, p);
-
-        // note, this should only work for classes that have no file name!
-        true = stringEqual(fNew,""); // see that we don't have a file!
-
-        // see if the build time from the class is the same as the build time from the compiled functions list
-        true = (buildTime >=. build);
-        true = (buildTime >. edit);
-        Debug.fprintln("sei", "function is in Cflist with the same build time as the class");
-      then
-        (cache,SOME(st));
-    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
-    case (cache,env,fn,e,prop,SOME((st as Interactive.SYMBOLTABLE(p as Absyn.PROGRAM(globalBuildTimes=ts),aDep,a,b,c,cflist,lf))))
-      local
-        Absyn.TimeStamp ts;
-        Integer libHandle, funcHandle;
-        String funcstr,f;
-        Real buildTime;
-        Boolean ifFuncInList;
-        list<Interactive.CompiledCFunction> newCF;
-        String name;
-        Boolean           ppref, fpref, epref;
-        Absyn.Restriction restriction  "Restriction" ;
-        Absyn.ClassDef    body;
-        Absyn.Info        info;
-        Absyn.Within      w;
-        String funcFileNameStr;
-      equation
-        Debug.fprintln("sei", "generate_compiled_function: start2");
-        path = Absyn.crefToPath(fn);
-        (cache,false) = isExternalObjectFunction(cache,env,path);
-        newCF = Interactive.removeCf(path, cflist); // remove it as it might be there with an older build time.
-
-        Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info) = Interactive.getPathedClassInProgram(path, p);
-        // p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        Debug.fprintln("sei", "generate_compiled_function: elaborated");
-        (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false) "	Inst.instantiate_implicit(p\') => d & message" ;
-        Debug.fprintln("sei", "generate_compiled_function: class looked up");
-        (_,env_2,_,d) = Inst.implicitFunctionInstantiation(cache, env_1, InnerOuter.emptyInstHierarchy,
-                                                               DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
-        Debug.fprintln("sei", "generate_compiled_function: function instantiated");
-        Print.clearBuf();
-        //
-        // d_1 = ModUtil.stringPrefixParams(DAE.DAE(d));
-        // libs = Codegen.generateFunctions(d_1);
-        //
-        Debug.fprintln("sei", "generate_compiled_function: function generated");
-        (cache, funcstr) = CevalScript.cevalGenerateFunction(cache,env_2,path);
-        t = Types.getPropType(prop) "	& Debug.fprintln(\"sei\", \"generate_compiled_function: compiled\")" ;
-        libHandle = System.loadLibrary(funcstr);
-        funcHandle = System.lookupFunction(libHandle, stringAppend("in_", funcstr));
-        System.freeLibrary(libHandle);
-        buildTime = System.getCurrentTime();
-        // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem
-        // update the build time in the class!
-        info = Absyn.setBuildTimeInInfo(buildTime,info);
-        ts = Absyn.setTimeStampBuild(ts, buildTime);
-        w = Interactive.buildWithin(path);
-        Debug.fprintln("dynload", "Updating build time for function path: " +& Absyn.pathString(path) +& " within: " +& Dump.unparseWithin(0, w) +& "\n");
-        p = Interactive.updateProgram(Absyn.PROGRAM({Absyn.CLASS(name,ppref,fpref,epref,Absyn.R_FUNCTION(),body,info)},w,ts), p);
-        f = Absyn.getFileNameFromInfo(info);
-        Debug.fprintln("sei", "Static: added the function in the compiled functions list");
-      then
-        (cache,SOME(Interactive.SYMBOLTABLE(p,aDep,a,b,c, Interactive.CFunction(path,t,funcHandle,buildTime,f) :: newCF,lf)));
-
-    case (cache,env,fn,e,prop,NONE) /* PROP_TUPLE? */
-      equation
-      Debug.fprintln("sei", "generate_compiled_function: start3");
-      then
-        (cache,NONE);
-    case (cache,env,cr,exp,prop,st)
-      local Option<Interactive.InteractiveSymbolTable> st;
-      equation
-        Debug.fprintln("failtrace", "- generate_compiled_function failed4");
-        str1 = Dump.printComponentRefStr(cr);
-        str2 = Exp.printExpStr(exp);
-        Debug.fprint("failtrace", str1);
-        Debug.fprint("failtrace", " -- ");
-        Debug.fprintln("failtrace", str2);
-      then
-        (cache,st);
-    case (cache,_,_,_,_,st)
-      local Option<Interactive.InteractiveSymbolTable> st;
-         /* If fails, skip it. */
-      then
-        (cache,st);
-  end matchcontinue;
-end generateCompiledFunction;
 
 public function isFunctionInCflist
 "function: isFunctionInCflist
@@ -11348,14 +11178,14 @@ algorithm
 
     case (cache,env,subs,dims,impl)
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("elabSubscriptsDims");
         (outCache,outSubs,outConst,dae) = elabSubscriptsDims2(cache,env,subs,dims,impl);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("elabSubscriptsDims");
       then (outCache,outSubs,outConst,dae);
 
     case (cache,env,subs,dims,impl)
       equation
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("elabSubscriptsDims");
         s1 = Dump.printSubscriptsStr(subs);
         s2 = Types.printDimensionsStr(dims);
         //print(" adding error for {{" +& s1 +& "}},,{{" +& s2 +& "}} ");

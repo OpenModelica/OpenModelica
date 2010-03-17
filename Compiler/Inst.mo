@@ -3732,7 +3732,7 @@ algorithm
 
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("instBasictypeBaseclass");
         (cache,m_1,_) = Mod.elabModForBasicType(cache,env, Prefix.NOPRE(), mod, true);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
@@ -3741,19 +3741,19 @@ algorithm
         b2 = Types.arrayType(ty);
         b3 = Types.extendsBasicType(ty);
         true = Util.boolOrList({b1, b2, b3});
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("instBasictypeBaseclass");
       then
         (cache,ih,store,SOME(ty),tys);
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
-        rollbackCheck(path) "only rollback errors affection basic types";
+        rollbackCheck(path) "only rollback errors affecting basic types";
       then fail();
 
     /* Inherits baseclass -and- has components */
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},inSCodeElementLst3,mods,inst_dims)
       equation
         true = (listLength(inSCodeElementLst3) > 0);
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("instBasictypeBaseclass2") "rolled back or deleted inside call below";
         instBasictypeBaseclass2(cache,env,ih,store,inSCodeElementLst2,inSCodeElementLst3,mods,inst_dims);
       then
         fail();
@@ -3764,7 +3764,7 @@ end instBasictypeBaseclass;
 
 protected function rollbackCheck "
 Author BZ 2009-08
-Rollsback errors on builtin classes.
+Rollsback errors on builtin classes and deletes checkpoint for other classes.
 "
   input Absyn.Path p;
 algorithm _ := matchcontinue(p)
@@ -3773,12 +3773,13 @@ algorithm _ := matchcontinue(p)
     equation
       n = Absyn.pathString(p);
       true = isBuiltInClass(n);
-      ErrorExt.rollBack();
+      ErrorExt.rollBack("instBasictypeBaseclass");
     then ();
   case(p)
     equation
       n = Absyn.pathString(p);
       false = isBuiltInClass(n);
+      ErrorExt.delCheckpoint("instBasictypeBaseclass");
     then ();
 end matchcontinue;
 end rollbackCheck;
@@ -3821,14 +3822,14 @@ algorithm _ := matchcontinue(inCache,inEnv1,inIH,store,inSCodeElementLst2,inSCod
         b2 = Types.arrayType(ty);
         true = boolOr(b1, b2);
         classname = Env.printEnvPathStr(env);
-        ErrorExt.rollBack();        
+        ErrorExt.rollBack("instBasictypeBaseclass2");
         Error.addMessage(Error.INHERIT_BASIC_WITH_COMPS, {classname});
       then
         ();
     // if not error above, then do not report error at all, try another case in instClassdef.
     case (_,_,_,_,_,_,_,_)
       equation
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("instBasictypeBaseclass2");
       then ();
     end matchcontinue;
 end instBasictypeBaseclass2;
@@ -4201,9 +4202,9 @@ algorithm
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
         (cache,env2,ih,csets,dae) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("updateCompeltsMods");
         (cache,env2,ih,csets,dae1) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
-        ErrorExt.rollBack() "roll back any errors";
+        ErrorExt.rollBack("updateCompeltsMods") "roll back any errors";
         (cache,cmod_1,dae2) = Mod.updateMod(cache,env2, pre, cmod, impl);
         (cache,env3,ih,res,csets,dae3) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
         dae = DAEUtil.joinDaeLst({dae,dae1,dae2,dae3});
@@ -6363,7 +6364,7 @@ algorithm
       tuple<SCode.Element,DAE.Mod> newComp;
       Boolean alreadyDeclared;
 
-    case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint(); then fail();
+    case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint("checkMultiplyDeclared"); then fail();
 
     /* If a variable is declared multiple times, the first is used.
      * If the two variables are not identical, an error is given.
@@ -6375,6 +6376,7 @@ algorithm
         (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache, env, n);
         checkMultipleElementsIdentical((oldElt,oldMod),newComp);
         alreadyDeclared = instStatusToBool(instStatus);
+        ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then alreadyDeclared;
 
     // If not multiply declared, return.
@@ -6382,12 +6384,14 @@ algorithm
           (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation
         failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache,env, n));
+        ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
     // failure
     case (cache,env,mod,prefix,csets,ciState,_,_,_)
       equation
         Debug.fprint("failtrace","-Inst.checkMultiplyDeclared failed\n");
+        ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then fail();
   end matchcontinue;
 end checkMultiplyDeclared;
@@ -7861,11 +7865,11 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = HashTable5.add((cref,0),updatedComps);
         (cache,env2,ih,csets,updatedComps,dae4) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl, updatedComps);
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("updateComponentInEnv");
         (cache,m_1,dae1) = Mod.elabMod(cache,env2, Prefix.NOPRE(), m, impl)
         "Prefix does not matter, since we only update types
          in env, and does not make any dae elements, etc.." ;
-        ErrorExt.rollBack()
+        ErrorExt.rollBack("updateComponentInEnv")
         "Rollback all error since we are only interested in type, not value at this point.
          Errors that occurse in elabMod which does not fail the function will be accepted.";
         classmod = Mod.lookupModificationP(mods, t);
@@ -7934,10 +7938,10 @@ algorithm
         /* Prefix does not matter, since we only update types in env, and does
 	   	   not make any dae elements, etc..
          */
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("updateComponentInEnv2");
         (cache,m_1,dae3) = Mod.elabMod(cache,env2, Prefix.NOPRE(), m, impl);
-        ErrorExt.rollBack() "Rollback all error since we are only interested in type, not value at this point. Errors that occur in elabMod which does not fail the function will be accepted.";
-
+        ErrorExt.rollBack("updateComponentInEnv2") "Rollback all error since we are only interested in type, not value at this point. 
+        Errors that occur in elabMod which does not fail the function will be accepted.";
         /* lookup and merge modifications */
         classmod = Mod.lookupModificationP(mods, t) ;
         mm = Mod.lookupCompModification(mods, n);
@@ -8511,10 +8515,10 @@ algorithm
     /* Special case when instantiating Real[0]. We need to know the type */
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       equation
-        ErrorExt.setCheckpoint();
+        ErrorExt.setCheckpoint("instArray");
         (cache,compenv,ih,store,_,csets,ty,graph) =
            instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (0 :: idxs), inst_dims, impl, comment,io,finalPrefix,graph);
-        ErrorExt.rollBack();
+        ErrorExt.rollBack("instArray");
       then
         (cache,compenv,ih,store,DAEUtil.emptyDae,csets,ty,graph);
 
@@ -9701,9 +9705,9 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix
       (_,deriveFunc) = makeFullyQualified(inCache,inEnv,deriveFunc);
       order = getDerivativeOrder(subs2);
 
-      ErrorExt.setCheckpoint() "don't report errors on modifers in functions";
+      ErrorExt.setCheckpoint("getDeriveAnnotation3") "don't report errors on modifers in functions";
       conditionRefs = getDeriveCondition(subs2,elemDecl,inCache,inEnv,inPrefix);
-      ErrorExt.rollBack();
+      ErrorExt.rollBack("getDeriveAnnotation3");
 
       conditionRefs = Util.sort(conditionRefs,DAEUtil.derivativeOrder);
       defaultDerivative = getDerivativeSubModsOptDefault(subs,inCache,inEnv,inPrefix);
@@ -16996,37 +17000,33 @@ protected function makeCrefBaseType "Function: makeCrefBaseType"
 algorithm ety := matchcontinue(baseType,dims)
   local
     DAE.ExpType ty;
-    DAE.Type tp_1;
+    DAE.Type tp_1,btp;
     list<Option<Integer>> lst;
-  case(baseType, dims)
+    
+    // Types extending basic type has dimensions already added
+    case(baseType as (DAE.T_COMPLEX(complexTypeOption=SOME(btp)),_),dims) equation
+      ty = Types.elabType(btp);
+    then ty;
+           
+   case(baseType, dims)
     equation
       lst = instdimsIntOptList(Util.listLast(dims));
       tp_1 = arrayBasictypeBaseclass2(lst, baseType);
       ty = Types.elabType(tp_1);
     then
       ty;
+     
   case(baseType, dims)
     equation
       failure(_ = instdimsIntOptList(Util.listLast(dims)));
       ty = Types.elabType(baseType);
     then
       ty;
-  case(baseType, dims)
-    equation
-      lst = instdimsIntOptList(Util.listLast(dims));
-      tp_1 = liftNonBasicTypesNDimensions(baseType,lst);
-      ty = Types.elabType(tp_1);
-    then
-      ty;
-  case(baseType, dims)
-    equation
-      failure(_ = instdimsIntOptList(Util.listLast(dims)));
-      ty = Types.elabType(baseType);
-    then
-      ty;
+
   case(_,_)
     equation
     Debug.fprint("failtrace", "- make_makeCrefBaseType failed\n");
+    print("makCrefBaseType failed\n");
     then
       fail();
 end matchcontinue;
