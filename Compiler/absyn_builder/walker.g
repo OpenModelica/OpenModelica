@@ -343,10 +343,8 @@ class_restriction returns [void* ast]
         | CONNECTOR { ast = Absyn__R_5fCONNECTOR; }
         | TYPE      { ast = Absyn__R_5fTYPE; }
         | PACKAGE   { ast = Absyn__R_5fPACKAGE; }
-        | FUNCTION  { ast = Absyn__R_5fFUNCTION; }
-        /* 
-        | OPERATOR (f:FUNCTION)? { ast = f ? Absyn__R_5fOPERATOR_5fFUNCTION : Absyn__R_5fOPERATOR; }  
-         add this later when enabling operators */
+        | FUNCTION  { ast = Absyn__R_5fFUNCTION; } 
+        | OPERATOR (f:FUNCTION)? { ast = f ? Absyn__R_5fOPERATOR_5fFUNCTION : Absyn__R_5fOPERATOR; }
         | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }
         )
     ;
@@ -1079,6 +1077,12 @@ declaration returns [void* ast=0]
 			id = to_rml_str(i);
 			ast = Absyn__COMPONENT(id, arr, mod ? mk_some(mod) : mk_none());
 		}
+		|#(o:OPERATOR (arr = array_subscripts)? (mod = modification)?)
+		{
+			if (!arr) arr = mk_nil();
+			id = to_rml_str(o);
+			ast = Absyn__COMPONENT(id, arr, mod ? mk_some(mod) : mk_none());
+		}		
 		/* For flat modelica parsing */
 		| #(FLAT_IDENT id2 = flat_component_reference[&arr] (mod=modification)? )
 		{
@@ -2220,8 +2224,17 @@ component_reference	returns [void* ast]
 					arr);
 
 			}
-		|#(DOT #(i2:IDENT (arr = array_subscripts)?)
-				ast = component_reference)
+        |#(o:OPERATOR (arr = array_subscripts)?)
+			{
+				if (!arr) arr = mk_nil();
+				id = to_rml_str(o);
+				ast = Absyn__CREF_5fIDENT(
+					id,
+					arr);
+
+			}			
+		|#(DOT 
+		    (#(i2:IDENT (arr = array_subscripts)?) ast = component_reference
 			{
 				if (!arr) arr = mk_nil();
 				id = to_rml_str(i2);
@@ -2231,6 +2244,18 @@ component_reference	returns [void* ast]
 					ast);
 
 			}
+		    |#(o2:OPERATOR (arr = array_subscripts)?) ast = component_reference
+			{
+				if (!arr) arr = mk_nil();
+				id = to_rml_str(o2);
+				ast = Absyn__CREF_5fQUAL(
+					id,
+					arr,
+					ast);
+
+			}
+			)
+	      )
 		| WILD
 			{
 				ast = Absyn__WILD;
@@ -2278,9 +2303,9 @@ named_argument returns [void* ast]
 	void* temp;
 }
 	:
-		#(eq:EQUALS i:IDENT temp = expression)
+		#(eq:EQUALS (i:IDENT|o:OPERATOR) temp = expression)
 		{
-			ast = Absyn__NAMEDARG(to_rml_str(i),temp);
+			ast = Absyn__NAMEDARG(to_rml_str(i?i:o),temp);
 		}
 	;
 
@@ -2496,23 +2521,42 @@ flat_component_reference [void**lastarrsub]	returns [void* ast]
 				*lastarrsub = arr;
 				ast = (void*)strdup(i->getText().c_str());
 			}
-		|#(DOT #(i2:IDENT (arr = flat_array_subscripts)?)
-				ast2 = flat_component_reference[lastarrsub])
+        |#(o:OPERATOR (arr= array_subscripts)?)
 			{
-				buf = (char*) malloc(strlen(i2->getText().c_str())
-					+(arr==0?0:strlen((const char*)arr))
-					+(ast2 == 0?0:strlen((const char*)ast2)) + 2);
-				if (!buf) return 0;
-				buf[0]='\0';
-				buf = strcat(buf,i2->getText().c_str());
-				if (arr) buf = strcat(buf,(const char*)arr);
-				buf = strcat(buf,".");
-				if (ast2) buf = strcat(buf,(const char*)ast2);
-				ast = buf;
-				if (ast2) free(ast2);
-				if (arr) free(arr);
-			}
-
+				*lastarrsub = arr;
+				ast = (void*)strdup(o->getText().c_str());
+			}			
+		|#(DOT (#(i2:IDENT (arr = flat_array_subscripts)?) ast2 = flat_component_reference[lastarrsub]
+			    {
+				  buf = (char*) malloc(strlen(i2->getText().c_str())
+					    +(arr==0?0:strlen((const char*)arr))
+					    +(ast2 == 0?0:strlen((const char*)ast2)) + 2);
+				  if (!buf) return 0;
+				  buf[0]='\0';
+				  buf = strcat(buf,i2->getText().c_str());
+				  if (arr) buf = strcat(buf,(const char*)arr);
+				  buf = strcat(buf,".");
+				  if (ast2) buf = strcat(buf,(const char*)ast2);
+				  ast = buf;
+				  if (ast2) free(ast2);
+				  if (arr) free(arr);
+			    }
+                |#(o2:OPERATOR (arr = flat_array_subscripts)?) ast2 = flat_component_reference[lastarrsub]
+			    {
+				  buf = (char*) malloc(strlen(o2->getText().c_str())
+					    +(arr==0?0:strlen((const char*)arr))
+					    +(ast2 == 0?0:strlen((const char*)ast2)) + 2);
+				  if (!buf) return 0;
+				  buf[0]='\0';
+				  buf = strcat(buf,o2->getText().c_str());
+				  if (arr) buf = strcat(buf,(const char*)arr);
+				  buf = strcat(buf,".");
+				  if (ast2) buf = strcat(buf,(const char*)ast2);
+				  ast = buf;
+				  if (ast2) free(ast2);
+				  if (arr) free(arr);
+			    })
+		 )
 	;
 
 /* flat_name_path is used in flat modelica where a model name can be qualified.

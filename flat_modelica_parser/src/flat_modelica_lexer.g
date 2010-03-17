@@ -89,7 +89,7 @@ tokens {
 	MODEL		= "model"	;
 	NOT		= "not"		;
 	OUTER		= "outer"	;
-/*	OPERATOR	= "operator" ; add this later when enabling operators */ 
+	OPERATOR	= "operator" ; 
     OVERLOAD    = "overload";
 	OR		= "or"		;
 	OUTPUT		= "output"	;

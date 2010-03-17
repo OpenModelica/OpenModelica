@@ -164,7 +164,7 @@ class_type :
 		| TYPE 
 		| PACKAGE 
 		| FUNCTION
-		/* | OPERATOR (FUNCTION)?  add this later when enabling operators */ 
+		| OPERATOR (FUNCTION)?  
 		| UNIONTYPE )
 		;
 
@@ -1018,6 +1018,7 @@ name_path_star returns [bool val=false]
 
 component_reference :
 		  IDENT^ ( array_subscripts )? ( DOT^ component_reference )?
+		| OPERATOR^ ( array_subscripts )? ( DOT^ component_reference )?
 		| WILD
 		;
 
@@ -1036,7 +1037,7 @@ function_arguments :
 for_or_expression_list
     :
 		(
-			{LA(1)==IDENT && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
+			{(LA(1)==IDENT || LA(1)==OPERATOR) && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
 		|
 			(
 				e:expression
@@ -1075,7 +1076,7 @@ named_arguments2 :
 		;
 
 named_argument :
-		IDENT EQUALS^ expression
+		(IDENT | OPERATOR) EQUALS^ expression
 		;
 
 expression_list :
