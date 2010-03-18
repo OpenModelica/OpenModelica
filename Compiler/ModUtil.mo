@@ -434,7 +434,9 @@ public function isOuter "Returns true if InnerOuter specification is outer or in
 	  end matchcontinue;
 end isOuter;
 
-public function isPureOuter ""
+public function isPureOuter "
+Check if the INNER/OUTER attribute is a sole outer, Absyn.OUTER() 
+"
   input Absyn.InnerOuter io;
   output Boolean res;
 algorithm res := matchcontinue(io)

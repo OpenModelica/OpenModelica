@@ -1876,7 +1876,9 @@ algorithm
   end matchcontinue;
 end subModsSubsetOrEqual;
 
-public function modEqual ""
+public function modEqual "
+Compares two DAE.Mod, returns true if equal
+"
   input DAE.Mod mod1;
   input DAE.Mod mod2;
   output Boolean equal;

@@ -8,6 +8,9 @@ package Cevalfunc
   description: This module constant evaluates userdefined functions, speeds up instantination process.
   It includes Constant evaluations of function and algorithm statements.
   RCS: $Id$
+  
+  TODO: implement ALG_RETURN and ALG_BREAK when evaluating statements
+
   "
 public import Env;
 public import Values;
@@ -39,17 +42,19 @@ protected import Dump;
 
 public function cevalUserFunc "Function: cevalUserFunc
 This is the main funciton for the class. It will take a userdefined function and \"try\" to
-evaluate it. This is to prevent multiple compilation of c files."
+evaluate it. This is to prevent multiple compilation of c files.
+
+NOTE: this function operates on Absyn and not DAE therefore static elaboration on expressions is done twice
+"
   input Env.Env env "enviroment for the user-function";
   input DAE.Exp callExp "DAE.CALL(userFunc)";
-  input list<Values.Value> inArgs;
-  input SCode.Class sc;
+  input list<Values.Value> inArgs "arguments evaluated so no envirnoment is needed";
+  input SCode.Class sc "function body";
   input DAE.DAElist daeList;
   output Values.Value outVal "The output value";
 
 algorithm
-  outVal :=
-  matchcontinue(env,callExp,inArgs,sc,daeList)
+  outVal := matchcontinue(env,callExp,inArgs,sc,daeList)
       local
         list<SCode.Element> elementList;
         Env.Env env1,env2,env3;
@@ -71,7 +76,7 @@ algorithm
         ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
         str = Util.stringAppendList({"cevalfunc_",str});
         env3 = Env.openScope(env, false, SOME(str));
-        env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2);
+        env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2) "also output arguments";
         // print("evalfunc env: " +& Env.printEnvStr(env) +& "\n");
         // print("evalfunc env1: " +& Env.printEnvStr(env1) +& "\n");        
         env2 = evaluateStatements(env1,sc,ht2);
@@ -163,12 +168,12 @@ algorithm
         env1 = extendEnvWithInputArgs(env,eles1,vals1,restExps, ht2);
         then
           env1;
-    // handle an input component definition = call(...) 
+    // handle an input component definition = call(...) where the variable is a record 
     case(env, ((ele1 as SCode.COMPONENT(component = varName, 
                                         typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::eles1), 
               (val1::vals1),((e1 as DAE.CALL(path = _))::restExps), ht2)
       equation
-        (tty as (DAE.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); //Types.expTypetoTypesType(ety);
+        (tty as (DAE.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); 
         compFrame = Env.newFrame(false);
         complexEnv = makeComplexEnv({compFrame},typeslst);
         env1 = Env.extendFrameV(env,
@@ -211,29 +216,13 @@ algorithm
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
-    // any other variables (might be output) with arrray dimensions
+    // any other variables (might be output) 
     case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim), 
-                                        typeSpec = Absyn.TPATH(path = apath,arrayDim = SOME(ad)), modifications = mod1)) ::eles1), 
-               (vals1),restExps, ht2)
-      equation
-        tty = getTypeFromName(apath,env);
-        tty = addDims(tty,adim,env, ht2);
-        (binding as DAE.VALBOUND(vv)) = makeBinding(mod1,env,tty, ht2);
-        // print("extendEnvWithInputArgs -> SOME component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(ad) +& "\n");        
-        env1 = Env.extendFrameV(env, 
-          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,binding,NONE()), NONE, Env.VAR_TYPED(), {});
-        env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
-      then
-        env2;
-    // any other variables (might be output) with no arrray dimensions
-    case(env, ((ele1 as SCode.COMPONENT(component=varName,attributes = SCode.ATTR(arrayDims=adim), 
-                                        typeSpec = Absyn.TPATH(path = apath,arrayDim = NONE()), modifications = mod1)) ::eles1), 
+                      typeSpec = Absyn.TPATH(path = apath,arrayDim = _), modifications = mod1)) ::eles1), 
               (vals1),restExps, ht2)
       equation
 
-        // print("extendEnvWithInputArgs -> NONE component: " +& Absyn.pathString(apath) +& "\n");
-
+        //since we do not have a value we use the class name to get type of variable.
         tty = getTypeFromName(apath,env);
         tty = addDims(tty,adim,env, ht2);
         (binding as DAE.VALBOUND(vv)) = makeBinding(mod1,env,tty, ht2);
@@ -508,8 +497,11 @@ algorithm
   end matchcontinue;
 end qualReplacer;
 
-protected function evaluateStatements "Function: evaluateStatements
-Intermediate step for evaluating algorithms."
+protected function evaluateStatements "
+Intermediate step for evaluating algorithms.
+Takes an Envirnoment that includes function variables and a hashtable witch represents constant values for crefs.
+Updates the envirnoment with the evaluated values(output)
+"
   input Env.Env env;
   input SCode.Class sc;
   input HashTable2.HashTable ht2;
@@ -557,8 +549,8 @@ algorithm
   end matchcontinue;
 end generateHashMap;
 
-protected function evaluateAlgorithmsList "Function: evaluateAlgorithms 
-Intermediate step for evaluating algorithms."
+protected function evaluateAlgorithmsList "
+helper function for evaluateAlgorithms"
   input Env.Env env;
   input list<SCode.Algorithm> inAlgs;
   input HashTable2.HashTable ht2;
@@ -609,8 +601,8 @@ algorithm
 end evaluateAlgorithms;
 
 protected function evaluateAlgorithm "Function: evaluateAlgorithm
-This is the actuall evaluation function.
-It matches the incoming algorithm types to a corresponding value/function."
+perform constant evaluation of Algorithm statements, eg. assign, for loop,etc.
+"
   input Env.Env env;
   input Absyn.Algorithm alg;
   input HashTable2.HashTable ht2;
@@ -1375,7 +1367,7 @@ end matchcontinue;
 end typeOfValue;
 
 protected function getTypeFromName "function: getTypeFromName
-  Returns the type specified by the cref.
+  Returns the type specified by the path.
 "
   input Absyn.Path inPath;
   input Env.Env env;
@@ -1461,6 +1453,7 @@ algorithm
         lval = getOutputVarValues(eles1,env);
       then
        value::lval;
+     /*TODO: Handle extends nodes, must pick up output arguments from base classes */
     case(_::eles1,env)
       equation
         lval = getOutputVarValues(eles1,env);
@@ -1470,9 +1463,7 @@ algorithm
 end getOutputVarValues;
 
 protected function convertOutputVarValues "Function: convertOutputVarValues
-This function converts a list of values to a single value.
-Eighter a Values.INTEGER etc. or a Values.ARRAY(list).
-This to work with multiple outputs(tuple return) "
+This function converts a list of values to a tuple value (if list contains more than one value) "
 input list<Values.Value> indata;
 output Values.Value outdata;
 algorithm outdata := matchcontinue(indata)
@@ -1488,7 +1479,7 @@ algorithm outdata := matchcontinue(indata)
 end matchcontinue;
 end convertOutputVarValues;
 
-public function mergeValues "Function: mergeValues
+protected function mergeValues "Function: mergeValues
 This function will update a specific value location.
 "
 input Values.Value oldVal "This is the old value, to update inside";
@@ -1623,7 +1614,7 @@ end addDims;
 
 protected function createReplacementRules "
 Author BZ
-Create a list of tuples mapping DAE.ComponentRef to a constant DAE.Exp( DAE.ICONST etc), construction made from Values.Value
+Create a list replacement rules, mapping a variable (component reference) to its value (represented as Exp.Exp)
 "
   input list<Values.Value> vals;
   input list<SCode.Element> elems;

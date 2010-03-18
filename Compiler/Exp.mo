@@ -7132,7 +7132,9 @@ algorithm
   res := Util.stringDelimitList(Util.listMap(expl,printExpStr),"");
 end printExpListStrNoSpace;
 
-public function printOptExpStr ""
+public function printOptExpStr "
+Returns a string if SOME otherwise ''
+"
 input Option<Exp> oexp;
 output String str;
 algorithm str := matchcontinue(oexp)

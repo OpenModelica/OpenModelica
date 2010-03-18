@@ -138,7 +138,9 @@ algorithm
   end matchcontinue;
 end getDerivativePaths;
 
-public function addEquationBoundString ""
+public function addEquationBoundString "
+Set the optional equationBound value
+"
   input DAE.Exp bindExp;
   input Option<DAE.VariableAttributes> attr;
   output Option<DAE.VariableAttributes> oattr;
@@ -172,7 +174,9 @@ algorithm
   end matchcontinue;
 end getClassList;
 
-public function getBoundStartEquation ""
+public function getBoundStartEquation "
+Returned bound equation
+"
 input DAE.VariableAttributes attr;
 output DAE.Exp oe;
 algorithm oe := matchcontinue(attr)
@@ -494,7 +498,10 @@ algorithm outCr := matchcontinue(inCr)
 end matchcontinue;
 end nameInnerouterUniqueCref;
 
-public function unNameInnerouterUniqueCref ""
+public function unNameInnerouterUniqueCref "
+Function for stripping a cref of its uniqified part.
+Remove 'removalString' from the cref if found
+"
 input DAE.ComponentRef cr;
 input String removalString;
 output DAE.ComponentRef ocr;
@@ -2582,7 +2589,9 @@ algorithm
   end matchcontinue;
 end dumpExtObjectClass;
 
-public function printInlineTypeStr ""
+public function printInlineTypeStr "
+Print what kind of inline we have
+"
 input DAE.InlineType it;
 output String str;
 algorithm

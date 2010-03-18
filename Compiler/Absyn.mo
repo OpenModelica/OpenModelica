@@ -3335,7 +3335,9 @@ algorithm
   end matchcontinue;
 end setClassFilename;
 
-public function emptyClassInfo ""
+public function emptyClassInfo "
+Return a class info with no content
+"
 output Info info;
 algorithm
   info := dummyInfo; //INFO("",false,0,0,0,0,TIMESTAMP(0.0,0.0));
