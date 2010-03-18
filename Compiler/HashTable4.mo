@@ -37,7 +37,7 @@ protected function hashFunc "
 
   Calculates a hash value for DAE.Exp
 "
-  input DAE.Exp cr;
+  input Key cr;
   output Integer res;
   String crstr;
 algorithm

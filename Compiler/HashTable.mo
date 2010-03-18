@@ -37,7 +37,7 @@ protected function hashFunc "
 
   Calculates a hash value for DAE.ComponentRef
 "
-  input DAE.ComponentRef cr;
+  input Key cr;
   output Integer res;
   String crstr;
 algorithm

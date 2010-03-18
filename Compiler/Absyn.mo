@@ -2047,8 +2047,8 @@ algorithm
 end pathSuffixOf;
 
 public function pathToStringList
-input Path path;
-output list<String> outPaths;
+  input Path path;
+  output list<String> outPaths;
 algorithm outPaths := matchcontinue(path)
     local
       String n;
@@ -2064,6 +2064,79 @@ algorithm outPaths := matchcontinue(path)
     case (IDENT(name = n)) then {n};
 end matchcontinue;
 end pathToStringList;
+
+public function pathReplaceFirstIdent "
+  Replaces the first part of a path with a replacement path:
+  (a.b.c, d.e) => d.e.b.c
+  (a, b.c.d) => b.c.d
+"
+  input Path path;
+  input Path replPath;
+  output Path outPath;
+algorithm
+  outPath := matchcontinue(path,replPath)
+    local
+      String n;
+      Path p;
+      list<String> strings;
+    // Should not be possible to replace FQ paths
+    case (QUALIFIED(path = p),replPath) then joinPaths(replPath,p);
+    case (IDENT(name = n),replPath) then replPath;
+  end matchcontinue;
+end pathReplaceFirstIdent;
+
+public function addSubscriptsLast "
+Function for appending subscripts at end on last ident
+"
+  input ComponentRef cr;
+  input list<Subscript> i;
+  output ComponentRef ocr;
+algorithm
+  ocr := matchcontinue(cr,i)
+    local
+      list<Subscript> subs;
+      String id;
+    case (CREF_IDENT(id,subs),i)
+      equation
+        subs = listAppend(subs,i);
+      then
+        CREF_IDENT(id,subs);
+    case (CREF_QUAL(id,subs,cr),i)
+      equation
+        cr = addSubscriptsLast(cr,i);
+      then
+        CREF_QUAL(id,subs,cr);
+  end matchcontinue;
+end addSubscriptsLast;
+
+public function crefReplaceFirstIdent "
+  Replaces the first part of a cref with a replacement path:
+  (a[4].b.c[3], d.e) => d.e[4].b.c[3]
+  (a[3], b.c.d) => b.c.d[3]
+"
+  input ComponentRef cref;
+  input Path replPath;
+  output ComponentRef outCref;
+algorithm
+  outCref := matchcontinue(cref,replPath)
+    local
+      String n;
+      Path p;
+      list<String> strings;
+      list<Subscript> subs;
+      ComponentRef cr;
+    case (CREF_QUAL(componentRef = cr, subScripts = subs),replPath)
+      equation
+        cref = pathToCref(replPath);
+        cref = addSubscriptsLast(cref,subs);
+      then joinCrefs(cref,cr);
+    case (CREF_IDENT(subscripts = subs),replPath)
+      equation
+        cref = pathToCref(replPath);
+        cref = addSubscriptsLast(cref,subs);
+      then cref;
+  end matchcontinue;
+end crefReplaceFirstIdent;
 
 public function pathPrefixOf
 "

@@ -36,7 +36,7 @@ protected function hashFunc "
 
   Calculates a hash value for Exp.ComponentRef
 "
-  input tuple<Exp.ComponentRef,Exp.ComponentRef> tpl;
+  input Key tpl;
   output Integer res;
   String crstr;
 algorithm

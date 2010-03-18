@@ -1,7 +1,7 @@
-package HashTable5 "
+package HashTableStringToPath "
 	  This file is an extension to OpenModelica.
 
-  Copyright (c) 2007-2009 MathCore Engineering AB
+  Copyright (c) 2007 MathCore Engineering AB
 
   All rights reserved.
 
@@ -26,24 +26,16 @@ public import Absyn;
 
 protected import System;
 protected import Util;
-protected import Dump;
-
 
 public
- type Key = Absyn.ComponentRef;
- type Value = Integer;
+ type Key = String;
+ type Value = Absyn.Path;
 
-protected function hashFunc "
-  author: PA
-
-  Calculates a hash value for DAE.Exp
-"
-  input Key cr;
+protected function hashFunc
+  input Key str;
   output Integer res;
-  String crstr;
 algorithm
-  crstr := Dump.printComponentRefStr(cr);
-  res := System.hash(crstr);
+  res := System.hash(str);
 end hashFunc;
 
 protected function keyEqual
@@ -51,17 +43,10 @@ protected function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := Absyn.crefEqual(key1,key2);
+  res := key1 ==& key2;
 end keyEqual;
 
-public function dumpHashTableStr "dump hashtable to a string"
-  input HashTable t;
-  output String str;
-algorithm
-  str := "HashTable:\n"+&Util.stringDelimitList(Util.listMap(hashTableList(t),dumpTuple),"\n")+&"\n";
-end dumpHashTableStr;
-
-protected function dumpHashTable
+public function dumpHashTable ""
   input HashTable t;
 algorithm
   print("HashTable:\n");
@@ -74,10 +59,11 @@ protected function dumpTuple
   output String str;
 algorithm
   str := matchcontinue(tpl)
-  local
-  Absyn.ComponentRef cr; Integer i;
-    case((cr,i)) equation
-      str = "{" +& Dump.printComponentRefStr(cr) +& "," +& intString(i) +& "}";
+    local
+      String id;
+      Absyn.Path p;
+    case((id,p)) equation
+      str = "{" +& id +& "," +& Absyn.pathString(p) +& "}";
     then str;
   end matchcontinue;
 end dumpTuple;
@@ -104,6 +90,46 @@ efficient manner"
   end VALUE_ARRAY;
 end ValueArray;
 
+public function cloneHashTable "
+Author BZ 2008-06
+Make a stand-alone-copy of hashtable.
+"
+input HashTable inHash;
+output HashTable outHash;
+algorithm outHash := matchcontinue(inHash)
+  local
+    list<tuple<Key,Integer>>[:] arg1,arg1_2;
+    Integer arg3,arg4,arg3_2,arg4_2,arg21,arg21_2,arg22,arg22_2;
+    Option<tuple<Key,Value>>[:] arg23,arg23_2;
+  case(HASHTABLE(arg1,VALUE_ARRAY(arg21,arg22,arg23),arg3,arg4))
+    equation
+      arg1_2 = arrayCopy(arg1);
+      arg21_2 = arg21;
+      arg22_2 = arg22;
+      arg23_2 = arrayCopy(arg23);
+      arg3_2 = arg3;
+      arg4_2 = arg4;
+      then
+        HASHTABLE(arg1_2,VALUE_ARRAY(arg21_2,arg22_2,arg23_2),arg3_2,arg4_2);
+end matchcontinue;
+end cloneHashTable;
+
+public function nullHashTable "
+  author: PA
+
+  Returns an empty HashTable.
+  Using the bucketsize 100 and array size 10.
+"
+  output HashTable hashTable;
+  list<tuple<Key,Integer>>[:] arr;
+  list<Option<tuple<Key,Value>>> lst;
+  Option<tuple<Key,Value>>[:] emptyarr;
+algorithm
+  arr := fill({}, 0);
+  emptyarr := listArray({});
+  hashTable := HASHTABLE(arr,VALUE_ARRAY(0,0,emptyarr),0,0);
+end nullHashTable;
+
 public function emptyHashTable "
   author: PA
 
@@ -118,7 +144,7 @@ algorithm
   arr := fill({}, 1000);
   // lst := Util.listFill(NONE, 100);
   // emptyarr := listArray(lst);
-    emptyarr := fill(NONE(), 100);
+  emptyarr := fill(NONE(), 100);
   hashTable := HASHTABLE(arr,VALUE_ARRAY(0,100,emptyarr),1000,0);
 end emptyHashTable;
 
@@ -181,6 +207,37 @@ algorithm
         fail();
   end matchcontinue;
 end add;
+
+public function anyKeyInHashTable "Returns true if any of the keys are present in the hashtable. Stops and returns true upon first occurence"
+  input list<Key> keys;
+  input HashTable ht;
+  output Boolean res;
+algorithm
+  res := matchcontinue(keys,ht)
+  local Key key;
+    case({},ht) then false;
+    case(key::keys,ht) equation
+      _ = get(key,ht);
+    then true;
+    case(_::keys,ht) then anyKeyInHashTable(keys,ht);
+  end matchcontinue;
+end anyKeyInHashTable;
+
+public function addListNoUpd "adds several keys with the same value, using addNuUpdCheck. Can be used to use HashTable as a Set"
+  input list<Key> keys;
+  input Value v;
+  input HashTable ht;
+  output HashTable outHt;
+algorithm
+  ht := matchcontinue(keys,v,ht)
+  local Key key;
+    case ({},v,ht) then ht;
+    case(key::keys,v,ht) equation
+      ht = addNoUpdCheck((key,v),ht);
+      ht = addListNoUpd(keys,v,ht);
+    then ht;
+  end matchcontinue;
+end addListNoUpd;
 
 public function addNoUpdCheck "
   author: PA
@@ -254,9 +311,10 @@ algorithm
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,hashTable)
       equation
-        //print("-HashTable.delete failed\n");
+        print("-HashTable.delete failed\n");
+        print("content:"); dumpHashTable(hashTable);
       then
-        hashTable;
+        fail();
   end matchcontinue;
 end delete;
 
@@ -562,4 +620,4 @@ algorithm
   end matchcontinue;
 end valueArrayNth;
 
-end HashTable5;
+end HashTableStringToPath;
