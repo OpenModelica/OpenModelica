@@ -2269,6 +2269,22 @@ algorithm
         res = simplifyScalarProduct(e1, e2);
       then
         res;
+    case (e1,DAE.ADD_ARR(ty = _),e2)
+      equation
+        tp = typeof(e1);
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        res = simplifyMatrixBinary(e1, DAE.ADD(tp), e2);
+      then
+        res;
+    case (e1,DAE.SUB_ARR(ty = _),e2)
+      equation
+        tp = typeof(e1);
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        res = simplifyMatrixBinary(e1, DAE.SUB(tp), e2);
+      then
+        res;         
   end matchcontinue;
 end simplifyBinaryArray;
 
@@ -2472,6 +2488,79 @@ algorithm
         DAE.ARRAY(tp1,scalar1,(DAE.BINARY(e1,op2,e2) :: es_1));
   end matchcontinue;
 end simplifyVectorBinary;
+
+protected function simplifyMatrixBinary
+"function: simlify_binary_matrix
+  author: PA
+  Simplifies matrix addition and subtraction"
+  input Exp inExp1;
+  input Operator inOperator2;
+  input Exp inExp3;
+  output Exp outExp;
+algorithm
+  outExp:=
+  matchcontinue (inExp1,inOperator2,inExp3)
+    local
+      Type tp1,tp2;
+      list<list<tuple<Exp, Boolean>>> scalar;
+      Integer integer1,integer2,i1,i2;
+      list<tuple<Exp, Boolean>> e,e1,e2;
+      Operator op,op2;
+      list<list<tuple<Exp, Boolean>>> es_1,es1,es2;
+    case (DAE.MATRIX(ty = tp1,integer=integer1,scalar = {e1}),
+          op,
+         DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}))
+      equation
+        op2 = removeOperatorDimension(op);
+        e = simplifyMatrixBinary1(e1,op2,e2);
+      then DAE.MATRIX(tp1,integer1,{e});  /* resulting operator */
+
+    case (DAE.MATRIX(ty = tp1,integer=integer1,scalar = (e1 :: es1)),
+          op,
+          DAE.MATRIX(ty = tp2,integer=integer2,scalar = (e2 :: es2)))
+      equation
+        op2 = removeOperatorDimension(op);
+        e = simplifyMatrixBinary1(e1,op2,e2);
+        i1 = integer1-1;
+        i2 = integer2-1;       
+        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,es1), op, DAE.MATRIX(tp2,i2,es2));
+      then
+        DAE.MATRIX(tp1,integer1,(e :: es_1));
+  end matchcontinue;
+end simplifyMatrixBinary;
+
+protected function simplifyMatrixBinary1
+"function: simlify_binary_matrix
+  author: PA
+  Simplifies matrix addition and subtraction"
+  input list<tuple<Exp, Boolean>> inExp1;
+  input Operator inOperator2;
+  input list<tuple<Exp, Boolean>> inExp3;
+  output list<tuple<Exp, Boolean>> outExp;
+algorithm
+  outExp:=
+  matchcontinue (inExp1,inOperator2,inExp3)
+    local
+      Exp e1,e2,e;
+      Boolean b1,b2,b;
+      Operator op,op2;
+      list<tuple<Exp, Boolean>> es_1,es1,es2;
+    case ({(e1,b1)},op,{(e2,b2)})
+      equation
+        op2 = removeOperatorDimension(op);
+        b = b1 or b2;
+        e = simplify1(DAE.BINARY(e1,op2,e2));
+      then {(e,b)};  // resulting operator 
+    case ((e1,b1)::es1,op,(e2,b2)::es2)
+      equation
+        op2 = removeOperatorDimension(op);
+        b = b1 or b2;
+        e = simplify1(DAE.BINARY(e1,op2,e2));
+        es_1 = simplifyMatrixBinary1(es1, op, es2);
+      then
+        (e,b) :: es_1;
+  end matchcontinue;
+end simplifyMatrixBinary1;
 
 protected function simplifyMatrixProduct
 "function: simplifyMatrixProduct
