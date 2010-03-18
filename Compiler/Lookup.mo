@@ -1225,7 +1225,7 @@ algorithm
     // look in the next frame, only if current frame is a for loop scope.
     case (cache,(f :: fs),ref)
       equation
-        true = frameIsForLoopScope(f);
+        true = frameIsImplAddedScope(f);
         (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, fs, ref);
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
@@ -1242,9 +1242,10 @@ algorithm
 end lookupVarInternal;
 
 
-protected function frameIsForLoopScope "returns true if the frame is a for-loop scope.
+protected function frameIsImplAddedScope "returns true if the frame is a for-loop scope or
+a valueblock scope.
 This is indicated by the name of the frame which should be 
-Env.forScopeName
+Env.forScopeName or Env.valueBlockScopeName
 
 "
   input Env.Frame f;
@@ -1253,11 +1254,11 @@ algorithm
   b := matchcontinue(f)
   local String name;
     case(Env.FRAME(optName=SOME(name))) equation
-      true = name ==& Env.forScopeName;
+      true = name ==& Env.forScopeName or name ==& Env.valueBlockScopeName;
     then true;
     case(_) then false;
   end matchcontinue;
-end frameIsForLoopScope;
+end frameIsImplAddedScope;
 
 public function lookupVarInPackages "function: lookupVarInPackages
 
