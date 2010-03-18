@@ -1139,9 +1139,9 @@ algorithm
     // try the old lookupVarInternal
     case (cache,env,cref) 
       equation 
-        (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInternal(cache, env, cref);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, env, cref);
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,{});
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
 
     // then look in classes (implicitly instantiated packages)
     case (cache,env,cref)  
@@ -1196,8 +1196,9 @@ public function lookupVarInternal "function: lookupVarInternal
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
   output SplicedExpData splicedExpData;
+  output Env.Env outEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
 algorithm
-  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData) :=
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outEnv) :=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Attributes attr;
@@ -1206,29 +1207,57 @@ algorithm
       Option<String> sid;
       Env.AvlTree ht;
       list<Env.Item> imps;
-      list<Env.Frame> fs;
-      Env.Frame frame;
+      list<Env.Frame> fs;      
+      Env.Frame frame,f;
       DAE.ComponentRef ref;
       Env.Cache cache;
       Option<DAE.Exp> splicedExp;
       Option<DAE.Const> cnstForRange;
+      Env.Env env;
     
     // look into the current frame  
-    case (cache,((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref)
+    case (cache,env as ((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref)
       equation
           (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarF(cache, ht, ref);
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
 
-    // look in the next frame
-    case (cache,(_ :: fs),ref)
+    // look in the next frame, only if current frame is a for loop scope.
+    case (cache,(f :: fs),ref)
       equation
-        (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInternal(cache, fs, ref);
+        true = frameIsForLoopScope(f);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, fs, ref);
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
+    
+    // If not in top scope, look in top scope for builtin variables, e.g. time.
+    case (cache,fs as _::_::_,ref)
+      equation
+        true = Builtin.variableIsBuiltin(ref);
+        (f as Env.FRAME(clsAndVars = ht)) = Env.topFrame(fs);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarF(cache, ht, ref);
+      then
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,{f});
   end matchcontinue;
 end lookupVarInternal;
 
+
+protected function frameIsForLoopScope "returns true if the frame is a for-loop scope.
+This is indicated by the name of the frame which should be 
+Env.forScopeName
+
+"
+  input Env.Frame f;
+  output Boolean b;
+algorithm
+  b := matchcontinue(f)
+  local String name;
+    case(Env.FRAME(optName=SOME(name))) equation
+      true = name ==& Env.forScopeName;
+    then true;
+    case(_) then false;
+  end matchcontinue;
+end frameIsForLoopScope;
 
 public function lookupVarInPackages "function: lookupVarInPackages
 

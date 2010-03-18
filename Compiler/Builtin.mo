@@ -49,9 +49,9 @@ public import Absyn;
 public import SCode;
 public import Env;
 public import RTOpts;
+public import DAE;
 
 /* protected imports */
-protected import DAE;
 protected import ClassInf;
 protected import Values;
 
@@ -159,6 +159,7 @@ protected constant SCode.Class stringType=SCode.CLASS("String",false,false,SCode
 protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL(),
           SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
+/* The builtin variable time. See also variableIsBuiltin */
 protected constant DAE.Var timeVar=DAE.TYPES_VAR("time",
           DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()) "- The `time\' variable" ;
 
@@ -2776,6 +2777,19 @@ protected constant tuple<DAE.TType, Option<Type_a>> intintint2int =(
           ("z",DAE.T_INTEGER_DEFAULT)
           },DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
 
+public function variableIsBuiltin "Returns true if cref is a builtin variable.
+Currently only 'time' is a builtin variable.
+"
+input DAE.ComponentRef cref;
+output Boolean b;
+algorithm
+  b := matchcontinue(cref)
+    case(DAE.CREF_IDENT(ident="time")) then true;
+    case(_) then false;  
+  end matchcontinue;
+end variableIsBuiltin;
+
+
 public function isTanh
   input Absyn.Path inPath;
 algorithm
@@ -3008,7 +3022,7 @@ algorithm
       env = Env.extendFrameC(env, stringType);
       env = Env.extendFrameC(env, booleanType);
       env = Env.extendFrameC(env, stateSelectType);
-      env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {});
+      env = Env.extendFrameV(env, timeVar, NONE, Env.VAR_UNTYPED(), {}) "see also variableIsBuiltin";
 
       env = Env.extendFrameT(env, "initial", nil2real) "non-functions" ;
       env = Env.extendFrameT(env, "terminal", nil2real);

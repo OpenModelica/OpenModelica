@@ -9352,8 +9352,8 @@ algorithm
     case (cache,(f::fs) ,path) 
       equation 
         crPath = Exp.pathToCref(path);
-        (cache,_,_,_,_,_) = Lookup.lookupVarInternal(cache, {f}, crPath);
-        path3 = makeFullyQualified2({},Absyn.pathLastIdent(path));
+        (cache,_,_,_,_,_,env) = Lookup.lookupVarInternal(cache, {f}, crPath);
+        path3 = makeFullyQualified2(env,Absyn.pathLastIdent(path));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));
 
