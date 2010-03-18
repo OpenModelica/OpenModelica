@@ -195,8 +195,8 @@ extern "C"
 		  // extract last checkpoint
 		  pair<int,string> cp;
 		  cp = checkPoints[checkPoints.size()-1];
-		  if (cp.second != string(id)) {
-			  printf("ERROREXT: deleting checkpoint called with id:%s but top of checkpoint stack has id %s\n",
+		  if (0 != strcmp(cp.second.c_str(),id)) {
+			  printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
 					  cp.second.c_str(),
 					  id);
 			  exit(-1);
@@ -233,8 +233,8 @@ extern "C"
 		  }*/
 		  pair<int,string> cp;
 		  cp = checkPoints[checkPoints.size()-1];
-		  if (cp.second != string(id)) {
-			  printf("ERROREXT: deleting checkpoint called with id:%s but top of checkpoint stack has id %s\n",
+		  if (0 != strcmp(cp.second.c_str(),id)) {
+			  printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
 					  cp.second.c_str(),
 					  id);
 			  exit(-1);
