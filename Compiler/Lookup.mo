@@ -2793,6 +2793,16 @@ algorithm
     local
       DAE.Subscript sub1,sub2;
       list<DAE.Subscript> subs1,subs2;
+		// If a for-iterator is used as subscript we get a cref subscript in inSubs,
+		// but nothing in inSlice because it only contains integers (see
+		// addArrayDimensions above). This case makes sure that for-iterators are
+		// not lost here.
+		case (((sub1 as DAE.INDEX(exp = DAE.CREF(componentRef = _))) :: subs1),
+			subs2)
+      equation
+        subs2 = expandWholeDimSubScript(subs1, subs2);
+      then
+        (sub1 :: subs2);
     case(_,{}) then {};
     case({},subs2) then subs2;
     case(((sub1 as DAE.WHOLEDIM())::subs1), (sub2::subs2))
