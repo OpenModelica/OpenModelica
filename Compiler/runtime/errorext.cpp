@@ -33,6 +33,7 @@
 #include <queue>
 #include <stack>
 #include <list>
+#include <string.h>
 #include <stdlib.h>
 #include <utility>
 
