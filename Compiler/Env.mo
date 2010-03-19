@@ -662,25 +662,13 @@ algorithm
 	new_env := matchcontinue(env, name, type_, binding, variability, constOfForIteratorRange)
 		local
 			Env new_env_1;
-		case (_, _, _, _, SCode.VAR(),constOfForIteratorRange)
+		case (_, _, _, _,variability,constOfForIteratorRange)
 			equation
 				new_env_1 = extendFrameV(env,
 					DAE.TYPES_VAR(
 						name,
-						DAE.ATTR(false, false, SCode.RW(), SCode.VAR(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+						DAE.ATTR(false, false, SCode.RW(), variability, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
 						false,
-						type_,
-						binding,
-						constOfForIteratorRange),
-					NONE, VAR_UNTYPED(), {});
-			then new_env_1;
-		case (_, _, _, _, SCode.CONST(),constOfForIteratorRange)
-			equation
-				new_env_1 = extendFrameV(env,
-					DAE.TYPES_VAR(
-						name,
-						DAE.ATTR(false, false, SCode.RO(), SCode.CONST(), Absyn.BIDIR(), Absyn.UNSPECIFIED()),
-						true,
 						type_,
 						binding,
 						constOfForIteratorRange),

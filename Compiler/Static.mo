@@ -1472,6 +1472,8 @@ algorithm
 			list<Values.Value> iter_values;
 			list<list<Values.Value>> iter_values_list;
 			DAE.DAElist dae,dae1,dae2;
+			SCode.Variability variability;
+			
 		case (_, _, {}, _, _, _)
 			equation
 				new_env = Env.openScope(env, false, SOME(Env.forScopeName));
@@ -1491,13 +1493,25 @@ algorithm
 				true = Types.isParameterOrConstant(iter_const);
 				// Add the iterator to the environment so that the array constructor
 				// expression can be elaborated later.
-				new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), SCode.VAR(), SOME(iter_const));
+				variability = constToVariability(iter_const) "need to be added to env with right variablity, so iterated expr in elabCallReduction gets correct variability too";
+				new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), variability, SOME(iter_const));
 				iters_const = Types.constAnd(iters_const, iter_const);
 				dae = DAEUtil.joinDaes(dae1,dae2);
 			then (new_cache, new_env, iters_const, iter_values :: iter_values_list, iter_name :: iter_names, (DAE.T_ARRAY(array_dim, array_type), NONE),dae);
 	end matchcontinue;
 end elabArrayIterators;
 
+protected function constToVariability "translates an DAE.Const to a SCode.Variability"
+  input DAE.Const const;
+  output SCode.Variability variability;
+algorithm
+  variability := matchcontinue(const)
+    case(DAE.C_VAR())  then SCode.VAR();
+    case(DAE.C_PARAM()) then SCode.PARAM();
+    case(DAE.C_CONST()) then SCode.CONST();
+  end matchcontinue;
+end constToVariability;
+  
 protected function expandArray
 	"Symbolically expands an array with the help of elabCallReduction2."
 	input DAE.Exp expr;
