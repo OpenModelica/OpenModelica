@@ -1808,6 +1808,20 @@ case STMT_BREAK then
   <<
   break;
   >>
+case STMT_TRY then
+  # body = (tryBody: algStatement(it, context, varDecls) "\n")
+  <<
+  try {
+    <body>
+  }
+  >>
+case STMT_CATCH then
+  # body = (catchBody: algStatement(it, context, varDecls) "\n")
+  <<
+  catch (int i) {
+    <body>
+  }
+  >>
 case STMT_THROW then
   <<
   throw 1;

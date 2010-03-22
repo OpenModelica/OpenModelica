@@ -719,6 +719,12 @@ package DAE
     end STMT_MATCHCASES;
     record STMT_BREAK
     end STMT_BREAK;
+    record STMT_TRY
+      list<Statement> tryBody;
+    end STMT_TRY;
+    record STMT_CATCH
+      list<Statement> catchBody;
+    end STMT_CATCH;
     record STMT_THROW
     end STMT_THROW;
     record STMT_NORETCALL
