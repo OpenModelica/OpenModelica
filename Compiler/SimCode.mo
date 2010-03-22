@@ -420,6 +420,14 @@ algorithm
   end matchcontinue;
 end buildCrefExpFromAsub;
 
+public function incrementInt
+  input Integer inInt;
+  input Integer increment;
+  output Integer outInt;
+algorithm
+  outInt := inInt + increment;
+end incrementInt;
+
 public function translateModel
 "One of the entry points."
   input Env.Cache inCache;
@@ -1353,7 +1361,7 @@ algorithm
         list<Exp.Exp> expl;
       equation
         expl = Algorithm.getAllExps(algorithm_);
-        expl = getMatchingExpsList(expl, matchCalls);
+        expl = getMatchingExpsList(expl, matchMetarecordCalls);
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
         //TODO: ? what about rest ? , can be there something else after the ALGORITHM
         (accRecDecls,rt_2) = elaborateRecordDeclarations(rest, accRecDecls, rt_2);
@@ -1366,7 +1374,6 @@ algorithm
         (accRecDecls,rt_1);
   end matchcontinue;
 end elaborateRecordDeclarations;
-
 
 protected function elaborateRecordDeclarationsForRecord
 "function generateRecordDeclarations
@@ -5882,6 +5889,21 @@ algorithm
         e::exps;
   end matchcontinue;
 end matchCalls;
+
+protected function matchMetarecordCalls
+"Used together with getMatchingExps"
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local list<DAE.Exp> args, exps; DAE.Exp e;
+    case (e as DAE.METARECORDCALL(args = args))
+      equation
+        exps = getMatchingExpsList(args,matchMetarecordCalls);
+      then
+        e::exps;
+  end matchcontinue;
+end matchMetarecordCalls;
 
 protected function generateExtFunctionIncludes
 "function: generateExtFunctionIncludes

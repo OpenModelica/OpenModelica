@@ -27,6 +27,12 @@ package SimCode
     output DAE.Exp cRefOut;
   end buildCrefExpFromAsub;
   
+  function incrementInt
+    input Integer inInt;
+    input Integer increment;
+    output Integer outInt;
+  end incrementInt;
+
   uniontype Context
     record SIMULATION
       Boolean genDiscrete;
@@ -533,6 +539,12 @@ package DAE
     record META_OPTION
       Option<Exp> exp;
     end META_OPTION;
+    record METARECORDCALL
+      Absyn.Path path;
+      list<Exp> args;
+      list<String> fieldNames;
+      Integer index;
+    end METARECORDCALL;
   end Exp;
   
   uniontype ComponentRef

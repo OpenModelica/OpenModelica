@@ -1341,6 +1341,12 @@ case RECORD_DECL_FULL then
                     underscorePath(defPath),
                     (variables of VARIABLE: '"<cref(name)>"' ",") )>
   >> 
+case RECORD_DECL_DEF then
+  <<
+  <recordDefinition(dotPath(path),
+                    underscorePath(path),
+                    (fieldNames of name: '"<name>"' ",") )>
+  >>
 
 recordDefinition(String origName, String encName, String fieldNames) ::=
 <<
@@ -1935,8 +1941,10 @@ daeExp(Exp exp, Context context, Text preExp, Text varDecls) ::=
   case REDUCTION  then daeExpReduction(it, context, preExp, varDecls)
   case VALUEBLOCK then daeExpValueblock(it, context, preExp, varDecls)
   case LIST       then daeExpList(it, context, preExp, varDecls)
+  case CONS       then daeExpCons(it, context, preExp, varDecls)
   case META_TUPLE then daeExpMetaTuple(it, context, preExp, varDecls)
   case META_OPTION then daeExpMetaOption(it, context, preExp, varDecls)
+  case METARECORDCALL then daeExpMetarecordcall(it, context, preExp, varDecls)
   case _          then "UNKNOWN_EXP"
 
 daeExpSconst(String string, Text preExp, Text varDecls) ::=
@@ -2467,11 +2475,17 @@ case e :: rest then
   mmc_mk_cons(<expPart>, <restList>)
   >>
 
+daeExpCons(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case CONS then
+  # tmp = tempDecl("modelica_metatype", varDecls)
+  # carExp = daeExpMetaHelperConstant(car, context, preExp, varDecls)
+  # cdrExp = daeExp(cdr, context, preExp, varDecls)
+  # preExp += '<tmp> = mmc_mk_cons(<carExp>, <cdrExp>);<\n>'
+  tmp
+
 daeExpMetaTuple(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case META_TUPLE then
-  # len = listLength(listExp)
-  //# start = if len>9 then '<len>(' else '(<len>, '
-  # start = '(<len>, '
+  # start = daeExpMetaHelperBoxStart(listLength(listExp))
   # args = (listExp of e: daeExpMetaHelperConstant(e, context, preExp, varDecls) ", ")
   # tmp = tempDecl("modelica_metatype", varDecls)
   # preExp += '<tmp> = mmc_mk_box<start>0, <args>);<\n>'
@@ -2483,6 +2497,15 @@ case META_OPTION(exp=SOME(e)) then
   # expPart = daeExpMetaHelperConstant(e, context, preExp, varDecls)
   'mmc_mk_some(<expPart>)'
 
+daeExpMetarecordcall(Exp exp, Context context, Text preExp, Text varDecls) ::=
+case METARECORDCALL then
+  # newIndex = incrementInt(index, 3)
+  # argsStr = (args of exp: daeExp(exp, context, preExp, varDecls) ", ")
+  # box = 'mmc_mk_box<daeExpMetaHelperBoxStart(incrementInt(listLength(args), 1))><newIndex>, &<underscorePath(path)>__desc, <argsStr>)'
+  # tmp = tempDecl("modelica_metatype", varDecls)
+  # preExp += '<tmp> = <box>;<\n>'
+  tmp
+
 daeExpMetaHelperConstant(Exp e, Context context, Text preExp,
                          Text varDecls) ::=
 # expPart = daeExp(e, context, preExp, varDecls)
@@ -2491,12 +2514,21 @@ match Exp.typeof(e)
   case ET_BOOL    then 'mmc_mk_icon(<expPart>)'
   case ET_REAL    then 'mmc_mk_rcon(<expPart>)'
   case ET_STRING  then 'mmc_mk_scon(<expPart>)'
-  case ET_COMPLEX then
-    # varNames = (varLst of COMPLEX_VAR: '<expPart>.<name>' ", ")
-    <<
-    mmc_mk_box...(<varNames>)
-    >>
+  case ET_COMPLEX then "ET_COMPLEX NOT IMPLEMENTED"
   case _          then expPart
+
+daeExpMetaHelperBoxStart(Integer numVariables) ::=
+case 0
+case 1
+case 2
+case 3
+case 4
+case 5
+case 6
+case 7
+case 8
+case 9 then '<numVariables>('
+case _ then '(<numVariables>, '
 
 // SECTION: GENERAL TEMPLATES, TEMPORARY VARIABLES
 
