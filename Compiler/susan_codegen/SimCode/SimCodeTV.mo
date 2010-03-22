@@ -721,6 +721,9 @@ package DAE
     end STMT_BREAK;
     record STMT_THROW
     end STMT_THROW;
+    record STMT_NORETCALL
+      Exp exp;
+    end STMT_NORETCALL;
   end Statement;
 
   uniontype Else

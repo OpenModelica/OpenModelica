@@ -1473,7 +1473,7 @@ case FUNCTION then
     <retType> out;
     <functionArguments of VARIABLE: readInVar(it) "\n">
     out = _<fname>(<functionArguments of VARIABLE: cref(name) ", ">);
-    <outVars of VARIABLE: writeOutVar(it, i1) "\n">
+    <if outVars then (outVars of VARIABLE: writeOutVar(it, i1) "\n") else "write_noretcall(outVar);">
     return 0;
   }
   >>
@@ -1815,6 +1815,12 @@ case STMT_THROW then
 case STMT_RETURN then
   <<
   goto _return;
+  >>
+case STMT_NORETCALL then
+  # preExp = "" 
+  # expPart = daeExp(exp, context, preExp, varDecls)
+  <<
+  <preExp>
   >>
 case _ then "/* not implemented alg statement*/"
 
@@ -2500,8 +2506,10 @@ case META_OPTION(exp=SOME(e)) then
 daeExpMetarecordcall(Exp exp, Context context, Text preExp, Text varDecls) ::=
 case METARECORDCALL then
   # newIndex = incrementInt(index, 3)
-  # argsStr = (args of exp: daeExp(exp, context, preExp, varDecls) ", ")
-  # box = 'mmc_mk_box<daeExpMetaHelperBoxStart(incrementInt(listLength(args), 1))><newIndex>, &<underscorePath(path)>__desc, <argsStr>)'
+  # argsStr = if args then
+      ', <args of exp: daeExpMetaHelperConstant(exp, context, preExp, varDecls) ", ">'
+      else ""
+  # box = 'mmc_mk_box<daeExpMetaHelperBoxStart(incrementInt(listLength(args), 1))><newIndex>, &<underscorePath(path)>__desc<argsStr>)'
   # tmp = tempDecl("modelica_metatype", varDecls)
   # preExp += '<tmp> = <box>;<\n>'
   tmp
