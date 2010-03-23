@@ -47,6 +47,20 @@ public import Values;
 
 public constant DAE.DAElist emptyDae = DAE.DAE({},DAE.AVLTREENODE(NONE,0,NONE,NONE));
 
+public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
+Used for debugging.
+"
+  input DAE.Const const;
+  output String str;
+algorithm
+  str := matchcontinue(const)
+    case(DAE.C_VAR()) then "VAR";
+    case(DAE.C_PARAM()) then "PARAM";
+    case(DAE.C_CONST()) then "CONST";
+      
+  end matchcontinue;
+end constStr;
+
 public function expTypeSimple "returns true if type is simple type"
   input DAE.ExpType tp;
   output Boolean isSimple;
@@ -604,7 +618,7 @@ algorithm
     case DAE.DAE(daelist,funcs)
       equation
         //print("dumping DAE, avltree list length:"+&intString(listLength(avlTreeToList(funcs)))+&"\n");
-        Util.listMap0(Util.listMap(avlTreeToList(funcs),Util.tuple22),dumpFunction);
+        Util.listMap0(sortFunctions(Util.listMap(avlTreeToList(funcs),Util.tuple22)),dumpFunction);
         Util.listMap0(daelist, dumpExtObjectClass);
         Util.listMap0(daelist, dumpCompElement);
       then
@@ -612,6 +626,28 @@ algorithm
   end matchcontinue;
 end dump;
 
+protected function sortFunctions "sorts the functions in alphabetical order"
+  input list<DAE.Element> funcs;
+  output list<DAE.Element> sortedFuncs; 
+algorithm
+  sortedFuncs := Util.sort(funcs,funcGreaterThan);
+end sortFunctions;
+
+protected function funcGreaterThan "sorting function for two DAE.Element that are functions"
+  input DAE.Element func1;
+  input DAE.Element func2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(func1,func2)
+  local Absyn.Path p1,p2;
+    case(DAE.FUNCTION(path=p1),DAE.FUNCTION(path=p2)) equation
+      res = System.strcmp(Absyn.pathString(p1),Absyn.pathString(p2)) > 0;
+    then res;
+    case(_,_) then true;
+  end matchcontinue;
+end funcGreaterThan;  
+ 
+ 
 public function dumpOperatorString "
 Author bz  printOperator
 Dump operator to a string.
@@ -980,7 +1016,7 @@ algorithm
       equation
         //flist = Util.listMap(daelist, dumpFunctionStr);
         //print("dumpStr, funcs list length="+&intString(listLength(avlTreeToList(funcs)))+&"\n");
-        flist = Util.listMap(Util.listMap(avlTreeToList(funcs),Util.tuple22),dumpFunctionStr);
+        flist = Util.listMap(sortFunctions(Util.listMap(avlTreeToList(funcs),Util.tuple22)),dumpFunctionStr);
         extlist = Util.listMap(daelist, dumpExtObjClassStr);
         clist = Util.listMap(daelist, dumpCompElementStr);
         slist = Util.listFlatten({flist,extlist, clist});

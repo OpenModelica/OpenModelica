@@ -195,6 +195,7 @@ algorithm
 end emptyCache;
 
 public constant String forScopeName="$for loop scope$" "a unique scope used in for equations";
+public constant String forIterScopeName="$foriter loop scope$" "a unique scope used in for iterators";
 public constant String valueBlockScopeName="$valueblock scope$" "a unique scope used by valueblocks";
 
 // functions for dealing with the environment
@@ -287,6 +288,33 @@ algorithm
     then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: res);
   end matchcontinue;
 end nameScope;
+
+public function inForLoopScope "returns true if environment has a frame that is a for loop"
+  input Env env;
+  output Boolean res;
+algorithm
+  res := matchcontinue(env)
+  local String name;
+    case(FRAME(optName = SOME(name))::_) equation
+      equality(name=forScopeName);
+    then true;
+    case(_) then false;
+  end matchcontinue;
+end inForLoopScope;
+
+public function inForIterLoopScope "returns true if environment has a frame that is a for iterator 'loop'"
+  input Env env;
+  output Boolean res;
+algorithm
+  res := matchcontinue(env)
+  local String name;
+    case(FRAME(optName = SOME(name))::_) equation
+      equality(name=forIterScopeName);
+    then true;
+    case(_) then false;
+  end matchcontinue;
+end inForIterLoopScope;
+
 
 public function stripForLoopScope "strips for loop scopes"
   input Env env;

@@ -1377,14 +1377,23 @@ algorithm
 			local
 				list<list<Values.Value>> vals;
 				list<Ident> iter_names;
-				DAE.Type array_type;
+				DAE.Type array_type; 
+				Env.Env env2;
+				list<DAE.Const> iterconsts;
 			equation
-				(cache, env, iterconst, vals, iter_names, array_type,dae1) = elabArrayIterators(cache, env, iterators, impl, st, doVect);
-			  (cache, exp_1, DAE.PROP(expty, expconst), st,dae2) = elabExp(cache, env, exp, impl, st, doVect);
+				(cache, env, iterconsts,vals, iter_names, array_type,dae1) = elabArrayIterators(cache, env, iterators, impl, st, doVect);
+				iterconst = Util.listReduce(iterconsts,Types.constAnd);
+				
+				// update constness of iterators from VAR to their elabed constness
+				env2 = updateIteratorConst(env,iter_names,iterconsts);
+
+			  (cache, exp_1, DAE.PROP(expty, expconst), st,dae2) = elabExp(cache, env2, exp, impl, st, doVect);
+			  
 				b = not Types.isArray(expty);
 				ty = constructArrayType(array_type, expty);
 			  etp = Types.elabType(ty);
 				exp_1 = expandArray(exp_1, vals, iter_names, b, etp);
+
 				const = Types.constAnd(expconst, iterconst);
 				prop = DAE.PROP(ty, const);
 				dae = DAEUtil.joinDaes(dae1,dae2);
@@ -1406,7 +1415,7 @@ algorithm
 			equation
 				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_,dae1)
 				= elabExp(cache, env, iterexp, impl, st, doVect);
-				env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+				env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName));
 				// Elaborate the expression with a variable iterator first, so that any
 				// subscripts using the iterator aren't substituted.
 				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.VAR(), SOME(iterconst));
@@ -1428,6 +1437,27 @@ algorithm
 			then fail();
 	end matchcontinue;
 end elabCallReduction;
+
+protected function updateIteratorConst "updates the const of for iterators from VAR to its elaborated constness"
+  input Env.Env env;  
+  input list<Ident> iter_names;
+  input list<DAE.Const> iter_const;
+  output Env.Env outEnv;
+algorithm
+  outEnv := matchcontinue(env,iter_names,iter_const)
+  local Ident name; DAE.Const c;
+    DAE.Type ty; DAE.Binding bind;
+    Option<DAE.Const> forIterConst;
+        
+    case(env,{},{}) then env;
+    case(env,name::iter_names,c::iter_const) equation
+      (_,_,ty,bind,forIterConst,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}));
+      env = Env.extendFrameForIterator(env,name,ty,bind,constToVariability(c),forIterConst);
+      //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
+      env = updateIteratorConst(env,iter_names,iter_const);
+    then env;
+  end matchcontinue;
+end updateIteratorConst;
 
 protected function reductionDefaultValue
 	input String reductionOp;
@@ -1451,13 +1481,13 @@ protected function elabArrayIterators
 	input Boolean performVectorization;
 	output Env.Cache newCache;
 	output Env.Env newEnv;
-	output DAE.Const const;
+	output list<DAE.Const> consts;
 	output list<list<Values.Value>> iteratorValues;
 	output list<Ident> iteratorNames;
 	output DAE.Type arrayType;
 	output DAE.DAElist outDae "contain functions";
 algorithm
-	(newCache, newEnv, const, iteratorValues, iteratorNames, arrayDim,outDae) :=
+	(newCache, newEnv, consts, iteratorValues, iteratorNames, arrayDim,outDae) :=
 	matchcontinue(cache, env, iterators, implicitInstantiation, st, performVectorization)
 		local
 			Ident iter_name;
@@ -1466,7 +1496,8 @@ algorithm
 			Absyn.ForIterators rest_iters;
 			Env.Cache new_cache;
 			Env.Env new_env;
-			DAE.Const iter_const, iters_const;
+			list<DAE.Const> iters_const;
+			DAE.Const iter_const;
 			DAE.ArrayDim array_dim;
 			DAE.Type array_type, iter_type;
 			list<Values.Value> iter_values;
@@ -1476,10 +1507,10 @@ algorithm
 			
 		case (_, _, {}, _, _, _)
 			equation
-				new_env = Env.openScope(env, false, SOME(Env.forScopeName));
+				new_env = Env.openScope(env, false, SOME(Env.forIterScopeName));
 				// Return the type T_NOTYPE as a placeholder. constructArrayType is
 				// later used by cevalCallReduction to replace it with the correct type.
-			then (cache, new_env, DAE.C_CONST(), {}, {}, (DAE.T_NOTYPE(), NONE),DAEUtil.emptyDae);
+			then (cache, new_env, {}, {}, {}, (DAE.T_NOTYPE(), NONE),DAEUtil.emptyDae);
 		case (_, _, (iter_name, SOME(iter_exp)) :: rest_iters, _, _, _)
 			equation
 				(new_cache, new_env, iters_const, iter_values_list, iter_names, array_type,dae1)
@@ -1493,11 +1524,9 @@ algorithm
 				true = Types.isParameterOrConstant(iter_const);
 				// Add the iterator to the environment so that the array constructor
 				// expression can be elaborated later.
-				variability = constToVariability(iter_const) "need to be added to env with right variablity, so iterated expr in elabCallReduction gets correct variability too";
-				new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), variability, SOME(iter_const));
-				iters_const = Types.constAnd(iters_const, iter_const);
+				new_env = Env.extendFrameForIterator(new_env, iter_name, iter_type, DAE.UNBOUND(), SCode.VAR(), SOME(iter_const));
 				dae = DAEUtil.joinDaes(dae1,dae2);
-			then (new_cache, new_env, iters_const, iter_values :: iter_values_list, iter_name :: iter_names, (DAE.T_ARRAY(array_dim, array_type), NONE),dae);
+			then (new_cache, new_env, iter_const::iters_const, iter_values :: iter_values_list, iter_name :: iter_names, (DAE.T_ARRAY(array_dim, array_type), NONE),dae);
 	end matchcontinue;
 end elabArrayIterators;
 
@@ -9822,6 +9851,7 @@ algorithm
       String typeStr;
       DAE.ComponentRef expCref;
       DAE.ExpType expType;
+      Option<DAE.Const> forIteratorConstOpt;
 
     // wildcard
     case (cache,env,c as Absyn.WILD(),impl,doVect) /* impl */
@@ -9835,8 +9865,8 @@ algorithm
     case (cache,env,c,impl,doVect) /* impl */
       equation
         (cache,c_1,_,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
-        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,_,splicedExpData,_) = Lookup.lookupVar(cache, env, c_1);
-        (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, io, t, binding, doVect,splicedExpData);
+        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_) = Lookup.lookupVar(cache, env, c_1);
+        (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt,io, t, binding, doVect,splicedExpData);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect);        
       then
         (cache,exp,DAE.PROP(t,const),acc_1,dae);
@@ -10142,6 +10172,7 @@ protected function elabCref2
   input DAE.ComponentRef inComponentRef;
   input SCode.Accessibility inAccessibility;
   input SCode.Variability inVariability;
+  input Option<DAE.Const> forIteratorConstOpt;
   input Absyn.InnerOuter io;
   input DAE.Type inType;
   input DAE.Binding inBinding;
@@ -10153,7 +10184,7 @@ protected function elabCref2
   output SCode.Accessibility outAccessibility;
 algorithm
   (outCache,outExp,outConst,outAccessibility) :=
-  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,io,inType,inBinding,performVectorization,splicedExpData)
+  matchcontinue (inCache,inEnv,inComponentRef,inAccessibility,inVariability,forIteratorConstOpt,io,inType,inBinding,performVectorization,splicedExpData)
     local
       DAE.ExpType t_1, expTy;
       DAE.ComponentRef cr,cr_1,cref;
@@ -10175,14 +10206,14 @@ algorithm
 
     // If type not yet determined, component must be referencing itself.
     // The constantness is undecidable since binding is not available. return C_VAR
-    case (cache,_,cr,acc,_,io,(t as (DAE.T_NOTYPE(),_)),_,doVect,_)
+    case (cache,_,cr,acc,_,_,io,(t as (DAE.T_NOTYPE(),_)),_,doVect,_)
       equation
         expTy = Types.elabType(t);
       then
         (cache,DAE.CREF(cr,expTy),DAE.C_VAR(),acc);
 
     // a variable
-    case (cache,_,cr,acc,SCode.VAR(),io,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
+    case (cache,_,cr,acc,SCode.VAR(),_,io,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
       local DAE.ExpType expIdTy; 
       equation
         expTy = Types.elabType(tt);
@@ -10194,7 +10225,7 @@ algorithm
         (cache,e,DAE.C_VAR(),acc);
 
     // a discrete variable
-    case (cache,_,cr,acc,SCode.DISCRETE(),io,tt,_,doVect,Lookup.SPLICEDEXPDATA(_,idTp))
+    case (cache,_,cr,acc,SCode.DISCRETE(),_,io,tt,_,doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
@@ -10204,7 +10235,7 @@ algorithm
         (cache,e,DAE.C_VAR(),acc);
 
     // a constant -> evaluate binding
-    case (cache,env,cr,acc,SCode.CONST(),io,tt,binding,doVect,_)
+    case (cache,env,cr,acc,SCode.CONST(),_,io,tt,binding,doVect,_)
       equation
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
         e = valueExp(v);
@@ -10214,7 +10245,7 @@ algorithm
         (cache,e_1,DAE.C_CONST(),SCode.RO());
 
     // evaluate parameters only if "evalparam" is set; TODO! also ceval if annotation Evaluate=true.
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
+    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation
         true = RTOpts.debugFlag("evalparam");
         expTy = Types.elabType(tt);
@@ -10229,7 +10260,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
 
     // a binding equation and evalparam
-    case (cache,env,cr,acc,var,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp)) 
+    case (cache,env,cr,acc,var,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp)) 
       equation 
         true = SCode.isParameterOrConst(var);
         true = RTOpts.debugFlag("evalparam");
@@ -10247,7 +10278,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),SCode.RO());
 
     // vectorization of parameters with valuebound
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
+    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
@@ -10257,7 +10288,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),acc);
 
     // a constant with a binding
-    case (cache,env,cr,acc,SCode.CONST(),io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
+    case (cache,env,cr,acc,SCode.CONST(),_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(_,idTp))
       equation 
         expTy = Types.elabType(tt) "Constants with equal bindings should be constant, i.e. true
                                     but const is passed on, allowing constants to have wrong bindings
@@ -10269,7 +10300,7 @@ algorithm
         (cache,e_1,const,acc);
 
     // vectorization of parameters with binding equations
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
+    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.EQBOUND(exp = exp ,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
       equation
         expTy = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.elabType(idTp);
@@ -10279,7 +10310,7 @@ algorithm
         (cache,e_1,DAE.C_PARAM(),acc);
 
     // variables with constant binding
-    case (cache,env,cr,acc,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
+    case (cache,env,cr,acc,_,_,io,tt,DAE.EQBOUND(exp = exp,constant_ = const),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
       equation
         expTy = Types.elabType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.elabType(idTp);
@@ -10289,22 +10320,22 @@ algorithm
         (cache,e_1,DAE.C_VAR(),acc);
 
     // enum constants does not have a value expression
-    case (cache,env,cr,acc,_,io,(tt as (DAE.T_ENUMERATION(SOME(_),_,_,_),_)),_,doVect,_)
+    case (cache,env,cr,acc,_,_,io,(tt as (DAE.T_ENUMERATION(SOME(_),_,_,_),_)),_,doVect,_)
       equation
         expTy = Types.elabType(tt);
       then
         (cache,DAE.CREF(cr,expTy),DAE.C_CONST(),acc);
 
     // if value not constant, but references another parameter, which has a value perform value propagation.
-    case (cache,env,cr,acc,variability,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData)
+    case (cache,env,cr,acc,variability,forIteratorConstOpt,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData)
       equation
         (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t,binding_1,_,_,_) = Lookup.lookupVar(cache, env, cref);
-        (cache,e,const,acc) = elabCref2(cache, env, cref, acc_1, variability_1, io, t, binding_1,doVect,splicedExpData);
+        (cache,e,const,acc) = elabCref2(cache, env, cref, acc_1, variability_1,forIteratorConstOpt, io, t, binding_1,doVect,splicedExpData);
       then
         (cache,e,const,acc);
 
     // report error
-    case (cache,_,cr,_,_,_,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),doVect,_)
+    case (cache,_,cr,_,_,_,_,_,DAE.EQBOUND(exp = exp,constant_ = DAE.C_VAR()),doVect,_)
       equation
         s = Exp.printComponentRefStr(cr);
         str = Exp.printExpStr(exp);
@@ -10312,8 +10343,8 @@ algorithm
       then
         fail();
 
-    // constants without value produce error.
-    case (cache,env,cr,acc,SCode.CONST(),io,tt,DAE.UNBOUND(),doVect,_)
+    // constants without value produce error. (as long as not for iterator)
+    case (cache,env,cr,acc,SCode.CONST(),NONE/*not foriter*/,io,tt,DAE.UNBOUND(),doVect,_)
       equation
         s = Exp.printComponentRefStr(cr);
         scope = Env.printEnvPathStr(env);
@@ -10324,8 +10355,8 @@ algorithm
       then
         (cache,DAE.CREF(cr_1,expTy),DAE.C_CONST(),acc);
 
-    // parameters without value but with fixed=false is ok, these are given value during initialization.
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,_)
+    // parameters without value but with fixed=false is ok, these are given value during initialization. (as long as not for iterator)
+    case (cache,env,cr,acc,SCode.PARAM(),NONE/* not foriter*/,io,tt,DAE.UNBOUND(),doVect,_)
       equation
         false = Types.getFixedVarAttribute(tt);
         expTy = Types.elabType(tt);
@@ -10334,7 +10365,7 @@ algorithm
         (cache,DAE.CREF(cr_1,expTy),DAE.C_PARAM(),acc);
 
     // outer parameters without value is ok.
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,_)
+    case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.UNBOUND(),doVect,_)
       equation
         (_,true) = InnerOuter.innerOuterBooleans(io);
         expTy = Types.elabType(tt);
@@ -10342,20 +10373,24 @@ algorithm
       then
         (cache,DAE.CREF(cr_1,expTy),DAE.C_PARAM(),acc);
 
-    // parameters without value with fixed=true or no fixed attribute set produce warning                  
-    case (cache,env,cr,acc,SCode.PARAM(),io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp)) 
+    // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)                 
+    case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp))
+      local Boolean genWarning;
+       
       equation
         s = Exp.printComponentRefStr(cr);
-        Error.addMessage(Error.UNBOUND_PARAMETER_WARNING, {s});
+        genWarning = not Util.isSome(forIteratorConstOpt);
+        // Don't generate warning if variable is for iterator, since it doesn't have a value (it's iterated over separately)
+        Debug.bcall2(genWarning,Error.addMessage,Error.UNBOUND_PARAMETER_WARNING,{s});
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE,expIdTy);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
-
+      
     // failure!
-    case (cache,env,cr,acc,var,io,tp,bind,doVect,_)
+    case (cache,env,cr,acc,var,_,io,tp,bind,doVect,_)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabCref2 failed for: " +& Exp.printComponentRefStr(cr) +& "\n env:" +& Env.printEnvStr(env));
@@ -11236,6 +11271,19 @@ algorithm
 
     // empty list
     case (cache,_,{},_,_) then (cache,{},DAE.C_CONST(),DAEUtil.emptyDae);
+
+    // if in for iterator loop scope the subscript should never be evaluated to a value 
+    //(since the parameter/const value of iterator variables are not available until expansion, which happens later on)
+    // Note that for loops are expanded 'on the fly' and should therefore not be treated in this way.
+    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl) /* If param, call ceval. */
+      equation
+        true = Env.inForIterLoopScope(env);
+        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl);
+        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl);
+        const = Types.constAnd(const1, const2);        
+        dae = DAEUtil.joinDaes(dae1,dae2);
+      then
+        (cache,sub_1::subs_1,const,dae);
 
     // if the subscript contains a param or const the it should be evaluated to the value
     case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl) /* If param, call ceval. */

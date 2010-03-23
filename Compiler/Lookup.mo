@@ -1254,7 +1254,7 @@ algorithm
   b := matchcontinue(f)
   local String name;
     case(Env.FRAME(optName=SOME(name))) equation
-      true = name ==& Env.forScopeName or name ==& Env.valueBlockScopeName;
+      true = name ==& Env.forScopeName or name ==& Env.valueBlockScopeName or name ==& Env.forIterScopeName;
     then true;
     case(_) then false;
   end matchcontinue;
