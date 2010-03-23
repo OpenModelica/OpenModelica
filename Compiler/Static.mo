@@ -1380,15 +1380,15 @@ algorithm
 				DAE.Type array_type; 
 				Env.Env env2;
 				list<DAE.Const> iterconsts;
-			equation
+			equation			  
 				(cache, env, iterconsts,vals, iter_names, array_type,dae1) = elabArrayIterators(cache, env, iterators, impl, st, doVect);
 				iterconst = Util.listReduce(iterconsts,Types.constAnd);
 				
-				// update constness of iterators from VAR to their elabed constness
+				// update constness of iterators from VAR to their elabed constness (currently at most PARAM due to cevalIfConst)
 				env2 = updateIteratorConst(env,iter_names,iterconsts);
 
 			  (cache, exp_1, DAE.PROP(expty, expconst), st,dae2) = elabExp(cache, env2, exp, impl, st, doVect);
-			  
+
 				b = not Types.isArray(expty);
 				ty = constructArrayType(array_type, expty);
 			  etp = Types.elabType(ty);
@@ -1438,7 +1438,10 @@ algorithm
 	end matchcontinue;
 end elabCallReduction;
 
-protected function updateIteratorConst "updates the const of for iterators from VAR to its elaborated constness"
+protected function updateIteratorConst "updates the const of for iterators from VAR to its elaborated constness, currently at most PARAM, since 
+cevalIfConstant will mess up things for constant expressions.
+TODO: When cevalIfConstant is removed in future this can also be fixed.
+"
   input Env.Env env;  
   input list<Ident> iter_names;
   input list<DAE.Const> iter_const;
@@ -1452,7 +1455,7 @@ algorithm
     case(env,{},{}) then env;
     case(env,name::iter_names,c::iter_const) equation
       (_,_,ty,bind,forIterConst,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}));
-      env = Env.extendFrameForIterator(env,name,ty,bind,constToVariability(c),forIterConst);
+      env = Env.extendFrameForIterator(env,name,ty,bind,constToVariabilityAtMostParam(c),forIterConst);
       //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
       env = updateIteratorConst(env,iter_names,iter_const);
     then env;
@@ -1530,16 +1533,17 @@ algorithm
 	end matchcontinue;
 end elabArrayIterators;
 
-protected function constToVariability "translates an DAE.Const to a SCode.Variability"
+protected function constToVariabilityAtMostParam "translates an DAE.Const to a SCode.Variability, but makes C_CONST into PARAM, since cevalIfConstant 
+will otherwise mess things up"
   input DAE.Const const;
   output SCode.Variability variability;
 algorithm
   variability := matchcontinue(const)
     case(DAE.C_VAR())  then SCode.VAR();
     case(DAE.C_PARAM()) then SCode.PARAM();
-    case(DAE.C_CONST()) then SCode.CONST();
+    case(DAE.C_CONST()) then SCode.PARAM();
   end matchcontinue;
-end constToVariability;
+end constToVariabilityAtMostParam;
   
 protected function expandArray
 	"Symbolically expands an array with the help of elabCallReduction2."

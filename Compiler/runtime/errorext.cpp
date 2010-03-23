@@ -96,7 +96,7 @@ bool error_on=true;
     	ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
     	if (errorMessageQueue.empty() ||
 	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-           /*std::cerr << "inserting error message "<< msg.getFullMessage() << " on variable "<< currVariable << std::endl;*/
+           //std::cout << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
            errorMessageQueue.push(msg);
         }
     }
@@ -106,8 +106,8 @@ bool error_on=true;
 
     	if (errorMessageQueue.empty() ||
 	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-           /*std::cerr << "inserting error message "<< msg.getFullMessage() << " on variable "<< currVariable << std::endl;
-           std::cerr << "values: " << finfo.rs << " " << finfo.ce << std::endl;*/
+           //std::cout << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
+           //std::cout << "values: " << finfo.rs << " " << finfo.ce << std::endl;
            errorMessageQueue.push(msg);
         }
     }
