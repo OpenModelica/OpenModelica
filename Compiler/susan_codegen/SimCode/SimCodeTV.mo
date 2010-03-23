@@ -258,6 +258,11 @@ package SimCode
       String language;
       list<RecordDeclaration> recordDecls;
     end EXTERNAL_FUNCTION;
+    record RECORD_CONSTRUCTOR
+      Absyn.Path name;
+      list<Variable> funArgs;
+      list<RecordDeclaration> recordDecls;
+    end RECORD_CONSTRUCTOR;
   end Function;
   
   uniontype RecordDeclaration

@@ -201,6 +201,11 @@ uniontype Function
     String language "C or Fortran";
     list<RecordDeclaration> recordDecls;
   end EXTERNAL_FUNCTION;
+  record RECORD_CONSTRUCTOR
+    Absyn.Path name;
+    list<Variable> funArgs;
+    list<RecordDeclaration> recordDecls;
+  end RECORD_CONSTRUCTOR;
 end Function;
 
 uniontype RecordDeclaration
@@ -765,6 +770,20 @@ algorithm
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
                            inVars, outVars, biVars, includes, libs, lang,
                            recordDecls),
+         rt_1);
+    /* Record constructor. */
+    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt)
+      local
+        String  defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
+        DAE.ExpType expType;
+        list<String> arg_names, arg_tmp1, arg_tmp2, arg_assignments;
+        Integer tnr;
+        Absyn.Path name;
+      equation
+        funArgs = Util.listMap(args, typesSimFunctionArg);
+        (recordDecls,rt_1) = elaborateRecordDeclarationsForRecord(restype, {}, rt);
+      then
+        (RECORD_CONSTRUCTOR(name, funArgs, recordDecls),
          rt_1);
     case (comp,rt)
       equation
@@ -5004,6 +5023,7 @@ algorithm
         {} = DAEUtil.getNamedFunction(path, elements);
         pathstr = Absyn.pathString(path);
         Error.addMessage(Error.LOOKUP_ERROR, {pathstr,"global scope"});
+        //Debug.fprintln("failtrace", "SimCode.getCalledFunctionsInFunction: Class " +& pathstr +& " not found in global scope.");
       then
         path::acc;
 

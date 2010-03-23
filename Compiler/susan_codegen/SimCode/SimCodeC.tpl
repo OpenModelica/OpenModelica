@@ -1328,6 +1328,18 @@ functionHeaders(list<Function> functions) ::=
 
     <extFunDef(it)>
     >> 
+  case RECORD_CONSTRUCTOR then
+    # fname = underscorePath(name)
+    <<
+    <recordDecls: recordDeclaration(it) \n>
+    #define <fname>_rettype_1 targ1
+    typedef struct <fname>_rettype_s {
+      struct <fname> targ1;
+    } <fname>_rettype;
+    
+    DLLExport 
+    <fname>_rettype _<fname>(<funArgs of VARIABLE: '<varType(it)> <cref(name)>' ", ">);
+    >> 
 \n> 
 >>
 
@@ -1505,6 +1517,23 @@ case EXTERNAL_FUNCTION then
     <preExp>
     <callPart>
     return out;
+  }
+  >>
+case RECORD_CONSTRUCTOR then
+  # System.tmpTickReset(1)
+  # varDecls = ""
+  # fname = underscorePath(name)
+  # retType = '<fname>_rettype'
+  # retVar = tempDecl(retType, varDecls)
+  # structType = 'struct <fname>'
+  # structVar = tempDecl(structType, varDecls)
+  <<
+  <retType> _<fname>(<funArgs of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>' ", ">)
+  {
+    <varDecls>
+    <funArgs of VARIABLE: '<structVar>.<cref(name)> = <cref(name)>;' "\n">
+    <retVar>.targ1 = <structVar>;
+    return <retVar>;
   }
   >>
 
@@ -2531,13 +2560,25 @@ case METARECORDCALL then
 daeExpMetaHelperConstant(Exp e, Context context, Text preExp,
                          Text varDecls) ::=
 # expPart = daeExp(e, context, preExp, varDecls)
-match Exp.typeof(e)
-  case ET_INT     then 'mmc_mk_icon(<expPart>)'
-  case ET_BOOL    then 'mmc_mk_icon(<expPart>)'
-  case ET_REAL    then 'mmc_mk_rcon(<expPart>)'
-  case ET_STRING  then 'mmc_mk_scon(<expPart>)'
-  case ET_COMPLEX then "ET_COMPLEX NOT IMPLEMENTED"
-  case _          then expPart
+daeExpMetaHelperConstantNameType(expPart, Exp.typeof(e), context, preExp, varDecls)
+
+daeExpMetaHelperConstantNameType(Text varname, ExpType type, Context context,
+                                 Text preExp, Text varDecls) ::=
+  match type
+  case ET_INT     then 'mmc_mk_icon(<varname>)'
+  case ET_BOOL    then 'mmc_mk_icon(<varname>)'
+  case ET_REAL    then 'mmc_mk_rcon(<varname>)'
+  case ET_STRING  then 'mmc_mk_scon(<varname>)'
+  case ET_COMPLEX(name=cname) then
+    # start = daeExpMetaHelperBoxStart(incrementInt(listLength(varLst), 1))
+    # args = if varLst then
+      ', <varLst of v as COMPLEX_VAR(name=cvname):
+           # nameText = '<varname>.<cvname>'
+           daeExpMetaHelperConstantNameType(nameText, tp, context, preExp, varDecls)
+         ", ">'
+      else ""
+    'mmc_mk_box<start>2, &<underscorePath(cname)>__desc<args>)'
+  case _          then varname
 
 daeExpMetaHelperBoxStart(Integer numVariables) ::=
 case 0
@@ -2575,6 +2616,13 @@ expTypeRW(DAE.ExpType) ::=
   case ET_BOOL    then "TYPE_DESC_BOOL"
   case ET_COMPLEX(complexClassType=RECORD) then "TYPE_DESC_RECORD"
   //case ET_ARRAY   then expTypeShort(ty)   
+  case ET_METAOPTION
+  case ET_LIST
+  case ET_METATUPLE
+  case ET_UNIONTYPE
+  case ET_POLYMORPHIC
+  case ET_META_ARRAY
+  case ET_BOXED then "TYPE_DESC_MMC"
 
 expTypeShort(DAE.ExpType) ::=
   case ET_INT     then "integer"
