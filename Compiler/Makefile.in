@@ -38,6 +38,7 @@ include Makefile.common
 
 PROG = omc
 PROGD = omcd
+PROGP = omcp
 
 SCRIPT_FILES = Compile Compile.bat doPlot doPlot.bat doPlot.Cygwin
 DOC_FILES = omc_helptext.txt omc_interactive_api.txt
@@ -63,6 +64,10 @@ $(PROG): omc_release
 $(PROGD): omc_debug
 	echo Copying $(PROGD)$(EXEEXT) into $(builddir_bin)
 	cp omc_debug/$(PROGD)$(EXEEXT) $(builddir_bin)/
+
+$(PROGP): omc_profiler
+	echo Copying $(PROGP)$(EXEEXT) into $(builddir_bin)
+	cp omc_profiler/$(PROGP)$(EXEEXT) $(builddir_bin)/
 
 install_doc:
 	for x in $(DOC_FILES); do \
@@ -96,6 +101,9 @@ omc_release: depend
 
 omc_debug: depend
 	(cd omc_debug && $(MAKE))
+
+omc_profiler: depend
+	(cd omc_profiler && $(MAKE))
 
 #vctarget:
 #	@(cd omc_debug ; $(MAKE) vctarget)
