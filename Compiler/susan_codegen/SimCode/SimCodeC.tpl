@@ -240,6 +240,7 @@ char* getName(double* ptr)
 
 functionDivisionError() ::=
 <<
+/*
 #define DIVISION(a,b,c) ((b != 0) ? a / b : a / division_error(b,c))
 
 int encounteredDivisionByZero = 0;
@@ -252,6 +253,7 @@ double division_error(double b, const char* division_str)
   }
   return b;
 }
+*/
 >>
 
 functionSetLocalData() ::=
@@ -2212,6 +2214,21 @@ case IFEXP then
 
 daeExpCall(Exp call, Context context, Text preExp, Text varDecls) ::=
   // special builtins
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="DIVISION"), expLst={e1, e2, DAE.SCONST(string=string)}) then
+    # var1 = daeExp(e1, context, preExp, varDecls)
+    # var2 = daeExp(e2, context, preExp, varDecls)
+    # var3 = Util.escapeModelicaStringToCString(string)
+    'DIVISION(<var1>,<var2>,"<var3>")'
+  case CALL(tuple_=false, builtin=true, ty=ty, 
+            path=IDENT(name="DIVISION_ARRAY_SCALAR"), expLst={e1, e2, DAE.SCONST(string=string)}) then
+    # type = if ty is ET_ARRAY(ty=ET_INT) then "integer_array" else "real_array"
+    # var = tempDecl(type, varDecls)
+    # var1 = daeExp(e1, context, preExp, varDecls)
+    # var2 = daeExp(e2, context, preExp, varDecls)
+    # var3 = Util.escapeModelicaStringToCString(string)
+    # preExp += 'division_alloc_<type>_scalar(&<var1>, <var2>, &<var>,"<var3>");<\n>'
+    '<var>'
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="pre"), expLst={arg as CREF}) then
     # retType = '<expTypeArrayIf(arg.ty)>'

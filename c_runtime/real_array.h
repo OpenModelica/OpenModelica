@@ -178,6 +178,10 @@ void div_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest);
 void div_alloc_real_array_scalar(real_array_t* a,modelica_real b,
                                  real_array_t* dest);
 
+void division_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest, const char* division_str);
+void division_alloc_real_array_scalar(real_array_t* a,modelica_real b,
+                                 real_array_t* dest, const char* division_str);
+
 void exp_real_array(real_array_t* a, modelica_integer b, real_array_t* dest);
 void exp_alloc_real_array(real_array_t* a, modelica_integer b,
                           real_array_t* dest);

@@ -20,7 +20,6 @@
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
- * even the implied warranty of  MERCHANTABILITY or FITNESS
  * FOR A PARTICULAR PURPOSE, EXCEPT AS EXPRESSLY SET FORTH
  * IN THE BY RECIPIENT SELECTED SUBSIDIARY LICENSE CONDITIONS
  * OF OSMC-PL.
@@ -33,6 +32,7 @@
 #include "integer_array.h"
 #include "index_spec.h"
 #include "memory_pool.h"
+#include "division.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -888,6 +888,23 @@ void div_alloc_integer_array_scalar(integer_array_t* a,modelica_integer b,intege
     div_integer_array_scalar(a,b,dest);
 }
 
+void division_integer_array_scalar(integer_array_t* a,modelica_integer b,integer_array_t* dest, const char* division_str)
+{
+    size_t nr_of_elements;
+    size_t i;
+    /* Assert that dest has correct size*/
+    nr_of_elements = base_array_nr_of_elements(a);
+    for (i=0; i < nr_of_elements; ++i) {
+        integer_set(dest, i, DIVISION(integer_get(a, i),b,division_str));
+    }
+}
+
+void division_alloc_integer_array_scalar(integer_array_t* a,modelica_integer b,integer_array_t* dest, const char* division_str)
+{
+    clone_integer_array_spec(a,dest);
+    alloc_integer_array_data(dest);
+    division_integer_array_scalar(a,b,dest,division_str);
+}
 
 void exp_integer_array(integer_array_t* a, modelica_integer n, integer_array_t* dest)
 {

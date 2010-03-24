@@ -1276,10 +1276,10 @@ protected function buildTermOp "Takes two UnitTerms and and DAE.Operator and cre
   output UnitAbsyn.UnitTerm ut;
 algorithm
   ut := matchcontinue(ut1,ut2,op,origExp)
-    case(ut1,ut2,DAE.ADD(_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
-    case(ut1,ut2,DAE.SUB(_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
-    case(ut1,ut2,DAE.MUL(_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
-    case(ut1,ut2,DAE.DIV(_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.ADD(ty=_),origExp) then UnitAbsyn.ADD(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.SUB(ty=_),origExp) then UnitAbsyn.SUB(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.MUL(ty=_),origExp) then UnitAbsyn.MUL(ut1,ut2,origExp);
+    case(ut1,ut2,DAE.DIV(ty=_),origExp) then UnitAbsyn.DIV(ut1,ut2,origExp);
   end matchcontinue;
 end buildTermOp;
 

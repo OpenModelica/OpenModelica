@@ -200,6 +200,11 @@ void div_integer_array_scalar(integer_array_t* a,modelica_integer b,
 void div_alloc_integer_array_scalar(integer_array_t* a,modelica_integer b,
                                     integer_array_t* dest);
 
+void division_integer_array_scalar(integer_array_t* a,modelica_integer b,
+                              integer_array_t* dest, const char* division_str);
+void division_alloc_integer_array_scalar(integer_array_t* a,modelica_integer b,
+                                    integer_array_t* dest, const char* division_str);
+
 void exp_integer_array(integer_array_t* a, modelica_integer b,
                        integer_array_t* dest);
 void exp_alloc_integer_array(integer_array_t* a, modelica_integer b,

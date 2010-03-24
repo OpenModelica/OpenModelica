@@ -1037,7 +1037,6 @@ algorithm
       list<SimEqSystem> initialEquations;
       list<SimEqSystem> parameterEquations;
       list<SimEqSystem> removedEquations;
-      list<list<SimEqSystem>> divExpEquations;
       list<Algorithm.Statement> algorithmAndEquationAsserts;
       list<DAELow.ZeroCrossing> zeroCrossings;
       list<list<SimVar>> zeroCrossingsNeedSave;
@@ -1091,6 +1090,18 @@ algorithm
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         makefileParams = createMakefileParams(libs);
         delayedExps = extractDelayedExpressions(dlow2);
+        
+        // replace div operator with div operator with check of Division by zero
+        allEquations = Util.listMap1(allEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        allEquationsPlusWhen = Util.listMap1(allEquationsPlusWhen,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        stateContEquations = Util.listMap1(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        nonStateContEquations = Util.listMap1(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        nonStateDiscEquations = Util.listMap1(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        residualEquations = Util.listMap1(residualEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        initialEquations = Util.listMap1(initialEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        parameterEquations = Util.listMap1(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
+        removedEquations = Util.listMap1(removedEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
+        
         simCode = SIMCODE(modelInfo, functions, allEquations, allEquationsPlusWhen, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
@@ -2904,8 +2915,6 @@ algorithm
         residualEquationsTmp = Util.listFilter(residualEquationsTmp,
                                                failUnlessResidual);
 
-//        divexplst = Util.listMap(residualEquationsTmp,DAELow.extractDivExpFromEquation);
-//        _ = Util.listMap1(divexplst,DAELow.checkEquationBecomesZero,dlow);
         residualEquations = Util.listMap(residualEquationsTmp,
                                          dlowEqToSimEqSystem);
       then
@@ -6078,5 +6087,96 @@ algorithm
         expLst_1;
   end matchcontinue;
 end matchFnRefs;
+
+protected function addDivExpErrorMsgtosimJac
+"function addDivExpErrorMsgtosimJac
+  helper for addDivExpErrorMsgtoSimEqSystem."
+  input tuple<Integer, Integer, SimEqSystem> inJac;
+  input tuple<DAELow.DAELow,DAELow.DivZeroExpReplace> inDlowMode;
+  output tuple<Integer, Integer, SimEqSystem> outJac;
+algorithm
+  outJac:=
+  matchcontinue (inJac,inDlowMode)
+    local
+      Integer a,b;
+      SimEqSystem ses;
+    case ( inJac as (a,b,ses),inDlowMode) 
+      equation
+        ses = addDivExpErrorMsgtoSimEqSystem(ses,inDlowMode);
+      then
+       ((a,b,ses));   
+   end matchcontinue;
+end addDivExpErrorMsgtosimJac;
+     
+protected function addDivExpErrorMsgtoSimEqSystem
+"function addDivExpErrorMsgtoSimEqSystem
+  Traverses all subexpressions of an expression of an equation."
+  input SimEqSystem inSES;
+  input tuple<DAELow.DAELow,DAELow.DivZeroExpReplace> inDlowMode;
+  output SimEqSystem outSES;
+algorithm
+  outSES:=
+  matchcontinue (inSES,inDlowMode)
+    local
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      Boolean partOfMixed;
+      list<SimVar> vars;
+      list<DAE.Exp> elst,elst1;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      Integer index;
+      list<DAE.ComponentRef> crefs;
+      SimEqSystem cont;
+      list<SimEqSystem> discEqs;
+      list<String> values;
+      list<Integer> value_dims;
+      list<tuple<DAE.Exp, Integer>> conditions;
+    case (SES_RESIDUAL(exp = e),inDlowMode)
+      equation
+        e = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+      then
+        SES_RESIDUAL(e);      
+    case (SES_SIMPLE_ASSIGN(componentRef = cr, exp = e),inDlowMode)
+      equation
+        e = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+      then
+        SES_SIMPLE_ASSIGN(cr, e);      
+    case (SES_ARRAY_CALL_ASSIGN(componentRef = cr, exp = e),inDlowMode)
+      equation
+        e = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+      then
+        SES_ARRAY_CALL_ASSIGN(cr, e);      
+/*
+    case (SES_ALGORITHM(),inDlowMode)
+      equation
+        e = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+      then
+        SES_ALGORITHM();
+*/              
+    case (SES_LINEAR(partOfMixed = partOfMixed,vars = vars, beqs = elst, simJac = simJac),inDlowMode)
+      equation
+        simJac = Util.listMap1(simJac,addDivExpErrorMsgtosimJac,inDlowMode);
+        elst1 = Util.listMap1(elst,DAELow.addDivExpErrorMsgtoExp,inDlowMode);
+      then
+        SES_LINEAR(partOfMixed,vars,elst1,simJac);      
+    case (SES_NONLINEAR(index = index,eqs = discEqs, crefs = crefs),inDlowMode)
+      equation
+        discEqs = Util.listMap1(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
+      then
+        SES_NONLINEAR(index,discEqs,crefs);      
+    case (SES_MIXED(cont = cont,discVars = vars, discEqs = discEqs, values = values, value_dims = value_dims),inDlowMode)
+      equation
+        cont = addDivExpErrorMsgtoSimEqSystem(cont,inDlowMode);
+        discEqs = Util.listMap1(discEqs,addDivExpErrorMsgtoSimEqSystem,inDlowMode);
+      then
+        SES_MIXED(cont,vars,discEqs,values,value_dims);      
+    case (SES_WHEN(left = cr, right = e, conditions = conditions),inDlowMode)
+      equation
+        e = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
+      then
+        SES_WHEN(cr,e,conditions);
+    case (inSES,_) then inSES;
+  end matchcontinue;
+end addDivExpErrorMsgtoSimEqSystem;
 
 end SimCode;

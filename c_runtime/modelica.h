@@ -59,6 +59,7 @@ typedef void(* modelica_fnptr) (void); /*MetaModelica extension, function pointe
 #include "integer_array.h"
 
 #include "utility.h"
+#include "division.h"
 
 
 #include <assert.h>

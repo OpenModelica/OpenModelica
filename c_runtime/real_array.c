@@ -33,6 +33,7 @@
 #include "real_array.h"
 #include "index_spec.h"
 #include "memory_pool.h"
+#include "division.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -893,6 +894,24 @@ void div_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* d
     clone_real_array_spec(a,dest);
     alloc_real_array_data(dest);
     div_real_array_scalar(a,b,dest);
+}
+
+void division_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest, const char* division_str)
+{
+    size_t nr_of_elements;
+    size_t i;
+    /* Assert that dest has correct size*/
+    nr_of_elements = base_array_nr_of_elements(a);
+    for (i=0; i < nr_of_elements; ++i) {
+        real_set(dest, i, DIVISION(real_get(a, i),b,division_str));
+    }
+}
+
+void division_alloc_real_array_scalar(real_array_t* a,modelica_real b,real_array_t* dest, const char* division_str)
+{
+    clone_real_array_spec(a,dest);
+    alloc_real_array_data(dest);
+    division_real_array_scalar(a,b,dest,division_str);
 }
 
 void exp_real_array(real_array_t* a, modelica_integer n, real_array_t* dest)
