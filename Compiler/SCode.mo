@@ -1328,7 +1328,7 @@ public function elementEqual
      local
       Ident name1,name2;
       Class cl1,cl2;
-      Boolean b1,b1a,b1b,b2,b3,b4,b5,b6,f1,f2,r1,r2,p1,p2;
+      Boolean b1,b1a,b1b,b2,b3,b4,b5,b6,b7,f1,f2,r1,r2,p1,p2;
       Absyn.InnerOuter io,io2;
       Attributes attr1,attr2; Mod mod1,mod2;
       Absyn.TypeSpec tp1,tp2;
@@ -1349,7 +1349,8 @@ public function elementEqual
          b4 = Util.boolEqual(p1,p2);
          b5 = attributesEqual(attr1,attr2);
          b6 = modEqual(mod1,mod2);
-         equal = Util.boolAndList({b1,b1a,b2,b3,b4,b5,b6});
+         b7 = Absyn.typeSpecEqual(tp1,tp2);
+         equal = Util.boolAndList({b1,b1a,b2,b3,b4,b5,b6,b7});
          then equal;
      case(_,_) then false;
    end matchcontinue;
