@@ -20,6 +20,6 @@ ADD_SUBDIRECTORY(c_runtime)
 # Example:
 #    BUILDMODEL(model dir Flags CSRC)
 
-BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump "")
-BUILDMODEL(ExternalFunction1 ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles/ExternalFunction1_f.c)
-
+#BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump)
+#BUILDMODEL(Simple ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump)
+BUILDMODEL(CombiTable2DTest ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump "")
