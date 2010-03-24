@@ -89,14 +89,15 @@ SET(c_runtime_sources  boolean_array.c index_spec.c integer_array.c
 					   fdjac1.c  hybrj.c   newuoa.c   qrfac.c
 					   trsapp.c daux.c    dlamch.c  dpmpar.c
 					   hybrd.c   lsame.c   newuob.c   r1mpyq.c
-					   update.c java_interface.c meta_modelica.c)
+					   update.c java_interface.c meta_modelica.c
+					   division.c)
 #					   meta_modelica_builtin.c)
 
 SET(c_runtime_headers  blaswrap.h f2c.h integer_array.h memory_pool.h
                        modelica_string.h base_array.h inline.h real_array.h
 					   string_array.h boolean_array.h index_spec.h matrix.h
 					   modelica.h read_write.h utility.h meta_modelica.h
-					   meta_modelica_builtin.h java_interface.h jni.h
+					   meta_modelica_builtin.h java_interface.h jni.h division.h
 					   jni_md.h jni_md_solaris.h jni_md_windows.h fortran_types.h
 					   sendData/sendData.h sendData/humbug.h)				 
 						 
