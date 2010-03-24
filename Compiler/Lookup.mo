@@ -60,6 +60,7 @@ protected import Debug;
 protected import Error;
 protected import Exp;
 protected import Inst;
+protected import InstExtends;
 protected import InnerOuter;
 protected import Mod;
 protected import ModUtil;
@@ -2065,7 +2066,7 @@ algorithm
         env = Env.openScope(env, false, SOME(name));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
-        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true);
+        (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,cdefelts,false,NONE);
         (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
@@ -2129,7 +2130,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
       SCode.Mod mod;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<Env.Frame> env_1;
       Option<Absyn.Exp> cond;
@@ -2142,7 +2142,7 @@ algorithm
 
     case ({},_,_) then {};
 
-    case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+    case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
       equation
         (_,mod_1,_) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2160,8 +2160,7 @@ algorithm
         var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,
-          umod,bc,comment,cond,nfo,cc) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,umod,comment,cond,nfo,cc) :: res);
 
     case (_,_,_)
       equation
@@ -2188,8 +2187,7 @@ algorithm
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
-          SCode.NOMOD,
-          {},NONE,NONE,NONE,NONE);
+          SCode.NOMOD(),NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv

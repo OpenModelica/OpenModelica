@@ -563,7 +563,7 @@ algorithm outEnv := matchcontinue(env,inAlgs,ht2)
     Env.Env env1,env2;
 
   case(env,{},_) then env;
-  case(env, (alg as SCode.ALGORITHM(alglst,_)) :: algs,ht2)
+  case(env, (alg as SCode.ALGORITHM(alglst)) :: algs,ht2)
     equation
       (env1) = evaluateAlgorithms(env,alglst,ht2);
       (env2) = evaluateAlgorithmsList(env1,algs,ht2);
