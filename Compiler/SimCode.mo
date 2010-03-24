@@ -122,6 +122,7 @@ uniontype FunctionCode
     String name;
     list<Function> functions;
     MakefileParams makefileParams;
+    list<RecordDeclaration> extraRecordDecls;
   end FUNCTIONCODE;
 end FunctionCode;
 
@@ -524,21 +525,23 @@ public function translateFunctions
 "One of the entry points."
   input String name;
   input list<DAE.Element> daeElements;
+  input list<DAE.Type> metarecordTypes;
 algorithm
   _ :=
-  matchcontinue (name, daeElements)
+  matchcontinue (name, daeElements, metarecordTypes)
     local
       list<Function> fns;
       list<String> libs;
       MakefileParams makefileParams;
       FunctionCode fnCode;
-    case (name, daeElements)
+      list<RecordDeclaration> extraRecordDecls;
+    case (name, daeElements, metarecordTypes)
       equation
         // Create FunctionCode
-        fns = elaborateFunctions(daeElements);
+        (fns, extraRecordDecls) = elaborateFunctions(daeElements, metarecordTypes);
         libs = extractLibs(fns);
         makefileParams = createMakefileParams(libs);
-        fnCode = FUNCTIONCODE(name, fns, makefileParams);
+        fnCode = FUNCTIONCODE(name, fns, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
       then
@@ -585,7 +588,7 @@ algorithm
         //libs1 = {};
         //usless filter, all are already functions from generateFunctions2
         //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
-        fns = elaborateFunctions(funcelems);
+        (fns, _) = elaborateFunctions(funcelems, {}); // Do we need metarecords here as well?
         //TODO: libs ? see in Codegen.cPrintFunctionIncludes(cfns)
         libs2 = extractLibs(fns);
       then
@@ -659,12 +662,16 @@ end generateExternalObjectInclude;
 
 protected function elaborateFunctions
   input list<DAE.Element> daeElements;
+  input list<DAE.Type> metarecordTypes;
   output list<Function> functions;
+  output list<RecordDeclaration> extraRecordDecls;
 protected
   list<Function> fns;
+  list<String> outRecordTypes;
 algorithm
-  (fns, _) := elaborateFunctions2(daeElements, {},{});
+  (fns, outRecordTypes) := elaborateFunctions2(daeElements, {},{});
   functions := listReverse(fns); // Is there a reason why we reverse here?
+  (extraRecordDecls,_) := elaborateRecordDeclarationsFromTypes(metarecordTypes, {}, outRecordTypes);
 end elaborateFunctions;
 
 protected function elaborateFunctions2
@@ -1348,6 +1355,31 @@ algorithm
   end matchcontinue;
 end extractLibs;
 
+protected function elaborateRecordDeclarationsFromTypes
+  input list<DAE.Type> inTypes;
+  input list<RecordDeclaration> inAccRecordDecls;
+  input list<String> inReturnTypes;
+  output list<RecordDeclaration> outRecordDecls;
+  output list<String> outReturnTypes;
+algorithm
+  (outRecordDecls, outReturnTypes) :=
+  matchcontinue (inTypes, inAccRecordDecls, inReturnTypes)
+    local
+      list<RecordDeclaration> accRecDecls;
+      DAE.Type firstType;
+      list<DAE.Type> restTypes;
+    case ({}, accRecDecls, inReturnTypes)
+      then (accRecDecls, inReturnTypes);
+    case (firstType :: restTypes, accRecDecls, inReturnTypes)
+      equation
+        (accRecDecls, inReturnTypes) =
+          elaborateRecordDeclarationsForRecord(firstType, accRecDecls, inReturnTypes);
+        (accRecDecls, inReturnTypes) =
+          elaborateRecordDeclarationsFromTypes(restTypes, accRecDecls, inReturnTypes);
+      then (accRecDecls, inReturnTypes);
+  end matchcontinue;
+end elaborateRecordDeclarationsFromTypes;
+
 protected function elaborateRecordDeclarations
 "function elaborateRecordDeclarations
   Translate all records used by varlist to structs."
@@ -1430,6 +1462,19 @@ algorithm
       then (accRecDecls,rt_2);
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),_), accRecDecls, rt)
       then (accRecDecls,rt);
+    case ((DAE.T_METARECORD(fields = varlst), SOME(path)), accRecDecls, rt)
+      local  String sname;
+      equation
+        sname = ModUtil.pathStringReplaceDot(path, "_");
+        failure(_ = Util.listGetMember(sname,rt));
+
+        fieldNames = Util.listMap(varlst, generateVarName);
+
+        accRecDecls = RECORD_DECL_DEF(path, fieldNames) :: accRecDecls;
+        rt_1 = sname::rt;
+
+        (accRecDecls,rt_2) = elaborateNestedRecordDeclarations(varlst, accRecDecls, rt_1);
+      then (accRecDecls,rt_2);
     case ((_,_), accRecDecls, rt)
       then (accRecDecls,rt);
     case ((_,_), accRecDecls, rt) then
@@ -1437,6 +1482,20 @@ algorithm
   end matchcontinue;
 end elaborateRecordDeclarationsForRecord;
 
+protected function generateVarName
+  input DAE.Var inVar;
+  output String outName;
+algorithm
+  outName :=
+  matchcontinue (inVar)
+    local
+      DAE.Ident name;
+    case DAE.TYPES_VAR(name = name)
+      then name;
+    case (_)
+      then "NULL";
+  end matchcontinue;
+end generateVarName;
 
 protected function elaborateNestedRecordDeclarations
 "function elaborateNestedRecordDeclarations
@@ -5957,12 +6016,19 @@ algorithm
     local
       String lib;
       list<Absyn.ElementArg> eltarg;
+      list<Absyn.Exp> arr;
     case (eltarg)
       equation
         Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{})) "System.stringReplace(lib,\"\\\"\",\"\"\") => lib\'" ;
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
       then
         {lib};
+    case (eltarg)
+      equation
+        Absyn.CLASSMOD(_,SOME(Absyn.ARRAY(arr))) =
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+      then
+        Util.listMap(arr, Absyn.expString);
     case (_) then {};
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;

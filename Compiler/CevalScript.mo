@@ -4111,8 +4111,9 @@ algorithm
         pathstr = generateFunctionName(path);
         Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction starting " +& pathstr +& " */");
         (cache,dae as DAE.DAE(d,_),_) = cevalGenerateFunctionDAEs(cache, path, env, {});
-        //uniontypePaths = Codegen.getUniontypePaths(d);
-        //(cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
+
+        uniontypePaths = Codegen.getUniontypePaths(d);
+        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
 
         cfilename = stringAppend(pathstr, ".c");
         //Print.clearBuf();
@@ -4137,7 +4138,7 @@ algorithm
           //" $(LDFLAGS)",
           //" ",libsstr," -lm \n"});
         //System.writeFile(makefilename, str);
-        SimCode.translateFunctions(pathstr, d);
+        SimCode.translateFunctions(pathstr, d, metarecordTypes);
         compileModel(pathstr, {}, "", "");
       then
         (cache, pathstr);

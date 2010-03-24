@@ -23,7 +23,7 @@ case SIMCODE(modelInfo=MODELINFO) then
 
 translateFunctions(FunctionCode functionCode) ::=
 case FUNCTIONCODE then
-  # functionsFileContent = functionsFile2(functions)
+  # functionsFileContent = functionsFile2(functions, extraRecordDecls)
   # textFile(functionsFileContent, '<name>.c')
   # makefileContent = makefileFunction(functionCode)
   # textFile(makefileContent, '<name>.makefile')
@@ -1161,7 +1161,8 @@ notimplemented = notimplemented;
 
 // SECTION: FUNCTION TARGET, FUNCTIONS FILE SPECIFIC TEMPLATES
 
-functionsFile2(list<Function> functions) ::=
+functionsFile2(list<Function> functions,
+               list<RecordDeclaration> extraRecordDecls) ::=
 <<
 #include "modelica.h"
 #include \<stdio.h\>
@@ -1189,6 +1190,7 @@ extern "C" {
 /* Header */
 <externalFunctionIncludes(functions)>
 <functionHeaders(functions)>
+<extraRecordDecls of rd: recordDeclaration(rd) \n>
 /* End Header */
 
 /* Body */
@@ -1408,6 +1410,13 @@ extType(Type) ::=
     <<
     struct <underscorePath(rname)>
     >>
+  case ET_METAOPTION
+  case ET_LIST
+  case ET_METATUPLE
+  case ET_UNIONTYPE
+  case ET_POLYMORPHIC
+  case ET_META_ARRAY
+  case ET_BOXED then "void*"
   case _ then "OTHER_EXT_TYPE"
 
 // Assume that language is C for now.

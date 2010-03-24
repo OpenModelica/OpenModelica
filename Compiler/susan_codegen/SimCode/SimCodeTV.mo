@@ -103,6 +103,7 @@ package SimCode
       String name;
       list<Function> functions;
       MakefileParams makefileParams;
+      list<RecordDeclaration> extraRecordDecls;
     end FUNCTIONCODE;
   end FunctionCode;
 
