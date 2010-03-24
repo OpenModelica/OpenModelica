@@ -4042,6 +4042,24 @@ algorithm
   end matchcontinue;
 end tuple22;
 
+public function tuple312 "
+  Takes a tuple of three values and returns the tuple of the two first values.
+  Example: tuple312((\"a\",1,2)) => (\"a\",1)"
+  input tuple<Type_a, Type_b,Type_c> tpl;
+  output tuple<Type_a, Type_b> outTypeA;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeA:=
+  matchcontinue (tpl)
+    local
+      Type_a a;
+      Type_b b;
+    case ((a,b,_)) then ((a,b));
+  end matchcontinue;
+end tuple312;
+
 public function tuple31 "
   Takes a tuple of three values and returns the first value.
   Example: tuple31((\"a\",1,2)) => \"a\""

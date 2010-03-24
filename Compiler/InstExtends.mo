@@ -84,7 +84,7 @@ protected function instExtendsList "
   output Env.Env outEnv1;
   output InstanceHierarchy outIH;
   output DAE.Mod outMod2;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst3;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
   output list<SCode.Equation> outSCodeEquationLst5;
   output list<SCode.Algorithm> outSCodeAlgorithmLst6;
@@ -104,7 +104,7 @@ algorithm
       list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
       Absyn.Path tp_1,tp;
       ClassInf.State new_ci_state,ci_state;
-      list<tuple<SCode.Element, DAE.Mod>> compelts1,compelts2,compelts,compelts3;
+      list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts1,compelts2,compelts,compelts3;
       SCode.Mod emod;
       SCode.Element elt;
       Env.Cache cache;
@@ -141,12 +141,12 @@ algorithm
         (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,importelts,impl,NONE);
         (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
 
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl,isPartialInst)
+        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
 
-        ht = getLocalIdents(compelts1,HashTableStringToPath.emptyHashTable());
-        ht = getLocalIdents(Inst.addNomod(cdefelts),ht);
-        ht = getLocalIdents(Inst.addNomod(importelts),ht);
+        ht = getLocalIdentList(compelts1,HashTableStringToPath.emptyHashTable(),getLocalIdentElementTpl);
+        ht = getLocalIdentList(cdefelts,ht,getLocalIdentElement);
+        ht = getLocalIdentList(importelts,ht,getLocalIdentElement);
         
         (cache,compelts1) = fixLocalIdents(cache,cenv1,compelts1,ht);
         (cache,eq1_1) = fixList(cache,cenv1,eq1_1,ht,fixEquation);
@@ -199,7 +199,7 @@ algorithm
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
       then
-        (cache,env_1,ih,mods,((elt,DAE.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
+        (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
     /* no further elements to instantiate */
     case (cache,env,ih,mod,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
@@ -237,13 +237,45 @@ public function instExtendsAndClassExtendsList "
   output list<SCode.Equation> outSCodeInitialEquationLst;
   output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
   output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
+protected
+  list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLstTpl3;
+algorithm
+  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
+  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
+  outTplSCodeElementModLst := Util.listMap(outTplSCodeElementModLstTpl3, Util.tuple312);
+end instExtendsAndClassExtendsList;
+
+protected function instExtendsAndClassExtendsList2 "
+  This function flattens out the inheritance structure of a class.
+  It takes an SCode.Element list and flattens out the extends nodes and
+  class extends nodes of that list. The result is a list of components and
+  lists of equations and algorithms."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input InstanceHierarchy inIH;
+  input DAE.Mod inMod;
+  input list<SCode.Element> inExtendsElementLst;
+  input list<SCode.Element> inClassExtendsElementLst;
+  input ClassInf.State inState;
+  input String inClassName; // the class name whose elements are getting instantiated.
+  input Boolean inImpl;
+  input Boolean isPartialInst;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output InstanceHierarchy outIH;
+  output DAE.Mod outMod;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
+  output list<SCode.Equation> outSCodeNormalEquationLst;
+  output list<SCode.Equation> outSCodeInitialEquationLst;
+  output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
+  output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
 algorithm
   //Debug.traceln("instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
   //Debug.traceln("instExtendsAndClassExtendsList: " +& inClassName +& " done");
-end instExtendsAndClassExtendsList;
+end instExtendsAndClassExtendsList2;
 
 protected function instClassExtendsList
 "Instantiate element nodes of type SCode.CLASS_EXTENDS. This is done by walking
@@ -251,9 +283,9 @@ the extended classes and performing the modifications in-place. The old class
 will no longer be accessible."
   input DAE.Mod inMod;
   input list<SCode.Element> inClassExtendsList;
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
   output DAE.Mod outMod;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
 algorithm
   (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inClassExtendsList,inTplSCodeElementModLst)
     local
@@ -270,7 +302,7 @@ algorithm
       list<SCode.Element> els,els1,els2;
       list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
       list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
-      list<tuple<SCode.Element, DAE.Mod>> compelts;
+      list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
       SCode.Mod mods;
       DAE.Mod emod;
       list<String> names;
@@ -285,7 +317,7 @@ algorithm
         true = RTOpts.debugFlag("failtrace");
         Debug.traceln("- Inst.instClassExtendsList failed " +& name);
         Debug.traceln("  Candidate classes: ");
-        els = Util.listMap(compelts, Util.tuple21);
+        els = Util.listMap(compelts, Util.tuple31);
         names = Util.listMap(els, SCode.elementName);
         Debug.traceln(Util.stringDelimitList(names, ","));
       then fail();
@@ -296,9 +328,9 @@ protected function instClassExtendsList2
   input DAE.Mod inMod;
   input String inName;
   input SCode.Element inClassExtendsElt;
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
   output DAE.Mod outMod;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
 algorithm
   (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
     local
@@ -314,13 +346,15 @@ algorithm
       list<SCode.Element> els,els1,els2;
       list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
       list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
-      list<tuple<SCode.Element, DAE.Mod>> rest,elsAndMods;
+      list<tuple<SCode.Element, DAE.Mod, Boolean>> rest,elsAndMods;
+      tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods;
       DAE.Mod mod,mod1,mod2,emod;
       Option<Absyn.ConstrainClass> cc1,cc2;
       Absyn.Info info1, info2;
+      Boolean b;
 
-    case (emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,cc2),mod1)::rest)
+    case (emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,cc2),mod1,b)::rest)
       equation
         true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
 
@@ -341,11 +375,11 @@ algorithm
         elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, cc1);
         emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
         // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
-      then (emod,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
-    case (emod,name1,classExtendsElt,(compelt,mod)::rest)
+      then (emod,(compelt,mod1,b)::(elt,DAE.NOMOD(),true)::rest);
+    case (emod,name1,classExtendsElt,first::rest)
       equation
         (emod,rest) = instClassExtendsList2(emod,name1,classExtendsElt,rest);
-      then (emod,(compelt,mod)::rest);
+      then (emod,first::rest);
     case (_,_,_,{})
       equation
         Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
@@ -462,20 +496,21 @@ protected function updateComponents
   end A;
   will result in a list of components
   from B for which modifiers should be applied to."
-  input list<tuple<SCode.Element, DAE.Mod>> inTplSCodeElementModLst;
+  input list<tuple<SCode.Element, DAE.Mod, Boolean>> inTplSCodeElementModLst;
   input DAE.Mod inMod;
   input Env.Env inEnv;
-  output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
+  output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
   output DAE.Mod restMod;
 algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElementModLst,inMod,inEnv)
     local
       DAE.Mod cmod2,mod_1,cmod,mod,emod,mod_rest;
-      list<tuple<SCode.Element, DAE.Mod>> res,xs;
+      list<tuple<SCode.Element, DAE.Mod, Boolean>> res,xs;
       SCode.Element comp,c;
       String id;
       list<Env.Frame> env;
+      Boolean b;
   case ({},mod,_) then ({},mod);
-    case ((((comp as SCode.COMPONENT(component = id)),cmod) :: xs),mod,env)
+    case ((((comp as SCode.COMPONENT(component = id)),cmod,b) :: xs),mod,env)
       equation
         // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
         cmod2 = Mod.lookupCompModification(mod, id);
@@ -484,22 +519,22 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
         mod_rest = Types.removeMod(mod,id);
         (res,mod_rest) = updateComponents(xs, mod_rest, env);
       then
-        (((comp,mod_1) :: res),mod_rest);
-    case ((((c as SCode.EXTENDS(baseClassPath = _)),emod) :: xs),mod,env)
+        (((comp,mod_1,b) :: res),mod_rest);
+    case ((((c as SCode.EXTENDS(baseClassPath = _)),emod,b) :: xs),mod,env)
       equation
         (res,mod_rest) = updateComponents(xs, mod, env);
       then
-        (((c,emod) :: res),mod_rest);
-    case ((((c as SCode.CLASSDEF(name = _)),cmod) :: xs),mod,env)
+        (((c,emod,b) :: res),mod_rest);
+    case ((((c as SCode.CLASSDEF(name = _)),cmod,b) :: xs),mod,env)
       equation
         (res,mod_rest) = updateComponents(xs, mod, env);
       then
-        (((c,cmod) :: res),mod_rest);
-    case ((((c as SCode.IMPORT(imp = _)),_) :: xs),mod,env)
+        (((c,cmod,b) :: res),mod_rest);
+    case ((((c as SCode.IMPORT(imp = _)),_,b) :: xs),mod,env)
       equation
         (res,mod_rest) = updateComponents(xs, mod, env);
       then
-        (((c,DAE.NOMOD()) :: res),mod_rest);
+        (((c,DAE.NOMOD(),b) :: res),mod_rest);
     case (_,_,_)
       equation
         Debug.fprintln("failtrace", "-Inst.updateComponents failed");
@@ -511,32 +546,54 @@ end updateComponents;
 
 
 
-public function getLocalIdents
+protected function getLocalIdentList
 " Analyzes the elements of a class and fetches a list of components and classdefs,
   as well as aliases from imports to paths.
 "
-  input list<tuple<SCode.Element,DAE.Mod>> elts;
+  input list<Type_A> elts;
+  input HashTableStringToPath.HashTable ht;
+  input getIdentFn getIdent;
+  output HashTableStringToPath.HashTable outHt;
+  
+  replaceable type Type_A subtypeof Any;
+  partial function getIdentFn
+    input Type_A inA;
+    input HashTableStringToPath.HashTable ht;
+    output HashTableStringToPath.HashTable outHt;
+  end getIdentFn;
+algorithm
+  (outHt) := matchcontinue (elts,ht,getIdent)
+    local
+      Type_A elt;
+    case ({},ht,getIdent) then ht;
+    case (elt::elts,ht,getIdent)
+      equation
+        ht = getIdent(elt,ht);
+        ht = getLocalIdentList(elts,ht,getIdent);
+      then ht;
+  end matchcontinue;
+end getLocalIdentList;
+
+protected function getLocalIdentElementTpl
+" Analyzes the elements of a class and fetches a list of components and classdefs,
+  as well as aliases from imports to paths.
+"
+  input tuple<SCode.Element,DAE.Mod,Boolean> eltTpl;
   input HashTableStringToPath.HashTable ht;
   output HashTableStringToPath.HashTable outHt;
 algorithm
-  (outHt) := matchcontinue (elts,ht)
+  (outHt) := matchcontinue (eltTpl,ht)
     local
-      tuple<SCode.Element,DAE.Mod> elt;
-      String id;
-    case ({},ht) then ht;
-    case (elt::elts,ht)
-      equation
-        ht = getLocalIdents2(elt,ht);
-        ht = getLocalIdents(elts,ht);
-      then ht;
+      SCode.Element elt;
+    case ((elt,_,_),ht) then getLocalIdentElement(elt,ht);
   end matchcontinue;
-end getLocalIdents;
+end getLocalIdentElementTpl;
 
-protected function getLocalIdents2
+protected function getLocalIdentElement
 " Analyzes an element of a class and fetches a list of components and classdefs,
   as well as aliases from imports to paths.
 "
-  input tuple<SCode.Element,DAE.Mod> elt;
+  input SCode.Element elt;
   input HashTableStringToPath.HashTable ht;
   output HashTableStringToPath.HashTable outHt;
 algorithm
@@ -544,39 +601,39 @@ algorithm
     local
       String id;
       Absyn.Path p;
-    case ((SCode.COMPONENT(component = id),_),ht)
+    case (SCode.COMPONENT(component = id),ht)
       equation
         ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
       then ht;
-    case ((SCode.CLASSDEF(name = id),_),ht)
+    case (SCode.CLASSDEF(name = id),ht)
       equation
         ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
       then ht;
-    case ((SCode.IMPORT(imp = Absyn.NAMED_IMPORT(name = id, path = p)),_),ht)
+    case (SCode.IMPORT(imp = Absyn.NAMED_IMPORT(name = id, path = p)),ht)
       equation
         failure(_ = HashTableStringToPath.get(id, ht));
         ht = HashTableStringToPath.add((id,p), ht);
       then ht;
-    case ((SCode.IMPORT(imp = Absyn.QUAL_IMPORT(path = p)),_),ht)
+    case (SCode.IMPORT(imp = Absyn.QUAL_IMPORT(path = p)),ht)
       equation
         id = Absyn.pathLastIdent(p);
         failure(_ = HashTableStringToPath.get(id, ht));
         ht = HashTableStringToPath.add((id,p), ht);
       then ht;
   end matchcontinue;
-end getLocalIdents2;
+end getLocalIdentElement;
 
-public function fixLocalIdents
+protected function fixLocalIdents
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
   local lookup or fully qualified in the environment.
 "
   input Env.Cache cache;
   input Env.Env env;
-  input list<tuple<SCode.Element,DAE.Mod>> elts;
+  input list<tuple<SCode.Element,DAE.Mod,Boolean>> elts;
   input HashTableStringToPath.HashTable ht;
   output Env.Cache outCache;
-  output list<tuple<SCode.Element,DAE.Mod>> outElts;
+  output list<tuple<SCode.Element,DAE.Mod,Boolean>> outElts;
 algorithm
   (outCache,outElts) := matchcontinue (cache,env,elts,ht)
     local
@@ -584,11 +641,15 @@ algorithm
       DAE.Mod mod;
       String id;
     case (cache,env,{},ht) then (cache,{});
-    case (cache,env,(elt,mod)::elts,ht)
+    case (cache,env,(elt,mod,false)::elts,ht)
       equation
         (cache,elt) = fixElement(cache,env,elt,ht);
         (cache,elts) = fixLocalIdents(cache,env,elts,ht);
-      then (cache,(elt,mod)::elts);
+      then (cache,(elt,mod,true)::elts);
+    case (cache,env,(elt,mod,true)::elts,ht)
+      equation
+        (cache,elts) = fixLocalIdents(cache,env,elts,ht);
+      then (cache,(elt,mod,true)::elts);
     case (_,_,_,_)
       equation
         Debug.traceln("fixLocalIdents failed");
@@ -648,10 +709,11 @@ algorithm
         //print("fix comp " +& SCode.printElementStr(elt) +& "\n");
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
       then (cache,SCode.EXTENDS(extendsPath,modifications,optAnnotation));
+    case (cache,env,SCode.IMPORT(imp = _),ht) then (cache,elt);
 
     case (cache,env,elt,ht)
       equation
-        Debug.traceln("InstExtends.fixElement failed: " +& SCode.printElementStr(elt));
+        Debug.fprintln("failtrace", "InstExtends.fixElement failed: " +& SCode.printElementStr(elt));
       then fail();
   end matchcontinue;
 end fixElement;

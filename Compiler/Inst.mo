@@ -2831,7 +2831,7 @@ algorithm
 
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
         InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, extendselts, extendsclasselts, ci_state, className, impl, false)
-        "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations." ;
+        "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
         compelts_1 = addNomod(compelts)
         "Problem. Modifiers on inherited components are unelabed, loosing their
 	                type information. This will not work, since the modifier type
