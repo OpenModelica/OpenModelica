@@ -8,7 +8,7 @@ IF(NOT IDL)
 ENDIF(NOT IDL)
 
 # custom command for idl
-SET(IDL_OUTPUT omc_communication.cc omc_communication.h)
+SET(IDL_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.cc ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.h)
 ADD_CUSTOM_COMMAND(OUTPUT ${IDL_OUTPUT}
                    COMMAND ${IDL} ${CMAKE_CURRENT_SOURCE_DIR}/omc_communication.idl  												  
                    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}

@@ -20,13 +20,30 @@ ENDIF(NOT JAVA)
 SET(ANTLR ${JAVA} -cp $ENV{OMDEV}/bin/antlr/antlr.jar antlr.Tool)
 SET(ANTLRFLAGS ) #-traceParser")
 
-SET(ANTLR_FILES walker.g)
 
 # Includes
 INCLUDE_DIRECTORIES($ENV{OMDEV}/include)
+INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/modelica_parser/src)
+
+GET_PROPERTY(modelica_parser GLOBAL PROPERTY  MODELICA_parser_BUILD)
+INCLUDE_DIRECTORIES(${modelica_parser})
+GET_PROPERTY(modelica_flat_parser GLOBAL PROPERTY  MODELICA_flat_parser_BUILD)
+INCLUDE_DIRECTORIES(${modelica_flat_parser})
+
+
+  SET(MPTT_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt)
+  # custom command for ar
+  ADD_CUSTOM_COMMAND(OUTPUT ${MPTT_OUTPUT}
+                     COMMAND ${CMAKE_COMMAND} -E copy ${modelica_parser}/modelica_parserTokenTypes.txt ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt
+					 DEPENDS modelica_parser.g_antlr
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "copy ${modelica_parser}/modelica_parserTokenTypes.txt to  ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt")
+
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${MPTT}_cp ALL DEPENDS ${modelica_parser})
 
 # generate antlr files
-FOREACH(DEP ${ANTLR_FILES})
+SET(DEP  walker.g)
 
 	# Datei- und Pfadname
     GET_FILENAME_COMPONENT(DF ${DEP} NAME)
@@ -45,17 +62,17 @@ FOREACH(DEP ${ANTLR_FILES})
 	# Merken
 	SET(ANTLR_DEP ${${DEP}_FILE})
 
-  SET(ANTLR_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${DF_WE}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${DF_WE}.hpp)
+  SET(ANTLR_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parser.hpp 
+	               ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parserTokenTypes.hpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parserTokenTypes.txt)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_OUTPUT}
-                     COMMAND ${ANTLR} ${ANTLRFLAGS} ${${DEP}_FILE}												  
+                     COMMAND ${ANTLR} ${ANTLRFLAGS} ${ANTLR_DEP} 
+					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_DEP} modelica_parser.g_antlr
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      COMMENT "Generate antlr from ${DEP}")
 
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${DEP}_antlr ALL DEPENDS ${ANTLR_DEP})
-
-ENDFOREACH(DEP)
 
 # Datei- und Pfadname
 SET(WDEP expression_parser.g)
@@ -75,17 +92,21 @@ SET(WDEP expression_parser.g)
 	# Merken
 	SET(ANTLR_WDEP ${${WDEP}_FILE})
 
-  SET(ANTLR_WOUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${WDF_WE}.cpp ${CMAKE_CURRENT_BINARY_DIR}/${WDF_WE}.hpp)
+  SET(ANTLR_WOUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parser.hpp
+                    ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parserTokenTypes.hpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parserTokenTypes.txt)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_WOUTPUT}
-                     COMMAND ${ANTLR} -glib ${CMAKE_CURRENT_SOURCE_DIR}/../../modelica_parser/src/modelica_parser.g ${ANTLRFLAGS} ${${WDEP}_FILE}												  
+                     COMMAND ${ANTLR} -glib ${OMCTRUNCHOME}/modelica_parser/src/modelica_parser.g ${ANTLRFLAGS} ${ANTLR_WDEP}
+					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_WDEP} modelica_parser.g_antlr					 
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
                      COMMENT "Generate antlr from ${WDEP}")
 
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${WDEP}_antlr ALL DEPENDS ${ANTLR_WDEP})
-
+  
+  
 # source
+SET(ANTLR_FILES ${DEP} ${WDEP})
 SET(helperobjs parse.cpp)
 
 SET(OBJS ${helperobjs} ${ANTLR_OUTPUT} ${ANTLR_WOUTPUT} ${ANTLR_FILES})
