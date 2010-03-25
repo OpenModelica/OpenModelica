@@ -16,14 +16,16 @@ IF(NOT JAVA)
   MESSAGE(STATUS "-- java is " ${JAVA})
 ENDIF(NOT JAVA)
 
-# antlr
+# antlr 
 SET(ANTLR ${JAVA} -cp $ENV{OMDEV}/bin/antlr/antlr.jar antlr.Tool)
 SET(ANTLRFLAGS ) #-traceParser")
 
 
 # Includes
 INCLUDE_DIRECTORIES($ENV{OMDEV}/include)
+INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
 INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/modelica_parser/src)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 GET_PROPERTY(modelica_parser GLOBAL PROPERTY  MODELICA_parser_BUILD)
 INCLUDE_DIRECTORIES(${modelica_parser})
@@ -40,7 +42,7 @@ INCLUDE_DIRECTORIES(${modelica_flat_parser})
                      COMMENT "copy ${modelica_parser}/modelica_parserTokenTypes.txt to  ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt")
 
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(${MPTT}_cp ALL DEPENDS ${modelica_parser})
+  ADD_CUSTOM_TARGET(MPTT_cp ALL DEPENDS ${modelica_parser})
 
 # generate antlr files
 SET(DEP  walker.g)
@@ -94,15 +96,26 @@ SET(WDEP expression_parser.g)
 
   SET(ANTLR_WOUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parser.hpp
                     ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parserTokenTypes.hpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parserTokenTypes.txt)
+
+  SET(EP_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${WDEP})
   # custom command for ar
-  ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_WOUTPUT}
-                     COMMAND ${ANTLR} -glib ${OMCTRUNCHOME}/modelica_parser/src/modelica_parser.g ${ANTLRFLAGS} ${ANTLR_WDEP}
-					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_WDEP} modelica_parser.g_antlr					 
+  ADD_CUSTOM_COMMAND(OUTPUT ${EP_OUTPUT}
+                     COMMAND ${CMAKE_COMMAND} -E copy ${ANTLR_WDEP} ${EP_OUTPUT}
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                     COMMENT "Generate antlr from ${WDEP}")
+                     COMMENT "copy ${ANTLR_WDEP} to ${EP_OUTPUT}")
 
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(${WDEP}_antlr ALL DEPENDS ${ANTLR_WDEP})
+  ADD_CUSTOM_TARGET(${WDEP}_cp ALL DEPENDS ${EP_OUTPUT})					
+
+  # custom command for ar
+  ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_WOUTPUT}
+                     COMMAND ${ANTLR} -glib ${OMCTRUNCHOME}/modelica_parser/src/modelica_parser.g ${ANTLRFLAGS} ${WDEP}
+					 DEPENDS ${WDEP}_cp  ${MPTT_OUTPUT} ${ANTLR_WDEP} modelica_parser.g_antlr					 
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "Generate antlr from ${ANTLR_WDEP}")
+
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${WDEP}_antlr ALL DEPENDS ${EP_OUTPUT} ${ANTLR_WDEP})
   
   
 # source

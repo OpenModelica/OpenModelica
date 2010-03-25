@@ -31,9 +31,27 @@ IF(NOT RML)
                PATH_SUFFIXES bin tools/rml/bin)
   MESSAGE(STATUS "-- rml is " ${RML})
 ENDIF(NOT RML)		  
-		  
 
-# generate sig files
+# BASH
+IF(NOT BASH)
+  FIND_PROGRAM(BASH bash DOC "Location of the BASH executable"
+               PATHS ENV OMDEV
+               PATH_SUFFIXES bin tools/msys/bin)
+  MESSAGE(STATUS "-- bash is " ${BASH})
+ENDIF(NOT BASH)
+
+# RMLC
+IF(NOT RMLC)
+  FIND_PROGRAM(RMLC rmlc DOC "Location of the RMLC executable"
+               PATHS ENV OMDEV
+               PATH_SUFFIXES bin tools/rml/bin)
+  MESSAGE(STATUS "-- rmlc is " ${RMLC})
+ENDIF(NOT RMLC)
+
+SET(RMLCFLAGS  -Wr,-ftrace)
+
+#copy all to CODEGENDIR
+
 FOREACH(DEP ${ALLMO})
 
 	# Datei- und Pfadname
@@ -50,19 +68,80 @@ FOREACH(DEP ${ALLMO})
 		SET(${DEP}_FILE "\"${DEP}\"")
 	ENDIF(${FF})
  
+ 	SET(COPY_DEP  ${${DEP}_FILE})
+
+	SET(COPY_OUTPUT  ${CODEGENDIR}/${DF})
+	# custom command for copy
+	ADD_CUSTOM_COMMAND(OUTPUT ${COPY_OUTPUT}
+                     COMMAND ${CMAKE_COMMAND} -E copy ${COPY_DEP} ${COPY_OUTPUT}
+					 DEPENDS ${COPY_DEP}
+                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMENT "copy ${COPY_DEP} to ${COPY_OUTPUT}")
+
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${DEP}_cp ALL DEPENDS ${COPY_OUTPUT})
+  
+  # remember
+  SET(COPY_ALL ${COPY_ALL} ${DEP}_cp)
+ENDFOREACH(DEP)
+
+#.depend:
+  SET(DEPENDT_OUTPUT  .depend)
+  # custom command for rml to sig
+  ADD_CUSTOM_COMMAND(OUTPUT ${DEPENDT_OUTPUT}
+                     COMMAND ${RML} -fdump-depends ${SRCMO} > .depend 	
+					 DEPENDS ${COPY_ALL}
+                     WORKING_DIRECTORY ${CODEGENDIR}
+                     COMMENT "Generate .depend")
+
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(DEPEND ALL DEPENDS ${DEPENDT_OUTPUT})
+  
+
+# generate sig files
+FOREACH(DEP ${ALLMO})
+
+	# Datei- und Pfadname
+    GET_FILENAME_COMPONENT(DF ${DEP} NAME)
+    GET_FILENAME_COMPONENT(DFWE ${DEP} NAME_WE)
+ 
 	# Merken
 	SET(SIG_DEP ${DFWE}.sig)
   
   SET(SIGX_OUTPUT  ${SIG_DEP})
   # custom command for rml to sig
   ADD_CUSTOM_COMMAND(OUTPUT ${SIGX_OUTPUT}
-                     COMMAND ${RML} -fdump-interface ${${DEP}_FILE} > ${SIG_DEP}  												  
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     COMMAND ${RML} -fdump-interface ${DEP} > ${SIG_DEP}  	
+					 DEPENDS DEPEND ${COPY_ALL}
+                     WORKING_DIRECTORY ${CODEGENDIR}
                      COMMENT "Generate Sigx from ${DF}")
 
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${SIG_DEP} ALL DEPENDS ${SIGX_OUTPUT})
 ENDFOREACH(DEP)
+
+# generate *.h and *.c from *.mo files
+FOREACH(DEP ${SRCMO})
+
+	# Datei- und Pfadname
+    GET_FILENAME_COMPONENT(DF ${DEP} NAME)
+    GET_FILENAME_COMPONENT(DFWE ${DEP} NAME_WE)
+ 
+	# Merken
+	SET(MOCH_DEP ${DFWE}.h ${DFWE}.c)
+  
+  SET(MOCH_OUTPUT  ${MOCH_DEP})
+  # custom command for rml to sig
+  ADD_CUSTOM_COMMAND(OUTPUT ${MOCH_OUTPUT}
+                     COMMAND ${BASH} ${RMLC} -v ${RMLCFLAGS} +C ${DEP} 	
+					 DEPENDS DEPEND ${COPY_ALL}
+                     WORKING_DIRECTORY ${CODEGENDIR}
+                     COMMENT "Generate *.h and *.c from ${DEP}")
+
+  # target fuer OM_OUTPUT
+  ADD_CUSTOM_TARGET(${DFWE}_codegen ALL DEPENDS ${MOCH_OUTPUT})
+ENDFOREACH(DEP)
+
 
 ADD_SUBDIRECTORY(runtime)
 ADD_SUBDIRECTORY(absyn_builder)
