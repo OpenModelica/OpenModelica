@@ -5297,7 +5297,7 @@ algorithm
         (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
 
         checkRecursiveDefinition(env,t,ci_state,cl);
-                 
+
         //If the element is `protected\', and an external modification 
         //is applied, it is an error. 
         checkProt(prot, mm_1, vn) ;
@@ -6303,14 +6303,18 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
    	// e.g. Point p => Real p[3]; These must be handled separately since even if they do not
 	 	// appear to be an array, they can. Therefore we need to collect
  	 	// the full dimensionality and call instVar2
+    //case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id, classDef = SCode.DERIVED(modifications = mods))),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name = id)),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      local
+        DAE.Mod type_mods;
       equation
         // Collect dimensions
         p1 = Absyn.IDENT(n);
         p1 = PrefixUtil.prefixPath(p1,pre);
         str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
-        (cache,(dims_1 as (_ :: _)),cl,dae) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
+        (cache,(dims_1 as (_ :: _)),cl,dae,type_mods) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
+        mod = Mod.merge(mod, type_mods, env, pre);
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix,graph);
         ty = ty_1; // adrpo: this doubles the dimension! ty = makeArrayType(dims_1, ty_1);
@@ -6734,7 +6738,8 @@ end makeArrayType;
 
 public function getUsertypeDimensions
 "function: getUsertypeDimensions
-  Retrieves the dimensions of a usertype and the innermost class type to instantiate.
+  Retrieves the dimensions of a usertype and the innermost class type to instantiate, 
+  and also any modifications from the base classes of the usertype.
   The builtin types have no dimension, whereas a user defined type might
   have dimensions. For instance, type Point = Real[3];
   has one dimension of size 3 and the class to instantiate is Real"
@@ -6749,14 +6754,15 @@ public function getUsertypeDimensions
   output list<DimExp> outDimExpLst;
   output SCode.Class classToInstantiate;
   output DAE.DAElist outDae "contain functions";
+  output DAE.Mod outMods "modifications from base classes";
 algorithm
-  (outCache,outDimExpLst,classToInstantiate,outDae) := matchcontinue (inCache,inEnv,inMod,inPrefix,inClass,inInstDims,inBoolean)
+  (outCache,outDimExpLst,classToInstantiate,outDae,outMods) := matchcontinue (inCache,inEnv,inMod,inPrefix,inClass,inInstDims,inBoolean)
     local
       SCode.Class cl;
       list<Env.Frame> cenv,env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad_1;
-      DAE.Mod mod_1,mods_2,mods_3,mods;
+      DAE.Mod mod_1,mods_2,mods_3,mods,type_mods;
       Option<DAE.EqMod> eq;
       list<DimExp> dim1,dim2,res;
       Prefix.Prefix pre;
@@ -6769,13 +6775,13 @@ algorithm
       Env.Cache cache;
       DAE.DAElist fdae,fdae2,fdae3;
 
-    case (cache,_,_,_,cl as SCode.CLASS(name = "Real"),_,_) then (cache,{},cl,DAEUtil.emptyDae);  /* impl */
-    case (cache,_,_,_,cl as SCode.CLASS(name = "Integer"),_,_) then (cache,{},cl,DAEUtil.emptyDae);
-    case (cache,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl,DAEUtil.emptyDae);
-    case (cache,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl,DAEUtil.emptyDae);
+    case (cache,_,_,_,cl as SCode.CLASS(name = "Real"),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);  /* impl */
+    case (cache,_,_,_,cl as SCode.CLASS(name = "Integer"),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
+    case (cache,_,_,_,cl as SCode.CLASS(name = "String"),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
+    case (cache,_,_,_,cl as SCode.CLASS(name = "Boolean"),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
 
     case (cache,_,_,_,cl as SCode.CLASS(restriction = SCode.R_RECORD(),
-                                        classDef = SCode.PARTS(elementLst = _)),_,_) then (cache,{},cl,DAEUtil.emptyDae);
+                                        classDef = SCode.PARTS(elementLst = _)),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
 
     /*------------------------*/
     /* MetaModelica extension */
@@ -6789,16 +6795,16 @@ algorithm
         ad_1 = getOptionArraydim(ad);
         // Absyn.IDENT("Integer") used as a dummie
         (cache,dim1,fdae) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"), ad_1, NONE, impl, NONE,true);
-      then (cache,dim1,cl,fdae);
+      then (cache,dim1,cl,fdae,DAE.NOMOD);
     // Partial function definitions with no output - stefan
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) then (cache,{},cl,DAEUtil.emptyDae);
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = true),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
     case (cache,env,_,_,SCode.CLASS(name = id,restriction = SCode.R_FUNCTION(),partialPrefix = false),_,_)
       equation
         Error.addMessage(Error.META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, {id});
       then fail();
 
       // MetaModelica Uniontype. Added 2009-05-11 sjoelund
-    case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl,DAEUtil.emptyDae);
+    case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
       /*----------------------*/
 
     /* Derived classes with restriction type, e.g. type Point = Real[3]; */
@@ -6813,12 +6819,13 @@ algorithm
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         eq = Mod.modEquation(mods_2);
         mods_3 = Mod.lookupCompModification(mods_2, id);
-        (cache,dim1,cl,fdae2) = getUsertypeDimensions(cache,cenv, mods_3, pre, cl, dims, impl);
+        (cache,dim1,cl,fdae2,type_mods) = getUsertypeDimensions(cache,cenv, mods_3, pre, cl, dims, impl);
+        type_mods = Mod.merge(mod_1, type_mods, env, pre);
         (cache,dim2,fdae3) = elabArraydim(cache,env, owncref, cn, ad_1, eq, impl, NONE,true);
         res = listAppend(dim2, dim1);
         fdae = DAEUtil.joinDaeLst({fdae,fdae2,fdae3});
       then
-        (cache,res,cl,fdae);
+        (cache,res,cl,fdae,type_mods);
 
     /* extended classes type Y = Real[3]; class X extends Y; */
     case (cache,env,mods,pre,SCode.CLASS(name = id,restriction = _,
@@ -6837,13 +6844,14 @@ algorithm
         (cache,mod_1,fdae) = Mod.elabModForBasicType(cache,env, pre, mod, impl);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, path, true);
-        (cache,res,cl,fdae2) = getUsertypeDimensions(cache,env,mods_2,pre,cl,{},impl);
+        (cache,res,cl,fdae2,type_mods) = getUsertypeDimensions(cache,env,mods_2,pre,cl,{},impl);
+        type_mods = Mod.merge(mods_2, type_mods, env, pre);
         fdae = DAEUtil.joinDaes(fdae,fdae2);
       then
-        (cache,res,cl,fdae);
+        (cache,res,cl,fdae,type_mods);
 
     case (cache,_,_,_,cl as SCode.CLASS(name = _),_,_)
-      then (cache,{},cl,DAEUtil.emptyDae);
+      then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
 
     case (_,_,_,_,SCode.CLASS(name = id),_,_)
       equation
