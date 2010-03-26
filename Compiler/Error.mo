@@ -548,6 +548,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 protected import ErrorExt;
 protected import Util;
 protected import Print;
+protected import RTOpts;
+protected import System;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
 This function takes a String and set the global var to which the current variable the
@@ -557,10 +559,11 @@ compiler is working with.
   input Option<Absyn.Info> info;
 algorithm _ :=
   matchcontinue (component, info)
-      local String s1; Integer i1,i2,i3,i4; Boolean b1;
-  case(component,SOME(Absyn.INFO(s1,b1,i1,i2,i3,i4,_)))
+      local String filename; Integer i1,i2,i3,i4; Boolean b1;
+  case(component,SOME(Absyn.INFO(filename,b1,i1,i2,i3,i4,_)))
     equation
-      ErrorExt.updateCurrentComponent(component,b1,s1,i1,i3,i2,i4);
+      filename = fixFilenameForTestsuite(filename);
+      ErrorExt.updateCurrentComponent(component,b1,filename,i1,i3,i2,i4);
       then ();
   case(component,NONE)
         equation
@@ -613,6 +616,9 @@ public function addSourceMessage "function: addSourceMessage
 
   Adds a message given ID, tokens and source file info.
   The rest of the info is looked up in the message table.
+  
+  Not used 2010-03-26. I'll keep it here in case MathCore uses it,
+  but changes made here do not fix things in OpenModelica!
 "
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
@@ -887,6 +893,7 @@ algorithm
       ErrorID sline,scol,eline,ecol;
     case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
+        filename = fixFilenameForTestsuite(filename);
         s1 = selectString(isReadOnly, "readonly", "writable");
         sline_str = intString(sline);
         scol_str = intString(scol);
@@ -899,5 +906,23 @@ algorithm
         res;
   end matchcontinue;
 end infoStr;
+
+protected function fixFilenameForTestsuite
+"Updates the filename if it is used within the testsuite.
+This ensures that error messages use the same filename for
+everyone running the testsuite."
+  input String filename;
+  output String outFilename;
+algorithm
+  outFilename := matchcontinue filename
+    case filename
+      equation
+        true = RTOpts.debugFlag("rtest");
+        filename = System.stringFindString(filename, "/testsuite/");
+      then filename;
+    case filename then filename;
+  end matchcontinue;
+end fixFilenameForTestsuite;
+
 end Error;
 

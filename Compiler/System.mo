@@ -78,6 +78,14 @@ public function stringFind "locates substring searchStr in str. If succeeds retu
   external "C" ;
 end stringFind;
 
+public function stringFindString "locates substring searchStr in str. If succeeds return the string, otherwise fail"
+  input String str;
+  input String searchStr;
+  output String outString;
+
+  external "C";
+end stringFindString;
+
 public function strncmp
   input String inString1;
   input String inString2;
