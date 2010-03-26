@@ -4972,7 +4972,28 @@ algorithm
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
         (v,kv,extVars,e,re,ie,ae,al,whenclauses_1,extObjCls);
-
+   
+    // constrain is not a standard Modelica function, but used in old libraries such as the old Multibody library.
+    // The OpenModelica backend does not support constrain, but the frontend does (Mathcore needs it for their backend).
+    // To get a meaningful error message when constrain is used we catch it here, instead of silently failing. 
+    // User-defined functions should have fully qualified names here, so Absyn.IDENT should only match the builtin constrain function.        
+    case (DAE.DAE(DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain")) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+      equation
+        Error.addMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {"constrain"});
+      then
+        fail();
+        
+    case (DAE.DAE(DAE.NORETCALL(functionName = func_name, functionArgs = args) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+      local
+        Absyn.Path func_name;
+        list<DAE.Exp> args;
+        DAE.Statement s;
+      equation
+        (vars,kv,extVars,eqns,re,ie,ae,al,whenclauses_1,extObjCls) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
+        s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, false, false, DAE.ET_NORETCALL, DAE.NORM_INLINE));
+      then
+        (vars,kv,extVars,eqns,re,ie,ae,DAE.ALGORITHM_STMTS({s}) :: al,whenclauses_1,extObjCls);
+        
     case (DAE.DAE(elementLst = (ddl :: xs)),_,vars,knvars,extVars,_)
       local DAE.Element ddl; String s3;
       equation
@@ -5400,6 +5421,12 @@ algorithm
 				inputs2 = statesAndVarsExp(e, vars);
 				inputs = Util.listUnion(inputs1, inputs2);
 			then (inputs, outputs);
+			  
+		case(vars, DAE.STMT_NORETCALL(exp = e))
+		  equation
+		    inputs = statesAndVarsExp(e, vars);
+		  then
+		    (inputs, {});
   end matchcontinue;
 end lowerStatementInputsOutputs;
 
@@ -11732,6 +11759,11 @@ algorithm
         (e2_1,_) = Exp.replaceExpList(e2, s, t);
       then
         DAE.STMT_ASSERT(e1_1,e2_1);
+    case (DAE.STMT_NORETCALL(exp = e),s,t)
+      equation
+        (e_1,_) = Exp.replaceExpList(e, s, t);
+      then
+        DAE.STMT_NORETCALL(e_1);
     case (a,_,_)
       equation
         print("- DAELow.replaceVariablesInStmt: Warning moving to next element due to failure.\n");
