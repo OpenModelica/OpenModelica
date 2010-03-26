@@ -736,7 +736,7 @@ algorithm
     case {(c,f,_)}
       equation
         exp = signFlow(c, f);
-        // print("Generating flow expresion: " +& Exp.printExpStr(exp) +& "\n");
+         //print("Generating flow expression: " +& Exp.printExpStr(exp) +& "\n");
       then
         exp;
     case (((c,f,_) :: cs))

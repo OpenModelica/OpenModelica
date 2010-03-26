@@ -4453,7 +4453,9 @@ end arrayEltType;
 
 public function unliftArray
 "function: unliftArray
-  Converts an array type into its element type."
+  Converts an array type into its element type
+  See also Types.unliftArray.
+  ."
   input Type inType;
   output Type outType;
 algorithm
@@ -8295,9 +8297,9 @@ public function stringifyComponentRef
   Type ty;
 algorithm
   subs := crefLastSubs(cr);
-  cr_1 := crefStripLastSubs(cr) "PA" ;
+  cr_1 := crefStripLastSubs(cr);
   crs := printComponentRefStr(cr_1);
-  ty := elaborateCrefQualType(cr);
+  ty := crefLastType(cr) "The type of the stringified cr is taken from the last identifier";
   outComponentRef := DAE.CREF_IDENT(crs,ty,subs);
 end stringifyComponentRef;
 

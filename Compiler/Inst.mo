@@ -1920,6 +1920,7 @@ algorithm
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
         tys2 = listAppend(tys,tys1);
+        fdae = DAEUtil.joinDaes(fdae,DAEUtil.extractFunctions(dae1));
       then (cache,env_3,ih,store,fdae,Connect.SETS({},crs,dc,oc),ci_state_1,tys2,bc /* NONE */,NONE,NONE,graph);
 
 
@@ -2773,7 +2774,7 @@ algorithm
       UnitAbsyn.Store st2;
       UnitAbsyn.Store st3;
       UnitAbsyn.Unit u1;
-      DAE.DAElist fdae,fdae0,fdae1;
+      DAE.DAElist fdae,fdae0,fdae1,fdae2,fdae3;
       Boolean unrollForLoops;
       
       /* This rule describes how to instantiate a class definition
@@ -2790,12 +2791,15 @@ algorithm
         (env1,ih) = addClassdefsToEnv(env,ih, cdefelts, impl,SOME(mods)) "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
         cdefelts_1 = addNomod(cdefelts) "instantiate CDEFS so redeclares are carried out" ;
         (cache,env2,ih,cdefelts_2,csets,fdae) = updateCompeltsMods(cache,env1,ih, pre, cdefelts_1, ci_state, csets, impl);
-        (cache,env3,ih,store,_,csets1,ci_state1,tys,graph) =
+
+        (cache,env3,ih,store,fdae3,csets1,ci_state1,tys,graph) =
           instElementList(cache, env2, ih, store, mods , pre, csets, ci_state, cdefelts_2, inst_dims, impl, graph);
         mods = Types.removeFirstSubsRedecl(mods);
-        (cache,ih,store,bc,tys)= instBasictypeBaseclass(cache, env3, ih, store, extendselts, compelts, mods, inst_dims);
+        (cache,ih,store,fdae2,bc,tys)= instBasictypeBaseclass(cache, env3, ih, store, extendselts, compelts, mods, inst_dims);
         // Search for equalityConstraint
         eqConstraint = equalityConstraint(cache, env, els);
+
+        fdae = DAEUtil.joinDaeLst({fdae,fdae2,fdae3});
       then
         (cache,env,ih,store,fdae,Connect.SETS({},crs,dc,oc),ci_state,tys,bc,NONE,eqConstraint,graph);
 
@@ -3709,10 +3713,11 @@ protected function instBasictypeBaseclass
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
+  output DAE.DAElist outDae "contain functions";
   output Option<DAE.Type> outTypesTypeOption;
   output list<DAE.Var> outTypeVars;
 algorithm
-  (outCache,outIH,outStore,outTypesTypeOption,outTypeVars) :=
+  (outCache,outIH,outStore,outDae,outTypesTypeOption,outTypeVars) :=
   matchcontinue (inCache,inEnv,inIH,store,inSCodeElementLst2,inSCodeElementLst3,inMod4,inInstDims5)
     local
       DAE.Mod m_1,m_2,mods;
@@ -3729,11 +3734,12 @@ algorithm
       String classname;
       Env.Cache cache;
       InstanceHierarchy ih;
+      DAE.DAElist fdae,fdae1;
 
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
-        (cache,m_1,_) = Mod.elabModForBasicType(cache,env, Prefix.NOPRE(), mod, true);
+        (cache,m_1,fdae) = Mod.elabModForBasicType(cache,env, Prefix.NOPRE(), mod, true);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
         (cache,env_1,ih,store,dae,_,ty,tys,st) = instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), Connect.emptySet, cdef, inst_dims, false, INNER_CALL());
@@ -3741,9 +3747,11 @@ algorithm
         b2 = Types.arrayType(ty);
         b3 = Types.extendsBasicType(ty);
         true = Util.boolOrList({b1, b2, b3});
+        
+        fdae = DAEUtil.joinDaes(fdae,dae);
         ErrorExt.rollBack("instBasictypeBaseclass");
       then
-        (cache,ih,store,SOME(ty),tys);
+        (cache,ih,store,fdae,SOME(ty),tys);
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
         rollbackCheck(path) "only rollback errors affecting basic types";
@@ -5837,7 +5845,7 @@ algorithm
       String n,n2,s,scope_str,ns;
       Boolean finalPrefix,repl,prot,f2,repl2,impl,flowPrefix,streamPrefix;
       SCode.Class cls2,c,cl;
-      DAE.DAElist dae,dae2,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6;
+      DAE.DAElist dae,dae2,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6,fdae7;
       DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
@@ -5968,7 +5976,8 @@ algorithm
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
         crefs_1 = Util.listFlatten({crefs,crefs2,crefs3});
-        (cache,env,ih,store,crefs_2) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,aInfo);
+        (cache,env,ih,store,crefs_2,fdae7) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,aInfo);
+        (cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         (cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         (cache,env2,ih,csets,fdae3) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
 				//Update the untyped modifiers to typed ones, and extract class and
@@ -6045,12 +6054,12 @@ algorithm
         //declaration is added to the DAE.
         env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv);
         vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE())});
-        dae = Util.if_(alreadyDeclared,DAEUtil.emptyDae,dae);
+        dae = Util.if_(alreadyDeclared,DAEUtil.extractFunctions(dae),dae);
         (dae,ih,graph) = InnerOuter.handleInnerOuterEquations(io,dae,ih,graphNew,graph);
 
         /* if declaration condition is true, remove dae elements and connections */
         (cache,dae,csets_1,graph,fdae) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre,graph);
-        dae = DAEUtil.joinDaeLst({dae,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6});
+        dae = DAEUtil.joinDaeLst({dae,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6,fdae7});
       then
         (cache,env_1,ih,store,dae,csets_1,ci_state,vars,graph);
 
@@ -6160,7 +6169,7 @@ algorithm
         // declaration is added to the DAE.
         env_1 = Env.updateFrameV(env, new_var, Env.VAR_DAE(), compenv)  ;
         vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE())});
-        dae = Util.if_(alreadyDeclared,DAEUtil.emptyDae,dae);
+        dae = Util.if_(alreadyDeclared,DAEUtil.extractFunctions(dae),dae);
         (dae,ih,graph) = InnerOuter.handleInnerOuterEquations(io,dae,ih,graphNew,graph);
         // If an outer element, remove this variable from the DAE. Variable references will be bound to
         // corresponding inner element instead.
@@ -7089,6 +7098,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       Mod modificationOnInnerComponent;
+      DAE.DAElist fdae;
 
    	// impl component environment dae elements for component Variables of userdefined type,
    	// e.g. Point p => Real p[3]; These must be handled separately since even if they do not
@@ -7104,12 +7114,13 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         p1 = PrefixUtil.prefixPath(p1,pre);
         str = Absyn.pathString(p1);
         Error.updateCurrentComponent(str,info);
-        (cache,(dims_1 as (_ :: _)),cl,dae,type_mods) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
+        (cache,(dims_1 as (_ :: _)),cl,fdae,type_mods) = getUsertypeDimensions(cache,env, mod, pre, cl, inst_dims, impl);
         mod = Mod.merge(mod, type_mods, env, pre);
         attr = propagateClassPrefix(attr,pre);
         (cache,compenv,ih,store,dae,csets_1,ty_1,graph) = instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr, prot, dims_1, idxs, inst_dims, impl, comment,io,finalPrefix,graph);
         ty = ty_1; // adrpo: this doubles the dimension! ty = makeArrayType(dims_1, ty_1);
         Error.updateCurrentComponent("",NONE);
+        dae = DAEUtil.joinDaes(fdae,dae);
       then
         (cache,compenv,ih,store,dae,csets_1,ty,graph);
 
@@ -7230,12 +7241,12 @@ algorithm
                 
         //get the equation modification 
         SOME(DAE.TYPED(e,_,p)) = Mod.modEquation(mod) ;        
-        //Instantiate type of the component, skip dae/not flattening
+        //Instantiate type of the component, skip dae/not flattening (but extract functions)
         // adrpo: do not send in the modifications as it will fail if the modification is an ARRAY. 
         //        anyhow the modifications are handled below.
         //        input Integer sequence[3](min = {1,1,1}, max = {3,3,3}) = {1,2,3}; // this will fail if we send in the mod.
         //        see testsuite/mofiles/Sequence.mo
-        (cache,env_1,ih,store,_,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);
+        (cache,env_1,ih,store,dae1,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, /* mod */ DAE.NOMOD(), pre, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         //Make it an array type since we are not flattening
         ty_1 = makeArrayType(dims, ty);
 
@@ -7252,6 +7263,7 @@ algorithm
 
         dae = daeDeclare(cr, ci_state, ty, attr, prot, SOME(e_1), {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+        dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
         (cache,env_1,ih,store,dae,csets_1,ty_1,graph);
 
@@ -7263,7 +7275,7 @@ algorithm
        equation
         ClassInf.isFunction(ci_state);
          //Instantiate type of the component, skip dae/not flattening
-        (cache,env_1,ih,store,_,csets,ty,st,_,_) = instClass(cache, env, ih, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
+        (cache,env_1,ih,store,dae1,csets,ty,st,_,_) = instClass(cache, env, ih, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
         cr = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
@@ -7275,6 +7287,7 @@ algorithm
         dae = daeDeclare(cr, ci_state, ty, attr,prot, NONE, {dims_1}, NONE, dae_var_attr, comment,io,finalPrefix,source,true);
         arrty = makeArrayType(dims, ty);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
+        dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
         (cache,env_1,ih,store,dae,csets,arrty,graph);
 
@@ -7380,7 +7393,8 @@ algorithm
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt,
                           inst_dims, start, dae_var_attr, comment,io,finalPrefix,source,false);
         dae3 = DAEUtil.addComponentTypeOpt(dae3, Types.getClassnameOpt(ty));
-        dae2 = Util.if_(Types.isComplexType(ty), dae2, DAEUtil.emptyDae);
+        dae2 = Util.if_(Types.isComplexType(ty), dae2, DAEUtil.extractFunctions(dae2));
+        
         dae3 = DAEUtil.joinDaes(dae2,dae3);
         dae = DAEUtil.joinDaes(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -8501,7 +8515,7 @@ algorithm
     case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,_,graph)
       equation
         SOME(DAE.TYPED(e,_,p)) = Mod.modEquation(mod);
-        (cache,env_1,ih,store,_,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
+        (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
         ty_1 = Types.elabType(ty);
         cr = PrefixUtil.prefixCref(pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";
         (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
@@ -8510,6 +8524,7 @@ algorithm
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         dae = makeDaeEquation(DAE.CREF(cr,ty_1), e_1, source, SCode.NON_INITIAL());
+        dae = DAEUtil.joinDaes(dae,DAEUtil.extractFunctions(dae1));
       then
         (cache,env_1,ih,store,dae,csets,ty,graph);
 
@@ -8524,11 +8539,12 @@ algorithm
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       equation
         ErrorExt.setCheckpoint("instArray");
-        (cache,compenv,ih,store,_,csets,ty,graph) =
+        (cache,compenv,ih,store,daeLst,csets,ty,graph) =
            instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (0 :: idxs), inst_dims, impl, comment,io,finalPrefix,graph);
+        daeLst = DAEUtil.extractFunctions(daeLst);   
         ErrorExt.rollBack("instArray");
       then
-        (cache,compenv,ih,store,DAEUtil.emptyDae,csets,ty,graph);
+        (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,graph)
       equation
@@ -10093,13 +10109,14 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         (cache,mod2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod1, false); 
-        (cache,_,ih,_,_,_,ty,_,_,_) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), mod2, Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
+        (cache,_,ih,_,dae,_,ty,_,_,_) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), mod2, Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(id));
         ty1 = setFullyQualifiedTypename(ty,fpath);
         env_1 = Env.extendFrameT(env_1, id, ty1);
+        dae = DAEUtil.extractFunctions(dae);
       then
-        (cache,env_1,ih,DAEUtil.emptyDae);
+        (cache,env_1,ih,dae);
 
     case (_,_,_,_)
       equation
@@ -11460,6 +11477,7 @@ algorithm
         
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
+        
         dae = DAEUtil.joinDaeLst({dae,fdae1,fdae2,fdae3});
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
@@ -16661,8 +16679,9 @@ protected function removeSelfReferenceAndUpdate
   output InstanceHierarchy outIH;
   output UnitAbsyn.InstStore outStore;
   output list<Absyn.ComponentRef> o1;
+  output DAE.DAElist dae "contain functions";
 algorithm
-  (o2,o3,outIH,outStore,o1) :=
+  (o2,o3,outIH,outStore,o1,dae) :=
   matchcontinue(cache,inEnv,inIH,store,inRefs,inRef,inPath,inState,icsets,p,iattr,impl,io,inst_dims,pre,mods,finalPrefix,info)
     local
       Absyn.Path sty;
@@ -16694,7 +16713,7 @@ algorithm
         i2 = listLength(cl1);
         true = ( i1 == i2);
       then
-        (cache,env,ih,store,cl2);
+        (cache,env,ih,store,cl2,DAEUtil.emptyDae);
 
     case(cache,env,ih,store,cl1,c1 as Absyn.CREF_IDENT(name = n) ,sty,state,csets,prot,
          (attr as SCode.ATTR(arrayDims = ad, flowPrefix = flowPrefix, streamPrefix = streamPrefix,
@@ -16705,20 +16724,21 @@ algorithm
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims,_) = elabArraydim(cache,cenv, c1, sty, ad, NONE, impl, NONE,true)  ;
-        (cache,compenv,ih,store,_,_,ty,_) = instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY);
+        (cache,compenv,ih,store,dae,_,ty,_) = instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,DAE.UNBOUND(),NONE());
         env = Env.updateFrameV(env, new_var, Env.VAR_TYPED(), compenv)  ;
+        dae = DAEUtil.extractFunctions(dae) "only return functions";
       then
-        (cache,env,ih,store,cl2);
+        (cache,env,ih,store,cl2,dae);
 
     case(cache,env,ih,store,cl1,c1,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         cl2 = removeCrefFromCrefs(cl1, c1);
       then
-        (cache,env,ih,store,cl2);
+        (cache,env,ih,store,cl2,DAEUtil.emptyDae);
 
   end matchcontinue;
 end removeSelfReferenceAndUpdate;
@@ -16779,7 +16799,7 @@ algorithm
       true = Types.isBoolean(t);
       true = Types.isParameterOrConstant(c);
       (cache,Values.BOOL(b),_) = Ceval.ceval(cache, env, e, false, NONE, NONE, Ceval.MSG());
-      dae = Util.if_(b,dae,DAEUtil.emptyDae);
+      dae = Util.if_(b,dae,DAEUtil.extractFunctions(dae));
       cr = PrefixUtil.prefixCref(pre,DAE.CREF_IDENT(compName,DAE.ET_OTHER(),{}));
       sets = ConnectUtil.addDeletedComponent(b,cr,sets);
     then (cache,dae,sets,graph,dae1);
@@ -17081,7 +17101,8 @@ algorithm
         true = Types.isExternalObject(tp);
         dae = makeDaeEquation(lhs,rhs,source,initial_);
         // adrpo: TODO! FIXME! shouldn't we return the dae here??!!
-      then DAEUtil.emptyDae;
+      // PA: do not know, but at least return the functions.
+      then DAEUtil.extractFunctions(dae); 
 
     // adrpo 2009-05-15: also T_COMPLEX that is NOT record but TYPE should be allowed
     //                   as is used in Modelica.Mechanics.MultiBody (Orientation type)

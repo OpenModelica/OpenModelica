@@ -8577,15 +8577,19 @@ algorithm
       list<Slot> slots;
       DAE.ExpType etp;
     case (e,{},_,prop) then (e,prop);
-    case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) /* Scalar expression, i.e function call */
+    
+    /* Scalar expression, i.e function call */
+    case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) 
       equation 
-        exp_type = Types.elabType(Types.liftArray(tp, SOME(dim)));
+        exp_type = Types.elabType(Types.liftArray(tp, SOME(dim))) "pass type of vectorized result expr";
         vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, dim, slots);
         (vect_exp_1,DAE.PROP(tp,c)) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
         tp = Types.liftArray(tp, SOME(dim));
       then
         (vect_exp_1,DAE.PROP(tp,c));
-    case (DAE.ARRAY(scalar = scalar,array = expl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) /* array expression of function calls */
+    
+    /* array expression of function calls */
+    case (DAE.ARRAY(scalar = scalar,array = expl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) 
       equation
         exp_type = Types.elabType(Types.liftArray(tp, SOME(dim)));
         vect_exp = vectorizeCallArray(DAE.ARRAY(exp_type,scalar,expl), dim, slots);
@@ -8696,8 +8700,8 @@ protected function vectorizeCallScalar
 
   Helper function to vectorizeCall, vectorizes CALL expressions to
   array expressions."
-  input DAE.Exp inExp;
-  input DAE.ExpType inType;
+  input DAE.Exp inExp "e.g. abs(v)";
+  input DAE.ExpType inType " e.g. Real[3], result of vectorized call";
   input Integer inInteger;
   input list<Slot> inSlotLst;
   output DAE.Exp outExp;
@@ -8715,7 +8719,7 @@ algorithm
     case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin)),e_type,dim,slots) /* cur_dim */
       equation
         expl = vectorizeCallScalar2(args, slots, 1, dim, callexp);
-        scalar = Exp.typeBuiltin(e_type);
+        scalar = Exp.typeBuiltin(Exp.unliftArray(e_type)) " unlift vectorized dimension to find element type";
         new_exp = DAE.ARRAY(e_type,scalar,expl);
       then
         new_exp;
@@ -10222,9 +10226,8 @@ algorithm
       equation
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
-        //print("cr ="+&Exp.printComponentRefStr(cr)+&" has type "+&Exp.typeString(expTy)+&"\n");
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy);        
+        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy);
       then
         (cache,e,DAE.C_VAR(),acc);
 

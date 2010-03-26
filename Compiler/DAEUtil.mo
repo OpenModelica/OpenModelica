@@ -608,7 +608,9 @@ end printDAE;
 
 
 public function dump "function: dump
-  This function prints the DAE in the standard output format."
+  This function prints the DAE in the standard output format to the Print buffer.
+  For printing to the stdout use print(dumpStr(dae)) instead.
+  "
   input DAE.DAElist inDAElist;
 algorithm
   _ := matchcontinue (inDAElist)
@@ -625,6 +627,40 @@ algorithm
         ();
   end matchcontinue;
 end dump;
+
+public function dumpFunctionNamesStr "return all function names in a string  (comma separated)"
+  input DAE.DAElist dae;
+  output String str;
+algorithm
+  str := matchcontinue(dae)
+    local
+      list<DAE.Element> daelist;
+      DAE.FunctionTree funcs;
+    case DAE.DAE(_,funcs) equation
+        //print("dumping DAE, avltree list length:"+&intString(listLength(avlTreeToList(funcs)))+&"\n");
+      str = Util.stringDelimitList(Util.listMap(sortFunctions(Util.listMap(avlTreeToList(funcs),Util.tuple22)),functionNameStr),",");
+    then str;
+  end matchcontinue;
+end dumpFunctionNamesStr;
+
+protected function functionNameStr
+"return the name of a function, if element is not function return  empty string"
+  input DAE.Element inElement;
+  output String res;
+algorithm
+  res := matchcontinue (inElement)
+    local
+      Absyn.Path fpath;
+      
+     case DAE.FUNCTION(path = fpath) equation
+       res = Absyn.pathString(fpath);
+     then res;
+     case DAE.RECORD_CONSTRUCTOR(path = fpath) equation
+       res = Absyn.pathString(fpath);
+     then res;
+     case _ then "";
+  end matchcontinue;
+end functionNameStr;
 
 protected function sortFunctions "sorts the functions in alphabetical order"
   input list<DAE.Element> funcs;
@@ -6817,7 +6853,6 @@ algorithm
     DAE.Element elt;
 
     case(DAE.DAE({},funcs)) then DAE.DAE({},funcs);
-
       /* is function */
     case(DAE.DAE(elt::elts,funcs)) equation
         true = elementIsFunction(elt);
@@ -6966,6 +7001,17 @@ algorithm
   end matchcontinue;
 end joinDaeLst;
 
+public function extractFunctions "Extracts only the functions from a DAE.DAElist and returns an empty element list
+Is typically used when no dae should be generated, but functions must be passed along.
+"
+  input DAE.DAElist dae;
+  output DAE.DAElist outDae;
+algorithm
+  outDae := matchcontinue(dae) 
+  local DAE.FunctionTree funcs;
+    case(DAE.DAE(_,funcs)) then DAE.DAE({},funcs);
+  end matchcontinue; 
+end extractFunctions;
 /*AvlTree implementation for DAE functions.*/
 
 public function keyStr "prints a key to a string"
