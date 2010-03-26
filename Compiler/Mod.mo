@@ -56,7 +56,6 @@ public import RTOpts;
 public type Ident = String;
 
 protected import Ceval;
-protected import ClassInf;
 protected import DAEUtil;
 protected import Dump;
 protected import Debug;
@@ -179,6 +178,18 @@ algorithm
   end matchcontinue;
 end elabModForBasicType;
 
+protected constant list<String> basicTypeMods = {
+  "quantity",
+  "unit",
+  "displayUnit",
+  "min",
+  "max",
+  "start",
+  "fixed",
+  "nominal",
+  "stateSelect"  
+};
+
 protected function checkIfModsAreBasicTypeMods "
   Verifies that a list of submods only have named modifications that could be
   used for basic types.
@@ -209,7 +220,7 @@ algorithm
     case {} then ();
     case SCode.NAMEMOD(ident = ident)::subs
       equation
-        true = ClassInf.isBasicTypeComponentName(ident);
+        true = listMember(ident,basicTypeMods);
         checkIfSubmodsAreBasicTypeMods(subs);
       then ();
     case SCode.IDXMOD(an = mod)::subs
@@ -236,6 +247,7 @@ algorithm
 	  Absyn.InnerOuter io;
 	  list<SCode.Element> elts;
 	  SCode.Ident cn,cn2,compname;
+	  SCode.BaseClassList bc;
 	  Option<SCode.Comment> cmt;
 	  SCode.Restriction restr;
 	  Absyn.TypeSpec tp,tp1;
@@ -253,7 +265,7 @@ algorithm
 	  case(cache,env,pre,f,{},_) then ({},DAEUtil.emptyDae);
 
 	 	// Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
-	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),cc)::elts,impl)
+	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),bc,cc)::elts,impl)
 	    local
 	      Absyn.ElementAttributes attr1;
 	      Option<Absyn.ConstrainClass> cc;
@@ -262,23 +274,23 @@ algorithm
 	     (modElts,dae2) = elabModRedeclareElements(cache,env,pre,f,elts,impl);
 	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
 	     dae = DAEUtil.joinDaes(dae1,dae2);
-	 then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),cc),emod)::modElts, dae);
+	 then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),bc,cc),emod)::modElts, dae);
    // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
-	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc)::elts,impl)
+	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),bc,cc)::elts,impl)
 	    local
 	      list<SCode.Enum> enumLst;
         Option<SCode.Comment> comment;
 	      Option<Absyn.ConstrainClass> cc;
 	    equation
 	     (modElts,dae) = elabModRedeclareElements(cache,env,pre,f,elts,impl);
-	    then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc),DAE.NOMOD())::modElts,dae);
+	 then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),bc,cc),DAE.NOMOD())::modElts,dae);
 		// redeclare of component declaration
-	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,cmt,cond,info,cc)::elts,impl) equation
+	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,bc,cmt,cond,info,cc)::elts,impl) equation
 	    (cache,emod,dae1) = elabMod(cache,env,pre,mod,impl);
 	    (modElts,dae2) = elabModRedeclareElements(cache,env,pre,f,elts,impl);
 	    (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
 	    dae = DAEUtil.joinDaes(dae1,dae2);
-	  then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,cmt,cond,info,cc),emod)::modElts,dae);
+	  then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,bc,cmt,cond,info,cc),emod)::modElts,dae);
 	end matchcontinue;
 end elabModRedeclareElements;
 
@@ -499,7 +511,8 @@ algorithm
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
-        Debug.fprintln("updmod", Debug.fcallret("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE,prop))),""));
+        Debug.fcall("updmod", printMod,
+          DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE,prop))));
        dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop))),dae);
@@ -1512,6 +1525,7 @@ algorithm
       SCode.Attributes attr;
       Absyn.TypeSpec tp;
       SCode.Mod m1,m2;
+      SCode.BaseClassList bc,bc2;
       Option<SCode.Comment> comment,comment2;
       list<Env.Frame> env;
       Prefix.Prefix pre;
@@ -1527,16 +1541,16 @@ algorithm
       /* redeclaring same component */
     case (DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst =
     {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,
-      attributes = attr,typeSpec = tp,modifications = m1,comment=comment,condition=cond,info=info),_)}),
+      attributes = attr,typeSpec = tp,modifications = m1,baseClassPath = bc,comment=comment,condition=cond,info=info),_)}),
       DAE.REDECL(finalPrefix = f2,tplSCodeElementModLst =
-      {(SCode.COMPONENT(component = id2,modifications = m2,comment = comment2,cc=cc),_)}),env,pre)
+      {(SCode.COMPONENT(component = id2,modifications = m2,baseClassPath = bc2,comment = comment2,cc=cc),_)}),env,pre)
       equation
         equality(id1 = id2);
         m1_1 = elabUntypedMod(m2, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
       then
-        DAE.REDECL(f1,{(SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),comment,cond,info,cc),m_2)});
+        DAE.REDECL(f1,{(SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),bc,comment,cond,info,cc),m_2)});
 
         /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */
     case ((mod as DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as DAE.MOD(subModLst = subs)),env,pre) then mod;

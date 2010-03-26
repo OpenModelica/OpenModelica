@@ -53,6 +53,10 @@ public type Path = Absyn.Path;
 
 public type Subscript = Absyn.Subscript;
 
+public type BaseClass = tuple<Absyn.Path,Mod>;
+
+public type BaseClassList = list<BaseClass>;
+
 public
 uniontype Restriction
   record R_CLASS end R_CLASS;
@@ -243,6 +247,8 @@ public
 uniontype Equation "- Equations"
   record EQUATION "an equation"
     EEquation eEquation "an equation";
+    BaseClassList baseClassPath
+    "the baseClassPath is present if the equation originates from a base class" ;
   end EQUATION;
 
 end Equation;
@@ -318,6 +324,7 @@ uniontype Algorithm "- Algorithms
   algorithm section."
   record ALGORITHM "the algorithm section"
     list<Absyn.Algorithm> statements "the algorithm statements" ;
+    BaseClassList baseClassPath "the baseclass name if these algorithms are from a baseclass" ;
   end ALGORITHM;
 
 end Algorithm;
@@ -343,6 +350,7 @@ uniontype Element "- Elements
     Boolean finalPrefix        "final prefix" ;
     Boolean replaceablePrefix  "replaceable prefix" ;
     Class   classDef           "the class definition" ;
+    BaseClassList baseClassPath "the base class path if this class definition originates from a base class" ;
     Option<Absyn.ConstrainClass> cc;
   end CLASSDEF;
 
@@ -359,6 +367,7 @@ uniontype Element "- Elements
     Attributes attributes         "the component attributes";
     Absyn.TypeSpec typeSpec       "the type specification" ;
     Mod modifications             "the modifications to be applied to the component";
+    BaseClassList baseClassPath "the base class path if this component originates from a base class";
     Option<Comment> comment       "this if for extraction of comments and annotations from Absyn";
     Option<Absyn.Exp> condition   "the conditional declaration of a component";
     Option<Absyn.Info> info       "this is for line and column numbers, also file name.";
@@ -875,6 +884,20 @@ algorithm
   end matchcontinue;
 end printElementList;
 
+public function unparsePathList
+  input  BaseClassList paths;
+  output String str;
+algorithm
+  str := matchcontinue paths
+    local
+      Absyn.Path path;
+      Mod mod;
+    case {} then "<nothing>";
+    case {(path,mod)} then Absyn.pathString(path) +& " with mod: " +& printModStr(mod);
+    case ((path,mod)::paths) then Absyn.pathString(path) +& " with mod: " +& printModStr(mod) +& " and " +& unparsePathList(paths);
+  end matchcontinue;
+end unparsePathList;
+
 public function printElement
 "function: printElement
   Print Element to Print buffer."
@@ -905,6 +928,7 @@ algorithm
       Attributes attr;
       String modStr;
       Absyn.Path path;
+      BaseClassList pathLst;
       Absyn.Import imp;
 
     case EXTENDS(baseClassPath = path,modifications = mod)
@@ -914,21 +938,23 @@ algorithm
         res = Util.stringAppendList({"EXTENDS(",str,", modification=",modStr,")"});
       then
         res;
-    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
+    case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl,baseClassPath = pathLst)
       equation
         str = printClassStr(cl);
-        res = Util.stringAppendList({"CLASSDEF(",n,",",str,")"});
+        str2 = unparsePathList(pathLst);
+        res = Util.stringAppendList({"CLASSDEF(",n,",",str,", from baseclass: ",str2,")"});
       then
         res;
     case COMPONENT(component = n,innerOuter=io,finalPrefix = finalPrefix,replaceablePrefix = repl,
                    protectedPrefix = prot, attributes = ATTR(variability = var),typeSpec = tySpec,
-                   modifications = mod,comment = comment)
+                   modifications = mod,baseClassPath = pathLst,comment = comment)
       equation
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(tySpec);
         vs = variabilityString(var);
+        str = unparsePathList(pathLst);
         str2 = innerouterString(io);
-        res = Util.stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,")"});
+        res = Util.stringAppendList({"COMPONENT(",n, " in/out: ", str2, " mod: ",mod_str, " tp: ", s," var :",vs,", baseClass: ", str,")"});
       then
         res;
     case CLASSDEF(name = n,finalPrefix = finalPrefix,replaceablePrefix = repl,classDef = cl)
@@ -953,6 +979,7 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs,ioStr;
+      BaseClassList paths;
       Absyn.TypeSpec typath;
       Mod mod;
       Class cl;
@@ -971,13 +998,15 @@ algorithm
         res;
 
     case COMPONENT(component = n,innerOuter = io,attributes = ATTR(variability = var),
-                   typeSpec = typath,modifications = mod,comment = comment)
+                   typeSpec = typath,modifications = mod,
+                   baseClassPath = paths,comment = comment)
       equation
         ioStr = Dump.unparseInnerouterStr(io);
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
-        res = Util.stringAppendList({ioStr,vs," ",s," ",n,mod_str,";\n"});
+        str = unparsePathList(paths);
+        res = Util.stringAppendList({ioStr,vs," ",s," ",n,mod_str,"; // from baseclass: ",str,"\n"});
       then
         res;
 
@@ -1332,7 +1361,7 @@ public function elementEqual
       Absyn.InnerOuter io,io2;
       Attributes attr1,attr2; Mod mod1,mod2;
       Absyn.TypeSpec tp1,tp2;
-     case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
+     case (CLASSDEF(name1,f1,r1,cl1,_,_),CLASSDEF(name2,f2,r2,cl2,_,_))
        equation
          b1 = stringEqual(name1,name2);
          b2 = Util.boolEqual(f1,f2);
@@ -1340,7 +1369,7 @@ public function elementEqual
          b3 = classEqual(cl1,cl2);
          equal = Util.boolAndList({b1,b2,b3});
        then equal;
-     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,_,_,_), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,_,_,_))
+     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,_,_,_,_), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,_,_,_,_))
        equation
          b1 = stringEqual(name1,name2);
          b1a = ModUtil.innerOuterEqual(io,io2);
@@ -1590,7 +1619,7 @@ algorithm
     local
       list<Absyn.Algorithm> a1,a2;
       list<Boolean> blst;
-    case(ALGORITHM(a1),ALGORITHM(a2))
+    case(ALGORITHM(a1,_),ALGORITHM(a2,_))
       equation
         blst = Util.listThreadMap(a1,a2,algorithmEqual2);
         equal = Util.boolAndList(blst);
@@ -1653,7 +1682,7 @@ protected function equationEqual
 algorithm
   equal := matchcontinue(eqn1,eqn2)
     local EEquation eq1,eq2;
-    case (EQUATION(eq1),EQUATION(eq2))
+    case (EQUATION(eq1,_),EQUATION(eq2,_))
       equation
         equal = equationEqual2(eq1,eq2);
         then equal;
@@ -2191,6 +2220,23 @@ algorithm
       then (comps,names);
   end matchcontinue;
 end getClassComponents;
+
+public function elementBaseClassPath "
+This function returns baseClassPath from COMPONENT and CLASDEF,
+  NONE() from other Elements"
+  input Element inElement;
+  output BaseClassList outBaseClassPath;
+algorithm
+  outBaseClassPath:= matchcontinue(inElement)
+  local
+    BaseClassList optPath;
+    BaseClass path;
+
+    case COMPONENT(baseClassPath=optPath) then optPath;
+    case CLASSDEF(baseClassPath=optPath) then optPath;
+    case _ then {};
+  end matchcontinue;
+end elementBaseClassPath;
 
 public function printInitialStr
 "prints SCode.Initial to a string"

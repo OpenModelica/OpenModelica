@@ -158,16 +158,12 @@ uniontype Event "- Events"
 
   record NEWDEF "A definition with elements, i.e. a long definition" end NEWDEF;
 
-  record FOUND_COMPONENT " A Definition that contains components"
-    String name "name of the component";
-  end FOUND_COMPONENT;
+  record FOUND_COMPONENT " A Definition that contains components" end FOUND_COMPONENT;
 
 end Event;
 
-protected import Debug;
 protected import Print;
 protected import Error;
-protected import RTOpts;
 
 public function printStateStr "- Printing
 
@@ -339,18 +335,23 @@ algorithm
   end matchcontinue;
 end getStateName;
 
-protected function printEventStr
+protected function printEvent "function: printEvent"
   input Event inEvent;
-  output String str;
 algorithm
-  str := matchcontinue (inEvent)
-    local
-      String name;
-    case FOUND_EQUATION() then "FOUND_EQUATION";
-    case NEWDEF() then "NEWDEF";
-    case FOUND_COMPONENT(name) then "FOUND_COMPONENT(" +& name +& ")";
+  _:=
+  matchcontinue (inEvent)
+    case FOUND_EQUATION()
+      equation
+        Print.printBuf("FOUND_EQUATION");
+      then
+        ();
+    case NEWDEF()
+      equation
+        Print.printBuf("NEWDEF");
+      then
+        ();
   end matchcontinue;
-end printEventStr;
+end printEvent;
 
 public function start "!includecode
   - Transitions
@@ -421,16 +422,12 @@ algorithm
     case (META_RECORD(path = p),NEWDEF()) then META_RECORD(p);  // Added 2009-08-18. sjoelund
 
    /* Event 'FOUND_COMPONENT' */
-    case (UNKNOWN(path = p),FOUND_COMPONENT(name = _)) then IS_NEW(p);  /* Event `NEWDEF\' */
-    case (MODEL(path = p),FOUND_COMPONENT(name = _)) then MODEL(p);
-    case (RECORD(path = p),FOUND_COMPONENT(name = _)) then RECORD(p);
-    case (BLOCK(path = p),FOUND_COMPONENT(name = _)) then BLOCK(p);
-    case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_COMPONENT(name = _)) then CONNECTOR(p,isExpandable);
-    case (TYPE(path = p),FOUND_COMPONENT(name = s))
-      equation
-        true = isBasicTypeComponentName(s);
-      then TYPE(p);
-    case (TYPE(path = p),FOUND_COMPONENT(name = _))  // A type can not contain new components
+    case (UNKNOWN(path = p),FOUND_COMPONENT()) then IS_NEW(p);  /* Event `NEWDEF\' */
+    case (MODEL(path = p),FOUND_COMPONENT()) then MODEL(p);
+    case (RECORD(path = p),FOUND_COMPONENT()) then RECORD(p);
+    case (BLOCK(path = p),FOUND_COMPONENT()) then BLOCK(p);
+    case (CONNECTOR(path = p,isExpandable = isExpandable),FOUND_COMPONENT()) then CONNECTOR(p,isExpandable);
+    case (TYPE(path = p),FOUND_COMPONENT())  // A type can not contain components
       equation
         s = Absyn.pathString(p);
         Error.addMessage(Error.TYPE_NOT_FROM_PREDEFINED, {s});
@@ -438,16 +435,16 @@ algorithm
         fail();
     /* adrpo 2009-05-15: type Orientation can contain equalityConstraint function! */
     //case (TYPE(path = p),FOUND_COMPONENT()) then TYPE(p);
-    case (PACKAGE(path = p),FOUND_COMPONENT(name = _)) then PACKAGE(p);
-    case (FUNCTION(path = p),FOUND_COMPONENT(name = _)) then FUNCTION(p);
-    case (ENUMERATION(path = p),FOUND_COMPONENT(name = _)) then ENUMERATION(p);
-    case (IS_NEW(path = p),FOUND_COMPONENT(name = _)) then IS_NEW(p);
-    case (TYPE_INTEGER(path = p),FOUND_COMPONENT(name = _)) then TYPE_INTEGER(p);
-    case (TYPE_REAL(path = p),FOUND_COMPONENT(name = _)) then TYPE_REAL(p);
-    case (TYPE_STRING(path = p),FOUND_COMPONENT(name = _)) then TYPE_STRING(p);
-    case (TYPE_BOOL(path = p),FOUND_COMPONENT(name = _)) then TYPE_BOOL(p);
-    case (TYPE_ENUM(path = p),FOUND_COMPONENT(name = _)) then TYPE_ENUM(p);
-    case (META_RECORD(path = p),FOUND_COMPONENT(name = _)) then META_RECORD(p);  // Added 2009-08-19. sjoelund
+    case (PACKAGE(path = p),FOUND_COMPONENT()) then PACKAGE(p);
+    case (FUNCTION(path = p),FOUND_COMPONENT()) then FUNCTION(p);
+    case (ENUMERATION(path = p),FOUND_COMPONENT()) then ENUMERATION(p);
+    case (IS_NEW(path = p),FOUND_COMPONENT()) then IS_NEW(p);
+    case (TYPE_INTEGER(path = p),FOUND_COMPONENT()) then TYPE_INTEGER(p);
+    case (TYPE_REAL(path = p),FOUND_COMPONENT()) then TYPE_REAL(p);
+    case (TYPE_STRING(path = p),FOUND_COMPONENT()) then TYPE_STRING(p);
+    case (TYPE_BOOL(path = p),FOUND_COMPONENT()) then TYPE_BOOL(p);
+    case (TYPE_ENUM(path = p),FOUND_COMPONENT()) then TYPE_ENUM(p);
+    case (META_RECORD(path = p),FOUND_COMPONENT()) then META_RECORD(p);  // Added 2009-08-19. sjoelund
 
    /* Event `FOUND_EQUATION\' */
     case (UNKNOWN(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
@@ -472,8 +469,11 @@ algorithm
     case (HAS_EQUATIONS(path = p),FOUND_EQUATION()) then HAS_EQUATIONS(p);
     case (st,ev)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- ClassInf.trans failed: " +& printStateStr(st) +& ", " +& printEventStr(ev));
+        Print.printBuf("- trans failed: ");
+        printState(st);
+        Print.printBuf(", ");
+        printEvent(ev);
+        Print.printBuf("\n");
       then
         fail();
   end matchcontinue;
@@ -626,26 +626,5 @@ algorithm
     case CONNECTOR(path = _) then ();
   end matchcontinue;
 end isConnector;
-
-protected constant list<String> basicTypeMods = {
-  "quantity",
-  "unit",
-  "displayUnit",
-  "min",
-  "max",
-  "start",
-  "fixed",
-  "nominal",
-  "stateSelect"  
-};
-
-public function isBasicTypeComponentName
-"Returns true if the name can be a component of a builtin type"
-  input String name;
-  output Boolean res;
-algorithm
-  res := listMember(name,basicTypeMods);
-end isBasicTypeComponentName;
-
 end ClassInf;
 

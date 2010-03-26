@@ -130,7 +130,7 @@ algorithm
       equation
         path = makePath(scope, n);
         fullCr = Absyn.pathToCref(path);
-        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, c, NONE()), NONE(), NONE()));
+        i = createInstanceFromClass(fullCr, ATTRIBUTES(SCode.CLASSDEF("dummy", false, false, c, {}, NONE()), NONE(), NONE()));
         ih = createInstanceHierarchyFromProgram(i::ih, scope, cs);
       then
         ih;
@@ -297,7 +297,7 @@ algorithm
       then
         i::ihrest;
 
-    case (scope, (el as SCode.CLASSDEF(classDef = cl as SCode.CLASS(name = name)))::rest)
+    case (scope, (el as SCode.CLASSDEF(_, _, _, cl as SCode.CLASS(name = name), _, _))::rest)
       equation
         fpath = makePath(scope, name);
         fullCref = Absyn.pathToCref(fpath);
@@ -372,14 +372,14 @@ algorithm
       InstanceConnects result;
       list<Absyn.ComponentRef> act;
 
-    case (scope, SCode.EQUATION(equ as SCode.EQ_CONNECT(_, _, _))::rest, CONNECTS(eqs,act))
+    case (scope, SCode.EQUATION(equ as SCode.EQ_CONNECT(_, _, _), _)::rest, CONNECTS(eqs,act))
       equation
         equ = addScopeToConnects(scope,equ);
         result = addConnects(scope, rest, CONNECTS(equ::eqs,act));
       then
         result;
 
-    case (scope, SCode.EQUATION(SCode.EQ_FOR(_, _, eEquationLst, _))::rest, CONNECTS(eqs,act))
+    case (scope, SCode.EQUATION(SCode.EQ_FOR(_, _, eEquationLst, _), _)::rest, CONNECTS(eqs,act))
       equation
         eEquationLst = filterConnects(eEquationLst);
         eEquationLst = Util.listMap1r(eEquationLst, addScopeToConnects, scope);
@@ -638,6 +638,7 @@ algorithm
   outString := matchcontinue (inElement)
     local
       String str,res,n,mod_str,s,vs;
+      SCode.BaseClassList paths;
       Absyn.TypeSpec typath;
       SCode.Mod mod;
       Boolean finalPrefix,repl,prot;
@@ -656,12 +657,14 @@ algorithm
         res;
 
     case SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                   attributes = SCode.ATTR(variability = var),typeSpec = typath,modifications = mod,comment = comment)
+                   attributes = SCode.ATTR(variability = var),typeSpec = typath,modifications = mod,
+                   baseClassPath = paths,comment = comment)
       equation
         mod_str = SCode.printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = SCode.unparseVariability(var);
-        res = Util.stringAppendList({vs," ",s," ",n,mod_str,";"});
+        str = SCode.unparsePathList(paths);
+        res = Util.stringAppendList({vs," ",s," ",n,mod_str,"; baseclass: ",str,";"});
       then
         res;
 

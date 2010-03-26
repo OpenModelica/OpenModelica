@@ -268,7 +268,6 @@ algorithm
         Interactive.InteractiveSymbolTable st;
       equation
         (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit mode.." ;
-        //Debug.traceln("cevalCref cr: " +& Exp.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,SOME(st));
 
@@ -276,7 +275,6 @@ algorithm
       local DAE.ComponentRef c;
       equation
         (cache,v) = cevalCref(cache,env, c, impl, msg);
-        //Debug.traceln("cevalCref cr: " +& Exp.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,st);
         
@@ -696,7 +694,6 @@ algorithm
     case (cache,env,DAE.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
-        Debug.traceln("cevalRelation " +& Exp.printExpStr(inExp));
         (cache,lhs_1,st_1) = ceval(cache,env, lhs, impl, st, dim, msg);
         (cache,rhs_1,st_2) = ceval(cache,env, rhs, impl, st_1, dim, msg);
         v = cevalRelation(lhs_1, relop, rhs_1);
@@ -4288,7 +4285,6 @@ algorithm
     case (Values.INTEGER(integer = i1),DAE.EQUAL(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))
       equation
         b = (i1 == i2);
-        Debug.traceln("ceval eq: " +& Util.boolString(b));
       then
         Values.BOOL(b);
     case (Values.INTEGER(integer = i1),DAE.NEQUAL(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))

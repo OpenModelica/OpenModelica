@@ -72,7 +72,6 @@ SRCMO= Absyn.mo \
   HashTableStringToPath.mo \
 	Inline.mo \
 	Inst.mo \
-	InstExtends.mo \
 	Interactive.mo \
 	Lookup.mo \
 	Main.mo \
