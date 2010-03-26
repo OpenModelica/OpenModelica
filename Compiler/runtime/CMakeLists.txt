@@ -8,8 +8,10 @@ IF(NOT IDL)
 ENDIF(NOT IDL)
 
 INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
+INCLUDE_DIRECTORIES(${CODEGENDIR})
 INCLUDE_DIRECTORIES(${CODEGENDIR}/absyn_builder)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lpsolve)
 
 # custom command for idl
 SET(IDL_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.cc ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.h)
@@ -29,5 +31,7 @@ SET(CPPSRC  unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessa
 SET(OBJ ${SRC} ${CPPSRC})
 	
 # Bibliothek
-ADD_LIBRARY(runtime ${CORBASRC} ${c_runtime_headers})
-#TARGET_LINK_LIBRARIES(c_runtime f2c)
+link_directories(${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
+add_definitions(/MT)
+ADD_LIBRARY(runtime ${OBJ})
+TARGET_LINK_LIBRARIES(runtime lpsolve55)

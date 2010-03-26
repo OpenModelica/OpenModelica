@@ -19,5 +19,6 @@ ELSE(USE_MODPAR)
   SET(OBJECTS  TaskGraphExt_stub.cpp)
 ENDIF(USE_MODPAR)
 
+add_definitions(/MT)
 ADD_LIBRARY(libmodpar ${OBJECTS})
 

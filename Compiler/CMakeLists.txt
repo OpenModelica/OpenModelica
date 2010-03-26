@@ -138,10 +138,10 @@ ADD_SUBDIRECTORY(modpar)
 INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
 INCLUDE_DIRECTORIES(${CODEGENDIR})
 
-
 # omc program
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc $ENV{OMDEV}/lib/mico-win32-msvc ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
+link_directories($ENV{OMDEV}/lib/antlr-win32-msvc $ENV{OMDEV}/lib/mico-win32-msvc ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32 $ENV{OMDEV}/tools/rml/lib/plain)
+
+add_definitions(/MT)
 ADD_EXECUTABLE(omc ${MOCH_FILES})
-TARGET_LINK_LIBRARIES(omc absyn_builder libflat_modelica_parser libmodpar mico2313 wsock32  sendData shlwapi runtime c_runtime)
-#psolve55
+TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar mico2313 sendData c_runtime librml wsock32 shlwapi)
 add_dependencies(omc ${MOCH_ALL})

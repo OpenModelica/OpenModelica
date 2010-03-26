@@ -97,6 +97,7 @@ ELSE(WIN32)
   SET(ANTLR_LIB libantlr)
 ENDIF(WIN32)
 link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
+add_definitions(/MT)
 ADD_LIBRARY(libflat_modelica_parser ${OBJS})
 TARGET_LINK_LIBRARIES(libflat_modelica_parser antlr)
 
