@@ -1,13 +1,3 @@
-
-
-# ar
-IF(NOT AR)
-  FIND_PROGRAM(AR ar DOC "Location of the ar executable"
-               PATHS ENV OMDEV
-               PATH_SUFFIXES bin tools/mingw/bin)
-  MESSAGE(STATUS "-- ar is " ${AR})
-ENDIF(NOT AR)
-
 # java
 IF(NOT JAVA)
   FIND_PROGRAM(JAVA java DOC "Location of the java executable"
@@ -25,7 +15,7 @@ SET(ANTLRFLAGS ) #-traceParser")
 INCLUDE_DIRECTORIES($ENV{OMDEV}/include)
 INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
 INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/modelica_parser/src)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CODEGENDIR}/absyn_builder)
 
 GET_PROPERTY(modelica_parser GLOBAL PROPERTY  MODELICA_parser_BUILD)
 INCLUDE_DIRECTORIES(${modelica_parser})
@@ -33,16 +23,16 @@ GET_PROPERTY(modelica_flat_parser GLOBAL PROPERTY  MODELICA_flat_parser_BUILD)
 INCLUDE_DIRECTORIES(${modelica_flat_parser})
 
 
-  SET(MPTT_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt)
+  SET(MPTT_OUTPUT ${CODEGENDIR}/absyn_builder/modelica_parserTokenTypes.txt)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${MPTT_OUTPUT}
-                     COMMAND ${CMAKE_COMMAND} -E copy ${modelica_parser}/modelica_parserTokenTypes.txt ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt
+                     COMMAND ${CMAKE_COMMAND} -E copy ${modelica_parser}/modelica_parserTokenTypes.txt ${CODEGENDIR}/absyn_builder/modelica_parserTokenTypes.txt
 					 DEPENDS modelica_parser.g_antlr
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                     COMMENT "copy ${modelica_parser}/modelica_parserTokenTypes.txt to  ${CMAKE_CURRENT_BINARY_DIR}/modelica_parserTokenTypes.txt")
+                     COMMENT "copy ${modelica_parser}/modelica_parserTokenTypes.txt to  ${CODEGENDIR}/absyn_builder/modelica_parserTokenTypes.txt")
 
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(MPTT_cp ALL DEPENDS ${modelica_parser})
+  ADD_CUSTOM_TARGET(MPTT_cp ALL DEPENDS modelica_parser.g_antlr)
 
 # generate antlr files
 SET(DEP  walker.g)
@@ -64,13 +54,13 @@ SET(DEP  walker.g)
 	# Merken
 	SET(ANTLR_DEP ${${DEP}_FILE})
 
-  SET(ANTLR_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parser.hpp 
-	               ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parserTokenTypes.hpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_tree_parserTokenTypes.txt)
+  SET(ANTLR_OUTPUT ${CODEGENDIR}/absyn_builder/modelica_tree_parser.cpp ${CODEGENDIR}/absyn_builder/modelica_tree_parser.hpp 
+	               ${CODEGENDIR}/absyn_builder/modelica_tree_parserTokenTypes.hpp ${CODEGENDIR}/absyn_builder/modelica_tree_parserTokenTypes.txt)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_OUTPUT}
                      COMMAND ${ANTLR} ${ANTLRFLAGS} ${ANTLR_DEP} 
-					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_DEP} modelica_parser.g_antlr
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_DEP} MPTT_cp
+                     WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "Generate antlr from ${DEP}")
 
   # target fuer OM_OUTPUT
@@ -94,14 +84,14 @@ SET(WDEP expression_parser.g)
 	# Merken
 	SET(ANTLR_WDEP ${${WDEP}_FILE})
 
-  SET(ANTLR_WOUTPUT ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parser.cpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parser.hpp
-                    ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parserTokenTypes.hpp ${CMAKE_CURRENT_BINARY_DIR}/modelica_expression_parserTokenTypes.txt)
+  SET(ANTLR_WOUTPUT ${CODEGENDIR}/absyn_builder/modelica_expression_parser.cpp ${CODEGENDIR}/absyn_builder/modelica_expression_parser.hpp
+                    ${CODEGENDIR}/absyn_builder/modelica_expression_parserTokenTypes.hpp ${CODEGENDIR}/absyn_builder/modelica_expression_parserTokenTypes.txt)
 
-  SET(EP_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/${WDEP})
+  SET(EP_OUTPUT ${CODEGENDIR}/absyn_builder/${WDEP})
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${EP_OUTPUT}
                      COMMAND ${CMAKE_COMMAND} -E copy ${ANTLR_WDEP} ${EP_OUTPUT}
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+                     WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "copy ${ANTLR_WDEP} to ${EP_OUTPUT}")
 
   # target fuer OM_OUTPUT
@@ -110,8 +100,8 @@ SET(WDEP expression_parser.g)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_WOUTPUT}
                      COMMAND ${ANTLR} -glib ${OMCTRUNCHOME}/modelica_parser/src/modelica_parser.g ${ANTLRFLAGS} ${WDEP}
-					 DEPENDS ${WDEP}_cp  ${MPTT_OUTPUT} ${ANTLR_WDEP} modelica_parser.g_antlr					 
-                     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+					 DEPENDS ${WDEP}_cp  ${MPTT_OUTPUT} ${ANTLR_WDEP} modelica_parser.g_antlr ${MOCH_ALL}					 
+                     WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "Generate antlr from ${ANTLR_WDEP}")
 
   # target fuer OM_OUTPUT
@@ -124,10 +114,11 @@ SET(helperobjs parse.cpp)
 
 SET(OBJS ${helperobjs} ${ANTLR_OUTPUT} ${ANTLR_WOUTPUT} ${ANTLR_FILES})
 
-ADD_LIBRARY(absyn_builder ${OBJS})
 IF(WIN32)
-  SET(ANTLR_LIB $ENV{OMDEV}/lib/antlr-win32-msvc/antlr)
+  SET(ANTLR_LIB antlr)
 ELSE(WIN32)
-  SET(ANTLR_LIB $ENV{OMDEV}/lib/antlr-msys-mingw/libantlr)
+  SET(ANTLR_LIB libantlr)
 ENDIF(WIN32)
-TARGET_LINK_LIBRARIES(absyn_builder ${ANTLR_LIB} libmodelica_parser libflat_modelica_parser)
+link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
+ADD_LIBRARY(absyn_builder ${OBJS})
+TARGET_LINK_LIBRARIES(absyn_builder antlr libmodelica_parser libflat_modelica_parser)

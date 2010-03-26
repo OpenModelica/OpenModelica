@@ -1,12 +1,4 @@
 
-# ar
-IF(NOT AR)
-  FIND_PROGRAM(AR ar DOC "Location of the ar executable"
-               PATHS ENV OMDEV
-               PATH_SUFFIXES bin tools/mingw/bin)
-  MESSAGE(STATUS "-- ar is " ${AR})
-ENDIF(NOT AR)
-
 # java
 IF(NOT JAVA)
   FIND_PROGRAM(JAVA java DOC "Location of the java executable"
@@ -96,12 +88,13 @@ SET(helperobjs token_names.cpp parse_tree_dumper.cpp token_names.hpp parse_tree_
 
 SET(OBJS ${helperobjs} ${ANTLR_OUTPUT} ${ANTLR_FILES} ${ANTLR_POUTPUT})
 
-ADD_LIBRARY(libmodelica_parser ${OBJS})
 IF(WIN32)
-  SET(ANTLR_LIB $ENV{OMDEV}/lib/antlr-win32-msvc/antlr)
+  SET(ANTLR_LIB antlr)
 ELSE(WIN32)
-  SET(ANTLR_LIB $ENV{OMDEV}/lib/antlr-msys-mingw/libantlr)
+  SET(ANTLR_LIB libantlr)
 ENDIF(WIN32)
-TARGET_LINK_LIBRARIES(libmodelica_parser ${ANTLR_LIB})
+link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
+ADD_LIBRARY(libmodelica_parser ${OBJS})
+TARGET_LINK_LIBRARIES(libmodelica_parser antlr)
 
 
