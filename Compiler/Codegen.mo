@@ -1282,7 +1282,7 @@ protected function isBuiltinFunction
   takes an Absyn.path and returns true if the name matches a modelica builtin function"
   input Absyn.Path path;
   output Boolean b;
-  list<String> builtins = { "delay","smooth","size","ndims","zeros","ones","fill","max","min","transpose","array","sum","product","pre","initial","terminal","floor","ceil","abs","sqrt","div","integer","mod","rem","diagonal","differentiate","simplify","noEvent","edge","sign","der","sample","change","cat","identity","vector","scalar","cross","String","skew"};
+  list<String> builtins = { "delay","smooth","size","ndims","zeros","ones","fill","max","min","transpose","array","sum","product","pre","initial","terminal","floor","ceil","abs","sqrt","div","integer","mod","rem","diagonal","differentiate","simplify","noEvent","edge","sign","der","sample","change","cat","identity","vector","scalar","cross","String","skew","constrain" };
 
 algorithm
   out := matchcontinue(path)
