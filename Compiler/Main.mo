@@ -985,6 +985,7 @@ algorithm
      Interactive.InteractiveSymbolTable symbolTable;
     case (_,symbolTable)
       equation
+        print("Opening a socket on port " +& intString(29500) +& "\n");
         shandle = Socket.waitforconnect(29500);
         _ = serverLoop(shandle, symbolTable);
       then
