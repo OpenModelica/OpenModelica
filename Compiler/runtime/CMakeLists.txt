@@ -32,6 +32,8 @@ SET(OBJ ${SRC} ${CPPSRC})
 	
 # Bibliothek
 link_directories(${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
+#add_definitions(/O2 /Ot /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP)
 add_definitions(/MT)
 ADD_LIBRARY(runtime ${OBJ})
 TARGET_LINK_LIBRARIES(runtime lpsolve55)
+add_dependencies(runtime ${MOCH_ALL})

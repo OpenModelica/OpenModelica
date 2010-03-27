@@ -59,7 +59,7 @@ SET(DEP  walker.g)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_OUTPUT}
                      COMMAND ${ANTLR} ${ANTLRFLAGS} ${ANTLR_DEP} 
-					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_DEP} MPTT_cp
+					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_DEP} MPTT_cp ${MOCH_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "Generate antlr from ${DEP}")
 
@@ -91,6 +91,7 @@ SET(WDEP expression_parser.g)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${EP_OUTPUT}
                      COMMAND ${CMAKE_COMMAND} -E copy ${ANTLR_WDEP} ${EP_OUTPUT}
+					 DEPENDS ${MOCH_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "copy ${ANTLR_WDEP} to ${EP_OUTPUT}")
 
@@ -120,6 +121,7 @@ ELSE(WIN32)
   SET(ANTLR_LIB libantlr)
 ENDIF(WIN32)
 link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
+#add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP)
 add_definitions(/MT)
 ADD_LIBRARY(absyn_builder ${OBJS})
 TARGET_LINK_LIBRARIES(absyn_builder antlr libmodelica_parser libflat_modelica_parser runtime)

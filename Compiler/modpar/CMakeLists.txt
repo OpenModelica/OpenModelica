@@ -19,6 +19,7 @@ ELSE(USE_MODPAR)
   SET(OBJECTS  TaskGraphExt_stub.cpp)
 ENDIF(USE_MODPAR)
 
+#add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312)
 add_definitions(/MT)
 ADD_LIBRARY(libmodpar ${OBJECTS})
 

@@ -16,8 +16,8 @@ SET(sendData_sources  sendData.cpp )
 SET(sendData_headers  sendData.h)				 
 						 
 
-ADD_DEFINITIONS(-DUNICODE -DQT_LARGEFILE_SUPPORT -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT)
-
+#ADD_DEFINITIONS(/O2 /frtti /fexceptions /mthreads /Wall /DUNICODE /DQT_LARGEFILE_SUPPORT /DQT_NO_DEBUG /DQT_GUI_LIB /DQT_NETWORK_LIB /DQT_CORE_LIB /DQT_THREAD_SUPPORT)
+add_definitions(/MT)
 # Bibliothek
 ADD_LIBRARY(sendData ${sendData_sources} ${sendData_headers})
 TARGET_LINK_LIBRARIES(sendData ${QT_LIBRARIES})

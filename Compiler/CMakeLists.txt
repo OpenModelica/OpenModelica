@@ -52,7 +52,7 @@ FOREACH(DEP ${ALLMO})
  
  	SET(COPY_DEP  ${${DEP}_FILE})
 
-	SET(COPY_OUTPUT  ${CODEGENDIR}/${DF})
+	SET(COPY_OUTPUT  ${CODEGENDIR}/${DEP})
 	# custom command for copy
 	ADD_CUSTOM_COMMAND(OUTPUT ${COPY_OUTPUT}
                      COMMAND ${CMAKE_COMMAND} -E copy ${COPY_DEP} ${COPY_OUTPUT}
@@ -113,14 +113,14 @@ FOREACH(DEP ${SRCMO})
     GET_FILENAME_COMPONENT(DFWE ${DEP} NAME_WE)
  
 	# Merken
-	SET(MOCH_DEP ${DFWE}.h ${DFWE}.c)
-    SET(MOCH_FILES ${MOCH_FILES}  ${CODEGENDIR}/${DFWE}.h ${CODEGENDIR}/${DFWE}.c)
+	SET(MOCH_DEP ${CODEGENDIR}/${DFWE}.h ${CODEGENDIR}/${DFWE}.c)
+    SET(MOCH_FILES ${MOCH_FILES}  ${MOCH_DEP})
   
   SET(MOCH_OUTPUT  ${MOCH_DEP})
   # custom command for rml to sig
   ADD_CUSTOM_COMMAND(OUTPUT ${MOCH_OUTPUT}
                      COMMAND ${RML} -Eplain -ftrace ${RMLCFLAGS} ${DEP} 	
-					 DEPENDS DEPEND ${COPY_ALL} ${SIGX_ALL}
+					 DEPENDS ${SIGX_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}
                      COMMENT "Generate *.h and *.c from ${DEP}")
 
@@ -141,6 +141,7 @@ INCLUDE_DIRECTORIES(${CODEGENDIR})
 # omc program
 link_directories($ENV{OMDEV}/lib/antlr-win32-msvc $ENV{OMDEV}/lib/mico-win32-msvc ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32 $ENV{OMDEV}/tools/rml/lib/plain)
 
+#add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312)
 add_definitions(/MT)
 ADD_EXECUTABLE(omc ${MOCH_FILES})
 TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar mico2313 sendData c_runtime librml wsock32 shlwapi)
