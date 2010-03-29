@@ -144,5 +144,6 @@ link_directories($ENV{OMDEV}/lib/antlr-win32-msvc $ENV{OMDEV}/lib/mico-win32-msv
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312)
 add_definitions(/MT)
 ADD_EXECUTABLE(omc ${MOCH_FILES})
-TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar mico2313 sendData c_runtime librml wsock32 shlwapi)
+TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar mico2313 sendData c_runtime wsock32 shlwapi )
+TARGET_LINK_LIBRARIES(omc -FORCE:MULTIPLE librml)
 add_dependencies(omc ${MOCH_ALL})

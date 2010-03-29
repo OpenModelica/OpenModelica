@@ -59,7 +59,7 @@ SET(DEP  walker.g)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${ANTLR_OUTPUT}
                      COMMAND ${ANTLR} ${ANTLRFLAGS} ${ANTLR_DEP} 
-					 DEPENDS ${MPTT_OUTPUT} ${ANTLR_DEP} MPTT_cp ${MOCH_ALL}
+					 DEPENDS MPTT_cp ${ANTLR_DEP} ${MOCH_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "Generate antlr from ${DEP}")
 
@@ -91,7 +91,7 @@ SET(WDEP expression_parser.g)
   # custom command for ar
   ADD_CUSTOM_COMMAND(OUTPUT ${EP_OUTPUT}
                      COMMAND ${CMAKE_COMMAND} -E copy ${ANTLR_WDEP} ${EP_OUTPUT}
-					 DEPENDS ${MOCH_ALL}
+					 DEPENDS MPTT_cp ${MOCH_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}/absyn_builder
                      COMMENT "copy ${ANTLR_WDEP} to ${EP_OUTPUT}")
 
