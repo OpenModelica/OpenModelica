@@ -97,6 +97,6 @@ link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP)
 add_definitions(/MT)
 ADD_LIBRARY(libmodelica_parser ${OBJS})
-TARGET_LINK_LIBRARIES(libmodelica_parser antlr)
+TARGET_LINK_LIBRARIES(libmodelica_parser optimized antlr debug antlrd)
 
 

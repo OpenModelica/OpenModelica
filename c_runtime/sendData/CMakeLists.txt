@@ -22,3 +22,5 @@ add_definitions(/MT)
 ADD_LIBRARY(sendData ${sendData_sources} ${sendData_headers})
 TARGET_LINK_LIBRARIES(sendData ${QT_LIBRARIES})
 
+INSTALL(TARGETS sendData
+		ARCHIVE DESTINATION lib)

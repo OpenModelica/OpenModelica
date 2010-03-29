@@ -120,3 +120,8 @@ TARGET_LINK_LIBRARIES(c_runtime f2c)
 add_definitions(/MT)
 ADD_LIBRARY(sim ${sim_sources} ${sim_headers})
 TARGET_LINK_LIBRARIES(sim c_runtime f2c)
+
+INSTALL(TARGETS c_runtime sim
+		ARCHIVE DESTINATION lib)
+		
+INSTALL(FILES ${c_runtime_headers} DESTINATION include)

@@ -115,12 +115,6 @@ SET(helperobjs parse.cpp)
 
 SET(OBJS ${helperobjs} ${ANTLR_OUTPUT} ${ANTLR_WOUTPUT} ${ANTLR_FILES})
 
-IF(WIN32)
-  SET(ANTLR_LIB antlr)
-ELSE(WIN32)
-  SET(ANTLR_LIB libantlr)
-ENDIF(WIN32)
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP)
 add_definitions(/MT)
 ADD_LIBRARY(absyn_builder ${OBJS})

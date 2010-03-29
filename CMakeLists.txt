@@ -20,6 +20,8 @@ ADD_SUBDIRECTORY(c_runtime)
 ADD_SUBDIRECTORY(modelica_parser)
 ADD_SUBDIRECTORY(flat_modelica_parser)
 ADD_SUBDIRECTORY(Compiler)
+ADD_SUBDIRECTORY(doc)
+ADD_SUBDIRECTORY(Examples)
 
 # -------------------------------------------------------------
 # Models
