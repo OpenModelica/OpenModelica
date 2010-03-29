@@ -9481,7 +9481,7 @@ algorithm
     case (cache,(SLOT(an = (id,tp),true_ = false,expExpOption = e,typesArrayDimLst = ds) :: xs),class_,env,impl)
       equation
         (cache,res) = fillDefaultSlots(cache,xs, class_, env, impl);
-        SCode.COMPONENT(_,_,_,_,_,_,_,SCode.MOD(_,_,_,SOME((dexp,_))),_,_,_,_,_) = SCode.getElementNamed(id, class_);
+        SCode.COMPONENT(modifications = SCode.MOD(_,_,_,SOME((dexp,_)))) = SCode.getElementNamed(id, class_);
         (cache,exp,DAE.PROP(t,c1),_,_) = elabExp(cache,env, dexp, impl, NONE,true);
         (exp_1,_) = Types.matchType(exp,t,tp,true);
       then
@@ -10356,9 +10356,9 @@ algorithm
         s = Exp.printComponentRefStr(cr);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.NO_CONSTANT_BINDING, {s,scope});
+        Debug.fprintln("static","- Static.elabCref2 failed on: " +& s +& " with no constant binding in scope: " +& scope);
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
-        Debug.fprintln("static","- Static.elabCref2 failed on: " +& s +& " with no constant binding in scope: " +& scope);
       then
         (cache,DAE.CREF(cr_1,expTy),DAE.C_CONST(),acc);
 

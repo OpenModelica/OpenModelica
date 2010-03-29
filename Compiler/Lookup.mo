@@ -60,6 +60,7 @@ protected import Debug;
 protected import Error;
 protected import Exp;
 protected import Inst;
+protected import InstExtends;
 protected import InnerOuter;
 protected import Mod;
 protected import ModUtil;
@@ -1135,6 +1136,7 @@ algorithm
       Env.Cache cache;
       SplicedExpData splicedExpData;
       Option<DAE.Const> cnstForRange;
+      Boolean mustBeConstant;
     
     // try the old lookupVarInternal
     case (cache,env,cref) 
@@ -1146,7 +1148,7 @@ algorithm
     // then look in classes (implicitly instantiated packages)
     case (cache,env,cref)  
       equation 
-        (cache,p_env,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env, cref);
+        (cache,p_env,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env,cref);
         checkPackageVariableConstant(p_env,attr,ty,cref);
         // optional exp.exp to return
       then
@@ -1155,7 +1157,7 @@ algorithm
     // fail if we couldn't find it
     case (_,env,cref) 
       equation
-        // Debug.fprintln("failtrace",  "- Lookup.lookupVar failed");  
+        Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& Exp.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
       then fail(); 
   end matchcontinue;
 end lookupVar;
@@ -1171,16 +1173,18 @@ algorithm
   _ := matchcontinue(env,attr,tp,cref)
     local 
       Absyn.Path path;
+      String s1,s2;
     
     // do not fail if is a constant
-    case (env, DAE.ATTR(parameter_= SCode.CONST()),_,cref) then ();
+    case (_,DAE.ATTR(parameter_= SCode.CONST()),_,_) then ();
     
     // fail if is not a constant
-    case (env,attr,tp,cref) local String s1,s2;
+    case (env,attr,tp,cref)
       equation
         s1=Exp.printComponentRefStr(cref);
         s2 = Env.printEnvPathStr(env);
         Error.addMessage(Error.PACKAGE_VARIABLE_NOT_CONSTANT,{s1,s2});
+        Debug.fprintln("failtrace", "- Lookup.checkPackageVariableConstant failed: " +& s1 +& " in " +& s2);
       then fail();
   end matchcontinue;
 end checkPackageVariableConstant;
@@ -1294,7 +1298,6 @@ algorithm
       Boolean encflag;
       SCode.Restriction r;
       list<Env.Frame> env2,env3,env5,env,fs,p_env;
-      Env.BCEnv bcframes;
       ClassInf.State ci_state;
       list<DAE.Var> types;
       DAE.Attributes attr;
@@ -1329,7 +1332,7 @@ algorithm
           // (cache,env5,_,_,_,_,_,_,_,_) = 
           //   Inst.instClass(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), 
           //                  Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env5, id2);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env5,id2);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
 
@@ -1383,13 +1386,6 @@ algorithm
       then
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData);
 
-        /* Search base classes */
-    case (cache,Env.FRAME(inherited = (bcframes as (_ :: _)))::fs,cref)
-      equation 
-        (cache,env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInBaseClasses(cache,bcframes, cref);
-      then
-        (cache,env,attr,ty,bind,cnstForRange,splicedExpData);
-
     // Search among qualified imports, e.g. import A.B; or import D=A.B; 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation
@@ -1406,9 +1402,9 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
         
      // Search parent scopes
-    case (cache,(f :: fs),cr)  
+    case (cache,(f :: fs),cr)
       equation 
-         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,fs, cr);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,fs,cr);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
 
@@ -1421,34 +1417,6 @@ algorithm
         fail(); 
   end matchcontinue;
 end lookupVarInPackages;
-
-protected function lookupVarInBaseClasses "searches the list of base class environments for a variable"
-  input Env.Cache cache;
-  input Env.BCEnv bcEnv "environments of base classes";
-  input DAE.ComponentRef cref;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output DAE.Attributes attr;
-  output DAE.Type ty;
-  output DAE.Binding bind;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
-  output SplicedExpData splicedExpData;
-algorithm
-  (outCache,outEnv,attr,ty,bind,constOfForIteratorRange,splicedExpData) := matchcontinue (cache,bcEnv,cref)
-    local
-      Env.Env env;
-      Option<DAE.Const> cnstForRange;
-      
-    case (cache,env::_,cref)
-      equation
-        (outCache,attr,ty,bind,cnstForRange,splicedExpData,env) = lookupVar(cache,env,cref);
-      then (outCache,env,attr,ty,bind,cnstForRange,splicedExpData);
-    case (cache,_::bcEnv,cref)
-      equation
-        (outCache,env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInBaseClasses(cache,bcEnv,cref);
-      then (outCache,env,attr,ty,bind,cnstForRange,splicedExpData);
-  end matchcontinue;          
-end lookupVarInBaseClasses;
 
 protected function makeOptIdentOrNone "
 Author: BZ, 2009-04
@@ -2065,7 +2033,7 @@ algorithm
         env = Env.openScope(env, false, SOME(name));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
-        (_,env,_,_,eltsMods,_,_,_,_) = Inst.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true);
+        (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,cdefelts,false,NONE);
         (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
@@ -2129,7 +2097,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec tp;
       SCode.Mod mod;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<Env.Frame> env_1;
       Option<Absyn.Exp> cond;
@@ -2142,7 +2109,7 @@ algorithm
 
     case ({},_,_) then {};
 
-    case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,bc,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
+    case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
       equation
         (_,mod_1,_) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
@@ -2160,8 +2127,7 @@ algorithm
         var = SCode.VAR();
         dir = Absyn.INPUT();
       then
-        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,
-          umod,bc,comment,cond,nfo,cc) :: res);
+        (SCode.COMPONENT(id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,SCode.VAR,Absyn.INPUT()),tp,umod,comment,cond,nfo,cc) :: res);
 
     case (_,_,_)
       equation
@@ -2188,8 +2154,7 @@ algorithm
   outElement := SCode.COMPONENT("result",Absyn.UNSPECIFIED(),false,false,false,
           SCode.ATTR({},false,false,SCode.RW(),SCode.VAR(),Absyn.OUTPUT()),
           Absyn.TPATH(Absyn.IDENT(id),NONE),
-          SCode.NOMOD,
-          {},NONE,NONE,NONE,NONE);
+          SCode.NOMOD(),NONE,NONE,NONE,NONE);
 end buildRecordConstructorResultElt;
 
 public function isInBuiltinEnv
@@ -2327,19 +2292,11 @@ algorithm
     local
       SCode.Class c;
       list<Env.Frame> env_1,env,fs,i_env,prevFrames;
-      Env.BCEnv bcframes;
       Env.Frame frame,f;
       String id,sid,scope;
       Boolean msg,msgflag;
       Absyn.Path aid,path;
       Env.Cache cache;
-
-        /* Search base classes */
-    case (cache,Env.FRAME(inherited = bcframes)::_,id,_,_,_)
-      equation
-        (cache,c,env,prevFrames) = lookupClassInBaseClasses(cache,bcframes,id);
-      then
-        (cache,c,env,prevFrames);
 
     case (cache,(env as ((frame as Env.FRAME(optName = SOME(sid),isEncapsulated = true)) :: fs)),id,prevFrames,inState,_)
       equation
@@ -2397,7 +2354,6 @@ algorithm
   (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (inCache,inFrame,inEnv,inIdent,inPrevFrames,inState,inBoolean)
     local
       SCode.Class c;
-      Env.BCEnv bcframes;
       list<Env.Frame> bcenv,env,totenv,env_1,prevFrames;
       Option<String> sid;
       Env.AvlTree ht;
@@ -2432,29 +2388,6 @@ algorithm
         (cache,c,env_1,prevFrames);
   end matchcontinue;
 end lookupClassInFrame;
-
-protected function lookupClassInBaseClasses "searches the list of base class environments for a class"
-  input Env.Cache cache;
-  input Env.BCEnv bcEnv "environments of base classes";
-  input String name;
-  output Env.Cache outCache;
-  output SCode.Class outClass;
-  output Env.Env outEnv;
-  output list<Env.Frame> outPrevFrames;
-algorithm
-  (outCache,outClass,outEnv,outPrevFrames) := matchcontinue (cache,bcEnv,name)
-    local
-      Env.Env env;
-    case (cache,env::_,name)
-      equation
-        (outCache,outClass,outEnv,outPrevFrames) = lookupClass2(cache,env,Absyn.IDENT(name),{},Util.makeStatefulBoolean(false),true);
-      then (outCache,outClass,outEnv,outPrevFrames);
-    case (cache,_::bcEnv,name)
-      equation
-        (outCache,outClass,outEnv,outPrevFrames) = lookupClassInBaseClasses(cache,bcEnv,name);
-      then (outCache,outClass,outEnv,outPrevFrames);
-  end matchcontinue;
-end lookupClassInBaseClasses;
 
 protected function lookupClassAssertClass "Asserts that item is Class (which is returned.
 If component is found, this is reported as an error"

@@ -208,6 +208,7 @@ public constant ErrorID CONNECTOR_ARRAY_DIFFERENT=120;
 public constant ErrorID MODIFIER_NON_ARRAY_TYPE_WARNING=121;
 public constant ErrorID BUILTIN_VECTOR_INVALID_DIMENSIONS=122;
 public constant ErrorID UNROLL_LOOP_CONTAINING_WHEN=123;
+public constant ErrorID CIRCULAR_PARAM=124;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -538,17 +539,17 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
           (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
+          (CIRCULAR_PARAM, TRANSLATION(), ERROR(), " Variable '%s' has a cyclic dependency and has variability %s."),
 
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix.")
-
+          
           };
 
 protected import ErrorExt;
 protected import Util;
 protected import Print;
-protected import RTOpts;
 protected import System;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
@@ -636,6 +637,7 @@ algorithm
       Absyn.Info sinfo;
     case (error_id,tokens,Absyn.INFO(fileName = file,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
       equation
+        file = fixFilenameForTestsuite(file);
         (msg_type,severity,msg) = lookupMessage(error_id);
         msg_type_str = messageTypeStr(msg_type);
         severity_string = severityStr(severity);
@@ -917,7 +919,6 @@ algorithm
   outFilename := matchcontinue filename
     case filename
       equation
-        true = RTOpts.debugFlag("rtest");
         filename = System.stringFindString(filename, "/testsuite/");
       then filename;
     case filename then filename;

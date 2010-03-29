@@ -268,6 +268,7 @@ algorithm
         Interactive.InteractiveSymbolTable st;
       equation
         (cache,v) = cevalCref(cache,env, c, false, msg) "When in interactive mode, always evalutate crefs, i.e non-implicit mode.." ;
+        //Debug.traceln("cevalCref cr: " +& Exp.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,SOME(st));
 
@@ -275,6 +276,7 @@ algorithm
       local DAE.ComponentRef c;
       equation
         (cache,v) = cevalCref(cache,env, c, impl, msg);
+        //Debug.traceln("cevalCref cr: " +& Exp.printComponentRefStr(c) +& " in s: " +& Env.printEnvPathStr(env) +& " v:" +& ValuesUtil.valString(v));
       then
         (cache,v,st);
         

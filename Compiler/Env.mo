@@ -87,7 +87,6 @@ public import SCode;
 public import HashTable5;
 
 public type Ident = String " An identifier is just a string " ;
-public type BCEnv = list<Env> "The environment of inherited classes";
 public type Env = list<Frame> "an environment is a list of frames";
 
 public uniontype Cache
@@ -123,7 +122,6 @@ uniontype Frame
     AvlTree             clsAndVars        "List of uniquely named classes and variables";
     AvlTree             types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
     list<Item>          imports           "list of unnamed items (imports)";
-    BCEnv               inherited         "list of environments for inherited elements";
     CSetsType           connectionSet     "current connection set crefs";
     Boolean             isEncapsulated    "encapsulated bool=true means that FRAME is created due to encapsulated class";
     list<SCode.Element> defineUnits "list of units defined in the frame";
@@ -210,7 +208,7 @@ public function newFrame "function: newFrame
 algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
-  outFrame := FRAME(NONE,ht,httypes,{},{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
+  outFrame := FRAME(NONE,ht,httypes,{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
 end newFrame;
 
 public function isTyped "
@@ -277,15 +275,14 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      BCEnv bcframes;
       Env res;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Ident id;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(_,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: res),id)
-    then (FRAME(SOME(id),ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: res);
+    case ((FRAME(_,ht,httypes,imps,crs,encflag,defineUnits) :: res),id)
+    then (FRAME(SOME(id),ht,httypes,imps,crs,encflag,defineUnits) :: res);
   end matchcontinue;
 end nameScope;
 
@@ -370,16 +367,15 @@ algorithm
   local   Option<Ident> optName;
     AvlTree clsAndVars, types ;
     list<Item> imports;
-    BCEnv inherited;
     list<Frame> fs;
     tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crefs;
     Boolean enc;
     list<SCode.Element> defineUnits;
 
-    case(FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs,classEnv)
+    case(FRAME(optName,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,classEnv)
       equation
         clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
-      then FRAME(optName,clsAndVars,types,imports,inherited,crefs,enc,defineUnits)::fs;
+      then FRAME(optName,clsAndVars,types,imports,crefs,enc,defineUnits)::fs;
   end matchcontinue;
 end updateEnvClasses;
 
@@ -441,7 +437,6 @@ algorithm
       AvlTree httypes;
       AvlTree ht,ht_1;
       Env env,fs;
-      BCEnv bcframes;
       Option<Ident> id;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
@@ -450,11 +445,11 @@ algorithm
       Ident n;
       list<SCode.Element> defineUnits;
 
-    case ((env as (FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs)),(c as SCode.CLASS(name = n)))
+    case ((env as (FRAME(id,ht,httypes,imps,crs,encflag,defineUnits) :: fs)),(c as SCode.CLASS(name = n)))
       equation
         (ht_1) = avlTreeAdd(ht, n, CLASS(c,env));
       then
-        (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
+        (FRAME(id,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
 
     case (_,_)
       equation
@@ -501,7 +496,6 @@ algorithm
       Option<Ident> id;
       list<AvlValue> imps;
       Env fs,env,remember;
-      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       InstStatus i;
@@ -510,15 +504,15 @@ algorithm
       Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
+    case ((FRAME(id,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
       equation
         //failure((_)= avlTreeGet(ht, n));
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
-        (FRAME(id,ht_1,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
+        (FRAME(id,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
 
     // Variable already added, perhaps from baseclass
-    case (remember as (FRAME(id,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),
+    case (remember as (FRAME(id,ht,httypes,imps,crs,encflag,defineUnits) :: fs),
           (v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
       equation
         (_)= avlTreeGet(ht, n);
@@ -546,7 +540,6 @@ algorithm
       AvlTree ht,ht_1;
       Option<Ident> sid;
       list<AvlValue> imps;
-      BCEnv bcframes;
       Env fs,env,frames;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       DAE.Var v;
@@ -554,18 +547,18 @@ algorithm
       list<SCode.Element> defineUnits;
 
     case ({},_,i,_) then {};  /* fully instantiated env of component */
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
+    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
       equation
         VAR(_,c,_,_) = avlTreeGet(ht, n);
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
-        (FRAME(sid,ht_1,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */
+        (FRAME(sid,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */
       equation
         frames = updateFrameV(fs, v, i, env);
       then
-        (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: frames);
-    case ((FRAME(sid,ht, httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),DAE.TYPES_VAR(name = n),_,_)
+        (FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
+    case ((FRAME(sid,ht, httypes,imps,crs,encflag,defineUnits) :: fs),DAE.TYPES_VAR(name = n),_,_)
       equation
         /*Print.printBuf("- update_frame_v, variable ");
         Print.printBuf(n);
@@ -573,7 +566,7 @@ algorithm
         printEnv(fs);
         Print.printBuf("\n");*/
       then
-        (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs);
+        (FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
     case (_,(v as DAE.TYPES_VAR(name = id)),_,_)
       equation
         print("- update_frame_v failed\n");
@@ -603,7 +596,6 @@ algorithm
       AvlTree ht;
       Option<Ident> sid;
       list<AvlValue> imps;
-      BCEnv bcframes;
       Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
@@ -611,18 +603,18 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),n,t)
+    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
       equation
         TYPE(tps) = avlTreeGet(httypes, n) "Other types with that name allready exist, add this type as well" ;
         (httypes_1) = avlTreeAdd(httypes, n, TYPE((t :: tps)));
       then
-        (FRAME(sid,ht,httypes_1,imps,bcframes,crs,encflag,defineUnits) :: fs);
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),n,t)
+        (FRAME(sid,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
+    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
       equation
         failure(TYPE(_) = avlTreeGet(httypes, n)) "No other types exists" ;
         (httypes_1) = avlTreeAdd(httypes, n, TYPE({t}));
       then
-        (FRAME(sid,ht,httypes_1,imps,bcframes,crs,encflag,defineUnits) :: fs);
+        (FRAME(sid,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
   end matchcontinue;
 end extendFrameT;
 
@@ -638,17 +630,16 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Absyn.Import imp;
       Env fs,env;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),imp)
+    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),imp)
       equation
         false = memberImportList(imps,imp);
-    then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),bcframes,crs,encflag,defineUnits) :: fs);
+    then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),crs,encflag,defineUnits) :: fs);
 
     case (env,imp) then env;
   end matchcontinue;
@@ -666,14 +657,13 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
       Env fs;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defineUnits) :: fs),defunit)
-    then (FRAME(sid,ht,httypes,imps,bcframes,crs,encflag,defunit::defineUnits) :: fs);
+    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),defunit)
+    then (FRAME(sid,ht,httypes,imps,crs,encflag,defunit::defineUnits) :: fs);
   end matchcontinue;
 end extendFrameDefunit;
 
@@ -965,21 +955,18 @@ algorithm
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
-      BCEnv bcframes;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
-    case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,inherited = bcframes,connectionSet = crs,isEncapsulated = encflag)
+    case FRAME(optName = optName,clsAndVars = ht,types = httypes,imports = imps,connectionSet = crs,isEncapsulated = encflag)
       equation
         sid = Util.getOptionOrDefault(optName, "unnamed");
         s1 = printAvlTreeStr(ht);
         s2 = printAvlTreeStr(httypes);
         s3 = printImportsStr(imps);
-        s4 = Util.stringAppendList(Util.listMap(bcframes,printEnvStr));
         encflag_str = Util.boolString(encflag);
         res = Util.stringAppendList(
           "FRAME: " :: sid :: " (enc=" :: encflag_str ::
-          ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 ::
-          "baseclass:\n======\n" :: s4 :: "end baseclass\n" :: {});
+          ") \nclasses and vars:\n=============\n" :: s1 :: "   Types:\n======\n" :: s2 :: "   Imports:\n=======\n" :: s3 :: {});
       then
         res;
   end matchcontinue;

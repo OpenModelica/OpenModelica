@@ -820,6 +820,8 @@ algorithm
     /* Search for both */
     case(cache,env,ih,cr1,cr2)
       equation
+        Debug.traceln(Exp.printComponentRefStr(cr1));
+        Debug.traceln(Exp.printComponentRefStr(cr2));
         (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner1,isOuter1) = innerOuterBooleans(io1);
@@ -1298,22 +1300,21 @@ algorithm
       AvlTree clsAndVars "List of uniquely named classes and variables" ;
       AvlTree types "List of types, which DOES NOT need to be uniquely named, eg. size may have several types" ;
       list<Item> imports "list of unnamed items (imports)" ;
-      Env.BCEnv inherited "list of frames for inherited elements" ;
       CSetsType connectionSet "current connection set crefs" ;
       Boolean isEncapsulated "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
       list<SCode.Element> defineUnits "list of units defined in the frame" ;
 
-    case (f as Env.FRAME(optName, clsAndVars, types, imports, inherited, connectionSet, isEncapsulated, defineUnits), cr)
+    case (f as Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
       equation
         SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
       then
-        Env.FRAME(optName, clsAndVars, types, imports, inherited, connectionSet, isEncapsulated, defineUnits);
+        Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
 
-    case (f as Env.FRAME(optName, clsAndVars, types, imports, inherited, connectionSet, isEncapsulated, defineUnits), cr)
+    case (f as Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
       equation
         // when above fails leave unchanged
       then
-        Env.FRAME(optName, clsAndVars, types, imports, inherited, connectionSet, isEncapsulated, defineUnits);
+        Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
 
   end matchcontinue;
 end switchInnerToOuterInFrame;

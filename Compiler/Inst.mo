@@ -138,6 +138,7 @@ end DimExp;
 protected import Algorithm;
 protected import Builtin;
 protected import Ceval;
+protected import ConnectUtil;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
@@ -146,12 +147,14 @@ protected import ErrorExt;
 protected import Exp;
 protected import HashTable;
 protected import HashTable5;
+protected import InstExtends;
 protected import Interactive;
 protected import Lookup;
 protected import MetaUtil;
 protected import ModUtil;
 protected import OptManager;
 protected import Patternm;
+protected import PrefixUtil;
 protected import Static;
 protected import Types;
 protected import UnitAbsynBuilder;
@@ -161,10 +164,6 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
-protected import ConnectUtil;
-protected import PrefixUtil;
-//protected import DAELow;
-//protected import CevalScript;
 
 protected function printDimsStr
 "function: printDims
@@ -2835,7 +2834,7 @@ algorithm
         "1. CLASSDEF & IMPORT nodes and COMPONENT nodes(add to env)" ;
 
         (cache,env2,ih,emods,extcomps,eqs2,initeqs2,alg2,initalg2) =
-        instExtendsAndClassExtendsList(cache, env1, ih, mods, extendselts, extendsclasselts, ci_state, className, impl)
+        InstExtends.instExtendsAndClassExtendsList(cache, env1, ih, mods, extendselts, extendsclasselts, ci_state, className, impl, false)
         "2. EXTENDS Nodes inst_extends_list only flatten inhteritance structure. It does not perform component instantiations.";
         compelts_1 = addNomod(compelts)
         "Problem. Modifiers on inherited components are unelabed, loosing their
@@ -3738,11 +3737,14 @@ algorithm
 
     case (cache,env,ih,store,{SCode.EXTENDS(baseClassPath = path,modifications = mod)},{},mods,inst_dims)
       equation
+        //Debug.traceln("Try instbasic 1 " +& Absyn.pathString(path));
         ErrorExt.setCheckpoint("instBasictypeBaseclass");
         (cache,m_1,fdae) = Mod.elabModForBasicType(cache,env, Prefix.NOPRE(), mod, true);
         m_2 = Mod.merge(mods, m_1, env, Prefix.NOPRE());
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env, path, true);
+        //Debug.traceln("Try instbasic 2 " +& Absyn.pathString(path) +& " " +& Mod.printModStr(m_2));
         (cache,env_1,ih,store,dae,_,ty,tys,st) = instClassBasictype(cache,cenv,ih, store,m_2, Prefix.NOPRE(), Connect.emptySet, cdef, inst_dims, false, INNER_CALL());
+        //Debug.traceln("Try instbasic 3 " +& Absyn.pathString(path) +& " " +& Mod.printModStr(m_2));
         b1 = Types.basicType(ty);
         b2 = Types.arrayType(ty);
         b3 = Types.extendsBasicType(ty);
@@ -3861,21 +3863,20 @@ algorithm
       Env.AvlTree bt1;
       list<Env.Item> imp;
       DAE.ComponentRef prefix_cr;
-      Env.BCEnv bc;
       list<Env.Frame> fs;
       Boolean enc;
       InstanceHierarchy ih;
       list<SCode.Element> defineUnits;
 
     case (Connect.SETS(connection = crs),prefix,
-      (Env.FRAME( n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs),ih)
+      (Env.FRAME( n,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
       equation
         prefix_cr = PrefixUtil.prefixToCref(prefix);
-      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,prefix_cr),enc,defineUnits) :: fs,ih);
+      then (Env.FRAME(n,bt1,bt2,imp,(crs,prefix_cr),enc,defineUnits) :: fs,ih);
     case (Connect.SETS(connection = crs),prefix,
-        (Env.FRAME(n,bt1,bt2,imp,bc,_,enc,defineUnits) :: fs),ih)
+        (Env.FRAME(n,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
       equation
-      then (Env.FRAME(n,bt1,bt2,imp,bc,(crs,DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,defineUnits) :: fs,ih);
+      then (Env.FRAME(n,bt1,bt2,imp,(crs,DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,defineUnits) :: fs,ih);
 
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -4036,12 +4037,12 @@ algorithm
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         (cdefelts,classextendselts,extendselts,_) = splitElts(els);
         (env1,ih) = addClassdefsToEnv(env, ih, cdefelts, true, NONE) " CLASSDEF & IMPORT nodes are added to env" ;
-        (cache,env2,ih,emods,extcomps) =
-        partialInstExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true)
+        (cache,env2,ih,emods,extcomps,_,_,_,_) =
+        InstExtends.instExtendsAndClassExtendsList(cache,env1,ih, mods, extendselts, classextendselts, ci_state, className, true, true)
         "2. EXTENDS Nodes inst_Extends_List only flatten inhteritance structure. It does not perform component instantiations." ;
         els = Util.if_(partialPrefix, {}, els);
         // If we partially instantiate a partial package, we filter out constants (maybe we should also filter out functions) /sjoelund
-		    lst_constantEls = addNomod(constantEls(els)) " Retrieve all constants";
+		    lst_constantEls = listAppend(extcomps,addNomod(constantEls(els))) " Retrieve all constants";
 	      /*
 	       Since partial instantiation is done in lookup, we need to add inherited classes here.
 	       Otherwise when looking up e.g. A.B where A inherits the definition of B, and without having a
@@ -4053,7 +4054,7 @@ algorithm
         (cache,env3,ih,_/*Skip collecting functions here, since partial */) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false);
-        lst_constantEls = listAppend(extcomps,lst_constantEls);
+        //lst_constantEls = listAppend(extcomps,lst_constantEls);
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls,
                           inst_dims, true, ConnectionGraph.EMPTY) "instantiate constants";
@@ -4188,7 +4189,6 @@ algorithm
       ClassInf.State ci_state;
       Boolean impl;
       Env.Cache cache;
-      SCode.BaseClassList bc;
       output InstanceHierarchy ih;
       DAE.DAElist dae,dae1,dae2,fdae1,fdae2,dae3;
       String name;
@@ -4241,8 +4241,6 @@ algorithm
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
 
-        bc=SCode.elementBaseClassPath(comp);
-        (cache,env,ih)=getDerivedEnv(cache,env,ih,bc);
         (cache,env2,ih,csets,fdae1) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
         (cache,env2,ih,csets,fdae2) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
         (cache,cmod_1,dae1) = Mod.updateMod(cache,env2, pre, cmod, impl);
@@ -4269,567 +4267,6 @@ algorithm
   end matchcontinue;
 end getOptionArraydim;
 
-public function instExtendsAndClassExtendsList "
-  This function flattens out the inheritance structure of a class.
-  It takes an SCode.Element list and flattens out the extends nodes and
-  class extends nodes of that list. The result is a list of components and
-  lists of equations and algorithms."
-  input Env.Cache inCache;
-  input Env inEnv;
-  input InstanceHierarchy inIH;
-  input Mod inMod;
-  input list<SCode.Element> inExtendsElementLst;
-  input list<SCode.Element> inClassExtendsElementLst;
-  input ClassInf.State inState;
-  input String inClassName; // the class name whose elements are getting instantiated.
-  input Boolean inImpl;
-  output Env.Cache outCache;
-  output Env outEnv;
-  output InstanceHierarchy outIH;
-  output Mod outMod;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
-  output list<SCode.Equation> outSCodeNormalEquationLst;
-  output list<SCode.Equation> outSCodeInitialEquationLst;
-  output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
-  output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
-  Env env;
-  list<SCode.Element> lst;
-  list<Mod> mods;
-  list<String> modStrings,elStrs;
-algorithm
-  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl);
-  (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
-end instExtendsAndClassExtendsList;
-
-protected function instExtendsList "
-  author: PA
-  This function flattens out the inheritance structure of a class.
-  It takes an SCode.Element list and flattens out the extends nodes
-  of that list. The result is a list of components and lists of equations
-  and algorithms."
-  input Env.Cache inCache;
-  input Env inEnv;
-  input InstanceHierarchy inIH;
-  input Mod inMod;
-  input list<SCode.Element> inSCodeElementLst;
-  input ClassInf.State inState;
-  input String inClassName; // the class name whose elements are getting instantiated.
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Env outEnv1;
-  output InstanceHierarchy outIH;
-  output Mod outMod2;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst3;
-  output list<SCode.Equation> outSCodeEquationLst4;
-  output list<SCode.Equation> outSCodeEquationLst5;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst6;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst7;
-algorithm
-  (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inSCodeElementLst,inState,inClassName,inBoolean)
-    local
-      SCode.Class c;
-      String cn,s,scope_str,className;
-      Boolean encf,impl;
-      SCode.Restriction r;
-      list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
-      list<SCode.Element> els,els_1,rest,cdefelts,extendselts,classextendselts;
-      list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
-      list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
-      Absyn.Path tp_1,tp;
-      ClassInf.State new_ci_state,ci_state;
-      list<tuple<SCode.Element, Mod>> compelts1,compelts2,compelts,compelts3;
-      SCode.Mod emod;
-      SCode.Element elt;
-      Env.Cache cache;
-      ClassInf.State new_ci_state;
-      InstanceHierarchy ih;
-    /* instantiate a base class */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
-      equation
-        // adrpo - here we need to check if we don't have recursive extends of the form:
-        // package Icons
-        //   extends Icons.BaseLibrary;
-        //        model BaseLibrary "Icon for base library"
-        //        end BaseLibrary;
-        // end Icons;
-        // if we don't check that, then the compiler enters an infinite loop!
-        // what we do is removing Icons from extends Icons.BaseLibrary;
-        tp = removeSelfReference(className, tp);
-        (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache,env, tp, false);
-
-        outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
-        (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
-        (cache,tp_1) = makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
-        els_1 = addInheritScope(noImportElements(els), (tp_1,emod)) "Add the scope of the base class to elements" ;
-        eq1_1 = addEqnInheritScope(eq1, (tp_1,emod));
-        ieq1_1 = addEqnInheritScope(ieq1, (tp_1,emod));
-        alg1_1 = addAlgInheritScope(alg1, (tp_1,emod));
-        ialg1_1 = addAlgInheritScope(ialg1, (tp_1,emod));
-
-        cenv3 = Env.openScope(cenv1, encf, SOME(cn));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
-        /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
-        (cdefelts,classextendselts,_,_) = splitElts(els);
-        (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
-        els_1 = Util.listSelect(els_1, SCode.isNotElementClassExtends); // Filtering is faster than listAppend. TODO: Create a new splitElts so this is even faster
-
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl)
-        "recurse to fully flatten extends elements env" ;
-        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl)
-        "continue with next element in list" ;
-        /*
-        corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod)
-        here and then apply the bindings to the be elaborated, because for instance extends
-        A(x=y) can reference a variable y defined in A and will thus not be found.
-        On the other hand: A(n=4), n might be a structural parameter that must be set
-        to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod
-        which transforms to a Mod, but set the type information to unknown. We can then perform the
-        merge, and update untyped modifications later (using update_mod), when we are instantiating
-        the components."
-        */
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE());
-        mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
-        mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
-
-        compelts = listAppend(compelts1, compelts2);
-
-        (compelts3,mods_1) = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers" ;
-        eq = Util.listlistFunc(eq1_1,{eq2,eq3},Util.listUnionOnTrue,Util.equal);
-        ieq = Util.listlistFunc(ieq1_1,{ieq2,ieq3},Util.listUnionOnTrue,Util.equal);
-        alg = Util.listlistFunc(alg1_1,{alg2,alg3},Util.listUnionOnTrue,Util.equal);
-        ialg = Util.listlistFunc(ialg1_1,{ialg2,ialg3},Util.listUnionOnTrue,Util.equal);
-      then
-        (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
-
-    /* base class was not found */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
-      equation
-        failure((_,c,cenv) = Lookup.lookupClass(cache,env, tp, false));
-        s = Absyn.pathString(tp);
-        scope_str = Env.printEnvPathStr(env);
-        Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
-      then
-        fail();
-
-    /* instantiate elements that are not extends */
-    case (cache,env,ih,mod,(elt :: rest),ci_state,className,impl) /* Components that are not EXTENDS */
-      equation
-         false = SCode.isElementExtends(elt) "verify that it is not an extends element";
-        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl);
-      then
-        (cache,env_1,ih,mods,((elt,DAE.NOMOD()) :: compelts2),eq2,initeq2,alg2,ialg2);
-
-    /* no further elements to instantiate */
-    case (cache,env,ih,mod,{},ci_state,className,impl) then (cache,env,ih,mod,{},{},{},{},{});
-
-    /* instantiation failed */
-    case (_,_,_,_,_,_,_,_)
-      equation
-        Debug.fprint("failtrace", "- Inst.instExtendsList failed\n");
-      then
-        fail();
-  end matchcontinue;
-end instExtendsList;
-
-protected function instClassExtendsList
-"Instantiate element nodes of type SCode.CLASS_EXTENDS. This is done by walking
-the extended classes and performing the modifications in-place. The old class
-will no longer be accessible."
-  input DAE.Mod inMod;
-  input list<SCode.Element> inClassExtendsList;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
-  output DAE.Mod outMod;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
-algorithm
-  (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inClassExtendsList,inTplSCodeElementModLst)
-    local
-      SCode.Element first;
-      SCode.Class cl;
-      list<SCode.Element> rest;
-      SCode.ClassDef classDef;
-      Boolean partialPrefix,encapsulatedPrefix;
-      SCode.Restriction restriction;
-      String name;
-      Option<Absyn.ExternalDecl> externalDecl;
-      list<SCode.Annotation> annotationLst;
-      Option<SCode.Comment> comment;
-      list<SCode.Element> els,els1,els2;
-      list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
-      list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
-      list<tuple<SCode.Element, Mod>> compelts;
-      SCode.Mod mods;
-      DAE.Mod emod;
-      list<String> names;
-    case (emod,{},compelts) then (emod,compelts);
-    case (emod,(first as SCode.CLASSDEF(name=name))::rest,compelts)
-      equation
-        (emod,compelts) = instClassExtendsList2(emod,name,first,compelts);
-        (emod,compelts) = instClassExtendsList(emod,rest,compelts);
-      then (emod,compelts);
-    case (_,SCode.CLASSDEF(name=name)::rest,compelts)
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Inst.instClassExtendsList failed " +& name);
-        Debug.traceln("  Candidate classes: ");
-        els = Util.listMap(compelts, Util.tuple21);
-        names = Util.listMap(els, SCode.elementName);
-        Debug.traceln(Util.stringDelimitList(names, ","));
-      then fail();
-  end matchcontinue;
-end instClassExtendsList;
-
-protected function instClassExtendsList2
-  input DAE.Mod inMod;
-  input String inName;
-  input SCode.Element inClassExtendsElt;
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
-  output DAE.Mod outMod;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
-algorithm
-  (outMod,outTplSCodeElementModLst) := matchcontinue (inMod,inName,inClassExtendsElt,inTplSCodeElementModLst)
-    local
-      SCode.Element elt,compelt,classExtendsElt,compelt;
-      SCode.Class cl,classExtendsClass;
-      SCode.ClassDef classDef,classExtendsCdef;
-      Boolean partialPrefix2,encapsulatedPrefix2,finalPrefix2,replaceablePrefix2,partialPrefix1,encapsulatedPrefix1,finalPrefix1,replaceablePrefix1;
-      SCode.Restriction restriction1,restriction2;
-      String name1,name2;
-      Option<Absyn.ExternalDecl> externalDecl;
-      list<SCode.Annotation> annotationLst1,annotationLst2;
-      Option<SCode.Comment> comment1,comment2;
-      list<SCode.Element> els,els1,els2;
-      list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
-      list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
-      list<tuple<SCode.Element, Mod>> rest,elsAndMods;
-      SCode.Mod mods;
-      Mod mod,mod1,mod2,emod;
-      SCode.BaseClassList baseClassPath1,baseClassPath2;
-      Option<Absyn.ConstrainClass> cc1,cc2;
-      Absyn.Info info1, info2;
-
-    case (emod,name1,classExtendsElt,(SCode.CLASSDEF(name2,finalPrefix2,replaceablePrefix2,cl,baseClassPath2,cc2),mod1)::rest)
-      equation
-        true = name1 ==& name2; // Compare the name before pattern-matching to speed this up
-
-        name2 = name2 +& "$parent";
-        SCode.CLASS(_,partialPrefix2,encapsulatedPrefix2,restriction2,SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,externalDecl,annotationLst2,comment2),info2) = cl;
-
-        SCode.CLASSDEF(_, finalPrefix1, replaceablePrefix1, classExtendsClass, baseClassPath1, cc1) = classExtendsElt;
-        SCode.CLASS(_, partialPrefix1, encapsulatedPrefix1, restriction1, classExtendsCdef, info1) = classExtendsClass;
-        SCode.CLASS_EXTENDS(_,mods,els1,nEqn1,inEqn1,nAlg1,inAlg1,annotationLst1,comment1) = classExtendsCdef;
-
-        classDef = SCode.PARTS(els2,nEqn2,inEqn2,nAlg2,inAlg2,externalDecl,annotationLst2,comment2);
-        cl = SCode.CLASS(name2,partialPrefix2,encapsulatedPrefix2,restriction2,classDef,info2);
-        compelt = SCode.CLASSDEF(name2, finalPrefix2, replaceablePrefix2, cl, baseClassPath2, cc2);
-
-        elt = SCode.EXTENDS(Absyn.IDENT(name2), mods, NONE);
-        classDef = SCode.PARTS(elt::els1,nEqn1,inEqn1,nAlg1,inAlg1,NONE,annotationLst1,comment1);
-        cl = SCode.CLASS(name1,partialPrefix1,encapsulatedPrefix1,restriction1,classDef, info1);
-        baseClassPath1 = listAppend(baseClassPath1,baseClassPath2);
-        elt = SCode.CLASSDEF(name1, finalPrefix1, replaceablePrefix1, cl, baseClassPath1, cc1);
-        emod = Mod.renameTopLevelNamedSubMod(emod,name1,name2);
-        // Debug.traceln("class extends: " +& SCode.printElementStr(compelt) +& "  " +& SCode.printElementStr(elt));
-      then (emod,(compelt,mod1)::(elt,DAE.NOMOD)::rest);
-    case (emod,name1,classExtendsElt,(compelt,mod)::rest)
-      equation
-        (emod,rest) = instClassExtendsList2(emod,name1,classExtendsElt,rest);
-      then (emod,(compelt,mod)::rest);
-    case (_,_,_,{})
-      equation
-        Debug.traceln("TODO: Make a proper Error message here - Inst.instClassExtendsList2 couldn't find the class to extend");
-      then fail();
-  end matchcontinue;
-end instClassExtendsList2;
-
-protected function partialInstExtendsAndClassExtendsList "
-  This function flattens out the inheritance structure of a class.
-  It takes an SCode.Element list and flattens out the extends nodes and
-  class extends nodes of that list. The result is a list of components and
-  lists of equations and algorithms."
-  input Env.Cache inCache;
-  input Env inEnv;
-  input InstanceHierarchy inIH;
-  input Mod inMod;
-  input list<SCode.Element> inExtendsElementLst;
-  input list<SCode.Element> inClassExtendsElementLst;
-  input ClassInf.State inState;
-  input String inClassName; // the class name whose elements are getting instantiated.
-  input Boolean inImpl;
-  output Env.Cache outCache;
-  output Env outEnv;
-  output InstanceHierarchy outIH;
-  output Mod outMod;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
-  Env env;
-  list<SCode.Element> lst;
-  list<Mod> mods;
-  list<String> modStrings,elStrs;
-algorithm
-  (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst):=
-  partialInstExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl);
-  (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
-end partialInstExtendsAndClassExtendsList;
-
-protected function partialInstExtendsList
-"function: partialInstExtendsList
-  author: PA
-  This function is the same as instExtendsList, except that it does partial instantiation."
-  input Env.Cache inCache;
-  input Env inEnv;
-  input InstanceHierarchy inIH;
-  input Mod inMod;
-  input list<SCode.Element> inSCodeElementLst;
-  input ClassInf.State inState;
-  input String inClassName; // the class name whose elements are getting instantiated.
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Env outEnv1;
-  output InstanceHierarchy outIH;
-  output Mod outMod2;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst3;
-algorithm
-  (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inSCodeElementLst,inState,inClassName,inBoolean)
-    local
-      SCode.Class c;
-      String cn,s,scope_str,className;
-      Boolean encf,impl;
-      SCode.Restriction r;
-      list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
-      list<SCode.Element> els,els_1,rest,cdefelts,extendselts,classextendselts;
-      Absyn.Path tp_1,tp;
-      ClassInf.State new_ci_state,ci_state;
-      list<tuple<SCode.Element, Mod>> compelts1,compelts2,compelts,compelts3;
-      SCode.Mod emod;
-      SCode.Element elt;
-      Env.Cache cache;
-      ClassInf.State new_ci_state;
-      InstanceHierarchy ih;
-    /* instantiate a base class */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
-      equation
-        // adrpo - here we need to check if we don't have recursive extends of the form:
-        // package Icons
-        //   extends Icons.BaseLibrary;
-        //        model BaseLibrary "Icon for base library"
-        //        end BaseLibrary;
-        // end Icons;
-        // if we don't check that, then the compiler enters an infinite loop!
-        // what we do is removing Icons from extends Icons.BaseLibrary;
-        tp = removeSelfReference(className, tp);
-        (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache,env, tp, false);
-
-        outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
-        (cache,cenv1,ih,els,_,_,_,_) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
-        (cache,tp_1) = makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
-        els_1 = addInheritScope(noImportElements(els), (tp_1,emod)) "Add the scope of the base class to elements" ;
-
-        cenv3 = Env.openScope(cenv1, encf, SOME(cn));
-        new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
-        /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
-        (cdefelts,classextendselts,_,_) = splitElts(els);
-        (cenv3,ih) = addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
-        els_1 = Util.listSelect(els_1, SCode.isNotElementClassExtends); // Filtering is faster than listAppend. TODO: Create a new splitElts so this is even faster
-
-        (cache,_,ih,mods,compelts1) = partialInstExtendsAndClassExtendsList(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl)
-        "recurse to fully flatten extends elements env" ;
-        (cache,env2,ih,mods_1,compelts2) = partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl)
-        "continue with next element in list" ;
-        /*
-        corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod)
-        here and then apply the bindings to the be elaborated, because for instance extends
-        A(x=y) can reference a variable y defined in A and will thus not be found.
-        On the other hand: A(n=4), n might be a structural parameter that must be set
-        to instantiate A. How could this be solved? Solution: made new function elab_untyped_mod
-        which transforms to a Mod, but set the type information to unknown. We can then perform the
-        merge, and update untyped modifications later (using update_mod), when we are instantiating
-        the components."
-        */
-        emod_1 = Mod.elabUntypedMod(emod, env2, Prefix.NOPRE());
-        mods_1 = Mod.merge(mod, mods_1, env2, Prefix.NOPRE());
-        mods_1 = Mod.merge(mods_1, emod_1, env2, Prefix.NOPRE());
-
-        compelts = listAppend(compelts1, compelts2);
-
-        (compelts3,mods_1) = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers" ;
-      then
-        (cache,env2,ih,mods_1,compelts3);
-
-    /* base class was not found */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl)
-      equation
-        failure((_,c,cenv) = Lookup.lookupClass(cache,env, tp, false));
-        s = Absyn.pathString(tp);
-        scope_str = Env.printEnvPathStr(env);
-        Error.addMessage(Error.LOOKUP_BASECLASS_ERROR, {s,scope_str});
-      then
-        fail();
-
-    /* instantiate elements that are not extends */
-    case (cache,env,ih,mod,(elt :: rest),ci_state,className,impl) /* Components that are not EXTENDS */
-      equation
-         false = SCode.isElementExtends(elt) "verify that it is not an extends element";
-        (cache,env_1,ih,mods,compelts2) =
-        partialInstExtendsList(cache,env,ih, mod, rest, ci_state, className, impl);
-      then
-        (cache,env_1,ih,mods,((elt,DAE.NOMOD()) :: compelts2));
-
-    /* no further elements to instantiate */
-    case (cache,env,ih,mod,{},ci_state,className,impl) then (cache,env,ih,mod,{});
-
-    /* instantiation failed */
-    case (_,_,_,_,_,_,_,_)
-      equation
-        Debug.fprint("failtrace", "- Inst.partialInstExtendsList failed\n");
-      then
-        fail();
-  end matchcontinue;
-end partialInstExtendsList;
-
-protected function addInheritScope
-"function: addInheritScope
-  author: PA
-  Adds the optional base class in a SCode.COMPONENTS to indicate which base
-  class the component originates from. This is needed in instantiation to
-  be able to look up classes, etc. from the scope where the component is
-  defined."
-  input list<SCode.Element> inSCodeElementLst;
-  input SCode.BaseClass inPathMod;
-  output list<SCode.Element> outSCodeElementLst;
-algorithm
-  outSCodeElementLst := matchcontinue (inSCodeElementLst,inPathMod)
-    local
-      list<SCode.Element> res,xs;
-      String a,name;
-      Boolean b,c,d,o2,i2,partialPrefix,encapsulatedPrefix;
-      SCode.Attributes e;
-      Absyn.TypeSpec f;
-      SCode.BaseClass tp;
-      SCode.Mod g;
-      Option<SCode.Comment> comment;
-      SCode.Element x;
-      Absyn.InnerOuter io;
-      Option<Absyn.Exp> cond;
-      SCode.Class cd;      
-      Option<Absyn.Info> infoOpt;
-      Option<Absyn.ConstrainClass> cc;
-      SCode.Restriction r,restriction;
-      SCode.ClassDef classDef;
-      Absyn.Info info;
-      SCode.BaseClassList bc;
-      Absyn.Path p;
-
-    case ({},_) then {};
-
-    case ((SCode.COMPONENT(component = a,innerOuter=io,finalPrefix = b,replaceablePrefix = c,
-                           protectedPrefix = d,attributes = e,typeSpec = f,modifications = g,
-                           comment = comment,condition=cond,info=infoOpt,cc=cc,baseClassPath = bc) :: xs),tp as (p,_))
-      equation
-        res = addInheritScope(xs, tp);
-      then
-        (SCode.COMPONENT(a,io,b,c,d,e,f,g,tp::bc,comment,cond,infoOpt,cc) :: res);
-
-    case ((SCode.CLASSDEF(name = a,finalPrefix = b,replaceablePrefix = c,
-                          classDef = cd as SCode.CLASS(name = name, partialPrefix = partialPrefix, encapsulatedPrefix = encapsulatedPrefix, restriction = restriction, classDef = classDef, info = info),
-                          cc=cc,baseClassPath = bc) :: xs),tp)
-      equation 
-        classDef = addInheritScopeToClassDef(classDef,tp);
-        res = addInheritScope(xs, tp);
-      then
-        (SCode.CLASSDEF(a,b,c,SCode.CLASS(name,partialPrefix,encapsulatedPrefix,restriction,classDef,info),tp::bc,cc) :: res);
-
-    case ((x :: xs),tp)
-      equation
-        res = addInheritScope(xs, tp);
-      then
-        (x :: res);
-
-    case (_,_)
-      equation
-        print("Inst.addInheritScope failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addInheritScope;
-
-protected function addInheritScopeToClassDef
-  input SCode.ClassDef classDef;
-  input SCode.BaseClass bc;
-  output SCode.ClassDef outClassDef;
-algorithm
-  outClassDef := matchcontinue (classDef,bc)
-    local
-      list<SCode.Element> elementLst;
-      list<SCode.Equation> normalEquationLst,initialEquationLst;
-      list<SCode.Algorithm> normalAlgorithmLst,initialAlgorithmLst;
-      Option<Absyn.ExternalDecl> externalDecl;
-      list<SCode.Annotation> annotationLst;
-      Option<SCode.Comment> comment;
-    case (SCode.PARTS(elementLst,normalEquationLst,initialEquationLst,normalAlgorithmLst,initialAlgorithmLst,externalDecl,annotationLst,comment),bc)
-      equation
-        elementLst = addInheritScope(elementLst,bc);
-      then SCode.PARTS(elementLst,normalEquationLst,initialEquationLst,normalAlgorithmLst,initialAlgorithmLst,externalDecl,annotationLst,comment);
-    case (classDef,bc) then classDef;
-  end matchcontinue;
-end addInheritScopeToClassDef;
-
-protected function addEqnInheritScope
-"function: addEqnInheritScope
-  author: PA
-  Adds the optional base class in a SCode.EQUATION to indicate which
-  base class the equation originates from. This is needed in instantiation
-  to be able to look up e.g. constants, etc. from the scope where the
-  equation  is defined."
-  input list<SCode.Equation> inSCodeEquationLst;
-  input SCode.BaseClass inPathMod;
-  output list<SCode.Equation> outSCodeEquationLst;
-algorithm
-  outSCodeEquationLst := matchcontinue (inSCodeEquationLst,inPathMod)
-    local
-      list<SCode.Equation> res,xs;
-      SCode.EEquation e;
-      SCode.BaseClass tp;
-      SCode.BaseClassList bc;
-    case ({},_) then {};
-    case ((SCode.EQUATION(eEquation = e, baseClassPath = bc) :: xs),tp)
-      equation
-        res = addEqnInheritScope(xs, tp);
-      then
-        (SCode.EQUATION(e,tp::bc) :: res);
-  end matchcontinue;
-end addEqnInheritScope;
-
-protected function addAlgInheritScope
-"function: addAlgInheritScope
-  author: PA
-  Adds the optional base class in a SCode.Algorithm to indicate which
-  base class the algorithm originates from. This is needed in instantiation
-  to be able to look up e.g. constants, etc. from the scope where the
-  algorithm is defined."
-  input list<SCode.Algorithm> inSCodeAlgorithmLst;
-  input SCode.BaseClass inPathMod;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst;
-algorithm
-  outSCodeAlgorithmLst := matchcontinue (inSCodeAlgorithmLst,inPathMod)
-    local
-      list<SCode.Algorithm> res,xs;
-      list<Absyn.Algorithm> a;
-      SCode.BaseClass tp;
-      SCode.BaseClassList bc;
-    case ({},_) then {};
-    case ((SCode.ALGORITHM(statements = a, baseClassPath = bc) :: xs),tp)
-      equation
-        res = addAlgInheritScope(xs, tp);
-      then
-        (SCode.ALGORITHM(a,tp::bc) :: res);
-  end matchcontinue;
-end addAlgInheritScope;
-
 public function addNomod
 "function: addNomod
   This function takes an SCode.Element list and tranforms it into a
@@ -4852,161 +4289,6 @@ algorithm
         ((x,DAE.NOMOD()) :: res);
   end matchcontinue;
 end addNomod;
-
-protected function updateComponents
-"function: updateComponents
-  author: PA
-  This function takes a list of components and a Mod and returns a list of
-  components  with the modifiers updated.  The function is used when
-  flattening the inheritance structure, resulting in a list of components
-  to insert into the class definition. For instance
-  model A
-    extends B(modifiers)
-  end A;
-  will result in a list of components
-  from B for which modifiers should be applied to."
-  input list<tuple<SCode.Element, Mod>> inTplSCodeElementModLst;
-  input Mod inMod;
-  input Env inEnv;
-  output list<tuple<SCode.Element, Mod>> outTplSCodeElementModLst;
-  output Mod restMod;
-algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElementModLst,inMod,inEnv)
-    local
-      DAE.Mod cmod2,mod_1,cmod,mod,emod,mod_rest;
-      list<tuple<SCode.Element, Mod>> res,xs;
-      SCode.Element comp,c;
-      String id;
-      list<Env.Frame> env;
-  case ({},mod,_) then ({},mod);
-    case ((((comp as SCode.COMPONENT(component = id)),cmod) :: xs),mod,env)
-      equation
-        // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
-        cmod2 = Mod.lookupCompModification(mod, id);
-        // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
-        mod_1 = Mod.merge(cmod2, cmod, env, Prefix.NOPRE());
-        mod_rest = Types.removeMod(mod,id);
-        (res,mod_rest) = updateComponents(xs, mod_rest, env);
-      then
-        (((comp,mod_1) :: res),mod_rest);
-    case ((((c as SCode.EXTENDS(baseClassPath = _)),emod) :: xs),mod,env)
-      equation
-        (res,mod_rest) = updateComponents(xs, mod, env);
-      then
-        (((c,emod) :: res),mod_rest);
-    case ((((c as SCode.CLASSDEF(name = _)),cmod) :: xs),mod,env)
-      equation
-        (res,mod_rest) = updateComponents(xs, mod, env);
-      then
-        (((c,cmod) :: res),mod_rest);
-    case ((((c as SCode.IMPORT(imp = _)),_) :: xs),mod,env)
-      equation
-        (res,mod_rest) = updateComponents(xs, mod, env);
-      then
-        (((c,DAE.NOMOD()) :: res),mod_rest);
-    case (_,_,_)
-      equation
-        Debug.fprintln("failtrace", "-Inst.updateComponents failed");
-      then
-        fail();
-  end matchcontinue;
-end updateComponents;
-
-protected function noImportElements
-"function: noImportElements
-  Returns all elements except imports, i.e. filter out import elements."
-  input list<SCode.Element> inSCodeElementLst;
-  output list<SCode.Element> outSCodeElementLst;
-algorithm
-  outSCodeElementLst := matchcontinue (inSCodeElementLst)
-    local
-      list<SCode.Element> elt,rest;
-      SCode.Element e;
-    case {} then {};
-    case (SCode.IMPORT(imp = _) :: rest)
-      equation
-        elt = noImportElements(rest);
-      then
-        elt;
-    case (e :: rest)
-      equation
-        elt = noImportElements(rest);
-      then
-        (e :: elt);
-  end matchcontinue;
-end noImportElements;
-
-protected function instDerivedClasses
-"function: instDerivedClasses
-  author: PA
-  This function takes a class definition and returns the
-  elements and equations and algorithms of the class.
-  If the class is derived, the class is looked up and the
-  derived class parts are fetched."
-  input Env.Cache inCache;
-  input Env inEnv;
-  input InstanceHierarchy inIH;
-  input Mod inMod;
-  input SCode.Class inClass;
-  input Boolean inBoolean;
-  output Env.Cache outCache;
-  output Env outEnv1;
-  output InstanceHierarchy outIH;
-  output list<SCode.Element> outSCodeElementLst2;
-  output list<SCode.Equation> outSCodeEquationLst3;
-  output list<SCode.Equation> outSCodeEquationLst4;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst5;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst6;
-algorithm
-  (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inClass,inBoolean)
-    local
-      list<SCode.Element> elt_1,elt;
-      list<Env.Frame> env,cenv;
-      DAE.Mod mod;
-      list<SCode.Equation> eq,ieq;
-      list<SCode.Algorithm> alg,ialg;
-      SCode.Class c;
-      Absyn.Path tp;
-      SCode.Mod dmod;
-      Boolean impl;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-      Option<SCode.Comment> cmt;
-      list<SCode.Enum> enumLst;
-      String n;      
-      Absyn.Info info;
-
-    case (cache,env,ih,mod,SCode.CLASS(classDef =
-          SCode.PARTS(elementLst = elt,
-                      normalEquationLst = eq,initialEquationLst = ieq,
-                      normalAlgorithmLst = alg,initialAlgorithmLst = ialg)),_)
-      equation
-        /* elt_1 = noImportElements(elt); */
-      then
-        (cache,env,ih,elt,eq,ieq,alg,ialg);
-
-    case (cache,env,ih,mod,SCode.CLASS(classDef = SCode.DERIVED(typeSpec = Absyn.TPATH(tp, _),modifications = dmod)),impl)
-      equation
-        (cache,c,cenv) = Lookup.lookupClass(cache,env, tp, true);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,cenv,ih, mod, c, impl)
-        "Mod.lookup_modification_p(mod, c) => innermod & We have to merge and apply modifications as well!" ;
-      then
-        (cache,env,ih,elt,eq,ieq,alg,ialg);
-
-    case (cache,env,ih,mod,SCode.CLASS(name=n, classDef = SCode.ENUMERATION(enumLst,cmt), info = info),impl)
-      equation
-        c = instEnumeration(n, enumLst, cmt, info);
-        (cache,env,ih,elt,eq,ieq,alg,ialg) = instDerivedClasses(cache,env,ih, mod, c, impl);
-      then
-        (cache,env,ih,elt,eq,ieq,alg,ialg);
-
-    case (_,_,_,_,_,_)
-      equation
-        Debug.fprint("failtrace", "- Inst.instDerivedClasses failed\n");
-      then
-        fail();
-  end matchcontinue;
-end instDerivedClasses;
 
 public function instElementList
 "function: instElementList
@@ -5354,11 +4636,10 @@ algorithm
       Absyn.Import imp;
       InstanceHierarchy ih;
       Absyn.Info info;
-      SCode.BaseClassList optBaseClass;
 
     case (env,ih,{},_,_) then (env,ih);
     // we do have a redeclaration of class.
-    case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = cl, baseClassPath = optBaseClass)) :: xs),impl,redeclareMod)
+    case (env,ih,( (sel1 as SCode.CLASSDEF(name = s, classDef = cl)) :: xs),impl,redeclareMod)
       local String s;
       equation
         (env1,ih,cl2) = addClassdefsToEnv3(env,ih,redeclareMod,sel1);
@@ -5384,6 +4665,7 @@ algorithm
     // otherwise, extend frame with in class.
     case (env,ih,( (sel1 as SCode.CLASSDEF(classDef = cl)) :: xs),impl,redeclareMod)
       equation
+        // Debug.traceln("Extend frame " +& Env.printEnvPathStr(env) +& " with " +& SCode.className(cl));
         env_1 = Env.extendFrameC(env, cl);
         (env_2, ih) = addClassdefsToEnv2(env_1, ih, xs, impl,redeclareMod);
       then
@@ -5540,7 +4822,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,allcomps,comps;
       list<SCode.Equation> eqns;
@@ -5567,7 +4848,6 @@ algorithm
                                                                     variability = param,direction = dir)),
                                    typeSpec = (tss as Absyn.TPATH(tpp, _)),
                                    modifications = m,
-                                   baseClassPath = bc,
                                    comment = comment,
                                    condition = aExp,
                                    info = aInfo,cc=cc)),cmod) :: xs),
@@ -5578,15 +4858,15 @@ algorithm
           SCode.Element selem;
           DAE.Mod smod,compModLocal;
       equation
-        // print(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& "\n");
         compModLocal = Mod.lookupModificationP(mod, tpp);
         m = traverseModAddFinal(m, finalPrefix);
 
         // compModLocal = Mod.lookupCompModification12(mod,n);
         // print(" \t comp: " +& n +& " " +& " compModLocal: " +& Mod.printModStr(compModLocal) +& "\n");
         (cache,env,ih,selem,smod,csets,dae1) = redeclareType(cache,env,ih,compModLocal,
-        /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tss,m,bc,comment, aExp, aInfo,cc),
+        /*comp,*/ SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tss,m,comment,aExp, aInfo,cc),
         pre, cistate, csets, impl,cmod);
+        // Debug.traceln(" adding comp: " +& n +& " " +& Mod.printModStr(mod) +& " cmod: " +& Mod.printModStr(cmod) +& " cmL: " +& Mod.printModStr(compModLocal) +& " smod: " +& Mod.printModStr(smod));
         // print(" \t comp: " +& n +& " " +& " smod: " +& Mod.printModStr(smod) +& "\n");
         (cache,env_1,ih,dae2) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(selem,smod)}, instdims, impl);
         (cache,env_2,ih,dae3) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
@@ -5606,14 +4886,13 @@ algorithm
                                                                     variability = param,direction = dir)),
                                    typeSpec = (t as Absyn.TCOMPLEX(_,_,_)),
                                    modifications = m,
-                                   baseClassPath = bc,
                                    comment = comment,
                                    condition = aExp,
                                    info = aInfo,cc=cc)),cmod as DAE.NOMOD()) :: xs),
         allcomps,eqns,instdims,impl)
       equation
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,t,m,bc,comment, aExp, aInfo, cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,t,m,comment,aExp,aInfo,cc);
         (cache,env_1,ih,dae1) = addComponentsToEnv2(cache, env, ih, mod, pre, csets, cistate, {(comp,cmod)}, instdims, impl);
         (cache,env_2,ih,dae2) = addComponentsToEnv(cache, env_1, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -5687,7 +4966,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.TypeSpec t;
       SCode.Mod m;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       list<tuple<SCode.Element, Mod>> xs,comps;
       InstDims inst_dims;
@@ -5702,7 +4980,7 @@ algorithm
     case (cache,env,ih,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,
                                     attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
-                                    t,m,bc,comment,condition,info,cc),cmod) :: xs),
+                                    t,m,comment,condition,info,cc),cmod) :: xs),
           inst_dims,impl)
       equation
         compmod = Mod.lookupCompModification(mods, n)
@@ -5726,6 +5004,7 @@ algorithm
           SCode.printElementStr(comp) +& "\n");
         */
 
+        // Debug.traceln("  extendFrameV comp " +& n +& " m:" +& Mod.printModStr(cmod_1) +& " compm: " +& Mod.printModStr(compmod) +& " cm: " +& Mod.printModStr(cmod));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,
           (DAE.T_NOTYPE(),NONE),DAE.UNBOUND(),NONE()), SOME((comp,cmod_1)), Env.VAR_UNTYPED(), {});
@@ -5857,7 +5136,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       Option<DAE.EqMod> eq;
       list<DimExp> dims;
@@ -5897,7 +5175,7 @@ algorithm
       equation
 
         //Redeclare of class definition, replaceable is true
-        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_,cc),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))  ;
+        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,cc),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n));
         //print(" to strp redecl?\n");
         classmod = Types.removeMod(classmod,n);
         (cache,env_1,ih,dae) = instClassDecl(cache,env,ih, classmod, pre, csets, cls2, inst_dims);
@@ -5913,7 +5191,7 @@ algorithm
     /* non replaceable class definition */
     case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,replaceablePrefix = false,classDef = c),_),inst_dims,impl,_)
       equation
-        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
+        ((classmod as DAE.REDECL(finalPrefix,{(SCode.CLASSDEF(n2,f2,repl2,cls2,_),_)}))) = Mod.lookupModificationP(mods, Absyn.IDENT(n))
         "Redeclare of class definition, replaceable is false" ;
         Error.addMessage(Error.REDECLARE_NON_REPLACEABLE, {n});
       then
@@ -5942,18 +5220,18 @@ algorithm
       		                                                           variability = param,direction = dir)),
       		                          typeSpec = ( ts as Absyn.TPATH(t, _)),
       		                          modifications = m,
-      		                          baseClassPath = bc,
       		                          comment = comment,
       		                          condition=cond,
       		                          info = aInfo,cc=cc)),cmod),
           inst_dims,impl,graph)
       equation
         //print("  instElement: A component: " +& n +& "\n");
+        //Debug.traceln(" instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,bc,comment, cond, aInfo,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,aInfo,cc);
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
-        ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT());
+        ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(n));
         vn = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& PrefixUtil.printPrefixStr(pre) +& "." +& n);
         //The class definition is fetched from the environment. Then the set of modifications 
@@ -5977,8 +5255,7 @@ algorithm
         crefs3 = getCrefFromCond(cond);
         crefs_1 = Util.listFlatten({crefs,crefs2,crefs3});
         (cache,env,ih,store,crefs_2,fdae7) = removeSelfReferenceAndUpdate(cache,env,ih,store,crefs_1,owncref,t,ci_state,csets,prot,attr,impl,io,inst_dims,pre,mods,finalPrefix,aInfo);
-        (cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
-        (cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
+        //(cache,env,ih) = getDerivedEnv(cache,env,ih, bc);
         (cache,env2,ih,csets,fdae3) = updateComponentsInEnv(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl);
 				//Update the untyped modifiers to typed ones, and extract class and
 				//component modifiers again.
@@ -6022,9 +5299,9 @@ algorithm
         (cache,env2_1,ih,
          SCode.COMPONENT(n,io,finalPrefix,repl,prot,
           (attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),
-          Absyn.TPATH(t, _),m,bc,comment,cond,_,_),
+          Absyn.TPATH(t, _),m,comment,cond,_,_),
           mod_1,csets,fdae5) = redeclareType(cache, env2, ih, mod1_1, comp, pre, ci_state, csets, impl, DAE.NOMOD());
-        (cache,env_1,ih) = getDerivedEnv(cache, env, ih, bc);
+        env_1 = env;
         (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
 
         checkRecursiveDefinition(env,t,ci_state,cl);
@@ -6032,6 +5309,7 @@ algorithm
         //If the element is `protected\', and an external modification 
         //is applied, it is an error. 
         checkProt(prot, mm_1, vn) ;
+        //Debug.traceln("modEq: " +& Mod.printModStr(mod_1));
         eq = Mod.modEquation(mod_1);
         
         // The variable declaration and the (optional) equation modification are inspected for array dimensions.
@@ -6081,14 +5359,14 @@ algorithm
     //------------------------------------------------------------------------
     case (cache,env,ih,store,mods,pre,csets,ci_state,
           ((comp as SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir),
-                                    tSpec as Absyn.TCOMPLEX(typeName,_,_), m, bc,comment,cond,aInfo,cc),cmod)),
+                                    tSpec as Absyn.TCOMPLEX(typeName,_,_),m,comment,cond,aInfo,cc),cmod)),
           inst_dims,impl,graph)
       local Absyn.Path typeName;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         // see if we have a modification on the inner component
         m = traverseModAddFinal(m, finalPrefix);
-        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tSpec,m,bc,comment, cond, aInfo,cc);
+        comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,tSpec,m,comment,cond,aInfo,cc);
 
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
@@ -6133,7 +5411,7 @@ algorithm
         /* Apply redeclaration modifier to component */
         // (cache,env2,ih,SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment),mod_1,env2_1,csets)
         // = redeclareType(cache,env,ih,mod1_1, comp, env2, pre, ci_state, csets, impl);
-        (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc);
+        env_1 = env;
         //---------
         // We build up a class structure for the complex type
         id=Absyn.pathString(typeName);
@@ -6434,7 +5712,6 @@ algorithm
       SCode.Attributes attr;
       Absyn.TypeSpec ts ;
       SCode.Mod mod;
-      SCode.BaseClassList bcp1, bcp2;
       Option<SCode.Comment> comment;
       Option<Absyn.Exp> condition;
       Option<Absyn.Info> info;
@@ -6457,73 +5734,6 @@ algorithm
       then fail();
   end matchcontinue;
 end checkMultipleElementsIdentical;
-
-protected function getDerivedEnv
-"function: getDerivedEnv
-  This function returns the environment of a baseclass.
-  It is used when instantiating a component defined in a baseclass."
-  input Env.Cache inCache;
-  input Env inEnv;
-  input InstanceHierarchy inIH;
-  input SCode.BaseClassList bc;
-  output Env.Cache outCache;
-  output Env outEnv;
-  output InstanceHierarchy outIH;
-algorithm
-  (outCache,outEnv,outIH) := matchcontinue (inCache,inEnv,inIH,bc)
-    local
-      list<Env.Frame> env,cenv,cenv_2,env_2,fs;
-      Env.BCEnv bcenv;
-      SCode.Class c;
-      Boolean enc;
-      Option<String> id;
-      Env.AvlTree tps;
-      Env.AvlTree cl;
-      list<Env.Item> imps;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Absyn.Path tp,envpath,newTp;
-      Env.Cache cache;
-      InstanceHierarchy ih;
-      list<SCode.Element> defineUnits;
-      SCode.Mod mod;
-
-    case (cache,env,ih,{})
-      equation
-        // print("Inst.getDerivedEnv: case 1 " +& Env.printEnvPathStr(env) +& "\n");
-      then
-        (cache,env,ih);
-
-    /* Base classes are fully qualified names, search from top scope.
-    * This is needed since the environment can be encapsulated, but inherited classes are not affected
-    * by this and therefore should search from top scope directly.
-    */
-    case (cache,(env as (Env.FRAME(id,cl,tps,imps,bcenv,crs,enc,defineUnits) :: fs)),ih,(tp,mod)::bc)
-      equation
-        // print("Inst.getDerivedEnv: case 2 " +& Env.printEnvPathStr(env) +& ", " +& Absyn.pathString(tp) +& "\n");
-        (cache,env_2) = Lookup.lookupAndInstantiate(cache,env,tp,mod,true);
-        env = Env.FRAME(id,cl,tps,imps,env_2::bcenv,crs,enc,defineUnits) :: fs;
-        (cache,env,ih) = getDerivedEnv(cache,env,ih,bc);
-        // print("Inst.getDerivedEnv: case 2 end " +& Env.printEnvPathStr(env) +& "\n");
-      then
-        (cache,env,ih);
-
-      /*
-    case (cache,(env as (Env.FRAME(id,cl,tps,imps,bcenv,crs,enc,defineUnits) :: fs)),ih,_::bc)
-      equation
-        Debug.traceln("Ooops... Something blew, but it's ok... We can be oblivious to that fact and just keep going. Nothing bad can come from this. No sir.");
-        (cache,env,ih) = getDerivedEnv(cache,env,ih,bc);
-      then
-        (cache,env,ih);
-       */
-
-    case (_,env,_,_)
-      equation
-        // print("Inst.getDerivedEnv: failure " +& Env.printEnvPathStr(env) +& "\n");
-        Debug.fprint("failtrace", "- Inst.getDerivedEnv failed\n");
-      then
-        fail();
-  end matchcontinue;
-end getDerivedEnv;
 
 protected function removeCrefFromCrefs
 "function: removeCrefFromCrefs
@@ -6596,7 +5806,6 @@ algorithm
       Boolean finalPrefix,repl,prot,repl2,prot2,impl,redfin;
       Absyn.TypeSpec t,t2;
       SCode.Mod mod,old_mod;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment,comment2;
       list<tuple<SCode.Element, Mod>> rest;
       Prefix.Prefix pre;
@@ -6615,8 +5824,8 @@ algorithm
     /* Implicit instantation */
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
           SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                          typeSpec = t,modifications = mod,baseClassPath = bc,comment = comment,
-                            innerOuter = io, attributes = at,condition = cond, info = nfo
+                          typeSpec = t,modifications = mod,comment = comment,
+                          innerOuter = io, attributes = at,condition = cond, info = nfo
                             )),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,modifications = old_mod,cc=(cc as SOME(Absyn.CONSTRAINCLASS(elementSpec=_)))),
@@ -6625,7 +5834,7 @@ algorithm
         equality(n1 = n2);
         compsOnConstrain = extractConstrainingComps(cc,env) "extract components belonging to constraining class";
         crefs = getCrefFromMod(mod);
-        (cache,env_1,ih,csets,dae1) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, csets, impl) "m" ;
+        (cache,env_1,ih,csets,dae1) = updateComponentsInEnv(cache, env, ih, pre, DAE.NOMOD(), crefs, ci_state, csets, impl);
         (cache,m_1,dae2) = Mod.elabMod(cache,env_1, pre, mod, impl);
         (cache,old_m_1,dae3) = Mod.elabMod(cache,env_1, pre, old_mod, impl);
 
@@ -6635,7 +5844,7 @@ algorithm
         innerCompMod = Mod.merge(m_1,old_m_1,env_1,pre) "inner comp modifier merg(new_inner, old_inner) ";
         compMod = Mod.merge(rmod,cmod,env_1,pre) "outer comp modifier";
 
-        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,at,t,mod,bc,comment,cond,nfo,cc);
+        redComp = SCode.COMPONENT(n1,io,finalPrefix,repl,prot,at,t,mod,comment,cond,nfo,cc);
         m_2 = Mod.merge(compMod, innerCompMod, env_1, pre);
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
@@ -6643,8 +5852,7 @@ algorithm
 
 // no constraining type on comp, throw away modifiers prior to redeclaration
     case (cache,env,ih,(m as DAE.REDECL(tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                          typeSpec = t,modifications = mod,baseClassPath = bc,comment = comment)),rmod) :: rest))),
+          SCode.COMPONENT(component = n1,typeSpec = t,modifications = mod,comment = comment)),rmod) :: rest))),
           SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
                           typeSpec = t2,modifications = old_mod,cc=(cc as NONE)),
           pre,ci_state,csets,impl,cmod)
@@ -6686,10 +5894,7 @@ algorithm
         (cache,env_1,ih,redecl,rmod,csets,dae1);
 
     case (cache,env,ih,(mod as DAE.REDECL(finalPrefix = redfin,tplSCodeElementModLst = (((redecl as
-          SCode.COMPONENT(component = n1,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot,
-                          typeSpec = t,baseClassPath = bc,comment = comment)),rmod) :: rest))),(comp as
-          SCode.COMPONENT(component = n2,finalPrefix = false,replaceablePrefix = repl2,protectedPrefix = prot2,
-                          typeSpec = t2,comment = comment2)),
+          SCode.COMPONENT(component = n1)),rmod) :: rest))),(comp as SCode.COMPONENT(component = n2,finalPrefix = false)),
           pre,ci_state,csets,impl,cmod)
       local DAE.Mod mod;
       equation
@@ -6711,7 +5916,10 @@ algorithm
       then (cache,env,ih,comp,DAE.NOMOD(),csets,DAEUtil.emptyDae);
 
     case (cache,env,ih,mod,comp,pre,ci_state,csets,impl,cmod)
-      local DAE.Mod mod;
+      local
+        DAE.Mod mod;
+      equation
+        mod = Mod.merge(mod, cmod, env, pre);
       then
         (cache,env,ih,comp,mod,csets,DAEUtil.emptyDae);
 
@@ -6798,7 +6006,7 @@ algorithm str := matchcontinue(cc,env)
     equation
       (_,(cl as SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst=selems))) ,clenv) = Lookup.lookupClass(Env.emptyCache(),env,path,false);
       (_,classextendselts,extendselts,compelts) = splitElts(selems);
-      (_,_,_,_,extcomps,_,_,_,_) = instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true);
+      (_,_,_,_,extcomps,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), extendselts, classextendselts, ClassInf.UNKNOWN(Absyn.IDENT("")), name, true, false);
       extcompelts = Util.listMap(extcomps,Util.tuple21);
       compelts = listAppend(compelts,extcompelts);
     then
@@ -7809,9 +7017,14 @@ protected function updateComponentsInEnv
   output InstanceHierarchy outIH;
   output Connect.Sets outSets;
   output DAE.DAElist outDae "contain functions";
+protected
+  String myTick;
 algorithm
+  //myTick := intString(tick());
+  //Debug.traceln("start update comps " +& myTick);
   (outCache,outEnv,outIH,outSets,_,outDae):=
   updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,csets,impl,HashTable5.emptyHashTable());
+  //Debug.traceln("finished update comps" +& myTick);
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
 
@@ -7851,9 +7064,8 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod m;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
-      DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
+      DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods,mods_original;
       SCode.Class cl;
       list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
@@ -7872,14 +7084,17 @@ algorithm
       DAE.DAElist dae,dae1,dae2,dae3,dae4;
       DAE.FunctionTree funcs;
     /* Variables that have Element in Environment, i.e. no type
-	 * information are instantiated here to get the type.
+     * information are instantiated here to get the type.
      */
-    case (cache,env,ih,pre,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),ci_state,csets,impl,updatedComps)
+    case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
       equation
-        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,bc,comment,cond,info,cc),cmod)),_)
-        	= Lookup.lookupIdent(cache, env, id);
+        id = Absyn.crefFirstIdent(cref);
+        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t, _),m,comment,cond,info,cc),cmod)),_)
+          = Lookup.lookupIdent(cache, env, id);
+        //Debug.traceln("update comp " +& n +& " with mods:" +& Mod.printModStr(mods) +& " m:" +& SCode.printModStr(m) +& " cm:" +& Mod.printModStr(cmod));
         (cache,cl,cenv) = Lookup.lookupClass(cache, env, t, false);
-        (mods,cmod,m) = noModForUpdatedComponents(updatedComps,cref,mods,cmod,m);
+        //Debug.traceln("got class " +& SCode.printClassStr(cl));
+        (mods,cmod,m) = noModForUpdatedComponents(param,updatedComps,cref,mods,cmod,m);
         crefs = getCrefFromMod(m);
         crefs2 = getCrefFromDim(ad);
         crefs3 = getCrefFromCond(cond);
@@ -7887,113 +7102,12 @@ algorithm
         crefs_2 = removeCrefFromCrefs(crefs_1, cref);
         updatedComps = HashTable5.add((cref,0),updatedComps);
         (cache,env2,ih,csets,updatedComps,dae4) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs_2, ci_state, csets, impl, updatedComps);
-        ErrorExt.setCheckpoint("updateComponentInEnv");
-        (cache,m_1,dae1) = Mod.elabMod(cache,env2, Prefix.NOPRE(), m, impl)
-        "Prefix does not matter, since we only update types
-         in env, and does not make any dae elements, etc.." ;
-        ErrorExt.rollBack("updateComponentInEnv")
-        "Rollback all error since we are only interested in type, not value at this point.
-         Errors that occurse in elabMod which does not fail the function will be accepted.";
-        classmod = Mod.lookupModificationP(mods, t);
-        mm = Mod.lookupCompModification(mods, n);
-        mod = Mod.merge(classmod, mm, env2, Prefix.NOPRE());
-        mod_1 = Mod.merge(mod, m_1, env2, Prefix.NOPRE());
-        mod_2 = Mod.merge(cmod, mod_1, env2, Prefix.NOPRE());        
-        (cache,mod_3,dae2) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);        
-        eq = Mod.modEquation(mod_3);
-        (cache,dims,dae3) = elabArraydim(cache, env2, cref, t,ad, eq, impl, NONE, true)
-        "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
-        /* Instantiate the component */
-        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, n, cl, attr, prot, dims, {}, {}, impl, NONE, io, finalPrefix, info, ConnectionGraph.EMPTY);
-        
-        // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
-        
-        /* The environment is extended with the new variable binding. */
-        (cache,binding) = makeBinding(cache, env2, attr, mod_3, ty);
-        /* type info present */
-        env_1 = Env.updateFrameV(env2, DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
-        updatedComps = HashTable5.delete(cref,updatedComps);
-        dae = DAEUtil.joinDaeLst({DAE.DAE({},funcs),dae1,dae2,dae3,dae4}); // Collect the functions, but not dae variable
-      then
-        (cache,env_1,ih,csets_1,updatedComps,dae);
-/*
-    case (cache,env,ih,pre,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),ci_state,csets,impl,updatedComps)
-      equation
-        print("\n Update comp env for: " +& id +& " FAILED \n");
-        print(" Extern modifier: " +& Mod.printModStr(mods) +& " \n");
-        (cache,_,SOME((SCode.COMPONENT(n,io,_,_,_,_,Absyn.TPATH(t, _),m,bc,_,_,_),cmod)),_)
-          = Lookup.lookupIdent(cache,env, id);
-        print(" ComponentModifier(class): " +& Mod.printModStr(cmod) +& " \n\n");
-      then
-        fail();
- */
-        /* Variable with NONE element is already instantiated. */
-    case (cache,env,ih,pre,mods,(cref as Absyn.CREF_IDENT(name = id,subscripts = subscr)),ci_state,csets,impl,updatedComps)
-      local DAE.Var ty; Env.InstStatus is;
-      equation
-        (cache,ty,_,is) = Lookup.lookupIdent(cache,env, id);
-        true = Env.isTyped(is) "If InstStatus is typed, return";
-      then
-        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
-
-        /* Nothing to update. */
-    case (cache,env,ih,pre,mods,(cref as Absyn.CREF_QUAL(name = id)),ci_state,csets,impl,updatedComps)
-      equation
-        (cache,tyVar,_,is) = Lookup.lookupIdent(cache,env, id);
-        true = Env.isTyped(is) "If InstStatus is typed, return";
-      then
-        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
-
-        /* For qualified names, e.g. a.b.c, instanitate component a */
-    case (cache,env,ih,pre,mods,(cref as Absyn.CREF_QUAL(name = id)),ci_state,csets,impl,updatedComps)
-      local Option<Absyn.Info> info;
-      equation
-        (cache,tyVar,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),Absyn.TPATH(t,_),m,_,comment,cond,info,cc),cmod)),_)
-        = Lookup.lookupIdent(cache,env, id);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env, t, false);
-        (mods,cmod,m) = noModForUpdatedComponents(updatedComps,cref,mods,cmod,m);
-        crefs = getCrefFromMod(m);
-        updatedComps = HashTable5.add((cref,0),updatedComps);
-        (cache,env2_1,ih,csets,updatedComps,dae1) = updateComponentsInEnv2(cache, env, ih, pre, mods, crefs, ci_state, csets, impl, updatedComps);
-        crefs2 = getCrefFromDim(ad);
-        (cache,env2,ih,csets,updatedComps,dae2) = updateComponentsInEnv2(cache, env2_1, ih, pre, mods, crefs2, ci_state, csets, impl, updatedComps);
-        /* Prefix does not matter, since we only update types in env, and does
-	   	   not make any dae elements, etc..
-         */
-        ErrorExt.setCheckpoint("updateComponentInEnv2");
-        (cache,m_1,dae3) = Mod.elabMod(cache,env2, Prefix.NOPRE(), m, impl);
-        ErrorExt.rollBack("updateComponentInEnv2") "Rollback all error since we are only interested in type, not value at this point. 
-        Errors that occur in elabMod which does not fail the function will be accepted.";
-        /* lookup and merge modifications */
-        classmod = Mod.lookupModificationP(mods, t) ;
-        mm = Mod.lookupCompModification(mods, n);
-        mod = Mod.merge(classmod, mm, env2, Prefix.NOPRE());
-        mod_1 = Mod.merge(mod, m_1, env2, Prefix.NOPRE());
-        mod_2 = Mod.merge(cmod, mod_1, env2, Prefix.NOPRE());
-        (cache,mod_3,dae4) = Mod.updateMod(cache,env2, Prefix.NOPRE(), mod_2, impl);
-        eq = Mod.modEquation(mod_3);
-        owncref = Absyn.CREF_IDENT(n,{})  ;
-
-        /* The variable declaration and the (optional) equation modification are inspected for array dimensions.*/
-        (cache,dims,dae4) = elabArraydim(cache,env2, owncref, t,ad, eq, impl, NONE,true);
-
-        /* Instantiate the component */
-        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, n, cl, attr, prot, dims, {}, {}, false, NONE, io, finalPrefix, info, ConnectionGraph.EMPTY);
-
-        // print("updateComponentInEnv -> 2 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
-
-        /*The environment is extended with the new variable binding.*/
-        (cache,binding) = makeBinding(cache,env2, attr, mod_3, ty);
-
-        /* type info present */
-        env_1 = Env.updateFrameV(env2,
-          DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
-        updatedComps = HashTable5.delete(cref,updatedComps);
-        dae = DAEUtil.joinDaeLst({DAE.DAE({},funcs),dae1,dae2,dae3,dae4}); // Collect functions, but not dae variable
+        (cache,env_1,ih,csets_1,updatedComps,dae) = updateComponentInEnv2(cache,env2,cenv,ih,pre,t,n,ad,cl,attr,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,finalPrefix,io,info,m,cmod,mods,cref,ci_state,csets,impl,updatedComps);
+        dae = DAEUtil.joinDaeLst({dae,dae4});
       then
         (cache,env_1,ih,csets_1,updatedComps,dae);
 
-          /* If first part of ident is a class, e.g StateSelect.None, nothing to update*/
+      /* If first part of ident is a class, e.g StateSelect.None, nothing to update*/
     case (cache,env,ih,pre,mods,(cref /*as Absyn.CREF_QUAL(name = id)*/),ci_state,csets,impl,updatedComps)
       equation
         id = Absyn.crefFirstIdent(cref);
@@ -8001,23 +7115,135 @@ algorithm
       then
         (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
 
+      /* Variable with NONE element is already instantiated. */
+    case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
+      local DAE.Var ty; Env.InstStatus is;
+      equation
+        id = Absyn.crefFirstIdent(cref);
+        (cache,ty,_,is) = Lookup.lookupIdent(cache,env,id);
+        true = Env.isTyped(is) "If InstStatus is typed, return";
+      then
+        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
+
     /* report an error! */
     case (cache,env,ih,pre,mod,cref,ci_state,csets,impl,updatedComps)
       equation
-        //Debug.fprint("failtrace", "-update_component_in_env failed, ident = ");
-        str = Debug.fcallret("failtrace", Dump.printComponentRefStr, cref, "");
-        //Debug.fprint("failtrace", str);
-        //Debug.fprint("failtrace", "\n mods:");
-        str2 = Debug.fcallret("failtrace", Mod.printModStr, mod, "");
-        //Debug.fprint("failtrace", str2);
-        //Debug.fprint("failtrace", "\n   env:   ");
-        str3 = Debug.fcallret("failtrace", Env.printEnvStr, env, "");
-        //Debug.fprint("failtrace", str3);
-        //Debug.fprint("failtrace", "\n");
-      then
-        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.updateComponentInEnv failed, ident = " +& Dump.printComponentRefStr(cref));
+        Debug.traceln(" mods: " +& Mod.printModStr(mod));
+        Debug.traceln(" scope: " +& Env.printEnvPathStr(env));
+      then fail();
+    case (cache,env,ih,pre,mod,cref,ci_state,csets,impl,updatedComps) then (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
   end matchcontinue;
 end updateComponentInEnv;
+
+protected function updateComponentInEnv2
+" Helper function, checks if the component was already instantiated.
+  If it was, don't do it again."
+  input Env.Cache cache;
+  input Env env;
+  input Env cenv;
+  input InstanceHierarchy inIH;
+  input Prefix.Prefix pre;
+  input Absyn.Path path;
+  input String name;
+  input list<Absyn.Subscript> ad;
+  input SCode.Class cl;
+  input SCode.Attributes attr;  
+  input DAE.Attributes dattr;
+  input Boolean prot;
+  input Boolean finalPrefix;
+  input Absyn.InnerOuter io;
+  input Option<Absyn.Info> info;
+  input SCode.Mod m;
+  input Mod cmod;
+  input Mod mod;
+  input Absyn.ComponentRef cref;
+  input ClassInf.State ci_state;
+  input Connect.Sets csets;
+  input Boolean impl;
+  input HashTable5.HashTable updatedComps;
+  output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output Connect.Sets outSets;
+  output HashTable5.HashTable outUpdatedComps;
+  output DAE.DAElist outDae "contains functions";
+algorithm
+  (outCache,outEnv,outIH,outSets,outUpdatedComps,outDae) := matchcontinue (cache,env,cenv,inIH,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+    local
+      tuple<DAE.TType, Option<Absyn.Path>> ty;
+      String n,id,str,str2,str3;
+      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
+      list<Absyn.Subscript> ad,subscr;
+      SCode.Accessibility acc;
+      SCode.Variability param;
+      Absyn.Direction dir;
+      Absyn.Path t;
+      SCode.Mod m;
+      Option<SCode.Comment> comment;
+      DAE.Mod cmod,m_1,classmod,mm,mod,mod_1,mod_2,mod_3,mods;
+      SCode.Class cl;
+      list<Env.Frame> cenv,env2,compenv,env2_1,env_1;
+      list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
+      Connect.Sets csets,csets_1;
+      Option<DAE.EqMod> eq;
+      list<DimExp> dims;
+      DAE.DAElist dae1;
+      DAE.Binding binding,binding_1;
+      Absyn.ComponentRef cref,owncref;
+      Option<Absyn.Exp> cond;
+      DAE.Var tyVar;
+      Env.InstStatus is;
+      InstanceHierarchy ih;
+      Option<Absyn.ConstrainClass> cc;
+      DAE.DAElist dae,dae1,dae2,dae3,dae4;
+      DAE.FunctionTree funcs;
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+      equation
+        1 = HashTable5.get(cref, updatedComps);
+      then (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+      equation        
+        ErrorExt.setCheckpoint("updateComponentInEnv2");
+        (cache,m_1,dae1) = Mod.elabMod(cache,env, Prefix.NOPRE(), m, impl)
+        "Prefix does not matter, since we only update types
+         in env, and does not make any dae elements, etc.." ;
+        ErrorExt.rollBack("updateComponentInEnv2")
+        "Rollback all error since we are only interested in type, not value at this point.
+         Errors that occurse in elabMod which does not fail the function will be accepted.";
+        classmod = Mod.lookupModificationP(mod, path);
+        mm = Mod.lookupCompModification(mod, name);
+        mod = Mod.merge(classmod, mm, env, Prefix.NOPRE());
+        mod_1 = Mod.merge(mod, m_1, env, Prefix.NOPRE());
+        mod_2 = Mod.merge(cmod, mod_1, env, Prefix.NOPRE());        
+        (cache,mod_3,dae2) = Mod.updateMod(cache,env,Prefix.NOPRE(),mod_2,impl);        
+        eq = Mod.modEquation(mod_3);
+        
+        owncref = Absyn.CREF_IDENT(name,{});
+        (cache,dims,dae3) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE,true)
+        "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
+        /* Instantiate the component */
+        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE, io, finalPrefix, info, ConnectionGraph.EMPTY);
+        
+        // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
+        
+        /* The environment is extended with the new variable binding. */
+        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty);
+        /* type info present */
+        //Debug.traceln("VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
+        env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
+        //updatedComps = HashTable5.delete(cref,updatedComps);
+        
+        updatedComps = HashTable5.add((cref,1),updatedComps);
+        dae = DAEUtil.joinDaeLst({DAE.DAE({},funcs),dae1,dae2,dae3}); // Collect the functions, but not dae variable        
+      then (cache,env,ih,csets_1,updatedComps,dae);
+    case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
+      equation
+        //Debug.traceln("- Inst.updateComponentInEnv2 failed");
+      then fail();
+  end matchcontinue;
+end updateComponentInEnv2;
 
 protected function instDimExpLst
 "function: instDimExpLst
@@ -8640,7 +7866,6 @@ algorithm
       SCode.Variability param;
       Absyn.Direction dir;
       SCode.Mod m,m_1;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       DAE.Mod cmod,cmod_1,m_2,mod_2;
       DAE.EqMod eq;
@@ -8652,7 +7877,7 @@ algorithm
 
     case (cache,env,(cref as DAE.CREF_IDENT(ident = id)))
       equation
-        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,bc,comment,_,_,_),cmod)),_)
+        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,comment,_,_,_),cmod)),_)
           = Lookup.lookupIdent(cache,env, id);
         cmod_1 = Types.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
@@ -8800,6 +8025,7 @@ algorithm
         t = Types.getPropType(prop);
         (cache,dim1,dae) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad,e,path);
+        //Debug.traceln("TYPED: " +& Exp.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
         dim3 = compatibleArraydim(dim1, dim2);
       then
         (cache,dim3,dae);
@@ -8810,6 +8036,7 @@ algorithm
         t = Types.getPropType(prop);
         (cache,dim1,dae2) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect);
         dim2 = elabArraydimType(t, ad,e_1,path);
+        //Debug.traceln("UNTYPED");
         dim3 = compatibleArraydim(dim1, dim2);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
@@ -8968,11 +8195,13 @@ algorithm
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect)
       equation
         //Debug.fprintln("insttr", "elab_arraydim_decl5");
+        //Debug.traceln("try elab const array dim " +& Dump.dumpExpStr(d) +& " s:" +& Env.printEnvPathStr(env));
         (cache,e,DAE.PROP((DAE.T_INTEGER(_),_),cnst),_,dae1) = Static.elabExp(cache,env, d, impl, st,doVect);
         failure(equality(cnst = DAE.C_VAR()));
         (cache,Values.INTEGER(i),_) = Ceval.ceval(cache,env, e, impl, st, NONE, Ceval.NO_MSG());
         (cache,l,dae2) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect);
         dae = DAEUtil.joinDaes(dae1,dae2);
+        //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& Exp.printExpStr(e) +& ":" +& intString(i));
       then
         (cache,SOME(DIMINT(i)) :: l,dae);
 
@@ -10025,7 +9254,6 @@ algorithm
       Absyn.TypeSpec typeSpc;
       SCode.Mod mods;
       Absyn.Direction dir;
-      SCode.BaseClassList bClsPth;
       Option<SCode.Comment> comm;
       Option<Absyn.Exp> cond;
       Option<Absyn.Info> inf;
@@ -10039,11 +9267,11 @@ algorithm
           protectedPrefix = proPre, attributes = attr as SCode.ATTR(direction = Absyn.OUTPUT()), 
           typeSpec = typeSpc,
           modifications = SCode.MOD(finalPrefix = modFinPre, eachPrefix = modEachPre, subModLst = modSubML, absynExpOption = SOME(_)),
-          baseClassPath = bClsPth, comment = comm, condition = cond, info = inf, cc = cc_))
+          comment = comm, condition = cond, info = inf, cc = cc_))
       equation
         modBla = SCode.MOD(modFinPre,modEachPre,modSubML,NONE());
       then 
-        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,attr,typeSpc,modBla,bClsPth,comm,cond,inf,cc_);
+        SCode.COMPONENT(id,inOut,finPre,repPre,proPre,attr,typeSpc,modBla,comm,cond,inf,cc_);
     case (e) then (e);          
   end matchcontinue; 
 end stripFuncOutputsMod;
@@ -10715,7 +9943,7 @@ algorithm
   end matchcontinue;
 end instExtGetRettype;
 
-protected function instEnumeration 
+public function instEnumeration 
 "function: instEnumeration
   author: PA
   This function takes an Ident and list of strings, and returns an enumeration class."
@@ -10749,14 +9977,14 @@ algorithm
     case ({SCode.ENUM(str,cmt)}) 
       then {SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
             SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),{},cmt,NONE,NONE,NONE)};
+            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),cmt,NONE,NONE,NONE)};
     case ((SCode.ENUM(str,cmt) :: (x as (_ :: _))))
       equation 
         els = makeEnumComponents(x);
       then
         (SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
          SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),{},cmt,NONE,NONE,NONE) :: els);
+         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),cmt,NONE,NONE,NONE) :: els);
   end matchcontinue;
 end makeEnumComponents;
 
@@ -11145,17 +10373,14 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
-      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq,baseClassPath = bc),impl,unrollForLoops,graph) /* impl */ 
-      equation 
-        (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc) "Equation inherited from base class" ;
-        (cache,_,ih,dae,csets_1,ci_state_1,graph) = 
-                   instEquationCommon(cache,env_1,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl,graph);
+    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,unrollForLoops,graph) /* impl */ 
+      equation
+        (cache,_,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih, mods, pre, csets, ci_state, eq, SCode.NON_INITIAL(), impl,graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
@@ -11257,16 +10482,14 @@ algorithm
       DAE.Mod mods;
       Prefix.Prefix pre;
       SCode.EEquation eq;
-      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq,baseClassPath = bc),impl,unrollForLoops,graph) /* impl */ 
+    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQUATION(eEquation = eq),impl,unrollForLoops,graph) 
       equation 
-        (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc) "Equation inherited from base class" ;
-        (cache,_,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache, env_1, ih, mods, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
+        (cache,_,ih,dae,csets_1,ci_state_1,graph) = instEquationCommon(cache, env, ih, mods, pre, csets, ci_state, eq, SCode.INITIAL(), impl, graph);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
         
@@ -12652,7 +11875,6 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
-      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -12663,10 +11885,9 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.DAElist dae,fdae;
       
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements,baseClassPath = bc),impl,unrollForLoops,graph) /* impl */ 
+    case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,unrollForLoops,graph) /* impl */ 
       equation 
-        (cache,env_1,ih) = getDerivedEnv(cache, env, ih, bc) "If algorithm is inherited, find base class environment" ;
-        (cache,statements_1,fdae) = instStatements(cache, env_1, pre, statements, SCode.NON_INITIAL(), impl, unrollForLoops);
+        (cache,statements_1,fdae) = instStatements(cache, env, pre, statements, SCode.NON_INITIAL(), impl, unrollForLoops);
         
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -12716,7 +11937,6 @@ algorithm
       Connect.Sets csets;
       ClassInf.State ci_state;
       list<Absyn.Algorithm> statements;
-      SCode.BaseClassList bc;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -12726,9 +11946,8 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.DAElist fdae,dae;
       
-    case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements,baseClassPath = bc),impl,unrollForLoops,graph)
+    case (cache,env,ih,_,pre,csets,ci_state,SCode.ALGORITHM(statements = statements),impl,unrollForLoops,graph)
       equation 
-        (cache,env_1,ih) = getDerivedEnv(cache,env,ih, bc);
         (cache,statements_1,fdae) = instStatements(cache,env, pre,statements, SCode.INITIAL(), impl, unrollForLoops);
         
         // set the source of this element
@@ -15627,7 +14846,6 @@ algorithm
       Absyn.Direction dir;
       Absyn.Path t;
       SCode.Mod mod;
-      SCode.BaseClassList bc;
       Option<SCode.Comment> comment;
       SCode.Element elt;
       Env.Cache cache;
@@ -15642,7 +14860,7 @@ algorithm
                           attributes = (attr as SCode.ATTR(arrayDims = dim,flowPrefix = f,streamPrefix=s,
                           accesibility = acc, variability = var,direction = dir)),
                           typeSpec = Absyn.TPATH(t, _),modifications = mod,
-                          baseClassPath = bc,comment = comment,innerOuter=io,
+                          comment = comment,innerOuter=io,
                           finalPrefix = finalPrefix,cc=cc),outerMod,impl)
       equation
         // - Prefixes (constant, parameter, final, discrete, input, output, ...) of the remaining record components are removed.
@@ -16259,6 +15477,65 @@ algorithm
   end matchcontinue;
 end splitElts;
 
+public function splitEltsNoComponents "
+This function splits the Element list into these categories:
+1. Imports
+2. Define units and class definitions
+3. Class-extends class definitions
+4. Filtered class extends and imports
+"
+  input list<SCode.Element> elts;
+  output list<SCode.Element> impElts;
+  output list<SCode.Element> defElts;
+  output list<SCode.Element> classextendsElts;
+  output list<SCode.Element> filtered;
+algorithm
+  (impElts,defImpElts,classextendsElts,filtered) := matchcontinue (elts)
+    local
+      list<SCode.Element> xs;
+      SCode.Element elt;
+
+    // empty case
+    case ({}) then ({},{},{},{});
+
+    // class definitions with class extends
+    case ((elt as SCode.CLASSDEF(classDef = SCode.CLASS(classDef = SCode.CLASS_EXTENDS(baseClassName = _))))::xs)
+      equation
+        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      then
+        (impElts,defElts,elt::classextendsElts,filtered);
+
+    // class definitions without class extends
+    case (((elt as SCode.CLASSDEF(name = _)) :: xs))
+      equation
+        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      then
+        (impElts,elt::defElts,classextendsElts,elt::filtered);
+        
+    // imports
+    case (((elt as SCode.IMPORT(imp = _)) :: xs))
+      equation
+        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      then
+        (elt::impElts,defElts,classextendsElts,filtered);
+        
+    // units
+    case (((elt as SCode.DEFINEUNIT(name = _)) :: xs))
+      equation
+        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      then
+        (impElts,elt::defElts,classextendsElts,elt::filtered);
+        
+    // extends and components elements
+    case (elt::xs)
+      equation
+        (impElts,defElts,classextendsElts,filtered) = splitEltsNoComponents(xs);
+      then
+        (impElts,defElts,classextendsElts,elt::filtered);
+
+  end matchcontinue;
+end splitEltsNoComponents;
+
 public function splitEltsInnerAndOther "
  @author: adrpo
   Splits elements into these categories:
@@ -16524,12 +15801,11 @@ algorithm oltuple := matchcontinue(ltuple)
     SCode.Mod c8,mod;
     Option<Absyn.ConstrainClass> c13;
   case({}) then {};
-  case(SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,c8,c9,c10,c11,c12,c13)::rest )
+  case(SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,c8,c10,c11,c12,c13)::rest )
     local
       Ident c1;
       Absyn.InnerOuter c2;
       Boolean c3,c4,c5;
-      SCode.BaseClassList c9;
       Option<SCode.Comment> c10;
       Option<Absyn.Exp> c11;
       Option<Absyn.Info> c12;
@@ -16537,7 +15813,7 @@ algorithm oltuple := matchcontinue(ltuple)
       rest = traverseModAddFinal3(rest);
       mod = traverseModAddFinal2(c8);
     then
-      SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,mod,c9,c10,c11,c12,c13)::rest;
+      SCode.COMPONENT(c1,c2,c3,c4,c5,c6,c7,mod,c10,c11,c12,c13)::rest;
   case((ele as SCode.IMPORT(_))::rest)
     equation
       rest = traverseModAddFinal3(rest);
@@ -17246,6 +16522,7 @@ protected function noModForUpdatedComponents "help function for updateComponentI
 
 For components that already have been visited by updateComponentsInEnv, they must be instantiated without
 modifiers to prevent infinite recursion"
+  input SCode.Variability variability;
   input HashTable5.HashTable updatedComps;
   input Absyn.ComponentRef cref;
   input  DAE.Mod mods;
@@ -17255,14 +16532,38 @@ modifiers to prevent infinite recursion"
   output DAE.Mod outCmod;
   output SCode.Mod outM;
 algorithm
-  (outMods,outCmod,outM) := matchcontinue(updatedComps,cref,mods,cmod,m)
-    case(updatedComps,cref,mods,cmod,m) equation
-      _ = HashTable5.get(cref,updatedComps);
-    then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
+  (outMods,outCmod,outM) := matchcontinue(variability,updatedComps,cref,mods,cmod,m)
+    case (variability,updatedComps,cref,mods,cmod,m)
+      equation
+        _ = HashTable5.get(cref,updatedComps);
+        checkVariabilityOfUpdatedComponent(variability,cref);
+      then (DAE.NOMOD(),DAE.NOMOD(),SCode.NOMOD());
 
-    case(updatedComps,cref,mods,cmod,m) then (mods,cmod,m);
+    case (_,updatedComps,cref,mods,cmod,m) then (mods,cmod,m);
   end matchcontinue;
 end noModForUpdatedComponents;
+
+protected function checkVariabilityOfUpdatedComponent "
+For components that already have been visited by updateComponentsInEnv, they must be instantiated without
+modifiers to prevent infinite recursion. However, parameters and constants may not have recursive definitions.
+So we print errors for those instead."
+  input SCode.Variability variability;
+  input Absyn.ComponentRef cref;
+algorithm
+  _ := matchcontinue (variability,cref)
+    local
+      String crefStr,varStr;
+    case (SCode.VAR(),_) then ();
+    case (SCode.DISCRETE(),_) then ();
+    case (variability,cref)
+      equation
+        /* Doesn't work anyway right away
+        crefStr = Absyn.printComponentRefStr(cref);
+        varStr = SCode.variabilityString(variability);
+        Error.addMessage(Error.CIRCULAR_PARAM,{crefStr,varStr});*/
+      then fail();
+  end matchcontinue;
+end checkVariabilityOfUpdatedComponent;
 
 protected function makeFullyQualified2
 "help function to makeFullyQualified"
