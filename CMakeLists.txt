@@ -1,20 +1,22 @@
-# PROJECT
-PROJECT(OpenModelica)
+# Jens Frenkel, Jens.Frenkel@tu-dresden.de, 2010-03-30
+# CMakefile for compilation of OMC 
 
 # CMAKE
 CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+# PROJECT
+PROJECT(OpenModelicaCompiler)
 
-# Includes
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/c_runtime)
-
-# OMCTRUNCHOME
+# Global Variables
 SET(OMCTRUNCHOME ${CMAKE_CURRENT_SOURCE_DIR})
 SET(CODEGENDIR ${CMAKE_CURRENT_BINARY_DIR}/codegen)
 
+# Tests
+OPTION(RUN_TESTS  "Run Tests"  OFF)
+IF(RUN_TESTS)
+enable_testing()
+ADD_SUBDIRECTORY(testsuite)
+ENDIF(RUN_TESTS)
 
-# OMC Compiler
-SET(OMC ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/omcd.exe)
-MESSAGE(" omc is " ${OMC})
 # Subdirectorys
 ADD_SUBDIRECTORY(c_runtime)
 ADD_SUBDIRECTORY(modelica_parser)

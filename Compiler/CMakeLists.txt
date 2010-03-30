@@ -9,8 +9,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  Exp.mo SCode.mo SCodeUtil.mo Graphviz.mo HashTable.mo 
 		  HashTable2.mo HashTable3.mo HashTable4.mo HashTable5.mo 
 		  HashTable6.mo HashTableCG.mo HashTableStringToPath.mo 
-#		  Inline.mo Inst.mo InstExtends.mo Interactive.mo 
-		  Inline.mo Inst.mo Interactive.mo 
+		  Inline.mo Inst.mo InstExtends.mo Interactive.mo 
 		  Lookup.mo Main.mo MMath.mo MetaUtil.mo Mod.mo ModUtil.mo 
 		  PartFn.mo Patternm.mo Prefix.mo PrefixUtil.mo Static.mo 
 		  SimCode.mo SimCodeC.mo SimCodeCSharp.mo SimCodegen.mo 
@@ -68,16 +67,16 @@ FOREACH(DEP ${ALLMO})
 ENDFOREACH(DEP)
 
 #.depend:
-  SET(DEPENDT_OUTPUT  .depend)
-  # custom command for rml to sig
-  ADD_CUSTOM_COMMAND(OUTPUT ${DEPENDT_OUTPUT}
-                     COMMAND ${RML} -fdump-depends ${SRCMO} > .depend 	
-					 DEPENDS ${COPY_ALL}
-                     WORKING_DIRECTORY ${CODEGENDIR}
-                     COMMENT "Generate .depend")
+SET(DEPENDT_OUTPUT  ${CODEGENDIR}/.depend)
+# custom command for rml to sig
+ADD_CUSTOM_COMMAND(OUTPUT ${DEPENDT_OUTPUT}
+                   COMMAND ${RML} -fdump-depends ${SRCMO} > ${DEPENDT_OUTPUT} 	
+                   DEPENDS ${COPY_ALL}
+                   WORKING_DIRECTORY ${CODEGENDIR}
+                   COMMENT "Generate .depend")
 
-  # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(DEPEND ALL DEPENDS ${DEPENDT_OUTPUT})
+# target fuer OM_OUTPUT
+ADD_CUSTOM_TARGET(depend ALL DEPENDS ${DEPENDT_OUTPUT})
   
 
 # generate sig files
@@ -90,11 +89,11 @@ FOREACH(DEP ${ALLMO})
 	# Merken
 	SET(SIG_DEP ${DFWE}.sig)
   
-  SET(SIGX_OUTPUT  ${SIG_DEP})
+  SET(SIGX_OUTPUT  ${CODEGENDIR}/${SIG_DEP})
   # custom command for rml to sig
   ADD_CUSTOM_COMMAND(OUTPUT ${SIGX_OUTPUT}
                      COMMAND ${RML} -fdump-interface ${DEP} > ${SIG_DEP}  	
-					 DEPENDS DEPEND ${COPY_ALL}
+					 DEPENDS depend ${COPY_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}
                      COMMENT "Generate Sigx from ${DF}")
 
@@ -120,7 +119,7 @@ FOREACH(DEP ${SRCMO})
   # custom command for rml to sig
   ADD_CUSTOM_COMMAND(OUTPUT ${MOCH_OUTPUT}
                      COMMAND ${RML} -Eplain -ftrace ${RMLCFLAGS} ${DEP} 	
-					 DEPENDS ${SIGX_ALL}
+					 DEPENDS depend ${SIGX_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}
                      COMMENT "Generate *.h and *.c from ${DEP}")
 
@@ -139,12 +138,12 @@ INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
 INCLUDE_DIRECTORIES(${CODEGENDIR})
 
 # omc program
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc $ENV{OMDEV}/lib/mico-win32-msvc ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32 $ENV{OMDEV}/tools/rml/lib/plain)
+link_directories($ENV{OMDEV}/lib/antlr-win32-msvc ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32 $ENV{OMDEV}/tools/rml/lib/plain)
 
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312)
-add_definitions(/MT)
+add_definitions(/MT /D "_CRT_SECURE_NO_WARNINGS" /D "_CONSOLE")
 ADD_EXECUTABLE(omc ${MOCH_FILES})
-TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime wsock32 shlwapi optimized mico2313 debug mico2313d)
+TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime wsock32 shlwapi)
 TARGET_LINK_LIBRARIES(omc -FORCE:MULTIPLE librml)
 add_dependencies(omc ${MOCH_ALL})
 

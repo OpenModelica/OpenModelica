@@ -12,6 +12,8 @@ INCLUDE_DIRECTORIES(${CODEGENDIR})
 INCLUDE_DIRECTORIES(${CODEGENDIR}/absyn_builder)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/lpsolve)
+INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
+
 
 # custom command for idl
 SET(IDL_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.cc ${CMAKE_CURRENT_BINARY_DIR}/omc_communication.h)
@@ -30,10 +32,10 @@ SET(CPPSRC  unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessa
             optmanager.cpp systemimplmisc.cpp ${CORBASRC})
 SET(OBJ ${SRC} ${CPPSRC})
 	
-# Bibliothek
+# Library runtime
 link_directories(${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
 #add_definitions(/O2 /Ot /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP)
 add_definitions(/MT)
 ADD_LIBRARY(runtime ${OBJ})
-TARGET_LINK_LIBRARIES(runtime optimized lpsolve55 debug lpsolve55d)
+TARGET_LINK_LIBRARIES(runtime optimized lpsolve55 debug lpsolve55d optimized mico2313 debug mico2313d)
 add_dependencies(runtime ${MOCH_ALL})

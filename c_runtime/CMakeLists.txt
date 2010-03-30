@@ -1,3 +1,10 @@
+# includes
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+# OMC Compiler
+SET(OMC ${OMCTRUNCHOME}/build/bin/omcd.exe)
+MESSAGE(" omc is " ${OMC})
+
 ADD_SUBDIRECTORY(libf2c)
 ADD_SUBDIRECTORY(sendData)
 
@@ -111,16 +118,18 @@ SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
                 simulation_events.h solver_dasrt.h solver_euler.h simulation_result.h
 				simulation_delay.h tables.h options.h)
 
-# Bibliothek
 
+# Library c_runtime
 #ADD_DEFINITIONS(/Wall /O3  /ansi /pedantic)
 add_definitions(/MT)
 ADD_LIBRARY(c_runtime ${c_runtime_sources} ${c_runtime_headers})
 TARGET_LINK_LIBRARIES(c_runtime f2c)
+# Library sim
 add_definitions(/MT)
 ADD_LIBRARY(sim ${sim_sources} ${sim_headers})
 TARGET_LINK_LIBRARIES(sim c_runtime f2c)
 
+# Install
 INSTALL(TARGETS c_runtime sim
 		ARCHIVE DESTINATION lib)
 		

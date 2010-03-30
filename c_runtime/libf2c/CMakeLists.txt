@@ -1,4 +1,4 @@
-# Quellen und Header
+# Sources and Headers
 set(MISC 
   f77vers.c i77vers.c main.c s_rnge.c abort_.c exit_.c getarg_.c iargc_.c
   getenv_.c signal_.c s_stop.c s_paus.c system_.c cabs.c 
@@ -66,6 +66,7 @@ SET(f2c_headers f2c.h
 
 set(OFILES  ${MISC} ${POW} ${CX} ${DCX} ${REAL} ${DBL} ${INT} 
   ${HALF} ${CMP} ${EFL} ${CHAR} ${I77} ${TIME})
+# Library f2c
 if(WIN32)
   ADD_DEFINITIONS(/D_COMPLEX_DEFINED /DUSE_CLOCK /DMSDOS /DNO_ONEXIT /D_MSC_VER /D__STDC__ /D_CRT_SECURE_NO_DEPRECATE /MT)
 ELSE(WIN32)
@@ -74,6 +75,7 @@ ENDIF(WIN32)
 add_library(f2c  ${OFILES} ${f2c_headers})
 #set_property(TARGET f2c PROPERTY PREFIX lib)
 
+# Install
 INSTALL(TARGETS f2c
 		ARCHIVE DESTINATION lib)
 INSTALL(FILES f2c.h DESTINATION include)
