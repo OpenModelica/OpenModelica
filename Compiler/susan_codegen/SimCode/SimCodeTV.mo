@@ -26,6 +26,11 @@ package SimCode
     input list<DAE.Exp> subs;
     output DAE.Exp cRefOut;
   end buildCrefExpFromAsub;
+
+  function crefSubs
+    input DAE.ComponentRef cref;
+    output list<DAE.Subscript> subs;
+  end crefSubs;
   
   function incrementInt
     input Integer inInt;
@@ -420,6 +425,9 @@ package DAE
       ExpType ty;
     end ET_BOXED;
     record ET_POLYMORPHIC end ET_POLYMORPHIC;
+    record ET_META_ARRAY
+      ExpType ty;
+    end ET_META_ARRAY;
     record ET_NORETCALL end ET_NORETCALL;
   end ExpType;
 

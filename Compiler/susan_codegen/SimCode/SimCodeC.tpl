@@ -1629,13 +1629,15 @@ case FUNCTION then
       varInit(var, "", i1, varDecls /*BUFC*/, varInits /*BUFC*/)
     )
   # bodyPart = (body of stmt : funStatement(stmt, varDecls /*BUFC*/) \n)
+  # outVarInits = "" /*BUFD*/
   # outVarsStr = (outVars of var:
-      varOutput(var, retVar, i1, varDecls /*BUFC*/, varInits /*BUFC*/)
+      varOutput(var, retVar, i1, varDecls /*BUFC*/, outVarInits /*BUFC*/)
     )
   <<
   <retType> _<fname>(<functionArguments of VARIABLE: '<expTypeArrayIf(ty)> <cref(name)>' ", ">)
   {
     <varDecls>
+    <outVarInits>
     <stateVar> = get_memory_state();
 
     <varInits>
@@ -2226,13 +2228,13 @@ elseExpr(DAE.Else else_, Context context, Text varDecls /*BUFP*/) ::=
     # condExp = daeExp(exp, context, preExp /*BUFC*/, varDecls /*BUFC*/)
     <<
     else {
-    <preExp>
-    if (<condExp>) {
-      <statementLst of stmt:
-        algStatement(stmt, context, varDecls /*BUFC*/)
-      "\n">
-    }
-    <elseExpr(else_, context, varDecls /*BUFC*/)>
+      <preExp>
+      if (<condExp>) {
+        <statementLst of stmt:
+          algStatement(stmt, context, varDecls /*BUFC*/)
+        "\n">
+      }
+      <elseExpr(else_, context, varDecls /*BUFC*/)>
     }
     >>
   case ELSE then
@@ -2308,20 +2310,20 @@ daeExpCrefRhs(Exp exp, Context context, Text preExp /*BUFP*/,
   match exp
   case CREF(componentRef=cr, ty=ET_ENUMERATION) then
     getEnumIndexfromCref(cr)
-  case cref as CREF(componentRef=CREF_IDENT(subscriptLst=subs)) then
+  case cref as CREF(componentRef=cr, ty=ty) then
     # box = daeExpCrefRhsArrayBox(cref, context, preExp /*BUFC*/,
                                   varDecls /*BUFC*/)
     if box then
       box
-    else if crefNoSub(cref.componentRef) then
-      # cast = if cref.ty is ET_INT then "(modelica_integer)" else ""
-      '<cast><cref(cref.componentRef)>'
-    else if crefSubIsScalar(cref.componentRef) then
+    else if crefNoSub(cr) then
+      # cast = if ty is ET_INT then "(modelica_integer)" else ""
+      '<cast><cref(cr)>'
+    else if crefSubIsScalar(cr) then
       // The array subscript results in a scalar
-      # arrName = cref(cref.componentRef)
-      # arrayType = expTypeArray(cref.ty)
-      # dimsLenStr = listLength(subs)
-      # dimsValuesStr = (subs of INDEX:
+      # arrName = cref(cr)
+      # arrayType = expTypeArray(ty)
+      # dimsLenStr = listLength(crefSubs(cr))
+      # dimsValuesStr = (crefSubs(cr) of INDEX:
           daeExp(exp, context, preExp /*BUFC*/, varDecls /*BUFC*/)
         ", ")
       <<
@@ -2329,16 +2331,12 @@ daeExpCrefRhs(Exp exp, Context context, Text preExp /*BUFP*/,
       >>
     else
       // The array subscript denotes a slice
-      # arrName = cref(cref.componentRef)
-      # arrayType = expTypeArray(cref.ty)
+      # arrName = cref(cr)
+      # arrayType = expTypeArray(ty)
       # tmp = tempDecl(arrayType, varDecls /*BUFC*/)
-      # spec1 = daeExpCrefRhsIndexSpec(subs, context, preExp /*BUFC*/, varDecls /*BUFC*/)
+      # spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, preExp /*BUFC*/, varDecls /*BUFC*/)
       # preExp += 'index_alloc_<arrayType>(&<arrName>, &<spec1>, &<tmp>);<\n>'
       tmp
-  case cref as CREF(componentRef=CREF_QUAL(subscriptLst=subs)) then
-    '<cref(cref.componentRef)>'
-  case _ then
-    "UNKNOWN RHS CREF: ONLY IDENT SUPPORTED"
 
 daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
                        Text preExp /*BUFP*/, Text varDecls /*BUFP*/) ::=
@@ -2415,6 +2413,12 @@ case BINARY then
     # var = tempDecl(type, varDecls /*BUFC*/)
     # preExp += 'div_alloc_<type>_scalar(&<e1>, <e2>, &<var>);<\n>'
     '<var>'
+  case MUL_MATRIX_PRODUCT then
+    # typeShort = if ty is ET_ARRAY(ty=ET_INT) then "integer" else "real"
+    # type = '<typeShort>_array'
+    # var = tempDecl(type, varDecls /*BUFC*/)
+    # preExp += 'mul_alloc_<typeShort>_matrix_product_smart(&<e1>, &<e2>, &<var>);<\n>'
+    '<var>'
   case _ then "daeExpBinary:ERR"
 
 daeExpUnary(Exp exp, Context context, Text preExp /*BUFP*/,
@@ -2425,7 +2429,10 @@ case UNARY then
   match operator
   case UMINUS     then '(-<e>)'
   case UPLUS      then '(<e>)'
-  case UMINUS_ARR then "UMINUS_ARR_NOT_IMPLEMENTED"
+  case UMINUS_ARR(ty=ET_ARRAY(ty=ET_REAL, arrayDimensions={NONE})) then
+    # preExp += 'usub_real_array(&<e>);<\n>'
+    '<e>'
+  case UMINUS_ARR then "unary minus for non-real arrays not implemented"
   case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
   case _          then "daeExpUnary:ERR"
 
@@ -2662,7 +2669,10 @@ case ARRAY then
   # arrayVar = tempDecl(arrayTypeStr, varDecls /*BUFC*/)
   # scalarPrefix = if scalar then "scalar_" else ""
   # scalarRef = if scalar then "&" else ""
-  # params = '<array of e: '(<expTypeFromExpModelica(e)>)<daeExp(e, context, preExp /*BUFC*/, varDecls /*BUFC*/)>' ", ">'
+  # params = (array of e:
+      # prefix = if scalar then '(<expTypeFromExpModelica(e)>)' else '&'
+      '<prefix><daeExp(e, context, preExp /*BUFC*/, varDecls /*BUFC*/)>'
+    ", ")
   # preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLength(array)>, <params>);<\n>'
   arrayVar
 
@@ -3023,6 +3033,7 @@ expTypeRW(DAE.ExpType type) ::=
   case ET_REAL        then "TYPE_DESC_REAL"
   case ET_STRING      then "TYPE_DESC_STRING"
   case ET_BOOL        then "TYPE_DESC_BOOL"
+  case ET_ARRAY       then '<expTypeRW(ty)>_ARRAY'
   case ET_COMPLEX(complexClassType=RECORD)
                       then "TYPE_DESC_RECORD"
   case ET_METAOPTION

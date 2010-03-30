@@ -370,39 +370,44 @@ algorithm
 end valueblockVars;
 
 public function crefSubIsScalar
-"Used
-
-Assume that cref is CREF_IDENT."
   input DAE.ComponentRef cref;
   output Boolean isScalar;
+  list<DAE.Subscript> subs;
 algorithm
-  isScalar :=
-  matchcontinue (cref)
-    local
-      list<DAE.Subscript> subs;
-    case (DAE.CREF_IDENT(subscriptLst=subs)) then subsToScalar(subs);
-    case _ then false;
-  end matchcontinue;
+  subs := crefSubs(cref);
+  isScalar := subsToScalar(subs);
 end crefSubIsScalar;
 
 public function crefNoSub
-"Assume that cref is CREF_IDENT."
   input DAE.ComponentRef cref;
   output Boolean noSub;
+  list<DAE.Subscript> subs;
+  Integer len;
 algorithm
-  noSub :=
+  subs := crefSubs(cref);
+  len := listLength(subs);
+  noSub := len == 0;
+end crefNoSub;
+
+function crefSubs
+  input DAE.ComponentRef cref;
+  output list<DAE.Subscript> subs;
+algorithm
+  subs :=
   matchcontinue (cref)
     local
-      list<DAE.Subscript> subs;
-    case (DAE.CREF_IDENT(subscriptLst={})) then true;
-    case (DAE.CREF_IDENT(subscriptLst=subs)) then false;
-    case _
+      list<DAE.Subscript> subs1;
+      list<DAE.Subscript> subs2;
+      DAE.ComponentRef cref1;
+    case (DAE.CREF_IDENT(subscriptLst=subs1))
+      then subs1;
+    case (DAE.CREF_QUAL(subscriptLst=subs1, componentRef=cref1))
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {""});
-      then
-        fail();
+        subs2 = crefSubs(cref1);
+        subs = Util.listFlatten({subs1, subs2});
+      then subs;
   end matchcontinue;
-end crefNoSub;
+end crefSubs;
 
 public function buildCrefExpFromAsub
   input DAE.Exp cref;
