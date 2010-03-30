@@ -77,6 +77,7 @@ protected import Inst;
 protected import InnerOuter;
 protected import Lookup;
 protected import ModUtil;
+protected import OptManager;
 protected import Prefix;
 protected import Parser;
 protected import Print;
@@ -306,8 +307,10 @@ algorithm
           instClsLst = ic,
           lstVarVal = iv,
           compiledFunctions = cf)),msg)
-           equation
-        (cache,ret_val,st_1) = checkModel(cache, env, className, st, msg);
+        equation
+          _ = OptManager.setOption("checkModel", true);
+          (cache,ret_val,st_1) = checkModel(cache, env, className, st, msg);
+          _ = OptManager.setOption("checkModel", false);
       then
         (cache,ret_val,st_1);
 
@@ -3895,7 +3898,9 @@ algorithm
         false = Interactive.isType(cr, p);
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
+        _ = OptManager.setOption("checkModel", true);
         (cache,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);
+        _ = OptManager.setOption("checkModel", false);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
         print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");
         print (System.stringReplace(str, "\n", "\n\t"));

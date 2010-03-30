@@ -11292,8 +11292,8 @@ algorithm
       then
         (cache,sub_1::subs_1,const,dae);
 
-    // if the subscript contains a param or const the it should be evaluated to the value
-    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl) /* If param, call ceval. */
+    // If the subscript contains a param or const then it should be evaluated to the value
+    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl) /* If param or const, call ceval. */
       equation
         (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl);
         (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl);
@@ -11304,6 +11304,19 @@ algorithm
       then
         (cache,sub_1::subs_1,const,dae);
 
+    // If the previous case failed and we're just checking the model, try again
+    // but skip the constant evaluation.
+    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl) 
+      equation
+        true = OptManager.getOption("checkModel");
+        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl);
+        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl);
+        const = Types.constAnd(const1, const2);
+        true = Types.isParameterOrConstant(const);
+        dae = DAEUtil.joinDaes(dae1,dae2);
+      then
+        (cache,sub_1::subs_1,const,dae);
+        
     // if not constant, keep as is.
     case (cache,env,(sub :: subs),(SOME(_) :: restdims),impl)
       equation

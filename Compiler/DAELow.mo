@@ -419,6 +419,7 @@ protected import Derive;
 protected import Env;
 protected import Error;
 protected import Exp;
+protected import OptManager;
 protected import Print;
 protected import RTOpts;
 protected import SimCodegen;
@@ -5010,6 +5011,11 @@ protected function checkAssertCondition "Succeds if condition of assert is not c
   input DAE.Exp message;
 algorithm
   _ := matchcontinue(cond,message)
+    case(_, _)
+      equation
+        // Don't check assertions when checking models
+        true = OptManager.getOption("checkModel");
+      then ();
     case(cond,message) equation
       false = Exp.isConstFalse(cond);
       then ();
