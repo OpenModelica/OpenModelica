@@ -820,8 +820,6 @@ algorithm
     /* Search for both */
     case(cache,env,ih,cr1,cr2)
       equation
-        Debug.traceln(Exp.printComponentRefStr(cr1));
-        Debug.traceln(Exp.printComponentRefStr(cr2));
         (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner1,isOuter1) = innerOuterBooleans(io1);
