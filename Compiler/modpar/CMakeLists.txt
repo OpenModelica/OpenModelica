@@ -1,7 +1,11 @@
 
 # Includes
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+if(WIN32)
 INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
+else(WIN32)
+INCLUDE_DIRECTORIES(${RMLHOME}/include/plain)
+endif(WIN32)
 
 IF(USE_MODPAR)
   SET(OBJECTS  Codegen.cpp 
@@ -20,6 +24,8 @@ ELSE(USE_MODPAR)
 ENDIF(USE_MODPAR)
 
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312)
+if(WIN32)
 add_definitions(/MT)
+endif(WIN32)
 ADD_LIBRARY(libmodpar ${OBJECTS})
 

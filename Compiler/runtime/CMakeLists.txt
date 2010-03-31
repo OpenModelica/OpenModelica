@@ -7,7 +7,11 @@ IF(NOT IDL)
   MESSAGE(STATUS "-- idl is " ${IDL})
 ENDIF(NOT IDL)
 
+if(WIN32)
 INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
+else(WIN32)
+INCLUDE_DIRECTORIES(${RMLHOME}/include/plain)
+endif(WIN32)
 INCLUDE_DIRECTORIES(${CODEGENDIR})
 INCLUDE_DIRECTORIES(${CODEGENDIR}/absyn_builder)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -33,9 +37,19 @@ SET(CPPSRC  unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessa
 SET(OBJ ${SRC} ${CPPSRC})
 	
 # Library runtime
+if(WIN32)
 link_directories(${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
 #add_definitions(/O2 /Ot /D "WIN32" /D "NDEBUG" /D "_LIB"  /D "_MBCS" /FD /EHsc /MT /GS- /W2 /c /TP)
 add_definitions(/MT)
+endif(WIN32)
 ADD_LIBRARY(runtime ${OBJ})
-TARGET_LINK_LIBRARIES(runtime optimized lpsolve55 debug lpsolve55d optimized mico2313 debug mico2313d)
+
+  # mico und benoetigte Bibliotheken
+  IF(WIN32)
+    SET(platform_libs optimized mico2313 debug mico2313d)
+  ELSE(WIN32)
+    SET(platform_libs mico2.3.13 ) #ssl pthread)
+  ENDIF(WIN32)
+
+TARGET_LINK_LIBRARIES(runtime optimized lpsolve55 debug lpsolve55d ${platform_libs} c_runtime sendData)
 add_dependencies(runtime ${MOCH_ALL})

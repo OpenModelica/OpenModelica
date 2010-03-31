@@ -18,7 +18,10 @@ SET(sendData_headers  sendData.h)
 
 # Library sendData
 #ADD_DEFINITIONS(/O2 /frtti /fexceptions /mthreads /Wall /DUNICODE /DQT_LARGEFILE_SUPPORT /DQT_NO_DEBUG /DQT_GUI_LIB /DQT_NETWORK_LIB /DQT_CORE_LIB /DQT_THREAD_SUPPORT)
+if(WIN32)
 add_definitions(/MT)
+endif(WIN32)
+
 ADD_LIBRARY(sendData ${sendData_sources} ${sendData_headers})
 TARGET_LINK_LIBRARIES(sendData ${QT_LIBRARIES})
 

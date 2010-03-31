@@ -121,11 +121,15 @@ SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
 
 # Library c_runtime
 #ADD_DEFINITIONS(/Wall /O3  /ansi /pedantic)
+if(WIN32)
 add_definitions(/MT)
+endif(WIN32)
 ADD_LIBRARY(c_runtime ${c_runtime_sources} ${c_runtime_headers})
 TARGET_LINK_LIBRARIES(c_runtime f2c)
 # Library sim
+if(WIN32)
 add_definitions(/MT)
+endif(WIN32)
 ADD_LIBRARY(sim ${sim_sources} ${sim_headers})
 TARGET_LINK_LIBRARIES(sim c_runtime f2c)
 

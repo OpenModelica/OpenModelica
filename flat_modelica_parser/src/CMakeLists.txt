@@ -7,7 +7,12 @@ IF(NOT JAVA)
 ENDIF(NOT JAVA)
 
 # antlr
-SET(ANTLR ${JAVA} -cp $ENV{OMDEV}/bin/antlr/antlr.jar antlr.Tool)
+if(WIN32)
+SET(ANTLRCLASSPATH  $ENV{OMDEV}/bin/antlr/antlr.jar)
+else(WIN32)
+SET(ANTLRCLASSPATH  /usr/share/java/antlr.jar)
+endif(WIN32)
+SET(ANTLR ${JAVA} -cp ${ANTLRCLASSPATH} antlr.Tool)
 SET(ANTLRFLAGS ) #-traceParser")
 
 SET(ANTLR_FILES flat_modelica_parser.g flat_modelica_lexer.g)
@@ -98,7 +103,9 @@ ELSE(WIN32)
 ENDIF(WIN32)
 link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312)
+if(WIN32)
 add_definitions(/MT)
+endif(WIN32)
 ADD_LIBRARY(libflat_modelica_parser ${OBJS})
 TARGET_LINK_LIBRARIES(libflat_modelica_parser optimized antlr debug antlrd)
 
