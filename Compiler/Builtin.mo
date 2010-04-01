@@ -2656,6 +2656,9 @@ protected constant tuple<DAE.TType, Option<Type_a>> anyIntegerIntegerString2bool
 protected constant tuple<DAE.TType, Option<Type_a>> string2void =(
           DAE.T_FUNCTION({("x1",DAE.T_STRING_DEFAULT)},(DAE.T_NORETCALL(),NONE),DAE.NO_INLINE),NONE);
 
+protected constant tuple<DAE.TType, Option<Type_a>> void2string =(
+          DAE.T_FUNCTION({},(DAE.T_STRING({}),NONE),DAE.NO_INLINE),NONE);
+
 protected constant tuple<DAE.TType, Option<Type_a>> a2void =(
           DAE.T_FUNCTION({("x1",typeA)},(DAE.T_NORETCALL(),NONE),DAE.NO_INLINE),NONE);
 
@@ -3489,7 +3492,10 @@ algorithm
       env = Env.extendFrameT(env, "delay", realReal2real);
       env = Env.extendFrameT(env, "delay", realRealReal2real);
       */
-      env = Env.extendFrameT(env, "print", string2void);
+      env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
+
+      env = Env.extendFrameT(env, "classDirectory", void2string);
+      env = Env.extendFrameT(env, "print", string2void) "MetaModelica extension added by default; useful for debugging";
       env = initialEnvMetaModelica(env);
       cache = Env.setCachedInitialEnv(cache,env);
     then (cache,env);
