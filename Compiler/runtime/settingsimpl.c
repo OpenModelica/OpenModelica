@@ -91,13 +91,26 @@ void Settings_5finit(void)
     strcpy(tempDirectoryPath, str);
   }
 #endif
-  compileCommand = malloc(sizeof(char)*(strlen("g++") + 1));
   /* adrpo: TODO! FIXME!
    * MathCore wants this set to g++
    * but OpenModelica uses $OPENMODELICAHOME/bin/Compile
    * now this is solved in CevalScript.compileModel which is different for OpenModelica vs. MathModelica
    */
-  strcpy(compileCommand,"g++");
+  str = NULL;
+  str = getenv("MC_DEFAULT_COMPILE_CMD");
+  if (str == NULL) {
+    compileCommand = malloc(sizeof(char)*(strlen("g++") + 1));
+    strcpy(compileCommand,"g++");
+  } else {
+    compileCommand = malloc(sizeof(char)*(strlen(str) + 1));
+    strcpy(compileCommand, str);
+  }
+  str = NULL;
+  str = getenv("MC_DEFAULT_COMPILE_PATH");
+  if (str != NULL) {
+	  compilePath = malloc(sizeof(char)*(strlen(str) + 1));
+	  strcpy(compilePath, str);
+  }
 }
 
 
