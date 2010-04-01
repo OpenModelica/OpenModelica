@@ -14691,6 +14691,15 @@ algorithm
     case (cr,(DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_)),_),(DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(_,DAE.C_CONST()))))),source,impl)
     then DAEUtil.emptyDae;
 
+      // Special case if the dimensions of the expression is 0.
+      // If this is true, and it is instantiated normally, matching properties
+      // will result in error messages (Real[0] is not Real), so we handle it here.      
+    case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2)))),source,impl)
+      equation
+        ((DAE.T_ARRAY(arrayDim = DAE.DIM(SOME(0))),_)) = Types.getPropType(prop2);
+      then
+        DAEUtil.emptyDae;
+
      // Regular cases
     case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2)))),source,impl)
       equation
