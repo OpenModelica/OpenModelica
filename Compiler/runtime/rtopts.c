@@ -47,7 +47,7 @@ static int version_request;
  * 2 - Full (a=-b, a=b, a=constant)
  * 3 - Only constants (a = constant)
  * */
-static int elimination_level=2;
+static long elimination_level=2;
 
 static char **debug_flags;
 static char *debug_flagstr;
@@ -193,7 +193,7 @@ static int set_debug_flags(char *flagstr)
   */
   return 0;
 }
-static int set_debug_flag(char const* strdata, int value)
+static int set_debug_flag(char const* strdata, long value)
 {
 	int length=strlen(strdata),i;
 	for (i=0; i<debug_flagc; i++)
@@ -436,7 +436,7 @@ RML_BEGIN_LABEL(RTOpts__args)
         elimination_level = (int)atoi(&arg[3]);
         if (elimination_level < 0 || elimination_level > 3) {
           elimination_level = 2;
-          fprintf(stderr, "Warning, wrong value of elimination level, will use default = %d\n",elimination_level);
+          fprintf(stderr, "Warning, wrong value of elimination level, will use default = %ld\n",elimination_level);
         }
         break;
       default:
@@ -498,7 +498,7 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__setEliminationLevel)
 {
-	int level = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+	long level = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
 	elimination_level = level;
 	RML_TAILCALLK(rmlSC);
 }
@@ -508,7 +508,7 @@ RML_BEGIN_LABEL(RTOpts__setDebugFlag)
 {
   void *str = rmlA0;
   //int level = 1;
-  int level = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
+  long level = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA1));
   char *strdata = RML_STRINGDATA(str);
   level = set_debug_flag(strdata,level);
   rmlA0 = RML_PRIM_MKBOOL(level);

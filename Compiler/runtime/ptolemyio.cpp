@@ -49,7 +49,7 @@ extern "C"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-void print_error_buf_impl(char*str);
+void print_error_buf_impl(const char* str);
 
 
 /* Given a file name and an array of variables, return the RML datastructure

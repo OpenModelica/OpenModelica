@@ -52,7 +52,7 @@ void Print_5finit(void)
 
 }
 
-int print_error_buf_impl(char *str)
+int print_error_buf_impl(const char *str)
 {
   /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
 
@@ -73,9 +73,9 @@ int print_error_buf_impl(char *str)
 
 RML_BEGIN_LABEL(Print__setBufSize)
 {
-  int newSize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  long newSize = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
   if (newSize > 0) {
-  	printf(" setting init_size to: %d\n",newSize);
+    printf(" setting init_size to: %ld\n",newSize);
     increase_buffer_fixed(newSize);
   }
   RML_TAILCALLK(rmlSC);
@@ -84,8 +84,8 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__unSetBufSize)
 {
-  int newSize = (int)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
-      increase_buffer_fixed(INITIAL_BUFSIZE);
+  long newSize = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  increase_buffer_fixed(INITIAL_BUFSIZE);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

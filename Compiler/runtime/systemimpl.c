@@ -1731,6 +1731,7 @@ RML_END_LABEL
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

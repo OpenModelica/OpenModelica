@@ -40,7 +40,7 @@ using namespace std;
 
 typedef map<std::string, bool> stringMap;
 stringMap options;
-char *undefined = "## UNDEFINED OPTION ##";
+const char *undefined = "## UNDEFINED OPTION ##";
 extern "C"
 {
 #include "rml.h"
