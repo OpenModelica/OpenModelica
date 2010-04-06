@@ -16798,242 +16798,6 @@ algorithm
   ((_, outExps)) := Exp.traverseExp(inExp, collectDelayExpressions, {});
 end findDelaySubExpressions;
 
-public function evalVariable
-"function evalVariable
-  Evaluate the value of a variable."
-  input DAE.ComponentRef inCref;
-  input DAELow indlow;
-  input list<DAE.ComponentRef> inCrefLst;
-  output Values.Value outVal;
-algorithm
-  outVal:=
-  matchcontinue (inCref,indlow,inCrefLst)
-   local
-      Variables vars;
-      Var var;
-      Option<Values.Value> bindValueo;
-      Values.Value bindValue;
-   case (inCref,indlow,inCrefLst)
-     equation
-       vars = daeVars(indlow);
-       ({var as VAR(bindValue=bindValueo)},_) = getVar(inCref,vars);
-       SOME(bindValue) = bindValueo;
-      then
-        bindValue;
-   case (inCref,indlow,inCrefLst)
-     equation
-       vars = daeKnVars(indlow);
-       ({var as VAR(bindValue=bindValueo)},_) = getVar(inCref,vars);
-       SOME(bindValue) = bindValueo;
-      then
-        bindValue;
-  end matchcontinue;
-end evalVariable;
-
-public function evalExpression
-"function evalExpression
-  Evaluate the value of a expression."
-  input DAE.Exp inExp;
-  input DAELow indlow;
-  input list<DAE.ComponentRef> inCrefLst;
-  output Values.Value outVal;
-algorithm
-  outVal:=
-  matchcontinue (inExp,indlow,inCrefLst)
-   case (inExp,indlow,inCrefLst)
-      then
-        Values.REAL(1.0);
-  end matchcontinue;
-end evalExpression;
-
-public function checkExpBecomesZero
-" function checkExpBecomesZero
-  autor: Frenkel TUD
-  "
-  input DAE.Exp inExp;
-  input DAELow indlow;
-  output Boolean outBool;
-  output Boolean outBool1;
-algorithm
-  (outBool,outBool1):=matchcontinue(inExp,indlow)
-    local
-      DAE.Exp exp;
-      list<DAE.Exp> explst;
-      DAE.ComponentRef cr;
-      Values.Value val;
-    // const expressions
-    case(exp,indlow)
-      equation
-        true = Exp.isZero(exp);
-    then
-      (true,true);
-    // ComponentRef expressions
-    case(exp as DAE.CREF(componentRef=cr),indlow)
-      equation
-        val = evalVariable(cr,indlow,{});
-        true = ValuesUtil.isZero(val);
-    then
-      (true,true);
-    case(exp,indlow)
-      equation
-        val = evalExpression(exp,indlow,{});
-        true = ValuesUtil.isZero(val);
-    then
-      (true,true);
-    case(exp,indlow)
-    then
-      (false,false);
-  end matchcontinue;
-end checkExpBecomesZero;
-
-public function checkEquationBecomesZero
-" function checkEquationBecomesZero
-  autor: Frenkel TUD
-  Check if a division by zero occurs
-  because of solving the equation.
-  The main goal is to support the user with as much
-  information about equations that cannot be solved
-  because of division by zero. Therefore the expressions of
-  the equation which reside below the slash have to be
-  inspect. The analysis is separated in to
-  - expressions which always be zero ( a-b, with a==b)
-    --> only constants and constant variables
-    --> ErrorMsg during compilation
-  - expressions which constant during simulation but depend
-    on parameters and bound parameters.
-    --> constants and parameters
-    --> check after parameter adjustment but before
-        calculation (c_runtime error msg)
-  - expressions which become during simulation equal zero
-    --> constants, parameters, time dependent variables
-    --> WarningMsg during compilation and the possibility
-        (maybe with flag inside c_runtime) to use the division
-        macro from c_runtime for those equations
-        (therefore we need maybe a new API commant \"compileModel\")"
-  input tuple<Equation, list<DAE.Exp>> inEqns;
-  input DAELow indlow;
-  output DAELow outdlow;
-algorithm
-  outdlow:=matchcontinue(inEqns,indlow)
-    local
-      Equation eqn;
-      DAE.Exp exp;
-      list<DAE.Exp> explst;
-      DAE.ComponentRef cr;
-      list<Var> vars;
-      Variables variables;
-      String se,se1,seqn;
-    case((_,{}),indlow) then indlow;
-    /* error */
-    case((eqn,exp::explst),indlow)
-      equation
-        (true,true) = checkExpBecomesZero(exp,indlow);
-        seqn = equationStr(eqn);
-        se = Exp.printExpStr(exp);
-        se1 = stringAppend(se, " = 0");
-        Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se1});
-        outdlow = checkEquationBecomesZero((eqn,explst),indlow);
-    then
-      outdlow;
-    /* warning */
-    case((eqn,exp::explst),indlow)
-      equation
-        (false,true) = checkExpBecomesZero(exp,indlow);
-        seqn = equationStr(eqn);
-        se = "";
-//        Error.addMessage(Error.DIVISION_BY_ZERO, {seqn,se});
-        outdlow = checkEquationBecomesZero((eqn,explst),indlow);
-    then
-      outdlow;
-    case((eqn,exp::explst),indlow)
-      equation
-        outdlow = checkEquationBecomesZero((eqn,explst),indlow);
-    then
-      outdlow;
-  end matchcontinue;
-end checkEquationBecomesZero;
-
-public function addDivExpErrorMsgtoEquation
-"function addDivExpErrorMsgto
-  Traverses all subexpressions of an expression of an equation."
-  input Equation inEqn;
-  input tuple<DAELow,DivZeroExpReplace> inDlowMode;
-  output Equation outEqn;
-algorithm
-  outEqn:=
-  matchcontinue (inEqn,inDlowMode)
-    local
-      DAE.Exp e,s;
-      list<DAE.Exp> elst,elst1,elst2,elst3;
-      DAE.ElementSource source;
-      Integer index;
-    case (EQUATION(exp = e,scalar = s,source=source),inDlowMode)
-      equation
-        e = addDivExpErrorMsgtoExp(e,inDlowMode);
-        s = addDivExpErrorMsgtoExp(s,inDlowMode);
-      then
-        EQUATION(e,s,source);
-    case (ARRAY_EQUATION(index=index,crefOrDerCref = elst,source=source),inDlowMode)
-      equation
-        elst1 = Util.listMap1(elst,addDivExpErrorMsgtoExp,inDlowMode);
-      then
-        ARRAY_EQUATION(index,elst1,source);
-    case (RESIDUAL_EQUATION(exp = e,source=source),inDlowMode)
-      equation
-        s = addDivExpErrorMsgtoExp(e,inDlowMode);
-      then
-        RESIDUAL_EQUATION(s,source);
-    case (ALGORITHM(index=index,in_=elst,out=elst1,source=source),inDlowMode)
-      equation
-        elst2 = Util.listMap1(elst,addDivExpErrorMsgtoExp,inDlowMode);
-        elst3 = Util.listMap1(elst1,addDivExpErrorMsgtoExp,inDlowMode);
-      then
-        ALGORITHM(index,elst2,elst3,source);
-    case (COMPLEX_EQUATION(index=index,lhs = e,rhs = s,source=source),inDlowMode)
-      equation
-        e = addDivExpErrorMsgtoExp(e,inDlowMode);
-        s = addDivExpErrorMsgtoExp(s,inDlowMode);
-      then
-        COMPLEX_EQUATION(index,e,s,source);
-    case (WHEN_EQUATION(whenEquation=whenEquation,source=source),inDlowMode)
-      local WhenEquation whenEquation;
-      equation
-        whenEquation = addDivExpErrorMsgtoWhenEquation(whenEquation,inDlowMode);
-      then
-        WHEN_EQUATION(whenEquation,source);
-    case (inEqn,_) then inEqn;
-  end matchcontinue;
-end addDivExpErrorMsgtoEquation;
-
-public function addDivExpErrorMsgtoWhenEquation
-"function addDivExpErrorMsgtoWhenEquation"
-  input WhenEquation inEqn;
-  input tuple<DAELow,DivZeroExpReplace> inDlowMode;
-  output WhenEquation outEqn;
-algorithm
-  outEqn:=
-  matchcontinue (inEqn,inDlowMode)
-    local
-      WhenEquation es,es1;
-      DAE.Exp right,right1;
-      list<DAE.Exp> elst,elst1,elst2;
-      Integer index;
-      DAE.ComponentRef left;
-   case (WHEN_EQ(index=index,left=left,right=right,elsewhenPart=SOME(es)),inDlowMode)
-      equation
-        right1 = addDivExpErrorMsgtoExp(right,inDlowMode);
-        es1 = addDivExpErrorMsgtoWhenEquation(es,inDlowMode);
-      then
-        WHEN_EQ(index,left,right1,SOME(es1));
-    case (WHEN_EQ(index=index,left=left,right=right,elsewhenPart=NONE()),inDlowMode)
-      equation
-        right1 = addDivExpErrorMsgtoExp(right,inDlowMode);
-      then
-        WHEN_EQ(index,left,right,NONE());
-     case (inEqn,_) then inEqn;
-  end matchcontinue;
-end addDivExpErrorMsgtoWhenEquation;
-
 public function addDivExpErrorMsgtoExp "
 Author: Frenkel TUD 2010-02, Adds the error msg to Exp.Div.
 "
@@ -17054,38 +16818,73 @@ protected function traversingDivExpFinder "
 Author: Frenkel TUD 2010-02"
   input tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace> > inExp;
   output tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace> > outExp;
-algorithm outExp := matchcontinue(inExp)
+algorithm
+outExp := matchcontinue(inExp)
   local
     DAELow dlow;
     tuple<DAELow,DivZeroExpReplace> dlowmode;
     DAE.Exp e,e1,e2;
     Exp.Type ty;
     String se;
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,_) ))
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode))
     equation
-      e = removeDivExpErrorMsgfromExp(e,dlow);
-      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2);
+      se = traversingDivExpFinder1(e,e2,dlowmode);
     then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), dlowmode ));
 /*
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty),exp2 = e2), dlowmode as (dlow,_)))
     then ((e, dlowmode ));
 */    
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,_)) )
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode))
     equation
-      e = removeDivExpErrorMsgfromExp(e,dlow);
-      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2);     
+      se = traversingDivExpFinder1(e,e2,dlowmode);
     then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), dlowmode ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,_) ))
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode))
     equation
-      e = removeDivExpErrorMsgfromExp(e,dlow);
-      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2);     
+      se = traversingDivExpFinder1(e,e2,dlowmode);
     then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), dlowmode ));
   case(inExp) then inExp;
 end matchcontinue;
 end traversingDivExpFinder;
+
+protected function traversingDivExpFinder1 "
+Author: Frenkel TUD 2010-02 
+  helper for traversingDivExpFinder"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input tuple<DAELow,DivZeroExpReplace> inMode;
+  output String outString;
+algorithm
+  outString := matchcontinue(inExp1,inExp2,inMode)
+  local
+    DAELow dlow;
+    tuple<DAELow,DivZeroExpReplace> dlowmode;
+    DAE.Exp e,e2;
+    String se;
+    list<DAE.ComponentRef> crlst;
+    Variables orderedVars;
+    list<Var> varlst;
+    list<Boolean> boollst;
+  case( e , e2, dlowmode as (dlow,ALL()) )
+    equation
+      /* generade modelica strings */
+      e = removeDivExpErrorMsgfromExp(e,dlow);
+      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
+      se = generadeDivExpErrorMsg(e,e2);
+    then se;    
+  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars),ONLY_VARIABLES()) )
+    equation
+      /* check if expression contains variables */
+      crlst = Exp.extractCrefsFromExp(e2);
+      varlst = varList(orderedVars);
+      boollst = Util.listMap1r(crlst,isVarKnown,varlst);
+      true = Util.boolOrList(boollst);
+      /* generade modelica strings */
+      e = removeDivExpErrorMsgfromExp(e,dlow);
+      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
+      se = generadeDivExpErrorMsg(e,e2);
+    then se;
+end matchcontinue;
+end traversingDivExpFinder1;
 
 protected  function generadeDivExpErrorMsg "
 Author: Frenkel TUD 2010-02.
@@ -17116,13 +16915,13 @@ algorithm outExps := matchcontinue(inExp,inDlow)
   case(inExp,inDlow)
     local DAE.Exp exp;
     equation
-      ((exp,_)) = Exp.traverseExp(inExp, traversingDivExpFinder1, inDlow);
+      ((exp,_)) = Exp.traverseExp(inExp, traversingDivExpFinder2, inDlow);
       then
         exp;
   end matchcontinue;
 end removeDivExpErrorMsgfromExp;
 
-protected function traversingDivExpFinder1 "
+protected function traversingDivExpFinder2 "
 Author: Frenkel TUD 2010-02"
   input tuple<DAE.Exp, DAELow > inExp;
   output tuple<DAE.Exp, DAELow > outExp;
@@ -17145,6 +16944,6 @@ algorithm outExp := matchcontinue(inExp)
     then ((DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2), dlow ));
   case(inExp) then inExp;
 end matchcontinue;
-end traversingDivExpFinder1;
+end traversingDivExpFinder2;
 
 end DAELow;

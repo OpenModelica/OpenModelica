@@ -1103,10 +1103,10 @@ algorithm
         stateContEquations = Util.listMap1(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
         nonStateContEquations = Util.listMap1(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
         nonStateDiscEquations = Util.listMap1(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        residualEquations = Util.listMap1(residualEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        initialEquations = Util.listMap1(initialEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        residualEquations = Util.listMap1(residualEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
+        initialEquations = Util.listMap1(initialEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
         parameterEquations = Util.listMap1(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
-        removedEquations = Util.listMap1(removedEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
+        removedEquations = Util.listMap1(removedEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
         
         simCode = SIMCODE(modelInfo, functions, allEquations, allEquationsPlusWhen, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
