@@ -65,8 +65,7 @@ algorithm
 end printKeyValueTupleStr;
 
 public function addEmptyDependency "Adds a dependency that a class has no dependencies by inserting empty lists.
-This is needed so that empty classes are still taken into consideration in e.g. Interactive.getTotalProgram
-"
+This is needed so that empty classes are still taken into consideration in e.g. Dependency.getTotalProgram"
   input Depends depends;
   input Absyn.Path cl;
   output Depends outDepends;

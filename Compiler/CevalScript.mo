@@ -56,6 +56,7 @@ public import DAE;
 public import DAELow;
 public import Env;
 public import Interactive;
+public import Dependency;
 public import Values;
 
 protected import SimCode;
@@ -157,7 +158,7 @@ algorithm
         compiledFunctions = cf)),msg)
       equation
         path = Static.componentRefToPath(cr);
-        ptot = Interactive.getTotalProgram(path,p);
+        ptot = Dependency.getTotalProgram(path,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,c,env) = Lookup.lookupClass(cache,env, path, true);
@@ -251,7 +252,7 @@ algorithm
         /*local DAELow.IfEquation[:] ifeqns;*/
       equation
         path = Static.componentRefToPath(cr);
-        ptot = Interactive.getTotalProgram(path,p);
+        ptot = Dependency.getTotalProgram(path,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_, dae) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1, path);
@@ -651,7 +652,7 @@ algorithm
       equation
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
-        ptot = Interactive.getTotalProgram(className,p);
+        ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
@@ -683,7 +684,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf)),msg)
       equation
-        ptot = Interactive.getTotalProgram(path,p);
+        ptot = Dependency.getTotalProgram(path,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         str = Print.getErrorString() "we do not want error msg twice.." ;
         failure((_,_,_,_) =
@@ -1961,7 +1962,7 @@ algorithm
       local AbsynDep.Depends dep; AbsynDep.AvlTree uses;
       equation
         class_ = Interactive.getPathedClassInProgram(classpath, p);
-        ptot = Interactive.getTotalProgram(classpath,p);
+        ptot = Dependency.getTotalProgram(classpath,p);
         str = Dump.unparseStr(ptot,true);
         System.writeFile(filename, str);
       then
@@ -2319,7 +2320,7 @@ algorithm
       equation
         false = RTOpts.debugFlag("tplmode");
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        ptot = Interactive.getTotalProgram(className,p);
+        ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
@@ -3274,7 +3275,7 @@ algorithm
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
-        ptot = Interactive.getTotalProgram(className,p);
+        ptot = Dependency.getTotalProgram(className,p);
         // this case should not handle functions
         failure(Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p));
         _ = Error.getMessagesStr() "Clear messages";
@@ -3311,7 +3312,7 @@ algorithm
 
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
-        ptot = Interactive.getTotalProgram(className,p);
+        ptot = Dependency.getTotalProgram(className,p);
         Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p);
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
@@ -3426,7 +3427,7 @@ algorithm
         loadedFiles = lf))
       equation
         classname_1 = Static.componentRefToPath(classname);
-        ptot = Interactive.getTotalProgram(classname_1,p);
+        ptot = Dependency.getTotalProgram(classname_1,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);
@@ -3467,7 +3468,7 @@ algorithm
         loadedFiles = lf)))
       equation
         classname_1 = Static.componentRefToPath(classname);
-        ptot = Interactive.getTotalProgram(classname_1,p);
+        ptot = Dependency.getTotalProgram(classname_1,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env) = Inst.makeEnvFromProgram(cache,p_1, Absyn.IDENT(""));
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env_1) = Lookup.lookupClass(cache,env, classname_1, true);

@@ -74,7 +74,8 @@ SRCMO= Absyn.mo \
     TplAbsyn.mo \
     TplCodegen.mo \
     TplParser.mo \
-	TplMain.mo 	
+	TplMain.mo \
+	Dependency.mo 	
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \

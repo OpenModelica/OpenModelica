@@ -69,7 +69,7 @@ SRCMO= Absyn.mo \
 	HashTable5.mo \
 	HashTable6.mo \
 	HashTableCG.mo \
-  HashTableStringToPath.mo \
+	HashTableStringToPath.mo \
 	Inline.mo \
 	Inst.mo \
 	InstExtends.mo \
@@ -109,7 +109,8 @@ SRCMO= Absyn.mo \
 	XMLDump.mo \
 	InstanceHierarchy.mo \
 	InnerOuter.mo \
-	ConnectUtil.mo
+	ConnectUtil.mo \
+	Dependency.mo
 
 # These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \

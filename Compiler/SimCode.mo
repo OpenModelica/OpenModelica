@@ -51,6 +51,7 @@ public import Values;
 public import Types;
 public import DAELow;
 public import Env;
+public import Dependency;
 public import Interactive;
 public import Absyn;
 public import Ceval;
@@ -487,7 +488,7 @@ algorithm
       equation
         /* calculate stuff that we need to create SimCode data structure */
         (cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
-        ptot = Interactive.getTotalProgram(className,p);
+        ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
         dae = DAEUtil.transformIfEqToExpr(dae,false);

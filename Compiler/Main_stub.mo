@@ -52,6 +52,7 @@ protected import DAE;
 protected import DAEUtil;
 protected import Inst;
 protected import Interactive;
+protected import Dependency;
 protected import RTOpts;
 protected import Debug;
 protected import Socket;
@@ -254,7 +255,7 @@ algorithm
         s = Print.getString();
         Debug.fcall("dump",print,s);
         p = transformFlatProgram(p,f);
-        p = Interactive.getTotalProgramLastClass(p);
+        p = Dependency.getTotalProgramLastClass(p);
 
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
