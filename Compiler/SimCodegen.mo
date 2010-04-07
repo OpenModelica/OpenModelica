@@ -8260,13 +8260,13 @@ algorithm
       DAELow.VariableArray vararr;
       DAELow.EquationArray eqns;
       Integer[:] ass1,ass2;
-
+      DAELow.WhenEquation weqn;
     /* assignments1 assignments2 equation no. cg var_id cg var_id */
     case (dae,DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = vararr),orderedEqs = eqns),ass1,ass2,e,index,cg_id)
       equation
         e_1 = e - 1;
-        DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(wc_ind,cr,expr,_)) = DAELow.equationNth(eqns, e_1); //TODO: elsewhen
-        (index == wc_ind) = true;
+        DAELow.WHEN_EQUATION(whenEquation = weqn) = DAELow.equationNth(eqns, e_1); //TODO: elsewhen
+        DAELow.WHEN_EQ(wc_ind,cr,expr,_) = buildWhenEquation1(weqn,index);
         v = ass2[e_1 + 1];
         v_1 = v - 1;
         ((va as DAELow.VAR(cr,kind,_,_,_,_,_,_,origname,_,dae_var_attr,comment,flowPrefix,streamPrefix))) = DAELow.vararrayNth(vararr, v_1);
@@ -8277,9 +8277,40 @@ algorithm
         cfn = Codegen.cPrependStatements(cfn, {save_stmt});
       then
         (cfn,cg_id_1);
+     
     case (_,_,_,_,_,_,cg_id) then (Codegen.cEmptyFunction,cg_id);
   end matchcontinue;
 end buildWhenEquation;
+
+protected function buildWhenEquation1
+"function: buildWhenEquation1
+  Helper function to buildWhenEquation."
+  input DAELow.WhenEquation inWEqn;
+  input Integer inInteger;
+  output DAELow.WhenEquation outWEqn;
+algorithm
+  outWEqn := matchcontinue (inWEqn,inInteger)
+    local
+      Integer wc_ind,index;
+      DAELow.WhenEquation weqn,we,we1;
+               
+    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = NONE()),index)
+      equation
+        (index == wc_ind) = true;
+      then
+        weqn;  
+    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
+      equation
+        (index == wc_ind) = true;
+      then
+        weqn;              
+    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
+      equation
+        we1 = buildWhenEquation1(we,index);
+      then
+        we1;              
+  end matchcontinue;
+end buildWhenEquation1;
 
 protected function generateComputeResidualState
 "function: generateComputeResidualState

@@ -773,11 +773,11 @@ algorithm
   (outWheneq, outVars) := matchcontinue(wheneq,vars)
     local DAE.ComponentRef cr; DAE.Exp e1; Integer indx; WhenEquation elsewheneq;
     case(WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars) equation
-      print("A1\n");
+//      print("A1\n");
       ((e1,vars)) = Exp.traverseExp(e1,expandDerExp,vars);
-      print("A2\n");
+//      print("A2\n");
       (elsewheneq,vars) = expandDerOperatorWhenEqn(elsewheneq,vars);
-      print("A3\n");
+//      print("A3\n");
     then (WHEN_EQ(indx,cr,e1,SOME(elsewheneq)),vars);
 
     case(WHEN_EQ(indx,cr,e1,NONE),vars) equation
@@ -3076,6 +3076,38 @@ algorithm
   end matchcontinue;
 end dumpEqns2;
 
+protected function whenEquationStr
+"function: whenEquationStr
+  Helper function to equationStr"
+  input WhenEquation inWhenEqn;
+  output String outString;
+algorithm
+  outString := matchcontinue (inWhenEqn)
+    local
+      String s1,s2,res,indx_str,is,var_str,intsStr,outsStr;
+      DAE.Exp e1,e2,e;
+      Value indx,i;
+      list<DAE.Exp> expl,inps,outs;
+      DAE.ComponentRef cr;
+      WhenEquation weqn;
+    case (WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn)))
+      equation
+        s1 = whenEquationStr(weqn);
+        s2 = Exp.printExpStr(e2);
+        is = intString(i);
+        res = Util.stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */, s1});
+      then
+        res;
+    case (WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = NONE()))
+      equation
+        s2 = Exp.printExpStr(e2);
+        is = intString(i);
+        res = Util.stringAppendList({" ; ",s2," elsewhen clause no: ",is /*, "\n" */});
+      then
+        res;
+  end matchcontinue;
+end whenEquationStr;
+
 public function equationStr
 "function: equationStr
   Helper function to e.g. dump."
@@ -3084,12 +3116,12 @@ public function equationStr
 algorithm
   outString := matchcontinue (inEquation)
     local
-      String s1,s2,res,indx_str,is,var_str,intsStr,outsStr;
+      String s1,s2,s3,res,indx_str,is,var_str,intsStr,outsStr;
       DAE.Exp e1,e2,e;
       Value indx,i;
       list<DAE.Exp> expl,inps,outs;
       DAE.ComponentRef cr;
-      
+      WhenEquation weqn;
     case (EQUATION(exp = e1,scalar = e2))
       equation
         s1 = Exp.printExpStr(e1);
@@ -3116,6 +3148,16 @@ algorithm
         s1 = Exp.printComponentRefStr(cr);
         s2 = Exp.printExpStr(e2);
         res = Util.stringAppendList({s1," := ",s2});
+      then
+        res;
+        
+    case (WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2, elsewhenPart = SOME(weqn))))
+      equation
+        s1 = Exp.printComponentRefStr(cr);
+        s2 = Exp.printExpStr(e2);
+        is = intString(i);
+        s3 = whenEquationStr(weqn);
+        res = Util.stringAppendList({s1," := ",s2," when clause no: ",is /*, "\n" */, s3});
       then
         res;
     case (WHEN_EQUATION(whenEquation = WHEN_EQ(index = i,left = cr,right = e2)))
@@ -4482,13 +4524,14 @@ algorithm
         reinit_count = listLength(reinit);
         hasReinit = (reinit_count > 0);
         extra = Util.if_(hasReinit, 1, 0);
+        tot_count = equation_count + extra;
         whenClauseList1 = makeWhenClauses(equation_count, cond, {});
         whenClauseList2 = makeWhenClauses(extra, cond, reinit);
-        tot_count = equation_count + extra;
-        (res1,i_1,whenClauseList3) = mergeClauses(trueEqnLst,elseEqnLst,whenClauseList2,
+        whenClauseList3 = listAppend(whenClauseList2, whenClauseList1);
+        (res1,i_1,whenClauseList4) = mergeClauses(trueEqnLst,elseEqnLst,whenClauseList3,
           elseClauseList,nextWhenIndex + tot_count);
       then
-        (res1,vars,i_1,whenClauseList3);
+        (res1,vars,i_1,whenClauseList4);
 
     case (DAE.WHEN_EQUATION(condition = cond),_,_)
       equation
@@ -4879,7 +4922,8 @@ algorithm
 				(vars, knvars, extVars, eqns, reqns, ieqns, (e_1 :: aeqns), algs, whenclauses_1, extObjCls);
 
     /* When equations */
-    case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+//    case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars1,knvars,extVars,eqns1,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
