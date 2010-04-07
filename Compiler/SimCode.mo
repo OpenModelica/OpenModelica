@@ -1863,13 +1863,13 @@ algorithm
   whenEq :=
   matchcontinue (eqs, index)
     local
-      DAELow.WhenEquation eq;
+      DAELow.WhenEquation eq,eq1;
       list<DAELow.Equation> restEqs;
       Integer eqindex;
-    case ((DAELow.WHEN_EQUATION(whenEquation = eq as DAELow.WHEN_EQ(index=eqindex))) :: restEqs, index)
+    case ((DAELow.WHEN_EQUATION(whenEquation = eq)) :: restEqs, index)
       equation
-        true = eqindex == index;
-      then SOME(eq);
+        eq1 = findWhenEquation1(eq,index);
+      then SOME(eq1);
     case (_ :: restEqs, index)
       equation
         whenEq = findWhenEquation(restEqs, index);
@@ -1878,6 +1878,36 @@ algorithm
       then NONE();
   end matchcontinue;
 end findWhenEquation;
+
+protected function findWhenEquation1
+"function: findWhenEquation1
+  Helper function to findWhenEquation."
+  input DAELow.WhenEquation inWEqn;
+  input Integer inInteger;
+  output DAELow.WhenEquation outWEqn;
+algorithm
+  outWEqn := matchcontinue (inWEqn,inInteger)
+    local
+      Integer wc_ind,index;
+      DAELow.WhenEquation weqn,we,we1;
+               
+    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = NONE()),index)
+      equation
+        (index == wc_ind) = true;
+      then
+        weqn;  
+    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
+      equation
+        (index == wc_ind) = true;
+      then
+        weqn;              
+    case(weqn as DAELow.WHEN_EQ(index = wc_ind,elsewhenPart = SOME(we)),index)
+      equation
+        we1 = findWhenEquation1(we,index);
+      then
+        we1;              
+  end matchcontinue;
+end findWhenEquation1;
 
 protected function whenClauseToSimWhenClause
   input DAELow.WhenClause whenClause;
