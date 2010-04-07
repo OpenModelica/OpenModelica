@@ -37,11 +37,19 @@ package SimCode
 
   RCS: $Id: SimCode.mo 3689 2009-02-26 07:38:30Z adrpo $
 
-  The entry point to this module is the translateModel function. (TODO: We need
-  another entry point for translating only functions.)
+  The entry points to this module are the translateModel function and the
+  translateFunctions fuction.
 
   Except for the entry points, the only other public functions are those that
   can be imported and called from templates.
+  
+  The number of imported functions should be kept as low as possible. Today
+  some of them are needed to generate target code from templates. More careful
+  design of data structures passed to templates should reduce the number of
+  imported functions needed.
+
+  Many of the functions in this module were originally copied from the Codegen
+  and SimCodegen modules.
 "
 
 
@@ -59,7 +67,6 @@ public import Tpl;
 public import SCode;
 public import DAE;
 
-// protected imports
 protected import DAEUtil;
 protected import SCodeUtil;
 protected import ClassInf;
@@ -70,7 +77,6 @@ protected import Debug;
 protected import Error;
 protected import Inst;
 protected import InnerOuter;
-// protected import Print;
 protected import Settings;
 protected import RTOpts;
 protected import System;
@@ -80,11 +86,6 @@ protected import ModUtil;
 
 
 public
-type Ident = String;
-type Type = Exp.Type;
-type Variables = list<Variable>;
-type Statements = list<Statement>;
-type Jacobian = list<tuple<Integer,Integer,Exp.Exp>>;
 type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
 type ExtDestructor = tuple<String, DAE.ComponentRef>;
 type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
@@ -92,7 +93,7 @@ type HelpVarInfo = tuple<Integer, Exp.Exp, Integer>; // helpvarindex, expression
 
 
 // Root data structure containing information required for templates to
-// generate simulation code.
+// generate simulation code for a Modelica model.
 uniontype SimCode
   record SIMCODE
     ModelInfo modelInfo;
@@ -118,6 +119,8 @@ uniontype SimCode
   end SIMCODE;
 end SimCode;
 
+// Root data structure containing information required for templates to
+// generate C functions for Modelica/MetaModelica functions.
 uniontype FunctionCode
   record FUNCTIONCODE
     String name;
@@ -127,6 +130,7 @@ uniontype FunctionCode
   end FUNCTIONCODE;
 end FunctionCode;
 
+// Container for metadata about a Modelica model.
 uniontype ModelInfo
   record MODELINFO
     String name;
@@ -136,6 +140,7 @@ uniontype ModelInfo
   end MODELINFO;
 end ModelInfo;
 
+// Number of variables of various types in a Modelica model.
 uniontype VarInfo
   record VARINFO
     Integer numHelpVars;
@@ -152,6 +157,7 @@ uniontype VarInfo
   end VARINFO;
 end VarInfo;
 
+// Container for metadata about variables in a Modelica model.
 uniontype SimVars
   record SIMVARS
     list<SimVar> stateVars;
@@ -166,6 +172,7 @@ uniontype SimVars
   end SIMVARS;
 end SimVars;
 
+// Information about a variable in a Modelica model.
 uniontype SimVar
   record SIMVAR
     DAE.ComponentRef name;
@@ -175,15 +182,20 @@ uniontype SimVar
     Boolean isFixed;
     Exp.Type type_;
     Boolean isDiscrete;
-    Option<DAE.ComponentRef> arrayCref; // if this var is the first in an array
+    // arrayCref is the name of the array if this variable is the first in that
+    // array
+    Option<DAE.ComponentRef> arrayCref;
   end SIMVAR;
 end SimVar;
 
+// Represents a Modelica or MetaModelica function.
+// TODO: I believe some of these fields can be removed. Check to see what is
+//       used in templates.
 uniontype Function
   record FUNCTION
     Absyn.Path name;
-    Variables inVars;
-    Variables outVars;
+    list<Variable> inVars;
+    list<Variable> outVars;
     list<RecordDeclaration> recordDecls;
     list<Variable> functionArguments;
     list<Variable> variableDeclarations;
@@ -191,7 +203,7 @@ uniontype Function
   end FUNCTION;
   record EXTERNAL_FUNCTION
     Absyn.Path name;
-    Ident extName;
+    String extName;
     list<Variable> funArgs;
     list<SimExtArg> extArgs;
     SimExtArg extReturn;
@@ -212,16 +224,17 @@ end Function;
 
 uniontype RecordDeclaration
   record RECORD_DECL_FULL
-    Ident name; // struct (record) name ? encoded
+    String name; // struct (record) name ? encoded
     Absyn.Path defPath; //definition path
-    Variables variables; //only name and type
+    list<Variable> variables; //only name and type
   end RECORD_DECL_FULL;
   record RECORD_DECL_DEF
     Absyn.Path path; //definition path .. encoded ?
-    list<Ident> fieldNames;
+    list<String> fieldNames;
   end RECORD_DECL_DEF;
 end RecordDeclaration;
 
+// Information about an argument to an external function.
 uniontype SimExtArg
   record SIMEXTARG
     DAE.ComponentRef cref;
@@ -250,20 +263,22 @@ uniontype Variable
     //the name should become a Path because templates will take responsibility
     //for ident encodings an alternative is to expect names with dot notation
     //inside the string; an encoding function sholud be then imported
-    DAE.ComponentRef       name   "variable name";
-    Type          ty    "variable type";
-    Option<Exp.Exp> value "variable default value";
+    DAE.ComponentRef name;
+    Exp.Type ty;
+    Option<Exp.Exp> value; // Default value
     list<DAE.Exp> instDims;
   end VARIABLE;
 end Variable;
 
-// TODO: Replace this with just list<Algorithm.Statement>?
+// TODO: Replace Statement with just list<Algorithm.Statement>?
 uniontype Statement
   record ALGORITHM
     list<Algorithm.Statement> statementLst; // in functions
   end ALGORITHM;
 end Statement;
 
+// Represents a single equation or a system of equations that must be solved
+// together.
 uniontype SimEqSystem
   record SES_RESIDUAL
     DAE.Exp exp;
@@ -321,6 +336,7 @@ uniontype ExtObjInfo
   end EXTOBJINFO;
 end ExtObjInfo;
 
+// Platform specific parameters used when generating makefiles.
 uniontype MakefileParams
   record MAKEFILE_PARAMS
     String ccompiler;
@@ -335,8 +351,8 @@ uniontype MakefileParams
   end MAKEFILE_PARAMS;
 end MakefileParams;
 
-/* Created ad used by templates to be able to generate different code depending
-   on the context it is generated in. */
+// Constants of this type defined below are used by templates to be able to
+// generate different code depending on the context it is generated in.
 uniontype Context
   record SIMULATION
     Boolean genDiscrete;
@@ -352,11 +368,9 @@ public constant Context contextOther                 = OTHER();
 
 
 public function valueblockVars
-"Used by templates to get a list of variables from a valueblock.
-
-It is a temporary fix and should be replaced."
+"Used by templates to get a list of variables from a valueblock."
   input DAE.Exp valueblock;
-  output Variables vars;
+  output list<Variable> vars;
 algorithm
   vars :=
   matchcontinue (valueblock)
@@ -371,6 +385,8 @@ algorithm
 end valueblockVars;
 
 public function crefSubIsScalar
+"Used by templates to determine if a component reference's subscripts are
+ scalar."
   input DAE.ComponentRef cref;
   output Boolean isScalar;
   list<DAE.Subscript> subs;
@@ -380,6 +396,7 @@ algorithm
 end crefSubIsScalar;
 
 public function crefNoSub
+"Used by templates to determine if a component reference has no subscripts."
   input DAE.ComponentRef cref;
   output Boolean noSub;
   list<DAE.Subscript> subs;
@@ -391,6 +408,7 @@ algorithm
 end crefNoSub;
 
 function crefSubs
+"Used by templates to get the subscript list from a component reference."
   input DAE.ComponentRef cref;
   output list<DAE.Subscript> subs;
 algorithm
@@ -411,6 +429,8 @@ algorithm
 end crefSubs;
 
 public function buildCrefExpFromAsub
+"Used by templates to convert an ASUB expression to a component reference
+ with subscripts."
   input DAE.Exp cref;
   input list<DAE.Exp> subs;
   output DAE.Exp cRefOut;
@@ -433,6 +453,7 @@ algorithm
 end buildCrefExpFromAsub;
 
 public function incrementInt
+"Used by templates to create new integers that are increments of another."
   input Integer inInt;
   input Integer increment;
   output Integer outInt;
@@ -441,7 +462,9 @@ algorithm
 end incrementInt;
 
 public function translateModel
-"One of the entry points."
+"Entry point to translate a Modelica model for simulation.
+    
+ Called from other places in the compiler."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
@@ -528,7 +551,9 @@ algorithm
 end translateModel;
 
 public function translateFunctions
-"One of the entry points."
+"Entry point to translate Modelica/MetaModelica functions to C functions.
+    
+ Called from other places in the compiler."
   input String name;
   input list<DAE.Element> daeElements;
   input list<DAE.Type> metarecordTypes;
@@ -554,6 +579,7 @@ algorithm
         ();
   end matchcontinue;
 end translateFunctions;
+
 
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */
@@ -737,7 +763,7 @@ algorithm
       DAE.Element comp;
       list<String> rt, rt_1, struct_funrefs, struct_funrefs_int;
       list<Absyn.Path> funrefPaths;
-      Variables outVars, inVars, biVars, funArgs, varDecls;
+      list<Variable> outVars, inVars, biVars, funArgs, varDecls;
       list<RecordDeclaration> recordDecls;
       list<Statement> body;
       DAE.InlineType inl;
@@ -833,7 +859,7 @@ algorithm
   outVar := matchcontinue(inElement)
     local
       String name;
-      Type expType;
+      Exp.Type expType;
       DAE.Type daeType;
       Exp.ComponentRef id;
       list<Exp.Subscript> inst_dims;
@@ -1245,7 +1271,6 @@ algorithm
   end matchcontinue;
 end helpVarInfoFromWhenConditionChecks;
 
-
 protected function buildDiscreteVarChanges "
 For all discrete variables in the model, generate code that checks if they have changed and if so generate code
 that add events to the event queue: if (change(<discretevar>)) { AddEvent(c1);...;AddEvent(cn)}
@@ -1464,7 +1489,7 @@ algorithm
       String first_str, last_str, path_str;
       list<String> res,strs,rest_strs,decl_strs,rt,rt_1,rt_2,record_definition,fieldNames;
       list<RecordDeclaration> accRecDecls;
-      Variables vars;
+      list<Variable> vars;
 
       RecordDeclaration recDecl;
     case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name), complexVarLst = varlst),SOME(path)), accRecDecls, rt)
@@ -1547,7 +1572,6 @@ algorithm
       then (accRecDecls,rt_1);
   end matchcontinue;
 end elaborateNestedRecordDeclarations;
-
 
 protected function elaborateRecordDeclarationsForMetarecords
   input list<Exp.Exp> inExpl;
@@ -4239,8 +4263,6 @@ algorithm
   end matchcontinue;
 end addMissingEquations;
 
-
-
 protected function buildDiscreteVarChangesVar2
 "Help relation to buildDiscreteVarChangesVar
  For an equation e  (not a when equation) containing a discrete variable v, if e contains a
@@ -4532,7 +4554,6 @@ algorithm
     then fail();
   end matchcontinue;
 end findDiscreteEquation;
-
 
 protected function isMixedSystem "function: isMixedSystem
   author: PA
@@ -5572,7 +5593,7 @@ algorithm
     local
       String name;
       Types.Type typesType;
-      Type expType;
+      Exp.Type expType;
     case (DAE.TYPES_VAR(name=name, type_=typesType))
       equation
         expType = Types.elabType(typesType);

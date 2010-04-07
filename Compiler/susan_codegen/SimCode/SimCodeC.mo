@@ -6659,7 +6659,7 @@ algorithm
     case ( txt,
            SimCode.FUNCTION(recordDecls = i_recordDecls, name = i_name, functionArguments = i_functionArguments, outVars = i_outVars) )
       local
-        SimCode.Variables i_outVars;
+        list<SimCode.Variable> i_outVars;
         list<SimCode.Variable> i_functionArguments;
         Absyn.Path i_name;
         list<SimCode.RecordDeclaration> i_recordDecls;
@@ -6794,7 +6794,7 @@ end functionHeaders;
 
 protected function lm_161
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -6810,7 +6810,7 @@ algorithm
     case ( txt,
            (i_var as SimCode.VARIABLE(name = i_var_name)) :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         DAE.ComponentRef i_var_name;
         SimCode.Variable i_var;
       equation
@@ -6825,7 +6825,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_161(txt, rest);
       then txt;
@@ -6834,7 +6834,7 @@ end lm_161;
 
 protected function lm_162
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -6850,7 +6850,7 @@ algorithm
     case ( txt,
            SimCode.VARIABLE(name = i_name) :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
@@ -6863,7 +6863,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_162(txt, rest);
       then txt;
@@ -6872,7 +6872,7 @@ end lm_162;
 
 protected function lm_163
   input Tpl.Text in_txt;
-  input list<SimCode.Ident> in_items;
+  input list<String> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -6888,8 +6888,8 @@ algorithm
     case ( txt,
            i_name :: rest )
       local
-        list<SimCode.Ident> rest;
-        SimCode.Ident i_name;
+        list<String> rest;
+        String i_name;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
         txt = Tpl.writeStr(txt, i_name);
@@ -6901,7 +6901,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        list<SimCode.Ident> rest;
+        list<String> rest;
       equation
         txt = lm_163(txt, rest);
       then txt;
@@ -6923,8 +6923,8 @@ algorithm
            SimCode.RECORD_DECL_FULL(name = i_name, variables = i_variables, defPath = i_defPath) )
       local
         Absyn.Path i_defPath;
-        SimCode.Variables i_variables;
-        SimCode.Ident i_name;
+        list<SimCode.Variable> i_variables;
+        String i_name;
         Tpl.Text txt_2;
         Tpl.Text txt_1;
         Tpl.Text txt_0;
@@ -6950,7 +6950,7 @@ algorithm
     case ( txt,
            SimCode.RECORD_DECL_DEF(path = i_path, fieldNames = i_fieldNames) )
       local
-        list<SimCode.Ident> i_fieldNames;
+        list<String> i_fieldNames;
         Absyn.Path i_path;
         Tpl.Text txt_2;
         Tpl.Text txt_1;
@@ -7005,7 +7005,7 @@ end recordDefinition;
 
 protected function lm_166
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -7021,7 +7021,7 @@ algorithm
     case ( txt,
            (i_var as SimCode.VARIABLE(name = i_name)) :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
         SimCode.Variable i_var;
       equation
@@ -7035,7 +7035,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_166(txt, rest);
       then txt;
@@ -7044,7 +7044,7 @@ end lm_166;
 
 protected function lm_167
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
   input String in_i_fname;
 
   output Tpl.Text out_txt;
@@ -7064,7 +7064,7 @@ algorithm
            SimCode.VARIABLE(name = _) :: rest,
            i_fname )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         Integer i_i1;
       equation
         i_i1 = Tpl.getIteri_i1(txt);
@@ -7082,7 +7082,7 @@ algorithm
            _ :: rest,
            i_fname )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_167(txt, rest, i_fname);
       then txt;
@@ -7154,7 +7154,7 @@ end lm_169;
 
 protected function fun_170
   input Tpl.Text in_txt;
-  input SimCode.Type in_i_ty;
+  input DAE.ExpType in_i_ty;
 
   output Tpl.Text out_txt;
 algorithm
@@ -7183,7 +7183,7 @@ end fun_170;
 
 protected function lm_171
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -7199,9 +7199,9 @@ algorithm
     case ( txt,
            (i_var as SimCode.VARIABLE(ty = i_ty, name = i_name)) :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
         SimCode.Variable i_var;
         Integer i_i1;
         Tpl.Text i_dimStr;
@@ -7222,7 +7222,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_171(txt, rest);
       then txt;
@@ -7232,8 +7232,8 @@ end lm_171;
 public function functionHeader
   input Tpl.Text txt;
   input String i_fname;
-  input SimCode.Variables i_fargs;
-  input SimCode.Variables i_outVars;
+  input list<SimCode.Variable> i_fargs;
+  input list<SimCode.Variable> i_outVars;
 
   output Tpl.Text out_txt;
 protected
@@ -7330,7 +7330,7 @@ algorithm
     case ( txt,
            SimCode.EXTERNAL_FUNCTION(extArgs = i_extArgs, extReturn = i_extReturn, extName = i_extName) )
       local
-        SimCode.Ident i_extName;
+        String i_extName;
         SimCode.SimExtArg i_extReturn;
         list<SimCode.SimExtArg> i_extArgs;
         Tpl.Text i_fargsStr;
@@ -7386,7 +7386,7 @@ end extReturnType;
 
 public function extType
   input Tpl.Text in_txt;
-  input SimCode.Type in_i_type;
+  input DAE.ExpType in_i_type;
 
   output Tpl.Text out_txt;
 algorithm
@@ -7847,7 +7847,7 @@ end lm_186;
 
 protected function lm_187
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
   input Tpl.Text in_i_outVarInits;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_retVar;
@@ -7877,7 +7877,7 @@ algorithm
            i_varDecls,
            i_retVar )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         SimCode.Variable i_var;
         Integer i_i1;
       equation
@@ -7893,7 +7893,7 @@ algorithm
            i_varDecls,
            i_retVar )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         (txt, i_outVarInits, i_varDecls) = lm_187(txt, rest, i_outVarInits, i_varDecls, i_retVar);
       then (txt, i_outVarInits, i_varDecls);
@@ -7920,7 +7920,7 @@ algorithm
       local
         list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = expTypeArrayIf(txt, i_ty);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
@@ -7959,7 +7959,7 @@ algorithm
       local
         list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = expTypeArrayIf(txt, i_ty);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
@@ -8053,7 +8053,7 @@ end lm_191;
 
 protected function lm_192
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -8069,7 +8069,7 @@ algorithm
     case ( txt,
            (i_var as SimCode.VARIABLE(name = _)) :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         SimCode.Variable i_var;
         Integer i_i1;
       equation
@@ -8082,7 +8082,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         txt = lm_192(txt, rest);
       then txt;
@@ -8091,7 +8091,7 @@ end lm_192;
 
 protected function fun_193
   input Tpl.Text in_txt;
-  input SimCode.Variables in_i_outVars;
+  input list<SimCode.Variable> in_i_outVars;
 
   output Tpl.Text out_txt;
 algorithm
@@ -8109,7 +8109,7 @@ algorithm
     case ( txt,
            i_outVars )
       local
-        SimCode.Variables i_outVars;
+        list<SimCode.Variable> i_outVars;
       equation
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_192(txt, i_outVars);
@@ -8133,7 +8133,7 @@ algorithm
            SimCode.FUNCTION(name = i_name, variableDeclarations = i_variableDeclarations, body = i_body, outVars = i_outVars, functionArguments = i_functionArguments) )
       local
         list<SimCode.Variable> i_functionArguments;
-        SimCode.Variables i_outVars;
+        list<SimCode.Variable> i_outVars;
         list<SimCode.Statement> i_body;
         list<SimCode.Variable> i_variableDeclarations;
         Absyn.Path i_name;
@@ -8318,7 +8318,7 @@ algorithm
       local
         list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = expTypeArrayIf(txt, i_ty);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
@@ -8468,7 +8468,7 @@ algorithm
       local
         list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = expTypeArrayIf(txt, i_ty);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
@@ -8611,7 +8611,7 @@ algorithm
       local
         list<SimCode.Variable> rest;
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = expTypeArrayIf(txt, i_ty);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" "));
@@ -8759,7 +8759,7 @@ algorithm
     case ( txt,
            SimCode.VARIABLE(name = i_cr, ty = (i_ty as DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _)))) )
       local
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
         DAE.ComponentRef i_cr;
         Tpl.Text txt_0;
       equation
@@ -8773,7 +8773,7 @@ algorithm
            SimCode.VARIABLE(ty = i_ty, name = i_name) )
       local
         DAE.ComponentRef i_name;
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (read_"));
         txt = expTypeArrayIf(txt, i_ty);
@@ -8922,7 +8922,7 @@ algorithm
            SimCode.VARIABLE(ty = (i_ty as DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = _)))),
            i_index )
       local
-        SimCode.Type i_ty;
+        DAE.ExpType i_ty;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("write_modelica_record(outVar, "));
         txt = writeOutVarRecordMembers(txt, i_ty, i_index, "");
@@ -9249,7 +9249,7 @@ protected function fun_217
   input list<DAE.Exp> in_i_instDims;
   input Tpl.Text in_i_instDimsInit;
   input Tpl.Text in_i_varName;
-  input SimCode.Type in_i_var_ty;
+  input DAE.ExpType in_i_var_ty;
   input Tpl.Text in_i_varInits;
 
   output Tpl.Text out_txt;
@@ -9261,7 +9261,7 @@ algorithm
       Tpl.Text txt;
       Tpl.Text i_instDimsInit;
       Tpl.Text i_varName;
-      SimCode.Type i_var_ty;
+      DAE.ExpType i_var_ty;
       Tpl.Text i_varInits;
 
     case ( txt,
@@ -9325,7 +9325,7 @@ algorithm
            i_varDecls,
            i_varInits )
       local
-        SimCode.Type i_var_ty;
+        DAE.ExpType i_var_ty;
         list<DAE.Exp> i_instDims;
         DAE.ComponentRef i_var_name;
         SimCode.Variable i_var;
@@ -9402,7 +9402,7 @@ protected function fun_220
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_i_instDims;
   input Tpl.Text in_i_instDimsInit;
-  input SimCode.Type in_i_var_ty;
+  input DAE.ExpType in_i_var_ty;
   input Tpl.Text in_i_varInits;
   input DAE.ComponentRef in_i_var_name;
   input Integer in_i_i;
@@ -9416,7 +9416,7 @@ algorithm
     local
       Tpl.Text txt;
       Tpl.Text i_instDimsInit;
-      SimCode.Type i_var_ty;
+      DAE.ExpType i_var_ty;
       Tpl.Text i_varInits;
       DAE.ComponentRef i_var_name;
       Integer i_i;
@@ -9505,7 +9505,7 @@ algorithm
            i_varDecls,
            i_varInits )
       local
-        SimCode.Type i_var_ty;
+        DAE.ExpType i_var_ty;
         DAE.ComponentRef i_var_name;
         list<DAE.Exp> i_instDims;
         SimCode.Variable i_var;
@@ -9756,7 +9756,7 @@ algorithm
            i_preExp,
            i_varDecls )
       local
-        SimCode.Ident i_extName;
+        String i_extName;
         SimCode.SimExtArg i_extReturn;
         list<SimCode.SimExtArg> i_extArgs;
         Absyn.Path i_name;
@@ -17322,7 +17322,7 @@ end daeExpReductionStartValue;
 
 protected function lm_360
   input Tpl.Text in_txt;
-  input SimCode.Variables in_items;
+  input list<SimCode.Variable> in_items;
   input Tpl.Text in_i_preExpInner;
   input Tpl.Text in_i_varDeclsInner;
 
@@ -17348,7 +17348,7 @@ algorithm
            i_preExpInner,
            i_varDeclsInner )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
         SimCode.Variable i_var;
       equation
         (txt, i_varDeclsInner, i_preExpInner) = varInit(txt, i_var, "", 0, i_varDeclsInner, i_preExpInner);
@@ -17360,7 +17360,7 @@ algorithm
            i_preExpInner,
            i_varDeclsInner )
       local
-        SimCode.Variables rest;
+        list<SimCode.Variable> rest;
       equation
         (txt, i_preExpInner, i_varDeclsInner) = lm_360(txt, rest, i_preExpInner, i_varDeclsInner);
       then (txt, i_preExpInner, i_varDeclsInner);
@@ -17444,7 +17444,7 @@ algorithm
         Tpl.Text txt_7;
         Tpl.Text i_res;
         Tpl.Text i_resType;
-        SimCode.Variables ret_4;
+        list<SimCode.Variable> ret_4;
         Tpl.Text i_0__;
         Tpl.Text i_varDeclsInner;
         Tpl.Text i_preExpRes;
@@ -18465,7 +18465,7 @@ end tempDecl;
 protected function fun_382
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_i_instDims;
-  input SimCode.Type in_i_var_ty;
+  input DAE.ExpType in_i_var_ty;
 
   output Tpl.Text out_txt;
 algorithm
@@ -18473,7 +18473,7 @@ algorithm
   matchcontinue(in_txt, in_i_instDims, in_i_var_ty)
     local
       Tpl.Text txt;
-      SimCode.Type i_var_ty;
+      DAE.ExpType i_var_ty;
 
     case ( txt,
            {},
@@ -18505,7 +18505,7 @@ algorithm
     case ( txt,
            (i_var as SimCode.VARIABLE(instDims = i_instDims, ty = i_var_ty)) )
       local
-        SimCode.Type i_var_ty;
+        DAE.ExpType i_var_ty;
         list<DAE.Exp> i_instDims;
         SimCode.Variable i_var;
       equation

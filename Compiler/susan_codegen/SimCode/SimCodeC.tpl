@@ -1516,7 +1516,7 @@ recordDefinition(String origName, String encName, String fieldNames) ::=
   };
   >>
 
-functionHeader(String fname, Variables fargs, Variables outVars) ::=
+functionHeader(String fname, list<Variable> fargs, list<Variable> outVars) ::=
   # fargsStr = (fargs of var as VARIABLE: '<varType(var)> <cref(name)>' ", ")
   <<
   <outVars of VARIABLE: '#define <fname>_rettype_<i1> targ<i1>' \n>
@@ -1549,7 +1549,7 @@ extReturnType(SimExtArg extArg) ::=
   case SIMEXTARG   then extType(type_)
   case SIMNOEXTARG then "void"
 
-extType(Type type) ::=
+extType(ExpType type) ::=
   match type
   case ET_INT         then "int"
   case ET_REAL        then "double"

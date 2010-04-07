@@ -11,72 +11,10 @@ end builtin;
 
 package SimCode
 
-  function crefSubIsScalar
-    input DAE.ComponentRef cref;
-    output Boolean isScalar;
-  end crefSubIsScalar;
-  
-  function crefNoSub
-    input DAE.ComponentRef cref;
-    output Boolean noSub;
-  end crefNoSub;
-
-  function buildCrefExpFromAsub
-    input DAE.Exp cref;
-    input list<DAE.Exp> subs;
-    output DAE.Exp cRefOut;
-  end buildCrefExpFromAsub;
-
-  function crefSubs
-    input DAE.ComponentRef cref;
-    output list<DAE.Subscript> subs;
-  end crefSubs;
-  
-  function incrementInt
-    input Integer inInt;
-    input Integer increment;
-    output Integer outInt;
-  end incrementInt;
-
-  uniontype Context
-    record SIMULATION
-      Boolean genDiscrete;
-    end SIMULATION;
-    record OTHER
-    end OTHER;
-  end Context;
-  
-  constant Context contextSimulationNonDescrete;
-  constant Context contextSimulationDescrete;
-  constant Context contextOther;  
-  
-  function valueblockVars
-    input DAE.Exp valueblock;
-    output Variables vars;
-  end valueblockVars;
-
-  type Ident = String;
-  type Type = DAE.ExpType;
+  type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
+  type ExtDestructor = tuple<String, DAE.ComponentRef>;
+  type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   type HelpVarInfo = tuple<Integer, DAE.Exp, Integer>;
-  
-  type Variables = list<Variable>;
-  type Statements = list<Statement>;
-  type VariableDeclarations = Variables;
-  
-  uniontype Variable
-    record VARIABLE
-      DAE.ComponentRef name;
-      Type ty;
-      Option<DAE.Exp> value;
-      list<DAE.Exp> instDims;
-    end VARIABLE;  
-  end Variable;
-  
-  uniontype Statement
-    record ALGORITHM
-       list<DAE.Statement> statementLst;
-    end ALGORITHM;
-  end Statement;
   
   uniontype SimCode
     record SIMCODE
@@ -112,7 +50,6 @@ package SimCode
     end FUNCTIONCODE;
   end FunctionCode;
 
-
   uniontype MakefileParams
     record MAKEFILE_PARAMS
       String ccompiler;
@@ -126,11 +63,30 @@ package SimCode
       list<String> libs;
     end MAKEFILE_PARAMS;
   end MakefileParams;
-
-  type ExtConstructor = tuple<DAE.ComponentRef, String, list<DAE.Exp>>;
-  type ExtDestructor = tuple<String, DAE.ComponentRef>;
-  type ExtAlias = tuple<DAE.ComponentRef, DAE.ComponentRef>;
   
+  uniontype Context
+    record SIMULATION
+      Boolean genDiscrete;
+    end SIMULATION;
+    record OTHER
+    end OTHER;
+  end Context;
+  
+  uniontype Variable
+    record VARIABLE
+      DAE.ComponentRef name;
+      DAE.ExpType ty;
+      Option<DAE.Exp> value;
+      list<DAE.Exp> instDims;
+    end VARIABLE;  
+  end Variable;
+  
+  uniontype Statement
+    record ALGORITHM
+       list<DAE.Statement> statementLst;
+    end ALGORITHM;
+  end Statement;
+
   uniontype ExtObjInfo
     record EXTOBJINFO
       list<String> includes;
@@ -243,8 +199,8 @@ package SimCode
   uniontype Function
     record FUNCTION    
       Absyn.Path name;
-      Variables inVars;
-      Variables outVars;
+      list<Variable> inVars;
+      list<Variable> outVars;
       list<RecordDeclaration> recordDecls; 
       list<Variable> functionArguments;
       list<Variable> variableDeclarations;
@@ -252,7 +208,7 @@ package SimCode
     end FUNCTION;
     record EXTERNAL_FUNCTION
       Absyn.Path name;
-      Ident extName;
+      String extName;
       list<Variable> funArgs;
       list<SimExtArg> extArgs;
       SimExtArg extReturn;
@@ -273,13 +229,13 @@ package SimCode
   
   uniontype RecordDeclaration
     record RECORD_DECL_FULL
-      Ident name;
+      String name;
       Absyn.Path defPath;
-      Variables variables;
+      list<Variable> variables;
     end RECORD_DECL_FULL;
     record RECORD_DECL_DEF
       Absyn.Path path;
-      list<Ident> fieldNames;
+      list<String> fieldNames;
     end RECORD_DECL_DEF;
   end RecordDeclaration;
 
@@ -304,6 +260,42 @@ package SimCode
     end SIMEXTARGSIZE;
     record SIMNOEXTARG end SIMNOEXTARG;
   end SimExtArg;
+  
+  constant Context contextSimulationNonDescrete;
+  constant Context contextSimulationDescrete;
+  constant Context contextOther;  
+
+  function valueblockVars
+    input DAE.Exp valueblock;
+    output list<Variable> vars;
+  end valueblockVars;
+  
+  function crefSubIsScalar
+    input DAE.ComponentRef cref;
+    output Boolean isScalar;
+  end crefSubIsScalar;
+  
+  function crefNoSub
+    input DAE.ComponentRef cref;
+    output Boolean noSub;
+  end crefNoSub;
+
+  function crefSubs
+    input DAE.ComponentRef cref;
+    output list<DAE.Subscript> subs;
+  end crefSubs;
+  
+  function buildCrefExpFromAsub
+    input DAE.Exp cref;
+    input list<DAE.Exp> subs;
+    output DAE.Exp cRefOut;
+  end buildCrefExpFromAsub;
+
+  function incrementInt
+    input Integer inInt;
+    input Integer increment;
+    output Integer outInt;
+  end incrementInt;
 
 end SimCode;
 
