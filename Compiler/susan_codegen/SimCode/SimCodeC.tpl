@@ -5,7 +5,7 @@
 // There are two root templates intended to be called from the code generator:
 // translateModel and translateFunctions. These templates do not return any
 // result but instead write the result to files. All other templates return
-// values and are used by the root templates (most of them indirectly).
+// text and are used by the root templates (most of them indirectly).
 //
 // To future maintainers of this file:
 //
@@ -28,7 +28,7 @@
 //   be written like this instead:
 //     ..., &var, ...
 //
-// - Style guides
+// - Style guidelines:
 //
 //   - Try (hard) to limit each row to 80 characters
 //
@@ -1764,7 +1764,7 @@ case ET_COMPLEX(varLst=vl, name=n) then
   &<basename>__desc<if args then ', <args>'>, TYPE_DESC_NONE
   >>
 
-// Does not return anything, just append declarations to buffers.
+// Does not return anything: just appends declarations to buffers.
 varInit(Variable var, String outStruct, Integer i, Text varDecls /*BUFP*/,
         Text varInits /*BUFP*/) ::=
 match var
