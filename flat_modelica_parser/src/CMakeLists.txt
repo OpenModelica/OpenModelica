@@ -96,17 +96,7 @@ SET(helperobjs ${OMCTRUNCHOME}/modelica_parser/src/token_names.cpp
 
 SET(OBJS ${helperobjs} ${ANTLR_OUTPUT} ${ANTLR_POUTPUT} ${ANTLR_FILES})
 
-IF(WIN32)
-  SET(ANTLR_LIB antlr)
-ELSE(WIN32)
-  SET(ANTLR_LIB libantlr)
-ENDIF(WIN32)
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TP /wd4311 /wd4312)
-if(WIN32)
-add_definitions(/MT)
-endif(WIN32)
 ADD_LIBRARY(libflat_modelica_parser ${OBJS})
-TARGET_LINK_LIBRARIES(libflat_modelica_parser optimized antlr debug antlrd)
 
 

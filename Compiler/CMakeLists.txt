@@ -18,7 +18,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  UnitAbsynBuilder.mo UnitChecker.mo Values.mo ValuesUtil.mo 
 		  VarTransform.mo BackendVarTransform.mo Refactor.mo 
 		  DAEQuery.mo XMLDump.mo InstanceHierarchy.mo InnerOuter.mo 
-		  ConnectUtil.mo)
+		  ConnectUtil.mo Dependency.mo)
 
 SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo 
 		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo 
@@ -27,7 +27,7 @@ SET(ALLMO ${SRCMO} DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo
 # RML
 IF(NOT RML)
   FIND_PROGRAM(RML rml DOC "Location of the RML executable"
-               PATHS ENV OMDEV
+               PATHS ENV OMDEV ${RMLHOME}/bin
                PATH_SUFFIXES bin tools/rml/bin)
   MESSAGE(STATUS "-- rml is " ${RML})
 ENDIF(NOT RML)		  
@@ -63,7 +63,7 @@ FOREACH(DEP ${ALLMO})
   ADD_CUSTOM_TARGET(${DFWE}_cp ALL DEPENDS ${COPY_OUTPUT})
   
   # remember
-  SET(COPY_ALL ${COPY_ALL} ${DFWE}_cp)
+  SET(COPY_ALL ${COPY_ALL} ${COPY_OUTPUT})
 ENDFOREACH(DEP)
 
 #.depend:
@@ -71,7 +71,7 @@ SET(DEPENDT_OUTPUT  ${CODEGENDIR}/.depend)
 # custom command for rml to sig
 ADD_CUSTOM_COMMAND(OUTPUT ${DEPENDT_OUTPUT}
                    COMMAND ${RML} -fdump-depends ${SRCMO} > .depend 	
-#                   DEPENDS ${COPY_ALL}
+                   DEPENDS ${COPY_ALL}
                    WORKING_DIRECTORY ${CODEGENDIR}
                    COMMENT "Generate .depend")
 
@@ -93,7 +93,7 @@ FOREACH(DEP ${ALLMO})
   # custom command for rml to sig
   ADD_CUSTOM_COMMAND(OUTPUT ${SIGX_OUTPUT}
                      COMMAND ${RML} -fdump-interface ${DEP} > ${SIG_DEP}  	
-#					 DEPENDS depend ${COPY_ALL}
+					 DEPENDS ${DEPENDT_OUTPUT}
                      WORKING_DIRECTORY ${CODEGENDIR}
                      COMMENT "Generate Sigx from ${DF}")
 
@@ -101,7 +101,7 @@ FOREACH(DEP ${ALLMO})
   ADD_CUSTOM_TARGET(${DFWE}_sig ALL DEPENDS ${SIGX_OUTPUT})
   
     # remember
-  SET(SIGX_ALL ${SIGX_ALL} ${DFWE}_sig )
+  SET(SIGX_ALL ${SIGX_ALL} ${SIGX_OUTPUT} )
 ENDFOREACH(DEP)
 
 # generate *.h and *.c from *.mo files
@@ -113,13 +113,12 @@ FOREACH(DEP ${SRCMO})
  
 	# Merken
 	SET(MOCH_DEP ${CODEGENDIR}/${DFWE}.h ${CODEGENDIR}/${DFWE}.c)
-    SET(MOCH_FILES ${MOCH_FILES}  ${MOCH_DEP})
   
   SET(MOCH_OUTPUT  ${MOCH_DEP})
   # custom command for rml to sig
   ADD_CUSTOM_COMMAND(OUTPUT ${MOCH_OUTPUT}
                      COMMAND ${RML} -Eplain -ftrace ${RMLCFLAGS} ${DEP} 	
-#					 DEPENDS depend ${SIGX_ALL}
+					 DEPENDS ${SIGX_ALL}
                      WORKING_DIRECTORY ${CODEGENDIR}
                      COMMENT "Generate *.h and *.c from ${DEP}")
 
@@ -127,7 +126,8 @@ FOREACH(DEP ${SRCMO})
   ADD_CUSTOM_TARGET(${DFWE}_codegen ALL DEPENDS ${MOCH_OUTPUT})
   
   # remember
-  SET(MOCH_ALL ${MOCH_ALL} ${DFWE}_codegen)
+  SET(MOCH_ALL ${MOCH_ALL} ${MOCH_OUTPUT})
+  SET(MOCH_codegen_ALL ${MOCH_codegen_ALL} ${DFWE}_codegen)
 ENDFOREACH(DEP)
 
 ADD_SUBDIRECTORY(runtime)
@@ -136,29 +136,35 @@ ADD_SUBDIRECTORY(modpar)
 
 if(WIN32)
 INCLUDE_DIRECTORIES($ENV{OMDEV}/tools/rml/include/plain)
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32 $ENV{OMDEV}/tools/rml/lib/plain)
+link_directories($ENV{OMDEV}/lib/antlr-win32-msvc/md-mdd ${OMCTRUNCHOME}/Compiler/runtime/lpsolve/lib/win32)
+link_directories($ENV{OMDEV}/tools/rml/lib/plain)
+#link_directories(D:/Programming/OPENMODELICA/buildmmc/runtime/plain/RelWithDebInfo)
 else(WIN32)
 INCLUDE_DIRECTORIES(${RMLHOME}/include/plain)
 link_directories(${RMLHOME}/lib/plain)
 endif(WIN32)
 INCLUDE_DIRECTORIES(${CODEGENDIR})
 
+# mico und benoetigte Bibliotheken
+IF(WIN32)
+  SET(platform_libs optimized mico2313 debug mico2313d optimized antlr debug antlrd)
+ELSE(WIN32)
+  SET(platform_libs mico2.3.13 optimized antlr debug antlrd) #ssl pthread)
+ENDIF(WIN32)
 # omc program
 
 #add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE" /D "_CRT_SECURE_NO_WARNINGS" /D "_MBCS" /FD /EHsc /MT /W3 /nologo /c /TC /wd4311 /wd4312)
 if(WIN32)
-add_definitions(/MT /D "_CRT_SECURE_NO_WARNINGS" /D "_CONSOLE")
+add_definitions(/D "_CRT_SECURE_NO_WARNINGS" /D "_CONSOLE")
 endif(WIN32)
-ADD_EXECUTABLE(omc ${MOCH_FILES})
+ADD_EXECUTABLE(omc ${MOCH_ALL})
 if(WIN32)
 TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime wsock32 shlwapi)
-TARGET_LINK_LIBRARIES(omc -FORCE:MULTIPLE librml)
+TARGET_LINK_LIBRARIES(omc  rml)
 else(WIN32)
-TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime)
+TARGET_LINK_LIBRARIES(omc absyn_builder libmodpar sendData c_runtime runtime optimized lpsolve55 debug lpsolve55d ${platform_libs})
 TARGET_LINK_LIBRARIES(omc rml)
 endif(WIN32)
-add_dependencies(omc ${MOCH_ALL})
-
 
 # install
 INSTALL(TARGETS omc 

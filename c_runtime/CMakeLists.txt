@@ -2,8 +2,8 @@
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 # OMC Compiler
-SET(OMC ${OMCTRUNCHOME}/build/bin/omcd.exe)
-MESSAGE(" omc is " ${OMC})
+SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omcd.exe)
+MESSAGE(" omc is " ${OMC_DEBUG})
 
 ADD_SUBDIRECTORY(libf2c)
 ADD_SUBDIRECTORY(sendData)
@@ -36,6 +36,8 @@ ENDMACRO(SHOW_VARIABLE)
 # MACRO BUILDMODEL
 MACRO(BUILDMODEL model dir Flags CSRC)
 
+  INCLUDE_DIRECTORIES(${OMCTRUNCHOME}/c_runtime)
+
   # Variablen fuer openmodelica2sarturis
   SET(OMC_CODE   ${CMAKE_CURRENT_BINARY_DIR}/${model}.cpp
                  ${CMAKE_CURRENT_BINARY_DIR}/${model}_functions.cpp
@@ -44,9 +46,9 @@ MACRO(BUILDMODEL model dir Flags CSRC)
 
   # custom command fuer openmodelicacompiler
   ADD_CUSTOM_COMMAND(OUTPUT ${OMC_OUTPUT}
-                     COMMAND ${OMC} ${Flags} +s ${dir}/${model}.mo  												  
+                     COMMAND ${OMC_DEBUG} ${Flags} +s ${dir}/${model}.mo  												  
                      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-                     COMMENT "Erzeuge Code fuer ${model}")
+                     COMMENT "Erzeuge Code fuer ${model} with ${OMC_DEBUG}")
 
   # target fuer OM_OUTPUT
   ADD_CUSTOM_TARGET(${model}codegen ALL DEPENDS ${OMC_OUTPUT})
@@ -122,13 +124,13 @@ SET(sim_headers simulation_runtime.h simulation_init.h simulation_input.h
 # Library c_runtime
 #ADD_DEFINITIONS(/Wall /O3  /ansi /pedantic)
 if(WIN32)
-add_definitions(/MT)
+#add_definitions(/MT)
 endif(WIN32)
 ADD_LIBRARY(c_runtime ${c_runtime_sources} ${c_runtime_headers})
 TARGET_LINK_LIBRARIES(c_runtime f2c)
 # Library sim
 if(WIN32)
-add_definitions(/MT)
+#add_definitions(/MT)
 endif(WIN32)
 ADD_LIBRARY(sim ${sim_sources} ${sim_headers})
 TARGET_LINK_LIBRARIES(sim c_runtime f2c)

@@ -83,27 +83,23 @@ SET(PDEP modelica_parser.g)
                      COMMENT "Generate antlr from ${PDEP}")
 
   # target fuer OM_OUTPUT
-  ADD_CUSTOM_TARGET(${PDEP}_antlr ALL DEPENDS ${ANTLR_PDEP})
+  ADD_CUSTOM_TARGET(${PDF_WE}_antlr ALL DEPENDS ${ANTLR_PDEP})
  
 # Property 
 SET_PROPERTY(GLOBAL PROPERTY MODELICA_parser_BUILD ${CMAKE_CURRENT_BINARY_DIR}) 
   
 # source
 SET(helperobjs token_names.cpp parse_tree_dumper.cpp token_names.hpp parse_tree_dumper.hpp MyAST.h)
-
 SET(OBJS ${helperobjs} ${ANTLR_OUTPUT} ${ANTLR_FILES} ${ANTLR_POUTPUT})
 
 IF(WIN32)
-  SET(ANTLR_LIB antlr)
+  SET(platform_libs optimized antlr debug antlrd)
+  link_directories($ENV{OMDEV}/lib/antlr-win32-msvc/md-mdd)
 ELSE(WIN32)
-  SET(ANTLR_LIB libantlr)
+  SET(platform_libs optimized antlr debug antlrd) #ssl pthread)
 ENDIF(WIN32)
-link_directories($ENV{OMDEV}/lib/antlr-win32-msvc)
-#add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP)
-if(WIN32)
-add_definitions(/MT)
-endif(WIN32)
-ADD_LIBRARY(libmodelica_parser ${OBJS})
-TARGET_LINK_LIBRARIES(libmodelica_parser optimized antlr debug antlrd)
 
+#add_definitions(/Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_LIB" /D "_MBCS" /FD /EHsc /MT /GS /Fd"antlr.pdb" /W3 /nologo /c /Zi /TP)
+ADD_LIBRARY(libmodelica_parser ${OBJS})
+TARGET_LINK_LIBRARIES(libmodelica_parser ${platform_libs})
 

@@ -31,7 +31,7 @@ ADD_SUBDIRECTORY(Examples)
 # add here your models to compile (add filename without ".mo")
 # Example:
 #    BUILDMODEL(model dir Flags CSRC)
-
+SET(OMC_DEBUG ${OMCTRUNCHOME}/build/bin/omcd.exe)
 #BUILDMODEL(BouncingBall ${CMAKE_CURRENT_SOURCE_DIR}/testsuite/mofiles +d=bltdump)
 #BUILDMODEL(Simple ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump)
 #BUILDMODEL(CombiTable2DTest ${CMAKE_CURRENT_SOURCE_DIR}/build/bin/Test +d=bltdump "")
