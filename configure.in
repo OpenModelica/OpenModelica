@@ -4,7 +4,6 @@ AC_SUBST(rmlc_bin)
 AC_SUBST(rmlhome)
 AC_SUBST(rmlinc)
 AC_SUBST(omc_antlr_jar)
-AC_SUBST(antlrhome)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
 AC_SUBST(readlineinc)
@@ -29,7 +28,7 @@ dnl check for environment variables
 AC_MSG_CHECKING([for \$RMLHOME])
 if test ! -z "$RMLHOME" ; then
   rmlhome=$RMLHOME
-  AC_MSG_RESULT([yes])
+  AC_MSG_RESULT([$RMLHOME])
 else
   AC_MSG_RESULT([no])
   AC_MSG_ERROR([RMLHOME variable not set.])
@@ -37,7 +36,7 @@ fi
 
 AC_MSG_CHECKING([for rmlc])
 if test -x $RMLHOME/bin/rmlc ; then
-   rmlc_bin=$RMLHOME/bin/rmlc
+  rmlc_bin=$RMLHOME/bin/rmlc
   AC_MSG_RESULT([yes])
 else
   rmlc_bin=`find $RMLHOME -name rmlc| head -1`
@@ -45,17 +44,8 @@ else
     AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin or anywhere in \$RMLHOME])
     AC_MSG_RESULT([no])
   else
-     AC_MSG_RESULT([yes])
+    AC_MSG_RESULT([yes])
   fi
-fi
-
-AC_MSG_CHECKING([for \$ANTLRHOME])
-if test ! -z "$ANTLRHOME" ; then
-    antlrhome=$ANTLRHOME
-  AC_MSG_RESULT([yes])
-else
-  AC_MSG_RESULT([no])
-  AC_MSG_ERROR([ANTLRHOME variable not set.])
 fi
 
 dnl Checks for libraries.
@@ -73,18 +63,26 @@ else
   AC_MSG_RESULT([yes])
 fi
 
-AC_MSG_CHECKING([for antlr header files])
-antlrinc=`find $ANTLRHOME /usr/local/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
+if test ! -z "$ANTLRHOME" ; then
+  antlrhome=$ANTLRHOME
+  antlrmsg=""
+else
+  antlrhome=/usr/
+  antlrmsg=". \$ANTLRHOME was not set, looked in $antlrhome."
+fi
+
+AC_MSG_CHECKING([for antlr headers])
+antlrinc=`find $antlrhome/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then
-  AC_MSG_ERROR([Could not find antlr include files])
+  AC_MSG_ERROR([Could not find antlr include files$antlrmsg])
 else
   AC_MSG_RESULT([yes])
 fi
 
 AC_MSG_CHECKING([for antlr libs])
-antlrlib=`find $ANTLRHOME /usr/local/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+antlrlib=`find $antlrhome/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then
-  AC_MSG_ERROR([Could not find antlr lib file])
+  AC_MSG_ERROR([Could not find antlr lib file$antlrmsg])
 else
   AC_MSG_RESULT([yes])
 fi
