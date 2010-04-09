@@ -2039,6 +2039,15 @@ algorithm
         res = simplifyVectorBinary(e1, DAE.DIV(tp), e2);
       then
         res;
+    case (e1,DAE.POW_ARR(ty = _),e2)
+      equation
+        tp = typeof(e1);
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        a1 = simplifyMatrixPow(e1, tp, e2);
+        res = simplify1(a1);
+      then
+        res;
     case (e1,DAE.POW_ARR2(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2561,6 +2570,89 @@ algorithm
         (e,b) :: es_1;
   end matchcontinue;
 end simplifyMatrixBinary1;
+
+protected function simplifyMatrixPow
+"function: simplifyMatrixPow
+  author: Frenkel TUD
+  Simplifies matrix powers."
+  input Exp inExp1;
+  input Type inType;
+  input Exp inExp2;
+  output Exp outExp;
+algorithm
+  outExp:=
+  matchcontinue (inExp1,inType,inExp2)
+    local
+      list<list<tuple<Exp, Boolean>>> expl_1,expl1,expl2;
+      list<tuple<Exp, Boolean>> el;
+      Type tp1,tp;
+      Integer size1,i,i_1;
+      list<Integer> range;
+      Exp e,m,res;
+    /* A^0=I */
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
+          DAE.ICONST(integer = i))
+      equation
+        0=i;
+        el = Util.listFill((DAE.RCONST(0.0),true),size1);
+        expl2 =  Util.listFill(el,size1);
+        range = Util.listIntRange2(0,size1-1);
+        expl_1 = simplifyMatrixPow1(range,expl2,(DAE.RCONST(1.0),true));
+      then
+        DAE.MATRIX(tp1,size1,expl_1);      
+    /* A^1=A */
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
+          DAE.ICONST(integer = i))
+      equation
+        1=i;
+      then
+        m;
+    /* A^i */
+    case (m as DAE.MATRIX(ty = tp1,integer = size1,scalar = expl1),tp,
+          DAE.ICONST(integer = i))
+      equation
+        true = 1 < i;
+        i_1 = i - 1;
+        e = simplifyMatrixPow(m,tp1,DAE.ICONST(i_1));
+        res = simplifyMatrixProduct(m,e);
+      then
+        res;
+  end matchcontinue;
+end simplifyMatrixPow;
+
+protected function simplifyMatrixPow1
+"function: simplifyMatrixPow1
+  author: Frenkel TUD
+  Simplifies matrix powers."
+  input list<Integer> inRange;
+  input list<list<tuple<Exp, Boolean>>> inMatrix;
+  input tuple<Exp, Boolean> inValue;
+  output list<list<tuple<Exp, Boolean>>> outMatrix;
+algorithm
+  outMatrix:=
+  matchcontinue (inRange,inMatrix,inValue)
+    local
+      list<list<tuple<Exp, Boolean>>> rm,rm1;
+      list<tuple<Exp, Boolean>> row,row1;
+      tuple<Exp, Boolean> e;
+      Integer i;
+      list<Integer> rr;
+    case ({},{},e)
+      then
+        {};      
+    case (i::{},row::{},e)
+      equation
+        row1 = Util.listReplaceAt(e,i,row);
+      then
+        {row1};      
+    case (i::rr,row::rm,e)
+      equation
+        row1 = Util.listReplaceAt(e,i,row);
+        rm1 = simplifyMatrixPow1(rr,rm,e);
+      then
+        row1::rm1;      
+  end matchcontinue;
+end simplifyMatrixPow1;
 
 protected function simplifyMatrixProduct
 "function: simplifyMatrixProduct

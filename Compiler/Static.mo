@@ -12212,6 +12212,15 @@ algorithm
         Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector elementwise division",t1_str,t2_str});
       then
         fail();
+    /* Matrix[n,m]^i */
+    case (DAE.POW_ARR(ty = _),{typ1,typ2},_)
+      equation
+        2 = nDims(typ1);
+        n = dimSize(typ1, 1);
+        m1 = dimSize(typ1, 2);
+        equality(n = m1);
+      then
+        typ1;
 
     case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype)
       equation
