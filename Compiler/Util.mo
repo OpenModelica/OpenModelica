@@ -82,11 +82,8 @@ protected constant list<ReplacePattern> replaceStringPatterns=
           REPLACEPATTERN("(",DAELow.leftParStr),REPLACEPATTERN(")",DAELow.rightParStr),
           REPLACEPATTERN(",",DAELow.commaStr)};
 
-
 public function sort "sorts a list given an ordering function.
-
-Uses the mergesort algorithm.
-"
+Uses the mergesort algorithm."
   input list<Type_a> lst;
   input greaterThanFunc greaterThan;
   output list<Type_a> outLst;
