@@ -236,27 +236,30 @@ algorithm
       then
         fail();//(cache,e,DAE.PROP_TUPLE(tp,DAE.C_VAR()));
 
-
     case (cache,e,prop,DAE.C_VAR(),_,_)
       equation
         e_1 = Exp.simplify(e);
       then
         (cache,e_1,prop);
-    case (cache,e as DAE.CALL(arg1,arg2,arg3,arg4,_,inl),prop,DAE.C_PARAM(),_,env)
-      local Values.Value val;
+        
+    case (cache,e as DAE.CALL(arg1,arg2,arg3,arg4,DAE.ET_ARRAY(arrayDimensions = dims),inl),prop,DAE.C_PARAM(),_,env)
+      local 
+        Values.Value val;
         DAE.Type cevalType;
         DAE.ExpType cTe;
         Absyn.Path arg1;
         list<DAE.Exp> arg2;
         Boolean arg3,arg4;
+        list<Option<Integer>> dims;
         DAE.InlineType inl;
       equation
+        true = Exp.arrayContainWholeDimension(dims);
         (_,val,_) = Ceval.ceval(cache,env,e,true,NONE,NONE,Ceval.MSG());
         cevalType = Types.typeOfValue(val);
         cTe = Types.elabType(cevalType);
       then
         (cache,DAE.CALL(arg1,arg2,arg3,arg4,cTe,inl),DAE.PROP(cevalType,DAE.C_PARAM));
-
+        
     case (cache,e,prop,DAE.C_PARAM(),_,_)
       equation
         e_1 = Exp.simplify(e);

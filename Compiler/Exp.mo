@@ -10997,6 +10997,20 @@ algorithm
 end matchcontinue;
 end arrayContainZeroDimension;
 
+public function arrayContainWholeDimension
+  "Checks if a list of dimensions contain a wholedim, i.e. NONE."
+  input list<Option<Integer>> inDim;
+  output Boolean wholedim;
+algorithm
+  wholedim := matchcontinue(inDim)
+    local
+      input list<Option<Integer>> rest_dims;
+    case ({}) then false;
+    case (NONE :: rest_dims) then true;
+    case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
+  end matchcontinue;
+end arrayContainWholeDimension;
+
 public function crefHasScalarSubscripts "returns true if the subscripts of the cref results in a scalar variable.
 For example given Real x[3,3]
   x[1,2] has scalar subscripts
