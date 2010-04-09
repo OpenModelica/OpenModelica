@@ -7142,9 +7142,24 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
       DAE.DAElist dae,dae1,dae2,dae3,dae4;
       DAE.FunctionTree funcs;
-    /* Variables that have Element in Environment, i.e. no type
-     * information are instantiated here to get the type.
-     */
+      /* If first part of ident is a class, e.g StateSelect.None, nothing to update*/
+    case (cache,env,ih,pre,mods,(cref /*as Absyn.CREF_QUAL(name = id)*/),ci_state,csets,impl,updatedComps)
+      equation
+        id = Absyn.crefFirstIdent(cref);
+        (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
+      then
+        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
+
+      /* Variable with NONE element is already instantiated. */
+    case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
+      local DAE.Var ty; Env.InstStatus is;
+      equation
+        id = Absyn.crefFirstIdent(cref);
+        (cache,ty,_,is) = Lookup.lookupIdent(cache,env,id);
+        true = Env.isTyped(is) "If InstStatus is typed, return";
+      then
+        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
+
     case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
       equation
         id = Absyn.crefFirstIdent(cref);
@@ -7165,24 +7180,6 @@ algorithm
         dae = DAEUtil.joinDaeLst({dae,dae4});
       then
         (cache,env_1,ih,csets_1,updatedComps,dae);
-
-      /* If first part of ident is a class, e.g StateSelect.None, nothing to update*/
-    case (cache,env,ih,pre,mods,(cref /*as Absyn.CREF_QUAL(name = id)*/),ci_state,csets,impl,updatedComps)
-      equation
-        id = Absyn.crefFirstIdent(cref);
-        (cache,cl,cenv) = Lookup.lookupClass(cache,env, Absyn.IDENT(id), false);
-      then
-        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
-
-      /* Variable with NONE element is already instantiated. */
-    case (cache,env,ih,pre,mods,cref,ci_state,csets,impl,updatedComps)
-      local DAE.Var ty; Env.InstStatus is;
-      equation
-        id = Absyn.crefFirstIdent(cref);
-        (cache,ty,_,is) = Lookup.lookupIdent(cache,env,id);
-        true = Env.isTyped(is) "If InstStatus is typed, return";
-      then
-        (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
 
     /* report an error! */
     case (cache,env,ih,pre,mod,cref,ci_state,csets,impl,updatedComps)
@@ -7258,6 +7255,7 @@ algorithm
       Option<Absyn.ConstrainClass> cc;
       DAE.DAElist dae,dae1,dae2,dae3,dae4;
       DAE.FunctionTree funcs;
+      SCode.Variability var;
     case (cache,env,cenv,ih,pre,path,name,ad,cl,attr,dattr,prot,finalPrefix,io,info,m,cmod,mod,cref,ci_state,csets,impl,updatedComps)
       equation
         1 = HashTable5.get(cref, updatedComps);
