@@ -16206,6 +16206,7 @@ algorithm
         v1_2 = Util.arrayNCopy(v1_1, v1_2,ll);
         m_3 = incidenceMatrix(dlow1_1);
         mT_3 = transposeMatrix(m_3);
+        (v1_3,v2_3) = correctAssignments(v1_2,v2_2,residualeqns,tearingvars);
         // next Block
         (r,t,dlow_2,dlow1_2,m_4,mT_4,v1_3,v2_3,comps_1) = tearingSystem1(dlow_1,dlow1_1,m_3,mT_3,v1_2,v2_2,comps);
       then
@@ -16221,6 +16222,34 @@ algorithm
         ({0}::r,{0}::t,dlow_1,dlow1_1,m_1,mT_1,v1_1,v2_1,comp::comps_1);
   end matchcontinue;
 end tearingSystem1;
+
+protected function correctAssignments
+" function: correctAssignments
+  Correct the assignments"
+  input Value[:] inV1;
+  input Value[:] inV2;
+  input list<Integer> inRLst;
+  input list<Integer> inTLst;
+  output Value[:] outV1;
+  output Value[:] outV2;
+algorithm
+  (outV1,outV2):=
+  matchcontinue (inV1,inV2,inRLst,inTLst)
+    local
+      Value[:] v1,v2,v1_1,v2_1,v1_2,v2_2;
+      list<Value> comp;
+      list<Integer> rlst,tlst;
+      Integer r,t;
+    case (v1,v2,{},{}) then (v1,v2);
+    case (v1,v2,r::rlst,t::tlst)
+      equation
+         v1_1 = arrayUpdate(v1,r,t);
+         v2_1 = arrayUpdate(v2,t,r);
+         (v1_2,v2_2) = correctAssignments(v1_1,v2_1,rlst,tlst);
+      then
+        (v1_2,v2_2);
+  end matchcontinue;
+end correctAssignments;
 
 protected function getTearingVars
 " function: getTearingVars

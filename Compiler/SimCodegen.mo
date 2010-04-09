@@ -4690,7 +4690,7 @@ algorithm
       list<DAE.ComponentRef> crefs;
       DAELow.MultiDimEquation[:] ae;
       Boolean genDiscrete;
-
+      list<Integer>[:] m,m_1,mt_1;
       /* A single array equation */
     case (mixedEvent,_,dae,jac,jac_tp,cg_id)
       equation
@@ -4704,6 +4704,36 @@ algorithm
       equation
         singleAlgorithmSection(dae);
         (s1,cg_id_1,f1) = generateSingleAlgorithmCode(genDiscrete, dae, jac, cg_id);
+      then
+        (s1,cg_id_1,f1);
+
+        /* Relaxation */
+    case (mixedEvent,genDiscrete,(dae as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),cg_id)
+      local
+        list<tuple<Integer, Integer, DAELow.Equation>> jac;
+        DAELow.DAELow subsystem_dae_1,subsystem_dae_2;
+        Integer[:] v1,v2,v1_1,v2_1;
+        DAELow.IncidenceMatrix m_2,m_3;
+        DAELow.IncidenceMatrixT mT_2,mT_3;
+        list<list<Integer>> comps,comps_1;
+        list<Integer> comps_flat;
+        list<list<Integer>> r,t;
+        list<Integer> rf,tf;        
+      equation
+        // check Relaxation
+        true = RTOpts.debugFlag("relaxation");
+        m = DAELow.incidenceMatrix(dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        (v1,v2,subsystem_dae_1,m_2,mT_2) = DAELow.matchingAlgorithm(dae, m_1, mt_1, (DAELow.NO_INDEX_REDUCTION(), DAELow.EXACT(), DAELow.KEEP_SIMPLE_EQN()));
+        (comps) = DAELow.strongComponents(m_2, mT_2, v1,v2);
+        (subsystem_dae_2,m_3,mT_3,v1_1,v2_1,comps_1,r,t) = DAELow.tearingSystem(subsystem_dae_1,m_2,mT_2,v1,v2,comps);
+        true = listLength(r) > 0;
+        true = listLength(t) > 0;
+        comps_flat = Util.listFlatten(comps_1);
+        rf = Util.listFlatten(r);
+        tf = Util.listFlatten(t);        
+        (s1,cg_id_1,f1) = generateRelaxationSystem(m_3,mT_3,v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, cg_id);
       then
         (s1,cg_id_1,f1);
 
@@ -4760,6 +4790,216 @@ algorithm
         fail();
   end matchcontinue;
 end generateOdeSystem2;
+
+protected function generateRelaxationSystem "function: generateRelaxationSystem
+  author: Frenkel TUD
+
+  Generates the actual simulation code for the relaxed system of equation
+"
+  input DAELow.IncidenceMatrix inM;
+  input DAELow.IncidenceMatrixT inMT;
+  input Integer[:] inIntegerArray2;
+  input Integer[:] inIntegerArray3;
+  input list<Integer> inIntegerLst4;
+  input list<Integer> inIntegerLst5;
+  input list<Integer> inIntegerLst6;
+  input Boolean mixedEvent "true if generating the mixed system event code";
+  input Boolean genDiscrete;
+  input DAELow.DAELow inDAELow;
+  input Integer inInteger;
+  output CFunction outCFunction;
+  output Integer outInteger;
+  output list<CFunction> outCFunctionLst;
+algorithm
+  (outCFunction,outInteger,outCFunctionLst):=
+  matchcontinue (inM,inMT,inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,mixedEvent,genDiscrete,inDAELow,inInteger)
+    local
+      Integer[:] ass1,ass2;
+      list<Integer> block_,block_1,r,t;
+      Codegen.CFunction s1,s2;
+      Codegen.CFunction res_func,func,f2,f3,f4,f1,f5,res,feqn;
+      Integer cg_id,eqn_size,cg_id1,cg_id2,cg_id3,cg_id4,id;
+      DAELow.DAELow daelow,daelow1;
+      list<tuple<Integer, Integer, DAELow.Equation>> jac,jacA;
+      DAELow.JacobianType jac_tp;
+      DAELow.Variables v,kv,exv;
+      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      DAELow.EquationArray eqn,eqn1,reeqn,ineq;
+      list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
+      list<DAELow.Var> var_lst;
+      list<DAE.ComponentRef> crefs,crefs1,tcrs;
+      DAELow.MultiDimEquation[:] ae;
+      Boolean genDiscrete;
+      list<list<Integer>> eqnlstlst;
+      String str_id,size_str,func_name,start_stmt,end_stmt;
+      VarTransform.VariableReplacements repl;
+      DAE.Algorithm[:] algorithms;
+      DAELow.EventInfo eventInfo;
+      DAELow.ExternalObjectClasses extObjClasses;
+      DAELow.IncidenceMatrix m;
+      DAELow.IncidenceMatrixT mT;
+      list<DAE.Exp> exp_lst,exp_lst1;
+    case (m,mT,ass1,ass2,block_,r,t,mixedEvent,_,
+          daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),cg_id) 
+      equation
+        // get equations and variables
+        eqn_lst = DAELow.equationList(eqn);
+        var_lst = DAELow.varList(v);
+        // gen jac
+        SOME(jac) = DAELow.calculateJacobian(v, eqn, ae, m, mT,false);
+        // sort A
+        jacA = Util.listMap2(jac,sortRelaxationSystemA,block_,ass2);
+        // generate B
+        exp_lst = generateRelaxationSystemB(eqn_lst,v);
+        // sort b
+        exp_lst1 = sortRelaxationSystemB(exp_lst,block_);
+        str_id = DAELow.dumpJacobianStr(SOME(jac));
+        print(str_id);
+        Debug.fcall("tearingdump", DAELow.dumpMatching, ass1);
+/*        // get names from variables
+        crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
+        // get Tearingvar from crs
+        // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
+        crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
+        eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.SOURCE({},{},{},{})),eqn_lst);
+        tcrs = Util.listMap1r(t,listNth,crefs1);
+        repl = makeResidualReplacements(tcrs);
+        // get residual eqns and other eqns
+        reqns = Util.listMap1r(r,listNth,eqn_lst1);
+        // remove residual equation from list of other equtions
+        block_1 = Util.listSelect1(block_,r,Util.listNotContains);
+        eqnlstlst = Util.listMap(block_1,Util.listCreate);
+        // replace tearing variables in other equations with x_loc[..]
+        eqn_lst2 = generateTearingSystem1(eqn_lst,repl);
+        eqn1 = DAELow.listEquation(eqn_lst2);
+        daelow1=DAELow.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        // generade code for other equations
+        (feqn,cg_id2,_) = buildSolvedBlocks(dae,daelow1,ass1,ass2,eqnlstlst,cg_id);
+        // generade code for nonlinear solver for tearing system
+        (s1,cg_id1) = generateOdeSystem2NonlinearResiduals2(reqns, ae, 0, repl, cg_id2);
+        s2 = Codegen.cMergeFns({feqn,s1});
+        id = tick();
+        str_id = intString(id);
+        eqn_size = listLength(reqns);
+        size_str = intString(eqn_size);
+        func_name = stringAppend("residualFunc", str_id);
+        res_func = Codegen.cMakeFunction("void", func_name, {},
+          {"int *n","double* xloc","double* res","int* iflag"});
+        func = Codegen.cMergeFns({res_func,s2});
+        func = addMemoryManagement(func);
+        (f2,cg_id2) = generateOdeSystem2NonlinearSetvector(tcrs, 0, cg_id1);
+        (f3,cg_id3) = generateOdeSystem2NonlinearCall(mixedEvent,str_id, cg_id2);
+        (f4,cg_id4) = generateOdeSystem2NonlinearStoreResults(tcrs, 0, cg_id3);
+        start_stmt = Util.stringAppendList({"start_nonlinear_system(",size_str,");"});
+        end_stmt = "end_nonlinear_system();";
+        f1 = Codegen.cAddStatements(Codegen.cEmptyFunction, {start_stmt});
+        f5 = Codegen.cAddStatements(Codegen.cEmptyFunction, {end_stmt});
+        res = Codegen.cMergeFns({f1,f2,f3,f4,f5});
+      then
+        (res,cg_id4,{func});
+*/
+      then
+        fail();
+    case (_,_,_,_,_,_,_,_,_,_,_)
+      equation
+        Debug.fprint("failtrace", "-generateRelaxationSystem failed \n");
+      then
+        fail();
+  end matchcontinue;
+end generateRelaxationSystem;
+
+protected function generateRelaxationSystemB "function: generateRelaxationSystemB
+  author: Frenkel TUD
+  Helper function to generateRelaxationSystem
+"
+  input list<DAELow.Equation> inDAELowEquationLst;
+  input DAELow.Variables inVariables2;
+  output list<DAE.Exp> outDAELowEquationLst;
+algorithm
+  outDAELowEquationLst:=
+  matchcontinue (inDAELowEquationLst,inVariables2)
+    local
+      DAE.ExpType tp;
+      DAE.Exp new_exp,rhs_exp,rhs_exp_1,rhs_exp_2,e1,e2,res_exp;
+      list<DAELow.Equation> rest;
+      list<DAE.Exp> rest1;
+      DAELow.Variables v;
+    case ({},_) then {};  
+    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest),v)
+      equation
+        tp = Exp.typeof(e1);
+        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
+        rhs_exp_2 = Exp.simplify(rhs_exp_1);
+        rest1 = generateRelaxationSystemB(rest,v);
+      then
+        rhs_exp_2::rest1;
+    case ((DAELow.RESIDUAL_EQUATION(exp = res_exp) :: rest),v)
+      equation
+        rhs_exp = DAELow.getEqnsysRhsExp(res_exp, v);
+        rhs_exp_1 = Exp.simplify(rhs_exp);
+        rest1 = generateRelaxationSystemB(rest,v);
+      then
+        rhs_exp_1::rest1;
+    case (_,_)
+      equation
+        Debug.fprint("failtrace", "generateRelaxationSystemB failed\n");
+      then
+        fail();
+  end matchcontinue;
+end generateRelaxationSystemB;
+
+protected function sortRelaxationSystemB "function: sortRelaxationSystemB
+  author: Frenkel TUD
+  Helper function to generateRelaxationSystem
+"
+  input list<DAE.Exp>  inExpLst;
+  input list<Integer> inIntegerLst;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst:=
+  matchcontinue (inExpLst,inIntegerLst)
+    local
+      DAE.Exp e;
+      list<DAE.Exp> elst,elst1;
+      list<Integer> rest;
+      Integer i;
+    case (elst,{}) then {};  
+    case (elst,i::rest)
+      equation
+        e = listNth(elst,i-1);
+        elst1 = sortRelaxationSystemB(elst,rest);
+      then
+        e::elst1;
+  end matchcontinue;
+end sortRelaxationSystemB;
+
+protected function sortRelaxationSystemA "function: sortRelaxationSystemA
+  author: Frenkel TUD
+  Helper function to generateRelaxationSystem
+"
+  input tuple<Integer, Integer, DAELow.Equation>  inJacElem;
+  input list<Integer> inIntegerLst;
+  input Integer[:] inIntegerArr;
+  output tuple<Integer, Integer, DAELow.Equation> outJacElem;
+algorithm
+  outJacElem:=
+  matchcontinue (inJacElem,inIntegerLst,inIntegerArr)
+    local
+      Integer z,z1,s,s1,e;
+      DAELow.Equation eqn;
+      list<Integer> comp;
+      Integer[:] v2;
+    case ( ((z,s,eqn)) ,comp,v2)
+      equation
+        z1 = Util.listGetMember(z,comp);
+        e = v2[s];
+        s1 = Util.listGetMember(e,comp);
+      then
+        ((z1,s1,eqn));
+  end matchcontinue;
+end sortRelaxationSystemA;
 
 protected function generateTearingSystem "function: generateTearingSystem
   author: Frenkel TUD
