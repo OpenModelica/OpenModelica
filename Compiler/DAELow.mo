@@ -16243,8 +16243,8 @@ algorithm
     case (v1,v2,{},{}) then (v1,v2);
     case (v1,v2,r::rlst,t::tlst)
       equation
-         v1_1 = arrayUpdate(v1,r,t);
-         v2_1 = arrayUpdate(v2,t,r);
+         v1_1 = arrayUpdate(v1,t,r);
+         v2_1 = arrayUpdate(v2,r,t);
          (v1_2,v2_2) = correctAssignments(v1_1,v2_1,rlst,tlst);
       then
         (v1_2,v2_2);
