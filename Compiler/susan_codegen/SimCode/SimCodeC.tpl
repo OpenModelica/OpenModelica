@@ -1077,6 +1077,9 @@ functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
   # body = (parameterEquations of eq as SES_SIMPLE_ASSIGN:
       equation_(eq, contextOther, varDecls /*BUFC*/)
     "\n")
+  # divbody = (parameterEquations of eq as SES_ALGORITHM:
+      equation_(eq, contextOther, varDecls /*BUFC*/)
+    "\n")    
   <<
   int bound_parameters()
   {
@@ -1085,6 +1088,7 @@ functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
   
     mem_state = get_memory_state();
     <body>
+    <divbody>
     restore_memory_state(mem_state);
   
     return 0;
@@ -2124,9 +2128,10 @@ algStmtNoretcall(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::
 match stmt
 case STMT_NORETCALL then
   # preExp = "" /*BUFD*/
-  # _ = daeExp(exp, context, preExp /*BUFC*/, varDecls /*BUFC*/)
+  # expPart = daeExp(exp, context, preExp /*BUFC*/, varDecls /*BUFC*/)
   <<
   <preExp>
+  <expPart>;
   >>
 
 algStmtWhen(DAE.Statement when, Context context, Text varDecls /*BUFP*/) ::=

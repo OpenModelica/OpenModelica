@@ -16878,64 +16878,64 @@ Author: Frenkel TUD 2010-02, Adds the error msg to Exp.Div.
 input DAE.Exp inExp;
 input tuple<DAELow,DivZeroExpReplace> inDlowMode;
 output DAE.Exp outExp;
-output Boolean outBool;
+output list<DAE.Exp> outDivLst;
 algorithm 
-  (outExps,outBool) := matchcontinue(inExp,inDlowMode)
+  (outExps,outDivLst) := matchcontinue(inExp,inDlowMode)
   case(inExp,inDlowMode as (dlow,dzer))
     local 
       DAE.Exp exp; 
       DAELow dlow;
       DivZeroExpReplace dzer;
-      Boolean bool;
+      list<DAE.Exp> divlst;
     equation
-      ((exp,(_,_,bool))) = Exp.traverseExp(inExp, traversingDivExpFinder, (dlow,dzer,false));
+      ((exp,(_,_,divlst))) = Exp.traverseExp(inExp, traversingDivExpFinder, (dlow,dzer,{}));
       then
-        (exp,bool);
+        (exp,divlst);
   end matchcontinue;
 end addDivExpErrorMsgtoExp;
 
 protected function traversingDivExpFinder "
 Author: Frenkel TUD 2010-02"
-  input tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace,Boolean> > inExp;
-  output tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace,Boolean> > outExp;
+  input tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace,list<DAE.Exp>> > inExp;
+  output tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace,list<DAE.Exp>> > outExp;
 algorithm
 outExp := matchcontinue(inExp)
   local
     DAELow dlow;
     DivZeroExpReplace dzer;
-    Boolean bool;
-    tuple<DAELow,DivZeroExpReplace,Boolean> dlowmode;
+    list<DAE.Exp> divLst;
+    tuple<DAELow,DivZeroExpReplace,list<DAE.Exp>> dlowmode;
     DAE.Exp e,e1,e2;
     Exp.Type ty;
     String se;
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,dzer,_)))
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
     equation
-      (se,false) = traversingDivExpFinder1(e,e2,dlowmode);
-    then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,false) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,dzer,_)))
+      (se,true) = traversingDivExpFinder1(e,e2,(dlow,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
     equation
-      (se,true) = traversingDivExpFinder1(e,e2,dlowmode);
-    then ((e, (dlow,dzer,true) ));
+      (se,false) = traversingDivExpFinder1(e,e2,(dlow,dzer));
+    then ((e, (dlow,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
 /*
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty),exp2 = e2), dlowmode as (dlow,_)))
     then ((e, dlowmode ));
 */    
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,dzer,_)))
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
     equation
-      (se,false) = traversingDivExpFinder1(e,e2,dlowmode);
-    then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,false) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,dzer,_)))
+      (se,true) = traversingDivExpFinder1(e,e2,(dlow,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
     equation
-      (se,true) = traversingDivExpFinder1(e,e2,dlowmode);
-    then ((e, (dlow,dzer,true) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,dzer,_)))
+      (se,false) = traversingDivExpFinder1(e,e2,(dlow,dzer));
+    then ((e, (dlow,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
     equation
-      (se,false) = traversingDivExpFinder1(e,e2,dlowmode);
-    then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,false) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,dzer,_)))
+      (se,true) = traversingDivExpFinder1(e,e2,(dlow,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
     equation
-      (se,true) = traversingDivExpFinder1(e,e2,dlowmode);
-    then ((e, (dlow,dzer,true) ));
+      (se,false) = traversingDivExpFinder1(e,e2,(dlow,dzer));
+    then ((e, (dlow,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
   case(inExp) then (inExp);
 end matchcontinue;
 end traversingDivExpFinder;
@@ -16945,66 +16945,106 @@ Author: Frenkel TUD 2010-02
   helper for traversingDivExpFinder"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input tuple<DAELow,DivZeroExpReplace,Boolean> inMode;
+  input tuple<DAELow,DivZeroExpReplace> inMode;
   output String outString;
   output Boolean outBool;
 algorithm
   (outString,outBool) := matchcontinue(inExp1,inExp2,inMode)
   local
     DAELow dlow;
-    tuple<DAELow,DivZeroExpReplace,Boolean> dlowmode;
+    tuple<DAELow,DivZeroExpReplace> dlowmode;
     DAE.Exp e,e2;
     String se;
     list<DAE.ComponentRef> crlst;
-    Variables orderedVars;
-    list<Var> varlst;
+    Variables orderedVars,knownVars,vars;
+    list<Var> varlst,varlst1,varlst2;
     list<Boolean> boollst;
-  case( e , e2, dlowmode as (dlow,ALL(),_) )
+    Boolean bres;
+  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars,knownVars=knownVars),ALL()) )
     equation
+      crlst = Exp.extractCrefsFromExp(e2);
+      varlst = varList(orderedVars);
+      varlst1 = varList(knownVars);
+      varlst2 = listAppend(varlst,varlst1);  
+      vars = listVar(varlst2);          
       /* generade modelica strings */
       e = removeDivExpErrorMsgfromExp(e,dlow);
       e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2);
+      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
     then (se,false);    
-  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars),ONLY_VARIABLES(),_) )
+  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars,knownVars=knownVars),ONLY_VARIABLES()) )
     equation
       /* check if expression contains variables */
       crlst = Exp.extractCrefsFromExp(e2);
       varlst = varList(orderedVars);
+      varlst1 = varList(knownVars);
+      varlst2 = listAppend(varlst,varlst1);
+      vars = listVar(varlst2);
       boollst = Util.listMap1r(crlst,isVarKnown,varlst);
-      true = Util.boolOrList(boollst);
+      bres = Util.boolOrList(boollst);
       /* generade modelica strings */
       e = removeDivExpErrorMsgfromExp(e,dlow);
       e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2);
-    then (se,false);
-  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars),ONLY_VARIABLES(),_) )
-    equation
-      /* check if expression contains variables */
-      crlst = Exp.extractCrefsFromExp(e2);
-      varlst = varList(orderedVars);
-      boollst = Util.listMap1r(crlst,isVarKnown,varlst);
-      false = Util.boolOrList(boollst);
-      /* generade modelica strings */
-      e = removeDivExpErrorMsgfromExp(e,dlow);
-      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2);
-    then (se,true);      
+      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
+    then (se,bres);
 end matchcontinue;
 end traversingDivExpFinder1;
 
+protected  function generadeDivExpErrorCrefRepl "
+Author: Frenkel TUD 2010-02. generadeDivExpErrorCrefRepl
+"
+input list<DAE.ComponentRef> inCrs;
+input Variables inVars;
+output list<DAE.Exp> outCrs;
+output list<DAE.Exp> outOrigCrs;
+algorithm 
+  (outCrs,outOrigCrs) := matchcontinue(inCrs,inVars)
+    local 
+      list<DAE.ComponentRef> crefs;
+      list<DAE.Exp> crefs1,corefs;
+      DAE.ComponentRef c,co;
+      Variables variables;
+    case(c::{},variables)
+      equation
+        ((VAR(origVarName=co):: _),_) = getVar(c,variables);
+      then
+        ({DAE.CREF(c,DAE.ET_OTHER())},{DAE.CREF(co,DAE.ET_OTHER())});
+    case(c::{},variables)
+      then
+        ({DAE.CREF(c,DAE.ET_OTHER())},{DAE.CREF(c,DAE.ET_OTHER())});
+    case(c::crefs,variables)
+      equation
+        ((VAR(origVarName=co):: _),_) = getVar(c,variables);
+        (crefs1,corefs) = generadeDivExpErrorCrefRepl(crefs,variables);
+      then
+        (DAE.CREF(c,DAE.ET_OTHER())::crefs1,DAE.CREF(co,DAE.ET_OTHER())::corefs);
+    case(c::crefs,variables)
+      equation
+        (crefs1,corefs) = generadeDivExpErrorCrefRepl(crefs,variables);
+      then
+        (crefs1,corefs);
+  end matchcontinue;
+end generadeDivExpErrorCrefRepl;
+
 protected  function generadeDivExpErrorMsg "
-Author: Frenkel TUD 2010-02.
+Author: Frenkel TUD 2010-02. varOrigCref
 "
 input DAE.Exp inExp;
 input DAE.Exp inDivisor;
+input Variables inVars;
+input list<DAE.ComponentRef> inCrs;
 output String outString;
 protected String se,se2,s,s1;
-protected String se,se2,s,s1;
+protected list<DAE.Exp> crs,cors;
+protected DAE.Exp e1,e2;
+protected Integer i;
 algorithm
   ((inExp,_)) := Exp.traverseExp(inExp, renameDerivativesExp, derivativeNamePrefix +& "$");
-  se := Exp.printExpStr(inExp);
-  se2 := Exp.printExpStr(inDivisor);
+  (crs,cors) := generadeDivExpErrorCrefRepl(inCrs,inVars);
+  (e1,i) := Exp.replaceExpList(inExp,crs,cors);
+  (e2,i) := Exp.replaceExpList(inDivisor,crs,cors);
+  se := Exp.printExpStr(e1);
+  se2 := Exp.printExpStr(e2);
   s := stringAppend(se," because ");
   s1 := stringAppend(s,se2);
   outString := stringAppend(s1," == 0");
