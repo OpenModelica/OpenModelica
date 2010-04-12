@@ -4113,6 +4113,8 @@ algorithm
         (cache,env3,ih,_/*Skip collecting functions here, since partial */) = addComponentsToEnv(cache, env2, ih, mods, pre, csets, ci_state,
                                              lst_constantEls, lst_constantEls, {},
                                              inst_dims, false);
+        (cache,env3,ih,lst_constantEls,csets,_) = updateCompeltsMods(cache,env3,ih, pre, lst_constantEls, ci_state, csets, true);
+
         //lst_constantEls = listAppend(extcomps,lst_constantEls);
         (cache,env3,ih,_,_,_,ci_state2,_,_) =
            instElementList(cache, env3, ih, UnitAbsyn.noStore, mods, pre, csets, ci_state1, lst_constantEls,
@@ -5186,7 +5188,7 @@ algorithm
       DAE.DAElist dae,dae2,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6,fdae7;
       DAE.ComponentRef vn;
       Absyn.ComponentRef owncref;
-      list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
+      list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs4,crefs_1,crefs_2;
       SCode.Element comp,el;
       SCode.Attributes attr;
       list<Absyn.Subscript> ad;
@@ -5285,7 +5287,7 @@ algorithm
           inst_dims,impl,graph)
       equation
         //print("  instElement: A component: " +& n +& "\n");
-        //Debug.traceln(" instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
+        //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
         m = traverseModAddFinal(m, finalPrefix);
         comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,aInfo,cc);
         // Fails if multiple decls not identical
@@ -7077,13 +7079,14 @@ protected function updateComponentsInEnv
   output Connect.Sets outSets;
   output DAE.DAElist outDae "contain functions";
 protected
-  String myTick;
+  String myTick, crefsStr;
 algorithm
   //myTick := intString(tick());
-  //Debug.traceln("start update comps " +& myTick);
+  //crefsStr := Util.stringDelimitList(Util.listMap(crefs, Dump.printComponentRefStr),",");
+  //Debug.fprintln("debug","start update comps " +& myTick +& " # " +& crefsStr);
   (outCache,outEnv,outIH,outSets,_,outDae):=
   updateComponentsInEnv2(cache,env,inIH,pre,mod,crefs,ci_state,csets,impl,HashTable5.emptyHashTable());
-  //Debug.traceln("finished update comps" +& myTick);
+  //Debug.fprintln("debug","finished update comps" +& myTick);
   //print("outEnv:");print(Env.printEnvStr(outEnv));print("\n");
 end updateComponentsInEnv;
 
@@ -7288,7 +7291,7 @@ algorithm
         /* The environment is extended with the new variable binding. */
         (cache,binding) = makeBinding(cache, env, attr, mod_3, ty);
         /* type info present */
-        //Debug.traceln("VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
+        //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
         //updatedComps = HashTable5.delete(cref,updatedComps);
         

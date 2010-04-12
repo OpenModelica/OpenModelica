@@ -111,6 +111,7 @@ algorithm
       ClassInf.State new_ci_state;
       InstanceHierarchy ih;
       HashTableStringToPath.HashTable ht;
+      Integer tmp;
     /* instantiate a base class */
     case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
       equation
@@ -148,11 +149,13 @@ algorithm
         ht = getLocalIdentList(cdefelts,ht,getLocalIdentElement);
         ht = getLocalIdentList(importelts,ht,getLocalIdentElement);
         
+        //tmp = tick(); Debug.traceln("try fix local idents " +& intString(tmp));
         (cache,compelts1) = fixLocalIdents(cache,cenv1,compelts1,ht);
         (cache,eq1_1) = fixList(cache,cenv1,eq1_1,ht,fixEquation);
         (cache,ieq1_1) = fixList(cache,cenv1,ieq1_1,ht,fixEquation);
         (cache,alg1_1) = fixList(cache,cenv1,alg1_1,ht,fixAlgorithm);
         (cache,ialg1_1) = fixList(cache,cenv1,ialg1_1,ht,fixAlgorithm);
+        //Debug.traceln("fixed local idents " +& intString(tmp));
 
         (env,ih) = Inst.addClassdefsToEnv(env,ih,cdefelts,impl,NONE);
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,rest,ci_state,className,impl,isPartialInst)
@@ -240,9 +243,11 @@ public function instExtendsAndClassExtendsList "
 protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLstTpl3;
 algorithm
+  //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   outTplSCodeElementModLst := Util.listMap(outTplSCodeElementModLstTpl3, Util.tuple312);
+  //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
 protected function instExtendsAndClassExtendsList2 "
@@ -270,11 +275,9 @@ protected function instExtendsAndClassExtendsList2 "
   output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
   output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
 algorithm
-  //Debug.traceln("instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
-  //Debug.traceln("instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList2;
 
 protected function instClassExtendsList
