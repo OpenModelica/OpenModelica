@@ -8456,7 +8456,7 @@ algorithm
         
     case(cache,env,name,_,_)
       equation
-        print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&"\n");
+        print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&" in scope: " +& Env.printEnvPathStr(env) +& "\n");
       then fail();
   end matchcontinue;
 end instantiateDaeFunction;

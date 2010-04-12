@@ -1157,7 +1157,7 @@ algorithm
     // fail if we couldn't find it
     case (_,env,cref) 
       equation
-        Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& Exp.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
+        // Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& Exp.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
       then fail(); 
   end matchcontinue;
 end lookupVar;
