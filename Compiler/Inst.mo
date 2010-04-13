@@ -403,13 +403,12 @@ protected function reEvaluateInitialIfEqns "
 Author BZ 
 This is a backpatch to fix the case of 'connection.isRoot' in initial if equations. 
 After the class is instantiated a second sweep is done to check the initial if equations conditions.
-If all conditions are constand, we return only the 'correct' branch equations. 
-"
-input Env.Cache cache;
-input Env.Env env;
-input DAE.DAElist dae;
-input Boolean isTopCall;
-output DAE.DAElist odae;
+If all conditions are constand, we return only the 'correct' branch equations."
+  input Env.Cache cache;
+  input Env.Env env;
+  input DAE.DAElist dae;
+  input Boolean isTopCall;
+  output DAE.DAElist odae;
 algorithm odae := matchcontinue(cache,env,dae,isTopCall)
   local
     DAE.FunctionTree funcs;
@@ -424,10 +423,10 @@ algorithm odae := matchcontinue(cache,env,dae,isTopCall)
 end reEvaluateInitialIfEqns;
 
 protected function reEvaluateInitialIfEqns2 ""
-input Env.Cache cache;
-input Env.Env env;
-input list<DAE.Element> elems;
-output list<DAE.Element> oelems;
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<DAE.Element> elems;
+  output list<DAE.Element> oelems;
 algorithm oelems := matchcontinue(cache,env,elems)
   local
     list<DAE.Exp> conds;
@@ -464,10 +463,9 @@ end reEvaluateInitialIfEqns2;
 
 protected function makeDAEElementInitial "
 Author BZ
-Helper function for reEvaluateInitialIfEqns, makes the contenst of an initial if equation initial.  
-"
-input list<DAE.Element> inElems;
-output list<DAE.Element> outElems;
+Helper function for reEvaluateInitialIfEqns, makes the contenst of an initial if equation initial."
+  input list<DAE.Element> inElems;
+  output list<DAE.Element> outElems;
 algorithm 
   outElems := matchcontinue(inElems)
   local
@@ -1217,7 +1215,7 @@ algorithm
         InnerOuter.checkMissingInnerDecl(dae1_1,callscope_1);
         (csets_1,_) = InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
         // print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");
-        dae2 = ConnectUtil.equations(csets_1,pre);
+        (dae2,graph) = ConnectUtil.equations(csets_1,pre,callscope_1,graph);
         (cache,dae3) = ConnectUtil.unconnectedFlowEquations(cache, csets_1, dae1, env_3, pre, callscope_1, {});
         dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
         dae = DAEUtil.joinDaeLst({dae1_1,dae2,dae3});
@@ -1618,11 +1616,11 @@ algorithm
         ci_state = ClassInf.start(r, Env.getEnvName(env_1));
         c_1 = SCode.classSetPartial(c, false);
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,_,_,_)
-        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY,NONE);
+        = instClassIn(cache,env_1,ih,store, mod, pre, csets, ci_state, c_1, false, inst_dims, impl, ConnectionGraph.EMPTY, NONE);
         (cache,fq_class) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
-        dae2 = ConnectUtil.equations(csets_1,pre);
+        (dae2 ,_) = ConnectUtil.equations(csets_1,pre,callscope_1,ConnectionGraph.EMPTY);
         (cache,dae3) = ConnectUtil.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
         dae = DAEUtil.joinDaes(dae1_1,DAEUtil.joinDaes(dae2,dae3));
         /*
@@ -2667,7 +2665,7 @@ algorithm
     case (cache,env,store,csets,pre,compDAE,daes)
       equation
         // Perform unit checking/dimensional analysis
-        daetemp = ConnectUtil.equations(csets,pre); // ToDO. calculation of connect eqns done twice. remove in future.
+        (daetemp,_) = ConnectUtil.equations(csets,pre,false,ConnectionGraph.EMPTY); // ToDO. calculation of connect eqns done twice. remove in future.
         // equations from components (dae1) not considered, they are checked in resp recursive call
         // but bindings on scalar variables must be considered, therefore passing dae1 separately
         daetemp = DAEUtil.joinDaeLst(daetemp::daes);
@@ -5394,10 +5392,10 @@ algorithm
         env_1 = Env.updateFrameV(env2_1, new_var, Env.VAR_DAE(), compenv);
         vars = Util.if_(alreadyDeclared,{},{DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE())});
         dae = Util.if_(alreadyDeclared,DAEUtil.extractFunctions(dae),dae);
-        (dae,ih,graph) = InnerOuter.handleInnerOuterEquations(io,dae,ih,graphNew,graph);
+        (dae,ih,graphNew) = InnerOuter.handleInnerOuterEquations(io,dae,ih,graphNew,graph);
 
         /* if declaration condition is true, remove dae elements and connections */
-        (cache,dae,csets_1,graph,fdae) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre,graph);
+        (cache,dae,csets_1,graph,fdae) = instConditionalDeclaration(cache,env2,cond,n,dae,csets_1,pre,graph,graphNew);
         dae = DAEUtil.joinDaeLst({dae,fdae,fdae0,fdae1,fdae2,fdae3,fdae4,fdae5,fdae6,fdae7});
       then
         (cache,env_1,ih,store,dae,csets_1,ci_state,vars,graph);
@@ -13192,7 +13190,7 @@ algorithm
         print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
         print("\n");*/
         (cache,_,ih,sets_3,dae,graph) =
-        connectComponents(cache,env,ih, sets_2, pre, c1_2, f1, ty1,vt1, c2_2, f2, ty2,vt2, flow1,io1,io2,graph);
+        connectComponents(cache, env, ih, sets_2, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, flow1, io1, io2, graph);
       then
         (cache,env,ih,sets_3,dae,graph);
 
@@ -13727,7 +13725,7 @@ algorithm
         // Connect components ignoring equality constraints
         (cache,env,ih,sets_1,dae,_) =
         connectComponents(
-          cache,env,ih,sets, pre,
+          cache, env, ih, sets, pre,
           c1, f1, t1, vt1,
           c2, f2, t2, vt2,
           flowPrefix, io1, io2, ConnectionGraph.NOUPDATE_EMPTY);
@@ -13735,7 +13733,7 @@ algorithm
         /* We can form the daes from connection set already at this point
            because there must not be flow components in types having equalityConstraint.
            TODO Is this correct if inner/outer has been used? */
-        //dae2 = ConnectUtil.equations(sets_1,pre);
+        //(dae2,graph) = ConnectUtil.equations(sets_1,pre,false,graph);
         //dae = listAppend(dae, dae2);
         //DAE.printDAE(DAE.DAE(dae));
 
@@ -13758,7 +13756,7 @@ algorithm
     /* Complex types t1 extending basetype */
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph)
       equation
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih, sets, pre, c1, f1, bc_tp1,vt1, c2, f2, t2,vt2, flowPrefix,io1,io2,graph);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets, pre, c1, f1, bc_tp1,vt1, c2, f2, t2,vt2, flowPrefix,io1,io2, graph);
       then
         (cache,env,ih,sets_1,dae,graph);
 
@@ -16119,38 +16117,41 @@ protected function  instConditionalDeclaration
   input DAE.DAElist dae;
   input Connect.Sets sets;
   input Prefix.Prefix pre;
-  input ConnectionGraph.ConnectionGraph inGraph;
+  input ConnectionGraph.ConnectionGraph inGraphOld;
+  input ConnectionGraph.ConnectionGraph inGraphNew;
   output Env.Cache outCache;
   output DAE.DAElist outDae;
   output Connect.Sets outSets;
   output ConnectionGraph.ConnectionGraph outGraph;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outDae,outSets,outGraph,outDae) := matchcontinue(cache,env,cond,compName,dae,sets,pre,inGraph)
+  (outCache,outDae,outSets,outGraph,outDae) := matchcontinue(cache,env,cond,compName,dae,sets,pre,inGraphOld,inGraphNew)
     local
       Absyn.Exp condExp; DAE.Exp e;
       DAE.Type t; DAE.Const c;
       String s1,s2;
       Boolean b;
       DAE.ComponentRef cr;
-      ConnectionGraph.ConnectionGraph graph;
+      ConnectionGraph.ConnectionGraph graph,graphOld,graphNew;
       DAE.DAElist dae,dae1,dae2;
 
     // no condition ... keep the same
-    case(cache,env,NONE,compName,dae,sets,_,graph) then (cache,dae,sets,graph,DAEUtil.emptyDae);
+    case(cache,env,NONE,compName,dae,sets,_,graphOld,graphNew) then (cache,dae,sets,graphNew,DAEUtil.emptyDae);
     // we have some condition, deal with it
-    case(cache,env,SOME(condExp),compName,dae,sets,pre,graph) equation
+    case(cache,env,SOME(condExp),compName,dae,sets,pre,graphOld,graphNew) equation
       (cache,e,DAE.PROP(t,c ),_,dae1) = Static.elabExp(cache, env, condExp, false, NONE, false);
       true = Types.isBoolean(t);
       true = Types.isParameterOrConstant(c);
       (cache,Values.BOOL(b),_) = Ceval.ceval(cache, env, e, false, NONE, NONE, Ceval.MSG());
       dae = Util.if_(b,dae,DAEUtil.extractFunctions(dae));
+      // if the condition is false the connection graph stays the same!!
+      graph = Util.if_(b,graphNew,graphOld);
       cr = PrefixUtil.prefixCref(pre,DAE.CREF_IDENT(compName,DAE.ET_OTHER(),{}));
       sets = ConnectUtil.addDeletedComponent(b,cr,sets);
     then (cache,dae,sets,graph,dae1);
 
     // Error: Wrong type on condition
-    case(cache,env,SOME(condExp),compName,dae,sets,_,graph) equation
+    case(cache,env,SOME(condExp),compName,dae,sets,_,graphOld,graphNew) equation
       (cache,e,DAE.PROP(t,c ),_,_) = Static.elabExp(cache, env, condExp, false, NONE, false);
       false = Types.isBoolean(t);
       s1 = Exp.printExpStr(e);
@@ -16159,7 +16160,7 @@ algorithm
     then fail();
 
     // Error: condition not parameter or constant
-    case(cache,env,SOME(condExp),compName,dae,sets,_,graph) equation
+    case(cache,env,SOME(condExp),compName,dae,sets,_,graphOld,graphNew) equation
       (cache,e,DAE.PROP(t,c ),_,_) = Static.elabExp(cache, env, condExp, false, NONE, false);
       true = Types.isBoolean(t);
       false = Types.isParameterOrConstant(c);
@@ -16167,7 +16168,7 @@ algorithm
       Error.addMessage(Error.COMPONENT_CONDITION_VARIABILITY,{s1});
     then fail();
     // failtrace
-    case(cache,env,SOME(condExp),compName,dae,sets,_,graph)
+    case(cache,env,SOME(condExp),compName,dae,sets,_,graphOld,graphNew)
       equation
         Debug.fprintln("failtrace", "- Inst.instConditionalDeclaration failed on component: " +& compName +& " for cond: " +& Dump.printExpStr(condExp));
       then fail();

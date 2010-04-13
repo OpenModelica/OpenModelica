@@ -1708,6 +1708,7 @@ algorithm
         (f_1 :: r_1);
   end matchcontinue;
 end listMap8;
+
 public function listMap32 "function listMap32
   Takes a list and a function and three extra arguments passed to the function.
   The function produces two values which is used for creating two new lists."
@@ -2681,7 +2682,10 @@ algorithm
 end listSelect;
 
 public function listSelect1 "function listSelect1
-  Same as listSelect above, but with extra argument to testing function."
+  This function retrieves all elements of a list for which
+  the passed function evaluates to true. The elements that
+  evaluates to false are thus removed from the list.
+  This function has an extra argument to testing function."
   input list<Type_a> inTypeALst;
   input Type_b inTypeB;
   input FuncTypeType_aType_bToBoolean inFuncTypeTypeATypeBToBoolean;

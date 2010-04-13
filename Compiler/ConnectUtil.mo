@@ -52,6 +52,7 @@ public import Env;
 public import InnerOuter;
 public import Prefix;
 public import ClassInf;
+public import ConnectionGraph;
 
 protected import Exp;
 protected import DAEUtil;
@@ -506,29 +507,44 @@ public function equations "
   From a number of connection sets, this function generates a list of equations."
   input Connect.Sets sets;
   input Prefix.Prefix pre "prefix required for checking deleted components";
-  output DAE.DAElist dae;
+  input Boolean isTopScope "this is true if we are in a top scope class!";
+  input ConnectionGraph.ConnectionGraph inConnectionGraph;
+  output DAE.DAElist outDAE;
+  output ConnectionGraph.ConnectionGraph outConnectionGraph;  
 algorithm
-  dae := matchcontinue(sets,pre)
+  (outDAE, outConnectionGraph) := matchcontinue(sets,pre,isTopScope,inConnectionGraph)
     local
       list<Connect.Set> s;
       list<DAE.ComponentRef> crs,deletedComps;
       DAE.ComponentRef cr,deletedComp;
       list<Connect.OuterConnect> outerConn;
+      ConnectionGraph.ConnectionGraph graph;
+      DAE.DAElist dae;
+      list<DAE.Element> daeElements, daeEqualityConstraint;
+      DAE.FunctionTree functions;
+      
     // no deleted components
-    case(sets as Connect.SETS(s,crs,{},outerConn),pre)
-      equation
-         //print(printSetsStr(sets));
-      then equations2(sets);
+    case(sets as Connect.SETS(s,crs,{},outerConn),pre,isTopScope,graph)
+      equation        
+        dae = equations2(sets);
+      then 
+        (dae, graph);
+
     // handle deleted components
-    case(Connect.SETS(s,crs,deletedComp::deletedComps,outerConn),pre)
+    case(Connect.SETS(s,crs,deletedComp::deletedComps,outerConn),pre,isTopScope,graph)
       equation
         cr = deletedComp;
         s = removeComponentInSets(cr,s);
+        // remove all branches/connections/roots in the connection graph leading to the deleted components
+        graph = ConnectionGraph.removeDeletedComponentsFromCG(graph, cr);
+        // recursive call with all the rest of deleted components. 
+        (dae, graph) = equations(Connect.SETS(s,crs,deletedComps,outerConn),pre,isTopScope,graph);
       then
-        equations(Connect.SETS(s,crs,deletedComps,outerConn),pre);
+        (dae, graph);
+
     // failure
-    case(_,_) equation
-      Debug.fprint("failtrace","Connect.equations failed\n");
+    case(_,_,_,_) equation
+      Debug.fprint("failtrace", "Connect.equations failed\n");
     then fail();
   end matchcontinue;
 end equations;
@@ -684,12 +700,18 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.ElementSource>> cs;
       DAE.ElementSource src,src1,src2;
       DAE.FunctionTree funcs;
+      list<Absyn.Within> partOfLst;
+      list<Option<DAE.ComponentRef>> instanceOptLst;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
+      list<Absyn.Path> typeLst;      
 
     case {_} then DAEUtil.emptyDae;
     case ((x,src1) :: ((y,src2) :: cs))
       equation
         DAE.DAE(eq,funcs) = equEquations(((y,src2) :: cs));
-        src = DAEUtil.mergeSources(src1,src2);
+        DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
+        // do not propagate connects from different sources! use the crefs directly!
+        src = DAE.SOURCE(partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
       then
         (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq,funcs));
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();
@@ -1782,7 +1804,9 @@ algorithm
         s2 = printSetCrsStr(crs);
         s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr),",");
         s4 = printOuterConnectsStr(outerConn);
-        res = Util.stringAppendList({"Connect.SETS(",s1_1,", ",s2,", deleted comps: ",s3,", outer connections:",s4,")\n"});
+        res = Util.stringAppendList({"Connect.SETS(\n\t",
+          s1_1,", \n\t",
+          s2,", \n\tdeleted comps: ",s3,", \n\touter connections:",s4,")\n"});
       then
         res;
   end matchcontinue;
