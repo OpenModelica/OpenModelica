@@ -157,7 +157,6 @@ algorithm
         (cache,ialg1_1) = fixList(cache,cenv1,ialg1_1,ht,fixAlgorithm);
         //Debug.traceln("fixed local idents " +& intString(tmp));
 
-        (env,ih) = Inst.addClassdefsToEnv(env,ih,cdefelts,impl,NONE);
         (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,rest,ci_state,className,impl,isPartialInst)
         "continue with next element in list" ;
         /*
@@ -176,7 +175,7 @@ algorithm
 
         compelts = listAppend(compelts1, compelts2);
 
-        (compelts3,mods_1) = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers" ;
+        (compelts3,mods_1) = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers";
         eq = Util.listlistFunc(eq1_1,{eq2,eq3},Util.listUnionOnTrue,Util.equal);
         ieq = Util.listlistFunc(ieq1_1,{ieq2,ieq3},Util.listUnionOnTrue,Util.equal);
         alg = Util.listlistFunc(alg1_1,{alg2,alg3},Util.listUnionOnTrue,Util.equal);
@@ -242,11 +241,18 @@ public function instExtendsAndClassExtendsList "
   output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
 protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLstTpl3;
+  list<SCode.Element> cdefelts,tmpelts;
 algorithm
   //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
+  // Filter out the last boolean in the tuple
   outTplSCodeElementModLst := Util.listMap(outTplSCodeElementModLstTpl3, Util.tuple312);
+  // Create a list of the class definitions, since these can't be properly added in the recursive call 
+  tmpelts := Util.listMap(outTplSCodeElementModLst,Util.tuple21);
+  (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
+  // Add the class definitions to the environment
+  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,cdefelts,inImpl,NONE);
   //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
@@ -609,7 +615,7 @@ algorithm
         ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
       then ht;
     case (SCode.CLASSDEF(name = id),ht)
-      equation
+      equation        
         ht = HashTableStringToPath.add((id,Absyn.IDENT(id)), ht);
       then ht;
     case (SCode.IMPORT(imp = Absyn.NAMED_IMPORT(name = id, path = p)),ht)
@@ -692,24 +698,24 @@ algorithm
     
     case (cache,env,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, infoOpt, cc),ht)
       equation
-        //print("fix comp " +& SCode.printElementStr(elt) +& "\n");
+        //Debug.fprintln("debug","fix comp " +& SCode.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
         (cache,typeSpec) = fixTypeSpec(cache,env,typeSpec,ht);
       then (cache,SCode.COMPONENT(component, innerOuter, finalPrefix, replaceablePrefix, protectedPrefix, attributes, typeSpec, modifications, comment, condition, infoOpt, cc));
     case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc),ht)
       equation
-        //print("fixClassdef " +& id +& "\n");
+        //Debug.fprintln("debug","fixClassdef " +& id);
         (cache,env) = Builtin.initialEnv(cache);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,true,restriction,classDef,info),cc));
     case (cache,env,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc),ht)
       equation
-        //print("fixClassdef " +& id +& "\n");
+        //Debug.fprintln("debug","fixClassdef " +& id);
         (cache,classDef) = fixClassdef(cache,env,classDef,ht);
       then (cache,SCode.CLASSDEF(id,finalPrefix,replaceablePrefix,SCode.CLASS(name,partialPrefix,false,restriction,classDef,info),cc));
     case (cache,env,SCode.EXTENDS(extendsPath,modifications,optAnnotation),ht)
       equation
-        //print("fix comp " +& SCode.printElementStr(elt) +& "\n");
+        //Debug.fprintln("debug","fix extends " +& SCode.printElementStr(elt));
         (cache,modifications) = fixModifications(cache,env,modifications,ht);
       then (cache,SCode.EXTENDS(extendsPath,modifications,optAnnotation));
     case (cache,env,SCode.IMPORT(imp = _),ht) then (cache,elt);
@@ -741,13 +747,35 @@ algorithm
       Option<Absyn.ExternalDecl> ed;
       list<SCode.Annotation> ann;
       Option<SCode.Comment> c;
+      Absyn.TypeSpec ts;
+      Absyn.ElementAttributes attr;
+      String name;
+      SCode.Mod mod;
     case (cache,env,SCode.PARTS(elts,ne,ie,na,ia,ed,ann,c),ht)
       equation
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
         (cache,ie) = fixList(cache,env,ie,ht,fixEquation);
       then (cache,SCode.PARTS(elts,ne,ie,na,ia,ed,ann,c));
-    case (cache,env,cd,ht) then (cache,cd);
+        
+    case (cache,env,SCode.CLASS_EXTENDS(name,mod,elts,ne,ie,na,ia,ann,c),ht)
+      equation
+        (cache,mod) = fixModifications(cache,env,mod,ht);
+        (cache,elts) = fixList(cache,env,elts,ht,fixElement);
+        (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
+        (cache,ie) = fixList(cache,env,ie,ht,fixEquation);
+      then (cache,SCode.CLASS_EXTENDS(name,mod,elts,ne,ie,na,ia,ann,c));
+
+    case (cache,env,SCode.DERIVED(ts,mod,attr,c),ht)
+      equation
+        (cache,ts) = fixTypeSpec(cache,env,ts,ht);
+        (cache,mod) = fixModifications(cache,env,mod,ht);
+      then (cache,SCode.DERIVED(ts,mod,attr,c));
+
+    case (cache,env,SCode.ENUMERATION(comment = _),ht) then (cache,cd);
+    case (cache,env,SCode.OVERLOAD(comment = _),ht) then (cache,cd);
+    case (cache,env,SCode.PDER(comment = _),ht) then (cache,cd);
+
   end matchcontinue;
 end fixClassdef;
 
@@ -1078,8 +1106,9 @@ algorithm
       equation
         id = Absyn.pathFirstIdent(path1);
         path2 = HashTableStringToPath.get(id,ht);
-        //print("Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& "\n");
-      then (cache,Absyn.pathReplaceFirstIdent(path1,path2));
+        path2 = Absyn.pathReplaceFirstIdent(path1,path2);
+        //Debug.fprintln("debug","Replacing: " +& Absyn.pathString(path1) +& " with " +& Absyn.pathString(path2) +& " s:" +& Env.printEnvPathStr(env));
+      then (cache,path2);
     case (cache,env,path,ht)
       equation
         (cache,path) = Inst.makeFullyQualified(cache,env,path);
@@ -1107,22 +1136,24 @@ algorithm
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
+        //Debug.traceln("Try ht lookup " +& id);
         path = HashTableStringToPath.get(id,ht);
+        //Debug.traceln("Got path " +& Absyn.pathString(path));
       then (cache,Absyn.crefReplaceFirstIdent(cref,path));
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        // Debug.traceln("Try lookupV " +& id);
+        //Debug.fprintln("debug","Try lookupV " +& id);
         (_,_,_,_,_,_,env) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-        // Debug.traceln("Got env " +& intString(listLength(env)));
+        //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
         env = Env.openScope(env,true,SOME(id));
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,ht)
       equation
         id = Absyn.crefFirstIdent(cref);
-        // Debug.traceln("Try lookupC " +& id);
+        //Debug.fprintln("debug","Try lookupC " +& id);
         (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
-        // Debug.traceln("Got env " +& intString(listLength(env)));
+        //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
         env = Env.openScope(env,true,SOME(id));
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,_) then (cache,cref);
@@ -1236,7 +1267,14 @@ algorithm
       equation
         (cache,expl) = fixList(cache,env,expl,ht,fixExp);
       then (cache,Absyn.TUPLE(expl));
-    case (cache,env,exp,ht) then (cache,exp);
+    case (cache,env,Absyn.INTEGER(_),ht) then (cache,exp);
+    case (cache,env,Absyn.REAL(_),ht) then (cache,exp);
+    case (cache,env,Absyn.STRING(_),ht) then (cache,exp);
+    case (cache,env,Absyn.BOOL(_),ht) then (cache,exp);
+    case (cache,env,exp,ht)
+      equation
+        Debug.fprintln("failtrace","InstExtends.fixExp failed: " +& Dump.printExpStr(exp));
+      then fail();
   end matchcontinue;
 end fixExp;
 
