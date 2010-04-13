@@ -344,7 +344,12 @@ class_restriction returns [void* ast]
         | TYPE      { ast = Absyn__R_5fTYPE; }
         | PACKAGE   { ast = Absyn__R_5fPACKAGE; }
         | FUNCTION  { ast = Absyn__R_5fFUNCTION; } 
-        | OPERATOR (f:FUNCTION)? { ast = f ? Absyn__R_5fOPERATOR_5fFUNCTION : Absyn__R_5fOPERATOR; }
+        | OPERATOR (f:FUNCTION | r:RECORD)? 
+          { 
+            ast = f ? Absyn__R_5fOPERATOR_5fFUNCTION : 
+                  r ? Absyn__R_5fOPERATOR_5fRECORD : 
+                  Absyn__R_5fOPERATOR;
+          }
         | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }
         )
     ;

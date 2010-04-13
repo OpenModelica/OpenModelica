@@ -162,7 +162,7 @@ class_type :
 		| TYPE 
 		| PACKAGE 
 		| FUNCTION
-		| OPERATOR (FUNCTION)?   
+		| OPERATOR (FUNCTION | RECORD)?   
 		| UNIONTYPE )
 		;
 

@@ -1025,6 +1025,7 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_FUNCTION end R_FUNCTION;
   record R_OPERATOR "an operator" end R_OPERATOR;
   record R_OPERATOR_FUNCTION "an operator function" end R_OPERATOR_FUNCTION;
+  record R_OPERATOR_RECORD   "an operator record"   end R_OPERATOR_RECORD;
   record R_ENUMERATION end R_ENUMERATION;
   record R_PREDEFINED_INT end R_PREDEFINED_INT;
   record R_PREDEFINED_REAL end R_PREDEFINED_REAL;
