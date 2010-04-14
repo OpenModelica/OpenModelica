@@ -1239,7 +1239,7 @@ algorithm
         (mod_1,subs_1) = lookupIdxModification2(subs,idx);
         mod_2 = merge(DAE.MOD(f,each_,subs_1,NONE), mod_1, {}, Prefix.NOPRE());
         eq_1 = indexEqmod(eq, {idx});
-        mod_3 = merge(mod_2, DAE.MOD(f,each_,{},eq_1), {}, Prefix.NOPRE());
+        mod_3 = merge(mod_2, DAE.MOD(false,each_,{},eq_1), {}, Prefix.NOPRE());
       then
         mod_3;
     case (mod,idx)
