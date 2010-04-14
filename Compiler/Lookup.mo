@@ -1193,25 +1193,6 @@ algorithm
       Env.Env dbgEnv;
       Boolean unique;      
 
-    // Lookup of enumeration variables
-    case (cache,env,DAE.CREF_QUAL(ident = id1,subscriptLst = {},componentRef = (id2 as DAE.CREF_IDENT(ident = _))))
-      equation
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r as SCode.R_ENUMERATION())),env2)
-        	= lookupClass(cache,env, Absyn.IDENT(id1), false) "Special case for looking up enumerations" ;
-        env3 = Env.openScope(env2, encflag, SOME(n));
-        ci_state = ClassInf.start(r, Env.getEnvName(env3));
-        (cache,env5,_,_,_,_,_,types,_,_,_,_) =
-        Inst.instClassIn(
-          cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-          // (cache,env5,_,_,_,_,_,_,_,_) = 
-          //   Inst.instClass(cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), 
-          //                  Prefix.NOPRE(), Connect.emptySet, c,{},false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env5,id2);
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
-
     // lookup of constants on form A.B in packages. First look in cache.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
       equation
