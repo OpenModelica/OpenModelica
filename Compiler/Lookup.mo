@@ -609,32 +609,16 @@ algorithm
       Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache; 
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cref;
       Absyn.Path path,scope;
       Absyn.Ident firstIdent;
 
-   // search in cache
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
-        firstIdent = Absyn.pathFirstIdent(path);
-        f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,_,_,_,_,_,_) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-      then
-        (cache,true);
-
-    // if not found in cache, try to instantiate
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
-      equation
-        fr = Env.topFrame(env);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-         (cache,(f :: _),_,_) =
-         Inst.partialInstClassIn(
-           cache,env2,InnerOuter.emptyInstHierarchy,
-           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-           ci_state, c, false, {});
-        (cache,_,_,_,_,_,_) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
+        f = Env.topFrame(env);
+        cref = Exp.pathToCref(path);
+        cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
+        (cache,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref);
       then
         (cache,true);
 
@@ -669,7 +653,7 @@ algorithm
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f;
-      DAE.ComponentRef cref;
+      DAE.ComponentRef cr,cref;
       SCode.Class c;
       String id,ident;
       Boolean encflag,more,unique;
@@ -682,37 +666,16 @@ algorithm
       Absyn.Path path;
       list<Env.Item> fs;
       Env.Cache cache; 
-      DAE.ComponentRef cr;
       Absyn.Path path,scope;
       Absyn.Ident firstIdent;
       Option<DAE.Const> cnstForRange;
 
-    // First look in cache
-    case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
-      equation
-        //print("look in cache\n");
-        firstIdent = Absyn.pathFirstIdent(path);
-        f::_ = Env.cacheGet(Absyn.IDENT(firstIdent),path,cache);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-        (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
-        unique = boolNot(more);
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData);
-
-    // if not in cache, try to instantiate
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
-        fr = Env.topFrame(env);
+        f = Env.topFrame(env);
         cref = Exp.pathToCref(path);
-        (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
-        ci_state = ClassInf.start(restr, Env.getEnvName(env2));
-        (cache,(f :: _),_,_,_,_,_,_,_,_,_,_) =
-        Inst.instClassIn(
-          cache,env2,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-          DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
-          ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
+        cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cref);
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then

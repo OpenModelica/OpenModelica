@@ -4315,4 +4315,15 @@ algorithm
   end matchcontinue;
 end isInner;
 
+public function makeFullyQualified
+"Makes a path fully qualified unless it already is."
+  input Path path;
+  output Path outPath;
+algorithm
+  outPath := matchcontinue path
+    case path as FULLYQUALIFIED(path = _) then path;
+    case path then FULLYQUALIFIED(path); 
+  end matchcontinue;
+end makeFullyQualified;
+
 end Absyn;
