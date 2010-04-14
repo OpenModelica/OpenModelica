@@ -2905,8 +2905,10 @@ algorithm
 	        instElement can handle the new format uniformely." ;
 
         cdefelts_1 = addNomod(cdefelts);
-        compelts_1 = Util.listFlatten({extcomps,compelts_1,cdefelts_1});
+        
         // Add components from base classes to be instantiated in 3 as well.
+        compelts_1 = Util.listFlatten({extcomps,compelts_1,cdefelts_1});
+                
         eqs_1 = listAppend(eqs, eqs2);
         initeqs_1 = listAppend(initeqs, initeqs2);
         alg_1 = listAppend(alg, alg2);
@@ -2933,9 +2935,13 @@ algorithm
         compelts_1 = addNomod(compelts);
         cdefelts_1 = addNomod(cdefelts);
         compelts_2 = Util.listFlatten({compelts_2,compelts_1, cdefelts_1});
+ 
+        // adrpo: MAKE SURE inner objects ARE FIRST 
+        //        in the list for instantiation!
+        // TODO! FIXME! CHECKME!
+        // compelts_2 =  sortInnerFirstTplLstElementMod(compelts_2); 
 
         //Instantiate components
-
         compelts_2_elem = Util.listMap(compelts_2,Util.tuple21);
         checkMods = Mod.merge(mods,emods,env4,Prefix.NOPRE());
         mods = checkMods;
@@ -8677,7 +8683,7 @@ algorithm
     case (cache,(f::fs) ,path) 
       equation 
         crPath = Exp.pathToCref(path);
-        (cache,_,_,_,_,_,env) = Lookup.lookupVarInternal(cache, {f}, crPath);
+        (cache,_,_,_,_,_,env) = Lookup.lookupVarInternal(cache, {f}, crPath, Lookup.SEARCH_ALSO_BUILTIN());
         path3 = makeFullyQualified2(env,Absyn.pathLastIdent(path));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));
@@ -15528,6 +15534,74 @@ algorithm
       then (name_,NONE);
 end matchcontinue;
 end extractCurrentName;
+
+protected function sortInnerFirstTplLstElementMod
+"@author: adrpo
+  This function will move all the *inner* 
+  elements first in the given list of elements"
+  input list<tuple<SCode.Element, Mod>> inTplLstElementMod; 
+  output list<tuple<SCode.Element, Mod>> outTplLstElementMod;
+algorithm
+  outTplLst_ElementMod := matchcontinue(inTplLstElementMod)
+    local
+      list<tuple<SCode.Element, Mod>> innerElts, innerouterElts, otherElts, sorted;
+
+    case (inTplLstElementMod)
+      equation
+        // split into inner, inner outer and other elements
+        (innerElts, innerouterElts, otherElts) = splitInnerAndOtherTplLstElementMod(inTplLstElementMod);
+        // put the inner elements first
+        sorted = listAppend(innerElts, innerouterElts);
+        // put the innerouter elements second
+        sorted = listAppend(sorted, otherElts);
+      then 
+        sorted;
+  end matchcontinue;
+end sortInnerFirstTplLstElementMod;
+
+public function splitInnerAndOtherTplLstElementMod 
+"@author: adrpo
+  Split the elements into inner, inner outer and others"
+  input list<tuple<SCode.Element, Mod>> inTplLstElementMod; 
+  output list<tuple<SCode.Element, Mod>> outInnerTplLstElementMod;
+  output list<tuple<SCode.Element, Mod>> outInnerOuterTplLstElementMod;  
+  output list<tuple<SCode.Element, Mod>> outOtherTplLstElementMod;  
+algorithm
+  (outInnerTplLstElementMod, outInnerOuterTplLstElementMod, outOtherTplLstElementMod) := matchcontinue (inTplLstElementMod)
+    local
+      list<tuple<SCode.Element, Mod>> rest,innerComps,innerouterComps,otherComps;
+      tuple<SCode.Element, Mod> comp;
+      Absyn.InnerOuter io;
+
+    // empty case
+    case ({}) then ({},{},{});
+
+    // inner components
+    case ( ( comp as (SCode.COMPONENT(component=_,innerOuter = io), _) ) :: rest)
+      equation
+        true = Absyn.isInner(io);
+        false = Absyn.isOuter(io);
+        (innerComps,innerouterComps,otherComps) = splitInnerAndOtherTplLstElementMod(rest);
+      then
+        (comp::innerComps,innerouterComps,otherComps);
+        
+    // inner outer components
+    case ( ( comp as (SCode.COMPONENT(component=_,innerOuter = io), _) ) :: rest)
+      equation
+        true = Absyn.isInner(io);
+        true = Absyn.isOuter(io);
+        (innerComps,innerouterComps,otherComps) = splitInnerAndOtherTplLstElementMod(rest);
+      then
+        (innerComps,comp::innerouterComps,otherComps);        
+
+    // any other components
+    case (comp :: rest)
+      equation
+        (innerComps,innerouterComps,otherComps) = splitInnerAndOtherTplLstElementMod(rest);
+      then
+        (innerComps,innerouterComps,comp::otherComps);
+  end matchcontinue;
+end splitInnerAndOtherTplLstElementMod;
 
 public function splitElts "
 This function splits the Element list into four lists

@@ -60,6 +60,7 @@ protected import ConnectUtil;
 protected import RTOpts;
 protected import Mod;
 protected import PrefixUtil;
+protected import ErrorExt;
 
 public
 type Cache     = Env.Cache;
@@ -803,7 +804,8 @@ end removeOuter;
 
 protected function lookupVarInnerOuterAttr
 "searches for two variables in env and retrieves
- its inner and outer attributes in form of booleans"
+ its inner and outer attributes in form of booleans.
+ adrpo: Make sure that there are no error messages displayed!"
   input Env.Cache cache;
   input Env env;
   input InstHierarchy inIH;
@@ -817,30 +819,39 @@ algorithm
       Absyn.InnerOuter io,io1,io2;
       Boolean isInner1,isInner2,isOuter1,isOuter2;
       InstHierarchy ih;
-    /* Search for both */
+    // Search for both 
     case(cache,env,ih,cr1,cr2)
       equation
+        ErrorExt.setCheckpoint("lookupVarInnerOuterAttr");
         (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner1,isOuter1) = innerOuterBooleans(io1);
         (isInner2,isOuter2) = innerOuterBooleans(io2);
         isInner = isInner1 or isInner2;
         isOuter = isOuter1 or isOuter2;
+        ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then
         (isInner,isOuter);
-    /* try to find var cr1 (lookup can fail for one of them) */
+    // try to find var cr1 (lookup can fail for one of them)
     case(cache,env,ih,cr1,cr2)
-      equation
+      equation        
         (_,DAE.ATTR(innerOuter=io),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (isInner,isOuter) = innerOuterBooleans(io);
+        ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then
         (isInner,isOuter);
-     /* ..else try cr2 (lookup can fail for one of them) */
+     // ..else try cr2 (lookup can fail for one of them)
     case(cache,env,ih,cr1,cr2)
       equation
         (_,DAE.ATTR(innerOuter=io),_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner,isOuter) = innerOuterBooleans(io);
+        ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then (isInner,isOuter);
+     // failure
+    case(cache,env,ih,cr1,cr2)
+      equation        
+        ErrorExt.rollBack("lookupVarInnerOuterAttr");
+      then fail();
   end matchcontinue;
 end lookupVarInnerOuterAttr;
 

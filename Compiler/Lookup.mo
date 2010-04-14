@@ -70,6 +70,15 @@ public import Types;
 protected import UnitAbsyn;
 protected import DAEUtil;
 
+public uniontype SearchStrategy
+  record SEARCH_LOCAL_ONLY
+    "this one searches only in the local scope, it won't find *time* variable" 
+  end SEARCH_LOCAL_ONLY; 
+  record SEARCH_ALSO_BUILTIN
+    "this one searches also in the builtin scope, it will find *time* variable" 
+  end SEARCH_ALSO_BUILTIN;
+end SearchStrategy;
+
 public uniontype SplicedExpData
   record SPLICEDEXPDATA "data for 'spliced expression' (typically a component reference) returned in lookupVar"
     Option<DAE.Exp> splicedExp "the spliced expression";
@@ -1017,7 +1026,7 @@ algorithm
     // try the old lookupVarInternal
     case (cache,env,cref) 
       equation 
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, env, cref);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, env, cref, SEARCH_ALSO_BUILTIN());
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
 
@@ -1070,6 +1079,7 @@ public function lookupVarInternal "function: lookupVarInternal
   input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
+  input SearchStrategy searchStrategy "if SEARCH_LOCAL_ONLY it won't search in the builtin scope";
   output Env.Cache outCache;
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
@@ -1079,7 +1089,7 @@ public function lookupVarInternal "function: lookupVarInternal
   output Env.Env outEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
 algorithm
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outEnv) :=
-  matchcontinue (inCache,inEnv,inComponentRef)
+  matchcontinue (inCache,inEnv,inComponentRef,searchStrategy)
     local
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -1096,22 +1106,22 @@ algorithm
       Env.Env env;
     
     // look into the current frame  
-    case (cache,env as ((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref)
+    case (cache,env as ((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref,searchStrategy)
       equation
           (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarF(cache, ht, ref);
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
 
     // look in the next frame, only if current frame is a for loop scope.
-    case (cache,(f :: fs),ref)
+    case (cache,(f :: fs),ref,searchStrategy)
       equation
         true = frameIsImplAddedScope(f);
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, fs, ref);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, fs, ref,searchStrategy);
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
     
     // If not in top scope, look in top scope for builtin variables, e.g. time.
-    case (cache,fs as _::_::_,ref)
+    case (cache,fs as _::_::_,ref,SEARCH_ALSO_BUILTIN())
       equation
         true = Builtin.variableIsBuiltin(ref);
         (f as Env.FRAME(clsAndVars = ht)) = Env.topFrame(fs);
@@ -1121,18 +1131,15 @@ algorithm
   end matchcontinue;
 end lookupVarInternal;
 
-
 protected function frameIsImplAddedScope "returns true if the frame is a for-loop scope or
 a valueblock scope.
 This is indicated by the name of the frame which should be 
-Env.forScopeName or Env.valueBlockScopeName
-
-"
+Env.forScopeName or Env.valueBlockScopeName"
   input Env.Frame f;
   output Boolean b;
 algorithm
   b := matchcontinue(f)
-  local String name;
+    local String name;
     case(Env.FRAME(optName=SOME(name))) equation
       true = name ==& Env.forScopeName or name ==& Env.valueBlockScopeName or name ==& Env.forIterScopeName;
     then true;
@@ -1310,8 +1317,12 @@ public function lookupVarLocal "function: lookupVarLocal
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
-  output SplicedExpData spliceExpData;
+  output SplicedExpData splicedExpData;
 algorithm
+  // adrpo: use lookupVarInternal as is the SAME but it doesn't search in the builtin scope!
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,_) :=
+  lookupVarInternal(inCache, inEnv, inComponentRef, SEARCH_LOCAL_ONLY());
+  /*
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData):=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
@@ -1326,19 +1337,21 @@ algorithm
       Option<DAE.Const> cnstForRange;
       SplicedExpData splicedExpData;
       
-      /* Lookup in frame */
+    // Lookup in frame
     case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: fs),cref)
       equation
         (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarF(cache,ht, cref);
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData);
 
+    // Exception, when in for loop scope allow search of next scope
     case (cache,(Env.FRAME(optName = SOME("$for loop scope$")) :: env),cref)
       equation
         (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarLocal(cache,env, cref) "Exception, when in for loop scope allow search of next scope" ;
       then
         (cache,attr,ty,binding,cnstForRange,splicedExpData);
   end matchcontinue;
+  */
 end lookupVarLocal;
 
 public function lookupIdentLocal "function: lookupIdentLocal

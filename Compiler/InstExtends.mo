@@ -552,9 +552,6 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
   end matchcontinue;
 end updateComponents;
 
-
-
-
 protected function getLocalIdentList
 " Analyzes the elements of a class and fetches a list of components and classdefs,
   as well as aliases from imports to paths.
