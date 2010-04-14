@@ -550,20 +550,11 @@ protected function lookupQualifiedImportedVarInFrame "function: lookupQualifiedI
 
   Looking up variables (constants) imported using qualified imports,
   i.e. import Modelica.Constants.PI;"
-  input Env.Cache inCache;
-  input list<Env.Item> inEnvItemLst;
-  input Env.Env inEnv;
-  input SCode.Ident inIdent;
-  output Env.Cache outCache;
-  output Env.Env outEnv;
-  output DAE.Attributes outAttributes;
-  output DAE.Type outType;
-  output DAE.Binding outBinding;
-  output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
-  output SplicedExpData splicedExpData;
+  input list<Env.Item> items;
+  input SCode.Ident ident;
+  output DAE.ComponentRef outCref;
 algorithm 
-  (outCache,outEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData) :=
-  matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
+  (outCref) := matchcontinue (items,ident)
     local
       Env.Frame fr;
       DAE.Attributes attr;
@@ -571,7 +562,7 @@ algorithm
       DAE.Binding bind;
       String id,id2,ident,str;
       list<Env.Item> fs;
-      list<Env.Frame> env,p_env,cenv;
+      list<Env.Frame> env,p_env,cenv,prevFrames;
       DAE.ComponentRef cref;
       Absyn.Path strippath,path;
       SCode.Class c2;
@@ -579,98 +570,20 @@ algorithm
       Option<DAE.Const> cnstForRange;
       
       // For imported simple name, e.g. A, not possible to assert sub-path package 
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: fs),env,ident) 
-      equation 
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        (cache,attr,ty,bind,cnstForRange,splicedExpData,_) = lookupVar(cache,{fr}, DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-      then
-        (cache,{fr},attr,ty,bind,cnstForRange,splicedExpData);
-
-    // For imported qualified name, e.g. A.B.C, assert A.B is package  
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) 
+    case (Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs,ident) 
       equation 
         id = Absyn.pathLastIdent(path);
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        cref = Exp.pathToCref(path);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,cenv) = lookupClass(cache,{fr}, strippath, true);
-        assertPackage(c2,Absyn.pathString(strippath));
-
-        cref = Exp.pathToCref(Absyn.pathTwoLastIdents(path));
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache, cenv, cref);
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
-
-    // importing qualified name, If not package, error 
-    // commented since MSL does not follow this rule, instead assertPackage gives warning          
-    /*  
-    case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident) 
-      equation 
-        id = Absyn.pathLastIdent(path);
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        cref = Exp.pathToCref(path);
-        (cache,p_env,attr,ty,bind,cnstForRange) = lookupVarInPackages(cache, {fr}, cref);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
-        failure(assertPackage(c2));
-        str = Absyn.pathString(strippath);
-        Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
-      then
-        fail();
-    */
-    
-    // Named imports of simple names, e.g. import A = C;  
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = Absyn.IDENT(id2))) :: fs),env,ident) 
-      equation 
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        cref = Exp.pathToCref(Absyn.IDENT(id2));
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{fr}, cref);
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        true = id ==& ident;
+      then Exp.pathToCref(path);
 
     // Named imports, e.g. import A = B.C;  
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident)
+    case (Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs,ident)
       equation
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        cref = Exp.pathToCref(path);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,cenv) = lookupClass(cache,{fr}, strippath, true);
-        assertPackage(c2,Absyn.pathString(strippath));
-        
-        cref = Exp.pathToCref(Absyn.pathTwoLastIdents(path));
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,cenv, cref);
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        true = id ==& ident;
+      then Exp.pathToCref(path);
 
-    // Error message if named import is not package. 
-    // commented since MSL does not follow this rule, instead assertPackage gives warning 
-    /*
-    case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident) 
-      equation 
-        equality(id = ident);
-        fr = Env.topFrame(env);
-        cref = Exp.pathToCref(path);
-        (cache,p_env,attr,ty,bind,cnstForRange) = lookupVarInPackages(cache, {fr}, cref);
-        strippath = Absyn.stripLast(path);
-        (cache,c2,_) = lookupClass(cache,{fr}, strippath, true);
-        failure(assertPackage(c2));
-        str = Absyn.pathString(strippath);
-        Error.addMessage(Error.IMPORT_PACKAGES_ONLY, {str});
-      then
-        fail();*/
-
-        
     // Check next frame.  
-    case (cache,(_ :: fs),env,ident) 
-      equation 
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupQualifiedImportedVarInFrame(cache, fs, env, ident);
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+    case (_ :: fs,ident) then lookupQualifiedImportedVarInFrame(fs,ident);
   end matchcontinue;
 end lookupQualifiedImportedVarInFrame;
 
@@ -1389,7 +1302,9 @@ algorithm
     // Search among qualified imports, e.g. import A.B; or import D=A.B; 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
       equation
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupQualifiedImportedVarInFrame(cache,items, env, id);
+        cr = lookupQualifiedImportedVarInFrame(items, id);
+        f = Env.topFrame(env);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cr);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
 
