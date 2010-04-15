@@ -613,7 +613,7 @@ algorithm
       String id,ident;
       Boolean encflag,res;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env;
+      list<Env.Frame> env_1,env2,env,prevFrames;
       ClassInf.State ci_state;
       Absyn.Path path;
       list<Env.Item> fs;
@@ -624,10 +624,10 @@ algorithm
 
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident)
       equation
-        f = Env.topFrame(env);
+        f::prevFrames = listReverse(env);
         cref = Exp.pathToCref(path);
         cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-        (cache,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref);
+        (cache,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
       then
         (cache,true);
 
@@ -667,7 +667,7 @@ algorithm
       String id,ident;
       Boolean encflag,more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env,p_env;
+      list<Env.Frame> env_1,env2,env,p_env,prevFrames;
       ClassInf.State ci_state;
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -681,10 +681,10 @@ algorithm
 
     case (cache,(Env.IMPORT(import_ = Absyn.UNQUAL_IMPORT(path = path)) :: fs),env,ident) /* unique */ 
       equation 
-        f = Env.topFrame(env);
+        f::prevFrames = listReverse(env);
         cref = Exp.pathToCref(path);
         cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cref);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
         (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
         unique = boolNot(more);
       then
@@ -697,6 +697,7 @@ algorithm
         (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData);
   end matchcontinue;
 end lookupUnqualifiedImportedVarInFrame;
+
 
 protected function lookupQualifiedImportedClassInFrame
 "function: lookupQualifiedImportedClassInFrame
@@ -722,7 +723,6 @@ algorithm
       Env.Cache cache;
     case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = Absyn.IDENT(name = id))) :: _),env,ident,inState)
       equation
-        false = Util.getStatefulBoolean(inState);
         true = id ==& ident "For imported paths A, not possible to assert sub-path package";
         Util.setStatefulBoolean(inState,true);
         fr::prevFrames = listReverse(env);
@@ -731,7 +731,6 @@ algorithm
         (cache,c,env_1,prevFrames);
     case (cache,(Env.IMPORT(import_ = Absyn.QUAL_IMPORT(path = path)) :: fs),env,ident,inState)
       equation
-        false = Util.getStatefulBoolean(inState);
         id = Absyn.pathLastIdent(path) "For imported path A.B.C, assert A.B is package" ;
         true = id ==& ident;
         Util.setStatefulBoolean(inState,true);
@@ -760,7 +759,6 @@ algorithm
         fail();*/
     case (cache,(Env.IMPORT(import_ = Absyn.NAMED_IMPORT(name = id,path = path)) :: fs),env,ident,inState)
       equation
-        false = Util.getStatefulBoolean(inState);
         true = id ==& ident "Named imports";
         Util.setStatefulBoolean(inState,true);
         fr::prevFrames = listReverse(env);
@@ -789,7 +787,6 @@ algorithm
 
     case (cache,(_ :: fs),env,ident,inState)
       equation
-        false = Util.getStatefulBoolean(inState);
         (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,fs,env,ident,inState);
       then
         (cache,c,env_1,prevFrames);
@@ -1032,8 +1029,8 @@ algorithm
 
     // then look in classes (implicitly instantiated packages)
     case (cache,env,cref)  
-      equation 
-        (cache,p_env,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env,cref);
+      equation
+        (cache,p_env,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
         checkPackageVariableConstant(p_env,attr,ty,cref);
         // optional exp.exp to return
       then
@@ -1165,6 +1162,8 @@ public function lookupVarInPackages "function: lookupVarInPackages
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
+  input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
+  input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
   output Env.Cache outCache;
   output Env.Env outEnv;
   output DAE.Attributes outAttributes;
@@ -1174,13 +1173,13 @@ public function lookupVarInPackages "function: lookupVarInPackages
   output SplicedExpData splicedExpData "currently not relevant for constants, but might be used in the future";
 algorithm 
   (outCache,outEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData) :=
-  matchcontinue (inCache,inEnv,inComponentRef)
+  matchcontinue (inCache,inEnv,inComponentRef,inPrevFrames,inState)
     local
       SCode.Class c;
-      String n,id1,id,str;
+      String n,id1,id,str,name;
       Boolean encflag;
       SCode.Restriction r;
-      list<Env.Frame> env2,env3,env5,env,fs,p_env;
+      list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames;
       ClassInf.State ci_state;
       list<DAE.Var> types;
       DAE.Attributes attr;
@@ -1194,91 +1193,95 @@ algorithm
       Env.Cache cache;
       Option<DAE.Const> cnstForRange; 
       SplicedExpData splicedExpData;
-      DAE.ComponentRef cr;
+      DAE.ComponentRef cr,cr1,cr2;
       Absyn.Path path,scope,ep,p,packp;
       Option<DAE.ComponentRef> filterCref;
       Env.Env dbgEnv;
       Boolean unique;      
 
-    // lookup of constants on form A.B in packages. First look in cache.
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
+      // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
+      // Must do like this to ensure finite recursion 
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a previous frame */
       equation
+        (SOME(f),prevFrames) = lookupPrevFrames(id,prevFrames);
+        Util.setStatefulBoolean(inState,true);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,f::env,cref,prevFrames,inState);
+      then
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+
+    // lookup of constants on form A.B in packages. First look in cache.
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a class. */ 
+      equation
+        (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
         SOME(scope) = Env.getEnvPath(env);
         path = Exp.crefToPath(cr);
         id = Absyn.pathLastIdent(path);
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
+        Util.setStatefulBoolean(inState,true);
         (cache,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarLocal(cache,f::fs, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
       then
         (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData);
         
-    // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
-    // Must do like this to ensure finite recursion 
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref))
-      equation
-        p = Exp.crefToPath(cr);
-        SOME(ep) = Env.getEnvPath(env);
-        packp = Absyn.stripLast(p);
-        true = ModUtil.pathEqual(ep, packp);
-        id = Absyn.pathLastIdent(p);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-      then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
-
     // lookup of constants on form A.B in packages. instantiate package and look inside.
-    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref)) /* First part of name is a class. */ 
+    case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a class. */ 
       equation 
-        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2) = lookupClass(cache,env, Absyn.IDENT(id), false);
+        (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
+        (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,false);
+        Util.setStatefulBoolean(inState,true);
         env3 = Env.openScope(env2, encflag, SOME(n));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         filterCref = makeOptIdentOrNone(cref);
-        (cache,env5,_,_,_,_,_,types,_,_,_,_) =
+        (cache,env5,_,_,_,_,_,_,_,_,_,_) =
         Inst.instClassIn(
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY, filterCref);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache, env5, cref);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
         
     // Why is this done? It is already done done in lookupVar! 
     // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls. 
-    case (cache,env,(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,env,(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
         (cache,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarLocal(cache, env, cr);
+        Util.setStatefulBoolean(inState,true);
       then
         (cache,env,attr,ty,bind,cnstForRange,splicedExpData);
 
     // Search among qualified imports, e.g. import A.B; or import D=A.B; 
-    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),DAE.CREF_IDENT(ident = id,subscriptLst = sb),prevFrames,inState)
       equation
         cr = lookupQualifiedImportedVarInFrame(items, id);
-        f = Env.topFrame(env);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cr);
+        Util.setStatefulBoolean(inState,true);
+        f::prevFrames = listReverse(env);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cr,prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
 
     // Search among unqualified imports, e.g. import A.B.* 
-    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)))
+    case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
         (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
         reportSeveralNamesError(unique,id);
+        Util.setStatefulBoolean(inState,true);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
         
      // Search parent scopes
-    case (cache,(f :: fs),cr)
-      equation 
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,fs,cr);
+    case (cache,((f as Env.FRAME(optName = SOME(id))):: fs),cr,prevFrames,inState)
+      equation
+        false = Util.getStatefulBoolean(inState);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,fs,cr,f::prevFrames,inState);
       then
         (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
 
-    case (cache,env,cr)
-      equation 
-        // Debug.fprintln("failtrace",  "- Lookup.lookupVarInPackages failed on exp:" );
-        // Debug.fcall("failtrace", Exp.printComponentRefStr, cr);
-        // Debug.fprint("failtrace", "\n");
+    case (cache,env,cr,prevFrames,inState)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& Exp.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
       then 
         fail(); 
   end matchcontinue;
@@ -2175,7 +2178,6 @@ algorithm
         /* Search among the qualified imports, e.g. import A.B; or import D=A.B; */
     case (cache,Env.FRAME(optName = sid,imports = items),totenv,name,_,inState,_)
       equation 
-        false = Util.getStatefulBoolean(inState);
         (cache,c,env_1,prevFrames) = lookupQualifiedImportedClassInFrame(cache,items,totenv,name,inState);
       then
         (cache,c,env_1,prevFrames);

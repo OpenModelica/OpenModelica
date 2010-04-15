@@ -2884,7 +2884,7 @@ algorithm
       equation
         false = Util.getStatefulBoolean(stopInst);
         UnitParserExt.checkpoint();
-        // Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
+        //Debug.traceln(" Instclassdef for: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& " mods: " +& Mod.printModStr(mods));
         ci_state1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         els = extractConstantPlusDeps(els,instSingleCref,{},className);
         (cdefelts,extendsclasselts,extendselts,compelts) = splitElts(els);
@@ -8703,7 +8703,7 @@ algorithm
     case (cache,env,path)
       equation 
           crPath = Exp.pathToCref(path); 
-         (cache,env,_,_,_,_,_) = Lookup.lookupVarInPackages(cache, env, crPath);
+         (cache,env,_,_,_,_,_) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
           path3 = makeFullyQualified2(env,Absyn.pathLastIdent(path));
       then
         (cache,Absyn.FULLYQUALIFIED(path3));    
