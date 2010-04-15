@@ -1280,8 +1280,8 @@ algorithm
 
     case (cache,env,cr,prevFrames,inState)
       equation
-        true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& Exp.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
+        //true = RTOpts.debugFlag("failtrace");
+        //Debug.traceln("- Lookup.lookupVarInPackages failed on exp:" +& Exp.printComponentRefStr(cr) +& " in scope: " +& Env.printEnvPathStr(env));
       then 
         fail(); 
   end matchcontinue;
