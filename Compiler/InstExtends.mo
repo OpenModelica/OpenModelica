@@ -112,6 +112,7 @@ algorithm
       InstanceHierarchy ih;
       HashTableStringToPath.HashTable ht;
       Integer tmp;
+      SCode.Variability var;
     /* instantiate a base class */
     case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
       equation
@@ -193,11 +194,19 @@ algorithm
       then
         fail();
 
+    /* Filter out non-constants if partial inst */
+    case (cache,env,ih,mod,SCode.COMPONENT(component = s, attributes = SCode.ATTR(variability = var)) :: rest,ci_state,className,impl,true) /* Components that are not EXTENDS */
+      equation
+        false = SCode.isConstant(var);
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
+        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, true);
+      then
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
+
     /* instantiate elements that are not extends */
     case (cache,env,ih,mod,(elt :: rest),ci_state,className,impl,isPartialInst) /* Components that are not EXTENDS */
       equation
         false = SCode.isElementExtends(elt) "verify that it is not an extends element";
-        // Debug.traceln("Not extends: " +& SCode.printElementStr(elt));
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
       then
