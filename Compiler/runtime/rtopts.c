@@ -60,6 +60,7 @@ double bandwidth=0.0;
 int simulation_cg;
 int silent;
 char* simulation_code_target = "gcc";
+char* class_to_instantiate = "";
 
 /*
  * adrpo 2007-06-11
@@ -439,6 +440,15 @@ RML_BEGIN_LABEL(RTOpts__args)
           fprintf(stderr, "Warning, wrong value of elimination level, will use default = %ld\n",elimination_level);
         }
         break;
+      case 'i':
+        if (arg[2] != '=') {
+          fprintf(stderr, "# Flag Usage: +i=<fully qualified path to class to instantiate>\n");
+          RML_TAILCALLK(rmlFC); /* fail */
+        }
+        
+        class_to_instantiate = (char*)malloc(strlen(arg) * sizeof(char));
+        strcpy(class_to_instantiate, arg + 3);
+        break;
       default:
         fprintf(stderr, "# Unknown option: %s\n", arg);
         RML_TAILCALLK(rmlFC); /* fail */
@@ -586,6 +596,12 @@ RML_BEGIN_LABEL(RTOpts__simulationCodeTarget)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__classToInstantiate)
+{
+  rmlA0 = mk_scon(class_to_instantiate);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__versionRequest)
 {

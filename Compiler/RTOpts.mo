@@ -133,6 +133,12 @@ public function simulationCodeTarget
   external "C" ;
 end simulationCodeTarget;
 
+public function classToInstantiate
+  output String modelName;
+
+  external "C";
+end classToInstantiate;
+
 public function silent
   output Boolean outBoolean;
 

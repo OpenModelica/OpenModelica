@@ -1977,6 +1977,37 @@ algorithm
   end matchcontinue;
 end pathString2;
 
+public function stringPath
+  "Converts a string into a qualified path."
+  input String str;
+  output Path qualifiedPath;
+
+  list<String> paths;
+algorithm
+  paths := Util.stringSplitAtChar(str, ".");
+  qualifiedPath := stringPath2(paths);
+end stringPath;
+
+protected function stringPath2
+  "Helper function to stringPath."
+  input list<String> paths;
+  output Path qualifiedPath;
+algorithm
+  qualifiedPath := matchcontinue(paths)
+    local
+      String str;
+      list<String> rest_str;
+      Path p;
+    case ({}) then fail();
+    case (str :: {}) then IDENT(str);
+    case (str :: rest_str)
+      equation
+        p = stringPath2(rest_str);
+      then
+        QUALIFIED(str, p);
+  end matchcontinue;
+end stringPath2;
+
 public function pathTwoLastIdents "Returns the two last idens of a path"
   input Path p;
   output Path twoLast;

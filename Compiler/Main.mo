@@ -451,7 +451,7 @@ protected function loadLibs
 algorithm
  outSymTab := matchcontinue(inLibs, inSymTab)
    local
-     String lib, mp;
+     String lib, mp, f;
      list<String> rest;
      Absyn.Program pnew, p, p_1;
      list<Interactive.InstantiatedClass> ic;
@@ -465,6 +465,18 @@ algorithm
 
    // no libs or end, return!
    case ({}, st) then st;
+
+   // A .mo-file.
+   case (f :: rest, st as Interactive.SYMBOLTABLE(p, aDep, sp, ic, iv, cf, lf))
+     equation
+       isModelicaFile(f);
+       pnew = Parser.parse(f);
+       pnew = Interactive.updateProgram(pnew, p);
+       newst = Interactive.SYMBOLTABLE(pnew, aDep, sp, ic, iv, cf, lf);
+       newst = loadLibs(rest, newst);
+     then
+      newst;
+
    // some libs present
    case (lib::rest, st as Interactive.SYMBOLTABLE(p,aDep,sp,ic,iv,cf,lf))
      equation
@@ -488,8 +500,9 @@ end loadLibs;
 
 protected function translateFile
 "function: translateFile
-  This function invokes the translator on a source file.  The
-  argument should be a list with a single file name."
+  This function invokes the translator on a source file.  The argument should be
+  a list with a single file name, with the rest of the list being an optional
+  list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
 algorithm
   _:=
@@ -514,119 +527,51 @@ algorithm
         print(Settings.getVersionNr());
       then ();
 
-    case (f::{}) /* A Modelica file .mo  */
+    // A .mo-file, followed by an optional list of extra .mo-files and libraries.
+    // The last class in the first file will be instantiated.
+    case (f :: libs)
       local
-        String s, lastClassName;
-        Absyn.Path lastClassPath;
+        String s;
         AbsynDep.Depends dep;
         list<Absyn.Class> cls;
       equation
-        Debug.fcall("execstat",print, "*** Main -> entering at time: " +& realString(clock()) +& "\n" );
+        //print("Class to instantiate: " +& RTOpts.classToInstantiate() +& "\n");
+        Debug.fcall("execstat", print, "*** Main -> entering at time: " +& realString(clock()) +& "\n");
+        // Check that it's a .mo-file.
         isModelicaFile(f);
-        // parse our file!
-        p = Parser.parse(f);
-        // show parse errors if there are any
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-
-        Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
-        Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
-        Debug.fcall("dump", Dump.dump, p);
-        s = Print.getString();
-        Debug.fcall("dump",print,s);
-
-        p = transformFlatProgram(p,f);
-        p = Dependency.getTotalProgramLastClass(p);
-
-        Debug.fprint("info", "\n------------------------------------------------------------ \n");
-        Debug.fprint("info", "---elaborating\n");
-        scode = SCodeUtil.translateAbsyn2SCode(p);
-        Debug.fprint("info", "\n------------------------------------------------------------ \n");
-        Debug.fprint("info", "---instantiating\n");
-        //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
-        Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (cache,_,d_1,_) = Inst.instantiate(Env.emptyCache(),
-                                            InnerOuter.emptyInstHierarchy,
-                                            scode);
-        Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
-        //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
-        Debug.fprint("beforefixmodout", "Explicit part:\n");
-        Debug.fcall("beforefixmodout", DAEUtil.dumpDebug, d_1);
-        d = fixModelicaOutput(d_1);
-        Print.clearBuf();
-        Debug.fprint("info", "---dumping\n");
-        Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret("flatmodelica", DAEUtil.dumpStr, d, "");
-        Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
-        Debug.fcall("flatmodelica", Print.printBuf, s);
-        Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret("none", DAEUtil.dumpStr, d, "");
-        Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
-        Debug.fcall("none", Print.printBuf, s);
-        Debug.fcall("daedump", DAEUtil.dump, d);
-        Debug.fcall("daedump2", DAEUtil.dump2, d);
-        Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
-        Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
-        // transform if equations to if expression before going into code generation
-        d = DAEUtil.transformIfEqToExpr(d,false);
-        cname = Absyn.lastClassname(p);
-        str = Print.getString();
-        silent = RTOpts.silent();
-        notsilent = boolNot(silent);
-        Debug.bcall(notsilent, print, str);
-        Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
-        optimizeDae(cache, Env.emptyEnv, scode, p, d, d, cname);
-        // show any errors or warnings if there are any!
-        showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-      then
-        ();
-
-    case (f::(libs as _::_)) /* A Modelica file .mo possibly followed by a list of libraries to load! */
-      local
-        String s, lastClassName;
-        Absyn.Path lastClassPath;
-        AbsynDep.Depends dep;
-        list<Absyn.Class> cls;
-      equation
-        Debug.fcall("execstat",print, "*** Main -> entering at time: " +& realString(clock()) +& "\n" );
-        isModelicaFile(f);
-        // loading possible libraries given at the command line
+        // Parse the first file.
+        (p as Absyn.PROGRAM(classes = cls)) = Parser.parse(f);
+        // Parse libraries and extra mo-files that might have been given at the command line.
         Interactive.SYMBOLTABLE(ast = pLibs) = loadLibs(libs, Interactive.emptySymboltable);
-        // parse our file!
-        (p as Absyn.PROGRAM(cls, _, _)) = Parser.parse(f);
-        // show parse errors if there are any
+        // Show any errors that occured during parsing.
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
 
-        // get the name of the last class in the program
-        Absyn.CLASS(name=lastClassName) = Util.listLast(cls);
-        lastClassPath = Absyn.IDENT(lastClassName);
-
-        p = Interactive.updateProgram(pLibs, p); // merge our program with possible libs
+        // Merge our program with the possible libs and models from extra .mo-files.
+        p = Interactive.updateProgram(pLibs, p); 
 
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
         s = Print.getString();
         Debug.fcall("dump",print,s);
-        p = transformFlatProgram(p,f);
 
-        p = Dependency.getTotalProgram(lastClassPath, p);
+        p = transformFlatProgram(p,f);
 
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---elaborating\n");
-        scode = SCodeUtil.translateAbsyn2SCode(p);
         Debug.fprint("info", "\n------------------------------------------------------------ \n");
         Debug.fprint("info", "---instantiating\n");
-        //print(" Inst.Instantiate " +& realString(clock()) +&"\n");
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
-        (cache,env,_,d_1) = Inst.instantiateClass(Env.emptyCache(),
-                                            InnerOuter.emptyInstHierarchy,
-                                            scode,
-                                            lastClassPath);
+
+        // Instantiate the program.
+        (cache, env, d_1, scode) = instantiate(p); 
+
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
-        //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
         Debug.fprint("beforefixmodout", "Explicit part:\n");
         Debug.fcall("beforefixmodout", DAEUtil.dumpDebug, d_1);
+
         d = fixModelicaOutput(d_1);
+
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
@@ -641,7 +586,8 @@ algorithm
         Debug.fcall("daedump2", DAEUtil.dump2, d);
         Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
-        // transform if equations to if expression before going into code generation
+
+        // Transform if equations to if expression before going into code generation.
         d = DAEUtil.transformIfEqToExpr(d,false);
         cname = Absyn.lastClassname(p);
         str = Print.getString();
@@ -649,11 +595,12 @@ algorithm
         notsilent = boolNot(silent);
         Debug.bcall(notsilent, print, str);
         Debug.fcall("execstat",print, "*** Main -> To optimizedae at time: " +& realString(clock()) +& "\n" );
+
+        // Run the backend.
         optimizeDae(cache, env, scode, p, d, d, cname);
-        // show any errors or warnings if there are any!
+        // Show any errors or warnings if there are any!
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-      then
-        ();
+      then ();
 
     /* Modelica script file .mos */
     case (f::libs)
@@ -717,6 +664,55 @@ algorithm
     case(p,filename) then p;
   end matchcontinue;
 end transformFlatProgram;
+
+protected function instantiate
+  "Translates the Absyn.Program to SCode and instantiates either a given class
+   specified by the +i flag on the command line, or the last class in the
+   program if no class was specified."
+  input Absyn.Program program;
+  output Env.Cache cache;
+  output Env.Env env;
+  output DAE.DAElist dae;
+  output list<SCode.Class> scode;
+algorithm
+  (cache, env, dae) := matchcontinue(program)
+    local
+      Env.Cache c;
+      Env.Env e;
+      DAE.DAElist d;
+      Absyn.Program p;
+      list<SCode.Class> s;
+      Absyn.Path class_path;
+      String class_to_instantiate;
+    case (_)
+      equation
+        // If no class was explicitly specified, instantiate the last class in
+        // the program.
+        class_to_instantiate = RTOpts.classToInstantiate();
+        equality(class_to_instantiate = ""); 
+        p = Dependency.getTotalProgramLastClass(program);
+        s = SCodeUtil.translateAbsyn2SCode(p);
+        (c, _, d, _) = Inst.instantiate(Env.emptyCache(),
+                                        InnerOuter.emptyInstHierarchy,
+                                        s);
+      then
+      (c, Env.emptyEnv(), d, s);
+    case (_)
+      equation
+        // If a class to instantiate was given on the command line, instantiate
+        // that class.
+        class_to_instantiate = RTOpts.classToInstantiate();
+        class_path = Absyn.stringPath(class_to_instantiate);
+        p = Dependency.getTotalProgram(class_path, program);
+        s = SCodeUtil.translateAbsyn2SCode(p);
+        (c, e, _, d) = Inst.instantiateClass(Env.emptyCache(),
+                                             InnerOuter.emptyInstHierarchy,
+                                             s,
+                                             class_path);
+     then
+        (c, e, d, s);
+  end matchcontinue;
+end instantiate;
 
 protected function runBackendQ
 "function: runBackendQ
@@ -1128,7 +1124,7 @@ algorithm
   print("OpenModelica Compiler version: "); print(Settings.getVersionNr()); print("\n");
   print("http://www.OpenModelica.org\n");
   print("Please check the System Guide for full information about flags.\n");
-  print("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Model.mof | Script.mos) [Libraries] \n");
+  print("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Model.mof | Script.mos) [Libraries | .mo(f)-files] \n");
   print("* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n");
   print("*            The libraries should be separated by spaces: Lib1 Lib2 ... LibN.\n");
   print("* runtimeOptions: call omc -help for seeing runtime options\n");
@@ -1162,12 +1158,16 @@ algorithm
   print("\t                           default is to not use the dependency analysis.\n");
   print("\t+d=noevalfunc              do not use the function interpreter, uses dynamic loading instead.\n");
   print("\t                           default is to use the function interpreter.\n");
+  print("\t+i=classpath               instantiate the class given by the fully qualified path.\n"); 
+  print("\n");
   print("* Examples:\n");
   print("\tomc Model.mo               will produce flattened Model on standard output\n");
   print("\tomc Model.mof              will produce flattened Model on standard output\n");
   print("\tomc Script.mos             will run the commands from Script.mos\n");
   print("\tomc Model.mo Modelica      will first load the Modelica library and then produce \n");
   print("\t                           flattened Model on standard output\n");
+  print("\tomc Model1.mo Model2.mo    will load both Model1.mo and Model2.mo, and produce \n");
+  print("\t                           flattened Model1 on standard output\n"); 
   print("\t*.mo (Modelica files) \n");
   print("\t*.mof (Flat Modelica files) \n");
   print("\t*.mos (Modelica Script files) \n");

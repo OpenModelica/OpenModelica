@@ -743,6 +743,7 @@ algorithm
       InstanceHierarchy ih;
       ConnectionGraph.ConnectionGraph graph;
 
+    // The class and the path match => instantiate the class.
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),Absyn.IDENT(name = name2))
       equation
         equality(name = name2);
@@ -758,9 +759,19 @@ algorithm
       then
         (cache,env_1,ih,dae);
 
+    // The class does not match the path, and no more classes left => error.
+    case (cache,env,ih,((c as SCode.CLASS(name = name)) :: {}),(path as Absyn.IDENT(name = name2)))
+      equation
+        failure(equality(name = name2));
+        Error.addMessage(Error.LOAD_MODEL_ERROR, {name2});
+      then
+        fail();
+        
+    // The class does not match the path, but there are more classes left => continue searching for a matching class.
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: cs),(path as Absyn.IDENT(name = name2)))
       equation
         failure(equality(name = name2));
+        failure(equality(cs = {}));
         (cache,env,ih,dae) = instClassInProgram(cache, env, ih, cs, path);
       then
         (cache,env,ih,dae);

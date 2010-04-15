@@ -1605,7 +1605,7 @@ extFunDefArg(SimExtArg extArg) ::=
     size_t <name>_<eStr>
     >>
 
-// This only works for constans (or else the name of a temporary variable is
+// This only works for constants (or else the name of a temporary variable is
 // returned).
 daeExpToString(Exp exp) ::=
   # preExp = "" /*BUFD*/
