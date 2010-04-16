@@ -5252,11 +5252,12 @@ algorithm
         tp = Exp.typeof(s1);
         tp_str = expTypeStr(tp, false);
         (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
-        (cfn1,var2,tnr2) = generateExpression(s2, tnr1, context);
+        (cfn2,var2,tnr2) = generateExpression(s2, tnr1, context);
+        cfn = cMergeFns({cfn1,cfn2});
         (tdecl,tvar,tnr3) = generateTempDecl(tp_str, tnr2);
-        cfn2 = cAddVariables(cfn1, {tdecl});
+        cfn = cAddVariables(cfn, {tdecl});
         stmt = Util.stringAppendList({tvar," = max(((modelica_real)(",var1,")),((modelica_real)(",var2,")));"});
-        cfn = cAddStatements(cfn2, {stmt});
+        cfn = cAddStatements(cfn, {stmt});
       then
         (cfn,tvar,tnr3);
         /* min */
@@ -5278,11 +5279,12 @@ algorithm
         tp = Exp.typeof(s1);
         tp_str = expTypeStr(tp, false);
         (cfn1,var1,tnr1) = generateExpression(s1, tnr, context);
-        (cfn1,var2,tnr2) = generateExpression(s2, tnr1, context);
+        (cfn2,var2,tnr2) = generateExpression(s2, tnr1, context);
+        cfn = cMergeFns({cfn1,cfn2});
         (tdecl,tvar,tnr3) = generateTempDecl(tp_str, tnr2);
-        cfn2 = cAddVariables(cfn1, {tdecl});
+        cfn = cAddVariables(cfn, {tdecl});
         stmt = Util.stringAppendList({tvar," = min(((modelica_real)(",var1,")),((modelica_real)(",var2,")));"});
-        cfn = cAddStatements(cfn2, {stmt});
+        cfn = cAddStatements(cfn, {stmt});
       then
         (cfn,tvar,tnr3);
     case (DAE.CALL(path = Absyn.IDENT(name = "abs"),expLst = {s1},tuple_ = false,builtin = true),tnr,context)
