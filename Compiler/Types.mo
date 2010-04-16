@@ -2854,6 +2854,15 @@ algorithm
     case((DAE.T_BOOL(_::vars),_)) equation
       fixed = getFixedVarAttribute((DAE.T_BOOL(vars),NONE));
     then fixed;
+      
+    case((DAE.T_ARRAY(arrayType = ty), _))
+      local
+        Type ty;
+        Boolean result;
+      equation
+        result = getFixedVarAttribute(ty);
+      then 
+        result;  
   end matchcontinue;
 end getFixedVarAttribute;
 
