@@ -186,7 +186,7 @@ algorithm
     // Record constructors
     case (cache,env_1,path,c as SCode.CLASS(name=id,restriction=SCode.R_RECORD()))
       equation
-        (env_1,t) = buildRecordType(env_1,c);
+        (cache,env_1,t) = buildRecordType(cache,env_1,c);
       then
         (cache,t,env_1);
 
@@ -918,25 +918,28 @@ end lookupUnqualifiedImportedClassInFrame;
 
 public function lookupRecordConstructorClass "function: lookupRecordConstructorClass  
   Searches for a record constructor implicitly defined by a record class."
+  input Env.Cache cache;
   input Env.Env inEnv;
   input Absyn.Path inPath;
+  output Env.Cache outCache;
   output SCode.Class outClass;
   output Env.Env outEnv;
 algorithm
-  (outClass,outEnv) := matchcontinue (inEnv,inPath)
+  (outCache,outClass,outEnv) := matchcontinue (cache,inEnv,inPath)
     local
       SCode.Class c;
       list<Env.Frame> env,env_1,env_2,env_3;
       Absyn.Path path;
       String name;
       SCode.Restriction re;
-    case (env,path)
+      Env.Cache cache;
+    case (cache,env,path)
       equation
-        (_,c,env_1) = lookupClass(Env.emptyCache(),env, path, false);
+        (cache,c,env_1) = lookupClass(cache,env, path, false);
         SCode.CLASS(name = name, restriction=SCode.R_RECORD()) = c;
-        (_,c) = buildRecordConstructorClass(env_1,c);
+        (cache,_,c) = buildRecordConstructorClass(cache,env_1,c);
       then
-        (c,env_1);
+        (cache,c,env_1);
   end matchcontinue;
 end lookupRecordConstructorClass;
 
@@ -1720,7 +1723,7 @@ algorithm
         /* Record constructor function*/
     case (cache,Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv),env,id)
       equation
-        (env_3,ty) = buildRecordType(env,cdef);
+        (cache,env_3,ty) = buildRecordType(cache,env,cdef);
       then
         (cache,ty,env_3);
 
@@ -1793,7 +1796,7 @@ algorithm
     case (cache,ht,httypes,env,id)
       equation
         Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv) = Env.avlTreeGet(ht, id);
-        (_,ftype) = buildRecordType(env,cdef);
+        (cache,_,ftype) = buildRecordType(cache,env,cdef);
       then
         (cache,{ftype},DAEUtil.emptyDae);
 
@@ -1832,20 +1835,22 @@ algorithm
 end lookupFunctionsInFrame;
 
 protected function buildRecordType ""
+  input Env.Cache cache;
   input Env.Env env;
   input SCode.Class cdef;
+  output Env.Cache outCache;
   output Env.Env outEnv;
   output Types.Type ftype;
 protected
   String name;
   Env.Env env_1;
 algorithm
-  (_,cdef) := buildRecordConstructorClass(env,cdef);
-  (_,outEnv,_,_) := Inst.implicitFunctionInstantiation(
-     Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,
+  (outCache,_,cdef) := buildRecordConstructorClass(cache,env,cdef);
+  (outCache,outEnv,_,_) := Inst.implicitFunctionInstantiation(
+     outCache,env,InnerOuter.emptyInstHierarchy,
      DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
   name := SCode.className(cdef);
-  (_,ftype,_) := lookupTypeInEnv(Env.emptyCache(),outEnv,Absyn.IDENT(name));
+  (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
 end buildRecordType;
 
 public function buildRecordConstructorClass
@@ -1853,13 +1858,15 @@ public function buildRecordConstructorClass
 
   Creates the record constructor class, i.e. a function, from the record
   class given as argument."
+  input Env.Cache cache;
   input Env.Env inEnv;
   input SCode.Class inClass;
+  output Env.Cache outCache;
   output Env.Env outEnv;
   output SCode.Class outClass;
 algorithm
-  (outEnv,outCache,outClass) :=
-  matchcontinue (inEnv,inClass)
+  (outCache,outEnv,outCache,outClass) :=
+  matchcontinue (cache,inEnv,inClass)
     local
       Env.Cache cache;
       list<SCode.Element> funcelts,elts;
@@ -1872,39 +1879,43 @@ algorithm
       list<Absyn.Algorithm> initAbsynStmts;
       Absyn.Info info;
 
-    case (env,cl as SCode.CLASS(name=id,info=info)) /* record class function class */
+    case (cache,env,cl as SCode.CLASS(name=id,info=info))
       equation
-        (env,funcelts,elts) = buildRecordConstructorClass2(env,cl,DAE.NOMOD());
+        (cache,env,funcelts,elts) = buildRecordConstructorClass2(cache,env,cl,DAE.NOMOD());
         reselt = buildRecordConstructorResultElt(funcelts,id,env);
         cl = SCode.CLASS(id,false,false,SCode.R_FUNCTION(),SCode.PARTS((reselt :: funcelts),{},{},{},{},NONE,{},NONE),info);
       then
-        (env,cl);
-    case (env,cl)
+        (cache,env,cl);
+    case (cache,env,cl)
       equation
         Debug.fprintln("failtrace","buildRecordConstructorClass failed");
       then fail();
   end matchcontinue;
 end buildRecordConstructorClass;
 
-protected function buildRecordConstructorClass2 "help function to buildRecordConstructorClass"
+protected function buildRecordConstructorClass2
+  input Env.Cache cache;
   input Env.Env env;
   input SCode.Class cl;
   input DAE.Mod mods;
+  output Env.Cache outCache;
   output Env.Env outEnv;
   output list<SCode.Element> funcelts;
   output list<SCode.Element> elts;
 algorithm
-  (outEnv,funcelts,elts) := matchcontinue(env,cl,mods)
+  (outCache,outEnv,funcelts,elts) := matchcontinue(cache,env,cl,mods)
     local
       list<SCode.Element> elts,cdefelts,restElts,classExtendsElts,extendsElts,compElts;
       list<tuple<SCode.Element,DAE.Mod>> eltsMods;
       Env.Env env1;
       String name;
       Absyn.Path fpath;
+      SCode.Class cl;
 
     /* a class with parts */
-    case (env,SCode.CLASS(name = name, classDef = SCode.PARTS(elementLst = elts)),mods)
+    case (cache,env,cl as SCode.CLASS(name = name),mods)
       equation
+        (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true);
         env = Env.openScope(env, false, SOME(name));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
@@ -1913,19 +1924,10 @@ algorithm
         (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,cdefelts,false,NONE);
         (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
-      then (env1,funcelts,elts);
-    /* adrpo: TODO! handle also the case model extends x end x;
-     * sjoelund: Is this really needed? Try commenting it out, since instExtendsAndClassExtendsList should handle it! */
-     /*
-    case(cache,env,SCode.CLASS(classDef = SCode.CLASS_EXTENDS(elementLst = elts)),mods)
-      equation
-        (cdefelts,restElts) = Inst.classdefAndImpElts(elts);
-        (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,cdefelts,false,NONE);
-        funcelts = buildRecordConstructorElts(restElts,mods,env1);
-      then (cache,funcelts,elts);
-      */
+      then (cache,env1,funcelts,elts);
+    
     // fail
-    case(env,cl,mods) equation
+    case(cache,env,cl,mods) equation
       Debug.traceln("buildRecordConstructorClass2 failed, cl:"+&SCode.printClassStr(cl)+&"\n");
     then fail();
       /* TODO: short class defs */

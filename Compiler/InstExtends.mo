@@ -405,7 +405,7 @@ algorithm
   end matchcontinue;
 end instClassExtendsList2;
 
-protected function instDerivedClasses
+public function instDerivedClasses
 "function: instDerivedClasses
   author: PA
   This function takes a class definition and returns the
@@ -555,7 +555,7 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
         (((c,DAE.NOMOD(),b) :: res),mod_rest);
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "-Inst.updateComponents failed");
+        Debug.fprintln("failtrace", "- InstExtends.updateComponents failed");
       then
         fail();
   end matchcontinue;

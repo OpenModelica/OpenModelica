@@ -8150,7 +8150,7 @@ algorithm
         (cache,cl as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) =
            Lookup.lookupClass(cache, env, Absyn.IDENT("GraphicalAnnotationsProgram____"), false);
         (cache,cl as SCode.CLASS(name = name, restriction = SCode.R_RECORD()),env_1) = Lookup.lookupClass(cache, env, fn, false);
-        (cl,env_2) = Lookup.lookupRecordConstructorClass(env_1 /* env */, fn);
+        (cache,cl,env_2) = Lookup.lookupRecordConstructorClass(cache,env_1 /* env */, fn);
         (comps,_::names) = SCode.getClassComponents(cl); // remove the fist one as it is the result!
         /*
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(name),_,_,_),_))),_)),env_1)
@@ -8252,10 +8252,10 @@ algorithm
         const = Util.listFold(constlist, Types.constAnd, DAE.C_CONST());
         tyconst = elabConsts(outtype, const);
         prop = getProperties(outtype, tyconst);
-        (env_2,cl) = Lookup.buildRecordConstructorClass(recordEnv, recordCl);
+        (cache,env_2,cl) = Lookup.buildRecordConstructorClass(cache, recordEnv, recordCl);
         (cache,newslots2) = fillDefaultSlots(cache, newslots, cl, env_2, impl);
         args_2 = expListFromSlots(newslots2);
-        tp = complexTypeFromSlots(newslots2,complexClassType);
+        tp = complexTypeFromSlots(newslots2,ClassInf.RECORD(fn));
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), vect_dims, newslots2, prop);
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/

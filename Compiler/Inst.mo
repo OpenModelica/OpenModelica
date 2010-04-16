@@ -8768,7 +8768,7 @@ algorithm
     
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
       equation
-        (c,cenv) = Lookup.lookupRecordConstructorClass(env,Absyn.IDENT(n));
+        (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
         (cache,env,ih,DAE.DAE({DAE.FUNCTION(fpath,_,ty1,false,_,source)},funcs)) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
       then (cache,env,ih,DAE.DAE({DAE.RECORD_CONSTRUCTOR(fpath,ty1,source)},funcs));
 
