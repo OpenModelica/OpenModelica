@@ -209,6 +209,7 @@ public constant ErrorID MODIFIER_NON_ARRAY_TYPE_WARNING=121;
 public constant ErrorID BUILTIN_VECTOR_INVALID_DIMENSIONS=122;
 public constant ErrorID UNROLL_LOOP_CONTAINING_WHEN=123;
 public constant ErrorID CIRCULAR_PARAM=124;
+public constant ErrorID NESTED_WHEN=125;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -358,9 +359,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 					"Non-array modification '%s' for array component, possibly due to missing 'each'.\n"),
 					(BUILTIN_VECTOR_INVALID_DIMENSIONS,TRANSLATION(),ERROR(),
 					"In scope %s: Invalid dimensions %s in %s, no more than one dimension may have size > 1."),
-
 					(UNROLL_LOOP_CONTAINING_WHEN,TRANSLATION(),ERROR(),
 					"Unable to unroll for loop containing when statements or equations: %s\n"),
+          (CIRCULAR_PARAM, TRANSLATION(), ERROR(), " Variable '%s' has a cyclic dependency and has variability %s."),
+          (NESTED_WHEN, TRANSLATION(), ERROR(),
+          "In scope %s: Invalid nested when statements:\n%s\n"),
+
 					
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),
@@ -539,8 +543,6 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
           (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
-          (CIRCULAR_PARAM, TRANSLATION(), ERROR(), " Variable '%s' has a cyclic dependency and has variability %s."),
-
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix.")

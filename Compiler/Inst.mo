@@ -763,6 +763,7 @@ algorithm
     case (cache,env,ih,((c as SCode.CLASS(name = name)) :: {}),(path as Absyn.IDENT(name = name2)))
       equation
         failure(equality(name = name2));
+        failure(equality(name2 = ""));
         Error.addMessage(Error.LOAD_MODEL_ERROR, {name2});
       then
         fail();
@@ -12403,6 +12404,7 @@ algorithm
     /* When clause without elsewhen */
     case (cache,env,pre,Absyn.ALG_WHEN_A(boolExpr = e,whenBody = sl,elseWhenAlgorithmBranch = {}),initial_,impl,unrollForLoops)
       equation 
+        false = containsWhenStatements(sl);
         (cache,e_1,prop,_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, e_1, pre);
         (cache,sl_1,dae2) = instAlgorithmitems(cache, env, pre, sl, initial_, impl, unrollForLoops);
@@ -12415,6 +12417,7 @@ algorithm
     case (cache,env,pre,Absyn.ALG_WHEN_A(boolExpr = e,whenBody = sl,
           elseWhenAlgorithmBranch = (elseWhenC,elseWhenSt)::elseWhenRest),initial_,impl,unrollForLoops)
       equation 
+        false = containsWhenStatements(sl);
         (cache,{stmt1},dae1) = instStatement(cache,env,pre,Absyn.ALG_WHEN_A(elseWhenC,elseWhenSt,elseWhenRest),initial_,impl,unrollForLoops);
         (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, e_1, pre);        
@@ -12423,7 +12426,18 @@ algorithm
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
         (cache,{stmt},dae);
-        
+
+    // Check for nested when clauses, which are invalid.
+    case (_,env,_,alg as Absyn.ALG_WHEN_A(whenBody = sl),_,_,_)
+      local
+        String alg_str, scope_str;
+      equation
+        true = containsWhenStatements(sl);
+        alg_str = Dump.unparseAlgorithmStr(0,Absyn.ALGORITHMITEM(alg,NONE()));
+        scope_str = Env.printEnvPathStr(env);
+        Error.addMessage(Error.NESTED_WHEN, {scope_str, alg_str});
+      then fail();
+                        
     /* assert(cond,msg) */
     case (cache,env,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),initial_,impl,unrollForLoops)
