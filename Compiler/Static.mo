@@ -8105,7 +8105,31 @@ function: elabCallArgs
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outExp,outProperties,outDae) :=
-  matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,inInteractiveInteractiveSymbolTableOption)
+  elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inInteractiveInteractiveSymbolTableOption);
+end elabCallArgs;
+      
+protected function elabCallArgs2 "
+function: elabCallArgs
+  Given the name of a function and two lists of expression and
+  NamedArg respectively to be used
+  as actual arguments in a function call to that function, this
+  function finds the function definition and matches the actual
+  arguments to the formal parameters."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Path inPath;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inAbsynNamedArgLst;
+  input Boolean inBoolean;
+  input Util.StatefulBoolean stopElab;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+	output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output DAE.DAElist outDae "contain functions";
+algorithm
+  (outCache,outExp,outProperties,outDae) :=
+  matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t,outtype,restype,functype;
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fargs;
@@ -8144,7 +8168,7 @@ algorithm
      * this could be also fixed by transforming the function call arguments into modifications and
      * send the modifications as an option in Lookup.lookup* functions!
      */
-    case (cache,env,fn,args,nargs,impl,st)
+    case (cache,env,fn,args,nargs,impl,stopElab,st)
       local list<SCode.Element> comps; list<String> names;
       equation
         (cache,cl as SCode.CLASS(restriction = SCode.R_PACKAGE()),_) =
@@ -8169,7 +8193,7 @@ algorithm
         (cache,DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()),DAEUtil.emptyDae);
 
     // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
-    case (cache, env, fn, args, nargs, impl, st)
+    case (cache, env, fn, args, nargs, impl, stopElab, st)
       local
         DAE.ExpType tp;
         String str2, stringifiedInstanceFunctionName;
@@ -8198,6 +8222,7 @@ algorithm
         // lookup the function using the correct typeOf(world).functionName
         Debug.fprintln("static", "Looking up class: " +& Absyn.pathString(functionClassPath));
         (_, scodeClass, classEnv) = Lookup.lookupClass(cache, env, functionClassPath, true);
+        Util.setStatefulBoolean(stopElab,true);
         // see if class scodeClass is derived and then
         // take the applied modifications and transform
         // them into function arguments by prefixing them
@@ -8230,7 +8255,7 @@ algorithm
         (cache,call_exp,prop_1,dae);
 
     /* Record constructors, user defined or implicit */ // try the hard stuff first
-    case (cache,env,fn,args,nargs,impl,st)
+    case (cache,env,fn,args,nargs,impl,stopElab,st)
       local
         String lastId;
         list<Env.Frame> recordEnv;
@@ -8242,6 +8267,7 @@ algorithm
 //        print(" inst record: " +& name +& " \n");
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
+        Util.setStatefulBoolean(stopElab,true);
         lastId = Absyn.pathLastIdent(fn);
         fn = Env.joinEnvPath(recordEnv, Absyn.IDENT(lastId));
 
@@ -8265,7 +8291,7 @@ algorithm
         (cache,call_exp,prop_1,dae);
 
     /* ------ */
-    case (cache,env,fn,args,nargs,impl,st) /* Metamodelica extension, added by simbj */
+    case (cache,env,fn,args,nargs,impl,stopElab,st) /* Metamodelica extension, added by simbj */
       local
         SCode.Class c;
         SCode.Restriction re;
@@ -8277,7 +8303,9 @@ algorithm
         Absyn.Path fqPath;
        equation
         true = RTOpts.acceptMetaModelicaGrammar();
+        false = Util.getStatefulBoolean(stopElab);
         (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
+        Util.setStatefulBoolean(stopElab,true);
         (cache,c,env_1) = Lookup.lookupClass(cache, env_1, fn, false);
         // (_, _, _, _, (DAE.T_COMPLEX(complexClassType = ClassInf.META_RECORD(_), complexVarLst = vars),_), _, _, _) = Inst.instClass(cache,env_1,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,c,{},false,Inst.INNER_CALL(), ConnectionGraph.EMPTY);
         fieldNames = Util.listMap(vars, Types.getVarName);
@@ -8295,7 +8323,7 @@ algorithm
         (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,DAEUtil.emptyDae);
         /* ------ */
 
-    case (cache,env,fn,args,nargs,impl,st) /* ..Other functions */
+    case (cache,env,fn,args,nargs,impl,stopElab,st) /* ..Other functions */
       local
         DAE.ExpType tp;
         DAE.Exp callExp;
@@ -8303,6 +8331,7 @@ algorithm
         list<DAE.Type> ltypes;
         list<String> lstr;
       equation
+        false = Util.getStatefulBoolean(stopElab);
         (cache,typelist as _::_,dae1) = Lookup.lookupFunctionsInEnv(cache, env, fn)
         "PR. A function can have several types. Taking an array with
          different dimensions as parameter for example. Because of this we
@@ -8311,6 +8340,7 @@ algorithm
          functiontype of several possibilites. The solution is to send
          in the function type of the user function and check both the
          function name and the function\'s type." ;
+        Util.setStatefulBoolean(stopElab,true);
         (cache,args_1,constlist,restype,functype as (DAE.T_FUNCTION(inline = inline),_),vect_dims,slots,dae2) =
           elabTypes(cache, env, args, nargs, typelist, true/* Check types*/, impl)
           "The constness of a function depends on the inputs. If all inputs are constant the call itself is constant." ;
@@ -8335,7 +8365,7 @@ algorithm
       then
         (cache,call_exp,prop_1,dae);
 
-    case (cache,env,fn,args,nargs,impl,st) /* no matching type found, no candidates. */
+    case (cache,env,fn,args,nargs,impl,stopElab,st) /* no matching type found, no candidates. */
       equation
         (cache,{},_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
         fn_str = Absyn.pathString(fn);
@@ -8343,7 +8373,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with -one- candidate */
+    case (cache,env,fn,args,nargs,impl,stopElab,st) /* no matching type found, with -one- candidate */
       local list<DAE.Exp> args1; String argStr; DAE.Type tp1;
       equation
         (cache,typelist as {tp1},_) = Lookup.lookupFunctionsInEnv(cache, env, fn);
@@ -8356,7 +8386,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,fn,args,nargs,impl,st) /* no matching type found, with candidates */
+    case (cache,env,fn,args,nargs,impl,stopElab,st) /* no matching type found, with candidates */
       equation
         (cache,typelist as _::_::_,_) = Lookup.lookupFunctionsInEnv(cache,env, fn);
 
@@ -8377,7 +8407,7 @@ algorithm
       then
         fail(); */
 
-    case (cache,env,fn,args,nargs,impl,st)
+    case (cache,env,fn,args,nargs,impl,stopElab,st)
       local
         list<Absyn.Exp> t4;
       equation
@@ -8389,14 +8419,14 @@ algorithm
       then
         fail();
 
-    case (cache,env,fn,args,nargs,impl,st)
+    case (cache,env,fn,args,nargs,impl,stopElab,st)
       equation
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Static.elabCallArgs failed on: " +& Absyn.pathString(fn) +& " in env: " +& Env.printEnvPathStr(env));
       then
         fail();
   end matchcontinue;
-end elabCallArgs;
+end elabCallArgs2;
 
 protected function instantiateDaeFunction "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
 functiontree of a newly created dae"

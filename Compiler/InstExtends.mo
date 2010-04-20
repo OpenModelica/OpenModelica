@@ -95,7 +95,7 @@ algorithm
     local
       SCode.Class c;
       String cn,s,scope_str,className;
-      Boolean encf,impl;
+      Boolean encf,impl,notConst;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
       DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
@@ -194,17 +194,27 @@ algorithm
       then
         fail();
 
-    /* Filter out non-constants if partial inst */
-    case (cache,env,ih,mod,SCode.COMPONENT(component = s, attributes = SCode.ATTR(variability = var)) :: rest,ci_state,className,impl,true) /* Components that are not EXTENDS */
+    /* Extending a component means copying it. */
+    case (cache,env,ih,mod,(elt as SCode.COMPONENT(component = s, attributes = SCode.ATTR(variability = var))) :: rest,ci_state,className,impl,isPartialInst)
       equation
-        false = SCode.isConstant(var);
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, true);
+        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
+        /* Filter out non-constants if partial inst */
+        notConst = not SCode.isConstant(var);
+        compelts2 = Util.if_(notConst and isPartialInst,compelts2,(elt,DAE.NOMOD(),false)::compelts2);
       then
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
 
+    /* Handle redeclare for classdefs */
+    case (cache,env,ih,mod,(elt as SCode.CLASSDEF(name = cn)) :: rest,ci_state,className,impl,isPartialInst)
+      equation
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
+        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
+      then
+        (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
+
     /* instantiate elements that are not extends */
-    case (cache,env,ih,mod,(elt :: rest),ci_state,className,impl,isPartialInst) /* Components that are not EXTENDS */
+    case (cache,env,ih,mod,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,isPartialInst)
       equation
         false = SCode.isElementExtends(elt) "verify that it is not an extends element";
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
