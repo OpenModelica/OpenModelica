@@ -128,6 +128,7 @@ algorithm
         (cache,(c as SCode.CLASS(name=cn,encapsulatedPrefix=encf,restriction=r)),cenv) = Lookup.lookupClass(cache,env, tp, false);
 
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
+        
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
         (cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
         
@@ -176,7 +177,7 @@ algorithm
 
         compelts = listAppend(compelts1, compelts2);
 
-        (compelts3,mods_1) = updateComponents(compelts, mods_1, env2) "update components with new merged modifiers";
+        (compelts3,mods_1) = updateComponentsAndClassdefs(compelts, mods_1, env2) "update components with new merged modifiers";
         eq = Util.listlistFunc(eq1_1,{eq2,eq3},Util.listUnionOnTrue,Util.equal);
         ieq = Util.listlistFunc(ieq1_1,{ieq2,ieq3},Util.listUnionOnTrue,Util.equal);
         alg = Util.listlistFunc(alg1_1,{alg2,alg3},Util.listUnionOnTrue,Util.equal);
@@ -205,7 +206,7 @@ algorithm
       then
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
 
-    /* Handle redeclare for classdefs */
+    /* Classdefs */
     case (cache,env,ih,mod,(elt as SCode.CLASSDEF(name = cn)) :: rest,ci_state,className,impl,isPartialInst)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
@@ -216,7 +217,6 @@ algorithm
     /* instantiate elements that are not extends */
     case (cache,env,ih,mod,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,isPartialInst)
       equation
-        false = SCode.isElementExtends(elt) "verify that it is not an extends element";
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
         instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
       then
@@ -512,7 +512,7 @@ algorithm
   end matchcontinue;
 end noImportElements;
 
-protected function updateComponents
+protected function updateComponentsAndClassdefs
 "function: updateComponents
   author: PA
   This function takes a list of components and a Mod and returns a list of
@@ -545,31 +545,42 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
         // Debug.traceln("\tSpecific mods on comp: " +&  Mod.printModStr(cmod2));
         mod_1 = Mod.merge(cmod2, cmod, env, Prefix.NOPRE());
         mod_rest = Types.removeMod(mod,id);
-        (res,mod_rest) = updateComponents(xs, mod_rest, env);
+        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod_rest, env);
       then
         (((comp,mod_1,b) :: res),mod_rest);
     case ((((c as SCode.EXTENDS(baseClassPath = _)),emod,b) :: xs),mod,env)
       equation
-        (res,mod_rest) = updateComponents(xs, mod, env);
+        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
       then
         (((c,emod,b) :: res),mod_rest);
-    case ((((c as SCode.CLASSDEF(name = _)),cmod,b) :: xs),mod,env)
-      equation
-        (res,mod_rest) = updateComponents(xs, mod, env);
-      then
-        (((c,cmod,b) :: res),mod_rest);
     case ((((c as SCode.IMPORT(imp = _)),_,b) :: xs),mod,env)
       equation
-        (res,mod_rest) = updateComponents(xs, mod, env);
+        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
       then
         (((c,DAE.NOMOD(),b) :: res),mod_rest);
+    
+    case ((((SCode.CLASSDEF(replaceablePrefix = true, name = id)),_,b) :: xs),mod,env)
+      equation
+        DAE.REDECL(_, {(c,cmod)}) = Mod.lookupCompModification(mod, id);
+        mod_rest = Types.removeMod(mod,id);
+        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod_rest, env);
+      then
+        (((c,cmod,b) :: res),mod_rest);
+
+    case ((((c as SCode.CLASSDEF(name = id)),cmod,b) :: xs),mod,env)
+      equation
+        DAE.NOMOD() = Mod.lookupCompModification(mod, id);
+        (res,mod_rest) = updateComponentsAndClassdefs(xs, mod, env);
+      then
+        (((c,cmod,b) :: res),mod_rest);
+
     case (_,_,_)
       equation
-        Debug.fprintln("failtrace", "- InstExtends.updateComponents failed");
+        Debug.fprintln("failtrace", "- InstExtends.updateComponentsAndClassdefs failed");
       then
         fail();
   end matchcontinue;
-end updateComponents;
+end updateComponentsAndClassdefs;
 
 protected function getLocalIdentList
 " Analyzes the elements of a class and fetches a list of components and classdefs,
