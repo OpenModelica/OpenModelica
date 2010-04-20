@@ -10,6 +10,7 @@ AC_SUBST(readlineinc)
 AC_SUBST(readlinelib)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
+AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(USE_CORBA)
 AC_SUBST(CORBAHOME)
 AC_SUBST(CORBALIBS)
@@ -39,13 +40,7 @@ if test -x $RMLHOME/bin/rmlc ; then
   rmlc_bin=$RMLHOME/bin/rmlc
   AC_MSG_RESULT([yes])
 else
-  rmlc_bin=`find $RMLHOME -name rmlc| head -1`
-  if test -z "$rmlc_bin" ; then
-    AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin or anywhere in \$RMLHOME])
-    AC_MSG_RESULT([no])
-  else
-    AC_MSG_RESULT([yes])
-  fi
+  AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin])
 fi
 
 dnl Checks for libraries.
@@ -160,22 +155,27 @@ return 0;
 ], [AC_MSG_RESULT([yes]); AC_DEFINE([HAVE_SCANDIR])],
       [AC_MSG_RESULT([no])])
 
+dnl check for lpsolve55
+
+LIBS=""
+AC_CHECK_LIB(colamd,colamd)
+AC_CHECK_LIB(dl,dlsym)
+AC_CHECK_LIB(lpsolve55,make_lp,[],[AC_MSG_ERROR([linking failed])])
+LIBLPSOLVE55=$LIBS
+LIBS=""
 
 dnl check for socket
 
-AC_CHECK_FUNC(socket,
- [AC_MSG_RESULT([yes]); LIBSOCKET=""],
- [AC_MSG_RESULT([no]);
-  AC_MSG_CHECKING([for libsocket]);
+AC_CHECK_FUNC(socket,[LIBSOCKET=""],
+ [AC_MSG_CHECKING([for libsocket]);
   AC_CHECK_LIB(socket, socket,[AC_MSG_RESULT([yes]); LIBSOCKET="-lsocket"],[AC_MSG_ERROR([neither socket nor libsocket.a found])])
 ])
 
 dnl check for gethostbyname
 
 AC_CHECK_FUNC(gethostbyname,
- [AC_MSG_RESULT([yes]); LIBNSL=""],
- [AC_MSG_RESULT([no]);
-  AC_MSG_CHECKING([for libnsl]);
+ [LIBNSL=""],
+ [AC_MSG_CHECKING([for libnsl]);
   AC_CHECK_LIB(nsl,gethostbyname, [AC_MSG_RESULT([yes]); LIBNSL="-lnsl"],[AC_MSG_ERROR([neither gethostbyname nor libnsl.a found])])
 ])
 

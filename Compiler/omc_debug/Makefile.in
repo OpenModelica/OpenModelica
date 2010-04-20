@@ -11,6 +11,7 @@ ANTLR_HOME = @antlrhome@
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
 LIBSOCKET = @LIBSOCKET@
+LIBLPSOLVE55 = @LIBLPSOLVE55@
 
 SHELL	= /bin/sh
 CC	= gcc
@@ -42,7 +43,7 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) -ldl -llpsolve55
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55)
 
 ifdef QTHOME
 PLTPKGFLAGS = -L../../build/lib -lsendData -L$(QTHOME)/lib -lQtNetwork -lQtCore -lQtGui
