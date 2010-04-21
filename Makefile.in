@@ -63,9 +63,9 @@ qtclients: mkbuilddirs
 	echo "environment variable QTHOME should be defined"
 	echo "Coin3D (www.coin3d.org) and SoQt should be installed and in the path!"
 	echo "using QTHOME=${QTHOME}"
-	(cd OMShell && qmake && make && cp -p OMShell ../$(builddir_bin)/.)
+	(cd OMShell && @IDLCMD@ ../Compiler/runtime/omc_communication.idl && CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" qmake && make && cp -p OMShell ../$(builddir_bin)/.)
 	(cd OMNotebook/ext && qmake && make && cp -p ext ../../$(builddir_bin)/.)
-	(cd OMNotebook/OMNotebookQT4 && qmake && make && cp -p OMNotebook *.xml ../../$(builddir_bin)/.)
+	(cd OMNotebook/OMNotebookQT4 && @IDLCMD@ ../../Compiler/runtime/omc_communication.idl && USE_CORBA="@QT_USE_CORBA@" CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" qmake && make && cp -p OMNotebook *.xml ../../$(builddir_bin)/.)
 
 clean:
 	(cd c_runtime && $(MAKE) -f Makefile clean)

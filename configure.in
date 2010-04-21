@@ -12,7 +12,8 @@ AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(USE_CORBA)
-AC_SUBST(CORBAHOME)
+AC_SUBST(QT_USE_CORBA)
+AC_SUBST(CORBACFLAGS)
 AC_SUBST(CORBALIBS)
 AC_SUBST(IDLCMD)
 AC_SUBST(USE_MODPAR)
@@ -181,41 +182,62 @@ AC_CHECK_FUNC(gethostbyname,
 
 dnl should we use corba?
 
-AC_ARG_WITH(CORBA, [  --with-CORBA=DIR        use corba installed in DIR [/usr/local]],
-[
-if test "x$withval" = "xno" ; then
-	AC_MSG_RESULT([disabling CORBA]);
-	USE_CORBA="";
-	CORBAHOME="";
+AC_ARG_WITH(CORBA,  [  --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[WANT_MICO="no"])
+AC_ARG_WITH(MICO,   [  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
+AC_ARG_WITH(ORBIT2, [  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)],[WANT_ORBIT2="$withval"],[WANT_ORBIT2="no"])
+AC_ARG_WITH(omniORB,[  --with-omniORB=DIR     use omniORB installed in DIR],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
+
+if test ! "$WANT_MICO" = "no"; then
+  if test "$WANT_MICO" = "yes"; then
+    MICO="mico-config";
+  else
+    MICO="$withval/bin/mico-config";
+  fi
+  AC_CHECK_PROG(USE_CORBA,$MICO,[-DUSE_CORBA -DUSE_MICO],[no])
+  if test "$USE_CORBA" = "no"; then
+    AC_MSG_ERROR([failed to find mico-corba])
+  fi
+  QT_USE_CORBA="USE_MICO"
+  CORBACFLAGS=-I`mico-config --prefix`/include;
+  CORBALIBS=`mico-config --libs`;
+  IDLCMD="idl";
+  DESIRED_CORBA="mico"
+elif test ! "$WANT_ORBIT2" = "no"; then
+  if test "$WANT_ORBIT2" = "yes"; then
+    ORBIT2="orbit2-config";
+  else
+    ORBIT2="$withval/bin/orbit2-config";
+  fi
+  AC_CHECK_PROG(USE_CORBA,$ORBIT2,[-DUSE_CORBA -DUSE_ORBIT2],[no])
+  if test "$USE_CORBA" = "no"; then
+    AC_MSG_ERROR([failed to find orbit2])
+  fi
+  QT_USE_CORBA="USE_ORBIT2"
+  CORBACFLAGS=`orbit2-config --cflags`;
+  CORBALIBS=`orbit2-config --libs`;
+  IDLCMD="orbit-idl-2";
+  DESIRED_CORBA="orbit2"
+  AC_MSG_ERROR([ORBIT2 is not supported yet])
+elif test ! "$WANT_OMNIORB" = "no"; then
+  if test "$WANT_OMNIORB" = "yes"; then
+    WANT_OMNIORB="/usr";
+  fi
+  USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
+  QT_USE_CORBA="USE_OMNIORB"
+  CORBALIBS="-lomniORB4 -lomnithread -lpthread";
+  CORBACFLAGS="-I$WANT_OMNIORB/include";
+  IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
+  DESIRED_CORBA="omniorb"
+else
+  USE_CORBA="";
+  CORBACFLAGS="";
   CORBALIBS="";
   IDLCMD="";
-else
-  if test "x$withval" = "xyes"; then
-    AC_MSG_RESULT([enabling CORBA... CORBAHOME="/usr/local"]); 
-    USE_CORBA="-DUSE_CORBA"; 
-    CORBAHOME="/usr/local";
-    CORBALIBS="-lmico -lcrypto -lssl -lpthread";
-    IDLCMD="idl";
-  else
-    AC_MSG_RESULT([enabling CORBA... CORBAHOME="$withval"]); 
-    USE_CORBA="-DUSE_CORBA"; 
-    CORBAHOME="$withval";
-    CORBALIBS="-lmico -lcrypto -lssl -lpthread";
-    IDLCMD="idl";
-  fi
+  DESIRED_CORBA="none"
 fi
-], [
-AC_MSG_RESULT([disabling CORBA (no CORBAHOME given)]); USE_CORBA=""; CORBAHOME="";CORBALIBS="";IDLCMD="";
-])
 
-AC_ARG_WITH(omniORB, [  --with-omniORB=DIR        use omniORB installed in DIR],
-[
-    AC_MSG_RESULT([enabling omniORB... CORBAHOME="$withval"]); 
-    USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB"; 
-    CORBALIBS="-lomniORB4 -lomnithread -lpthread";
-    CORBAHOME="$withval";
-    IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
-], [])
+AC_MSG_CHECKING([if CORBA is desired]);
+AC_MSG_RESULT([$DESIRED_CORBA]);
 
 dnl should we compile modpar
 
@@ -244,4 +266,3 @@ AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
 AC_OUTPUT(Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile)
-

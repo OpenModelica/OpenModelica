@@ -14,14 +14,13 @@ builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
 
 USE_CORBA = @USE_CORBA@
-CORBAHOME = @CORBAHOME@
 
 RMLINCLUDE = @rmlinc@
 CFLAGS = @DEFS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
-  CORBAINCL = -I$(CORBAHOME)/include
+  CORBAINCL = @CORBACFLAGS@
 else
   CORBASRC = corbaimpl_stub.cpp
   CORBAINCL =  

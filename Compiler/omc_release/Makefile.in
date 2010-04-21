@@ -14,7 +14,6 @@ LIBSOCKET = @LIBSOCKET@
 LIBLPSOLVE55 = @LIBLPSOLVE55@
 
 USE_CORBA = @USE_CORBA@
-CORBAHOME = @CORBAHOME@
 
 SHELL	= /bin/sh
 CC	= gcc
@@ -32,10 +31,8 @@ builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
 include $(srcdir)/Makefile.common
 
-CORBALIB=`mico-config --libs`
-
 ifdef USE_CORBA
- CORBALIBS=$(CORBALIB)
+ CORBALIBS=@CORBALIBS@
 else
  CORBALIBS=
 endif

@@ -21,7 +21,6 @@ RMLINC  = -I$(RMLHOME)/include/plain
 
 
 USE_CORBA = @USE_CORBA@
-CORBAHOME = @CORBAHOME@
 
 EXEEXT = @EXEEXT@
 
@@ -35,10 +34,8 @@ builddir_doc=$(top_builddir)/build/doc
 
 include $(srcdir)/Makefile.common
 
-CORBALIB=`mico-config --libs`
-
 ifdef USE_CORBA
- CORBALIBS=$(CORBALIB)
+ CORBALIBS=$CORBALIBS$
 else
  CORBALIBS=
 endif

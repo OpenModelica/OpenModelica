@@ -611,7 +611,8 @@ BOOSTHOME
 USE_MODPAR
 IDLCMD
 CORBALIBS
-CORBAHOME
+CORBACFLAGS
+QT_USE_CORBA
 USE_CORBA
 LIBLPSOLVE55
 LIBNSL
@@ -666,6 +667,8 @@ ac_subst_files=''
 ac_user_opts='
 enable_option_checking
 with_CORBA
+with_MICO
+with_ORBIT2
 with_omniORB
 with_MODPAR
 with_BOOST
@@ -1286,8 +1289,10 @@ if test -n "$ac_init_help"; then
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
-  --with-CORBA=DIR        use corba installed in DIR /usr/local
-  --with-omniORB=DIR        use omniORB installed in DIR
+  --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)
+  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)
+  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)
+  --with-omniORB=DIR     use omniORB installed in DIR
   --with-MODPAR        Compile with automatic parallelization, requires boost
   --with-BOOST=DIR        With BOOST library in DIR
 
@@ -2131,6 +2136,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -3961,7 +3967,7 @@ _ACEOF
   LIBS="-llpsolve55 $LIBS"
 
 else
-  as_fn_error "not found" "$LINENO" 5
+  as_fn_error "linking failed" "$LINENO" 5
 fi
 
 LIBLPSOLVE55=$LIBS
@@ -4079,53 +4085,161 @@ fi
 
 # Check whether --with-CORBA was given.
 if test "${with_CORBA+set}" = set; then :
-  withval=$with_CORBA;
-if test "x$withval" = "xno" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: disabling CORBA" >&5
-$as_echo "disabling CORBA" >&6; };
-	USE_CORBA="";
-	CORBAHOME="";
-  CORBALIBS="";
-  IDLCMD="";
+  withval=$with_CORBA; WANT_MICO="$withval"
 else
-  if test "x$withval" = "xyes"; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling CORBA... CORBAHOME=\"/usr/local\"" >&5
-$as_echo "enabling CORBA... CORBAHOME=\"/usr/local\"" >&6; };
-    USE_CORBA="-DUSE_CORBA";
-    CORBAHOME="/usr/local";
-    CORBALIBS="-lmico -lcrypto -lssl -lpthread";
-    IDLCMD="idl";
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling CORBA... CORBAHOME=\"$withval\"" >&5
-$as_echo "enabling CORBA... CORBAHOME=\"$withval\"" >&6; };
-    USE_CORBA="-DUSE_CORBA";
-    CORBAHOME="$withval";
-    CORBALIBS="-lmico -lcrypto -lssl -lpthread";
-    IDLCMD="idl";
-  fi
+  WANT_MICO="no"
 fi
 
-else
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: disabling CORBA (no CORBAHOME given)" >&5
-$as_echo "disabling CORBA (no CORBAHOME given)" >&6; }; USE_CORBA=""; CORBAHOME="";CORBALIBS="";IDLCMD="";
-
+# Check whether --with-MICO was given.
+if test "${with_MICO+set}" = set; then :
+  withval=$with_MICO; WANT_MICO="$withval"
 fi
 
+
+# Check whether --with-ORBIT2 was given.
+if test "${with_ORBIT2+set}" = set; then :
+  withval=$with_ORBIT2; WANT_ORBIT2="$withval"
+else
+  WANT_ORBIT2="no"
+fi
 
 
 # Check whether --with-omniORB was given.
 if test "${with_omniORB+set}" = set; then :
-  withval=$with_omniORB;
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling omniORB... CORBAHOME=\"$withval\"" >&5
-$as_echo "enabling omniORB... CORBAHOME=\"$withval\"" >&6; };
-    USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
-    CORBALIBS="-lomniORB4 -lomnithread -lpthread";
-    CORBAHOME="$withval";
-    IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
-
+  withval=$with_omniORB; WANT_OMNIORB="$withval"
+else
+  WANT_OMNIORB="no"
 fi
 
+
+if test ! "$WANT_MICO" = "no"; then
+  if test "$WANT_MICO" = "yes"; then
+    MICO="mico-config";
+  else
+    MICO="$withval/bin/mico-config";
+  fi
+  # Extract the first word of "$MICO", so it can be a program name with args.
+set dummy $MICO; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_USE_CORBA+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$USE_CORBA"; then
+  ac_cv_prog_USE_CORBA="$USE_CORBA" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_USE_CORBA="-DUSE_CORBA -DUSE_MICO"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_USE_CORBA" && ac_cv_prog_USE_CORBA="no"
+fi
+fi
+USE_CORBA=$ac_cv_prog_USE_CORBA
+if test -n "$USE_CORBA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_CORBA" >&5
+$as_echo "$USE_CORBA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "$USE_CORBA" = "no"; then
+    as_fn_error "failed to find mico-corba" "$LINENO" 5
+  fi
+  QT_USE_CORBA="USE_MICO"
+  CORBACFLAGS=-I`mico-config --prefix`/include;
+  CORBALIBS=`mico-config --libs`;
+  IDLCMD="idl";
+  DESIRED_CORBA="mico"
+elif test ! "$WANT_ORBIT2" = "no"; then
+  if test "$WANT_ORBIT2" = "yes"; then
+    ORBIT2="orbit2-config";
+  else
+    ORBIT2="$withval/bin/orbit2-config";
+  fi
+  # Extract the first word of "$ORBIT2", so it can be a program name with args.
+set dummy $ORBIT2; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_USE_CORBA+set}" = set; then :
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$USE_CORBA"; then
+  ac_cv_prog_USE_CORBA="$USE_CORBA" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_USE_CORBA="-DUSE_CORBA -DUSE_ORBIT2"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_prog_USE_CORBA" && ac_cv_prog_USE_CORBA="no"
+fi
+fi
+USE_CORBA=$ac_cv_prog_USE_CORBA
+if test -n "$USE_CORBA"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_CORBA" >&5
+$as_echo "$USE_CORBA" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  if test "$USE_CORBA" = "no"; then
+    as_fn_error "failed to find orbit2" "$LINENO" 5
+  fi
+  QT_USE_CORBA="USE_ORBIT2"
+  CORBACFLAGS=`orbit2-config --cflags`;
+  CORBALIBS=`orbit2-config --libs`;
+  IDLCMD="orbit-idl-2";
+  DESIRED_CORBA="orbit2"
+  as_fn_error "ORBIT2 is not supported yet" "$LINENO" 5
+elif test ! "$WANT_OMNIORB" = "no"; then
+  if test "$WANT_OMNIORB" = "yes"; then
+    WANT_OMNIORB="/usr";
+  fi
+  USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
+  QT_USE_CORBA="USE_OMNIORB"
+  CORBALIBS="-lomniORB4 -lomnithread -lpthread";
+  CORBACFLAGS="-I$WANT_OMNIORB/include";
+  IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
+  DESIRED_CORBA="omniorb"
+else
+  USE_CORBA="";
+  CORBACFLAGS="";
+  CORBALIBS="";
+  IDLCMD="";
+  DESIRED_CORBA="none"
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if CORBA is desired" >&5
+$as_echo_n "checking if CORBA is desired... " >&6; };
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $DESIRED_CORBA" >&5
+$as_echo "$DESIRED_CORBA" >&6; };
 
 
 
@@ -5321,5 +5435,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
-
 
