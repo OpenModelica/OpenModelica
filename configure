@@ -3283,19 +3283,19 @@ if test ! -z "$RMLHOME" ; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $RMLHOME" >&5
 $as_echo "$RMLHOME" >&6; }
 else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-  as_fn_error "RMLHOME variable not set." "$LINENO" 5
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: /usr" >&5
+$as_echo "/usr" >&6; }
+  rmlhome=/usr
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rmlc" >&5
 $as_echo_n "checking for rmlc... " >&6; }
-if test -x $RMLHOME/bin/rmlc ; then
-  rmlc_bin=$RMLHOME/bin/rmlc
+if test -x $rmlhome/bin/rmlc ; then
+  rmlc_bin=$rmlhome/bin/rmlc
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
-  as_fn_error "rmlc not found in \$RMLHOME/bin" "$LINENO" 5
+  as_fn_error "rmlc not found in \$rmlhome/bin" "$LINENO" 5
 fi
 
 
@@ -3573,9 +3573,9 @@ fi
 done
 
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rml includefiles in $RMLHOME" >&5
-$as_echo_n "checking for rml includefiles in $RMLHOME... " >&6; }
-rmlinc=`find $RMLHOME/include -follow -type d -name plain |grep include/plain`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rml includefiles in $rmlhome" >&5
+$as_echo_n "checking for rml includefiles in $rmlhome... " >&6; }
+rmlinc=`find $rmlhome/include -follow -type d -name plain |grep include/plain`
 if test -z "$rmlinc" ; then
   as_fn_error "rml headers not found" "$LINENO" 5
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5

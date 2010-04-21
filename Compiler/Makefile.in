@@ -124,6 +124,9 @@ test:
 #		(cd $$d ; $(MAKE)) \
 #	done
 
+.depend:
+	touch .depend
+
 clean: .depend
 	@for d in $(SUBDIRS); do \
 		(cd $$d ; $(MAKE) clean) \

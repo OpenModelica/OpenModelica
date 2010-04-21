@@ -74,7 +74,7 @@ test: test.cpp libflat_modelica_parser.a parse_tree_dumper.o
 depend: $(DFILES)
 
 clean:
-	-rm -f *.o *~ core *.core libflat_modelica_parser.a
+	-rm -f *.o *~ core *.core *.a
 
 reallyclean: clean
 	-rm -f $(lexergen) $(parsergen)

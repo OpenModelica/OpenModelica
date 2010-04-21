@@ -49,7 +49,7 @@ MergeAllParents.o: MergeAllParents.cpp MergeAllParents.hpp MergeRule.hpp
 Schedule.o: Schedule.cpp Schedule.hpp
 
 clean:
-	rm -rf $(OBJECTS)
+	rm -rf *.a $(OBJECTS)
 
 reallyclean: clean
 

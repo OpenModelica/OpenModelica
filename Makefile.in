@@ -13,10 +13,10 @@ libdir = @libdir@
 includedir = @includedir@
 datadir = @datadir@
 
-INSTALL_BINDIR     = ${bindir}
-INSTALL_LIBDIR     = ${libdir}
-INSTALL_INCLUDEDIR = ${includedir}
-INSTALL_DATADIR    = ${datadir}
+INSTALL_BINDIR     = ${DESTDIR}${bindir}
+INSTALL_LIBDIR     = ${DESTDIR}${libdir}
+INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}
+INSTALL_DATADIR    = ${DESTDIR}${datadir}
 INSTALL_DOCDIR     = ${INSTALL_DATADIR}/omc/doc
 
 all : release qtclients mosh
@@ -68,7 +68,13 @@ qtclients: mkbuilddirs
 	(cd OMNotebook/OMNotebookQT4 && @IDLCMD@ ../../Compiler/runtime/omc_communication.idl && USE_CORBA="@QT_USE_CORBA@" CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" qmake && make && cp -p OMNotebook *.xml ../../$(builddir_bin)/.)
 
 distclean: clean
-	rm -f Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile
+	(cd Compiler && $(MAKE) -f Makefile reallyclean)
+	(cd Compiler/omc_debug && $(MAKE) -f Makefile reallyclean)
+	(cd Compiler/omc_release && $(MAKE) -f Makefile reallyclean)
+	(cd Compiler/omc_profiler && $(MAKE) -f Makefile reallyclean)
+	(cd modelica_parser/src && $(MAKE) -f Makefile reallyclean)
+	(cd flat_modelica_parser/src && $(MAKE) -f Makefile reallyclean)
+	rm -f Compiler/.depend
 	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 clean:
 	(cd c_runtime && $(MAKE) -f Makefile clean)
@@ -76,11 +82,18 @@ clean:
 	(cd Compiler && $(MAKE) -f Makefile clean)
 	(cd Compiler/omc_debug && $(MAKE) -f Makefile clean)
 	(cd Compiler/omc_release && $(MAKE) -f Makefile clean)
+	(cd Compiler/omc_profiler && $(MAKE) -f Makefile clean)
 	(cd mosh/src && $(MAKE) -f Makefile clean)
 	(cd modelica_parser/src && $(MAKE) -f Makefile clean)
 	(cd flat_modelica_parser/src && $(MAKE) -f Makefile clean)
 	(rm -f $(builddir_doc)/*.pdf)
 	(rm -f $(builddir_doc)/testmodels/*.*)
+	cd OMShell && make clean || true
+	cd OMNotebook/ext && make clean || true
+	cd OMNotebook/OMNotebookQT4 && make clean || true
+	rm -f OMNotebook/ext/ext
+	rm -f OMShell/OMShell OMShell/omc_communication.*
+	rm -f OMNotebook/OMNotebookQT4/OMNotebook OMNotebook/OMNotebookQT4/omc_communication.*
 	(cd OMShell && qmake && make clean)
 	(cd OMNotebook/ext && qmake && make clean)
 	(cd OMNotebook/OMNotebookQT4 && qmake && make clean)
@@ -88,6 +101,7 @@ clean:
 	(rm -f $(builddir_bin)/OMNotebook)
 	(rm -f $(builddir_bin)/ext)
 	(rm -f $(builddir_bin)/*.xml)
+	rm -f build/include/*
 
 ${INSTALL_BINDIR}:
 	mkdir -p ${INSTALL_BINDIR}

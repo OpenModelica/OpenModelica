@@ -49,4 +49,4 @@ omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 dynload.o: systemimpl.h ../Absyn.h ../Values.h
 
 clean:
-	$(RM) -rf *.o 
+	$(RM) -rf *.a *.o omc_communication.{cc,h} omc_communication-*

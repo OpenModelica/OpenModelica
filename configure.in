@@ -32,16 +32,16 @@ if test ! -z "$RMLHOME" ; then
   rmlhome=$RMLHOME
   AC_MSG_RESULT([$RMLHOME])
 else
-  AC_MSG_RESULT([no])
-  AC_MSG_ERROR([RMLHOME variable not set.])
+  AC_MSG_RESULT([/usr])
+  rmlhome=/usr
 fi
 
 AC_MSG_CHECKING([for rmlc])
-if test -x $RMLHOME/bin/rmlc ; then
-  rmlc_bin=$RMLHOME/bin/rmlc
+if test -x $rmlhome/bin/rmlc ; then
+  rmlc_bin=$rmlhome/bin/rmlc
   AC_MSG_RESULT([yes])
 else
-  AC_MSG_ERROR([rmlc not found in \$RMLHOME/bin])
+  AC_MSG_ERROR([rmlc not found in \$rmlhome/bin])
 fi
 
 dnl Checks for libraries.
@@ -50,8 +50,8 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_CHECK_HEADERS(sys/time.h)
 
-AC_MSG_CHECKING([for rml includefiles in $RMLHOME])
-rmlinc=`find $RMLHOME/include -follow -type d -name plain |grep include/plain`
+AC_MSG_CHECKING([for rml includefiles in $rmlhome])
+rmlinc=`find $rmlhome/include -follow -type d -name plain |grep include/plain`
 if test -z "$rmlinc" ; then
   AC_MSG_ERROR([rml headers not found])
   AC_MSG_RESULT([no])
