@@ -9,10 +9,19 @@ INCLUDEPATH += . \
                /usr/local/include
 #OBJECTS +=
 
-MICO_LIBS = $$system(mico-config --libs)
+win32 {
+  CORBAINC = $$system(mico-config --prefix)/include
+  CORBALIBS = $$system(mico-config --libs)
+  DEFINES += HAVE_MICO
+} else {
+  CORBAINC = $$(CORBACFLAGS)
+  CORBALIBS = $$(CORBALIBS)
+  DEFINES += $$(USE_CORBA)
+}
+
 COIN_LIBS = $$system(coin-config --ldflags --libs)
 SOQT_LIBS = $$system(soqt-config --ldflags --libs)
-unix:LIBS += -L${ANTLRHOME}/src -lantlr $${MICO_LIBS} $${COIN_LIBS} $${SOQT_LIBS}
+unix:LIBS += -L${ANTLRHOME}/src -lantlr $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
 
 
 TARGET = OMNotebook
@@ -26,10 +35,9 @@ QMAKE_LFLAGS+=
 #correctly. If omc not is installed on the system. Comment out
 #theese three lines below.
 DEFINES += OMC
-MICOHOME = $$system(mico-config --prefix)
 COIN_INCLUDE = $$system(coin-config --includedir)
 SOQT_INCLUDE = $$system(soqt-config --includedir)
-INCLUDEPATH += $${MICOHOME}/include \
+INCLUDEPATH += $${CORBAINC} \
                $${COIN_INCLUDE} \
                $${SOQT_INCLUDE} \
                /usr/include/qt4/ \

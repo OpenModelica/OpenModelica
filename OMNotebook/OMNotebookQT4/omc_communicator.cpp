@@ -116,7 +116,12 @@ bool OmcCommunicator::establishConnection()
   try {
     // ORB initialization.
     int argc = 4;
-    char* argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking" /*,  "-ORBDebugLevel", "10" */ };
+    #if defined(USE_OMNIORB)
+      char *argv[] = { "OMNotebook", "-NoResolve", "-IIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
+    #else
+      char *argv[] = { "OMNotebook", "-ORBNoResolve", "-ORBIIOPAddr", "inet:127.0.0.1:0", "-ORBIIOPBlocking"};
+    #endif
+
     CORBA::ORB_var orb = CORBA::ORB_init(argc, argv);
 
     QFile objectRefFile;
@@ -191,7 +196,9 @@ bool OmcCommunicator::establishConnection()
   }
   catch (CORBA::Exception& e) {
     omc_ = 0;
+    #ifdef HAVE_MICO
     e._print_stack_trace(cerr);
+    #endif
     return false;
   }
 
@@ -250,7 +257,9 @@ QString OmcCommunicator::callOmc(const QString& fnCall)
     }
     catch (CORBA::Exception& e)
     {
+      #ifdef HAVE_CORBA
       e._print_stack_trace(cerr);
+      #endif
       // 2005-11-24 AF, added otherwise it crashes when command quit() is called.
       // ignore if quit() is the first in the function call
       if( 0 != fnCall.indexOf( "quit()", 0, Qt::CaseInsensitive ))
