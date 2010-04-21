@@ -8784,7 +8784,7 @@ algorithm
         SCode.ClassDef cd;       
       equation
         inlineType = isInlineFunc2(c);
-
+        
         (cache,cenv,ih,_,DAE.DAE(daeElts,funcs),csets_1,ty,st,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
@@ -9042,7 +9042,7 @@ algorithm element := matchcontinue(subs,elemDecl,baseFunc,inCache,inEnv,inPrefix
     DAE.FunctionDefinition mapper;
       list<DAE.Type> deriveTypes;
   case({},_,_,_,_,_) then fail();
-  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = (subs2 as _::_),absynExpOption=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,elemDecl,baseFunc,inCache,inEnv,inPrefix)
+  case(SCode.NAMEMOD("derivative",(m as SCode.MOD(subModLst = subs2,absynExpOption=SOME(((ae as Absyn.CREF(acr)),_)))))::subs,elemDecl,baseFunc,inCache,inEnv,inPrefix)
     equation
       deriveFunc = Absyn.crefToPath(acr);
       (_,deriveFunc) = makeFullyQualified(inCache,inEnv,deriveFunc);
