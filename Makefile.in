@@ -67,6 +67,9 @@ qtclients: mkbuilddirs
 	(cd OMNotebook/ext && qmake && make && cp -p ext ../../$(builddir_bin)/.)
 	(cd OMNotebook/OMNotebookQT4 && @IDLCMD@ ../../Compiler/runtime/omc_communication.idl && USE_CORBA="@QT_USE_CORBA@" CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" qmake && make && cp -p OMNotebook *.xml ../../$(builddir_bin)/.)
 
+distclean: clean
+	rm -f Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile
+	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 clean:
 	(cd c_runtime && $(MAKE) -f Makefile clean)
 	(cd Compiler/rml2sig && $(MAKE) -f Makefile clean)

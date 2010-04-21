@@ -11,25 +11,30 @@ TMPMSG=""
 mydir="`dirname $0`"
 
 if [ -z "${OMDEV}" ]; then
-  RML=${RMLHOME}/bin/rml
+  RML=$1
+  FNAME=$2
+  if [ ! "$#" -eq 2 ]; then
+    echo "Usage: $0 /path/to/rml <file>.mo)";
+    exit;
+  fi
 else
   RML=${OMDEV}/tools/rml/bin/rml
+  FNAME=$1
+  if [ ! "$#" -eq 1 ]; then
+    echo "Usage: $0 <file>.mo)";
+    exit;
+  fi
 fi
 
-if [ ! "$#" -eq 1 ]; then
-  echo "Usage: $0 <file>.mo)";
-  exit;
-fi
-
-tmp_file="$1.$$"
-sig_file="`basename "$1" ".mo"`.sig"
+tmp_file="$FNAME.$$"
+sig_file="`basename "$FNAME" ".mo"`.sig"
 
 if [ ! -f $sig_file ]; then
   TMPMSG="Sig file: $sig_file does not exist...";
-  ${RML} -fdump-interface $1 > $sig_file;
+  ${RML} -fdump-interface $FNAME > $sig_file;
 else 
   #echo "Generates tmp sig."
-  ${RML} -fdump-interface $1 > $tmp_file
+  ${RML} -fdump-interface $FNAME > $tmp_file
   #echo "Diffing"
   diff $tmp_file $sig_file > /dev/null
   if [ $? -eq 0 ]; then

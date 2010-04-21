@@ -80,7 +80,7 @@ $(SRCHSRCDIR) : $(srcdir)/%.h : %.h
 	cp $< $@
 
 $(SRCSIGX): %.sigx : %.mo
-	$(srcdir)/rml2sig/rmldep-new.sh $<
+	$(srcdir)/rml2sig/rmldep-new.sh $(RML) $<
 	@touch $@
 
 vctarget: $(SRCC) absyn_subdir
