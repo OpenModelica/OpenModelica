@@ -1,10 +1,17 @@
 TEMPLATE = app
 
 DEPENDPATH += .
-MICOHOME = $$system(mico-config --prefix)
-INCLUDEPATH += $${MICOHOME}/include
-MICO_LIBS = $$system(mico-config --libs)
-LIBS+= $${MICO_LIBS}
+win32 {
+  CORBAINC = $$system(mico-config --prefix)/include
+  CORBALIBS = $$system(mico-config --libs)
+} else {
+  CORBAINC = $$(CORBACFLAGS)
+  CORBALIBS = $$(CORBALIBS)
+}
+
+INCLUDEPATH += $${CORBAINC)
+LIBS+= $${CORBALIBS}
+
 CONFIG += warn_on
 QT += network xml
 

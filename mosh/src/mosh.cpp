@@ -52,7 +52,6 @@
 #include <sys/param.h> /* MAXPATHLEN */
 #include "options.h"
 #ifdef USE_CORBA
-#include <CORBA.h>
 #include "omc_communication.h"
 #endif
 
