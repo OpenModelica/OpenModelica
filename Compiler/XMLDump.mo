@@ -2712,7 +2712,7 @@ algorithm
     equation
       m = DAELow.incidenceMatrix(dlow);
       mT = DAELow.transposeMatrix(m);
-      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
+      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
       (comps) = DAELow.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);
@@ -2747,7 +2747,7 @@ algorithm
     equation
       m = DAELow.incidenceMatrix(dlow);
       mT = DAELow.transposeMatrix(m);
-      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()));
+      (v1,v2,_,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT,(DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.avlTreeNew());
       (comps) = DAELow.strongComponents(m, mT, v1, v2);
       //(blt_states,blt_no_states) = DAELow.generateStatePartition(comps, dlow, v1, v2, m, mt);
       dumpStrOpenTag(ADDITIONAL_INFO);

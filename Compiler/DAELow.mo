@@ -426,7 +426,7 @@ protected import SimCodegen;
 protected import System;
 protected import Util;
 //protected import VarTransform; // since it is imported as public
-protected import ValuesUtil;
+//protected import ValuesUtil;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
@@ -629,7 +629,7 @@ algorithm
         (vars,knvars,eqns,reqns,ieqns,aeqns1,aliasVars) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
-        (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
+        (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs,DAEUtil.daeFunctionTree(lst));
         (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
         eqnarr = listEquation(eqns_1);
         reqnarr = listEquation(reqns);
@@ -683,6 +683,7 @@ protected function expandDerOperator
   input list<Equation> ieqns;
   input list<MultiDimEquation> aeqns;
   input list<DAE.Algorithm> algs;
+  input DAE.FunctionTree functions;
 
   output list<Equation> outEqns;
   output list<Equation> outIeqns;
@@ -691,12 +692,12 @@ protected function expandDerOperator
   output Variables outVars;
 algorithm
   (outEqns, outIeqns,outAeqns,outAlgs,outVars) :=
-  matchcontinue(vars,eqns,ieqns,aeqns,algs)
-    case(vars,eqns,ieqns,aeqns,algs) equation
-      (eqns,vars) = expandDerOperatorEqns(eqns,vars);
-      (ieqns,vars) = expandDerOperatorEqns(ieqns,vars);
-      (aeqns,vars) = expandDerOperatorArrEqns(aeqns,vars);
-      (algs,vars) = expandDerOperatorAlgs(algs,vars);
+  matchcontinue(vars,eqns,ieqns,aeqns,algs,functions)
+    case(vars,eqns,ieqns,aeqns,algs,functions) equation
+      (eqns,(vars,_)) = expandDerOperatorEqns(eqns,(vars,functions));
+      (ieqns,(vars,_)) = expandDerOperatorEqns(ieqns,(vars,functions));
+      (aeqns,(vars,_)) = expandDerOperatorArrEqns(aeqns,(vars,functions));
+      (algs,(vars,_)) = expandDerOperatorAlgs(algs,(vars,functions));
     then(eqns,ieqns,aeqns,algs,vars);
   end matchcontinue;
 end expandDerOperator;
@@ -704,9 +705,9 @@ end expandDerOperator;
 protected function expandDerOperatorEqns
 "Help function to expandDerOperator"
   input list<Equation> eqns;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output list<Equation> outEqns;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outEqns,outVars) := matchcontinue(eqns,vars)
   local Equation e;
@@ -724,9 +725,9 @@ end expandDerOperatorEqns;
 protected function expandDerOperatorEqn
 "Help function to expandDerOperator, handles Equations"
   input Equation eqn;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output Equation outEqn;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outEqn,outVars) := matchcontinue(eqn,vars)
     local
@@ -766,9 +767,9 @@ end expandDerOperatorEqn;
 protected function expandDerOperatorWhenEqn
 "Helper function to expandDerOperatorWhenEqn"
   input WhenEquation wheneq;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output WhenEquation outWheneq;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outWheneq, outVars) := matchcontinue(wheneq,vars)
     local DAE.ComponentRef cr; DAE.Exp e1; Integer indx; WhenEquation elsewheneq;
@@ -789,9 +790,9 @@ end expandDerOperatorWhenEqn;
 protected function expandDerOperatorAlgs
 "Help function to expandDerOperator"
   input list<DAE.Algorithm> algs;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output list<DAE.Algorithm> outAlgs;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outAlgs,outVars) := matchcontinue(algs,vars)
   local DAE.Algorithm a;
@@ -811,9 +812,9 @@ end expandDerOperatorAlgs;
 protected function expandDerOperatorAlg
 "Help function to to expandDerOperator, handles Algorithms"
   input DAE.Algorithm alg;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output DAE.Algorithm outAlg;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outAlg,outVars) := matchcontinue(alg,vars)
   local list<Algorithm.Statement> stmts;
@@ -826,9 +827,9 @@ end expandDerOperatorAlg;
 protected function expandDerOperatorStmts
 "Help function to expandDerOperatorAlg"
   input list<Algorithm.Statement> stmts;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output list<Algorithm.Statement> outStmts;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outStmts,outVars) := matchcontinue(stmts,vars)
   local Algorithm.Statement s;
@@ -843,9 +844,9 @@ end expandDerOperatorStmts;
 protected function expandDerOperatorStmt
 "Help function to expandDerOperatorAlg."
   input Algorithm.Statement stmt;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output Algorithm.Statement outStmt;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outStmt,outVars) := matchcontinue(stmt,vars)
     local DAE.ExpType tp; DAE.ComponentRef cr;
@@ -920,9 +921,9 @@ end  expandDerOperatorStmt;
 protected function expandDerOperatorElseBranch
 "Help function to expandDerOperatorStmt, for else branches in if statements"
   input Algorithm.Else elseB;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output Algorithm.Else outElseB;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outElseB,outVars) := matchcontinue(elseB,vars)
     local DAE.Exp e1;
@@ -942,9 +943,9 @@ end expandDerOperatorElseBranch;
 protected function expandDerOperatorArrEqns
 "Help function to expandDerOperator"
   input list<MultiDimEquation> eqns;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output list<MultiDimEquation> outEqns;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outEqns,outVars) := matchcontinue(eqns,vars)
   local MultiDimEquation e;
@@ -963,9 +964,9 @@ end expandDerOperatorArrEqns;
 protected function expandDerOperatorArrEqn
 "Help function to to expandDerOperator, handles Array equations"
   input MultiDimEquation arrEqn;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output MultiDimEquation outArrEqn;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outArrEqn,outVars) := matchcontinue(arrEqn,vars)
     local
@@ -982,9 +983,9 @@ end expandDerOperatorArrEqn;
 protected function expandDerExps
 "Help function to e.g. expandDerOperatorEqn"
   input list<DAE.Exp> expl;
-  input Variables vars;
+  input tuple<Variables,DAE.FunctionTree> vars;
   output list<DAE.Exp> outExpl;
-  output Variables outVars;
+  output tuple<Variables,DAE.FunctionTree> outVars;
 algorithm
   (outExpl,outVars) := matchcontinue(expl,vars)
     local DAE.Exp e;
@@ -998,21 +999,22 @@ end expandDerExps;
 
 protected function expandDerExp
 "Help function to e.g. expandDerOperatorEqn"
-  input tuple<DAE.Exp,Variables> tpl;
-  output tuple<DAE.Exp,Variables> outTpl;
+  input tuple<DAE.Exp,tuple<Variables,DAE.FunctionTree>> tpl;
+  output tuple<DAE.Exp,tuple<Variables,DAE.FunctionTree>> outTpl;
 algorithm
   outTpl := matchcontinue(tpl)
     local DAE.Exp inExp;
       Variables vars;
+      DAE.FunctionTree funcs;
       DAE.Exp e1;
       list<DAE.ComponentRef> newStates;
-    case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),vars)) equation
-      e1 = Derive.differentiateExpTime(e1,vars);
+    case((DAE.CALL(Absyn.IDENT(name = "der"),{e1},tuple_ = false,builtin = true),(vars,funcs))) equation
+      e1 = Derive.differentiateExpTime(e1,(vars,funcs));
       e1 = Exp.simplify(e1);
       (newStates,_) = bintreeToList(statesExp(e1,emptyBintree));
       vars = updateStatesVars(vars,newStates);
-    then ((e1,vars));
-    case((e1,vars)) then ((e1,vars));
+    then ((e1,(vars,funcs)));
+    case((e1,(vars,funcs))) then ((e1,(vars,funcs)));
   end matchcontinue;
 end expandDerExp;
 
@@ -7946,6 +7948,7 @@ public function matchingAlgorithm
   input IncidenceMatrix inIncidenceMatrix;
   input IncidenceMatrixT inIncidenceMatrixT;
   input MatchingOptions inMatchingOptions;
+  input DAE.FunctionTree inFunctions;
   output Integer[:] outIntegerArray1;
   output Integer[:] outIntegerArray2;
   output DAELow outDAELow3;
@@ -7953,7 +7956,7 @@ public function matchingAlgorithm
   output IncidenceMatrixT outIncidenceMatrixT5;
 algorithm
   (outIntegerArray1,outIntegerArray2,outDAELow3,outIncidenceMatrix4,outIncidenceMatrixT5) :=
-  matchcontinue (inDAELow,inIncidenceMatrix,inIncidenceMatrixT,inMatchingOptions)
+  matchcontinue (inDAELow,inIncidenceMatrix,inIncidenceMatrixT,inMatchingOptions,inFunctions)
     local
       Value nvars,neqns,memsize;
       String ns,ne;
@@ -7973,7 +7976,7 @@ algorithm
       MatchingOptions match_opts;
       ExternalObjectClasses eoc;
 
-    case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,REMOVE_SIMPLE_EQN())))
+    case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,REMOVE_SIMPLE_EQN())),inFunctions)
       equation
         DAEEXT.clearDifferentiated();
         checkMatching(dae, match_opts);
@@ -7986,7 +7989,7 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,(dae as DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts);
+        (ass1,ass2,(dae as DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions);
 				/* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
 				could potentially be removed after a index reduction has been done. However, removing equations here
 				also require that e.g. zero crossings, array equations, etc. must be recalculated. */
@@ -7999,13 +8002,13 @@ algorithm
         memsize = nvars + nvars;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae_2,m,mt) = matchingAlgorithm2(dae, m_1, mt_1, nvars, neqns, 1, assign1, assign2, match_opts);
+        (ass1,ass2,dae_2,m,mt) = matchingAlgorithm2(dae, m_1, mt_1, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
         (vec1,vec2,dae_2,m,mt);
 
-    case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,KEEP_SIMPLE_EQN())))
+    case ((dae as DAELOW(orderedVars = vars,orderedEqs = eqns)),m,mt,(match_opts as (_,_,KEEP_SIMPLE_EQN())),inFunctions)
       equation
         checkMatching(dae, match_opts);
         nvars = arrayLength(m);
@@ -8017,7 +8020,7 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts);
+        (ass1,ass2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions);
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
@@ -8248,6 +8251,7 @@ protected function matchingAlgorithm2
   input Assignments inAssignments7;
   input Assignments inAssignments8;
   input MatchingOptions inMatchingOptions9;
+  input DAE.FunctionTree inFunctions;
   output Assignments outAssignments1;
   output Assignments outAssignments2;
   output DAELow outDAELow3;
@@ -8255,7 +8259,7 @@ protected function matchingAlgorithm2
   output IncidenceMatrixT outIncidenceMatrixT5;
 algorithm
   (outAssignments1,outAssignments2,outDAELow3,outIncidenceMatrix4,outIncidenceMatrixT5):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9)
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions)
     local
       Assignments ass1_1,ass2_1,ass1,ass2,ass1_2,ass2_2;
       DAELow dae;
@@ -8268,7 +8272,7 @@ algorithm
       list<Value> eqn_lst,var_lst;
       String eqn_str,var_str;
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,_)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_)
       equation
         (nv == i) = true;
         DAEEXT.initMarks(nv, nf);
@@ -8276,18 +8280,18 @@ algorithm
       then
         (ass1_1,ass2_1,dae,m,mt);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts,inFunctions)
       equation
         i_1 = i + 1;
         DAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false" ;
-        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts);
+        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts, inFunctions);
       then
         (ass1_2,ass2_2,dae,m,mt);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION(),eq_cons,r_simple))
+    case (dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION(),eq_cons,r_simple),inFunctions)
       equation
-        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i) 
+        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions) 
         "path_found failed, Try index reduction using dummy derivatives.
 	       When a constraint exist between states and index reduction is needed
 	       the dummy derivative will select one of the states as a dummy state
@@ -8310,11 +8314,11 @@ algorithm
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);
-        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (INDEX_REDUCTION(),eq_cons,r_simple));
+        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (INDEX_REDUCTION(),eq_cons,r_simple),inFunctions);
       then
         (ass1_2,ass2_2,dae,m,mt);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,_)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_)
       equation
         eqn_lst = DAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally singular." ;
         var_lst = DAEEXT.getMarkedVariables();
@@ -8408,12 +8412,13 @@ protected function reduceIndexDummyDer
   input Integer inInteger4;
   input Integer inInteger5;
   input Integer inInteger6;
+  input DAE.FunctionTree inFunctions;
   output DAELow outDAELow;
   output IncidenceMatrix outIncidenceMatrix;
   output IncidenceMatrixT outIncidenceMatrixT;
 algorithm
   (outDAELow,outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6)
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inFunctions)
     local
       list<Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<Key> states;
@@ -8424,7 +8429,7 @@ algorithm
       list<String> es;
       String es_1;
 
-    case (dae,m,mt,nv,nf,i)
+    case (dae,m,mt,nv,nf,i,inFunctions)
       equation
         eqns = DAEEXT.getMarkedEqns();
         //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
@@ -8437,7 +8442,7 @@ algorithm
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
-        (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1);
+        (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
        //print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
@@ -8457,7 +8462,7 @@ algorithm
       then
         (dae,m,mt);
 
-    case (dae,m,mt,nv,nf,i)
+    case (dae,m,mt,nv,nf,i,_)
       equation
         eqns = DAEEXT.getMarkedEqns();
         diff_eqns = DAEEXT.getDifferentiatedEqns();
@@ -8475,7 +8480,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         print("-reduce_index_dummy_der failed\n");
       then
@@ -9965,6 +9970,7 @@ protected function differentiateEqns
   input Integer inInteger4;
   input Integer inInteger5;
   input list<Integer> inIntegerLst6;
+  input DAE.FunctionTree inFunctions;
   output DAELow outDAELow1;
   output IncidenceMatrix outIncidenceMatrix2;
   output IncidenceMatrixT outIncidenceMatrixT3;
@@ -9973,7 +9979,7 @@ protected function differentiateEqns
   output list<Integer> outIntegerLst6;
 algorithm
   (outDAELow1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6)
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions)
     local
       DAELow dae;
       list<Value>[:] m,mt;
@@ -9988,13 +9994,13 @@ algorithm
       DAE.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses eoc;
-    case (dae,m,mt,nv,nf,{}) then (dae,m,mt,nv,nf,{});
-    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es))
+    case (dae,m,mt,nv,nf,{},_) then (dae,m,mt,nv,nf,{});
+    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions)
       equation
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
 
-        eqn_1 = Derive.differentiateEquationTime(eqn, v);
+        eqn_1 = Derive.differentiateEquationTime(eqn, v, inFunctions);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         str = equationStr(eqn);
         //print( "differentiated equation ") ;
@@ -10010,10 +10016,10 @@ algorithm
         eqns_1 = equationAdd(eqns, eqn_1);
         leneqns = equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al,wc,eoc), m, mt, nv, nf, es);
+        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al,wc,eoc), m, mt, nv, nf, es, inFunctions);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)));
-    case (_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_)
       equation
         print("-differentiate_eqns failed\n");
       then
@@ -16474,7 +16480,7 @@ algorithm
         Debug.fcall("tearingdump", dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", dumpIncidenceMatrixT, mT_1);
         Debug.fcall("tearingdump", dump, dlow_1);
-        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()));
+        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
         v1_1 = assignmentsVector(ass1);
         v2_1 = assignmentsVector(ass2);
         (comps) = strongComponents(m_2, mT_2, v1_1, v2_1);

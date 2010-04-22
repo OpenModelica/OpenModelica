@@ -768,7 +768,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()));
+        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, dlow_1);
