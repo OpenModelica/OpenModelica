@@ -104,10 +104,10 @@ public function differentiateExpTime "function: differentiateExpTime
   gives
   differentiate_exp_time(\'x+y=5PI\', {x,y}) => der(x)+der(y)=0"
   input DAE.Exp inExp;
-  input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
+  input tuple<DAELow.Variables,DAE.FunctionTree> inVariables;
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (inExp,inVarsandFuncs)
+  outExp := matchcontinue (inExp,inVariables)
     local
       DAE.ExpType tp;
       DAE.ComponentRef cr;
@@ -123,6 +123,7 @@ algorithm
       Absyn.Path fname;
       DAE.ExpType ty;
       DAE.FunctionTree functions;
+      DAE.Element func;
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -281,15 +282,12 @@ algorithm
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(a,expl_1,b,c,tp,inl);
-    case (DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
+    case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
         // get Derivative function
-        // 
-        str = Absyn.pathString(a);
-        s1 = stringAppend("differentiation of function ", str);
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {s1,"no suggestion"});
+        e1 = differentiateFunctionTime(e,(timevars,functions));
       then
-        fail();        
+        e1;        
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
         e_str = Exp.printExpStr(e);
@@ -340,6 +338,171 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateExpTime;
+
+protected function differentiateFunctionTime
+  input DAE.Exp inExp;
+  input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
+  output DAE.Exp outExp;  
+algorithm    
+  outExp := matchcontinue (inExp,inVarsandFuncs)
+    local 
+      list<DAE.Exp> expl,expl1;
+      DAE.Exp e,e1;
+      DAELow.Variables timevars;
+      Absyn.Path a,da;
+      Boolean b,c;
+      DAE.InlineType inl;
+      DAE.ExpType ty;
+      DAE.FunctionTree functions;
+      list<DAE.FunctionDefinition> flst;
+      DAE.FunctionDefinition mapper;
+      list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
+      Option<Absyn.Path> defaultDerivative; 
+      Integer derivativeOrder;
+      DAE.Type tp;
+    case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
+      equation
+        // get function mapper
+        DAE.FUNCTION(functions=flst,type_=tp) = DAEUtil.avlTreeGet(functions,a);
+        DAE.FUNCTION_DER_MAPPER(derivativeFunction=da,derivativeOrder=derivativeOrder,conditionRefs=conditionRefs,defaultDerivative=defaultDerivative) = getFunctionMapper(flst);
+        (da,expl1) = differentiateFunctionTime1(da,derivativeOrder,conditionRefs,defaultDerivative,expl,tp,(timevars,functions));
+      then
+        DAE.CALL(da,expl1,b,c,ty,inl);
+  end matchcontinue;
+end differentiateFunctionTime;
+
+protected function differentiateFunctionTime1
+  input Absyn.Path inFuncName;
+  input Integer derivativeOrder;
+  input list<tuple<Integer,DAE.derivativeCond>> conds;
+  input Option<Absyn.Path> defaultDerivative;
+  input list<DAE.Exp> expl;
+  input DAE.Type tp;
+  input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
+  output Absyn.Path outFuncName;
+  output list<DAE.Exp> outExpLst;  
+algorithm    
+  (outFuncName,outExpLst) := matchcontinue (inFuncName,derivativeOrder,conds,defaultDerivative,expl,tp,inVarsandFuncs)
+    local 
+      DAELow.Variables timevars;
+      DAE.FunctionTree functions;
+      tuple<Integer,DAE.derivativeCond> cond;
+      list<DAE.Exp> expl1,dexpl,dexpl1;
+      Absyn.Path default;
+      DAE.TType typ;
+    // check conditions  
+    case (inFuncName,derivativeOrder,cond::conds,_,expl,tp,(timevars,functions))
+      equation
+        (default,expl1) = differentiateFunctionTime1(inFuncName,derivativeOrder,conds,defaultDerivative,expl,tp,(timevars,functions));
+      then
+        (default,expl1);
+    // use default, order=1 
+    case (inFuncName,derivativeOrder,{},SOME(default),expl,(typ,_),(timevars,functions))
+      equation
+         true = intEq(1,derivativeOrder);
+         dexpl = getDerivedFuncExpLst(typ,expl);
+         dexpl1 = Util.listMap1(dexpl,differentiateExpTime,(timevars,functions));
+         expl1 = listAppend(expl,dexpl1);       
+      then
+        (default,expl);  
+    // no default, no  condition, order=1  
+    case (inFuncName,derivativeOrder,{},NONE(),expl,(typ,_),(timevars,functions))
+      equation
+         true = intEq(1,derivativeOrder);
+         dexpl = getDerivedFuncExpLst(typ,expl);
+         dexpl1 = Util.listMap1(dexpl,differentiateExpTime,(timevars,functions));
+         expl1 = listAppend(expl,dexpl1);
+      then
+        (inFuncName,expl1);              
+  end matchcontinue;
+end differentiateFunctionTime1;
+
+protected function getDerivedFuncExpLst
+  input DAE.TType typ;
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := matchcontinue(typ,inExpLst)
+  local
+    list<DAE.Exp> expl,expl1;
+    list<DAE.FuncArg> funcArg;
+    list<Boolean> blst;
+    case(DAE.T_FUNCTION(funcArg=funcArg),expl)
+    equation
+      blst = Util.listMap(funcArg,isRealfromFuncArg);
+      (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
+    then
+      expl1;  
+  end matchcontinue;         
+end getDerivedFuncExpLst; 
+
+public function isRealfromFuncArg
+  input DAE.FuncArg funcArg;
+  output Boolean bool;
+algorithm
+  bool :=  matchcontinue(funcArg)
+    local 
+      Boolean b;
+      DAE.Type typ; 
+    case((_,typ))
+    equation
+      b = isRealfromType(typ);
+    then 
+      b;
+  end matchcontinue;        
+end isRealfromFuncArg;
+
+public function isRealfromType
+  input DAE.Type typ;
+  output Boolean bool;
+algorithm
+  bool :=  matchcontinue(typ)
+    local 
+      Boolean b;
+      list<Boolean> blst;
+      DAE.Type tp;
+      list<DAE.Type> tplst;
+    case((DAE.T_REAL(_),_)) then true;
+    case((DAE.T_ARRAY(arrayType=tp),_))
+    equation
+      b = isRealfromType(tp);
+    then 
+      b;
+    case((DAE.T_LIST(listType=tp),_))
+    equation
+      b = isRealfromType(tp);
+    then 
+      b;
+    case((DAE.T_COMPLEX(complexTypeOption=SOME(tp)),_))
+    equation
+      b = isRealfromType(tp);
+    then 
+      b;
+    case((DAE.T_TUPLE(tupleType=tplst),_))
+    equation
+      blst = Util.listMap(tplst,isRealfromType);
+      b = Util.boolOrList(blst);
+    then 
+      b;
+    case(_) then false;
+  end matchcontinue;
+end isRealfromType;
+
+public function getFunctionMapper
+  input list<DAE.FunctionDefinition> funcDefs;
+  output DAE.FunctionDefinition mapper;
+algorithm
+  mapper := matchcontinue(funcDefs)
+  local 
+    DAE.FunctionDefinition m;
+    Absyn.Path p1;
+    case((m as DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1))::funcDefs) then m;
+    case(_::funcDefs)
+    equation
+      m = getFunctionMapper(funcDefs);
+    then m;
+  end matchcontinue;
+end getFunctionMapper;
 
 public function differentiateExpCont "calls differentiateExp(e,cr,false)"
   input DAE.Exp inExp;
