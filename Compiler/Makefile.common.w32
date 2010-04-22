@@ -65,7 +65,7 @@ SRCMO= Absyn.mo \
 	InstanceHierarchy.mo \
 	XMLDump.mo \
 	InnerOuter.mo \
-	ConnectUtil.mo
+	ConnectUtil.mo \
 	SimCode.mo \
 	SimCodeC.mo \
 	SimCodeCSharp.mo \
@@ -75,7 +75,8 @@ SRCMO= Absyn.mo \
     TplCodegen.mo \
     TplParser.mo \
 	TplMain.mo \
-	Dependency.mo 	
+	Dependency.mo \
+	InstExtends.mo 
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \
@@ -90,6 +91,5 @@ ALLMO = $(SRCMO) \
 	Settings.mo \
 	OptManager.mo \
 	SimulationResults.mo \
-	DynLoad.mo
-
-
+	DynLoad.mo \
+	UnitParserExt.mo 
