@@ -346,7 +346,7 @@ protected function differentiateFunctionTime
 algorithm    
   outExp := matchcontinue (inExp,inVarsandFuncs)
     local 
-      list<DAE.Exp> expl,expl1;
+      list<DAE.Exp> expl,expl1,dexpl;
       DAE.Exp e,e1;
       DAELow.Variables timevars;
       Absyn.Path a,da;
@@ -354,18 +354,20 @@ algorithm
       DAE.InlineType inl;
       DAE.ExpType ty;
       DAE.FunctionTree functions;
-      list<DAE.FunctionDefinition> flst;
       DAE.FunctionDefinition mapper;
       list<tuple<Integer,DAE.derivativeCond>> conditionRefs;
       Option<Absyn.Path> defaultDerivative; 
       Integer derivativeOrder;
       DAE.Type tp;
+      list<Boolean> blst;
     case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
       equation
         // get function mapper
-        DAE.FUNCTION(functions=flst,type_=tp) = DAEUtil.avlTreeGet(functions,a);
-        DAE.FUNCTION_DER_MAPPER(derivativeFunction=da,derivativeOrder=derivativeOrder,conditionRefs=conditionRefs,defaultDerivative=defaultDerivative) = getFunctionMapper(flst);
-        (da,expl1) = differentiateFunctionTime1(da,derivativeOrder,conditionRefs,defaultDerivative,expl,tp,(timevars,functions));
+        (DAE.FUNCTION_DER_MAPPER(derivativeFunction=da,derivativeOrder=derivativeOrder,conditionRefs=conditionRefs,defaultDerivative=defaultDerivative),tp) = getFunctionMapper(a,functions);
+        (da,blst) = differentiateFunctionTime1(a,da,derivativeOrder,conditionRefs,defaultDerivative,tp,(timevars,functions));
+        (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
+        dexpl = Util.listMap1(expl1,differentiateExpTime,(timevars,functions));
+        expl1 = listAppend(expl,dexpl);
       then
         DAE.CALL(da,expl1,b,c,ty,inl);
   end matchcontinue;
@@ -373,66 +375,106 @@ end differentiateFunctionTime;
 
 protected function differentiateFunctionTime1
   input Absyn.Path inFuncName;
+  input Absyn.Path inDFuncName;
   input Integer derivativeOrder;
   input list<tuple<Integer,DAE.derivativeCond>> conds;
   input Option<Absyn.Path> defaultDerivative;
-  input list<DAE.Exp> expl;
   input DAE.Type tp;
   input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
   output Absyn.Path outFuncName;
-  output list<DAE.Exp> outExpLst;  
+  output list<Boolean> blst;  
 algorithm    
-  (outFuncName,outExpLst) := matchcontinue (inFuncName,derivativeOrder,conds,defaultDerivative,expl,tp,inVarsandFuncs)
+  (outFuncName,blst) := matchcontinue (inFuncName,inDFuncName,derivativeOrder,conds,defaultDerivative,tp,inVarsandFuncs)
     local 
       DAELow.Variables timevars;
       DAE.FunctionTree functions;
       tuple<Integer,DAE.derivativeCond> cond;
-      list<DAE.Exp> expl1,dexpl,dexpl1;
-      Absyn.Path default;
+      Absyn.Path default,fname,da;
       DAE.TType typ;
+      list<tuple<Integer,DAE.derivativeCond>> cr;
+      Option<Absyn.Path> dd; 
+      Integer do;
+      DAE.Type tp;      
+      list<Boolean> bl,bl1,bl2;
     // check conditions  
-    case (inFuncName,derivativeOrder,cond::conds,_,expl,tp,(timevars,functions))
+    case (inFuncName,inDFuncName,derivativeOrder,cond::conds,_,tp,(timevars,functions))
       equation
-        (default,expl1) = differentiateFunctionTime1(inFuncName,derivativeOrder,conds,defaultDerivative,expl,tp,(timevars,functions));
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
+          {"differentiation of functions with zeroDerivative or noDerivative",
+          "don't use zeroDerivative or noDerivative"});        
+        (default,_) = differentiateFunctionTime1(inFuncName,inDFuncName,derivativeOrder,conds,defaultDerivative,tp,(timevars,functions));
       then
-        (default,expl1);
+        fail();
     // use default, order=1 
-    case (inFuncName,derivativeOrder,{},SOME(default),expl,(typ,_),(timevars,functions))
+    case (inFuncName,inDFuncName,derivativeOrder,{},SOME(default),(typ,_),(timevars,functions))
       equation
          true = intEq(1,derivativeOrder);
-         dexpl = getDerivedFuncExpLst(typ,expl);
-         dexpl1 = Util.listMap1(dexpl,differentiateExpTime,(timevars,functions));
-         expl1 = listAppend(expl,dexpl1);       
+         bl = getDerivedFuncExpLst(typ);
       then
-        (default,expl);  
+        (default,bl);  
     // no default, no  condition, order=1  
-    case (inFuncName,derivativeOrder,{},NONE(),expl,(typ,_),(timevars,functions))
+    case (inFuncName,inDFuncName,derivativeOrder,{},NONE(),(typ,_),(timevars,functions))
       equation
          true = intEq(1,derivativeOrder);
-         dexpl = getDerivedFuncExpLst(typ,expl);
-         dexpl1 = Util.listMap1(dexpl,differentiateExpTime,(timevars,functions));
-         expl1 = listAppend(expl,dexpl1);
+         bl = getDerivedFuncExpLst(typ);
       then
-        (inFuncName,expl1);              
+        (inDFuncName,bl);  
+    // no default, no  condition, order>1  
+    case (inFuncName,inDFuncName,derivativeOrder,{},NONE(),(typ,_),(timevars,functions))
+      equation
+         failure(true = intEq(1,derivativeOrder));
+         // get n-1 func name
+         fname = getlowerOrderDerivative(inFuncName,functions);
+         // get mapper
+         (DAE.FUNCTION_DER_MAPPER(derivativeFunction=da,derivativeOrder=do,conditionRefs=cr,defaultDerivative=dd),tp) = getFunctionMapper(fname,functions);
+         // get bool list
+         (da,blst) = differentiateFunctionTime1(fname,inFuncName,do,cr,dd,tp,(timevars,functions));
+         // count true
+         (bl1,_) = Util.listSplitOnTrue1(blst,Util.isEqual,true);
+         bl2 = Util.listFill(false,listLength(blst));
+         bl = listAppend(bl2,bl1);
+      then
+        (inDFuncName,bl);                     
   end matchcontinue;
 end differentiateFunctionTime1;
 
+public function getlowerOrderDerivative
+  input Absyn.Path fname;
+  input DAE.FunctionTree functions;
+  output Absyn.Path outFName;
+algorithm
+  outFName := matchcontinue(fname,functions)
+  local 
+    list<DAE.FunctionDefinition> flst;
+    list<Absyn.Path> lowerOrderDerivatives;
+    Absyn.Path name;
+    case(fname,functions)
+    equation
+        DAE.FUNCTION(functions=flst) = DAEUtil.avlTreeGet(functions,fname);
+        DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
+        name = Util.listLast(lowerOrderDerivatives);
+    then name;
+  end matchcontinue;
+end getlowerOrderDerivative;
+
 protected function getDerivedFuncExpLst
   input DAE.TType typ;
-  input list<DAE.Exp> inExpLst;
-  output list<DAE.Exp> outExpLst;
+  output list<Boolean> blst;
 algorithm
-  outExpLst := matchcontinue(typ,inExpLst)
+  blst := matchcontinue(typ)
   local
-    list<DAE.Exp> expl,expl1;
     list<DAE.FuncArg> funcArg;
     list<Boolean> blst;
-    case(DAE.T_FUNCTION(funcArg=funcArg),expl)
+    case(DAE.T_FUNCTION(funcArg=funcArg))
     equation
       blst = Util.listMap(funcArg,isRealfromFuncArg);
-      (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
     then
-      expl1;  
+      blst;  
+    case(DAE.T_TUPLE(tupleType=(DAE.T_FUNCTION(funcArg=funcArg),_)::_))
+    equation
+      blst = Util.listMap(funcArg,isRealfromFuncArg);
+    then
+      blst;      
   end matchcontinue;         
 end getDerivedFuncExpLst; 
 
@@ -489,6 +531,25 @@ algorithm
 end isRealfromType;
 
 public function getFunctionMapper
+  input Absyn.Path fname;
+  input DAE.FunctionTree functions;
+  output DAE.FunctionDefinition mapper;
+  output DAE.Type tp;
+algorithm
+  (mapper,tp) := matchcontinue(fname,functions)
+  local 
+    list<DAE.FunctionDefinition> flst;
+    DAE.Type t;
+    DAE.FunctionDefinition m;
+    case(fname,functions)
+    equation
+        DAE.FUNCTION(functions=flst,type_=t) = DAEUtil.avlTreeGet(functions,fname);
+        m = getFunctionMapper1(flst);
+    then (m,t);
+  end matchcontinue;
+end getFunctionMapper;
+
+public function getFunctionMapper1
   input list<DAE.FunctionDefinition> funcDefs;
   output DAE.FunctionDefinition mapper;
 algorithm
@@ -499,10 +560,10 @@ algorithm
     case((m as DAE.FUNCTION_DER_MAPPER(derivativeFunction=p1))::funcDefs) then m;
     case(_::funcDefs)
     equation
-      m = getFunctionMapper(funcDefs);
+      m = getFunctionMapper1(funcDefs);
     then m;
   end matchcontinue;
-end getFunctionMapper;
+end getFunctionMapper1;
 
 public function differentiateExpCont "calls differentiateExp(e,cr,false)"
   input DAE.Exp inExp;
