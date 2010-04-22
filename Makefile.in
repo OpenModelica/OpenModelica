@@ -48,7 +48,7 @@ omcd: c_runtime
 
 omc: c_runtime
 	(cd Compiler && $(MAKE) -f Makefile release)
-	(cp doc/*.pdf doc/ $(builddir_doc)/)
+	(cp -p doc/*.pdf doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
 test:
