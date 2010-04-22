@@ -5,6 +5,7 @@ builddir_bin=$(top_builddir)/build/bin
 builddir_lib=$(top_builddir)/build/lib
 builddir_inc=$(top_builddir)/build/include
 builddir_doc=$(top_builddir)/build/doc
+builddir_java=$(top_builddir)/build/share/omc/java/
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -12,12 +13,14 @@ bindir = @bindir@
 libdir = @libdir@
 includedir = @includedir@
 datadir = @datadir@
+docdir = @docdir@
 
 INSTALL_BINDIR     = ${DESTDIR}${bindir}
 INSTALL_LIBDIR     = ${DESTDIR}${libdir}
 INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}
 INSTALL_DATADIR    = ${DESTDIR}${datadir}
-INSTALL_DOCDIR     = ${INSTALL_DATADIR}/omc/doc
+INSTALL_DOCDIR     = ${DESTDIR}${docdir}
+INSTALL_JAVADIR    = ${INSTALL_DATADIR}/omc/java
 
 all : release qtclients mosh
 .PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test
@@ -27,6 +30,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_lib)
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_doc)
+	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_doc)/testmodels
 
 debug: omcd
@@ -38,13 +42,13 @@ c_runtime: mkbuilddirs
 
 omcd: c_runtime
 	(cd Compiler && $(MAKE) -f Makefile debug)
-	(cp -p doc/*.pdf $(builddir_doc)/)
+	(cp -p doc/*.pdf doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
 
 omc: c_runtime
 	(cd Compiler && $(MAKE) -f Makefile release)
-	(cp doc/*.pdf $(builddir_doc)/)
+	(cp doc/*.pdf doc/ $(builddir_doc)/)
 	(cp -p Examples/*.* $(builddir_doc)/testmodels/)
 
 test:
@@ -76,6 +80,8 @@ distclean: clean
 	(cd flat_modelica_parser/src && $(MAKE) -f Makefile reallyclean)
 	rm -f Compiler/.depend
 	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
+	rm -f Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile
+	rm -f config.status config.log
 clean:
 	(cd c_runtime && $(MAKE) -f Makefile clean)
 	(cd Compiler/rml2sig && $(MAKE) -f Makefile clean)
@@ -102,6 +108,7 @@ clean:
 	(rm -f $(builddir_bin)/ext)
 	(rm -f $(builddir_bin)/*.xml)
 	rm -f build/include/*
+	rm -rf build/share
 
 ${INSTALL_BINDIR}:
 	mkdir -p ${INSTALL_BINDIR}
@@ -116,7 +123,10 @@ ${INSTALL_DOCDIR}:
 	mkdir -p ${INSTALL_DOCDIR}
 	mkdir -p ${INSTALL_DOCDIR}/testmodels
 
-install: ${INSTALL_BINDIR} ${INSTALL_LIBDIR} ${INSTALL_INCLUDEDIR} ${INSTALL_DOCDIR}
+${INSTALL_JAVADIR}:
+	mkdir -p ${INSTALL_JAVADIR}
+
+install: ${INSTALL_BINDIR} ${INSTALL_LIBDIR} ${INSTALL_INCLUDEDIR} ${INSTALL_DOCDIR} $(INSTALL_JAVADIR)
 	echo Installing OpenModelica...
 	echo Installing build/bin/* to ${INSTALL_BINDIR} ...
 	cp -p build/bin/* ${INSTALL_BINDIR}
@@ -126,6 +136,8 @@ install: ${INSTALL_BINDIR} ${INSTALL_LIBDIR} ${INSTALL_INCLUDEDIR} ${INSTALL_DOC
 	cp -p build/include/* ${INSTALL_INCLUDEDIR}
 	echo Installing build/doc/* to ${INSTALL_DOCDIR} ...
 	cp -Rp build/doc/* ${INSTALL_DOCDIR}
+	echo Installing build/share/omc/java/* to ${INSTALL_JAVADIR} ...
+	cp -Rp build/share/omc/java/* ${INSTALL_JAVADIR}
 
 
 .PRECIOUS: Makefile

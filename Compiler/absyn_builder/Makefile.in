@@ -90,7 +90,7 @@ modelica_parserTokenTypes.txt : $(PARSE_HOME)/src/modelica_parserTokenTypes.txt
 clean:
 	-rm -f *.o *~ core *.core walker absyn_builder.a
 	-rm -f $(walkergen) modelica_parserTokenTypes.txt
-
+	-rm -f expandedexpression_parser.g modelica_expression_parser*
 reallyclean: clean
 
 parse.o : parse.cpp $(PARSE_HOME)/src/modelica_lexer.hpp $(PARSE_HOME)/src/modelica_parser.hpp \

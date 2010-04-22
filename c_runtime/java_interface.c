@@ -263,9 +263,9 @@ JNIEnv* getJavaEnv()
   JNIEnv *env = NULL;
   jsize nVMs = 0;
   #if defined(__MINGW32__) || defined(_MSC_VER) /* Windows/MinGW */
-  const char* classpathFormatString = "-Djava.class.path=%s\\share\\java\\modelica_java.jar;%s\\share\\java\\antlr-3.1.3.jar;%s";
+  const char* classpathFormatString = "-Djava.class.path=%s\\share\\omc\\java\\modelica_java.jar;%s\\share\\omc\\java\\antlr-3.1.3.jar;%s";
   #else
-  const char* classpathFormatString = "-Djava.class.path=%s/share/java/modelica_java.jar:%s/share/java/antlr-3.1.3.jar:%s";
+  const char* classpathFormatString = "-Djava.class.path=%s/share/omc/java/modelica_java.jar:%s/share/omc/java/antlr-3.1.3.jar:%s";
   #endif
   char* openmodelicahome;
   char* classpathEnv;

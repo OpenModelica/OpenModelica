@@ -3615,18 +3615,20 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for antlr.Tool support" >&5
 $as_echo_n "checking for antlr.Tool support... " >&6; }
-omc_antlr_jar=build/share/java/antlr-3.1.3.jar
+omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar
+mkdir -p build/share/omc/java
 cp c_runtime/java_interface/antlr-3.1.3.jar $omc_antlr_jar
 echo "" > $$grammar.g
 if java -cp $omc_antlr_jar antlr.Tool $$grammar.g ; then
+  rm -f $$grammar.g
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
+  rm -f $$grammar.g
   as_fn_error "no antlr.Tool support" "$LINENO" 5
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
-rm -f $$grammar.g
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for readline include" >&5
 $as_echo_n "checking for readline include... " >&6; }

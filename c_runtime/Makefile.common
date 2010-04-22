@@ -67,5 +67,5 @@ clean :
 	cd $(builddir_inc)/ && rm -f $(HFILES)
 	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
 	rm -rf sendData/release sendData/debug
-	rm -f sendData.o sendData.a sendData/releasesendData.o
+	rm -f sendData.o sendData.a sendData/releasesendData.o sendData/Makefile
 

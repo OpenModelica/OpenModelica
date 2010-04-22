@@ -4,23 +4,20 @@ JAVA=$(JAVA_HOME)/bin/java
 JAR=$(JAVA_HOME)/bin/jar
 TARGET=build
 else
-ifeq ($(shell javac -version 2>log.txt | echo "OK"),"OK")
 JAVAC=javac
 JAVA=java
 JAR=jar
-TARGET=build
-else
-JAVAC=javac
-JAVA=java
-JAR=jar
-TARGET=install
-endif
+TARGET=$(shell javac -version > log.txt 2>&1 && echo build || echo install)
 endif
 
 antlr = antlr-3.1.3.jar
 junit = junit-4.6.jar
 
+grammars = src/org/openmodelica/corba/parser/OMCorbaDefinitions.g
+
 java_sources = \
+$(grammars:%.g=%Lexer.java) \
+$(grammars:%.g=%Parser.java) \
 src/org/openmodelica/ModelicaArray.java \
 src/org/openmodelica/ModelicaAny.java \
 src/org/openmodelica/ModelicaFunctionReference.java \
@@ -45,13 +42,11 @@ src/org/openmodelica/corba/parser/ParseException.java \
 src/org/openmodelica/corba/parser/DefinitionsCreator.java \
 src/org/openmodelica/corba/parser/FunctionDefinition.java \
 src/org/openmodelica/corba/parser/JarCreator.java \
-src/org/openmodelica/corba/parser/OMCorbaDefinitionsLexer.java \
 src/org/openmodelica/corba/parser/RecordDefinition.java \
 src/org/openmodelica/corba/parser/PackageDefinition.java \
 src/org/openmodelica/corba/parser/SymbolTable.java \
 src/org/openmodelica/corba/parser/OMCStringParser.java \
 src/org/openmodelica/corba/parser/VariableDefinition.java \
-src/org/openmodelica/corba/parser/OMCorbaDefinitionsParser.java \
 src/org/openmodelica/corba/ConnectException.java \
 src/org/openmodelica/corba/CommunicationException.java \
 src/org/openmodelica/corba/OmcCommunicationHolder.java \
@@ -101,13 +96,14 @@ antlr_compile = @"$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
 
 default: showtarget $(TARGET)
 showtarget:
+	@echo java_interface: target is $(TARGET)
 ifeq ($(TARGET),install)
 	@echo "* No JDK (javac) detected. Using the previosuly compiled jar-file."
 	@echo "* To compile, set JAVA_HOME to a JDK or add javac to the PATH."
 endif
 
 clean:
-	rm -rf bin-jar modelica_java.jar
+	rm -rf bin-jar modelica_java.jar log.txt $(grammars:%.g=%Lexer.java) $(grammars:%.g=%Parser.java) $(grammars:%.g=%.tokens)
 
 %Lexer.java: %.g
 	$(antlr_compile) $<
