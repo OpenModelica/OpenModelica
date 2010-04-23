@@ -21,7 +21,7 @@ win32 {
 
 COIN_LIBS = $$system(coin-config --ldflags --libs)
 SOQT_LIBS = $$system(soqt-config --ldflags --libs)
-unix:LIBS += -L${ANTLRHOME}/src -lantlr $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
+unix:LIBS += -L${ANTLRHOME}/lib -lantlr $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
 
 
 TARGET = OMNotebook
@@ -41,7 +41,7 @@ INCLUDEPATH += $${CORBAINC} \
                $${COIN_INCLUDE} \
                $${SOQT_INCLUDE} \
                /usr/include/qt4/ \
-               ${ANTLRHOME} \
+               ${ANTLRHOME}/include \
                ../NotebookParser \
                ../Pltpkg2 \
                ../3Dpkg
