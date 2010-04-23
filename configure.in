@@ -193,7 +193,7 @@ if test ! "$WANT_MICO" = "no"; then
   if test "$WANT_MICO" = "yes"; then
     MICO="mico-config";
   else
-    MICO="$withval/bin/mico-config";
+    MICO="$WANT_MICO/bin/mico-config";
   fi
   AC_CHECK_PROG(USE_CORBA,$MICO,[-DUSE_CORBA -DUSE_MICO],[no])
   if test "$USE_CORBA" = "no"; then

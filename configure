@@ -4119,7 +4119,7 @@ if test ! "$WANT_MICO" = "no"; then
   if test "$WANT_MICO" = "yes"; then
     MICO="mico-config";
   else
-    MICO="$withval/bin/mico-config";
+    MICO="$WANT_MICO/bin/mico-config";
   fi
   # Extract the first word of "$MICO", so it can be a program name with args.
 set dummy $MICO; ac_word=$2
