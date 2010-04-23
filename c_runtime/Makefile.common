@@ -36,15 +36,19 @@ $(OBJS) : $(HFILES)
 
 libc_runtime.a : $(OBJS) $(HFILES)
 	$(AR) $@ $(OBJS)
+	ranlib $@
 
 libsim.a : $(SIMOBJS) $(HFILES)
 	$(AR) $@ $(SIMOBJS)
+	ranlib $@
 
 libf2c/libf2c.a :
 	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
+	ranlib $@
 
 libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro
 	$(PLTPKGCMD)
+	ranlib sendData/release/$@
 
 install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp $(HFILES) $(builddir_inc)/
