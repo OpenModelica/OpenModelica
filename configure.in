@@ -195,9 +195,12 @@ if test ! "$WANT_MICO" = "no"; then
   else
     MICO="$WANT_MICO/bin/mico-config";
   fi
-  AC_CHECK_PROG(USE_CORBA,$MICO,[-DUSE_CORBA -DUSE_MICO],[no])
   if test "$USE_CORBA" = "no"; then
     AC_MSG_ERROR([failed to find mico-corba])
+  fi
+  AC_MSG_CHECKING([mico version])
+  if ! $MICO --version; then
+    AC_MSG_ERROR([failed to call $MICO])
   fi
   QT_USE_CORBA="USE_MICO"
   CORBACFLAGS=-I`mico-config --prefix`/include;
