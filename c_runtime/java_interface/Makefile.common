@@ -2,15 +2,15 @@ ifdef JAVA_HOME
 JAVAC=$(JAVA_HOME)/bin/javac
 JAVA=$(JAVA_HOME)/bin/java
 JAR=$(JAVA_HOME)/bin/jar
-TARGET=build
 else
 JAVAC=javac
 JAVA=java
 JAR=jar
-TARGET=$(shell javac -version > log.txt 2>&1 && echo build || echo install)
 endif
 
 antlr = antlr-3.1.3.jar
+licenses = ptplot_license.txt antlr_license.txt
+ptplot = ptplot.jar
 junit = junit-4.6.jar
 
 grammars = src/org/openmodelica/corba/parser/OMCorbaDefinitions.g
@@ -94,13 +94,9 @@ org.openmodelica.test.TestDefinitionsParser
 
 antlr_compile = @"$(JAVA)" -jar $(antlr) -fo src/org/openmodelica/corba/parser
 
-default: showtarget $(TARGET)
-showtarget:
-	@echo java_interface: target is $(TARGET)
-ifeq ($(TARGET),install)
-	@echo "* No JDK (javac) detected. Using the previosuly compiled jar-file."
-	@echo "* To compile, set JAVA_HOME to a JDK or add javac to the PATH."
-endif
+build: modelica_java.jar
+
+.PHONY : build install install-nomodelica
 
 clean:
 	rm -rf bin-jar modelica_java.jar log.txt $(grammars:%.g=%Lexer.java) $(grammars:%.g=%Parser.java) $(grammars:%.g=%.tokens)
@@ -118,3 +114,10 @@ clean:
 	$(antlr_compile) $<
 %.tokens: %.g
 	$(antlr_compile) $<
+
+install-nomodelica:
+	cp $(antlr) $(ptplot) ../../build/share/omc/java
+	cp $(licenses) ../../build/share/doc/omc
+install: install-nomodelica
+	cp modelica_java.jar ../../build/share/omc/java
+

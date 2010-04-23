@@ -1339,8 +1339,8 @@ case SIMCODE(modelInfo=MODELINFO, makefileParams=MAKEFILE_PARAMS) then
   LINK=<makefileParams.linker>
   EXEEXT=<makefileParams.exeext>
   DLLEXT=<makefileParams.dllext>
-  CFLAGS= -I"<makefileParams.omhome>/include" <makefileParams.cflags>
-  LDFLAGS= -L"<makefileParams.omhome>/lib" <makefileParams.ldflags>
+  CFLAGS= -I"<makefileParams.omhome>/include/omc" <makefileParams.cflags>
+  LDFLAGS= -L"<makefileParams.omhome>/lib/omc" <makefileParams.ldflags>
   
   .PHONY: <modelInfo.name>
   <modelInfo.name>: <modelInfo.name>.cpp

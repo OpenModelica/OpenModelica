@@ -607,6 +607,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+GENERATED_AUTOCONF_FILES
 BOOSTHOME
 USE_MODPAR
 IDLCMD
@@ -2136,6 +2137,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -4121,46 +4123,13 @@ if test ! "$WANT_MICO" = "no"; then
   else
     MICO="$WANT_MICO/bin/mico-config";
   fi
-  # Extract the first word of "$MICO", so it can be a program name with args.
-set dummy $MICO; ac_word=$2
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_USE_CORBA+set}" = set; then :
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$USE_CORBA"; then
-  ac_cv_prog_USE_CORBA="$USE_CORBA" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-    for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_USE_CORBA="-DUSE_CORBA -DUSE_MICO"
-    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-  done
-IFS=$as_save_IFS
-
-  test -z "$ac_cv_prog_USE_CORBA" && ac_cv_prog_USE_CORBA="no"
-fi
-fi
-USE_CORBA=$ac_cv_prog_USE_CORBA
-if test -n "$USE_CORBA"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $USE_CORBA" >&5
-$as_echo "$USE_CORBA" >&6; }
-else
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
   if test "$USE_CORBA" = "no"; then
     as_fn_error "failed to find mico-corba" "$LINENO" 5
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking mico version" >&5
+$as_echo_n "checking mico version... " >&6; }
+  if ! $MICO --version; then
+    as_fn_error "failed to call $MICO" "$LINENO" 5
   fi
   QT_USE_CORBA="USE_MICO"
   CORBACFLAGS=-I`mico-config --prefix`/include;
@@ -4285,7 +4254,8 @@ $as_echo "Not compiling with BOOST" >&6; }; USE_MODPAR=""; BOOSTHOME=""
 fi
 
 
-ac_config_files="$ac_config_files Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
+GENERATED_AUTOCONF_FILES="Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
+ac_config_files="$ac_config_files ${GENERATED_AUTOCONF_FILES}"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4985,21 +4955,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
-    "Compiler/rml2sig/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/rml2sig/Makefile" ;;
-    "modelica_parser/test/parser/Makefile") CONFIG_FILES="$CONFIG_FILES modelica_parser/test/parser/Makefile" ;;
-    "mosh/src/Makefile") CONFIG_FILES="$CONFIG_FILES mosh/src/Makefile" ;;
-    "Compiler/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/Makefile" ;;
-    "Compiler/omc_release/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/omc_release/Makefile" ;;
-    "Compiler/omc_debug/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/omc_debug/Makefile" ;;
-    "Compiler/omc_profiler/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/omc_profiler/Makefile" ;;
-    "Compiler/absyn_builder/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/absyn_builder/Makefile" ;;
-    "modelica_parser/test/lexer/Makefile") CONFIG_FILES="$CONFIG_FILES modelica_parser/test/lexer/Makefile" ;;
-    "Compiler/test_codegen/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/test_codegen/Makefile" ;;
-    "Compiler/runtime/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/runtime/Makefile" ;;
-    "modelica_parser/src/Makefile") CONFIG_FILES="$CONFIG_FILES modelica_parser/src/Makefile" ;;
-    "Compiler/modpar/Makefile") CONFIG_FILES="$CONFIG_FILES Compiler/modpar/Makefile" ;;
-    "flat_modelica_parser/src/Makefile") CONFIG_FILES="$CONFIG_FILES flat_modelica_parser/src/Makefile" ;;
+    "${GENERATED_AUTOCONF_FILES}") CONFIG_FILES="$CONFIG_FILES ${GENERATED_AUTOCONF_FILES}" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
   esac

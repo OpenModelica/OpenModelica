@@ -6,8 +6,8 @@
 
 top_builddir = ..
 builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib
-builddir_inc=$(top_builddir)/build/include
+builddir_lib=$(top_builddir)/build/lib/omc
+builddir_inc=$(top_builddir)/build/include/omc
 
 UNAME := $(shell uname -m)
 CMDFPUFLAGS := `case ${UNAME} in i[3456]86) echo "-msse2 -mfpmath=sse";; x86_64) echo "-msse2 -mfpmath=sse -fPIC";; *) echo "";; esac`

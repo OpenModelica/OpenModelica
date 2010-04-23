@@ -1,0 +1,129 @@
+.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean
+
+top_builddir = .
+builddir_bin=$(top_builddir)/build/bin
+builddir_lib=$(top_builddir)/build/lib/omc
+builddir_inc=$(top_builddir)/build/include/omc
+builddir_doc=$(top_builddir)/build/share/doc
+builddir_share=$(top_builddir)/build/share/
+builddir_java=$(top_builddir)/build/share/omc/java/
+
+INSTALL_BINDIR     = ${DESTDIR}${bindir}
+INSTALL_LIBDIR     = ${DESTDIR}${libdir}/omc
+INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}/omc
+INSTALL_DATADIR    = ${DESTDIR}${datadir}
+INSTALL_DOCDIR     = ${DESTDIR}${docdir}/omc
+INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
+INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
+
+.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test install-dirs
+
+mkbuilddirs:
+	mkdir -p $(builddir_bin)
+	mkdir -p $(builddir_lib)
+	mkdir -p $(builddir_inc)
+	mkdir -p $(builddir_java)
+	mkdir -p $(builddir_share)/omnotebook
+	mkdir -p $(builddir_share)/omshell
+	mkdir -p $(builddir_doc)/omc/testmodels
+
+debug: .testvariables mkbuilddirs settings omcd
+frontend: .testvariables mkbuilddirs settings omc_frontend
+release: omc
+
+c_runtime: mkbuilddirs
+	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
+
+docs:
+	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
+	rm -f build/doc/omc/CMakeLists.txt
+	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)
+
+testfast:
+	(cd testsuite; time $(MAKE) -f Makefile fast)
+
+test:
+	(cd testsuite; time $(MAKE) -f Makefile)
+
+testlog:
+	(cd testsuite; time $(MAKE) -f Makefile > testsuite-trace.txt 2>&1)
+	echo "log is in testsuite/testsuite-trace.txt"
+
+testmos:
+	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
+	
+testmeta:
+	(cd testsuite/meta; time $(MAKE) -f Makefile)
+	(cd testsuite/records; time $(MAKE) -f Makefile)
+
+testlibraries:
+	(cd testsuite/libraries; time $(MAKE) -f Makefile)
+
+testSummary:
+	(cd testsuite; time $(MAKE) -f Makefile | grep "==")
+
+mosh: omc
+	$(MAKE) -C mosh/src -f $(defaultMakefileTarget)
+
+susan: all
+	$(MAKE) -C Compiler/susan_codegen
+
+sus: 
+	$(MAKE) -C Compiler/susan_codegen
+
+tpl_simcode: tpl_sc susan tpl_gen
+
+tpl_sc:
+	$(MAKE) -C Compiler/susan_codegen/SimCode
+
+tpl_gen:
+	$(MAKE) -C Compiler/susan_codegen/SimCode/GenTest
+
+distclean: clean
+	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	(cd modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	(cd flat_modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) reallyclean)
+	rm -f Compiler/.depend
+	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
+	rm -f $(autoconfGeneratedFiles)
+	rm -f config.status config.log
+clean:
+	(cd c_runtime && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd Compiler/rml2sig && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd Compiler/omc_debug && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd Compiler/omc_release && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd Compiler/omc_profiler && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) clean)
+	(cd flat_modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) clean)
+	rm -rf build/
+
+install-dirs:
+	mkdir -p ${INSTALL_BINDIR}
+	mkdir -p ${INSTALL_LIBDIR}
+	mkdir -p ${INSTALL_INCLUDEDIR}
+	mkdir -p ${INSTALL_DOCDIR}
+	mkdir -p ${INSTALL_DOCDIR}/testmodels
+	mkdir -p ${INSTALL_SHAREDIR}/omnotebook ${INSTALL_SHAREDIR}/omshell ${INSTALL_JAVADIR}
+
+install: install-dirs
+	echo Installing OpenModelica...
+	# Binaries
+	cp -p ${builddir_bin}/* ${INSTALL_BINDIR}
+	# Libraries
+	cp -p ${builddir_lib}/* ${INSTALL_LIBDIR}
+	# Includes
+	cp -p ${builddir_inc}/* ${INSTALL_INCLUDEDIR}
+	# Documents
+	cp -p ${builddir_doc}/omc/*.pdf ${INSTALL_DOCDIR}
+	cp -p ${builddir_doc}/omc/*.txt ${INSTALL_DOCDIR}
+	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/testmodels
+	# Shared data
+	cp -p ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook
+	cp -p ${builddir_share}/omshell/* ${INSTALL_SHAREDIR}/omshell
+	# Java
+	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}

@@ -9,8 +9,8 @@
 srcdir= .
 top_builddir= ..
 builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib
-builddir_inc=$(top_builddir)/build/include
+builddir_lib=$(top_builddir)/build/lib/omc
+builddir_inc=$(top_builddir)/build/include/omc
 builddir_doc=$(top_builddir)/build/doc
 
 ANTLR_HOME = @antlrhome@
@@ -40,8 +40,7 @@ PROG = omc
 PROGD = omcd
 PROGP = omcp
 
-SCRIPT_FILES = Compile Compile.bat doPlot doPlot.bat doPlot.Cygwin
-DOC_FILES = omc_helptext.txt omc_interactive_api.txt
+SCRIPT_FILES = Compile doPlot
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime absyn_builder modpar
@@ -69,32 +68,15 @@ $(PROGP): omc_profiler
 	echo Copying $(PROGP)$(EXEEXT) into $(builddir_bin)
 	cp omc_profiler/$(PROGP)$(EXEEXT) $(builddir_bin)/
 
-install_doc:
-	for x in $(DOC_FILES); do \
-		echo Copying $$x into $(builddir_doc); \
-		cp doc/$$x $(builddir_doc)/; \
-	done
-
 install_scripts:
 	for x in $(SCRIPT_FILES); do \
 		echo Copying $$x into $(builddir_bin); \
 		cp scripts/$$x $(builddir_bin)/; \
 	done
 
+install: install_scripts $(PROG)
 
-install: install_doc install_scripts $(PROG)
-	echo Copying needed helpfiles....
-	for x in $(DOC_FILES); do \
-		echo Copying $$x into $(builddir_bin) where omc expects it...; \
-		cp doc/$$x $(builddir_bin)/; \
-	done
-
-dinstall: install_doc install_scripts $(PROGD)
-	echo Copying needed helpfiles....
-	for x in $(DOC_FILES); do \
-		echo Copying $$x into $(builddir_bin) where omc expects it...; \
-		cp doc/$$x $(builddir_bin)/; \
-	done
+dinstall: install_scripts $(PROGD)
 
 omc_release: depend
 	(cd omc_release && $(MAKE))
@@ -134,8 +116,7 @@ clean: .depend
 	(cd omc_release; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir_bin)/$(PROG)$(EXEEXT)
-	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES) && rm -f $(DOC_FILES)
-	-cd $(builddir_doc) && rm -f $(DOC_FILES)
+	-cd $(builddir_bin) && rm -f $(SCRIPT_FILES)
 
 dclean: .depend
 	@for d in $(SUBDIRS); do \
@@ -144,8 +125,7 @@ dclean: .depend
 	(cd omc_debug; $(MAKE) clean)
 	-$(RM) -f $(SRCH)
 	-$(RM) -f $(builddir)/$(PROGD)$(EXEEXT)
-	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES) && rm -f $(DOC_FILES)
-	-cd $(builddir_doc) && rm -f $(DOC_FILES)
+	-cd $(builddir_bin) && rm -f $(SCRIPTS_FILES)
 
 reallyclean: .depend
 	@for d in $(SUBDIRS); do \
@@ -173,4 +153,4 @@ depend:
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in
-	$(top_builddir)/config.status Makefile
+	$(top_builddir)/config.status

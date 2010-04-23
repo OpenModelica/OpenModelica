@@ -2009,7 +2009,7 @@ algorithm
         omhome_1 = System.trim(omhome, "\"");
         cit = winCitation();
         pd = System.pathDelimiter();
-        filename = Util.stringAppendList({omhome_1,pd,"bin",pd,"omc_helptext.txt"});
+        filename = Util.stringAppendList({omhome_1,pd,"share",pd,"doc",pd,"omc",pd,"omc_helptext.txt"});
         print(filename);
         str = System.readFile(filename);
       then
@@ -4044,8 +4044,8 @@ algorithm
           "LINK=",linker,"\n",
           "EXEEXT=",exeext,"\n",
           "DLLEXT=",dllext,"\n",
-          "CFLAGS= -I\"",omhome,"/include\" ", cflags ,"\n",
-          "LDFLAGS= -L\"",omhome,"/lib\" ", ldflags ,"\n",
+          "CFLAGS= -I\"",omhome,"/include/omc\" ", cflags ,"\n",
+          "LDFLAGS= -L\"",omhome,"/lib/omc\" ", ldflags ,"\n",
 		  "ifndef SENDDATALIBS\n",
 		  "  SENDDATALIBS=",senddatalibs,"\n",
 		  "endif\n"

@@ -686,8 +686,8 @@ algorithm
           "LINK=",linker,"\n",
           "EXEEXT=",exeext,"\n",
           "DLLEXT=",dllext,"\n",
-          "CFLAGS= -I\"",omhome,"/include\" ", cflags ,"\n",
-          "LDFLAGS= -L\"",omhome,"/lib\" ", ldflags ,"\n"
+          "CFLAGS= -I\"",omhome,"/include/omc\" ", cflags ,"\n",
+          "LDFLAGS= -L\"",omhome,"/lib/omc\" ", ldflags ,"\n"
           });
     then header;
   end matchcontinue;

@@ -55,7 +55,9 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
 	cp sendData/release/libsendData.a $(builddir_lib)/
-	@make -C java_interface -f $(JAVAMAKEFILE) || echo "Skipping jar-file"
+	@make -C java_interface -f $(JAVAMAKEFILE) && \
+	make -C java_interface -f $(JAVAMAKEFILE) install || \
+	make -C java_interface -f $(JAVAMAKEFILE) install-nomodelica
 
 clean :
 	$(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
@@ -64,11 +66,6 @@ clean :
 	rm -f libsim.a
 	rm -f $(OBJS)
 	rm -f $(SIMOBJS)
-	rm -f $(builddir_lib)/libc_runtime.a
-	rm -f $(builddir_lib)/libsim.a
-	rm -f $(builddir_lib)/libf2c.*
-	rm -f $(builddir_lib)/libsendData.a
-	cd $(builddir_inc)/ && rm -f $(HFILES)
 	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
 	rm -rf sendData/release sendData/debug
 	rm -f sendData.o sendData.a sendData/releasesendData.o sendData/Makefile
