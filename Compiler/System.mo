@@ -308,10 +308,10 @@ end readEnv;
 
 
 
-public function setEnv
-  input String inString1;
-  input String inString2;
-  input Integer inInteger3;
+public function setEnv ""
+  input String varName;
+  input String value;
+  input Boolean overwrite "is always true on Windows, so recommended to always call it using true";
   output Integer outInteger;
 
   external "C" ;
@@ -530,10 +530,12 @@ end isIdenticalFile;
 
 public function os "Returns a string with the operating system name
 
-For linux : 'linux'
+For linux: 'linux'
+For OSX: 'linux'
+For Windows : 'Windows_NT' (the name of env var OS )
 
-For Windowns : 'Windows_NT' (the name of env var OS )
-
+Why it returns linux for OSX, we have no clue. But it does, so let's
+document it.
 "
   output String str;
   external "C" ;

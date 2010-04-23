@@ -218,12 +218,9 @@ void System_5finit(void)
 {
   char* path;
   char* newPath;
-  char* omhome;
-  char* mingwpath;
-  char* qthome;
 
-    last_ptr_index = -1;
-    memset(ptr_vector, 0, sizeof(ptr_vector));
+  last_ptr_index = -1;
+  memset(ptr_vector, 0, sizeof(ptr_vector));
 
   set_cc("g++");
   set_cxx("g++");
@@ -246,23 +243,6 @@ void System_5finit(void)
 #endif
   set_ldflags("-lc_runtime");
   path = getenv("PATH");
-  omhome = getenv("OPENMODELICAHOME");
-  if (omhome) {
-    mingwpath = malloc(2*strlen(omhome)+25);
-    sprintf(mingwpath,"%s\\mingw\\bin;%s\\lib", omhome, omhome);
-    if (strncmp(mingwpath,path,strlen(mingwpath))!=0) {
-      newPath = malloc(strlen(path)+strlen(mingwpath)+10);
-      sprintf(newPath,"PATH=%s;%s",mingwpath,path);
-      _putenv(newPath);
-      free(newPath);
-    }
-    free(mingwpath);
-  } else {
-    fprintf(stderr, "Error: OPENMODELICAHOME was not set.\n");
-    fprintf(stderr, "  Read the documentation for instructions on how to set it properly.\n"
-    fprintf(stderr, "  Most OpenModelica distributions have scripts that set OPENMODELICAHOME for you.\n");
-    exit(1);
-  }
 
   _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
 }
@@ -1886,12 +1866,6 @@ void System_5finit(void)
     sprintf(
         sendDataLibs,
         "SENDDATALIBS=-lsendData");
-  }
-  if (getenv("OPENMODELICAHOME") == 0) {
-    fprintf(stderr, "Error: OPENMODELICAHOME was not set.\n");
-    fprintf(stderr, "  Read the documentation for instructions on how to set it properly.\n"
-    fprintf(stderr, "  Most OpenModelica distributions have scripts that set OPENMODELICAHOME for you.\n");
-    exit(1);
   }
   /* set the SENDDATALIBS environment variable */
   putenv(strdup(sendDataLibs));

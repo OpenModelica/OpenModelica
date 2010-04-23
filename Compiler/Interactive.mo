@@ -1465,7 +1465,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf))) /* adrpo added 2005-11-24 */
       equation
-        0 = System.setEnv(name, value, 1) "overwrite" ;
+        0 = System.setEnv(name, value, true);
       then
         ("Ok",st);
 
@@ -1477,7 +1477,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf))) /* adrpo added 2005-11-24 */
       equation
-        rest = System.setEnv(name, value, 1) "overwrite" ;
+        rest = System.setEnv(name, value, true);
         (rest == 0) = false;
       then
         ("error",st);

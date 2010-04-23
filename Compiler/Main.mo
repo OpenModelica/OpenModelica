@@ -1184,10 +1184,24 @@ algorithm
       String ver_str,errstr;
       list<String> args_1,args;
       Boolean ismode,icmode,imode,imode_1;
-      String s,str;
+      String s,str,omhome,oldpath,newpath;
       Interactive.InteractiveSymbolTable symbolTable;
+      String omhome;
+      
+      // Setup mingw path only once.
+    case _
+      equation
+        omhome = System.readEnv("OPENMODELICAHOME");
+        true = "Windows_NT" ==& System.os();
+        oldpath = System.readEnv("PATH");
+        newpath = Util.stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
+        _ = System.setEnv("PATH",newpath,true);
+      then fail();
+    
     case args as _::_
       equation
+        _ = System.readEnv("OPENMODELICAHOME");
+        
         args_1 = RTOpts.args(args);
 
         // we need this as we get the arguments in reverse from RTOpts.args
@@ -1215,6 +1229,7 @@ algorithm
         ();
     case args as _::_
       equation
+        _ = System.readEnv("OPENMODELICAHOME");
         failure(args_1 = RTOpts.args(args));
         printUsage();
       then ();
@@ -1224,6 +1239,7 @@ algorithm
       then ();
     case _
       equation
+        _ = System.readEnv("OPENMODELICAHOME");
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
         errstr = Print.getErrorString();
@@ -1232,6 +1248,14 @@ algorithm
         print(ErrorExt.printMessagesStr()); print("\n");
       then
         fail();
+
+    case _
+      equation
+        failure(_ = System.readEnv("OPENMODELICAHOME"));
+        print("Error: OPENMODELICAHOME was not set.\n");
+        print("  Read the documentation for instructions on how to set it properly.\n");
+        print("  Most OpenModelica release distributions have scripts that set OPENMODELICAHOME for you.\n\n");
+      then fail();
   end matchcontinue;
 end main;
 end Main;
