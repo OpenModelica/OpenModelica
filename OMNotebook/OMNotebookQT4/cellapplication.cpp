@@ -191,9 +191,9 @@ namespace IAEX
 		{
 			QString stylesheetfile;
 			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-				stylesheetfile = openmodelica + "bin/stylesheet.xml";
+				stylesheetfile = openmodelica + "share/omnotebook/stylesheet.xml";
 			else
-				stylesheetfile = openmodelica + "/bin/stylesheet.xml";
+				stylesheetfile = openmodelica + "/share/omnotebook/stylesheet.xml";
 
 			sheet = Stylesheet::instance( stylesheetfile );
 		}
@@ -209,9 +209,9 @@ namespace IAEX
 		{
 			QString commandfile;
 			if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-				commandfile = openmodelica + "bin/commands.xml";
+				commandfile = openmodelica + "share/omnotebook/commands.xml";
 			else
-				commandfile = openmodelica + "/bin/commands.xml";
+				commandfile = openmodelica + "/share/omnotebook/commands.xml";
 
 			CommandCompletion::instance( commandfile );
 		}
@@ -244,9 +244,9 @@ namespace IAEX
 
 				QString modelicacolorsfile;
 				if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-					modelicacolorsfile = openmodelica + "bin/modelicacolors.xml";
+					modelicacolorsfile = openmodelica + "share/omnotebook/modelicacolors.xml";
 				else
-					modelicacolorsfile = openmodelica + "/bin/modelicacolors.xml";
+					modelicacolorsfile = openmodelica + "/share/omnotebook/modelicacolors.xml";
 
 				OpenModelicaHighlighter *highlighter = new OpenModelicaHighlighter( modelicacolorsfile, *style.textCharFormat() );
 				HighlighterThread *thread = HighlighterThread::instance( highlighter );
