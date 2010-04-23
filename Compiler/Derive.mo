@@ -68,7 +68,30 @@ algorithm
       DAELow.Variables timevars;
       DAELow.Equation dae_equation;
       DAE.ElementSource source "the origin of the element";
+      Absyn.Path p;
+      DAE.FunctionDefinition mapper;
+      DAE.Type tp;
 
+    // Derivatives of Functions
+    case (DAELow.EQUATION(exp = e1 as DAE.CALL(path=p),scalar = e2,source=source),timevars,inFunctions) /* time varying variables */
+      equation
+        e1_1 = differentiateFunctionTime(e1, (timevars,inFunctions));
+        (mapper,tp) = getFunctionMapper(p,inFunctions);
+        e2_1 = differentiateFunctionTimeOutputs(e2,mapper,tp,(timevars,inFunctions));
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+      then
+        DAELow.EQUATION(e1_2,e2_2,source);
+    case (DAELow.EQUATION(exp = e1,scalar = e2 as DAE.CALL(path=p),source=source),timevars,inFunctions) /* time varying variables */
+      equation
+        e2_1 = differentiateFunctionTime(e2, (timevars,inFunctions));
+        (mapper,tp) = getFunctionMapper(p,inFunctions);
+        e1_1 = differentiateFunctionTimeOutputs(e1,mapper,tp,(timevars,inFunctions));
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+      then
+        DAELow.EQUATION(e1_2,e2_2,source);
+        
     case (DAELow.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions) /* time varying variables */
       equation
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
@@ -339,6 +362,41 @@ algorithm
   end matchcontinue;
 end differentiateExpTime;
 
+protected function differentiateFunctionTimeOutputs
+  input DAE.Exp inExp;
+  input DAE.FunctionDefinition mapper;
+  input DAE.Type tp;
+  input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
+  output DAE.Exp outExp;
+algorithm    
+  outExp := matchcontinue (inExp,mapper,tp,inVarsandFuncs)
+    local 
+      DAELow.Variables timevars;
+      DAE.FunctionTree functions;
+      DAE.TType typ;
+      Integer derivativeOrder;
+      DAE.Exp e;
+    // order=1  
+    case (inExp,DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),(typ,_),(timevars,functions))
+      equation
+         true = intEq(1,derivativeOrder);
+         // remove all outputs not subtyp of real
+/* Frenkel TUD: TODO: implement remove all outputs not subtyp of real*/         
+         // diff exp
+         e = differentiateExpTime(inExp, (timevars,functions));
+      then
+        e;
+    // order>1  
+    case (inExp,DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),(typ,_),(timevars,functions))
+      equation
+         failure(true = intEq(1,derivativeOrder));
+         // diff exp
+         e = differentiateExpTime(inExp, (timevars,functions));
+      then
+        e;
+  end matchcontinue;
+end differentiateFunctionTimeOutputs;
+
 protected function differentiateFunctionTime
   input DAE.Exp inExp;
   input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
@@ -461,6 +519,7 @@ algorithm
       bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
     then bl;
     // noDerivative
+/* Frenkel TUD: TODO: test this case*/         
     case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,expl,inVarsandFuncs)
     equation
       i_1 = i-1;
