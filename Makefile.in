@@ -19,7 +19,7 @@ INSTALL_BINDIR     = ${DESTDIR}${bindir}
 INSTALL_LIBDIR     = ${DESTDIR}${libdir}
 INSTALL_INCLUDEDIR = ${DESTDIR}${includedir}
 INSTALL_DATADIR    = ${DESTDIR}${datadir}
-INSTALL_DOCDIR     = ${DESTDIR}${docdir}
+INSTALL_DOCDIR     = ${DESTDIR}${docdir}/omc
 INSTALL_JAVADIR    = ${INSTALL_DATADIR}/omc/java
 
 all : release qtclients mosh
