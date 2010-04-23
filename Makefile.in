@@ -128,15 +128,16 @@ ${INSTALL_JAVADIR}:
 
 install: ${INSTALL_BINDIR} ${INSTALL_LIBDIR} ${INSTALL_INCLUDEDIR} ${INSTALL_DOCDIR} $(INSTALL_JAVADIR)
 	echo Installing OpenModelica...
-	echo Installing build/bin/* to ${INSTALL_BINDIR} ...
+	# Binaries
 	cp -p build/bin/* ${INSTALL_BINDIR}
-	echo Installing build/lib/* to ${INSTALL_LIBDIR} ...
+	# Libraries
 	cp -p build/lib/* ${INSTALL_LIBDIR}
-	echo Installing build/include/* to ${INSTALL_INCLUDEDIR} ...
+	# Includes
 	cp -p build/include/* ${INSTALL_INCLUDEDIR}
-	echo Installing build/doc/* to ${INSTALL_DOCDIR} ...
-	cp -Rp build/doc/* ${INSTALL_DOCDIR}
-	echo Installing build/share/omc/java/* to ${INSTALL_JAVADIR} ...
+	# Documents
+	cp -p build/doc/*.pdf ${INSTALL_DOCDIR}
+	cp -p build/doc/testmodels/* ${INSTALL_DOCDIR}/testmodels
+	# Java
 	cp -Rp build/share/omc/java/* ${INSTALL_JAVADIR}
 
 
