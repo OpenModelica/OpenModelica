@@ -275,15 +275,15 @@ OMS::OMS( QWidget* parent )
 	// create command compleation instance
 	QString openmodelica( getenv( "OPENMODELICAHOME" ) );
 	if( openmodelica.isEmpty() )
-		QMessageBox::critical( 0, "OMShell Error", "Could not find environment variable OPENMODELICAHOME, command compleation will not work" );
+		QMessageBox::critical( 0, "OMShell Error", "Could not find environment variable OPENMODELICAHOME, command completion will not work" );
 
 	try
 	{
 		QString commandfile;
 		if( openmodelica.endsWith("/") || openmodelica.endsWith( "\\") )
-			commandfile = openmodelica + "bin/commands.xml";
+			commandfile = openmodelica + "share/omshell/commands.xml";
 		else
-			commandfile = openmodelica + "/bin/commands.xml";
+			commandfile = openmodelica + "/share/omshell/commands.xml";
 
 		commandcompletion_ = IAEX::CommandCompletion::instance( commandfile );
 	}
