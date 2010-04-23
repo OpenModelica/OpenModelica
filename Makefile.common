@@ -90,7 +90,7 @@ distclean: clean
 	rm -f OMShell/Makefile OMNotebook/ext/Makefile OMNotebook/OMNotebookQT4/Makefile
 	rm -f $(autoconfGeneratedFiles)
 	rm -f config.status config.log
-clean:
+clean: qtclean
 	(cd c_runtime && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler/rml2sig && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) clean)
