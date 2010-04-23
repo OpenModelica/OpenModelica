@@ -257,10 +257,15 @@ void System_5finit(void)
       free(newPath);
     }
     free(mingwpath);
+  } else {
+    fprintf(stderr, "Error: OPENMODELICAHOME was not set.\n");
+    fprintf(stderr, "  Read the documentation for instructions on how to set it properly.\n"
+    fprintf(stderr, "  Most OpenModelica distributions have scripts that set OPENMODELICAHOME for you.\n");
+    exit(1);
   }
 
-    _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
-    }
+  _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
+}
 
 
 RML_BEGIN_LABEL(System__isSameFile)
@@ -1881,6 +1886,12 @@ void System_5finit(void)
     sprintf(
         sendDataLibs,
         "SENDDATALIBS=-lsendData");
+  }
+  if (getenv("OPENMODELICAHOME") == 0) {
+    fprintf(stderr, "Error: OPENMODELICAHOME was not set.\n");
+    fprintf(stderr, "  Read the documentation for instructions on how to set it properly.\n"
+    fprintf(stderr, "  Most OpenModelica distributions have scripts that set OPENMODELICAHOME for you.\n");
+    exit(1);
   }
   /* set the SENDDATALIBS environment variable */
   putenv(strdup(sendDataLibs));
