@@ -25,3 +25,4 @@ LIBF2CMAKEFILE = makefile.u
 JAVAMAKEFILE = Makefile
 include Makefile.common
 
+omdevinstall:

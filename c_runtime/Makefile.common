@@ -50,7 +50,7 @@ libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro
 	$(PLTPKGCMD)
 	ranlib sendData/release/$@
 
-install: libc_runtime.a libsim.a libf2c/libf2c.a
+install: libc_runtime.a libsim.a libf2c/libf2c.a omdevinstall
 	cp $(HFILES) $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
