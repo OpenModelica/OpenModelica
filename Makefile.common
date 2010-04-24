@@ -30,6 +30,7 @@ mkbuilddirs:
 
 debug: .testvariables mkbuilddirs settings omcd
 frontend: .testvariables mkbuilddirs settings omc_frontend
+profiler: .testvariables mkbuilddirs settings omc_profiler
 release: omc
 
 c_runtime: mkbuilddirs
