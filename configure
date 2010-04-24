@@ -3597,7 +3597,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for antlr headers" >&5
 $as_echo_n "checking for antlr headers... " >&6; }
-antlrinc=`find $antlrhome/include -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
+antlrinc=`find $antlrhome/include/ -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
 if test -z "$antlrinc" ; then
   as_fn_error "Could not find antlr include files$antlrmsg" "$LINENO" 5
 else
@@ -3607,7 +3607,7 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for antlr libs" >&5
 $as_echo_n "checking for antlr libs... " >&6; }
-antlrlib=`find $antlrhome/lib -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
+antlrlib=`find $antlrhome/lib/ -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
 if test -z "$antlrlib" ; then
   as_fn_error "Could not find antlr lib file$antlrmsg" "$LINENO" 5
 else
