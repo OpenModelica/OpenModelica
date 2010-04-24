@@ -23,6 +23,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_lib)
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
+	mkdir -p $(builddir_share)/omc/scripts
 	mkdir -p $(builddir_share)/omnotebook
 	mkdir -p $(builddir_share)/omshell
 	mkdir -p $(builddir_doc)/omc/testmodels
@@ -108,7 +109,9 @@ install-dirs:
 	mkdir -p ${INSTALL_INCLUDEDIR}
 	mkdir -p ${INSTALL_DOCDIR}
 	mkdir -p ${INSTALL_DOCDIR}/testmodels
-	mkdir -p ${INSTALL_SHAREDIR}/omnotebook ${INSTALL_SHAREDIR}/omshell ${INSTALL_JAVADIR}
+	mkdir -p ${INSTALL_SHAREDIR}/omnotebook ${INSTALL_SHAREDIR}/omshell
+	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
+
 
 install: install-dirs
 	echo Installing OpenModelica...
@@ -125,5 +128,7 @@ install: install-dirs
 	# Shared data
 	cp -p ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook
 	cp -p ${builddir_share}/omshell/* ${INSTALL_SHAREDIR}/omshell
+	# Scripts
+	cp -p ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
 	cp -p ${builddir_java}/* ${INSTALL_JAVADIR}

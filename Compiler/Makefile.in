@@ -9,9 +9,7 @@
 srcdir= .
 top_builddir= ..
 builddir_bin=$(top_builddir)/build/bin
-builddir_lib=$(top_builddir)/build/lib/omc
-builddir_inc=$(top_builddir)/build/include/omc
-builddir_doc=$(top_builddir)/build/doc
+builddir_scripts=$(top_builddir)/build/share/omc/scripts
 
 ANTLR_HOME = @antlrhome@
 EXEEXT = @EXEEXT@
@@ -69,10 +67,7 @@ $(PROGP): omc_profiler
 	cp omc_profiler/$(PROGP)$(EXEEXT) $(builddir_bin)/
 
 install_scripts:
-	for x in $(SCRIPT_FILES); do \
-		echo Copying $$x into $(builddir_bin); \
-		cp scripts/$$x $(builddir_bin)/; \
-	done
+	cd scripts; cp $(SCRIPT_FILES) ../$(builddir_scripts)
 
 install: install_scripts $(PROG)
 

@@ -782,7 +782,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
+        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_2, "Plot by OpenModelica");
@@ -1507,7 +1507,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
+        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = ValuesUtil.writePtolemyplotDataset(tmpPlotFile, value, vars_1, "Plot by OpenModelica");
@@ -1606,7 +1606,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath();
         omhome_1 = System.trim(omhome, "\"");
         pd = System.pathDelimiter();
-        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"bin",pd,"doPlot",cit});
+        plotCmd = Util.stringAppendList({cit,omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"doPlot",cit});
         uniqueStr = intString(tick());
         tmpPlotFile = Util.stringAppendList({pwd,pd,"tmpPlot_",uniqueStr,".plt"});
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
@@ -2680,7 +2680,7 @@ algorithm
         System.writeFile(libsfilename, libs_str);
         s_call =
         Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",
-          omhome_1,pd,"bin",pd,"Compile"," ",fileprefix," ",noClean});
+          omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
         Debug.fprintln("dynload", "compileModel: successful! ");
@@ -2735,7 +2735,7 @@ algorithm
          * please leave Compile instead of Compile.bat
          * here as it has to work on Linux too
          */
-        s_call = Util.stringAppendList({"\"",omhome_1,pd,"bin",pd,"Compile","\""});
+        s_call = Util.stringAppendList({"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""});
         retVal = System.regularFileExists(s_call);
         true = retVal <> 0;
         str=Util.stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
