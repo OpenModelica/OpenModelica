@@ -53,10 +53,10 @@ all: release
 
 
 release: $(PROG)$(EXEEXT)
+	cp $(PROG)$(EXEEXT) $(builddir_bin)/
 
 $(PROG)$(EXEEXT) : $(OBJS)
 	$(CXX) -o $(PROG)$(EXEEXT) $(OBJS) $(CORBAOBJS) $(LINKFLAGS) $(LIBS)
-	cp $(PROG)$(EXEEXT) $(builddir_bin)/
 
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $<
