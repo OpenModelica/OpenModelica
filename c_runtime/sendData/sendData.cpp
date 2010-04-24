@@ -99,13 +99,7 @@ const char* Connection::getExternalViewerFileName()
   string path( getenv( "OPENMODELICAHOME" ) );
 	if( path.empty() )
 		throw runtime_error( "Could not find environment variable OPENMODELICAHOME" );
-  /*
-  if(path.endsWith("/") || path.endsWith("\\"))
-    path += "bin/ext";
-  else
-    path += "/bin/ext";
-  */
-  path += "/bin/ext";
+  path += "/bin/OMPlotWindow";
 #ifdef WIN32
   path += ".exe";
 #elif defined(__APPLE_CC__)

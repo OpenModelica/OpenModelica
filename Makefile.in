@@ -29,7 +29,7 @@ qtclients: mkbuilddirs
 	echo "Coin3D (www.coin3d.org) and SoQt should be installed and in the path!"
 	echo "using QTHOME=${QTHOME}"
 	(cd OMShell && (test -f omc_communication.cc || @IDLCMD@ ../Compiler/runtime/omc_communication.idl) && CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" qmake && make && cp -p OMShell ../$(builddir_bin)/.)
-	(cd OMNotebook/ext && qmake && make && cp -p ext ../../$(builddir_bin)/.)
+	(cd OMNotebook/ext && qmake && make && cp -p OMPlotWindow ../../$(builddir_bin)/.)
 	(cd OMNotebook/OMNotebookQT4 && (test -f omc_communication.cc || @IDLCMD@ ../../Compiler/runtime/omc_communication.idl) && USE_CORBA="@QT_USE_CORBA@" CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" qmake && make)
 	cp -p OMNotebook/OMNotebookQT4/OMNotebook $(builddir_bin)
 	cp -p OMNotebook/OMNotebookQT4/*.xml $(builddir_share)/omnotebook
