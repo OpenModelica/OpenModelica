@@ -13,16 +13,23 @@ win32 {
   CORBAINC = $$system(mico-config --prefix)/include
   CORBALIBS = $$system(mico-config --libs)
   DEFINES += HAVE_MICO
+  COIN_INCLUDE = $$system(coin-config --includedir)
+  SOQT_INCLUDE = $$system(soqt-config --includedir)
+  COIN_LIBS = $$system(coin-config --ldflags --libs)
+  SOQT_LIBS = $$system(soqt-config --ldflags --libs)
 } else {
-  CORBAINC = $$(CORBACFLAGS)
-  CORBALIBS = $$(CORBALIBS)
-  DEFINES += $$(USE_CORBA)
+  include(OMNotebook.config)
 }
 
-COIN_LIBS = $$system(coin-config --ldflags --libs)
-SOQT_LIBS = $$system(soqt-config --ldflags --libs)
-unix:LIBS += -L${ANTLRHOME}/lib -lantlr $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
-
+LIBS += -L${ANTLRHOME}/lib -lantlr $${CORBALIBS} $${COIN_LIBS} $${SOQT_LIBS}
+INCLUDEPATH += $${CORBAINC} \
+               $${COIN_INCLUDE} \
+               $${SOQT_INCLUDE} \
+               /usr/include/qt4/ \
+               ${ANTLRHOME}/include \
+               ../NotebookParser \
+               ../Pltpkg2 \
+               ../3Dpkg
 
 TARGET = OMNotebook
 
@@ -34,19 +41,8 @@ QMAKE_LFLAGS+=
 #If omc is installed on system. Set includepath and objects
 #correctly. If omc not is installed on the system. Comment out
 #theese three lines below.
-DEFINES += OMC
-COIN_INCLUDE = $$system(coin-config --includedir)
-SOQT_INCLUDE = $$system(soqt-config --includedir)
-INCLUDEPATH += $${CORBAINC} \
-               $${COIN_INCLUDE} \
-               $${SOQT_INCLUDE} \
-               /usr/include/qt4/ \
-               ${ANTLRHOME}/include \
-               ../NotebookParser \
-               ../Pltpkg2 \
-               ../3Dpkg
+DEFINES += OMC $${HAVE_COIN} $${USE_CORBA}
 
-unix:LIBS +=
 QT += network xml core gui opengl
 
 # Input

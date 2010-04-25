@@ -133,6 +133,7 @@ namespace IAEX
 	{
     filename_ = filename;
     //Initialize SoQT
+
     mainFrame_ = new QFrame(a->getMainWindow());
 
 		mainFrame_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding,

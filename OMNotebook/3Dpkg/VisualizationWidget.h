@@ -46,7 +46,7 @@
 #include <QtGui/QMessageBox>
 #include <QtGui/QApplication>
 
-#ifndef __APPLE_CC__
+#ifdef HAVE_COIN
 #include <Inventor/Qt/SoQt.h>
 #include <Inventor/Qt/SoQtRenderArea.h>
 #include <Inventor/Qt/viewers/SoQtExaminerViewer.h>
@@ -88,14 +88,16 @@ namespace IAEX {
 		void ptolemyDataStreamClosed();
 
 	private:
-#ifndef __APPLE_CC__
+#ifdef HAVE_COIN
 		SoQtExaminerViewer *eviewer_;
 		SoQtRenderArea *renderarea_;
 #endif
 		QFrame *frame_;
 		QSlider *slider_;
 		QLabel *label_;
+#ifdef HAVE_COIN
 		SimulationData *simdata_;
+#endif
     QWidget *visframe_;
     QVBoxLayout *buttonlayout_;
     QTimer* timer_;

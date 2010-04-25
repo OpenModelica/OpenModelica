@@ -92,8 +92,10 @@ namespace IAEX
 		: QObject()
 	{
 		app_ = new QApplication(argc, argv);
-#ifndef __APPLE_CC__
-                mainWindow = SoQt::init(argc, argv, argv[0]);
+#ifdef HAVE_COIN
+    mainWindow = SoQt::init(argc, argv, argv[0]);
+#else
+    mainWindow = new QMainWindow();
 #endif
 		QDir dir;
 

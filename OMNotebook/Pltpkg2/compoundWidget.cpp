@@ -73,7 +73,7 @@ CompoundWidget::CompoundWidget(QWidget* parent):  QWidget(parent)
 	gwMain->compoundwidget = this;
 
   //Initialize SoQT
-  //#ifndef __APPLE_CC__  
+  //#ifdef HAVE_COIN  
 	// SoQt::init(this);
   //#endif
 	visWidget = new IAEX::VisualizationWidget(this);

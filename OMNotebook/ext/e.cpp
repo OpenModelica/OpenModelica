@@ -42,7 +42,7 @@ int main(int argc, char** argv)
    QMainWindow *mw = new QMainWindow();
    mw->setWindowTitle("Plot Window");
    mw->setWindowIcon( QIcon(":/Resources/plotWindow.bmp"));
-#ifndef __APPLE_CC__
+#ifdef HAVE_COIN
    SoQt::init(mainFrame_);
 #endif
    GraphWindow *w = new GraphWindow(mainFrame_);

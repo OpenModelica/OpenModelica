@@ -36,7 +36,7 @@ namespace IAEX {
 
 	VisualizationWidget::VisualizationWidget(QWidget *parent) : QWidget(parent)
 	{
-#ifndef __APPLE_CC__
+//#ifdef HAVE_COIN
 		this->setMinimumWidth(600);
 		this->setMinimumHeight(300);
 		this->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
@@ -45,8 +45,10 @@ namespace IAEX {
 
 		visframe_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 
+#ifdef HAVE_COIN
 		simdata_ = new SimulationData();
 		simdata_->setFrame(0);
+#endif
 
 		QFrame *buttonframe = new QFrame();
 		QPushButton *playbutton = new QPushButton("Play");
@@ -58,9 +60,13 @@ namespace IAEX {
 		label_ = new QLabel();
 		label_->setText("0");
 		slider_ = new QSlider(Qt::Vertical);
+#ifdef HAVE_COIN
 		slider_->setRange(1000*simdata_->get_start_time(), 1000*simdata_->get_end_time());
+#endif
 		slider_->setValue(0);
+#ifdef HAVE_COIN
     currentTime_ = 1000*simdata_->get_start_time();
+#endif
 		timer_ = new QTimer(this);
 		// 40 fps
 		timer_->setInterval(25);
@@ -85,11 +91,15 @@ namespace IAEX {
 
 		buttonframe->setLayout(buttonlayout_);
 
+#ifdef HAVE_COIN
 		eviewer_ = new SoQtExaminerViewer(visframe_, NULL, TRUE, SoQtFullViewer::BUILD_NONE);
 		//eviewer_->setSize(SbVec2s(600,400));
     //eviewer_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
 		eviewer_->setSceneGraph(simdata_->getSceneGraph());
 		eviewer_->setBackgroundColor(SbColor(0.95f, 0.95f, 0.95f));
+#else
+    new QLabel(QString("Coin3D was disabled on this build.\nThe rest of the widget still works so\nthe application won't crash when we send it data."), visframe_);
+#endif
 
 		//SoCamera *cam = eviewer_->getCamera();
 		//cam->
@@ -102,50 +112,52 @@ namespace IAEX {
 		server = new QTcpServer(this);
 		server->setMaxPendingConnections(500);
 		activeSocket = 0;
-#endif
+//#endif
 
 	}
 
 	VisualizationWidget::~VisualizationWidget(void)
 	{
-#ifndef __APPLE_CC__        
     delete slider_;
+#ifdef HAVE_COIN        
     delete eviewer_;
+#endif        
     delete visframe_;
     delete server;
     delete buttonlayout_;
     delete timer_;
-#endif        
 	}
 
 	void VisualizationWidget::sliderChanged(int val) {
-#ifndef __APPLE_CC__
 		currentTime_ = val;
 		QString num;
 		num.setNum(currentTime_/1000.0);
 		label_->setText(num);
+#ifdef HAVE_COIN
 		simdata_->setFrame(currentTime_/1000.0);
 #endif
 	}
 
 	void VisualizationWidget::nextFrame() {
-#ifndef __APPLE_CC__
 		currentTime_ += 25; // FIIIIX!
+#ifdef HAVE_COIN
 		if (currentTime_ > 1000*simdata_->get_end_time()) {
 			currentTime_ = 0;
 		}
+#endif
 
 		QString num;
 		num.setNum(currentTime_/1000.0);
 		label_->setText(num);
 		slider_->setValue(currentTime_);
+#ifdef HAVE_COIN
 		simdata_->setFrame(currentTime_/1000.0);
 #endif
 	}
 
 	void  VisualizationWidget::setServerState(bool listen)
 	{
-#ifndef __APPLE_CC__
+//#ifdef HAVE_COIN
 		if(listen)
 		{
 
@@ -188,21 +200,21 @@ namespace IAEX {
 			emit newMessage("Port closed");
 			emit serverState(false);
 		}
-#endif
+//#endif
 	}
 
 	bool VisualizationWidget::getServerState()
 	{
-#ifndef __APPLE_CC__
+//#ifdef HAVE_COIN
 		return server->isListening();
-#else
+//#else
         return 0;
-#endif
+//#endif
 	}
 
 	void VisualizationWidget::acceptConnection()
 	{
-#ifndef __APPLE_CC__
+//#ifdef HAVE_COIN
 		while(server && server->hasPendingConnections())
 		{
 			if( (activeSocket && (activeSocket->state() == QAbstractSocket::UnconnectedState) || !activeSocket))
@@ -221,11 +233,11 @@ namespace IAEX {
 
 			qApp->processEvents();
 		}
-#endif
+//#endif
 	}
 
 	void VisualizationWidget::getData()	{
-#ifndef __APPLE_CC__
+//#ifdef HAVE_COIN
 		disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
 		connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
 
@@ -253,7 +265,9 @@ namespace IAEX {
 			}
 			else if(command == QString("ptolemyDataStream"))
 			{
+#ifdef HAVE_COIN
 				simdata_->clear();
+#endif
 				emit newMessage("Recieving streaming data...");
 				disconnect(activeSocket, SIGNAL(readyRead()), 0, 0);
 
@@ -270,13 +284,13 @@ namespace IAEX {
 		}
 
 		connect(activeSocket, SIGNAL(readyRead()), this, SLOT(getData()));
-#endif
+//#endif
 	}
 
 
 
 	void VisualizationWidget::readPtolemyDataStream() {
-#ifndef __APPLE_CC__
+//#ifdef HAVE_COIN
 		QString tmp;
 		//qint32 variableCount = 0;
   //  	qint32 packetSize = 0;
@@ -334,7 +348,9 @@ namespace IAEX {
 						std::cout << "name: " << objname.toStdString()
 							<< " & type: " << objtype.toStdString()
 							<< " & params: " << params.toStdString() << std::endl;
+#ifdef HAVE_COIN
 						simdata_->addObject(objtype, objname, params);
+#endif
 					}
 				}
 
@@ -356,6 +372,7 @@ namespace IAEX {
 			}
 
 			ds >> variableCount;
+#ifdef HAVE_COIN
 			SimulationKeypoint *point = new SimulationKeypoint();
 
 			for(quint32 i = 0; i < variableCount; ++i)
@@ -374,16 +391,17 @@ namespace IAEX {
 
 			packetSize = 0;
 			++it;
+#endif
 		}
 		while(activeSocket->bytesAvailable() >= sizeof(quint32));
 
 		if(activeSocket->state() != QAbstractSocket::ConnectedState)
 			ptolemyDataStreamClosed();
-#endif
+//#endif
 	}
 
 	void VisualizationWidget::ptolemyDataStreamClosed()	{
-#ifndef __APPLE_CC__
+#ifdef HAVE_COIN
 		slider_->setRange(1000*simdata_->get_start_time(), 1000*simdata_->get_end_time());
 		slider_->setValue(0);
 		//for(map<QString, VariableData*>::iterator i = variables.begin(); i != variables.end(); ++i)

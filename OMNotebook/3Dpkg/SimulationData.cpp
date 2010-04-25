@@ -31,6 +31,8 @@
  */
 
 
+#ifdef HAVE_COIN
+
 #include "SimulationData.h"
 #include <iostream>
 
@@ -657,3 +659,5 @@ namespace IAEX {
 	//		//			n = n.nextSibling();
 	//	}
 	//}
+
+#endif

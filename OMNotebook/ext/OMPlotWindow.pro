@@ -8,12 +8,16 @@ DEPENDPATH += .
 INCLUDEPATH += . \
                ../Pltpkg2
 
-COIN_LIBS = $$system(coin-config --ldflags --libs)
-SOQT_LIBS = $$system(soqt-config --ldflags --libs)
-unix:LIBS += $${MICO_LIBS} $${COIN_LIBS} $${SOQT_LIBS}
+win32 {
+  COIN_LIBS = $$system(coin-config --ldflags --libs)
+  SOQT_LIBS = $$system(soqt-config --ldflags --libs)
+  COIN_INCLUDE = $$system(coin-config --includedir)
+  SOQT_INCLUDE = $$system(soqt-config --includedir)
+} else {
+  include(OMPlotWindow.config)
+}
 
-COIN_INCLUDE = $$system(coin-config --includedir)
-SOQT_INCLUDE = $$system(soqt-config --includedir)
+LIBS += $${COIN_LIBS} $${SOQT_LIBS}
 INCLUDEPATH += $${COIN_INCLUDE} $${SOQT_INCLUDE}
 
 QT += network xml

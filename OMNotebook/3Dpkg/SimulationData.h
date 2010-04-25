@@ -38,6 +38,7 @@
 #include <QtCore/QVector>
 #include <QtCore/QHash>
 
+#ifdef HAVE_COIN
 #include <Inventor/nodes/SoSeparator.h>
 #include <Inventor/nodes/SoTranslation.h>
 #include <Inventor/nodes/SoRotation.h>
@@ -145,3 +146,6 @@ namespace IAEX
 		float end_time;
 	};
 }
+
+#endif
+
