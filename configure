@@ -607,6 +607,11 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+HAVE_COIN
+SOQT_INCLUDE
+COIN_INCLUDE
+SOQT_LIBS
+COIN_LIBS
 GENERATED_AUTOCONF_FILES
 BOOSTHOME
 USE_MODPAR
@@ -672,6 +677,7 @@ with_CORBA
 with_MICO
 with_ORBIT2
 with_omniORB
+with_Coin
 with_MODPAR
 with_BOOST
 '
@@ -1296,6 +1302,7 @@ Optional Packages:
   --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)
   --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)
   --with-omniORB=DIR     use omniORB installed in DIR
+  --with-Coin     Compile with support for plotting in 3D.
   --with-MODPAR        Compile with automatic parallelization, requires boost
   --with-BOOST=DIR        With BOOST library in DIR
 
@@ -2139,6 +2146,11 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+
+
+
 
 
 
@@ -4460,10 +4472,36 @@ else
   DESIRED_CORBA="none"
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking if CORBA is desired" >&5
-$as_echo_n "checking if CORBA is desired... " >&6; };
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CORBA" >&5
+$as_echo_n "checking for CORBA... " >&6; };
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $DESIRED_CORBA" >&5
 $as_echo "$DESIRED_CORBA" >&6; };
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for libCoin" >&5
+$as_echo_n "checking for libCoin... " >&6; }
+
+# Check whether --with-Coin was given.
+if test "${with_Coin+set}" = set; then :
+  withval=$with_Coin;
+  COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
+  SOQT_LIBS=`soqt-config --ldflags --libs | tr \\\\n \\ `
+  COIN_INCLUDE=`coin-config --includedir | tr \\\\n \\ `
+  SOQT_INCLUDE=`soqt-config --includedir | tr \\\\n \\ `
+  HAVE_COIN="HAVE_COIN"
+  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$COIN_LIBS" || test -z "$SOQT_LIBS"; then
+    as_fn_error "failure" "$LINENO" 5;
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
+$as_echo "disabled" >&6; }
+
+fi
+
 
 
 
@@ -4484,20 +4522,16 @@ fi
 # Check whether --with-BOOST was given.
 if test "${with_BOOST+set}" = set; then :
   withval=$with_BOOST;
-if test "x$withval" = "xno" ; then
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: disabling BOOST" >&5
-$as_echo "disabling BOOST" >&6; };
 	if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
-			{ $as_echo "$as_me:${as_lineno-$LINENO}: result:  Warning, MODPAR requires BOOST, disabling MODPAR  " >&5
-$as_echo " Warning, MODPAR requires BOOST, disabling MODPAR  " >&6; }
-	fi
-	USE_MODPAR="";
-	BOOSTHOME="";
-else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling BOOST... BOOSTHOME=\"$withval\"" >&5
+	  { $as_echo "$as_me:${as_lineno-$LINENO}: result: enabling BOOST... BOOSTHOME=\"$withval\"" >&5
 $as_echo "enabling BOOST... BOOSTHOME=\"$withval\"" >&6; };
-	BOOSTHOME="$withval";
-fi
+	  BOOSTHOME="$withval";
+  else
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result:  Warning, MODPAR requires BOOST, disabling MODPAR  " >&5
+$as_echo " Warning, MODPAR requires BOOST, disabling MODPAR  " >&6; }
+  	USE_MODPAR="";
+	  BOOSTHOME="";
+  fi
 
 else
 
@@ -4507,7 +4541,7 @@ $as_echo "Not compiling with BOOST" >&6; }; USE_MODPAR=""; BOOSTHOME=""
 fi
 
 
-GENERATED_AUTOCONF_FILES="Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
+GENERATED_AUTOCONF_FILES="Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config"
 ac_config_files="$ac_config_files ${GENERATED_AUTOCONF_FILES}"
 
 cat >confcache <<\_ACEOF

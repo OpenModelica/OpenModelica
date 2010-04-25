@@ -19,6 +19,11 @@ AC_SUBST(IDLCMD)
 AC_SUBST(USE_MODPAR)
 AC_SUBST(BOOSTHOME)
 AC_SUBST(GENERATED_AUTOCONF_FILES)
+AC_SUBST(COIN_LIBS)
+AC_SUBST(SOQT_LIBS)
+AC_SUBST(COIN_INCLUDE)
+AC_SUBST(SOQT_INCLUDE)
+AC_SUBST(HAVE_COIN)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -262,8 +267,27 @@ else
   DESIRED_CORBA="none"
 fi
 
-AC_MSG_CHECKING([if CORBA is desired]);
+AC_MSG_CHECKING([for CORBA]);
 AC_MSG_RESULT([$DESIRED_CORBA]);
+
+dnl Check for libCoin
+
+AC_MSG_CHECKING([for libCoin])
+AC_ARG_WITH(Coin, [  --with-Coin     Compile with support for plotting in 3D.],
+[
+  COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `
+  SOQT_LIBS=`soqt-config --ldflags --libs | tr \\\\n \\ `
+  COIN_INCLUDE=`coin-config --includedir | tr \\\\n \\ `
+  SOQT_INCLUDE=`soqt-config --includedir | tr \\\\n \\ `
+  HAVE_COIN="HAVE_COIN"
+  if test -z "$COIN_INCLUDE" || test -z "$SOQT_INCLUDE" || test -z "$COIN_LIBS" || test -z "$SOQT_LIBS"; then
+    AC_MSG_ERROR([failure]);
+  fi
+  AC_MSG_RESULT([ok])
+],
+[
+  AC_MSG_RESULT([disabled])
+])
 
 dnl should we compile modpar
 
@@ -276,20 +300,17 @@ AC_MSG_RESULT([Not compiling ModPar]); USE_MODPAR=""; BOOSTHOME=""
 
 AC_ARG_WITH(BOOST, [  --with-BOOST=DIR        With BOOST library in DIR],
 [
-if test "x$withval" = "xno" ; then
-	AC_MSG_RESULT([disabling BOOST]);
 	if test "$USE_MODPAR" = "-DUSE_MODPAR" ; then
-			AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] )
-	fi
-	USE_MODPAR="";
-	BOOSTHOME="";
-else
-	AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);
-	BOOSTHOME="$withval";
-fi
+	  AC_MSG_RESULT([enabling BOOST... BOOSTHOME="$withval"]);
+	  BOOSTHOME="$withval";
+  else
+    AC_MSG_RESULT([ Warning, MODPAR requires BOOST, disabling MODPAR ] )
+  	USE_MODPAR="";
+	  BOOSTHOME="";
+  fi
 ], [
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 
-GENERATED_AUTOCONF_FILES="Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile"
+GENERATED_AUTOCONF_FILES="Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config"
 AC_OUTPUT(${GENERATED_AUTOCONF_FILES})
