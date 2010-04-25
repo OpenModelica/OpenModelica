@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="ext"
+	Name="OMPlotWindow"
 	ProjectGUID="{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}"
 	RootNamespace="ext"
 	Keyword="Qt4VSv1.0"
@@ -76,7 +76,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="$(QTHOME)\lib\qtmaind.lib $(QTHOME)\lib\QtGuid4.lib $(QTHOME)\lib\QtCored4.lib $(QTHOME)\lib\QtNetworkd4.lib ..\Pltpkg2\debug\pltpkg2.lib 3Dpkg.lib soqt1d.lib coin3d.lib"
-				OutputFile="debug\ext.exe"
+				OutputFile="debug\OMPlotWindow.exe"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(COINDIR)\lib&quot;;&quot;$(SolutionDir)\Debug\&quot;"
 				GenerateDebugInformation="true"
@@ -168,7 +168,7 @@
 				Name="VCLinkerTool"
 				IgnoreImportLibrary="true"
 				AdditionalDependencies="$(QTHOME)\lib\qtmain.lib $(QTHOME)\lib\QtGui4.lib $(QTHOME)\lib\QtCore4.lib $(QTHOME)\lib\QtNetwork4.lib ..\Pltpkg2\Release\pltpkg2.lib 3Dpkg.lib soqt1.lib coin3.lib"
-				OutputFile="release\ext.exe"
+				OutputFile="release\OMPlotWindow.exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
 				AdditionalLibraryDirectories="&quot;$(QTHOME)\lib&quot;;&quot;$(COINDIR)\lib&quot;;&quot;$(SolutionDir)\Release\&quot;"
@@ -198,8 +198,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="Copy ext.exe and xml files to build/bin"
-				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\bin\&#x0D;&#x0A;"
+				Description="Copy OMPlotWindow.exe and xml files to build/bin"
+				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\share\omnotebook&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -243,7 +243,7 @@
 					>
 					<Tool
 						Name="VCCustomBuildTool"
-						CommandLine="$(QTHOME)\bin\rcc.exe -o generatedfiles/qtres.cpp qtres.qrc"
+						CommandLine="$(QTHOME)\bin\rcc.exe -o generatedfiles/qtres.cpp qtres.qrc&#x0D;&#x0A;"
 						AdditionalDependencies="qtres.qrc"
 						Outputs="generatedfiles/qtres.cpp"
 					/>
@@ -445,11 +445,11 @@
 			</File>
 		</Filter>
 		<File
-			RelativePath=".\ext.rc"
+			RelativePath="..\OMNotebookQT4\omnotebook_png.png"
 			>
 		</File>
 		<File
-			RelativePath="..\OMNotebookQT4\omnotebook_png.png"
+			RelativePath=".\OMPlotWindow.rc"
 			>
 		</File>
 		<File
