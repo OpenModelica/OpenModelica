@@ -36,7 +36,7 @@ qtclients: mkbuilddirs
 	cp -p OMNotebook/OMNotebookQT4/commands.xml $(builddir_share)/omshell
 
 qtclean:
-	rm -f OMNotebook/ext/ext
+	rm -f OMNotebook/ext/ext OMNotebook/ext/OMPlotWindow
 	rm -f OMShell/OMShell OMShell/omc_communication.*
 	rm -f OMNotebook/OMNotebookQT4/OMNotebook OMNotebook/OMNotebookQT4/omc_communication.*
 	(cd OMShell && qmake && make clean)
