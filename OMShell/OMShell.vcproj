@@ -2,7 +2,7 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9,00"
-	Name="OMS"
+	Name="OMShell"
 	ProjectGUID="{B79AA7D4-B09D-4507-ABCE-D0619ADD8943}"
 	RootNamespace="OMS"
 	Keyword="Qt4VSv1.0"
