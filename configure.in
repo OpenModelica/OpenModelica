@@ -161,12 +161,32 @@ return 0;
 
 dnl check for lpsolve55
 
-LIBS=""
-AC_CHECK_LIB(colamd,colamd)
-AC_CHECK_LIB(dl,dlsym)
-AC_CHECK_LIB(lpsolve55,make_lp,[],[AC_MSG_ERROR([linking failed])])
-LIBLPSOLVE55=$LIBS
-LIBS=""
+AC_ARG_WITH(static-lpsolve,  [  --with-static-lpsolve=DIR  (default to dynamic linking; searches /usr if no other directory is provided)],[WANT_STATIC_LPSOLVE="$withval"],[WANT_STATIC_LPSOLVE="no"])
+
+if test "$WANT_STATIC_LPSOLVE" = "no"; then
+  AC_SEARCH_LIBS(dlopen,dl)
+  AC_SEARCH_LIBS(sqrt,m)
+  AC_SEARCH_LIBS(colamd,colamd)
+  AC_SEARCH_LIBS(make_lp,lpsolve55,[],[AC_MSG_ERROR([linking failed])])
+  LIBLPSOLVE55=$LIBS
+  LIBS=""
+else
+  if test "$WANT_STATIC_LPSOLVE" = "yes"; then
+    LPLIB=/usr/lib;
+  else
+    LPLIB=$WANT_STATIC_LPSOLVE/lib
+  fi
+  LIBS=""
+  AC_SEARCH_LIBS(dlopen,dl)
+  AC_SEARCH_LIBS(sqrt,m)
+  LIBS="$LPLIB/liblpsolve55.a $LPLIB/libcolamd.a $LIBS"
+  AC_MSG_CHECKING([for static lpsolve55])
+  AC_LINK_IFELSE([AC_LANG_CALL([], [make_lp])], [LIBLPSOLVE55=$LIBS], [AC_MSG_ERROR([failed])])
+  AC_MSG_RESULT([$LIBLPSOLVE55])
+  LIBS=""
+fi
+
+
 
 dnl check for socket
 
