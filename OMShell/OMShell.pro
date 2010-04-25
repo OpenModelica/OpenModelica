@@ -5,8 +5,7 @@ win32 {
   CORBAINC = $$system(mico-config --prefix)/include
   CORBALIBS = $$system(mico-config --libs)
 } else {
-  CORBAINC = $$(CORBACFLAGS)
-  CORBALIBS = $$(CORBALIBS)
+  include(OMShell.config)
 }
 
 INCLUDEPATH += $${CORBAINC}
