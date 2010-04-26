@@ -414,6 +414,7 @@ protected import Util;
 protected import Dump;
 protected import ModUtil;
 protected import Print;
+protected import Error;
 
 public function equationStr
 "function: equationStr
@@ -2202,6 +2203,45 @@ algorithm
     case (NON_INITIAL()) then "non initial";
   end matchcontinue;
 end printInitialStr;
+
+public function makeEnumType
+  "Creates an EnumType element from an enumeration literal and an optional
+  comment."
+  input Enum enum;
+  input Absyn.Info info;
+  output Element enum_type;
+algorithm
+  enum_type := matchcontinue(enum, info)
+    local
+      String literal;
+      Option<Comment> comment;
+    case (ENUM(literal = literal, comment = comment), _)
+      equation
+        isValidEnumLiteral(literal);
+      then 
+        COMPONENT(
+          literal, Absyn.UNSPECIFIED(), true, false, false,
+          ATTR({}, false, false, RO(), CONST(), Absyn.BIDIR()),
+          Absyn.TPATH(Absyn.IDENT("EnumType"), NONE), 
+          NOMOD(), comment, NONE, NONE, NONE);
+    case (ENUM(literal = literal), _)
+      local
+        String info_str;
+      equation
+        info_str = Error.infoStr(info);
+        Error.addMessage(Error.INVALID_ENUM_LITERAL, {info_str, literal});
+      then fail();
+  end matchcontinue;
+end makeEnumType;
+
+public function isValidEnumLiteral
+  "Checks if a string is a valid enumeration literal."
+  input String literal;
+algorithm
+  true := Util.listNotContains(literal, 
+    {"quantity", "min", "max", "start", "fixed"});
+end isValidEnumLiteral;
+
 
 end SCode;
 

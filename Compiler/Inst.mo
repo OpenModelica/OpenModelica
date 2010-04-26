@@ -4989,7 +4989,7 @@ algorithm
         (cache,env_2,ih,dae) = addComponentsToEnv(cache,env, ih, mod, pre, csets, cistate, xs, allcomps, eqns, instdims, impl);
       then
         (cache,env_2,ih,dae);
-
+        
     /* Class definitions */
     case (cache,env,ih,mod,pre,csets,cistate,((SCode.CLASSDEF(name = _),_) :: xs),allcomps,eqns,instdims,impl)
       equation
@@ -6898,7 +6898,7 @@ algorithm
       // MetaModelica Uniontype. Added 2009-05-11 sjoelund
     case (cache,env,_,_,cl as SCode.CLASS(name = id,restriction = SCode.R_UNIONTYPE()),_,_) then (cache,{},cl,DAEUtil.emptyDae,DAE.NOMOD);
       /*----------------------*/
-
+          
     /* Derived classes with restriction type, e.g. type Point = Real[3]; */
     case (cache,env,mods,pre,inClass as SCode.CLASS(name = id,restriction = SCode.R_TYPE(),
                                          classDef = SCode.DERIVED(Absyn.TPATH(path = cn, arrayDim = ad),modifications = mod)),
@@ -6907,6 +6907,7 @@ algorithm
         (cache,cl,cenv) = Lookup.lookupClass(cache,env, cn, true);
         owncref = Absyn.CREF_IDENT(id,{});
         ad_1 = getOptionArraydim(ad);
+        env = addEnumerationLiteralsToEnv(env, cl);
         (cache,mod_1,fdae) = Mod.elabMod(cache,env, pre, mod, impl);
         mods_2 = Mod.merge(mods, mod_1, env, pre);
         eq = Mod.modEquation(mods_2);
@@ -6954,6 +6955,57 @@ algorithm
   end matchcontinue;
 end getUsertypeDimensions;
 
+protected function addEnumerationLiteralsToEnv
+  "If the input SCode.Class is an enumeration, this function adds all of it's 
+   enumeration literals to the environment. This is used in getUsertypeDimensions 
+   so that the modifiers on an enumeration can be elaborated when the literals
+   are used, for example like this:
+     type enum1 = enumeration(val1, val2);
+     type enum2 = enum1(start = val1); // val1 needs to be in the environment here." 
+  input Env.Env inEnv;
+  input SCode.Class inClass;
+  output Env.Env outEnv;  
+algorithm
+  outEnv := matchcontinue(inEnv, inClass)
+    case (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst = enums)))
+      local
+        list<SCode.Element> enums;
+        Env.Env env;
+      equation
+        env = Util.listFold(enums, addEnumerationLiteralToEnv, inEnv);
+      then env;
+    case (_, _) then inEnv; // Not an enumeration, no need to do anything.
+  end matchcontinue;
+end addEnumerationLiteralsToEnv;
+    
+protected function addEnumerationLiteralToEnv
+  input SCode.Element inEnum;
+  input Env.Env inEnv;
+  output Env.Env outEnv;
+algorithm
+  outEnv := matchcontinue(inEnum, inEnv)
+    case (SCode.COMPONENT(component = lit), _)
+      local
+        SCode.Ident lit;
+        Env.Env env;
+      equation
+        env = Env.extendFrameV(inEnv,
+          DAE.TYPES_VAR(
+            lit,
+            DAE.ATTR(false, false, SCode.RO(), SCode.VAR, Absyn.BIDIR(), Absyn.UNSPECIFIED()),
+            false,
+            (DAE.T_NOTYPE(), NONE),
+            DAE.UNBOUND(),
+            NONE),
+          NONE, Env.VAR_UNTYPED(), {});  
+      then env;
+    case (_, _)
+      equation
+        print("Inst.addEnumerationLiteralToEnv: Unknown enumeration type!\n");
+      then fail();
+  end matchcontinue;
+end addEnumerationLiteralToEnv;
+    
 protected function getCrefFromMod
 "function: getCrefFromMod
   author: PA
@@ -10044,39 +10096,18 @@ public function instEnumeration
   output SCode.Class outClass;
   list<SCode.Element> comp;
 algorithm 
-  comp := makeEnumComponents(l);
+  comp := makeEnumComponents(l, info);
   outClass := SCode.CLASS(n,false,false,SCode.R_ENUMERATION(),SCode.PARTS(comp,{},{},{},{},NONE,{},cmt),info);
 end instEnumeration;
 
-protected function makeEnumComponents 
-"function: makeEnumComponents
-  author: PA
-  This function takes a list of strings and returns the elements of 
-  type EnumType each corresponding to one of the enumeration values."
+protected function makeEnumComponents
+  "Translates a list of Enums to a list of elements of type EnumType."  
   input list<SCode.Enum> inEnumLst;
+  input Absyn.Info info;
   output list<SCode.Element> outSCodeElementLst;
-algorithm 
-  outSCodeElementLst:= matchcontinue (inEnumLst)
-    local
-      String str;
-      Integer idx;
-      list<SCode.Element> els;
-      list<SCode.Enum> x;
-      Option<SCode.Comment> cmt;
-      
-    case ({SCode.ENUM(str,cmt)}) 
-      then {SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
-            SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-            Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),cmt,NONE,NONE,NONE)};
-    case ((SCode.ENUM(str,cmt) :: (x as (_ :: _))))
-      equation 
-        els = makeEnumComponents(x);
-      then
-        (SCode.COMPONENT(str,Absyn.UNSPECIFIED(),true,false,false,
-         SCode.ATTR({},false,false,SCode.RO(),SCode.CONST(),Absyn.BIDIR()),
-         Absyn.TPATH(Absyn.IDENT("EnumType"),NONE),SCode.NOMOD(),cmt,NONE,NONE,NONE) :: els);
-  end matchcontinue;
-end makeEnumComponents;
+algorithm
+  outSCodeElementLst := Util.listMap1(inEnumLst, SCode.makeEnumType, info);
+end makeEnumComponents; 
 
 protected function daeDeclare 
 "function: daeDeclare 

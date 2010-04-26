@@ -689,7 +689,7 @@ algorithm
         // If no class was explicitly specified, instantiate the last class in
         // the program.
         class_to_instantiate = RTOpts.classToInstantiate();
-        equality(class_to_instantiate = ""); 
+        true = Util.isEmptyString(class_to_instantiate);
         p = Dependency.getTotalProgramLastClass(program);
         s = SCodeUtil.translateAbsyn2SCode(p);
         (c, _, d, _) = Inst.instantiate(Env.emptyCache(),
@@ -702,6 +702,7 @@ algorithm
         // If a class to instantiate was given on the command line, instantiate
         // that class.
         class_to_instantiate = RTOpts.classToInstantiate();
+        true = Util.isNotEmptyString(class_to_instantiate);
         class_path = Absyn.stringPath(class_to_instantiate);
         p = Dependency.getTotalProgram(class_path, program);
         s = SCodeUtil.translateAbsyn2SCode(p);

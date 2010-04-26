@@ -210,6 +210,7 @@ public constant ErrorID BUILTIN_VECTOR_INVALID_DIMENSIONS=122;
 public constant ErrorID UNROLL_LOOP_CONTAINING_WHEN=123;
 public constant ErrorID CIRCULAR_PARAM=124;
 public constant ErrorID NESTED_WHEN=125;
+public constant ErrorID INVALID_ENUM_LITERAL=126;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -364,6 +365,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (CIRCULAR_PARAM, TRANSLATION(), ERROR(), " Variable '%s' has a cyclic dependency and has variability %s."),
           (NESTED_WHEN, TRANSLATION(), ERROR(),
           "In scope %s: Invalid nested when statements:\n%s\n"),
+          (INVALID_ENUM_LITERAL, TRANSLATION(), ERROR(),
+          "%s Invalid use of reserved attribute name %s as enumeration literal."),
 
 					
            /*
@@ -880,34 +883,23 @@ algorithm
   end matchcontinue;
 end selectString;
 
-protected function infoStr "function: infoStr
-
-  Converts a Absyn.Info to a string.
-  adrpo changed 2006-02-05 to match the new Absyn.INFO specification
-
-"
-  input Absyn.Info inInfo;
-  output String outString;
+public function infoStr
+  "Converts an Absyn.Info into a string ready to be used in error messages.
+  Format is [filename:line start:column start-line end:column end]"
+  input Absyn.Info info;
+  output String str;
 algorithm
-  outString:=
-  matchcontinue (inInfo)
-    local
-      String s1,sline_str,scol_str,eline_str,ecol_str,res,filename;
-      Boolean isReadOnly;
-      ErrorID sline,scol,eline,ecol;
-    case (Absyn.INFO(fileName = filename,isReadOnly = isReadOnly,lineNumberStart = sline,columnNumberStart = scol,lineNumberEnd = eline,columnNumberEnd = ecol))
-      equation
-        filename = fixFilenameForTestsuite(filename);
-        s1 = selectString(isReadOnly, "readonly", "writable");
-        sline_str = intString(sline);
-        scol_str = intString(scol);
-        eline_str = intString(eline);
-        ecol_str = intString(ecol);
-        res = Util.stringAppendList(
-          {"{",filename,", ",s1,",",sline_str,", ",scol_str,", ",
-          eline_str,", ",ecol_str,"}"});
-      then
-        res;
+  str := matchcontinue(info)
+    local 
+      String filename, info_str;
+      Integer line_start, line_end, col_start, col_end;
+    case (Absyn.INFO(fileName = filename, lineNumberStart = line_start, 
+        columnNumberStart = col_start, lineNumberEnd = line_end, columnNumberEnd = col_end))
+        equation
+          info_str = "[" +& filename +& ":" +& 
+                     intString(line_start) +& ":" +& intString(col_start) +& "-" +& 
+                     intString(line_end) +& ":" +& intString(col_end) +& "]";
+      then info_str;
   end matchcontinue;
 end infoStr;
 
