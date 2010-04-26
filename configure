@@ -4396,6 +4396,7 @@ $as_echo_n "checking mico version... " >&6; }
   if ! $MICO --version; then
     as_fn_error "failed to call $MICO" "$LINENO" 5
   fi
+  USE_CORBA="-DUSE_CORBA -DUSE_MICO"
   QT_USE_CORBA="USE_MICO"
   CORBACFLAGS=-I`mico-config --prefix`/include;
   CORBALIBS=`mico-config --libs`;
@@ -4448,6 +4449,7 @@ fi
   if test "$USE_CORBA" = "no"; then
     as_fn_error "failed to find orbit2" "$LINENO" 5
   fi
+  USE_CORBA="-DUSE_CORBA -DUSE_ORBIT"
   QT_USE_CORBA="USE_ORBIT2"
   CORBACFLAGS=`orbit2-config --cflags`;
   CORBALIBS=`orbit2-config --libs`;

@@ -228,6 +228,7 @@ if test ! "$WANT_MICO" = "no"; then
   if ! $MICO --version; then
     AC_MSG_ERROR([failed to call $MICO])
   fi
+  USE_CORBA="-DUSE_CORBA -DUSE_MICO"
   QT_USE_CORBA="USE_MICO"
   CORBACFLAGS=-I`mico-config --prefix`/include;
   CORBALIBS=`mico-config --libs`;
@@ -243,6 +244,7 @@ elif test ! "$WANT_ORBIT2" = "no"; then
   if test "$USE_CORBA" = "no"; then
     AC_MSG_ERROR([failed to find orbit2])
   fi
+  USE_CORBA="-DUSE_CORBA -DUSE_ORBIT"
   QT_USE_CORBA="USE_ORBIT2"
   CORBACFLAGS=`orbit2-config --cflags`;
   CORBALIBS=`orbit2-config --libs`;
