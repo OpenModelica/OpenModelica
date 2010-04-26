@@ -13795,6 +13795,10 @@ algorithm
         Absyn.Path fpath1, fpath2;
         Integer dim1, dim2;
         DAE.Exp zeroVector;
+        list<DAE.Element> elements, breakDAEElements;
+        DAE.FunctionTree functions, equalityConstraintFunctions;
+        DAE.DAElist equalityConstraintDAE;
+        SCode.Class equalityConstraintFunction;
       equation
         c1_1 = PrefixUtil.prefixCref(pre, c1);
         c2_1 = PrefixUtil.prefixCref(pre, c2);
@@ -13816,16 +13820,27 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
-        /* Add an edge to connection graph. The edge contains daes to be added in
-           both cases whether the edge remains or is broken.
-         */
+        // Add an edge to connection graph. The edge contains the 
+        // dae to be added in the case where the edge is broken.
         zeroVector = Exp.makeRealArrayOfZeros(dim1);
-        graph = ConnectionGraph.addConnection(graph, c1_1, c2_1,
+        breakDAEElements = 
           {DAE.EQUATION(zeroVector,
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
-                                 false, false, DAE.ET_REAL,DAE.NO_INLINE),
+                                 false, false, DAE.ET_REAL(), DAE.NO_INLINE()),
                         source // set the origin of the element
-          )});
+                        )};
+        graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, breakDAEElements);
+ 
+        // deal with equalityConstraint function!
+        // instantiate and add the equalityConstraint function to the dae function tree!
+        (cache,equalityConstraintFunction,env) = Lookup.lookupClass(cache,env,fpath1,false);
+        (cache,fpath1) = makeFullyQualified(cache,env,fpath1);
+        cache = Env.addCachedInstFunc(cache,fpath1);
+        (cache,env,ih,equalityConstraintDAE) = 
+            implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),pre,sets_1,equalityConstraintFunction,{});
+        equalityConstraintDAE = DAEUtil.addDaeFunction(equalityConstraintDAE);
+        
+        dae = DAEUtil.joinDaes(dae, equalityConstraintDAE); 
       then
         (cache,env,ih,sets_1,dae,graph);
 
