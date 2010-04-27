@@ -757,9 +757,9 @@ algorithm
     // TODO! FIXME! CHECK THIS! anything else could not have come from a connect, ignore!
     case (inElement, left, right)
       equation
-         debug_print("element", inElement);
-         debug_print("left", left);
-         debug_print("right", right);
+         //debug_print("element", inElement);
+         //debug_print("left", left);
+         //debug_print("right", right);
       then false;
   end matchcontinue;
 end originInConnect;
@@ -787,8 +787,8 @@ algorithm
         b1 = Exp.crefPrefixOf(left, crLeft);
         b2 = Exp.crefPrefixOf(right, crRight);
         true = boolAnd(b1, b2);
-        print("connect: " +& Exp.printComponentRefStr(left) +& ", " +& Exp.printComponentRefStr(right) +& "\n");
-        print("origin: " +& Exp.printComponentRefStr(crLeft) +& ", " +& Exp.printComponentRefStr(crRight) +& "\n");
+        // print("connect: " +& Exp.printComponentRefStr(left) +& ", " +& Exp.printComponentRefStr(right) +& "\n");
+        // print("origin: " +& Exp.printComponentRefStr(crLeft) +& ", " +& Exp.printComponentRefStr(crRight) +& "\n");
       then
         true;
     // try inverse match
@@ -797,8 +797,8 @@ algorithm
         b1 = Exp.crefPrefixOf(right, crLeft);
         b2 = Exp.crefPrefixOf(left, crRight);
         true = boolAnd(b1, b2);
-        print("connect: " +& Exp.printComponentRefStr(left) +& ", " +& Exp.printComponentRefStr(right) +& "\n");
-        print("origin: " +& Exp.printComponentRefStr(crRight) +& ", " +& Exp.printComponentRefStr(crLeft) +& "\n");        
+        // print("connect: " +& Exp.printComponentRefStr(left) +& ", " +& Exp.printComponentRefStr(right) +& "\n");
+        // print("origin: " +& Exp.printComponentRefStr(crRight) +& ", " +& Exp.printComponentRefStr(crLeft) +& "\n");        
       then
         true;
     // try the rest
