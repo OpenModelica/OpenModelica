@@ -3,19 +3,19 @@
 ---------------------------------------------------------------------------
 
 
-             Last update 2009-11-10 Adrian Pop, adrpo@ida.liu.se
+             Last update 2010-04-27 Adrian Pop, adrpo@ida.liu.se
 
 The following step-by-step guides explain how to
 build the OpenModelica release .msi file on Windows
 using the Microsoft Visual Studio .NET 2008
 
 -1. Checkout the sources from Subversion:
-     https://openmodelica.ida.liu.se/svn/OpenModelica/trunk -> trunk
+     https://openmodelica.org/svn/OpenModelica/trunk -> trunk
      user: anonymous
      pass: none      <- write none here
 
     Checkout the VC7 directory from Subversion:
-      https://openmodelica.ida.liu.se/svn/OpenModelica/installers/VC7
+      https://openmodelica.org/svn/OpenModelica/installers/VC7
     into directory:
       trunk\Compiler\VC7
     IMPORTANT: VC7 HAS TO BE CHECKOUT into trunk\Compiler\VC7
@@ -36,7 +36,7 @@ using the Microsoft Visual Studio .NET 2008
     - unpack trunk\Compiler\VC7\Setup\zips\mingw.tar.gz
       -> to \trunk\build\MinGW
     - take 
-      https://openmodelica.ida.liu.se/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
+      https://openmodelica.org/svn/OpenModelica/installers/windows/VC7/Setup/zips/ModelicaLib.tar.gz
       and unpack 
       -> to \turnk\build\ModelicaLibrary
     - build trunk\OMShell then you will get a file:

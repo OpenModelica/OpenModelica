@@ -5,6 +5,7 @@
 
              Last update 2005-09-26 David Broman
              Last update 2009-11-10 Adrian Pop
+             Last update 2010-04-27 Adrian Pop
 
 The following step-by-step guides explain how to compile the
 Open Modelica Compiler using:
@@ -19,7 +20,7 @@ See the file:
    which contains the gcc compiler, mico, antlr, rml packed togheter.
 
 Checkout the sources from Subversion:
-   https://openmodelica.ida.liu.se/svn/OpenModelica/trunk -> trunk
+   https://openmodelica.org/svn/OpenModelica/trunk -> trunk
    user: anonymous
    pass: none      <- write none here
 
@@ -27,20 +28,22 @@ Checkout the sources from Subversion:
        Compiling OMC using  Microsoft Visual Studio 2008
 ------------------------------------------------------------------------------------------------
 
+0.  Install MS Visual Studio 2008
+
 1.  Install OMDev from http://www.ida.liu.se/~adrpo/omc/omdev/mingw/
     Do all the steps in trunk\README-OMDev-MINGW.txt
     This is needed to build the simulation runtime.
     We consider OMDev installed into $(OMDEV) environment variable
 
-2.  Install MS Visual Studio 2008
+2.  Get the qt libraries from:
+      http://www.ida.liu.se/~adrpo/omc/omdev/qtlibs/
+    and unpack them somewhere into OpenModelicaLibs.
+    Set environment variables:
+    COINDIR=OpenModelicaLibs\coin3d
+    QTHOME=OpenModelicaLibs\qt-win-opensource-src-4.4.3
 
-3.  In the windows control panel, select "system". Select the "Advanced"
-    tab and click on the button "Environment Variables".
-    Create the following environment variable:
-     CLASSPATH=$(OMDEV)\bin\antlr\antlr.jar
-
-4.  Checkout the VC7 directory from Subversion:
-      https://openmodelica.ida.liu.se/svn/OpenModelica/installers/VC7
+3.  Checkout the VC7 directory from Subversion:
+      https://openmodelica.org/svn/OpenModelica/installers/VC7
     into directory:
       trunk\Compiler\VC7
     IMPORTANT: VC7 HAS TO BE CHECKOUT into trunk\Compiler\VC7
