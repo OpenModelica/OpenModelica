@@ -211,6 +211,7 @@ public constant ErrorID UNROLL_LOOP_CONTAINING_WHEN=123;
 public constant ErrorID CIRCULAR_PARAM=124;
 public constant ErrorID NESTED_WHEN=125;
 public constant ErrorID INVALID_ENUM_LITERAL=126;
+public constant ErrorID UNEXCPECTED_FUNCTION_INPUTS_WARNING=127;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -367,7 +368,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "In scope %s: Invalid nested when statements:\n%s\n"),
           (INVALID_ENUM_LITERAL, TRANSLATION(), ERROR(),
           "%s Invalid use of reserved attribute name %s as enumeration literal."),
-
+          (UNEXCPECTED_FUNCTION_INPUTS_WARNING,TRANSLATION(), WARNING(),
+          "Function %s has not the expected inputs. Expected inputs are %s."), 
 					
            /*
           (CONNECT_STREAM_TO_NONSTREAM,TRANSLATION(),ERROR(),

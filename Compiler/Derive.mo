@@ -48,6 +48,7 @@ public import DAE;
 public import DAELow;
 public import RTOpts;
 public import DAEUtil;
+public import Types;
 
 protected import Exp;
 protected import Util;
@@ -413,20 +414,70 @@ algorithm
       DAE.ExpType ty;
       DAE.FunctionTree functions;
       DAE.FunctionDefinition mapper;
-      DAE.Type tp;
+      DAE.Type tp,dtp;
       list<Boolean> blst;
+      list<DAE.Type> tlst;
+      list<String> typlststring;
+      String typstring,dastring;
     case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
+        (_,dtp) = getFunctionMapper(da,functions);
+        // check if derivativ function has all expected inputs 
+        (true,_) = checkDerivativeFunctionInputs(blst,tp,dtp);
         (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
         dexpl = Util.listMap1(expl1,differentiateExpTime,(timevars,functions));
         expl1 = listAppend(expl,dexpl);
       then
         DAE.CALL(da,expl1,b,c,ty,inl);
+    case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
+      equation
+        // get function mapper
+        (mapper,tp) = getFunctionMapper(a,functions);
+        (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
+        (_,dtp) = getFunctionMapper(da,functions);
+        // check if derivativ function has all expected inputs 
+        (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
+        // add Warning
+        typlststring = Util.listMap(tlst,Types.unparseType);
+        typstring = Util.stringDelimitList(typlststring,";");
+        dastring = Absyn.pathString(da);
+        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});        
+      then
+        fail();        
   end matchcontinue;
 end differentiateFunctionTime;
+
+protected function checkDerivativeFunctionInputs
+  input list<Boolean> blst;
+  input DAE.Type tp;
+  input DAE.Type dtp;
+  output Boolean outBoolean;
+  output list<DAE.Type> outExpectedTypeLst;
+algorithm
+  (outBoolean,outExpectedTypeLst) := matchcontinue(blst,tp,dtp)
+    local
+      list<DAE.FuncArg> falst,falst1,falst2,dfalst;
+      list<DAE.Type> tlst,dtlst;
+      list<DAE.TType> ttlst,dttlst;
+      Boolean ret;
+      case (blst,(DAE.T_FUNCTION(funcArg=falst),_),(DAE.T_FUNCTION(funcArg=dfalst),_))
+      equation
+        // generate expected function inputs
+        (falst1,_) = DAELow.listSplitOnTrue(falst,blst);
+        falst2 = listAppend(falst,falst1);
+        // compare with derivative function inputs
+        tlst = Util.listMap(falst2,Util.tuple22);
+        ttlst = Util.listMap(tlst,Util.tuple21);
+        dtlst = Util.listMap(dfalst,Util.tuple22);
+        dttlst = Util.listMap(dtlst,Util.tuple21);  
+        ret = Util.isListEqual(ttlst,dttlst,true);     
+      then 
+        (ret,tlst);
+    end matchcontinue;
+end checkDerivativeFunctionInputs;
 
 protected function differentiateFunctionTime1
   input Absyn.Path inFuncName;
@@ -586,47 +637,11 @@ algorithm
       DAE.Type typ; 
     case((_,typ))
     equation
-      b = isRealfromType(typ);
+        b = Types.isRealOrSubTypeReal(typ);
     then 
       b;
   end matchcontinue;        
 end isRealfromFuncArg;
-
-public function isRealfromType
-  input DAE.Type typ;
-  output Boolean bool;
-algorithm
-  bool :=  matchcontinue(typ)
-    local 
-      Boolean b;
-      list<Boolean> blst;
-      DAE.Type tp;
-      list<DAE.Type> tplst;
-    case((DAE.T_REAL(_),_)) then true;
-    case((DAE.T_ARRAY(arrayType=tp),_))
-    equation
-      b = isRealfromType(tp);
-    then 
-      b;
-    case((DAE.T_LIST(listType=tp),_))
-    equation
-      b = isRealfromType(tp);
-    then 
-      b;
-    case((DAE.T_COMPLEX(complexTypeOption=SOME(tp)),_))
-    equation
-      b = isRealfromType(tp);
-    then 
-      b;
-    case((DAE.T_TUPLE(tupleType=tplst),_))
-    equation
-      blst = Util.listMap(tplst,isRealfromType);
-      b = Util.boolOrList(blst);
-    then 
-      b;
-    case(_) then false;
-  end matchcontinue;
-end isRealfromType;
 
 public function getFunctionMapper
   input Absyn.Path fname;
