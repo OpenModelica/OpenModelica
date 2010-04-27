@@ -1375,7 +1375,7 @@ algorithm
     case (connectEquationOptLst, (left, right)::rest)
       equation
         true = isInConnectionList(connectEquationOptLst, left, right);
-        print("Found it!\n"); 
+        // print("Found it!\n"); 
       then true;
 
     // current element is NOT in connection list
