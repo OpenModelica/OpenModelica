@@ -117,7 +117,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copying OMNotebook and xml files to build\bin"
-				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\*.xml $(InputDir)\..\..\build\bin\&#x0D;&#x0A;"
+				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\*.xml $(InputDir)\..\..\build\share\omnotebook\&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
