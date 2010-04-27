@@ -752,3 +752,14 @@ int checkForDiscreteVarChanges()
   }
   return needToIterate;
 }
+
+
+/* provide a dummy MAIN__ for libf2c */
+extern "C"
+{
+  void MAIN__(void)
+  {
+  }
+
+}
+
