@@ -318,32 +318,21 @@ protected function elabModValue
 algorithm
   (outCache,outValuesValueOption) :=
   matchcontinue (inCache,inEnv,inExp,inProp)
-    local
-      Values.Value v;
-      list<Env.Frame> env;
-      DAE.Exp e;
-      Env.Cache cache;
-      DAE.Properties prop;
-      DAE.Const const;
-    // Don't constant evaluate parameters with fixed = false
-    case (cache,env,e,prop as DAE.PROP(type_ = ty))
+    case (_,_,_,_)
       local
-        DAE.Type ty;
+        Values.Value v;
+        Ceval.Msg msg;
+        Env.Cache cache;
       equation
-        DAE.C_PARAM() = Types.propAllConst(prop);
-        false = Types.getFixedVarAttribute(ty);
-      then (cache, NONE);
-    // evaluate ONLY constants and parameters
-    case (cache,env,e,prop)
-      equation
-        // const = Types.propAllConst(prop) "Don't ceval variables";
-        // true = listMember(const, {DAE.C_CONST(),DAE.C_PARAM()});
-        // now which one is faster?
-        failure(DAE.C_VAR() = Types.propAllConst(prop)) "Don't ceval variables";
-        (cache,v,_) = Ceval.ceval(cache,env, e, false, NONE, NONE, Ceval.MSG());
+        // Don't ceval variables.
+        failure(DAE.C_VAR() = Types.propAllConst(inProp));
+        // Show error messages from ceval only if the expression is not a parameter.
+        msg = Util.if_(Util.equal(DAE.C_PARAM(), Types.propAllConst(inProp)), Ceval.NO_MSG(), Ceval.MSG());
+        (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false, NONE, NONE, msg);
       then
         (cache,SOME(v));
-    case (cache,_,_,_) then (cache,NONE);
+    // Constant evaluation failed, return no value.
+    case (_,_,_,_) then (inCache, NONE);
   end matchcontinue;
 end elabModValue;
 
