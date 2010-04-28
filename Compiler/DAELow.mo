@@ -9991,7 +9991,7 @@ algorithm
       Variables v,kv,ev;
       VarTransform.VariableReplacements av "alias-variables' hashtable";
       MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      DAE.Algorithm[:] al,al1;
       EventInfo wc;
       ExternalObjectClasses eoc;
     case (dae,m,mt,nv,nf,{},_) then (dae,m,mt,nv,nf,{});
@@ -10000,7 +10000,7 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
 
-        eqn_1 = Derive.differentiateEquationTime(eqn, v, inFunctions);
+        (eqn_1,al1) = Derive.differentiateEquationTime(eqn, v, inFunctions, al);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         str = equationStr(eqn);
         //print( "differentiated equation ") ;
@@ -10016,7 +10016,7 @@ algorithm
         eqns_1 = equationAdd(eqns, eqn_1);
         leneqns = equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al,wc,eoc), m, mt, nv, nf, es, inFunctions);
+        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)));
     case (_,_,_,_,_,_,_)
@@ -10670,13 +10670,9 @@ algorithm
   outInteger:=
   matchcontinue (inInteger1,inAssignments2,inAssignments3)
     local
-      Value v_1,v;
+      Value v;
       Value[:] m;
-    case (v,ASSIGNMENTS(arrOfIndices = m),_)
-      equation
-        v_1 = v - 1;
-      then
-        m[v_1 + 1];
+    case (v,ASSIGNMENTS(arrOfIndices = m),_) then m[v];
   end matchcontinue;
 end getAssigned;
 
