@@ -5276,9 +5276,11 @@ algorithm
         fail();
 
     // Classdefinition without redeclaration
-    case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n,classDef = c),_),inst_dims,impl,graph)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,(comp as SCode.CLASSDEF(name = n,classDef = c),cmod),inst_dims,impl,graph)
       equation
         classmod = Mod.lookupModificationP(mods, Absyn.IDENT(n));
+    //  This was an attempt to fix multiple class definition bug. Unfortunately, it breaks some tests. -- alleb       
+    //    _ = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         (cache,env_1,ih,dae) =
         instClassDecl(cache,env,ih, classmod, pre, csets, c, inst_dims);
       then
@@ -5721,7 +5723,7 @@ algorithm
     local
       list<Env.Frame> env,env_1,env2,env2_1,cenv,compenv;
       DAE.Mod mod;
-      String n;
+      String n,n2;
       Boolean finalPrefix,repl,prot;
       SCode.Element oldElt; DAE.Mod oldMod;
       tuple<SCode.Element,DAE.Mod> newComp;
@@ -5729,6 +5731,7 @@ algorithm
       SCode.Element oldElt; DAE.Mod oldMod;
       tuple<SCode.Element,DAE.Mod> newComp;
       Boolean alreadyDeclared;
+      SCode.Class oldClass,newClass;
 
     case (_,_,_,_,_,_,_,_,_) equation /*print(" dupe check setting ");*/ ErrorExt.setCheckpoint("checkMultiplyDeclared"); then fail();
 
@@ -5750,6 +5753,50 @@ algorithm
           (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation
         failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache,env, n));
+        ErrorExt.rollBack("checkMultiplyDeclared");
+      then false;
+
+
+    // If a class definition is replaceable, skip check
+    case (cache,env,mod,prefix,csets,ciState,
+          (newComp as (SCode.CLASSDEF(replaceablePrefix=true),_)),_,_)
+      equation
+        ErrorExt.rollBack("checkMultiplyDeclared");
+      then false;
+
+    // If a class definition is redeclaration, skip check
+    case (cache,env,mod,prefix,csets,ciState,
+          (newComp as (SCode.CLASSDEF(replaceablePrefix=_),DAE.REDECL(_,_))),_,_)
+      equation
+        ErrorExt.rollBack("checkMultiplyDeclared");
+      then false;
+
+    // If a class definition is a product of InstExtends.instClassExtendsList2, skip check
+    case (cache,env,mod,prefix,csets,ciState,
+          (newComp as (SCode.CLASSDEF(name=n,classDef=SCode.CLASS(classDef=SCode.PARTS(elementLst=SCode.EXTENDS(baseClassPath=Absyn.IDENT(n2))::_ ))),_)),_,_)
+      equation
+        n=n+&"$parent";
+        equality(n=n2);
+        ErrorExt.rollBack("checkMultiplyDeclared");
+      then false;
+
+    // If a class is defined multiple times, the first is used.
+    // If the two class definitions are not equivalent, an error is given.
+    // 
+
+    case (cache,env,mod,prefix,csets,ciState,
+          (newComp as (SCode.CLASSDEF(name=n, classDef=newClass),_)),_,_)
+      equation
+        (oldClass,_) = Lookup.lookupClassLocal(env, n);
+        checkMultipleClassesEquivalent(oldClass,newClass);
+        ErrorExt.delCheckpoint("checkMultiplyDeclared");
+      then true;
+
+    // If a class not multiply defined, return.
+    case (cache,env,mod,prefix,csets,ciState,
+          (newComp as (SCode.CLASSDEF(name=n, classDef=newClass),_)),_,_)
+      equation
+        failure((oldClass,_) = Lookup.lookupClassLocal(env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -5813,6 +5860,54 @@ algorithm
       then fail();
   end matchcontinue;
 end checkMultipleElementsIdentical;
+
+protected function checkMultipleClassesEquivalent
+"Checks that the old class definition is equivalent
+ to the new one. If not, give error message"
+  input SCode.Class oldClass;
+  input SCode.Class newClass;
+algorithm
+  _ := matchcontinue(oldClass,newClass)
+    local
+      SCode.Class oldCl,newCl;
+      String s1,s2;
+      list<String> sl1,sl2;
+      list<SCode.Enum> enumLst;
+      list<SCode.Element> elementLst;
+      list<Boolean> boolList;
+
+    //   Special cases for checking enumerations which can be represented differently
+    case(oldCl as SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)), newCl as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)))
+      equation
+        sl1=Util.listMap(enumLst,SCode.enumName);
+        sl2=Util.listMap(elementLst,SCode.elementName);
+        boolList=Util.listThreadMap(sl1,sl2,stringEqual);
+        true=Util.boolAndList(boolList);
+      then ();
+
+    case(oldCl as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)), newCl as SCode.CLASS(classDef=SCode.ENUMERATION(enumLst=enumLst)))
+      equation
+        sl1=Util.listMap(enumLst,SCode.enumName);
+        sl2=Util.listMap(elementLst,SCode.elementName);
+        boolList=Util.listThreadMap(sl1,sl2,stringEqual);
+        true=Util.boolAndList(boolList);
+      then ();
+
+    // try equality first!
+    case(oldCl,newCl)
+      equation
+        true = SCode.classEqual(oldCl,newCl);
+      then ();
+
+    case (oldCl,newCl)
+      equation
+      s1 = SCode.printClassStr(oldCl);
+      s2 = SCode.printClassStr(newCl);
+      Error.addMessage(Error.DUPLICATE_CLASSES_NOT_EQUIVALENT(),{s1,s2});
+      //print(" *** error message added *** \n");
+      then fail();
+  end matchcontinue;
+end checkMultipleClassesEquivalent;
 
 protected function removeCrefFromCrefs
 "function: removeCrefFromCrefs

@@ -1234,6 +1234,15 @@ algorithm
   end matchcontinue;
 end elementName;
 
+public function enumName ""
+input Enum e;
+output String s;
+algorithm
+  s := matchcontinue(e)
+    case(ENUM(literal = s)) then s;
+  end matchcontinue;
+end enumName;
+
 public function componentNamesFromElts
 "function: componentNamesFromElts
   Helper function to componentNames."
@@ -1333,6 +1342,10 @@ public function elementEqual
       Absyn.InnerOuter io,io2;
       Attributes attr1,attr2; Mod mod1,mod2;
       Absyn.TypeSpec tp1,tp2;
+      Absyn.Import im1,im2;
+      Absyn.Path path1, path2;
+      Option<String> os1,os2;
+      Option<Real> or1,or2;
      case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
        equation
          b1 = stringEqual(name1,name2);
@@ -1353,6 +1366,22 @@ public function elementEqual
          b7 = Absyn.typeSpecEqual(tp1,tp2);
          equal = Util.boolAndList({b1,b1a,b2,b3,b4,b5,b6,b7});
          then equal;
+     case (EXTENDS(path1,mod1,_), EXTENDS(path2,mod2,_))      
+       equation
+         b1 = ModUtil.pathEqual(path1,path2);
+         b2 = modEqual(mod1,mod2);
+         equal = Util.boolAndList({b1,b2});
+       then equal;
+     case (IMPORT(im1), IMPORT(im2))      
+       equation
+         equal = Absyn.importEqual(im1,im2);
+       then equal;
+     case (DEFINEUNIT(name1,os1,or1), DEFINEUNIT(name2,os2,or2))      
+       equation
+         b1 = stringEqual(name1,name2);
+         equality(os1=os2);
+         equality(or1=or2);
+       then b1;
      case(_,_) then false;
    end matchcontinue;
  end elementEqual;
@@ -1378,7 +1407,7 @@ algorithm
   end matchcontinue;
 end annotationEqual;
 
-protected function classEqual
+public function classEqual
 "function classEqual
   returns true if two classes are equal"
   input Class class1;
@@ -1691,7 +1720,7 @@ algorithm
     case(EQ_EQUALS(e11,e12,_),EQ_EQUALS(e21,e22,_))
       equation
         b1 = Absyn.expEqual(e11,e21);
-        b2 = Absyn.expEqual(e21,e22);
+        b2 = Absyn.expEqual(e12,e22);
         equal = boolAnd(b1,b2);
       then equal;
     case(EQ_CONNECT(cr11,cr12,_),EQ_CONNECT(cr21,cr22,_))

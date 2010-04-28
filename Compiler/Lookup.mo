@@ -1390,6 +1390,30 @@ algorithm
   end matchcontinue;
 end lookupIdentLocal;
 
+public function lookupClassLocal "function: lookupClassLocal
+  Searches for a class definition in the local scope."
+  input Env.Env inEnv;
+  input SCode.Ident inIdent;
+  output SCode.Class outClass;
+  output Env.Env outEnv;
+algorithm
+  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
+  matchcontinue (inEnv,inIdent)
+    local
+      SCode.Class cl;
+      list<Env.Frame> env;
+      Option<String> sid;
+      Env.AvlTree ht;
+      String id;
+      Env.Cache cache;
+    case (env as (Env.FRAME(optName = sid, clsAndVars = ht) :: _),id) /* component environment */
+      equation
+        Env.CLASS(cl,env) = Env.avlTreeGet(ht, id);
+      then
+        (cl,env);
+  end matchcontinue;
+end lookupClassLocal;
+
 public function lookupAndInstantiate "performs a lookup of a class and then instantiate that class to
 return its environment. Helper function used e.g by Inst.mo"
   input Env.Cache inCache;

@@ -4357,4 +4357,35 @@ algorithm
   end matchcontinue;
 end makeFullyQualified;
 
+public function importEqual "function: importEqual
+  Compares two import elements. "
+  input Import im1;
+  input Import im2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (im1,im2)
+    local
+      Ident id,id2;
+      Path p1,p2;
+    case (NAMED_IMPORT(name = id,path=p1),NAMED_IMPORT(name = id2,path=p2))
+      equation
+        equality(id = id2);
+        true = ModUtil.pathEqual(p1,p2);
+      then
+        true;
+    case (QUAL_IMPORT(path=p1),QUAL_IMPORT(path=p2))
+      equation
+        true = ModUtil.pathEqual(p1,p2);
+      then
+        true;
+    case (UNQUAL_IMPORT(path=p1),UNQUAL_IMPORT(path=p2))
+      equation
+        true = ModUtil.pathEqual(p1,p2);
+      then
+        true;
+    case (_,_) then false;
+  end matchcontinue;
+end importEqual;
+
 end Absyn;

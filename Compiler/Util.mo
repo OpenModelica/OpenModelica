@@ -5754,6 +5754,35 @@ algorithm
   _ := arrayUpdate(sb,1,b);
 end setStatefulBoolean;
 
-
+public function optionEqual "
+Takes two options and a function to compare the type."
+  input Option<Type_a> inOpt1;
+  input Option<Type_a> inOpt2;
+  input CompareFunc inFunc;
+  output Boolean outBool;
+  
+  replaceable type Type_a subtypeof Any;
+  partial function CompareFunc
+    input Type_a inType_a1;
+    input Type_a inType_a2;
+    output Boolean outBool;
+  end CompareFunc;  
+algorithm
+  outBool := matchcontinue(inOpt1,inOpt2,inFunc)
+  local 
+    Type_a a1,a2;
+    Boolean b;
+    CompareFunc fn;
+    
+    case (NONE(),NONE(),_) then true;
+    case (SOME(a1),SOME(a2),fn)
+      equation
+        b = fn(a1,a2);
+      then
+        b;
+    case (_,_,_) then false;        
+  end matchcontinue;
+end optionEqual;  
+  
 end Util;
 

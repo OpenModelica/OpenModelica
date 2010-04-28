@@ -212,6 +212,7 @@ public constant ErrorID CIRCULAR_PARAM=124;
 public constant ErrorID NESTED_WHEN=125;
 public constant ErrorID INVALID_ENUM_LITERAL=126;
 public constant ErrorID UNEXCPECTED_FUNCTION_INPUTS_WARNING=127;
+public constant ErrorID DUPLICATE_CLASSES_NOT_EQUIVALENT=128;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -457,6 +458,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 		      "A break statement not inside a loop"),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
+          (DUPLICATE_CLASSES_NOT_EQUIVALENT,TRANSLATION(),ERROR(),
+          "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
