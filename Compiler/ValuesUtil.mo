@@ -119,9 +119,10 @@ algorithm
       varLst = Util.listThreadMap(eltTps,nameLst,valueExpTypeExpVar);
     then DAE.ET_COMPLEX(path,varLst,ClassInf.RECORD(path));
     
-    case(inValue) equation
-      print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
-    then fail();
+    case(inValue)
+      equation
+        print("valueExpType on "+&valString(inValue) +& " not implemented yet\n");
+      then fail();
   end matchcontinue;  
 end valueExpType;
 
@@ -1783,6 +1784,23 @@ public function valString "function: valString
 "
   input Value inValue;
   output String outString;
+protected
+  String oldBuffer;
+algorithm
+  oldBuffer := Print.getString();
+  Print.clearBuf();
+  valString2(inValue);
+  outString := Print.getString();
+  Print.clearBuf();
+  Print.printBuf(oldBuffer);
+end valString;
+
+public function valString2 "function: valString
+
+  This function returns a textual representation of a value.
+  Uses an external buffer to store intermediate results.
+"
+  input Value inValue;
 algorithm
   outString:=
   matchcontinue (inValue)
@@ -1799,163 +1817,183 @@ algorithm
     case Values.INTEGER(integer = n)
       equation
         s = intString(n);
+        Print.printBuf(s);
       then
-        s;
+        ();
     case Values.REAL(real = x)
       equation
         s = realString(x);
+        Print.printBuf(s);
       then
-        s;
+        ();
     case Values.STRING(string = s)
       equation
         s_1 = Util.stringAppendList({"\"",s,"\""});
+        Print.printBuf(s_1);
       then
-        s_1;
-    case Values.BOOL(boolean = false) then "false";
-    case Values.BOOL(boolean = true) then "true";
+        ();
+    case Values.BOOL(boolean = false)
+      equation
+        Print.printBuf("false");
+      then
+        ();
+    case Values.BOOL(boolean = true)
+      equation
+        Print.printBuf("true");
+      then
+        ();
     case Values.ARRAY(valueLst = vs)
       equation
-        s = valListString(vs);
-        s_1 = stringAppend("{", s);
-        s_2 = stringAppend(s_1, "}");
+        Print.printBuf("{");
+        valListString(vs);
+        Print.printBuf("}");
       then
-        s_2;
+        ();
     case Values.TUPLE(valueLst = vs)
       equation
-        s = valListString(vs);
-        s_1 = stringAppend("(", s);
-        s_2 = stringAppend(s_1, ")");
+        Print.printBuf("(");
+        valListString(vs);
+        Print.printBuf(")");
       then
-        s_2;
+        ();
     case Values.META_TUPLE(valueLst = vs)
       equation
-        s = valListString(vs);
-        s_1 = stringAppend("(", s);
-        s_2 = stringAppend(s_1, ")");
+        Print.printBuf("(");
+        valListString(vs);
+        Print.printBuf(")");
       then
-        s_2;
-    case ((r as Values.RECORD(record_ = recordPath)))
-      local Absyn.Path recordPath; String recordName;
+        ();
+    case ((r as Values.RECORD(record_ = recordPath, orderd = xs, comp = ids)))
+      local
+        Absyn.Path recordPath;
+        String recordName;
+        list<Value> xs;
+        list<String> ids;
       equation
         recordName = Absyn.pathString(recordPath);
-        s = valRecordString(r);
-        res = Util.stringAppendList({"record ", recordName, "\n", s,"end ", recordName, ";"});
+        
+        Print.printBuf("record " +& recordName +& "\n");
+        valRecordString(xs,ids);
+        Print.printBuf("end " +& recordName +& ";");
       then
-        res;
+        ();
     case ((Values.OPTION(SOME(r))))
       equation
-        s = valString(r);
-        res = Util.stringAppendList({"SOME(", s, ")"});
+        Print.printBuf("SOME(");
+        valString2(r);
+        Print.printBuf(")");
       then
-        res;
+        ();
     case ((Values.OPTION(NONE())))
+      equation
+        Print.printBuf("NONE()");
       then
-        "NONE()";
+        ();
 
     case (Values.CODE(A = c))
       equation
-        res = Dump.printCodeStr(c);
-        res_1 = Util.stringAppendList({"Code(",res,")"});
+        Print.printBuf("Code(");
+        Print.printBuf(Dump.printCodeStr(c));
+        Print.printBuf(")");
       then
-        res_1;
+        ();
 
         // MetaModelica list
     case Values.LIST(valueLst = vs)
       equation
-        s = valListString(vs);
-        s_1 = stringAppend("{", s);
-        s_2 = stringAppend(s_1, "}");
+        Print.printBuf("{");
+        valListString(vs);
+        Print.printBuf("}");
       then
-        s_2;
+        ();
         // MetaModelica array
     case Values.META_ARRAY(valueLst = vs)
       equation
-        s = valListString(vs);
-        s_1 = stringAppend("meta_array(", s);
-        s_2 = stringAppend(s_1, ")");
+        Print.printBuf("meta_array(");
+        valListString(vs);
+        Print.printBuf(")");
       then
-        s_2;
+        ();
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
-    case (Values.ENUM(index = n, path=p)) equation
+    case (Values.ENUM(index = n, path=p))
+      equation
 //      s = Exp.printComponentRefStr(cr);
-      s = intString(n) +& " /* ENUM: " +& Absyn.pathString(p) +& " */";
-    then s;
-    case(Values.NORETCALL) then "";
+        s = intString(n) +& " /* ENUM: " +& Absyn.pathString(p) +& " */";
+        Print.printBuf(s);
+      then
+        ();
+    case(Values.NORETCALL) then ();
     case _
       equation
-        Debug.fprintln("failtrace", "- ValuesUtil.valString failed");
+        Debug.fprintln("failtrace", "- ValuesUtil.valString2 failed");
       then
         fail();
   end matchcontinue;
-end valString;
+end valString2;
 
 protected function valRecordString
 "function: valRecordString
   This function returns a textual representation of a record,
  separating each value with a comma."
-  input Value inValue;
-  output String outString;
+  input list<Value> xs;
+  input list<String> ids;
 algorithm
-  outString:=
-  matchcontinue (inValue)
+  outString := matchcontinue (xs,ids)
     local
       Absyn.Path cname;
       String s1,s2,res,id;
       Value x;
-      list<Value> xs;
-      list<String> ids;
+      
       Integer ix;
-    case (Values.RECORD(record_ = cname,orderd = {},comp = {})) then "";
-    case (Values.RECORD(record_ = cname,orderd = (x :: (xs as (_ :: _))),comp = (id :: (ids as (_ :: _))),index=ix))
+    case ({},{}) then ();
+    case (x :: (xs as (_ :: _)),id :: (ids as (_ :: _)))
       equation
-        s1 = valString(x);
-        s2 = valRecordString(Values.RECORD(cname,xs,ids,ix));
-        res = Util.stringAppendList({"    ",id," = ",s1,",\n",s2});
+        Print.printBuf("    ");
+        Print.printBuf(id);
+        Print.printBuf(" = ");
+        valString2(x);
+        Print.printBuf(",\n");
+        valRecordString(xs,ids);
       then
-        res;
-    case (Values.RECORD(record_ = cname,orderd = (x :: xs),comp = (id :: ids),index=ix))
+        ();
+    case (x :: {},id :: {})
       equation
-        s1 = valString(x);
-        s2 = valRecordString(Values.RECORD(cname,xs,ids,ix));
-        res = Util.stringAppendList({"    ",id," = ",s1,"\n",s2});
+        Print.printBuf("    ");
+        Print.printBuf(id);
+        Print.printBuf(" = ");
+        valString2(x);
+        Print.printBuf("\n");
       then
-        res;
-    case(Values.RECORD(orderd=xs,comp=ids)) equation
-        /*print("-valRecordString failed. vals="+&Util.stringDelimitList(Util.listMap(xs,valString),",")
-        +&" comps="+&Util.stringDelimitList(ids,",")+&"\n");*/
-    then fail();
+        ();
   end matchcontinue;
 end valRecordString;
 
-public function valListString "function: valListString
+protected function valListString "function: valListString
 
   This function returns a textual representation of a list of
   values, separating each value with a comman.
 "
   input list<Value> inValueLst;
-  output String outString;
 algorithm
   outString:=
   matchcontinue (inValueLst)
     local
-      String s,s_1,s_2,s_3;
       Value v;
       list<Value> vs;
-    case {} then "";
+    case {} then ();
     case {v}
       equation
-        s = valString(v);
+        valString2(v);
       then
-        s;
+        ();
     case (v :: vs)
       equation
-        s = valString(v);
-        s_1 = valListString(vs);
-        s_2 = stringAppend(s, ",");
-        s_3 = stringAppend(s_2, s_1);
+        valString2(v);
+        Print.printBuf(",");
+        valListString(vs);
       then
-        s_3;
+        ();
     case _
       equation
         Debug.fprintln("failtrace", "- ValuesUtil.valListString failed");
@@ -1979,16 +2017,24 @@ algorithm
   outInteger:=
   matchcontinue (inString1,inValue2,inStringLst3,inString4)
     local
-      String datasets,str,filename,timevar,message;
+      String datasets,str,filename,timevar,message,oldBuf;
       Value time;
       list<Value> rest;
       list<String> varnames;
     case (filename,Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message) /* filename values Variable names message string */
       equation
-        datasets = unparsePtolemyValues(time, rest, varnames);
-        str = Util.stringAppendList(
-          {"#Ptolemy Plot generated by OpenModelica\n","TitleText: ",
-          message,"\n",datasets});
+        oldBuf = Print.getString();
+        Print.clearBuf();
+
+        Print.printBuf("#Ptolemy Plot generated by OpenModelica\nTitleText: ");
+        Print.printBuf(message);
+        Print.printBuf("\n");
+        unparsePtolemyValues(time, rest, varnames);
+        
+        str = Print.getString();
+        Print.clearBuf();
+        Print.printBuf(oldBuf);
+
         System.writeFile(filename, str);
       then
         0;
@@ -2017,17 +2063,24 @@ public function sendPtolemyplotDataset "function: sendPtolemyplotDataset
 algorithm
   outInteger := matchcontinue (inValue2,inStringLst3,inString4, interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange)
     local
-      String datasets,str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2;
+      String datasets,str,filename,timevar,message, interpolation2, title2, xLabel2, yLabel2, xRange2, yRange2, oldBuf;
       Boolean legend2, logX2, logY2, grid2, points2;
       Value time;
       list<Value> rest;
       list<String> varnames;
     case (Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),message, interpolation2, title2, legend2, grid2, logX2, logY2, xLabel2, yLabel2, points2, xRange2, yRange2) /* filename values Variable names message string */
       equation
-        datasets = unparsePtolemyValues(time, rest, varnames);
-        str = Util.stringAppendList(
-          {"#Ptolemy Plot generated by OpenModelica\n","TitleText: ",
-          message,"\n",datasets});
+        oldBuf = Print.getString();
+        Print.clearBuf();
+
+        Print.printBuf("#Ptolemy Plot generated by OpenModelica\nTitleText: ");
+        Print.printBuf(message);
+        Print.printBuf("\n");
+        unparsePtolemyValues(time, rest, varnames);
+        
+        str = Print.getString();
+        Print.clearBuf();
+        Print.printBuf(oldBuf);
 
         System.sendData(str, interpolation2, title2, legend2, grid2, logX2, logY2, xLabel2, yLabel2, points2, xRange2 +& " " +& yRange2);
       then
@@ -2035,12 +2088,47 @@ algorithm
   end matchcontinue;
 end sendPtolemyplotDataset;
 
+public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
+  This function writes a data set in the pltolemy plot format to a file.
+  The first column of the dataset matrix should be the time variable.
+  The message string will be displayed in the plot window of ptplot."
+  input Value inValue2;
+  input list<String> inStringLst3;
+  input String visInfo;
+  input String inString4;
+  output Integer outInteger;
+algorithm
+  outInteger := matchcontinue (inValue2,inStringLst3,visInfo,inString4)
+    local
+      String datasets,str,filename,timevar,info,message,oldBuf;
+      Value time;
+      list<Value> rest;
+      list<String> varnames;
+    case (Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),info,message) /* filename values Variable names message string */
+      equation
+        oldBuf = Print.getString();
+        Print.clearBuf();
+
+        Print.printBuf("#Ptolemy Plot generated by OpenModelica\nTitleText: ");
+        Print.printBuf(message);
+        Print.printBuf("\n");
+        unparsePtolemyValues(time, rest, varnames);
+        
+        str = Print.getString();
+        Print.clearBuf();
+        Print.printBuf(oldBuf);
+
+        System.sendData2(info, str);
+      then
+        0;
+  end matchcontinue;
+end sendPtolemyplotDataset2;
+
 protected function unparsePtolemyValues "function: unparsePtolemyValues
   Helper function to writePtolemyplotDataset."
   input Value inValue;
   input list<Value> inValueLst;
   input list<String> inStringLst;
-  output String outString;
 algorithm
   outString := matchcontinue (inValue,inValueLst,inStringLst)
     local
@@ -2049,14 +2137,13 @@ algorithm
       list<Value> xs;
       list<String> vs;
 
-    case (_,{},_) then "";
+    case (_,{},_) then ();
     case (time,(s1 :: xs),(v1 :: vs))
       equation
-        str = unparsePtolemySet(time, s1, v1);
-        str2 = unparsePtolemyValues(time, xs, vs);
-        res = stringAppend(str, str2);
+        unparsePtolemySet(time, s1, v1);
+        unparsePtolemyValues(time, xs, vs);
       then
-        res;
+        ();
   end matchcontinue;
 end unparsePtolemyValues;
 
@@ -2065,18 +2152,15 @@ protected function unparsePtolemySet "function: unparsePtolemySet
   input Value v1;
   input Value v2;
   input String varname;
-  output String res;
-  String str;
 algorithm
-  str := unparsePtolemySet2(v1, v2);
-  res := Util.stringAppendList({"DataSet: ",varname,"\n",str});
+  Print.printBuf(Util.stringAppendList({"DataSet: ",varname,"\n"}));
+  unparsePtolemySet2(v1, v2);
 end unparsePtolemySet;
 
 protected function unparsePtolemySet2 "function: unparsePtolemySet2
   Helper function to unparsePtolemySet"
   input Value inValue1;
   input Value inValue2;
-  output String outString;
 algorithm
   outString := matchcontinue (inValue1,inValue2)
     local
@@ -2085,17 +2169,18 @@ algorithm
       list<Value> v1s,v2s;
       list<Integer> dims1,dims2;
 
-    case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then "";
+    case (Values.ARRAY(valueLst = {}),Values.ARRAY(valueLst = {})) then ();
     // adrpo: ignore dimenstions here as we're just printing! otherwise it fails.
     //        TODO! FIXME! see why the dimension list is wrong!
     case (Values.ARRAY(valueLst = (v1 :: v1s), dimLst = _),Values.ARRAY(valueLst = (v2 :: v2s), dimLst = _))
       equation
-        s1 = valString(v1);
-        s2 = valString(v2);
-        res = unparsePtolemySet2(Values.ARRAY(v1s,{}), Values.ARRAY(v2s,{}));
-        res_1 = Util.stringAppendList({s1,",",s2,"\n",res});
+        valString2(v1);
+        Print.printBuf(",");
+        valString2(v2);
+        Print.printBuf("\n");
+        unparsePtolemySet2(Values.ARRAY(v1s,{}), Values.ARRAY(v2s,{}));
       then
-        res_1;
+        ();
     case (v1, v2)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -2143,44 +2228,6 @@ more correct naming then valString"
 algorithm
   s := valString(v);
 end printValStr;
-
-public function sendPtolemyplotDataset2 "function: sendPtolemyplotDataset2
-  This function writes a data set in the pltolemy plot format to a file.
-  The first column of the dataset matrix should be the time variable.
-  The message string will be displayed in the plot window of ptplot."
-  input Value inValue2;
-  input list<String> inStringLst3;
-  input String visInfo;
-  input String inString4;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inValue2,inStringLst3,visInfo,inString4)
-    local
-      String datasets,str,filename,timevar,info,message;
-      Value time;
-      list<Value> rest;
-      list<String> varnames;
-    case (Values.ARRAY(valueLst = (time :: rest)),(timevar :: varnames),info,message) /* filename values Variable names message string */
-      equation
-//        print("+++\n");
-//  		  print(Util.stringAppendList(varnames));
-//  			print("+++\n");
-        datasets = unparsePtolemyValues(time, rest, varnames);
-//        print("+++\n");
-//  		  print(Util.stringAppendList(varnames));
-//  			print("+++\n");
-
-        str = Util.stringAppendList(
-          {"#Ptolemy Plot generated by OpenModelica\n","TitleText: ",
-          message,"\n",datasets});
-
-				//print("till send:\n" +& str +& "\n");
-
-        System.sendData2(info, str);
-      then
-        0;
-  end matchcontinue;
-end sendPtolemyplotDataset2;
 
 public function nthnthArrayelt "function: nthArrayelt
   author: BZ

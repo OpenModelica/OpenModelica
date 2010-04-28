@@ -81,7 +81,7 @@ public function clearBuf
   external "C" ;
 end clearBuf;
 
-public function getString
+public function getString "Does not clear the buffer"
   output String outString;
 
   external "C" ;
