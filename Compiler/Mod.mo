@@ -325,6 +325,14 @@ algorithm
       Env.Cache cache;
       DAE.Properties prop;
       DAE.Const const;
+    // Don't constant evaluate parameters with fixed = false
+    case (cache,env,e,prop as DAE.PROP(type_ = ty))
+      local
+        DAE.Type ty;
+      equation
+        DAE.C_PARAM() = Types.propAllConst(prop);
+        false = Types.getFixedVarAttribute(ty);
+      then (cache, NONE);
     // evaluate ONLY constants and parameters
     case (cache,env,e,prop)
       equation
