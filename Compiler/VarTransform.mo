@@ -1366,6 +1366,17 @@ algorithm
         e3_1 = replaceExp(e3, repl, cond);
       then
         DAE.IFEXP(e1_1,e2_1,e3_1);
+      /* Special case when a variable in pre() is an alias for unary minus of another */
+    case (DAE.CALL(path = path as Absyn.IDENT("pre"),expLst = {e as DAE.CREF(componentRef = _)},tuple_ = t,builtin = c,ty=tp,inlineType=i),repl,cond)
+      local
+        Boolean t,c;
+        DAE.InlineType i;
+        DAE.ExpType ety,tp;
+      equation
+        true = replaceExpCond(cond, e);
+        DAE.UNARY(DAE.UMINUS(ety),e) = replaceExp(e, repl, cond);
+      then
+        DAE.UNARY(DAE.UMINUS(ety),DAE.CALL(path,{e},t,c,tp,i));
     case ((e as DAE.CALL(path = path,expLst = expl,tuple_ = t,builtin = c,ty=tp,inlineType=inl)),repl,cond)
       local Boolean t;
       DAE.InlineType inl; DAE.ExpType tp;
