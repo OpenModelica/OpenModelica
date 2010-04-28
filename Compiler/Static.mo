@@ -8483,7 +8483,17 @@ algorithm
         (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
         dae = DAEUtil.addDaeFunction(dae);
       then (cache,dae);
-        
+
+    /* Call to function reference variable */
+    case(cache,env,name,false,NONE)
+      local
+        DAE.ComponentRef cref;
+      equation
+        cref = pathToComponentRef(name);
+        (cache,_,(DAE.T_FUNCTION(funcArg = _),_),_,_,_,env) = Lookup.lookupVar(cache,env,cref);
+        dae = DAEUtil.emptyDae;
+      then (cache,dae);
+
     case(cache,env,name,_,_)
       equation
         print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&" in scope: " +& Env.printEnvPathStr(env) +& "\n");
