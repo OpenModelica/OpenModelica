@@ -65,7 +65,7 @@ int emit()
 {
   storeExtrapolationData();
   if (actualPoints < maxPoints) {
-    add_result(simulationResultData,&actualPoints);
+	  if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
     return 0;
   }
   else {
@@ -79,7 +79,7 @@ int emit()
           cerr << "Error allocating simulation result data of size " << maxPoints * dataSize << endl;
           return -1;
     }
-    add_result(simulationResultData,&actualPoints);
+    if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
     return 0;
     /* adrpo - realloc the result array instead of fixed size!
      * cout << "Too many points: " << actualPoints << " max points: " << maxPoints << endl;
@@ -154,7 +154,14 @@ void add_result(double *data, long *actualPoints)
 int initializeResult(long numpoints,long nx, long ny, long np)
 
 {
-  maxPoints = numpoints;
+	/*
+	 * Re-Initialization is important because the variables are global and used in every solving step
+	 */
+	simulationResultData = 0;
+	currentPos = 0;
+	actualPoints = 0; // the number of actual points saved
+	dataSize = 0;
+	maxPoints = numpoints;
 
   if (numpoints < 0 ) { // Automatic number of output steps
   	cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
@@ -180,6 +187,15 @@ int initializeResult(long numpoints,long nx, long ny, long np)
   return 0;
 }
 
+/**
+ * Deallocates the simulationResultData
+ * This is important for an interactive Simulation because
+ * the solvers will be called in a loop and they allocate
+ * memory for the simulationResultData all the time
+ */
+void deallocResult(){
+	free(simulationResultData);
+}
 
 /* \brief
 * stores the result of all variables for all timesteps on a file

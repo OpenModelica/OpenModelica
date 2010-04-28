@@ -239,7 +239,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     // alg vars too.
     acceptedStep=1;
     functionDAE_output();
-    function_storeDelayed();
+	function_storeDelayed(); //TODO NEW storeDelayed
     acceptedStep=0;
 
     tout = newTime(tout,step,stop);
@@ -303,26 +303,26 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         calcEnabledZeroCrossings();
         do {
           // Calculate time steps until either a zero crossing is found or tout is reached. 
-          DDASRT(functionDAE_res,
-            &globalData->nStates,   &globalData->timeValue,
-            globalData->states, globalData->statesDerivatives, &tout,
-            info,&rtol, &atol,
-            &idid,rwork,&lrw, iwork, &liw, globalData->algebraics,
-            &ipar, dummyJacobianDASSL,
-            function_zeroCrossing, &globalData->nZeroCrossing, jroot);
+        DDASRT(functionDAE_res,
+          &globalData->nStates,   &globalData->timeValue,
+          globalData->states, globalData->statesDerivatives, &tout,
+          info,&rtol, &atol,
+          &idid,rwork,&lrw, iwork, &liw, globalData->algebraics,
+          &ipar, dummyJacobianDASSL,
+          function_zeroCrossing, &globalData->nZeroCrossing, jroot);
 
-          if (idid < 0)
-          {
-            if(!continue_with_dassl(&idid,&atol,&rtol))
-              throw TerminateSimulationException(globalData->timeValue);
-          }
-  
-          functionDAE_res(&globalData->timeValue,globalData->states,
-            globalData->statesDerivatives,
-            dummy_delta,0,0,0); // Since residual function calculates
-          // alg vars too.
-          acceptedStep = 1;
-          functionDAE_output();
+        if (idid < 0)
+        {
+          if(!continue_with_dassl(&idid,&atol,&rtol))
+            throw TerminateSimulationException(globalData->timeValue);
+        }
+
+        functionDAE_res(&globalData->timeValue,globalData->states,
+          globalData->statesDerivatives,
+          dummy_delta,0,0,0); // Since residual function calculates
+        // alg vars too.
+        acceptedStep = 1;
+        functionDAE_output();
           function_storeDelayed();
           acceptedStep = 0;
         } while (outputSteps >= 0 && idid == 1 && globalData->timeValue < tout); 
@@ -407,9 +407,15 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
   } else {
     result_file_cstr = *result_file;
   }
-  if (deinitializeResult(result_file_cstr.c_str())) {
-    status =-1;
-  }
+
+  if (isInteractiveSimulation()) // In interactive mode there is no need to write results to file because all results will be used intern
+		deallocResult();
+	else {
+		if (deinitializeResult(result_file_cstr.c_str())) {
+			status = -1;
+
+		}
+	}
   return status;
 }
 

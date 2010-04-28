@@ -42,6 +42,7 @@
 
 int emit();
 int initializeResult(long numpoints,long nx, long ny,long np);
+void deallocResult();
 int deinitializeResult(const char * filename);
 
 #endif

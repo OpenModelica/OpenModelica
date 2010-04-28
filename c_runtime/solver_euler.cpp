@@ -182,9 +182,15 @@ int euler_main( int argc, char** argv,double &start,  double &stop, double &step
 	} else {
 		result_file_cstr = *result_file;
 	}
-	if (deinitializeResult(result_file_cstr.c_str())) {
-		return -1;
-	}
+
+  // In interactive mode there is no need to write results to file.
+  if (isInteractiveSimulation()) {    
+    deallocResult();
+  } else {
+    if (deinitializeResult(result_file_cstr.c_str())) {
+      return -1;
+    }
+  }
 	return 0;
 }
 

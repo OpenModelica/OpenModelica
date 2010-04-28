@@ -33,19 +33,23 @@
 #include <list>
 #include <math.h>
 #include <iomanip>
-#include <time.h>  
+#include <time.h>
+#include <stdio.h>
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
 #include "solver_euler.h"
 #include "options.h"
+#include "omi_ServiceInterface.h"
+
 
 using namespace std;
 
+bool interactiveSimuation = false; //This variable signals if an simulation session is interactive or non-interactive (by default)
 
 /* Global Data */
 /***************/
-
+const string version = "20100427_V2";
 // Becomes non-zero when model terminates simulation.
 int modelTermination=0;
 
@@ -74,6 +78,9 @@ const int LOG_DEBUG = 4;
 extern const int ERROR_NONLINSYS=-1;
 extern const int ERROR_LINSYS=-2;
 
+int startInteractiveSimulation(int , char**);
+int startNonInteractiveSimulation(int , char**);
+int initRuntimeAndSimulation(int , char**);
 /* \brief returns the next simulation time.
  *
  * Returns the next simulation time when an output data is requested.
@@ -192,6 +199,146 @@ int verboseLevel(int argc, char**argv)
 	return res;
 }
 
+/**
+ * Signals the type of the simulation
+ * retuns true for interactive and false for non-interactive
+ */
+bool isInteractiveSimulation(){
+	return interactiveSimuation;
+}
+
+/**
+ * Starts an Interactive simulation session
+ * the runtime waits until a user shuts down the simulation
+ */
+int startInteractiveSimulation(int argc, char**argv) {
+	int retVal = -1;
+
+	initServiceInterfaceData(argc, argv);
+
+	//Create the Control Server Thread
+	Thread *threadSimulationControl = createControlThread();
+	threadSimulationControl->Join();
+	delete threadSimulationControl;
+
+	std::cout << "simulation finished!" << std::endl;
+	return retVal; //TODO 20100211 pv return value implementation / error handling
+}
+
+/**
+ * Starts a non-interactive simulation
+ */
+int startNonInteractiveSimulation(int argc, char**argv){
+	int retVal = -1;
+
+	  	  /* mesure time option is set : -mt */
+	  int measure_time_flag = (int)flagSet("mt",argc,argv);
+	  double measure_start_time = 0;
+
+	  double start = 0.0;
+	  double stop = 5.0;
+	  double stepSize = 0.05;
+	  long outputSteps = 500;
+	  double tolerance = 1e-4;
+	  string method;
+	  read_input(argc,argv,
+	             globalData,
+	             &start,&stop,&stepSize,&outputSteps,&tolerance,&method);
+	  globalData->lastEmittedTime = start;
+	  globalData->forceEmit=0;
+
+	  initDelay(start);
+
+	  if (measure_time_flag)
+		  measure_start_time = clock();
+
+	  callSolver(argc, argv, method, start, stop, stepSize, outputSteps, tolerance);
+
+	  if (measure_time_flag)
+	     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
+	  deInitializeDataStruc(globalData,ALL);
+
+	  return retVal;
+}
+
+/**
+ * Calls the solver which is selected in the parameter string "method"
+ * This funktion is used for interactive and non-interactive simulation
+ * Parameter method:
+ * "" & "dassl" calls a DASSL Solver
+ * "euler" calls an Euler solver
+ * "rungekutta" calls a fourth-order Runge–Kutta Solver
+ */
+int callSolver(int argc, char**argv, string method, double start, double stop, double stepSize,
+		long outputSteps, double tolerance) {
+	int retVal = -1;
+
+	/* */
+	  if (method == "") {
+		  if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
+		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+	  } else  if (method == std::string("euler")) {
+		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+		  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
+	  } else  if (method == std::string("rungekutta")) {
+		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+		  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+	  } else if (method == std::string("dassl")) {
+		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+	 } else {
+		 if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
+		 retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+	  }
+
+	return retVal;
+}
+
+/**
+ * Initialization is the same for interactive or non-interactive simulation
+ */
+int initRuntimeAndSimulation(int argc, char**argv) {
+
+	if (argc == 2 && flagSet("?", argc, argv)) {
+		    //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
+		cout << "usage: " << argv[0]
+				<< " <-f initfile> <-r result file> -m solver:{dassl, euler} -v <-interactive> <-port value>"
+				<< endl;
+		exit(0);
+	}
+	globalData = initializeDataStruc(ALL);
+	if (!globalData) {
+		std::cerr
+				<< "Error: Could not initialize the global data structure file"
+				<< std::endl;
+	}
+	//this sets the static variable that is in the file with the generated-model functions
+	setLocalData(globalData);
+	if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
+		std::cerr << "No variables in the model." << std::endl;
+		return 1;
+	}
+	/* verbose flag is set : -v */
+	sim_verbose = (int) flagSet("v", argc, argv);
+
+	interactiveSimuation = flagSet("interactive", argc, argv);
+
+	if (interactiveSimuation && flagSet("port", argc, argv)) {
+		cout << "userPort" << endl;
+		string *portvalue = (string*) getFlagValue("port", argc, argv);
+		std::istringstream stream(*portvalue);
+		int userPort;
+		stream >> userPort;
+		setPortOfControlServer(userPort);
+	}
+
+	int verbose_flags = verboseLevel(argc, argv);
+	sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
+	//sim_verbose = 1;
+
+	return 0;
+}
+
 /* \brief main function for simulator
  *
  * The arguments for the main function are:
@@ -202,87 +349,20 @@ int verboseLevel(int argc, char**argv)
  */
 
 int main(int argc, char**argv)
-{
-   int retVal=-1;
-  if (argc == 2 && flagSet("?",argc,argv)) {
-    cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
-    exit(0);
-  }
-  globalData = initializeDataStruc(ALL);
-  if( !globalData ){
-      std::cerr << "Error: Could not initialize the global data structure file" << std::endl;
-  }
-  //this sets the static variable that is in the file with the generated-model functions
-  setLocalData(globalData);
-  if(globalData->nStates == 0 && globalData->nAlgebraic == 0)
-    {
-      std::cerr << "No variables in the model." << std::endl;
-      return 1;
-    }
-  /* verbose flag is set : -v */
-  sim_verbose = (int)flagSet("v",argc,argv);
+ {
+	int retVal = -1;
 
-  int verbose_flags = verboseLevel(argc,argv);
-  sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
+	if(initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
+		return 1;
 
-  /* mesure time option is set : -mt */
-  int measure_time_flag = (int)flagSet("mt",argc,argv);
-  double measure_start_time = 0;
+	if(interactiveSimuation){
+		//cout << "startInteractiveSimulation: " << version << endl;
+		retVal = startInteractiveSimulation(argc, argv);
+	} else{
+		//cout << "startNonInteractiveSimulation: " << version << endl;
+		retVal = startNonInteractiveSimulation(argc, argv);
+	}
 
-  double start = 0.0;
-  double stop = 5.0;
-  double stepSize = 0.05;
-  long outputSteps = 500;
-  double tolerance = 1e-4;
-  string method;
-  read_input(argc,argv,
-             globalData,
-             &start,&stop,&stepSize,&outputSteps,&tolerance,&method);
-  globalData->lastEmittedTime = start;
-  globalData->forceEmit=0;
-
-  initDelay(start);
-
-  if (measure_time_flag) 
-	  measure_start_time = clock();
-  /* the main method identifies which solver to use and then calls
-     respecive solver main function*/
-  if (method == "") {
-	  if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
-	  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-  } else  if (method == std::string("euler")) {
-	  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-	  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
-  } else  if (method == std::string("rungekutta")) {
-	  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-	  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
-  } else if (method == std::string("dassl")) {
-	  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-	  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
- } else {
-	 if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
-	 retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-  }
-  if (measure_time_flag) 
-     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
-  deInitializeDataStruc(globalData,ALL);
-  return retVal;
+	deInitializeDataStruc(globalData, ALL);
+	return retVal;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

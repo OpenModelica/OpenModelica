@@ -54,7 +54,20 @@ static list<long> EventQueue;
  *
  * \return zero if successful.
  */
-int initializeEventData() {
+int initializeEventData() {	
+  /*
+	 * Re-Initialization is important because the variables are global and used in every solving step
+	 */
+	h_saved = 0;
+	x_saved = 0;
+	xd_saved = 0;
+	y_saved = 0;
+
+	gout = 0;
+	zeroCrossingEnabled = 0;
+	inUpdate = 0;
+	inSample = 0;
+
   // load default initial values.
   gout = new double[globalData->nZeroCrossing];
   h_saved = new double[globalData->nHelpVars];

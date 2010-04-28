@@ -249,6 +249,9 @@ int bound_parameters();
 // and fixed start attibutes
 int initial_residual();
 
+bool isInteractiveSimulation();
+int callSolver(int, char**, string, double, double, double, long, double);
+
 double newTime(double t, double step,double stop);
 
 #define MODELICA_ASSERT(cond,msg) do { if (!(cond)&& acceptedStep) { modelTermination=1; \

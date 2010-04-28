@@ -1847,27 +1847,12 @@ void System_5finit(void)
 #endif
   set_ldflags("-lc_runtime");
 
-  qthome = getenv("QTHOME");
-  if (qthome && strlen(qthome)) {
-     /* use QTHOME if is set! */
 #ifdef __APPLE_CC__
-    sprintf(
-        sendDataLibs,
-        "SENDDATALIBS=-L%s/lib -lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon",
-        qthome);
+  putenv("SENDDATALIBS= -lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon");
 #else
-    sprintf(
-        sendDataLibs,
-        "SENDDATALIBS=-L%s/lib -lsendData -lQtNetwork -lQtCore -lQtGui",
-        qthome);
+  putenv("SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui");
 #endif
-  } else {
-    /* no QTHOME was set! */
-    sprintf(
-        sendDataLibs,
-        "SENDDATALIBS=-lsendData");
-  }
-  /* set the SENDDATALIBS environment variable */
+   /* set the SENDDATALIBS environment variable */
   putenv(strdup(sendDataLibs));
 }
 

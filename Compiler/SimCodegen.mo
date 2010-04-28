@@ -134,6 +134,7 @@ algorithm
           " -lsim",
           " $(LDFLAGS)",
           " -lf2c",
+          " -linteractive",
           " ${SENDDATALIBS} ",
           "\n"});
         System.writeFile(filename, str);
@@ -159,6 +160,7 @@ algorithm
           " -lsim",
           " $(LDFLAGS)",
           " -lf2c",
+          " -linteractive",
           " ${SENDDATALIBS} ",
           libs_1,
           "\n"});

@@ -23,6 +23,8 @@ endif
 
 LIBF2CMAKEFILE = makefile.u
 JAVAMAKEFILE = Makefile
+INTERACTIVEMAKEFILE = Makefile
+INTERACTIVELIBS = "-lpthread"
 include Makefile.common
 
 omdevinstall:
