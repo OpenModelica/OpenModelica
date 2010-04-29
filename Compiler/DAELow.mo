@@ -8442,7 +8442,6 @@ algorithm
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
-        // avoid multiple derived algorithms
         (dae,m,mt,nv,nf,deqns,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{});
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
@@ -10506,7 +10505,6 @@ algorithm
         leneqns = equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs);
-        Debug.fcall("dumpdaelow", dump, dae);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1);
     case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs)
@@ -10530,7 +10528,6 @@ algorithm
         leneqns = equationSize(eqns);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs);
-        Debug.fcall("dumpdaelow", dump, dae);
       then
         (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1);        
     case (_,_,_,_,_,_,_,_)

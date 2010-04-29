@@ -632,7 +632,7 @@ algorithm
         (ret,tlst);
     case (_,_,_)
       equation
-        print("-Derive.checkDerivativeFunctionInputs failed\n");
+        Debug.fprintln("failtrace", "-Derive.checkDerivativeFunctionInputs failed\n");
       then
         fail();        
     end matchcontinue;
@@ -784,6 +784,11 @@ algorithm
         DAE.FUNCTION(functions=flst,type_=t) = DAEUtil.avlTreeGet(functions,fname);
         m = getFunctionMapper1(flst);
     then (m,t);
+    case (_,_)
+      equation
+        Debug.fprintln("failtrace", "-Derive.getFunctionMapper failed\n");
+      then
+        fail();      
   end matchcontinue;
 end getFunctionMapper;
 
@@ -802,7 +807,7 @@ algorithm
     then m;
     case (_)
       equation
-        print("-Derive.getFunctionMapper1 failed\n");
+        Debug.fprintln("failtrace", "-Derive.getFunctionMapper1 failed\n");
       then
         fail();      
   end matchcontinue;
