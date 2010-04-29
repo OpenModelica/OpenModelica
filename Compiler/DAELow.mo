@@ -5330,7 +5330,7 @@ algorithm
   end matchcontinue;
 end lowerAlgorithm2;
 
-protected function lowerAlgorithmInputsOutputs
+public function lowerAlgorithmInputsOutputs
 "function: lowerAlgorithmInputsOutputs
   This function finds the inputs and the outputs of an algorithm.
   An input is all values that are reffered on the right hand side of any
@@ -8442,7 +8442,8 @@ algorithm
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
-        (dae,m,mt,nv,nf,deqns) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions);
+        // avoid multiple derived algorithms
+        (dae,m,mt,nv,nf,deqns,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{});
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
        //print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
@@ -8986,7 +8987,7 @@ algorithm
       VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns_1,eqns,seqns,ie,ie1;
       MultiDimEquation[:] ae;
-      DAE.Algorithm[:] al;
+      DAE.Algorithm[:] al,al1,al2,al3;
       EventInfo wc;
       list<Value> rest;
       ExternalObjectClasses eoc;
@@ -8999,15 +9000,15 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
         ieLst = equationList(ie);
-        eqn_1 = replaceDummyDer2(state, dummyder, eqn);
-        ieLst1 = replaceDummyDerEqns(ieLst,state,dummyder);
+        (eqn_1,al1) = replaceDummyDer2(state, dummyder, eqn, al);
+        (ieLst1,al2) = replaceDummyDerEqns(ieLst,state,dummyder, al1);
         ie1 = listEquation(ieLst1);
-        (eqn_1,v_1) = replaceDummyDerOthers(eqn_1, v);
+        (eqn_1,v_1,al3) = replaceDummyDerOthers(eqn_1, v,al2);
         eqns_1 = equationSetnth(eqns, e_1, eqn_1)
          "incidence_row(v\'\',eqn\') => row\' &
 	        Util.list_replaceat(row\',e\',m) => m\' &
 	        transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,av,eqns_1,seqns,ie1,ae,al,wc,eoc), m, mt, rest);
+        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,av,eqns_1,seqns,ie1,ae,al3,wc,eoc), m, mt, rest);
       then
         (dae,m,mt);
 
@@ -9028,58 +9029,283 @@ protected function replaceDummyDer2
   input DAE.ComponentRef inComponentRef1;
   input DAE.ComponentRef inComponentRef2;
   input Equation inEquation3;
+  input DAE.Algorithm[:] inAlgs;
   output Equation outEquation;
+  output DAE.Algorithm[:] outAlgs;
 algorithm
-  outEquation := matchcontinue (inComponentRef1,inComponentRef2,inEquation3)
+  (outEquation,outAlgs) := matchcontinue (inComponentRef1,inComponentRef2,inEquation3,inAlgs)
     local
       DAE.Exp dercall,e1_1,e2_1,e1,e2;
       DAE.ComponentRef st,dummyder,cr;
       Value ds,indx,i;
-      list<DAE.Exp> expl,in_,out;
+      list<DAE.Exp> expl,expl1,in_,in_1,out,out1;
       Equation res;
       WhenEquation elsepartRes;
       WhenEquation elsepart;
       DAE.ElementSource source "the source of the element";
-
-    case (st,dummyder,EQUATION(exp = e1,scalar = e2,source = source))
+      DAE.Algorithm[:] algs;
+    case (st,dummyder,EQUATION(exp = e1,scalar = e2,source = source),inAlgs)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) "scalar equation" ;
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
       then
-        EQUATION(e1_1,e2_1,source);
-    /* TODO: We need to go through MultiDimEquation array here.. */
-    case (st,dummyder,ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source))
-      then ARRAY_EQUATION(ds,expl,source);  /* array equation */
-    /* TODO: We need to go through DAE.Algorithm here.. */
-    case (st,dummyder,ALGORITHM(index = indx,in_ = in_,out = out,source = source))
-      then ALGORITHM(indx,in_,out,source);  /* Algorithms */
+        (EQUATION(e1_1,e2_1,source),inAlgs);
+    case (st,dummyder,ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs)
+      equation
+        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
+        (expl1,_) = Exp.replaceListExp(expl, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));        
+      then (ARRAY_EQUATION(ds,expl1,source),inAlgs);  /* array equation */
+    case (st,dummyder,ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs)
+      equation
+        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
+        (in_1,_) = Exp.replaceListExp(in_, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));        
+        (out1,_) = Exp.replaceListExp(out, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));  
+        algs = replaceDummyDerAlgs(indx,inAlgs,dercall, DAE.CREF(dummyder,DAE.ET_REAL()));     
+      then (ALGORITHM(indx,in_1,out1,source),algs);  /* Algorithms */
     case (st,dummyder,WHEN_EQUATION(whenEquation =
-          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE),source = source))
+          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE),source = source),inAlgs)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE),source);
       then
-        res;
+        (res,inAlgs);
 
     case (st,dummyder,WHEN_EQUATION(whenEquation =
-          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source))
+          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),inAlgs)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
-        WHEN_EQUATION(elsepartRes,source) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart,source));
+        (WHEN_EQUATION(elsepartRes,source),algs) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart,source),inAlgs);
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
       then
-        res;
+        (res,algs);
 
-    case (_,_,_)
+    case (_,_,_,_)
       equation
         print("-DAELow.replaceDummyDer2 failed\n");
       then
         fail();
   end matchcontinue;
 end replaceDummyDer2;
+
+protected function replaceDummyDerAlgs
+  input Integer inIndex;
+  input DAE.Algorithm[:] inAlgs;  
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;  
+  output DAE.Algorithm[:] outAlgs;  
+algorithm
+  outAlgs:=
+  matchcontinue (inIndex,inAlgs,inExp2,inExp3)
+    local  
+      DAE.Algorithm[:] algs;
+      list<DAE.Statement> statementLst,statementLst1;
+      Integer i_1;
+  case (inIndex,inAlgs,inExp2,inExp3)
+    equation
+        // get Allgorithm
+        i_1 = inIndex+1;
+        DAE.ALGORITHM_STMTS(statementLst= statementLst) = inAlgs[i_1];  
+        statementLst1 = replaceDummyDerAlgs1(statementLst,inExp2,inExp3); 
+        algs = arrayUpdate(inAlgs,i_1,DAE.ALGORITHM_STMTS(statementLst1));   
+    then
+      algs;
+  end matchcontinue;      
+end replaceDummyDerAlgs;
+
+protected function replaceDummyDerAlgs1
+  input list<DAE.Statement> inStatementLst;  
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;  
+  output list<DAE.Statement> outStatementLst;  
+algorithm
+  outStatementLst:=
+  matchcontinue (inStatementLst,inExp2,inExp3)
+    local  
+      list<DAE.Statement> rest,st,stlst,stlst1;
+      DAE.Statement s,s1;
+      DAE.Exp e,e1,e_1,e1_1;
+      list<DAE.Exp> elst,elst1;
+      DAE.ExpType t;
+      DAE.ComponentRef cr,cr1;
+      DAE.Else else_,else_1;
+  case ({},_,_) then {};
+  case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e_1,_) = Exp.replaceExp(e1,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_ASSIGN(t,e1,e_1)::st);
+  case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (elst1,_) = Exp.replaceListExp(elst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1)::st);
+  case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (DAE.CREF(componentRef = cr1),_) = Exp.replaceExp(DAE.CREF(cr,DAE.ET_REAL()),inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_ASSIGN_ARR(t,cr1,e1)::st);
+  case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_)::rest,inExp2,inExp3)
+    equation
+       (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+       stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+       else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
+       st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_IF(e1,stlst1,else_1)::st);
+  case (DAE.STMT_FOR(type_=t,boolean=b,ident=id,exp=e,statementLst=stlst)::rest,inExp2,inExp3)
+    local 
+      Boolean b;
+      DAE.Ident id;
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_FOR(t,b,id,e1,stlst1)::st);
+  case (DAE.STMT_WHILE(exp=e,statementLst=stlst)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_WHILE(e1,stlst1)::st);
+  case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices)::rest,inExp2,inExp3)
+    local list<Integer> helpVarIndices;
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        {s1} = replaceDummyDerAlgs1({s},inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_WHEN(e1,stlst1,SOME(s1),helpVarIndices)::st);
+  case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices)::rest,inExp2,inExp3)
+    local list<Integer> helpVarIndices;
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices)::st);
+  case (DAE.STMT_ASSERT(cond=e1,msg=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e_1,_) = Exp.replaceExp(e1,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_ASSERT(e1,e_1)::st);
+  case (DAE.STMT_TERMINATE(msg=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_TERMINATE(e1)::st);
+  case (DAE.STMT_REINIT(var=e1,value=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        (e_1,_) = Exp.replaceExp(e1,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_REINIT(e1,e_1)::st);
+  case (DAE.STMT_NORETCALL(exp=e)::rest,inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_NORETCALL(e1)::st);
+  case (DAE.STMT_RETURN()::rest,inExp2,inExp3)
+    equation
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_RETURN()::st);
+  case (DAE.STMT_BREAK()::rest,inExp2,inExp3)
+    equation
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_BREAK()::st);
+  case (DAE.STMT_TRY(tryBody=stlst)::rest,inExp2,inExp3)
+    equation
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_TRY(stlst1)::st);
+  case (DAE.STMT_CATCH(catchBody=stlst)::rest,inExp2,inExp3)
+    equation
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_CATCH(stlst1)::st);
+  case (DAE.STMT_THROW()::rest,inExp2,inExp3)
+    equation
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_THROW()::st);
+  case (DAE.STMT_GOTO(labelName=labelName)::rest,inExp2,inExp3)
+    local String labelName;
+    equation
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_GOTO(labelName)::st);
+  case (DAE.STMT_LABEL(labelName=labelName)::rest,inExp2,inExp3)
+    local String labelName;
+    equation
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_LABEL(labelName)::st);
+  case (DAE.STMT_MATCHCASES(caseStmt=elst)::rest,inExp2,inExp3)
+    equation
+        (elst1,_) = Exp.replaceListExp(elst,inExp2,inExp3);
+        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
+    then
+      (DAE.STMT_MATCHCASES(elst1)::st);
+  case (_,_,_)
+    equation
+      print("-DAELow.replaceDummyDerAlgs1 failed\n");
+    then
+      fail();    
+  end matchcontinue;      
+end replaceDummyDerAlgs1;
+
+protected function replaceDummyDerAlgs2
+  input DAE.Else inElse;  
+  input DAE.Exp inExp2;
+  input DAE.Exp inExp3;  
+  output DAE.Else outElse;  
+algorithm
+  outElse:=
+  matchcontinue (inElse,inExp2,inExp3)
+    local  
+      DAE.Exp e,e1;
+      list<DAE.Statement> stlst,stlst1;
+      DAE.Else else_,else_1;
+  case (DAE.NOELSE(),_,_) then DAE.NOELSE();
+  case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inExp2,inExp3)
+    equation
+        (e1,_) = Exp.replaceExp(e,inExp2,inExp3);
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+        else_1 = replaceDummyDerAlgs2(else_,inExp2,inExp3);
+    then
+      DAE.ELSEIF(e1,stlst1,else_1);
+  case (DAE.ELSE(statementLst=stlst),inExp2,inExp3)
+    equation
+        stlst1 = replaceDummyDerAlgs1(stlst,inExp2,inExp3);
+    then
+      DAE.ELSE(stlst1);
+  case (_,_,_)
+    equation
+      print("-DAELow.replaceDummyDerAlgs2 failed\n");
+    then
+      fail();    
+  end matchcontinue;      
+end replaceDummyDerAlgs2;
 
 protected function replaceDummyDerEqns
 "function replaceDummyDerEqns
@@ -9089,21 +9315,24 @@ protected function replaceDummyDerEqns
   input list<Equation> eqns;
   input DAE.ComponentRef st;
   input DAE.ComponentRef dummyder;
+  input DAE.Algorithm[:] inAlgs;
   output list<Equation> outEqns;
+  output DAE.Algorithm[:] outAlgs;
 algorithm
-  outEqns:=
-  matchcontinue (eqns,st,dummyder)
+  (outEqns,outAlgs):=
+  matchcontinue (eqns,st,dummyder,inAlgs)
     local
       DAE.ComponentRef st,dummyder;
       list<Equation> eqns1,eqns;
       Equation e,e1;
-    case ({},st,dummyder) then {};
-    case (e::eqns,st,dummyder)
+      DAE.Algorithm[:] algs,algs1;
+    case ({},st,dummyder,inAlgs) then ({},inAlgs);
+    case (e::eqns,st,dummyder,inAlgs)
       equation
-         e1 = replaceDummyDer2(st,dummyder,e);
-         eqns1 = replaceDummyDerEqns(eqns,st,dummyder);
+         (e1,algs) = replaceDummyDer2(st,dummyder,e,inAlgs);
+         (eqns1,algs1) = replaceDummyDerEqns(eqns,st,dummyder,algs);
       then
-        e1::eqns1;
+        (e1::eqns1,algs1);
   end matchcontinue;
 end replaceDummyDerEqns;
 
@@ -9120,53 +9349,310 @@ protected function replaceDummyDerOthers
   is a dummy variable, etc."
   input Equation inEquation;
   input Variables inVariables;
+  input DAE.Algorithm[:] inAlgs;
   output Equation outEquation;
   output Variables outVariables;
+  output DAE.Algorithm[:] outAlgs;
 algorithm
-  (outEquation,outVariables):=
-  matchcontinue (inEquation,inVariables)
+  (outEquation,outVariables,outAlgs):=
+  matchcontinue (inEquation,inVariables,inAlgs)
     local
       DAE.Exp e1_1,e2_1,e1,e2;
       Variables vars_1,vars_2,vars;
       Value ds,i;
-      list<DAE.Exp> expl;
+      list<DAE.Exp> expl,expl1,in_,in_1,out,out1;
       DAE.ComponentRef cr;
       WhenEquation elsePartRes;
       WhenEquation elsePart;
       DAE.ElementSource source "the origin of the element";
+      Integer indx;
+      DAE.Algorithm[:] al;
 
-    case (EQUATION(exp = e1,scalar = e2,source = source),vars)
+    case (EQUATION(exp = e1,scalar = e2,source = source),vars,inAlgs)
       equation
         (e1_1,vars_1) = replaceDummyDerOthersExp(e1, vars) "scalar equation" ;
         (e2_1,vars_2) = replaceDummyDerOthersExp(e2, vars_1);
       then
-        (EQUATION(e1_1,e2_1,source),vars_2);
+        (EQUATION(e1_1,e2_1,source),vars_2,inAlgs);
 
-    case (ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),vars) /* TODO */
-      then (ARRAY_EQUATION(ds,expl,source),vars);  /* array equation */
+    case (ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),vars,inAlgs) 
+      equation
+        (expl1,vars_1) = replaceDummyDerOthersExpLst(expl,vars);
+      then (ARRAY_EQUATION(ds,expl1,source),vars_1,inAlgs);  /* array equation */
 
     case (WHEN_EQUATION(whenEquation =
-            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE),source = source),vars)
+            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE),source = source),vars,inAlgs)
       equation
         (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE),source),vars_1);
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE),source),vars_1,inAlgs);
 
     case (WHEN_EQUATION(whenEquation =
-            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars)
+            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars,inAlgs)
       equation
         (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
-        (WHEN_EQUATION(elsePartRes,source), vars_2) = replaceDummyDerOthers(WHEN_EQUATION(elsePart,source),vars_1);
+        (WHEN_EQUATION(elsePartRes,source), vars_2,al) = replaceDummyDerOthers(WHEN_EQUATION(elsePart,source),vars_1,inAlgs);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,SOME(elsePartRes)),source),vars_2);
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,SOME(elsePartRes)),source),vars_2,al);
 
-    case (_,_)
+    case (ALGORITHM(index = indx,in_ = in_,out = out,source = source),vars,inAlgs)
+      equation
+        (in_1,vars_1) = replaceDummyDerOthersExpLst(in_, vars);
+        (out1,vars_2) = replaceDummyDerOthersExpLst(out, vars_1);
+        (vars_2,al) = replaceDummyDerOthersAlgs(indx,vars_1,inAlgs);     
+      then (ALGORITHM(indx,in_1,out1,source),vars_2,al);
+
+    case (_,_,_)
       equation
         print("-DAELow.replaceDummyDerOthers failed\n");
       then
         fail();
   end matchcontinue;
 end replaceDummyDerOthers;
+
+protected function replaceDummyDerOthersAlgs
+  input Integer inIndex;
+  input Variables inVariables;
+  input DAE.Algorithm[:] inAlgs;
+  output Variables outVariables;
+  output DAE.Algorithm[:] outAlgs;
+algorithm
+  (outVariables,outAlgs):=
+  matchcontinue (inIndex,inVariables,inAlgs)
+    local
+      DAE.Algorithm[:] algs;
+      list<DAE.Statement> statementLst,statementLst1;
+      Integer i_1;
+      Variables vars;
+      case(inIndex,inVariables,inAlgs)
+        equation
+        // get Allgorithm
+        i_1 = inIndex+1;
+        DAE.ALGORITHM_STMTS(statementLst= statementLst) = inAlgs[i_1];  
+        (statementLst1,vars) = replaceDummyDerOthersAlgs1(statementLst,inVariables); 
+        algs = arrayUpdate(inAlgs,i_1,DAE.ALGORITHM_STMTS(statementLst1));           
+      then
+       (vars,algs); 
+  end matchcontinue;        
+end replaceDummyDerOthersAlgs;
+
+protected function replaceDummyDerOthersAlgs1
+  input list<DAE.Statement> inStatementLst;  
+  input Variables inVariables;
+  output list<DAE.Statement> outStatementLst;  
+  output Variables outVariables;
+algorithm
+  (outStatementLst,outVariables) :=
+  matchcontinue (inStatementLst,inVariables)
+    local  
+      list<DAE.Statement> rest,st,stlst,stlst1;
+      DAE.Statement s,s1;
+      DAE.Exp e,e1,e_1,e1_1;
+      list<DAE.Exp> elst,elst1;
+      DAE.ExpType t;
+      DAE.ComponentRef cr,cr1;
+      DAE.Else else_,else_1;
+      Variables vars,vars1,vars2,vars3;
+  case ({},inVariables) then ({},inVariables);
+  case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (e_1,vars1) = replaceDummyDerOthersExp(e1,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_ASSIGN(t,e1,e_1)::st,vars2);
+  case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (elst1,vars1) = replaceDummyDerOthersExpLst(elst,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1)::st,vars2);
+  case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (DAE.CREF(componentRef = cr1),vars1) = replaceDummyDerOthersExp(DAE.CREF(cr,DAE.ET_REAL()),vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_ASSIGN_ARR(t,cr1,e1)::st,vars2);
+  case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_)::rest,inVariables)
+    equation
+       (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+       (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
+       (else_1,vars2) = replaceDummyDerOthersAlgs2(else_,vars1);
+       (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
+    then
+      (DAE.STMT_IF(e1,stlst1,else_1)::st,vars3);
+  case (DAE.STMT_FOR(type_=t,boolean=b,ident=id,exp=e,statementLst=stlst)::rest,inVariables)
+    local 
+      Boolean b;
+      DAE.Ident id;
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_FOR(t,b,id,e1,stlst1)::st,vars2);
+  case (DAE.STMT_WHILE(exp=e,statementLst=stlst)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_WHILE(e1,stlst1)::st,vars2);
+  case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices)::rest,inVariables)
+    local list<Integer> helpVarIndices;
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
+        ({s1},vars2) = replaceDummyDerOthersAlgs1({s},vars1);
+        (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
+    then
+      (DAE.STMT_WHEN(e1,stlst1,SOME(s1),helpVarIndices)::st,vars3);
+  case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices)::rest,inVariables)
+    local list<Integer> helpVarIndices;
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices)::st,vars2);
+  case (DAE.STMT_ASSERT(cond=e1,msg=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (e_1,vars1) = replaceDummyDerOthersExp(e1,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_ASSERT(e1,e_1)::st,vars2);
+  case (DAE.STMT_TERMINATE(msg=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
+    then
+      (DAE.STMT_TERMINATE(e1)::st,vars1);
+  case (DAE.STMT_REINIT(var=e1,value=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (e_1,vars1) = replaceDummyDerOthersExp(e1,vars);
+        (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
+    then
+      (DAE.STMT_REINIT(e1,e_1)::st,vars2);
+  case (DAE.STMT_NORETCALL(exp=e)::rest,inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
+    then
+      (DAE.STMT_NORETCALL(e1)::st,vars1);
+  case (DAE.STMT_RETURN()::rest,inVariables)
+    equation
+        (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
+    then
+      (DAE.STMT_RETURN()::st,vars);
+  case (DAE.STMT_BREAK()::rest,inVariables)
+    equation
+        (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
+    then
+      (DAE.STMT_BREAK()::st,vars);
+  case (DAE.STMT_TRY(tryBody=stlst)::rest,inVariables)
+    equation
+        (stlst1,vars) = replaceDummyDerOthersAlgs1(stlst,inVariables);
+        (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
+    then
+      (DAE.STMT_TRY(stlst1)::st,vars1);
+  case (DAE.STMT_CATCH(catchBody=stlst)::rest,inVariables)
+    equation
+        (stlst1,vars) = replaceDummyDerOthersAlgs1(stlst,inVariables);
+        (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
+    then
+      (DAE.STMT_CATCH(stlst1)::st,vars1);
+  case (DAE.STMT_THROW()::rest,inVariables)
+    equation
+        (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
+    then
+      (DAE.STMT_THROW()::st,vars);
+  case (DAE.STMT_GOTO(labelName=labelName)::rest,inVariables)
+    local String labelName;
+    equation
+        (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
+    then
+      (DAE.STMT_GOTO(labelName)::st,vars);
+  case (DAE.STMT_LABEL(labelName=labelName)::rest,inVariables)
+    local String labelName;
+    equation
+        (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
+    then
+      (DAE.STMT_LABEL(labelName)::st,vars);
+  case (DAE.STMT_MATCHCASES(caseStmt=elst)::rest,inVariables)
+    equation
+        (elst1,vars) = replaceDummyDerOthersExpLst(elst,inVariables);
+        (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
+    then
+      (DAE.STMT_MATCHCASES(elst1)::st,vars1);
+  case (_,_)
+    equation
+      print("-DAELow.replaceDummyDerOthersAlgs1 failed\n");
+    then
+      fail();    
+  end matchcontinue;      
+end replaceDummyDerOthersAlgs1;
+
+protected function replaceDummyDerOthersAlgs2
+  input DAE.Else inElse;  
+  input Variables inVariables;
+  output DAE.Else outElse; 
+  output Variables outVariables; 
+algorithm
+  (outElse,outVariables):=
+  matchcontinue (inElse,inVariables)
+    local  
+      DAE.Exp e,e1;
+      list<DAE.Statement> stlst,stlst1;
+      DAE.Else else_,else_1;
+      Variables vars,vars1,vars2;
+  case (DAE.NOELSE(),inVariables) then (DAE.NOELSE(),inVariables);
+  case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inVariables)
+    equation
+        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
+        (else_1,vars2) = replaceDummyDerOthersAlgs2(else_,vars1);
+    then
+      (DAE.ELSEIF(e1,stlst1,else_1),vars2);
+  case (DAE.ELSE(statementLst=stlst),inVariables)
+    equation
+        (stlst1,vars) = replaceDummyDerOthersAlgs1(stlst,inVariables);
+    then
+      (DAE.ELSE(stlst1),vars);
+  case (_,_)
+    equation
+      print("-DAELow.replaceDummyDerOthersAlgs2 failed\n");
+    then
+      fail();    
+  end matchcontinue;      
+end replaceDummyDerOthersAlgs2;
+
+protected function replaceDummyDerOthersExpLst
+"function: replaceDummyDerOthersExp
+  author: PA
+  Helper function for replaceDummyDer_others"
+  input list<DAE.Exp> inExpLst;
+  input Variables inVariables;
+  output list<DAE.Exp> outExpLst;
+  output Variables outVariables;
+algorithm
+  (outExpLst,outVariables) := matchcontinue (inExpLst,inVariables)
+  local 
+    list<DAE.Exp> rest,elst;
+    DAE.Exp e,e1;
+    Variables vars,vars1,vars2;
+    case ({},vars) then ({},vars); 
+    case (e::rest,vars)
+      equation
+        (e1,vars1) = replaceDummyDerOthersExp(e,vars);
+        (elst,vars2) = replaceDummyDerOthersExpLst(rest,vars1);
+      then
+       (e1::elst,vars2); 
+  end matchcontinue;       
+end replaceDummyDerOthersExpLst;
 
 protected function replaceDummyDerOthersExp
 "function: replaceDummyDerOthersExp
@@ -9971,15 +10457,17 @@ protected function differentiateEqns
   input Integer inInteger5;
   input list<Integer> inIntegerLst6;
   input DAE.FunctionTree inFunctions;
+  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   output DAELow outDAELow1;
   output IncidenceMatrix outIncidenceMatrix2;
   output IncidenceMatrixT outIncidenceMatrixT3;
   output Integer outInteger4;
   output Integer outInteger5;
   output list<Integer> outIntegerLst6;
+  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
 algorithm
-  (outDAELow1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions)
+  (outDAELow1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6,outDerivedAlgs):=
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions,inDerivedAlgs)
     local
       DAELow dae;
       list<Value>[:] m,mt;
@@ -9994,13 +10482,14 @@ algorithm
       DAE.Algorithm[:] al,al1;
       EventInfo wc;
       ExternalObjectClasses eoc;
-    case (dae,m,mt,nv,nf,{},_) then (dae,m,mt,nv,nf,{});
-    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions)
+      list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
+    case (dae,m,mt,nv,nf,{},_,inDerivedAlgs) then (dae,m,mt,nv,nf,{},inDerivedAlgs);
+    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs)
       equation
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
 
-        (eqn_1,al1) = Derive.differentiateEquationTime(eqn, v, inFunctions, al);
+        (eqn_1,al1,derivedAlgs,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         str = equationStr(eqn);
         //print( "differentiated equation ") ;
@@ -10016,10 +10505,35 @@ algorithm
         eqns_1 = equationAdd(eqns, eqn_1);
         leneqns = equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions);
+        (dae,m,mt,nv,nf,reqns,derivedAlgs1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs);
+        Debug.fcall("dumpdaelow", dump, dae);
       then
-        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)));
-    case (_,_,_,_,_,_,_)
+        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1);
+    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs)
+      equation
+        e_1 = e - 1;
+        eqn = equationNth(eqns, e_1);
+
+        (eqn_1,al1,derivedAlgs,false) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs);
+        Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
+        str = equationStr(eqn);
+        //print( "differentiated equation ") ;
+        Debug.fprint("bltdump", str)  ;
+        //print(str); print("\n");
+        Debug.fprint("bltdump", " to ");
+        //print(" to ");
+        str = equationStr(eqn_1);
+        //print(str);
+        //print("\n");
+        Debug.fprint("bltdump", str) "	print \" to \" & print str &  print \"\\n\" &" ;
+        Debug.fprint("bltdump", "\n");
+        leneqns = equationSize(eqns);
+        DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
+        (dae,m,mt,nv,nf,reqns,derivedAlgs1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs);
+        Debug.fcall("dumpdaelow", dump, dae);
+      then
+        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1);        
+    case (_,_,_,_,_,_,_,_)
       equation
         print("-differentiate_eqns failed\n");
       then

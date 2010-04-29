@@ -7996,6 +7996,32 @@ algorithm
   end matchcontinue;
 end replaceExpListOpt;
 
+public function replaceListExp
+"function: replaceListExp.
+  Replaces an list of expressions with a expression."
+  input list<Exp> inExpLst;
+  input Exp inExp2;
+  input Exp inExp3;
+  output list<Exp> outExpLst;
+  output list<Integer> outIntegerLst;
+algorithm
+  (outExpLst,outIntegerLst):=
+  matchcontinue (inExpLst,inExp2,inExp3)
+    local
+      Exp e,e1,e2,e3;
+      Integer c;
+      list<Exp> rest,explst;
+      list<Integer> intlst;
+    case ({},_,_) then ({},{});  
+    case (e::rest,e2,e3)
+      equation
+        (e1,c) = replaceExp(e, e2, e3);
+        (explst,intlst) = replaceListExp(rest,e2,e3);
+      then
+        (e1::explst,c::intlst);
+  end matchcontinue;
+end replaceListExp;
+
 public function replaceExpList
 "function: replaceExpList.
   Replaces an expression with a list of several expressions.

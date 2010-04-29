@@ -45,9 +45,9 @@ package Derive
 
 public import Absyn;
 public import DAE;
-public import DAELow;
 public import RTOpts;
 public import DAEUtil;
+public import DAELow;
 public import Types;
 
 protected import Exp;
@@ -62,10 +62,13 @@ public function differentiateEquationTime "function: differentiateEquationTime
   input DAELow.Variables inVariables;
   input DAE.FunctionTree inFunctions;
   input DAE.Algorithm[:] al;
+  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
   output DAELow.Equation outEquation;
   output DAE.Algorithm[:] outal;
+  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output Boolean outAdd;
 algorithm
-  (outEquation,outal) := matchcontinue (inEquation,inVariables,inFunctions,al)
+  (outEquation,outal,outDerivedAlgs,outAdd) := matchcontinue (inEquation,inVariables,inFunctions,al,inDerivedAlgs)
     local
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       DAELow.Variables timevars;
@@ -75,49 +78,109 @@ algorithm
       DAE.FunctionDefinition mapper;
       DAE.Type tp;
       Integer index;
-      DAE.Algorithm a;
-      list<DAE.Exp> in_,out,out1,dout,dout1,expExpLst,expExpLst1; 
+      list<DAE.Exp> in_,din_,in_1,out,out1,dout,dout1,expExpLst,expExpLst1; 
       list<Boolean> blst; 
       DAE.ExpType exptyp;
-      list<DAE.Algorithm> alst,alst1;
+      list<DAE.ExpType> exptyplst; 
       DAE.Algorithm[:] a1;
-    case (DAELow.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions,al) /* time varying variables */
+      list<tuple<Integer,Integer,Integer>> derivedAlgs;
+      Boolean add;
+    case (DAELow.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions,al,inDerivedAlgs) /* time varying variables */
       equation
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
         e1_2 = Exp.simplify(e1_1);
         e2_2 = Exp.simplify(e2_1);
       then
-        (DAELow.EQUATION(e1_2,e2_2,source),al);
+        (DAELow.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,true);
 
    // diverivative of function with multiple outputs
-    case (DAELow.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,inFunctions,al)
+    case (DAELow.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,inFunctions,al,inDerivedAlgs)
       equation
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1)}) = al[index+1];
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e1_1,expExpLst,out,(timevars,inFunctions));
-        a = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)});
-        alst = arrayList(al);
-        alst1 = listAppend(alst,{a});
-        a1 = listArray(alst1);
-        index = arrayLength(al);
-      then
-        (DAELow.ALGORITHM(index,in_,out1,source),a1);
+        // inputs
+        (in_1,_) = DAELow.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}));
+        // only add algorithm if it is not already derived 
+        (index,a1,derivedAlgs,add) = addAlgorithm(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}),listLength(out1),inDerivedAlgs);
+       then
+        (DAELow.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,add);
 
-    case (DAELow.ALGORITHM(index = _),_,_,_)
+    case (DAELow.ALGORITHM(index = _),_,_,_,_)
       equation
         print("-differentiate_equation_time on algorithm not impl yet.\n");
       then
         fail();
-    case (dae_equation,_,_,_)
+    case (dae_equation,_,_,_,_)
       equation
         print("-differentiate_equation_time failed\n");
       then
         fail();
   end matchcontinue;
 end differentiateEquationTime;
+
+protected function addAlgorithm
+  input Integer inIndex;
+  input DAE.Algorithm[:] inAlg;
+  input DAE.Algorithm inA;
+  input Integer inNumber;
+  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+  output Integer outIndex;
+  output DAE.Algorithm[:] outAlg; 
+  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output Boolean outAdd;
+algorithm
+  (outIndex,outAlg,outDerivedAlgs,outAdd) := matchcontinue (inIndex,inAlg,inA,inNumber,inDerivedAlgs)
+    local
+      list<tuple<Integer,Integer,Integer>> rest,derivedAlgs;
+      tuple<Integer,Integer,Integer> dalg;
+      list<DAE.Algorithm> alst,alst1;
+      Integer index,index1,dindex,dnumber,dnumber_1;
+      DAE.Algorithm[:] a1;
+      Boolean add;
+   // no derived functions without outputs
+   case (inIndex,inAlg,inA,inNumber,derivedAlgs)
+     equation
+       true = intEq(inNumber,0); 
+     then
+       (inIndex,inAlg,derivedAlgs,false);      
+   // not derived   
+   case (inIndex,inAlg,inA,inNumber,{})
+     equation
+        alst = arrayList(inAlg);
+        alst1 = listAppend(alst,{inA});
+        a1 = listArray(alst1);
+        index = arrayLength(inAlg);      
+     then
+       (index,a1,{(inIndex,index,1)},true);
+   // derived    
+   case (inIndex,inAlg,inA,inNumber,(dalg as (index,dindex,dnumber))::rest)
+     equation
+       // search
+       true = intEq(inIndex,index);
+       true = dnumber < inNumber;
+       dnumber_1 = dnumber + 1;
+     then
+       (dindex,inAlg,(index,dindex,dnumber_1)::rest,true);    
+   case (inIndex,inAlg,inA,inNumber,(dalg as (index,dindex,dnumber))::rest)
+     equation
+       // search
+       true = intEq(inIndex,index);
+       false = dnumber < inNumber;
+     then
+       (dindex,inAlg,(index,dindex,dnumber)::rest,false);        
+   case (inIndex,inAlg,inA,inNumber,(dalg as (index,dindex,dnumber))::rest)
+     equation
+       false = intEq(inIndex,index);
+       // next
+       (index1,a1,derivedAlgs,add) = addAlgorithm(inIndex,inAlg,inA,inNumber,rest);
+     then   
+       (index1,a1,dalg::derivedAlgs,add);    
+  end matchcontinue;
+end addAlgorithm;
 
 public function differentiateExpTime "function: differentiateExpTime
   This function differentiates expressions with respect to the \'time\' variable.
@@ -383,49 +446,95 @@ algorithm
       Absyn.Path a,da;
       Integer derivativeOrder;
       DAE.Type tp,dtp;
-      list<DAE.Type> tlst,tlst2;
+      list<DAE.Type> tlst,tlst1,tlst2;
       list<DAE.Exp> explst,dexplst,dexplst1,dexplst_1,dexplst1_1;
       list<Boolean> blst,blst1;
       DAE.TType ttype;
       list<DAE.TType> ttlst,dttlst;
+      list<String> typlststring;
+      String typstring,dastring;      
     // order=1  
     case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,(timevars,functions))
       equation
-         // get function mapper
+        // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
         tlst = getFunctionResultTypes(tp);
-         // remove all outputs not subtyp of real
+        // remove all outputs not subtyp of real
         blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
-        blst1 = listReverse(blst);
-        (_,dtp) = getFunctionMapper(da,functions);       
+        blst1 = listReverse(blst);      
+        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);
+        // check if derivativ function has all expected outputs
+        tlst2 = getFunctionResultTypes(dtp);
+        (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
+        ttlst = Util.listMap(tlst1,Util.tuple21);
+        dttlst = Util.listMap(tlst2,Util.tuple21);  
+        true = Util.isListEqual(ttlst,dttlst,true);
+        // diff explst
         (dexplst,_) = DAELow.listSplitOnTrue(inExpLst,blst);
-         // check if derivativ function has all expected outputs
-         tlst2 = getFunctionResultTypes(dtp);
-         ttlst = Util.listMap(tlst,Util.tuple21);
-         dttlst = Util.listMap(tlst2,Util.tuple21);  
-         true = Util.isListEqual(ttlst,dttlst,true);
-         // diff explst
         (dexplst1,_) = DAELow.listSplitOnTrue(inExpLst1,blst1);
         dexplst_1 = Util.listMap1(dexplst,differentiateExpTime,(timevars,functions));        
         dexplst1_1 = Util.listMap1(dexplst1,differentiateExpTime,(timevars,functions));        
       then
         (dexplst_1,dexplst1_1);
+    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,(timevars,functions))
+      equation
+        // get function mapper
+        (DAE.FUNCTION_DER_MAPPER(derivativeOrder=1),tp) = getFunctionMapper(a,functions);
+        tlst = getFunctionResultTypes(tp);
+        // remove all outputs not subtyp of real
+        blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
+        blst1 = listReverse(blst);
+        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
+        // check if derivativ function has all expected outputs
+        tlst2 = getFunctionResultTypes(dtp);
+        (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
+        ttlst = Util.listMap(tlst1,Util.tuple21);
+        dttlst = Util.listMap(tlst2,Util.tuple21);   
+        false = Util.isListEqual(ttlst,dttlst,true);
+        // add Warning
+        typlststring = Util.listMap(tlst1,Types.unparseType);
+        typstring = Util.stringDelimitList(typlststring,";");
+        dastring = Absyn.pathString(da);
+        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});      
+      then
+        fail();        
     // order>1  
     case (DAE.CALL(path=a),DAE.CALL(path=da),inExpLst,inExpLst1,(timevars,functions))
       equation
-         // get function mapper
+        // get function mapper
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
         tlst = getFunctionResultTypes(tp);        
         true = (derivativeOrder > 1);       
-        (_,dtp) = getFunctionMapper(da,functions);    
-         // check if derivativ function has all expected outputs
-         blst = Util.listFill(true,listLength(tlst));
-         (true,_) = checkDerivativeFunctionOutputs(blst,tp,dtp);    
-         // diff explst
+        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
+        // check if derivativ function has all expected outputs
+        tlst2 = getFunctionResultTypes(dtp);
+        ttlst = Util.listMap(tlst,Util.tuple21);
+        dttlst = Util.listMap(tlst2,Util.tuple21);  
+        true = Util.isListEqual(ttlst,dttlst,true);    
+        // diff explst
         dexplst_1 = Util.listMap1(inExpLst,differentiateExpTime,(timevars,functions));        
         dexplst1_1 = Util.listMap1(inExpLst1,differentiateExpTime,(timevars,functions));        
       then
         (dexplst_1,dexplst1_1);
+    case (DAE.CALL(path=a),DAE.CALL(path=da),_,_,(timevars,functions))
+      equation
+        // get function mapper
+        (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
+        tlst = getFunctionResultTypes(tp);        
+        true = (derivativeOrder > 1);       
+        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
+        // check if derivativ function has all expected outputs
+        tlst2 = getFunctionResultTypes(dtp);
+        ttlst = Util.listMap(tlst,Util.tuple21);
+        dttlst = Util.listMap(tlst2,Util.tuple21);  
+        false = Util.isListEqual(ttlst,dttlst,true);    
+        // add Warning
+        typlststring = Util.listMap(tlst,Types.unparseType);
+        typstring = Util.stringDelimitList(typlststring,";");
+        dastring = Absyn.pathString(da);
+        Error.addMessage(Error.UNEXCPECTED_FUNCTION_INPUTS_WARNING, {dastring,typstring});        
+      then
+        fail();        
   end matchcontinue;
 end differentiateFunctionTimeOutputs;
 
@@ -448,7 +557,7 @@ protected function differentiateFunctionTime
   input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
   output DAE.Exp outExp;  
 algorithm    
-  (outExp,outBlst) := matchcontinue (inExp,inVarsandFuncs)
+  (outExp) := matchcontinue (inExp,inVarsandFuncs)
     local 
       list<DAE.Exp> expl,expl1,dexpl;
       DAE.Exp e,e1;
@@ -469,7 +578,7 @@ algorithm
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
-        (_,dtp) = getFunctionMapper(da,functions);
+         DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (true,_) = checkDerivativeFunctionInputs(blst,tp,dtp);
         (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
@@ -482,7 +591,7 @@ algorithm
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
-        (_,dtp) = getFunctionMapper(da,functions);
+        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
         // add Warning
@@ -521,54 +630,13 @@ algorithm
         ret = Util.isListEqual(ttlst,dttlst,true);     
       then 
         (ret,tlst);
+    case (_,_,_)
+      equation
+        print("-Derive.checkDerivativeFunctionInputs failed\n");
+      then
+        fail();        
     end matchcontinue;
 end checkDerivativeFunctionInputs;
-
-protected function checkDerivativeFunctionOutputs
-  input list<Boolean> blst;
-  input DAE.Type tp;
-  input DAE.Type dtp;
-  output Boolean outBoolean;
-  output list<DAE.Type> outExpectedTypeLst;
-algorithm
-  (outBoolean,outExpectedTypeLst) := matchcontinue(blst,tp,dtp)
-    local
-      DAE.Type t,t1;
-      list<DAE.Type> tlst,tlst1,tlst2;
-      list<DAE.TType> ttlst,dttlst;
-      Boolean ret;
-      case (blst,(DAE.T_FUNCTION(funcResultType=t),_),(DAE.T_FUNCTION(funcResultType=t1),_))
-      equation
-        // generate expected function inputs
-        (tlst1,_) = DAELow.listSplitOnTrue({t},blst);
-        // compare with derivative function inputs
-        ttlst = Util.listMap(tlst1,Util.tuple21);
-        dttlst = Util.listMap({t1},Util.tuple21);  
-        ret = Util.isListEqual(ttlst,dttlst,true);     
-      then 
-        (ret,tlst1);       
-      case (blst,(DAE.T_TUPLE(tupleType=tlst),_),(DAE.T_FUNCTION(funcResultType=t),_))
-      equation
-        // generate expected function inputs
-        (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
-        // compare with derivative function inputs
-        ttlst = Util.listMap(tlst1,Util.tuple21);
-        dttlst = Util.listMap({t},Util.tuple21);  
-        ret = Util.isListEqual(ttlst,dttlst,true);     
-      then 
-        (ret,tlst1);    
-      case (blst,(DAE.T_TUPLE(tupleType=tlst),_),(DAE.T_TUPLE(tupleType=tlst2),_))
-      equation
-        // generate expected function inputs
-        (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
-        // compare with derivative function inputs
-        ttlst = Util.listMap(tlst1,Util.tuple21);
-        dttlst = Util.listMap(tlst2,Util.tuple21);  
-        ret = Util.isListEqual(ttlst,dttlst,true);     
-      then 
-        (ret,tlst1);          
-    end matchcontinue;
-end checkDerivativeFunctionOutputs;
 
 protected function differentiateFunctionTime1
   input Absyn.Path inFuncName;
@@ -732,6 +800,11 @@ algorithm
     equation
       m = getFunctionMapper1(funcDefs);
     then m;
+    case (_)
+      equation
+        print("-Derive.getFunctionMapper1 failed\n");
+      then
+        fail();      
   end matchcontinue;
 end getFunctionMapper1;
 
