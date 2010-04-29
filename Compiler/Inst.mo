@@ -5548,6 +5548,7 @@ algorithm
                            attributes=SCode.ATTR(variability=vt),typeSpec = Absyn.TPATH(t,_),cc=cc),_),_,_,_)
       local Absyn.ComponentRef tref; SCode.Variability vt;
       equation
+        true = RTOpts.debugFlag("failtrace");
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);

@@ -3452,6 +3452,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> eltp,newtp;
       Integer dim1,dim2,dimMax;
       DAE.Properties prop;
+      DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp matexp;
       DAE.Exp exp_1,exp;
@@ -3460,12 +3461,12 @@ algorithm
 
     case (cache,env,{matexp},_,impl) /* impl try symbolically transpose the ARRAY expression */
       equation
-        (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),_),_,dae1)
+        (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_,dae1)
         	= elabExp(cache,env, matexp, impl, NONE,true);
         dim1 = Types.arraydimInt(d1);
         exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
-        prop = DAE.PROP(newtp,DAE.C_VAR());
+        prop = DAE.PROP(newtp,c);
       then
         (cache,DAE.ARRAY(tp,sc,exp_2),prop,dae1);
     case (cache,env,{matexp},_,impl) /* try symbolically transpose the MATRIX expression */
@@ -3473,25 +3474,25 @@ algorithm
         Integer sc;
         list<list<tuple<DAE.Exp, Boolean>>> expl,exp_2;
       equation
-        (cache,DAE.MATRIX(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),_),_,dae1)
+        (cache,DAE.MATRIX(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_,dae1)
         	= elabExp(cache,env, matexp, impl, NONE,true);
         dim1 = Types.arraydimInt(d1);
         dim2 = Types.arraydimInt(d2);
         dimMax = intMax(dim1, dim2);
         exp_2 = elabBuiltinTranspose3(expl, 1, dimMax);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
-        prop = DAE.PROP(newtp,DAE.C_VAR());
+        prop = DAE.PROP(newtp,c);
       then
         (cache,DAE.MATRIX(tp,sc,exp_2),prop,dae1);
     case (cache,env,{matexp},_,impl) /* .. otherwise create transpose call */
       local DAE.ExpType tp;
       equation
-        (cache,exp_1,DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),_),_,dae1)
+        (cache,exp_1,DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_,dae1)
         	= elabExp(cache,env, matexp, impl, NONE,true);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
         tp = Types.elabType(newtp);
         exp = DAE.CALL(Absyn.IDENT("transpose"),{exp_1},false,true,tp,DAE.NO_INLINE);
-        prop = DAE.PROP(newtp,DAE.C_VAR());
+        prop = DAE.PROP(newtp,c);
       then
         (cache,exp,prop,dae1);
   end matchcontinue;
