@@ -68,6 +68,7 @@ case FUNCTIONCODE then
   # textFile(functionsMakefile(functionCode), '<filePrefix>.makefile')
   () // Return empty result since result written to files directly
 
+// Generates code for main C file for simulation target.
 simulationFile(SimCode simCode) ::=
 match simCode
 case SIMCODE then
@@ -126,6 +127,7 @@ case SIMCODE then
   <functionCheckForDiscreteVarChanges(helpVarInfo, discreteModelVars)>
   >>
 
+// Generates header part of simulation file.
 simulationFileHeader(SimCode simCode) ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO, extObjInfo=EXTOBJINFO) then
@@ -150,6 +152,7 @@ case SIMCODE(modelInfo=MODELINFO, extObjInfo=EXTOBJINFO) then
   }
   >>
 
+// Generates global data in simulation file.
 globalData(ModelInfo modelInfo) ::=
 match modelInfo
 case MODELINFO(varInfo=VARINFO, vars=SIMVARS) then
@@ -241,6 +244,7 @@ case MODELINFO(varInfo=VARINFO, vars=SIMVARS) then
   };
   >>
 
+// Generates array with variable names in global data section.
 globalDataVarNamesArray(String name, list<SimVar> items) ::=
   match items
   case {} then
@@ -253,6 +257,7 @@ globalDataVarNamesArray(String name, list<SimVar> items) ::=
     char* <name>[<listLength(items)>] = {<itemsStr>};
     >>
 
+// Generates array with variable comments in global data section.
 globalDataVarCommentsArray(String name, list<SimVar> items) ::=
   match items
   case {} then
@@ -265,6 +270,7 @@ globalDataVarCommentsArray(String name, list<SimVar> items) ::=
     char* <name>[<listLength(items)>] = {<itemsStr>};
     >>
 
+// Generates a define statement for a varable in the global data section.
 globalDataVarDefine(SimVar simVar, String arrayName) ::=
   match simVar
   case SIMVAR(arrayCref=SOME(c)) then
@@ -277,11 +283,13 @@ globalDataVarDefine(SimVar simVar, String arrayName) ::=
     #define <cref(name)> localData-\><arrayName>[<index>]
     >>
 
+// Generates integer for use in arrays in global data section.
 globalDataFixedInt(Boolean isFixed) ::=
   match isFixed
   case true  then "1"
   case false then "0"
 
+// Generates integer for use in arrays in global data section.
 globalDataAttrInt(DAE.ExpType type) ::=
   match type
   case ET_REAL   then "1"
@@ -289,11 +297,13 @@ globalDataAttrInt(DAE.ExpType type) ::=
   case ET_INT    then "4"
   case ET_BOOL   then "8"
 
+// Generates integer for use in arrays in global data section.
 globalDataDiscAttrInt(Boolean isDiscrete) ::=
   match isDiscrete
   case true  then "16"
   case false then "0"
 
+// Generates function in simulation file.
 functionGetName(ModelInfo modelInfo) ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS) then
@@ -316,6 +326,7 @@ case MODELINFO(vars=SIMVARS) then
   }
   >>
 
+// Generates function in simulation file.
 functionDivisionError() ::=
   <<
   /* Commented out by Frenkel TUD because there is a new implementation of
@@ -336,6 +347,7 @@ functionDivisionError() ::=
   */
   >>
 
+// Generates function in simulation file.
 functionSetLocalData() ::=
   <<
   void setLocalData(DATA* data)
@@ -344,6 +356,7 @@ functionSetLocalData() ::=
   }
   >>
 
+// Generates function in simulation file.
 functionInitializeDataStruc(ExtObjInfo extObjInfo) ::=
 match extObjInfo
 case EXTOBJINFO then
@@ -578,6 +591,7 @@ case EXTOBJINFO then
   }
   >>
 
+// Generates function in simulation file.
 functionDeInitializeDataStruc(ExtObjInfo extObjInfo) ::=
 match extObjInfo
 case EXTOBJINFO then
@@ -629,6 +643,7 @@ case EXTOBJINFO then
   }
   >>
 
+// Generates function in simulation file.
 functionDaeOutput(list<SimEqSystem> nonStateContEquations,
                   list<SimEqSystem> removedEquations,
                   list<DAE.Statement> algorithmAndEquationAsserts) ::=
@@ -659,6 +674,7 @@ functionDaeOutput(list<SimEqSystem> nonStateContEquations,
   }
   >>
 
+// Generates function in simulation file.
 functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
                    list<SimEqSystem> removedEquations) ::=
   # varDecls = "" /*BUFD*/
@@ -684,6 +700,7 @@ functionDaeOutput2(list<SimEqSystem> nonStateDiscEquations,
   }
   >>
 
+// Generates function in simulation file.
 functionInput(ModelInfo modelInfo) ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS) then
@@ -697,6 +714,7 @@ case MODELINFO(vars=SIMVARS) then
   }
   >>
 
+// Generates function in simulation file.
 functionOutput(ModelInfo modelInfo) ::=
 match modelInfo
 case MODELINFO(vars=SIMVARS) then
@@ -710,6 +728,7 @@ case MODELINFO(vars=SIMVARS) then
   }
   >>
 
+// Generates function in simulation file.
 functionDaeRes() ::=
   <<
   int functionDAE_res(double *t, double *x, double *xd, double *delta,
@@ -756,6 +775,7 @@ functionDaeRes() ::=
   }
   >>
 
+// Generates function in simulation file.
 functionZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
   # varDecls = "" /*BUFD*/
   # zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, varDecls /*BUFC*/)
@@ -784,6 +804,7 @@ functionZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave) ::=
   <<
   /* This function should only save in cases. The rest is done in
@@ -812,6 +833,7 @@ functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionUpdateDependents(list<SimEqSystem> allEquations,
                          list<HelpVarInfo> helpVarInfo) ::=
   # varDecls = "" /*BUFD*/
@@ -843,6 +865,7 @@ functionUpdateDependents(list<SimEqSystem> allEquations,
   }
   >>
 
+// Generates function in simulation file.
 functionUpdateDepend(list<SimEqSystem> allEquationsPlusWhen) ::=
   # varDecls = "" /*BUFD*/
   # eqs = (allEquationsPlusWhen of eq:
@@ -866,6 +889,7 @@ functionUpdateDepend(list<SimEqSystem> allEquationsPlusWhen) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
   # varDecls = "" /*BUFD*/
   # zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, varDecls /*BUFC*/)
@@ -883,6 +907,7 @@ functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) ::=
   <<
   int checkForDiscreteChanges()
@@ -897,6 +922,7 @@ functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionStoreDelayed(list<tuple<DAE.Exp, DAE.Exp>> delayedExps) ::=
   # varDecls = "" /*BUFD*/
   # storePart = (delayedExps of (id, e):
@@ -924,6 +950,7 @@ functionStoreDelayed(list<tuple<DAE.Exp, DAE.Exp>> delayedExps) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionWhen(list<SimWhenClause> whenClauses) ::=
   # varDecls = "" /*BUFD*/
   # cases = (whenClauses of SIM_WHEN_CLAUSE:
@@ -959,6 +986,7 @@ functionWhen(list<SimWhenClause> whenClauses) ::=
   }
   >>
 
+// Generates content of case-clause for a when equation in function_when.
 functionWhenCaseEquation(Option<WhenEquation> when, Text varDecls /*BUFP*/) ::=
 match when
 case SOME(weq as WHEN_EQ) then
@@ -972,6 +1000,7 @@ case SOME(weq as WHEN_EQ) then
   <cref(weq.left)> = <expPart>;
   >>
 
+// Generates re-init statement for when equation.
 functionWhenReinitStatement(ReinitStatement reinit, Text preExp /*BUFP*/,
                             Text varDecls /*BUFP*/) ::=
 match reinit
@@ -982,6 +1011,7 @@ case REINIT then
   <cref(stateVar)> = <val>;
   >>
 
+// Generates function in simulation file.
 functionOde(list<SimEqSystem> stateContEquations) ::=
   # varDecls = "" /*BUFD*/
   # stateContPart = (stateContEquations of eq:
@@ -1001,6 +1031,7 @@ functionOde(list<SimEqSystem> stateContEquations) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionInitial(list<SimEqSystem> initialEquations) ::=
   # varDecls = "" /*BUFD*/
   # eqPart = (initialEquations of eq as SES_SIMPLE_ASSIGN:
@@ -1021,6 +1052,7 @@ functionInitial(list<SimEqSystem> initialEquations) ::=
   }
   >>
 
+// Generates function in simulation file.
 functionInitialResidual(list<SimEqSystem> residualEquations) ::=
   # varDecls = "" /*BUFD*/
   # body = (residualEquations of SES_RESIDUAL:
@@ -1047,6 +1079,7 @@ functionInitialResidual(list<SimEqSystem> residualEquations) ::=
   }
   >>
 
+// Generates functions in simulation file.
 functionExtraResudials(list<SimEqSystem> allEquations) ::=
   (allEquations of eq as SES_NONLINEAR:
      # varDecls = "" /*BUFD*/
@@ -1072,6 +1105,7 @@ functionExtraResudials(list<SimEqSystem> allEquations) ::=
      >>
    "\n\n")
 
+// Generates function in simulation file.
 functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
   # varDecls = "" /*BUFD*/
   # body = (parameterEquations of eq as SES_SIMPLE_ASSIGN:
@@ -1095,7 +1129,8 @@ functionBoundParameters(list<SimEqSystem> parameterEquations) ::=
   }
   >>
 
-// Is the -1 check really correct? It seems to work.
+// Generates function in simulation file.
+// TODO: Is the -1 windex check really correct? It seems to work.
 functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
                                    list<ComponentRef> discreteModelVars) ::=
   <<
@@ -1122,11 +1157,13 @@ functionCheckForDiscreteVarChanges(list<HelpVarInfo> helpVarInfo,
   }
   >>
 
+// Generates code for zero crossings.
 zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text varDecls /*BUFP*/) ::=
   (zeroCrossings of ZERO_CROSSING:
     zeroCrossingTpl(i0, relation_, varDecls /*BUFC*/)
   "\n")
 
+// Generates code for a zero crossing.
 zeroCrossingTpl(Integer index, Exp relation, Text varDecls /*BUFP*/) ::=
   match relation
   case RELATION then
@@ -1151,6 +1188,7 @@ zeroCrossingTpl(Integer index, Exp relation, Text varDecls /*BUFP*/) ::=
     ZERO CROSSING ERROR
     >>
 
+// Generates zero crossing function name for operator.
 zeroCrossingOpFunc(Operator op) ::=
   match op
   case LESS      then "Less"
@@ -1158,6 +1196,7 @@ zeroCrossingOpFunc(Operator op) ::=
   case LESSEQ    then "LessEq"
   case GREATEREQ then "GreaterEq"
 
+// Generates an equation.
 // This template should not be used for a SES_RESIDUAL. Residual equations
 // are handled differently.
 equation_(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
@@ -1179,6 +1218,7 @@ equation_(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
   case _
     then "NOT IMPLEMENTED EQUATION"
 
+// Generates an equation that is just a simple assignment.
 equationSimpleAssign(SimEqSystem eq, Context context,
                      Text varDecls /*BUFP*/) ::=
 match eq
@@ -1190,10 +1230,11 @@ case SES_SIMPLE_ASSIGN then
   <cref(componentRef)> = <expPart>;
   >>
 
+// Generates equation on form 'cref_array = call(...)'.
 equationArrayCallAssign(SimEqSystem eq, Context context,
                         Text varDecls /*BUFP*/) ::=
 match eq
-case SES_ARRAY_CALL_ASSIGN then // cref_array = call(...)
+case SES_ARRAY_CALL_ASSIGN then
   # preExp = "" /*BUFD*/
   # expPart = daeExp(exp, context, preExp /*BUFC*/, varDecls /*BUFC*/)
   <<
@@ -1201,6 +1242,7 @@ case SES_ARRAY_CALL_ASSIGN then // cref_array = call(...)
   copy_real_array_data_mem(&<expPart>, &<cref(componentRef)>);
   >>
 
+// Generates an equation that is an algorithm.
 equationAlgorithm(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
 match eq
 case SES_ALGORITHM then
@@ -1208,6 +1250,7 @@ case SES_ALGORITHM then
     algStatement(stmt, context, varDecls /*BUFC*/)
   "\n") 
 
+// Generates a linear equation system.
 equationLinear(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
 match eq
 case SES_LINEAR then
@@ -1233,6 +1276,7 @@ case SES_LINEAR then
   <vars of SIMVAR: '<cref(name)> = get_vector_elt(<bname>, <i0>);' "\n">
   >>
 
+// Generates a mixed equation system.
 equationMixed(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
 match eq
 case SES_MIXED then
@@ -1264,6 +1308,7 @@ case SES_MIXED then
   mixed_equation_system_end(<numDiscVarsStr>);
   >>
 
+// Generates a non linear equation system.
 equationNonlinear(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
 match eq
 case SES_NONLINEAR then
@@ -1281,6 +1326,7 @@ case SES_NONLINEAR then
   end_nonlinear_system();
   >>
 
+// Generates a when equation.
 equationWhen(SimEqSystem eq, Context context, Text varDecls /*BUFP*/) ::=
 match eq
 case SES_WHEN then
@@ -1304,6 +1350,7 @@ case SES_WHEN then
   }
   >>
 
+// Generates the content of the C file for functions in the simulation case.
 simulationFunctionsFile(list<Function> functions) ::=
   <<
   #ifdef __cplusplus
@@ -1324,6 +1371,7 @@ simulationFunctionsFile(list<Function> functions) ::=
   #endif
   >>
 
+// Generates the contents of the makefile for the simulation case.
 simulationMakefile(SimCode simCode) ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO, makefileParams=MAKEFILE_PARAMS) then
@@ -1347,6 +1395,7 @@ case SIMCODE(modelInfo=MODELINFO, makefileParams=MAKEFILE_PARAMS) then
   <\t> $(CXX) $(CFLAGS) -I. -o <modelInfo.name>$(EXEEXT) <modelInfo.name>.cpp <dirExtra> <libsPos1> -lsim $(LDFLAGS) -lf2c ${SENDDATALIBS} <libsPos2>
   >>
 
+// Generates the contents of the main C file for the function case.
 functionsFile(list<Function> functions,
               list<RecordDeclaration> extraRecordDecls) ::=
   <<
@@ -1387,6 +1436,7 @@ functionsFile(list<Function> functions,
   #endif
   >>
 
+// Generates the contents of the makefile for the function case.
 functionsMakefile(FunctionCode fnCode) ::=
 match fnCode
 case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS) then
@@ -1407,23 +1457,30 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS) then
   <\t> $(LINK) $(CFLAGS) -o <name>$(DLLEXT) <name>.c <libsStr> $(LDFLAGS) -lm
   >>
 
+// Generates C equivalent name for component reference.
+// Most of the cases are CREF_IDENT where the name has already been converted
+// in a C-specific way. This should perhaps change in the future so that all
+// transformations are done in templates.
 cref(ComponentRef cref) ::=
   match cref
   case CREF_IDENT then '<ident>'
   case CREF_QUAL  then '<ident>.<cref(componentRef)>'
   case _          then "CREF_NOT_IDENT_OR_QUAL"
 
+// Generates the name of a variable for variable name array.
 // Only works for CREF_IDENT.
 crefWithSubscript(ComponentRef cref) ::=
   match cref
   case CREF_IDENT then '<ident><subscriptsTpl(subscriptLst)>'
   case _          then "CREF_NOT_IDENT"
 
+// Generares subscript part of the name.
 subscriptsTpl(list<Subscript> subscripts) ::=
   match subscripts
   case {}         then ""
   case subscripts then '[<subscripts of s: subscriptTpl(s) ",">]'
 
+// Generates a single subscript.
 // Only works for contstant integer indicies.
 subscriptTpl(Subscript subscript) ::=
   match subscript
@@ -1434,12 +1491,14 @@ subscriptTpl(Subscript subscript) ::=
   )
   case _     then "SUBSCRIPT_NOT_CONSTANT"
  
+// Generates paths with components separated by dots.
 dotPath(Path path) ::=
   match path
   case QUALIFIED      then '<name>.<dotPath(path)>'
   case IDENT          then name
   case FULLYQUALIFIED then dotPath(path)
 
+// Generate paths with components separated by underscores.
 underscorePath(Path path) ::=
   match path
   case QUALIFIED then
@@ -1449,6 +1508,7 @@ underscorePath(Path path) ::=
   case FULLYQUALIFIED then
     underscorePath(path)
 
+// Generates external includes part in function files.
 externalFunctionIncludes(list<Function> functions) ::=
   <<
   #ifdef __cplusplus
@@ -1462,6 +1522,7 @@ externalFunctionIncludes(list<Function> functions) ::=
   #endif
   >>
 
+// Generates function header part in function files.
 functionHeaders(list<Function> functions) ::=
   (functions of fn:
     match fn
@@ -1494,6 +1555,7 @@ functionHeaders(list<Function> functions) ::=
       >> 
   "\n")
 
+// Generates structs for a record declaration.
 recordDeclaration(RecordDeclaration recDecl) ::=
   match recDecl
   case RECORD_DECL_FULL then
@@ -1512,6 +1574,7 @@ recordDeclaration(RecordDeclaration recDecl) ::=
                       (fieldNames of name: '"<name>"' ","))>
     >>
 
+// Generates the definition struct for a record declaration.
 recordDefinition(String origName, String encName, String fieldNames) ::=
   <<
   const char* <encName>__desc__fields[] = {<fieldNames>};
@@ -1522,6 +1585,7 @@ recordDefinition(String origName, String encName, String fieldNames) ::=
   };
   >>
 
+// Generates function header for a Modelica/MetaModelica function.
 functionHeader(String fname, list<Variable> fargs, list<Variable> outVars) ::=
   # fargsStr = (fargs of var as VARIABLE: '<varType(var)> <cref(name)>' ", ")
   <<
@@ -1542,6 +1606,7 @@ functionHeader(String fname, list<Variable> fargs, list<Variable> outVars) ::=
   <fname>_rettype _<fname>(<fargsStr>);
   >>
 
+// Generates function header for an external function.
 extFunDef(Function fn) ::=
 match fn
 case EXTERNAL_FUNCTION then
@@ -1550,11 +1615,13 @@ case EXTERNAL_FUNCTION then
   extern <extReturnType(extReturn)> <extName>(<fargsStr>);
   >>
 
+// Generates return type for external function.
 extReturnType(SimExtArg extArg) ::=
   match extArg
   case SIMEXTARG   then extType(type_)
   case SIMNOEXTARG then "void"
 
+// Generates type for external function argument or return value.
 extType(ExpType type) ::=
   match type
   case ET_INT         then "int"
@@ -1575,6 +1642,7 @@ extType(ExpType type) ::=
   case ET_BOXED       then "void*"
   case _              then "OTHER_EXT_TYPE"
 
+// Generates the definition of an external function argument.
 // Assume that language is C for now.
 extFunDefArg(SimExtArg extArg) ::=
   match extArg
@@ -1605,6 +1673,7 @@ extFunDefArg(SimExtArg extArg) ::=
     size_t <name>_<eStr>
     >>
 
+// Helper to extFunDefArg.
 // This only works for constants (or else the name of a temporary variable is
 // returned).
 daeExpToString(Exp exp) ::=
@@ -1612,15 +1681,18 @@ daeExpToString(Exp exp) ::=
   # varDecls = "" /*BUFD*/
   daeExp(exp, contextOther, preExp /*BUFC*/, varDecls /*BUFC*/)
 
+// Generates the body for a set of functions.
 functionBodies(list<Function> functions) ::=
   (functions of fn: functionBody(fn) "\n")
 
+// Generates the body for a function.
 functionBody(Function fn) ::=
   match fn
   case fn as FUNCTION           then functionBodyRegularFunction(fn)
   case fn as EXTERNAL_FUNCTION  then functionBodyExternalFunction(fn)
   case fn as RECORD_CONSTRUCTOR then functionBodyRecordConstructor(fn)
 
+// Generates the body for a Modelica/MetaModelica function.
 functionBodyRegularFunction(Function fn) ::=
 match fn
 case FUNCTION then
@@ -1667,6 +1739,7 @@ case FUNCTION then
   }
   >>
 
+// Generates the body for an external fuction (just a wrapper).
 functionBodyExternalFunction(Function fn) ::=
 match fn
 case EXTERNAL_FUNCTION then
@@ -1702,6 +1775,7 @@ case EXTERNAL_FUNCTION then
   }
   >>
 
+// Generates the body for a record constructor.
 functionBodyRecordConstructor(Function fn) ::=
 match fn
 case RECORD_CONSTRUCTOR then
@@ -1722,6 +1796,7 @@ case RECORD_CONSTRUCTOR then
   }
   >>
 
+// Generates code for reading a variable from inArgs.
 readInVar(Variable var) ::=
   match var
   case VARIABLE(name=cr, ty=ET_COMPLEX(complexClassType=RECORD)) then
@@ -1733,6 +1808,7 @@ readInVar(Variable var) ::=
     if (read_<expTypeArrayIf(ty)>(&inArgs, &<cref(name)>)) return 1;
     >>
 
+// Helper to readInVar.
 readInVarRecordMembers(ExpType type, String prefix) ::=
 match type
 case ET_COMPLEX(varLst=vl) then
@@ -1744,6 +1820,7 @@ case ET_COMPLEX(varLst=vl) then
       '&(<prefix>.<subvar.name>)'
   ", ")
 
+// Generates code for writing a variable to outVar.
 writeOutVar(Variable var, Integer index) ::=
   match var
   case VARIABLE(ty=ET_COMPLEX(complexClassType=RECORD)) then
@@ -1755,6 +1832,7 @@ writeOutVar(Variable var, Integer index) ::=
     write_<varType(var)>(outVar, &out.targ<index>);
     >>
 
+// Helper to writeOutVar.
 writeOutVarRecordMembers(ExpType type, Integer index, String prefix) ::=
 match type
 case ET_COMPLEX(varLst=vl, name=n) then
@@ -1770,6 +1848,7 @@ case ET_COMPLEX(varLst=vl, name=n) then
   &<basename>__desc<if args then ', <args>'>, TYPE_DESC_NONE
   >>
 
+// Generates code to initialize variables.
 // Does not return anything: just appends declarations to buffers.
 varInit(Variable var, String outStruct, Integer i, Text varDecls /*BUFP*/,
         Text varInits /*BUFP*/) ::=
@@ -1786,6 +1865,7 @@ case var as VARIABLE then
   else
     ()
 
+// Generates code to copy result value from a function to dest.
 varOutput(Variable var, String dest, Integer i, Text varDecls /*BUFP*/,
           Text varInits /*BUFP*/) ::=
 match var
@@ -1803,6 +1883,7 @@ case var as VARIABLE then
     <dest>.targ<i> = <cref(var.name)>;
     >>
 
+// Generates the call to an external function.
 extFunCall(Function fun, Text preExp /*BUFP*/, Text varDecls /*BUFP*/) ::=
 match fun
 case EXTERNAL_FUNCTION then
@@ -1822,6 +1903,7 @@ case EXTERNAL_FUNCTION then
   <if extReturn is SIMEXTARG then extFunCallVarcopy(extReturn)>
   >>
 
+// Helper to extFunCall.
 extFunCallVardecl(SimExtArg arg, Text varDecls /*BUFP*/) ::=
   match arg
   case SIMEXTARG(isInput=true, isArray=false, type_=ty, cref=c) then
@@ -1839,6 +1921,7 @@ extFunCallVardecl(SimExtArg arg, Text varDecls /*BUFP*/) ::=
       # varDecls += '<extType(ty)> <cref(c)>_ext;<\n>'
       ""
 
+// Helper to extFunCall.
 extFunCallVarcopy(SimExtArg arg) ::=
 match arg
 case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
@@ -1849,6 +1932,7 @@ case SIMEXTARG(outputIndex=oi, isArray=false, type_=ty, cref=c) then
     out.targ<oi> = (<expTypeModelica(ty)>)<cref(c)>_ext;
     >>
 
+// Helper to extFunCall.
 extArg(SimExtArg extArg, Text preExp /*BUFP*/, Text varDecls /*BUFP*/) ::=
   match extArg
   case SIMEXTARG(cref=c, outputIndex=oi, isArray=true, type_=t) then
@@ -1869,14 +1953,7 @@ extArg(SimExtArg extArg, Text preExp /*BUFP*/, Text varDecls /*BUFP*/) ::=
     # dim = daeExp(exp, contextOther, preExp /*BUFC*/, varDecls /*BUFC*/)
     'size_of_dimension_<typeStr>_array(<name>, <dim>)'
 
-funBody(list<Statement> body) ::=
-  # varDecls = "" /*BUFD*/
-  # bodyPart = (body of stmt: funStatement(stmt, varDecls /*BUFC*/) "\n")
-  <<
-  <varDecls>
-  <bodyPart>
-  >>
-
+// Generates function statements.
 funStatement(Statement stmt, Text varDecls /*BUFP*/) ::=
   match stmt
   case ALGORITHM then
@@ -1886,6 +1963,7 @@ funStatement(Statement stmt, Text varDecls /*BUFP*/) ::=
   case _ then
     "NOT IMPLEMENTED FUN STATEMENT"
 
+// Generates an algorithm statement.
 algStatement(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
   match stmt
   case s as STMT_ASSIGN       then algStmtAssign(s, context, varDecls /*BUFC*/)
@@ -1905,6 +1983,7 @@ algStatement(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
   case s as STMT_NORETCALL    then algStmtNoretcall(s, context, varDecls /*BUFC*/)
   case _                      then "NOT IMPLEMENTED ALG STATEMENT"
 
+// Generates an assigment algorithm statement.
 algStmtAssign(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
   match stmt
   case STMT_ASSIGN(exp1=CREF(componentRef=WILD), exp=e) then
@@ -1930,6 +2009,7 @@ algStmtAssign(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
     <expPart1> = <expPart2>;
     >>
 
+// Generates an array assigment algorithm statement.
 algStmtAssignArr(DAE.Statement stmt, Context context,
                  Text varDecls /*BUFP*/) ::=
 match stmt
@@ -1948,6 +2028,7 @@ case STMT_ASSIGN_ARR(exp=e, componentRef=cref, type_=t) then
     copy_<expTypeArray(t)>_data(&<expPart>, &<cref(cref)>);
     >>
 
+// Generates a tuple assigment algorithm statement.
 algStmtTupleAssign(DAE.Statement stmt, Context context,
                    Text varDecls /*BUFP*/) ::=
 match stmt
@@ -1962,6 +2043,7 @@ case STMT_TUPLE_ASSIGN(exp=CALL) then
   "\n">
   >>
 
+// Generates an if algorithm statement.
 algStmtIf(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_IF then
@@ -1975,6 +2057,7 @@ case STMT_IF then
   <elseExpr(else_, context, varDecls /*BUFC*/)>
   >>
 
+// Generates a for algorithm statement.
 algStmtFor(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
   match stmt
   case s as STMT_FOR(exp=rng as RANGE) then
@@ -1982,6 +2065,7 @@ algStmtFor(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
   case s as STMT_FOR then
     algStmtForGeneric(s, context, varDecls /*BUFC*/)
 
+// Generates a for algorithm statement where range is RANGE.
 algStmtForRange(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_FOR(exp=rng as RANGE) then
@@ -2012,6 +2096,7 @@ case STMT_FOR(exp=rng as RANGE) then
   } /*end for*/
   >>
 
+// Generates a for algorithm statement where range is not RANGE.
 algStmtForGeneric(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_FOR then
@@ -2045,6 +2130,7 @@ case STMT_FOR then
   } /* end for*/
   >>
 
+// Generates a while algorithm statement.
 algStmtWhile(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_WHILE then
@@ -2058,6 +2144,7 @@ case STMT_WHILE then
   }
   >>
 
+// Generates an assert algorithm statement.
 algStmtAssert(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_ASSERT then
@@ -2069,6 +2156,7 @@ case STMT_ASSERT then
   MODELICA_ASSERT(<condVar>, <msgVar>);
   >>
 
+// Generates a matchcases algorithm statement.
 algStmtMatchcases(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_MATCHCASES then
@@ -2100,6 +2188,7 @@ case STMT_MATCHCASES then
   if (0 == <doneVar>) throw 1; /* Didn't end in a valid state */
   >>
 
+// Generates a try algorithm statement.
 algStmtTry(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_TRY then
@@ -2112,6 +2201,7 @@ case STMT_TRY then
   }
   >>
 
+// Generates a catch algorithm statement.
 algStmtCatch(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_CATCH then
@@ -2124,6 +2214,7 @@ case STMT_CATCH then
   }
   >>
 
+// Generates a no return call algorithm statement.
 algStmtNoretcall(DAE.Statement stmt, Context context, Text varDecls /*BUFP*/) ::=
 match stmt
 case STMT_NORETCALL then
@@ -2134,6 +2225,7 @@ case STMT_NORETCALL then
   <expPart>;
   >>
 
+// Generates a when algorithm statement.
 algStmtWhen(DAE.Statement when, Context context, Text varDecls /*BUFP*/) ::=
 match context
 case SIMULATION(genDiscrete=true) then
@@ -2152,6 +2244,7 @@ case SIMULATION(genDiscrete=true) then
     <else>
     >>
 
+// Helper to algStmtWhen.
 algStatementWhenPre(DAE.Statement stmt, Text varDecls /*BUFP*/) ::=
   match stmt
   case STMT_WHEN(exp=ARRAY(array=el)) then
@@ -2184,6 +2277,7 @@ algStatementWhenPre(DAE.Statement stmt, Text varDecls /*BUFP*/) ::=
       <restPre>
       >>
 
+// Helper to algStmtWhen.
 algStatementWhenElse(Option<DAE.Statement> stmt, Text varDecls /*BUFP*/) ::=
 match stmt
 case SOME(when as STMT_WHEN) then
@@ -2201,6 +2295,7 @@ case SOME(when as STMT_WHEN) then
   <else>
   >>
 
+// Helper to algStatementWhenPre.
 // The lists exps and ints should be of the same length. Iterating over two
 // lists like this is not so well supported in Susan, so it looks a bit ugly.
 algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
@@ -2219,6 +2314,7 @@ algStatementWhenPreAssigns(list<Exp> exps, list<Integer> ints,
       <rest>
       >>
 
+// Helper to algStmtAssignArr.
 // Currently works only for CREF_IDENT.
 indexSpecFromCref(ComponentRef cref, Context context, Text preExp /*BUFP*/,
                   Text varDecls /*BUFP*/) ::=
@@ -2226,6 +2322,7 @@ match cref
 case CREF_IDENT(subscriptLst=subs as (_ :: _)) then
   daeExpCrefRhsIndexSpec(subs, context, preExp /*BUFC*/, varDecls /*BUFC*/)
 
+// Helper to algStmtIf.
 elseExpr(DAE.Else else_, Context context, Text varDecls /*BUFP*/) ::= 
   match else_
   case NOELSE then
@@ -2253,6 +2350,8 @@ elseExpr(DAE.Else else_, Context context, Text varDecls /*BUFP*/) ::=
     }
     >>
 
+// Generates the left hand side (for use on left hand side) of a component
+// reference.
 scalarLhsCref(Exp cref, Context context, Text preExp /*BUFP*/,
               Text varDecls /*BUFP*/) ::=
   match cref
@@ -2266,17 +2365,20 @@ scalarLhsCref(Exp cref, Context context, Text preExp /*BUFP*/,
   case _ then
     "ONLY IDENT SUPPORTED"
 
+// Like cref but with cast if type is integer.
 rhsCref(ComponentRef cref, ExpType ty) ::=
   match cref
   case CREF_IDENT then '<rhsCrefType(ty)><ident>'
   case CREF_QUAL  then '<rhsCrefType(ty)><ident>.<rhsCref(componentRef,ty)>'
   case _          then "rhsCref:ERROR"
 
+// Helper to rhsCref.
 rhsCrefType(ExpType type) ::=
   match type
   case ET_INT then "(modelica_integer)"
   case _      then ""
   
+// Generates code for an expression.
 daeExp(Exp exp, Context context, Text preExp /*BUFP*/,
        Text varDecls /*BUFP*/) ::=
   match exp
@@ -2306,12 +2408,14 @@ daeExp(Exp exp, Context context, Text preExp /*BUFP*/,
   case e as METARECORDCALL then daeExpMetarecordcall(e, context, preExp /*BUFC*/, varDecls /*BUFC*/)
   case _                   then "UNKNOWN_EXP"
 
+// Generates code for a string constant.
 daeExpSconst(String string, Text preExp /*BUFP*/, Text varDecls /*BUFP*/) ::=
   # strVar = tempDecl("modelica_string", varDecls /*BUFC*/)
   # escapedStr = Util.escapeModelicaStringToCString(string)
   # preExp += 'init_modelica_string(&<strVar>,"<escapedStr>");<\n>'
   strVar  
 
+// Generates code for a component reference.
 daeExpCrefRhs(Exp exp, Context context, Text preExp /*BUFP*/,
               Text varDecls /*BUFP*/) ::=
   match exp
@@ -2345,6 +2449,7 @@ daeExpCrefRhs(Exp exp, Context context, Text preExp /*BUFP*/,
       # preExp += 'index_alloc_<arrayType>(&<arrName>, &<spec1>, &<tmp>);<\n>'
       tmp
 
+// Helper to daeExpCrefRhs.
 daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
                        Text preExp /*BUFP*/, Text varDecls /*BUFP*/) ::=
   # nridx_str = listLength(subs)
@@ -2371,6 +2476,7 @@ daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context,
   # preExp += 'create_index_spec(&<tmp>, <nridx_str>, <idx_str>);<\n>'
   tmp
 
+// Helper to daeExpCrefRhs.
 daeExpCrefRhsArrayBox(Exp exp, Context context, Text preExp /*BUFP*/,
                       Text varDecls /*BUFP*/) ::=
 match exp
@@ -2384,6 +2490,7 @@ case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     # preExp += '<expTypeShort(aty)>_array_create(&<tmpArr>, &<cref(cref.componentRef)>, <dimsLenStr>, <dimsValuesStr>);<\n>'
     tmpArr
 
+// Generates code for a binary expression.
 daeExpBinary(Exp exp, Context context, Text preExp /*BUFP*/,
              Text varDecls /*BUFP*/) ::=
 match exp
@@ -2428,6 +2535,7 @@ case BINARY then
     '<var>'
   case _ then "daeExpBinary:ERR"
 
+// Generates code for a unary expression.
 daeExpUnary(Exp exp, Context context, Text preExp /*BUFP*/,
             Text varDecls /*BUFP*/) ::=
 match exp
@@ -2443,6 +2551,7 @@ case UNARY then
   case UPLUS_ARR  then "UPLUS_ARR_NOT_IMPLEMENTED"
   case _          then "daeExpUnary:ERR"
 
+// Generates code for a logical binary expression.
 daeExpLbinary(Exp exp, Context context, Text preExp /*BUFP*/,
               Text varDecls /*BUFP*/) ::=
 match exp
@@ -2454,6 +2563,7 @@ case LBINARY then
   case OR  then '(<e1> || <e2>)'
   case _   then "daeExpLbinary:ERR"
 
+// Generates code for a logical unary expression.
 daeExpLunary(Exp exp, Context context, Text preExp /*BUFP*/,
              Text varDecls /*BUFP*/) ::=
 match exp
@@ -2462,6 +2572,7 @@ case LUNARY then
   match operator
   case NOT then '(!<e>)'
 
+// Generates code for a relation expression.
 daeExpRelation(Exp exp, Context context, Text preExp /*BUFP*/,
                Text varDecls /*BUFP*/) ::=
 match exp
@@ -2499,6 +2610,7 @@ case rel as RELATION then
     case NEQUAL(ty = ET_REAL)      then '(<e1> != <e2>)'
     case _                         then "daeExpRelation:ERR"
 
+// Helper to daeExpRelation.
 daeExpRelationSim(Exp exp, Context context, Text preExp /*BUFP*/,
                   Text varDecls /*BUFP*/) ::=
 match exp
@@ -2522,6 +2634,7 @@ case rel as RELATION then
       # preExp += 'RELATIONGREATEREQ(<res>, <e1>, <e2>);<\n>'
       res
 
+// Generates code for an if expression.
 daeExpIf(Exp exp, Context context, Text preExp /*BUFP*/,
          Text varDecls /*BUFP*/) ::=
 match exp
@@ -2551,6 +2664,7 @@ case IFEXP then
 //  ((<condVar>)?<eThen>:<eElse>)
 //  >>
 
+// Generates code for a function call.
 daeExpCall(Exp call, Context context, Text preExp /*BUFP*/,
            Text varDecls /*BUFP*/) ::=
   match call
@@ -2663,11 +2777,13 @@ daeExpCall(Exp call, Context context, Text preExp /*BUFP*/,
     # preExp += '<retVar> = <daeExpCallBuiltinPrefix(builtin)><funName>(<argStr>);<\n>'
     retVar
 
+// Helper to daeExpCall.
 daeExpCallBuiltinPrefix(Boolean builtin) ::=
   match builtin
   case true  then ""
   case false then "_"
 
+// Generates code for an array expression.
 daeExpArray(Exp exp, Context context, Text preExp /*BUFP*/,
             Text varDecls /*BUFP*/) ::=
 match exp
@@ -2683,6 +2799,7 @@ case ARRAY then
   # preExp += 'array_alloc_<scalarPrefix><arrayTypeStr>(&<arrayVar>, <listLength(array)>, <params>);<\n>'
   arrayVar
 
+// Generates code for a matrix expression.
 daeExpMatrix(Exp exp, Context context, Text preExp /*BUFP*/,
              Text varDecls /*BUFP*/) ::=
   match exp
@@ -2716,6 +2833,7 @@ daeExpMatrix(Exp exp, Context context, Text preExp /*BUFP*/,
     # preExp += 'cat_alloc_<arrayTypeStr>(1, &<tmp>, <listLength(m.scalar)><vars2>);<\n>'
     tmp
 
+// Helper to daeExpMatrix.
 daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
                 Context context, Text preExp /*BUFP*/,
                 Text varDecls /*BUFP*/) ::=
@@ -2732,6 +2850,7 @@ daeExpMatrixRow(list<tuple<Exp,Boolean>> row, String arrayTypeStr,
   # preExp += preExp2
   varLstStr
 
+// Generates code for a cast expression.
 daeExpCast(Exp exp, Context context, Text preExp /*BUFP*/,
            Text varDecls /*BUFP*/) ::=
 match exp
@@ -2748,6 +2867,7 @@ case CAST then
     # preExp += 'cast_<from>_array_to_<to>(&<expVar>, &<tvar>);<\n>'
     tvar
 
+// Generates code for an asub expression.
 daeExpAsub(Exp exp, Context context, Text preExp /*BUFP*/,
            Text varDecls /*BUFP*/) ::=
   match exp
@@ -2781,6 +2901,7 @@ daeExpAsub(Exp exp, Context context, Text preExp /*BUFP*/,
   case _ then
     'OTHER_ASUB'
 
+// Generates code for a size expression.
 daeExpSize(Exp exp, Context context, Text preExp /*BUFP*/,
            Text varDecls /*BUFP*/) ::=
   match exp
@@ -2793,6 +2914,7 @@ daeExpSize(Exp exp, Context context, Text preExp /*BUFP*/,
     resVar
   case _ then "size(X) not implemented"
 
+// Generates code for a reduction expression.
 daeExpReduction(Exp exp, Context context, Text preExp /*BUFP*/,
                 Text varDecls /*BUFP*/) ::=
 match exp
@@ -2836,6 +2958,7 @@ case REDUCTION(path=IDENT(name=op), range=RANGE) then
     >>
   res
 
+// Helper to daeExpReduction.
 daeExpReductionFnName(String reduction_op, String type) ::=
   match reduction_op
   case "sum" then (
@@ -2852,6 +2975,7 @@ daeExpReductionFnName(String reduction_op, String type) ::=
   )
   case _ then reduction_op
 
+// Helper to daeExpReduction.
 daeExpReductionStartValue(String reduction_op, String type) ::=
   match reduction_op
   case "min" then (
@@ -2870,6 +2994,7 @@ daeExpReductionStartValue(String reduction_op, String type) ::=
   case "product" then "1"
   case _ then "UNKNOWN_REDUCTION"
 
+// Generates code for a valueblock expression.
 daeExpValueblock(Exp exp, Context context, Text preExp /*BUFP*/,
                  Text varDecls /*BUFP*/) ::=
 match exp
@@ -2899,6 +3024,7 @@ case exp as VALUEBLOCK then
       >>
   res
 
+// Helper to daeExpAsub.
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
@@ -2913,6 +3039,7 @@ arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context context,
   (*<arrayType>_element_addr(&<arrName>, <dimsLenStr>, <dimsValuesStr>))
   >>
 
+// Generates code for a meta modelica list expression.
 daeExpList(Exp exp, Context context, Text preExp /*BUFP*/,
            Text varDecls /*BUFP*/) ::=
 match exp
@@ -2922,6 +3049,7 @@ case LIST then
   # preExp += '<tmp> = <expPart>;<\n>'
   tmp
 
+// Helper to daeExpList.
 daeExpListToCons(list<Exp> listItems, Context context, Text preExp /*BUFP*/,
                  Text varDecls /*BUFP*/) ::=
   match listItems
@@ -2933,6 +3061,7 @@ daeExpListToCons(list<Exp> listItems, Context context, Text preExp /*BUFP*/,
     mmc_mk_cons(<expPart>, <restList>)
     >>
 
+// Generates code for a meta modelica cons expression.
 daeExpCons(Exp exp, Context context, Text preExp /*BUFP*/,
            Text varDecls /*BUFP*/) ::=
 match exp
@@ -2943,6 +3072,7 @@ case CONS then
   # preExp += '<tmp> = mmc_mk_cons(<carExp>, <cdrExp>);<\n>'
   tmp
 
+// Generates code for a meta modelica tuple expression.
 daeExpMetaTuple(Exp exp, Context context, Text preExp /*BUFP*/,
                 Text varDecls /*BUFP*/) ::=
 match exp
@@ -2955,6 +3085,7 @@ case META_TUPLE then
   # preExp += '<tmp> = mmc_mk_box<start>0, <args>);<\n>'
   tmp
 
+// Generates code for a meta modelica option expression.
 daeExpMetaOption(Exp exp, Context context, Text preExp /*BUFP*/,
                  Text varDecls /*BUFP*/) ::=
   match exp
@@ -2964,6 +3095,7 @@ daeExpMetaOption(Exp exp, Context context, Text preExp /*BUFP*/,
     # expPart = daeExpMetaHelperConstant(e, context, preExp /*BUFC*/, varDecls /*BUFC*/)
     'mmc_mk_some(<expPart>)'
 
+// Generates code for a meta modelica record call expression.
 daeExpMetarecordcall(Exp exp, Context context, Text preExp /*BUFP*/,
                      Text varDecls /*BUFP*/) ::=
 match exp
@@ -2980,12 +3112,14 @@ case METARECORDCALL then
   # preExp += '<tmp> = <box>;<\n>'
   tmp
 
+// Generates a constant meta modelica value.
 daeExpMetaHelperConstant(Exp e, Context context, Text preExp /*BUFP*/,
                          Text varDecls /*BUFP*/) ::=
   # expPart = daeExp(e, context, preExp /*BUFC*/, varDecls /*BUFC*/)
   daeExpMetaHelperConstantNameType(expPart, Exp.typeof(e), context,
                                    preExp /*BUFC*/, varDecls /*BUFC*/)
 
+// Helper to daeExpMetaHelperConstant.
 daeExpMetaHelperConstantNameType(Text varname, ExpType type, Context context,
                                  Text preExp /*BUFP*/,
                                  Text varDecls /*BUFP*/) ::=
@@ -3007,6 +3141,7 @@ daeExpMetaHelperConstantNameType(Text varname, ExpType type, Context context,
     'mmc_mk_box<start>2, &<underscorePath(cname)>__desc<args>)'
   case _          then varname
 
+// Helper to determine how mmc_mk_box should be called.
 daeExpMetaHelperBoxStart(Integer numVariables) ::=
   match numVariables
   case 0
@@ -3021,11 +3156,13 @@ daeExpMetaHelperBoxStart(Integer numVariables) ::=
   case 9 then '<numVariables>('
   case _ then '(<numVariables>, '
 
+// Declares a temporary variable in varDecls and returns the name.
 tempDecl(String ty, Text varDecls /*BUFP*/) ::=
   # newVar = 'tmp<System.tmpTick()>'
   # varDecls += '<ty> <newVar>;<\n>'
   newVar
 
+// Generates type for a variable.
 varType(Variable var) ::=
 match var
 case var as VARIABLE then
@@ -3034,6 +3171,7 @@ case var as VARIABLE then
   else
     expTypeArrayIf(var.ty)
 
+// Helper to writeOutVarRecordMembers.
 expTypeRW(DAE.ExpType type) ::=
   match type
   case ET_INT         then "TYPE_DESC_INT"
