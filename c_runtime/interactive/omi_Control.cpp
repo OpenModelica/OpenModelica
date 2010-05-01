@@ -499,19 +499,39 @@ void parseMessageFromClient(string message) {
 		string end = message.substr(checkForSharpSymbol + 1);
 
 		if (end.compare("end") == 0) {
-			string operationANDAttribute = message.substr(0,
+			string operation;
+			string seqNumber;
+			string attributes;
+
+			string opANDseqANDattr = message.substr(0,
 					checkForSharpSymbol);
 			string::size_type checkForSharpSymbolAfterOperation =
-					operationANDAttribute.find_first_of("#");
-			string operation;
-			string attributes;
+					opANDseqANDattr.find_first_of("#");
+
 			if (checkForSharpSymbolAfterOperation != string::npos) {
-				operation = operationANDAttribute.substr(0,
+				operation = opANDseqANDattr.substr(0,
 						checkForSharpSymbolAfterOperation);
-				attributes = operationANDAttribute.substr(
+				
+				string seqANDattr = opANDseqANDattr.substr(
 						checkForSharpSymbolAfterOperation + 1);
-			} else {
-				operation = operationANDAttribute;
+
+				string::size_type checkForSharpSymbolAfterSeqNumber =
+						seqANDattr.find_first_of("#");
+				if (checkForSharpSymbolAfterSeqNumber != string::npos) {
+					seqNumber = seqANDattr.substr(0,
+						checkForSharpSymbolAfterSeqNumber);
+					attributes = seqANDattr.substr(
+						checkForSharpSymbolAfterSeqNumber + 1);
+				}
+				else {
+					seqNumber = seqANDattr; //Hier muss geschaut werden ob das # zwischen seq und attr vergessen wurde
+					// und es muss ein standard für die seq festgelegt werden!
+				}
+			}
+			else {
+				createMessage( //TODO Operation ist nicht mit einen # getrennt!
+						"Error: Sequence number is missing");
+				return;
 			}
 			/*
 			 * To optimize the reaction on a user interaction, most used operations should
@@ -588,9 +608,12 @@ void parseMessageFromClient(string message) {
 				createProducerAndConsumer();
 			} else {
 				createMessage(
-						"Error: Unknown operation [accept: start, pause, stop, shutdown, changevalue, changetime, init]");
+						"Error: Unknown operation [please view documentation]");
 				return;
 			}
+			ostringstream formatter;
+			formatter << "done#" << seqNumber << "#end";
+			createMessage(formatter.str()); //TODO 20100217 pv Refactoring because of error handling, otherwise an incorrect also replies with an done#end
 		} else {
 			createMessage(
 					"Error: Missing 'end' string at the end of the message");
@@ -600,7 +623,6 @@ void parseMessageFromClient(string message) {
 		createMessage("Error: Missing '#' symbol to separate tokens from end");
 		return;
 	}
-	createMessage("done#end"); //TODO 20100217 pv Refactoring because of error handling, otherwise an incorrect also replies with an done#end
 }
 
 /*****************************************************************
