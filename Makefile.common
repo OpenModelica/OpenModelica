@@ -36,7 +36,7 @@ release: omc
 c_runtime: mkbuilddirs
 	$(MAKE) -C c_runtime -f $(defaultMakefileTarget)
 
-docs:
+docs: mkbuilddirs
 	(cp -p doc/*.pdf doc/*.txt doc/OpenModelicaAPI-Howto/*.pdf $(builddir_doc)/omc)
 	rm -f build/doc/omc/CMakeLists.txt
 	(cp -p Examples/*.* $(builddir_doc)/omc/testmodels/)

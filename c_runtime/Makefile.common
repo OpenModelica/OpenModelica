@@ -28,7 +28,8 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a
 
-all : libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a libsendData.a install
+.PHONY : libsendData.a libsendDataHumbug.a
+all : libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) install
 
 #recompile all if a header changes!
 $(SIMOBJS) : $(HFILES)
@@ -49,15 +50,14 @@ libf2c/libf2c.a :
 	cd libf2c && $(MAKE) -f $(LIBF2CMAKEFILE)
 	ranlib $@
 
-libsendData.a : sendData/sendData.cpp sendData/sendData.h sendData/sendData.pro
-	$(PLTPKGCMD)
-	ranlib sendData/release/$@
+libsendDataHumbug.a :
+	make -C sendData -f Makefile.humbug
 
 install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a omdevinstall
 	cp $(HFILES) $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
-	cp sendData/release/libsendData.a $(builddir_lib)/
+	cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	cp interactive/libinteractive.a $(builddir_lib)/
 	@make -C java_interface -f $(JAVAMAKEFILE) && \
 	make -C java_interface -f $(JAVAMAKEFILE) install || \
@@ -73,5 +73,5 @@ clean :
 	rm -f $(SIMOBJS)
 	cd sendData && rm -fr release debug *sendData*.o *sendData*.a
 	rm -rf sendData/release sendData/debug
-	rm -f sendData.o sendData.a sendData/releasesendData.o sendData/Makefile
+	rm -f sendData.o sendData.a sendData/sendDataHumbug.o sendData/releasesendData.o sendData/Makefile
 

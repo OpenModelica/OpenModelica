@@ -6,8 +6,6 @@
 # $Id$
 #
 
-ANTLR_HOME = @antlrhome@
-
 ANTLR_INCP = -I@antlrinc@
 ANTLR_LIBP = -L@antlrlib@
 LIBSOCKET = @LIBSOCKET@
@@ -36,13 +34,8 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55)
-
-ifdef QTHOME
-PLTPKGFLAGS = -L../../build/lib/omc -lsendData -L$(QTHOME)/lib -lQtNetwork -lQtCore -lQtGui
-else
-PLTPKGFLAGS = -L../../build/lib/omc -lsendData
-endif
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
+  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@
 
 PROG = omcd
 RMLC	= @rmlc_bin@ -g -Wc,-O3 #-Wr,-East,-Ecps,-Efol

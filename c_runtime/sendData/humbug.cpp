@@ -41,7 +41,8 @@ using namespace std;
 
 void _errmesg()
 {
-    cerr << "OMC is compiled without Qt. Check the QTHOME environment variable and recompile." << endl;
+    cerr << "OpenModelica is compiled without Qt. Configure it with-sendData-Qt and recompile." << endl;
+    cerr << "Or use a command like plot2() that does not require Qt." << endl;
 }
 
 bool Static::enabled_ = false;

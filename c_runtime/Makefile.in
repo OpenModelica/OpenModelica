@@ -13,18 +13,14 @@ UNAME := $(shell uname -m)
 CMDFPUFLAGS := `case ${UNAME} in i[3456]86) echo "-msse2 -mfpmath=sse";; x86_64) echo "-msse2 -mfpmath=sse -fPIC";; *) echo "";; esac`
 FPUFLAGS := ${CMDFPUFLAGS}
 
-ifdef QTHOME
-PLTPKGCMD = cd ./sendData && $(QTHOME)/bin/qmake && $(MAKE) -f Makefile
-else
-PLTPKGCMD = mkdir -p sendData/release && \
-g++ -c -o sendData/libsendData.o sendData/humbug.cpp && \
-ar -ru sendData/release/libsendData.a sendData/libsendData.o
-endif
-
 LIBF2CMAKEFILE = makefile.u
 JAVAMAKEFILE = Makefile
 INTERACTIVEMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
+LIBSENDDATA = lib@LIBSENDDATA@.a
 include Makefile.common
+
+libsendData.a :
+	cd ./sendData && qmake && $(MAKE) -f Makefile
 
 omdevinstall:

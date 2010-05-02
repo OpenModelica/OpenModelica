@@ -1847,11 +1847,7 @@ void System_5finit(void)
 #endif
   set_ldflags("-lc_runtime");
 
-#ifdef __APPLE_CC__
-  putenv("SENDDATALIBS= -lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon");
-#else
-  putenv("SENDDATALIBS= -lsendData -lQtNetwork -lQtCore -lQtGui");
-#endif
+  putenv(LDFLAGS_SENDDATA /* Defined in the Makefile; from the configure script */);
    /* set the SENDDATALIBS environment variable */
   putenv(strdup(sendDataLibs));
 }
