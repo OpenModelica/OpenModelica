@@ -354,6 +354,13 @@ end crefIdent;
 
 public function stripCrefIdentSliceSubs "
 Author BZ
+
+Strips the SLICE-subscripts fromt the -last- subscript list. All other subscripts are not changed.
+
+For example
+x[1].y[{1,2},3,{1,3,7}] => x[1].y[3]
+
+Alternative names: stripLastSliceSubs
 "
   input ComponentRef inCref;
   output ComponentRef outCref;
@@ -370,7 +377,7 @@ algorithm
     then DAE.CREF_IDENT(id,ty,subs);
     case (DAE.CREF_QUAL(componentRef = cr, identType=ty, subscriptLst=subs, ident=id))
       equation
-        outCref = crefStripSubs(cr);
+        outCref = stripCrefIdentSliceSubs(cr);
       then
         DAE.CREF_QUAL(id,ty,subs,outCref);
   end matchcontinue;
@@ -1273,6 +1280,36 @@ algorithm
   end matchcontinue;
 end extendCref;
 
+public function applyExpSubscripts "
+author: PA
+Takes an arbitrary expression and applies subscripts to it. This is done by creating asub
+expressions given the original expression and then simplify them.
+Note: The subscripts must be INDEX
+
+alternative names: subsriptExp (but already taken), subscriptToAsub
+"
+  input Exp e;
+  input list<DAE.Subscript> subs; 
+  output Exp res;
+algorithm
+  res := matchcontinue(e,subs)
+  local list<DAE.Exp> expl;
+    DAE.Exp s;
+    DAE.Subscript sub;
+    
+    case(e,{}) then e;
+      
+    case(e,sub::subs) equation
+      // Apply one subscript at a time, so simplify works fine on it.
+     s = subscriptExp(sub);
+     res = applyExpSubscripts(simplify(DAE.ASUB(e,{s})),subs);
+    then res;
+      
+  end matchcontinue;
+end applyExpSubscripts ;
+  
+
+
 public function makeAsub "creates an ASUB given an expression and an index"
   input Exp e;
   input Integer indx;
@@ -1711,8 +1748,8 @@ algorithm
     {DAE.ARRAY(array=v1),DAE.ARRAY(array=v2)} = expl;
     expl = Static.elabBuiltinCross2(v1,v2);
     tp = typeof(e);
-    scalar = not isArrayType(typeof(Util.listFirst(v1)));
-    outExp = simplify(DAE.ARRAY(tp,scalar,expl));
+    scalar = not isArrayType(unliftArray(tp)); // Since there is a bug somewherein simplify that gives wrong types for the arrays we take the type from cross instead
+    outExp = simplify(DAE.ARRAY(tp,scalar,expl));    
   then outExp;
 
   end matchcontinue;
@@ -3904,6 +3941,53 @@ algorithm
   end matchcontinue;
 end allTerms;
 
+public function expand "expands products
+For example
+a *(b+c) => a*b + a*c
+" 
+  input Exp e;
+  output Exp outE;
+algorithm
+  outE := matchcontinue(e)
+  local DAE.ExpType tp;
+    DAE.Operator op;
+    Exp e1,e2,e21,e22;
+    case(DAE.BINARY(e1,DAE.MUL(tp),e2)) equation
+      DAE.BINARY(e21,op,e22) = expand(e2);
+      true = isAddOrSub(op);      
+    then DAE.BINARY(DAE.BINARY(e1,DAE.MUL(tp),e21),op,DAE.BINARY(e1,DAE.MUL(tp),e22));
+    case(e) then e;     
+  end matchcontinue;
+end expand;
+
+public function isAddOrSub "returns true if operator is ADD or SUB"
+  input Operator op;
+  output Boolean res;
+algorithm
+  res := isAdd(op) or isSub(op);    
+end isAddOrSub;
+
+public function isAdd "returns true if operator is ADD"
+  input Operator op;
+  output Boolean res;
+algorithm
+  res := matchcontinue(op)
+    case(DAE.ADD(_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isAdd;
+
+public function isSub "returns true if operator is SUB"
+  input Operator op;
+  output Boolean res;
+algorithm
+  res := matchcontinue(op)
+    case(DAE.SUB(_)) then true;
+    case(_) then false;
+  end matchcontinue;
+end isSub;
+
+
 public function terms "
 function: terms
   author: PA
@@ -3959,17 +4043,17 @@ public function quotient
 "function: quotient
   author: PA
   Returns the quotient of an expression.
-  For instance e = p/q returns (p,q) for nominator p and denominator q."
+  For instance e = p/q returns (p,q) for numerator p and denominator q."
   input Exp inExp;
-  output Exp nom;
+  output Exp num;
   output Exp denom;
 algorithm
-  (nom,denom):=
+  (num,denom):=
   matchcontinue (inExp)
     local
       Exp e1,e2,p,q;
       Type tp;
-    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = _),exp2 = e2)) then (e1,e2);  /* nominator denominator */
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = _),exp2 = e2)) then (e1,e2);  /* (numerator,denominator) */
     case (DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = _),exp2 = e2))
       equation
         (p,q) = quotient(e1);
@@ -4677,9 +4761,12 @@ algorithm
   end matchcontinue;
 end typeof;
 
-public function liftArrayRight
-"This function has the same functionality
- as Types.liftArrayType but for DAE.ExpType"
+public function liftArrayRight "
+This function adds an array dimension to a type on the right side, i.e.
+liftArrayRigth(Real[2,3],SOME(4)) => Real[2,3,4].
+
+This function has the same functionality as Types.liftArrayType but for DAE.ExpType.'
+"
   input Type inType;
   input Option<Integer> inIntegerOption;
   output Type outType;
@@ -4701,6 +4788,29 @@ algorithm
         DAE.ET_ARRAY(ty,{SOME(i)});
   end matchcontinue;
 end liftArrayRight;
+
+public function liftArrayLeft "
+author: PA
+This function adds an array dimension to a type on the left side, i.e.
+liftArrayRigth(Real[2,3],SOME(4)) => Real[4,2,3]
+"
+  input Type inType;
+  input Option<Integer> inIntegerOption;
+  output Type outType;
+algorithm
+  outType:=
+  matchcontinue (inType,inIntegerOption)
+    local
+      Type ty_1,ty;
+      list<Option<Integer>> dims;
+      Option<Integer> dim;
+      
+    case (DAE.ET_ARRAY(ty,dims),dim) then DAE.ET_ARRAY(ty,dim::dims);
+      
+    case (ty,dim)then DAE.ET_ARRAY(ty,{dim});
+      
+  end matchcontinue;
+end liftArrayLeft;
 
 protected function typeofOp
 "function: typeofOp
@@ -5078,6 +5188,9 @@ algorithm
       Type ty,ty2,tp,tp2,ty1;
       Ident s1,s2;
       list<Exp> exp_lst,exp_lst_1;
+      DAE.ComponentRef cr1,cr2;
+      Boolean b;
+      
     case (e,oper,e1,e2)
       equation
         true = isConst(e1);
@@ -5370,6 +5483,17 @@ algorithm
         res = makeProductLst(exp_lst_1);
       then
         res;
+        
+        //relation: cr1 == cr2, where cr1 and cr2 are the same 
+    case(_,DAE.EQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_)) equation
+      true = crefEqual(cr1,cr2);
+    then DAE.BCONST(true);
+    
+    //relation: cr1 <> cr2 . where cr1 and cr2 are the same 
+    case(_,DAE.NEQUAL(_),DAE.CREF(cr1,_),DAE.CREF(cr2,_)) equation
+      true = crefEqual(cr1,cr2);
+    then DAE.BCONST(false);
+      
     case (e,_,_,_) then e;
   end matchcontinue;
 end simplifyBinary;
