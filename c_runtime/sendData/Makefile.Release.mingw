@@ -65,7 +65,10 @@ DESTDIR_TARGET = release/libsendData.a
 ####### Build rules
 
 first: all
-all: Makefile.Release.mingw  $(DESTDIR_TARGET)
+all: createDir Makefile.Release.mingw  $(DESTDIR_TARGET)
+
+createDir:
+	$(MKDIR) -p ./release
 
 $(DESTDIR_TARGET):  $(OBJECTS)
 	$(LIB) "$(DESTDIR_TARGET)" $(OBJECTS)
