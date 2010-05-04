@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2009 - currentYear, Adrian Pop [adrpo@ida.liu.se] All rights reserved.
- *
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-CurrentYear, Linköping University,
