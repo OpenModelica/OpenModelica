@@ -5734,21 +5734,24 @@ end mulListIntegerOpt;
 public type StatefulBoolean = Boolean[:] "A single boolean value that can be updated (a destructive operation)";
 
 public function makeStatefulBoolean
+"Create a boolean with state (that is, it is mutable)"
   input Boolean b;
-  output Boolean[:] sb;
+  output StatefulBoolean sb;
 algorithm
   sb := arrayCreate(1, b);
 end makeStatefulBoolean;
 
 public function getStatefulBoolean
-  input Boolean[:] sb;
+"Create a boolean with state (that is, it is mutable)"
+  input StatefulBoolean sb;
   output Boolean b;
 algorithm
   b := sb[1];
 end getStatefulBoolean;
 
 public function setStatefulBoolean
-  input Boolean[:] sb;
+"Update the state of a mutable boolean"
+  input StatefulBoolean sb;
   input Boolean b;
 algorithm
   _ := arrayUpdate(sb,1,b);
