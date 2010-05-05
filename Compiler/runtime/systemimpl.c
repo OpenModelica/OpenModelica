@@ -780,17 +780,6 @@ RML_BEGIN_LABEL(System__compileCFile)
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__systemCall)
-{
-  int ret_val;
-  char* str = RML_STRINGDATA(rmlA0);
-  ret_val  = system(str);
-  rmlA0 = (void*) mk_icon(ret_val);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__pathDelimiter)
 {
   rmlA0 = (void*) mk_scon("/");
@@ -2571,18 +2560,6 @@ RML_BEGIN_LABEL(System__compileCFile)
 }
 RML_END_LABEL
 
-
-RML_BEGIN_LABEL(System__systemCall)
-{
-  int ret_val;
-  char* str = RML_STRINGDATA(rmlA0);
-  ret_val = system(str);
-  rmlA0 = (void*) mk_icon(ret_val);
-
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__cd)
 {
   char* str = RML_STRINGDATA(rmlA0);
@@ -3735,6 +3712,30 @@ RML_BEGIN_LABEL(System__disableTrace)
     fprintf(stderr, "System__disableTrace\n"); fflush(stderr);
   }
   rml_trace_enabled = 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/* is the same for both Windows/Linux */
+RML_BEGIN_LABEL(System__systemCall)
+{
+  int ret_val;
+  char* str = RML_STRINGDATA(rmlA0);
+
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "System.systemCall: %s\n", str); fflush(stderr);
+  }
+
+  ret_val = system(str);
+
+  if (rml_trace_enabled)
+  {
+    fprintf(stderr, "System.systemCall: returned value: %d\n", ret_val); fflush(stderr);
+  }
+
+  rmlA0 = (void*) mk_icon(ret_val);
+
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
