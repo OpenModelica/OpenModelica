@@ -252,7 +252,7 @@ int startNonInteractiveSimulation(int argc, char**argv){
 	  if (measure_time_flag)
 		  measure_start_time = clock();
 
-	  callSolver(argc, argv, method, start, stop, stepSize, outputSteps, tolerance);
+	  retVal = callSolver(argc, argv, method, start, stop, stepSize, outputSteps, tolerance);
 
 	  if (measure_time_flag)
 	     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
