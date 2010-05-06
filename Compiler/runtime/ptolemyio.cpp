@@ -49,6 +49,7 @@ extern "C"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>
 void print_error_buf_impl(const char* str);
 
 
@@ -109,6 +110,9 @@ void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
     lst = mk_nil();
     int j=0;
     while(j<datasize) {
+      const char* buf1;
+      char* buf2;
+      
       stream.getline(buf,255);
     
       if (string(buf).find("DataSet:") == 1) {
@@ -117,7 +121,19 @@ void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
       }
       string values(buf);
       int commapos=values.find(",");
-      val = atof(values.substr(commapos+1).c_str()); // Second value after comma
+      
+      buf1 = values.substr(commapos+1).c_str();
+      val = strtod(buf1,&buf2); // Second value after comma
+      if (buf1 == buf2) {
+        // We may be trying to parse Infinity on a Windows platform.
+        // Don't we feel stupid expecting this to work?
+        // Let's do these extra tests on Linux as well to check for NaN
+        if (0 == strncmp(buf1,"Inf",3)) val = INFINITY;
+        else if (0 == strncmp(buf1,"-Inf",4)) val = -INFINITY;
+        else if (0 == strncmp(buf1,"inf",3)) val = INFINITY;
+        else if (0 == strncmp(buf1,"-inf",4)) val = -INFINITY;
+        else val = NAN;
+      }
    
       lst = (void*)mk_cons(Values__REAL(mk_rcon(val)),lst);
       j++;
