@@ -8936,7 +8936,7 @@ algorithm
         (cache,cenv,ih,_,DAE.DAE(daeElts,funcs),csets_1,ty,st,_,_) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(),mod, pre, csets, c, inst_dims, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(n));
-        derFuncs = getDeriveAnnotation(cd,fpath,cache,env,pre);
+        derFuncs = getDeriveAnnotation(cd,fpath,cache,cenv,pre);
 
         (cache,dae1) = instantiateDerivativeFuncs(cache,env,ih,derFuncs,fpath);
 
