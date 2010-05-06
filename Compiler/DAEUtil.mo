@@ -2981,6 +2981,12 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
+    case (DAE.STMT_RETURN(),i)
+      equation
+        indent(i);
+        Print.printBuf("return;\n");
+      then
+        ();
     case (DAE.STMT_BREAK(),i)
       equation
         indent(i);
