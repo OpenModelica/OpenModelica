@@ -13925,7 +13925,7 @@ algorithm
         // dae to be added in the case where the edge is broken.
         zeroVector = Exp.makeRealArrayOfZeros(dim1);
         breakDAEElements = 
-          {DAE.EQUATION(zeroVector,
+          {DAE.ARRAY_EQUATION({dim1}, zeroVector,
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
                                  false, false, DAE.ET_REAL(), inlineType1), // use the inline type
                         source // set the origin of the element
