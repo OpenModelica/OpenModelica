@@ -7,7 +7,6 @@
 # $Id$
 #
 
-
 ifdef USE_CORBA
  CORBAOBJ = $(srcdir)/runtime/corbaimpl.o $(srcdir)/runtime/omc_communication_impl.o $(srcdir)/runtime/omc_communication.o
  CORBALIB =
