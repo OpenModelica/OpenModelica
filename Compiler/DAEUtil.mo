@@ -2661,16 +2661,15 @@ algorithm
   end matchcontinue;
 end dumpExtObjectClass;
 
-public function printInlineTypeStr "
-Print what kind of inline we have
-"
-input DAE.InlineType it;
-output String str;
+public function printInlineTypeStr 
+"Print what kind of inline we have"
+  input DAE.InlineType it;
+  output String str;
 algorithm
   str := matchcontinue(it)
     case(DAE.NO_INLINE) then "No inline";
-      case(DAE.AFTER_INDEX_RED_INLINE) then "Inline after index reduction";
-        case(DAE.NORM_INLINE) then "Inline before index reduction";
+    case(DAE.AFTER_INDEX_RED_INLINE) then "Inline after index reduction";
+    case(DAE.NORM_INLINE) then "Inline before index reduction";
   end matchcontinue;
 end printInlineTypeStr;
 
@@ -2717,15 +2716,19 @@ protected function dumpFunction
 algorithm
   _ := matchcontinue (inElement)
     local
-      String fstr;
+      String fstr, inlineTypeStr;
       Absyn.Path fpath;
       list<DAE.Element> daeElts;
       DAE.Type t;
-    case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t)
+      DAE.InlineType inlineType;
+      
+    case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_DEF(body = daeElts)::_),type_ = t)
       equation
         Print.printBuf("function ");
         fstr = Absyn.pathString(fpath);
         Print.printBuf(fstr);
+        inlineTypeStr = dumpInlineTypeStr(inlineType);
+        Print.printBuf(inlineTypeStr); 
         Print.printBuf("\n");
         dumpFunctionElements(daeElts);
         Print.printBuf("end ");
@@ -2733,12 +2736,13 @@ algorithm
         Print.printBuf(";\n\n");
       then
         ();
-      case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_EXT(body = daeElts)::_),type_ = t)
+      case DAE.FUNCTION(path = fpath,inlineType=inlineType,functions = (DAE.FUNCTION_EXT(body = daeElts)::_),type_ = t)
        local String fstr,daestr,str;
       equation
         fstr = Absyn.pathString(fpath);
+        inlineTypeStr = dumpInlineTypeStr(inlineType);
         daestr = dumpElementsStr(daeElts);
-        str = Util.stringAppendList({"function ",fstr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
+        str = Util.stringAppendList({"function ",fstr,inlineTypeStr,"\n",daestr,"\nexternal \"C\";\nend ",fstr,";\n\n"});
         Print.printBuf(str);
       then
         ();
@@ -2759,6 +2763,17 @@ algorithm
     case _ then ();
   end matchcontinue;
 end dumpFunction;
+
+protected function dumpInlineTypeStr
+  input DAE.InlineType inlineType;
+  output String str;
+algorithm
+  str := matchcontinue(inlineType)
+    case(DAE.NO_INLINE) then "";
+    case(DAE.AFTER_INDEX_RED_INLINE) then " \"Inline after index reduction\"";
+    case(DAE.NORM_INLINE) then " \"Inline before index reduction\"";
+  end matchcontinue;
+end dumpInlineTypeStr;
 
 protected function printRecordConstructorInputsStr "help function to dumpFunction. Prints the inputs of a record constructor"
   input DAE.Type tp;

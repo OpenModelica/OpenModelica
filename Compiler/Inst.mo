@@ -2623,6 +2623,8 @@ algorithm
       list<DAE.Type> types;
       Integer dimension;
       DAE.EqualityConstraint result;
+      DAE.InlineType inlineType;
+      
     case(cache, env, {})
       then NONE;
     case(cache, env, SCode.CLASSDEF(classDef = classDef as SCode.CLASS(name = "equalityConstraint", restriction = SCode.R_FUNCTION,
@@ -2642,7 +2644,9 @@ algorithm
         /*print("dimension: ");
         print(intString(dimension));
         print("\n");*/
-      then SOME((path, dimension));
+        // adrpo: get the inline type of the function
+        inlineType = isInlineFunc2(classDef);
+      then SOME((path, dimension, inlineType));
     case(cache, env, _ :: tail)
       then equalityConstraint(cache, env, tail);
   end matchcontinue;
@@ -13712,6 +13716,7 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
+      DAE.InlineType inlineType1, inlineType2;
 
     /* connections to outer components */
     case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph)
@@ -13883,8 +13888,8 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of connectors with an equality constraint.*/
-    case (cache,env,ih,sets,pre,c1,f1,t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1))),_),vt1,
-                                c2,f2,t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2))),_),vt2,
+    case (cache,env,ih,sets,pre,c1,f1,t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1,inlineType1))),_),vt1,
+                                c2,f2,t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2,inlineType2))),_),vt2,
                                 flowPrefix,io1,io2,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)))
       local
@@ -13922,7 +13927,7 @@ algorithm
         breakDAEElements = 
           {DAE.EQUATION(zeroVector,
                         DAE.CALL(fpath1,{DAE.CREF(c1_1, DAE.ET_OTHER()), DAE.CREF(c2_1, DAE.ET_OTHER())},
-                                 false, false, DAE.ET_REAL(), DAE.NO_INLINE()),
+                                 false, false, DAE.ET_REAL(), inlineType1), // use the inline type
                         source // set the origin of the element
                         )};
         graph = ConnectionGraph.addConnection(graph, c1_1, c2_1, breakDAEElements);

@@ -626,7 +626,9 @@ public type Type = tuple<TType, Option<Absyn.Path>> "
 - Type";
 
 public
-type EqualityConstraint = Option<tuple<Absyn.Path, Integer>>;
+type EqualityConstraint = Option<tuple<Absyn.Path, Integer, InlineType>>
+  "contains the path to the equalityConstraint function, 
+   the dimension of the output and the inline type of the function";
 
 public constant Type T_REAL_DEFAULT    = (T_REAL({}),NONE());
 public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
