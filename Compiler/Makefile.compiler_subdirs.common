@@ -1,0 +1,65 @@
+#
+# A common Makefile for omc_release, omc_debug, omc_profiler
+# Should be used for both OMDev and Linux
+#
+
+include $(srcdir)/Makefile.common
+
+all : .testvariables $(ALLMO) $(SRCSIGX)
+	# Updated dependencies; reload make and compile the target
+	$(MAKE) -f $(MAKETARGET) $(PROG)
+
+SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
+SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
+
+.SUFFIXES: .o .mo .h .c
+.PHONY: all vctarget absyn_subdir clean reallyclean $(SUBDIRS)
+
+$(ALLMO): %.mo : $(srcdir)/%.mo
+	cp $< $@
+
+$(SRCO): %.o : %.c %.h
+	$(RMLC) $(RMLCFLAGS) -c $<
+
+%.c %.h : %.mo
+	$(RMLC) $(RMLCFLAGS) +C $<
+
+%.h : %.c
+
+$(SRCHSRCDIR) : $(srcdir)/%.h : %.h
+	cp $< $@
+
+$(SRCSIGX): %.sigx : %.mo
+	$(srcdir)/rml2sig/rmldep-new.sh $(RML) $<
+	@touch $@
+
+vctarget: $(SRCC) absyn_subdir
+
+absyn_subdir:
+	(cd $(srcdir)/absyn_builder && $(MAKE) -f $(MAKETARGET) vctarget)
+
+$(srcdir)/runtime: $(SRCHSRCDIR)
+	$(MAKE) -C $@ -f $(MAKETARGET)
+$(srcdir)/absyn_builder: $(SRCHSRCDIR)
+	$(MAKE) -C $@ -f $(MAKETARGET)
+$(srcdir)/modpar: $(SRCHSRCDIR)
+	$(MAKE) -C $@ -f $(MAKETARGET)
+
+clean:
+	for d in $(SUBDIRS); do \
+		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
+	done
+	(cd $(srcdir) && $(RM) $(SRCH))
+	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx)
+
+reallyclean: clean
+	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx) $(ALLMO:.mo=.srz) $(PROG)$(EXEEXT) 
+
+# don't remove these files after intermediate build steps
+.PRECIOUS: Makefile $(ALLMO)
+
+Makefile: Makefile.in
+	$(top_builddir)/config.status Makefile
+
+## dependencies
+include $(srcdir)/.depend

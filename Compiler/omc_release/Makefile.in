@@ -1,8 +1,6 @@
 #
 # Makefile for omc
 #
-# David Kågedal <x97davka@ida.liu.se>
-#
 # $Id$
 #
 
@@ -15,7 +13,7 @@ USE_CORBA = @USE_CORBA@
 
 SHELL	= /bin/sh
 CC	= gcc
-CFLAGS	= $(USE_CORBA)
+CFLAGS	= $(USE_CORBA) -O3
 RMLHOME	= @rmlhome@
 RMLINC  = -I$(RMLHOME)/include/plain
 
@@ -23,7 +21,6 @@ EXEEXT  = @EXEEXT@
 
 srcdir = ..
 top_builddir = ../..
-include $(srcdir)/Makefile.common
 
 ifdef USE_CORBA
  CORBALIBS=@CORBALIBS@
@@ -39,66 +36,10 @@ RMLC	= @rmlc_bin@
 RML	= $(RMLHOME)/bin/rml
 RMLCFLAGS = -Wr,-ftrace
 
+MAKETARGET = Makefile
+include $(srcdir)/Makefile.compiler_subdirs.common
+.testvariables:
+	# You're using the proper Unix Makefile. Thanks for making my life easier.
 
-
-SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
-
-all : $(ALLMO) $(SRCSIGX)
-	# Updated dependencies; reload make and compile the target
-	$(MAKE) $(PROG)
-
-.SUFFIXES:
-.SUFFIXES: .o .mo .h .c
-.PHONY: all vctarget absyn_subdir clean reallyclean
-
-SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
-
-
-$(ALLMO): %.mo : $(srcdir)/%.mo
-	cp $< $@
-
-$(SRCO): %.o : %.c %.h
-	$(RMLC) $(RMLCFLAGS) -c $<
-
-%.c %.h : %.mo
-	$(RMLC) $(RMLCFLAGS) +C $<
-
-%.h : %.c
-
-$(SRCHSRCDIR) : $(srcdir)/%.h : %.h
-	cp $< $@
-
-$(SRCSIGX): %.sigx : %.mo
-	$(srcdir)/rml2sig/rmldep-new.sh $(RML) $<
-	@touch $@
-
-vctarget: $(SRCC) absyn_subdir
-
-absyn_subdir:
-	(cd $(srcdir)/absyn_builder && $(MAKE) vctarget)
-
-$(PROG): $(SRCO) subdirs $(top_builddir)/c_runtime/sendData/*.cpp
-	g++ -O3 -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
-
-subdirs: $(SRCHSRCDIR)
-	for dir in $(SUBDIRS); do $(MAKE) -C $$dir; done;
-
-clean:
-	for d in $(SUBDIRS); do \
-		(cd $$d && $(MAKE) clean) \
-	done
-	(cd $(srcdir) && $(RM) $(SRCH))
-	$(RM) -f $(SRCO) $(SRCC) $(SRCH) $(PROG)$(EXEEXT) *~ $(ALLMO:.mo=.srz) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx)
-
-reallyclean: clean
-	$(RM) -f $(ALLMO) $(ALLMO:.mo=.sig) $(ALLMO:.mo=.sigx) $(ALLMO:.mo=.srz) $(PROG)$(EXEEXT) 
-
-# don't remove these files after intermediate build steps
-.PRECIOUS: Makefile $(ALLMO)
-
-Makefile: Makefile.in
-	$(top_builddir)/config.status Makefile
-
-
-## dependencies
-include $(srcdir)/.depend
+$(PROG): $(SRCO) $(SUBDIRS) $(top_builddir)/c_runtime/sendData/*.cpp
+	g++ $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)

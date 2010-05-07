@@ -29,9 +29,6 @@ RMLINC  = -I$(RMLHOME)/include/plain
 USE_CORBA = @USE_CORBA@
 CORBAHOME = @CORBAHOME@
 
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml_g -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread -lreadline
-#LDFLAGS = -L$(RMLHOME)/lib/plain $(ANTLR_LIBP) -lrml -lm -lantlr $(LIBSOCKET) $(CORBALIB) -lm -lpthread
-
 include Makefile.common
 
 PROG = omc
