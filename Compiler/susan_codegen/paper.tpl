@@ -1,3 +1,5 @@
+// (?<!(>|-|(list|Option|tuple)<\w{1,40}))>(?!>)
+// (?<!(<|list|Option|tuple))<(?!<)
 spackage paper
   
   package Example
@@ -38,11 +40,11 @@ spackage paper
 
 statement(Statement) ::=
   case ASSIGN then <<
-  <exp(lhs)> = <exp(rhs)>;
+  <%exp(lhs)%> = <%exp(rhs)%>;
   >>	
   case WHILE  then <<
-  while(<exp(condition)>) {
-    <statements : statement() \n>
+  while(<%exp(condition)%>) {
+    <%statements : statement() \n%>
   }
   >>
 
@@ -50,7 +52,7 @@ exp(Exp) ::=
  case ICONST   then value
  case VARIABLE then name
  case BINARY   then
-  '(<exp(lhs)> <oper(op)> <exp(rhs)>)'
+  '(<%exp(lhs)%> <%oper(op)%> <%exp(rhs)%>)'
 
 oper(Operator) ::=
   case PLUS then "+"
@@ -60,9 +62,9 @@ oper(Operator) ::=
 //********
 opt(Option<Option<Integer>> ho) ::= ho
 
-pok(list<String> names, Integer i0) ::= '<i0> <names : '<it> <i0>' ", ">'
+pok(list<String> names, Integer i0) ::= '<%i0%> <%names : '<%it%> <%i0%>' ", "%>'
 
-pok2(list<String> names, String sep) ::= (names of "a" : i0 'o<sep>')	 
+pok2(list<String> names, String sep) ::= (names of "a" : i0 'o<%sep%>')	 
 
 pok3(list<Exp> exps) ::= (exps of ICONST : value ", ")	 
 
@@ -72,10 +74,10 @@ pok5(String a, Integer /*it*/itt) ::= it //error ... displaced it
 
 pok6(tuple<Integer,String> tup) ::= tup of (i,s) : i + s
 
-pok7(list<tuple<String,Integer>> tuples) ::= (tuples of (s,i) : 'o<it of (s,_):s>')	 
+pok7(list<tuple<String,Integer>> tuples) ::= (tuples of (s,i) : 'o<%it of (s,_):s%>')	 
 
 pok8() ::= <<
-   blabla<\n>hej you!<\n>
+   blabla<%\n%>hej you!<%\n%>
      juchi
 >>
 //********/

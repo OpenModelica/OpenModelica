@@ -54,38 +54,38 @@ spackage test
 
 pathIdent(PathIdent) ::= 
   case IDENT      then ident
-  case PATH_IDENT then '<ident>.<pathIdent(path)>'
+  case PATH_IDENT then '<%ident%>.<%pathIdent(path)%>'
 	
 typedIdents(TypedIdents decls) ::= 
 (decls of (id,pid) : 
-   '<pathIdent(pid)> <id>;//heja' 
+   '<%pathIdent(pid)%> <%id%>;//heja' 
    \n 
 )
 
-test(list<String> items, Integer ind) ::= (items ind; align=testfn(ind); alignSeparator='ss<ind>'; wrapSeparator=testfn(2))
+test(list<String> items, Integer ind) ::= (items ind; align=testfn(ind); alignSeparator='ss<%ind%>'; wrapSeparator=testfn(2))
 
 test2(list<String> items, String sep, Integer a) ::= (items sep; align=a)
 
 test3(list<String> items, String item, Integer ii) ::= 
   <<
-  <[items, item, ii] of st: 'bla<st>' \n>
-  <[items, item, ii, ([items, item, ii]\n), "blaaa" ] ", ">
-  <[items, item, ii] ", "/*]*/>!!!!!error should be
-  <[items, item, ii, ([items, item, ii]\n), "blaaa" ] : case it then it ", ">
-  <match 'aha<ii>' case it then it>
+  <%[items, item, ii] of st: 'bla<%st%>' \n%>
+  <%[items, item, ii, ([items, item, ii]\n), "blaaa" ] ", "%>
+  <%[items, item, ii] ", "/*]*/%>!!!!!error should be
+  <%[items, item, ii, ([items, item, ii]\n), "blaaa" ] : case it then it ", "%>
+  <%match 'aha<%ii%>' case it then it%>
 >>
 
 testCond(Option<tuple<String,Integer>> nvOpt) ::= 
-  if nvOpt is SOME((name,value)) then '<name> = <value>;'
+  if nvOpt is SOME((name,value)) then '<%name%> = <%value%>;'
   else "no value"
 
 testCond2(Option<tuple<String,Integer>> nvOpt) ::= 
   if nvOpt is not SOME((name,value)) then "none" 
-  else 'SOME(<name>,<value>)' 
+  else 'SOME(<%name%>,<%value%>)' 
 
-mapInt(Integer) ::= '(int:<it>)'
-mapString(String) ::= '(str:<it>)'
-mapIntString(Integer intPar, String stPar) ::= '(int:<intPar>,str:<stPar>)'
+mapInt(Integer) ::= '(int:<%it%>)'
+mapString(String) ::= '(str:<%it%>)'
+mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 
 testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
 testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
@@ -98,17 +98,17 @@ testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
 
 intMatrix(list<list<Integer>> lstOfLst) ::= 
 << 
-[ <lstOfLst of intLst : 
+[ <%lstOfLst of intLst : 
 		(intLst ", ") 
-   ";\n"; anchor> ]
+   ";\n"; anchor%> ]
 >>
 
-ifTest(Integer i) ::= if mapInt(i) then '<it> name;' else "/* weird I */"
+ifTest(Integer i) ::= if mapInt(i) then '<%it%> name;' else "/* weird I */"
 
 bindTest() ::= 
   ifTest(1) of ii : 
     <<
-      some hej<ii>
+      some hej<%ii%>
     >>
 
 txtTest() ::= 
@@ -117,23 +117,22 @@ txtTest() ::=
   txt
 
 txtTest2() ::= 
+# txt = "ahoj2"
+# txt += "hej2"
 <<
-<# txt = "ahoj2" #>
-<# txt += "hej2" #>
-bláá <txt>
-  </* jhgjhgjh  */>  
+bláá <%txt%>
+  <%/* jhgjhgjh  */%>  
 jo
 >>
 
 txtTest3(String hej, Text buf) ::= 
+# txt = "aahoj2"
+# txt += "ahej2"
+# buf += txt 
+# buf += '<%txtTest4("ha!",buf)%>ahoj' //TODO: not allow this ...  
 <<
-<# txt = "aahoj2" #>
-<# txt += "ahej2" #>
-<# buf += txt #>
-<# buf += '<txtTest4("ha!",buf)>ahoj' //TODO: not allow this ...  
-#>
-abláá <txt>
-  </* jhgjhgjh  */>  
+abláá <%txt%>
+  <%/* jhgjhgjh  */%>  
 ajo
 >>
 
@@ -143,20 +142,19 @@ if hej then
   # txt += hej
   # buf += txt
   <<
-  bláá <txt>
-  </* jhgjhgjh  */>  
+  bláá <%txt%>
+  <%/* jhgjhgjh  */%>  
   jo
   >>
 
 txtTest5(String hej, Text buf, Text nobuf) ::= 
+# txt = "aahoj2" 
+# txt += "ahej2"
+# buf += txt
+# buf += '<%txtTest4("ha!",buf)%>ahoj' //TODO: not allow this ...  
 <<
-<# txt = "aahoj2" #>
-<# txt += "ahej2" #>
-<# buf += txt #>
-<# buf += '<txtTest4("ha!",buf)>ahoj' //TODO: not allow this ...  
-#>
-abláá <txt>
-  </* jhgjhgjh  */>  
+abláá <%txt%>
+  <%/* jhgjhgjh  */%>  
 ajo
 >>
 
@@ -168,16 +166,16 @@ txtTest6(list<String> hej, Text buf) ::=
     # buf2 = "hop"
     (hej : 
       # buf2 += it 
-      # mytxt += '<it>jo'
-      '<it><nomut>'
+      # mytxt += '<%it%>jo'
+      '<%it%><%nomut%>'
      nomut)
   
   case h::_ then
     # buf2 = "hop"
     (h : 
       # buf2 += it 
-      # mytxt += '<it>jo'
-      '<it><nomut>'
+      # mytxt += '<%it%>jo'
+      '<%it%><%nomut%>'
      nomut)
 
 contCase(String tst) ::=
@@ -191,7 +189,7 @@ contCase2(PathIdent) ::=
   case IDENT
   case PATH_IDENT 
   case IDENT(ident = "ii")
-    then 'id=<ident>'
+    then 'id=<%ident%>'
   case IDENT then "hej"
 
 
@@ -220,11 +218,11 @@ genericTest(list<String> lst) ::= listLength(lst)
 genericTest2(list<Integer> lst) ::= listLength(lst)
 genericTest3(list<Integer> lst) ::= listMember(3,lst)
 genericTest4(list<String> lst) ::= listMember("ahoj",lst)
-genericTest5(list<String> lst, String hoj) ::= listMember('a<hoj>',lst)
+genericTest5(list<String> lst, String hoj) ::= listMember('a<%hoj%>',lst)
 genericTest6(list<String> lst, Integer idx) ::= listGet(lst,idx)
 genericTest7(list<Integer> lst, Integer idx) ::= listGet(lst,idx)
-genericTest8(list<Integer> lst) ::= listReverse(lst) : '<it>th revesed'
-genericTest9(list<list<String>> lst) ::= listReverse() : listReverse() : '<it>hej!'
+genericTest8(list<Integer> lst) ::= listReverse(lst) : '<%it%>th revesed'
+genericTest9(list<list<String>> lst) ::= listReverse() : listReverse() : '<%it%>hej!'
 
 //Error - unmatched type for type variable 'TypeVar'. Firstly inferred 'String', next inferred 'Integer'(dealiased 'Integer').
 //genericTest10(list<Integer> lst) ::= listMember("3",lst) 
@@ -243,9 +241,9 @@ proposal: multiValue filter pattern -> expr
 examples:
 
 current:
-mapInt(Integer) ::= '(int:<it>)'
-mapString(String) ::= '(str:<it>)'
-mapIntString(Integer intPar, String stPar) ::= '(int:<intPar>,str:<stPar>)'
+mapInt(Integer) ::= '(int:<%it%>)'
+mapString(String) ::= '(str:<%it%>)'
+mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 
 testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
 testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
@@ -258,9 +256,9 @@ testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
 
 
 proposal:
-mapInt(Integer) ::= '(int:<it>)'
-mapString(String) ::= '(str:<it>)'
-mapIntString(Integer intPar, String stPar) ::= '(int:<intPar>,str:<stPar>)'
+mapInt(Integer) ::= '(int:<%it%>)'
+mapString(String) ::= '(str:<%it%>)'
+mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 
 testMap(list<Integer> ints) ::= (ints map i -> mapInt(i) map mi -> mapString(mi) ", ")
 testMap2(list<Integer> ints) ::= (ints map int -> mapInt(int) map st -> mapIntString(int, st) ", ")
@@ -327,7 +325,7 @@ private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 /*
 typeTempl(list<String> lst) ::= lst
 
-typeTemplCall(list<String> lst) ::= '<typeTempl( (lst) )> hoop'
+typeTemplCall(list<String> lst) ::= '<%typeTempl( (lst) )> hoop'
 
 multiTest(list<String> lst, String s, String s2, list<String> lst2) ::=
 	([lst, s, lst2, s2] ; separator=",")
@@ -336,6 +334,6 @@ multiTest2(list<String> lst, String s, String s2, list<String> lst2) ::=
 	([lst : if it then it, s, lst2, s2] ; separator=",")
 
 multiTest23(list<String> lst, String s, String s2, list<String> lst2) ::=
-	([lst : if it then it, s, '<lst2>', s2] : 'bla<it>' ; separator=",") //!! TODO: '<lst2>' is same as lst2 ... it is not reduced
+	([lst : if it then it, s, '<%lst2>', s2] : 'bla<%it>' ; separator=",") //!! TODO: '<%lst2>' is same as lst2 ... it is not reduced
 */
 end test;

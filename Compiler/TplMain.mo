@@ -1110,6 +1110,7 @@ is\\n new lined!
            "true*\nSusan\nis\n new lined!\n*~:)", true, true, "TplParser.expression \n>"+& str +&"<\n", notPassedCnt);   
                   
         //*************
+        /*
         str = "%(Susan)%~:)";
         chars = stringListStringChar( str );
         
@@ -1127,8 +1128,9 @@ is\\n new lined!
         strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& string_char_list_string(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*Susan*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
-        
+        */
         //*************
+        /*
         str = "%/
 Susan
 is\\n verbatim!
@@ -1149,7 +1151,7 @@ is\\n verbatim!
         strOut = Tpl.booleanString(tequal) +& "*" +& strOut +& "*" +& string_char_list_string(chars);       
         notPassedCnt = testStringEquality(strOut,  
            "true*Susan\nis\\n verbatim!*~:)", true, true, "TplParser.expression \n\""+& str +&"\"\n", notPassedCnt);   
-
+				*/
         //*************
         str = "1234567~:)";
         chars = stringListStringChar( str );

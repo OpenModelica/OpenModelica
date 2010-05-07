@@ -2284,8 +2284,8 @@ end templDef_ConstOrTempl;
 /*
 templDef_AngleOrDolar:
 	'::='  expression(LEsc = '<',REsc = '>'):exp   => (exp,'<','>')
-	|
-	'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
+//	|
+//	'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
 */
 public function templDef_AngleOrDolar
   input list<String> inChars;
@@ -2316,18 +2316,18 @@ algorithm
         (chars, linfo, exp) = expression(chars, linfo, "<", ">", false);
       then (chars, linfo, exp, "<", ">");
     
-    case ("$"::"$"::"=" :: chars, linfo)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, "$", "$", false);
-      then (chars, linfo, exp, "$", "$");
+    //case ("$"::"$"::"=" :: chars, linfo)
+    //  equation
+    //    (chars, linfo) = interleave(chars, linfo);
+    //    (chars, linfo, exp) = expression(chars, linfo, "$", "$", false);
+    //  then (chars, linfo, exp, "$", "$");
 
    //error expect ::= or $$=, try ::= 
    case (chars, linfo)
       equation
         failure(":"::":"::"=" :: _ = chars);
-        failure("$"::"$"::"=" :: _ = chars);
-        linfo = parseError(chars, linfo, "Expected '::=' symbol (or '$$=') before a template definition at the position.", false);
+        //failure("$"::"$"::"=" :: _ = chars);
+        linfo = parseError(chars, linfo, "Expected '::=' symbol before a template definition at the position.", false);
         //try the ::= path
         (chars, linfo, exp) = expression(chars, linfo, "<", ">", false);                       
       then (chars, linfo, exp, "<", ">");
@@ -3013,9 +3013,9 @@ stringConstant:
 	'"' doubleQuoteConst({},{}):stRevLst  
 	  => stRevLst
 	|
-	'%'(lquot) stripFirstNewLine verbatimConst(Rquote(lquot),{},{}):stRevLst 
-	  => stRevLst
-	|
+	//'%'(lquot) stripFirstNewLine verbatimConst(Rquote(lquot),{},{}):stRevLst 
+	//  => stRevLst
+	//|
 	'\\n' escUnquotedChars({}, {"\n"}):stRevLst
 	  => stRevLst
 	|
@@ -3053,6 +3053,7 @@ algorithm
         linfo = parseErrorPrevPositionOpt(startChars, startLinfo, linfo, optError, true);        
       then (chars, linfo, stRevLst);
     
+    /*
     case (startChars as ("%"::lquot:: chars), startLinfo)
       equation
         (chars, linfo) = stripFirstNewLine(chars, startLinfo);        
@@ -3060,6 +3061,7 @@ algorithm
         (chars, linfo, stRevLst, optError) = verbatimConst(chars, linfo, rquot,{},{});
         linfo = parseErrorPrevPositionOpt(startChars, startLinfo, linfo, optError, true);        
       then (chars, linfo, stRevLst);
+    */
     
     case ("\\"::"n":: chars, linfo)
       equation
@@ -3779,12 +3781,12 @@ end lineIndent;
 /*
 // & ... no interleave
 restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):
-	(lesc)'#' nonTemplateExprWithOpts(lesc,resc):eexp  '#'(resc)
-	   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
-	   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
-	   => exp
-	    
-	| 
+	//(lesc)'#' nonTemplateExprWithOpts(lesc,resc):eexp  '#'(resc)
+	//   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
+	//   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
+	//   => exp
+	//    
+	//| 
 	(lesc)  (resc)	// a comment | empty expression ... ignore completely   
 	   & restOfTemplLineAfterEmptyExp(lesc,resc,isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):exp
 	   => exp
@@ -3855,6 +3857,7 @@ algorithm
       list<tuple<Integer,list<TplAbsyn.Expression>>> indStack;
     
    //<# #> or $# #$ 
+   /*
    case (startChars as (c :: "#" :: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         equality( c  = lesc );
@@ -3870,25 +3873,27 @@ algorithm
         linfo = parseErrorPrevPositionOpt(solChars, startLinfo, linfo, errOpt, false);
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, actInd, {});
       then (chars, linfo, exp);
+   */
    
-   //< > or $ $ empty expression ... i.e. comment or a break in line that is not parsed 
-   case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+   //<% %>  empty expression ... i.e. comment or a break in line that is not parsed 
+   case (c :: "%":: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         equality( c  = lesc );
         (chars, linfo) = interleave(chars, linfo);
-        (c :: chars) = chars;
+        ("%" :: c :: chars) = chars;
         equality( c  = resc );
         (chars, linfo, lineInd) = dropNewLineAfterEmptyExp(chars, linfo, lineInd, accChars);
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
       then (chars, linfo, exp);
       
-   //<expressionWithOpts> or $expressionWithOpts$
-   case (startChars as (c :: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
+   //<% expressionWithOpts %> 
+   case (startChars as (c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         equality( c  = lesc );
         (chars, linfo) = interleave(chars, startLinfo);
         (chars, linfo, eexp) = expressionWithOpts(chars, linfo, lesc, resc);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, resc);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "%");
+        (chars, linfo) = expectChar(chars, linfo, resc);
         //(c :: chars) = chars;
         //equality( c  = resc );
         (expLst, indStack, actInd, errOpt) = onEscapedExp(eexp, expLst, indStack, actInd, lineInd, accChars);
@@ -3920,12 +3925,15 @@ algorithm
         exp = makeTemplateFromExpList(expLst, "<<",">>");
       then (chars, linfo, exp);
    
+   //??? should we allow escaping at all ??
+   /* experimentally we will disallow it ... use "" constants in like 'hey son<%"'"%>s brother'
+   // \ will be taken literally,  '\\' and <<\\>> are both double-backslash !
    case ("\\":: c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         true = (c ==& "\\" or c ==& "'" or c ==& lesc or c ==& resc); 
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
       then (chars, linfo, exp);
-
+	 */
    case (c :: chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, c :: accChars);
