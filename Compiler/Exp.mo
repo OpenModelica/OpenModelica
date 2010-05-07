@@ -9254,8 +9254,16 @@ algorithm
         rhs = solve(lhs,e2,cr);
         res = solve(lhs,e3,cr);
         res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
-        then
-          res_1;
+      then
+        res_1;
+   
+    case (DAE.IFEXP(e1,e2,e3),rhs,(cr as DAE.CREF(componentRef = _)))
+      equation
+        lhs = solve(rhs,e2,cr);
+        res = solve(rhs,e3,cr);
+        res_1 = simplify1(DAE.IFEXP(e1,rhs,res));
+      then
+        res_1;
    
     case (e1,e2,e3)
       equation
