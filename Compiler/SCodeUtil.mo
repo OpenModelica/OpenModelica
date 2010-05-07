@@ -477,6 +477,7 @@ algorithm
       list<Absyn.ElementItem> eilst;
       list<Absyn.ClassPart> cdr;
       list<Absyn.EquationItem> eqilst;
+      list<Absyn.AlgorithmItem> algilst;
 
     case({}) then {};
     case(Absyn.PUBLIC(eilst) :: cdr)
@@ -507,6 +508,20 @@ algorithm
         anns2 = listAppend(anns,anns1);
       then
         anns2;
+    case(Absyn.ALGORITHMS(algilst) :: cdr)
+      equation
+        anns = translateAnnotationsAlg(algilst);
+        anns1 = translateClassdefAnnotations(cdr);
+        anns2 = listAppend(anns,anns1);
+      then
+        anns2;
+    case(Absyn.INITIALALGORITHMS(algilst) :: cdr)
+      equation
+        anns = translateAnnotationsAlg(algilst);
+        anns1 = translateClassdefAnnotations(cdr);
+        anns2 = listAppend(anns,anns1);
+      then
+        anns2;        
     case(_ :: cdr)
       equation
         anns = translateClassdefAnnotations(cdr);
@@ -740,9 +755,9 @@ algorithm
   end matchcontinue;
 end translateAnnotations;
 
-// stefan
 protected function translateAnnotationsEq
-"function: translateAnnotations
+"@author: stefan
+  function: translateAnnotationsEq
   turns a list of Absyn.EquationItem into a list of Annotations"
   input list<Absyn.EquationItem> inEquationItemList;
   output list<SCode.Annotation> outAnnotationList;
@@ -773,6 +788,41 @@ algorithm
         fail();
   end matchcontinue;
 end translateAnnotationsEq;
+
+
+protected function translateAnnotationsAlg
+"@author: adrpo
+  function: translateAnnotationsAlg
+  turns a list of Absyn.AlgorithmItem into a list of Annotations"
+  input list<Absyn.AlgorithmItem> inAlgorithmItemList;
+  output list<SCode.Annotation> outAnnotationList;
+algorithm
+  outAnnotationList := matchcontinue(inAlgorithmItemList)
+    local
+      list<Absyn.AlgorithmItem> cdr;
+      Absyn.Annotation ann;
+      SCode.Annotation res;
+      list<SCode.Annotation> anns,anns_1;
+    case({}) then {};
+    case(Absyn.ALGORITHMITEMANN(ann) :: cdr)
+      equation
+        res = translateAnnotation(ann);
+        anns = translateAnnotationsAlg(cdr);
+        anns_1 = res :: anns;
+      then
+        anns_1;
+    case(_ :: cdr)
+      equation
+        anns = translateAnnotationsAlg(cdr);
+      then
+        anns;
+    case(_)
+      equation
+        Debug.fprintln("failtrace","SCode.translateAnnotationsAlg failed");
+      then
+        fail();
+  end matchcontinue;
+end translateAnnotationsAlg;
 
 // stefan
 protected function translateAnnotation

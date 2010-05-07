@@ -103,7 +103,8 @@ clean: qtclean
 	(cd mosh/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) clean)
 	(cd flat_modelica_parser/src && $(MAKE) -f $(defaultMakefileTarget) clean)
-	rm -rf build/share build/lib build/include build/bin/omc* build/bin/OMPlotWindow* build/bin/OMShell* build/bin/OMNotebook*
+	rm -rf build/share build/lib build/include build/bin/OMPlotWindow* build/bin/OMShell* build/bin/OMNotebook* \
+	build/bin/omc build/bin/omc.exe build/bin/omcp build/bin/omcp.exe  
 
 install-dirs:
 	mkdir -p ${INSTALL_BINDIR}
