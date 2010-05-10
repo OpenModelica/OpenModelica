@@ -59,19 +59,6 @@
  */
 
 /*
- * Common includes
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include "systemimpl.h"
-#include "rml.h"
-
-
-/*
  * Platform specific includes and defines
  */
 #if defined(__MINGW32__) || defined(_MSC_VER)
@@ -109,6 +96,18 @@
 # endif
 #endif
 #endif
+
+/*
+ * Common includes
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include "systemimpl.h"
+#include "rml.h"
 
 #define MAX_PTR_INDEX 10000
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
