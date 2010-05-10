@@ -2662,23 +2662,24 @@ protected function handleUnitChecking
   input Prefix.Prefix pre;
   input DAE.DAElist compDAE;
   input list<DAE.DAElist> daes;
+  input String className "for debugging";
   output Env.Cache outCache;
   output Env outEnv;
   output UnitAbsyn.InstStore outStore;
 algorithm
-  (outCache,outEnv,outStore) := matchcontinue(cache,env,store,csets,pre,compDAE,daes)
+  (outCache,outEnv,outStore) := matchcontinue(cache,env,store,csets,pre,compDAE,daes,className)
     local
       DAE.DAElist daetemp;
       UnitAbsyn.UnitTerms ut;
 
     // do nothing if we don't have to do unit checking
-    case (cache,env,store,csets,pre,compDAE,daes)
+    case (cache,env,store,csets,pre,compDAE,daes,className)
       equation
         false = OptManager.getOption("unitChecking");
       then
         (cache,env,store);
 
-    case (cache,env,store,csets,pre,compDAE,daes)
+    case (cache,env,store,csets,pre,compDAE,daes,className)
       equation
         // Perform unit checking/dimensional analysis
         (daetemp,_) = ConnectUtil.equations(csets,pre,false,ConnectionGraph.EMPTY); // ToDO. calculation of connect eqns done twice. remove in future.
@@ -2699,7 +2700,7 @@ algorithm
 
         //print("store for "+&className+&"\n");
         //UnitAbsynBuilder.printInstStore(store);
-        //print("dae1="+&DAE.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
+        //print("dae1="+&DAEUtil.dumpDebugDAE(DAE.DAE(dae1))+&"\n");
      then
        (cache,env,store);
   end matchcontinue;
@@ -2993,7 +2994,7 @@ algorithm
         (dae,csets5,ih,graph) = InnerOuter.changeOuterReferences(dae,csets5,ih,graph);
 
         // adrpo: moved bunch of a lot of expensive unit checking operations to this function
-        (cache,env,store) = handleUnitChecking(cache,env,store,csets5,pre,dae1,{dae2,dae3,dae4,dae5});
+        (cache,env,store) = handleUnitChecking(cache,env,store,csets5,pre,dae1,{dae2,dae3,dae4,dae5},className);
 
         UnitParserExt.rollback();
         //print("rollback for "+&className+&"\n");

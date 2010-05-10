@@ -283,23 +283,25 @@ void UnitParser::addPrefix(const string symbol, Rational exponent) {
 
 void UnitParser::addBase(const string quantityName, const string unitName,
 		const string unitSymbol, bool prefixAllowed) {
-	Base b(quantityName, unitName, unitSymbol, prefixAllowed);
-	_base.push_back(b);
-	Unit u;
-	u.prefixAllowed = b.prefixAllowed;
-	u.quantityName = b.quantityName;
-	u.unitName = b.unitName;
-	u.unitSymbol = unitSymbol;
-	for (unsigned long j = 0; j < _base.size(); j++) {
-		u.unitVec.push_back(Rational((_base.size() - 1) == j ? 1 : 0));
-	}
+	if (_units.find(unitSymbol) == _units.end()) {
+		Base b(quantityName, unitName, unitSymbol, prefixAllowed);
+		_base.push_back(b);
+		Unit u;
+		u.prefixAllowed = b.prefixAllowed;
+		u.quantityName = b.quantityName;
+		u.unitName = b.unitName;
+		u.unitSymbol = unitSymbol;
+		for (unsigned long j = 0; j < _base.size(); j++) {
+			u.unitVec.push_back(Rational((_base.size() - 1) == j ? 1 : 0));
+		}
 
-	//Force the old unit vectors to have the same lenght as the new one
-	for (map<string, Unit>::iterator p = _units.begin(); p != _units.end(); p++) {
-		(*p).second.unitVec.push_back(Rational(0));
-	}
+		//Force the old unit vectors to have the same length as the new one
+		for (map<string, Unit>::iterator p = _units.begin(); p != _units.end(); p++) {
+			(*p).second.unitVec.push_back(Rational(0));
+		}
 
-	_units[b.unitSymbol] = u;
+		_units[b.unitSymbol] = u;
+	}
 }
 
 void UnitParser::addDerived(const string quantityName, const string unitName,
@@ -377,8 +379,8 @@ UnitRes UnitParser::commit() {
 }
 
 string UnitParser::prettyPrintUnit2str(Unit unit) {
-	Unit prettyUnit = solveMIP(unit);
-	return unit2str(prettyUnit);
+	//Unit prettyUnit = solveMIP(unit);
+	return unit2str(unit);//prettyUnit);
 }
 
 Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
@@ -568,7 +570,7 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
 	}
 	//cout << "LP debug:" << endl;
 	set_verbose(lp, -1); // NO printing
-	print_lp(lp);
+	//print_lp(lp);
 	int res = solve(lp);
 	Unit prettyUnit, retVal;
 	if (res == 0) {
@@ -599,18 +601,18 @@ Unit UnitParser::solveMIP(Unit unit, bool innerCall) {
 	Unit retVal1,retVal2;
 	if (!innerCall) {
 		_derivedUnitsVisited.clear();
-		cout << "minimizing derived units for " << unit2str(retVal) <<  endl;
+		//cout << "minimizing derived units for " << unit2str(retVal) <<  endl;
 		retVal1 = minimizeDerivedUnits(retVal,unit,0.1);
 		_derivedUnitsVisited.clear();
 		retVal2 = minimizeDerivedUnits(retVal,unit,10.0);
-		cout << "increase factor gave " << unit2str(retVal1) <<  endl;
-		cout << "decrease factor gave " << unit2str(retVal2) <<  endl;
+		//cout << "increase factor gave " << unit2str(retVal1) <<  endl;
+		//cout << "decrease factor gave " << unit2str(retVal2) <<  endl;
 		if (actualNumDerived(retVal1) < actualNumDerived(retVal2)) {
 			retVal = retVal1;
 		} else {
 			retVal = retVal2;
 		}
-		cout << "returning unit " << unit2str(retVal) <<  endl;
+		//cout << "returning unit " << unit2str(retVal) <<  endl;
 	}
 
 	delete row;

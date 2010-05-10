@@ -7,7 +7,7 @@ This package contains a datatype for rational numbers and operations on rational
 public
 uniontype Rational
 record RATIONAL "represents a rational number, e.g. 6/7"
-   Integer nom "nominator";
+   Integer nom "numerator";
    Integer denom "denominator";
   end RATIONAL;
 end Rational;
@@ -38,6 +38,18 @@ algorithm
     case(r) then r;
   end matchcontinue;
 end normalizeZero;
+
+public function rationalString "converts a rational to a string"
+input Rational r;
+output String str;
+algorithm
+  str := matchcontinue(r) 
+  local Integer n,d; 
+    case(RATIONAL(n,d)) equation
+      str = intString(n)+&"/"+&intString(d);
+    then str;    
+  end matchcontinue;
+end rationalString;
 
 public function subRational "subtracts two rationals"
   input Rational r1;
