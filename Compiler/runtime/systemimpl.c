@@ -631,6 +631,32 @@ RML_BEGIN_LABEL(System__writeFile)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__appendFile)
+{
+  char* data = RML_STRINGDATA(rmlA1);
+  char* filename = RML_STRINGDATA(rmlA0);
+  FILE * file=NULL;
+  file = fopen(filename, "a");
+  if (file == NULL) {
+    char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      "SCRIPTING",
+      "ERROR",
+      "Error appending to file %s.",
+      c_tokens,
+      1);
+    RML_TAILCALLK(rmlFC);
+  }
+  /* adrpo changed 2006-10-06
+   * fprintf(file,"%s",data);
+   */
+  fwrite(RML_STRINGDATA(rmlA1), RML_HDRSTRLEN(RML_GETHDR(rmlA1)), 1, file);
+  fflush(file);
+  fclose(file);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__readFile)
 {
   char* filename = RML_STRINGDATA(rmlA0);

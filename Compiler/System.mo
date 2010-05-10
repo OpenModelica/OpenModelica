@@ -265,6 +265,13 @@ public function writeFile
   external "C" ;
 end writeFile;
 
+public function appendFile
+  input String inString1;
+  input String inString2;
+
+  external "C" ;
+end appendFile;
+
 public function readFile
   input String inString;
   output String outString;
