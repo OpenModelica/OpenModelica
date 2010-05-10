@@ -58,6 +58,24 @@
  *
  */
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <shlwapi.h>
+#endif
+
+/*
+ * Common includes
+ */
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <time.h>
+#include "systemimpl.h"
+#include "rml.h"
+
 /*
  * Platform specific includes and defines
  */
@@ -65,13 +83,12 @@
 /* includes/defines specific for Windows*/
 #include <assert.h>
 #include <direct.h>
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <shlwapi.h>
 
 #define MAXPATHLEN MAX_PATH
 #define S_IFLNK  0120000  /* symbolic link */
+
 #else
+
 /* includes/defines specific for LINUX/OS X */
 #include <ctype.h>
 #include <dirent.h>
@@ -97,17 +114,6 @@
 #endif
 #endif
 
-/*
- * Common includes
- */
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <time.h>
-#include "systemimpl.h"
-#include "rml.h"
 
 #define MAX_PTR_INDEX 10000
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
