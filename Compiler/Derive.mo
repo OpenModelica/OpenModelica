@@ -732,7 +732,6 @@ algorithm
       bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
     then bl;
     // noDerivative
-/* Frenkel TUD: TODO: test this case*/         
     case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,expl,inVarsandFuncs)
     equation
       i_1 = i-1;
@@ -746,6 +745,20 @@ algorithm
       bl1 = arrayList(ba);      
       bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
     then bl;
+    // noDerivative  
+    case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.ICONST(_)))::crlst,expl,inVarsandFuncs)
+    equation
+      // remove input from list
+      ba = listArray(inblst);
+      ba = arrayUpdate(ba,i,false);
+      bl1 = arrayList(ba);      
+      bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+    then bl;      
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "-Derive.checkDerFunctionConds failed\n");
+      then
+        fail();       
   end matchcontinue;
 end checkDerFunctionConds;
 
