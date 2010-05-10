@@ -5829,9 +5829,13 @@ algorithm
       then txt;
 
     case ( txt,
-           _ )
+           i_modelInfo_directory )
+      local
+        String i_modelInfo_directory;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("-L\"<modelInfo.directory>\""));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("-L\""));
+        txt = Tpl.writeStr(txt, i_modelInfo_directory);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("\""));
       then txt;
   end matchcontinue;
 end fun_137;

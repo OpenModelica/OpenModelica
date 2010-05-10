@@ -1375,7 +1375,7 @@ simulationFunctionsFile(list<Function> functions) ::=
 simulationMakefile(SimCode simCode) ::=
 match simCode
 case SIMCODE(modelInfo=MODELINFO, makefileParams=MAKEFILE_PARAMS) then
-  # dirExtra = if modelInfo.directory then "-L\"<modelInfo.directory>\"" else "" //TODO: a bug here ... should be '-L"<%modelInfo.directory%>"'
+  # dirExtra = if modelInfo.directory then '-L"<%modelInfo.directory%>"' //else ""
   # libsStr = (makefileParams.libs of lib: lib " ")
   # libsPos1 = if dirExtra then "" else libsStr
   # libsPos2 = if dirExtra then libsStr else ""
