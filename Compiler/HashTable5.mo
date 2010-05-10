@@ -287,14 +287,15 @@ algorithm
       Value v;
       list<tuple<Key,Integer>>[:] hashvec;
       ValueArray varr;
-      Key key2;
+      Key k;
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation
         hval = hashFunc(key);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
         indx = get2(key, indexes);
-        v = valueArrayNth(varr, indx);
+        (k, v) = valueArrayNth(varr, indx);
+        true = keyEqual(k, key); 
       then
         (v,indx);
   end matchcontinue;
@@ -534,15 +535,17 @@ end valueArrayClearnth;
 public function valueArrayNth "function: valueArrayNth
   author: PA
 
-  Retrieve the n:th Vale from ValueArray, index from 0..n-1.
+  Retrieve the n:th Value from ValueArray, index from 0..n-1.
  "
   input ValueArray valueArray;
   input Integer pos;
+  output Key key;
   output Value value;
 algorithm
   value:=
   matchcontinue (valueArray,pos)
     local
+      Key k;
       Value v;
       Integer n,pos,len;
       Option<tuple<Key,Value>>[:] arr;
@@ -550,9 +553,9 @@ algorithm
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;
-        SOME((_,v)) = arr[pos + 1];
+        SOME((k,v)) = arr[pos + 1];
       then
-        v;
+        (k, v);
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;
