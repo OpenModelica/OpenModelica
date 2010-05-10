@@ -97,7 +97,9 @@ algorithm
   end matchcontinue;
 end expTypeComplex;
 
-public function expTypeArray "returns true if type is array type"
+public function expTypeArray "returns true if type is array type
+Alternative names: isArrayType, isExpTypeArray
+"
   input DAE.ExpType tp;
   output Boolean isArray;
 algorithm
@@ -167,13 +169,20 @@ matchcontinue (bindExp,attr)
       Option<Boolean> ip,fn;
       String s;
   case (bindExp,SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,_,ip,fn)))
-    then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,SOME(bindExp),ip,fn)));
+  then (SOME(DAE.VAR_ATTR_REAL(e1,e2,e3,min,e4,e5,e6,sSelectOption,SOME(bindExp),ip,fn)));
+    
   case (bindExp,SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,_,ip,fn)))
-    then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,SOME(bindExp),ip,fn));
+  then SOME(DAE.VAR_ATTR_INT(e1,min,e2,e3,SOME(bindExp),ip,fn));
+    
   case (bindExp,SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,_,ip,fn)))
-    then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn));
+  then SOME(DAE.VAR_ATTR_BOOL(e1,e2,e3,SOME(bindExp),ip,fn));
+    
   case (bindExp,SOME(DAE.VAR_ATTR_STRING(e1,e2,_,ip,fn)))
-    then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn));
+  then SOME(DAE.VAR_ATTR_STRING(e1,e2,SOME(bindExp),ip,fn));
+       
+  case (bindExp,SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,_,ip,fn)))
+  then SOME(DAE.VAR_ATTR_ENUMERATION(e1,min,e2,e3,SOME(bindExp),ip,fn));
+      
   case(_,_) equation print("-failure in DAEUtil.addEquationBoundString\n"); then fail();
    end matchcontinue;
 end addEquationBoundString;
@@ -643,7 +652,7 @@ algorithm
   end matchcontinue;
 end dumpFunctionNamesStr;
 
-protected function functionNameStr
+public function functionNameStr
 "return the name of a function, if element is not function return  empty string"
   input DAE.Element inElement;
   output String res;

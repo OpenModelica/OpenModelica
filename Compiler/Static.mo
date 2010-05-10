@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Linköping University,
+ * Copyright (c) 1998-CurrentYear, LinkÃ¶ping University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 LinkÃ¶ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköping University, either from the above address,
+ * from LinkÃ¶ping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -6098,7 +6098,7 @@ algorithm
        etp = Exp.typeof(e1);
        eltTp = Types.arrayElementType(tp1);
        dae = DAEUtil.joinDaes(dae1,dae2);
-       then (cache,DAE.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,DAE.ET_ARRAY(etp,{SOME(3)}),DAE.NO_INLINE),
+       then (cache,DAE.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,etp,DAE.NO_INLINE),
          		 DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(3)),eltTp),NONE),DAE.C_VAR()),dae);
   end matchcontinue;
 end elabBuiltinCross;
@@ -10271,7 +10271,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy);
+        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy,true);
       then
         (cache,e,DAE.C_VAR(),acc);
 
@@ -10281,7 +10281,7 @@ algorithm
         expTy = Types.elabType(tt);
         cr_1 = fillCrefSubscripts(cr, tt);
         expIdTy = Types.elabType(idTp);
-        e = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
+        e = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
       then
         (cache,e,DAE.C_VAR(),acc);
 
@@ -10302,7 +10302,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
@@ -10320,7 +10320,7 @@ algorithm
                                     This must be caught later on.";
         expIdTy = Types.elabType(idTp);                            
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
         e = valueExp(v);
         et = Types.typeOfValue(v);
@@ -10334,7 +10334,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
@@ -10346,7 +10346,7 @@ algorithm
                                     This must be caught later on." ;
         expIdTy = Types.elabType(idTp);                                    
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
       then
         (cache,e_1,const,acc);
 
@@ -10356,7 +10356,7 @@ algorithm
         expTy = Types.elabType(tt) "parameters with equal binding becomes C_PARAM" ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,sexp,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,sexp,expIdTy,true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
 
@@ -10366,7 +10366,7 @@ algorithm
         expTy = Types.elabType(tt) "..the rest should be non constant, even if they have a constant binding." ;
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
       then
         (cache,e_1,DAE.C_VAR(),acc);
 
@@ -10436,7 +10436,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE,expIdTy);
+        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE,expIdTy,true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
       
@@ -10450,7 +10450,7 @@ algorithm
   end matchcontinue;
 end elabCref2;
 
-protected function crefVectorize
+public function crefVectorize
 "function: crefVectorize
   This function takes a DAE.Exp and a DAE.Type and if the expression
   is a ComponentRef and the type is an array it returns an array of
@@ -10464,10 +10464,11 @@ protected function crefVectorize
   input DAE.Exp inExp;
   input DAE.Type inType;
   input Option<DAE.Exp> splicedExp;
-  input DAE.ExpType crefIdType "the type of the last cref ident, without considering subscripts. picked up from splicedExpData and used for crefs in vectorized exp"; 
+  input DAE.ExpType crefIdType "the type of the last cref ident, without considering subscripts. picked up from splicedExpData and used for crefs in vectorized exp";
+  input Boolean applyLimits "if true, only perform for small sized arrays (dimsize <20)"; 
   output DAE.Exp outExp;
 algorithm
-  outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType)
+  outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType,applyLimits)
     local
       Boolean b1,b2,doVect;
       DAE.ExpType elt_tp,exptp,t2;
@@ -10483,55 +10484,55 @@ algorithm
       DAE.ComponentRef testCREF;
 
     // no vectorization
-    case(false, e, _, _,_) then e;
+    case(false, e, _, _,_,_) then e;
 
     // types extending basictype
-    case (doVect,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_,crefIdType)
+    case (doVect,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_,crefIdType,applyLimits)
       equation
-        e = crefVectorize(doVect,e,t,NONE,crefIdType);
+        e = crefVectorize(doVect,e,t,NONE,crefIdType,applyLimits);
       then e;
 
     // component reference and an array type with dimensions less than 20
     case (_,DAE.CREF(componentRef = cr_2,ty = t2),
            (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType =
                                  (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_)),
-           SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType)
+           SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
       equation
         b1 = (ds < 20);
         b2 = (ds2 < 20);
-        true = boolAnd(b1, b2);
+        true = boolAnd(b1, b2) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
         e = tryToConvertArrayToMatrix(e);
       then
         e;
 
-    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType)
+    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
       equation
         false = Types.isArray(t);
-        (ds < 20) = true;
+        true = (ds < 20) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
       then
         e;
 
     /* matrix sizes > 20 is not vectorized */
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_),_,crefIdType) 
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_),_,crefIdType,applyLimits) 
       equation 
         b1 = (ds < 20);
         b2 = (ds2 < 20);
-        true = boolAnd(b1, b2);
+        true = boolAnd(b1, b2) or not applyLimits;
         e = createCrefArray2d(cr, 1, ds, ds2, exptp, t,crefIdType);
       then
         e;
         
     /* vectorsizes > 20 is not vectorized */ 
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_),_,crefIdType) 
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_),_,crefIdType,applyLimits) 
       equation 
         false = Types.isArray(t);
-        (ds < 20) = true;
+        true = (ds < 20) or not applyLimits;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
-    case (_,e,_,_,_) then e; 
+    case (_,e,_,_,_,_) then e; 
   end matchcontinue;
 end crefVectorize;
 
@@ -11032,7 +11033,7 @@ algorithm
         cr_1 = Exp.crefStripLastSubs(cr);
         cr_1 = Exp.subscriptCref(cr_1, DAE.INDEX(DAE.ICONST(indx))::ss);
         elt_tp = Exp.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType);
+        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // no subscript
@@ -11043,7 +11044,7 @@ algorithm
         DAE.ARRAY(_,_,expl) = createCrefArray(cr, indx_1, ds, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
-        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType);
+        e_1 = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType,true);
       then
         DAE.ARRAY(et,true,(e_1 :: expl));
     // index
@@ -11102,7 +11103,7 @@ algorithm
         DAE.MATRIX(_,_,ms) = createCrefArray2d(cr, indx_1, ds, ds2, et, t,crefIdType);
         cr_1 = Exp.subscriptCref(cr, {DAE.INDEX(DAE.ICONST(indx))});
         elt_tp = Exp.unliftArray(et);
-        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType);
+        DAE.ARRAY(tp,sc,expl) = crefVectorize(true,DAE.CREF(cr_1,elt_tp), t,NONE,crefIdType,true);
         scs = Util.listFill(sc, ds2);
         row = Util.listThreadTuple(expl, scs);
       then

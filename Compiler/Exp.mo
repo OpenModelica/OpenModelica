@@ -3717,6 +3717,8 @@ algorithm
        e1_1 = simplifyAsub(e1, indx);
        e2_1 = simplifyAsub(e2, indx);
     then DAE.IFEXP(cond,e1_1,e2_1);
+      
+    case(e,indx) then DAE.ASUB(e, {DAE.ICONST(indx)});
   end matchcontinue;
 end simplifyAsub;
 
@@ -4734,7 +4736,9 @@ algorithm
     case (DAE.MATRIX(ty = tp)) then tp;
     case (DAE.RANGE(ty = tp)) then tp;
     case (DAE.CAST(ty = tp)) then tp;
-    case (DAE.ASUB(exp = e)) then typeof(e);
+    case (DAE.ASUB(exp = e,sub=explist)) equation
+      tp = unliftArrayTypeWithSubs(Util.listMap(explist,makeIndexSubscript) ,typeof(e));
+    then tp;
     case (DAE.CODE(ty = tp)) then tp;
     case (DAE.REDUCTION(expr = e)) then typeof(e);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */

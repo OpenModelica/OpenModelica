@@ -136,7 +136,16 @@ are referenced in the model are picked up
 "
   input Absyn.Program prg;
 algorithm
-  ((_,_,_)) := Interactive.traverseClasses(prg,NONE,registerUnitInClass,0,false); // defineunits must be in public section.
+  _ := matchcontinue(prg)
+    case(prg) equation
+      true = OptManager.getOption("unitChecking");
+      ((_,_,_)) = Interactive.traverseClasses(prg,NONE,registerUnitInClass,0,false); // defineunits must be in public section.
+    then ();
+      
+    case(prg) equation
+      false = OptManager.getOption("unitChecking");
+    then ();   
+  end matchcontinue; 
 end registerUnits;
 
 protected function registerUnitInClass " help function to registerUnits"

@@ -83,7 +83,14 @@ protected constant list<ReplacePattern> replaceStringPatterns=
           REPLACEPATTERN(",",DAELow.commaStr)};
 
 public function sort "sorts a list given an ordering function.
-Uses the mergesort algorithm."
+
+Uses the mergesort algorithm.
+
+For example.
+
+sort({2,1,3},intGt) => {1,2,3}
+sort({2,1,3},intLt) => {3,2,1}
+"
   input list<Type_a> lst;
   input greaterThanFunc greaterThan;
   output list<Type_a> outLst;
@@ -5216,6 +5223,28 @@ algorithm
           rec;
   end matchcontinue;
 end listSplitEqualParts2;
+
+public function listPartition "partitions a list of elements into subslists of length n
+For example
+listPartition({1,2,3,4},2) => {{1,2},{3,4}}
+listPartition({1,2,3,4,5},2) => {{1,2},{3,4},{5}}
+"
+  input list<Type_a> lst;
+  replaceable type Type_a subtypeof Any;
+  input Integer n;
+  output list<list<Type_a>> res;
+algorithm
+  res := matchcontinue(lst,n)
+  local list<Type_a> lst1;
+    case(lst,n) equation
+      true = n > listLength(lst);
+    then {lst};
+    case(lst,n) equation
+      (lst1,lst) = listSplit(lst,n);
+      res = listPartition(lst,n);
+    then lst1::res;
+  end matchcontinue;
+end listPartition;  
 
 public function listSplit "function: listSplit
   Takes a list of values and an position value.

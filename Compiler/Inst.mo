@@ -10835,8 +10835,8 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts1,daeElts2;
       list<list<DAE.Element>> daeLLst;
-      DAE.DAElist fdae,fdae1,fdae11,fdae2,fdae3;
-      DAE.FunctionTree funcs;
+      DAE.DAElist fdae,fdae1,fdae11,fdae2,fdae3,dae2;
+      DAE.FunctionTree funcs,funcs1;
       DAE.Const cnst;
       Boolean unrollForLoops;
 
@@ -10966,9 +10966,9 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl, graph);
-        (cache,env_2,ih,DAE.DAE(daeElts2,_),_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
-        funcs = DAEUtil.avlTreeNew();
+        (cache,env_1,ih,daeLLst,funcs1,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state,tb, false, impl, graph);
+        (cache,env_2,ih,DAE.DAE(daeElts2,funcs),_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEEquation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        funcs = DAEUtil.joinAvlTrees(funcs1,funcs);
         dae = DAEUtil.joinDaes(DAE.DAE({DAE.IF_EQUATION(expl1,daeLLst,daeElts2,source)},funcs),fdae1); 
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
@@ -10983,9 +10983,9 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
         
-        (cache,env_1,ih,daeLLst,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
-        (cache,env_2,ih,DAE.DAE(daeElts2,_),_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialequation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
-        funcs = DAEUtil.avlTreeNew(); /* No functions instantiated from equation sections */
+        (cache,env_1,ih,daeLLst,funcs1,_,ci_state_1,graph) = instIfTrueBranches(cache,env,ih, mod, pre, csets, ci_state, tb, true, impl, graph);
+        (cache,env_2,ih,DAE.DAE(daeElts2,funcs),_,ci_state_2,graph) = instList(cache,env_1,ih, mod, pre, csets, ci_state, instEInitialequation, fb, impl, alwaysUnroll, graph) "There are no connections inside if-clauses." ;
+        funcs = DAEUtil.joinAvlTrees(funcs1,funcs);        
         dae = DAEUtil.joinDaes(DAE.DAE({DAE.INITIAL_IF_EQUATION(expl1,daeLLst,daeElts2,source)},funcs),fdae1);
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
@@ -13939,8 +13939,7 @@ algorithm
         cache = Env.addCachedInstFunc(cache,fpath1);
         (cache,env,ih,equalityConstraintDAE) = 
             implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),pre,sets_1,equalityConstraintFunction,{});
-        equalityConstraintDAE = DAEUtil.addDaeFunction(equalityConstraintDAE);
-        
+        equalityConstraintDAE = DAEUtil.addDaeFunction(equalityConstraintDAE);        
         dae = DAEUtil.joinDaes(dae, equalityConstraintDAE); 
       then
         (cache,env,ih,sets_1,dae,graph);
@@ -16549,11 +16548,12 @@ protected function instIfTrueBranches
   output Env outEnv;
   output InstanceHierarchy outIH;
   output list<list<DAE.Element>> outDaeLst;
+  output DAE.FunctionTree funcs "functions collected from the branches";
   output Connect.Sets outSets;
   output ClassInf.State outState;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
-  (outCache,outEnv,outIH,outDaeLst,outSets,outState,outGraph):=
+  (outCache,outEnv,outIH,outDaeLst,funcs,outSets,outState,outGraph):=
   matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inTypeALst,IE,inBoolean,inGraph)
     local
       list<Env.Frame> env,env_1,env_2;
@@ -16571,27 +16571,31 @@ algorithm
       InstanceHierarchy ih;
       SCode.EEquation eee;
       list<DAE.Element> elts;
+      DAE.FunctionTree funcs1,funcs2;
 
-    case (cache,env,ih,mod,pre,csets,ci_state,{},_,impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state,{},_,impl,graph) equation
+      funcs = DAEUtil.avlTreeNew() "new functiontree";      
       then
-        (cache,env,ih,{},csets,ci_state,graph);
+        (cache,env,ih,{},funcs,csets,ci_state,graph);
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),false,impl,graph)
       equation
-        (cache,env_1,ih,DAE.DAE(elts,_),csets_1,ci_state_1,graph) = 
+        (cache,env_1,ih,DAE.DAE(elts,funcs1),csets_1,ci_state_1,graph) = 
            instList(cache, env, ih, mod, pre, csets, ci_state, instEEquation, e, impl, alwaysUnroll, graph);
-        (cache,env_2,ih,llb,csets_2,ci_state_2,graph) = 
-           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, false, impl, graph);        
+        (cache,env_2,ih,llb,funcs2,csets_2,ci_state_2,graph) = 
+           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, false, impl, graph);
+        funcs = DAEUtil.joinAvlTrees(funcs1,funcs2); 
       then
-        (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
+        (cache,env_2,ih,elts::llb,funcs,csets_2,ci_state_2,graph);
 
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),true,impl,graph)
       equation
-        (cache,env_1,ih,DAE.DAE(elts,_),csets_1,ci_state_1,graph) = 
+        (cache,env_1,ih,DAE.DAE(elts,funcs1),csets_1,ci_state_1,graph) = 
            instList(cache, env, ih, mod, pre, csets, ci_state, instEInitialequation, e, impl, alwaysUnroll, graph);
-        (cache,env_2,ih,llb,csets_2,ci_state_2,graph) = 
-           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, true, impl, graph);        
+        (cache,env_2,ih,llb,funcs2,csets_2,ci_state_2,graph) = 
+           instIfTrueBranches(cache, env_1, ih, mod, pre, csets_1, ci_state_1,  es, true, impl, graph);
+        funcs = DAEUtil.joinAvlTrees(funcs1,funcs2);                   
       then
-        (cache,env_2,ih,elts::llb,csets_2,ci_state_2,graph);
+        (cache,env_2,ih,elts::llb,funcs,csets_2,ci_state_2,graph);
 
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),_,impl,graph)
       equation
