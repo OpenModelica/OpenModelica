@@ -9579,7 +9579,7 @@ algorithm
       equation 
         (cache,(c as SCode.CLASS(name = cn2, restriction = r)),cenv) = Lookup.lookupClass(cache,env, cn, true);
         (cache,mod2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod1, false); 
-        (cache,_,ih,_,dae,_,ty,_,_,_) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), mod2, Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
+        (cache,_,ih,_,dae,_,ty,_,_,_) = instClass(cache,cenv,ih,UnitAbsynBuilder.emptyInstStore(), mod2, Prefix.NOPRE(), Connect.emptySet, c, {}, true, INNER_CALL(), ConnectionGraph.EMPTY);
         env_1 = Env.extendFrameC(env,c);
         (cache,fpath) = makeFullyQualified(cache,env_1, Absyn.IDENT(id));
         ty1 = setFullyQualifiedTypename(ty,fpath);
