@@ -28,14 +28,11 @@
  *
  */
 
-#if defined(_MSC_VER)
-#define round(dbl) (dbl >= 0.0 ? (int)(dbl + 0.5) : ((dbl - (double)(int)dbl) <= -0.5 ? (int)dbl : (int)(dbl - 0.5)))
-#endif
-
 #include "unitparser.h"
 #include <iostream>
 #include <sstream>
 #include <stack>
+#include "omc_msvc.h" /* For round() */
 #ifndef NO_LPLIB
 #include "lp_lib.h"
 #endif
@@ -282,6 +279,7 @@ void UnitParser::addPrefix(const string symbol, Rational exponent) {
 }
 
 void UnitParser::addBase(const string quantityName, const string unitName,
+
 		const string unitSymbol, bool prefixAllowed) {
 	if (_units.find(unitSymbol) == _units.end()) {
 		Base b(quantityName, unitName, unitSymbol, prefixAllowed);

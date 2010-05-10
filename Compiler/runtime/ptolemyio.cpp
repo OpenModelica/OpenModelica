@@ -50,6 +50,7 @@ extern "C"
 #include <string.h>
 #include <stdlib.h>
 #include <math.h>
+#include "omc_msvc.h" /* For INFINITY and NAN */
 void print_error_buf_impl(const char* str);
 
 /* Given a file name and an array of variables, return the RML datastructure
@@ -123,19 +124,19 @@ void * read_ptolemy_dataset(char*filename, int size,char**vars,int datasize)
       
       buf1 = values.substr(commapos+1).c_str();
       val = strtod(buf1,&buf2); // Second value after comma
-// INFINITY and NAN is not defined in the MSVC version of math.h., hence the exclusion of the code snippet below on MSVC.
-#if !defined(_MSC_VER)
+
       if (buf1 == buf2) {
         // We may be trying to parse Infinity on a Windows platform.
         // Don't we feel stupid expecting this to work?
-        // Let's do these extra tests on Linux as well to check for NaN
         if (0 == strncmp(buf1,"Inf",3)) val = INFINITY;
         else if (0 == strncmp(buf1,"-Inf",4)) val = -INFINITY;
         else if (0 == strncmp(buf1,"inf",3)) val = INFINITY;
         else if (0 == strncmp(buf1,"-inf",4)) val = -INFINITY;
+        // Don't put 0.0 if the value is undefined.
+        // NaN sends a clear signal to the user that he has a problem.
         else val = NAN;
       }
-#endif   
+
       lst = (void*)mk_cons(Values__REAL(mk_rcon(val)),lst);
       j++;
     }
