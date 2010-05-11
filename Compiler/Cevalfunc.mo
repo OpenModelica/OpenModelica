@@ -60,11 +60,22 @@ algorithm
         Env.Env env1,env2,env3;
         Values.Value retVal;
         list<Values.Value> retVals;
-        Absyn.Path funcpath;
+        Absyn.Path funcpath, basefuncpath;
         list<DAE.Exp> crefArgs;
         String str;
         HashTable2.HashTable ht2;
+        SCode.Class c;
         list<tuple<DAE.ComponentRef, DAE.Exp>> replacements;
+    // Case for derived functions without modifications    
+    case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
+         sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
+                           classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=basefuncpath), 
+                             modifications=SCode.MOD(subModLst={}))),daeList)
+      equation
+        (_,c,env2)=Lookup.lookupClass(Env.emptyCache(),env,basefuncpath,true);
+        retVal = cevalUserFunc(env2,callExp,inArgs,c,daeList);
+      then
+        retVal;                         
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
          sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
                            classDef=SCode.PARTS(elementLst=elementList) ),daeList)
