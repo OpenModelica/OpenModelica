@@ -535,6 +535,11 @@ public function isIdenticalFile "Checks if two filenames points to the exact sam
   external "C";
 end isIdenticalFile;
 
+public function windowsNewline "returns /r/n, since MetaModelica has a bug for representing this as a literal"
+output String str;
+external "C";
+end windowsNewline;
+
 public function os "Returns a string with the operating system name
 
 For linux: 'linux'
