@@ -4050,9 +4050,9 @@ algorithm
         list<list<Integer>> r,t;
         list<Integer> rf,tf;
       equation
+        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         // check tearing
         true = RTOpts.debugFlag("tearing");
-        (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(var_lst_1);
         eqns_1 = DAELow.listEquation(eqn_lst);
