@@ -542,7 +542,7 @@ public function valueArrayNth "function: valueArrayNth
   output Key key;
   output Value value;
 algorithm
-  value:=
+  (key, value) :=
   matchcontinue (valueArray,pos)
     local
       Key k;
