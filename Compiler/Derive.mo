@@ -91,7 +91,7 @@ algorithm
       Boolean add;
       DAELow.MultiDimEquation[:] ae,ae1;
       list<DAELow.MultiDimEquation> listae,listae1;
-      list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref2,crefOrDerCref3;
+      list<DAE.Exp> crefOrDerCref,crefOrDerCref1,crefOrDerCref11,crefOrDerCref2,crefOrDerCref21,crefOrDerCref3,derCref1,derCref2;
       list<Integer> dimSize;
     case (DAELow.EQUATION(exp = e1,scalar = e2,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn) /* time varying variables */
       equation
@@ -109,13 +109,17 @@ algorithm
         DAELow.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i_1];
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        //crefOrDerCref1 = Exp.stringifyCrefs(e1_1);
-        //crefOrDerCref2 = Exp.stringifyCrefs(e2_1);
-        //crefOrDerCref3 = listAppend(crefOrDerCref1,crefOrDerCref2);
+        ((_,(crefOrDerCref1,derCref1,_))) = Exp.traverseExp(e1_1,traversingcrefOrDerCrefFinder,({},{},timevars));
+        ((_,(crefOrDerCref2,derCref2,_))) = Exp.traverseExp(e2_1,traversingcrefOrDerCrefFinder,({},{},timevars));
+        crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
+        crefOrDerCref21 = removeCrefFromDerCref(crefOrDerCref2,derCref2);
+        crefOrDerCref3 = Util.listUnionOnTrue(crefOrDerCref11,crefOrDerCref21,Exp.expEqual);
         // only add algorithm if it is not already derived 
-        (index1,ae1,derivedMultiEqn,add) = addAlgorithm(index,ae,DAELow.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1),1,inDerivedMultiEqn);
+        (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,DAELow.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1),1,inDerivedMultiEqn);
        then
-        (DAELow.ARRAY_EQUATION(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
+        //(DAELow.ARRAY_EQUATION(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
+         // Until the array equations will be unrolled we should return true to add an equation for every element
+        (DAELow.ARRAY_EQUATION(index1,crefOrDerCref3,source),al,inDerivedAlgs,ae1,derivedMultiEqn,true);
    // diverivative of function with multiple outputs
     case (DAELow.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
@@ -127,9 +131,14 @@ algorithm
         // inputs
         (in_1,_) = DAELow.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}));
         // only add algorithm if it is not already derived 
-        (index,a1,derivedAlgs,add) = addAlgorithm(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}),listLength(out1),inDerivedAlgs);
+        (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}),listLength(out1),inDerivedAlgs);
        then
         (DAELow.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
+    case (DAELow.ARRAY_EQUATION(index = _),_,_,_,_,_,_)
+      equation
+        print("-differentiate_equation_time on array equations not impl yet.\n");
+      then
+        fail();
     case (DAELow.ALGORITHM(index = _),_,_,_,_,_,_)
       equation
         print("-differentiate_equation_time on algorithm not impl yet.\n");
@@ -143,66 +152,116 @@ algorithm
   end matchcontinue;
 end differentiateEquationTime;
 
-protected function addAlgorithm
+protected function removeCrefFromDerCref "
+Author: Frenkel TUD"
+  input list<DAE.Exp> inCrefOrDerCref;
+  input list<DAE.Exp> inDerCref;
+  output list<DAE.Exp> outCrefOrDerCref;
+algorithm outCrefOrDerCref := matchcontinue(inCrefOrDerCref,inDerCref)
+  local
+    list<DAE.Exp> rest,crefOrDerCref,crefOrDerCref1;
+    DAE.Exp e;
+  case (inCrefOrDerCref,{}) then inCrefOrDerCref;
+  case (inCrefOrDerCref,e::rest)
+    equation
+      crefOrDerCref = removeCrefFromDerCref(inCrefOrDerCref,rest);
+      crefOrDerCref1 = Util.listDeleteMemberOnTrue(crefOrDerCref,e,Exp.expEqual);
+    then
+      crefOrDerCref1;
+end matchcontinue;
+end removeCrefFromDerCref;
+
+protected function traversingcrefOrDerCrefFinder "
+Author: Frenkel TUD
+Returns a list containing, unique, all componentRef or der(componentRef) in an exp.
+"
+  input tuple<DAE.Exp, tuple<list<DAE.Exp>,list<DAE.Exp>,DAELow.Variables> > inExp;
+  output tuple<DAE.Exp, tuple<list<DAE.Exp>,list<DAE.Exp>,DAELow.Variables> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    list<DAE.Exp> crefOrDerCref,derCref;
+    DAE.Exp e,e1;
+    DAELow.Variables timevars;
+    DAE.ComponentRef cr;
+  // CREF
+  case( (e as DAE.CREF(componentRef = cr), (crefOrDerCref,derCref,timevars)) )
+    equation
+      // exlude time
+      failure(DAE.CREF_IDENT(ident = "time",subscriptLst = {}) = cr);
+      (_,_) = DAELow.getVar(cr, timevars);
+    then
+      ((e, (e::crefOrDerCref,derCref,timevars) ));
+  // der(CREF)    
+  case ( (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CREF(componentRef = cr)}), (crefOrDerCref,derCref,timevars)) )
+    equation
+      (_,_) = DAELow.getVar(cr, timevars);
+    then
+      ((e, (e::crefOrDerCref,e1::derCref,timevars) ));
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingcrefOrDerCrefFinder;
+
+protected function addArray "
+Author: Frenkel TUD"
   input Integer inIndex;
-  input Type_a[:] inAlg;
+  input Type_a[:] inArray;
   input Type_a inA;
   input Integer inNumber;
-  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+  input list<tuple<Integer,Integer,Integer>> inDerivedArray;   
   output Integer outIndex;
-  output Type_a[:] outAlg; 
-  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output Type_a[:] outArray; 
+  output list<tuple<Integer,Integer,Integer>> outDerivedArray;
   output Boolean outAdd;
   replaceable type Type_a subtypeof Any;
 algorithm
-  (outIndex,outAlg,outDerivedAlgs,outAdd) := matchcontinue (inIndex,inAlg,inA,inNumber,inDerivedAlgs)
+  (outIndex,outArray,outDerivedArray,outAdd) := matchcontinue (inIndex,inArray,inA,inNumber,inDerivedArray)
     local
-      list<tuple<Integer,Integer,Integer>> rest,derivedAlgs;
-      tuple<Integer,Integer,Integer> dalg;
+      list<tuple<Integer,Integer,Integer>> rest,derivedArray;
+      tuple<Integer,Integer,Integer> dArray;
       list<Type_a> alst,alst1;
       Integer index,index1,dindex,dnumber,dnumber_1;
       Type_a[:] a1;
       Boolean add;
    // no derived functions without outputs
-   case (inIndex,inAlg,inA,inNumber,derivedAlgs)
+   case (inIndex,inArray,inA,inNumber,derivedArray)
      equation
        true = intEq(inNumber,0); 
      then
-       (inIndex,inAlg,derivedAlgs,false);      
+       (inIndex,inArray,derivedArray,false);      
    // not derived   
-   case (inIndex,inAlg,inA,inNumber,{})
+   case (inIndex,inArray,inA,inNumber,{})
      equation
-        alst = arrayList(inAlg);
+        alst = arrayList(inArray);
         alst1 = listAppend(alst,{inA});
         a1 = listArray(alst1);
-        index = arrayLength(inAlg);      
+        index = arrayLength(inArray);      
      then
        (index,a1,{(inIndex,index,1)},true);
    // derived    
-   case (inIndex,inAlg,inA,inNumber,(dalg as (index,dindex,dnumber))::rest)
+   case (inIndex,inArray,inA,inNumber,(dArray as (index,dindex,dnumber))::rest)
      equation
        // search
        true = intEq(inIndex,index);
        true = dnumber < inNumber;
        dnumber_1 = dnumber + 1;
      then
-       (dindex,inAlg,(index,dindex,dnumber_1)::rest,true);    
-   case (inIndex,inAlg,inA,inNumber,(dalg as (index,dindex,dnumber))::rest)
+       (dindex,inArray,(index,dindex,dnumber_1)::rest,true);    
+   case (inIndex,inArray,inA,inNumber,(dArray as (index,dindex,dnumber))::rest)
      equation
        // search
        true = intEq(inIndex,index);
        false = dnumber < inNumber;
      then
-       (dindex,inAlg,(index,dindex,dnumber)::rest,false);        
-   case (inIndex,inAlg,inA,inNumber,(dalg as (index,dindex,dnumber))::rest)
+       (dindex,inArray,(index,dindex,dnumber)::rest,false);        
+   case (inIndex,inArray,inA,inNumber,(dArray as (index,dindex,dnumber))::rest)
      equation
        false = intEq(inIndex,index);
        // next
-       (index1,a1,derivedAlgs,add) = addAlgorithm(inIndex,inAlg,inA,inNumber,rest);
+       (index1,a1,derivedArray,add) = addArray(inIndex,inArray,inA,inNumber,rest);
      then   
-       (index1,a1,dalg::derivedAlgs,add);    
+       (index1,a1,dArray::derivedArray,add);    
   end matchcontinue;
-end addAlgorithm;
+end addArray;
 
 public function differentiateExpTime "function: differentiateExpTime
   This function differentiates expressions with respect to the \'time\' variable.
@@ -452,7 +511,8 @@ algorithm
   end matchcontinue;
 end differentiateExpTime;
 
-protected function differentiateFunctionTimeOutputs
+protected function differentiateFunctionTimeOutputs"
+Author: Frenkel TUD"
   input DAE.Exp inExp;
   input DAE.Exp inDExp;
   input list<DAE.Exp> inExpLst;
@@ -560,7 +620,8 @@ algorithm
   end matchcontinue;
 end differentiateFunctionTimeOutputs;
 
-protected function getFunctionResultTypes
+protected function getFunctionResultTypes"
+Author: Frenkel TUD"
   input DAE.Type inType;
   output list<DAE.Type> outTypLst;
 algorithm
@@ -574,7 +635,8 @@ algorithm
   end matchcontinue;    
 end getFunctionResultTypes;
 
-protected function differentiateFunctionTime
+protected function differentiateFunctionTime"
+Author: Frenkel TUD"
   input DAE.Exp inExp;
   input tuple<DAELow.Variables,DAE.FunctionTree> inVarsandFuncs;
   output DAE.Exp outExp;  
@@ -626,7 +688,8 @@ algorithm
   end matchcontinue;
 end differentiateFunctionTime;
 
-protected function checkDerivativeFunctionInputs
+protected function checkDerivativeFunctionInputs"
+Author: Frenkel TUD"
   input list<Boolean> blst;
   input DAE.Type tp;
   input DAE.Type dtp;
@@ -660,7 +723,8 @@ algorithm
     end matchcontinue;
 end checkDerivativeFunctionInputs;
 
-protected function differentiateFunctionTime1
+protected function differentiateFunctionTime1"
+Author: Frenkel TUD"
   input Absyn.Path inFuncName;
   input DAE.FunctionDefinition mapper;
   input DAE.Type tp;
@@ -721,7 +785,8 @@ algorithm
   end matchcontinue;
 end differentiateFunctionTime1;
 
-protected function checkDerFunctionConds
+protected function checkDerFunctionConds"
+Author: Frenkel TUD"
   input list<Boolean> inblst;
   input list<tuple<Integer,DAE.derivativeCond>> crlst;
   input list<DAE.Exp> expl;
@@ -784,7 +849,8 @@ algorithm
   end matchcontinue;
 end checkDerFunctionConds;
 
-public function getlowerOrderDerivative
+public function getlowerOrderDerivative"
+Author: Frenkel TUD"
   input Absyn.Path fname;
   input DAE.FunctionTree functions;
   output Absyn.Path outFName;
@@ -803,7 +869,8 @@ algorithm
   end matchcontinue;
 end getlowerOrderDerivative;
 
-public function getFunctionMapper
+public function getFunctionMapper"
+Author: Frenkel TUD"
   input Absyn.Path fname;
   input DAE.FunctionTree functions;
   output DAE.FunctionDefinition mapper;
@@ -827,7 +894,8 @@ algorithm
   end matchcontinue;
 end getFunctionMapper;
 
-public function getFunctionMapper1
+public function getFunctionMapper1"
+Author: Frenkel TUD"
   input list<DAE.FunctionDefinition> funcDefs;
   output DAE.FunctionDefinition mapper;
 algorithm
