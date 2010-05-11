@@ -8442,7 +8442,7 @@ algorithm
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
-        (dae,m,mt,nv,nf,deqns,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{});
+        (dae,m,mt,nv,nf,deqns,_,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{},{});
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
        //print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
@@ -10457,6 +10457,7 @@ protected function differentiateEqns
   input list<Integer> inIntegerLst6;
   input DAE.FunctionTree inFunctions;
   input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;
   output DAELow outDAELow1;
   output IncidenceMatrix outIncidenceMatrix2;
   output IncidenceMatrixT outIncidenceMatrixT3;
@@ -10464,9 +10465,10 @@ protected function differentiateEqns
   output Integer outInteger5;
   output list<Integer> outIntegerLst6;
   output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;
 algorithm
-  (outDAELow1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6,outDerivedAlgs):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions,inDerivedAlgs)
+  (outDAELow1,outIncidenceMatrix2,outIncidenceMatrixT3,outInteger4,outInteger5,outIntegerLst6,outDerivedAlgs,outDerivedMultiEqn):=
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inIntegerLst6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       DAELow dae;
       list<Value>[:] m,mt;
@@ -10477,18 +10479,19 @@ algorithm
       list<Value> reqns,es;
       Variables v,kv,ev;
       VarTransform.VariableReplacements av "alias-variables' hashtable";
-      MultiDimEquation[:] ae;
+      MultiDimEquation[:] ae,ae1;
       DAE.Algorithm[:] al,al1;
       EventInfo wc;
       ExternalObjectClasses eoc;
       list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
-    case (dae,m,mt,nv,nf,{},_,inDerivedAlgs) then (dae,m,mt,nv,nf,{},inDerivedAlgs);
-    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs)
+      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;
+    case (dae,m,mt,nv,nf,{},_,inDerivedAlgs,inDerivedMultiEqn) then (dae,m,mt,nv,nf,{},inDerivedAlgs,inDerivedMultiEqn);
+    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
 
-        (eqn_1,al1,derivedAlgs,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,true) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         str = equationStr(eqn);
         //print( "differentiated equation ") ;
@@ -10504,15 +10507,15 @@ algorithm
         eqns_1 = equationAdd(eqns, eqn_1);
         leneqns = equationSize(eqns_1);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns,derivedAlgs1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs);
+        (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns_1,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
-        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1);
-    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs)
+        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1);
+    case ((dae as DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al,wc,eoc)),m,mt,nv,nf,(e :: es),inFunctions,inDerivedAlgs,inDerivedMultiEqn)
       equation
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
 
-        (eqn_1,al1,derivedAlgs,false) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs);
+        (eqn_1,al1,derivedAlgs,ae1,derivedMultiEqn,false) = Derive.differentiateEquationTime(eqn, v, inFunctions, al,inDerivedAlgs,ae,inDerivedMultiEqn);
         Debug.fprint("bltdump", "High index problem, differentiated equation: ") "update equation row in IncidenceMatrix" ;
         str = equationStr(eqn);
         //print( "differentiated equation ") ;
@@ -10527,10 +10530,10 @@ algorithm
         Debug.fprint("bltdump", "\n");
         leneqns = equationSize(eqns);
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
-        (dae,m,mt,nv,nf,reqns,derivedAlgs1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns,seqns,ie,ae,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs);
+        (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
-        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1);        
-    case (_,_,_,_,_,_,_,_)
+        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1);        
+    case (_,_,_,_,_,_,_,_,_)
       equation
         print("-differentiate_eqns failed\n");
       then
