@@ -247,6 +247,7 @@ int startNonInteractiveSimulation(int argc, char**argv){
 	  globalData->lastEmittedTime = start;
 	  globalData->forceEmit=0;
 
+    initSample(start);
 	  initDelay(start);
 
 	  if (measure_time_flag)

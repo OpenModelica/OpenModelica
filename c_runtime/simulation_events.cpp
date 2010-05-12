@@ -350,7 +350,7 @@ double sample(double start, double interval) {
    * below should be: if (tmp >= -0.0001 && tmp < 0.0001) but needs more testing as some models from
    * testsuite fail.
    */
-  static double eps = 0.0001;
+  static const double eps = 0.0001;
   /*
    * sjoelund - do not sample before the start value !
    */
@@ -367,6 +367,52 @@ double sample(double start, double interval) {
           << tmp << endl;
     return 0;
   }
+}
+
+void initSample(double start) {
+  if (sim_verbose)
+    printf("Calculating time of sample events is not performed yet\n");
+
+  /* This code will generate an array of time values when sample generates events.
+   * The only problem is our backend does not generate this array.
+   * Sample() and sample() also need to be changed, but this should be easy to fix. */
+
+  /*
+  int i;
+  double stop = 1.0;
+  double d;
+  double samples[][2] = {
+    {0.0,0.1},
+    {0.3,0.3},
+    {0.5,0.2},
+    {0.0,0.15},
+  };
+  double* events;
+  int num_samples = sizeof(samples)/(2*sizeof(double));
+  int max_events = 0;
+  int ix = 0;
+  int nuniq;
+  
+  for (i=0; i<num_samples; i++) {
+    if (stop >= samples[i][0])
+     max_events += (stop - samples[i][0])/samples[i][1]+1;
+  }
+  events = malloc(max_events * sizeof(double));
+  for (i=0; i<num_samples; i++) {
+    for (d=samples[i][0]; ix<max_events && d<stop; d+= samples[i][1]) {
+      events[ix++] = d;
+    }
+  }
+  assert(ix == max_events);
+  qsort(events,max_events,sizeof(double),compdbl);
+  nuniq = unique(events,max_events,sizeof(double),compdbl);
+  printf("Sorted, unique events\n");
+  for (i=0; i<nuniq; i++) {
+    printf("%d %f\n", i, events[i]);
+  }
+  free(events);
+  return 0;
+  */
 }
 
 void saveall() {

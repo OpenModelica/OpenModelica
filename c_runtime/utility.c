@@ -65,3 +65,31 @@ modelica_real rem(modelica_real x, modelica_real y)
 	return fmod(x, y);
 }
 
+int compdbl(const void* a, const void* b) {
+  const double *v1 = (const double *) a;
+  const double *v2 = (const double *) b;
+  const double diff = *v1 - *v2;
+  const double epsilon = 0.00000000000001;
+
+  if (diff < epsilon && diff > -epsilon)
+    return 0;  
+  return (*v1 > *v2) - (*v1 < *v2);
+}
+
+int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
+  size_t nuniq = 0;
+  size_t i,j;
+  void *a, *b, *c;
+  a = base;
+  for (i=1; i<nmemb; i++) {
+    b = ((char*)base)+i*size;
+    if (0 == compar(a,b)) {
+      nuniq++;
+    } else {
+      a = b;
+      c = ((char*)base)+(i-nuniq)*size;
+      memcpy(c, b, size);
+    }
+  }
+  return nmemb-nuniq;
+}

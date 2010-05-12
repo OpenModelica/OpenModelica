@@ -151,7 +151,7 @@ void storeDelayedExpression(int exprNumber, double exprValue)
 		int index = delayStruct->currentIndex;
     if (index >= delayStruct->maxExpressionBuffer) {
       // it doesn't fit anymore, we need to re-alloc:
-      delayStruct->maxExpressionBuffer += 500;
+      delayStruct->maxExpressionBuffer *= 2;
       delayStruct->expressionDelayBuffer = (t_TimeAndValue*)realloc(
               delayStruct->expressionDelayBuffer,
               delayStruct->maxExpressionBuffer * sizeof(t_TimeAndValue));

@@ -64,6 +64,7 @@ bool change(double& var);
 
 double Sample(double t, double start ,double interval);
 double sample(double start ,double interval);
+void initSample(double start);
 
 double Less(double a,double b);
 double LessEq(double a,double b);
