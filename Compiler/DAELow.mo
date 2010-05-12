@@ -4971,18 +4971,24 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_2,extObjCls);
 
     /* If equation */
-    case (DAE.DAE(elementLst = (DAE.IF_EQUATION(condition1 = _) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(elementLst = ((e as DAE.IF_EQUATION(condition1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
+      local String str;
       equation
+        str = DAEUtil.dumpElementsStr({e});
+        str = stringAppend("rewrite equations using if-expressions: ",str);
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"if-equations","rewrite equations using if-expressions"});
+          {"if-equations",str});
       then
         fail();
 
     /* Initial if equation */
-    case (DAE.DAE(elementLst = (DAE.INITIAL_IF_EQUATION(condition1 = _) :: xs)),states,vars,knvars,extVars,whenclauses)
+    case (DAE.DAE(elementLst = ((e as DAE.INITIAL_IF_EQUATION(condition1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
+      local String str;
       equation
+        str = DAEUtil.dumpElementsStr({e});
+        str = stringAppend("rewrite equations using if-expressions: ",str);
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"if-equations","rewrite equations using if-expressions"});
+          {"if-equations",str});
       then
         fail();
 

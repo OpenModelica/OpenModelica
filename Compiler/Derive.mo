@@ -102,6 +102,18 @@ algorithm
       then
         (DAELow.EQUATION(e1_2,e2_2,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
 
+    
+   // Complex Equations
+    case (DAELow.COMPLEX_EQUATION(index = index,lhs=e1,rhs=e2,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
+      equation
+        true = intEq(index,-1);
+        e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
+        e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
+       then
+        // because der(Record) is not jet implemented -> fail()
+        //(DAELow.COMPLEX_EQUATION(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
+        fail();
+   // Array Equations    
     case (DAELow.ARRAY_EQUATION(index = index,crefOrDerCref=crefOrDerCref,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         // get Equation
@@ -134,6 +146,11 @@ algorithm
         (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}),listLength(out1),inDerivedAlgs);
        then
         (DAELow.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
+    case (DAELow.COMPLEX_EQUATION(index = _),_,_,_,_,_,_)
+      equation
+        print("-differentiate_equation_time on complex equations not impl yet.\n");
+      then
+        fail();        
     case (DAELow.ARRAY_EQUATION(index = _),_,_,_,_,_,_)
       equation
         print("-differentiate_equation_time on array equations not impl yet.\n");
@@ -531,8 +548,6 @@ algorithm
       list<DAE.Type> tlst,tlst1,tlst2;
       list<DAE.Exp> explst,dexplst,dexplst1,dexplst_1,dexplst1_1;
       list<Boolean> blst,blst1;
-      DAE.TType ttype;
-      list<DAE.TType> ttlst,dttlst;
       list<String> typlststring;
       String typstring,dastring;      
     // order=1  
@@ -548,9 +563,7 @@ algorithm
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
-        ttlst = Util.listMap(tlst1,Util.tuple21);
-        dttlst = Util.listMap(tlst2,Util.tuple21);  
-        true = Util.isListEqual(ttlst,dttlst,true);
+        true =  Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes); 
         // diff explst
         (dexplst,_) = DAELow.listSplitOnTrue(inExpLst,blst);
         (dexplst1,_) = DAELow.listSplitOnTrue(inExpLst1,blst1);
@@ -570,9 +583,7 @@ algorithm
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
-        ttlst = Util.listMap(tlst1,Util.tuple21);
-        dttlst = Util.listMap(tlst2,Util.tuple21);   
-        false = Util.isListEqual(ttlst,dttlst,true);
+        false = Util.isListEqualWithCompareFunc(tlst1,tlst2,Types.equivtypes); 
         // add Warning
         typlststring = Util.listMap(tlst1,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
@@ -590,9 +601,7 @@ algorithm
         DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        ttlst = Util.listMap(tlst,Util.tuple21);
-        dttlst = Util.listMap(tlst2,Util.tuple21);  
-        true = Util.isListEqual(ttlst,dttlst,true);    
+        true = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes); 
         // diff explst
         dexplst_1 = Util.listMap1(inExpLst,differentiateExpTime,(timevars,functions));        
         dexplst1_1 = Util.listMap1(inExpLst1,differentiateExpTime,(timevars,functions));        
@@ -607,9 +616,7 @@ algorithm
         DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
-        ttlst = Util.listMap(tlst,Util.tuple21);
-        dttlst = Util.listMap(tlst2,Util.tuple21);  
-        false = Util.isListEqual(ttlst,dttlst,true);    
+        false = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);     
         // add Warning
         typlststring = Util.listMap(tlst,Types.unparseType);
         typstring = Util.stringDelimitList(typlststring,";");
@@ -700,7 +707,6 @@ algorithm
     local
       list<DAE.FuncArg> falst,falst1,falst2,dfalst;
       list<DAE.Type> tlst,dtlst;
-      list<DAE.TType> ttlst,dttlst;
       Boolean ret;
       case (blst,(DAE.T_FUNCTION(funcArg=falst),_),(DAE.T_FUNCTION(funcArg=dfalst),_))
       equation
@@ -709,10 +715,8 @@ algorithm
         falst2 = listAppend(falst,falst1);
         // compare with derivative function inputs
         tlst = Util.listMap(falst2,Util.tuple22);
-        ttlst = Util.listMap(tlst,Util.tuple21);
         dtlst = Util.listMap(dfalst,Util.tuple22);
-        dttlst = Util.listMap(dtlst,Util.tuple21);  
-        ret = Util.isListEqual(ttlst,dttlst,true);     
+        ret = Util.isListEqualWithCompareFunc(tlst,dtlst,Types.equivtypes);     
       then 
         (ret,tlst);
     case (_,_,_)
