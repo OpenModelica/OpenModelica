@@ -52,71 +52,96 @@ spackage test
   end TplAbsyn;
 
 
-pathIdent(PathIdent) ::= 
+template pathIdent(PathIdent) "bla" ::= 
   case IDENT      then ident
   case PATH_IDENT then '<%ident%>.<%pathIdent(path)%>'
-	
-typedIdents(TypedIdents decls) ::= 
+end pathIdent;
+
+template typedIdents(TypedIdents decls) ::= 
 (decls of (id,pid) : 
    '<%pathIdent(pid)%> <%id%>;//heja' 
    \n 
 )
+end typedIdents;
 
-test(list<String> items, Integer ind) ::= (items ind; align=testfn(ind); alignSeparator='ss<%ind%>'; wrapSeparator=testfn(2))
+template test(list<String> items, Integer ind) ::= (items ind; align=testfn(ind); alignSeparator='ss<%ind%>'; wrapSeparator=testfn(2))
+end test;
 
-test2(list<String> items, String sep, Integer a) ::= (items sep; align=a)
+template test2(list<String> items, String sep, Integer a) ::= (items sep; align=a)
+end test2;
 
-test3(list<String> items, String item, Integer ii) ::= 
+template test3(list<String> items, String item, Integer ii) ::= 
   <<
   <%[items, item, ii] of st: 'bla<%st%>' \n%>
   <%[items, item, ii, ([items, item, ii]\n), "blaaa" ] ", "%>
   <%[items, item, ii] ", "/*]*/%>!!!!!error should be
   <%[items, item, ii, ([items, item, ii]\n), "blaaa" ] : case it then it ", "%>
   <%match 'aha<%ii%>' case it then it%>
->>
+  >>
+end test3;
 
-testCond(Option<tuple<String,Integer>> nvOpt) ::= 
+template testCond(Option<tuple<String,Integer>> nvOpt) ::= 
   if nvOpt is SOME((name,value)) then '<%name%> = <%value%>;'
   else "no value"
+end testCond;
 
-testCond2(Option<tuple<String,Integer>> nvOpt) ::= 
+template testCond2(Option<tuple<String,Integer>> nvOpt) ::= 
   if nvOpt is not SOME((name,value)) then "none" 
   else 'SOME(<%name%>,<%value%>)' 
+end testCond2;
 
-mapInt(Integer) ::= '(int:<%it%>)'
-mapString(String) ::= '(str:<%it%>)'
-mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
+template mapInt(Integer) ::= '(int:<%it%>)'
+end mapInt;
 
-testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
-testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
-testMap3(list<list<Integer>> lstOfLst) ::= 
+template mapString(String) ::= '(str:<%it%>)'
+end mapString;
+
+template mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
+end mapIntString;
+
+template testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
+end testMap;
+
+template testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
+end testMap2;
+
+template testMap3(list<list<Integer>> lstOfLst) ::= 
 	(lstOfLst of intLst : 
 		(intLst of int : mapInt(int) ", ") 
 	";\n"; anchor)
-testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst : it : mapInt()
-testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
+end testMap3;
 
-intMatrix(list<list<Integer>> lstOfLst) ::= 
+template testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst : it : mapInt()
+end testMap4;
+
+template testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
+end testMap5;
+
+template intMatrix(list<list<Integer>> lstOfLst) ::= 
 << 
 [ <%lstOfLst of intLst : 
 		(intLst ", ") 
    ";\n"; anchor%> ]
 >>
+end intMatrix;
 
-ifTest(Integer i) ::= if mapInt(i) then '<%it%> name;' else "/* weird I */"
+template ifTest(Integer i) ::= if mapInt(i) then '<%it%> name;' else "/* weird I */"
+end ifTest;
 
-bindTest() ::= 
+template bindTest() ::= 
   ifTest(1) of ii : 
     <<
       some hej<%ii%>
     >>
+end bindTest;
 
-txtTest() ::= 
+template txtTest() ::= 
   # txt = "ahoj"
   # txt += "hej"
   txt
+end txtTest;
 
-txtTest2() ::= 
+template txtTest2() ::= 
 # txt = "ahoj2"
 # txt += "hej2"
 <<
@@ -124,8 +149,9 @@ bl·· <%txt%>
   <%/* jhgjhgjh  */%>  
 jo
 >>
+end txtTest2;
 
-txtTest3(String hej, Text buf) ::= 
+template txtTest3(String hej, Text buf) ::= 
 # txt = "aahoj2"
 # txt += "ahej2"
 # buf += txt 
@@ -135,8 +161,9 @@ abl·· <%txt%>
   <%/* jhgjhgjh  */%>  
 ajo
 >>
+end txtTest3;
 
-txtTest4(String hej, Text buf) ::= 
+template txtTest4(String hej, Text buf) ::= 
 if hej then 
   # txt = "ahoj2"
   # txt += hej
@@ -146,8 +173,9 @@ if hej then
   <%/* jhgjhgjh  */%>  
   jo
   >>
+end txtTest4;
 
-txtTest5(String hej, Text buf, Text nobuf) ::= 
+template txtTest5(String hej, Text buf, Text nobuf) ::= 
 # txt = "aahoj2" 
 # txt += "ahej2"
 # buf += txt
@@ -157,8 +185,9 @@ abl·· <%txt%>
   <%/* jhgjhgjh  */%>  
 ajo
 >>
+end txtTest5;
 
-txtTest6(list<String> hej, Text buf) ::=
+template txtTest6(list<String> hej, Text buf) ::=
   # mytxt = "bolo"
   # nomut = ','
   
@@ -177,15 +206,17 @@ txtTest6(list<String> hej, Text buf) ::=
       # mytxt += '<%it%>jo'
       '<%it%><%nomut%>'
      nomut)
+end txtTest6;
 
-contCase(String tst) ::=
+template contCase(String tst) ::=
   case "a"
   case "b"
   case "bb"
   case "c" then "hej"
   case "d" then "Hej!"
+end contCase;
 
-contCase2(PathIdent) ::=
+template contCase2(PathIdent) ::=
   case IDENT
   case PATH_IDENT 
   case IDENT(ident = "ii")
@@ -213,16 +244,34 @@ contCase2(PathIdent) ::=
     sdf
     >>
  */
+end contCase2;
 
-genericTest(list<String> lst) ::= listLength(lst)  
-genericTest2(list<Integer> lst) ::= listLength(lst)
-genericTest3(list<Integer> lst) ::= listMember(3,lst)
-genericTest4(list<String> lst) ::= listMember("ahoj",lst)
-genericTest5(list<String> lst, String hoj) ::= listMember('a<%hoj%>',lst)
-genericTest6(list<String> lst, Integer idx) ::= listGet(lst,idx)
-genericTest7(list<Integer> lst, Integer idx) ::= listGet(lst,idx)
-genericTest8(list<Integer> lst) ::= listReverse(lst) : '<%it%>th revesed'
-genericTest9(list<list<String>> lst) ::= listReverse() : listReverse() : '<%it%>hej!'
+template genericTest(list<String> lst) ::= listLength(lst)  
+end genericTest;
+
+template genericTest2(list<Integer> lst) ::= listLength(lst)
+end genericTest2;
+
+template genericTest3(list<Integer> lst) ::= listMember(3,lst)
+end genericTest3;
+
+template genericTest4(list<String> lst) ::= listMember("ahoj",lst)
+end genericTest4;
+
+template genericTest5(list<String> lst, String hoj) ::= listMember('a<%hoj%>',lst)
+end genericTest5;
+
+template genericTest6(list<String> lst, Integer idx) ::= listGet(lst,idx)
+end genericTest6;
+
+template genericTest7(list<Integer> lst, Integer idx) ::= listGet(lst,idx)
+end genericTest7;
+
+template genericTest8(list<Integer> lst) ::= listReverse(lst) : '<%it%>th revesed'
+end genericTest8;
+
+template genericTest9(list<list<String>> lst) ::= listReverse() : listReverse() : '<%it%>hej!'
+end genericTest9;
 
 //Error - unmatched type for type variable 'TypeVar'. Firstly inferred 'String', next inferred 'Integer'(dealiased 'Integer').
 //genericTest10(list<Integer> lst) ::= listMember("3",lst) 

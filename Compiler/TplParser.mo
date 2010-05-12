@@ -2182,7 +2182,15 @@ end typeVars;
 
 /*
 templDef:
-    identifier:name  templDef_ConstOrTempl:td   =>  (name, td)
+    'template' identifier:name  
+      '(' templArgs:args ')' stringComment
+	    templDef_Templ:(exp,lesc,resc) 
+    endDefIdent(name) 
+      =>  (name, TEMPLATE_DEF(args,lesc,resc,exp))
+    |
+    'constant' constantType:ctype  identifier:name templDef_Const:td //check ctype 
+      stringComment ';'
+      => (name, td)
 */
 public function templDef
   input list<String> inChars;
@@ -2195,6 +2203,7 @@ public function templDef
 algorithm
   (outChars, outLineInfo, outTemplName, outTemplDef) := matchcontinue (inChars, inLineInfo)
     local
+      String lesc, resc;
       list<String> chars;
       LineInfo linfo;
       Boolean isD;
@@ -2202,33 +2211,63 @@ algorithm
       list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
       TplAbsyn.Ident name;
       TplAbsyn.TemplateDef td;
+      TplAbsyn.TypeSignature ctype, ctypeLit;
+      TplAbsyn.TypedIdents args;
+      TplAbsyn.Expression exp;
     
-    case (chars, linfo)
+    case ("t"::"e"::"m"::"p"::"l"::"a"::"t"::"e":: chars, linfo)
       equation
-        (chars, name) = identifier(chars); 
+        afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        
-        (chars, linfo,td) = templDef_ConstOrTempl(chars, linfo);
+        (chars, linfo, name) = identifierNoOpt(chars, linfo);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "(");
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, args) = templArgs(chars, linfo);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = stringComment(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);        
+        (chars, linfo, exp, lesc, resc) = templDef_Templ(chars, linfo);        
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = endDefIdent(chars, linfo, name);
+      then (chars, linfo, name, TplAbsyn.TEMPLATE_DEF(args,lesc,resc,exp));
+    
+    case ("c"::"o"::"n"::"s"::"t"::"a"::"n"::"t" :: chars, linfo)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, ctype) = constantType(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, name) = identifierNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, td, ctypeLit) = templDef_Const(chars, linfo);
+        (chars, linfo) = checkConstantType(chars, linfo, ctype, ctypeLit);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = stringComment(chars, linfo);
+        (chars,linfo) = interleave(chars, linfo);
+        (chars,linfo) = semicolon(chars, linfo);
       then (chars, linfo, name, td);
   end matchcontinue;
 end templDef;
 
 /*
-templDef_ConstOrTempl:
-	'(' templArgs:args ')' templDef_AngleOrDolar:(exp,lesc,resc)  =>  TEMPLATE_DEF(args,lesc,resc,exp)
+templDef_Const:
+	'=' stringConstant:strRevList  
+	  =>  STR_TOKEN_DEF(makeStrTokFromRevStrList(strRevList))
 	|
-	'=' constant:cdef  =>  cdef 
-
+	'=' literalConstant:(str,litType)  
+	  =>  LITERAL_DEF(str, litType) 
 */
-public function templDef_ConstOrTempl
+public function templDef_Const
   input list<String> inChars;
   input LineInfo inLineInfo;
 
   output list<String> outChars;
   output LineInfo outLineInfo;
   output TplAbsyn.TemplateDef outTemplDef;
+  output TplAbsyn.TypeSignature outConstType;
 algorithm
-  (outChars, outLineInfo, outTemplDef) := matchcontinue (inChars, inLineInfo)
+  (outChars, outLineInfo, outTemplDef, outConstType) := matchcontinue (inChars, inLineInfo)
     local
       String lesc, resc, str;
       list<String> chars, strRevList;
@@ -2242,52 +2281,146 @@ algorithm
       Tpl.StringToken st;
       TplAbsyn.TypeSignature litType;
     
-    case ("(" :: chars, linfo)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, args) = templArgs(chars, linfo);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");
-        (chars, linfo) = interleave(chars, linfo);        
-        (chars, linfo, exp,lesc,resc) = templDef_AngleOrDolar(chars, linfo);        
-      then (chars, linfo, TplAbsyn.TEMPLATE_DEF(args,lesc,resc,exp));
-    
     case ("=" :: chars, linfo)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, strRevList) = stringConstant(chars, linfo);
         st = makeStrTokFromRevStrList(strRevList);
-      then (chars, linfo, TplAbsyn.STR_TOKEN_DEF(st));
+      then (chars, linfo, TplAbsyn.STR_TOKEN_DEF(st), TplAbsyn.STRING_TYPE());
     
     case ("=" :: chars, linfo)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, str, litType) = literalConstant(chars, linfo);
-      then (chars, linfo, TplAbsyn.LITERAL_DEF(str, litType));
+      then (chars, linfo, TplAbsyn.LITERAL_DEF(str, litType), litType);
     
    //error after = expect constant
    case ("=" :: chars, linfo)
       equation
-        linfo = parseError(chars, linfo, "Expected a constant definition after the '='.", true);                       
-      then (chars, linfo, TplAbsyn.LITERAL_DEF("#error#",  TplAbsyn.UNRESOLVED_TYPE("#Error#")));
+        linfo = parseError(chars, linfo, "Expected a constant definition after the '='.", true);
+        litType = TplAbsyn.UNRESOLVED_TYPE("#Error#");                       
+      then (chars, linfo, TplAbsyn.LITERAL_DEF("#error#", litType),litType);
    
    //error, cannot follow on 
    case (chars, linfo)
       equation
-        linfo = parseError(chars, linfo, "Expected a template signature or constant definition after the position.", true);                       
-      then (chars, linfo, TplAbsyn.TEMPLATE_DEF({},"","",TplAbsyn.ERROR_EXP()));
+        linfo = parseError(chars, linfo, "Expected a constant definition after the position.", true);
+        litType = TplAbsyn.UNRESOLVED_TYPE("#Error#");                      
+      then (chars, linfo, TplAbsyn.TEMPLATE_DEF({},"","",TplAbsyn.ERROR_EXP()), litType);
    
             
   end matchcontinue;
-end templDef_ConstOrTempl;
+end templDef_Const;
+
+/*
+constantType:
+	'String'  => STRING_TYPE()
+	'Integer' => INTEGER_TYPE()
+	'Real'    => REAL_TYPE()
+	'Boolean' => BOOLEAN_TYPE()
+*/
+public function constantType
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.TypeSignature outConstType;
+algorithm
+  (outChars, outLineInfo, outConstType) := matchcontinue (inChars, inLineInfo)
+    local
+      String lesc, resc, str;
+      list<String> chars, strRevList;
+      LineInfo linfo;
+      Boolean isD;
+      TplAbsyn.PathIdent pid;
+      list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
+      TplAbsyn.Ident name;
+      TplAbsyn.TypedIdents args;
+      TplAbsyn.Expression exp;
+      Tpl.StringToken st;
+      TplAbsyn.TypeSignature litType;
+    
+    case ("S"::"t"::"r"::"i"::"n"::"g" :: chars, linfo)
+      equation
+        afterKeyword(chars);        
+      then (chars, linfo, TplAbsyn.STRING_TYPE());
+    
+    case ("I"::"n"::"t"::"e"::"g"::"e"::"r" :: chars, linfo)
+      equation
+        afterKeyword(chars);        
+      then (chars, linfo, TplAbsyn.INTEGER_TYPE());
+    
+    case ("R"::"e"::"a"::"l":: chars, linfo)
+      equation
+        afterKeyword(chars);        
+      then (chars, linfo, TplAbsyn.REAL_TYPE());
+    
+    case ("B"::"o"::"o"::"l"::"e"::"a"::"n" :: chars, linfo)
+      equation
+        afterKeyword(chars);        
+      then (chars, linfo, TplAbsyn.BOOLEAN_TYPE());
+    
+   //error, no expected type, cannot follow on 
+   case (chars, linfo)
+      equation
+        linfo = parseError(chars, linfo, "Expected 'String', 'Integer', 'Real' or 'Boolean' type specification for the constant definition after the position.", false);                               
+      then (chars, linfo, TplAbsyn.UNRESOLVED_TYPE("#Error#"));
+   
+            
+  end matchcontinue;
+end constantType;
+
+
+public function checkConstantType
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input TplAbsyn.TypeSignature inConstType;
+  input TplAbsyn.TypeSignature inConstTypeLiteral;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+algorithm
+  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inConstType, inConstTypeLiteral)
+    local
+      String lesc, resc, str;
+      list<String> chars, strRevList;
+      LineInfo linfo;
+      Boolean isD;
+      TplAbsyn.PathIdent pid;
+      list<tuple<TplAbsyn.Ident, TplAbsyn.TypeInfo>> types;
+      TplAbsyn.Ident name;
+      TplAbsyn.TypedIdents args;
+      TplAbsyn.Expression exp;
+      Tpl.StringToken st;
+      TplAbsyn.TypeSignature ctype, litType;
+    
+    
+    //types resolved, but not equal
+    case (chars, linfo, ctype, litType)
+      equation
+        failure(TplAbsyn.UNRESOLVED_TYPE(_) = ctype);
+        failure(TplAbsyn.UNRESOLVED_TYPE(_) = litType);
+        failure(equality(ctype = litType));
+        linfo = parseError(chars, linfo, "Declared constant type and the type of the constant's definition literal are different.", false);
+      then (chars, linfo);
+    
+    //otherwise, error is already reported
+    case (chars, linfo, ctype, litType)
+      then (chars, linfo);
+            
+  end matchcontinue;
+end checkConstantType;
+
 
 
 /*
-templDef_AngleOrDolar:
+templDef_Templ:
 	'::='  expression(LEsc = '<',REsc = '>'):exp   => (exp,'<','>')
-//	|
-//	'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
+	///|
+	//'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
 */
-public function templDef_AngleOrDolar
+public function templDef_Templ
   input list<String> inChars;
   input LineInfo inLineInfo;
 
@@ -2327,18 +2460,18 @@ algorithm
       equation
         failure(":"::":"::"=" :: _ = chars);
         //failure("$"::"$"::"=" :: _ = chars);
-        linfo = parseError(chars, linfo, "Expected '::=' symbol before a template definition at the position.", false);
+        linfo = parseError(chars, linfo, "Expected '::=' symbol before a template definition body at the position.", false);
         //try the ::= path
         (chars, linfo, exp) = expression(chars, linfo, "<", ">", false);                       
       then (chars, linfo, exp, "<", ">");
   
   case (chars, linfo)
       equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.templDef_AngleOrDolar failed.\n");
+        Debug.fprint("failtrace", "!!!Parse error - TplParser.templDef_Templ failed.\n");
       then fail();
           
   end matchcontinue;
-end templDef_AngleOrDolar;
+end templDef_Templ;
 /*
 templArgs:
     templArg0:a0  templArgs_rest:args  =>  a0::args

@@ -1,5 +1,7 @@
 // (?<!(>|-|(list|Option|tuple)<\w{1,40}))>(?!>)
 // (?<!(<|list|Option|tuple))<(?!<)
+// (?s)(?<!template )(\w+)(.*?)(?:\n*template) -> \1\2\nend \1;
+// (?<=template )(\w+)(?s:.*?)(?=\R*template)
 spackage paper
   
   package Example
@@ -38,7 +40,7 @@ spackage paper
 
   end Example;
 
-statement(Statement) ::=
+template statement(Statement) ::=
   case ASSIGN then <<
   <%exp(lhs)%> = <%exp(rhs)%>;
   >>	
@@ -47,39 +49,52 @@ statement(Statement) ::=
     <%statements : statement() \n%>
   }
   >>
+end statement;
 
-exp(Exp) ::=
+template exp(Exp) ::=
  case ICONST   then value
  case VARIABLE then name
  case BINARY   then
   '(<%exp(lhs)%> <%oper(op)%> <%exp(rhs)%>)'
+end exp;
 
-oper(Operator) ::=
+template oper(Operator) ::=
   case PLUS then "+"
   case TIMES then "*"
   case LESS then "<"
+end oper;
 
 //********
-opt(Option<Option<Integer>> ho) ::= ho
+template opt(Option<Option<Integer>> ho) ::= ho
+end opt;
 
-pok(list<String> names, Integer i0) ::= '<%i0%> <%names : '<%it%> <%i0%>' ", "%>'
+template pok(list<String> names, Integer i0) ::= '<%i0%> <%names : '<%it%> <%i0%>' ", "%>'
+end pok;
 
-pok2(list<String> names, String sep) ::= (names of "a" : i0 'o<%sep%>')	 
+template pok2(list<String> names, String sep) ::= (names of "a" : i0 'o<%sep%>')	 
+end pok2;
 
-pok3(list<Exp> exps) ::= (exps of ICONST : value ", ")	 
+template pok3(list<Exp> exps) ::= (exps of ICONST : value ", ")	 
+end pok3;
 
-pok4(String s) ::= it
+template pok4(String s) ::= it
+end pok4;
 
-pok5(String a, Integer /*it*/itt) ::= it //error ... displaced it
+template pok5(String a, Integer /*it*/itt) ::= it //error ... displaced it
+end pok5;
 
-pok6(tuple<Integer,String> tup) ::= tup of (i,s) : i + s
+template pok6(tuple<Integer,String> tup) ::= tup of (i,s) : i + s
+end pok6;
 
-pok7(list<tuple<String,Integer>> tuples) ::= (tuples of (s,i) : 'o<%it of (s,_):s%>')	 
+template pok7(list<tuple<String,Integer>> tuples) ::= (tuples of (s,i) : 'o<%it of (s,_):s%>')	 
+end pok7;
 
-pok8() ::= <<
+template pok8() ::= <<
    blabla<%\n%>hej you!<%\n%>
      juchi
 >>
+end pok8;
+
 //********/
 
 end paper;

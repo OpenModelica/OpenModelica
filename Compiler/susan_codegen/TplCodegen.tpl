@@ -4,7 +4,7 @@ spackage TplCodegen
 typeview "TplCodegenTV.mo"
 
 
-mmPackage(MMPackage) ::=  
+template mmPackage(MMPackage) ::=  
   case MM_PACKAGE then
     <<
     package <%pathIdent(name)%>
@@ -17,9 +17,9 @@ mmPackage(MMPackage) ::=
  
     end <%pathIdent(name)%>;
     >>
+end mmPackage;
 
-
-mmDeclaration(MMDeclaration) ::=
+template mmDeclaration(MMDeclaration) ::=
   case MM_IMPORT(packageName = IDENT(ident = "Tpl")) then '' //ignore Tpl as it is always imported
   case MM_IMPORT(packageName = IDENT(ident = "builtin")) then '' //ignore Tpl as it is always imported
   case MM_IMPORT then
@@ -58,9 +58,9 @@ mmDeclaration(MMDeclaration) ::=
     %>
     end <%name%>;
     >>
+end mmDeclaration;
 
-
-mmMatchFunBody(TypedIdents inArgs, TypedIdents outArgs, TypedIdents locals, list<MMMatchCase> matchCases) ::=
+template mmMatchFunBody(TypedIdents inArgs, TypedIdents outArgs, TypedIdents locals, list<MMMatchCase> matchCases) ::=
 <<
   <%typedIdentsEx(inArgs, "input", "in_")%>
   
@@ -92,32 +92,34 @@ algorithm
   >>\n%>
   end matchcontinue;
 >>
+end mmMatchFunBody;
 
-
-pathIdent(PathIdent path) ::= 
+template pathIdent(PathIdent path) ::= 
   case IDENT      then ident
   case PATH_IDENT then ident + "." + pathIdent(path) //'<%ident%>.<%pathIdent(path)%>'
+end pathIdent;
 
-
-mmPublic(Boolean) ::= 
+template mmPublic(Boolean) ::= 
   case true then "public" 
   case _    then "protected"
+end mmPublic;
 
-	
-typedIdents(TypedIdents decls) ::=
+
+template typedIdents(TypedIdents decls) ::=
 (decls of (id,ts) : 
    '<%typeSig(ts)%> <%id%>;' 
    \n 
 )
+end typedIdents;
 
-
-typedIdentsEx(TypedIdents decls, String typePrfx, String idPrfx) ::= 
+template typedIdentsEx(TypedIdents decls, String typePrfx, String idPrfx) ::= 
 (decls of (id,ty): 
   '<%typePrfx%> <%typeSig(ty)%> <%idPrfx%><%id%>;'
   \n
 )
+end typedIdentsEx;
 
-typeSig(TypeSignature) ::=
+template typeSig(TypeSignature) ::=
   case LIST_TYPE   then 'list<<%typeSig(ofType)%>>'
   case ARRAY_TYPE  then '<%typeSig(ofType)%>[:]'
   case OPTION_TYPE then 'Option<<%typeSig(ofType)%>>'
@@ -132,8 +134,9 @@ typeSig(TypeSignature) ::=
   case BOOLEAN_TYPE      then "Boolean"
   case UNRESOLVED_TYPE   then '#type? <%reason%> ?#'
 
+end typeSig;
 
-mmStringTokenConstant(StringToken) ::=
+template mmStringTokenConstant(StringToken) ::=
   case ST_NEW_LINE then "Tpl.ST_NEW_LINE()"
   case ST_STRING   then 'Tpl.ST_STRING("<%mmEscapeStringConst(value,true)%>")'
   case ST_LINE     then 'Tpl.ST_LINE("<%mmEscapeStringConst(line,true)%>")'
@@ -143,8 +146,9 @@ mmStringTokenConstant(StringToken) ::=
         <%strList : '"<%mmEscapeStringConst(it,true)%>"' ",\n"%>
     }, <%lastHasNewLine%>)
     >>; anchor) // perhaps this should be automatic ?
+end mmStringTokenConstant;
 
-mmEscapeStringConst(String internalValue, Boolean escapeNewLine) ::= 
+template mmEscapeStringConst(String internalValue, Boolean escapeNewLine) ::= 
   stringListStringChar(internalValue) :
     case "\\"  then <<\\>>
     case "'"   then <<\'>>
@@ -157,9 +161,9 @@ mmEscapeStringConst(String internalValue, Boolean escapeNewLine) ::=
     case "\t"  then <<\t>>
     //case "\v"  then <<\v>>
     case c   then c 
+end mmEscapeStringConst;
 
-
-mmExp(MMExp, String assignStr) ::=
+template mmExp(MMExp, String assignStr) ::=
   case MM_ASSIGN  then  
     <<
     <%match lhsArgs
@@ -173,9 +177,9 @@ mmExp(MMExp, String assignStr) ::=
   case MM_STRING    then ('"<%mmEscapeStringConst(value,false)%>"' ; absIndent)
   case MM_LITERAL   then value 
   // MM_MATCH won't appear here, it is caught in the mmMatchFunBody
+end mmExp;
 
-
-mmMatchingExp(MatchingExp) ::=
+template mmMatchingExp(MatchingExp) ::=
   case BIND_AS_MATCH then '(<%bindIdent%> as <%mmMatchingExp(matchingExp)%>)'
   case BIND_MATCH    then bindIdent
   case RECORD_MATCH  then
@@ -192,15 +196,15 @@ mmMatchingExp(MatchingExp) ::=
   case STRING_MATCH   then '"<%mmEscapeStringConst(value,true)%>"'
   case LITERAL_MATCH  then value
   case REST_MATCH     then "_"
-
+end mmMatchingExp;
 
 // **** helper dumping functions (Susan unparser) ****
 
-mmStatements(list<MMExp> stmts) ::=
+template mmStatements(list<MMExp> stmts) ::=
   (stmts : '<%mmExp(it, "=")%>;' \n)
+end mmStatements;
 
-
-sTemplPackage(TemplPackage) ::= 
+template sTemplPackage(TemplPackage) ::= 
   case TEMPL_PACKAGE then 
 	<<
     spackage <%pathIdent(name)%>
@@ -214,9 +218,9 @@ sTemplPackage(TemplPackage) ::=
     <%templateDefs of (id, def) : sTemplateDef(def,id) \n\n%>
     end <%pathIdent(name)%>;
 	>>
+end sTemplPackage;
 
-
-sASTDefType(Ident id, TypeInfo info) ::=
+template sASTDefType(Ident id, TypeInfo info) ::=
   match info
   case TI_UNION_TYPE then
 	<<
@@ -234,18 +238,18 @@ sASTDefType(Ident id, TypeInfo info) ::=
     end <%id%>;
 	>>
   case TI_CONST_TYPE then 'constant <%typeSig(constType)%> <%id%>;'
+end sASTDefType;
 
-
-sRecordTypeDef(Ident id, TypedIdents fields) ::= 
+template sRecordTypeDef(Ident id, TypedIdents fields) ::= 
 <<
 record <%id%> <%if fields then <<<%"\n"%>
   <%fields of (fid, ts) : '<%typeSig(ts)%> <%fid%>;<%\n%>'%>
 >>
 %>end <%id%>;
 >>
+end sRecordTypeDef;
 
-
-sTemplateDef(TemplateDef, Ident templId) ::= 
+template sTemplateDef(TemplateDef, Ident templId) ::= 
 	case STR_TOKEN_DEF then '<%templId%> = <%sConstStringToken(value)%>'
 /*
 case TEMPLATE_DEF then 
@@ -258,8 +262,9 @@ case TEMPLATE_DEF then
 case CONST_DEF then '<%name%> = <%constant(value)%>'
 %>}
 */
+end sTemplateDef;
 
-sConstStringToken(StringToken) ::=
+template sConstStringToken(StringToken) ::=
   case ST_NEW_LINE then <<\n>>
   case ST_STRING   then '"<%mmEscapeStringConst(value,true)%>"'
   case ST_LINE     then '"<%mmEscapeStringConst(line,true)%>"'
@@ -269,5 +274,6 @@ sConstStringToken(StringToken) ::=
   	else if canBeEscapedUnquoted(sl) 
   	     then  sl : mmEscapeStringConst(it,true)
   	     else  '"<%sl : mmEscapeStringConst(it,true)%>"'
+end sConstStringToken;
 
 end TplCodegen;
