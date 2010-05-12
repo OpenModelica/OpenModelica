@@ -2290,6 +2290,31 @@ algorithm b := matchcontinue(p1,p2)
   end matchcontinue;
 end pathContains;
 
+public function pathContainsString "
+Author OT,
+checks if Path contains the given string.
+"
+input Path p1;
+input String str;
+output Boolean b;
+algorithm b := matchcontinue(p1,str)
+  local
+    String str1,searchStr;
+    Path qp;
+    Boolean b1,b2,b3;
+  case(IDENT(str1),searchStr)
+      then System.stringFind(str1,searchStr) != -1;
+  case(QUALIFIED(str1,qp),searchStr)
+    equation
+      b1 = System.stringFind(str1, searchStr) != -1;
+      b2 = pathContainsString(qp, searchStr);
+      b3 = boolOr(b1, b2);
+      then
+        b3;
+  case(FULLYQUALIFIED(qp), searchStr) then pathContainsString(qp, searchStr);
+  end matchcontinue;
+end pathContainsString;
+
 public function pathContainedIn "This function checks if subPath is contained in path.
 If it is the complete path is returned. Otherwise the function fails.
 For example,
