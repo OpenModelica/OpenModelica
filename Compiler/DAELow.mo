@@ -14286,6 +14286,7 @@ algorithm
 
         noScalar_map1 = getAllElements(noScalar_map);
         sort_map = sortNoScalarList(noScalar_map1);
+        //dumpSortMap(sort_map);
         // connect scalars and sortet non scalars
         mergedvar_map = listAppend(scalar_map,sort_map);
         // calculate indexes
@@ -14307,7 +14308,36 @@ algorithm
         fail();
   end matchcontinue;
 end calculateIndexes;
-
+/*
+protected function dumpSortMap
+  input list< tuple<Var,Integer,Integer> > inTypeALst;
+algorithm
+  _ :=
+  matchcontinue (inTypeALst)
+    local
+      list<tuple<Var,Integer,Integer>> rest;
+      Var item;
+      Integer a,b;
+    case ((item,a,b)::{})
+      equation
+        print(intString(a));
+        print(intString(b));
+        dumpVars({item});
+      then
+        ();      
+    case ((item,a,b)::rest)
+      equation
+        print(intString(a));
+        print(";");
+        print(intString(b));
+        print(";");
+        dumpVars({item});
+        dumpSortMap(rest);
+      then
+        ();
+  end matchcontinue;
+end dumpSortMap;  
+*/
 protected function fillListConst
 "function: fillListConst
 author: Frenkel TUD
@@ -14594,7 +14624,7 @@ algorithm
     local
       list<Type_a > var_lst;
       Type_a var;
-    case (false,_,var_lst) then inlist;
+    case (false,_,var_lst) then var_lst;
     case (true,var,var_lst)
       local
        list<Type_a > out_lst;
@@ -14681,12 +14711,11 @@ algorithm
   outval:=
   matchcontinue (invar1,invar2)
     local
-      Var var1,var2;
       DAE.Ident origName1,origName2;
       list<DAE.Subscript> arryDim, arryDim1;
       list<DAE.Subscript> subscriptLst, subscriptLst1;
       Boolean out_val;
-    case (var1 as VAR(DAE.CREF_IDENT(origName1,_,subscriptLst),_,_,_,_,_,arryDim,_,_,_,_,_,_,_),var2 as VAR(DAE.CREF_IDENT(origName2,_,subscriptLst1),_,_,_,_,_,arryDim1,_,_,_,_,_,_,_))
+    case (VAR(DAE.CREF_IDENT(origName1,_,subscriptLst),_,_,_,_,_,arryDim,_,_,_,_,_,_,_),VAR(DAE.CREF_IDENT(origName2,_,subscriptLst1),_,_,_,_,_,arryDim1,_,_,_,_,_,_,_))
       equation
         (origName1 ==& origName2) = true;
         out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
@@ -14714,18 +14743,19 @@ algorithm
     local
       list<DAE.Subscript> arryDim, arryDim1;
       list<DAE.Subscript> subscriptLst, subscriptLst1;
-      list<Integer> dim_lst,dim_lst1;
+      list<Integer> dim_lst,dim_lst1,dim_lst_1,dim_lst1_1;
       list<Integer> index,index1;
       Integer val1,val2;
-      Boolean ret;
     case (subscriptLst,subscriptLst1,arryDim,arryDim1)
       equation
         dim_lst = getArrayDim(arryDim);
         dim_lst1 = getArrayDim(arryDim1);
         index = getArrayDim(subscriptLst);
         index1 = getArrayDim(subscriptLst1);
-        val1 = calcPlace(index,dim_lst);
-        val2 = calcPlace(index1,dim_lst1);
+        dim_lst_1 = Util.listStripFirst(dim_lst);
+        dim_lst1_1 = Util.listStripFirst(dim_lst1);
+        val1 = calcPlace(index,dim_lst_1);
+        val2 = calcPlace(index1,dim_lst1_1);
         (val1 > val2) = true;
       then
        true;
@@ -14748,13 +14778,13 @@ algorithm
   matchcontinue (inindex,dimlist)
     local
       list<Integer> index_lst,dim_lst;
-      Integer value,value1,index,dim,dim1;
+      Integer value,value1,index,dim;
     case ({},{}) then 0;
     case (index::{},_) then index;
-    case (index::index_lst,dim::dim1::dim_lst)
+    case (index::index_lst,dim::dim_lst)
       equation
         value = calcPlace(index_lst,dim_lst);
-        value1 = value + (index*dim1);
+        value1 = value + (index*dim);
       then
         value1;
      case (_,_)
@@ -14786,10 +14816,9 @@ algorithm
         dim_lst = getArrayDim(rest);
         dim_lst1 = listAppend({dim},dim_lst);
       then
-        dim_lst1;
+        dim_lst1;       
   end matchcontinue;
 end getArrayDim;
-
 
 protected function transformVariables "function: transformVariables
   author: PA
