@@ -687,7 +687,7 @@ void enableSendData(int enable)
   Static::enabled_ = enable;
 }
 
-void initSendData(int variableCount1, int variableCount2, char** statesNames, char** stateDerivativesNames,  char** algebraicsNames)
+void initSendData(int variableCount1, int variableCount2, const char** statesNames, const char** stateDerivativesNames, const char** algebraicsNames)
 {
   char* port = getenv("sendDataPort");
   if(port != NULL && strlen(port))

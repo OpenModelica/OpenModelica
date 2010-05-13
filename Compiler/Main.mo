@@ -564,7 +564,7 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> To instantiate at time: " +& realString(clock()) +& "\n" );
 
         // Instantiate the program.
-        (cache, env, d_1, scode) = instantiate(p); 
+        (cache, env, d_1, scode, cname) = instantiate(p); 
 
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         Debug.fprint("beforefixmodout", "Explicit part:\n");
@@ -589,7 +589,7 @@ algorithm
 
         // Transform if equations to if expression before going into code generation.
         d = DAEUtil.transformIfEqToExpr(d,false);
-        cname = Absyn.lastClassname(p);
+        
         str = Print.getString();
         silent = RTOpts.silent();
         notsilent = boolNot(silent);
@@ -674,8 +674,9 @@ protected function instantiate
   output Env.Env env;
   output DAE.DAElist dae;
   output list<SCode.Class> scode;
+  output Absyn.Path cname;
 algorithm
-  (cache, env, dae) := matchcontinue(program)
+  (cache, env, dae, cname) := matchcontinue(program)
     local
       Env.Cache c;
       Env.Env e;
@@ -696,7 +697,7 @@ algorithm
                                         InnerOuter.emptyInstHierarchy,
                                         s);
       then
-      (c, Env.emptyEnv(), d, s);
+      (c, Env.emptyEnv(), d, s, Absyn.lastClassname(program));
     case (_)
       equation
         // If a class to instantiate was given on the command line, instantiate
@@ -711,7 +712,7 @@ algorithm
                                              s,
                                              class_path);
      then
-        (c, e, d, s);
+        (c, e, d, s, class_path);
   end matchcontinue;
 end instantiate;
 
@@ -847,7 +848,7 @@ algorithm
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
         n = RTOpts.noProc();
         TaskGraphExt.schedule(n);
-        (nx,ny,np,_,_,_,_) = DAELow.calculateSizes(indexed_dae_1);
+        (nx,ny,np,_,_,_,_,_) = DAELow.calculateSizes(indexed_dae_1);
         nps = intString(np);
         print("=======\nnp =");
         print(nps);

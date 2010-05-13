@@ -13368,6 +13368,7 @@ public function calculateSizes "function: calculateSizes
   output Integer outny "number of alg. vars";
   output Integer outnp "number of parameters";
   output Integer outng " number of zerocrossings";
+  output Integer outng_sample " number of zerocrossings that are samples";
   output Integer outnext " number of external objects";
 
 //nx cannot be strings
@@ -13378,7 +13379,7 @@ algorithm
   matchcontinue (inDAELow)
     local
       list<Var> varlst,knvarlst,extvarlst;
-      Value np,ng,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string;
+      Value np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string;
       String np_str;
       Variables vars,knvars,extvars;
       list<WhenClause> wc;
@@ -13394,13 +13395,41 @@ algorithm
         knvarlst = varList(knvars);
         (np,np_string) = calculateParamSizes(knvarlst);
         np_str = intString(np);
-        ng = listLength(zc);
+        (ng,nsam) = calculateNumberZeroCrossings(zc,0,0);
         (nx,ny,ny_string) = calculateVarSizes(varlst, 0, 0,0);
         (nx_1,ny_1,ny_1_string) = calculateVarSizes(knvarlst, nx, ny,ny_string);
       then
-        (nx_1,ny_1,np,ng,next,ny_1_string,np_string);
+        (nx_1,ny_1,np,ng,nsam,next,ny_1_string,np_string);
   end matchcontinue;
 end calculateSizes;
+
+protected function calculateNumberZeroCrossings
+  input list<ZeroCrossing> zcLst;
+  input Integer zc_index;
+  input Integer sample_index;
+  output Integer zc;
+  output Integer sample;
+algorithm
+  (outCFn) := matchcontinue (zcLst,zc_index,sample_index)
+    local
+      list<ZeroCrossing> xs;
+    case ({},zc_index,sample_index) then (zc_index,sample_index);
+
+    case (ZERO_CROSSING(relation_ = DAE.CALL(path = Absyn.IDENT(name = "sample"))) :: xs,zc_index,sample_index)
+      equation
+        sample_index = sample_index + 1;
+        zc_index = zc_index + 1;
+        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
+      then (zc,sample);
+
+    case (ZERO_CROSSING(relation_ = DAE.RELATION(operator = _), occurEquLst = _) :: xs,zc_index,sample_index)
+      equation
+        zc_index = zc_index + 1;
+        (zc,sample) = calculateNumberZeroCrossings(xs,zc_index,sample_index);
+      then (zc,sample);
+
+  end matchcontinue;
+end calculateNumberZeroCrossings;
 
 protected function calculateParamSizes "function: calculateParamSizes
   author: PA

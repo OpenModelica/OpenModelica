@@ -100,6 +100,8 @@ typedef enum {
   INPUTCOMMENTS             = 0x00200000,
   OUTPUTCOMMENTS            = 0x00400000,
 
+  RAWSAMPLES                = 0x00800000,
+
   ALL                       = 0xFFFFFFFF
 } DATA_FLAGS;
 
@@ -113,6 +115,11 @@ typedef struct sim_DATA_STRING {
   long nInputVars,nOutputVars;
 } DATA_STRING;
 
+typedef struct sample_raw_time_st {
+  double start;
+  double interval;
+  int zc_index;
+} sample_raw_time;
 
 typedef struct sim_DATA {
   /* this is the data structure for saving important data for this simulation. */
@@ -146,25 +153,33 @@ typedef struct sim_DATA {
   //extern char init_fixed[];
   DATA_STRING stringVariables;
 
-  char*  modelName;
-  char** statesNames;
-  char** stateDerivativesNames;
-  char** algebraicsNames;
-  char** parametersNames;
-  char** inputNames;
-  char** outputNames;
-  char** statesComments;
-  char** stateDerivativesComments;
-  char** algebraicsComments;
-  char** parametersComments;
-  char** inputComments;
-  char** outputComments;
+  const char*  modelName;
+  const char** statesNames;
+  const char** stateDerivativesNames;
+  const char** algebraicsNames;
+  const char** parametersNames;
+  const char** inputNames;
+  const char** outputNames;
+  const char** statesComments;
+  const char** stateDerivativesComments;
+  const char** algebraicsComments;
+  const char** parametersComments;
+  const char** inputComments;
+  const char** outputComments;
 
   double timeValue; //the time for the simulation
   //used in some generated function
   // this is not changed by initializeDataStruc
   double lastEmittedTime; // The last time value that has been emitted.
   int forceEmit; // when != 0 force emit, set e.g. by newTime for equidistant output signal.
+
+  // An array containing the initial data of samples used in the sim
+  sample_raw_time* rawSampleExps;
+  long nRawSamples;
+  // The queue of sample time events to be processed.
+  double* sampleTimes; // Warning: Not implemented yet!
+  long curSampleTimeIx;
+  long nSampleTimes;
 } DATA;
 
 /* Global data */
@@ -200,7 +215,7 @@ void deInitializeDataStruc(DATA* data, DATA_FLAGS flags);
 void setLocalData(DATA* data);
 
 // defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors.
-char* getName(double* ptr);
+const char* getName(double* ptr);
 
 void storeExtrapolationData();
 
@@ -248,6 +263,9 @@ int bound_parameters();
 // function for calculate residual values for the initial equations
 // and fixed start attibutes
 int initial_residual();
+
+// function for initializing time instants when sample() is activated
+void function_sampleInit();
 
 bool isInteractiveSimulation();
 int callSolver(int, char**, string, double, double, double, long, double);

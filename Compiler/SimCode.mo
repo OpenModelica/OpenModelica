@@ -3837,7 +3837,7 @@ algorithm
       Integer nx, ny, np, ng, next, ny_string, np_string, ng_1;
     case (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
       equation
-        (nx, ny, np, ng, next, ny_string, np_string) =
+        (nx, ny, np, ng, _ /* ng_sam */, next, ny_string, np_string) =
           DAELow.calculateSizes(dlow);
         ng_1 = filterNg(ng);
       then

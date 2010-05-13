@@ -36,7 +36,7 @@
 #include <algorithm>
 
 /* -f */
-bool flagSet(char*, int, char**);
+bool flagSet(const char*, int, char**);
 
 /* -f=value */
 const std::string * getOption(const char*, int, char **);

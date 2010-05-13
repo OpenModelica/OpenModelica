@@ -77,7 +77,7 @@ void _errmesg();
 	void setDataPort(int port);
 	void enableSendData(int enable);
 	//void initSendData(int variableCount, const char* variableNames);
-	void initSendData(int variableCount1, int variableCount2, char** statesNames, char** stateDerivativesNames,  char** algebraicsNames);
+	void initSendData(int variableCount1, int variableCount2, const char** statesNames, const char** stateDerivativesNames, const char** algebraicsNames);
 	void sendPacket(const char* data);
 	void closeSendData();
 

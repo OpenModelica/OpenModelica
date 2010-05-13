@@ -31,6 +31,7 @@
 #include "simulation_events.h"
 #include "simulation_runtime.h"
 #include "simulation_result.h"
+#include "utility.h"
 #include <math.h>
 #include <string.h> // adrpo - 2006-12-05 -> for memset
 #include <list>
@@ -369,50 +370,93 @@ double sample(double start, double interval) {
   }
 }
 
-void initSample(double start) {
-  if (sim_verbose)
-    printf("Calculating time of sample events is not performed yet\n");
+int compdbl(const void* a, const void* b) {
+  const double *v1 = (const double *) a;
+  const double *v2 = (const double *) b;
+  const double diff = *v1 - *v2;
+  const double epsilon = 0.00000000000001;
 
+  if (diff < epsilon && diff > -epsilon)
+    return 0;  
+  return (*v1 > *v2 ? 1 : -1);
+}
+
+int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
+  size_t nuniq = 0;
+  size_t i;
+  void *a, *b, *c;
+  a = base;
+  for (i=1; i<nmemb; i++) {
+    b = ((char*)base)+i*size;
+    if (0 == compar(a,b)) {
+      nuniq++;
+    } else {
+      a = b;
+      c = ((char*)base)+(i-nuniq)*size;
+      memcpy(c, b, size);
+    }
+  }
+  return nmemb-nuniq;
+}
+
+// Array does not need to be sorted
+int filter_all_lesser(void *base, void *a, size_t nmemb, size_t size, int(*compar)(const void *, const void *)) {
+  size_t nuniq = 0;
+  size_t i;
+  void *b, *c;
+  for (i=0; i<nmemb; i++) {
+    b = ((char*)base)+i*size;
+    if (compar(a,b) > 0) {
+      nuniq++;
+    } else {
+      c = ((char*)base)+(i-nuniq)*size;
+      memcpy(c, b, size);
+    }
+  }
+  return nmemb-nuniq;
+}
+
+void initSample(double start) {
+  long measure_start_time = clock();
+  
+  if (sim_verbose) printf("Notice: Calculated time of sample events is not yet used!\n");
+  function_sampleInit();
   /* This code will generate an array of time values when sample generates events.
    * The only problem is our backend does not generate this array.
    * Sample() and sample() also need to be changed, but this should be easy to fix. */
 
-  /*
   int i;
   double stop = 1.0;
   double d;
-  double samples[][2] = {
-    {0.0,0.1},
-    {0.3,0.3},
-    {0.5,0.2},
-    {0.0,0.15},
-  };
   double* events;
-  int num_samples = sizeof(samples)/(2*sizeof(double));
+  int num_samples = globalData->nRawSamples;
   int max_events = 0;
   int ix = 0;
   int nuniq;
   
   for (i=0; i<num_samples; i++) {
-    if (stop >= samples[i][0])
-     max_events += (stop - samples[i][0])/samples[i][1]+1;
+    if (stop >= globalData->rawSampleExps[i].start)
+      max_events += (stop - globalData->rawSampleExps[i].start)/globalData->rawSampleExps[i].interval+1;
   }
-  events = malloc(max_events * sizeof(double));
+  events = (double*) malloc(max_events * sizeof(double) + 1);
   for (i=0; i<num_samples; i++) {
-    for (d=samples[i][0]; ix<max_events && d<stop; d+= samples[i][1]) {
+    if (sim_verbose) printf("Generate times for sample(%f,%f)\n",globalData->rawSampleExps[i].start,globalData->rawSampleExps[i].interval);
+    for (d=globalData->rawSampleExps[i].start; ix<max_events && d<stop; d+= globalData->rawSampleExps[i].interval) {
       events[ix++] = d;
     }
   }
-  assert(ix == max_events);
+  // Sort, filter out values before start, filter out unique values
+  max_events = filter_all_lesser(events,&start,max_events,sizeof(double),compdbl);
   qsort(events,max_events,sizeof(double),compdbl);
   nuniq = unique(events,max_events,sizeof(double),compdbl);
-  printf("Sorted, unique events\n");
-  for (i=0; i<nuniq; i++) {
-    printf("%d %f\n", i, events[i]);
+  if (sim_verbose) {
+    printf("Number of sorted, unique sample events: %d\n", nuniq);
+    //for (i=0; i<nuniq; i++) printf("%f\n", i, events[i]);
   }
-  free(events);
-  return 0;
-  */
+  globalData->sampleTimes = events;
+  globalData->curSampleTimeIx = 0;
+  globalData->nSampleTimes = nuniq;
+  
 }
 
 void saveall() {

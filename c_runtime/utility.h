@@ -47,9 +47,4 @@ modelica_real modelica_div(modelica_real x, modelica_real y);
 modelica_real modelica_mod(modelica_real x, modelica_real y);
 modelica_real rem(modelica_real x, modelica_real y);
 
-/* Compatible with C-standard qsort and unique */
-int compdbl(const void* a, const void* b);
-/* Input is a sorted array with nmemb elements. Returns the number of elements after removing unique elements */
-int unique(void *base, size_t nmemb, size_t size, int(*compar)(const void *, const void *));
-
 #endif

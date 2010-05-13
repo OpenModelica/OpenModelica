@@ -49,7 +49,7 @@ bool interactiveSimuation = false; //This variable signals if an simulation sess
 
 /* Global Data */
 /***************/
-const string version = "20100427_V2";
+const string version = "20100513";
 // Becomes non-zero when model terminates simulation.
 int modelTermination=0;
 
@@ -88,7 +88,7 @@ int initRuntimeAndSimulation(int , char**);
  * \param step defines the step size between two consecutive result data.
  * \param stop defines the stop time of the simulation, should not be exceeded.
 */
-double newTime(double t, double step,double stop)
+double newTime(double t, double step, double stop)
 {
 	const double maxSolverStep=0.001;
 	double newTime;
@@ -111,7 +111,13 @@ double newTime(double t, double step,double stop)
 	 globalData->forceEmit = 1;
 	}
 
-	// Do not exceed the stop time.
+  // Small gain taking hints from the scheduled sample events. Needs to be done better.
+  while (globalData->curSampleTimeIx < globalData->nSampleTimes && globalData->sampleTimes[globalData->curSampleTimeIx] < t)
+    globalData->curSampleTimeIx++;
+  if (globalData->curSampleTimeIx && globalData->curSampleTimeIx < globalData->nSampleTimes && newTime > globalData->sampleTimes[globalData->curSampleTimeIx]) {
+    newTime = globalData->sampleTimes[globalData->curSampleTimeIx++] + 1e-15;
+  } 
+  // Do not exceed the stop time.
 	if (newTime > stop) {
 		newTime = stop;
 	}

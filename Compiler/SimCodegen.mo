@@ -489,25 +489,27 @@ algorithm
   outString:=
   matchcontinue (class_,loweredDAE,numberOfOutputVariables,numberOfInputVariables,numberOfHelpVariables,numberOfResidulas,fileDir)
     local
-      Integer nx,ny,np,ng,ng_1,no,ni,nh,nres,next,ny_string,np_string;
+      Integer nx,ny,np,ng,ng_sam,ng_1,ng_sam_1,no,ni,nh,nres,next,ny_string,np_string;
       String initDeinitDataStructFunction,class_str,nx_str,ny_str,np_str,ng_str,no_str,ni_str,nh_str;
       String nres_str,c_code2_str,c_code3_str,c_code_str,macros_str,global_bufs,str1,str,next_str;
-      String nystring_str, npstring_str;
+      String nystring_str, npstring_str, ng_sam_str;
       list<String> c_code;
       Absyn.Path class_;
       DAELow.DAELow dlow;
       String trimmedFileDir;
     case (class_,dlow,no,ni,nh,nres,fileDir)
       equation
-        (nx,ny,np,ng,next,ny_string,np_string) = DAELow.calculateSizes(dlow);
+        (nx,ny,np,ng,ng_sam,next,ny_string,np_string) = DAELow.calculateSizes(dlow);
         //DAELow.dump(dlow);
 
         ng_1 = filterNg(ng);
+        ng_sam_1 = filterNg(ng_sam);
         class_str = Absyn.pathString(class_);
         nx_str = intString(nx);
         ny_str = intString(ny);
         np_str = intString(np);
         ng_str = intString(ng_1);
+        ng_sam_str = intString(ng_sam_1);
         no_str = intString(no);
         ni_str = intString(ni);
         nh_str = intString(nh);
@@ -527,10 +529,14 @@ algorithm
         // and transform it to a C string: \ replaced by \\
         // trimmedFileDir = System.stringReplace(trimmedFileDir, "\\", "\\\\");
         str1 = Util.stringAppendList(
-          {"\n","#define NHELP ",nh_str,"\n","#define NG ",ng_str,"//number of zero crossing",
-          "\n","#define NX ",nx_str,"\n","#define NY ",ny_str,"\n","#define NP ",
-          np_str," // number of parameters\n","#define NO ",no_str,
-          " // number of outputvar on topmodel\n","#define NI ",ni_str," // number of inputvar on topmodel\n",
+          {"\n","#define NHELP ",nh_str,"\n",
+          "#define NG ",ng_str,"// number of zero crossing\n",
+          "#define NG_SAM ",ng_sam_str,"// number of zero crossings that are samples\n",
+          "#define NX ",nx_str,"\n",
+          "#define NY ",ny_str,"\n",
+          "#define NP ",np_str," // number of parameters\n",
+          "#define NO ",no_str," // number of outputvar on topmodel\n",
+          "#define NI ",ni_str," // number of inputvar on topmodel\n",
           "#define NR ",nres_str," // number of residuals for initialialization function\n",
           "#define NEXT ", next_str," // number of external objects\n",
           "#define MAXORD 5\n",
@@ -539,8 +545,8 @@ algorithm
           "\n",
            global_bufs,
            "extern \"C\" { /* adrpo: this is needed for Visual C++ compilation to work! */\n",
-           "  char *model_name=\"",class_str,"\";\n",
-           "  char *model_dir=\"",trimmedFileDir,"\";\n",
+           "  const char *model_name=\"",class_str,"\";\n",
+           "  const char *model_dir=\"",trimmedFileDir,"\";\n",
            "}\n",
            c_code_str,c_code2_str,"\n",c_code3_str,"\n"});
         str = Util.stringAppendList({str1,macros_str,"\n",initDeinitDataStructFunction,"\n"})
@@ -869,6 +875,7 @@ extObjConstructorsDecl_str,"
   returnData->nInputVars = NI;
   returnData->nOutputVars = NO;
   returnData->nZeroCrossing = NG;
+  returnData->nRawSamples = NG_SAM;
   returnData->nInitialResiduals = NR;
   returnData->nHelpVars = NHELP;
   returnData->stringVariables.nParameters = NPSTR;
@@ -1035,6 +1042,13 @@ extObjConstructorsDecl_str,"
   } else {
     returnData->outputComments = 0;
   }\n","
+  if(flags & RAWSAMPLES && returnData->nRawSamples) {
+    returnData->rawSampleExps = (sample_raw_time*) malloc(sizeof(sample_raw_time)*returnData->nRawSamples);
+    assert(returnData->rawSampleExps);
+    memset(returnData->rawSampleExps,0,sizeof(sample_raw_time)*returnData->nRawSamples);
+  } else {
+    returnData->rawSampleExps = 0;
+  }
   if (flags & EXTERNALVARS) {
     returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);
     if (!returnData->extObjs) {
@@ -1789,7 +1803,7 @@ algorithm
 
         get_name_function_ifs_1 = Util.stringAppendList(get_name_function_ifs_1) "generate getName function" ;
         get_name_function = Util.stringAppendList(
-          {"char* getName( double* ",paramInGetNameFunction,")\n",
+          {"const char* getName( double* ",paramInGetNameFunction,")\n",
           "{\n",get_name_function_ifs_1,"  return \"\";\n}\n\n"});
         var_defines_str = Util.stringAppendList(var_defines_1);
       then
@@ -1801,7 +1815,7 @@ end generateVarNamesAndComments;
 protected function generateCDeclForStringArray
 "function generateCDeclForStringArray
  author x02lucpo
- generates a static C-array with char <name>{<number>}
+ generates a static C-array with const char <name>{<number>}
  or only a char depending it the int parameters is > 0"
   input String inString1;
   input String inString2;
@@ -1816,13 +1830,13 @@ algorithm
     case (array_name,_,number_of_strings)
       equation
         (number_of_strings == 0) = true;
-        res = Util.stringAppendList({"char* ",array_name,"[1] = {\"\"};\n"});
+        res = Util.stringAppendList({"const char* ",array_name,"[1] = {\"\"};\n"});
       then
         res;
     case (array_name,array_str,number_of_strings)
       equation
         number_of_strings_str = intString(number_of_strings);
-        res = Util.stringAppendList({"char* ",array_name,"[",number_of_strings_str,"]={",array_str,"};\n"});
+        res = Util.stringAppendList({"const char* ",array_name,"[",number_of_strings_str,"]={",array_str,"};\n"});
       then
         res;
   end matchcontinue;
@@ -7287,7 +7301,7 @@ algorithm
         stop_str = realString(stop);
         step_str = realString(step);
         tolerance_str = realString(tolerance);
-        (nx,ny,np,_,_,nystring,npstring) = DAELow.calculateSizes(dlow);
+        (nx,ny,np,_,_,_,nystring,npstring) = DAELow.calculateSizes(dlow);
         nx_str = intString(nx);
         ny_str = intString(ny);
         np_str = intString(np);
@@ -7768,7 +7782,7 @@ algorithm
   matchcontinue (inString1,inDAElist2,inDAELow3,inIntegerArray4,inIntegerArray5,inIntegerLstLst6,helpVarLst)
     local
       Codegen.CFunction func_zc,func_handle_zc,cfunc,cfunc0_1,cfunc0,cfunc_1,cfunc_2,func_zc0,func_handle_zc0,func_handle_zc0_1;
-      Codegen.CFunction func_handle_zc0_2,func_handle_zc0_3,func_zc0_1,func_zc_1,func_handle_zc_1,cfuncHelpvars;
+      Codegen.CFunction func_handle_zc0_2,func_handle_zc0_3,func_zc0_1,func_zc_1,func_handle_zc_1,cfuncHelpvars,func_sample_init;
       Integer cg_id1,cg_id2,cg_id;
       list<CFunction> extra_funcs1,extra_funcs2,extra_funcs;
       String extra_funcs_str,helpvarUpdateStr,func_str,res,cname;
@@ -7813,8 +7827,10 @@ algorithm
         func_zc0_1 = Codegen.cAddCleanups(func_zc0, {"localData->timeValue = timeBackup;", "return 0;"});
         func_zc_1 = Codegen.cMergeFns({func_zc0_1,func_zc});
         func_handle_zc_1 = Codegen.cMergeFns({func_handle_zc0_3,func_handle_zc});
+        
+        func_sample_init = generateSampleInit(zc);
 
-        func_str = Codegen.cPrintFunctionsStr({func_zc_1,func_handle_zc_1,cfunc_2});
+        func_str = Codegen.cPrintFunctionsStr({func_zc_1,func_handle_zc_1,func_sample_init,cfunc_2});
         res = Util.stringAppendList({extra_funcs_str,func_str});
       then
         res;
@@ -7838,7 +7854,7 @@ protected function generateZeroCrossing2
   input Integer[:] inIntegerArray5;
   input Integer[:] inIntegerArray6;
   input list<list<Integer>> inIntegerLstLst7;
-  input list<HelpVarInfo> helpVarLst;  // not used her anymore
+  input list<HelpVarInfo> helpVarLst;  // not used here anymore
   input Integer inInteger9;
   input Integer inInteger10;
   output CFunction outCFunction1;
@@ -7908,6 +7924,65 @@ algorithm
 
   end matchcontinue;
 end generateZeroCrossing2;
+
+protected function generateSampleInit
+"Generates code to schedule sample() events."
+  input list<DAELow.ZeroCrossing> zcLst;
+  output CFunction outFn;
+protected
+  list<String> sampleTimes;
+algorithm
+  (sampleTimes) := generateSampleInit2(zcLst, 0, 0);
+  outFn := Codegen.cMakeFunction("void", "function_sampleInit", {}, {});
+  outFn := Codegen.cAddStatements(outFn, sampleTimes);
+end generateSampleInit;
+
+protected function generateSampleInit2
+"Generates code to schedule sample() events."
+  input list<DAELow.ZeroCrossing> zcLst;
+  input Integer sample_index;
+  input Integer zc_index;
+  output list<String> outStmts;
+algorithm
+  (outCFn) := matchcontinue (zcLst,sample_index,zc_index)
+    local
+      DAELow.ZeroCrossing zc;
+      list<DAELow.ZeroCrossing> xs;
+      DAE.Exp start,interval;
+      String sample_index_str, zc_index_str, e1_str, e2_str, zc_str1, zc_str2, zc_str3;
+      list<String> res;
+    case ({},sample_index,_) then ({});
+
+    case (DAELow.ZERO_CROSSING(relation_ = DAE.CALL(path = Absyn.IDENT(name = "sample"),expLst = {start,interval})) :: xs,sample_index,zc_index)
+      equation
+        sample_index_str = intString(sample_index);
+        sample_index = sample_index + 1;
+        zc_index_str = intString(zc_index);
+        zc_index = zc_index + 1;
+
+        e1_str = printExpCppStr(start);
+        e2_str = printExpCppStr(interval);
+        zc_str1 = Util.stringAppendList({"localData->rawSampleExps[",sample_index_str,"].start = ",e1_str,";"});
+        zc_str2 = Util.stringAppendList({"localData->rawSampleExps[",sample_index_str,"].interval = ",e2_str,";"});
+        zc_str3 = Util.stringAppendList({"localData->rawSampleExps[",sample_index_str,"].zc_index = ",zc_index_str,";"});
+        res = generateSampleInit2(xs,sample_index,zc_index);
+      then (zc_str1 :: zc_str2 :: zc_str3 :: res);
+
+    case (((zc as DAELow.ZERO_CROSSING(relation_ = DAE.RELATION(operator = _), occurEquLst = _)) :: xs),sample_index,zc_index)
+      equation
+        zc_index = zc_index + 1;
+        (res) = generateSampleInit2(xs,sample_index,zc_index);
+      then (res);
+
+    case (((zc as DAELow.ZERO_CROSSING(occurEquLst = _)) :: xs),_,_)
+      equation
+        zc_str1 = dumpZeroCrossingStr(zc);
+        zc_str2 = Util.stringAppendList({"generateSampleInit :",zc_str1,"\n"});
+        Error.addMessage(Error.INTERNAL_ERROR, {zc_str2});
+      then fail();
+
+  end matchcontinue;
+end generateSampleInit2;
 
 protected function generateUpdateDepended
   input DAE.DAElist inDAElist;
@@ -8111,7 +8186,7 @@ end getZcMixedSystem;
 protected function dumpZeroCrossingStr
 "function: dumpZeroCrossingStr
   author:
-  Dumps a ZeroCrossing to a sting. Useful for debugging."
+  Dumps a ZeroCrossing to a string. Useful for debugging."
   input DAELow.ZeroCrossing inZeroCrossing;
   output String outString;
 algorithm

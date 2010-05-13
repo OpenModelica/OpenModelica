@@ -34,7 +34,7 @@
 
 using namespace std;
 
-bool flagSet(char *option, int argc, char** argv)
+bool flagSet(const char *option, int argc, char** argv)
 {
   for (int i=0; i<argc;i++) {
     if (("-"+string(option))==string(argv[i])) return true;
