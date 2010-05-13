@@ -38,14 +38,16 @@ using namespace std;
 
 const int control_default_client_port = 10500;
 const int control_default_server_port = 10501;
+const int transfer_default_server_port = 10502;
 const string control_default_client_ip = "127.0.0.1"; //localhost ip for control client
-const string control_default_server_ip = "127.0.0.1"; //localhost ip for control client
+const string control_default_server_ip = "127.0.0.1"; //localhost ip for control server
+const string transfer_default_server_ip = "127.0.0.1"; //localhost ip for transfer server
 
 string control_client_ip = "";
 int control_client_port = 0;
 int control_server_port = 0;
 
-bool debugControl = false; //Set true to print out comments which describes the program flow to the console
+bool debugControl = true; //Set true to print out comments which describes the program flow to the console
 bool shutDownSignal = false;
 bool error = false;
 string messageForClient;
@@ -111,7 +113,6 @@ void addNameTo_A_SimDataNames(SimDataNamesFilter*, char, string);
  * initializes the DataNames structure
  */
 void initialize() {
-
 	nStates = get_NStates();
 	nAlgebraic = get_NAlgebraic();
 	nParameters = get_NParameters();
@@ -125,7 +126,7 @@ void initialize() {
 			p_simDataNames_SimulationResult, p_simDataNamesFilterForTransfer);
 	if (debugControl)
 		cout << "***** End store the DataNames *****" << endl;
-
+//TODO initDone is obsolete
 	initDone = true;
 	if (debugControl)
 		cout << "initialize done..." << endl;
@@ -171,8 +172,6 @@ void createControlClient() {
 		threadClient.Create(threadClientControl);
 		if (debugControl)
 			cout << "create client done..." << endl;
-	} else {
-		//Set Client IP & PORT
 	}
 }
 
@@ -487,6 +486,9 @@ int sendMessageToClient(SOCKET* p_ConnectSocket, string message) {
  * Parses the message from the client and calls the needed operation
  */
 void parseMessageFromClient(string message) {
+
+	//TODO IMPORTANT: The Control Server should be able to reply with an error message while the Control Client is not initialized e.g. if an user sends an malformed operation
+
 	/*SYSTEMTIME systime;
 	 GetSystemTime(&systime);
 	 cout << systime.wSecond << systime.wMilliseconds << endl;
@@ -503,15 +505,14 @@ void parseMessageFromClient(string message) {
 			string seqNumber;
 			string attributes;
 
-			string opANDseqANDattr = message.substr(0,
-					checkForSharpSymbol);
+			string opANDseqANDattr = message.substr(0, checkForSharpSymbol);
 			string::size_type checkForSharpSymbolAfterOperation =
 					opANDseqANDattr.find_first_of("#");
 
 			if (checkForSharpSymbolAfterOperation != string::npos) {
 				operation = opANDseqANDattr.substr(0,
 						checkForSharpSymbolAfterOperation);
-				
+
 				string seqANDattr = opANDseqANDattr.substr(
 						checkForSharpSymbolAfterOperation + 1);
 
@@ -519,16 +520,14 @@ void parseMessageFromClient(string message) {
 						seqANDattr.find_first_of("#");
 				if (checkForSharpSymbolAfterSeqNumber != string::npos) {
 					seqNumber = seqANDattr.substr(0,
-						checkForSharpSymbolAfterSeqNumber);
+							checkForSharpSymbolAfterSeqNumber);
 					attributes = seqANDattr.substr(
-						checkForSharpSymbolAfterSeqNumber + 1);
-				}
-				else {
+							checkForSharpSymbolAfterSeqNumber + 1);
+				} else {
 					seqNumber = seqANDattr; //Hier muss geschaut werden ob das # zwischen seq und attr vergessen wurde
 					// und es muss ein standard für die seq festgelegt werden!
 				}
-			}
-			else {
+			} else {
 				createMessage( //TODO Operation ist nicht mit einen # getrennt!
 						"Error: Sequence number is missing");
 				return;
@@ -540,57 +539,8 @@ void parseMessageFromClient(string message) {
 			 */
 			if (debugControl)
 				cout << "Operation: " << operation << endl;
-			if (operation.compare("changevalue") == 0 && (initDone
-					&& clientDone && transferDone)) {
-				string::size_type endOfTime = attributes.find_first_of("#");
-				if (endOfTime != string::npos) {
-					string time = attributes.substr(0, endOfTime);
-					string parameter = attributes.substr(endOfTime + 1);
 
-					//Check if time is a valid double value
-					char* rest = 0;
-					double d = strtod(time.c_str(), &rest);
-					if (*rest == 0)
-						changeParameterValues(d, parameter);
-					else {
-						createMessage(
-								"Error: The time value is not a valid double value");
-						return;
-					}
-				} else {
-					createMessage(
-							"Error: Missing '#' symbol to separate time from parameter");
-					return;
-				}
-			} else if (operation.compare("changetime") == 0 && (initDone
-					&& clientDone && transferDone)) {
-				string time = attributes;
-				//Check if time is a valid double value
-				char* rest = 0;
-				double d = strtod(time.c_str(), &rest);
-				if (*rest == 0)
-					changeSimulationTime(d);
-				else{
-					createMessage(
-							"Error: The time value is not a valid double value");
-					return;
-				}
-			} else if (operation.compare("pause") == 0 && (initDone
-					&& clientDone && transferDone)) {
-				pauseSimulation();
-			} else if (operation.compare("start") == 0 && (initDone
-					&& clientDone && transferDone)) {
-				startSimulation();
-			} else if (operation.compare("stop") == 0 && (initDone
-					&& clientDone && transferDone)) {
-				stopSimulation();
-			} else if (operation.compare("shutdown") == 0 && (initDone
-					&& clientDone && transferDone)) {
-				endSimulation();
-			} else if (operation.compare("setfilter") == 0 && (initDone)) {
-				string parameter = attributes;
-				setFilterForTransfer(parameter);
-			} else if (operation.compare("setcontrolclienturl") == 0) {
+			if (operation.compare("setcontrolclienturl") == 0) {
 				string ip = parseIP(attributes);
 				if (debugControl)
 					cout << ip << endl;
@@ -607,13 +557,79 @@ void parseMessageFromClient(string message) {
 				transferDone = true;
 				createProducerAndConsumer();
 			} else {
-				createMessage(
-						"Error: Unknown operation [please view documentation]");
-				return;
+
+				{
+					if (!clientDone) {
+						setControlClientIPandPort(control_default_client_ip,
+								control_default_client_port);
+						clientDone = true;
+						createControlClient();
+					}
+					if (!transferDone) {
+						setTransferIPandPort(transfer_default_server_ip,
+								transfer_default_server_port);
+						transferDone = true;
+						createProducerAndConsumer();
+					}
+				}
+
+				//This block parses the commonly used messages from a client
+				{
+					if (operation.compare("changevalue") == 0) {
+						string::size_type endOfTime = attributes.find_first_of(
+								"#");
+						if (endOfTime != string::npos) {
+							string time = attributes.substr(0, endOfTime);
+							string parameter = attributes.substr(endOfTime + 1);
+
+							//Check if time is a valid double value
+							char* rest = 0;
+							double d = strtod(time.c_str(), &rest);
+							if (*rest == 0)
+								changeParameterValues(d, parameter);
+							else {
+								createMessage(
+										"Error: The time value is not a valid double value");
+								return;
+							}
+						} else {
+							createMessage(
+									"Error: Missing '#' symbol to separate time from parameter");
+							return;
+						}
+					} else if (operation.compare("changetime") == 0) {
+						string time = attributes;
+						//Check if time is a valid double value
+						char* rest = 0;
+						double d = strtod(time.c_str(), &rest);
+						if (*rest == 0)
+							changeSimulationTime(d);
+						else {
+							createMessage(
+									"Error: The time value is not a valid double value");
+							return;
+						}
+					} else if (operation.compare("pause") == 0) {
+						pauseSimulation();
+					} else if (operation.compare("start") == 0) {
+						startSimulation();
+					} else if (operation.compare("stop") == 0) {
+						stopSimulation();
+					} else if (operation.compare("shutdown") == 0) {
+						endSimulation();
+					} else if (operation.compare("setfilter") == 0) {
+						string parameter = attributes;
+						setFilterForTransfer(parameter);
+					} else {
+						createMessage(
+								"Error: Unknown operation [please view documentation]");
+						return;
+					}
+				}
+				ostringstream formatter;
+				formatter << "done#" << seqNumber << "#end";
+				createMessage(formatter.str()); //TODO 20100217 pv Refactoring because of error handling, otherwise an incorrect also replies with an done#end
 			}
-			ostringstream formatter;
-			formatter << "done#" << seqNumber << "#end";
-			createMessage(formatter.str()); //TODO 20100217 pv Refactoring because of error handling, otherwise an incorrect also replies with an done#end
 		} else {
 			createMessage(
 					"Error: Missing 'end' string at the end of the message");
