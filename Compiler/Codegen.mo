@@ -1224,9 +1224,9 @@ algorithm
         extfnname_1 = generateExtFunctionName(extfnname,lang);
         arg_strs = generateExtFunctionArgs(extargs, lang);
         (includes,libs) = generateExtFunctionIncludes(ann);
-        rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
+        rcw_fn = generateReadCallWrite(fn_name_str, outvars, retstructtype, invars);
         ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
-        cfns = {rcw_fn, ext_decl};
+        cfns = {ext_decl, rcw_fn};
       then (cfns, rt_1);
 
     /* External functions */
@@ -1254,11 +1254,11 @@ algorithm
         arg_strs = generateExtFunctionArgs(extargs, lang);
         (includes,libs) = generateExtFunctionIncludes(ann);
         includes = Util.if_("Java" ==& lang, "#include \"java_interface.h\"" :: includes, includes);
-        rcw_fn = generateReadCallWriteExternal(fn_name_str, outvars, retstructtype, invars, extdecl, bivars);
+        rcw_fn = generateReadCallWrite(fn_name_str, outvars, retstructtype, invars);
         ext_decl = generateExternalWrapperCall(fn_name_str, outvars, retstructtype, invars, extdecl, bivars, tp);
         func_decl = cMakeFunctionDecl(retstr, extfnname_1, struct_strs, arg_strs, includes, libs);
         wrapper_body = generateFunctionReferenceWrapperBody(fpath, tp);
-        cfns = func_decl :: rcw_fn :: ext_decl :: wrapper_body;
+        cfns = func_decl :: ext_decl :: rcw_fn :: wrapper_body;
       then
         (cfns,rt_1);
 
@@ -1418,6 +1418,38 @@ algorithm
   end matchcontinue;
 end generateExtFunctionIncludes;
 
+protected function getLibraryStringInGccFormat
+  input Absyn.Exp exp;
+  output String str;
+algorithm
+  str := matchcontinue exp
+    
+    // If the string contains a dot, it's probably a good path
+    case Absyn.STRING(str)
+      equation
+        false = -1 == System.stringFind(str, ".");
+      then str;
+        
+    // If the string starts with a -, it's probably -l or -L gcc flags
+    case Absyn.STRING(str)
+      equation
+        true = "-l" ==& stringGetStringChar(str, 1);
+      then str;
+
+    case Absyn.STRING(str)
+      equation
+        // Either this or we handle "Lapack" from MSL specifically.
+        // Not an issue on Windows, but Unix is case-sensitive and most old libraries are lower-case only.
+        str = System.tolower(str);
+      then "-l" +& str;
+    
+    case _
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"Failed to process Library annotation for external function"});
+      then fail();
+  end matchcontinue;
+end getLibraryStringInGccFormat;
+
 protected function generateExtFunctionIncludesLibstr
   input list<Absyn.ElementArg> inAbsynElementArgLst;
   output list<String> outStringLst;
@@ -1428,10 +1460,12 @@ algorithm
       Lib lib;
       list<Absyn.ElementArg> eltarg;
       list<Absyn.Exp> arr;
+      Absyn.Exp exp;
     case (eltarg)
       equation
-        Absyn.CLASSMOD(_,SOME(Absyn.STRING(lib))) =
+        Absyn.CLASSMOD(_,SOME(exp)) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+        lib = getLibraryStringInGccFormat(exp);
       then
         {lib};
     case (eltarg)
@@ -1439,7 +1473,7 @@ algorithm
         Absyn.CLASSMOD(_,SOME(Absyn.ARRAY(arr))) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
       then
-        Util.listMap(arr, Absyn.expString);
+        Util.listMap(arr, getLibraryStringInGccFormat);
     case (_) then {};
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;
@@ -2327,7 +2361,7 @@ algorithm
       equation
         tystr = generateExtArgType(attr, ty);
         (name,_) = compRefCstr(cref);
-        res = Util.stringAppendList({tystr," ",name});
+        res = Util.stringAppendList({tystr," /*",name,"*/"});
       then
         res;
 
@@ -2341,7 +2375,7 @@ algorithm
       equation
         (name,_) = compRefCstr(cr);
         e_str = Exp.printExpStr(exp);
-        res = Util.stringAppendList({"size_t ",name,"_",e_str});
+        res = Util.stringAppendList({"size_t /*",name,"_",e_str,"*/"});
       then
         res;
 
@@ -7209,77 +7243,24 @@ protected function generateExternalWrapperCall "function: generateExternalWrappe
   input DAE.Type inType7;
   output CFunction outCFunction;
 algorithm
-  outCFunction:=
-  matchcontinue (inString1,inDAEElementLst2,inString3,inDAEElementLst4,inExternalDecl5,inDAEElementLst6,inType7)
+  outCFunction := matchcontinue (inString1,inDAEElementLst2,inString3,inDAEElementLst4,inExternalDecl5,inDAEElementLst6,inType7)
     local
-      Integer tnr,tnr_invars1,tnr_invars,tnr_bivars1,tnr_bivars,tnr_extcall,tnr_ret;
-      list<Lib> arg_strs;
-      CFunction cfn1,cfn31,cfn32,cfn33,cfn34,cfn3,extcall,cfn_1,cfn,allocstmts_1,allocstmts;
-      Lib out_decl,fnname,retstr,extfnname,lang;
-      list<DAE.Element> vars_1,vars,outvars,invars,bivars;
-      DAE.ExternalDecl extdecl;
-      list<DAE.ExtArg> extargs;
-      DAE.ExtArg extretarg;
-      Option<Absyn.Annotation> ann;
       list<tuple<Lib, tuple<DAE.TType, Option<Absyn.Path>>>> args;
-      tuple<DAE.TType, Option<Absyn.Path>> restype;
-    case (fnname,outvars,retstr,invars,(extdecl as DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann)),bivars,(DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_)) /* function name output variables return type input variables external declaration bidirectional vars function type */
-      equation
-        tnr = 1;
-        arg_strs = Util.listMap(args, generateFunctionArg);
-        cfn1 = cMakeFunction(retstr, fnname, {}, arg_strs);
-        out_decl = Util.stringAppendList({retstr," out;"});
-        (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", 1,tnr, extdecl);
-        allocstmts = cAddVariables(allocstmts_1, {out_decl});
-        (cfn31,tnr_invars1) = generateVarDecls(invars, isRcwInput, tnr_ret, funContext);
-        (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, 1,tnr_invars1, "", funContext);
-        (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, funContext);
-        (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, 1,tnr_bivars1, "", funContext);
-        cfn3 = cMergeFns({allocstmts,cfn31,cfn32,cfn33,cfn34});
-        vars_1 = listAppend(invars, outvars);
-        vars = listAppend(vars_1, bivars);
-        (extcall,tnr_extcall) = generateExtCall(vars, extdecl, tnr_bivars);
-        cfn_1 = cMergeFns({cfn1,allocstmts,extcall});
-        cfn = cAddCleanups(cfn_1, {"return out;"});
-      then
-        cfn;
-    case (_,_,_,_,_,_,_)
-      equation
-        Debug.fprint("failtrace", "#-- generate_external_wrapper_call failed\n");
-      then
-        fail();
-  end matchcontinue;
-end generateExternalWrapperCall;
-
-protected function generateReadCallWriteExternal "function: generateReadCallWriteExternal
-
-  Generates code for reading input parameters from file, executing function
-  and writing result to file fo external functions.
-"
-  input String inString1;
-  input list<DAE.Element> inDAEElementLst2;
-  input String inString3;
-  input list<DAE.Element> inDAEElementLst4;
-  input DAE.ExternalDecl inExternalDecl5;
-  input list<DAE.Element> inDAEElementLst6;
-  output CFunction outCFunction;
-algorithm
-  outCFunction:=
-  matchcontinue (inString1,inDAEElementLst2,inString3,inDAEElementLst4,inExternalDecl5,inDAEElementLst6)
-    local
+      list<Lib> arg_strs;
       Integer tnr,tnr_ret,tnr_bialloc_1,tnr_bialloc,tnr_mem,tnr_invars1,tnr_invars,tnr_bivars1,tnr_bivars,tnr_extcall;
       Lib out_decl,mem_decl,mem_var,get_mem_stmt,rest_mem_stmt,fnname,retstr;
       CFunction cfn1,cfn1_1,allocstmts_1,allocstmts,biallocstmts,cfnoutinit,cfnoutbialloc,mem_fn_1,mem_fn_2,mem_fn,cfn31,cfn32,cfn33,cfn34,cfn3,cfn3_1,readinvars,readdone,extcall,cfn4_1,cfn5,cfn5_1,cfn_1,cfn;
       list<DAE.Element> vars_1,vars,outvars,invars,bivars;
       DAE.ExternalDecl extdecl;
-    case (fnname,outvars,retstr,invars,extdecl,bivars) /* function name output variables return type input variables external declaration bidirectional vars */
+      
+    case (fnname,outvars,retstr,invars,extdecl,bivars,(DAE.T_FUNCTION(funcArg = args),_)) /* function name output variables return type input variables external declaration bidirectional vars */
       equation
         Debug.fprintln("cgtr", "generate_read_call_write_external");
         tnr = 1;
-        cfn1 = cMakeFunction("int", "in" +& fnname, {},
-          {"type_description * inArgs","type_description * outVar"});
+        arg_strs = Util.listMap(args, generateFunctionArg);
+        cfn1 = cMakeFunction(retstr, fnname, {}, arg_strs);
+
         out_decl = Util.stringAppendList({retstr," out;"});
-        cfn1_1 = cAddInits(cfn1,{});
         (allocstmts_1,tnr_ret) = generateAllocOutvarsExt(outvars, "out", 1,tnr, extdecl) "generate_vars(outvars,is_rcw_output,1) => (cfn2,tnr1) &" ;
         allocstmts = cAddVariables(allocstmts_1, {out_decl});
         (biallocstmts,tnr_bialloc_1) = generateAllocOutvarsExt(bivars, "", 1,tnr_ret, extdecl);
@@ -7295,27 +7276,22 @@ algorithm
         (cfn32,tnr_invars) = generateVarInits(invars, isRcwInput, 1,tnr_invars1, "", funContext);
         (cfn33,tnr_bivars1) = generateVarDecls(bivars, isRcwBidir, tnr_invars, funContext);
         (cfn34,tnr_bivars) = generateVarInits(bivars, isRcwBidir, 1,tnr_bivars1, "", funContext);
-        cfn3 = cMergeFns({cfn31,cfn32,cfn33,cfn34});
-        cfn3_1 = cAddInits(cfn3, {});
-        readinvars = generateRead(invars);
-        readdone = cAddInits(readinvars, {});
+        cfn3 = cMergeFns({cfn33,cfn34});
         vars_1 = listAppend(invars, outvars);
         vars = listAppend(vars_1, bivars);
         (extcall,tnr_extcall) = generateExtCall(vars, extdecl, tnr_bivars);
-        cfn4_1 = cAddStatements(extcall,{});
-        cfn5 = generateWriteOutvars(outvars,1);
-        cfn_1 = cMergeFns({cfn1_1,cfn3_1,readdone,mem_fn,cfn4_1,cfn5});
-        cfn = cAddCleanups(cfn_1, {rest_mem_stmt,"return 0;"});
+        cfn_1 = cMergeFns({cfn1,cfn3,mem_fn,extcall});
+        cfn = cAddCleanups(cfn_1, {rest_mem_stmt,"return out;"});
       then
         cfn;
-    case (_,_,_,_,_,_)
+
+    case (_,_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace",
-          "#-- generate_read_call_write_external failed\n");
+        Debug.fprint("failtrace", "#-- generate_external_wrapper_call failed\n");
       then
         fail();
   end matchcontinue;
-end generateReadCallWriteExternal;
+end generateExternalWrapperCall;
 
 protected function generateExtCall "function: generateExtCall
 
@@ -7419,7 +7395,7 @@ end generateExtcallVardecls;
 protected function generateExternalArgNumberMapping
 "It's important that the output arguments are mapped in the same way a normal
 function call is made. This function takes a list<ExtArg> and list<Element>,
-and maps the ExtArgs to elements (or -1)"
+and maps the ExtArgs to elements (negative values for other arguments so they can get unique IDs)"
   input list<DAE.ExtArg> args;
   input DAE.ExtArg extArg;
   input list<DAE.Element> vars;
@@ -7435,27 +7411,36 @@ algorithm
   varCrefs := Util.listMap(outvars, DAEUtil.varCref);
   varNames := Util.listMap(varCrefs, varNameExternal);
   // TODO: Check for duplicates here to generate better error messages. Now fails when compiling.
-  outArgNums := Util.listMap1(args,findExternalArgMapping,varNames);
-  outExtArg := findExternalArgMapping(extArg,varNames);
+  outArgNums := findExternalArgMapping(args,varNames,-1);
+  outExtArg::_ := findExternalArgMapping({extArg},varNames,-1);
 end generateExternalArgNumberMapping;
 
 protected function findExternalArgMapping
-  input DAE.ExtArg extArg;
+  input list<DAE.ExtArg> extArg;
   input list<String> varNames;
-  output tuple<DAE.ExtArg,Integer> outExtArgNum;
+  input Integer counter;
+  output list<tuple<DAE.ExtArg,Integer>> outExtArgNum;
 algorithm
-  outExtArgNum := matchcontinue (extArg,varNames)
+  outExtArgNum := matchcontinue (extArg,varNames,counter)
     local
       String name;
       Integer n;
+      DAE.ExtArg arg;
       DAE.ComponentRef componentRef;
-    case (DAE.EXTARG(componentRef = componentRef, attributes = DAE.ATTR(direction = Absyn.OUTPUT())),varNames)
+      list<tuple<DAE.ExtArg>> xs;
+      list<tuple<DAE.ExtArg,Integer>> res;
+    case ({},_,_) then {};
+    case ((arg as DAE.EXTARG(componentRef = componentRef, attributes = DAE.ATTR(direction = Absyn.OUTPUT())))::xs,varNames,counter)
       equation
         name = varNameExternal(componentRef);
         n = Util.listPosition(name,varNames);
         n = n+1;
-      then ((extArg,n));
-    case (extArg,_) then ((extArg,-1));
+        res = findExternalArgMapping(xs,varNames,counter);
+      then ((arg,n)::res);
+    case (arg::xs,varNames,counter)
+      equation
+        res = findExternalArgMapping(xs,varNames,counter-1);
+      then ((arg,counter)::res);
   end matchcontinue;
 end findExternalArgMapping;
 
@@ -7868,8 +7853,7 @@ algorithm
         DAE.EXTARGSIZE(componentRef = cr,attributes = attr,type_ = ty,exp = dim) = arg;
         Debug.fprintln("cgtr", "generate_extcall_vardecl_f77_5");
         tmpname_1 = varNameArray(cr, attr, i);
-        tnrstr = intString(tnr);
-        tnr_1 = tnr + 1;
+        tnrstr = intString(-i);
         tmpstr = Util.stringAppendList({tmpname_1,"_size_",tnrstr});
         tmpcref = DAE.CREF_IDENT(tmpstr,DAE.ET_OTHER(),{});
         callstr = generateExtArraySizeCall(arg);
@@ -7879,7 +7863,7 @@ algorithm
         res = cAddStatements(decl, {callstr});
         newarg = DAE.EXTARGSIZE(tmpcref,attr,ty,dim);
       then
-        (res,(newarg,i),tnr_1);
+        (res,(newarg,i),tnr);
     case (_,_)
       equation
         Debug.fprintln("failtrace", "#-- Codegen.generateExtcallVardeclF77");
@@ -8276,7 +8260,8 @@ algorithm
     case (DAE.EXTARGSIZE(componentRef = cref,attributes = attr,type_ = ty,exp = dim), i)
       equation
         (name,_) = compRefCstr(cref);
-        res = stringAppend("&", name);
+        res = intString(i);
+        res = Util.stringAppendList({"&", name, "_size_", res});
       then
         res;
 
