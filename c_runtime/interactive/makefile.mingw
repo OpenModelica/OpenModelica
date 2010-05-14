@@ -20,4 +20,4 @@ libinteractive.a : $(OBJ)
 	$(AR) -s -r $@ $(OBJ)
 
 clean:
-	$(RM) -rf *.o 
+	$(RM) -rf *.o *.a
