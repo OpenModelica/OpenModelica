@@ -32,8 +32,8 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
-  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@
+LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml_g -lpthread $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
+  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@ 
 
 PROG = omcd
 RMLC	= @rmlc_bin@ -g -Wc,-O3 #-Wr,-East,-Ecps,-Efol
