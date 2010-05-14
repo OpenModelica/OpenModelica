@@ -114,6 +114,8 @@
 #endif
 #endif
 
+/* errorext.h is a C++ header... */
+void c_add_message(int errorID, char* type, char* severity, char* message, char** ctokens, int nTokens);
 
 #define MAX_PTR_INDEX 10000
 static struct modelica_ptr_s ptr_vector[MAX_PTR_INDEX];
@@ -271,12 +273,29 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__toupper)
 {
-  char *str = strdup(RML_STRINGDATA(rmlA0));
-  char *res=str;
-  while (*str!= '\0')
-  {
-    *str=toupper(*str++);
-  }
+  char *base = RML_STRINGDATA(rmlA0);
+  long len = strlen(base);
+  char *res = (char*) malloc(len);
+  int i;
+  for (i=0; i<len; i++)
+    res[i] = toupper(base[i]);
+  rmlA0 = (void*) mk_scon(res);
+
+  /* adrpo added 2004-10-29 */
+  free(res);
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__tolower)
+{
+  char *base = RML_STRINGDATA(rmlA0);
+  long len = strlen(base);
+  char *res = (char*) malloc(len);
+  int i;
+  for (i=0; i<len; i++)
+    res[i] = tolower(base[i]);
   rmlA0 = (void*) mk_scon(res);
 
   /* adrpo added 2004-10-29 */
@@ -2466,10 +2485,6 @@ RML_BEGIN_LABEL(System__getDllExt)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-/* errorext.h is a C++ header... */
-void c_add_message(int errorID, char* type, char* severity,
-    char* message, char** ctokens, int nTokens);
 
 RML_BEGIN_LABEL(System__loadLibrary)
 {

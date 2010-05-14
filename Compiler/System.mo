@@ -112,6 +112,13 @@ public function toupper
   external "C" ;
 end toupper;
 
+public function tolower
+  input String inString;
+  output String outString;
+
+  external "C" ;
+end tolower;
+
 public function strtok
   input String inString1;
   input String inString2;
