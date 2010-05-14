@@ -783,6 +783,8 @@ algorithm
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
         (cache,ie) = fixList(cache,env,ie,ht,fixEquation);
+        (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
+        (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
       then (cache,SCode.PARTS(elts,ne,ie,na,ia,ed,ann,c));
         
     case (cache,env,SCode.CLASS_EXTENDS(name,mod,elts,ne,ie,na,ia,ann,c),ht)
@@ -791,6 +793,8 @@ algorithm
         (cache,elts) = fixList(cache,env,elts,ht,fixElement);
         (cache,ne) = fixList(cache,env,ne,ht,fixEquation);
         (cache,ie) = fixList(cache,env,ie,ht,fixEquation);
+        (cache,na) = fixList(cache,env,na,ht,fixAlgorithm);
+        (cache,ia) = fixList(cache,env,ia,ht,fixAlgorithm);
       then (cache,SCode.CLASS_EXTENDS(name,mod,elts,ne,ie,na,ia,ann,c));
 
     case (cache,env,SCode.DERIVED(ts,mod,attr,c),ht)
