@@ -4549,11 +4549,19 @@ algorithm
         var = Util.if_(b, "(1)", "(0)");
       then
         (cEmptyFunction,var,tnr);
-		case (DAE.CREF(cref, t as DAE.ET_ARRAY(_,_)), tnr, context)
-			equation
-				(cfn, var, tnr_1) = generateRhsCref(cref, t, tnr, context);
-			then
-				(cfn, var, tnr_1);
+    case (DAE.CREF(cref, t as DAE.ET_ARRAY(_,_)), tnr, context)
+      equation
+        (cfn, var, tnr_1) = generateRhsCref(cref, t, tnr, context);
+      then
+        (cfn, var, tnr_1);
+    // A record cref without subscripts (i.e. a record instance) is handled
+    // by generateRhsRecordCref only in a simulation context, not in a function.
+    case (DAE.CREF(cref as DAE.CREF_IDENT(subscriptLst = {}), ty = DAE.ET_COMPLEX(complexClassType =
+      ClassInf.RECORD(path = _))), tnr, context as CONTEXT(codeContext = SIMULATION(genDiscrete = _)))
+      equation
+        (cfn,var,tnr_1) = generateRhsRecordCref(cref, tnr, context);
+      then
+        (cfn,var,tnr_1);
     case (DAE.CREF(componentRef = cref,ty = t),tnr,context)
       equation
         (cfn,var,tnr_1) = generateRhsCref(cref, t, tnr, context);
@@ -9827,7 +9835,9 @@ public function matchFnRefs
   output list<DAE.Exp> outExprLst;
 algorithm
   outExprLst := matchcontinue (inExpr)
-    local DAE.Exp e; DAE.ExpType t;
+    local 
+      DAE.Exp e; 
+      DAE.ExpType t;
     case((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
     case(DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
       local
@@ -9843,10 +9853,50 @@ algorithm
         list<DAE.Exp> expLst,expLst_1;
       equation
         expLst_1 = getMatchingExpsList(expLst,matchFnRefs);
+        expLst = getImplicitRecordConstructors(expLst);
+        expLst = listAppend(expLst, expLst_1);
       then
-        expLst_1;
+        expLst;
   end matchcontinue;
 end matchFnRefs;
+
+public function getImplicitRecordConstructors
+  "If a record instance is sent to a function we need to generate code for the
+  record constructor even if it's not explicitly called, because the constructor
+  is used by the generated code. This function checks the arguments of a
+  function for these implicit record constructor calls and returns a list of all
+  record constructors that are used."
+  input list<DAE.Exp> inExpLst;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := matchcontinue(inExpLst)
+    local
+      DAE.ComponentRef cref;
+      DAE.ExpType record_type;
+      Absyn.Path record_path;
+      list<DAE.Exp> rest_expr;
+      DAE.Exp record_cref;
+    case ({}) then {};
+    // A record component reference.
+    case (DAE.CREF(
+           componentRef = cref, 
+           ty = (record_type as DAE.ET_COMPLEX(
+             complexClassType = ClassInf.RECORD(path = record_path)))) :: rest_expr)
+      equation
+        // Make sure it has no subscripts, i.e. it's a component reference for
+        // an entire record instance.
+        {} = Exp.crefLastSubs(cref);
+        // Build a DAE.CREF from the record path.
+        cref = Exp.pathToCref(record_path);
+        record_cref = Exp.crefExp(cref);
+        rest_expr = getImplicitRecordConstructors(rest_expr);
+      then record_cref :: rest_expr;
+    case (_ :: rest_expr)
+      equation
+        rest_expr = getImplicitRecordConstructors(rest_expr);
+      then rest_expr;
+  end matchcontinue;
+end getImplicitRecordConstructors;
 
 public function matchCalls
 "Used together with getMatchingExps"
@@ -10221,5 +10271,66 @@ algorithm
 		case ("product", DAE.ET_REAL) then ("realMul", "1");
 	end matchcontinue;
 end makeReductionFunction;
+
+protected function generateRhsRecordCref
+  "This function generates code for a record component reference on the RHS.
+   This is done by creating a call to the record constructor with the record
+   members as arguments, and generating code for that call with
+   generateExpression."
+  input DAE.ComponentRef inCref;
+  input Integer nextTmp;
+  input Context context;
+  output CFunction outCFunction;
+  output String varName;
+  output Integer newNextTmp;
+algorithm
+  (outCFunction, varName, newNextTemp) := matchcontinue(inCref, nextTmp, context)
+    local
+      DAE.ComponentRef cref;
+      String record_name, record_type_str, tmp_var_str;
+      Absyn.Path record_path;
+      list<DAE.ExpVar> var_lst;
+      list<DAE.Exp> var_exp_lst;
+      list<String> var_str_lst;
+      CFunction cfn;
+      Integer next_tmp;
+      DAE.ExpType ident_type;
+      DAE.Exp record_call;
+    case (cref as DAE.CREF_IDENT(_, ident_type as DAE.ET_COMPLEX(name = record_path,
+      varLst =  var_lst), _), _, _)
+      equation
+        record_type_str = expTypeStr(ident_type, false);
+        record_name = Absyn.pathString(record_path);
+        var_exp_lst = Util.listMap1r(var_lst, makeRecordSubscriptCref, cref);
+        record_call = DAE.CALL(Absyn.IDENT(record_name), var_exp_lst, false, false, ident_type, DAE.NO_INLINE);
+        (cfn, tmp_var_str, next_tmp) = generateExpression(record_call, nextTmp, context); 
+      then
+        (cfn, tmp_var_str, next_tmp);
+  end matchcontinue;
+end generateRhsRecordCref;
+
+function makeRecordSubscriptCref
+  "Helper function to generateRhsRecordCref. Generates a DAE.CREF from a
+  component reference to a record variable and an ExpVar that represents a
+  record member. Ex:
+    makeRecordSubscriptCref(r, x) => r.x (actually $r$Px when converted to C)
+  "
+  input DAE.ComponentRef recordCref;
+  input DAE.ExpVar expVar;
+  output DAE.Exp varCref;
+algorithm
+  varCref := matchcontinue(recordCref, expVar)
+    local
+      DAE.Ident record_name, var_name;
+      DAE.ExpType var_type;
+    case (_, DAE.COMPLEX_VAR(name = var_name, tp = var_type))
+      equation
+        record_name = Exp.crefStr(recordCref);
+        var_name = record_name +& "." +& var_name;
+        var_name = Util.modelicaStringToCStr(var_name, false);
+      then
+        DAE.CREF(DAE.CREF_IDENT(var_name, var_type, {}), var_type);
+  end matchcontinue;
+end makeRecordSubscriptCref;
 
 end Codegen;

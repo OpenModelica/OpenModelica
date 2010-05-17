@@ -8176,7 +8176,7 @@ algorithm
       SCode.Class cl;
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
-      DAE.DAElist dae,dae1,dae2,dae3,outDae;
+      DAE.DAElist dae,dae1,dae2,dae3,dae4,outDae;
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -8301,7 +8301,7 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), vect_dims, newslots2, prop);
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
-        (cache,dae) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl));
+        (cache,dae) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
         dae = DAEUtil.joinDaes(dae,dae1);
       then
         (cache,call_exp,prop_1,dae);
@@ -8376,8 +8376,11 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop);
 
         /* Instantiate the function and add to dae function tree*/
-        (cache,dae3) = instantiateDaeFunction(cache,env,fn,builtin,NONE);
-        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
+        (cache,dae3) = instantiateDaeFunction(cache,env,fn,builtin,NONE,true);
+        /* Instantiate any implicit record constructors needed and add them to the dae function tree */
+        (cache,dae4) = instantiateImplicitRecordConstructors(cache, env, args_1, st);
+        //dae4 = DAEUtil.emptyDae;
+        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3,dae4});
       then
         (cache,call_exp,prop_1,dae);
 
@@ -8451,31 +8454,32 @@ functiontree of a newly created dae"
   input Absyn.Path name;
   input Boolean builtin "builtin functions create empty dae";
   input option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   output Env.Cache outCache;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outDae) := matchcontinue(inCache,env,name,builtin,clOpt)
+  (outCache,outDae) := matchcontinue(inCache,env,name,builtin,clOpt,printErrorMsg)
   local Env.Cache cache;
     SCode.Class cl; DAE.DAElist dae;
     String id,id2;
     /* Builtin functions skipped*/
-    case(cache,env,name,true,_) then (cache,DAEUtil.emptyDae);
+    case(cache,env,name,true,_,_) then (cache,DAEUtil.emptyDae);
 
     /* External object functions skipped*/
-    case(cache,env,name,_,_)
+    case(cache,env,name,_,_,_)
       equation
         (_,true) = isExternalObjectFunction(cache,env,name);
       then (cache,DAEUtil.emptyDae);
 
       /* Recursive calls (by looking at envinronment) skipped */
-    case(cache,env,name,false,NONE)
+    case(cache,env,name,false,NONE,_)
       equation
         false = Env.isTopScope(env);
         true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
       then (cache,DAEUtil.emptyDae);
 
     /* Recursive calls (by looking in cache) skipped */
-    case(cache,env,name,false,_)
+    case(cache,env,name,false,_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -8483,7 +8487,7 @@ algorithm
       then (cache,DAEUtil.emptyDae);
 
     /* Class must be looked up*/
-    case(cache,env,name,false,NONE)
+    case(cache,env,name,false,NONE,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
@@ -8493,7 +8497,7 @@ algorithm
       then (cache,dae);
 
     /* class already available*/
-    case(cache,env,name,false,SOME(cl))
+    case(cache,env,name,false,SOME(cl),_)
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
@@ -8501,7 +8505,7 @@ algorithm
       then (cache,dae);
 
     /* Call to function reference variable */
-    case(cache,env,name,false,NONE)
+    case(cache,env,name,false,NONE,_)
       local
         DAE.ComponentRef cref;
       equation
@@ -8510,12 +8514,46 @@ algorithm
         dae = DAEUtil.emptyDae;
       then (cache,dae);
 
-    case(cache,env,name,_,_)
+    case(cache,env,name,_,_,true)
       equation
         print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&" in scope: " +& Env.printEnvPathStr(env) +& "\n");
       then fail();
   end matchcontinue;
 end instantiateDaeFunction;
+
+protected function instantiateImplicitRecordConstructors
+  "Given a list of arguments to a function, this function checks if any of the
+  arguments are component references to a record instance, and instantiates the
+  record constructors for those components. These are implicit record
+  constructors, because they are not explicitly called, but are needed when code
+  is generated for record instances as function input arguments."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> args;
+  input Option<Interactive.InteractiveSymbolTable> st;
+  output Env.Cache outCache;
+  output DAE.DAElist outDae;
+algorithm
+  (outCache, outDae) := matchcontinue(inCache, inEnv, args, st)
+    local
+      list<DAE.Exp> rest_args;
+      Absyn.Path record_name;
+      Env.Cache cache;
+      DAE.DAElist dae1, dae2;
+    case (_, _, _, SOME(_)) then (inCache, DAEUtil.emptyDae);
+    case (_, _, {}, _) then (inCache, DAEUtil.emptyDae);
+    case (_, _, DAE.CREF(ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = record_name))) :: rest_args, _)
+      equation
+        (cache, dae1) = instantiateDaeFunction(inCache, inEnv, record_name, false, NONE, false);
+        (cache, dae2) = instantiateImplicitRecordConstructors(cache, inEnv, rest_args, NONE);
+        dae1 = DAEUtil.joinDaes(dae1, dae2);
+      then (cache, dae1);
+    case (_, _, _ :: rest_args, _)
+      equation
+        (cache, dae1) = instantiateImplicitRecordConstructors(inCache, inEnv, rest_args, NONE);
+      then (cache, dae1);
+  end matchcontinue;
+end instantiateImplicitRecordConstructors;
 
 protected function addDefaultArgs "adds default values (from slots) to argument list of function call.
 This is needed because when generating C-code all arguments must be present in the function call.
