@@ -202,6 +202,8 @@ algorithm
       Integer[:] ass1,ass2;
       list<Integer>[:] m,mt;
       Absyn.Path class_;
+      // lochel
+      String jacobian_code;
 
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,filename,funcfilename,fileDir)
       equation
@@ -223,6 +225,10 @@ algorithm
         coutput = generateComputeOutput(cname, dae, dlow2, ass1, ass2,m,mt, blt_no_states);
         cstate = generateComputeResidualState(cname, dae, dlow2, ass1, ass2, blt_states);
         c_ode = generateOdeCode(dae, dlow2, blt_states, ass1, ass2, m, mt, class_);
+        
+        // lochel: generateJacobianCode
+        jacobian_code = generateJacCode(dlow2, blt_states, ass1, ass2, m, mt);
+        
         s_code = generateInitialValueCode(dlow2);
         cwhen = generateWhenClauses(cname, dae, dlow2, ass1, ass2, comps);
         czerocross = generateZeroCrossing(cname, dae, dlow2, ass1, ass2, comps, helpVarInfo);
@@ -244,7 +250,7 @@ algorithm
             "#endif \n\n",
             "#include \"",funcfilename,"\"\n\n",
             extObjInclude,cglobal,coutput,in_str,out_str,
-            cstate,czerocross,updatedepend,storedelayed,cwhen,c_ode,s_code,s_code2,
+            cstate,czerocross,updatedepend,storedelayed,cwhen,/*lochel*/jacobian_code,c_ode,s_code,s_code2,
             s_code3,c_eventchecking});
         System.writeFile(filename, res);
       then
@@ -10550,5 +10556,1027 @@ algorithm
   end matchcontinue;
 end generateEquationOrder;
 
-end SimCodegen;
+// lochel
+// generateJacCode and all helpers
+public import Derive;
 
+protected function lowerStatePartition
+  // function: lowerStatePartition
+  // outputs the state-partition without discret equations
+  // (e.g. relations and when-equations)
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input Integer[:] inAss1;
+  input Integer[:] inAss2;
+  input list<list<Integer>> inBltStates;
+  output list<list<Integer>> outBltStates;
+algorithm
+  outBltStates := matchcontinue(inDAELow, inAss1, inAss2, inBltStates)
+    local
+      DAELow.DAELow DAELow;
+      Integer[:] ass1;
+      Integer[:] ass2;
+      Integer eqnNr;
+      list<Integer> currBLTStatesBlock;
+      list<list<Integer>> bltStates;
+      list<Integer> r1, r2;
+      list<list<Integer>> r1, r2;
+      Integer r1Length;
+      
+    case(_, _, _, {}) then {};
+      
+      // for system of equations
+    case(DAELow, ass1, ass2, (currBLTStatesBlock as (_::(_::_)))::bltStates) equation
+      r1 = lowerStatePartition2(DAELow, ass1, ass2, currBLTStatesBlock);
+      r1Length = listLength(r1);
+      failure(0 = r1Length);
+      r2 = lowerStatePartition(DAELow, ass1, ass2, bltStates);
+      r1 = listAppend({r1}, r2);
+    then r1;
+      
+      // for single equations
+    case(DAELow, ass1, ass2, {eqnNr}::bltStates) equation
+      r1 = lowerStatePartition2(DAELow, ass1, ass2, {eqnNr});
+      r1Length = listLength(r1);
+      failure(0 = r1Length);
+      r2 = lowerStatePartition(DAELow, ass1, ass2, bltStates);
+      r1 = listAppend({r1}, r2);
+    then r1;
+
+    case(DAELow, ass1, ass2, {_}::bltStates) equation
+      r2 = lowerStatePartition(DAELow, ass1, ass2, bltStates);
+    then r2;
+      
+    case(_, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodegen.lowerStatePartition failed"});
+    then fail();
+  end matchcontinue;
+end lowerStatePartition;
+
+protected function lowerStatePartition2
+  // function: lowerStatePartition2
+  // helper for lowerStatePartition
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input Integer[:] inAss1;
+  input Integer[:] inAss2;
+  input list<Integer> inBltStates;
+  output list<Integer> outBltStates;
+algorithm
+  outBltStates := matchcontinue(inDAELow, inAss1, inAss2, inBltStates)
+    local
+      DAELow.DAELow daeLow;
+      Integer[:] ass1;
+      Integer[:] ass2;
+      Integer eqnNr;
+      list<Integer> rest, r1, r2;
+      DAE.ComponentRef currCRef;
+      DAE.Exp e1, e2;
+      
+    case(_, _, _, {}) then {};
+
+    case(daeLow, ass1, ass2, eqnNr::rest) equation
+      ({currCRef}, {DAELow.EQUATION(exp=e1, scalar=e2)}) = getVarsAndEquations(daeLow, {eqnNr}, ass2);
+      
+      // relation/when
+      false = Exp.isRelation(e1);
+      false = Exp.isRelation(e2);
+      
+      r2 = lowerStatePartition2(daeLow, ass1, ass2, rest);
+      r1 = listAppend({eqnNr}, r2);
+    then r1;
+      
+    case(daeLow, ass1, ass2, eqnNr::rest) equation
+      r2 = lowerStatePartition2(daeLow, ass1, ass2, rest);
+    then r2;
+      
+    case(_, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodegen.lowerStatePartition2 failed"});
+    then fail();
+  end matchcontinue;
+end lowerStatePartition2;
+
+protected function generateJacCode
+  // function: generateJacCode
+  // outputs simulation code from a DAELow: d(dot{x})/d(x)
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input list<list<Integer>> inIntegerLstLst2;
+  input Integer[:] inAss1;
+  input Integer[:] inAss2;
+  input DAELow.IncidenceMatrix inIncidenceMatrix;
+  input DAELow.IncidenceMatrixT inIncidenceMatrixT;
+  output String outSimCode;
+algorithm
+  outSimCode := matchcontinue(inDAELow, inIntegerLstLst2, inAss1, inAss2, inIncidenceMatrix, inIncidenceMatrixT)
+    local
+      DAELow.DAELow daelow;
+      list<list<Integer>> comps;
+      Integer[:] ass1;
+      Integer[:] ass2;
+      list<Integer>[:] m;
+      list<Integer>[:] mt;  
+      list<list<Integer>> blt_states;
+      Codegen.CFunction block_code;
+      list<CFunction> extra_funcs;
+      Codegen.CFunction func;
+      String jac_func_str;
+      String extra_funcs_str;
+      String simCode;
+      list<String> stmts;
+      list<Exp.ComponentRef> states;
+      
+    case(daelow, comps, ass1, ass2, m, mt) equation
+      true = RTOpts.debugFlag("genjac"); 
+      (blt_states, _) = DAELow.generateStatePartition(comps, daelow, ass1, ass2, m, mt);
+      blt_states = lowerStatePartition(daelow, ass1, ass2, blt_states);
+      
+      (block_code, _, extra_funcs) = generateJacBlocks(daelow, ass1, ass2, blt_states, 0, {});
+      
+      func = Codegen.cMakeFunction("int", "derivedODEWithRespectToStates", {}, {"double *jac"});
+      func = Codegen.cAddVariables(func, {"int i=0;"});      
+      func = addMemoryManagement(func);
+      func = Codegen.cAddCleanups(func, {"return 0;"}); 
+      func = Codegen.cMergeFns({func, block_code});
+      
+      // in Jacobi-Matrix speichern
+      states = getdaeVarsExp(daelow);
+      stmts = writeToJacMat(states, states);
+      func = Codegen.cAddStatements(func, stmts);
+      
+      jac_func_str = Codegen.cPrintFunctionsStr({func});
+      extra_funcs_str = Codegen.cPrintFunctionsStr(extra_funcs);
+      simCode = Util.stringAppendList({jac_func_str, extra_funcs_str});
+    then simCode;
+      
+    case(_, _, _, _, _, _) equation
+      false =  RTOpts.debugFlag("genjac");
+    then "";
+      
+    case(_, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"SimCodegen.generateJacCode failed"});
+    then fail();
+  end matchcontinue;
+end generateJacCode;
+
+protected function generateJacBlocks
+  // function: generateJacBlocks
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input Integer[:] inAss1;
+  input Integer[:] inAss2;
+  input list<list<Integer>> inBLTStates;
+  input Integer inCGID;
+  input list<DAE.ComponentRef> inDependentVars;
+  output CFunction outCFunction;
+  output Integer outCGID;
+  output list<CFunction> outExtraFunctions;
+algorithm
+  (outCFunction, outCGID, outExtraFunctions) :=
+  matchcontinue(inDAELow, inAss1, inAss2, inBLTStates, inCGID, inDependentVars)
+    local
+      DAELow.DAELow daeLow;
+      Integer[:] ass1;
+      Integer[:] ass2;
+      list<Integer> currBLTStatesBlock;
+      list<list<Integer>> bltStatesRest;
+      Integer cgID, eqnNr;
+      list<DAE.ComponentRef> dependentVars;
+      Codegen.CFunction fn1, fn2, mergedFn;
+      list<CFunction> extraFns1, extraFns2, mergedExtraFns;
+      
+    case(_, _, _, {}, cgID, dependentVars) then (Codegen.cEmptyFunction, cgID, {});
+      
+      // for system of equations
+    case(daeLow, ass1, ass2, ((currBLTStatesBlock as (_::(_::_)))::bltStatesRest), cgID, dependentVars) equation        
+      (fn1, cgID, extraFns1, dependentVars) = generateJacSystem(daeLow, ass2, currBLTStatesBlock, cgID, dependentVars);
+      (fn2, cgID, extraFns2) = generateJacBlocks(daeLow, ass1, ass2, bltStatesRest, cgID, dependentVars);
+      mergedFn = Codegen.cMergeFns({fn1, fn2});
+      mergedExtraFns = listAppend(extraFns1, extraFns2);
+    then (mergedFn, cgID, mergedExtraFns);
+      
+      // for single equations
+    case(daeLow, ass1, ass2, ((currBLTStatesBlock as {eqnNr})::bltStatesRest), cgID, dependentVars) equation
+      (fn1, cgID, extraFns1, dependentVars) = generateJacEquation(daeLow, ass1, ass2, eqnNr, cgID, dependentVars);
+      (fn2, cgID, extraFns2) = generateJacBlocks(daeLow, ass1, ass2, bltStatesRest, cgID, dependentVars);
+      mergedFn = Codegen.cMergeFns({fn1, fn2});
+      mergedExtraFns = listAppend(extraFns1, extraFns2);
+    then (mergedFn, cgID, mergedExtraFns);
+      
+    case (_, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"-SimCodegen.generateJacBlocks failed"});
+    then fail();
+  end matchcontinue;
+end generateJacBlocks;
+
+protected function solveEqs
+  input list<Exp.Exp> inResidual;
+  input list<DAE.ComponentRef> inCref;
+  output list<Exp.Exp> out;
+algorithm
+  out := matchcontinue(inResidual, inCref)
+    local
+      Exp.Exp currExp, currRes, currCrefExp;
+      list<Exp.Exp> restExp, restRes;
+      DAE.ComponentRef currCref;
+      list<DAE.ComponentRef> restCref;
+      
+    case({}, {}) then {};
+    case({}, _) then {}; // error-handling
+    case(_, {}) then {}; // error-handling
+    case(currExp::restExp, currCref::restCref) equation
+      currCrefExp = DAE.CREF(currCref, DAE.ET_REAL());
+      currRes = Exp.solve(DAE.RCONST(0.0), currExp, currCrefExp);
+      currRes = Exp.simplify(currRes);
+      restRes = solveEqs(restExp, restCref);
+    then (currRes::restRes);
+  end matchcontinue;
+end solveEqs;
+
+protected function generateJacEquation
+  // function: generateJacEquation
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input Integer[:] inAss1;
+  input Integer[:] inAss2;
+  input Integer inEqnNr;
+  input Integer inCGID;
+  input list<Exp.ComponentRef> inDependentVars;
+  output CFunction outCFunction;
+  output Integer outCGID;
+  output list<CFunction> outExtraFunctions;
+  output list<Exp.ComponentRef> outDependentVars;
+algorithm
+  (outCFunction, outCGID, outExtraFunctions, outDependentVars) :=
+  matchcontinue(inDAELow, inAss1, inAss2, inEqnNr, inCGID, inDependentVars)
+    local
+      DAELow.DAELow daeLow;
+      Integer[:] ass1;
+      Integer[:] ass2;
+      Integer eqnNr;
+      Integer cgID;
+      list<Exp.ComponentRef> dependentVars;
+      DAE.ComponentRef currCRef;
+      DAE.Exp e1, e2;
+      list<Exp.ComponentRef> states;
+      DAE.Exp currCrefExp, currExp;
+      list<Exp.ComponentRef> derivedCRefs;
+      list<Exp.Exp> derivedExps;
+      Codegen.CFunction fn;
+      list<String> stms;
+      list<String> derivedCRefsStr;
+      
+    case(daeLow, ass1, ass2, eqnNr, cgID, dependentVars) equation        
+      ({currCRef}, {DAELow.EQUATION(exp=e1, scalar=e2)}) = getVarsAndEquations(daeLow, {eqnNr}, ass2);
+      
+      states = getdaeVarsExp(daeLow);
+      dependentVars = listAppend(dependentVars, {currCRef});
+      
+      currCrefExp = DAE.CREF(currCRef, DAE.ET_REAL());
+      
+      (derivedCRefs, derivedExps) = differentiateLGS({currCRef}, {DAELow.EQUATION(e1, e2, DAE.emptyElementSource)}, states, dependentVars);
+      dependentVars = listAppend(dependentVars, {currCRef});
+      
+      derivedExps = solveEqs(derivedExps, derivedCRefs);
+      
+      (fn, stms, cgID) = Codegen.generateExpressions(derivedExps, cgID, Codegen.CONTEXT(Codegen.SIMULATION(false), Codegen.NORMAL(), Codegen.NO_LOOP));
+      
+      // Vars definieren
+      derivedCRefsStr = Util.listMap(derivedCRefs, Exp.printComponentRefStr);
+      stms = cMakeStm(derivedCRefsStr, stms);
+      derivedCRefsStr = cMakeDoubleVarDef(derivedCRefsStr);
+      fn = Codegen.cAddVariables(fn, derivedCRefsStr);
+      fn = Codegen.cAddStatements(fn, stms);
+    then (fn, cgID, {}, dependentVars);
+      
+    case(_, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"-SimCodegen.generateJacEquation failed"});
+    then fail();
+  end matchcontinue;
+end generateJacEquation;
+
+protected function generateJacSystem
+  // function: generateJacSystem
+  // generates code for a linear subsystem of equations
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input Integer[:] inAss2; // eqn -> var
+  input list<Integer> inBLTStateBlock;
+  input Integer inCGID;
+  input list<DAE.ComponentRef> inDependentVars;
+  output CFunction outCFunction;
+  output Integer outCGID;
+  output list<CFunction> outExtraFunctions;
+  output list<Exp.ComponentRef> outDependentVars;
+algorithm
+  (outCFunction, outCGID, outExtraFunctions, outDependentVars) := matchcontinue(inDAELow, inAss2, inBLTStateBlock, inCGID, inDependentVars)
+    local
+      DAELow.DAELow daeLow;
+      Integer[:] ass2; // eqn -> var
+      list<Integer> bltStateBlock;
+      Integer cgID;
+      list<DAE.ComponentRef> dependentVars;
+      list<DAE.ComponentRef> vars, states;
+      list<DAELow.Equation> eqns;
+      Codegen.CFunction fn;
+      list<Codegen.CFunction> extraFn;
+      
+    case(daeLow, ass2, bltStateBlock, cgID, dependentVars) equation
+      (vars, eqns) = getVarsAndEquations(daeLow, bltStateBlock, ass2);
+      dependentVars = listAppend(dependentVars, vars);
+      states = getdaeVarsExp(daeLow);
+      (fn, cgID, extraFn) = generateJacSystem2(daeLow, vars, eqns, states, dependentVars, cgID);
+    then (fn, cgID, extraFn, dependentVars);
+      
+    case(_, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"-SimCodegen.generateJacSystem failed"});
+    then fail();
+  end matchcontinue;
+end generateJacSystem;
+
+protected function generateJacSystem2
+  // function: generateJacSystem2
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input list<DAE.ComponentRef> inVars;
+  input list<DAELow.Equation> inEqns;
+  input list<DAE.ComponentRef> inStates;
+  input list<DAE.ComponentRef> inDependentVars;
+  input Integer inCGID;
+  output CFunction outCFunction;
+  output Integer outCGID;
+  output list<CFunction> outExtraFunctions;
+algorithm
+  (outCFunction, outCGID, outExtraFunctions) := matchcontinue(inDAELow, inVars, inEqns, inStates, inDependentVars, inCGID)
+    local
+      DAELow.DAELow daeLow;
+      list<DAE.ComponentRef> vars;
+      list<DAELow.Equation> eqns;
+      DAE.ComponentRef currState;
+      list<DAE.ComponentRef> states, restStates;
+      list<DAE.ComponentRef> dependentVars;
+      Integer cgID;
+      Codegen.CFunction fn1, fn2, mergedFn;
+      list<CFunction> extraFns1, extraFns2, mergedExtraFns;   
+      Integer dim, id;
+      String dimStr, idStr;
+
+      String stmt1, stmt2;
+
+      list<Exp.Exp> derivedExps;
+      list<Exp.ComponentRef> derivedVars;
+      Exp.Exp a, b;
+      Exp.ComponentRef c;
+      list<String> stmts;
+      DAELow.Variables v_;
+      DAELow.EquationArray e_;
+
+    case(daeLow, vars, eqns, {}, dependentVars, cgID) then (Codegen.cEmptyFunction, cgID, {});
+
+    case(daeLow, vars, eqns, currState::restStates, dependentVars, cgID) equation
+      states = getdaeVarsExp(daeLow);
+      (derivedVars, derivedExps) = differentiateLGS(vars, eqns, {currState}, dependentVars);
+
+      dim = listLength(vars);
+      dimStr = intString(dim);
+      id = tick();
+      idStr = intString(id);
+
+      // A und b definieren
+      stmt1 = Util.stringAppendList({"declare_matrix(A", idStr, ", ", dimStr, ", ", dimStr, ");"});
+      stmt2 = Util.stringAppendList({"declare_vector(b", idStr, ", ",dimStr, ");"});
+      
+      // A
+      (fn1, cgID) = fillA(derivedExps, derivedVars, dim, "A" +& idStr, cgID, 0);
+      fn1 = Codegen.cAddVariables(fn1, {stmt1, stmt2});
+
+      // b
+      v_ = DAELow.listVar(crefsToVars(derivedVars));
+      e_ = DAELow.listEquation(expToEquation(derivedExps));
+      (fn2, cgID) = generateOdeSystem2PopulateB({}, v_, e_, id, cgID);
+      mergedFn = Codegen.cMergeFns({fn1, fn2});
+
+      // Gleichungssystem lösen
+      stmt1 = Util.stringAppendList({"solve_linear_equation_system", "(A", idStr, ", b", idStr, ", ", dimStr, ", ", idStr, ");"});
+      mergedFn = Codegen.cAddStatements(mergedFn, {stmt1});
+
+      // Ergebnis speichern
+      stmts = cMakeDoubleVarDef(Util.listMap(derivedVars, Exp.printComponentRefStr));
+      mergedFn = Codegen.cAddVariables(mergedFn, stmts);
+      stmts = generateResultLines(derivedVars, dim, "b" +& idStr, 0);
+      fn1 = Codegen.cAddStatements(mergedFn, stmts);
+
+      extraFns1 = {};
+
+      (fn2, cgID, extraFns2) = generateJacSystem2(daeLow, vars, eqns, restStates, dependentVars, cgID);
+      mergedExtraFns = listAppend(extraFns1, extraFns2);
+      mergedFn = Codegen.cMergeFns({fn1, fn2});
+    then (mergedFn, cgID, mergedExtraFns);
+
+    case(_, _, _, _, _, _) equation
+      Error.addMessage(Error.INTERNAL_ERROR, {"-SimCodegen.generateJacSystem2 failed"});
+    then fail();
+  end matchcontinue;
+end generateJacSystem2;
+
+protected function writeToJacMat
+  // function: writeToJacMat
+  // using column major order
+  // author: lochel
+  
+  input list<DAE.ComponentRef> inStates;
+  input list<DAE.ComponentRef> inStates2;
+  output list<String> out;
+algorithm
+  out := matchcontinue(inStates, inStates2)
+    local
+      list<String> str;
+      list<String> erg;
+      list<DAE.ComponentRef> rest, states;
+      DAE.ComponentRef curr;
+    case ({}, states) then {};
+    case (curr::rest, states) equation      
+      str = writeToJacMat2(states, curr);
+      erg = writeToJacMat(rest, states);
+      str = listAppend(str, erg);
+    then str;
+  end matchcontinue;
+end writeToJacMat;
+
+protected function writeToJacMat2
+  // function: writeToJacMat
+  // author: lochel
+  
+  input list<DAE.ComponentRef> inStates;
+  input DAE.ComponentRef inDStates;
+  output list<String> out;
+algorithm
+  out := matchcontinue(inStates, inDStates)
+    local
+      String str;
+      list<String> erg;
+      list<DAE.ComponentRef> rest;
+      DAE.ComponentRef curr, dState;
+    case ({}, dState) then {};
+    case (curr::rest, dState) equation      
+      str = "jac[i++] = " +& DAELow.derivativeNamePrefix +& Exp.printComponentRefStr(dState) +& DAELow.derivativeNamePrefix +& Exp.printComponentRefStr(curr) +& ";";
+      erg = writeToJacMat2(rest, dState);
+    then (str::erg);
+  end matchcontinue;
+end writeToJacMat2;
+
+protected function getVarsAndEquations
+  // function: getVarsAndEquations
+  // outputs a list of crefs and equations of a loop
+  // author: lochel
+  
+  input DAELow.DAELow inDAELow;
+  input list<Integer> inEqnNrs;
+  input Integer[:] inAss2; // eqn -> var
+  output list<DAE.ComponentRef> outVars;
+  output list<DAELow.Equation> outEqns;
+algorithm
+  (outVars, outEqns) := matchcontinue(inDAELow, inEqnNrs, inAss2)
+  local
+    DAELow.DAELow daeLow;
+    DAELow.Variables orderedVars;
+    DAELow.EquationArray orderedEqs;
+    Integer currEqnNr;
+    list<Integer> eqnNrs;
+    Integer[:] ass2; // eqn -> var
+    
+    DAELow.Equation currEqn;
+    DAE.ComponentRef currVar;
+    list<DAE.ComponentRef> vars;
+    list<DAELow.Equation> eqns;
+    DAELow.VarKind kind;
+    String id, name;
+    
+    case(_, {}, _) then ({}, {});
+      
+    // non-state
+    case(daeLow as DAELow.DAELOW(orderedVars=orderedVars, orderedEqs=orderedEqs), currEqnNr::eqnNrs, ass2) equation
+      (currEqn, DAELow.VAR(varName=currVar, varKind=kind)) = getEquationAndSolvedVar(currEqnNr, orderedEqs, orderedVars, ass2);
+      isNonState(kind);
+      (vars, eqns) = getVarsAndEquations(daeLow, eqnNrs, ass2);
+      vars = listAppend(vars, {currVar});
+      eqns = listAppend(eqns, {currEqn});
+    then(vars, eqns);
+
+    // state
+    case(daeLow as DAELow.DAELOW(orderedVars=orderedVars, orderedEqs=orderedEqs), currEqnNr::eqnNrs, ass2) equation
+      (currEqn, DAELow.VAR(varName=currVar)) = getEquationAndSolvedVar(currEqnNr, orderedEqs, orderedVars, ass2);
+      
+      name = Exp.printComponentRefStr(currVar);      
+      id = Util.stringAppendList({DAELow.derivativeNamePrefix, name});
+      currVar = DAE.CREF_IDENT(id, DAE.ET_REAL(), {});
+        
+      (vars, eqns) = getVarsAndEquations(daeLow, eqnNrs, ass2);
+      vars = listAppend(vars, {currVar});
+      eqns = listAppend(eqns, {currEqn});
+    then(vars, eqns);
+  end matchcontinue;
+end getVarsAndEquations;
+
+protected function differentiateLGS
+  // function: differentiateLGS
+  // author: lochel
+  
+	input list<DAE.ComponentRef> inVars;
+	input list<DAELow.Equation> inEqns;
+	input list<DAE.ComponentRef> inStates;
+	input list<DAE.ComponentRef> inDependentVars;
+	output list<DAE.ComponentRef> outVars;
+	output list<DAE.Exp> outExps;
+algorithm
+  (outVars, outExps) := matchcontinue(inVars, inEqns, inStates, inDependentVars)
+  local
+    DAE.ComponentRef currVar;
+    list<DAE.ComponentRef> restVars;
+	  DAELow.Equation currEqn;
+	  list<DAELow.Equation> restEqns;
+	  list<DAE.ComponentRef> states;
+	  list<DAE.ComponentRef> dependentVars;
+	  DAE.Exp currExp, e1, e2;
+	  
+	  list<DAE.ComponentRef> vars1, vars2;
+	  list<DAE.Exp> exps1, exps2;
+	  
+    case({}, {}, _, _) then ({}, {});
+    case({}, _, _, _) then fail();
+    case(_, {}, _, _) then fail();
+      
+    case(currVar::restVars, (currEqn as DAELow.EQUATION(exp=e1, scalar=e2))::restEqns, states, dependentVars) equation
+      vars1 = differentiateVarWithRespectToStates(currVar, states);
+      DAELow.RESIDUAL_EQUATION(exp=currExp) = DAELow.equationToResidualForm(currEqn);      
+      exps1 = differentiateWithRespectToStates(currExp, states, dependentVars);
+      
+      (vars2, exps2) = differentiateLGS(restVars, restEqns, states, dependentVars);
+      vars1 = listAppend(vars1, vars2);
+      exps1 = listAppend(exps1, exps2);
+    then (vars1, exps1);
+
+    // Relationen nicht ableiten
+    /*case(currVar::restVars, (currEqn as DAELow.EQUATION(exp=e1, scalar=e2))::restEqns, states, dependentVars) equation      
+      (vars1, exps1) = differentiateLGS(restVars, restEqns, states, dependentVars);
+    then (vars1, exps1);*/
+  end matchcontinue;
+end differentiateLGS;
+
+protected function fillA
+  // function: fillA
+  // author: lochel
+  input list<Exp.Exp> inExps;
+  input list<DAE.ComponentRef> inRefs;
+  input Integer inDim;
+  input String inMatName;
+  input Integer inCGID;
+  input Integer x;
+  output Codegen.CFunction out;
+  output Integer outCGID;
+algorithm
+  (out, outCGID) := matchcontinue(inExps, inRefs, inDim, inMatName, inCGID, x)
+    local
+      list<Exp.Exp> exps;
+      Integer dim, cgID;
+      String matName;
+      DAE.ComponentRef currRef;
+      list<DAE.ComponentRef> restRef;
+      list<Exp.Exp> de;
+      Codegen.CFunction fn1, fn2, mergedFn;
+      
+    case(_, {}, _, _, cgID, _) then (Codegen.cEmptyFunction, cgID);
+      
+    case(exps, currRef::restRef, dim, matName, cgID, x) equation
+      de = Util.listMap2(exps, Derive.differentiateExp, currRef, true);
+      de = Util.listMap(de, Exp.simplify);
+      (fn1, cgID) = generateOneALine(de, dim, matName, cgID, x, 0);
+      
+      (fn2, cgID) = fillA(exps, restRef, dim, matName, cgID, x+1);
+      mergedFn = Codegen.cMergeFns({fn1, fn2});
+    then (mergedFn, cgID);      
+  end matchcontinue;
+end fillA;
+
+protected function generateOneALine
+  // function: generateOneALine
+  // author: lochel
+  
+  input list<Exp.Exp> inExps;
+  input Integer inDim;
+  input String inMatName;
+  input Integer inCGID;
+  input Integer x;
+  input Integer y;
+  output Codegen.CFunction outFn;
+  output Integer outCGID;
+algorithm
+  (outFn, outCGID) := matchcontinue(inExps, inDim, inMatName, inCGID, x, y)
+    local
+      Exp.Exp currExp;
+      list<Exp.Exp> restExp;
+      Integer dim, cgID;
+      String matName, line;
+      String stms;
+      Codegen.CFunction fn1, fn2, mergedFn;
+    case({}, _, _, cgID, _, _) then (Codegen.cEmptyFunction, cgID);
+    case(currExp::restExp, dim, matName, cgID, x, y) equation
+      
+      (fn1, stms, cgID) = Codegen.generateExpression(currExp, cgID, Codegen.CONTEXT(Codegen.SIMULATION(false), Codegen.NORMAL(), Codegen.NO_LOOP));
+      line = "set_matrix_elt(" +& matName +& ", " +& intString(y) +& ", " +& intString(x) +& ", " +& intString(dim) +& ", " +& stms +& ");";
+      fn1 = Codegen.cAddStatements(fn1, {line});
+      
+      (fn2, cgID) = generateOneALine(restExp, dim, matName, cgID, x, y+1);
+      mergedFn = Codegen.cMergeFns({fn1, fn2});
+    then (mergedFn, cgID);
+  end matchcontinue;
+end generateOneALine;
+
+protected function generateResultLines
+  // function: generateResultLines
+  // author: lochel
+  
+  input list<DAE.ComponentRef> inVars;
+  input Integer inDim;
+  input String inBName;
+  input Integer y;
+  output list<String> out;
+algorithm
+  out := matchcontinue(inVars, inDim, inBName, y)
+    local
+      DAE.ComponentRef currVar;
+      list<DAE.ComponentRef> restVar;
+      Integer dim;
+      String bName, line;
+      list<String> code;
+    case({}, _, _, _) then {};
+    case(currVar::restVar, dim, bName, y) equation
+      line = Exp.printComponentRefStr(currVar) +& " = get_vector_elt(" +& bName +& ", " +& intString(y) +& ");";
+      code = generateResultLines(restVar, dim, bName, y+1);
+      code = listAppend({line}, code);
+    then code;
+  end matchcontinue;
+end generateResultLines;
+
+protected function crefsToVars
+  // function: crefsToVars
+  // author: lochel
+  
+  input list<DAE.ComponentRef> inRefs;
+  output list<DAELow.Var> out;
+algorithm
+  out := matchcontinue(inRefs)
+    local
+      DAE.ComponentRef curr;
+      list<DAE.ComponentRef> rest;
+      DAELow.Var v;
+      list<DAELow.Var> vars;
+    case ({}) then {};
+    case(curr::rest) equation
+      v = DAELow.VAR(curr, DAELow.VARIABLE, DAE.BIDIR, DAELow.REAL, NONE, NONE, {}, 0, curr, DAE.emptyElementSource, NONE, NONE, DAE.NON_CONNECTOR, DAE.NON_STREAM_CONNECTOR);
+      vars = crefsToVars(rest);
+    then (v::vars);
+  end matchcontinue;
+end crefsToVars;
+
+protected function expToEquation
+  // function: expToEquation
+  // author: lochel
+  
+  input list<Exp.Exp> inExps;
+  output list<DAELow.Equation> out;
+algorithm
+  out := matchcontinue(inExps)
+    local
+      Exp.Exp curr;
+      list<Exp.Exp> rest;
+      DAELow.Equation e;
+      list<DAELow.Equation> eqs;
+    case ({}) then {};
+    case(curr::rest) equation
+      e = DAELow.RESIDUAL_EQUATION(curr, DAE.emptyElementSource);
+      eqs = expToEquation(rest);
+    then (e::eqs);
+  end matchcontinue;
+end expToEquation;
+
+protected function differentiateWithRespectToStates
+  // function: differentiateWithRespectToStates
+  // author: lochel
+  
+  input Exp.Exp inExp;
+  input list<Exp.ComponentRef> inStates;
+  input list<Exp.ComponentRef> inDependentVars;
+  output list<Exp.Exp> outExp;
+algorithm
+  outExp := matchcontinue(inExp, inStates, inDependentVars)
+    local
+      Exp.Exp exp, r1;
+      list<Exp.Exp> r2;
+      
+      Exp.ComponentRef x;
+      list<Exp.ComponentRef> rest;
+      list<Exp.ComponentRef> states;
+      
+    case(exp, {}, states) then {};
+            
+    case(exp, x::rest, states) equation
+      r1 = differentiateWithRespectToStates2(exp, x, states);
+      r2 = differentiateWithRespectToStates(exp, rest, states);
+    then r1::r2;
+      
+    case(_, _, _)
+    then fail();
+  end matchcontinue;
+end differentiateWithRespectToStates;
+
+protected function differentiateWithRespectToStates2
+  // function: differentiateWithRespectToStates2
+  // author: lochel
+  
+  input Exp.Exp inExp;
+  input Exp.ComponentRef inX;
+  input list<Exp.ComponentRef> inDependentVariables;
+  output Exp.Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp, inX, inDependentVariables)
+    local
+      Exp.ComponentRef x, cref;
+      list<Exp.ComponentRef> states, diff_crefs;
+      Exp.Exp e1, e2, e1_, e2_, e;
+      DAE.ExpType et;
+      Absyn.Path fname;
+      Real r1;
+      DAE.Operator op;
+      
+    case(DAE.ICONST(_), x, states)
+    then DAE.ICONST(0);
+      
+    case(DAE.RCONST(_), x, states)
+    then DAE.RCONST(0.0);
+      
+    case (DAE.CAST(ty=et, exp=e), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e, x, states);
+    then DAE.CAST(et, e1_);
+      
+    case(DAE.CREF(componentRef=cref), x, states) equation
+      true = Exp.crefEqual(cref, x);
+    then DAE.RCONST(1.0);
+      
+    case(DAE.CREF(componentRef=cref, ty=et), x, states) equation
+      crefInList(cref, states);
+      (cref::_) = differentiateVarWithRespectToStates(cref, {x});
+      //cref = listNth(diff_crefs, 0);
+    then DAE.CREF(cref, et);
+      
+    case(DAE.CREF(componentRef=cref), x, states)
+    then DAE.RCONST(0.0);
+  
+    // a + b
+    case(DAE.BINARY(exp1=e1, operator=DAE.ADD(ty=et), exp2=e2), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+      e2_ = differentiateWithRespectToStates2(e2, x, states);
+    then DAE.BINARY(e1_, DAE.ADD(et), e2_);
+      
+    // a - b
+    case(DAE.BINARY(exp1=e1, operator=DAE.SUB(ty=et), exp2=e2), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+      e2_ = differentiateWithRespectToStates2(e2, x, states);
+    then DAE.BINARY(e1_, DAE.SUB(et), e2_);
+      
+    // a * b
+    case(DAE.BINARY(exp1=e1, operator=DAE.MUL(ty=et), exp2=e2), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+      e2_ = differentiateWithRespectToStates2(e2, x, states);
+      e = DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.ADD(et), DAE.BINARY(e1, DAE.MUL(et), e2_));
+      e = Exp.simplify(e);
+    then e;
+      
+    // a / b
+    case(DAE.BINARY(exp1=e1, operator=DAE.DIV(ty=et), exp2=e2), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+      e2_ = differentiateWithRespectToStates2(e2, x, states);
+      e = DAE.BINARY(DAE.BINARY(DAE.BINARY(e1_, DAE.MUL(et), e2), DAE.SUB(et), DAE.BINARY(e1, DAE.MUL(et), e2_)), DAE.DIV(et), DAE.BINARY(e2, DAE.MUL(et), e2));
+      e = Exp.simplify(e);
+    then e;
+    
+    // -exp
+    case(DAE.UNARY(operator=op, exp=e1), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+    then DAE.UNARY(op, e1_);
+      
+    // sin(x)        
+    case (DAE.CALL(path=fname, expLst={e1}), x, states) equation
+      Derive.isSin(fname);
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+    then DAE.BINARY(e1_, DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("cos"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+
+    // cos(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, states) equation
+      Derive.isCos(fname);
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+    then DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()), DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(Absyn.IDENT("sin"),{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE())));
+
+    // exp(x)          
+    case (DAE.CALL(path=fname, expLst={e1}), x, states) equation
+      Derive.isExp(fname);
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+    then DAE.BINARY(e1_,DAE.MUL(DAE.ET_REAL()), DAE.CALL(fname,{e1},false,true,DAE.ET_REAL(),DAE.NO_INLINE()));
+      
+      // Differentiate if-expressions
+    case (DAE.IFEXP(expCond=e, expThen=e1, expElse=e2), x, states) equation
+      e1_ = differentiateWithRespectToStates2(e1, x, states);
+      e2_ = differentiateWithRespectToStates2(e2, x, states);
+    then DAE.IFEXP(e, e1_, e2_);
+      
+    case(e, cref, _)
+      local String str;
+      equation
+        str = "differentiateWithRespectToStates2 failed: " +& Exp.printExpStr(e) +& " | " +& Exp.printComponentRefStr(cref);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
+      then
+        fail();
+  end matchcontinue;
+end differentiateWithRespectToStates2;
+
+protected function differentiateVarWithRespectToStates
+  // function: differentiateVarWithRespectToStates
+  // author: lochel
+  input Exp.ComponentRef inCRef;
+  input list<Exp.ComponentRef> inStates;
+  output list<Exp.ComponentRef> outCRef;
+algorithm
+  outCRef := matchcontinue(inCRef, inStates)
+    local
+      Exp.ComponentRef cref;
+      Exp.ComponentRef curr;
+      list<Exp.ComponentRef> rest, r2;
+      String id;
+      DAE.ExpType idType;
+      list<DAE.Subscript> sLst;
+    case(_, {}) then {};
+    case(cref as DAE.CREF_IDENT(identType=idType, subscriptLst=sLst), curr::rest) equation
+      id = Exp.printComponentRefStr(cref) +& DAELow.derivativeNamePrefix +& Exp.printComponentRefStr(curr);
+      r2 = differentiateVarWithRespectToStates(cref, rest);
+    then DAE.CREF_IDENT(id, idType, sLst)::r2;
+      
+    case(_, _) then fail();
+  end matchcontinue;
+end differentiateVarWithRespectToStates;
+
+protected function crefInList
+  // function: crefInList
+  // author: lochel
+  
+  input Exp.ComponentRef inCref;
+  input list<Exp.ComponentRef> inCrefLst;
+algorithm
+  _ := matchcontinue(inCref, inCrefLst)
+    local
+      Exp.ComponentRef cr, curr;
+      list<Exp.ComponentRef> rest;
+      String id1, id2;
+      
+    case(_, {}) then fail();
+      
+    case(cr, curr::rest) equation
+      id1 = Exp.printComponentRefStr(cr);
+      id2 = Exp.printComponentRefStr(curr);
+      true = (id1 ==& id2);
+    then ();
+      
+    case(cr, curr::rest) equation
+      crefInList(cr, rest);
+    then ();
+  end matchcontinue;
+end crefInList;
+
+protected function cMakeDoubleVarDef
+  // function: cMakeDoubleVarDef
+  // author: lochel
+  
+  input list<String> inList;
+  output list<String> outList;
+algorithm
+  outList := matchcontinue(inList)
+    local
+      String curr, r1;
+      list<String> rest, r2;
+      
+    case({}) then {};
+    case(curr::rest) equation
+      r1 = "double " +& curr +& ";";
+      r2 = cMakeDoubleVarDef(rest);
+    then (r1::r2);
+  end matchcontinue;
+end cMakeDoubleVarDef;
+
+protected function cMakeStm
+  // function: cMakeStm
+  // author: lochel
+  
+  input list<String> inVarList;
+  input list<String> inStmList;
+  output list<String> outList;
+algorithm
+  outList := matchcontinue(inVarList, inStmList)
+    local
+      String curr_var, curr_stm, r1;
+      list<String> rest_var, rest_stm, r2;
+
+    case({}, _) then {};
+    case(_, {}) then {};
+    case(curr_var::rest_var, curr_stm::rest_stm) equation
+      r1 = curr_var +& " = " +& curr_stm +& ";";
+      r2 = cMakeStm(rest_var, rest_stm);
+    then (r1::r2);
+  end matchcontinue;
+end cMakeStm;
+
+public function getdaeVarsExp
+  // author: wbraun
+  
+  input DAELow.DAELow inDAELow;
+  output list<DAE.ComponentRef> vars;
+algorithm
+  vars :=
+  matchcontinue (inDAELow)
+    local 
+      Integer index;
+      list<DAE.ComponentRef> vars1;
+      Option<DAELow.Var>[:] varArray, varArray2;
+      list<Option<DAELow.Var>> varOptlst, varOptlst2;
+      list<DAE.ComponentRef> exlst;
+    case (DAELow.DAELOW(orderedVars = DAELow.VARIABLES(varArr = DAELow.VARIABLE_ARRAY(varOptArr = varArray))))
+      //case (DAELOW(VARIABLES(varArr = VARIABLE_ARRAY(varOptArr = varArray))),_,_,_)
+      equation 
+        varOptlst = arrayList(varArray);
+        index = 0;
+        varOptlst2 = getStateVars(varOptlst, varOptlst, index);
+        exlst = {};
+        vars1 = getdaeVarsExpHelp(varOptlst2,exlst);
+      then 
+        vars1;
+  end matchcontinue;
+end getdaeVarsExp;
+
+protected function getStateVars
+  // author: wbraun
+  
+  input list<Option<DAELow.Var>> inVars;
+  input list<Option<DAELow.Var>> inStateLst;
+  input Integer inIndex; 
+  output list<Option<DAELow.Var>> outStateLst;
+algorithm
+  outStateLst:= matchcontinue(inVars,inStateLst,inIndex)
+    local
+      DAELow.VarKind kind;
+      list<Option<DAELow.Var>> stateLst,rest;
+      Integer index;
+    case (SOME(DAELow.VAR(varKind = kind))::rest,stateLst,index)
+      equation
+        isNonState(kind);
+        index = index + 1;
+        stateLst= getStateVars(rest, stateLst, index);
+        stateLst = listDelete(stateLst, index-1);
+      then
+        stateLst;
+    case (SOME(DAELow.VAR(varKind = kind))::rest,stateLst,index)
+      equation
+        index = index + 1;
+        stateLst= getStateVars(rest, stateLst, index);
+      then
+        stateLst;
+    case (_,stateLst,index) then stateLst; 
+  end matchcontinue;
+end getStateVars;
+
+protected function getdaeVarsExpHelp
+  // author: wbraun
+  
+  input list<Option<DAELow.Var>> inVars;
+  input list<Exp.ComponentRef> inexplst;
+  output list<Exp.ComponentRef> explst;
+algorithm
+  explst := matchcontinue (inVars,inexplst)
+    local
+      list<Option<DAELow.Var>> rest;
+      Exp.ComponentRef ex1;
+      list<Exp.ComponentRef> exlst;      
+    case(SOME(DAELow.VAR(varName = ex1))::rest,exlst)
+      equation
+        exlst = listAppend(exlst,{ex1});
+        exlst =  getdaeVarsExpHelp(rest,exlst);
+      then exlst;
+    case(_,exlst) then exlst;
+  end matchcontinue;
+end getdaeVarsExpHelp; 
+
+end SimCodegen;
