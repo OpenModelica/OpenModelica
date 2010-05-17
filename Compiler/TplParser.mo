@@ -434,31 +434,33 @@ public function interleaveExpectKeyWord
   input list<String> inChars;
   input LineInfo inLineInfo;
   input list<String> inKeywordChars;
+  input Boolean isFatal;
   
   output list<String> outChars;
   output LineInfo outLineInfo;
 algorithm
-  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inKeywordChars)
+  (outChars, outLineInfo) := matchcontinue (inChars, inLineInfo, inKeywordChars, isFatal)
     local
       list<String> chars, kwchars;
       LineInfo linfo;
-      String kw;      
+      String kw;
+      Boolean isfatal;      
       
-    case (chars, linfo, kwchars) 
+    case (chars, linfo, kwchars, _) 
       equation
         (chars, linfo) = interleave(chars, linfo);
         (chars, true) = isKeyword(chars, kwchars);
       then (chars, linfo);
     
-    case (chars, linfo, kwchars) 
+    case (chars, linfo, kwchars, isfatal) 
       equation
         (chars, linfo) = interleave(chars, linfo);
         (_, false) = isKeyword(chars, kwchars);
         kw = string_char_list_string(kwchars);
-        (linfo) = parseError(chars, linfo, "Expected keyword '" +& kw +& "' at the position.", true); 
+        (linfo) = parseError(chars, linfo, "Expected keyword '" +& kw +& "' at the position.", isfatal); 
       then (chars, linfo);
     
-    case (_,_,_) 
+    case (_,_,_,_) 
       equation
         Debug.fprint("failtrace", "- !!! TplParser.interleaveExpectKeyWord failed.\n");
       then fail();
@@ -1050,7 +1052,7 @@ algorithm
     
     case (chars, linfo)
       equation
-        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"s","p","a","c","k","a","g","e"});
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"s","p","a","c","k","a","g","e"}, true);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, pid) = pathIdentNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
@@ -1298,41 +1300,29 @@ algorithm
       equation
         afterKeyword(chars);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "<");
-        //(chars, linfo) = interleave(chars, linfo);
-        //("<" :: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, tof) = typeSigNoOpt(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, ">");
-        //(chars, linfo) = interleave(chars, linfo);
-        //(">" :: chars) = chars;               
       then (chars, linfo, TplAbsyn.LIST_TYPE(tof));
     
     case ("O"::"p"::"t"::"i"::"o"::"n" :: chars, linfo)
       equation
         afterKeyword(chars);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "<");
-        //(chars, linfo) = interleave(chars, linfo);
-        //("<" :: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, tof) = typeSigNoOpt(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, ">");
-        //(chars, linfo) = interleave(chars, linfo);
-        //(">" :: chars) = chars;               
       then (chars, linfo, TplAbsyn.OPTION_TYPE(tof));
     
     case ("t"::"u"::"p"::"l"::"e" :: chars, linfo)
       equation
         afterKeyword(chars);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "<");
-        //(chars, linfo) = interleave(chars, linfo);
-        //("<" :: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, tof) = typeSigNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, restLst) = typeSig_restList(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, ">");
-        //(chars, linfo) = interleave(chars, linfo);        
-        //(">" :: chars) = chars;               
       then (chars, linfo, TplAbsyn.TUPLE_TYPE(tof::restLst));
     
     case (chars, linfo)
@@ -1368,11 +1358,7 @@ algorithm
     case ("[" :: chars, linfo, baseTS)
       equation
         (chars, linfo) = interleaveExpectChar(chars, linfo, ":");
-        //(chars, linfo) = interleave(chars, linfo);
-        //(":" :: chars) = chars;
         (chars, linfo) = interleaveExpectChar(chars, linfo, "]");
-        //(chars, linfo) = interleave(chars, linfo);
-        //("]" :: chars) = chars;
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, ts) = typeSig_array(chars, linfo, TplAbsyn.ARRAY_TYPE(baseTS));
       then (chars, linfo, ts);
@@ -2164,11 +2150,11 @@ algorithm
     case ("r"::"e"::"p"::"l"::"a"::"c"::"e"::"a"::"b"::"l"::"e":: chars, linfo, tyvars)
       equation
         afterKeyword(chars);
-        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"t","y","p","e"});
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"t","y","p","e"}, true);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, id) = identifierNoOpt(chars, linfo);
-        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"s","u","b","t","y","p","e","o","f"});
-        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"A","n","y"});        
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"s","u","b","t","y","p","e","o","f"}, true);
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"A","n","y"}, true);        
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = semicolon(chars,linfo);
         (chars, linfo, tyvars) = typeVars(chars, linfo, id::tyvars);
@@ -2474,7 +2460,10 @@ algorithm
 end templDef_Templ;
 /*
 templArgs:
-    templArg0:a0  templArgs_rest:args  =>  a0::args
+    //TODO: to be TEXT_REF ... for now only syntax
+    'Text' '&' identifier:name  templArgs_rest:args  =>  (name,TEXT_TYPE())::args
+    |
+    typeSig:ts  identifier:name  templArgs_rest:args  =>  (name,ts)::args
     |
     _  => {}
 */
@@ -2498,14 +2487,28 @@ algorithm
       TplAbsyn.TemplateDef td;
       TplAbsyn.TypedIdents args;
       TplAbsyn.Expression exp;
-      tuple<TplAbsyn.Ident, TplAbsyn.TypeSignature> arg0;
+      TplAbsyn.TypeSignature ts;
     
-    case (chars, linfo)
+    //TODO: a HACK!!  ... just for now
+    case ("T"::"e"::"x"::"t":: chars, linfo)
       equation
-        (chars, linfo, arg0) = templArg0(chars, linfo);
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        ("&":: chars) = chars;
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, name) = identifierNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, args) = templArgs_rest(chars, linfo);
-      then (chars, linfo, arg0::args);
+      then (chars, linfo, (name,TplAbsyn.TEXT_TYPE())::args);
+        
+    case (chars, linfo)
+      equation
+        (chars, linfo, ts) = typeSig(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, name) = identifierNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, args) = templArgs_rest(chars, linfo);
+      then (chars, linfo, (name,ts)::args);
     
     case (chars, linfo)
       then (chars, linfo, {});
@@ -2517,6 +2520,7 @@ templArg0:
     typeSig:ts  implicitArgName:name  =>  (name,ts) 
 
 */
+/*
 public function templArg0
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -2548,13 +2552,14 @@ algorithm
     
   end matchcontinue;
 end templArg0;
+*/
 /*
 implicitArgName:
       IDENT:id  => id  //maybe 'it' explicitly 
       |
       _  => 'it'
 
-*/
+
 public function implicitArgName
   input list<String> inChars;
 
@@ -2584,6 +2589,9 @@ algorithm
     
   end matchcontinue;
 end implicitArgName;
+*/
+
+
 /*
 templArgs_rest
 	',' typeSig:ts  argName_nonIt:name  templArgs_rest:rest  =>  (name,ts)::rest
@@ -2613,12 +2621,27 @@ algorithm
       TplAbsyn.TypeSignature ts;
       TplAbsyn.TypedIdents rest;
     
+    //TODO: a HACK!! ... just for now
+    case ("," :: chars, linfo)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        ("T"::"e"::"x"::"t":: chars) = chars;
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        ("&":: chars) = chars;
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, name) = identifierNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, args) = templArgs_rest(chars, linfo);
+      then (chars, linfo, (name,TplAbsyn.TEXT_TYPE())::args);
+        
     case ("," :: chars, linfo)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, ts) = typeSigNoOpt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, name) = argName_nonIt(chars, linfo);
+        (chars, linfo, name) = identifierNoOpt(chars, linfo);
+        //(chars, linfo, name) = argName_nonIt(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, rest) = templArgs_rest(chars, linfo);
       then (chars, linfo, (name,ts) :: rest);
@@ -2635,6 +2658,7 @@ argName_nonIt:
       |
       IDENT:id  => id   
 */
+/*
 public function argName_nonIt
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -2673,11 +2697,12 @@ algorithm
     
   end matchcontinue;
 end argName_nonIt;
+*/
 
 /*
 expression(lesc,resc):
-	'#' nonTemplateExp(lesc,resc):nexp  concatNonTemplExp_rest(lesc,resc):expLst
-	   => TEMPLATE(nexp::expLst}, "#", "");
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", "");
 	|
 	expression_base(lesc,resc):bexp  expression_tail(bexp,lesc,resc):exp => exp 
 */
@@ -2702,16 +2727,17 @@ algorithm
       TplAbsyn.TypedIdents fields,inargs,outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp, nexp;
+      TplAbsyn.Expression exp, bexp, lexp;
       list<TplAbsyn.Expression> expLst;
     
-    case ("#" :: chars, linfo, lesc, resc, _)
+    case ("l"::"e"::"t" :: chars, linfo, lesc, resc, _)
       equation
+        afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, nexp) = nonTemplateExp(chars, linfo, lesc, resc);
+        (chars, linfo, lexp) = letExp(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, expLst) = concatNonTemplExp_rest(chars, linfo, lesc, resc);        
-      then (chars, linfo, TplAbsyn.TEMPLATE(nexp :: expLst, "#", ""));
+        (chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);        
+      then (chars, linfo, TplAbsyn.TEMPLATE(lexp :: expLst, "let", "")); //TODO: ?? to be a LET_EXPRESSION ??
   
     case (chars, linfo, lesc, resc, _)
       equation
@@ -2730,14 +2756,14 @@ algorithm
 end expression;
 
 /*
-concatNonTemplExp_rest(lesc,resc):
-	'#' nonTemplateExp(lesc,resc):nexp  concatNonTemplExp_rest(lesc,resc):expLst 
-	  =>  nexp::expLst
+concatLetExp_rest(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst 
+	  =>  lexp::expLst
 	|
 	expression(lesc,resc):exp
 	  => {exp}
 */
-public function concatNonTemplExp_rest
+public function concatLetExp_rest
   input list<String> inChars;
   input LineInfo inLineInfo;
   input String inLeftEsc;
@@ -2758,17 +2784,18 @@ algorithm
       TplAbsyn.TypedIdents fields,inargs,outargs;
       TplAbsyn.TypeSignature ts;
       Tpl.StringToken st;
-      TplAbsyn.Expression exp, nexp;
+      TplAbsyn.Expression exp, lexp;
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
-    case ("#":: chars, linfo, lesc, resc)
+    case ("l"::"e"::"t":: chars, linfo, lesc, resc)
       equation
+        afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, nexp) = nonTemplateExp(chars, linfo, lesc, resc);
+        (chars, linfo, lexp) = letExp(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, expLst) = concatNonTemplExp_rest(chars, linfo, lesc, resc);
-      then (chars, linfo, nexp::expLst);
+        (chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);
+      then (chars, linfo, lexp::expLst);
 
     case (chars, linfo, lesc, resc)
       equation
@@ -2776,7 +2803,120 @@ algorithm
       then (chars, linfo, {exp});
     
   end matchcontinue;
-end concatNonTemplExp_rest;
+end concatLetExp_rest;
+
+
+/*
+must not fail - not optional, at least one must match
+letExp(lesc,resc):
+	'&' identifier:id '=' 'buffer' expression(lesc,resc):exp
+	     => TEXT_CREATE(id,exp)
+	|
+	'&' identifier:id '+=' expression(lesc,resc):exp
+	     => TEXT_ADD(id,exp)
+	|
+	'()' '=' pathIdent:name  funCall(name,lesc,resc):exp   	   
+	     =>  exp //TODO: noRetCall expression should be here
+	|
+	identifier:id '=' expression(lesc,resc):exp
+		=> TEXT_CREATE(id,exp) //TODO: !! a HACK for now
+	
+	//TODO:
+	|
+	letBinding:bd '=' expression(lesc,resc):exp
+	  =>  LET_BINDING(bd, exp)
+*/
+public function letExp
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String lesc, resc;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.Expression exp;
+      list<TplAbsyn.Expression> args;
+      TplAbsyn.Ident id;
+      
+   
+  case ("&":: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, id) = identifier(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        ("=":: chars) = chars;
+        (chars, linfo) = interleaveExpectKeyWord(chars, linfo, {"b","u","f","f","e","r"}, false);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+      then (chars, linfo, TplAbsyn.TEXT_CREATE(id, exp));
+  
+  case ("&":: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, id) = identifier(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        ("+"::"=":: chars) = chars;
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+      then (chars, linfo, TplAbsyn.TEXT_ADD(id, exp));
+  
+  case ("&":: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, id) = identifierNoOpt(chars, linfo);
+        linfo = parseError(chars, linfo, "Expecting a '=' or '+=' text variable creation/addition (&var = exp or &var += exp) at the position.", true);
+      then (chars, linfo, TplAbsyn.ERROR_EXP());
+  
+  
+  case ("("::")":: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, name) = pathIdentNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, TplAbsyn.FUN_CALL(name, args)) = funCall(chars, linfo, name, lesc, resc);
+      then (chars, linfo, TplAbsyn.NORET_CALL(name, args));
+  
+  case ("("::")":: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, name) = pathIdentNoOpt(chars, linfo);
+        //(chars, linfo) = interleaveExpectChar(chars, linfo, "(");
+        linfo = parseError(chars, linfo, "Expecting a non-return function call( let () = [package.]funName(args,...) ) at the position.", true);        
+      then (chars, linfo, TplAbsyn.ERROR_EXP());
+  
+  //TODO: to be  letBinding:bd '=' expression(lesc,resc):exp	  =>  LET_BINDING(bd, exp)
+  case (chars, linfo, lesc, resc)
+      equation
+        (chars, linfo, id) = identifierNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+      then (chars, linfo, TplAbsyn.TEXT_CREATE(id, exp));
+  
+  //case (chars, linfo, lesc, resc)
+  //    equation
+  //      linfo = parseError(chars, linfo, "Expecting a let-expression: no-return function call ( ()=funName(...) ) or text variable binding/creation/addition (var = exp, &var = exp or &var += exp) at the position.", true);
+  //    then (chars, linfo, TplAbsyn.ERROR_EXP());
+   
+   
+   case (_, _, _, _)
+     equation
+       Debug.fprint("failtrace", "!!!Parse error - TplParser.letExp failed.\n");
+     then fail();      
+  end matchcontinue;
+end letExp;
+
 
 /*
 expression_base(lesc,resc):
@@ -2798,11 +2938,10 @@ expression_base(lesc,resc):
 	                                                           //… useful in map/concatenation context
 	   => MAP_ARG_LIST(exp::expLst)	                                                           
 	|
-	'('  ')' //a variant of an empty expression, equivalent to ""
-	   =>  STR_TOKEN(ST_STRING("")) 	
-	|
 	'(' expressionWithOpts(lesc,resc):exp ')'
 	   => exp
+	|//TODO: ref Text buffer 
+	'&' identifier:id  => BOUND_VALUE(IDENT(name))
 	|// TODO: create an optional variant of pathIdent
 	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
 */
@@ -2856,29 +2995,28 @@ algorithm
         (chars, linfo, exp) = matchExp(chars, linfo, lesc, resc);
       then (chars, linfo, exp);
 
-   case ("[" :: chars, linfo, lesc, resc)
+   case ("{" :: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        ("]" :: chars) = chars;
+        ("}" :: chars) = chars;
       then (chars, linfo, TplAbsyn.MAP_ARG_LIST({}));
    
-   case ("[" :: chars, linfo, lesc, resc)
+   case ("{" :: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
-        //(chars, linfo) = interleave(chars, linfo);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "]");
-        //("]" :: chars) = chars;
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "}");
       then (chars, linfo, TplAbsyn.MAP_ARG_LIST(exp::expLst));
    
+   /*
    case ("(" :: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (")" :: chars) = chars;
       then (chars, linfo, TplAbsyn.STR_TOKEN(Tpl.ST_STRING("")) );
- 
+   */
    case ("(" :: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
@@ -2887,6 +3025,12 @@ algorithm
         (chars, linfo) = interleaveExpectChar(chars, linfo, ")");        
         //(")" :: chars) = chars;
       then (chars, linfo, exp);
+   //TODO: be a ref Text buffer
+   case ("&" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, id) = identifierNoOpt(chars, linfo);        
+      then (chars, linfo, TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT(id)));
    
    case (chars, linfo, lesc, resc)
       equation
@@ -2900,10 +3044,14 @@ end expression_base;
 
 /*
 expression_tail(bexp,lesc,resc):
-	'of' matchBinding:mexp ':' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
+	//TODO: 'indexedby'
+	//TODO: other precedence --> be left assoc instead of right 
+	indexedBy:idxNmOpt 
+	'|>' matchBinding:mexp
+	'=>' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
 	|
-	':' expression(lesc,resc):exp  =>  MAP(bexp,BIND_MATCH('it'),exp)
-	|
+	//':' expression(lesc,resc):exp  =>  MAP(bexp,BIND_MATCH('it'),exp)
+	//|
 	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
 	=> TEMPLATE(bexp::exp::expLst, "+", "");
 	|
@@ -2927,6 +3075,7 @@ algorithm
       String c, lesc, resc;
       Boolean isD;
       TplAbsyn.Ident id;
+      Option<TplAbsyn.Ident> idxNmOpt;
       TplAbsyn.PathIdent name;
       TplAbsyn.TypedIdents fields,inargs,outargs;
       TplAbsyn.TypeSignature ts;
@@ -2935,24 +3084,26 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.MatchingExp mexp;
     
-    case ("o"::"f":: chars, linfo, bexp, lesc, resc)
+    case ("|"::">":: chars, linfo, bexp, lesc, resc)
       equation
-        afterKeyword(chars);
+        //afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, mexp) = matchBinding(chars, linfo);
-        //(chars, linfo) = interleave(chars, linfo);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, ":");        
-        //(":" :: chars) = chars;
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, idxNmOpt) = indexedBy(chars, linfo);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");        
+        (chars, linfo) = expectChar(chars, linfo, ">");        
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
       then (chars, linfo, TplAbsyn.MAP(bexp, mexp, exp) );
 
+    /*
     case (":" :: chars, linfo, bexp, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
       then (chars, linfo, TplAbsyn.MAP(bexp, TplAbsyn.BIND_MATCH("it"), exp) );
-   
+    */
     case ("+" :: chars, linfo, bexp, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
@@ -2966,6 +3117,50 @@ algorithm
 
   end matchcontinue;
 end expression_tail;
+
+/* 
+//is optional
+indexedBy:
+	'indexedby' identifier:id
+		=> SOME(id)
+	|
+	_ => NONE
+*/
+public function indexedBy
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output Option<TplAbsyn.Ident> outIndexNameOpt;
+algorithm
+  (outChars, outLineInfo, outIndexNameOpt) := matchcontinue (inChars, inLineInfo)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+      TplAbsyn.MatchingExp mexp;
+    
+    case ("i"::"n"::"d"::"e"::"x"::"e"::"d"::"b"::"y":: chars, linfo)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars,linfo,id) = identifierNoOpt(chars,linfo);        
+      then (chars, linfo, SOME(id) );
+    
+    case (chars, linfo)
+      then (chars, linfo, NONE );
+
+  end matchcontinue;
+end indexedBy;
 
 /*
 concatExp_rest(lesc,resc):
@@ -3049,6 +3244,7 @@ algorithm
 end boundValueOrFunCall;
 
 /*
+//may fail
 funCall(name,lesc,resc):
 	'(' ')' => FUN_CALL(name,{})
 	|
@@ -4750,7 +4946,7 @@ end finalizeLastStringToken;
 must not fail
 expressionWithOpts(lesc,resc):
 	expression(lesc,resc):exp  
-	  separator:sopt 
+	  //separator:sopt 
 	  escapedOptions:opts	
 	=> makeEscapedExp(exp, listAppend(sopt,opts))
 */
@@ -4782,11 +4978,12 @@ algorithm
    case (chars, linfo, lesc, resc)
       equation
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, sopt) = separator(chars, linfo, lesc, resc);
+        //(chars, linfo) = interleave(chars, linfo);
+        //(chars, linfo, sopt) = separator(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
-        exp = makeEscapedExp(exp, listAppend(sopt,opts));
+        //exp = makeEscapedExp(exp, listAppend(sopt,opts));
+        exp = makeEscapedExp(exp, opts);
       then (chars, linfo, exp);
    
    case (chars, linfo, _, _) 
@@ -4824,6 +5021,7 @@ separator(lesc,resc):
 	_ => {}
 
 */
+/*
 public function separator
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -4861,7 +5059,7 @@ algorithm
    
   end matchcontinue;
 end separator;
-
+*/
 /*
 public function isErrorExp
   input TplAbsyn.Expression inExp;
@@ -4980,6 +5178,7 @@ nonTemplateExprWithOpts(lesc,resc):
 	  escapedOptions:opts	
 	=> makeEscapedExp(exp, opts)
 */
+/*
 public function nonTemplateExprWithOpts
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -5020,7 +5219,7 @@ algorithm
         
   end matchcontinue;
 end nonTemplateExprWithOpts;
-
+*/
 /*
 must not fail
 nonTemplateExp(lesc,resc):
@@ -5036,6 +5235,7 @@ nonTemplateExp(lesc,resc):
 	pathIdent:name  funCall(name,lesc,resc):exp  	   
 	     =>  exp
 */
+/*
 public function nonTemplateExp
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -5101,7 +5301,7 @@ algorithm
      then fail();      
   end matchcontinue;
 end nonTemplateExp;
-
+*/
 /*
 public function ensurePathIdentBeIdent
   input TplAbsyn.PathIdent inPathIdent;  
@@ -5282,7 +5482,8 @@ condArgExp:
 	  => (true, lhsExp, NONE)
 	|
 	expression(lesc,resc):lhsExp
-	  condArgRHS:(isNot, rshMExpOpt)
+	//  condArgRHS:(isNot, rshMExpOpt)
+	{ isNot = false }
 	 => (isNot,lhsExp, rhsMExpOpt)
 */
 public function condArgExp
@@ -5326,9 +5527,10 @@ algorithm
    case (chars, linfo, lesc, resc)
       equation
         (chars, linfo, lhsExp) = expression(chars, linfo, lesc, resc, false);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, isNot, rhsMExpOpt) = condArgRHS(chars, linfo);        
-      then (chars, linfo, isNot, lhsExp, rhsMExpOpt);
+        //(chars, linfo) = interleave(chars, linfo);
+        //(chars, linfo, isNot, rhsMExpOpt) = condArgRHS(chars, linfo);
+        //isNot = false;        
+      then (chars, linfo, false, lhsExp, NONE);
    
   end matchcontinue;
 end condArgExp;
@@ -5340,6 +5542,7 @@ condArgRHS:
 	|
 	_ => (false, NONE)
 */
+/*
 public function condArgRHS
   input list<String> inChars;
   input LineInfo inLineInfo;
@@ -5392,15 +5595,16 @@ algorithm
    
   end matchcontinue;
 end condArgRHS;
+*/
 /*
 optional, can fail
 matchExp(lesc,resc):
 	'match' expression:exp 
 	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }
 	 => MATCH(exp, mcaseLst)
-	|
-	matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
-	=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
+	//|
+	//matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
+	//=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
 */
 public function matchExp
   input list<String> inChars;
@@ -5429,7 +5633,7 @@ algorithm
       list<TplAbsyn.Expression> expLst;
       TplAbsyn.EscOption sopt;
       list<TplAbsyn.EscOption> opts;
-      list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst, mcrest;
+      list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> mcaseLst, elseLst, mcrest;
     
    case ("m"::"a"::"t"::"c"::"h":: chars, linfo, lesc, resc)
       equation
@@ -5437,14 +5641,19 @@ algorithm
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
         (chars, linfo, mcaseLst) = matchCaseListNoOpt(chars, linfo, lesc, resc);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, elseLst) = matchElseCase(chars, linfo, lesc, resc);
+        mcaseLst = listAppend(mcaseLst, elseLst);      
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo) = matchEndMatch(chars, linfo);
       then (chars, linfo, TplAbsyn.MATCH(exp, mcaseLst));
    
    //implicit without 'match' keyword -> match it
-   case (chars, linfo, lesc, resc)
-      equation
-        (chars, linfo, mcaseLst) = matchCaseList(chars, linfo, lesc, resc);
-        (_::_) = mcaseLst;
-      then (chars, linfo, TplAbsyn.MATCH(TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("it")), mcaseLst));
+   //case (chars, linfo, lesc, resc)
+   //   equation
+   //     (chars, linfo, mcaseLst) = matchCaseList(chars, linfo, lesc, resc);
+   //     (_::_) = mcaseLst;
+   //   then (chars, linfo, TplAbsyn.MATCH(TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT("it")), mcaseLst));
    
   end matchcontinue;
 end matchExp;
@@ -5503,6 +5712,77 @@ algorithm
   end matchcontinue;
 end matchCase;
 
+/*
+matchElseCase(lesc,resc):
+	'else' expression:exp
+	  => {(REST_MATCH(), exp)}
+	|
+	_ => {}
+*/
+public function matchElseCase
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output list<tuple<TplAbsyn.MatchingExp, TplAbsyn.Expression>> outMatchCaseLst;
+algorithm
+  (outChars, outLineInfo, outMatchCaseLst) := 
+  matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String lesc, resc;
+      TplAbsyn.Expression exp;
+      
+   case ("e"::"l"::"s"::"e":: chars, linfo, lesc, resc)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars,linfo,exp) = expression(chars, linfo, lesc, resc, false);
+      then (chars, linfo, { (TplAbsyn.REST_MATCH(), exp) } );
+   
+   case (chars, linfo, lesc, resc)
+      then (chars, linfo, {} );
+        
+  end matchcontinue;
+end matchElseCase;
+
+/*
+matchEndMatch:
+	'end' 'match'
+	|
+	_
+*/
+public function matchEndMatch
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+algorithm
+  (outChars, outLineInfo) := 
+  matchcontinue (inChars, inLineInfo)
+    local
+      list<String> chars;
+      LineInfo linfo;
+            
+   case ("e"::"n"::"d":: chars, linfo)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        //both keywords are optional ... the match cannot be "expected" as there can be 'end' indentifier ';' 
+        ("m"::"a"::"t"::"c"::"h" :: chars) = chars; // interleaveExpectKeyWord(chars, linfo, {"m","a","t","c","h"}, false);
+        afterKeyword(chars);        
+      then (chars, linfo);
+   
+   case (chars, linfo)
+      then (chars, linfo);
+        
+  end matchcontinue;
+end matchEndMatch;
 
 /*
 matchCaseHeads(lesc,resc):
@@ -5877,7 +6157,7 @@ algorithm
 end matchBinding_base;
 /*
 someBinding_rest:
-	'(' ')'
+	'(' '__' ')'
 	  => SOME_MATCH(REST_MATCH())
 	|
 	'(' matchBinding:mexp ')'
@@ -5909,7 +6189,8 @@ algorithm
    case ("(":: chars, linfo)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        (")"::chars) = chars;
+        ("_"::"_":: chars) = chars;
+        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");
       then (chars, linfo, TplAbsyn.REST_MATCH());
 
    case ("(":: chars, linfo)
@@ -6047,11 +6328,15 @@ afterIdentBinding(pid):
 	'(' ')' 
 	  => RECORD_MATCH(pid, {})
 	|
+	'(' '__' ')' 
+	  => RECORD_MATCH(pid, {}) //TODO: to be RECORD_TYPE_MATCH(pid)
+	|
 	'(' fieldBinding:fb  fieldBinding_rest:fbs ')'
 	  => RECORD_MATCH(pid, fb::fbs)
 	|
 	{pid is PATH_IDENT}
-	=> RECORD_MATCH(pid, {}) 
+	=> error "Expected '(' after the dot path." 
+	//RECORD_MATCH(pid, {}) 
 	|
 	{pid is IDENT(id)}
 	'as' matchBinding:mexp
@@ -6092,6 +6377,13 @@ algorithm
    case ("(":: chars, linfo, pid)
       equation
         (chars, linfo) = interleave(chars, linfo);
+        ("_"::"_":: chars) = chars;
+        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");
+      then (chars, linfo, TplAbsyn.RECORD_MATCH(pid, {}));
+   
+   case ("(":: chars, linfo, pid)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, fb) = fieldBinding(chars, linfo);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, fbs) = fieldBinding_rest(chars, linfo);
@@ -6099,6 +6391,8 @@ algorithm
       then (chars, linfo, TplAbsyn.RECORD_MATCH(pid, fb::fbs));
    
    case (chars, linfo, pid as TplAbsyn.PATH_IDENT(_,_))
+      equation
+         (linfo) = parseError(chars, linfo, "Expected '(' after the dot path.", false);  
       then (chars, linfo, TplAbsyn.RECORD_MATCH(pid, {}));
         
    case ("a"::"s":: chars, linfo, TplAbsyn.IDENT(id))

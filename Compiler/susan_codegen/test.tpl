@@ -52,76 +52,78 @@ spackage test
   end TplAbsyn;
 
 
-template pathIdent(PathIdent) "bla" ::= 
-  case IDENT      then ident
-  case PATH_IDENT then '<%ident%>.<%pathIdent(path)%>'
+template pathIdent(PathIdent it) "bla" ::= 
+  match it
+  case IDENT(__)      then ident
+  case PATH_IDENT(__) then '<%ident%>.<%pathIdent(path)%>'
 end pathIdent;
 
 template typedIdents(TypedIdents decls) ::= 
-(decls of (id,pid) : 
+(decls |> (id,pid) => 
    '<%pathIdent(pid)%> <%id%>;//heja' 
-   \n 
+   ;separator="\n" 
 )
 end typedIdents;
 
-template test(list<String> items, Integer ind) ::= (items ind; align=testfn(ind); alignSeparator='ss<%ind%>'; wrapSeparator=testfn(2))
+template test(list<String> items, Integer ind) ::= (items ;separator=ind; align=testfn(ind); alignSeparator='ss<%ind%>'; wrapSeparator=testfn(2))
 end test;
 
-template test2(list<String> items, String sep, Integer a) ::= (items sep; align=a)
+template test2(list<String> items, String sep, Integer a) ::= (items ;separator=sep; align=a)
 end test2;
 
 template test3(list<String> items, String item, Integer ii) ::= 
   <<
-  <%[items, item, ii] of st: 'bla<%st%>' \n%>
-  <%[items, item, ii, ([items, item, ii]\n), "blaaa" ] ", "%>
-  <%[items, item, ii] ", "/*]*/%>!!!!!error should be
-  <%[items, item, ii, ([items, item, ii]\n), "blaaa" ] : case it then it ", "%>
+  <%{items, item, ii} |> st => 'bla<%st%>' ;separator="\n"%>
+  <%{items, item, ii, ({items, item, ii};separator="\n"), "blaaa" } ;separator=", "%>
+  <%{items, item, ii} ;separator=", "/*}*/%>!!!!!error should be
+  <%{items, item, ii, ({items, item, ii};separator="\n"), "blaaa" } |> it => match it case it then it ;separator=", "%>
   <%match 'aha<%ii%>' case it then it%>
   >>
 end test3;
 
 template testCond(Option<tuple<String,Integer>> nvOpt) ::= 
-  if nvOpt is SOME((name,value)) then '<%name%> = <%value%>;'
+  match nvOpt case SOME((name,value)) then '<%name%> = <%value%>;'
   else "no value"
 end testCond;
 
 template testCond2(Option<tuple<String,Integer>> nvOpt) ::= 
-  if nvOpt is not SOME((name,value)) then "none" 
-  else 'SOME(<%name%>,<%value%>)' 
+  match nvOpt case SOME((name,value)) then 'SOME(<%name%>,<%value%>)'
+  else "none" 
+    
 end testCond2;
 
-template mapInt(Integer) ::= '(int:<%it%>)'
+template mapInt(Integer it) ::= '(int:<%it%>)'
 end mapInt;
 
-template mapString(String) ::= '(str:<%it%>)'
+template mapString(String it) ::= '(str:<%it%>)'
 end mapString;
 
 template mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 end mapIntString;
 
-template testMap(list<Integer> ints) ::= (ints : mapInt() : mapString() ", ")
+template testMap(list<Integer> ints) ::= (ints |> it => mapInt(it) |> it => mapString(it) ;separator=", ")
 end testMap;
 
-template testMap2(list<Integer> ints) ::= (ints of int : mapInt() of st : mapIntString(int, st) ", ")
+template testMap2(list<Integer> ints) ::= (ints |> int => mapInt(it) |> st => mapIntString(int, st) ;separator=", ")
 end testMap2;
 
 template testMap3(list<list<Integer>> lstOfLst) ::= 
-	(lstOfLst of intLst : 
-		(intLst of int : mapInt(int) ", ") 
-	";\n"; anchor)
+	(lstOfLst |> intLst => 
+		(intLst |> int => mapInt(int) ;separator=", ") 
+	;separator=";\n"; anchor)
 end testMap3;
 
-template testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst : it : mapInt()
+template testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst |> it => it |> it => mapInt(it)
 end testMap4;
 
-template testMap5(list<Integer> ints) ::= (ints : mapString(mapInt()) ", ")
+template testMap5(list<Integer> ints) ::= (ints |> it => mapString(mapInt(it)) ;separator=", ")
 end testMap5;
 
 template intMatrix(list<list<Integer>> lstOfLst) ::= 
 << 
-[ <%lstOfLst of intLst : 
-		(intLst ", ") 
-   ";\n"; anchor%> ]
+[ <%lstOfLst |> intLst => 
+		(intLst ;separator=", ") 
+   ;separator=";\n"; anchor%> ]
 >>
 end intMatrix;
 
@@ -129,21 +131,21 @@ template ifTest(Integer i) ::= if mapInt(i) then '<%it%> name;' else "/* weird I
 end ifTest;
 
 template bindTest() ::= 
-  ifTest(1) of ii : 
+  ifTest(1) |> ii => 
     <<
       some hej<%ii%>
     >>
 end bindTest;
 
 template txtTest() ::= 
-  # txt = "ahoj"
-  # txt += "hej"
+  let &txt = buffer "ahoj"
+  let &txt += "hej"
   txt
 end txtTest;
 
 template txtTest2() ::= 
-# txt = "ahoj2"
-# txt += "hej2"
+let &txt = buffer "ahoj2"
+let &txt += "hej2"
 <<
 bláá <%txt%>
   <%/* jhgjhgjh  */%>  
@@ -151,11 +153,11 @@ jo
 >>
 end txtTest2;
 
-template txtTest3(String hej, Text buf) ::= 
-# txt = "aahoj2"
-# txt += "ahej2"
-# buf += txt 
-# buf += '<%txtTest4("ha!",buf)%>ahoj' //TODO: not allow this ...  
+template txtTest3(String hej, Text &buf) ::= 
+let &txt = buffer "aahoj2"
+let &txt += "ahej2"
+let &buf += txt 
+let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
 <<
 abláá <%txt%>
   <%/* jhgjhgjh  */%>  
@@ -163,11 +165,11 @@ ajo
 >>
 end txtTest3;
 
-template txtTest4(String hej, Text buf) ::= 
+template txtTest4(String hej, Text &buf) ::= 
 if hej then 
-  # txt = "ahoj2"
-  # txt += hej
-  # buf += txt
+  let &txt = buffer "ahoj2"
+  let &txt += hej
+  let &buf += txt
   <<
   bláá <%txt%>
   <%/* jhgjhgjh  */%>  
@@ -175,11 +177,11 @@ if hej then
   >>
 end txtTest4;
 
-template txtTest5(String hej, Text buf, Text nobuf) ::= 
-# txt = "aahoj2" 
-# txt += "ahej2"
-# buf += txt
-# buf += '<%txtTest4("ha!",buf)%>ahoj' //TODO: not allow this ...  
+template txtTest5(String hej, Text &buf, Text &nobuf) ::= 
+let &txt = buffer "aahoj2" 
+let &txt += "ahej2"
+let &buf += txt
+let &buf += '<%txtTest4("ha!",&buf)%>ahoj' //TODO: not allow this ...  
 <<
 abláá <%txt%>
   <%/* jhgjhgjh  */%>  
@@ -187,28 +189,29 @@ ajo
 >>
 end txtTest5;
 
-template txtTest6(list<String> hej, Text buf) ::=
-  # mytxt = "bolo"
-  # nomut = ','
-  
+template txtTest6(list<String> hej, Text &buf) ::=
+  let &mytxt = buffer "bolo"
+  let nomut = ','
+  match hej
   case "1"::_ then
-    # buf2 = "hop"
-    (hej : 
-      # buf2 += it 
-      # mytxt += '<%it%>jo'
+    let &buf2 = buffer "hop"
+    (hej |> it => 
+      let &buf2 += it 
+      let &mytxt += '<%it%>jo'
       '<%it%><%nomut%>'
-     nomut)
+     ;separator=nomut)
   
   case h::_ then
-    # buf2 = "hop"
-    (h : 
-      # buf2 += it 
-      # mytxt += '<%it%>jo'
+    let &buf2 = buffer "hop"
+    (h |> it => 
+      let &buf2 += it 
+      let &mytxt += '<%it%>jo'
       '<%it%><%nomut%>'
-     nomut)
+     ;separator=nomut)
 end txtTest6;
 
 template contCase(String tst) ::=
+  match tst
   case "a"
   case "b"
   case "bb"
@@ -216,12 +219,13 @@ template contCase(String tst) ::=
   case "d" then "Hej!"
 end contCase;
 
-template contCase2(PathIdent) ::=
-  case IDENT
-  case PATH_IDENT 
+template contCase2(PathIdent it) ::=
+  match it
+  case IDENT(__)
+  case PATH_IDENT(__) 
   case IDENT(ident = "ii")
     then 'id=<%ident%>'
-  case IDENT then "hej"
+  case IDENT(__) then "hej"
 
 
 /*
@@ -267,10 +271,10 @@ end genericTest6;
 template genericTest7(list<Integer> lst, Integer idx) ::= listGet(lst,idx)
 end genericTest7;
 
-template genericTest8(list<Integer> lst) ::= listReverse(lst) : '<%it%>th revesed'
+template genericTest8(list<Integer> lst) ::= listReverse(lst) |> it => '<%it%>th revesed'
 end genericTest8;
 
-template genericTest9(list<list<String>> lst) ::= listReverse() : listReverse() : '<%it%>hej!'
+template genericTest9(list<list<String>> lst) ::= listReverse(lst) |> it => listReverse(it) |> it => '<%it%>hej!'
 end genericTest9;
 
 //Error - unmatched type for type variable 'TypeVar'. Firstly inferred 'String', next inferred 'Integer'(dealiased 'Integer').
@@ -349,7 +353,7 @@ testMap(list<Integer> ints) ::=
 <<	
 private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 	<% {  
-		filter vars.stateVars with SIMVAR then 
+		filter vars.stateVars with SIMVAR(__) then 
 		
 		map vars.stateVars with el then
 		 
@@ -357,14 +361,14 @@ private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 		  new SimVarInfo( "(% cref(origName) %)", "(%comment%)", SimVarType.State, <% index %>, false)
 		  >>; separator=",\n"
 		,
-		vars.derivativeVars |? SIMVAR => <<
+		vars.derivativeVars |? SIMVAR(__) => <<
 		new SimVarInfo( "<% cref(origName) %>", "<% comment %>", SimVarType.StateDer, <% index %>, false)
 		>>; separator=",\n"
 		,
-		(vars.algVars of SIMVAR: <<
+		(vars.algVars of SIMVAR(__): <<
 		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Algebraic, <index>, false)
 		>>; separator=",\n"),
-		(vars.paramVars of SIMVAR: <<
+		(vars.paramVars of SIMVAR(__): <<
 		new SimVarInfo( "<cref(origName)>", "<comment>", SimVarType.Parameter, <index>, true)
 		>>; separator=",\n")
 	}; separator=",\n\n" %>
@@ -377,12 +381,12 @@ typeTempl(list<String> lst) ::= lst
 typeTemplCall(list<String> lst) ::= '<%typeTempl( (lst) )> hoop'
 
 multiTest(list<String> lst, String s, String s2, list<String> lst2) ::=
-	([lst, s, lst2, s2] ; separator=",")
+	({lst, s, lst2, s2} ; separator=",")
 
 multiTest2(list<String> lst, String s, String s2, list<String> lst2) ::=
-	([lst : if it then it, s, lst2, s2] ; separator=",")
+	({lst : if it then it, s, lst2, s2} ; separator=",")
 
 multiTest23(list<String> lst, String s, String s2, list<String> lst2) ::=
-	([lst : if it then it, s, '<%lst2>', s2] : 'bla<%it>' ; separator=",") //!! TODO: '<%lst2>' is same as lst2 ... it is not reduced
+	({lst : if it then it, s, '<%lst2>', s2} : 'bla<%it>' ; separator=",") //!! TODO: '<%lst2>' is same as lst2 ... it is not reduced
 */
 end test;

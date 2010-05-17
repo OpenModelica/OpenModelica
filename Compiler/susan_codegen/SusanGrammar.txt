@@ -4,19 +4,19 @@
 //*********************************************
 
 template-def:
-	template-signature '::='  expression(LEsc =  '<',REsc =  '>')
+	'template' template-signature (string-comment)? '::='  
+	   expression
+	'end' IDENT ';'
 	|
-	template-signature '$$='  expression(LEsc =  '$',Resc = '$')
-	|
-	CONST '='  constant  //an expression with compile-time evaluation ?
-		
+	'constant' const-type CONST '='  constant (string-comment)? ';' //an expression with compile-time evaluation ?
 
 template-signature:
-	IDENT  '(' (targ0 (',' targ)*)?  ')'
-targ0:
-	type-signature ( 'it' | IDENT ) ?
+	IDENT  '(' (targ (',' targ)*)?  ')'
+
 targ:
-	type-signature  IDENT // not 'it'
+	type-signature  IDENT
+	|
+	'Text' '&' IDENT
 
 type-signature:
 	'list' '<' type-signature '>
@@ -29,10 +29,11 @@ type-signature:
 	|
 	type-signature '[' ':' ']'  // array
 
+const-type:
+	'String' | 'Integer' | 'Real' | 'Boolean' //maybe also 'Text' ?? for constant << ... >> and ' ... ' ??
+
 constant :
 	string-const 
-	|
-	verbatim-string-const:
 	|
 	( esc-char )+    // unquoted  esc-chars e.g. \n
 	|
@@ -51,17 +52,7 @@ esc-char:
 string-const:
     '"'   ( esc-char | [^"] )*  '"'     //  " constant expression with escapes "
     	
-verbatim-string-const:
-	'%'  (Lquot)  verbatim-string-const-string  (Rquot(Lquot))  '%' 
-
-// Rquot() ...  ({<[*  ==> )}>]* 
-
-verbatim-string-const-string:   //  ... equivalent to   (  .*  ( \n   .* )*  )   
-	.*            //   '.' is everything except NEW-LINE
-	|
-	NEW_LINE  ( verbatim-string-const-string  )?
-
-template(LEsc, REsc):
+template:
 	'\''  multi-line-template( EndEsc = '\'' )  '\''
 	|
 	'<<' multi-line-template( EndEsc = none )  '>>'
@@ -70,38 +61,14 @@ multi-line-template( EndEsc  ):
 	one-line-templ( EndEsc )
 	NEW-LINE  ( multi-line-template( EndEsc  )  )?
 
-one-line-templ( EndEsc,  LEsc,  REsc):
-	STRING(EndEsc, LEsc)
-	LEsc   expression-with-options  REsc  ( one-line-templ( EndEsc,  LEsc,  REsc) )?
-	LEsc'#'  non-template-expr-with-options  '#'REsc ( one-line-templ( EndEsc,  LEsc,  REsc) )?
+one-line-templ( EndEsc):
+	STRING(EndEsc)
+	'<%' expression ?  '%>'  ( one-line-templ( EndEsc) )?  // nothing  is useful for </*  */> comment
 	
-STRING(EndEsc, Lesc, REsc): //always is processed on one line
-               // everything till  Lesc | EndEsc  and process escape \EndEsc,  \LEsc and \REsc and \\
-	case  EndEsc = SOME   ==>   
-	    (  [^{LEsc}{EndEsc}]  
-	       |  ( '\\'  ( EndEsc | Lesc | REsc | '\\')  )  
-	    )+
-	
-	    //  everything before LEsc  and not  '>>'  ... on one line,
-	    // but process also  \LEsc and \REsc and \\ … if  Resc or \ is literally, ignore escaping (take it literally )
-	    // $ is right before end of line  (or  EOF)
-	case EndEsc = NONE    ==>   
-	    ( [^{LEsc}>]  
-	      | '>' ( [^>] | $ | next is LEsc )  // requires LA(1)
-	      |  '\\'  (  Lesc | REsc | '\\')  
-	    )+     
+STRING(EndEsc ): //always is processed on one line //no escaping
+	( ^'<%' | ^EndEsc )+  //take whatever except '<%' and  EndEsc if SOME, or '>>' if NONE 
+	     
 
-expression-with-options:
-	(
-		expression (separator )?
-		( ';' OPTION  ( '=' expression) ?  )*
-	) ? 
-	 // nothing  is useful for </*  */> comment
-
-separator:
-	expression
-
-	
 expression:
 	template
 	|
@@ -109,7 +76,7 @@ expression:
 	|
 	bound-value
 	|
-	fn-call   //template  or  intrinsic function
+	fn-call   //template  or  intrinsic function/template
 	|
 	condition
 	|
@@ -117,28 +84,35 @@ expression:
 	|
 	map-expr
 	|
-	'[' expression (, expression )* ']'   //  list construction with possible mixed scalars and lists 
-	                                                           //… useful in map/concatenation context
+	'{' expression (, expression )* '}'   // list construction with possible mixed scalars and lists 
+	                                      //… useful in map/concatenation context
+	                                      //TODO: decide if mix of scalars / list values are allowed
 	|
-	expression '+' expression   //  concatenation … same as "<expression><expression>"
+	expression '+' expression   //  concatenation ...… same as '<expression><expression>'
 	|
-	'(' expression-with-options ? ')'  //empty () is equivalent to ""
+	'(' expression ')'
 	|
-	'#' non-template-expr  expression
+	'&' IDENT
+	|
+	'let' let-expr  expression
+	|
+	expression ( ';' OPTION  ( '=' expression) ?  )+
 
-	
-non-template-expr:
-	TEXT ( '=' | '+=' )  expression 
+let-expr:
+	'&' TEXT '=' 'buffer' expression
 	|
-	intrinsic-fn-call
+	'&' TEXT '+=' expression
 	|
-	'(' non-template-expr-with-options ')' 
+	'()' '=' fn-call  //no return call
+	|
+	let-binding '=' expression
 	
-	//TEXT   '='  text-create-call  … no creation/file streams at this time … all texts are in-memory
-
-non-template-expr-with-options:
-	non-template-expr
-	( ';' OPTION  ( '=' expression) ?  )*  //failMsg = expression ... a whole in-memory text can be written by an intrinsic  call
+let-binding:
+	'_'
+	|
+	IDENT
+	|
+	'(' let-binding (',' let-binding)+ ')'
 
 bound-value:
 	path-ident
@@ -148,33 +122,40 @@ path-ident:
 
 fn-call:
 	path-ident  '('  (expression (',' expression )* )?  ')'   
-	// path-ident to be able to call an AST logical or another useful functions
+	// path-ident to be able to call an imported function from a package
 
 map-expr:
-	expression  ('of'  binding)?   ':'   expression   // only 1 for the first impl. … left assoc
-	// expression  ('of'  binding)?  (',' expression 'of'  binding)*    ':'   expression 
+	expression '|>'  binding ('indexedby' IDENT)? '=>' expression   // only 1 for the first impl. … left assoc
+	// expression (',' expression)* '|>'  binding  (','  binding)* ('indexedby' IDENT)? '=>'  expression 
 
-condition:  // we will stick to simple inline only if expression for now
-	'if'  cond-expr  'then'  expression
+condition:  // we will stick to simple inline only if expression for now ... not <%if cond%> <%endif%> form ... that is ugly looking
+	// Boolean, list, Option, Integer, Real, String, Text
+	'if'  ('not')?  expression  'then'  expression
 	('else'  expression)?
 
-cond-expr:
-	('not')?  expression   // Boolean, list, Option, Integer, Real, String 
-	|
-	expression 'is' ('not')? binding
+//cond-expr:
+	//('not')?  expression   // Boolean, list, Option, Integer, Real, String 
+	//|
+	//expression 'is' ('not')? binding
 
 match:
-	( 'match'  expression ) ?   // 'it' is implicit when omitted
+	'match'  expression
 	( ('case'  binding)+  'then'  expression )+
+	( 'else' expression )?
+	( 'end' 'match' )?
 
 binding:
-    BINDVAL 'as' binding
+    BINDVAL ('as' binding) ?
     |
-    path-ident  ( '('  ( FIELD '=' binding  ( ','  FIELD '=' binding )*  )?  ')' )?            
+    path-ident '(' '__' ')'
+    |
+    path-ident '(' ( FIELD '=' binding  ( ','  FIELD '=' binding )*  )?  ')'             
+	|
+	'SOME' '(' '__' ')'
 	|
 	'SOME' ( '(' binding  ')' )?
 	|
-	'NONE'
+	'NONE' ( '(' ')' )?
 	|
 	'(' binding ')'
 	|
@@ -195,13 +176,8 @@ binding:
 	               // 
 	// |
 	// expression  // we can provide "expression" matching, when it is a constant during compilation
-	                           // it will give better readability, while supporting the single-point-of-change principle
-	                          // for named constant references  (like <constName> or  "<costantName>")
-
-
-
-template-call, intrinsic-fn-call, stream-create-call:
-	fn-call
+	                           // it would give better readability, while supporting the single-point-of-change principle
+	                          // for named constant references  (like '<%costantName%>')
 
 TYPE, ITEM, BINDVAL, FIELD, TEXT , CONST: 
 	IDENT
@@ -212,6 +188,9 @@ IDENT:
 	'_' [0-9A-Za-z] ([_0-9A-Za-z] )*
 	// identificator cannot be '_' or start with "__" ... to be simple to generate compiled helper names
 	// or, it can be solved with a package / namespace ?
+	|
+	//TODO: to be implemented ... maybe only for keywords (Susan exclusive: 'let', 'template', ...) 
+	"$'" ( esc-char | [^'] )*  "'"  // ??is it correct with Modelica '' identifiers ??
 
 string-comment:
 	string-const
@@ -239,6 +218,7 @@ constant-type:
 type-alias:
 	'type' TYPE '=' type-signature (string-comment)? ';'
 
+//TODO: interface package
 typeview-def:
 	('public' | 'protected')?  
 	'package'  path-ident  (string-comment)?
@@ -258,9 +238,9 @@ typeview-def:
 codegen-package:
 	'spackage' path-ident '  (string-comment)? ';'  //syntaxgen, templates , can be just package
 	 (
-	  'typeview' (string-const | verbatim-string-const)
+	  'typeview' (string-const | verbatim-string-const) //TODO: 'import' 'interface' ??
 	  |
-	  typeview-def
+	  typeview-def //TODO: ?? to be removed from here ??
 	  |
 	  template-def
 	 )*
@@ -417,11 +397,14 @@ absynDef:
 	endDefPathIdent(pid) 
 	=>  AST_DEF(pid, isD, types)
 
+//not optional, must not fail
 endDefPathIdent(pid):
-	pathIdent:pidEnd ';' // pid == pidEnd | warning
-
+	'end' pathIdent:pidEnd ';' // pid == pidEnd | warning
+	
+//not optional ... must not fail
 endDefIdent(id):
-	identifier:idEnd ';' // id == idEnd | warning
+	'end' identifier:idEnd ';' // id == idEnd | warning
+
 
 absynTypes:
 	'end' => {}
@@ -501,65 +484,100 @@ typeVars(tyvars):
 
 //TODO: is optional	... it is not when templDef_ConstOrTempl:td  
 templDef:
-    identifier:name  templDef_ConstOrTempl:td   =>  (name, td)
+    'template' identifier:name  
+      '(' templArgs:args ')' stringComment
+	    templDef_Templ:(exp,lesc,resc) 
+    endDefIdent(name) 
+      =>  (name, TEMPLATE_DEF(args,lesc,resc,exp))
+    |
+    'constant' constantType:ctype  identifier:name templDef_Const:td //check ctype 
+      stringComment ';'
+      => (name, td)
 
-templDef_ConstOrTempl:
-	'(' templArgs:args ')' templDef_AngleOrDolar:(exp,lesc,resc)  =>  TEMPLATE_DEF(args,lesc,resc,exp)
-	|
+templDef_Templ:
+	'::='  expression(LEsc = '<',REsc = '>'):exp   => (exp,'<','>')
+	///|
+	//'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
+      
+constantType:
+	'String'  => STRING_TYPE()
+	'Integer' => INTEGER_TYPE()
+	'Real'    => REAL_TYPE()
+	'Boolean' => BOOLEAN_TYPE()
+
+templDef_Const:
 	'=' stringConstant:strRevList  
 	  =>  STR_TOKEN_DEF(makeStrTokFromRevStrList(strRevList))
 	|
 	'=' literalConstant:(str,litType)  
 	  =>  LITERAL_DEF(str, litType) 
-	
-	|
-	'(' templArgs:args contError("expecting ')'") =>  TEMPLATE_DEF(args,lesc,resc,noExp)
-	
-	 
-
-templDef_AngleOrDolar:
-	'::='  expression(LEsc = '<',REsc = '>'):exp   => (exp,'<','>')
-	|
-	'$$='  expression(LEsc = '$',REsc = '$'):exp   => (exp,'$','$')
 		
 
 templArgs:
-    templArg0:a0  templArgs_rest:args  =>  a0::args
+	//TODO: to be TEXT_REF ... for now only syntax
+    'Text' '&' identifier:name  templArgs_rest:args  =>  (name,TEXT_TYPE())::args
+    |
+    typeSig:ts  identifier:name  templArgs_rest:args  =>  (name,ts)::args
     |
     _  => {}
 
-//TODO: is optional	
-templArg0:
-    typeSig:ts  implicitArgName:name  =>  (name,ts) 
+//is optional	
+//templArg:
+//    typeSig:ts  identifier:name  =>  (name,ts) 
 
-implicitArgName:
-      identifier:id  => id  //maybe 'it' explicitly 
-      |
-      _  => 'it'
-      
 templArgs_rest
-	',' typeSig:ts  argName_nonIt:name  templArgs_rest:rest  =>  (name,ts)::rest
+	',' typeSig:ts  identifier:name  templArgs_rest:rest  =>  (name,ts)::rest
 	|
 	_  => {}
 
-argName_nonIt:
-      'it'  =>  Error("Implicit argument 'it' appeared at non-fist position in the template argument list. 'it' can be explicitly only as the first argument.")
-      |
-      identifier:id  => id   
-
 
 expression(lesc,resc):
-	'#' nonTemplateExp(lesc,resc):nexp  concatNonTemplExp_rest(lesc,resc):expLst
-	   => TEMPLATE(nexp::expLst}, "#", "");
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", "");
 	|
 	expression_base(lesc,resc):bexp  expression_tail(bexp,lesc,resc):exp => exp 
 
-concatNonTemplExp_rest(lesc,resc):
-	'#' nonTemplateExp(lesc,resc):nexp  concatNonTemplExp_rest(lesc,resc):expLst 
-	  =>  nexp::expLst
+concatLetExp_rest(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst 
+	  =>  lexp::expLst
 	|
 	expression(lesc,resc):exp
 	  => {exp}
+
+//not optional, at least one must match
+letExp(lesc,resc):
+	'&' identifier:id '=' 'buffer' expression(lesc,resc):exp
+	     => TEXT_CREATE(id,exp)
+	|
+	'&' identifier:id '+=' expression(lesc,resc):exp
+	     => TEXT_ADD(id,exp)
+	|
+	'()' '=' pathIdent:name  funCall(name,lesc,resc):FUN_CALL(name, args)   	   
+	     =>  NORET_CALL(name, args)
+	|
+	identifier:id '=' expression(lesc,resc):exp
+		=> TEXT_CREATE(id,exp) //TODO: !! a HACK for now
+	
+	//TODO:
+	|
+	letBinding:bd '=' expression(lesc,resc):exp
+	  =>  LET_BINDING(bd, exp)
+
+letBinding:
+	'(' letBinding:headMExp  ',' letBinding:secMExp  letBindingTupleRest:mrest ')'
+	  => TUPLE_MATCH(headMExp :: secMExp :: mrest)
+	|
+	'_'
+	  => REST_MATCH()
+	|
+	identifier:id
+	  => BIND_MATCH(id)
+
+letBindingTupleRest:
+	',' letBinding:mexp  letBindingTupleRest:mrest
+	  => mexp :: mrest
+	|
+	_ => {}
 	
 expression_base(lesc,resc):
 	stringConstant:strRevList 
@@ -570,35 +588,44 @@ expression_base(lesc,resc):
 	|
 	templateExp(lesc,resc)
 	|
-	conditionExp(lesc,resc)
+	conditionExp(lesc,resc) //TODO: lower precedence
 	|
-	matchExp(lesc,resc)
+	matchExp(lesc,resc) //TODO: lower precedence
 	|
-	'[' ']'  => MAP_ARG_LIST({})	                                                           
+	'{' '}'  => MAP_ARG_LIST({})	                                                           
 	|
-	'[' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst ']'   //  list construction with possible mixed scalars and lists 
+	'{' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
 	                                                           //… useful in map/concatenation context
 	   => MAP_ARG_LIST(exp::expLst)	                                                           
 	|
-	'('  ')' //a variant of an empty expression, equivalent to ""
-	   =>  STR_TOKEN(ST_STRING("")) 	
-	|
 	'(' expressionWithOpts(lesc,resc):exp ')'
 	   => exp
+	|//TODO: ref Text buffer 
+	'&' identifier:id  => BOUND_VALUE(IDENT(name))
 	|// TODO: create an optional/error reporting variant of pathIdent
 	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
 	|
 	parseError("Not able to parse an expression from this point.")
 	
 expression_tail(bexp,lesc,resc):
-	'of' matchBinding:mexp ':' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
+	//TODO: 'indexedby'
+	//TODO: other precedence --> be left assoc instead of right 
+	'|>' matchBinding:mexp  indexedBy:idxNmOpt
+	'=>' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
 	|
-	':' expression(lesc,resc):exp  =>  MAP(bexp,BIND_MATCH('it'),exp)
-	|
+	//':' expression(lesc,resc):exp  =>  MAP(bexp,BIND_MATCH('it'),exp)
+	//|
 	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
 	=> TEMPLATE(bexp::exp::expLst, "+", "");
 	|
 	_ => bexp 
+
+//is optional
+indexedBy:
+	'indexedby' identifier:id
+		=> SOME(id)
+	|
+	_ => NONE
 
 concatExp_rest(lesc,resc):
 	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
@@ -628,9 +655,9 @@ stringConstant:
 	'"' doubleQuoteConst({},{}):stRevLst  
 	  => stRevLst
 	|
-	'%'(lquot) stripFirstNewLine verbatimConst(Rquote(lquot),{},{}):stRevLst 
-	  => stRevLst
-	|
+	//'%'(lquot) stripFirstNewLine verbatimConst(Rquote(lquot),{},{}):stRevLst 
+	//  => stRevLst
+	//|
 	'\\n' escUnquotedChars({}, {"\n"}):stRevLst
 	  => stRevLst
 	|
@@ -756,17 +783,17 @@ lineIndent(ind):
 
 // & ... no interleave
 restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):
-	(lesc)'#' nonTemplateExprWithOpts(lesc,resc):eexp  '#'(resc)
-	   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
-	   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
-	   => exp
-	    
-	| 
+	//(lesc)'#' nonTemplateExprWithOpts(lesc,resc):eexp  '#'(resc)
+	//   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
+	//   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
+	//   => exp
+	//    
+	//| 
 	(lesc)  (resc)	// a comment | empty expression ... ignore completely   
 	   & restOfTemplLineAfterEmptyExp(lesc,resc,isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):exp
 	   => exp
 	| 
-	(lesc) expressionWithOpts(lesc,resc):eexp (resc)
+	(lesc) '%' expressionWithOpts(lesc,resc):eexp (resc)
 	   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
 	   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
 	   => exp
@@ -799,14 +826,14 @@ restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, a
 
 expressionWithOpts(lesc,resc):
 	expression(lesc,resc):exp  
-	  separator:sopt 
+	  //separator:sopt 
 	  escapedOptions:opts	
 	=> makeEscapedExp(exp, listAppend(sopt,opts))
 
-separator(lesc,resc):
-	expression(lesc,resc):exp => { ("separator", SOME(exp)) }
-	|
-	_ => {}
+//separator(lesc,resc):
+	//expression(lesc,resc):exp => { ("separator", SOME(exp)) }
+	//|
+	//_ => {}
 
 escapedOptions(lesc,resc):
 	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
@@ -820,24 +847,6 @@ escOptionExp(lesc,resc):
 	|
 	_ => NONE
 
-nonTemplateExprWithOpts(lesc,resc):
-	nonTemplateExp(lesc,resc):exp  
-	  escapedOptions:opts	
-	=> makeEscapedExp(exp, opts)
-
-nonTemplateExp(lesc,resc):
-	'(' nonTemplateExprWithOpts(lesc,resc):eexp ')'
-	  => eexp
-	|
-	identifier:id '=' expression(lesc,resc):exp
-	     => TEXT_CREATE(id,exp)
-	 |
-	identifier:id '+=' expression(lesc,resc):exp
-	     => TEXT_ADD(id,exp)
-	 |
-	pathIdent:name  funCall(name,lesc,resc):exp  	   
-	     =>  exp
-	     
 
 conditionExp(lesc,resc):
 	'if' condArgExp(lesc,resc):(isNot, lhsExp, rhsMExpOpt)
@@ -856,29 +865,43 @@ condArgExp:
 	  => (true, lhsExp, NONE)
 	|
 	expression(lesc,resc):lhsExp
-	  condArgRHS:(isNot, rshMExpOpt)
+	//  condArgRHS:(isNot, rshMExpOpt)
+	{ isNot = false }
 	 => (isNot,lhsExp, rhsMExpOpt)
 
-condArgRHS:
-	'is' 'not' matchBinding:rhsMExp  =>  (true, SOME(rhsMexp))
-	|
-	'is' matchBinding:rhsMExp  =>  (false, SOME(rhsMexp))
-	|
-	_ => (false, NONE)
+//condArgRHS:
+//	'is' 'not' matchBinding:rhsMExp  =>  (true, SOME(rhsMexp))
+//	|
+//	'is' matchBinding:rhsMExp  =>  (false, SOME(rhsMexp))
+//	|
+//	_ => (false, NONE)
 
 	
 matchExp(lesc,resc):
 	'match' expression:exp 
-	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }
-	 => MATCH(exp, mcaseLst)
-	|
-	matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
-	=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
+	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }//not optional
+	  matchElseCase(lesc,resc):elseLst
+	  matchEndMatch
+	 => MATCH(exp, listAppend(mcaseLst, elseLst))
+	//|
+	//matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
+	//=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
 
 matchCase(lesc,resc):
 	'case'  matchBinding:mexp	matchCaseHeads(): mexpHeadLst  
 	'then'  expression:exp
 	   => makeMatchCaseLst(mexp::mexpHeadLst,exp)
+
+matchElseCase(lesc,resc):
+    'else' expression:exp
+	  => {(REST_MATCH(), exp)}
+	|
+	_ => {}
+
+matchEndMatch:
+	'end' 'match'
+	|
+	_
 
 matchCaseHeads():
 	'case'  matchBinding:mexp	matchCaseHeads(): mexpHeadLst  
@@ -891,6 +914,7 @@ matchCaseList(lesc,resc):
 	  => listAppend(mcaseLst, mcrest)
 	|
 	_ => {}
+
 	 
 matchBinding:
 	matchBinding_base:headMExp  matchBinding_tail(headMExp):mexp
@@ -933,7 +957,7 @@ matchBinding_base:
 	  => mexp
 
 someBinding_rest:
-	'(' ')'
+	'(' '__' ')'
 	  => SOME_MATCH(REST_MATCH())
 	|
 	'(' matchBinding:mexp ')'
@@ -962,11 +986,15 @@ afterIdentBinding(pid):
 	'(' ')' 
 	  => RECORD_MATCH(pid, {})
 	|
+	'(' '__' ')' 
+	  => RECORD_MATCH(pid, {}) //TODO: to be RECORD_TYPE_MATCH(pid)
+	|
 	'(' fieldBinding:fb  fieldBinding_rest:fbs ')'
 	  => RECORD_MATCH(pid, fb::fbs)
 	|
 	{pid is PATH_IDENT}
-	=> RECORD_MATCH(pid, {}) 
+	=> error "Expected '(' after the dot path." 
+	//RECORD_MATCH(pid, {}) 
 	|
 	{pid is IDENT(id)}
 	'as' matchBinding:mexp

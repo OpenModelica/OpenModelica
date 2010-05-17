@@ -40,41 +40,44 @@ spackage paper
 
   end Example;
 
-template statement(Statement) ::=
-  case ASSIGN then <<
+template statement(Statement it) ::=
+  match it
+  case ASSIGN(__) then <<
   <%exp(lhs)%> = <%exp(rhs)%>;
   >>	
-  case WHILE  then <<
+  case WHILE(__)  then <<
   while(<%exp(condition)%>) {
-    <%statements : statement() \n%>
+    <%statements |> it => statement(it) ;separator="\n"%>
   }
   >>
 end statement;
 
-template exp(Exp) ::=
- case ICONST   then value
- case VARIABLE then name
- case BINARY   then
+template exp(Exp it) ::=
+ match it
+ case ICONST(__)   then value
+ case VARIABLE(__) then name
+ case BINARY(__)   then
   '(<%exp(lhs)%> <%oper(op)%> <%exp(rhs)%>)'
 end exp;
 
-template oper(Operator) ::=
-  case PLUS then "+"
-  case TIMES then "*"
-  case LESS then "<"
+template oper(Operator it) ::=
+  match it
+  case PLUS(__) then "+"
+  case TIMES(__) then "*"
+  case LESS(__) then "<"
 end oper;
 
 //********
 template opt(Option<Option<Integer>> ho) ::= ho
 end opt;
 
-template pok(list<String> names, Integer i0) ::= '<%i0%> <%names : '<%it%> <%i0%>' ", "%>'
+template pok(list<String> names, Integer i0) ::= '<%i0%> <%names |> it => '<%it%> <%i0%>' ;separator=", "%>'
 end pok;
 
-template pok2(list<String> names, String sep) ::= (names of "a" : i0 'o<%sep%>')	 
+template pok2(list<String> names, String sep) ::= (names |> "a" => i0 ;separator='o<%sep%>')	 
 end pok2;
 
-template pok3(list<Exp> exps) ::= (exps of ICONST : value ", ")	 
+template pok3(list<Exp> exps) ::= (exps |> ICONST(__) => value ;separator=", ")	 
 end pok3;
 
 template pok4(String s) ::= it
@@ -83,10 +86,10 @@ end pok4;
 template pok5(String a, Integer /*it*/itt) ::= it //error ... displaced it
 end pok5;
 
-template pok6(tuple<Integer,String> tup) ::= tup of (i,s) : i + s
+template pok6(tuple<Integer,String> tup) ::= tup |> (i,s) => i + s
 end pok6;
 
-template pok7(list<tuple<String,Integer>> tuples) ::= (tuples of (s,i) : 'o<%it of (s,_):s%>')	 
+template pok7(list<tuple<String,Integer>> tuples) ::= (tuples |> (s,i) => 'o<%it |> (s,_)=>s%>')	 
 end pok7;
 
 template pok8() ::= <<

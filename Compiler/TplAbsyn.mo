@@ -1157,7 +1157,7 @@ algorithm
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
         //Debug.fprint("failtrace"," after fname = " +& pathIdentString(fname) +& "\n");
         
-        explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
+        //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
         
@@ -1324,7 +1324,7 @@ algorithm
         //Debug.fprint("failtrace"," after fname = " +& pathIdentString(fname) +& "\n");
 
         {} = oargs;
-        explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
+        //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
           = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
         
@@ -1607,7 +1607,7 @@ algorithm
   end matchcontinue;           
 end pushPopBlock;
 
-
+/*
 public function addImplicitArgument
   input list<Expression> inArgLst;
   input TypedIdents inInArgs;
@@ -1659,7 +1659,7 @@ algorithm
         fail();
   end matchcontinue;           
 end addImplicitArgument;
-
+*/
 
 public function statementsFromArg
   input Expression inExp;
@@ -1729,7 +1729,7 @@ algorithm
            stmts, locals, scEnv, tplPackage, accMMDecls )
       equation
         (fname, iargs, oargs, tyVars) = getFunSignature(fname, tplPackage);
-        explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
+        //explst = addImplicitArgument(explst, iargs, oargs, tplPackage);
         (argvals, stmts, locals, scEnv, accMMDecls) 
            = statementsFromArgList(explst, stmts, locals, scEnv, tplPackage, accMMDecls);        
         outtxt = "txt_" +& intString(listLength(locals));
@@ -3335,6 +3335,7 @@ algorithm
     
     //try if it is a record ident
     //-> convert to RECORD_MATCH()
+    /*
     case ( BIND_MATCH(bindIdent = bid), mtype, astDefs)
       equation
         NAMED_TYPE(typepath) = deAliasedType(mtype, astDefs);
@@ -3344,6 +3345,7 @@ algorithm
         tagpath = makePathIdent(typepckg, bid);
       then 
         (RECORD_MATCH(tagpath, {} ));
+    */
     
     //otherwise it is like REST_MATCH ... nothing to check
     case ( mexp as BIND_MATCH(_), _, _)
