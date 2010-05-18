@@ -1419,29 +1419,42 @@ algorithm
 end generateExtFunctionIncludes;
 
 protected function getLibraryStringInGccFormat
+"Takes an Absyn.STRING describing a library and outputs a list
+of strings corresponding to it.
+Note: Normally only outputs a single string, but Lapack on MinGW is special."
   input Absyn.Exp exp;
-  output String str;
+  output list<String> strs;
 algorithm
-  str := matchcontinue exp
+  strs := matchcontinue exp
+    local
+      String str;
     
-    // If the string contains a dot, it's probably a good path
+    // Lapack on MinGW/Windows is linked against f2c
+    case Absyn.STRING("Lapack")
+      equation
+        true = "Windows_NT" ==& System.os();
+      then {"-llapack","-lf2c","-lblas"};
+    
+    // The library is not actually named libLapack.so.
+    // Which is a problem, since MSL says it does.
+    case Absyn.STRING("Lapack") then {"-llapack"};        
+      
+    // If the string contains a dot, it's a good path that should not be prefix -l
     case Absyn.STRING(str)
       equation
         false = -1 == System.stringFind(str, ".");
-      then str;
+      then {str};
         
     // If the string starts with a -, it's probably -l or -L gcc flags
     case Absyn.STRING(str)
       equation
-        true = "-l" ==& stringGetStringChar(str, 1);
-      then str;
+        true = "-" ==& stringGetStringChar(str, 1);
+      then {str};
 
     case Absyn.STRING(str)
       equation
-        // Either this or we handle "Lapack" from MSL specifically.
-        // Not an issue on Windows, but Unix is case-sensitive and most old libraries are lower-case only.
-        str = System.tolower(str);
-      then "-l" +& str;
+        str = "-l" +& str;
+      then {str};
     
     case _
       equation
@@ -1457,23 +1470,25 @@ algorithm
   outStringLst:=
   matchcontinue (inAbsynElementArgLst)
     local
-      Lib lib;
       list<Absyn.ElementArg> eltarg;
       list<Absyn.Exp> arr;
+      list<String> libs;
+      list<list<String>> libsList;
       Absyn.Exp exp;
     case (eltarg)
       equation
         Absyn.CLASSMOD(_,SOME(exp)) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
-        lib = getLibraryStringInGccFormat(exp);
+        libs = getLibraryStringInGccFormat(exp);
       then
-        {lib};
+        libs;
     case (eltarg)
       equation
         Absyn.CLASSMOD(_,SOME(Absyn.ARRAY(arr))) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+        libsList = Util.listMap(arr, getLibraryStringInGccFormat); 
       then
-        Util.listMap(arr, getLibraryStringInGccFormat);
+        Util.listFlatten(libsList);
     case (_) then {};
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;
