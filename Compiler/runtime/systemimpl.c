@@ -275,7 +275,7 @@ RML_BEGIN_LABEL(System__toupper)
 {
   char *base = RML_STRINGDATA(rmlA0);
   long len = strlen(base);
-  char *res = (char*) malloc(len);
+  char *res = (char*) malloc(len+1);
   int i;
   for (i=0; i<len; i++)
     res[i] = toupper(base[i]);
@@ -292,7 +292,7 @@ RML_BEGIN_LABEL(System__tolower)
 {
   char *base = RML_STRINGDATA(rmlA0);
   long len = strlen(base);
-  char *res = (char*) malloc(len);
+  char *res = (char*) malloc(len+1);
   int i;
   for (i=0; i<len; i++)
     res[i] = tolower(base[i]);
