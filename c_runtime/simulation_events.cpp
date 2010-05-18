@@ -417,7 +417,9 @@ int filter_all_lesser(void *base, void *a, size_t nmemb, size_t size, int(*compa
 }
 
 void initSample(double start) {
-  long measure_start_time = clock();
+  /* not used yet
+   * long measure_start_time = clock();
+   */
   
   if (sim_verbose) printf("Notice: Calculated time of sample events is not yet used!\n");
   function_sampleInit();
@@ -436,7 +438,7 @@ void initSample(double start) {
   
   for (i=0; i<num_samples; i++) {
     if (stop >= globalData->rawSampleExps[i].start)
-      max_events += (stop - globalData->rawSampleExps[i].start)/globalData->rawSampleExps[i].interval+1;
+      max_events += (int)((stop - globalData->rawSampleExps[i].start)/globalData->rawSampleExps[i].interval+1);
   }
   events = (double*) malloc(max_events * sizeof(double) + 1);
   for (i=0; i<num_samples; i++) {

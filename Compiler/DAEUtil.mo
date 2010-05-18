@@ -45,7 +45,8 @@ public import Env;
 public import SCode;
 public import Values;
 
-public constant DAE.DAElist emptyDae = DAE.DAE({},DAE.AVLTREENODE(NONE,0,NONE,NONE));
+public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
+public constant DAE.DAElist emptyDae = DAE.DAE({},emptyFuncTree);
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
 Used for debugging.
@@ -671,22 +672,22 @@ algorithm
   end matchcontinue;
 end functionNameStr;
 
-protected function sortFunctions "sorts the functions in alphabetical order"
+protected function sortFunctions "sorts the functions and record constructors in alphabetical order"
   input list<DAE.Element> funcs;
   output list<DAE.Element> sortedFuncs; 
 algorithm
   sortedFuncs := Util.sort(funcs,funcGreaterThan);
 end sortFunctions;
 
-protected function funcGreaterThan "sorting function for two DAE.Element that are functions"
+protected function funcGreaterThan "sorting function for two DAE.Element that are functions or record constuctors"
   input DAE.Element func1;
   input DAE.Element func2;
   output Boolean res;
 algorithm
   res := matchcontinue(func1,func2)
   local Absyn.Path p1,p2;
-    case(DAE.FUNCTION(path=p1),DAE.FUNCTION(path=p2)) equation
-      res = System.strcmp(Absyn.pathString(p1),Absyn.pathString(p2)) > 0;
+    case(func1,func2) equation
+      res = System.strcmp(functionNameStr(func1),functionNameStr(func2)) > 0;
     then res;
     case(_,_) then true;
   end matchcontinue;
@@ -1064,8 +1065,15 @@ algorithm
         flist = Util.listMap(sortFunctions(Util.listMap(avlTreeToList(funcs),Util.tuple22)),dumpFunctionStr);
         extlist = Util.listMap(daelist, dumpExtObjClassStr);
         clist = Util.listMap(daelist, dumpCompElementStr);
-        slist = Util.listFlatten({flist,extlist, clist});
-        str = Util.stringAppendList(slist);
+        // clear the print buffer
+        Print.clearBuf();
+        // print the dae to the print buffer
+        Util.listMap0(flist, Print.printBuf);
+        Util.listMap0(extlist, Print.printBuf);
+        Util.listMap0(clist, Print.printBuf);
+        str = Print.getString();
+        // clear the print buffer
+        Print.clearBuf();
       then
         str;
   end matchcontinue;
@@ -7010,9 +7018,66 @@ algorithm
     local
       list<DAE.Element> elts1,elts2,elts;
       DAE.FunctionTree funcs1,funcs2,funcs;
-    case(DAE.DAE(elts1,funcs1),DAE.DAE(elts2,funcs2)) equation
-      elts = listAppend(elts1,elts2);
-      funcs = joinAvlTrees(funcs1,funcs2);
+      Real t1, t2, ti;
+
+    // deal with the empty case
+    case(DAE.DAE({},DAE.AVLTREENODE(NONE(),0,NONE(),NONE())),
+         DAE.DAE({},DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) 
+      then emptyDae;
+
+    // we have something in the first argument  
+    case(dae1 as DAE.DAE(elts1,funcs1),
+         dae2 as DAE.DAE({},DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) 
+      then dae1;
+
+    // we have something in the second argument
+    case(dae1 as DAE.DAE({},DAE.AVLTREENODE(NONE(),0,NONE(),NONE())), 
+         dae2 as DAE.DAE(elts2,funcs2)) 
+      then dae2;
+        
+    // we have empty trees in both arguments, just append lists 
+    case(DAE.DAE(elts1,DAE.AVLTREENODE(NONE(),0,NONE(),NONE())), 
+         DAE.DAE(elts2,DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) 
+      equation
+        t1 = clock();
+        elts = Util.listAppendNoCopy(elts1,elts2);
+        t2 = clock();
+        ti = t2 -. t1;
+        //Debug.fprintln("io", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
+      then DAE.DAE(elts, emptyFuncTree);
+    
+    // we have empty trees in first argument 
+    case(DAE.DAE(elts1,DAE.AVLTREENODE(NONE(),0,NONE(),NONE())), 
+         DAE.DAE(elts2,funcs2)) 
+      equation
+        t1 = clock();
+        elts = Util.listAppendNoCopy(elts1,elts2);
+        t2 = clock();
+        ti = t2 -. t1;
+        //Debug.fprintln("io", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
+      then DAE.DAE(elts, funcs2);
+    
+    // we have empty trees in second argument 
+    case(DAE.DAE(elts1,funcs1), 
+         DAE.DAE(elts2,DAE.AVLTREENODE(NONE(),0,NONE(),NONE()))) 
+      equation
+        t1 = clock();
+        elts = Util.listAppendNoCopy(elts1,elts2);
+        t2 = clock();
+        ti = t2 -. t1;
+        //Debug.fprintln("io", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));
+      then DAE.DAE(elts, funcs1);
+    
+    // we have something in both arguments
+    case(DAE.DAE(elts1,funcs1),
+         DAE.DAE(elts2,funcs2)) 
+      equation
+        t1 = clock();
+        elts = Util.listAppendNoCopy(elts1,elts2);
+        funcs = joinAvlTrees(funcs1,funcs2);
+        t2 = clock();
+        ti = t2 -. t1;
+        //Debug.fprintln("io", " joinDAEs: (" +& realString(ti) +& ") -> " +& intString(listLength(elts1)) +& " + " +&  intString(listLength(elts2)));      
     then DAE.DAE(elts,funcs);
   end matchcontinue;
 end joinDaes;
