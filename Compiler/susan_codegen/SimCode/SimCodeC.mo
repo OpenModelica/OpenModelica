@@ -1054,11 +1054,11 @@ algorithm
                                     "extern \"C\" { /* adrpo: this is needed for Visual C++ compilation to work! */\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("char *model_name=\""));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char *model_name=\""));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "\";\n",
-                                    "char *model_dir=\""
+                                    "const char *model_dir=\""
                                 }, false));
         txt = Tpl.writeStr(txt, i_directory);
         txt = Tpl.writeTok(txt, Tpl.ST_LINE("\";\n"));
@@ -1236,7 +1236,7 @@ algorithm
            {},
            i_name )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("[1] = {\"\"};"));
       then txt;
@@ -1252,7 +1252,7 @@ algorithm
         i_itemsStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_itemsStr = lm_36(i_itemsStr, i_items);
         i_itemsStr = Tpl.popIter(i_itemsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
         ret_1 = listLength(i_items);
@@ -1329,7 +1329,7 @@ algorithm
            {},
            i_name )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("[1] = {\"\"};"));
       then txt;
@@ -1345,7 +1345,7 @@ algorithm
         i_itemsStr = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         i_itemsStr = lm_39(i_itemsStr, i_items);
         i_itemsStr = Tpl.popIter(i_itemsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("char* "));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("const char* "));
         txt = Tpl.writeStr(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
         ret_1 = listLength(i_items);
@@ -1712,7 +1712,7 @@ algorithm
         list<SimCode.SimVar> i_vars_stateVars;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "char* getName(double* ptr)\n",
+                                    "const char* getName(double* ptr)\n",
                                     "{\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));

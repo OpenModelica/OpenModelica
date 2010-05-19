@@ -186,8 +186,8 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   static DATA* localData = 0;
   #define time localData->timeValue
   extern "C" { /* adrpo: this is needed for Visual C++ compilation to work! */
-    char *model_name="<%name%>";
-    char *model_dir="<%directory%>";
+    const char *model_name="<%name%>";
+    const char *model_dir="<%directory%>";
   }
   
   <%globalDataVarNamesArray("state_names", vars.stateVars)%>
@@ -265,12 +265,12 @@ template globalDataVarNamesArray(String name, list<SimVar> items)
   match items
   case {} then
     <<
-    char* <%name%>[1] = {""};
+    const char* <%name%>[1] = {""};
     >>
   case items then
     let itemsStr = (items |> SIMVAR(__) => '"<%crefWithSubscript(origName)%>"' ;separator=", ")
     <<
-    char* <%name%>[<%listLength(items)%>] = {<%itemsStr%>};
+    const char* <%name%>[<%listLength(items)%>] = {<%itemsStr%>};
     >>
 end globalDataVarNamesArray;
 
@@ -281,12 +281,12 @@ template globalDataVarCommentsArray(String name, list<SimVar> items)
   match items
   case {} then
     <<
-    char* <%name%>[1] = {""};
+    const char* <%name%>[1] = {""};
     >>
   case items then
     let itemsStr = (items |> SIMVAR(__) => '"<%comment%>"' ;separator=", ")
     <<
-    char* <%name%>[<%listLength(items)%>] = {<%itemsStr%>};
+    const char* <%name%>[<%listLength(items)%>] = {<%itemsStr%>};
     >>
 end globalDataVarCommentsArray;
 
@@ -342,7 +342,7 @@ template functionGetName(ModelInfo modelInfo)
 match modelInfo
 case MODELINFO(vars=SIMVARS(__)) then
   <<
-  char* getName(double* ptr)
+  const char* getName(double* ptr)
   {
     <%vars.stateVars |> SIMVAR(__) =>
       'if (&<%cref(name)%> == ptr) return state_names[<%index%>];'

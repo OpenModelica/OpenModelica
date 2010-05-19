@@ -1,6 +1,6 @@
 .PHONY : all 
 
-OMC = ../../../build/bin/omc.exe
+OMC = ../../../build/bin/omc
 
 all : SimCodeC.mo SimCodeCSharp.mo
 
