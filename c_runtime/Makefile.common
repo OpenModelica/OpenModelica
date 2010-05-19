@@ -53,7 +53,7 @@ libf2c/libf2c.a :
 libsendDataHumbug.a :
 	make -C sendData -f Makefile.humbug
 
-install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a omdevinstall
+install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall
 	cp $(HFILES) $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
