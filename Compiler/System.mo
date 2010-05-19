@@ -665,5 +665,13 @@ public function disableTrace
   external "C" ;
 end disableTrace;
 
+public function userIsRoot
+"Returns true if the current user is root.
+Used by main to disable running omc as root as it is very dangerous.
+Consider opening a socket and letting anyone run system() commands without authentication. As root."
+  output Boolean isRoot;
+  external "C";
+end userIsRoot;
+
 end System;
 

@@ -1193,6 +1193,7 @@ algorithm
       // Setup mingw path only once.
     case _
       equation
+        false = System.userIsRoot();
         omhome = System.readEnv("OPENMODELICAHOME");
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
@@ -1202,6 +1203,7 @@ algorithm
     
     case args as _::_
       equation
+        false = System.userIsRoot();
         _ = System.readEnv("OPENMODELICAHOME");
         
         args_1 = RTOpts.args(args);
@@ -1229,18 +1231,30 @@ algorithm
         */
       then
         ();
+    case _
+      equation
+        true = System.userIsRoot();
+        print("You are trying to run OpenModelica as root.\n");
+        print("This is a very bad idea. Why you ask?\n");
+        print("* The socket interface does not authenticate the user.\n");
+        print("* OpenModelica allows execution of arbitrary commands.\n");
+        print("* The good news is there is no reason to run OpenModelica as root.\n");
+      then fail();
     case args as _::_
       equation
+        false = System.userIsRoot();
         _ = System.readEnv("OPENMODELICAHOME");
         failure(args_1 = RTOpts.args(args));
         printUsage();
       then ();
     case {}
       equation
+        false = System.userIsRoot();
         printUsage();
       then ();
     case _
       equation
+        false = System.userIsRoot();
         _ = System.readEnv("OPENMODELICAHOME");
         print("# Error encountered! Exiting...\n");
         print("# Please check the error message and the flags.\n");
@@ -1253,6 +1267,7 @@ algorithm
 
     case _
       equation
+        false = System.userIsRoot();
         failure(_ = System.readEnv("OPENMODELICAHOME"));
         print("Error: OPENMODELICAHOME was not set.\n");
         print("  Read the documentation for instructions on how to set it properly.\n");

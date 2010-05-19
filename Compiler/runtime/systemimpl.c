@@ -208,6 +208,13 @@ static int set_ldflags(char *str)
   return 0;
 }
 
+RML_BEGIN_LABEL(System__userIsRoot)
+{
+  rmlA0 = mk_icon(geteuid() == 0 ? 1 : 0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 RML_BEGIN_LABEL(System__trimChar)
 {
   char* str = RML_STRINGDATA(rmlA0);
@@ -2944,7 +2951,6 @@ RML_BEGIN_LABEL(System__getCurrentTimeStr)
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
 
 #endif /* MINGW32 and Linux */
 
