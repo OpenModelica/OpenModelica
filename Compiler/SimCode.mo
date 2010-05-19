@@ -347,6 +347,7 @@ uniontype MakefileParams
     String omhome;
     String cflags;
     String ldflags;
+    String senddatalibs;
     list<String> libs;
   end MAKEFILE_PARAMS;
 end MakefileParams;
@@ -1196,7 +1197,7 @@ algorithm
   makefileParams :=
   matchcontinue (libs)
     local
-      String omhome,header,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags;
+      String omhome,header,ccompiler,cxxcompiler,linker,exeext,dllext,cflags,ldflags,senddatalibs;
     case (libs)
       equation
         ccompiler = System.getCCompiler();
@@ -1208,8 +1209,9 @@ algorithm
         omhome = System.trim(omhome, "\""); // Remove any quotation marks from omhome.
         cflags = System.getCFlags();
         ldflags = System.getLDFlags();
+        senddatalibs = System.getSendDataLibs();
       then MAKEFILE_PARAMS(ccompiler, cxxcompiler, linker, exeext, dllext,
-                           omhome, cflags, ldflags, libs);
+                           omhome, cflags, ldflags, senddatalibs, libs);
   end matchcontinue;
 end createMakefileParams;
 

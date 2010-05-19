@@ -1522,10 +1522,14 @@ void System_5finit(void)
 #endif
   set_ldflags("-lc_runtime");
   path = getenv("PATH");
-
-  _putenv("SENDDATALIBS=-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
 }
 
+RML_BEGIN_LABEL(System__getSendDataLibs)
+{
+  rmlA0 = (void*) mk_scon("-lsendData -lQtNetwork-mingw -lQtCore-mingw -lQtGui-mingw -luuid -lole32 -lws2_32");
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__isSameFile)
 {
@@ -2209,7 +2213,6 @@ int scandir(const char* dirname,
 void System_5finit(void)
 {
   char* qthome;
-  char sendDataLibs[3000] = {0};
 
   last_ptr_index = -1;
   memset(ptr_vector, 0, sizeof(ptr_vector));
@@ -2237,11 +2240,14 @@ void System_5finit(void)
   set_cflags("${MODELICAUSERCFLAGS}");
 #endif
   set_ldflags("-lc_runtime");
-
-  putenv(LDFLAGS_SENDDATA /* Defined in the Makefile; from the configure script */);
-   /* set the SENDDATALIBS environment variable */
-  putenv(strdup(sendDataLibs));
 }
+
+RML_BEGIN_LABEL(System__getSendDataLibs)
+{
+  rmlA0 = (void*) mk_scon(LDFLAGS_SENDDATA) /* Defined in the Makefile; from the configure script */;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /**
  * Author BZ

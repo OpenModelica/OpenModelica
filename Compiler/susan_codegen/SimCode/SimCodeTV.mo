@@ -62,6 +62,7 @@ package SimCode
       String omhome;
       String cflags;
       String ldflags;
+      String senddatalibs;
       list<String> libs;
     end MAKEFILE_PARAMS;
   end MakefileParams;
@@ -314,6 +315,7 @@ package DAELow
     record REINIT
       DAE.ComponentRef stateVar;
       DAE.Exp value;
+
     end REINIT;
     record EMPTY_REINIT end EMPTY_REINIT;
   end ReinitStatement;

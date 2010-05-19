@@ -665,6 +665,12 @@ public function disableTrace
   external "C" ;
 end disableTrace;
 
+public function getSendDataLibs
+"Returns a string containing the compiler flags used for SENDDATALIBS"
+  output String sendDataLibs;
+  external "C" ;
+end getSendDataLibs;
+
 public function userIsRoot
 "Returns true if the current user is root.
 Used by main to disable running omc as root as it is very dangerous.

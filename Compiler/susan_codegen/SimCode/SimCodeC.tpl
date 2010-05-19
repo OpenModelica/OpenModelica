@@ -111,6 +111,8 @@ case SIMCODE(__) then
   
   <%functionHandleZeroCrossing(zeroCrossingsNeedSave)%>
   
+  <%functionInitSample(zeroCrossings)%>
+
   <%functionUpdateDependents(allEquations, helpVarInfo)%>
   
   <%functionUpdateDepend(allEquationsPlusWhen)%>
@@ -171,17 +173,18 @@ match modelInfo
 case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <<
   #define NHELP <%varInfo.numHelpVars%>
-  #define NG <%varInfo.numZeroCrossings%>
+  #define NG <%varInfo.numZeroCrossings%> // number of zero crossings
+  #define NG_SAM -1 // number of zero crossings that are samples
   #define NX <%varInfo.numStateVars%>
   #define NY <%varInfo.numAlgVars%>
-  #define NP <%varInfo.numParams%>
-  #define NO <%varInfo.numOutVars%>
-  #define NI <%varInfo.numInVars%>
-  #define NR <%varInfo.numResiduals%>
-  #define NEXT <%varInfo.numExternalObjects%>
+  #define NP <%varInfo.numParams%> // number of parameters
+  #define NO <%varInfo.numOutVars%> // number of outputvar on topmodel
+  #define NI <%varInfo.numInVars%> // number of inputvar on topmodel
+  #define NR <%varInfo.numResiduals%> // number of residuals for initialialization function
+  #define NEXT <%varInfo.numExternalObjects%> // number of external objects
   #define MAXORD 5
-  #define NYSTR <%varInfo.numStringAlgVars%>
-  #define NPSTR <%varInfo.numStringParamVars%>
+  #define NYSTR <%varInfo.numStringAlgVars%> // number of alg. string variables
+  #define NPSTR <%varInfo.numStringParamVars%> // number of alg. string variables
   
   static DATA* localData = 0;
   #define time localData->timeValue
@@ -793,7 +796,7 @@ template functionDaeRes()
 ::=
   <<
   int functionDAE_res(double *t, double *x, double *xd, double *delta,
-                      long int *ires, double *rpar, long int* ipar)
+                      fortran_integer *ires, double *rpar, fortran_integer *ipar)
   {
     int i;
     double temp_xd[NX];
@@ -844,8 +847,8 @@ template functionZeroCrossing(list<ZeroCrossing> zeroCrossings)
   let &varDecls = buffer "" /*BUFD*/
   let zeroCrossingsCode = zeroCrossingsTpl(zeroCrossings, &varDecls /*BUFC*/)
   <<
-  int function_zeroCrossing(long *neqm, double *t, double *x, long *ng,
-                            double *gout, double *rpar, long* ipar)
+  int function_zeroCrossing(fortran_integer *neqm, double *t, double *x, fortran_integer *ng,
+                            double *gout, double *rpar, fortran_integer* ipar)
   {
     double timeBackup;
     state mem_state;
@@ -901,6 +904,18 @@ template functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave)
   >>
 end functionHandleZeroCrossing;
 
+template functionInitSample(list<ZeroCrossing> zeroCrossings)
+  "Generates function initSample() in simulation file."
+::=
+  <<
+  /* Initializes the raw time events of the simulation using the now
+     calcualted parameters.
+     TODO: Implement this in Susan. */
+  void function_sampleInit()
+  {
+  }
+  >>
+end functionInitSample;
 
 template functionUpdateDependents(list<SimEqSystem> allEquations,
                                   list<HelpVarInfo> helpVarInfo)
@@ -1537,12 +1552,13 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  CFLAGS=-I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
+  LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
+  SENDDATALIBS=<%makefileParams.senddatalibs%>
   
   .PHONY: <%modelInfo.name%>
   <%modelInfo.name%>: <%modelInfo.name%>.cpp
-  <%\t%> $(CXX) $(CFLAGS) -I. -o <%modelInfo.name%>$(EXEEXT) <%modelInfo.name%>.cpp <%dirExtra%> <%libsPos1%> -lsim $(LDFLAGS) -lf2c ${SENDDATALIBS} <%libsPos2%>
+  <%\t%> $(CXX) $(CFLAGS) -I. -o <%modelInfo.name%>$(EXEEXT) <%modelInfo.name%>.cpp <%dirExtra%> <%libsPos1%> -lsim $(LDFLAGS) -lf2c -linteractive $(SENDDATALIBS) <%libsPos2%>
   >>
 end simulationMakefile;
 
@@ -1605,8 +1621,8 @@ case FUNCTIONCODE(makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  CFLAGS= -I"<%makefileParams.omhome%>/include" <%makefileParams.cflags%>
-  LDFLAGS= -L"<%makefileParams.omhome%>/lib" <%makefileParams.ldflags%>
+  CFLAGS= -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
+  LDFLAGS= -L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   
   .PHONY: <%name%>
   <%name%>: <%name%>.c

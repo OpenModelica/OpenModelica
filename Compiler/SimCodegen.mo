@@ -135,7 +135,7 @@ algorithm
           " $(LDFLAGS)",
           " -lf2c",
           " -linteractive",
-          " ${SENDDATALIBS} ",
+          " $(SENDDATALIBS) ",
           "\n"});
         System.writeFile(filename, str);
       then
@@ -161,7 +161,7 @@ algorithm
           " $(LDFLAGS)",
           " -lf2c",
           " -linteractive",
-          " ${SENDDATALIBS} ",
+          " $(SENDDATALIBS) ",
           libs_1,
           "\n"});
         System.writeFile(filename, str);
