@@ -284,8 +284,8 @@ template sConstStringToken(StringToken it) ::=
   	if not canBeOnOneLine(sl) 
   	then ('"<%sl |> it => mmEscapeStringConst(it,false)%>"' ; absIndent) 
   	else if canBeEscapedUnquoted(sl) 
-  	     then  sl |> it => mmEscapeStringConst(it,true)
-  	     else  '"<%sl |> it => mmEscapeStringConst(it,true)%>"'
+  	     then  (sl |> it => mmEscapeStringConst(it,true))
+  	     else  '"<% sl |> it => mmEscapeStringConst(it,true) %>"'
 end sConstStringToken;
 
 end TplCodegen;

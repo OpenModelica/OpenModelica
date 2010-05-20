@@ -2701,10 +2701,8 @@ end argName_nonIt;
 
 /*
 expression(lesc,resc):
-	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
-	   => TEMPLATE(lexp::expLst}, "let", "");
-	|
-	expression_base(lesc,resc):bexp  expression_tail(bexp,lesc,resc):exp => exp 
+	expressionNoOptions(lesc,resc):exp  escapedOptions:opts	
+	  => makeEscapedExp(exp, opts)
 */
 public function expression
   input list<String> inChars;
@@ -2729,8 +2727,306 @@ algorithm
       Tpl.StringToken st;
       TplAbsyn.Expression exp, bexp, lexp;
       list<TplAbsyn.Expression> expLst;
+      list<TplAbsyn.EscOption> opts;
     
-    case ("l"::"e"::"t" :: chars, linfo, lesc, resc, _)
+    case (chars, linfo, lesc, resc, _)
+      equation
+        (chars, linfo, exp) = expressionNoOptions(chars, linfo, lesc, resc);
+        (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
+        //exp = makeEscapedExp(exp, listAppend(sopt,opts));
+        exp = makeEscapedExp(exp, opts);
+      then (chars, linfo, exp);
+    
+    case (chars, linfo, lesc, resc, false)
+      equation
+        (linfo) = parseError(chars, linfo, "Expecting an expression - not able to parse from this point.", true);        
+      then (chars, linfo, TplAbsyn.ERROR_EXP());
+                
+  end matchcontinue;
+end expression;
+
+
+public function makeEscapedExp
+  input TplAbsyn.Expression inExpression;
+  input list<TplAbsyn.EscOption> inOptions;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outExpression) := matchcontinue (inExpression, inOptions)
+    local
+      TplAbsyn.Expression exp;
+      list<TplAbsyn.EscOption> opts;    
+   case (exp, {})  then exp;   
+   case (exp, opts as (_::_)) then TplAbsyn.ESCAPED(exp, opts);        
+  end matchcontinue;
+end makeEscapedExp;
+
+/*
+escapedOptions(lesc,resc):
+	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
+	=> (id, expOpt) :: opts
+	|
+	_ => {} 
+
+*/
+public function escapedOptions
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output list<TplAbsyn.EscOption> outOptions;
+algorithm
+  (outChars, outLineInfo, outOptions) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      Option<TplAbsyn.Expression> expOpt;
+      list<TplAbsyn.Expression> expLst;
+      TplAbsyn.EscOption sopt;
+      list<TplAbsyn.EscOption> opts;
+    
+   case (";" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, id) = identifierNoOpt(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, expOpt) = escOptionExp(chars, linfo, lesc, resc);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
+      then (chars, linfo, (id, expOpt) :: opts);
+   
+   case (chars, linfo, _, _)
+      then (chars, linfo, {} );
+   
+  end matchcontinue;
+end escapedOptions;
+
+/*
+escOptionExp(lesc,resc):
+	'=' expressionNoOptions(lesc,resc):exp
+	  => SOME(exp)
+	|
+	_ => NONE
+*/
+public function escOptionExp
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output Option<TplAbsyn.Expression> outExpOption;
+algorithm
+  (outChars, outLineInfo, outExpOption) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      Option<TplAbsyn.Expression> expOpt;
+      list<TplAbsyn.Expression> expLst;
+      TplAbsyn.EscOption sopt;
+      list<TplAbsyn.EscOption> opts;
+    
+   case ("=" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expressionNoOptions(chars, linfo, lesc, resc);
+      then (chars, linfo, SOME(exp));
+   
+   case (chars, linfo, _, _)
+      then (chars, linfo, NONE );
+   
+  end matchcontinue;
+end escOptionExp;
+
+
+/* not optional
+expressionNoOptions(lesc,resc):
+	expressionLet(lesc,resc):expLet  mapTailOpt(lesc,resc,expLet):exp
+	  => exp
+*/
+public function expressionNoOptions
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+      list<TplAbsyn.EscOption> sopt, opts;
+    
+   case (chars, linfo, lesc, resc)
+      equation
+        (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = mapTailOpt(chars, linfo, exp, lesc, resc);        
+      then (chars, linfo, exp);
+        
+  end matchcontinue;
+end expressionNoOptions;
+
+/*
+mapTailOpt(headExp,lesc,resc):
+	'|>' matchBinding:mexp  
+	indexedByOpt:idxNmOpt //TODO: 'indexedby' in TplAbsyn	
+	'=>' expressionLet(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
+	|
+	_ => headExp 
+*/
+public function mapTailOpt
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input TplAbsyn.Expression inHeadExpression;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inHeadExpression, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      Option<TplAbsyn.Ident> idxNmOpt;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, headExp;
+      list<TplAbsyn.Expression> expLst;
+      TplAbsyn.MatchingExp mexp;
+    
+    case ("|"::">":: chars, linfo, headExp, lesc, resc)
+      equation
+        //afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, mexp) = matchBinding(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, idxNmOpt) = indexedByOpt(chars, linfo);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");        
+        (chars, linfo) = expectChar(chars, linfo, ">");        
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
+      then (chars, linfo, TplAbsyn.MAP(headExp, mexp, exp) );
+
+    case (chars, linfo, headExp, _, _)
+      then (chars, linfo, headExp );
+
+  end matchcontinue;
+end mapTailOpt;
+
+/* 
+indexedByOpt:
+	'indexedby' identifier:id
+		=> SOME(id)
+	|
+	_ => NONE
+*/
+public function indexedByOpt
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output Option<TplAbsyn.Ident> outIndexNameOpt;
+algorithm
+  (outChars, outLineInfo, outIndexNameOpt) := matchcontinue (inChars, inLineInfo)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+      TplAbsyn.MatchingExp mexp;
+    
+    case ("i"::"n"::"d"::"e"::"x"::"e"::"d"::"b"::"y":: chars, linfo)
+      equation
+        afterKeyword(chars);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars,linfo,id) = identifierNoOpt(chars,linfo);        
+      then (chars, linfo, SOME(id) );
+    
+    case (chars, linfo)
+      then (chars, linfo, NONE );
+
+  end matchcontinue;
+end indexedByOpt;
+
+
+/*
+expressionLet(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", ""); //TODO: should be a LET_EXPRESSION()
+	|
+	expressionMatch(lesc,resc):exp
+*/
+public function expressionLet
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD, isOpt;
+      TplAbsyn.Ident id;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp, lexp;
+      list<TplAbsyn.Expression> expLst;
+    
+    case ("l"::"e"::"t" :: chars, linfo, lesc, resc)
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
@@ -2739,21 +3035,13 @@ algorithm
         (chars, linfo, expLst) = concatLetExp_rest(chars, linfo, lesc, resc);        
       then (chars, linfo, TplAbsyn.TEMPLATE(lexp :: expLst, "let", "")); //TODO: ?? to be a LET_EXPRESSION ??
   
-    case (chars, linfo, lesc, resc, _)
+    case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, bexp) = expression_base(chars, linfo, lesc, resc);
-        //failure(TplAbsyn.ERROR_EXP() = bexp);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression_tail(chars, linfo, bexp, lesc, resc);
+        (chars, linfo, exp) = expressionMatch(chars, linfo, lesc, resc);        
       then (chars, linfo, exp);
-    
-    case (chars, linfo, lesc, resc, false)
-      equation
-        (linfo) = parseError(chars, linfo, "Not able to parse an expression from this point.", true);        
-      then (chars, linfo, TplAbsyn.ERROR_EXP());
                 
   end matchcontinue;
-end expression;
+end expressionLet;
 
 /*
 concatLetExp_rest(lesc,resc):
@@ -2799,7 +3087,7 @@ algorithm
 
     case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);        
+        (chars, linfo, exp) = expressionMatch(chars, linfo, lesc, resc);        
       then (chars, linfo, {exp});
     
   end matchcontinue;
@@ -2919,33 +3207,14 @@ end letExp;
 
 
 /*
-expression_base(lesc,resc):
-	stringConstant:strRevList 
-	  => STR_TOKEN(makeStrTokFromRevStrList(strRevList))
+expressionMatch(lesc,resc):
+	matchExp(lesc,resc):exp 
+	  => exp
 	|
-	literalConstant:(str,litType) 
-	  => LITERAL(str,litType)
-	|
-	templateExp(lesc,resc)
-	|
-	conditionExp(lesc,resc)
-	|
-	matchExp(lesc,resc)
-	|
-	'[' ']'  => MAP_ARG_LIST({})	                                                           
-	|
-	'[' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst ']'   //  list construction with possible mixed scalars and lists 
-	                                                           //… useful in map/concatenation context
-	   => MAP_ARG_LIST(exp::expLst)	                                                           
-	|
-	'(' expressionWithOpts(lesc,resc):exp ')'
-	   => exp
-	|//TODO: ref Text buffer 
-	'&' identifier:id  => BOUND_VALUE(IDENT(name))
-	|// TODO: create an optional variant of pathIdent
-	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
+	expressionIf(lesc,resc):exp
+	  => exp
 */
-public function expression_base
+public function expressionMatch
   input list<String> inChars;
   input LineInfo inLineInfo;
   input String inLeftEsc;
@@ -2957,9 +3226,9 @@ public function expression_base
 algorithm
   (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
     local
-      list<String> chars, strRevList;
+      list<String> chars;
       LineInfo linfo;
-      String c, lesc, resc, str;
+      String c, lesc, resc;
       Boolean isD;
       TplAbsyn.Ident id;
       TplAbsyn.PathIdent name;
@@ -2968,23 +3237,54 @@ algorithm
       Tpl.StringToken st;
       TplAbsyn.Expression exp, bexp;
       list<TplAbsyn.Expression> expLst;
+      list<TplAbsyn.EscOption> sopt, opts;
     
-    case (chars, linfo, _, _)
+   case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, strRevList) = stringConstant(chars, linfo);
-        st = makeStrTokFromRevStrList(strRevList);
-      then (chars, linfo, TplAbsyn.STR_TOKEN(st));
-        
-    case (chars, linfo, _, _)
-      equation
-        (chars, linfo, str, ts) = literalConstant(chars, linfo);
-      then (chars, linfo, TplAbsyn.LITERAL(str, ts));
+        (chars, linfo, exp) = matchExp(chars, linfo, lesc, resc);
+      then (chars, linfo, exp);
    
    case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, exp) = templateExp(chars, linfo, lesc, resc);
+        (chars, linfo, exp) = expressionIf(chars, linfo, lesc, resc);
       then (chars, linfo, exp);
-   
+        
+  end matchcontinue;
+end expressionMatch;
+
+/*
+expressionIf(lesc,resc):
+	conditionExp(lesc,resc):exp 
+	  => exp
+	|
+	expressionPlus(lesc,resc):exp
+	  => exp
+*/
+public function expressionIf
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+      list<TplAbsyn.EscOption> sopt, opts;
+    
    case (chars, linfo, lesc, resc)
       equation
         (chars, linfo, exp) = conditionExp(chars, linfo, lesc, resc);
@@ -2992,72 +3292,61 @@ algorithm
    
    case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, exp) = matchExp(chars, linfo, lesc, resc);
+        (chars, linfo, exp) = expressionPlus(chars, linfo, lesc, resc);
       then (chars, linfo, exp);
+        
+  end matchcontinue;
+end expressionIf;
 
-   case ("{" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        ("}" :: chars) = chars;
-      then (chars, linfo, TplAbsyn.MAP_ARG_LIST({}));
-   
-   case ("{" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "}");
-      then (chars, linfo, TplAbsyn.MAP_ARG_LIST(exp::expLst));
-   
-   /*
-   case ("(" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (")" :: chars) = chars;
-      then (chars, linfo, TplAbsyn.STR_TOKEN(Tpl.ST_STRING("")) );
-   */
-   case ("(" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expressionWithOpts(chars, linfo, lesc, resc);
-        //(chars, linfo) = interleave(chars, linfo);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");        
-        //(")" :: chars) = chars;
-      then (chars, linfo, exp);
-   //TODO: be a ref Text buffer
-   case ("&" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, id) = identifierNoOpt(chars, linfo);        
-      then (chars, linfo, TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT(id)));
-   
+
+/* 
+expressionPlus(lesc,resc):
+	expression_base(lesc,resc):bexp  plusTailOpt(lesc,resc,bexp):exp
+	  => exp
+*/
+public function expressionPlus
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars;
+      LineInfo linfo;
+      String c, lesc, resc;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+      list<TplAbsyn.EscOption> sopt, opts;
+    
    case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, name) = pathIdent(chars, linfo);
+        (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = boundValueOrFunCall(chars, linfo, name, lesc, resc);
+        (chars, linfo, exp) = plusTailOpt(chars, linfo, exp, lesc, resc);        
       then (chars, linfo, exp);
-      
+        
   end matchcontinue;
-end expression_base;
+end expressionPlus;
 
 /*
-expression_tail(bexp,lesc,resc):
-	//TODO: 'indexedby'
-	//TODO: other precedence --> be left assoc instead of right 
-	indexedBy:idxNmOpt 
-	'|>' matchBinding:mexp
-	'=>' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
-	|
-	//':' expression(lesc,resc):exp  =>  MAP(bexp,BIND_MATCH('it'),exp)
-	//|
-	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
-	=> TEMPLATE(bexp::exp::expLst, "+", "");
+plusTailOpt(lesc,resc,bexp):	
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+	  => TEMPLATE(bexp::exp::expLst, "+", "");
 	|
 	_ => bexp 
 */
-public function expression_tail
+public function plusTailOpt
   input list<String> inChars;
   input LineInfo inLineInfo;
   input TplAbsyn.Expression inBaseExpression;
@@ -3073,41 +3362,13 @@ algorithm
       list<String> chars;
       LineInfo linfo;
       String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      Option<TplAbsyn.Ident> idxNmOpt;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
       TplAbsyn.Expression exp, bexp;
       list<TplAbsyn.Expression> expLst;
-      TplAbsyn.MatchingExp mexp;
-    
-    case ("|"::">":: chars, linfo, bexp, lesc, resc)
-      equation
-        //afterKeyword(chars);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, mexp) = matchBinding(chars, linfo);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, idxNmOpt) = indexedBy(chars, linfo);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, "=");        
-        (chars, linfo) = expectChar(chars, linfo, ">");        
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.MAP(bexp, mexp, exp) );
-
-    /*
-    case (":" :: chars, linfo, bexp, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.MAP(bexp, TplAbsyn.BIND_MATCH("it"), exp) );
-    */
+      
     case ("+" :: chars, linfo, bexp, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = concatExp_rest(chars, linfo, lesc, resc);
       then (chars, linfo, TplAbsyn.TEMPLATE(bexp::exp::expLst, "+", "") );
@@ -3116,55 +3377,12 @@ algorithm
       then (chars, linfo, bexp );
 
   end matchcontinue;
-end expression_tail;
+end plusTailOpt;
 
-/* 
-//is optional
-indexedBy:
-	'indexedby' identifier:id
-		=> SOME(id)
-	|
-	_ => NONE
-*/
-public function indexedBy
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output Option<TplAbsyn.Ident> outIndexNameOpt;
-algorithm
-  (outChars, outLineInfo, outIndexNameOpt) := matchcontinue (inChars, inLineInfo)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
-      list<TplAbsyn.Expression> expLst;
-      TplAbsyn.MatchingExp mexp;
-    
-    case ("i"::"n"::"d"::"e"::"x"::"e"::"d"::"b"::"y":: chars, linfo)
-      equation
-        afterKeyword(chars);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars,linfo,id) = identifierNoOpt(chars,linfo);        
-      then (chars, linfo, SOME(id) );
-    
-    case (chars, linfo)
-      then (chars, linfo, NONE );
-
-  end matchcontinue;
-end indexedBy;
 
 /*
 concatExp_rest(lesc,resc):
-	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
 	|
 	_ => {}
 */
@@ -3196,7 +3414,7 @@ algorithm
     case ("+":: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo, exp) = expression_base(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = concatExp_rest(chars, linfo, lesc, resc);
       then (chars, linfo, exp::expLst);
@@ -3206,6 +3424,111 @@ algorithm
 
   end matchcontinue;
 end concatExp_rest;
+
+
+/*
+expression_base(lesc,resc):
+	stringConstant:strRevList 
+	  => STR_TOKEN(makeStrTokFromRevStrList(strRevList))
+	|
+	literalConstant:(str,litType) 
+	  => LITERAL(str,litType)
+	|
+	templateExp(lesc,resc)
+	|
+	'{' '}'  => MAP_ARG_LIST({})	                                                           
+	|
+	'{' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
+	                                                           //… useful in map/concatenation context
+	   => MAP_ARG_LIST(exp::expLst)	                                                           
+	|
+	'(' expression(lesc,resc):exp ')'
+	   => exp
+	| 
+	'&' identifier:id  
+	  => BOUND_VALUE(IDENT(name))  //TODO: ref Text buffer
+	|// TODO: create an optional/error reporting variant of pathIdent
+	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
+*/
+public function expression_base
+  input list<String> inChars;
+  input LineInfo inLineInfo;
+  input String inLeftEsc;
+  input String inRightEsc;
+  
+  output list<String> outChars;
+  output LineInfo outLineInfo;
+  output TplAbsyn.Expression outExpression;
+algorithm
+  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
+    local
+      list<String> chars, strRevList;
+      LineInfo linfo;
+      String c, lesc, resc, str;
+      Boolean isD;
+      TplAbsyn.Ident id;
+      TplAbsyn.PathIdent name;
+      TplAbsyn.TypedIdents fields,inargs,outargs;
+      TplAbsyn.TypeSignature ts;
+      Tpl.StringToken st;
+      TplAbsyn.Expression exp, bexp;
+      list<TplAbsyn.Expression> expLst;
+    
+    case (chars, linfo, _, _)
+      equation
+        (chars, linfo, strRevList) = stringConstant(chars, linfo);
+        st = makeStrTokFromRevStrList(strRevList);
+      then (chars, linfo, TplAbsyn.STR_TOKEN(st));
+     
+    case (chars, linfo, _, _)
+      equation
+        (chars, linfo, str, ts) = literalConstant(chars, linfo);
+      then (chars, linfo, TplAbsyn.LITERAL(str, ts));
+   
+   case (chars, linfo, lesc, resc)
+      equation
+        (chars, linfo, exp) = templateExp(chars, linfo, lesc, resc);
+      then (chars, linfo, exp);
+   
+   case ("{" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        ("}" :: chars) = chars;
+      then (chars, linfo, TplAbsyn.MAP_ARG_LIST({}));
+   
+   case ("{" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expressionPlus(chars, linfo, lesc, resc);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, "}");
+      then (chars, linfo, TplAbsyn.MAP_ARG_LIST(exp::expLst));
+   
+   case ("(" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");        
+      then (chars, linfo, exp);
+   
+   //TODO: be a ref Text buffer
+   case ("&" :: chars, linfo, lesc, resc)
+      equation
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, id) = identifierNoOpt(chars, linfo);        
+      then (chars, linfo, TplAbsyn.BOUND_VALUE(TplAbsyn.IDENT(id)));
+   
+   case (chars, linfo, lesc, resc)
+      equation
+        (chars, linfo, name) = pathIdent(chars, linfo);
+        (chars, linfo) = interleave(chars, linfo);
+        (chars, linfo, exp) = boundValueOrFunCall(chars, linfo, name, lesc, resc);
+      then (chars, linfo, exp);
+      
+  end matchcontinue;
+end expression_base;
+
 
 /*
 boundValueOrFunCall(name,lesc,resc):
@@ -3280,12 +3603,10 @@ algorithm
     case ("(":: chars, linfo, name, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo, exp) = expressionPlus(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
-        //(chars, linfo) = interleave(chars, linfo);
         (chars, linfo) = interleaveExpectChar(chars, linfo, ")");
-        //(")" :: chars) = chars;
       then (chars, linfo, TplAbsyn.FUN_CALL(name, exp::expLst));
 
   end matchcontinue;
@@ -3293,7 +3614,7 @@ end funCall;
 
 /*
 expressionList_rest(lesc,resc):	
-	',' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst => exp::expLst
+	',' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst => exp::expLst
 	|
 	_ => {} 
 */
@@ -3325,7 +3646,7 @@ algorithm
     case (",":: chars, linfo, lesc, resc)
       equation
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo, exp) = expressionPlus(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, expLst) = expressionList_rest(chars, linfo, lesc, resc);
       then (chars, linfo, exp::expLst);
@@ -4120,7 +4441,7 @@ restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, a
 	   & restOfTemplLineAfterEmptyExp(lesc,resc,isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):exp
 	   => exp
 	| 
-	(lesc) expressionWithOpts(lesc,resc):eexp (resc)
+	(lesc) '%' expression(lesc,resc):eexp (resc)
 	   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
 	   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
 	   => exp
@@ -4215,12 +4536,12 @@ algorithm
         (chars, linfo, exp) = restOfTemplLine(chars, linfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars);
       then (chars, linfo, exp);
       
-   //<% expressionWithOpts %> 
+   //<% expression %> 
    case (startChars as (c :: "%":: chars), startLinfo, lesc, resc, isSQ, expLst, indStack, actInd, lineInd, accChars)
       equation
         equality( c  = lesc );
         (chars, linfo) = interleave(chars, startLinfo);
-        (chars, linfo, eexp) = expressionWithOpts(chars, linfo, lesc, resc);
+        (chars, linfo, eexp) = expression(chars, linfo, lesc, resc, false);
         (chars, linfo) = interleaveExpectChar(chars, linfo, "%");
         (chars, linfo) = expectChar(chars, linfo, resc);
         //(c :: chars) = chars;
@@ -4942,394 +5263,13 @@ algorithm
   end matchcontinue;
 end finalizeLastStringToken;
 
-/*
-must not fail
-expressionWithOpts(lesc,resc):
-	expression(lesc,resc):exp  
-	  //separator:sopt 
-	  escapedOptions:opts	
-	=> makeEscapedExp(exp, listAppend(sopt,opts))
-*/
-public function expressionWithOpts
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
-algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
-      list<TplAbsyn.Expression> expLst;
-      list<TplAbsyn.EscOption> sopt, opts;
-    
-   case (chars, linfo, lesc, resc)
-      equation
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-        //(chars, linfo) = interleave(chars, linfo);
-        //(chars, linfo, sopt) = separator(chars, linfo, lesc, resc);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
-        //exp = makeEscapedExp(exp, listAppend(sopt,opts));
-        exp = makeEscapedExp(exp, opts);
-      then (chars, linfo, exp);
-   
-   case (chars, linfo, _, _) 
-      equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.expressionWithOpts failed .\n");
-      then fail();
-        
-  end matchcontinue;
-end expressionWithOpts;
-
-
-public function makeEscapedExp
-  input TplAbsyn.Expression inExpression;
-  input list<TplAbsyn.EscOption> inOptions;
-  
-  output TplAbsyn.Expression outExpression;
-algorithm
-  (outExpression) := matchcontinue (inExpression, inOptions)
-    local
-      TplAbsyn.Expression exp;
-      list<TplAbsyn.EscOption> opts;
-    
-   case (exp, {})
-      then exp;
-   
-   case (exp, opts as (_::_))
-      then TplAbsyn.ESCAPED(exp, opts);
-        
-  end matchcontinue;
-end makeEscapedExp;
-/*
-separator(lesc,resc):
-	expression(lesc,resc):sep => { ("separator", SOME(exp)) }
-	|
-	_ => {}
-
-*/
-/*
-public function separator
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output list<TplAbsyn.EscOption> outSepOption;
-algorithm
-  (outChars, outLineInfo, outSepOption) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
-      list<TplAbsyn.Expression> expLst;
-      TplAbsyn.EscOption sopt;
-      list<TplAbsyn.EscOption> opts;
-    
-   case (chars, linfo, lesc, resc)
-      equation
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, true);
-        //failure(TplAbsyn.ERROR_EXP() = exp);
-      then (chars, linfo, { ("separator",SOME(exp)) } );
-   
-   case (chars, linfo, _, _)
-      then (chars, linfo, { } );
-   
-  end matchcontinue;
-end separator;
-*/
-/*
-public function isErrorExp
-  input TplAbsyn.Expression inExp;
-  output Boolean outIsErrorExp;  
-algorithm
-  outIsErrorExp := matchcontinue (inExp)
-    
-   case ERROR_EXP() then true;
-   case _           then false;
-      
-  end matchcontinue;
-end isErrorExp;
-*/
-
-/*
-escapedOptions(lesc,resc):
-	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
-	=> (id, expOpt) :: opts
-	|
-	_ => {} 
-
-*/
-public function escapedOptions
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output list<TplAbsyn.EscOption> outOptions;
-algorithm
-  (outChars, outLineInfo, outOptions) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
-      Option<TplAbsyn.Expression> expOpt;
-      list<TplAbsyn.Expression> expLst;
-      TplAbsyn.EscOption sopt;
-      list<TplAbsyn.EscOption> opts;
-    
-   case (";" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, id) = identifierNoOpt(chars, linfo);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, expOpt) = escOptionExp(chars, linfo, lesc, resc);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
-      then (chars, linfo, (id, expOpt) :: opts);
-   
-   case (chars, linfo, _, _)
-      then (chars, linfo, {} );
-   
-  end matchcontinue;
-end escapedOptions;
-/*
-escOptionExp(lesc,resc):
-	'=' expression(lesc,resc):exp
-	  => SOME(exp)
-	|
-	_ => NONE
-*/
-public function escOptionExp
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output Option<TplAbsyn.Expression> outExpOption;
-algorithm
-  (outChars, outLineInfo, outExpOption) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
-      Option<TplAbsyn.Expression> expOpt;
-      list<TplAbsyn.Expression> expLst;
-      TplAbsyn.EscOption sopt;
-      list<TplAbsyn.EscOption> opts;
-    
-   case ("=" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, SOME(exp));
-   
-   case (chars, linfo, _, _)
-      then (chars, linfo, NONE );
-   
-  end matchcontinue;
-end escOptionExp;
-
-
-/*
-must not fail
-nonTemplateExprWithOpts(lesc,resc):
-	nonTemplateExp(lesc,resc):exp  
-	  escapedOptions:opts	
-	=> makeEscapedExp(exp, opts)
-*/
-/*
-public function nonTemplateExprWithOpts
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
-algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String c, lesc, resc;
-      Boolean isD;
-      TplAbsyn.Ident id;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.TypedIdents fields,inargs,outargs;
-      TplAbsyn.TypeSignature ts;
-      Tpl.StringToken st;
-      TplAbsyn.Expression exp, bexp;
-      list<TplAbsyn.Expression> expLst;
-      list<TplAbsyn.EscOption> sopt, opts;
-    
-   case (chars, linfo, lesc, resc)
-      equation
-        (chars, linfo, exp) = nonTemplateExp(chars, linfo, lesc, resc);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, opts) = escapedOptions(chars, linfo, lesc, resc);
-        exp = makeEscapedExp(exp, opts);
-      then (chars, linfo, exp);
-   
-   case (chars, linfo, _, _) 
-      equation
-        Debug.fprint("failtrace", "!!!Parse error - TplParser.nonTemplateExprWithOpts failed .\n");
-      then fail();
-        
-  end matchcontinue;
-end nonTemplateExprWithOpts;
-*/
-/*
-must not fail
-nonTemplateExp(lesc,resc):
-	'(' nonTemplateExprWithOpts(lesc,resc):eexp ')'
-	  => eexp
-	|
-	identifier:id '=' expression(lesc,resc):exp
-	     => TEXT_CREATE(id,exp)
-	 |
-	identifier:id '+=' expression(lesc,resc):exp
-	     => TEXT_ADD(id,exp)
-	 |
-	pathIdent:name  funCall(name,lesc,resc):exp  	   
-	     =>  exp
-*/
-/*
-public function nonTemplateExp
-  input list<String> inChars;
-  input LineInfo inLineInfo;
-  input String inLeftEsc;
-  input String inRightEsc;
-  
-  output list<String> outChars;
-  output LineInfo outLineInfo;
-  output TplAbsyn.Expression outExpression;
-algorithm
-  (outChars, outLineInfo, outExpression) := matchcontinue (inChars, inLineInfo, inLeftEsc, inRightEsc)
-    local
-      list<String> chars;
-      LineInfo linfo;
-      String lesc, resc;
-      TplAbsyn.PathIdent name;
-      TplAbsyn.Expression exp;
-      TplAbsyn.Ident id;
-      
-   
-   case ("(" :: chars, linfo, lesc, resc)
-      equation
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = nonTemplateExprWithOpts(chars, linfo, lesc, resc);
-        (chars, linfo) = interleaveExpectChar(chars, linfo, ")");
-        //(")" :: chars) = chars;
-      then (chars, linfo, exp);
-  
-  case (chars, linfo, lesc, resc)
-      equation
-        (chars, id) = identifier(chars);
-        (chars, linfo) = interleave(chars, linfo);
-        ("=":: chars) = chars;
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.TEXT_CREATE(id, exp));
-  
-  case (chars, linfo, lesc, resc)
-      equation
-        (chars, id) = identifier(chars);
-        (chars, linfo) = interleave(chars, linfo);
-        ("+"::"=":: chars) = chars;
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
-      then (chars, linfo, TplAbsyn.TEXT_ADD(id, exp));
-  
-  case (chars, linfo, lesc, resc)
-      equation
-        (chars, linfo, name) = pathIdent(chars, linfo);
-        (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = funCall(chars, linfo, name, lesc, resc);
-      then (chars, linfo, exp);
-  
-  case (chars, linfo, lesc, resc)
-      equation
-        linfo = parseError(chars, linfo, "Expecting a non-template expression: no-return function call or text variable creation/addition (var = exp or var += exp) at the position.", true);
-      then (chars, linfo, TplAbsyn.ERROR_EXP());
-   
-   
-   case (_, _, _, _)
-     equation
-       Debug.fprint("failtrace", "!!!Parse error - TplParser.nonTemplateExp failed.\n");
-     then fail();      
-  end matchcontinue;
-end nonTemplateExp;
-*/
-/*
-public function ensurePathIdentBeIdent
-  input TplAbsyn.PathIdent inPathIdent;  
-  output TplAbsyn.Ident outIdent;
-algorithm
-  (outIdent) := 
-  matchcontinue (inPathIdent)
-    local
-      TplAbsyn.Ident id;
-      
-   case (TplAbsyn.IDENT(id))
-      then id;
-
-   case (TplAbsyn.PATH_IDENT(ident = _))
-     equation
-       Debug.fprint("failtrace", "Parse error - an identifier expected but found a (dot)path.\n");
-     then fail();
-   
-  end matchcontinue;
-end ensurePathIdentBeIdent;
-*/
 
 /*
 conditionExp(lesc,resc):
 	'if' condArgExp(lesc,resc):(isNot, lhsExp, rhsMExpOpt)
-	'then' expression(lesc,resc):trueBr
+	'then' expressionLet(lesc,resc):trueBr
 	elseBranch(lesc,resc):elseBrOpt
-	 => CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBranch:elseBrOpt)
+	 => CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt)
 */
 public function conditionExp
   input list<String> inChars;
@@ -5406,7 +5346,7 @@ algorithm
      equation
        afterKeyword(chars);
        (chars, linfo) = interleave(chars, linfo);
-       (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);        
+       (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);        
      then (chars, linfo, exp);
    
    //error not a keyword
@@ -5414,8 +5354,8 @@ algorithm
    case (chars, linfo, lesc, resc)
      equation
        (_, false) = isKeyword(chars, "t"::"h"::"e"::"n"::{});
-       (linfo) = parseError(chars, linfo, "Expected 'then' keyword at the position.", true);
-       (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+       (linfo) = parseError(chars, linfo, "Expected 'then' keyword at the position.", false);
+       (chars, linfo, exp) = expressionLet(chars, linfo, lesc, resc);
      then (chars, linfo, exp);
    
    case (_,_,_,_) 
@@ -5429,7 +5369,7 @@ end thenBranch;
 
 /*
 elseBranch(lesc,resc):
-	'else' expression(lesc,resc):elseBr
+	'else' expressionLet(lesc,resc):elseBr
 	  => SOME(elseBr)
 	|
 	_ => NONE
@@ -5467,7 +5407,7 @@ algorithm
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, elseBr) = expression(chars, linfo, lesc, resc, false);        
+        (chars, linfo, elseBr) = expressionLet(chars, linfo, lesc, resc);        
       then (chars, linfo, SOME(elseBr));
    
    case (chars, linfo, lesc, resc)
@@ -5478,10 +5418,10 @@ end elseBranch;
 /*
 must not fail
 condArgExp:
-	'not' expression(lesc,resc):lhsExp
+	'not' expressionPlus(lesc,resc):lhsExp
 	  => (true, lhsExp, NONE)
 	|
-	expression(lesc,resc):lhsExp
+	expressionPlus(lesc,resc):lhsExp
 	//  condArgRHS:(isNot, rshMExpOpt)
 	{ isNot = false }
 	 => (isNot,lhsExp, rhsMExpOpt)
@@ -5521,12 +5461,12 @@ algorithm
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, lhsExp) = expression(chars, linfo, lesc, resc, false);        
+        (chars, linfo, lhsExp) = expressionPlus(chars, linfo, lesc, resc);        
       then (chars, linfo, true, lhsExp, NONE);
    
    case (chars, linfo, lesc, resc)
       equation
-        (chars, linfo, lhsExp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo, lhsExp) = expressionPlus(chars, linfo, lesc, resc);
         //(chars, linfo) = interleave(chars, linfo);
         //(chars, linfo, isNot, rhsMExpOpt) = condArgRHS(chars, linfo);
         //isNot = false;        
@@ -5596,12 +5536,16 @@ algorithm
   end matchcontinue;
 end condArgRHS;
 */
+
+
 /*
 optional, can fail
 matchExp(lesc,resc):
-	'match' expression:exp 
-	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }
-	 => MATCH(exp, mcaseLst)
+	'match' expressionIf:exp 
+	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }//not optional
+	  matchElseCase(lesc,resc):elseLst
+	  matchEndMatch
+	 => MATCH(exp, listAppend(mcaseLst, elseLst))
 	//|
 	//matchCaseList(lesc,resc):mcaseLst { (_::_) = mcaseLst }
 	//=> MATCH(BOUND_VALUE(IDENT("it")), mcaseLst) 
@@ -5639,7 +5583,7 @@ algorithm
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars, linfo, exp) = expression(chars, linfo, lesc, resc, false);
+        (chars, linfo, exp) = expressionIf(chars, linfo, lesc, resc);
         (chars, linfo, mcaseLst) = matchCaseListNoOpt(chars, linfo, lesc, resc);
         (chars, linfo) = interleave(chars, linfo);
         (chars, linfo, elseLst) = matchElseCase(chars, linfo, lesc, resc);
@@ -5741,7 +5685,7 @@ algorithm
       equation
         afterKeyword(chars);
         (chars, linfo) = interleave(chars, linfo);
-        (chars,linfo,exp) = expression(chars, linfo, lesc, resc, false);
+        (chars,linfo,exp) = expressionLet(chars, linfo, lesc, resc);
       then (chars, linfo, { (TplAbsyn.REST_MATCH(), exp) } );
    
    case (chars, linfo, lesc, resc)

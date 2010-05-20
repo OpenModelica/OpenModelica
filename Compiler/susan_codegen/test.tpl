@@ -101,10 +101,16 @@ end mapString;
 template mapIntString(Integer intPar, String stPar) ::= '(int:<%intPar%>,str:<%stPar%>)'
 end mapIntString;
 
-template testMap(list<Integer> ints) ::= (ints |> it => mapInt(it) |> it => mapString(it) ;separator=", ")
+template testMap(list<Integer> ints) ::= 
+(ints |> it => 
+   (mapInt(it) |> it => mapString(it)) 
+ ;separator=", ")
 end testMap;
 
-template testMap2(list<Integer> ints) ::= (ints |> int => mapInt(it) |> st => mapIntString(int, st) ;separator=", ")
+template testMap2(list<Integer> ints) ::= 
+(ints |> int => 
+   (mapInt(it) |> st => mapIntString(int, st)) 
+ ;separator=", ")
 end testMap2;
 
 template testMap3(list<list<Integer>> lstOfLst) ::= 
@@ -113,7 +119,9 @@ template testMap3(list<list<Integer>> lstOfLst) ::=
 	;separator=";\n"; anchor)
 end testMap3;
 
-template testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst |> it => it |> it => mapInt(it)
+template testMap4(list<list<Integer>> lstOfLst) ::= 
+  lstOfLst |> it => 
+    (it |> it => mapInt(it))
 end testMap4;
 
 template testMap5(list<Integer> ints) ::= (ints |> it => mapString(mapInt(it)) ;separator=", ")
@@ -274,7 +282,9 @@ end genericTest7;
 template genericTest8(list<Integer> lst) ::= listReverse(lst) |> it => '<%it%>th revesed'
 end genericTest8;
 
-template genericTest9(list<list<String>> lst) ::= listReverse(lst) |> it => listReverse(it) |> it => '<%it%>hej!'
+template genericTest9(list<list<String>> lst) ::= 
+  listReverse(lst) |> it => 
+    (listReverse(it) |> it => '<%it%>hej!')
 end genericTest9;
 
 //Error - unmatched type for type variable 'TypeVar'. Firstly inferred 'String', next inferred 'Integer'(dealiased 'Integer').

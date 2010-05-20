@@ -68,7 +68,21 @@ one-line-templ( EndEsc):
 STRING(EndEsc ): //always is processed on one line //no escaping
 	( ^'<%' | ^EndEsc )+  //take whatever except '<%' and  EndEsc if SOME, or '>>' if NONE 
 	     
-
+/* expression operators precedence and associativity (from lowest to highest)
+ *   ; option  |  no assoc. -  n-ary
+ *   |> =>     |  no assoc. - ternary (binary de-facto) //will be left assoc.
+ *   then,else |  no assoc. //to allow nesting of if and/or match ... else always belongs to closest form (if or match)
+ *   let       |  no assoc. - binary or ternary // the precedence for the result expression here ... the bounded expression is full expression - similar to ... let b = (bounded-expr) in result-expr  
+ *   match     |  no assoc. 
+ *   if        |  no assoc.
+ *   ,         |  no assoc. - n-ary //preserve this precedence for future usage
+ *   not       |  unary
+ *   +         |  left assoc. - binary
+ *   f()       |  unary
+ *   . //dot   |  left assoc. - binary       
+ *   &         |  unary
+ *   (), {}    |  no assoc.
+ */ 
 expression:
 	template
 	|
@@ -532,16 +546,49 @@ templArgs_rest
 
 
 expression(lesc,resc):
-	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
-	   => TEMPLATE(lexp::expLst}, "let", "");
-	|
-	expression_base(lesc,resc):bexp  expression_tail(bexp,lesc,resc):exp => exp 
+	expressionNoOptions(lesc,resc):exp  escapedOptions:opts	
+	  => makeEscapedExp(exp, opts)
 
+escapedOptions(lesc,resc):
+	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
+	=> (id, expOpt) :: opts
+	|
+	_ => {} 
+
+escOptionExp(lesc,resc):
+	'=' expressionNoOptions(lesc,resc):exp
+	  => SOME(exp)
+	|
+	_ => NONE
+
+expressionNoOptions(lesc,resc):
+	expressionLet(lesc,resc):expLet  mapTailOpt(lesc,resc,expLet):exp
+	  => exp
+
+mapTailOpt(headExp,lesc,resc):
+	'|>' matchBinding:mexp  
+	indexedByOpt:idxNmOpt //TODO: 'indexedby' in TplAbsyn	
+	'=>' expressionLet(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
+	|
+	_ => headExp
+
+indexedByOpt:
+	'indexedby' identifier:id
+		=> SOME(id)
+	|
+	_ => NONE
+		
+expressionLet(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", ""); //TODO: should be a LET_EXPRESSION()
+	|
+	expressionMatch(lesc,resc):exp
+		
 concatLetExp_rest(lesc,resc):
 	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst 
 	  =>  lexp::expLst
 	|
-	expression(lesc,resc):exp
+	expressionMatch(lesc,resc):exp
 	  => {exp}
 
 //not optional, at least one must match
@@ -563,6 +610,7 @@ letExp(lesc,resc):
 	letBinding:bd '=' expression(lesc,resc):exp
 	  =>  LET_BINDING(bd, exp)
 
+//TODO:
 letBinding:
 	'(' letBinding:headMExp  ',' letBinding:secMExp  letBindingTupleRest:mrest ')'
 	  => TUPLE_MATCH(headMExp :: secMExp :: mrest)
@@ -578,7 +626,38 @@ letBindingTupleRest:
 	  => mexp :: mrest
 	|
 	_ => {}
-	
+
+
+expressionMatch(lesc,resc):
+	matchExp(lesc,resc):exp 
+	  => exp
+	|
+	expressionIf(lesc,resc):exp
+	  => exp
+
+expressionIf(lesc,resc):
+	conditionExp(lesc,resc):exp 
+	  => exp
+	|
+	expressionPlus(lesc,resc):exp
+	  => exp
+
+expressionPlus(lesc,resc):
+	expression_base(lesc,resc):bexp  plusTailOpt(lesc,resc,bexp):exp
+	  => exp
+		
+plusTailOpt(lesc,resc,bexp):	
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+	  => TEMPLATE(bexp::exp::expLst, "+", "");
+	|
+	_ => bexp 
+
+concatPlus_rest(lesc,resc):
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
+	|
+	_ => {}
+
+
 expression_base(lesc,resc):
 	stringConstant:strRevList 
 	  => STR_TOKEN(makeStrTokFromRevStrList(strRevList))
@@ -588,49 +667,21 @@ expression_base(lesc,resc):
 	|
 	templateExp(lesc,resc)
 	|
-	conditionExp(lesc,resc) //TODO: lower precedence
-	|
-	matchExp(lesc,resc) //TODO: lower precedence
-	|
 	'{' '}'  => MAP_ARG_LIST({})	                                                           
 	|
-	'{' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
+	'{' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst '}'   //  list construction with possible mixed scalars and lists 
 	                                                           //… useful in map/concatenation context
 	   => MAP_ARG_LIST(exp::expLst)	                                                           
 	|
-	'(' expressionWithOpts(lesc,resc):exp ')'
+	'(' expression(lesc,resc):exp ')'
 	   => exp
-	|//TODO: ref Text buffer 
-	'&' identifier:id  => BOUND_VALUE(IDENT(name))
+	| 
+	'&' identifier:id  
+	  => BOUND_VALUE(IDENT(name))  //TODO: ref Text buffer
 	|// TODO: create an optional/error reporting variant of pathIdent
 	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
-	|
-	parseError("Not able to parse an expression from this point.")
 	
-expression_tail(bexp,lesc,resc):
-	//TODO: 'indexedby'
-	//TODO: other precedence --> be left assoc instead of right 
-	'|>' matchBinding:mexp  indexedBy:idxNmOpt
-	'=>' expression(lesc,resc):exp  =>  MAP(bexp,mexp,exp)
-	|
-	//':' expression(lesc,resc):exp  =>  MAP(bexp,BIND_MATCH('it'),exp)
-	//|
-	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
-	=> TEMPLATE(bexp::exp::expLst, "+", "");
-	|
-	_ => bexp 
-
-//is optional
-indexedBy:
-	'indexedby' identifier:id
-		=> SOME(id)
-	|
-	_ => NONE
-
-concatExp_rest(lesc,resc):
-	'+' expression(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
-	|
-	_ => {}
+	
 	
 boundValueOrFunCall(name,lesc,resc):
 	funCall(name,lesc,resc):exp  => exp
@@ -641,12 +692,12 @@ boundValueOrFunCall(name,lesc,resc):
 funCall(name,lesc,resc):
 	'(' ')' => FUN_CALL(name,{})
 	|
-	'(' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst ')'  //template  or  intrinsic function
+	'(' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst ')'  //template  or  intrinsic function
 	  => FUN_CALL(name,exp::expLst)
 	
 
 expressionList_rest(lesc,resc):	
-	',' expression(lesc,resc):exp  expressionList_rest(lesc,resc):expLst => exp::expLst
+	',' expressionPlus(lesc,resc):exp  expressionList_rest(lesc,resc):expLst => exp::expLst
 	|
 	_ => {} 
 
@@ -793,7 +844,7 @@ restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, a
 	   & restOfTemplLineAfterEmptyExp(lesc,resc,isSingleQuote, expList, indStack, actInd, lineInd, accStrChars):exp
 	   => exp
 	| 
-	(lesc) '%' expressionWithOpts(lesc,resc):eexp (resc)
+	(lesc) '%' expression(lesc,resc):eexp (resc)
 	   { (expList, indStack, actInd) = onEscapedExp(eexp, expList, indStack, actInd, lineInd, accStrChars) }
 	   & restOfTemplLine(lesc,resc,isSingleQuote, expList, indStack, actInd, actInd, {}):exp
 	   => exp
@@ -824,47 +875,23 @@ restOfTemplLine(lesc, resc, isSingleQuote, expList, indStack, actInd, lineInd, a
 	  => exp
 	
 
-expressionWithOpts(lesc,resc):
-	expression(lesc,resc):exp  
-	  //separator:sopt 
-	  escapedOptions:opts	
-	=> makeEscapedExp(exp, listAppend(sopt,opts))
-
-//separator(lesc,resc):
-	//expression(lesc,resc):exp => { ("separator", SOME(exp)) }
-	//|
-	//_ => {}
-
-escapedOptions(lesc,resc):
-	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
-	=> (id, expOpt) :: opts
-	|
-	_ => {} 
-
-escOptionExp(lesc,resc):
-	'=' expression(lesc,resc):exp
-	  => SOME(exp)
-	|
-	_ => NONE
-
-
 conditionExp(lesc,resc):
 	'if' condArgExp(lesc,resc):(isNot, lhsExp, rhsMExpOpt)
-	'then' expression(lesc,resc):trueBr
+	'then' expressionLet(lesc,resc):trueBr
 	elseBranch(lesc,resc):elseBrOpt
 	 => CONDITION(isNot, lhsExp, rhsMExpOpt, trueBr, elseBrOpt)
 
 elseBranch(lesc,resc):
-	'else' expression(lesc,resc):elseBr
+	'else' expressionLet(lesc,resc):elseBr
 	  => SOME(elseBr)
 	|
 	_ => NONE
 
 condArgExp:
-	'not' expression(lesc,resc):lhsExp
+	'not' expressionPlus(lesc,resc):lhsExp
 	  => (true, lhsExp, NONE)
 	|
-	expression(lesc,resc):lhsExp
+	expressionPlus(lesc,resc):lhsExp
 	//  condArgRHS:(isNot, rshMExpOpt)
 	{ isNot = false }
 	 => (isNot,lhsExp, rhsMExpOpt)
@@ -878,7 +905,7 @@ condArgExp:
 
 	
 matchExp(lesc,resc):
-	'match' expression:exp 
+	'match' expressionIf:exp 
 	  matchCaseList(lesc,resc):mcaseLst  { (_::_) = mcaseLst }//not optional
 	  matchElseCase(lesc,resc):elseLst
 	  matchEndMatch
@@ -889,11 +916,11 @@ matchExp(lesc,resc):
 
 matchCase(lesc,resc):
 	'case'  matchBinding:mexp	matchCaseHeads(): mexpHeadLst  
-	'then'  expression:exp
+	'then'  expressionLet:exp
 	   => makeMatchCaseLst(mexp::mexpHeadLst,exp)
 
 matchElseCase(lesc,resc):
-    'else' expression:exp
+    'else' expressionLet:exp
 	  => {(REST_MATCH(), exp)}
 	|
 	_ => {}

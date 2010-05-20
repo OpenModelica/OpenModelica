@@ -130,11 +130,11 @@ private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 public override SimVarInfo[] VariableInfos { get { return VariableInfosStatic; } }
 
 private static readonly bool[] InitialFixedStatic = new bool[NX + NX + NY + NP] {
-    <%{ if vars.stateVars      then "//states\n" + initFixed(vars.stateVars),
-       if vars.derivativeVars then "//derivatives\n" + initFixed(vars.derivativeVars),
-       if vars.algVars        then "//algebraics\n" + initFixed(vars.algVars), 
-       if vars.paramVars      then "//parameters\n" + initFixed(vars.paramVars)
-     } ;separator=",\n"%>
+    <%{ (if vars.stateVars      then "//states\n" + initFixed(vars.stateVars)),
+        (if vars.derivativeVars then "//derivatives\n" + initFixed(vars.derivativeVars)),
+        (if vars.algVars        then "//algebraics\n" + initFixed(vars.algVars)), 
+        (if vars.paramVars      then "//parameters\n" + initFixed(vars.paramVars))
+      } ;separator=",\n"%>
 };
 public override bool[] InitialFixed { get { return InitialFixedStatic; } }
 
