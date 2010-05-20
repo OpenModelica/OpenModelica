@@ -208,13 +208,6 @@ static int set_ldflags(char *str)
   return 0;
 }
 
-RML_BEGIN_LABEL(System__userIsRoot)
-{
-  rmlA0 = mk_icon(geteuid() == 0 ? 1 : 0);
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 RML_BEGIN_LABEL(System__trimChar)
 {
   char* str = RML_STRINGDATA(rmlA0);
@@ -1493,6 +1486,13 @@ RML_END_LABEL
 // windows and mingw32
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
+RML_BEGIN_LABEL(System__userIsRoot)
+{
+  rmlA0 = mk_icon(0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
 void System_5finit(void)
 {
   char* path;
@@ -2452,6 +2452,13 @@ char* normalizePath(const char* src)
 }
 /*
 */
+
+RML_BEGIN_LABEL(System__userIsRoot)
+{
+  rmlA0 = mk_icon(geteuid() == 0 ? 1 : 0);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__isSameFile)
 {
