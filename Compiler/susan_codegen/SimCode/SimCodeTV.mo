@@ -160,6 +160,7 @@ package SimCode
     record VARINFO
       Integer numHelpVars;
       Integer numZeroCrossings;
+      Integer numTimeEvents;
       Integer numStateVars;
       Integer numAlgVars;
       Integer numParams;

@@ -174,7 +174,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <<
   #define NHELP <%varInfo.numHelpVars%>
   #define NG <%varInfo.numZeroCrossings%> // number of zero crossings
-  #define NG_SAM -1 // number of zero crossings that are samples
+  #define NG_SAM <%varInfo.numTimeEvents%> // number of zero crossings that are samples
   #define NX <%varInfo.numStateVars%>
   #define NY <%varInfo.numAlgVars%>
   #define NP <%varInfo.numParams%> // number of parameters
@@ -188,7 +188,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   
   static DATA* localData = 0;
   #define time localData->timeValue
-  extern "C" { /* adrpo: this is needed for Visual C++ compilation to work! */
+  extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
     const char *model_name="<%name%>";
     const char *model_dir="<%directory%>";
   }
@@ -232,6 +232,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   
   static char init_fixed[NX+NX+NY+NP] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
+
         '<%globalDataFixedInt(isFixed)%> /* <%cref(origName)%> */'
       ;separator=",\n"),
       (vars.derivativeVars |> SIMVAR(__) =>
@@ -431,6 +432,7 @@ case EXTOBJINFO(__) then
     returnData->nInputVars = NI;
     returnData->nOutputVars = NO;
     returnData->nZeroCrossing = NG;
+    returnData->nRawSamples = NG_SAM;
     returnData->nInitialResiduals = NR;
     returnData->nHelpVars = NHELP;
     returnData->stringVariables.nParameters = NPSTR;
@@ -621,6 +623,14 @@ case EXTOBJINFO(__) then
       returnData->outputComments = 0;
     }
   
+    if(flags & RAWSAMPLES && returnData->nRawSamples) {
+      returnData->rawSampleExps = (sample_raw_time*) malloc(sizeof(sample_raw_time)*returnData->nRawSamples);
+      assert(returnData->rawSampleExps);
+      memset(returnData->rawSampleExps,0,sizeof(sample_raw_time)*returnData->nRawSamples);
+    } else {
+      returnData->rawSampleExps = 0;
+    }
+
     if (flags & EXTERNALVARS) {
       returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);
       if (!returnData->extObjs) {
@@ -907,12 +917,15 @@ end functionHandleZeroCrossing;
 template functionInitSample(list<ZeroCrossing> zeroCrossings)
   "Generates function initSample() in simulation file."
 ::=
+  let &varDecls = buffer "" /*BUFD*/
+  let timeEventCode = timeEventsTpl(zeroCrossings, &varDecls /*BUFC*/)
   <<
   /* Initializes the raw time events of the simulation using the now
-     calcualted parameters.
-     TODO: Implement this in Susan. */
+     calcualted parameters. */
   void function_sampleInit()
   {
+    int i = 0; // Current index
+    <%timeEventCode%>
   }
   >>
 end functionInitSample;
@@ -1313,7 +1326,7 @@ template zeroCrossingTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     <<
     <%preExp%>
-    ZEROCROSSING(<%index%>, Sample(*t, <%e1%>, <%e2%>));
+    ZEROCROSSING(<%index%>,Sample(*t,<%e1%>,<%e2%>));
     >>
   else
     <<
@@ -1321,6 +1334,39 @@ template zeroCrossingTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
     >>
 end zeroCrossingTpl;
 
+
+template timeEventsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
+ "Generates code for zero crossings."
+::=
+  (zeroCrossings |> ZERO_CROSSING(__) indexedby i0 =>
+    timeEventTpl(i0, relation_, &varDecls /*BUFC*/)
+  ;separator="\n")
+end timeEventsTpl;
+
+
+template timeEventTpl(Integer index, Exp relation, Text &varDecls /*BUFP*/)
+ "Generates code for a zero crossing."
+::=
+  match relation
+  case RELATION(__) then
+    <<
+    /* <%index%> Not a time event */
+    >>
+  case CALL(path=IDENT(name="sample"), expLst={start, interval}) then
+    let &preExp = buffer "" /*BUFD*/
+    let e1 = daeExp(start, contextOther, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let e2 = daeExp(interval, contextOther, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    <<
+    <%preExp%>
+    localData->rawSampleExps[i].start = <%e1%>;
+    localData->rawSampleExps[i].interval = <%e2%>;
+    localData->rawSampleExps[i++].zc_index = <%index%>;
+    >>
+  else
+    <<
+    ZERO CROSSING ERROR
+    >>
+end timeEventTpl;
 
 template zeroCrossingOpFunc(Operator op)
  "Generates zero crossing function name for operator."
@@ -3391,6 +3437,7 @@ template daeExpReductionStartValue(String reduction_op, String type)
     end match
   case "max" then 
     match type
+
     case "modelica_integer" then "-1073741823"
     case "modelica_real" then "-1.e60"
     else "INVALID_TYPE"

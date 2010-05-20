@@ -145,6 +145,7 @@ uniontype VarInfo
   record VARINFO
     Integer numHelpVars;
     Integer numZeroCrossings;
+    Integer numTimeEvents;
     Integer numStateVars;
     Integer numAlgVars;
     Integer numParams;
@@ -3836,14 +3837,15 @@ algorithm
   varInfo :=
   matchcontinue (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
     local
-      Integer nx, ny, np, ng, next, ny_string, np_string, ng_1;
+      Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
     case (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
       equation
-        (nx, ny, np, ng, _ /* ng_sam */, next, ny_string, np_string) =
+        (nx, ny, np, ng, ng_sam, next, ny_string, np_string) =
           DAELow.calculateSizes(dlow);
         ng_1 = filterNg(ng);
+        ng_sam_1 = filterNg(ng_sam);
       then
-        VARINFO(numHelpVars, ng_1, nx, ny, np, numOutVars, numInVars,
+        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, np, numOutVars, numInVars,
                 numResiduals, next, ny_string, np_string);
     case (_,_,_,_,_)
       equation
