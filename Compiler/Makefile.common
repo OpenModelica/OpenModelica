@@ -28,6 +28,11 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/runtime/systemimplmisc.o $(sr
 	$(srcdir)/runtime/settingsimpl.o \
 	$(srcdir)/runtime/SimulationResults.o
 
+# The Susan-generated MO sources
+SUSANMO= \
+	SimCodeC.mo \
+	SimCodeCSharp.mo
+
 # The MO sources
 SRCMO= Absyn.mo \
 	AbsynDep.mo \
@@ -82,9 +87,8 @@ SRCMO= Absyn.mo \
 	PrefixUtil.mo \
 	Static.mo \
 	SimCode.mo \
-	SimCodeC.mo \
-	SimCodeCSharp.mo \
 	SimCodegen.mo \
+        $(SUSANMO) \
 	Types.mo \
 	TaskGraph.mo \
     Tpl.mo \
