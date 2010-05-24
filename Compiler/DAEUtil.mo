@@ -5676,7 +5676,8 @@ algorithm
       Integer true_eq,false_eq;
       String elt_str;
       DAE.Element elt;
-      list<DAE.Exp> cond;
+      list<DAE.Exp> cond,fbsExp;
+      list<list<DAE.Exp>> tbsExp;
       list<DAE.Element> false_branch,equations;
       list<list<DAE.Element>> true_branch;
       DAE.ElementSource source "the origin of the element";
@@ -5711,16 +5712,24 @@ algorithm
       then
         {};*/
 
-
-    // handle the default case.
-    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
+    // This case does not work correctly if a branch contains an if-equation, see bug 1229
+    /*case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
       equation
         true_eq = ifEqToExpr2(true_branch);
         false_eq = listLength(false_branch);
         (true_eq == false_eq) = true;
         equations = makeEquationsFromIf(cond, true_branch, false_branch, source);
       then
-        equations;
+        equations;*/
+    // handle the default case.
+    case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
+      equation
+        _ = countEquationsInBranches(true_branch, false_branch);
+        fbsExp = makeEquationLstToResidualExpLst(false_branch);
+        tbsExp = Util.listMap(true_branch, makeEquationLstToResidualExpLst);
+        equations = makeEquationsFromResiduals(cond, tbsExp, fbsExp, source);
+      then
+        equations;        
     case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval as true)
       then
         {elt};
@@ -5755,8 +5764,10 @@ protected function countEquations
 algorithm
   nrOfEquations := matchcontinue(equations)
     local
-      list<DAE.Element> rest;
-      Integer nr;
+      list<list<DAE.Element>> tb;
+      list<DAE.Element> rest,fb;
+      DAE.Element elt;
+      Integer nr,n;
     // empty case
     case ({}) then 0;
     // ignore assert!
@@ -5765,13 +5776,47 @@ algorithm
     // ignore terminate!
     case (DAE.TERMINATE(message=_)::rest)
       then countEquations(rest);
-    // any other case, just add 1
-    case (_::rest)
+    // For an if-equation, count equations in branches    
+    case (DAE.IF_EQUATION(equations2=tb,equations3=fb)::rest)
       equation
+        n = countEquationsInBranches(tb,fb);
+        nr = countEquations(rest);
+      then nr + n;  
+    case (DAE.INITIAL_IF_EQUATION(equations2=tb,equations3=fb)::rest)
+      equation
+        n = countEquationsInBranches(tb,fb);
+        nr = countEquations(rest);
+      then nr + n;  
+    // any other case, just add 1
+    case (elt::rest)
+      equation
+        failure(isIfEquation(elt));
         nr = countEquations(rest);
       then nr + 1;
   end matchcontinue;
 end countEquations;
+
+protected function countEquationsInBranches "
+Checks that the number of equations is the same in all branches
+of an if-equation and returns this number"
+  input list<list<DAE.Element>> trueBranches;
+  input list<DAE.Element> falseBranch;
+  output Integer nrOfEquations;
+algorithm
+  nrOfEquations := matchcontinue(trueBranches,falseBranch)
+    local
+      list<list<DAE.Element>> tb;
+      list<DAE.Element> fb;
+      Integer nt,nf;
+    case (tb,fb)
+      equation
+        nt = ifEqToExpr2(tb);
+        nf = countEquations(fb);
+        true=intEq(nt,nf);
+      then
+        nt;   
+  end matchcontinue;
+end countEquationsInBranches;
 
 protected function makeEquationsFromIf
   input list<DAE.Exp> inExp1;
@@ -5814,6 +5859,45 @@ algorithm
         (eq :: rest_res);
   end matchcontinue;
 end makeEquationsFromIf;
+
+protected function makeEquationToResidualExpLst "
+If-equations with more than 1 equation in each branch cannot be transformed
+to a single equation with residual if-expression. This function translates such
+equations to a list of residual if-expressions. Normal equations are translated 
+to a list with a single residual expression."
+  input DAE.Element eq;
+  output list<DAE.Exp> oExpLst;
+algorithm
+  oExpLst := matchcontinue(eq)
+    local
+      list<list<DAE.Element>> tbs;
+      list<DAE.Element> fbs;
+      list<DAE.Exp> conds, fbsExp,exps;
+      list<list<DAE.Exp>> tbsExp;
+      DAE.Element elt;
+      DAE.Exp exp;
+
+    case (DAE.IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
+      equation
+        fbsExp = makeEquationLstToResidualExpLst(fbs);
+        tbsExp = Util.listMap(tbs, makeEquationLstToResidualExpLst);
+        exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
+      then
+        exps;  
+    case (DAE.INITIAL_IF_EQUATION(condition1=conds,equations2=tbs,equations3=fbs))
+      equation
+        fbsExp = makeEquationLstToResidualExpLst(fbs);
+        tbsExp = Util.listMap(tbs, makeEquationLstToResidualExpLst);
+        exps = makeResidualIfExpLst(conds,tbsExp,fbsExp);
+      then
+        exps;  
+    case (elt)
+      equation
+        exp=makeEquationToResidualExp(elt);
+      then
+        {exp};
+  end matchcontinue;
+end makeEquationToResidualExpLst;             
 
 protected function makeEquationToResidualExp ""
   input DAE.Element eq;
@@ -5897,6 +5981,91 @@ algorithm
       then fail();
   end matchcontinue;
 end makeEquationToResidualExp;
+
+protected function makeEquationLstToResidualExpLst 
+  input list<DAE.Element> eqLst;
+  output list<DAE.Exp> oExpLst;
+algorithm
+  oExpLst := matchcontinue(eqLst)
+    local
+      list<DAE.Element> eqs;
+      list<DAE.Exp> exps;
+      list<list<DAE.Exp>> expsLst;
+    case (eqs)
+      equation
+        expsLst = Util.listMap(eqs, makeEquationToResidualExpLst); 
+        exps = Util.listFlatten(expsLst);
+      then 
+        exps;
+  end matchcontinue;
+end makeEquationLstToResidualExpLst;         
+
+protected function makeResidualIfExpLst
+  input list<DAE.Exp> inExp1;
+  input list<list<DAE.Exp>> inExpLst2;
+  input list<DAE.Exp> inExpLst3;
+  output list<DAE.Exp> outExpLst;
+algorithm
+  outExpLst := matchcontinue (inExp1,inExpLst2,inExpLst3)
+    local
+      list<list<DAE.Exp>> tbs,tbsRest;
+      list<DAE.Exp> tbsFirst,fbs,rest_res;
+      list<DAE.Exp> conds;
+      DAE.Exp ifexp,fb;
+
+    case (_,tbs,{})
+      equation
+        Util.listMap0(tbs, Util.assertListEmpty);
+      then {};
+
+    case (conds,tbs,fb::fbs)
+      equation
+        tbsRest = Util.listMap(tbs,Util.listRest);
+        rest_res = makeResidualIfExpLst(conds, tbsRest, fbs);
+
+        tbsFirst = Util.listMap(tbs,Util.listFirst);
+
+        ifexp = Exp.makeNestedIf(conds,tbsFirst,fb);
+      then
+        (ifexp :: rest_res);
+  end matchcontinue;
+end makeResidualIfExpLst;
+
+protected function makeEquationsFromResiduals
+  input list<DAE.Exp> inExp1;
+  input list<list<DAE.Exp>> inExpLst2;
+  input list<DAE.Exp> inExpLst3;
+  input DAE.ElementSource source "the origin of the element";
+  output list<DAE.Element> outExpLst;
+algorithm
+  outExpLst := matchcontinue (inExp1,inExpLst2,inExpLst3,source)
+    local
+      list<list<DAE.Exp>> tbs,tbsRest;
+      list<DAE.Exp> tbsFirst,fbs;
+      list<DAE.Exp> conds;
+      DAE.Exp ifexp,fb;
+      DAE.Element eq;
+      list<DAE.Element> rest_res;
+      DAE.ElementSource src;
+
+    case (_,tbs,{},_)
+      equation
+        Util.listMap0(tbs, Util.assertListEmpty);
+      then {};
+
+    case (conds,tbs,fb::fbs,src)
+      equation
+        tbsRest = Util.listMap(tbs,Util.listRest);
+        rest_res = makeEquationsFromResiduals(conds, tbsRest,fbs,src);
+
+        tbsFirst = Util.listMap(tbs,Util.listFirst);
+
+        ifexp = Exp.makeNestedIf(conds,tbsFirst,fb);
+        eq = DAE.EQUATION(DAE.RCONST(0.0),ifexp,src);
+      then
+        (eq :: rest_res);
+  end matchcontinue;
+end makeEquationsFromResiduals;
 
 public function dumpFlow "
 Author BZ 2008-07, dump flow properties to string."
@@ -7581,6 +7750,16 @@ algorithm
   end matchcontinue;
 end getHeight;
 
-
+protected function isIfEquation "function: isIfEquation
+  Succeeds if Element is an if-equation.
+"
+  input DAE.Element inElement;
+algorithm
+  _:=
+  matchcontinue (inElement)
+    case DAE.IF_EQUATION(condition1 = _) then ();
+    case DAE.INITIAL_IF_EQUATION(condition1 = _) then ();
+  end matchcontinue;
+end isIfEquation;
 
 end DAEUtil;
