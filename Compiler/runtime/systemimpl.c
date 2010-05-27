@@ -216,6 +216,10 @@ RML_BEGIN_LABEL(System__trimChar)
   int start_pos = 0;
   int end_pos = length - 1;
   char* res;
+  if (length == 0) {
+	  rmlA0 = (void*) mk_scon("");
+	  RML_TAILCALLK(rmlSC);
+  }
   while(start_pos < end_pos){
     if(str[start_pos] == char_to_be_trimmed)
       start_pos++;
@@ -224,14 +228,13 @@ RML_BEGIN_LABEL(System__trimChar)
     if(str[start_pos] != char_to_be_trimmed && str[end_pos] != char_to_be_trimmed)
       break;
   }
-  if(end_pos > start_pos){
+  if(end_pos >= start_pos){
     res= (char*)malloc(end_pos - start_pos +2);
     strncpy(res,&str[start_pos],end_pos - start_pos+1);
     res[end_pos - start_pos+1] = '\0';
     rmlA0 = (void*) mk_scon(res);
     free(res);
     RML_TAILCALLK(rmlSC);
-
   }else{
     rmlA0 = (void*) mk_scon("");
     RML_TAILCALLK(rmlSC);
