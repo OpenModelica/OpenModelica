@@ -1454,7 +1454,7 @@ algorithm
       String before, after;
       Real time1,time2;
 
-      /* noEvent propagated to relations */
+      /* noEvent propagated to relations and event triggering functions */
     case(DAE.CALL(Absyn.IDENT("noEvent"),{e},tpl,builtin,tp,inline))
       local
         Boolean tpl,builtin;
@@ -1463,7 +1463,8 @@ algorithm
        equation
          e1 = simplify1(stripNoEvent(e));
          e2 = addNoEventToRelations(e1);
-    then e2;
+         e3 = addNoEventToEventTriggeringFunctions(e2);
+    then e3;
 
     case(DAE.CALL(fn,expl,tpl,builtin,tp,inline))
       local
@@ -1934,6 +1935,44 @@ algorithm
     case((e,i)) then ((e,i));
   end matchcontinue;
 end addNoEventToRelationExp;
+
+public function addNoEventToEventTriggeringFunctions
+" Function that adds a  noEvent() call to all event triggering functions in an expression"
+  input Exp e;
+  output Exp outE;
+algorithm
+  ((outE,_)) := traverseExp(e,addNoEventToEventTriggeringFunctionsExp,0);
+end addNoEventToEventTriggeringFunctions;
+
+protected function addNoEventToEventTriggeringFunctionsExp "
+traversal function for addNoEventToEventTriggeringFunctions"
+  input tuple<Exp,Integer/*dummy*/> inTpl;
+  output tuple<Exp,Integer> outTpl;
+algorithm
+  outTpl := matchcontinue(inTpl)
+  local Exp e; Integer i;
+    case (((e as DAE.CALL(path=_)), i))
+      equation
+        true = isEventTriggeringFunctionExp(e);
+      then ((DAE.CALL(Absyn.IDENT("noEvent"),{e},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),i));
+    case ((e,i)) then ((e,i));
+  end matchcontinue;
+end addNoEventToEventTriggeringFunctionsExp;
+
+protected function isEventTriggeringFunctionExp
+  input DAE.Exp inExp;
+  output Boolean outB;
+algorithm
+  outB := matchcontinue(inExp)
+    case (DAE.CALL(path = Absyn.IDENT("div"))) then true;
+    case (DAE.CALL(path = Absyn.IDENT("mod"))) then true;
+    case (DAE.CALL(path = Absyn.IDENT("rem"))) then true;
+    case (DAE.CALL(path = Absyn.IDENT("ceil"))) then true;
+    case (DAE.CALL(path = Absyn.IDENT("floor"))) then true;
+    case (DAE.CALL(path = Absyn.IDENT("integer"))) then true;
+    case (_) then false;
+  end matchcontinue;
+end isEventTriggeringFunctionExp;
 
 protected function simplifyCref
 " Function for simplifying
