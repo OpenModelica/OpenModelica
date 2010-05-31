@@ -212,10 +212,40 @@ algorithm
   end matchcontinue;
 end fcall0;
 
-public function fcallret
-"function: fcallret
+public function fcallret0
+"function: fcallret0
   Flag controlled calling of given function (2nd arg).
-  The passed functions return value is returned."
+  The passed function gets 0 arguments.
+  The last parameter is returned if the given flag is not set."
+  input String inString;
+  input FuncTypeToType_b inFuncTypeTypeB;
+  input Type_b inTypeB;
+  output Type_b outTypeB;
+  partial function FuncTypeToType_b
+    output Type_b outTypeB;
+  end FuncTypeToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeB := matchcontinue (inString,inFuncTypeTypeB,inTypeB)
+    local
+      Type_b res,def;
+      String flag;
+      FuncTypeToType_b func;
+    case (flag,func,def)
+      equation
+        true = RTOpts.debugFlag(flag);
+        res = func();
+      then
+        res;
+    case (_,_,def) then def;
+  end matchcontinue;
+end fcallret0;
+
+public function fcallret1
+"function: fcallret1
+  Flag controlled calling of given function (2nd arg).
+  The passed function gets 1 arguments.
+  The last parameter is returned if the given flag is not set."
   input String inString;
   input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
   input Type_a inTypeA;
@@ -242,7 +272,7 @@ algorithm
         res;
     case (_,_,_,def) then def;
   end matchcontinue;
-end fcallret;
+end fcallret1;
 
 public function bcall
 "function: bcall
