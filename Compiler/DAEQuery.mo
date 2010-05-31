@@ -46,9 +46,9 @@ import Util;
 import Exp;
 import Absyn;
 import DAE;
-import DAEUtil;
 import Algorithm;
 import RTOpts;
+import DAEDump;
 
 public function writeIncidenceMatrix
   input DAELow.DAELow dlow;
@@ -388,7 +388,7 @@ algorithm
                             streamPrefix = streamPrefix)) :: {}),varno)
       equation
         varnostr = intString(varno);
-        dirstr = DAEUtil.dumpDirectionStr(dir);
+        dirstr = DAEDump.dumpDirectionStr(dir);
         str1 = Exp.printComponentRefStr(cr);
         /*
         paths_lst = Util.listMap(paths, Absyn.pathString);
@@ -400,7 +400,7 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx);
-        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAEDump.dumpTypeStr(var_type);print( " type: "); print(str);
 
         print(" indx = ");
         print(indx_str);
@@ -426,7 +426,7 @@ algorithm
                               streamPrefix = streamPrefix)) :: xs),varno)
       equation
         varnostr = intString(varno);
-        dirstr = DAEUtil.dumpDirectionStr(dir);
+        dirstr = DAEDump.dumpDirectionStr(dir);
         str1 = Exp.printComponentRefStr(cr);
         /*
         paths_lst = Util.listMap(paths, Absyn.pathString);
@@ -438,7 +438,7 @@ algorithm
         print(" ");
         print(path_str);
         indx_str = intString(indx);
-        str = DAEUtil.dumpTypeStr(var_type);print( " type: "); print(str);
+        str = DAEDump.dumpTypeStr(var_type);print( " type: "); print(str);
 
         print(" indx = ");
         print(indx_str);
