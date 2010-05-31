@@ -52,8 +52,11 @@ public import Env;
 public import Prefix;
 public import SCode;
 public import RTOpts;
+public import InnerOuter;
 
-public type Ident = String;
+public 
+type Ident = String;
+type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
 protected import Ceval;
 protected import ClassInf;
@@ -78,6 +81,7 @@ public function elabMod "
   they are provided in, and not the context they are used in."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
@@ -85,7 +89,7 @@ public function elabMod "
   output DAE.Mod outMod;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outMod) := matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
+  (outCache,outMod) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean)
     local
       Boolean impl,finalPrefix;
       list<DAE.SubMod> subs_1;
@@ -103,49 +107,50 @@ algorithm
       Ident str;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
+      InstanceHierarchy ih;
 
     // no modifications
-    case (cache,_,_,SCode.NOMOD(),impl) then (cache,DAE.NOMOD(),DAEUtil.emptyDae);  /* impl */
+    case (cache,_,_,_,SCode.NOMOD(),impl) then (cache,DAE.NOMOD(),DAEUtil.emptyDae);  /* impl */
 
     // no top binding
-    case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),impl)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = NONE)),impl)
       equation
-        (cache,subs_1,dae1) = elabSubmods(cache,env, pre, subs, impl);
+        (cache,subs_1,dae1) = elabSubmods(cache, env, ih, pre, subs, impl);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,NONE),dae1);
 
     // Only elaborate expressions with non-delayed type checking, see SCode.MOD.
-    case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,false)))),impl)
       equation
-        (cache,subs_1,dae1) = elabSubmods(cache, env, pre, subs, impl);
+        (cache,subs_1,dae1) = elabSubmods(cache, env, ih, pre, subs, impl);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
         (cache,e_val) = elabModValue(cache, env, e_1, prop);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, e_1, pre)
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
         "Bug: will cause elaboration of parameters without value to fail,
          But this can be ok, since a modifier is present, giving it a value from outer modifications.." ;
          dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop))),dae);
+        (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))),dae);
 
     // Delayed type checking
-    case (cache,env,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
+    case (cache,env,ih,pre,(m as SCode.MOD(finalPrefix = finalPrefix,eachPrefix = each_,subModLst = subs,absynExpOption = SOME((e,true)))),impl)
       equation
         // print("Mod.elabMod: delayed mod : " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-        (cache,subs_1,dae) = elabSubmods(cache, env, pre, subs, impl);
+        (cache,subs_1,dae) = elabSubmods(cache, env, ih, pre, subs, impl);
       then
         (cache,DAE.MOD(finalPrefix,each_,subs_1,SOME(DAE.UNTYPED(e))),dae);
 
     // redeclarations
-    case (cache,env,pre,(m as SCode.REDECL(finalPrefix = finalPrefix,elementLst = elist)),impl)
+    case (cache,env,ih,pre,(m as SCode.REDECL(finalPrefix = finalPrefix,elementLst = elist)),impl)
       equation
         //elist_1 = Inst.addNomod(elist);
-        (elist_1,dae) = elabModRedeclareElements(cache,env,pre,finalPrefix,elist,impl);
+        (elist_1,dae) = elabModRedeclareElements(cache,env,ih,pre,finalPrefix,elist,impl);
       then
         (cache,DAE.REDECL(finalPrefix,elist_1),dae);
 
     // failure
-    case (cache,env,pre,mod,impl)
+    case (cache,env,ih,pre,mod,impl)
       equation
         /*Debug.fprint("failtrace", "#-- elab_mod ");
         str = SCode.printModStr(mod);
@@ -163,6 +168,7 @@ public function elabModForBasicType "
   Same as elabMod, but if a named Mod is not part of a basic type, fail instead."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.Mod inMod;
   input Boolean inBoolean;
@@ -170,19 +176,18 @@ public function elabModForBasicType "
   output DAE.Mod outMod;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outMod,outDae) := matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
-    case (inCache,inEnv,inPrefix,inMod,inBoolean)
+  (outCache,outMod,outDae) := matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean)
+    case (inCache,inEnv,inIH,inPrefix,inMod,inBoolean)
       equation
         checkIfModsAreBasicTypeMods(inMod);
-        (outCache,outMod,outDae) = elabMod(inCache,inEnv,inPrefix,inMod,inBoolean);
+        (outCache,outMod,outDae) = elabMod(inCache,inEnv,inIH,inPrefix,inMod,inBoolean);
       then (outCache,outMod,outDae);
   end matchcontinue;
 end elabModForBasicType;
 
 protected function checkIfModsAreBasicTypeMods "
   Verifies that a list of submods only have named modifications that could be
-  used for basic types.
-"
+  used for basic types."
   input SCode.Mod mod;
 algorithm
   _ := matchcontinue mod
@@ -198,8 +203,7 @@ end checkIfModsAreBasicTypeMods;
 
 protected function checkIfSubmodsAreBasicTypeMods "
   Verifies that a list of submods only have named modifications that could be
-  used for basic types.
-"
+  used for basic types."
   input list<SCode.SubMod> subs;
 algorithm
   _ := matchcontinue subs
@@ -223,6 +227,7 @@ end checkIfSubmodsAreBasicTypeMods;
 protected function elabModRedeclareElements
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;  
   input Prefix.Prefix inPrefix;
 	input Boolean finalPrefix;
 	input list<SCode.Element> elts;
@@ -230,7 +235,7 @@ protected function elabModRedeclareElements
 	output list<tuple<SCode.Element, DAE.Mod>> modElts "the elaborated modifiers";
 	output DAE.DAElist outDae "contain functions";
 algorithm
-	(modElts,outDae) := matchcontinue(inCache,inEnv,inPrefix,finalPrefix,elts,impl)
+	(modElts,outDae) := matchcontinue(inCache,inEnv,inIH,inPrefix,finalPrefix,elts,impl)
 	local
 	  Env.Cache cache; Env.Env env; Prefix.Prefix pre; Boolean f,fi,repl,p,enc,prot;
 	  Absyn.InnerOuter io;
@@ -248,34 +253,37 @@ algorithm
 	  Option<SCode.Comment> cmt;
 	  Absyn.Info i;
 	  DAE.DAElist dae,dae1,dae2;
+	  InstanceHierarchy ih;
 
 	  /* the empty case */
-	  case(cache,env,pre,f,{},_) then ({},DAEUtil.emptyDae);
+	  case(cache,env,_,pre,f,{},_) then ({},DAEUtil.emptyDae);
 
 	 	// Only derived classdefinitions supported in redeclares for now. TODO: What is allowed according to spec?
-	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),cc)::elts,impl)
+	  case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.DERIVED(tp,mod,attr1,cmt),i),cc)::elts,impl)
 	    local
 	      Absyn.ElementAttributes attr1;
 	      Option<Absyn.ConstrainClass> cc;
 	    equation
-	     (cache,emod,dae1) = elabMod(cache,env,pre,mod,impl);
-	     (modElts,dae2) = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	     (cache,emod,dae1) = elabMod(cache,env,ih,pre,mod,impl);
+	     (modElts,dae2) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl);
 	     (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
 	     dae = DAEUtil.joinDaes(dae1,dae2);
-	 then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),cc),emod)::modElts, dae);
+	    then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.DERIVED(tp1,mod,attr1,cmt),i),cc),emod)::modElts, dae);
+
    // replaceable type E=enumeration(e1,...,en), E=enumeration(:)
-	  case(cache,env,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc)::elts,impl)
+	  case(cache,env,ih,pre,f,SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn2,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc)::elts,impl)
 	    local
 	      list<SCode.Enum> enumLst;
         Option<SCode.Comment> comment;
 	      Option<Absyn.ConstrainClass> cc;
 	    equation
-	     (modElts,dae) = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	     (modElts,dae) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl);
 	    then ((SCode.CLASSDEF(cn,fi,repl,SCode.CLASS(cn,p,enc,restr,SCode.ENUMERATION(enumLst,comment),i),cc),DAE.NOMOD())::modElts,dae);
+
 		// redeclare of component declaration
-	  case(cache,env,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,cmt,cond,info,cc)::elts,impl) equation
-	    (cache,emod,dae1) = elabMod(cache,env,pre,mod,impl);
-	    (modElts,dae2) = elabModRedeclareElements(cache,env,pre,f,elts,impl);
+	  case(cache,env,ih,pre,f,SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp,mod,cmt,cond,info,cc)::elts,impl) equation
+	    (cache,emod,dae1) = elabMod(cache,env,ih,pre,mod,impl);
+	    (modElts,dae2) = elabModRedeclareElements(cache,env,ih,pre,f,elts,impl);
 	    (cache,tp1) = elabModQualifyTypespec(cache,env,tp);
 	    dae = DAEUtil.joinDaes(dae1,dae2);
 	  then ((SCode.COMPONENT(compname,io,fi,repl,prot,attr,tp1,mod,cmt,cond,info,cc),emod)::modElts,dae);
@@ -350,11 +358,12 @@ algorithm
       Boolean finalPrefix;
       Absyn.Each each_;
       list<DAE.SubMod> subs;
-      Absyn.Exp e,e_1;
+      Absyn.Exp e,e_1,absynExp;
       Ident es,s;
       DAE.Properties p;
       list<SCode.Element> elist_1;
       list<tuple<SCode.Element, DAE.Mod>> elist;
+      
     case (DAE.NOMOD()) then SCode.NOMOD();
     case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = NONE)))
       equation
@@ -366,7 +375,19 @@ algorithm
         subs_1 = unelabSubmods(subs);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e,false))); // Default type checking non-delayed
-    case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.TYPED(e,_,p)))))
+
+    case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,
+                        eqModOption = SOME(DAE.TYPED(e,_,p,SOME(absynExp))))))
+      local DAE.Exp e;
+      equation
+        //es = Exp.printExpStr(e);
+        subs_1 = unelabSubmods(subs);
+        e_1 = absynExp; //Exp.unelabExp(e);
+      then
+        SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
+
+    case ((m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = subs,
+                        eqModOption = SOME(DAE.TYPED(e,_,p,NONE())))))
       local DAE.Exp e;
       equation
         //es = Exp.printExpStr(e);
@@ -374,6 +395,7 @@ algorithm
         e_1 = Exp.unelabExp(e);
       then
         SCode.MOD(finalPrefix,each_,subs_1,SOME((e_1,false))); // default typechecking non-delayed
+
     case ((m as DAE.REDECL(finalPrefix = finalPrefix,tplSCodeElementModLst = elist)))
       equation
         elist_1 = Util.listMap(elist, Util.tuple21);
@@ -464,6 +486,7 @@ public function updateMod
   up the type of the modifier in the environment and update it."
   input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input DAE.Mod inMod;
   input Boolean inBoolean;
@@ -472,7 +495,7 @@ public function updateMod
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outMod,outDae) :=
-  matchcontinue (inCache,inEnv,inPrefix,inMod,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inMod,inBoolean)
     local
       Boolean impl,f;
       DAE.Mod m;
@@ -484,34 +507,40 @@ algorithm
       Prefix.Prefix pre;
       Absyn.Each each_;
       Absyn.Exp e;
+      Option<Absyn.Exp> eOpt;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
+      InstanceHierarchy ih;
 
-    case (cache,_,_,DAE.NOMOD(),impl) then (cache,DAE.NOMOD(),DAEUtil.emptyDae);
-    case (cache,_,_,(m as DAE.REDECL(finalPrefix = _)),impl) then (cache,m,DAEUtil.emptyDae);
-    case (cache,env,pre,(m as DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))),impl)
+    case (cache,_,_,_,DAE.NOMOD(),impl) then (cache,DAE.NOMOD(),DAEUtil.emptyDae);
+
+    case (cache,_,_,_,(m as DAE.REDECL(finalPrefix = _)),impl) then (cache,m,DAEUtil.emptyDae);
+
+    case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))),impl)
       equation
-        (cache,subs_1,dae1) = updateSubmods(cache, env, pre, subs, impl);
+        (cache,subs_1,dae1) = updateSubmods(cache, env, ih, pre, subs, impl);
         (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
-        (cache,e_2) = PrefixUtil.prefixExp(cache, env, e_1, pre);
+        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
-        Debug.fprintln("updmod", Debug.fcallret("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE,prop))),""));
+        Debug.fprintln("updmod", Debug.fcallret1("updmod", printModStr, DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,NONE,prop,SOME(e)))),""));
        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop))),dae);
-    case (cache,env,pre,DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.TYPED(e,e_val,p))),impl)
-      local DAE.Exp e;
+        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_2,e_val,prop,SOME(e)))),dae);
+
+    case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.TYPED(e_1,e_val,p,eOpt))),impl)
       equation
-        (cache,subs_1,dae) = updateSubmods(cache, env, pre, subs, impl);
+        (cache,subs_1,dae) = updateSubmods(cache, env, ih, pre, subs, impl);
       then
-        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e,e_val,p))),dae);
-    case (cache,env,pre,DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE),impl)
+        (cache,DAE.MOD(f,each_,subs_1,SOME(DAE.TYPED(e_1,e_val,p,eOpt))),dae);
+
+    case (cache,env,ih,pre,DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = NONE),impl)
       equation
-        (cache,subs_1,dae) = updateSubmods(cache, env, pre, subs, impl);
+        (cache,subs_1,dae) = updateSubmods(cache, env, ih, pre, subs, impl);
       then
         (cache,DAE.MOD(f,each_,subs_1,NONE),dae);
-    case (cache,env,pre,m,impl)
+
+    case (cache,env,ih,pre,m,impl)
       local String str;
       equation
 				true = RTOpts.debugFlag("failtrace");
@@ -525,6 +554,7 @@ end updateMod;
 protected function updateSubmods ""
 	input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input list<DAE.SubMod> inTypesSubModLst;
   input Boolean inBoolean;
@@ -533,7 +563,7 @@ protected function updateSubmods ""
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outTypesSubModLst,outDae):=
-  matchcontinue (inCache,inEnv,inPrefix,inTypesSubModLst,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inTypesSubModLst,inBoolean)
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res,xs;
@@ -542,11 +572,13 @@ algorithm
       DAE.SubMod x;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-    case (cache,_,_,{},impl) then (cache,{},DAEUtil.emptyDae);  /* impl */
-    case (cache,env,pre,(x :: xs),impl)
+      InstanceHierarchy ih;
+      
+    case (cache,_,ih,_,{},impl) then (cache,{},DAEUtil.emptyDae);  /* impl */
+    case (cache,env,ih,pre,(x :: xs),impl)
       equation
-        (cache,x_1,dae1) = updateSubmod(cache,env, pre, x, impl);
-        (cache,xs_1,dae2) = updateSubmods(cache,env, pre, xs, impl);
+        (cache,x_1,dae1) = updateSubmod(cache, env, ih, pre, x, impl);
+        (cache,xs_1,dae2) = updateSubmods(cache, env, ih, pre, xs, impl);
         res = insertSubmods(x_1, xs_1, env, pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
@@ -557,6 +589,7 @@ end updateSubmods;
 protected function updateSubmod " "
 	input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input DAE.SubMod inSubMod;
   input Boolean inBoolean;
@@ -566,7 +599,7 @@ protected function updateSubmod " "
 
 algorithm
   (outCache,outTypesSubModLst,outDae):=
-  matchcontinue (outCache,inEnv,inPrefix,inSubMod,inBoolean)
+  matchcontinue (outCache,inEnv,inIH,inPrefix,inSubMod,inBoolean)
     local
       DAE.Mod m_1,m;
       list<Env.Frame> env;
@@ -577,21 +610,23 @@ algorithm
       Env.Cache cache;
       list<Integer> idxmod;
       DAE.DAElist dae;
-    case (cache,env,pre,DAE.NAMEMOD(ident = i,mod = m),impl) /* impl */
+      InstanceHierarchy ih;
+      
+    case (cache,env,ih,pre,DAE.NAMEMOD(ident = i,mod = m),impl) /* impl */
       equation
-        (cache,m_1,dae) = updateMod(cache,env, pre, m, impl);
+        (cache,m_1,dae) = updateMod(cache, env, ih, pre, m, impl);
       then
         (cache,{DAE.NAMEMOD(i,m_1)},dae);
-    case (cache,env,pre,DAE.IDXMOD(mod = m,integerLst=idxmod),impl)
+
+    case (cache,env,ih,pre,DAE.IDXMOD(mod = m,integerLst=idxmod),impl)
       equation
-        (cache,m_1,dae) = updateMod(cache,env, pre, m, impl) "Static.elab_subscripts (env,ss) => (ss\',true) &" ;
+        (cache,m_1,dae) = updateMod(cache, env, ih, pre, m, impl) "Static.elab_subscripts (env,ss) => (ss\',true) &" ;
       then
         (cache,{DAE.IDXMOD(idxmod,m_1)},dae);
   end matchcontinue;
 end updateSubmod;
 
 public function elabUntypedMod "function elabUntypedMod
-
   This function is used to convert SCode.Mod into Mod, without
   adding correct type information. Instead, a undefined type will be
   given to the modification. This is used when modifications of e.g.
@@ -599,15 +634,13 @@ public function elabUntypedMod "function elabUntypedMod
   model test extends A(x=y); end test; // both x and y are defined in A
   The modifier x=y must be merged with outer modifiers, thus it needs
   to be converted to Mod.
-  Notice that the correct type information must be updated later on.
-"
+  Notice that the correct type information must be updated later on."
   input SCode.Mod inMod;
   input Env.Env inEnv;
   input Prefix.Prefix inPrefix;
   output DAE.Mod outMod;
 algorithm
-  outMod:=
-  matchcontinue (inMod,inEnv,inPrefix)
+  outMod := matchcontinue (inMod,inEnv,inPrefix)
     local
       list<DAE.SubMod> subs_1;
       SCode.Mod m,mod;
@@ -652,6 +685,7 @@ protected function elabSubmods
   This function helps elabMod by recusively elaborating on a list of submodifications."
 	input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;  
   input Prefix.Prefix inPrefix;
   input list<SCode.SubMod> inSCodeSubModLst;
   input Boolean inBoolean;
@@ -660,7 +694,7 @@ protected function elabSubmods
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outTypesSubModLst,outDAe) :=
-  matchcontinue (inCache,inEnv,inPrefix,inSCodeSubModLst,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSCodeSubModLst,inBoolean)
     local
       Boolean impl;
       list<DAE.SubMod> x_1,xs_1,res;
@@ -670,12 +704,13 @@ algorithm
       list<SCode.SubMod> xs;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
+      InstanceHierarchy ih;
 
-    case (cache,_,_,{},impl) then (cache,{},DAEUtil.emptyDae);  /* impl */
-    case (cache,env,pre,(x :: xs),impl)
+    case (cache,_,_,_,{},impl) then (cache,{},DAEUtil.emptyDae);  /* impl */
+    case (cache,env,ih,pre,(x :: xs),impl)
       equation
-        (cache,x_1,dae1) = elabSubmod(cache,env, pre, x, impl);
-        (cache,xs_1,dae2) = elabSubmods(cache,env, pre, xs, impl);
+        (cache,x_1,dae1) = elabSubmod(cache, env, ih, pre, x, impl);
+        (cache,xs_1,dae2) = elabSubmods(cache, env, ih, pre, xs, impl);
         res = insertSubmods(x_1, xs_1, env, pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
@@ -689,6 +724,7 @@ protected function elabSubmod
   SCode.SubMod into one or more DAE.SubMod."
 	input Env.Cache inCache;
   input Env.Env inEnv;
+  input InstanceHierarchy inIH;
   input Prefix.Prefix inPrefix;
   input SCode.SubMod inSubMod;
   input Boolean inBoolean;
@@ -697,7 +733,7 @@ protected function elabSubmod
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outTypesSubModLst,outDae) :=
-  matchcontinue (inCache,inEnv,inPrefix,inSubMod,inBoolean)
+  matchcontinue (inCache,inEnv,inIH,inPrefix,inSubMod,inBoolean)
     local
       DAE.Mod m_1;
       list<Env.Frame> env;
@@ -710,15 +746,17 @@ algorithm
       list<Absyn.Subscript> ss;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
-    case (cache,env,pre,SCode.NAMEMOD(ident = i,A = m),impl) /* impl */
+      InstanceHierarchy ih;
+      
+    case (cache,env,ih,pre,SCode.NAMEMOD(ident = i,A = m),impl) /* impl */
       equation
-        (cache,m_1,dae) = elabMod(cache, env, pre, m, impl);
+        (cache,m_1,dae) = elabMod(cache, env, ih, pre, m, impl);
       then
         (cache,{DAE.NAMEMOD(i,m_1)},dae);
-    case (cache,env,pre,SCode.IDXMOD(subscriptLst = ss,an = m),impl)
+    case (cache,env,ih,pre,SCode.IDXMOD(subscriptLst = ss,an = m),impl)
       equation
         (cache,ss_1,DAE.C_CONST(),dae1) = Static.elabSubscripts(cache,env, ss, impl);
-        (cache,m_1,dae2) = elabMod(cache,env, pre, m, impl);
+        (cache,m_1,dae2) = elabMod(cache, env, ih, pre, m, impl);
         smods = makeIdxmods(ss_1, m_1);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
@@ -884,16 +922,18 @@ algorithm
       Option<Values.Value> e_val;
       DAE.Const const;
       Ident str;
+      
     case ({},_,_,_) then {};
     case ({},_,_,_) then {};
-    case ((x :: xs),ss,n,(m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = {},eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const))))))
+    case ((x :: xs),ss,n,(m as DAE.MOD(finalPrefix = finalPrefix,each_ = each_,subModLst = {},
+                                       eqModOption = SOME(DAE.TYPED(e,e_val,DAE.PROP(t,const),_)))))
       equation
         e_2 = DAE.ICONST(n);
         e_1 = Exp.simplify(DAE.ASUB(e,{e_2}));
         t_1 = Types.unliftArray(t);
         mods1 = makeIdxmods((DAE.INDEX(x) :: ss),
           DAE.MOD(finalPrefix,each_,{},
-          SOME(DAE.TYPED(e_1,e_val,DAE.PROP(t_1,const)))));
+          SOME(DAE.TYPED(e_1,e_val,DAE.PROP(t_1,const),NONE()))));
         n_1 = n + 1;
         mods2 = expandSlice(xs, ss, n_1, m);
         mods = listAppend(mods1, mods2);
@@ -1123,9 +1163,12 @@ algorithm
 
     case(NONE,_,_,_) then DAE.NOMOD();
 
-    case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),DAE.PROP((DAE.T_COMPLEX(complexVarLst = varLst),_),_))),n,finalPrefix,each_) equation
-      mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_);
-    then mod;
+    case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
+                        DAE.PROP((DAE.T_COMPLEX(complexVarLst = varLst),_),_),_)),
+         n,finalPrefix,each_) 
+      equation
+        mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_);
+      then mod;
 
     case(_,_,_,_) then DAE.NOMOD();
   end matchcontinue;
@@ -1141,17 +1184,22 @@ protected function lookupComplexCompModification2 "Help function to lookupComple
   output DAE.Mod mod;
 algorithm
   mod := matchcontinue(values,names,vars,name,finalPrefix,each_)
-    local DAE.Type tp;
+    local 
+      DAE.Type tp;
       Values.Value v; String name1,name2;
       DAE.Exp e;
-    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,type_=tp)::_,name,finalPrefix,each_) equation
-      true = (name1 ==& name2);
-      true = (name2 ==& name);
-      e = Static.valueExp(v);
-    then DAE.MOD(finalPrefix,each_,{},SOME(DAE.TYPED(e,SOME(v),DAE.PROP(tp,DAE.C_CONST()))));
+      
+    case(v::_,name1::_,DAE.TYPES_VAR(name=name2,type_=tp)::_,name,finalPrefix,each_) 
+      equation
+        true = (name1 ==& name2);
+        true = (name2 ==& name);
+        e = Static.valueExp(v);
+      then DAE.MOD(finalPrefix,each_,{},SOME(DAE.TYPED(e,SOME(v),DAE.PROP(tp,DAE.C_CONST()),NONE())));
+
     case(_::values,_::names,_::vars,name,finalPrefix,each_) equation
       mod = lookupComplexCompModification2(values,names,vars,name,finalPrefix,each_);
     then mod;
+
   end matchcontinue;
 end lookupComplexCompModification2;
 
@@ -1359,8 +1407,7 @@ protected function indexEqmod "function: indexEqmod
   it using the provided indexing expressions.  This is used when a
   modification equates an array variable with an array expression.
   This expression will be expanded to produce one equation
-  expression per array component.
-"
+  expression per array component."
   input Option<DAE.EqMod> inTypesEqModOption;
   input list<Integer> inIntegerLst;
   output Option<DAE.EqMod> outTypesEqModOption;
@@ -1376,30 +1423,32 @@ algorithm
       Integer x;
       list<Integer> xs;
       DAE.EqMod eq;
+      Absyn.Exp absynExp;
 
     case (NONE,_) then NONE;
     case (e,{}) then e;
-      /* Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) */
-    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_)),xs) then NONE;
 
-      /* For modifiers with value, retrieve nth element*/
-    case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c))),(x :: xs))
+    // Subscripting empty array gives no value. This is needed in e.g. fill(1.0,0,2) 
+    case (SOME(DAE.TYPED(_,SOME(Values.ARRAY(valueLst = {})),_,_)),xs) then NONE;
+
+    // For modifiers with value, retrieve nth element
+    case (SOME(DAE.TYPED(e,SOME(e_val),DAE.PROP(t,c),_)),(x :: xs))
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         exp = Exp.simplify(DAE.ASUB(e,{exp2}));
         e_val_1 = ValuesUtil.nthArrayelt(e_val, x);
-        e = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c))), xs);
+        e = indexEqmod(SOME(DAE.TYPED(exp,SOME(e_val_1),DAE.PROP(t_1,c),NONE())), xs);
       then
         e;
 
-			/* For modifiers without value, apply subscript operaor */
-    case (SOME(DAE.TYPED(e,NONE,DAE.PROP(t,c))),(x :: xs))
+		// For modifiers without value, apply subscript operator
+    case (SOME(DAE.TYPED(e,NONE,DAE.PROP(t,c),_)),(x :: xs))
       equation
         t_1 = Types.unliftArray(t);
         exp2 = DAE.ICONST(x);
         exp = Exp.simplify(DAE.ASUB(e,{exp2}));
-        e = indexEqmod(SOME(DAE.TYPED(exp,NONE,DAE.PROP(t_1,c))), xs);
+        e = indexEqmod(SOME(DAE.TYPED(exp,NONE,DAE.PROP(t_1,c),NONE())), xs);
       then
         e;
 
@@ -1417,19 +1466,19 @@ algorithm
 				Error.addMessage(Error.MODIFIER_NON_ARRAY_TYPE_WARNING, {exp_str});
 			then fail();
 
-    case (SOME(eq),inIntegerLst) equation
-			true = RTOpts.debugFlag("failtrace");
-      Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +&
+    case (SOME(eq),inIntegerLst) 
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- Mod.indexEqmod failed for mod:\n " +&
                Types.unparseEqMod(eq) +& "\n indexes:" +&
                Util.stringDelimitList(Util.listMap(inIntegerLst, intString), ", "));
-    then fail();
+      then fail();
   end matchcontinue;
 end indexEqmod;
 
 public function merge "
 A mid step for merging two modifiers.
-It validates that the merging is allowed(considering final modifier).
-"
+It validates that the merging is allowed(considering final modifier)."
   input DAE.Mod inMod1;
   input DAE.Mod inMod2;
   input Env.Env inEnv3;
@@ -1468,8 +1517,7 @@ end merge;
 
 public function merge2 "
 This function validates that the inner modifier is not final.
-Helper function for merge
-"
+Helper function for merge"
   input DAE.Mod inMod1;
   output Boolean outMod;
 algorithm outMod:= matchcontinue (inMod1)
@@ -1732,21 +1780,18 @@ algorithm
   outTypesEqModOption:=
   matchcontinue (inTypesEqModOption1,inTypesEqModOption2)
     local Option<DAE.EqMod> e;
-    case ((e as SOME(DAE.TYPED(_,_,_))),_) then e;  /* Outer assignments take precedence */
+    case ((e as SOME(DAE.TYPED(modifierAsExp = _))),_) then e;  /* Outer assignments take precedence */
     case ((e as SOME(DAE.UNTYPED(_))),_) then e;
     case (NONE,e) then e;
   end matchcontinue;
 end mergeEq;
 
 public function modEquation "function: modEquation
-
-  This function simply extracts the equation part of a modification.
-"
+  This function simply extracts the equation part of a modification."
   input DAE.Mod inMod;
   output Option<DAE.EqMod> outTypesEqModOption;
 algorithm
-  outTypesEqModOption:=
-  matchcontinue (inMod)
+  outTypesEqModOption := matchcontinue (inMod)
     local Option<DAE.EqMod> e;
     case DAE.NOMOD() then NONE;
     case DAE.REDECL(finalPrefix = _) then NONE;
@@ -1801,24 +1846,55 @@ Returns true if two EqMods are equal or outer(input arg1) is NONE"
   output Boolean equal;
 algorithm
   equal := matchcontinue(eqMod1,eqMod2)
-  local Absyn.Exp aexp1,aexp2;
-    DAE.Exp exp1,exp2; DAE.EqMod teq;
-    case(SOME(DAE.TYPED(exp1,_,_)),SOME(DAE.TYPED(exp2,_,_))) equation
-      equal = Exp.expEqual(exp1,exp2);
-    then equal;
-    case(SOME(DAE.TYPED(exp1,_,_)),SOME(DAE.UNTYPED(aexp2))) equation
-      aexp1 = Exp.unelabExp(exp1);
-      equal = Absyn.expEqual(aexp1,aexp2);
-    then equal;
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_))) equation
-      aexp2 = Exp.unelabExp(exp2);
-      equal = Absyn.expEqual(aexp1,aexp2);
-    then equal;
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.UNTYPED(aexp2))) equation
-      equal = Absyn.expEqual(aexp1,aexp2);
-    then equal;
+    local 
+      Absyn.Exp aexp1,aexp2;
+      DAE.Exp exp1,exp2; DAE.EqMod teq;
+    
+    // no mods
     case(NONE,NONE) then true;
+    
+    // none vs. some (subset) mods
     case(NONE,SOME(teq)) then true;
+    
+    // typed mods
+    case(SOME(DAE.TYPED(modifierAsExp = exp1)),SOME(DAE.TYPED(modifierAsExp = exp2))) 
+      equation
+        equal = Exp.expEqual(exp1,exp2);
+      then equal;
+    
+    // typed vs. untyped mods
+    case(SOME(DAE.TYPED(exp1,_,_,SOME(aexp1))),SOME(DAE.UNTYPED(aexp2))) 
+      equation
+        //aexp1 = Exp.unelabExp(exp1);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    case(SOME(DAE.TYPED(exp1,_,_,NONE())),SOME(DAE.UNTYPED(aexp2))) 
+      equation
+        aexp1 = Exp.unelabExp(exp1);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    // untyped vs. typed 
+    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,SOME(aexp2)))) 
+      equation
+        //aexp2 = Exp.unelabExp(exp2);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE()))) 
+      equation
+        aexp2 = Exp.unelabExp(exp2);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    // untyped mods
+    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.UNTYPED(aexp2))) 
+      equation
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    // anything else gives false
     case(_,_) then false;
   end matchcontinue;
 end eqModSubsetOrEqual;
@@ -1860,8 +1936,7 @@ algorithm
 end subModsSubsetOrEqual;
 
 public function modEqual "
-Compares two DAE.Mod, returns true if equal
-"
+Compares two DAE.Mod, returns true if equal"
   input DAE.Mod mod1;
   input DAE.Mod mod2;
   output Boolean equal;
@@ -1922,23 +1997,52 @@ protected function eqModEqual "Returns true if two EqMods are equal"
   output Boolean equal;
 algorithm
   equal := matchcontinue(eqMod1,eqMod2)
-  local Absyn.Exp aexp1,aexp2;
-    DAE.Exp exp1,exp2;
-    case(SOME(DAE.TYPED(exp1,_,_)),SOME(DAE.TYPED(exp2,_,_))) equation
-      equal = Exp.expEqual(exp1,exp2);
-    then equal;
-    case(SOME(DAE.TYPED(exp1,_,_)),SOME(DAE.UNTYPED(aexp2))) equation
-      aexp1 = Exp.unelabExp(exp1);
-      equal = Absyn.expEqual(aexp1,aexp2);
-    then equal;
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_))) equation
-      aexp2 = Exp.unelabExp(exp2);
-      equal = Absyn.expEqual(aexp1,aexp2);
-    then equal;
-    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.UNTYPED(aexp2))) equation
-      equal = Absyn.expEqual(aexp1,aexp2);
-    then equal;
+    local 
+      Absyn.Exp aexp1,aexp2;
+      DAE.Exp exp1,exp2;
+
+    // no equ mods
     case(NONE,NONE) then true;
+
+    // typed equmods
+    case(SOME(DAE.TYPED(exp1,_,_,_)),SOME(DAE.TYPED(exp2,_,_,_))) 
+      equation
+        equal = Exp.expEqual(exp1,exp2);
+      then equal;
+
+    // typed vs. untyped equmods
+    case(SOME(DAE.TYPED(exp1,_,_,SOME(aexp1))),SOME(DAE.UNTYPED(aexp2))) 
+      equation
+        //aexp1 = Exp.unelabExp(exp1);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    case(SOME(DAE.TYPED(exp1,_,_,NONE())),SOME(DAE.UNTYPED(aexp2))) 
+      equation
+        aexp1 = Exp.unelabExp(exp1);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    // untyped vs. typed equmods
+    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,SOME(aexp2)))) 
+      equation
+        //aexp2 = Exp.unelabExp(exp2);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.TYPED(exp2,_,_,NONE()))) 
+      equation
+        aexp2 = Exp.unelabExp(exp2);
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    // untyped equmods
+    case(SOME(DAE.UNTYPED(aexp1)),SOME(DAE.UNTYPED(aexp2))) 
+      equation
+        equal = Absyn.expEqual(aexp1,aexp2);
+      then equal;
+
+    // anything else will give false
     case(_,_) then false;
   end matchcontinue;
 end eqModEqual;
@@ -2175,7 +2279,7 @@ algorithm
       Values.Value e_val;
       DAE.Properties prop;
     case NONE then "";
-    case SOME(DAE.TYPED(e,SOME(e_val),prop))
+    case SOME(DAE.TYPED(e,SOME(e_val),prop,_))
       equation
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);
@@ -2183,7 +2287,7 @@ algorithm
         res = Util.stringAppendList({" = (typed)",str," ",str2,", E_VALUE: ",e_val_str});
       then
         res;
-    case SOME(DAE.TYPED(e,NONE,prop))
+    case SOME(DAE.TYPED(e,NONE,prop,_))
       equation
         str = Exp.printExpStr(e);
         str2 = Types.printPropStr(prop);

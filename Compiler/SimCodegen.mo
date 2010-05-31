@@ -98,6 +98,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import VarTransform;
+protected import DAEDump;
 
 public function generateMakefile
 "function: generateMakefile
@@ -2097,7 +2098,7 @@ algorithm
         true = DAELow.isVarOnTopLevelAndInput(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr,tp, n_vars, inputNames) "no defines because the outputvars is a subset of algvars" ;
@@ -2165,7 +2166,7 @@ algorithm
         true = DAELow.isVarOnTopLevelAndOutput(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         if_str = generateGetnameFunctionIf(cr, tp,n_vars, outputNames) "no defines because the outputvars is a subset of algvars" ;
@@ -2244,7 +2245,7 @@ algorithm
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         num_stralg = num_stralg + 1;
         comment_1 = generateEmptyString(comment);
         stralg_arr = arrayUpdate(stralg_arr, indx + 1, name_1);
@@ -2276,7 +2277,7 @@ algorithm
         _ = Util.listGetMember(kind, kind_lst);
         origname_str = Exp.printComponentRefStr(origname) "if this fails then the var is not added to list" ;
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2419,7 +2420,7 @@ algorithm
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         num_strparam = num_strparam + 1;
         comment_1 = generateEmptyString(comment);
         strparam_arr = arrayUpdate(strparam_arr, indx + 1, name_1);
@@ -2453,7 +2454,7 @@ algorithm
         true = DAELow.isParam(var);
         origname_str = Exp.printComponentRefStr(origname);
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -2596,7 +2597,7 @@ algorithm
         name_1 = Util.stringAppendList({"\"",origname_str,"\""});
         der_origname_1 = changeNameForDerivative(origname_str);
         der_name_1 = Util.stringAppendList({"\"",der_origname_1,"\""});
-        comment = DAEUtil.dumpCommentOptionStr(comment);
+        comment = DAEDump.dumpCommentOptionStr(comment);
         n_vars_1 = n_vars + 1;
         comment_1 = generateEmptyString(comment);
         name_arr_1 = arrayUpdate(name_arr, indx + 1, name_1);
@@ -5486,7 +5487,7 @@ algorithm
 
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
-        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
@@ -6860,7 +6861,7 @@ algorithm
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
-        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
@@ -7036,7 +7037,7 @@ algorithm
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
-        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();

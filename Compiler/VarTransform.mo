@@ -45,16 +45,15 @@ public import HashTable3;
 public import SCode;
 
 public
-uniontype VariableReplacements "
-VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
-To eliminate a variable from an equation system a replacement rule varname->expression is added to this
-datatype.
-To be able to update these replacement rules incrementally a backward lookup mechanism is also required.
-For instance, having a rule a->b and adding a rule b->c requires to find the first rule a->b and update it to
-a->c. This is what the second binary tree is used for.
-   "
+uniontype VariableReplacements 
+"VariableReplacements consists of a mapping between variables and expressions, the first binary tree of this type.
+ To eliminate a variable from an equation system a replacement rule varname->expression is added to this
+ datatype.
+ To be able to update these replacement rules incrementally a backward lookup mechanism is also required.
+ For instance, having a rule a->b and adding a rule b->c requires to find the first rule a->b and update it to
+ a->c. This is what the second binary tree is used for."
   record REPLACEMENTS
-    HashTable2.HashTable hashTable "src -> dst, used for replacing. src is variable, dst is expression" ;
+    HashTable2.HashTable hashTable "src -> dst, used for replacing. src is variable, dst is expression.";
     HashTable3.HashTable invHashTable "dst -> list of sources. dst is a variable, sources are variables.";
   end REPLACEMENTS;
 
@@ -381,7 +380,7 @@ algorithm
     case(elt::dae,repl,condExpFunc)
       local String str;
       equation
-        // Debug.fprintln("failtrace", "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEUtil.dumpElementsStr({elt}));
+        // Debug.fprintln("failtrace", "- VarTransform.applyReplacementsDAEElts could not apply replacements to: " +& DAEDump.dumpElementsStr({elt}));
         dae = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then elt::dae;
   end matchcontinue;

@@ -26,7 +26,8 @@ RTOBJ   = $(srcdir)/runtime/systemimpl.o $(srcdir)/runtime/systemimplmisc.o $(sr
   $(CORBAOBJ) \
 	$(srcdir)/modpar/libmodpar.a \
 	$(srcdir)/runtime/settingsimpl.o \
-	$(srcdir)/runtime/SimulationResults.o
+	$(srcdir)/runtime/SimulationResults.o \
+	$(srcdir)/runtime/IOStreamExt.o
 
 # The Susan-generated MO sources
 SUSANMO= \
@@ -51,6 +52,7 @@ SRCMO= Absyn.mo \
 	DAE.mo \
 	DAELow.mo \
 	DAEUtil.mo \
+	DAEDump.mo \
 	Derive.mo \
 	Debug.mo \
 	DFA.mo \
@@ -110,12 +112,13 @@ SRCMO= Absyn.mo \
 	InstanceHierarchy.mo \
 	InnerOuter.mo \
 	ConnectUtil.mo \
-	Dependency.mo
+	Dependency.mo \
+	IOStream.mo
 
 # These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \
 		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo \
-		OptManager.mo UnitParserExt.mo SimulationResults.mo
+		OptManager.mo UnitParserExt.mo SimulationResults.mo IOStreamExt.mo 
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)

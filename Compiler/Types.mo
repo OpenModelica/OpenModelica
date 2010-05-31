@@ -1035,6 +1035,7 @@ algorithm
       list<Ident> dummyIds;
       Type ty;
       DAE.ComponentRef cref;
+      Absyn.Exp absynExp;
 
     // adrpo: TODO! why not use typeOfValue everywhere here??!!
 
@@ -1049,7 +1050,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.ICONST(i),SOME(Values.INTEGER(i)),
-          DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),SOME(Absyn.INTEGER(i)))))) :: res),NONE);
 
     case ((Values.REAL(real = r) :: rest),(id :: ids))
       equation
@@ -1060,7 +1061,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.RCONST(r),SOME(Values.REAL(r)),
-          DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),SOME(Absyn.REAL(r)))))) :: res),NONE);
 
     case ((Values.STRING(string = s) :: rest),(id :: ids))
       equation
@@ -1071,7 +1072,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.SCONST(s),SOME(Values.STRING(s)),
-          DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(Absyn.STRING(s)))))) :: res),NONE);
 
     case ((Values.BOOL(boolean = b) :: rest),(id :: ids))
       equation
@@ -1082,7 +1083,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(DAE.BCONST(b),SOME(Values.BOOL(b)),
-          DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()))))) :: res),NONE);
+          DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(Absyn.BOOL(b)))))) :: res),NONE);
     case (((v as Values.RECORD(index=_)) :: rest),(id :: ids))
       equation
         ty = typeOfValue(v);
@@ -1092,7 +1093,7 @@ algorithm
         DAE.MOD(false,Absyn.NON_EACH(),
           (DAE.NAMEMOD(id,
           DAE.MOD(false,Absyn.NON_EACH(),{},
-          SOME(DAE.TYPED(exp,SOME(v),DAE.PROP(ty,DAE.C_VAR()))))) :: res),NONE);
+          SOME(DAE.TYPED(exp,SOME(v),DAE.PROP(ty,DAE.C_VAR()),NONE())))) :: res),NONE);
 
     case ((v as Values.ENUM(index = _)) :: rest,(id :: ids))
       equation
@@ -1105,7 +1106,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(
           DAE.TYPED(exp,SOME(v),
-          DAE.PROP(ty,DAE.C_CONST()))))) :: res),NONE);
+          DAE.PROP(ty,DAE.C_CONST()),NONE())))) :: res),NONE);
 
     case ((v as Values.ARRAY(valueLst = vals)) :: rest,(id :: ids))
       equation
@@ -1115,7 +1116,7 @@ algorithm
       then
         DAE.MOD(false,Absyn.NON_EACH(),
           (DAE.NAMEMOD(id,DAE.MOD(false,Absyn.NON_EACH(),{},
-                   SOME(DAE.TYPED(exp, SOME(v),DAE.PROP(ty,DAE.C_CONST()))))) :: res),NONE);
+                   SOME(DAE.TYPED(exp, SOME(v),DAE.PROP(ty,DAE.C_CONST()),NONE())))) :: res),NONE);
 
     case ((v :: _),_)
       equation
@@ -2026,7 +2027,7 @@ public function unparseEqMod
 algorithm
   str := matchcontinue(eq)
   local DAE.Exp e; Absyn.Exp e2;
-    case(DAE.TYPED(e,_,_)) equation
+    case(DAE.TYPED(e,_,_,_)) equation
       str =Exp.printExpStr(e);
     then str;
     case(DAE.UNTYPED(e2)) equation
@@ -4758,9 +4759,7 @@ algorithm
 end printPropStr;
 
 public function printProp "function: printProp
-
-  Print the Properties to the Print buffer.
-"
+  Print the Properties to the Print buffer."
   input Properties p;
   Ident str;
 algorithm
@@ -4769,10 +4768,8 @@ algorithm
 end printProp;
 
 public function flowVariables "function: flowVariables
-
   This function retrieves all variables names that are flow variables, and
-  prepends the prefix given as an \'DAE.ComponentRef\'
-"
+  prepends the prefix given as an DAE.ComponentRef"
   input list<Var> inVarLst;
   input DAE.ComponentRef inComponentRef;
   output list<DAE.ComponentRef> outExpComponentRefLst;
@@ -4786,16 +4783,21 @@ algorithm
       list<Var> vs;
       DAE.ExpType ty2;
       Type ty;
+    
+    // handle empty case
     case ({},_) then {};
+    
+    // we have a flow prefix
     case ((DAE.TYPES_VAR(name = id,attributes = DAE.ATTR(flowPrefix = true),type_ = ty) :: vs),cr)
       equation
         ty2 = elabType(ty);
-
         cr_1 = Exp.joinCrefs(cr, DAE.CREF_IDENT(id,ty2,{}));
-        //print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n");
+        // print("\n created: " +& Exp.debugPrintComponentRefTypeStr(cr_1) +& "\n");
         res = flowVariables(vs, cr);
       then
         (cr_1 :: res);
+    
+    // handle the rest 
     case ((_ :: vs),cr)
       equation
         res = flowVariables(vs, cr);

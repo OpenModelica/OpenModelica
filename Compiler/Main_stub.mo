@@ -66,6 +66,7 @@ protected import CevalScript;
 protected import Env;
 protected import Settings;
 protected import InnerOuter;
+protected import DAEDump;
 
 protected function checkClassdef
   input String inString;
@@ -252,7 +253,7 @@ algorithm
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
-        s = Print.getString();
+        s = Debug.fcallret0("dump", Print.getString, "");
         Debug.fcall("dump",print,s);
         p = transformFlatProgram(p,f);
         p = Dependency.getTotalProgramLastClass(p);
@@ -268,22 +269,22 @@ algorithm
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         //print(" Inst.Instantiate " +& realString(clock()) +&" DONE\n");
         Debug.fprint("beforefixmodout", "Explicit part:\n");
-        Debug.fcall("beforefixmodout", DAEUtil.dumpDebug, d_1);
+        Debug.fcall("beforefixmodout", DAEDump.dumpDebug, d_1);
         d = fixModelicaOutput(d_1);
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret("flatmodelica", DAEUtil.dumpStr, d, "");
+        s = Debug.fcallret1("flatmodelica", DAEDump.dumpStr, d, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
         Debug.fcall("flatmodelica", Print.printBuf, s);
         Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret("none", DAEUtil.dumpStr, d, "");
+        s = Debug.fcallret1("none", DAEDump.dumpStr, d, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
         Debug.fcall("none", Print.printBuf, s);
-        Debug.fcall("daedump", DAEUtil.dump, d);
-        Debug.fcall("daedump2", DAEUtil.dump2, d);
-        Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
-        Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
+        Debug.fcall("daedump", DAEDump.dump, d);
+        Debug.fcall("daedump2", DAEDump.dump2, d);
+        Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
+        Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
         cname = Absyn.lastClassname(p);
         str = Print.getString();
         silent = RTOpts.silent();

@@ -84,6 +84,7 @@ protected import System;
 protected import VarTransform;
 protected import CevalScript;
 protected import ModUtil;
+protected import DAEDump;
 
 
 public
@@ -2191,7 +2192,7 @@ algorithm
 				// We need to solve an inverse problem of an algorithm section.
         false = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
-        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
         message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
         Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
@@ -3384,11 +3385,9 @@ algorithm
 
         // The variables solved for and the output variables of the algorithm must be the same.
         false = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
-        algStr =	DAEUtil.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
-        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,
-          ". This is not implemented yet.\n"});
-        Error.addMessage(Error.INTERNAL_ERROR,
-          {message});
+        algStr =	DAEDump.dumpAlgorithmsStr({DAE.ALGORITHM(alg,source)});
+        message = Util.stringAppendList({"Inverse Algorithm needs to be solved for in ",algStr,". This is not implemented yet.\n"});
+        Error.addMessage(Error.INTERNAL_ERROR,{message});
       then fail();
     case (_,_)
       equation

@@ -14,6 +14,7 @@ SRCMO= Absyn.mo \
 	Convert.mo \
 	DAE.mo \
 	DAEUtil.mo \
+	DAEDump.mo \
 	DAELow.mo \
 	Derive.mo \
 	Debug.mo \
@@ -76,7 +77,8 @@ SRCMO= Absyn.mo \
     TplParser.mo \
 	TplMain.mo \
 	Dependency.mo \
-	InstExtends.mo 
+	InstExtends.mo \
+	IOStream.mo 
 
 ALLMO = $(SRCMO) \
 	DAEEXT.mo \
@@ -92,4 +94,5 @@ ALLMO = $(SRCMO) \
 	OptManager.mo \
 	SimulationResults.mo \
 	DynLoad.mo \
-	UnitParserExt.mo 
+	UnitParserExt.mo \
+	IOStreamExt.mo 

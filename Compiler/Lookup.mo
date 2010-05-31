@@ -2012,7 +2012,7 @@ algorithm
 
     case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
       equation
-        (_,mod_1,_) = Mod.elabMod(Env.emptyCache(), env, Prefix.NOPRE(), mod, false);
+        (_,mod_1,_) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2020,7 +2020,7 @@ algorithm
         compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (_,cmod,_) = Mod.updateMod(Env.emptyCache(),env,Prefix.NOPRE(),cmod,true);
+        (_,cmod,_) = Mod.updateMod(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true);
         selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
         umod = Mod.unelabMod(selectedMod);
         res = buildRecordConstructorElts(rest, mods, env);

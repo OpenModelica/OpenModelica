@@ -73,6 +73,7 @@ protected import InnerOuter;
 protected import ClassLoader;
 protected import Inline;
 protected import TplMain;
+protected import DAEDump;
 
 protected function serverLoop
 "function: serverLoop
@@ -350,7 +351,7 @@ algorithm
 end isModelicaScriptFile;
 
 protected function isCodegenTemplateFile
-"function: isModelicaScriptFile
+"function: isCodegenTemplateFile
   Succeeds if filname end with .tpl"
   input String filename;
   list<String> lst;
@@ -552,7 +553,7 @@ algorithm
         Debug.fprint("dump", "\n--------------- Parsed program ---------------\n");
         Debug.fcall("dumpgraphviz", DumpGraphviz.dump, p);
         Debug.fcall("dump", Dump.dump, p);
-        s = Print.getString();
+        s = Debug.fcallret0("dump", Print.getString, "");
         Debug.fcall("dump",print,s);
 
         p = transformFlatProgram(p,f);
@@ -568,24 +569,24 @@ algorithm
 
         Debug.fcall("execstat",print, "*** Main -> done instantiation at time: " +& realString(clock()) +& "\n" );
         Debug.fprint("beforefixmodout", "Explicit part:\n");
-        Debug.fcall("beforefixmodout", DAEUtil.dumpDebug, d_1);
+        Debug.fcall("beforefixmodout", DAEDump.dumpDebug, d_1);
 
         d = fixModelicaOutput(d_1);
 
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret("flatmodelica", DAEUtil.dumpStr, d, "");
+        s = Debug.fcallret1("flatmodelica", DAEDump.dumpStr, d, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
         Debug.fcall("flatmodelica", Print.printBuf, s);
         Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret("none", DAEUtil.dumpStr, d, "");
+        s = Debug.fcallret1("none", DAEDump.dumpStr, d, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
         Debug.fcall("none", Print.printBuf, s);
-        Debug.fcall("daedump", DAEUtil.dump, d);
-        Debug.fcall("daedump2", DAEUtil.dump2, d);
-        Debug.fcall("daedumpdebug", DAEUtil.dumpDebug, d);
-        Debug.fcall("daedumpgraphv", DAEUtil.dumpGraphviz, d);
+        Debug.fcall("daedump", DAEDump.dump, d);
+        Debug.fcall("daedump2", DAEDump.dump2, d);
+        Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
+        Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
 
         // Transform if equations to if expression before going into code generation.
         d = DAEUtil.transformIfEqToExpr(d,false);
@@ -613,8 +614,8 @@ algorithm
         // are there any errors?
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
-        (res,newst) = Interactive.evaluate(stmts, st, true);
-        print(res);
+        // evaluate statements and print the result to stdout directly
+        newst = Interactive.evaluateToStdOut(stmts, st, true);
       then
         ();
     case {f} /* A template file .tpl (in the Susan language)*/

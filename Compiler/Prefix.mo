@@ -56,12 +56,14 @@ The class prefix contains the variability of the class, i.e unspecified, paramet
   record NOPRE "No prefix information" end NOPRE ;
 
   record PREFIX
-       ComponentPrefix compPre;
+       ComponentPrefix compPre "component prefixes are stored in inverse order c.b.a";
        ClassPrefix classPre;
   end PREFIX;
 end Prefix;
 
-uniontype ComponentPrefix "Prefix for component name, e.g. a.b[2].c"
+uniontype ComponentPrefix  
+"Prefix for component name, e.g. a.b[2].c. 
+ NOTE: Component prefixes are stored in inverse order c.b[2].a!"
   record PRE
     String prefix "prefix name" ;
     list<Integer> subscripts "subscripts" ;

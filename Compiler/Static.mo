@@ -680,7 +680,9 @@ algorithm
         (b2,DAE.DAE(dae1_2Elts,_)) = Convert.fromDAEEqsToAbsynAlg(dae1);
         b = listAppend(b2,b);
         //----------------------------------------------------------------------
-        (cache,b_alg,_) = Inst.instAlgorithmitems(cache, env2, Prefix.NOPRE(), b, SCode.NON_INITIAL(), true, Inst.neverUnroll);
+        (cache,b_alg,_) = Inst.instAlgorithmItems(cache, env2, 
+            InnerOuter.emptyInstHierarchy, 
+            Prefix.NOPRE(), b, SCode.NON_INITIAL(), true, Inst.neverUnroll);
         // debug_print("before -> res",res);
         (cache,res2,prop as DAE.PROP(tp,_),st,dae3) = elabExp(cache,env2,res,impl,st,doVect);
         // debug_print("after -> res",res2);
@@ -10062,7 +10064,7 @@ algorithm
       local DAE.Exp tmpExp;
       equation
         (_,_,const as DAE.C_VAR,_) = elabSubscripts(cache,env, assl ,impl);
-        exp1 = makeASUBArrayAdressing2( essl);
+        exp1 = makeASUBArrayAdressing2(essl);
         ty2 = Exp.crefType(cr);
         exp1 = DAE.ASUB(DAE.CREF(DAE.CREF_IDENT(id2,ty2,{}),ty2),exp1);
       then

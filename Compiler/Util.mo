@@ -1909,6 +1909,49 @@ algorithm
   end matchcontinue;
 end listMap22;
 
+public function listMapMap0 "function: listMapMap0
+  Takes a list and two functions the first returns a value, the second doesn't. 
+  The first function is applied to the element of the list and on its result 
+  the second function is called. The second function is usually a function 
+  with side effects, like print.
+  Example: 
+    listMapMap0({1,2,3},intString,print) 
+    is equivalent to print(intString(1)), ..."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;  
+  input FuncTypeType_bTo inFuncTypeTypeBTo;
+
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end FuncTypeType_aToType_b;
+
+  partial function FuncTypeType_bTo
+    input Type_b inTypeB;
+  end FuncTypeType_bTo;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  _ := matchcontinue (inTypeALst,inFuncTypeTypeAToTypeB,inFuncTypeTypeBTo)
+    local
+      Type_a f;
+      Type_b out;
+      list<Type_a> r;
+      FuncTypeType_aToType_b fnTranslate;
+      FuncTypeType_bTo fnNoOutput;
+
+    case ({}, _, _) then ();
+    case ((f :: r), fnTranslate, fnNoOutput)
+      equation
+        out = fnTranslate(f);
+        fnNoOutput(out);
+        listMapMap0(r, fnTranslate, fnNoOutput);
+      then
+        ();
+  end matchcontinue;
+end listMapMap0;
+
 public function listMap0 "function: listMap0
   Takes a list and a function which does not return a value
   The function is probably a function with side effects, like print.
