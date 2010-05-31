@@ -66,6 +66,7 @@ public import Ceval;
 public import Tpl;
 public import SCode;
 public import DAE;
+public import Inline;
 
 protected import DAEUtil;
 protected import SCodeUtil;
@@ -509,6 +510,7 @@ algorithm
       Values.Value outValMsg;
       SimCode simCode;
       list<Function> functions;
+      DAE.FunctionTree funcs;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy)
       equation
         /* calculate stuff that we need to create SimCode data structure */
@@ -519,6 +521,9 @@ algorithm
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
+        funcs = DAEUtil.daeFunctionTree(dae);
+        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);

@@ -2309,6 +2309,7 @@ algorithm
       String MakefileHeader;
       Values.Value outValMsg;
       list<DAE.Element> funcelems;
+      DAE.FunctionTree funcs;
     //tpl based translation
     case (cache,env,className,st,msg,fileprefix,addDummy) /* mo file directory */
       equation
@@ -2330,6 +2331,9 @@ algorithm
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
+        funcs = DAEUtil.daeFunctionTree(dae);
+        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
@@ -2351,7 +2355,7 @@ algorithm
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
         (cache,libs,funcelems,indexed_dlow_1,dae) = SimCodegen.generateFunctions(cache, env, p_1, dae, indexed_dlow_1, className, funcfilename);
-        indexed_dlow_1 = Inline.inlineCalls(funcelems,indexed_dlow_1);
+        indexed_dlow_1 = Inline.inlineCalls(SOME(funcelems),NONE(),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},indexed_dlow_1);
         SimCodegen.generateSimulationCode(dae, /* dlow_1,*/ indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
         SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
         /*

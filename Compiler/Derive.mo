@@ -890,11 +890,15 @@ algorithm
         DAE.FUNCTION(functions=flst,type_=t) = DAEUtil.avlTreeGet(functions,fname);
         m = getFunctionMapper1(flst);
     then (m,t);
-    case (_,_)
+    case (fname,functions)
+      local String s,s1,s2;
       equation
-        Debug.fprintln("failtrace", "-Derive.getFunctionMapper failed\n");
+        s = Absyn.pathString(fname);
+        s1 = stringAppend("-Derive.getFunctionMapper failed for function ",s);
+        s2 = stringAppend(s1,"\n");
+        Debug.fprintln("failtrace", s1 );
       then
-        fail();      
+        fail();    
   end matchcontinue;
 end getFunctionMapper;
 

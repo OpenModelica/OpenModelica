@@ -50,6 +50,8 @@ public import Util;
 public import Values;
 
 type Ident = String;
+  
+public type Functiontuple = tuple<Option<list<DAE.Element>>,Option<DAE.FunctionTree>,list<DAE.InlineType>>;  
 
 protected import Algorithm;
 protected import Debug;
@@ -60,13 +62,17 @@ protected import VarTransform;
 public function inlineCalls
 "function: inlineCalls
 	searches for calls where the inline flag is true, and inlines them"
-	input list<DAE.Element> inElementList "functions";
+	input Option<list<DAE.Element>> inElementList "functions";
+	input Option<DAE.FunctionTree> inFTree "functions";
+	input list<DAE.InlineType> inITLst;
 	input DAELow.DAELow inDAELow;
   output DAELow.DAELow outDAELow;
 algorithm
-  outDAELow := matchcontinue(inElementList,inDAELow)
+  outDAELow := matchcontinue(inElementList,inFTree,inITLst,inDAELow)
     local
-      list<DAE.Element> fns;
+      Option<list<DAE.Element>> fns;
+      Option<DAE.FunctionTree> ftree;
+      list<DAE.InlineType> itlst;
       DAELow.Variables orderedVars;
       DAELow.Variables knownVars;
       DAELow.Variables externalObjects;
@@ -80,23 +86,23 @@ algorithm
       list<Algorithm.Algorithm> alglst;
       DAELow.EventInfo eventInfo;
       DAELow.ExternalObjectClasses extObjClasses;
-    case(fns,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case(fns,ftree,itlst,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
-        orderedVars = inlineVariables(orderedVars,fns);
-        knownVars = inlineVariables(knownVars,fns);
-        externalObjects = inlineVariables(externalObjects,fns);
-        orderedEqs = inlineEquationArray(orderedEqs,fns);
-        removedEqs = inlineEquationArray(removedEqs,fns);
-        initialEqs = inlineEquationArray(initialEqs,fns);
-        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,fns);
+        orderedVars = inlineVariables(orderedVars,(fns,ftree,itlst));
+        knownVars = inlineVariables(knownVars,(fns,ftree,itlst));
+        externalObjects = inlineVariables(externalObjects,(fns,ftree,itlst));
+        orderedEqs = inlineEquationArray(orderedEqs,(fns,ftree,itlst));
+        removedEqs = inlineEquationArray(removedEqs,(fns,ftree,itlst));
+        initialEqs = inlineEquationArray(initialEqs,(fns,ftree,itlst));
+        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,(fns,ftree,itlst));
         arrayEqs = listArray(mdelst);
-        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,fns);
+        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,(fns,ftree,itlst));
         algorithms = listArray(alglst);
-        eventInfo = inlineEventInfo(eventInfo,fns);
-        extObjClasses = inlineExtObjClasses(extObjClasses,fns);
+        eventInfo = inlineEventInfo(eventInfo,(fns,ftree,itlst));
+        extObjClasses = inlineExtObjClasses(extObjClasses,(fns,ftree,itlst));
       then
         DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
-    case(_,_)
+    case(_,_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");
       then
@@ -108,12 +114,12 @@ protected function inlineEquationArray "
 function: inlineEquationArray
 	inlines function calls in an equation array"
 	input DAELow.EquationArray inEquationArray;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.EquationArray outEquationArray;
 algorithm
   outEquationArray := matchcontinue(inEquationArray,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       Integer i1,i2;
       Option<DAELow.Equation>[:] eqarr,eqarr_1;
       list<Option<DAELow.Equation>> eqlst,eqlst_1;
@@ -124,6 +130,11 @@ algorithm
         eqarr_1 = listArray(eqlst_1);
       then
         DAELow.EQUATION_ARRAY(i1,i2,eqarr_1);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineEquationArray failed");
+      then
+        fail();        
   end matchcontinue;
 end inlineEquationArray;
 
@@ -131,12 +142,12 @@ protected function inlineEqOpt "
 function: inlineEqOpt
 	inlines function calls in equations"
 	input Option<DAELow.Equation> inEquationOption;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output Option<DAELow.Equation> outEquationOption;
 algorithm
   outEquationOption := matchcontinue(inEquationOption,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       Integer i;
       list<DAE.Exp> explst,explst_1,explst1,explst1_1,explst2,explst2_1;
@@ -182,6 +193,18 @@ algorithm
         weq_1 = inlineWhenEq(weq,fns);
       then
         SOME(DAELow.WHEN_EQUATION(weq_1,source));
+  
+    case(SOME(DAELow.COMPLEX_EQUATION(index=i,lhs=e1,rhs=e2,source=source)),fns)
+      equation
+        e1_1 = inlineExp(e1,fns);
+        e2_1 = inlineExp(e2,fns);
+      then
+        SOME(DAELow.COMPLEX_EQUATION(i,e1_1,e2_1,source));        
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineEqOpt failed");
+      then
+        fail();          
   end matchcontinue;
 end inlineEqOpt;
 
@@ -189,12 +212,12 @@ protected function inlineWhenEq
 "function: inlineWhenEq
 	inlines function calls in when equations"
 	input DAELow.WhenEquation inWhenEquation;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.WhenEquation outWhenEquation;
 algorithm
   outWhenEquation := matchcontinue(inWhenEquation,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       Integer i;
       DAE.ComponentRef cref;
       DAE.Exp e,e_1;
@@ -210,6 +233,11 @@ algorithm
         weq_1 = inlineWhenEq(weq,fns);
       then
         DAELow.WHEN_EQ(i,cref,e_1,SOME(weq_1));
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineWhenEq failed");
+      then
+        fail();          
   end matchcontinue;
 end inlineWhenEq;
 
@@ -217,12 +245,12 @@ protected function inlineVariables
 "function: inlineVariables
 	inlines function calls in variables"
 	input DAELow.Variables inVariables;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.Variables outVariables;
 algorithm
   outVariables := matchcontinue(inVariables,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       list<DAELow.CrefIndex>[:] crefind;
       list<DAELow.StringIndex>[:] strind;
       Integer i1,i2,i3,i4;
@@ -235,6 +263,11 @@ algorithm
         vararr_1 = listArray(varlst_1);
       then
         DAELow.VARIABLES(crefind,strind,DAELow.VARIABLE_ARRAY(i3,i4,vararr_1),i1,i2);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineVariables failed");
+      then
+        fail();          
   end matchcontinue;
 end inlineVariables;
 
@@ -242,12 +275,12 @@ protected function inlineVarOpt
 "functio: inlineVarOpt
 	inlines calls in a variable option"
 	input Option<DAELow.Var> inVarOption;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output Option<DAELow.Var> outVarOption;
 algorithm
   outVarOption := matchcontinue(inVarOption,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAE.ComponentRef varName;
       DAELow.VarKind varKind;
       DAE.VarDirection varDirection;
@@ -279,12 +312,12 @@ protected function inlineMultiDimEqs
 "function: inlineMultiDimEqs
 	inlines function calls in multi dim equations"
 	input DAELow.MultiDimEquation inMultiDimEquation;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.MultiDimEquation outMultiDimEquation;
 algorithm
   outMultiDimEquation := matchcontinue(inMultiDimEquation,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       list<Integer> ilst;
       DAE.Exp e1,e1_1,e2,e2_1;
       DAE.ElementSource source "the origin of the element";
@@ -295,6 +328,11 @@ algorithm
         e2_1 = inlineExp(e2,fns);
       then
         DAELow.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineMultiDimEqs failed");
+      then
+        fail();         
   end matchcontinue;
 end inlineMultiDimEqs;
 
@@ -302,12 +340,12 @@ protected function inlineEventInfo
 "function: inlineEventInfo
 	inlines function calls in event info"
 	input DAELow.EventInfo inEventInfo;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.EventInfo outEventInfo;
 algorithm
   outEventInfo := matchcontinue(inEventInfo,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       list<DAELow.WhenClause> wclst,wclst_1;
       list<DAELow.ZeroCrossing> zclst,zclst_1;
     case(DAELow.EVENT_INFO(wclst,zclst),fns)
@@ -316,6 +354,11 @@ algorithm
         zclst_1 = Util.listMap1(zclst,inlineZeroCrossing,fns);
       then
         DAELow.EVENT_INFO(wclst_1,zclst_1);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineEventInfo failed");
+      then
+        fail();         
   end matchcontinue;
 end inlineEventInfo;
 
@@ -323,12 +366,12 @@ protected function inlineZeroCrossing
 "function: inlineZeroCrossing
 	inlines function calls in a zero crossing"
 	input DAELow.ZeroCrossing inZeroCrossing;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.ZeroCrossing outZeroCrossing;
 algorithm
   outZeroCrossing := matchcontinue(inZeroCrossing,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAE.Exp e,e_1;
       list<Integer> ilst1,ilst2;
     case(DAELow.ZERO_CROSSING(e,ilst1,ilst2),fns)
@@ -336,6 +379,11 @@ algorithm
         e_1 = inlineExp(e,fns);
       then
         DAELow.ZERO_CROSSING(e_1,ilst1,ilst2);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineZeroCrossing failed");
+      then
+        fail();         
   end matchcontinue;
 end inlineZeroCrossing;
 
@@ -343,12 +391,12 @@ protected function inlineWhenClause
 "function: inlineWhenClause
 	inlines function calls in a when clause"
 	input DAELow.WhenClause inWhenClause;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.WhenClause outWhenClause;
 algorithm
   outWhenClause := matchcontinue(inWhenClause,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAE.Exp e,e_1;
       list<DAELow.ReinitStatement> rslst,rslst_1;
       Option<Integer> io;
@@ -359,6 +407,11 @@ algorithm
         rslst_1 = Util.listMap1(rslst,inlineReinitStmt,fns);
       then
         DAELow.WHEN_CLAUSE(e_1,rslst_1,io);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineWhenClause failed");
+      then
+        fail();        
   end matchcontinue;
 end inlineWhenClause;
 
@@ -366,12 +419,12 @@ protected function inlineReinitStmt
 "function: inlineReinitStmt
 	inlines function calls in a reinit statement"
 	input DAELow.ReinitStatement inReinitStatement;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.ReinitStatement outReinitStatement;
 algorithm
   outReinitStatement := matchcontinue(inReinitStatement,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAE.ComponentRef cref;
       DAE.Exp e,e_1;
       DAELow.ReinitStatement rs;
@@ -390,12 +443,12 @@ protected function inlineExtObjClasses
 "function: inlineExtObjClasses
 	inlines function calls in external object classes"
 	input DAELow.ExternalObjectClasses inExtObjClasses;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAELow.ExternalObjectClasses outExtObjClasses;
 algorithm
   outExtObjClasses := matchcontinue(inExtObjClasses,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAELow.ExternalObjectClasses cdr,cdr_1;
       DAELow.ExternalObjectClass res;
       Absyn.Path p;
@@ -410,6 +463,11 @@ algorithm
         cdr_1 = inlineExtObjClasses(cdr,fns);
       then
         res :: cdr_1;
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineExtObjClasses failed");
+      then
+        fail();        
   end matchcontinue;
 end inlineExtObjClasses;
 
@@ -417,21 +475,23 @@ public function inlineCallsInFunctions "
 function: inlineCallsInFunctions
 	inlines function calls within functions"
 	input list<DAE.Element> inElementList;
+	input list<DAE.InlineType> inITList;
 	output list<DAE.Element> outElementList;
 algorithm
-  outElementList := inlineDAEElements(inElementList,inElementList);
+  outElementList := inlineDAEElements(inElementList,(SOME(inElementList),NONE(),inITList));
 end inlineCallsInFunctions;
 
 protected function inlineDAEElements
 "function: inlineDAEElements
 	inlines calls in DAEElements"
 	input list<DAE.Element> inElementList;
-	input list<DAE.Element> inFunctions;
+	input Functiontuple inFunctions;
 	output list<DAE.Element> outElementList;
 algorithm
   outDAElist := matchcontinue(inElementList,inFunctions)
     local
-      list<DAE.Element> fns,cdr,cdr_1,elist,elist_1;
+      Functiontuple fns;
+      list<DAE.Element> cdr,cdr_1,elist,elist_1;
       list<list<DAE.Element>> dlist,dlist_1;
       DAE.Element el,el_1,res,el1,el1_1,el2,el2_1;
       DAE.ComponentRef componentRef;
@@ -671,18 +731,23 @@ protected function inlineAlgorithm
 "function: inlineAlgorithm
 	inline calls in an Algorithm.Algorithm"
 	input Algorithm.Algorithm inAlgorithm;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output Algorithm.Algorithm outAlgorithm;
 algorithm
   outAlgorithm := matchcontinue(inAlgorithm,inElementList)
     local
       list<Algorithm.Statement> stmts,stmts_1;
-      list<DAE.Element> fns;
+      Functiontuple fns;
     case(DAE.ALGORITHM_STMTS(stmts),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
         DAE.ALGORITHM_STMTS(stmts_1);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.inlineAlgorithm failed");
+      then
+        fail();         
   end matchcontinue;
 end inlineAlgorithm;
 
@@ -690,12 +755,12 @@ protected function inlineStatement
 "function: inlineStatement
 	inlines calls in an Algorithm.Statement"
 	input Algorithm.Statement inStatement;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output Algorithm.Statement outStatement;
 algorithm
   outStatement := matchcontinue(inStatement,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       Algorithm.Statement stmt,stmt_1;
       DAE.ExpType t;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
@@ -800,12 +865,12 @@ protected function inlineElse
 "function: inlineElse
 	inlines calls in an Algorithm.Else"
 	input Algorithm.Else inElse;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output Algorithm.Else outElse;
 algorithm
   outElse := matchcontinue(inElse,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       Algorithm.Else a_else,a_else_1;
       DAE.Exp e,e_1;
       list<Algorithm.Statement> stmts,stmts_1;
@@ -829,12 +894,12 @@ protected function inlineExp "
 function: inlineExp
 	inlines calls in an DAE.Exp"
 	input DAE.Exp inExp;
-	input list<DAE.Element> inElementList;
+	input Functiontuple inElementList;
 	output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue(inExp,inElementList)
     local
-      list<DAE.Element> fns;
+      Functiontuple fns;
       DAE.Exp e,e_1;
     case(e,fns)
       equation
@@ -848,34 +913,140 @@ end inlineExp;
 protected function inlineCall
 "function: inlineCall
 	replaces an inline call with the expression from the function"
-	input tuple<DAE.Exp, list<DAE.Element>> inTuple;
-	output tuple<DAE.Exp, list<DAE.Element>> outTuple;
+	input tuple<DAE.Exp, Functiontuple> inTuple;
+	output tuple<DAE.Exp, Functiontuple> outTuple;
 algorithm
   outExp := matchcontinue(inTuple)
     local
-      list<DAE.Element> fns,fn;
+      Functiontuple fns,fns1;
+      list<DAE.Element> fn;
       Absyn.Path p;
       list<DAE.Exp> args;
       Boolean tup,built;
       DAE.ExpType t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      DAE.Exp newExp;
+      DAE.Exp newExp,newExp1;
       DAE.InlineType inlineType;
     case((DAE.CALL(p,args,tup,built,t,inlineType),fns))
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
-        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) :: _ = DAEUtil.getNamedFunction(p,fns);
+        true = checkInlineType(inlineType,fns);
+        fn = getFunctionBody(p,fns);
         crefs = Util.listMap(fn,getInputCrefs);
         crefs = Util.listSelect(crefs,removeWilds);
         argmap = Util.listThreadTuple(crefs,args);
+        argmap = extendCrefRecords(argmap);
         newExp = getRhsExp(fn);
         ((newExp,argmap)) = Exp.traverseExp(newExp,replaceArgs,argmap);
+        // for inlinecals in functions
+        ((newExp1,fns1)) = Exp.traverseExp(newExp,inlineCall,fns);
       then
-        ((newExp,fns));
+        ((newExp1,fns));
     case((newExp,fns)) then ((newExp,fns));
   end matchcontinue;
 end inlineCall;
+
+protected function checkInlineType "
+Author: Frenkel TUD, 2010-05"
+  input DAE.InlineType inIT;
+  input Functiontuple fns;
+  output Boolean outb;
+algorithm
+  outb := matchcontinue(inIT,fns)
+    local
+      DAE.InlineType it;
+      list<DAE.InlineType> itlst;
+      Boolean b;
+    case (it,(_,_,itlst))
+      equation
+       b = Util.listContains(it,itlst);
+      then b; 
+    case (_,_) then false; 
+  end matchcontinue;
+end checkInlineType;
+
+protected function extendCrefRecords
+"function: extendCrefRecords
+	extends crefs from records"
+	input list<tuple<DAE.ComponentRef, DAE.Exp>> inArgmap;
+	output list<tuple<DAE.ComponentRef, DAE.Exp>> outArgmap;
+algorithm
+  outArgmap := matchcontinue(inArgmap)
+    local
+      list<tuple<DAE.ComponentRef, DAE.Exp>> res,res1,res2,new;
+      DAE.ComponentRef c,cref;
+      DAE.Exp e;
+      list<DAE.ExpVar> varLst;
+    case ({}) then {}; 
+    case((c,e as (DAE.CREF(componentRef = cref)))::res)
+      equation
+      true = Exp.isRecord(cref);
+      DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e);
+      new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
+      res1 = extendCrefRecords(res);  
+      res2 = listAppend(new,res1);
+      then ((c,e)::res2);      
+    case((c,e)::res)
+      equation
+      res1 = extendCrefRecords(res);  
+      then ((c,e)::res1);
+  end matchcontinue;
+end extendCrefRecords;
+
+protected function extendCrefRecords1
+"function: extendCrefRecords1
+	helper for extendCrefRecords"
+	input DAE.ExpVar ev;
+	input DAE.ComponentRef c;
+	input DAE.ComponentRef e;
+	output tuple<DAE.ComponentRef, DAE.Exp> outArg;
+algorithm
+  outArg := matchcontinue(ev,c,e)
+    local
+      list<DAE.ExpVar> varLst;
+      DAE.Ident ident,eident;
+      DAE.ExpType identType,eidentType,tp;
+      list<DAE.Subscript> subscriptLst,esubscriptLst; 
+      String name;
+    case(DAE.COMPLEX_VAR(name=name,tp=tp),DAE.CREF_IDENT(ident=ident,identType=identType,subscriptLst=subscriptLst),
+      DAE.CREF_IDENT(ident=eident,identType=eidentType,subscriptLst=esubscriptLst)) 
+      then ((DAE.CREF_QUAL(ident,identType,subscriptLst,DAE.CREF_IDENT(name,tp,{})),
+             DAE.CREF(DAE.CREF_QUAL(eident,eidentType,esubscriptLst,DAE.CREF_IDENT(name,tp,{})),tp))); 
+    case(_,_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.extendCrefRecords1 failed");
+      then
+        fail();                   
+  end matchcontinue;
+end extendCrefRecords1;
+
+protected function getFunctionBody
+"function: getFunctionBody
+	returns the body of a function"
+	input Absyn.Path p;
+	input Functiontuple fns;
+	output list<DAE.Element> outfn;
+algorithm
+  outfn := matchcontinue(p,fns)
+    local
+      list<DAE.Element> flst,fn;
+      DAE.FunctionTree ftree;
+    case(p,(SOME(flst),_,_))
+    equation
+      DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) :: _ = DAEUtil.getNamedFunction(p,flst);  
+    then fn;
+    case(p,(_,SOME(ftree),_))
+    equation
+      DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) = DAEUtil.avlTreeGet(ftree,p); 
+    then fn;   
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.getFunctionBody failed");
+      then
+        fail();        
+  end matchcontinue;
+end getFunctionBody;
 
 protected function getRhsExp
 "function: getRhsExp

@@ -758,12 +758,16 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       list<Integer> reseqn,tearvar;
+      DAE.FunctionTree funcs;
     case (cache,env,p,ap,dae,daeimpl,classname)
       local String str,strtearing;
       equation
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
+        funcs = DAEUtil.daeFunctionTree(dae);
+        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
@@ -917,7 +921,7 @@ algorithm
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         (cache,libs,funcelems,indexed_dlow_1,dae) = SimCodegen.generateFunctions(cache, env, p, dae, indexed_dlow_1, classname, funcfilename);
-        indexed_dlow_1 = Inline.inlineCalls(funcelems,indexed_dlow_1);
+        indexed_dlow_1 = Inline.inlineCalls(SOME(funcelems),NONE(),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},indexed_dlow_1);
         SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, filename, funcfilename,file_dir);
         SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","");
         SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);

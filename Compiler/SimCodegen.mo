@@ -7097,7 +7097,7 @@ algorithm
         (dae,funcelems_1) = PartFn.partEvalDAE(dae,funcelems_1);
         (funcelems_1,dlow) = PartFn.partEvalDAELow(funcelems_1,dlow);
         funcelems_1 = Util.listUnion(funcelems_1,funcelems_1);
-        funcelems_1 = Inline.inlineCallsInFunctions(funcelems_1);
+        funcelems_1 = Inline.inlineCallsInFunctions(funcelems_1,{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()});
         Print.clearBuf();
         Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
 				(_,libs1) = generateExternalObjectIncludes(dlow);

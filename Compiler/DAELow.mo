@@ -6002,9 +6002,10 @@ algorithm
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
         // create as many equations as the dimension of the record
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
+        complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
+        //ty = Exp.typeof(e1);
+        //i = Exp.sizeOf(ty);
+        //complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
       then
         complexEqs;
     // initial
@@ -6015,9 +6016,10 @@ algorithm
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
         // create as many equations as the dimension of the record
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
+        complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
+        //ty = Exp.typeof(e1);
+        //i = Exp.sizeOf(ty);
+        //complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
       then
         complexEqs;
     case (_)
@@ -17679,5 +17681,202 @@ algorithm outExp := matchcontinue(inExp)
   case(inExp) then inExp;
 end matchcontinue;
 end traversingDivExpFinder2;
+
+public function extendAllRecordEqns"
+Author: Frenkel TUD 2010-05"
+	input DAELow inDAELow;
+	input DAE.FunctionTree inFuncs;
+  output DAELow outDAELow;
+algorithm
+  outDAELow := matchcontinue(inDAELow,inFuncs)
+    local
+      DAE.FunctionTree ftree;
+      Variables orderedVars;
+      Variables knownVars;
+      Variables externalObjects;
+      VarTransform.VariableReplacements aliasVars "alias-variables' hashtable";
+      EquationArray orderedEqs;
+      EquationArray removedEqs;
+      EquationArray initialEqs;
+      MultiDimEquation[:] arrayEqs;
+      list<MultiDimEquation> mdelst;
+      Algorithm.Algorithm[:] algorithms;
+      list<Algorithm.Algorithm> alglst;
+      EventInfo eventInfo;
+      ExternalObjectClasses extObjClasses;
+    case(DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses),ftree)
+      equation
+        orderedEqs = extendRecordArray(orderedEqs,ftree);
+        removedEqs = extendRecordArray(removedEqs,ftree);
+        initialEqs = extendRecordArray(initialEqs,ftree);
+      then
+        DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","DAElow.extendAllRecordEqns failed");
+      then
+        fail();
+  end matchcontinue;
+end extendAllRecordEqns;
+
+protected function extendRecordArray "
+Author: Frenkel TUD 2010-05"
+	input EquationArray inEquationArray;
+	input DAE.FunctionTree inFuncs;
+	output EquationArray outEquationArray;
+algorithm
+  outEquationArray := matchcontinue(inEquationArray,inFuncs)
+    local
+      DAE.FunctionTree funcs;
+      Integer i1,i2,n,i1_1,i2_1;
+      Option<Equation>[:] eqarr,eqarr_1;
+      list<Option<Equation>> eqlst,eqlst_1;
+      list<tuple<list<Option<Equation>>,Integer>> eqtpllstlst;
+      list<list<Option<Equation>>> eqlstlst;
+      list<Integer> nlst;
+    case(EQUATION_ARRAY(i1,i2,eqarr),funcs)
+      equation
+        eqlst = arrayList(eqarr);
+        eqtpllstlst = Util.listMap1(eqlst,extendRecordEqOpt,funcs);
+        (eqlstlst,nlst) = Util.splitTuple2List(eqtpllstlst);
+        eqlst_1 = Util.listFlatten(eqlstlst);
+        n = Util.listFold(nlst,intAdd,0);
+        i1_1 = n + i1;
+        i2_1 = listLength(eqlst_1);
+        eqarr_1 = listArray(eqlst_1);
+      then
+        EQUATION_ARRAY(i1_1,i2_1,eqarr_1);
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","DAELow.extendRecordArray failed");
+      then
+        fail();        
+  end matchcontinue;
+end extendRecordArray;
+
+protected function extendRecordEqOpt "
+Author: Frenkel TUD 2010-05"
+	input Option<Equation> inEquationOption;
+	input DAE.FunctionTree inFuncs;
+	output tuple<list<Option<Equation>>,Integer> outEquationOptionLst;
+algorithm
+  outEquationOptionLst := matchcontinue(inEquationOption,inFuncs)
+    local
+      DAE.FunctionTree funcs;
+      Equation eqn;
+      list<Equation> eqnlst;
+      list<Option<Equation>> opteqnlst;
+      Integer n,n1;
+    case(NONE,funcs) then (({NONE()},0));
+    case(SOME(eqn),funcs)
+      equation
+        eqnlst = extendRecordEqns(eqn,funcs);
+        n = listLength(eqnlst);
+        n1 = n - 1;
+        opteqnlst = Util.listMap(eqnlst,Util.makeOption);
+      then
+        ((opteqnlst,n1));
+  end matchcontinue;
+end extendRecordEqOpt;
+
+protected function extendRecordEqns "
+Author: Frenkel TUD 2010-05"
+  input Equation inEqn;
+  input DAE.FunctionTree inFuncs;
+  output list<Equation> outEqnLst;
+algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
+  local
+    DAE.FunctionTree funcs;
+    Equation eqn;
+    DAE.ComponentRef cr1,cr2;
+    DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
+    list<DAE.ExpVar> varLst;
+    Integer i;
+    list<Equation> complexEqs;  
+    DAE.ElementSource source;  
+    Absyn.Path path,fname;
+    list<DAE.Exp> expLst;
+  // a=b
+  case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),_)
+    equation
+      e1_1 = Exp.simplify(e1);
+      e2_1 = Exp.simplify(e2);
+      e1_2 = Exp.stringifyCrefs(e1_1);
+      e2_2 = Exp.stringifyCrefs(e2_1);
+      // create as many equations as the dimension of the record
+      DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
+      complexEqs = extendRecordEqns1(e1_2,e2_2,varLst,source,{});
+    then
+      complexEqs;
+  // a=Record()
+  case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CALL(path=path,expLst=expLst),source = source),funcs)
+    equation
+      DAE.RECORD_CONSTRUCTOR(path=fname) = DAEUtil.avlTreeGet(funcs,path);
+      e1_1 = Exp.simplify(e1);
+      e1_2 = Exp.stringifyCrefs(e1_1);
+      // create as many equations as the dimension of the record
+      DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
+      complexEqs = extendRecordEqns2(e1_2,expLst,varLst,source,{});
+    then
+      complexEqs;      
+  case(eqn,_) then {eqn};      
+end matchcontinue;
+end extendRecordEqns;
+
+protected function extendRecordEqns1 "
+Author: Frenkel TUD 2010-05"
+  input DAE.Exp inExp1;
+  input DAE.Exp inExp2;
+  input list<DAE.ExpVar> inVarLst;
+  input DAE.ElementSource Source;
+  input list<Equation> inEqnLst;
+  output list<Equation> outEqnLst;
+algorithm outEqnLst := matchcontinue(inExp1,inExp2,inVarLst,Source,inEqnLst)
+  local
+    DAE.Ident id1,id2;
+    list<DAE.ExpVar> rest;
+    String name;
+    DAE.ExpType tp;
+    list<Equation> complexEqs,complexEqs1;  
+    DAE.ElementSource source;
+    DAE.Exp e1,e2,v1,v2; 
+  case (e1,e2,{},source,complexEqs) then complexEqs;
+  case (e1 as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1)),
+        e2 as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id2)),DAE.COMPLEX_VAR(name=name,tp=tp)::rest,source,complexEqs)
+  equation
+    v1 = DAE.CREF(DAE.CREF_QUAL(id1,tp,{},DAE.CREF_IDENT(name,tp,{})),tp);
+    v2 = DAE.CREF(DAE.CREF_QUAL(id2,tp,{},DAE.CREF_IDENT(name,tp,{})),tp);
+    complexEqs1 = extendRecordEqns1(e1,e2,rest,source,EQUATION(v1,v2,source)::complexEqs);
+    then complexEqs1;
+end matchcontinue;
+end extendRecordEqns1;
+
+protected function extendRecordEqns2 "
+Author: Frenkel TUD 2010-05"
+  input DAE.Exp inExp1;
+  input list<DAE.Exp> inExpLst;
+  input list<DAE.ExpVar> inVarLst;
+  input DAE.ElementSource Source;
+  input list<Equation> inEqnLst;
+  output list<Equation> outEqnLst;
+algorithm outEqnLst := matchcontinue(inExp1,inExpLst,inVarLst,Source,inEqnLst)
+  local
+    DAE.Ident id1,id2;
+    list<DAE.ExpVar> rest;
+    String name;
+    DAE.ExpType tp;
+    list<Equation> complexEqs,complexEqs1;  
+    DAE.ElementSource source;
+    DAE.Exp e1,e2,v1;
+    list<DAE.Exp> esplst; 
+  case (e1,{},{},source,complexEqs) then complexEqs;
+  case (e1 as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1)),
+        e2::esplst,DAE.COMPLEX_VAR(name=name,tp=tp)::rest,source,complexEqs)
+  equation
+    v1 = DAE.CREF(DAE.CREF_QUAL(id1,tp,{},DAE.CREF_IDENT(name,tp,{})),tp);
+    complexEqs1 = extendRecordEqns2(e1,esplst,rest,source,EQUATION(v1,e2,source)::complexEqs);
+    then complexEqs1;
+end matchcontinue;
+end extendRecordEqns2;
 
 end DAELow;
