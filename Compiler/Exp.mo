@@ -334,9 +334,7 @@ algorithm
 end crefLastIdent;
 
 public function crefIdent "
-
-  Return the last ComponentRef
-"
+  Return the last ComponentRef"
   input ComponentRef inComponentRef;
   output ComponentRef outSubscriptLst;
 algorithm outSubscriptLst:= matchcontinue (inComponentRef)
@@ -354,14 +352,10 @@ end crefIdent;
 
 public function stripCrefIdentSliceSubs "
 Author BZ
-
 Strips the SLICE-subscripts fromt the -last- subscript list. All other subscripts are not changed.
-
 For example
 x[1].y[{1,2},3,{1,3,7}] => x[1].y[3]
-
-Alternative names: stripLastSliceSubs
-"
+Alternative names: stripLastSliceSubs"
   input ComponentRef inCref;
   output ComponentRef outCref;
 algorithm
@@ -402,8 +396,7 @@ algorithm
 end removeSliceSubs;
 
 public function crefStripSubs "
-Removes all subscript of a componentref
-"
+Removes all subscript of a componentref"
   input ComponentRef inCref;
   output ComponentRef outCref;
 algorithm
@@ -650,38 +643,41 @@ end crefIsIdent;
 public function crefPrefixOf
 "function: crefPrefixOf
   author: PA
-  Returns true if y is a prefix of x
+  Returns true if prefixCref is a prefix of fullCref
   For example, a.b is a prefix of a.b.c"
-  input ComponentRef x;
-  input ComponentRef y;
+  input ComponentRef prefixCref;
+  input ComponentRef fullCref;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (x,y)
+  outBoolean := matchcontinue (prefixCref,fullCref)
     local
       ComponentRef cr1,cr2;
       Boolean res;
       Ident id1,id2;
       list<Subscript> ss1,ss2;
       Type t2,t22;
-    case (cr1,cr2) /* x y */
+    
+    case (cr1,cr2) 
       equation
-        true = crefEqual(cr1, cr2);
+        true = crefEqualNoStringCompare(cr1, cr2);
       then
         true;
+    
     case (DAE.CREF_QUAL(ident = id1, subscriptLst = ss1,componentRef = cr1),DAE.CREF_QUAL(ident = id2, subscriptLst = ss2,componentRef = cr2))
       equation
-        equality(id1 = id2);
+        true = stringEqual(id1, id2);
         true = subscriptEqual(ss1, ss2);
         res = crefPrefixOf(cr1, cr2);
       then
         res;
+    
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
       equation
-        equality(id1 = id2);
+        true = stringEqual(id1, id2);
         res = subscriptEqual(ss1, ss2);
       then
         res;
+
     case (cr1,cr2)
       equation
         // print("Exp.crefPrefixOf: " +& printComponentRefStr(cr1) +& " NOT PREFIX OF " +& printComponentRefStr(cr2) +& "\n");
@@ -6067,9 +6063,13 @@ algorithm
 
     case(DAE.CODE(code,_)) then Absyn.CODE(code);
 
-    case DAE.REDUCTION(_,_,_,_) equation
-      print("unelab of reduction not impl. yet");
-    then fail();
+    case DAE.REDUCTION(path,e1,s,e2) equation
+      //print("unelab of reduction not impl. yet");
+      acref = Absyn.pathToCref(path);
+      ae1 = unelabExp(e1);
+      ae2 = unelabExp(e2);
+    then 
+      Absyn.CALL(acref, Absyn.FOR_ITER_FARG(ae1, {(s,SOME(ae2))}));
 
     case(DAE.END()) then Absyn.END();
     case(DAE.VALUEBLOCK(_,_,_,_)) equation
@@ -10570,8 +10570,7 @@ algorithm
 end isUnary;
 
 public function isCref "
-Author: BZ 2008-06, checks wheter an exp is cref or not.
-"
+Author: BZ 2008-06, checks wheter an exp is cref or not."
   input Exp inExp;
   output Boolean outB;
 algorithm outB:= matchcontinue(inExp)
@@ -10583,8 +10582,7 @@ end isCref;
 public function crefAppend "
 Author BZ
 function for appending two cref
-append (a.b, r.q.t) ==> a.b.r.q.t
-"
+append (a.b, r.q.t) ==> a.b.r.q.t"
   input ComponentRef cr1,cr2;
   output ComponentRef cr3;
 algorithm
