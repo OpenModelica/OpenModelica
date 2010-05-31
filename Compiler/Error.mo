@@ -524,22 +524,21 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Start value is assigned for variable: %s, but not used since %s"),
           (UNUSED_MODIFIER,TRANSLATION(),ERROR(),
           "In modifier %s"),
-          (MISSING_INNER_PREFIX,TRANSLATION(),ERROR(),
-          "No corresponding 'inner' declaration found for component %s declared as '%s'."),
+          (MISSING_INNER_PREFIX,TRANSLATION(),WARNING(),
+          "No corresponding 'inner' declaration found for component %s declared as '%s'.\n\tPlease declare an 'inner' component with the same name in the top scope.\n\tContinuing flattening by only considering the 'outer' component declaration."),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
-
-
+          
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
           "While deriving %s to %s, types of inputs: %s and type of %s: %s did not match"),
-
+          
           (MULTIPLE_MODIFIER,TRANSLATION(),ERROR(),
           "Multiple modifers in same scope for element %s, %s"),
-
+          
           (STRUCT_SINGULAR_SYSTEM_INITIALIZATION,TRANSLATION(),ERROR(),
           "The initialization problem of model is structurally singular, error found sorting equations %s for variables %s"),
           (CIRCULAR_EQUATION, TRANSLATION(),ERROR(), " Equation : '%s'  has circular references for variable %s."),
@@ -558,14 +557,12 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           };
 
 protected import ErrorExt;
-protected import Util;
 protected import Print;
 protected import System;
 
 public function updateCurrentComponent "Function: updateCurrentComponent
-This function takes a String and set the global var to which the current variable the
-compiler is working with.
-"
+This function takes a String and set the global var to 
+which the current variable the compiler is working with."
   input String component;
   input Option<Absyn.Info> info;
 algorithm _ :=
