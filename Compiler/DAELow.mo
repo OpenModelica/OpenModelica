@@ -425,6 +425,8 @@ protected import RTOpts;
 protected import SimCodegen;
 protected import System;
 protected import Util;
+protected import DAEDump;
+protected import IOStream;
 //protected import VarTransform; // since it is imported as public
 //protected import ValuesUtil;
 
@@ -2406,11 +2408,17 @@ protected function dumpAlgorithms "Help function to dump, prints algorithms to s
   input list<DAE.Algorithm> algs;
 algorithm
   _ := matchcontinue(algs)
-    local list<Algorithm.Statement> stmts;
+    local 
+      list<Algorithm.Statement> stmts;
+      IOStream.IOStream myStream;
+      
     case({}) then ();
-    case(DAE.ALGORITHM_STMTS(stmts)::algs) equation
-      print(DAEUtil.dumpAlgorithmStr(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource)));
-      dumpAlgorithms(algs);
+    case(DAE.ALGORITHM_STMTS(stmts)::algs) 
+      equation
+        myStream = IOStream.create("", IOStream.LIST()); 
+        myStream = DAEDump.dumpAlgorithmStream(DAE.ALGORITHM(DAE.ALGORITHM_STMTS(stmts),DAE.emptyElementSource), myStream);
+        IOStream.print(myStream, IOStream.stdOutput);
+        dumpAlgorithms(algs);
     then ();
   end matchcontinue;
 end dumpAlgorithms;
@@ -4015,9 +4023,9 @@ algorithm
         print("class ");
         print(Absyn.pathString(path));
         print("\n  extends ExternalObject");
-        print(DAEUtil.dumpFunctionStr(constr));
+        print(DAEDump.dumpFunctionStr(constr));
         print("\n");
-        print(DAEUtil.dumpFunctionStr(destr));
+        print(DAEDump.dumpFunctionStr(destr));
         print("\n origin: ");
         paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = Util.listMap(paths, Absyn.pathString);
@@ -4081,7 +4089,7 @@ algorithm
         varnostr = intString(varno);
         print(varnostr);
         print(": ");
-        dirstr = DAEUtil.dumpDirectionStr(dir);
+        dirstr = DAEDump.dumpDirectionStr(dir);
         print(dirstr);
         print(" ");
         str = Exp.printComponentRefStr(cr);
@@ -4091,7 +4099,7 @@ algorithm
         paths = DAEUtil.getElementSourceTypes(source);
         paths_lst = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(paths_lst, ", ");
-        comment_str = DAEUtil.dumpCommentOptionStr(comment);
+        comment_str = DAEDump.dumpCommentOptionStr(comment);
         print("= ");
         s = Exp.printExpStr(e);
         print(s);
@@ -4105,7 +4113,7 @@ algorithm
         varno_1 = varno + 1;
         print(" fixed:");print(Util.boolString(varFixed(v)));
         print("\n");
-        dumpVars2(xs, varno_1) "DAEUtil.dump_variable_attributes(dae_var_attr) &" ;
+        dumpVars2(xs, varno_1) "DAEDump.dump_variable_attributes(dae_var_attr) &" ;
       then
         ();
 
@@ -4126,14 +4134,14 @@ algorithm
         varnostr = intString(varno);
         print(varnostr);
         print(": ");
-        dirstr = DAEUtil.dumpDirectionStr(dir);
+        dirstr = DAEDump.dumpDirectionStr(dir);
         print(dirstr);
         print(" ");
         str = Exp.printComponentRefStr(cr);
         paths = DAEUtil.getElementSourceTypes(source);
         path_strs = Util.listMap(paths, Absyn.pathString);
         path_str = Util.stringDelimitList(path_strs, ", ");
-        comment_str = DAEUtil.dumpCommentOptionStr(comment);
+        comment_str = DAEDump.dumpCommentOptionStr(comment);
         print(str);
         print(":");
         dumpKind(kind);
@@ -4974,10 +4982,9 @@ algorithm
     case (DAE.DAE(elementLst = ((e as DAE.IF_EQUATION(condition1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
       local String str;
       equation
-        str = DAEUtil.dumpElementsStr({e});
+        str = DAEDump.dumpElementsStr({e});
         str = stringAppend("rewrite equations using if-expressions: ",str);
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"if-equations",str});
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"if-equations",str});
       then
         fail();
 
@@ -4985,10 +4992,9 @@ algorithm
     case (DAE.DAE(elementLst = ((e as DAE.INITIAL_IF_EQUATION(condition1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
       local String str;
       equation
-        str = DAEUtil.dumpElementsStr({e});
+        str = DAEDump.dumpElementsStr({e});
         str = stringAppend("rewrite equations using if-expressions: ",str);
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"if-equations",str});
+        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"if-equations",str});
       then
         fail();
 
@@ -5052,7 +5058,7 @@ algorithm
       equation
         // show only on failtrace!
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "- DAELow.lower2 failed on: " +& DAEUtil.dumpElementsStr({ddl}));
+        Debug.fprintln("failtrace", "- DAELow.lower2 failed on: " +& DAEDump.dumpElementsStr({ddl}));
       then
         fail();
   end matchcontinue;
@@ -15121,6 +15127,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Integer typ,place;
+    
     case ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType)
       then ({},x,xd,y,p,dummy,ext,x_strType,xd_strType,y_strType,p_strType,dummy_strType);
 
