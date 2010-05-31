@@ -65,11 +65,12 @@ protected import Debug;
 protected import Error;
 protected import Dump;
 protected import PrefixUtil;
+protected import RTOpts;
 
 public
-type Env = Env.Env;
+type Env     = Env.Env;
 type AvlTree = Env.AvlTree;
-type Cache = Env.Cache;
+type Cache   = Env.Cache;
 
 public function addDeletedComponent "Adds a deleted component, i.e. conditional component
 with condition = false, to Connect.Sets, if condition b is false"
@@ -127,11 +128,12 @@ protected function outerConnectionMatches "Returns true if Connect.OuterConnect 
 algorithm
   matches := matchcontinue(oc,cr1,cr2)
     local DAE.ComponentRef cr11,cr22;
-    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) equation
-      matches =
+    case(Connect.OUTERCONNECT(cr1=cr11,cr2=cr22),cr1,cr2) 
+      equation
+        matches =
         Exp.crefEqual(cr11,cr1) and Exp.crefEqual(cr22,cr2) or
         Exp.crefEqual(cr11,cr2) and Exp.crefEqual(cr22,cr1);
-    then matches;
+      then matches;
   end matchcontinue;
 end outerConnectionMatches;
 
@@ -318,6 +320,7 @@ public function addEqu "function: addEqu
 algorithm
   s1 := findEquSet(ss, r1, source);
   s2 := findEquSet(ss, r2, source);
+  
   ss_1 := merge(ss, s1, s2);
 end addEqu;
 
@@ -1112,12 +1115,12 @@ public function unconnectedFlowEquations "Unconnected flow variables.
   input DAE.DAElist inDae;
   input Env inEnv;
   input Prefix.Prefix prefix;
-  input Boolean inBoolean;
+  input Boolean isTopScope;
   input list<Connect.OuterConnect> ocl;
   output Cache outCache;
   output DAE.DAElist outDae;
 algorithm
-  (outCache,outDae) := matchcontinue (inCache,inSets,inDae,inEnv,prefix,inBoolean,ocl)
+  (outCache, outDae) := matchcontinue (inCache,inSets,inDae,inEnv,prefix,isTopScope,ocl)
     local
       list<DAE.ComponentRef> v1,v2,v3,vSpecial,vars,vars2,vars3,unconnectedvars,deletedComponents;
       DAE.DAElist dae_1,dae;
@@ -1127,7 +1130,8 @@ algorithm
       DAE.ComponentRef prefixCref;
       list<Connect.Set> set;
       list<DAE.ComponentRef> flowCrefs;
-
+    
+    // is top scope as the input var isTopScope is true
     case (cache,(csets as Connect.SETS(setLst = set, deletedComponents = deletedComponents)),dae,env,prefix,true,ocl)
       equation
         v1 = localOutsideConnectorFlowvars(env) "if outermost call look at both inner and outer unconnected connectors" ;
@@ -1138,30 +1142,35 @@ algorithm
 				(v3,vSpecial) = extractOuterNonEnvDeclaredVars(ocl,true,flowCrefs);
 				vars = listAppend(v1, listAppend(v2,v3));
 				*/
-
+        
 				//print("\n Outside connectors, v1: " +& Util.stringDelimitList(Util.listMap(v1,Exp.printComponentRefStr),", ") +& "\n");
 				//print(" Inside connectors, v2: " +& Util.stringDelimitList(Util.listMap(v2,Exp.printComponentRefStr),", ") +& "\n");
-
-        vars = listAppend(v1, v2);
+        
+        vars  = listAppend(v1, v2);
         vars2 = getInsideFlowVariables(csets);
         vars3 = getOuterConnectFlowVariables(csets,vars,prefix);
         vars2 = listAppend(vars3,vars2);
-
+        
         //print(" vars2 : " +& Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),", ") +& "\n");
-
         //print(" acquired: " +& Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),", ") +& "\n");
-        // last array subscripts are not present in vars, therefor removed from vars2 too.
+        // last array subscripts are not present in vars, therefore removed from vars2 too.
+        
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs);
+        
+        // print(" removing : " +& Util.stringDelimitList(Util.listMap(vars2,Exp.printComponentRefStr),", ") +& "\n");
+        // print(" from : " +& Util.stringDelimitList(Util.listMap(vars,Exp.printComponentRefStr),", ") +& "\n");
+
         unconnectedvars = removeVariables(vars, vars2);
         unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets,prefix);
-
+        
         // no prefix for top level
         /* SE COMMENT ABOVE
 				unconnectedvars = Util.listUnion(vSpecial,unconnectedvars);*/
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,Prefix.NOPRE(),deletedComponents);
       then
         (cache,dae_1);
-
+    
+    // is NOT top scope as the input var isTopScope is false
     case (cache,(csets as Connect.SETS(deletedComponents = deletedComponents)),dae,env,prefix,false,ocl)
       equation
         vars = localInsideConnectorFlowvars(env);
@@ -1174,12 +1183,13 @@ algorithm
         vars2 = Util.listMap(vars2,Exp.crefStripLastSubs);
         unconnectedvars = removeVariables(vars, vars2);
         unconnectedvars = removeUnconnectedDeletedComponents(unconnectedvars,csets,prefix);
-
+        
 				// Add prefix that was "removed" above
         (cache,dae_1) = generateZeroflowEquations(cache,unconnectedvars,env,prefix,deletedComponents);
       then
         (cache,dae_1);
 
+    // we could not find any unconnected flow equations, return emtpty DAE  
     case (cache,csets,dae,env,_,_,_) then (cache,DAEUtil.emptyDae);
   end matchcontinue;
 end unconnectedFlowEquations;
@@ -1571,20 +1581,21 @@ end getAllFlowVariables;
 protected function getOuterConnectFlowVariables "Retrieves all flow variables from outer connections
 given a list of all local flow variables
 For instance, for a connect(A,B) in outerConnects and  a list of flow variables A.i, B.i, other.i,...
-where A and B are Electrical Pin, the function returns
-{A.i, B.i}
-Note: A and B a prefixed eariler, so the prefix is remove, if the reference is not outer.
-"
+where A and B are Electrical Pin, the function returns {A.i, B.i}
+Note: A and B a prefixed earlier, so the prefix is removed if the reference is not outer."
   input Connect.Sets csets;
   input list<DAE.ComponentRef> allFlowVars;
   input Prefix.Prefix prefix;
   output list<DAE.ComponentRef> flowVars;
 algorithm
     flowVars := matchcontinue(csets,allFlowVars,prefix)
-    local list<Connect.OuterConnect> outerConnects;
-      case(Connect.SETS(outerConnects=outerConnects),allFlowVars,prefix) equation
-        flowVars = Util.listListUnionOnTrue(Util.listMap2(outerConnects,getOuterConnectFlowVariables2,allFlowVars,prefix),Exp.crefEqual);
-      then flowVars;
+      local 
+        list<Connect.OuterConnect> outerConnects;
+
+      case(Connect.SETS(outerConnects=outerConnects),allFlowVars,prefix) 
+        equation
+          flowVars = Util.listListUnionOnTrue(Util.listMap2(outerConnects,getOuterConnectFlowVariables2,allFlowVars,prefix),Exp.crefEqual);
+        then flowVars;
     end matchcontinue;
 end getOuterConnectFlowVariables;
 
@@ -1599,13 +1610,13 @@ algorithm
       DAE.ComponentRef cr1,cr2;
       Absyn.InnerOuter io1,io2;
 
-    case(Connect.OUTERCONNECT(_,cr1,io1,_,cr2,io2,_,_),allFlowVars,prefix) equation
-      cr1 = removePrefixOnNonOuter(cr1,io1,prefix);
-      cr2 = removePrefixOnNonOuter(cr2,io2,prefix);
-      flowVars = listAppend(
-        Util.listSelect1R(allFlowVars,cr1,Exp.crefPrefixOf),
-        Util.listSelect1R(allFlowVars,cr2,Exp.crefPrefixOf));
-     then flowVars;
+    case(Connect.OUTERCONNECT(_,cr1,io1,_,cr2,io2,_,_),allFlowVars,prefix) 
+      equation
+        cr1 = removePrefixOnNonOuter(cr1,io1,prefix);
+        cr2 = removePrefixOnNonOuter(cr2,io2,prefix);
+        flowVars = listAppend(Util.listSelect1R(allFlowVars,cr1,Exp.crefPrefixOf), Util.listSelect1R(allFlowVars,cr2,Exp.crefPrefixOf));
+      then 
+        flowVars;
   end matchcontinue;
 end getOuterConnectFlowVariables2;
 
@@ -1616,12 +1627,14 @@ protected  function removePrefixOnNonOuter "help function to  getOuterConnectFlo
   output DAE.ComponentRef outCr;
 algorithm
   outCr := matchcontinue(cr,io,prefix)
-  local DAE.ComponentRef prefixCref;
+    local 
+      DAE.ComponentRef prefixCref;
+
     case(cr,Absyn.OUTER(),prefix) then cr;
     case(cr,Absyn.INNEROUTER(),prefix) then cr;
     case(cr,_,prefix) equation
       prefixCref = PrefixUtil.prefixToCref(prefix);
-      cr =Exp.crefStripPrefix(cr,prefixCref);
+      cr = Exp.crefStripPrefix(cr,prefixCref);
     then cr;
   end matchcontinue;
 end removePrefixOnNonOuter;
@@ -1665,20 +1678,33 @@ algorithm
       list<DAE.ComponentRef> res;
       DAE.ComponentRef cr;
       list<tuple<DAE.ComponentRef, Connect.Face, DAE.ElementSource>> xs;
-
+      String str;
+    
+    // handle emptyness 
     case ({}) then {};
+    
+    // is an inside, add to our list
     case ((cr,Connect.INSIDE(),_) :: xs)
       equation
         res = getInsideFlowVariables2(xs);
       then
         (cr :: res);
+    
+    // anything else, just handle the rest
     case (_ :: xs)
       equation
         res = getInsideFlowVariables2(xs);
       then
         res;
-    case (_) /* Debug.fprint(\"failtrace\",\"-get_inner_flow_variables_2 failed\\n\") */
-      then fail();
+
+    case (xs)
+      equation 
+        true = RTOpts.debugFlag("failtrace");
+        str = Util.stringDelimitList(Util.listMap(xs, printFlowRefStr), ", ");
+        str = Util.stringAppendList({"flow set: {", str, "}"});
+        Debug.traceln("- ConnectUtil.getInnerFlowVariables2 failed on list: " +& str);
+      then 
+        fail();
   end matchcontinue;
 end getInsideFlowVariables2;
 
@@ -1744,14 +1770,11 @@ end getOutsideFlowVariables2;
 */
 
 public function printSets "function: printSets
-
   Prints a description of a number of connection sets to the
-  standard output.
-"
+  standard output."
   input Connect.Sets inSets;
 algorithm
-  _:=
-  matchcontinue (inSets)
+  _ := matchcontinue (inSets)
     local
       Connect.Set x;
       list<Connect.Set> xs;
@@ -1802,7 +1825,7 @@ algorithm
         s1 = Util.listMap(sets, printSetStr);
         s1_1 = Util.stringDelimitList(s1, ", ");
         s2 = printSetCrsStr(crs);
-        s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr),",");
+        s3 = Util.stringDelimitList(Util.listMap(dc,Exp.printComponentRefStr), ",");
         s4 = printOuterConnectsStr(outerConn);
         res = Util.stringAppendList({"Connect.SETS(\n\t",
           s1_1,", \n\t",
@@ -1847,7 +1870,7 @@ algorithm
       equation
         strs = Util.listMap(Util.listMap(cs, Util.tuple21), Exp.printComponentRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({" non-flow set: {",s1,"}"});
+        res = Util.stringAppendList({"non-flow set: {",s1,"}"});
       then
         res;
     case Connect.FLOW(tplExpComponentRefFaceLst = cs)
@@ -1855,7 +1878,7 @@ algorithm
       equation
         strs = Util.listMap(cs, printFlowRefStr);
         s1 = Util.stringDelimitList(strs, ", ");
-        res = Util.stringAppendList({" flow set: {",s1,"}"});
+        res = Util.stringAppendList({"flow set: {",s1,"}"});
       then
         res;
   end matchcontinue;
@@ -1872,13 +1895,13 @@ algorithm
     case ((c,Connect.INSIDE(),_))
       equation
         s = Exp.printComponentRefStr(c);
-        res = stringAppend(s, " Connect.INSIDE");
+        res = stringAppend(s, " INSIDE");
       then
         res;
     case ((c,Connect.OUTSIDE(),_))
       equation
         s = Exp.printComponentRefStr(c);
-        res = stringAppend(s, " Connect.OUTSIDE");
+        res = stringAppend(s, " OUTSIDE");
       then
         res;
   end matchcontinue;
@@ -1892,13 +1915,24 @@ protected function printSetCrsStr
 algorithm
   c_strs := Util.listMap(crs, Exp.printComponentRefStr);
   s := Util.stringDelimitList(c_strs, ", ");
-  res := Util.stringAppendList({" connect crs: {",s,"}"});
+  res := Util.stringAppendList({"connect crs: {",s,"}"});
 end printSetCrsStr;
 
 public function componentFace
 "function: componentFace
   This function determines whether a component
-  reference refers to an inner or outer connector."
+  reference refers to an inner or outer connector:
+  Rules:
+    qualified cref and connector     => OUTSIDE
+    non-qualifed cref                => OUTSIDE
+    qualified cref and non-connector => INSIDE
+
+  Modelica Specification 4.0 
+  Section: 9.1.2 Inside and Outside Connectors
+  In an element instance M, each connector element of M is called an outside connector with respect to M. 
+  All other connector elements that are hierarchically inside M, but not in one of the outside connectors 
+  of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements 
+  to corresponding inner ones."
   input Env env;
   input InnerOuter.InstHierarchy inIH;
   input DAE.ComponentRef inComponentRef;
@@ -1910,84 +1944,108 @@ algorithm
       DAE.Ident id;
       InnerOuter.InstHierarchy ih;
 
-    case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) equation
+    // is a non-qualified cref => OUTSIDE
+    case (env,ih,DAE.CREF_IDENT(ident = _)) 
+      then Connect.OUTSIDE();
+
+    // is a qualified cref and is a connector => OUTSIDE 
+    case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
+      equation
        (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_) 
          = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-    then Connect.OUTSIDE();
-    case (env,ih,DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE();
-    case (env,ih,DAE.CREF_IDENT(ident = _)) then Connect.OUTSIDE();
+      then Connect.OUTSIDE();
+
+    // is a qualified cref and is NOT a connector => INSIDE
+    case (env,ih,DAE.CREF_QUAL(componentRef =_)) 
+      then Connect.INSIDE();
   end matchcontinue;
 end componentFace;
 
 public function componentFaceType
 "function: componentFaceType
   Author: BZ, 2008-12
-  Same functionalty as componentFace, with the difference that this function
-  checks ident-type rather then env->lookup ==> type.   "
+  Same functionalty as componentFace, with the difference that 
+  this function checks ident-type rather then env->lookup ==> type.
+  Rules:
+    qualified cref and connector     => OUTSIDE
+    non-qualifed cref                => OUTSIDE
+    qualified cref and non-connector => INSIDE
+  
+  Modelica Specification 4.0 
+  Section: 9.1.2 Inside and Outside Connectors
+  In an element instance M, each connector element of M is called an outside connector with respect to M. 
+  All other connector elements that are hierarchically inside M, but not in one of the outside connectors 
+  of M, is called an inside connector with respect to M. This is done **BEFORE** resolving outer elements 
+  to corresponding inner ones."
   input DAE.ComponentRef inComponentRef;
   output Connect.Face outFace;
 algorithm
   outFace := matchcontinue (inComponentRef)
-    case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_))))
-      then Connect.OUTSIDE();
-    case (DAE.CREF_QUAL(componentRef =_))
-      then Connect.INSIDE();
-    case (DAE.CREF_IDENT(ident = _))
-      then Connect.OUTSIDE();
+    // is a non-qualified cref => OUTSIDE
+    case (DAE.CREF_IDENT(ident = _)) then Connect.OUTSIDE();
+    // is a qualified cref and is a connector => OUTSIDE
+    case (DAE.CREF_QUAL(identType = DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)))) then Connect.OUTSIDE();
+    // is a qualified cref and is NOT a connector => INSIDE
+    case (DAE.CREF_QUAL(componentRef =_)) then Connect.INSIDE();
   end matchcontinue;
 end componentFaceType;
 
-public function updateConnectionSetTypes "Function: updateConnectionSetTypes
+public function updateConnectionSetTypes "function: updateConnectionSetTypes
 When instantiating connection_sets we have no type information on them.
-So this is what till function will do, update type information on csets.
-"
+So this is what till function will do, update type information on csets."
   input Connect.Sets csets;
   input DAE.ComponentRef typedRef;
   output Connect.Sets updatedEnv;
-algorithm updatedEnv := matchcontinue(csets,typedRef)
-  local
-    Connect.Sets cs1;
-    list<Connect.Set> arg1;
-    list<DAE.ComponentRef> arg2,arg2_2;
-    list<DAE.ComponentRef> arg3;
-    list<Connect.OuterConnect> arg4,arg4_2;
-  case((cs1 as Connect.SETS(arg1,arg2,arg3,arg4)),typedRef)
+algorithm 
+  updatedEnv := matchcontinue(csets,typedRef)
+    local
+      Connect.Sets cs1;
+      list<Connect.Set> arg1;
+      list<DAE.ComponentRef> arg2,arg2_2;
+      list<DAE.ComponentRef> arg3;
+      list<Connect.OuterConnect> arg4,arg4_2;
+    
+    case((cs1 as Connect.SETS(arg1,arg2,arg3,arg4)),typedRef)
       equation
         //TODO: update types for rest of set(arg1,arg3,arg4)
         arg2_2 = updateConnectionSetTypesCrefs(arg2,typedRef);
-        then
-          Connect.SETS(arg1,arg2_2,arg3,arg4);
-  case(_,_)
-    equation
-      Debug.fprint("failtrace", "- updateConnectionSetTypes failed");
+      then
+        Connect.SETS(arg1,arg2_2,arg3,arg4);
+    
+    case(_,_)
+      equation
+        Debug.fprint("failtrace", "- updateConnectionSetTypes failed");
       then
         fail();
-end matchcontinue;
+  end matchcontinue;
 end updateConnectionSetTypes;
 
-protected function updateConnectionSetTypesCrefs "Function: updateConnectionSetTypes2
-helper function for updateConnectionSetTypes
-"
+protected function updateConnectionSetTypesCrefs "function: updateConnectionSetTypes2
+helper function for updateConnectionSetTypes"
   input list<DAE.ComponentRef> list1;
   input DAE.ComponentRef list2;
   output list<DAE.ComponentRef> list3;
-algorithm lsit3 := matchcontinue(list1,list2)
-  local
-    list<DAE.ComponentRef> cr1s,cr2s;
-    DAE.ComponentRef cr1,cr2;
+algorithm 
+  lsit3 := matchcontinue(list1,list2)
+    local
+      list<DAE.ComponentRef> cr1s,cr2s;
+      DAE.ComponentRef cr1,cr2;
+    // empty case
     case({},_) then {};
-  case(cr1::cr1s, cr2)
-    equation
-      true = Exp.crefEqual(cr1,cr2);
-      cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
-    then
-      cr2::cr2s;
-  case(cr1::cr1s,cr2)
-    equation
-      cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
-    then
-      cr1::cr2s;
-end matchcontinue;
+    // found something, replace the cref in the list 
+    case(cr1::cr1s, cr2)
+      equation
+        true = Exp.crefEqual(cr1,cr2);
+        cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
+      then
+        cr2::cr2s;
+    // move along to some better part of the day
+    case(cr1::cr1s,cr2)
+      equation
+        cr2s = updateConnectionSetTypesCrefs(cr1s,cr2);
+      then
+        cr1::cr2s;
+  end matchcontinue;
 end updateConnectionSetTypesCrefs;
 
 public function localOutsideConnectorFlowvars "function: localOutsideConnectorFlowvars
@@ -2020,17 +2078,24 @@ algorithm
       list<DAE.Var> vars;
       Option<AvlTree> l,r;
       Absyn.InnerOuter io;
+
+    // no tree
     case (NONE) then {};
+
+    // a CONNECTOR variable with inner outer, prefix all inside 
+    // variables from its type with its id and return the list
     case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(id,DAE.ATTR(innerOuter=io),_,
           (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),vars,_,_),_),_,_),_,_,_))),_,l,r)))
       equation
         lst1 = localOutsideConnectorFlowvars2(l);
         lst2 = localOutsideConnectorFlowvars2(r);
+        // make sure is not an outer?
         (_,false) = InnerOuter.innerOuterBooleans(io);
         lst3 = Types.flowVariables(vars, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         res = Util.listFlatten({lst1,lst2,lst3});
       then
         res;
+    // follow left and right in the tree
     case (SOME(Env.AVLTREENODE(SOME(_),_,l,r)))
       equation
         lst1 = localOutsideConnectorFlowvars2(l);
@@ -2092,6 +2157,7 @@ algorithm
             Env.VAR(DAE.TYPES_VAR(id,(tatr as DAE.ATTR(innerOuter=io)),b3,
                     (tmpty as (DAE.T_ARRAY(ad,at),_)),bind,_),_,_,_))),_,l,r)))
       equation
+        // make sure is not an outer
         (_,false) = InnerOuter.innerOuterBooleans(io);
         ((flatArrayType as (DAE.T_COMPLEX(_,tvars,_,_),_)),adims) = Types.flattenArrayType(tmpty);
         false = Types.isComplexConnector(flatArrayType);
@@ -2106,7 +2172,7 @@ algorithm
       then
         res;
 
-    // If CONNECTOR then  outside and not inside, skip..
+    // If CONNECTOR then outside and not inside, skip..
     case (SOME(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(_,Env.VAR(DAE.TYPES_VAR(name=id,
           type_ = (DAE.T_COMPLEX(ClassInf.CONNECTOR(_,_),_,_,_),_)),_,_,_))),_,l,r)))  
       equation 
