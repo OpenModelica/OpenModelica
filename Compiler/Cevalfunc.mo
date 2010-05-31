@@ -1407,7 +1407,7 @@ algorithm
     case(p ,env)
       equation        
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
-        (_,dims,typeClass,_,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);
+        (_,dims,typeClass,_,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);
         (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
           Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
         ty = Inst.makeArrayType(dims, ty);
