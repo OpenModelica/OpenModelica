@@ -69,6 +69,7 @@ protected import Codegen;
 protected import Connect;
 protected import DAEQuery;
 protected import DAEUtil;
+protected import DAEDump;
 protected import Debug;
 protected import Dump;
 protected import Error;
@@ -656,8 +657,10 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        str = DAEUtil.dumpStr(dae);
+        // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
+        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        ic_1 = ic;
+        str = DAEDump.dumpStr(dae);
       then
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
 
@@ -2249,7 +2252,7 @@ algorithm
         RTOpts.setEliminationLevel(0); // No variable eliminiation
         dlow = DAELow.lower(dae, false, false);
         RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
-        flatModelicaStr = DAEUtil.dumpStr(dae);
+        flatModelicaStr = DAEDump.dumpStr(dae);
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
         flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
