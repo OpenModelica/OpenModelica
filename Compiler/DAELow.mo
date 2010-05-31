@@ -6005,7 +6005,7 @@ algorithm
         // create as many equations as the dimension of the record
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
       then
         complexEqs;
     // initial
@@ -6019,7 +6019,7 @@ algorithm
         // create as many equations as the dimension of the record
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
       then
         complexEqs;
     case (_)
