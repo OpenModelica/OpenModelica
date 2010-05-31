@@ -403,6 +403,7 @@ protected import Exp;
 protected import Debug;
 protected import Print;
 protected import System;
+protected import DAEDump;
 
 protected function canonical
 "Returns the canonical element of the component where input element belongs to.
@@ -582,7 +583,7 @@ algorithm
       equation
         true = originInConnect(el, cr1, cr2);
         Debug.fprintln("cgraph", "- ConnectionGraph.removeEquationsWithOrigin: removed " +&
-          DAEUtil.dumpDAEElementsStr(DAE.DAE({el}, DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& 
+          DAEDump.dumpDAEElementsStr(DAE.DAE({el}, DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& 
           "\t generated from: connect(" +& 
           Exp.printComponentRefStr(cr1) +& ", " +& 
           Exp.printComponentRefStr(cr2) +& ")");
