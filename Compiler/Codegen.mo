@@ -130,6 +130,7 @@ protected import System;
 protected import Error;
 protected import Types;
 protected import DAEUtil;
+protected import DAEDump;
 
 public constant CFunction cEmptyFunction=CFUNCTION("","",{},{},{},{},{},{}) " empty function ";
 
@@ -1053,7 +1054,7 @@ algorithm
   Debug.fprintln("cgtr", "generate_functions_elist");
   Debug.fprintln("cgtrdumpdae", "Dumping DAE:");
   funcs := DAEUtil.avlTreeNew();
-  Debug.fcall("cgtrdumpdae", DAEUtil.dump2, DAE.DAE(els,funcs));
+  Debug.fcall("cgtrdumpdae", DAEDump.dump2, DAE.DAE(els,funcs));
   fns := Util.listFilter(els, DAEUtil.isFunction);
   (cfns,rt_1) := generateFunctionsElist2(fns,rt);
 end generateFunctionsElist;
@@ -1132,7 +1133,7 @@ algorithm
         Debug.fprintl("cgtr", {"generating function ",fn_name_str,"\n"});
         Debug.fprintln("cgtrdumpdae3", "Dumping DAE:");
         funcs = DAEUtil.avlTreeNew();
-        Debug.fcall("cgtrdumpdae3", DAEUtil.dump2, DAE.DAE(dae,funcs));
+        Debug.fcall("cgtrdumpdae3", DAEDump.dump2, DAE.DAE(dae,funcs));
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         (struct_strs,rt_1) = generateStructsForRecords(dae, rt);
@@ -1240,7 +1241,7 @@ algorithm
         DAE.EXTERNALDECL(ident = extfnname,external_ = extargs,parameters = extretarg,returnType = lang,language = ann) = extdecl;
         Debug.fprintln("cgtrdumpdae2", "Dumping DAE:");
         funcs = DAEUtil.avlTreeNew();
-        Debug.fcall("cgtrdumpdae2", DAEUtil.dump2, DAE.DAE(dae,funcs));
+        Debug.fcall("cgtrdumpdae2", DAEDump.dump2, DAE.DAE(dae,funcs));
         outvars = DAEUtil.getOutputVars(dae);
         invars = DAEUtil.getInputVars(dae);
         bivars = DAEUtil.getBidirVars(dae);
@@ -1913,7 +1914,7 @@ algorithm
 
       equation
         funcs = DAEUtil.avlTreeNew();
-        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el},funcs));
+        Debug.fcall("isarrdb", DAEDump.dump2, DAE.DAE({el},funcs));
       then
         false;
 
@@ -1928,7 +1929,7 @@ algorithm
                          absynCommentOption = comment)))
       equation
         funcs = DAEUtil.avlTreeNew();
-        Debug.fcall("isarrdb", DAEUtil.dump2, DAE.DAE({el},funcs));
+        Debug.fcall("isarrdb", DAEDump.dump2, DAE.DAE({el},funcs));
       then
         true;
 
@@ -7344,8 +7345,8 @@ algorithm
     case (vars,(extdecl as DAE.EXTERNALDECL(ident = n,external_ = arglist,parameters = retarg,returnType = lang,language = ann)),tnr)
       equation
         funcs = DAEUtil.avlTreeNew();
-        Debug.fcall("cgtrdumpdaeextcall", DAEUtil.dump2, DAE.DAE(vars,funcs));
-        extdeclstr = DAEUtil.dumpExtDeclStr(extdecl);
+        Debug.fcall("cgtrdumpdaeextcall", DAEDump.dump2, DAE.DAE(vars,funcs));
+        extdeclstr = DAEDump.dumpExtDeclStr(extdecl);
         Debug.fprintln("cgtrdumpdaeextcall", extdeclstr);
 
         (argsNums,retArgNum) = generateExternalArgNumberMapping(arglist, retarg, vars);
@@ -7515,7 +7516,7 @@ algorithm
       equation
         Debug.fprint("cgtr", "#--Ignoring: ");
         funcs = DAEUtil.avlTreeNew();
-        Debug.fcall("cgtr", DAEUtil.dump2, DAE.DAE({var},funcs));
+        Debug.fcall("cgtr", DAEDump.dump2, DAE.DAE({var},funcs));
         Debug.fprintln("cgtr", "");
         (fn,tnr_1) = generateExtcallCopydeclsF77(rest,i,tnr);
       then
