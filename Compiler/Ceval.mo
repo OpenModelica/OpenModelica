@@ -146,7 +146,6 @@ algorithm
       list<Integer> dims;
       list<Option<Integer>> optDims;
 
-
     case (cache,_,DAE.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st);
 
     case (cache,_,DAE.RCONST(real = x),_,st,_,_)
@@ -208,14 +207,14 @@ algorithm
       then
         (cache,Values.ARRAY(elts,dims),st);
 
-      /* MetaModelica List. sjoelund */
+    // MetaModelica List. sjoelund 
     case (cache,env,DAE.LIST(valList = expl),impl,st,_,msg)
       equation
         (cache,es_1) = cevalList(cache,env, expl, impl, st, msg);
       then
         (cache,Values.LIST(es_1),st);
 
-    /* MetaModelica Partial Function. sjoelund */
+    // MetaModelica Partial Function. sjoelund 
     case (cache,env,DAE.CREF(componentRef = c, ty = DAE.ET_FUNCTION_REFERENCE_VAR()),impl,st,_,msg)
       local
         DAE.ComponentRef c;
@@ -234,7 +233,7 @@ algorithm
       then
         fail();
 
-    /* MetaModelica Uniontype Constructor. sjoelund 2009-05-18 */
+    // MetaModelica Uniontype Constructor. sjoelund 2009-05-18
     case (cache,env,inExp as DAE.METARECORDCALL(path=funcpath,args=expl,fieldNames=fieldNames,index=index),impl,st,_,msg)
       local
         list<String> fieldNames; Integer index;
@@ -242,7 +241,7 @@ algorithm
         (cache,vallst) = cevalList(cache,env, expl, impl, st, msg);
       then (cache,Values.RECORD(funcpath,vallst,fieldNames,index),st);
 
-    /* MetaModelica Option type. sjoelund 2009-07-01 */
+    // MetaModelica Option type. sjoelund 2009-07-01 
     case (cache,env,DAE.META_OPTION(NONE),impl,st,_,msg)
       then (cache,Values.OPTION(NONE),st);
     case (cache,env,DAE.META_OPTION(SOME(inExp)),impl,st,_,msg)
@@ -250,12 +249,13 @@ algorithm
         (cache,value,st) = ceval(cache,env,inExp,impl,st,NONE,msg);
       then (cache,Values.OPTION(SOME(value)),st);
 
-    /* MetaModelica Tuple. sjoelund 2009-07-02 */
+    // MetaModelica Tuple. sjoelund 2009-07-02 
     case (cache,env,DAE.META_TUPLE(expl),impl,st,_,msg)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
       then (cache,Values.META_TUPLE(vallst),st);
+
     case (cache,env,DAE.TUPLE(expl),impl,st,_,msg)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
@@ -280,17 +280,17 @@ algorithm
       then
         (cache,v,st);
         
-    //Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
+    // Evaluates for build in types. ADD, SUB, MUL, DIV for Reals and Integers.
     case (cache,env,expExp,impl,st,dimOpt,msg)
       equation
         (cache,v,st_1) = cevalBuiltin(cache,env, expExp, impl, st, dimOpt, msg);
       then
         (cache,v,st_1);
 
-    /* adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem */
+    // adrpo: TODO! this needs more work as if we don't have a symtab we run into unloading of dlls problem 
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),impl,st,dimOpt,msg)
-      /* Call functions FIXME: functions are always generated. Put back the check
-	  and write another rule for the false case that generates the function */
+      // Call functions FIXME: functions are always generated. Put back the check
+      // and write another rule for the false case that generates the function 
       equation
         ErrorExt.setCheckpoint("cevalCall");
         // do not handle Connection.isRoot here!
@@ -300,13 +300,13 @@ algorithm
         ErrorExt.rollBack("cevalCall");
       then
         (cache,newval,st);
-        // make rollback for case above
+
+    // make rollback for case above
     case(_,_,DAE.CALL(path = funcpath,expLst = expl,builtin = builtin),_,_,_,_) equation
         ErrorExt.rollBack("cevalCall");
     then fail();
-      
-      
-        /* Try Interactive functions last */
+    
+    // Try Interactive functions last
     case (cache,env,(e as DAE.CALL(path = _)),(impl as true),SOME(st),_,msg)
       local
         Interactive.InteractiveSymbolTable st;
@@ -325,7 +325,8 @@ algorithm
         fail();
 
 
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.ET_STRING()),exp2 = rh),impl,st,_,msg) /* Strings */
+    // Strings 
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.ET_STRING()),exp2 = rh),impl,st,_,msg) 
       local String lhv,rhv;
       equation
         (cache,Values.STRING(lhv),_) = ceval(cache,env, lh, impl, st, NONE, msg);
@@ -334,7 +335,8 @@ algorithm
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.ET_REAL()),exp2 = rh),impl,st,dim,msg) /* Numerical */
+    // Numerical
+    case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD(ty = DAE.ET_REAL()),exp2 = rh),impl,st,dim,msg)
       local
         Real lhv,rhv;
         Option<Integer> dim;
@@ -345,6 +347,7 @@ algorithm
       then
         (cache,Values.REAL(sum),st_2);
 
+    // Array addition
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -354,6 +357,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array subtraction
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -363,6 +367,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array multiplication
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -372,6 +377,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array division
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -381,6 +387,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array power
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARR2(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -390,6 +397,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array multipled scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -408,6 +416,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array add scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.ADD_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -426,6 +435,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array subtract scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.SUB_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -444,6 +454,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array power scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -453,6 +464,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // Array power scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.POW_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -462,6 +474,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // scalar div array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_SCALAR_ARRAY(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -471,6 +484,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // array div scalar
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.DIV_ARRAY_SCALAR(ty = _),exp2 = rh),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -480,6 +494,7 @@ algorithm
       then
         (cache,Values.ARRAY(reslst,dims),st_2);
 
+    // scalar multiplied array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_SCALAR_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         Values.Value res;
@@ -491,6 +506,7 @@ algorithm
       then
         (cache,res,st_2);
 
+    // array multipled array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         Values.Value res;
@@ -504,6 +520,7 @@ algorithm
       then
         (cache,res,st_2);
 
+    // array multiplied array 
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         Values.Value res;
@@ -517,6 +534,7 @@ algorithm
       then
         (cache,res,st_2);
 
+    // array multiplied array
     case (cache,env,DAE.BINARY(exp1 = lh,operator = DAE.MUL_MATRIX_PRODUCT(ty = _),exp2 = rh),impl,st,dim,msg)
       local
         list<Values.Value> res;
@@ -605,7 +623,7 @@ algorithm
       then
         (cache,res3,st_2);
 
-        /*  unary minus of array */
+    //  unary minus of array 
     case (cache,env,DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = exp),impl,st,dim,msg)
       local
         DAE.Exp exp;
@@ -616,6 +634,7 @@ algorithm
       then
         (cache,Values.ARRAY(arr_1,dims),st_1);
 
+    // unary minus of expression
     case (cache,env,DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = exp),impl,st,dim,msg)
       local
         DAE.Exp exp;
@@ -626,6 +645,7 @@ algorithm
       then
         (cache,v_1,st_1);
 
+    // unary plus of expression
     case (cache,env,DAE.UNARY(operator = DAE.UPLUS(ty = _),exp = exp),impl,st,dim,msg)
       local
         DAE.Exp exp;
@@ -635,21 +655,20 @@ algorithm
       then
         (cache,v,st_1);
 
-        /* Logical */
-        // special case when leftside is false...
-        // We allow errors on right hand side. and even if there is no errors, the performance
-        // will be better.
+    // Logical operations false AND rhs
+    // special case when leftside is false...
+    // We allow errors on right hand side. and even if there is no errors, the performance
+    // will be better.
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(),exp2 = rh),impl,st,dim,msg)
       local
         Boolean lhv,rhv,x;
         Option<Integer> dim;
       equation
-        (cache,Values.BOOL(lhv),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
-        false = lhv;
+        (cache,Values.BOOL(false),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
       then
         (cache,Values.BOOL(false),st_1);
 
-        /* Logical */
+    // Logical lhs AND rhs
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.AND(),exp2 = rh),impl,st,dim,msg)
       local
         Boolean lhv,rhv,x;
@@ -661,6 +680,17 @@ algorithm
       then
         (cache,Values.BOOL(x),st_2);
 
+    // true OR rhs 
+    case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(),exp2 = rh),impl,st,dim,msg)
+      local
+        Boolean lhv,rhv,x;
+        Option<Integer> dim;
+      equation
+        (cache,Values.BOOL(true),st_1) = ceval(cache,env, lh, impl, st, dim, msg);
+      then
+        (cache,Values.BOOL(true),st_1);
+
+    // lhs OR rhs 
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(),exp2 = rh),impl,st,dim,msg)
       local
         Boolean lhv,rhv,x;
@@ -671,9 +701,10 @@ algorithm
         x = boolOr(lhv, rhv);
       then
         (cache,Values.BOOL(x),st_2);
-// Special case for a boolean expression like if( expression or ARRAY_IDEX_OUT_OF_BOUNDS_ERROR)
-// "expression" in this case we return the lh expression to be equall to
-// the previous c-code generation.
+
+    // Special case for a boolean expression like if( expression or ARRAY_IDEX_OUT_OF_BOUNDS_ERROR)
+    // "expression" in this case we return the lh expression to be equall to
+    // the previous c-code generation.
     case (cache,env,DAE.LBINARY(exp1 = lh,operator = DAE.OR(),exp2 = rh),impl,st,dim,msg)
       local
         Boolean lhv,rhv,x;
@@ -684,6 +715,7 @@ algorithm
       then
         (cache,v,st_1);
 
+    // NOT
     case (cache,env,DAE.LUNARY(operator = DAE.NOT(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -692,7 +724,7 @@ algorithm
       then
         (cache,Values.BOOL(b_1),st_1);
 
-        /* Relations */
+    // relations <, >, <=, >=, <> 
     case (cache,env,DAE.RELATION(exp1 = lhs,operator = relop,exp2 = rhs),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -702,7 +734,8 @@ algorithm
       then
         (cache,v,st_2);
 
-    case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */
+    // range first:last for integers
+    case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) 
       local Option<Integer> dim;
       equation
         (cache,Values.INTEGER(start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
@@ -711,6 +744,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(arr),st_1);
 
+    // range first:step:last for integers
     case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -721,7 +755,8 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(arr),st_3);
 
-    case (cache,env,DAE.RANGE(ty = DAE.ET_ENUMERATION(_,_,_,_),exp = start,expOption = NONE,range = stop),impl,st,dim,msg) /*  */
+    // range first:step:last for enumearations
+    case (cache,env,DAE.RANGE(ty = DAE.ET_ENUMERATION(_,_,_,_),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
         (cache,Values.ENUM(start_1,_,_),st_1) = ceval(cache,env, start, impl, st, dim, msg);
@@ -730,6 +765,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(arr),st_1);
 
+    // range first:last for reals
     case (cache,env,DAE.RANGE(ty = DAE.ET_REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
       local
         Real start_1,stop_1,step;
@@ -743,6 +779,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(arr),st_2);
 
+    // range first:step:last for reals    
     case (cache,env,DAE.RANGE(ty = DAE.ET_REAL(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
       local
         Real start_1,step_1,stop_1;
@@ -755,6 +792,7 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(arr),st_3);
 
+    // cast integer to real
     case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -763,6 +801,7 @@ algorithm
       then
         (cache,Values.REAL(r),st_1);
 
+    // cast integer array to real array
     case (cache,env,DAE.CAST(ty = DAE.ET_ARRAY(DAE.ET_REAL(),optDims),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -771,6 +810,7 @@ algorithm
       then
         (cache,Values.ARRAY(rvals,dims),st_1);
 
+    // cast integer array to real array
     case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = (e as DAE.ARRAY(ty = DAE.ET_INT(),array = expl))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -779,6 +819,7 @@ algorithm
       then
         (cache,Values.ARRAY(vallst_1,dims),st_1);
 
+    // cast integer range to real range
     case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = (e as DAE.RANGE(ty = DAE.ET_INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -787,6 +828,7 @@ algorithm
       then
         (cache,Values.ARRAY(vallst_1,dims),st_1);
 
+    // cast integer matrix to real matrix
     case (cache,env,DAE.CAST(ty = DAE.ET_REAL(),exp = (e as DAE.MATRIX(ty = DAE.ET_INT()))),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -795,6 +837,7 @@ algorithm
       then
         (cache,Values.ARRAY(vallst_1,dims),st_1);
 
+    // if expressions, select then branch if condition is true
     case (cache,env,DAE.IFEXP(expCond = b,expThen = e1,expElse = e2),impl,st,dim,msg)
       local
         DAE.Exp b;
@@ -805,6 +848,7 @@ algorithm
       then
         (cache,v,st_2);
 
+    // if expressions, select else branch if condition is false
     case (cache,env,DAE.IFEXP(expCond = b,expThen = e1,expElse = e2),impl,st,dim,msg)
       local
         DAE.Exp b;
@@ -815,6 +859,7 @@ algorithm
       then
         (cache,v,st_2);
 
+    // indexing for array[integer index] 
     case (cache,env,DAE.ASUB(exp = e,sub = ((e1 as DAE.ICONST(indx))::{})),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
@@ -823,6 +868,8 @@ algorithm
         v = listNth(vals, indx_1);
       then
         (cache,v,st_1);
+    
+    // indexing for array[subscripts]
     case (cache, env, DAE.ASUB(exp = e,sub = expl ), impl, st, dim, msg)
       local Option<Integer> dim; String s;
       equation
@@ -833,26 +880,26 @@ algorithm
       then
         (cache,v,st_1);
 
-		case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = exp, ident = iter, range = iterexp), impl, st, dimOpt, msg)
-			local
-				DAE.Ident reductionName;
-				DAE.Exp exp;
-				ReductionOperator op;
-			equation
-				(cache, Values.ARRAY(vals,_), st_1) = ceval(cache, env, iterexp, impl, st, dimOpt, msg);
-				env = Env.openScope(env, false, SOME(Env.forScopeName));
-				op = lookupReductionOp(reductionName);
-				(cache, value, st_1) = cevalReduction(cache, env, op, exp, iter, vals, impl, st, dimOpt, msg);
-			then (cache, value, st_1);
-    /* ceval can fail and that is ok, caught by other rules... */
+    // reductions
+    case (cache, env, DAE.REDUCTION(Absyn.IDENT(reductionName), expr = exp, ident = iter, range = iterexp), impl, st, dimOpt, msg)
+      local
+        DAE.Ident reductionName;
+        DAE.Exp exp;
+        ReductionOperator op;
+      equation
+        (cache, Values.ARRAY(vals,_), st_1) = ceval(cache, env, iterexp, impl, st, dimOpt, msg);
+        env = Env.openScope(env, false, SOME(Env.forScopeName));
+        op = lookupReductionOp(reductionName);
+        (cache, value, st_1) = cevalReduction(cache, env, op, exp, iter, vals, impl, st, dimOpt, msg);
+      then (cache, value, st_1);
+
+    // ceval can fail and that is ok, caught by other rules... 
     case (cache,env,e,_,_,_,_) // MSG())
       equation
-        ///*
         true = RTOpts.debugFlag("ceval");
         Debug.traceln("- Ceval.ceval failed: " +& Exp.printExpStr(e));
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
-        //Debug.traceln("  Env:" +& Env.printEnvStr(env));
-        //*/
+        // Debug.traceln("  Env:" +& Env.printEnvStr(env));
       then
         fail();
   end matchcontinue;
