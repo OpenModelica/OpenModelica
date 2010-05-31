@@ -6001,11 +6001,11 @@ algorithm
         e2_1 = Exp.simplify(e2);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
+        //complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
         // create as many equations as the dimension of the record
-        complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
-        //ty = Exp.typeof(e1);
-        //i = Exp.sizeOf(ty);
-        //complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
+        ty = Exp.typeof(e1);
+        i = Exp.sizeOf(ty);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
       then
         complexEqs;
     // initial
@@ -6015,11 +6015,11 @@ algorithm
         e2_1 = Exp.simplify(e2);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
-        // create as many equations as the dimension of the record
         complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
-        //ty = Exp.typeof(e1);
-        //i = Exp.sizeOf(ty);
-        //complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
+        // create as many equations as the dimension of the record
+        ty = Exp.typeof(e1);
+        i = Exp.sizeOf(ty);
+        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), 1);
       then
         complexEqs;
     case (_)
