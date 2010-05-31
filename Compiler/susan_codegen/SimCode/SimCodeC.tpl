@@ -2152,6 +2152,7 @@ match var
 case var as VARIABLE(__) then
   let &varDecls += if not outStruct then '<%varType(var)%> <%cref(var.name)%>;<%\n%>' //else ""
   let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%cref(var.name)%>'
+  let typeInit = (varInitType(type_, &varInits)) /* In case the type is complex, we may need to init fields, etc */
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextOther, &varInits /*BUFC*/, &varDecls /*BUFC*/)
     ;separator=", ")
@@ -2159,8 +2160,20 @@ case var as VARIABLE(__) then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     ""
   else
+    let &varInits += '/* var: <%varName%>. Do nothing. If the variable is a record, we may have a problem. */'
     ""
 end varInit;
+
+
+template varInitType(Type type_, Text &varInits /*BUFP*/)
+ "Generates code to initialize variables.
+  Does not return anything: just appends declarations to buffers."
+::=
+match var
+case var as T_COMPLEX(__) then
+  let &varInits += '/* The variable is a record, we may have a problem! */'
+  ""
+end varInitType;
 
 
 template varOutput(Variable var, String dest, Integer i, Text &varDecls /*BUFP*/,
