@@ -281,6 +281,46 @@ algorithm
   end matchcontinue;
 end evaluate;
 
+public function evaluateToStdOut
+"function: evaluateToStdOut
+  This function evaluates expressions or statements feed interactively to the compiler.
+  The resulting string after evaluation is printed. 
+  If an error has occurred, this string will be empty. 
+  The error messages can be retrieved by calling print_messages_str() in Error.mo."
+  input InteractiveStmts inInteractiveStmts;
+  input InteractiveSymbolTable inInteractiveSymbolTable;
+  input Boolean inBoolean;
+  output InteractiveSymbolTable outInteractiveSymbolTable;
+algorithm
+  outInteractiveSymbolTable := matchcontinue (inInteractiveStmts,inInteractiveSymbolTable,inBoolean)
+    local
+      String res,res_1,res2,res_2;
+      InteractiveSymbolTable newst,st,newst_1;
+      Boolean echo,semicolon,verbose;
+      InteractiveStmt x;
+      list<InteractiveStmt> xs;
+
+    case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
+      equation
+        (res,newst) = evaluate2(ISTMTS({x},verbose), st);
+        echo = getEcho();
+        res_1 = selectResultstr(res, semicolon, verbose, echo);
+        print(res_1);
+      then
+        newst;
+
+    case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
+      equation
+        (res,newst) = evaluate2(ISTMTS({x},semicolon), st);
+        echo = getEcho();
+        res_1 = selectResultstr(res, semicolon, verbose, echo);
+        print(res_1);
+        newst_1 = evaluateToStdOut(ISTMTS(xs,semicolon), newst, verbose);
+      then
+        newst_1;
+  end matchcontinue;
+end evaluateToStdOut;
+
 protected function selectResultstr
 "function: selectResultstr
   Returns result string depending on three boolean variables
@@ -13608,10 +13648,10 @@ algorithm
       equation
         (cache,c,env_1) = Lookup.lookupClass(Env.emptyCache(),env, Absyn.IDENT("Placement"), false);
         mod_1 = SCodeUtil.translateMod(SOME(Absyn.CLASSMOD(mod,NONE)), false, Absyn.NON_EACH());
-        (cache,mod_2,_) = Mod.elabMod(cache,env_1, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache, env_1, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
         c_1 = SCode.classSetPartial(c, false);
         (_,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache,env_1,InnerOuter.emptyInstHierarchy,
+          Inst.instClass(cache, env_1,InnerOuter.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          c_1, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         gexpstr = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13840,9 +13880,9 @@ algorithm
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache,env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(),
+          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,mod_2, Prefix.NOPRE(),
                          Connect.emptySet,placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
         (_,graphicexp2,prop) = Static.elabGraphicsExp(cache, env, graphicexp, false) "impl" ;
@@ -13864,9 +13904,9 @@ algorithm
         (cache,env) = Inst.makeSimpleEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Icon"));
         placementc = getClassInProgram("Icon", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, true);
+        (cache,mod_2,_) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, true);
         (cache,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache,env,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(),
                          ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13883,9 +13923,9 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT("Diagram"));
         placementc = getClassInProgram("Diagram", p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache,env, InnerOuter.emptyInstHierarchy,
+          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy,
                          UnitAbsyn.noStore, mod_2, Prefix.NOPRE(), Connect.emptySet,
                          placementclass, {}, false, Inst.TOP_CALL(), ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
@@ -13905,9 +13945,9 @@ algorithm
         (cache,env) = Inst.makeEnvFromProgram(Env.emptyCache(),p_1, Absyn.IDENT(anncname));
         placementc = getClassInProgram(anncname, p);
         placementclass = SCodeUtil.translateClass(placementc);
-        (cache,mod_2,_) = Mod.elabMod(cache,env, Prefix.NOPRE(), mod_1, false);
+        (cache,mod_2,_) = Mod.elabMod(cache, env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod_1, false);
         (cache,_,_,_,dae,cs,t,state,_,_) =
-          Inst.instClass(cache,env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+          Inst.instClass(cache, env, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
                          mod_2, Prefix.NOPRE(), Connect.emptySet, placementclass, {}, false, Inst.TOP_CALL(),
                          ConnectionGraph.EMPTY);
         str = DAEUtil.getVariableBindingsStr(DAEUtil.daeElements(dae));
