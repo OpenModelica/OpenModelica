@@ -62,7 +62,7 @@ flat_parser:
 	cd $(FLAT_PARSE_HOME)\src && $(MAKE) /f Makefile.vc
 
 absyn_buildervc.lib : $(OBJS)
-	LIB /out:$@ $(OBJS)
+	link -lib /LTCG /out:$@ $(OBJS)
 
 $(walkergen): walker.g modelica_parserTokenTypes.txt
 	java $(ANTLRCLASSPATH) antlr.Tool $(ANTLRFLAGS) walker.g

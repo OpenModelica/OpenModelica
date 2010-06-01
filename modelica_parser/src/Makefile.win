@@ -1,6 +1,6 @@
 CPP=cl /nologo
 LINK=link
-LINKFLAGS = -lib /nologo
+LINKFLAGS = -lib /nologo /LTCG
 
 INCLUDES = /I$(OMDEV)\include
 #CFLAGS = $(INCLUDES) /Ob2 /Ox /O2 /Ot /Oy /D "WIN32" /D "NDEBUG" /D "_CONSOLE"\
