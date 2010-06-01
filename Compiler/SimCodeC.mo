@@ -9559,38 +9559,35 @@ protected function fun_225
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_i_instDims;
   input Tpl.Text in_i_instDimsInit;
-  input DAE.ExpType in_i_var_ty;
   input Tpl.Text in_i_varName;
+  input DAE.ExpType in_i_var_ty;
   input Tpl.Text in_i_varInits;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_varInits;
 algorithm
   (out_txt, out_i_varInits) :=
-  matchcontinue(in_txt, in_i_instDims, in_i_instDimsInit, in_i_var_ty, in_i_varName, in_i_varInits)
+  matchcontinue(in_txt, in_i_instDims, in_i_instDimsInit, in_i_varName, in_i_var_ty, in_i_varInits)
     local
       Tpl.Text txt;
       Tpl.Text i_instDimsInit;
-      DAE.ExpType i_var_ty;
       Tpl.Text i_varName;
+      DAE.ExpType i_var_ty;
       Tpl.Text i_varInits;
 
     case ( txt,
            {},
            _,
            _,
-           i_varName,
+           _,
            i_varInits )
-      equation
-        i_varInits = Tpl.writeTok(i_varInits, Tpl.ST_STRING("We dont do shit here "));
-        i_varInits = Tpl.writeText(i_varInits, i_varName);
       then (txt, i_varInits);
 
     case ( txt,
            i_instDims,
            i_instDimsInit,
-           i_var_ty,
            i_varName,
+           i_var_ty,
            i_varInits )
       local
         list<DAE.Exp> i_instDims;
@@ -9651,7 +9648,7 @@ algorithm
         i_instDimsInit = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING(", ")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         (i_instDimsInit, i_varDecls, i_varInits) = lm_224(i_instDimsInit, i_instDims, i_varDecls, i_varInits);
         i_instDimsInit = Tpl.popIter(i_instDimsInit);
-        (txt, i_varInits) = fun_225(txt, i_instDims, i_instDimsInit, i_var_ty, i_varName, i_varInits);
+        (txt, i_varInits) = fun_225(txt, i_instDims, i_instDimsInit, i_varName, i_var_ty, i_varInits);
       then (txt, i_varDecls, i_varInits);
 
     case ( txt,

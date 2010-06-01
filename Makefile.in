@@ -42,7 +42,7 @@ qtclean:
 	(cd OMNotebook/OMNotebookQT4 && qmake && make clean)
 
 fix-svn-eol-style:
-	svn propset svn:eol-style LF `find testsuite/ Compiler/ | grep "\.mos\?\$"`
+	svn propset svn:eol-style LF `find testsuite/ Compiler/ | grep "\.mos\?\$$"`
 
 .PRECIOUS: Makefile
 
