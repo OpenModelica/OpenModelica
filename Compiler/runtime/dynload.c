@@ -851,6 +851,8 @@ static int execute_function(void *in_arg, void **out_arg,
   if (debugFlag) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
   /* call our function pointer! */
   retval = func(arglst, &retarg);
+  /* Flush all buffers for deterministic behaviour; in particular for the testsuite */
+  fflush(NULL);
 
   /* free the type description for the input parameters! */
   arg = arglst;
