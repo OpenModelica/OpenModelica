@@ -766,9 +766,9 @@ algorithm
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
         dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
-        funcs = DAEUtil.daeFunctionTree(dae);
-        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
-        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
+        //funcs = DAEUtil.daeFunctionTree(dae);
+        //dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        //dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);

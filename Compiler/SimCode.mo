@@ -522,9 +522,9 @@ algorithm
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
-        funcs = DAEUtil.daeFunctionTree(dae);
-        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
-        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
+        //funcs = DAEUtil.daeFunctionTree(dae);
+        //dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        //dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);

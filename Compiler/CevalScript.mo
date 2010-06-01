@@ -2331,9 +2331,9 @@ algorithm
         dae = DAEUtil.transformIfEqToExpr(dae,false);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         dlow = DAELow.lower(dae, addDummy, true);
-        funcs = DAEUtil.daeFunctionTree(dae);
-        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
-        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
+        //funcs = DAEUtil.daeFunctionTree(dae);
+        //dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        //dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
@@ -3302,9 +3302,9 @@ algorithm
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
         = DAELow.lower(dae, false/* no dummy variable*/, true);
-        funcs = DAEUtil.daeFunctionTree(dae);
-        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
-        dlow = DAELow.extendAllRecordEqns(dlow,funcs);
+        //funcs = DAEUtil.daeFunctionTree(dae);
+        //dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
+        //dlow = DAELow.extendAllRecordEqns(dlow,funcs);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
