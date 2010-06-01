@@ -138,8 +138,13 @@ dreallyclean: .depend
 report:
 	@(cd report ; $(MAKE))
 
+ifeq ($(wildcard ../build/bin/omc),)
 simcode:
-	@make -C susan_codegen/SimCode/ > susan.log 2>&1 && echo Susan generated new SimCode files. See susan.log for details. || echo "Using old Susan template files. See susan.log for details."
+	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
+else 
+simcode:
+	make -C susan_codegen/SimCode/
+endif
 
 depend: simcode
 	-$(RM) .depend
@@ -148,4 +153,4 @@ depend: simcode
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in
-	$(top_builddir)/config.status
+	cd $(top_builddir); ./config.status
