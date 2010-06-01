@@ -2074,11 +2074,13 @@ algorithm
     local
       Exp e_1,e1,e2,res,s1,a1;
       Type tp;
+
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
         e_1 = simplifyMatrixProduct(e1, e2);
       then
         e_1;
+
     case (e1,DAE.ADD_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2087,6 +2089,7 @@ algorithm
         res = simplifyVectorBinary(e1, DAE.ADD(tp), e2);
       then
         res;
+
     case (e1,DAE.SUB_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2095,6 +2098,7 @@ algorithm
         res = simplifyVectorBinary(e1, DAE.SUB(tp), e2);
       then
         res;
+
     case (e1,DAE.MUL_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2103,6 +2107,7 @@ algorithm
         res = simplifyVectorBinary(e1, DAE.MUL(tp), e2);
       then
         res;
+
     case (e1,DAE.DIV_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2111,6 +2116,7 @@ algorithm
         res = simplifyVectorBinary(e1, DAE.DIV(tp), e2);
       then
         res;
+
     case (e1,DAE.POW_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2120,6 +2126,7 @@ algorithm
         res = simplify1(a1);
       then
         res;
+
     case (e1,DAE.POW_ARR2(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2129,21 +2136,21 @@ algorithm
       then
         res;
 
-        // v1 - -v2 => v1 + v2
+    // v1 - -v2 => v1 + v2
     case(e1,DAE.SUB_ARR(ty=tp),e2)
       equation
         (DAE.UNARY(_,e2)) = simplify1(e2);
 				e1 = simplify1(e1);
       then DAE.BINARY(e1,DAE.ADD_ARR(tp),e2);
 
-     // v1 + -v2 => v1 - v2
+    // v1 + -v2 => v1 - v2
     case(e1,DAE.ADD_ARR(ty=tp),e2)
       equation
         (DAE.UNARY(_,e2)) = simplify1(e2);
         e1 = simplify1(e1);
       then DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
 
-        /* scalar * matrix */
+    // scalar * matrix
     case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2158,7 +2165,7 @@ algorithm
       then
         res;
 
-    /* scalar * array */
+    // scalar * array
     case (s1,DAE.MUL_SCALAR_ARRAY(ty = tp),a1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2173,7 +2180,7 @@ algorithm
       then
         res;
 
-    /* matrix * scalar */
+    // matrix * scalar
     case (a1,DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2188,7 +2195,7 @@ algorithm
       then
         res;
 
-    /* array * scalar */
+    // array * scalar
     case (a1,DAE.MUL_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2203,7 +2210,7 @@ algorithm
       then
         res;
 
-    /* scalar .+ array */
+    // scalar .+ array
     case (s1,DAE.ADD_SCALAR_ARRAY(ty = tp),a1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2218,7 +2225,7 @@ algorithm
       then
         res;
 
-    /* array .+ scalar */
+    // array .+ scalar
     case (a1,DAE.ADD_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2233,7 +2240,7 @@ algorithm
       then
         res;
 
-    /* scalar .- array */
+    // scalar .- array
     case (s1,DAE.SUB_SCALAR_ARRAY(ty = tp),a1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2248,7 +2255,7 @@ algorithm
       then
         res;
 
-    /* array .- scalar */
+    // array .- scalar
     case (a1,DAE.SUB_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2263,8 +2270,7 @@ algorithm
       then
         res;
 
-
-    /* scalar ./ array */
+    // scalar ./ array
     case (s1,DAE.DIV_SCALAR_ARRAY(ty = tp),a1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2278,7 +2284,8 @@ algorithm
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
-    /* array / scalar */
+
+    // matrix / scalar
     case (a1,DAE.DIV_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2287,14 +2294,13 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(unliftArray(atp));
-         b = typeBuiltin(atp2);
+        b = typeBuiltin(atp2);
         op2 = Util.if_(b,DAE.DIV(tp),DAE.DIV_ARRAY_SCALAR(atp2));
-        tp = typeof(s1);
         res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
 
-    /* array / scalar */
+    // array / scalar
     case (a1,DAE.DIV_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2303,14 +2309,13 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-         b = typeBuiltin(atp2);
+        b = typeBuiltin(atp2);
         op2 = Util.if_(b,DAE.DIV(tp),DAE.DIV_ARRAY_SCALAR(atp2));
-        tp = typeof(s1);
         res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
 
-    /* scalar .^ array */
+    // scalar .^ array
     case (s1,DAE.POW_SCALAR_ARRAY(ty = tp),a1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2325,7 +2330,7 @@ algorithm
       then
         res;
 
-    /* array .+ scalar */
+    // array .+ scalar
     case (a1,DAE.POW_ARRAY_SCALAR(ty = tp),s1)
       local Boolean b; Operator op2; Type atp,atp2;
       equation
@@ -2345,11 +2350,13 @@ algorithm
         res = simplifyScalarProduct(e1, e2);
       then
         res;
+
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
         res = simplifyScalarProduct(e1, e2);
       then
         res;
+
     case (e1,DAE.ADD_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2358,6 +2365,7 @@ algorithm
         res = simplifyMatrixBinary(e1, DAE.ADD(tp), e2);
       then
         res;
+
     case (e1,DAE.SUB_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -3657,7 +3665,7 @@ algorithm
         t2 = typeof(e1_1);
         b = typeBuiltin(t2);
         op = Util.if_(b,DAE.DIV(t2),DAE.DIV_ARRAY_SCALAR(t2));
-        exp = simplify1(DAE.BINARY(e1_1,DAE.DIV(t),e2_1));
+        exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.POW_SCALAR_ARRAY(ty = t),exp2 = e2),indx)
