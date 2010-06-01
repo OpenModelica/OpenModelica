@@ -1105,8 +1105,9 @@ algorithm
   outExp := matchcontinue(inArgMap,inComponentRef)
     local
       DAE.ComponentRef key,cref;
-      DAE.Exp exp;
+      DAE.Exp exp,e;
       list<tuple<DAE.ComponentRef, DAE.Exp>> cdr;
+      list<DAE.Subscript> subs;
     case({},_)
       equation
         Debug.fprintln("failtrace","Inline.getExpFromArgMap failed");
@@ -1114,10 +1115,12 @@ algorithm
         fail();
     case((cref,exp) :: cdr,key)
       equation
+        subs = Exp.crefSubs(key);
         key = Exp.crefStripSubs(key);
         true = Exp.crefEqual(cref,key);
+        e = Exp.applyExpSubscripts(exp,subs);
       then
-        exp;
+        e;
     case(_ :: cdr,key)
       equation
         exp = getExpFromArgMap(cdr,key);

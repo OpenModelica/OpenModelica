@@ -6001,11 +6001,11 @@ algorithm
         e2_1 = Exp.simplify(e2);
         e1_2 = Exp.stringifyCrefs(e1_1);
         e2_2 = Exp.stringifyCrefs(e2_1);
-        //complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
+        complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
         // create as many equations as the dimension of the record
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
+        //ty = Exp.typeof(e1);
+        //i = Exp.sizeOf(ty);
+        //complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
       then
         complexEqs;
     // initial
@@ -6017,9 +6017,9 @@ algorithm
         e2_2 = Exp.stringifyCrefs(e2_1);
         complexEqs = {COMPLEX_EQUATION(-1,e1_2,e2_2,source)};
         // create as many equations as the dimension of the record
-        ty = Exp.typeof(e1);
-        i = Exp.sizeOf(ty);
-        complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
+        //ty = Exp.typeof(e1);
+        //i = Exp.sizeOf(ty);
+        //complexEqs = Util.listFill(COMPLEX_EQUATION(-1,e1_2,e2_2,source), i);
       then
         complexEqs;
     case (_)
@@ -17789,94 +17789,242 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
     DAE.FunctionTree funcs;
     Equation eqn;
     DAE.ComponentRef cr1,cr2;
-    DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
+    DAE.Exp e1,e2;
+    list<DAE.Exp> e1lst,e2lst;
     list<DAE.ExpVar> varLst;
     Integer i;
-    list<Equation> complexEqs;  
+    list<list<Equation>> complexEqsLst,complexEqsLst1;
+    list<Equation> complexEqs,complexEqs1;  
     DAE.ElementSource source;  
     Absyn.Path path,fname;
     list<DAE.Exp> expLst;
+    list<tuple<DAE.Exp,DAE.Exp>> exptpllst;
   // a=b
-  case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),_)
+  case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
-      e1_1 = Exp.simplify(e1);
-      e2_1 = Exp.simplify(e2);
-      e1_2 = Exp.stringifyCrefs(e1_1);
-      e2_2 = Exp.stringifyCrefs(e2_1);
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
-      complexEqs = extendRecordEqns1(e1_2,e2_2,varLst,source,{});
+      e1lst = Util.listMap1(varLst,generateCrefsFromType,e1);
+      e2lst = Util.listMap1(varLst,generateCrefsFromType,e2);
+      exptpllst = Util.listThreadTuple(e1lst,e2lst);
+      complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
+      complexEqs = Util.listFlatten(complexEqsLst);
+      // nested Records
+      complexEqsLst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
+      complexEqs1 = Util.listFlatten(complexEqsLst1);
     then
-      complexEqs;
+      complexEqs1; 
   // a=Record()
   case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CALL(path=path,expLst=expLst),source = source),funcs)
     equation
       DAE.RECORD_CONSTRUCTOR(path=fname) = DAEUtil.avlTreeGet(funcs,path);
-      e1_1 = Exp.simplify(e1);
-      e1_2 = Exp.stringifyCrefs(e1_1);
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
-      complexEqs = extendRecordEqns2(e1_2,expLst,varLst,source,{});
+      e1lst = Util.listMap1(varLst,generateCrefsFromType,e1);
+      exptpllst = Util.listThreadTuple(e1lst,expLst);
+      complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
+      complexEqs = Util.listFlatten(complexEqsLst);
+      // nested Records
+      complexEqsLst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
+      complexEqs1 = Util.listFlatten(complexEqsLst1);
     then
-      complexEqs;      
+      complexEqs1;       
   case(eqn,_) then {eqn};      
 end matchcontinue;
 end extendRecordEqns;
 
-protected function extendRecordEqns1 "
+protected function generateCrefsFromType "
 Author: Frenkel TUD 2010-05"
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input list<DAE.ExpVar> inVarLst;
-  input DAE.ElementSource Source;
-  input list<Equation> inEqnLst;
-  output list<Equation> outEqnLst;
-algorithm outEqnLst := matchcontinue(inExp1,inExp2,inVarLst,Source,inEqnLst)
+  input DAE.ExpVar inVar;
+  input DAE.Exp inExp;
+  output DAE.Exp outCrefExp;
+algorithm outCrefExp := matchcontinue(inVar,inExp)
   local
-    DAE.Ident id1,id2;
-    list<DAE.ExpVar> rest;
     String name;
     DAE.ExpType tp;
-    list<Equation> complexEqs,complexEqs1;  
-    DAE.ElementSource source;
-    DAE.Exp e1,e2,v1,v2; 
-  case (e1,e2,{},source,complexEqs) then complexEqs;
-  case (e1 as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1)),
-        e2 as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id2)),DAE.COMPLEX_VAR(name=name,tp=tp)::rest,source,complexEqs)
+    DAE.ComponentRef cr,cr1;
+    DAE.Exp e;
+  case (DAE.COMPLEX_VAR(name=name,tp=tp),DAE.CREF(componentRef=cr))
   equation
-    v1 = DAE.CREF(DAE.CREF_QUAL(id1,tp,{},DAE.CREF_IDENT(name,tp,{})),tp);
-    v2 = DAE.CREF(DAE.CREF_QUAL(id2,tp,{},DAE.CREF_IDENT(name,tp,{})),tp);
-    complexEqs1 = extendRecordEqns1(e1,e2,rest,source,EQUATION(v1,v2,source)::complexEqs);
-    then complexEqs1;
-end matchcontinue;
-end extendRecordEqns1;
+    cr1 = Exp.extendCref(cr,tp,name,{});
+    e = Exp.stringifyCrefs(DAE.CREF(cr1,tp));
+  then
+    e;
+ end matchcontinue;
+end generateCrefsFromType;
 
-protected function extendRecordEqns2 "
+protected function generateextendedRecordEqn "
 Author: Frenkel TUD 2010-05"
-  input DAE.Exp inExp1;
-  input list<DAE.Exp> inExpLst;
-  input list<DAE.ExpVar> inVarLst;
+  input tuple<DAE.Exp,DAE.Exp> inExp;
   input DAE.ElementSource Source;
-  input list<Equation> inEqnLst;
   output list<Equation> outEqnLst;
-algorithm outEqnLst := matchcontinue(inExp1,inExpLst,inVarLst,Source,inEqnLst)
+algorithm outEqnLst := matchcontinue(inExp,Source)
   local
-    DAE.Ident id1,id2;
-    list<DAE.ExpVar> rest;
-    String name;
-    DAE.ExpType tp;
-    list<Equation> complexEqs,complexEqs1;  
+    DAE.Exp e1,e2;
+    list<DAE.Exp> e1lst, e2lst;
     DAE.ElementSource source;
-    DAE.Exp e1,e2,v1;
-    list<DAE.Exp> esplst; 
-  case (e1,{},{},source,complexEqs) then complexEqs;
-  case (e1 as DAE.CREF(componentRef=DAE.CREF_IDENT(ident=id1)),
-        e2::esplst,DAE.COMPLEX_VAR(name=name,tp=tp)::rest,source,complexEqs)
-  equation
-    v1 = DAE.CREF(DAE.CREF_QUAL(id1,tp,{},DAE.CREF_IDENT(name,tp,{})),tp);
-    complexEqs1 = extendRecordEqns2(e1,esplst,rest,source,EQUATION(v1,e2,source)::complexEqs);
-    then complexEqs1;
-end matchcontinue;
-end extendRecordEqns2;
+    DAE.ComponentRef cr;
+    list<Equation> eqnlst;
+    list<tuple<DAE.Exp,DAE.Exp>> exptplst;
+    list<list<DAE.Subscript>> subslst;
+  case ((e1 as DAE.CREF(componentRef=cr),e2),source)
+  equation 
+    false = Exp.isRecord(cr);
+    (e1lst,subslst) = extendExp(e1);
+    e2lst = Util.listMap1r(subslst,Exp.applyExpSubscripts,e2);
+    exptplst = Util.listThreadTuple(e1lst,e2lst);
+    eqnlst = Util.listMap1(exptplst,generateEQUATION,source);
+  then
+    eqnlst;
+  case ((e1 as DAE.CREF(componentRef=cr),e2),source)
+  equation 
+    false = Exp.isRecord(cr);
+    (e1lst,{}) = extendExp(e1);
+    e2lst = {e2};
+    exptplst = Util.listThreadTuple(e1lst,e2lst);
+    eqnlst = Util.listMap1(exptplst,generateEQUATION,source);
+  then
+    eqnlst;    
+  case ((e1 as DAE.CREF(componentRef=cr),e2),source)
+  equation 
+    true = Exp.isRecord(cr);
+  then
+     {COMPLEX_EQUATION(-1,e1,e2,source)};    
+ end matchcontinue;
+end generateextendedRecordEqn;
+
+protected function extendExp "
+Author: Frenkel TUD 2010-05"
+  input DAE.Exp inExp;
+  output list<DAE.Exp> outExplst;
+  output list<list<DAE.Subscript>> outSubsLst;
+algorithm 
+  (outExplst,outSubsLst) := matchcontinue(inExp)
+  local
+    DAE.Exp e;
+    DAE.ComponentRef cr;
+    list<DAE.ComponentRef> crlst;
+    DAE.ExpType t,ty;
+    list<Option<Integer>> ad;
+    list<list<DAE.Subscript>> subslst,subslst1;
+    list<DAE.Exp> expl;
+    list<list<tuple<DAE.Exp, Boolean>>> scalar;
+    list<tuple<DAE.Exp, Boolean>> sc;
+    case (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)))
+      equation
+        subslst = arrayDimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Exp.makeCrefExp,t);
+      then 
+        (expl,subslst1);
+/*        
+    case (DAE.ARRAY(array=expl)) then expl;
+    case (DAE.MATRIX(scalar=scalar))
+      equation
+        sc = Util.listFlatten(scalar);
+        expl = Util.listMap(sc,Util.tuple21);
+      then
+        expl;
+*/        
+  case (e) then ({e},{});
+  
+ end matchcontinue;
+end extendExp;
+
+protected function arrayDimensionsToRange "
+Author: Frenkel TUD 2010-05"
+  input list<Option<Integer>> dims;
+  output list<list<DAE.Subscript>> outRangelist;
+algorithm
+  outRangelist := matchcontinue(dims)
+  local 
+    Integer i;
+    list<list<DAE.Subscript>> rangelist;
+    list<Integer> range;
+    list<DAE.Subscript> subs;
+    case({}) then {};
+    case(NONE::dims) equation
+      rangelist = arrayDimensionsToRange(dims);
+    then {}::rangelist;
+    case(SOME(i)::dims) equation
+      range = Util.listIntRange(i);
+      subs = rangesToSubscript(range);
+      rangelist = arrayDimensionsToRange(dims);
+    then subs::rangelist;
+  end matchcontinue;
+end arrayDimensionsToRange;
+
+protected function rangesToSubscript "
+Author: Frenkel TUD 2010-05"
+  input list<Integer> inRange;
+  output list<DAE.Subscript> outSubs;
+algorithm
+  outSubs := matchcontinue(inRange)
+  local 
+    Integer i;
+    list<Integer> res;
+    list<DAE.Subscript> range;
+    case({}) then {};
+    case(i::res) 
+      equation
+        range = rangesToSubscript(res);
+      then DAE.INDEX(DAE.ICONST(i))::range;
+  end matchcontinue;
+end rangesToSubscript;
+
+protected function rangesToSubscripts "
+Author: Frenkel TUD 2010-05"
+  input list<list<DAE.Subscript>> inRangelist;
+  output list<list<DAE.Subscript>> outSubslst;
+algorithm
+  outSubslst := matchcontinue(inRangelist)
+  local 
+    list<list<DAE.Subscript>> rangelist,rangelist1;
+    list<list<list<DAE.Subscript>>> rangelistlst;
+    list<DAE.Subscript> range;
+    case({}) then {};
+    case(range::{})
+      equation
+        rangelist = Util.listMap(range,Util.listCreate); 
+      then rangelist;
+    case(range::rangelist)
+      equation
+      rangelist = rangesToSubscripts(rangelist);
+      rangelistlst = Util.listMap1(range,rangesToSubscripts1,rangelist);
+      rangelist1 = Util.listFlatten(rangelistlst);
+    then rangelist1;
+  end matchcontinue;
+end rangesToSubscripts;
+
+protected function rangesToSubscripts1 "
+Author: Frenkel TUD 2010-05"
+  input DAE.Subscript inSub;
+  input list<list<DAE.Subscript>> inRangelist;
+  output list<list<DAE.Subscript>> outSubslst;
+algorithm
+  outSubslst := matchcontinue(inSub,inRangelist)
+  local 
+    list<list<DAE.Subscript>> rangelist,rangelist1;
+    DAE.Subscript sub;
+    case(sub,rangelist)
+      equation
+      rangelist1 = Util.listMap1r(rangelist,Util.listAddElementFirst,sub);
+    then rangelist1;
+  end matchcontinue;
+end rangesToSubscripts1;
+
+protected function generateEQUATION "
+Author: Frenkel TUD 2010-05"
+  input tuple<DAE.Exp,DAE.Exp> inTpl;
+  input DAE.ElementSource Source;
+  output Equation outEqn;
+algorithm outEqn := matchcontinue(inTpl,Source)
+  local
+    DAE.Exp e1,e2;
+    DAE.ElementSource source;
+  case ((e1,e2),source) then EQUATION(e1,e2,source);
+ end matchcontinue;
+end generateEQUATION;
 
 end DAELow;
