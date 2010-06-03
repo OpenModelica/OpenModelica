@@ -227,6 +227,10 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
     else {
       i = findTime(timeStamp, delayStruct);
       assert(i < delayStruct->currentIndex);
+      // Was it the last value?
+      if (i+1 == delayStruct->currentIndex) {
+        return value0;
+      }
       t_TimeAndValue *nearest = delayStruct->expressionDelayBuffer + i;
       time0 = nearest[0].time;
       value0 = nearest[0].value;
