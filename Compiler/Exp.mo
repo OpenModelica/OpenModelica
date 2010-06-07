@@ -1758,6 +1758,12 @@ protected function simplifyBuiltinConstantCalls "simplifies some builtin calls i
 algorithm
   outExp := matchcontinue(exp)
   local Real r,v1,v2; Integer i; Absyn.Path path; Exp e;
+    
+    // der(constant) ==> 0
+    case(DAE.CALL(path=Absyn.IDENT("der"),expLst ={e})) equation
+      true = isConst(e);
+    then DAE.RCONST(0.0);
+    
     case(DAE.CALL(path=path,expLst={e})) equation
       Builtin.isSqrt(path);
       r = realSqrt(getRealConst(e));
