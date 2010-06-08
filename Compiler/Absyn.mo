@@ -31,7 +31,7 @@
 
 package Absyn
 "
-  file:	       Absyn.mo
+  file:         Absyn.mo
   package:     Absyn
   description: Abstract syntax
 
@@ -341,7 +341,7 @@ uniontype Element "Elements
 
   record TEXT
     Option<Ident> optName "optName : optional name of text, e.g. model with syntax error.
-			                                 We need the name to be able to browse it..." ;
+                                       We need the name to be able to browse it..." ;
     String string;
     Info info;
   end TEXT;
@@ -792,11 +792,11 @@ uniontype Exp "The Exp uniontype is the container of a Modelica expression.
   end CONS;
 
   record MATCHEXP "matchcontinue expression"
-		MatchType matchTy            " match or matchcontinue      ";
-		Exp inputExp                 " match expression of         ";
-		list<ElementItem> localDecls " local declarations          ";
-		list<Case> cases             " case list + else in the end ";
-		Option<String> comment       " match expr comment_optional ";
+    MatchType matchTy            " match or matchcontinue      ";
+    Exp inputExp                 " match expression of         ";
+    list<ElementItem> localDecls " local declarations          ";
+    list<Case> cases             " case list + else in the end ";
+    Option<String> comment       " match expr comment_optional ";
   end MATCHEXP;
 
     // The following two are only used internaly in the compiler
@@ -829,17 +829,17 @@ end ValueblockBody;
 uniontype Case "case in match or matchcontinue"
   record CASE
     Exp pattern " patterns to be matched ";
-		list<ElementItem> localDecls " local decls ";
-		list<EquationItem>  equations " equations [] for no equations ";
-		Exp result " result ";
-		Option<String> comment " comment after case like: case pattern string_comment ";
+    list<ElementItem> localDecls " local decls ";
+    list<EquationItem>  equations " equations [] for no equations ";
+    Exp result " result ";
+    Option<String> comment " comment after case like: case pattern string_comment ";
   end CASE;
 
   record ELSE "else in match or matchcontinue"
-		list<ElementItem> localDecls " local decls ";
-		list<EquationItem>  equations " equations [] for no equations ";
-		Exp result " result ";
-		Option<String> comment " comment after case like: case pattern string_comment ";
+    list<ElementItem> localDecls " local decls ";
+    list<EquationItem>  equations " equations [] for no equations ";
+    Exp result " result ";
+    Option<String> comment " comment after case like: case pattern string_comment ";
   end ELSE;
 end Case;
 
@@ -1117,17 +1117,17 @@ end setTimeStampBool;
 // stefan
 public function traverseEquation
 "function: traverseEquation
-	Traverses all subequations of an equation
-	takes a function and an extra argument passed through the traversal"
-	input Equation inEquation;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<Equation, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Equation, TypeA> inTpl;
-	  output tuple<Equation, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
+  Traverses all subequations of an equation
+  takes a function and an extra argument passed through the traversal"
+  input Equation inEquation;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<Equation, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Equation, TypeA> inTpl;
+    output tuple<Equation, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
   replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inEquation,inFunc,inTypeA)
@@ -1178,17 +1178,17 @@ end traverseEquation;
 // stefan
 protected function traverseEquationItem
 "function: traverseEquationItem
-	Traverses the equation inside an equationitem"
-	input EquationItem inEquationItem;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<EquationItem, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Equation, TypeA> inTpl;
-	  output tuple<Equation, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  Traverses the equation inside an equationitem"
+  input EquationItem inEquationItem;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<EquationItem, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Equation, TypeA> inTpl;
+    output tuple<Equation, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inEquationItem,inFunc,inTypeA)
     local
@@ -1209,17 +1209,17 @@ end traverseEquationItem;
 // stefan
 public function traverseEquationItemList
 "function: traverseEquationItemList
-	calls traverseEquationItem on every element of the given list"
-	input list<EquationItem> inEquationItemList;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<list<EquationItem>, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Equation, TypeA> inTpl;
-	  output tuple<Equation, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  calls traverseEquationItem on every element of the given list"
+  input list<EquationItem> inEquationItemList;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<list<EquationItem>, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Equation, TypeA> inTpl;
+    output tuple<Equation, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inEquationItemList,inFunc,inTypeA)
     local
@@ -1240,18 +1240,18 @@ end traverseEquationItemList;
 // stefan
 public function traverseExpEqItemTupleList
 "function: traverseExpEqItemTupleList
-	traverses a list of Exp * EquationItem list tuples
-	mostly used for else-if blocks"
-	input list<tuple<Exp, list<EquationItem>>> inList;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<list<tuple<Exp, list<EquationItem>>>, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Equation, TypeA> inTpl;
-	  output tuple<Equation, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  traverses a list of Exp * EquationItem list tuples
+  mostly used for else-if blocks"
+  input list<tuple<Exp, list<EquationItem>>> inList;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<list<tuple<Exp, list<EquationItem>>>, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Equation, TypeA> inTpl;
+    output tuple<Equation, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inList,inFunc,inTypeA)
     local
@@ -1273,18 +1273,18 @@ end traverseExpEqItemTupleList;
 // stefan
 public function traverseAlgorithm
 "function: traverseAlgorithm
-	Traverses all subalgorithms of an algorithm
-	Takes a function and an extra argument passed through the traversal"
-	input Algorithm inAlgorithm;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<Algorithm, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Algorithm, TypeA> inTpl;
-	  output tuple<Algorithm, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  Traverses all subalgorithms of an algorithm
+  Takes a function and an extra argument passed through the traversal"
+  input Algorithm inAlgorithm;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<Algorithm, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Algorithm, TypeA> inTpl;
+    output tuple<Algorithm, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inAlgorithm,inFunc,inTypeA)
     local
@@ -1346,18 +1346,18 @@ end traverseAlgorithm;
 // stefan
 public function traverseAlgorithmItem
 "function: traverseAlgorithmItem
-	traverses the Algorithm contained in an AlgorithmItem, if any
-	see traverseAlgorithm"
-	input AlgorithmItem inAlgorithmItem;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<AlgorithmItem, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Algorithm, TypeA> inTpl;
-	  output tuple<Algorithm, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  traverses the Algorithm contained in an AlgorithmItem, if any
+  see traverseAlgorithm"
+  input AlgorithmItem inAlgorithmItem;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<AlgorithmItem, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Algorithm, TypeA> inTpl;
+    output tuple<Algorithm, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inAlgorithmItem,inFunc,inTypeA)
     local
@@ -1378,17 +1378,17 @@ end traverseAlgorithmItem;
 // stefan
 public function traverseAlgorithmItemList
 "function: traverseAlgorithmItemList
-	calls traverseAlgorithmItem on each item in a list of AlgorithmItems"
-	input list<AlgorithmItem> inAlgorithmItemList;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<list<AlgorithmItem>, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Algorithm, TypeA> inTpl;
-	  output tuple<Algorithm, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  calls traverseAlgorithmItem on each item in a list of AlgorithmItems"
+  input list<AlgorithmItem> inAlgorithmItemList;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<list<AlgorithmItem>, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Algorithm, TypeA> inTpl;
+    output tuple<Algorithm, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inAlgorithmItemList,inFunc,inTypeA)
     local
@@ -1409,18 +1409,18 @@ end traverseAlgorithmItemList;
 // stefan
 public function traverseExpAlgItemTupleList
 "function: traverseExpAlgItemTupleList
-	traverses a list of Exp * AlgorithmItem list tuples
-	mostly used for else-if blocks"
-	input list<tuple<Exp, list<AlgorithmItem>>> inList;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<list<tuple<Exp, list<AlgorithmItem>>>, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Algorithm, TypeA> inTpl;
-	  output tuple<Algorithm, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  traverses a list of Exp * AlgorithmItem list tuples
+  mostly used for else-if blocks"
+  input list<tuple<Exp, list<AlgorithmItem>>> inList;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<list<tuple<Exp, list<AlgorithmItem>>>, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Algorithm, TypeA> inTpl;
+    output tuple<Algorithm, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inList,inFunc,inTypeA)
     local
@@ -1506,7 +1506,7 @@ algorithm
         ((e1_1,ext_arg_1)) = traverseExp(e1, rel, ext_arg);
         ((e2_1,ext_arg_2)) = traverseExp(e2, rel, ext_arg_1);
         ((e3_1,ext_arg_3)) = traverseExp(e3, rel, ext_arg_2);
-				((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
+        ((elseIfBranch1,ext_arg_3)) = traverseExpElseIfBranch(elseIfBranch,rel,ext_arg_3);
         ((e_1,ext_arg_4)) = rel((e,ext_arg_3));
       then
         ((IFEXP(e1_1,e2_1,e3_1,elseIfBranch1),ext_arg_4));
@@ -1578,17 +1578,17 @@ end traverseExp;
 // stefan
 public function traverseExpList
 "function: traverseExpList
-	calls traverseExp on each element in the given list"
+  calls traverseExp on each element in the given list"
   input list<Exp> inExpList;
-	input FuncTplToTpl inFunc;
-	input TypeA inTypeA;
-	output tuple<list<Exp>, TypeA> outTpl;
-	partial function FuncTplToTpl
-	  input tuple<Exp, TypeA> inTpl;
-	  output tuple<Exp, TypeA> outTpl;
-	  replaceable type TypeA subtypeof Any;
-	end FuncTplToTpl;
-	replaceable type TypeA subtypeof Any;
+  input FuncTplToTpl inFunc;
+  input TypeA inTypeA;
+  output tuple<list<Exp>, TypeA> outTpl;
+  partial function FuncTplToTpl
+    input tuple<Exp, TypeA> inTpl;
+    output tuple<Exp, TypeA> outTpl;
+    replaceable type TypeA subtypeof Any;
+  end FuncTplToTpl;
+  replaceable type TypeA subtypeof Any;
 algorithm
   outTpl := matchcontinue (inExpList,inFunc,inTypeA)
     local
@@ -1621,8 +1621,8 @@ public function traverseExpElseIfBranch
   replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(inLst,rel,ext_arg)
- 	local Exp e1,e2,e11,e21;
- 	  list<tuple<Exp,Exp>> lst;
+   local Exp e1,e2,e11,e21;
+     list<tuple<Exp,Exp>> lst;
     case({},rel,ext_arg) then (({},ext_arg));
     case((e1,e2)::inLst,rel,ext_arg) equation
       ((lst,ext_arg)) = traverseExpElseIfBranch(inLst,rel,ext_arg);
@@ -1678,15 +1678,15 @@ protected function traverseExpNamedArgs "Help function to traverseExpFunctionArg
   replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(nargs,rel,ext_arg)
- 	local Exp e1,e2,e11,e21;
- 	 	Ident id;
- 	  list<NamedArg> nargs;
- 	  case({},rel,ext_arg)
-		then (({},ext_arg));
- 	  case(NAMEDARG(id,e1)::nargs,rel,ext_arg) equation
- 	    ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
- 	    ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
- 	  then((NAMEDARG(id,e11)::nargs,ext_arg));
+   local Exp e1,e2,e11,e21;
+      Ident id;
+     list<NamedArg> nargs;
+     case({},rel,ext_arg)
+    then (({},ext_arg));
+     case(NAMEDARG(id,e1)::nargs,rel,ext_arg) equation
+       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+       ((nargs,ext_arg)) = traverseExpNamedArgs(nargs,rel,ext_arg);
+     then((NAMEDARG(id,e11)::nargs,ext_arg));
   end matchcontinue;
 end traverseExpNamedArgs;
 
@@ -1703,15 +1703,15 @@ protected function traverseExpPosArgs "Help function to traverseExpFunctionArgs"
   replaceable type Type_a subtypeof Any;
 algorithm
   outTplExpTypeA:= matchcontinue(pargs,rel,ext_arg)
- 	local Exp e1,e2,e11,e21;
- 	 	Ident id;
- 	  list<Exp> pargs;
- 	  case({},rel,ext_arg)
-		then (({},ext_arg));
- 	  case(e1::pargs,rel,ext_arg) equation
- 	    ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
- 	    ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
- 	  then((e11::pargs,ext_arg));
+   local Exp e1,e2,e11,e21;
+      Ident id;
+     list<Exp> pargs;
+     case({},rel,ext_arg)
+    then (({},ext_arg));
+     case(e1::pargs,rel,ext_arg) equation
+       ((e11,ext_arg)) = traverseExp(e1, rel, ext_arg);
+       ((pargs,ext_arg)) = traverseExpPosArgs(pargs,rel,ext_arg);
+     then((e11::pargs,ext_arg));
   end matchcontinue;
 end traverseExpPosArgs;
 
@@ -2060,9 +2060,9 @@ algorithm
 end pathFirstIdent;
 
 public function pathSuffixOf "returns true if suffix_path is a suffix of path"
-	input Path suffix_path;
-	input Path path;
-	output Boolean res;
+  input Path suffix_path;
+  input Path path;
+  output Boolean res;
 algorithm
   res := matchcontinue(suffix_path,path)
   local Path p;
@@ -2177,9 +2177,9 @@ public function pathPrefixOf
   
   Returns true if prefixPath is a prefix of path, false otherwise.
 "
-	input Path prefixPath;
-	input Path path;
-	output Boolean out;
+  input Path prefixPath;
+  input Path path;
+  output Boolean out;
 algorithm
   out := matchcontinue(prefixPath, path)
     case(prefixPath, path) 
@@ -2201,9 +2201,9 @@ public function crefPrefixOf
   Returns true if prefixCr is a prefix of cr, i.e., false otherwise.
   Subscripts are NOT checked.
 "
-	input ComponentRef prefixCr;
-	input ComponentRef cr;
-	output Boolean out;
+  input ComponentRef prefixCr;
+  input ComponentRef cr;
+  output Boolean out;
 algorithm
   out := matchcontinue(prefixCr, cr)
     case(prefixCr, cr) 
@@ -2217,9 +2217,9 @@ algorithm
 end crefPrefixOf;
 
 public function removePrefix "removes the prefix_path from path, and returns the rest of path"
-	input Path prefix_path;
-	input Path path;
-	output Path newPath;
+  input Path prefix_path;
+  input Path path;
+  output Path newPath;
 algorithm
   newPath := matchcontinue(prefix_path,path)
   local Path p,p2; Ident id1,id2;
@@ -2243,9 +2243,9 @@ public function crefRemovePrefix
   If prefixCr is a prefix of cr, removes prefixCr from cr and returns the remaining reference,
   otherwise fails. Subscripts are NOT checked.
 "
-	input ComponentRef prefixCr;
-	input ComponentRef cr;
-	output ComponentRef out;
+  input ComponentRef prefixCr;
+  input ComponentRef cr;
+  output ComponentRef out;
 algorithm
   out := matchcontinue(prefixCr, cr)
     local
@@ -2328,12 +2328,12 @@ pathContainedIn( C.D, A.B.C) => A.B.C.D
 pathContainedIn(C.D, A.B.C.D) => A.B.C.D
 pathContainedIn(A.B.C.D, A.B.C.D) => A.B.C.D
 pathContainedIn(B.C,A.B) => A.B.C"
-	input Path subPath;
-	input Path path;
-	output Path completePath;
+  input Path subPath;
+  input Path path;
+  output Path completePath;
 algorithm
   completePath := matchcontinue(subPath,path)
-  	// A suffix, e.g. C.D in A.B.C.D
+    // A suffix, e.g. C.D in A.B.C.D
     case (subPath,path)
       equation
         true=pathSuffixOf(subPath,path);
@@ -2535,11 +2535,11 @@ end getCrefFromFarg;
 // stefan
 public function appendFunctionArgs
 "function: appendFunctionArgs
-	appends 2 function args into one
-	does not work for FOR_ITER_FARG"
-	input FunctionArgs inFunctionArgs1;
-	input FunctionArgs inFunctionArgs2;
-	output FunctionArgs outFunctionArgs;
+  appends 2 function args into one
+  does not work for FOR_ITER_FARG"
+  input FunctionArgs inFunctionArgs1;
+  input FunctionArgs inFunctionArgs2;
+  output FunctionArgs outFunctionArgs;
 algorithm
   outFunctionArgs := matchcontinue(inFunctionArgs1,inFunctionArgs2)
     local
@@ -2560,11 +2560,11 @@ end appendFunctionArgs;
 // stefan
 public function getClassByName
 "function: getClassByName
-	searches through a list of Classes and returns the one with the given name
-	fails if list is empty (no class found)"
-	input Ident inIdent;
-	input list<Class> inClassList;
-	output Class outClass;
+  searches through a list of Classes and returns the one with the given name
+  fails if list is empty (no class found)"
+  input Ident inIdent;
+  input list<Class> inClassList;
+  output Class outClass;
 algorithm
   outClass := matchcontinue(inIdent,inClassList)
     local
@@ -2583,10 +2583,10 @@ end getClassByName;
 // stefan
 public function renameClass
 "function: renameClass
-	returns the same class with a new name"
-	input Ident inIdent;
-	input Class inClass;
-	output Class outClass;
+  returns the same class with a new name"
+  input Ident inIdent;
+  input Class inClass;
+  output Class outClass;
 algorithm
   outClass := matchcontinue(inIdent,inClass)
     local
@@ -2607,9 +2607,9 @@ end renameClass;
 // stefan
 public function getClassParts
 "function: getClassParts
-	returns the classparts of a class definition"
-	input Class inClass;
-	output list<ClassPart> outClassPartList;
+  returns the classparts of a class definition"
+  input Class inClass;
+  output list<ClassPart> outClassPartList;
 algorithm
   outClassPartList := matchcontinue(inClass)
     local
@@ -2622,10 +2622,10 @@ end getClassParts;
 // stefan
 public function setClassParts
 "function: setClassParts
-	sets the classparts of a class to the given ones"
-	input list<ClassPart> inClassPartList;
-	input Class inClass;
-	output Class outClass;
+  sets the classparts of a class to the given ones"
+  input list<ClassPart> inClassPartList;
+  input Class inClass;
+  output Class outClass;
 algorithm
   outClass := matchcontinue(inClassPartList,inClass)
     local
@@ -2647,9 +2647,9 @@ end setClassParts;
 // stefan
 public function getPublicElementsFromClassParts
 "function: getPublicElementsFromClassParts
-	returns the element list from a public class part"
-	input list<ClassPart> inClassPartList;
-	output list<ElementItem> outElementItemList;
+  returns the element list from a public class part"
+  input list<ClassPart> inClassPartList;
+  output list<ElementItem> outElementItemList;
 algorithm
   outElementItemList := matchcontinue(inClassPartList)
     local
@@ -2673,9 +2673,9 @@ end getPublicElementsFromClassParts;
 // stefan
 public function getAlgorithmItems
 "function: getAlgorithmItems
-	retreives a list of AlgorithmItems from a given Class"
-	input Class inClass;
-	output list<AlgorithmItem> outAlgorithmItemList;
+  retreives a list of AlgorithmItems from a given Class"
+  input Class inClass;
+  output list<AlgorithmItem> outAlgorithmItemList;
 algorithm
   outAlgorithmItemList := matchcontinue (inClass)
     local
@@ -2696,9 +2696,9 @@ end getAlgorithmItems;
 // stefan
 protected function getAlgorithmItems2
 "function: getAlgorithmItems2
-	helper function to getAlgorithmItems"
-	input list<ClassPart> inClassPartList;
-	output list<AlgorithmItem> outAlgorithmItemList;
+  helper function to getAlgorithmItems"
+  input list<ClassPart> inClassPartList;
+  output list<AlgorithmItem> outAlgorithmItemList;
 algorithm
   outAlgorithmItemList := matchcontinue (inClassPartList)
     local
@@ -2719,10 +2719,10 @@ end getAlgorithmItems2;
 // stefan
 public function setAlgorithmItems
 "function: setAlgorithmItems
-	sets the algorithm part of a class to the input list of algorithm items"
-	input list<AlgorithmItem> inAlgorithmItemList;
-	input Class inClass;
-	output Class outClass;
+  sets the algorithm part of a class to the input list of algorithm items"
+  input list<AlgorithmItem> inAlgorithmItemList;
+  input Class inClass;
+  output Class outClass;
 algorithm
   outClass := matchcontinue (inAlgorithmItemList,inClass)
     local
@@ -2748,10 +2748,10 @@ end setAlgorithmItems;
 // stefan
 protected function setAlgorithmItems2
 "function: setAlgorithmItems2
-	helper function to setAlgorithmItems"
-	input list<AlgorithmItem> inAlgorithmItemList;
-	input list<ClassPart> inClassPartList;
-	output list<ClassPart> outClassPartList;
+  helper function to setAlgorithmItems"
+  input list<AlgorithmItem> inAlgorithmItemList;
+  input list<ClassPart> inClassPartList;
+  output list<ClassPart> outClassPartList;
 algorithm
   outClassPartList := matchcontinue (inAlgorithmItemList,inClassPartList)
     local
@@ -2796,10 +2796,10 @@ end setAlgorithmItems2;
 // stefan
 public function extractArgs
 "function: extractArgs
-	retrieves the positional and named arguments from a FunctionArgs"
-	input FunctionArgs inFunctionArgs;
-	output list<Exp> outArgs;
-	output list<NamedArg> outNamedArgs;
+  retrieves the positional and named arguments from a FunctionArgs"
+  input FunctionArgs inFunctionArgs;
+  output list<Exp> outArgs;
+  output list<NamedArg> outNamedArgs;
 algorithm
   (outArgs,outNamedArgs) := matchcontinue(inFunctionArgs)
     local
@@ -2812,10 +2812,10 @@ end extractArgs;
 // stefan
 public function getNamedFuncArgNamesAndValues
 "function: getNamedFuncArgNames
-	returns the names from a list of NamedArgs as a string list"
-	input list<NamedArg> inNamedArgList;
-	output list<String> outStringList;
-	output list<Exp> outExpList;
+  returns the names from a list of NamedArgs as a string list"
+  input list<NamedArg> inNamedArgList;
+  output list<String> outStringList;
+  output list<Exp> outExpList;
 algorithm
   (outStringList,outExpList) := matchcontinue ( inNamedArgList )
     local
@@ -3146,9 +3146,9 @@ end getSubsFromCref;
 // stefan
 public function buildExpFromCref
 "function: buildExpFromCref
-	Creates a CREF expression from a ComponentRef"
-	input ComponentRef inComponentRef;
-	output Exp outExp;
+  Creates a CREF expression from a ComponentRef"
+  input ComponentRef inComponentRef;
+  output Exp outExp;
 algorithm
   outExp := CREF(inComponentRef);
 end buildExpFromCref;
@@ -3156,10 +3156,10 @@ end buildExpFromCref;
 // stefan
 public function buildNamedArgList
 "function: buildNamedArgList
-	builds a list of NamedArg from a list of arg names and args"
-	input list<Ident> inIdentList;
-	input list<Exp> inExpList;
-	output list<NamedArg> outNamedArgList;
+  builds a list of NamedArg from a list of arg names and args"
+  input list<Ident> inIdentList;
+  input list<Exp> inExpList;
+  output list<NamedArg> outNamedArgList;
 algorithm
   outNamedArgList := matchcontinue(inIdentList,inExpList)
     local
@@ -3183,9 +3183,9 @@ end buildNamedArgList;
 // stefan
 public function getExpListFromNamedArgList
 "function: getExpListFromNamedArgList
-	returns the expressions in the named arguments without the argument names"
-	input list<NamedArg> inNamedArgList;
-	output list<Exp> outExpList;
+  returns the expressions in the named arguments without the argument names"
+  input list<NamedArg> inNamedArgList;
+  output list<Exp> outExpList;
 algorithm
   outExpList := matchcontinue(inNamedArgList)
     local
@@ -3204,9 +3204,9 @@ end getExpListFromNamedArgList;
 // stefan
 public function crefGetLastIdent
 "function: crefGetLastIdent
-	Gets the last ident in a ComponentRef"
-	input ComponentRef inComponentRef;
-	output ComponentRef outComponentRef;
+  Gets the last ident in a ComponentRef"
+  input ComponentRef inComponentRef;
+  output ComponentRef outComponentRef;
 algorithm
   outComponentRef := matchcontinue (inComponentRef)
     local
@@ -3225,10 +3225,10 @@ end crefGetLastIdent;
 // stefan
 public function crefSetLastIdent
 "function: crefSetLastIdent
-	Sets the last ident in a ComponentRef to the given ComponentRef"
-	input ComponentRef inComponentRef; // cref to change
-	input ComponentRef inNewIdent; // ident to replace the old one
-	output ComponentRef outComponentRef;
+  Sets the last ident in a ComponentRef to the given ComponentRef"
+  input ComponentRef inComponentRef; // cref to change
+  input ComponentRef inNewIdent; // ident to replace the old one
+  output ComponentRef outComponentRef;
 algorithm
   outComponentRef := matchcontinue (inNewIdent,inComponentRef)
     local
