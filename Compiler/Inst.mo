@@ -1224,10 +1224,10 @@ algorithm
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         callscope_1 = isTopCall(callscope);
         reportUnitConsistency(callscope_1,store);
-        //print("in class ");print(n);print(" generate equations for sets:");print(Connect.printSetsStr(csets_1));print("\n");
+        //print("in class ");print(n);print(" generate equations for sets:");print(ConnectUtil.printSetsStr(csets_1));print("\n");
         //InnerOuter.checkMissingInnerDecl(dae1_1,callscope_1);
         (csets_1, _) = InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
-        // print("updated sets: ");print(Connect.printSetsStr(csets_1));print("\n");
+         //print("updated sets: ");print(ConnectUtil.printSetsStr(csets_1));print("\n");
         (dae2,graph) = ConnectUtil.equations(csets_1,pre,callscope_1,graph);
         (cache,dae3) = ConnectUtil.unconnectedFlowEquations(cache, csets_1, dae1, env_3, pre, callscope_1, {});
         dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
@@ -2878,7 +2878,7 @@ algorithm
        	true = isExternalObject(els);
        	(cache,env,ih,dae,ci_state) = instantiateExternalObject(cache,env,ih,els,impl);
       then
-        (cache,env,ih,store,dae,Connect.emptySet,ci_state,{},NONE,NONE,NONE,graph);
+        (cache,env,ih,store,dae,csets,ci_state,{},NONE,NONE,NONE,graph);
 
     // This rule describes how to instantiate an explicit class definition
     case (cache,env,ih,store,mods,pre,csets,ci_state,className,
