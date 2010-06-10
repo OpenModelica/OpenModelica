@@ -38,7 +38,7 @@
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
-#include "solver_euler.h"
+#include "solver_main.h"
 #include "options.h"
 #include "omi_ServiceInterface.h"
 
@@ -270,11 +270,12 @@ int startNonInteractiveSimulation(int argc, char**argv){
 
 /**
  * Calls the solver which is selected in the parameter string "method"
- * This funktion is used for interactive and non-interactive simulation
+ * This function is used for interactive and non-interactive simulation
  * Parameter method:
  * "" & "dassl" calls a DASSL Solver
  * "euler" calls an Euler solver
- * "rungekutta" calls a fourth-order Runge–Kutta Solver
+ * "rungekutta" calls a fourth-order Runge-Kutta Solver
+ * "dassl2" calls a DASSL Solver with synchronous event handling
  */
 int callSolver(int argc, char**argv, string method, double start, double stop, double stepSize,
 		long outputSteps, double tolerance) {
@@ -286,10 +287,13 @@ int callSolver(int argc, char**argv, string method, double start, double stop, d
 		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
 	  } else  if (method == std::string("euler")) {
 		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
+		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
 	  } else  if (method == std::string("rungekutta")) {
 		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = euler_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+	  } else  if (method == std::string("dassl2")) {
+		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
 	  } else if (method == std::string("dassl")) {
 		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
 		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);

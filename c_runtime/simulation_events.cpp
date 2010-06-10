@@ -630,7 +630,6 @@ void EventHandle(){
 		else if (zeroCrossingEnabled[event_id] == -1){
 			zeroCrossingEnabled[event_id] = 1;}
 		
-		if (sim_verbose) { emit();}
 		saveall();
 		function_updateDepend();
 	    if (sim_verbose) { emit();}
@@ -771,40 +770,29 @@ int CheckZeroCrossings(long int *eventid) {
 }
 
 void InitialZeroCrossings() {
-  int i;
+
   if (sim_verbose) {
     cout << "checkForIntialZeroCrossings" << endl;
   }
-  //Enable all Events
-  for (int i = 0; i < globalData->nZeroCrossing; i++) {
-    zeroCrossingEnabled[i] = 1;
-  }
   
   function_onlyZeroCrossings(gout,&globalData->timeValue);
-  for (i = 0; i < globalData->nZeroCrossing; i++) {
+  for (int i = 0; i < globalData->nZeroCrossing; i++) {
     if (gout[i] < 0) {
       zeroCrossingEnabled[i] = -1;
       if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i] << " so it's set to 1" << endl;}
-    } else {
+    } else if (gout[i] > 0) {
       zeroCrossingEnabled[i] = 1;
       if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i] << " so it's set to -1" << endl;}
+    } else {
+      if (sim_verbose) { cout << "Could not initialize all Zero-Crossing!" << endl;}
     }
     //if gout[i] == 0 then ZC[i] will step in next step
     // TODO: check where ZC will move to handle correct
   }
-  function_onlyZeroCrossings(gout,&globalData->timeValue);
-  for (i = 0; i < globalData->nZeroCrossing; i++) {
-      if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i]  << endl;}
-      if (gout[i] < 0 ) {
-    	  if (sim_verbose) {
-    	  	cout << "adding initial event : " << i << endl;
-    	  }
-    	  AddEvent(i);  
-      }
-  }
-  EventHandle();
+
   if (sim_verbose) {
     cout << "checkForIntialZeroCrossings done." << endl;
   }
 }
+
 
