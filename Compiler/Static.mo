@@ -5478,22 +5478,20 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae;
 
-      /* use elab_call_args to also try vectorized calls */
+    // Replace der of constant Real, Integer or array of Real/Integer by zero(s) 
     case (cache,env,{exp},_,impl)
       local
-        DAE.Type ety,restype,ty;
-        DAE.Exp ee1;
-        String es1,es2,es3;
-        list<String> ls;
+        DAE.Type ety,ty;
+        list<Option<Integer>> dims;
       equation
-        (_,ee1,DAE.PROP(ety,c),_,dae) = elabExp(cache,env, exp, impl, NONE,false);
-        false = Types.isRealOrSubTypeReal(ety);
-        ls = Util.listMap({exp}, Dump.printExpStr);
-        es1 = Util.stringDelimitList(ls, ", ");
-        es3 = Types.unparseType(ety);
-        Error.addMessage(Error.DERIVATIVE_NON_REAL, {es1,es1,es3});
+        (_,_,DAE.PROP(ety,c),_,_) = elabExp(cache, env, exp, impl, NONE,false);
+        failure(equality(c=DAE.C_VAR));
+        dims = Types.getRealOrIntegerDimensions(ety);
+        (e,ty) = DAEUtil.makeZeroExpression(dims);
       then
-        fail();
+        (cache,e,DAE.PROP(ty,DAE.C_CONST),DAE.DAE({}, DAE.AVLTREENODE(NONE, 0, NONE, NONE)));  
+
+      /* use elab_call_args to also try vectorized calls */
     case (cache,env,{exp},_,impl)
       local
         DAE.Type ety,restype,ty;
@@ -5503,59 +5501,31 @@ algorithm
         (_,ee1,DAE.PROP(ety,c),_,_) = elabExp(cache, env, exp, impl, NONE,true);
         ety = Types.arrayElementType(ety);
         true = Types.isRealOrSubTypeReal(ety);
-        (cache,e,(prop as DAE.PROP(ty,DAE.C_VAR())),dae) = elabCallArgs(cache,env, Absyn.IDENT("der"), {exp}, {}, impl, NONE);
+        (cache,e,(prop as DAE.PROP(ty,_)),dae) = elabCallArgs(cache,env, Absyn.IDENT("der"), {exp}, {}, impl, NONE);
       then
         (cache,e,prop,dae);
 
-    case(cache,env,expl,_,impl)
+    case (cache,env,{exp},_,impl)
+      local
+        DAE.Type ety;
+        String es3;
       equation
-        setUniqueErrorMessageForDer(cache,env,expl,impl);
-        then
-          fail();
+        (_,_,DAE.PROP(ety,_),_,_) = elabExp(cache,env, exp, impl, NONE,false);
+        false = Types.isRealOrSubTypeReal(ety);
+        s = Dump.printExpStr(exp);
+        es3 = Types.unparseType(ety);
+        Error.addMessage(Error.DERIVATIVE_NON_REAL, {s,s,es3});
+      then
+        fail();
+    case (cache,env,expl,_,_)
+      equation
+        lst = Util.listMap(expl, Dump.printExpStr);
+        s = Util.stringDelimitList(lst, ", ");
+        s = Util.stringAppendList({"der(",s,")"});
+        Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s});
+      then fail();
   end matchcontinue;
 end elabBuiltinDer;
-
-protected function setUniqueErrorMessageForDer "
-Author: BZ, 2009-02
-Function to set correct error message for der.
-(if we have an error with constant arguments to der() then do not give Error.WRONG_TYPE_OR_NO_OF_ARGS
-"
-  input Env.Cache cache;
-  input Env.Env env;
-  input list<Absyn.Exp> expl;
-  input Boolean impl;
-algorithm _ :=  matchcontinue(cache,env,expl,impl)
-  local
-    Absyn.Exp exp;
-    list<Ident> lst;
-    Ident s;
-  case (cache,env,{(exp as Absyn.CREF(componentRef = _))},impl)
-    equation
-      failure((cache,_,DAE.PROP(_,DAE.C_VAR),_,_) = elabExp(cache,env, exp, impl, NONE,true));
-      lst = Util.listMap({exp}, Dump.printExpStr);
-      s = Util.stringDelimitList(lst, ", ");
-      s = Util.stringAppendList({"der(",s,")'.\n"});
-      Error.addMessage(Error.DER_APPLIED_TO_CONST, {s});
-    then ();
-  case (cache,env,{exp},impl)
-    equation
-      (_,_,DAE.PROP(_,DAE.C_CONST),_,_) = elabExp(cache,env, exp, impl, NONE,true);
-      lst = Util.listMap({exp}, Dump.printExpStr);
-      s = Util.stringDelimitList(lst, ", ");
-      s = Util.stringAppendList({"der(",s,")'.\n"});
-      Error.addMessage(Error.DER_APPLIED_TO_CONST, {s});
-    then ();
-/*
-  case (cache,env,expl,_)
-    equation
-      lst = Util.listMap(expl, Dump.printExpStr);
-      s = Util.stringDelimitList(lst, ", ");
-      s = Util.stringAppendList({"der(",s,")'.\n"});
-      Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s});
-    then ();
-*/
-end matchcontinue;
-end setUniqueErrorMessageForDer;
 
 protected function elabBuiltinSample "function: elabBuiltinSample
   author: PA

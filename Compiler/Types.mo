@@ -5589,4 +5589,32 @@ algorithm
   end matchcontinue;
 end resTypeToListTypes;
 
+public function getRealOrIntegerDimensions 
+"If the type is a Real, Integer or an array of Real or Integer, the function returns 
+list of dimensions; otherwise, it fails."
+ input Type inType;
+ output list<Option<Integer>> outDims;
+algorithm
+  outType := matchcontinue (inType)
+    local
+      Type ty;
+      Option<Integer> d;
+      list<Option<Integer>> dims;
+ 
+    case ((DAE.T_REAL(varLstReal=_),_))
+      then
+        {};
+    case ((DAE.T_INTEGER(varLstInt=_),_))
+      then
+        {};
+    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_))
+      then getRealOrIntegerDimensions(ty);
+    case ((DAE.T_ARRAY(arrayDim=DAE.DIM(d),arrayType=ty),_))
+      equation
+        dims = getRealOrIntegerDimensions(ty);
+      then
+        d::dims;           
+  end matchcontinue;
+end getRealOrIntegerDimensions;
+
 end Types;
