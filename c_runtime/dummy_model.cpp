@@ -32,26 +32,26 @@ extern "C" {
 static DATA* localData = 0;
 #define time localData->timeValue
 extern "C" { /* adrpo: this is needed for Visual C++ compilation to work! */
-  char *model_name="BouncingBall";
-  char *model_dir="";
+  const char *model_name="BouncingBall";
+  const char *model_dir="";
 }
-char* state_names[2]={"h", "v"};
-char* derivative_names[2]={"der(h)", "der(v)"};
-char* algvars_names[4]={"flying", "impact", "v_new", "foo"};
-char* input_names[1] = {""};
-char* output_names[1] = {""};
-char* param_names[2]={"e", "g"};
-char* string_alg_names[1] = {""};
-char* string_param_names[1] = {""};
+const char* state_names[2]={"h", "v"};
+const char* derivative_names[2]={"der(h)", "der(v)"};
+const char* algvars_names[4]={"flying", "impact", "v_new", "foo"};
+const char* input_names[1] = {""};
+const char* output_names[1] = {""};
+const char* param_names[2]={"e", "g"};
+const char* string_alg_names[1] = {""};
+const char* string_param_names[1] = {""};
 
-char* state_comments[2]={ "height of ball",  "velocity of ball"};
-char* derivative_comments[2]={ "height of ball",  "velocity of ball"};
-char* algvars_comments[4]={ "true, if ball is flying", "", "", ""};
-char* input_comments[1] = {""};
-char* output_comments[1] = {""};
-char* param_comments[2]={ "coefficient of restitution",  "gravity acceleration"};
-char* string_param_comments[1] = {""};
-char* string_alg_comments[1] = {""};
+const char* state_comments[2]={ "height of ball",  "velocity of ball"};
+const char* derivative_comments[2]={ "height of ball",  "velocity of ball"};
+const char* algvars_comments[4]={ "true, if ball is flying", "", "", ""};
+const char* input_comments[1] = {""};
+const char* output_comments[1] = {""};
+const char* param_comments[2]={ "coefficient of restitution",  "gravity acceleration"};
+const char* string_param_comments[1] = {""};
+const char* string_alg_comments[1] = {""};
 
 #define $g localData->parameters[1]
 #define $e localData->parameters[0]
@@ -64,7 +64,7 @@ char* string_alg_comments[1] = {""};
 #define $h localData->states[0]
 #define $DER$h localData->statesDerivatives[0]
 
-char* getName( double* ptr)
+const char* getName( double* ptr)
 {
   if( &$g == ptr ) return param_names[1];
   if( &$e == ptr ) return param_names[0];
@@ -470,6 +470,10 @@ int handleZeroCrossing(long index)
   }
   restore_memory_state(mem_state);
   return 0;
+}
+
+void function_sampleInit()
+{
 }
 
 int function_updateDependents()
