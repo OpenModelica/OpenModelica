@@ -293,7 +293,7 @@ int callSolver(int argc, char**argv, string method, double start, double stop, d
 		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
 	  } else  if (method == std::string("dassl2")) {
 		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
 	  } else if (method == std::string("dassl")) {
 		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
 		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);

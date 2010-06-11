@@ -146,25 +146,22 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	if(sim_verbose) { emit(); }
 
 	// Do a tiny step to initialize ZeroCrossing that are fulfilled
+    // And then go back and start at t_0
 	globalData->timeValue += calcTiny(globalData->timeValue);
 	double* backupstats_new = new double[globalData->nStates];
-	//for(int i=0; i < globalData->nStates; i++) {
 	backupstats_new = globalData->states;
-	//}
-
 	if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
 	else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
 	else if (flag == 3) dasrt_step(&current_stepsize,functionODE);
 	else euler_ex_step(&current_stepsize,functionODE);
 	functionDAE_output();
 	if(sim_verbose) { emit(); }
-	//
 	InitialZeroCrossings();
 
 	globalData->timeValue = start;
-	//for(int i=0; i < globalData->nStates; i++) {
 	globalData->states = backupstats_new;
-	//}
+	delete [] backupstats_new;
+
 	function_updateDepend();
 	if(sim_verbose) { emit(); }
 	while(checkForDiscreteChanges()) {
@@ -175,13 +172,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	saveall();
 	emit();
 
-	// check for Event at Initial
-	//InitialZeroCrossings();
-	//if (sim_verbose) { cout << "Checking events at initialization (at time "<< globalData->timeValue << ")." << endl; }
-	//if (CheckForNewEvent(NOINTERVAL)){
-	//	if(sim_verbose) { emit(); }
-	//}
-	saveall();
 	globalData->init=0;
 	
 	// Put initial values to delayed expression buffers
