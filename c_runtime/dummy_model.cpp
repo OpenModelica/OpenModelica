@@ -315,7 +315,7 @@ DATA* initializeDataStruc(DATA_FLAGS flags)
     returnData->extObjs = (void**)malloc(sizeof(void*)*NEXT);
     if (!returnData->extObjs) {
       printf("error allocating external objects\n");
-      exit(-2);
+      EXIT(-2);
     }
     memset(returnData->extObjs,0,sizeof(void*)*NEXT);
     setLocalData(returnData); /* must be set since used by constructors*/

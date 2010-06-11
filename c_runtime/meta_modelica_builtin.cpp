@@ -527,7 +527,7 @@ listDelete_rettype listDelete(modelica_metatype lst, modelica_integer ix)
   tmpArr = (modelica_metatype *) malloc(sizeof(modelica_metatype)*ix); /* We know the size of the first part of the list (+1 for the element to delete) */
   if (tmpArr == NULL) {
     fprintf(stderr, "%s:%d: malloc failed", __FILE__, __LINE__);
-    exit(1);
+    EXIT(1);
   }
   for (i=0; i<ix; i++)
   {

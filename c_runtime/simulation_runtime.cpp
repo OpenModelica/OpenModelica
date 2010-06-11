@@ -315,7 +315,7 @@ int initRuntimeAndSimulation(int argc, char**argv) {
 		cout << "usage: " << argv[0]
 				<< " <-f initfile> <-r result file> -m solver:{dassl, euler} -v <-interactive> <-port value>"
 				<< endl;
-		exit(0);
+		EXIT(0);
 	}
 	globalData = initializeDataStruc(ALL);
 	if (!globalData) {
@@ -375,5 +375,5 @@ int main(int argc, char**argv)
 	}
 
 	deInitializeDataStruc(globalData, ALL);
-	return retVal;
+	EXIT(retVal);
 }

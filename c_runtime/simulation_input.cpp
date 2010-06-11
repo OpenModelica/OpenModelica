@@ -65,7 +65,7 @@ void read_commented_value(ifstream &f, char **str);
   if (!file) {
     cerr << "Error, can not read file " << *filename
 	 << " as indata to simulation." << endl;
-    exit(-1);
+    EXIT(-1);
   }
   //  cerr << "opened file" << endl;
   read_commented_value(file,start);
@@ -100,7 +100,7 @@ void read_commented_value(ifstream &f, char **str);
     cerr << "np in initfile: " << npchk << " from model code :" << simData->nParameters << endl;
 	cerr << "npstr in initfile: " << npstrchk << " from model code: " << simData->stringVariables.nParameters << endl;
 	cerr << "nystr in initfile: " << nystrchk << " from model code: " << simData->stringVariables.nAlgebraic <<  endl;
-    exit(-1);
+    EXIT(-1);
   }
   for(int i = 0; i < simData->nStates; i++) { // Read x initial values
     read_commented_value(file,&simData->states[i]);

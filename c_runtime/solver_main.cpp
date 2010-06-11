@@ -83,6 +83,7 @@ int euler_in_use;
 int solver_main(int argc, char** argv, double &start,  double &stop, double &step, long &outputSteps,
 		       double &tolerance, int flag)
 {
+  acceptedStep = 1; // euler only takes accepted steps
 
 	//Workaround for Relation in simulation_events
 	euler_in_use = 1;
@@ -183,6 +184,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		cout << "Start numerical solver from "<< globalData->timeValue << " to "<< stop << endl; 
 	}
 
+  try {
 	while( globalData->timeValue < stop){
 
 		/*
@@ -233,6 +235,13 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		emit();
 
 	}
+  } catch (TerminateSimulationException &e) {
+    cout << e.getMessage() << endl;
+    if (modelTermination) { // terminated from assert, etc.
+      cout << "Simulation terminated at time " << globalData->timeValue << endl;
+      return -1;
+    }
+  }
 
 	deinitializeEventData();
 

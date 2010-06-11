@@ -380,6 +380,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     cout << e.getMessage() << endl;
     if (modelTermination) { // terminated from assert, etc.
       cout << "Simulation terminated at time " << globalData->timeValue << endl;
+      status = 1;
     }
   }
   if(emit()) {

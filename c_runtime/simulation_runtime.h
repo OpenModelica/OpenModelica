@@ -40,6 +40,7 @@
 #ifndef _SIMULATION_RUNTIME_H
 #define _SIMULATION_RUNTIME_H
 
+#include "compat.h"
 #include "simulation_events.h"
 #include "simulation_delay.h"
 

@@ -44,7 +44,7 @@ void *mmc_alloc_bytes(unsigned nbytes)
   void *p;
   if( (p = malloc(nbytes)) == 0 ) {
     fprintf(stderr, "malloc(%u) failed: %s\n", nbytes, strerror(errno));
-    exit(1);
+    EXIT(1);
   }
   return p;
 }
@@ -342,7 +342,7 @@ int mmc_boxes_equal(void* lhs, void* rhs)
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  exit(1);
+  EXIT(1);
 }
 
 mmc__uniontype__metarecord__typedef__equal_rettype
@@ -462,6 +462,6 @@ void printAny(void* any) /* For debugging */
   }
 
   fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
-  exit(1);
+  EXIT(1);
 }
 

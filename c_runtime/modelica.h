@@ -48,6 +48,7 @@ typedef void(* modelica_fnptr) (void); /*MetaModelica extension, function pointe
 
 #include <stdlib.h>
 
+#include "compat.h"
 #include "modelica_string.h"
 #include "memory_pool.h"
 #include "index_spec.h"
@@ -127,7 +128,6 @@ typedef modelica_real    sign_rettype;
 
 /* sign function */
 #define sign(v) (v>0?1:(v<0?-1:0))
-
 
 #if defined(__cplusplus)
 }
