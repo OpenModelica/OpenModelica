@@ -75,13 +75,32 @@ absyn_builder.a : parser flat_parser $(OBJS)
 
 $(PARSER_OBJS) : parser flat_parser
 
-walkeronce: walker.g modelica_parserTokenTypes.txt
-	$(ANTLR) $(ANTLRFLAGS) $<
-$(walkergen): walkeronce
 
-exprparseonce: expression_parser.g modelica_parserTokenTypes.txt
-	$(ANTLR) -glib $(PARSE_HOME)/src/modelica_parser.g $(ANTLRFLAGS) $<
-$(exprparsegen): exprparseonce
+walker.stamp: walker.g modelica_parserTokenTypes.txt
+	@rm -f walker.tmp
+	@touch walker.tmp
+	$(ANTLR) $(ANTLRFLAGS) $<
+	touch $(walkergen)
+	@mv -f walker.tmp $@
+$(walkergen): walker.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f walker.stamp; \
+	$(MAKE) walker.stamp; \
+	fi
+
+exprparse.stamp: expression_parser.g modelica_parserTokenTypes.txt
+	rm -f exprparse.tmp
+	touch exprparse.tmp
+	$(ANTLR) $(ANTLRFLAGS) $<
+	touch $(exprparsegen)
+	mv -f exprparse.tmp $@
+$(exprparsegen): exprparse.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f exprparse.stamp; \
+	$(MAKE) exprparse.stamp; \
+	fi
 
 $(PARSE_HOME)/src/modelica_parserTokenTypes.txt: parser flat_parser
 modelica_parserTokenTypes.txt : $(PARSE_HOME)/src/modelica_parserTokenTypes.txt
@@ -100,4 +119,5 @@ parse.o : parse.cpp $(PARSE_HOME)/src/modelica_lexer.hpp $(PARSE_HOME)/src/model
 	modelica_expression_parser.hpp \
 	$(PARSE_HOME)/src/parse_tree_dumper.hpp
 
-
+Makefile: Makefile.in
+	cd $(top_builddir); ./config.status

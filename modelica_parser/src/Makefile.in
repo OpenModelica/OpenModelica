@@ -47,15 +47,31 @@ vctarget: $(lexergen) $(parsergen)
 libmodelica_parser.a: $(OBJS)
 	$(AR) $@ $(OBJS)
 
-lexeronce: modelica_lexer.g
+lexer.stamp: modelica_lexer.g
+	@rm -f lexer.tmp
+	@touch lexer.tmp
 	$(ANTLR) $(ANTLRFLAGS) $<
+	touch $(lexergen)
+	@mv -f lexer.tmp $@
+$(lexergen): lexer.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f lexer.stamp; \
+	$(MAKE) lexer.stamp; \
+	fi
 
-parseronce: modelica_parser.g $(lexergen)
+parser.stamp: modelica_parser.g $(lexergen)
+	rm -f parser.tmp
+	touch parser.tmp
 	$(ANTLR) $(ANTLRFLAGS) $<
-
-$(lexergen): lexeronce
-
-$(parsergen): parseronce
+	touch $(parsergen)
+	mv -f parser.tmp $@
+$(parsergen): parser.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f parser.stamp; \
+	$(MAKE) parser.stamp; \
+	fi
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
@@ -80,3 +96,5 @@ token_names.o:token_names.cpp
 parse_tree_dumper.o:parse_tree_dumper.cpp parse_tree_dumper.hpp
 #include $(DFILES)
 
+Makefile: Makefile.in
+	cd $(top_builddir); ./config.status
