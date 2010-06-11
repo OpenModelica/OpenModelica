@@ -1757,12 +1757,13 @@ protected function simplifyBuiltinConstantCalls "simplifies some builtin calls i
   output Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
-  local Real r,v1,v2; Integer i; Absyn.Path path; Exp e;
+  local Real r,v1,v2; Integer i; Absyn.Path path; Exp e,e1;
     
     // der(constant) ==> 0
     case(DAE.CALL(path=Absyn.IDENT("der"),expLst ={e})) equation
       true = isConst(e);
-    then DAE.RCONST(0.0);
+      e1 = simplifyBuiltinConstantDer(e);
+    then e1;
     
     case(DAE.CALL(path=path,expLst={e})) equation
       Builtin.isSqrt(path);
@@ -12016,6 +12017,53 @@ algorithm
     case _ then 1;
   end matchcontinue;
 end sizeOf;
+
+protected function simplifyBuiltinConstantDer 
+"returns 0.0 or an array filled with 0.0 if the input is Real, Integer or an array of Real/Integer"
+  input Exp inExp "assumes already simplified constant expression";
+  output Exp outExp;
+algorithm
+  outExp := matchcontinue (inExp)
+    local
+      Exp e;
+      list<Option<Integer>> dims;
+    case DAE.RCONST(_) then DAE.RCONST(0.0);   
+    case DAE.ICONST(_) then DAE.RCONST(0.0);   
+    case DAE.ARRAY(ty=DAE.ET_ARRAY(ty=DAE.ET_REAL, arrayDimensions=dims))
+      equation
+        (e,_) = makeZeroExpression(dims);
+      then
+        e;  
+    case DAE.ARRAY(ty=DAE.ET_ARRAY(ty=DAE.ET_INT, arrayDimensions=dims))
+      equation
+        (e,_) = makeZeroExpression(dims);
+      then
+        e;  
+  end matchcontinue;
+end simplifyBuiltinConstantDer;
+
+public function makeZeroExpression
+" creates a Real or array<Real> zero expression with given dimensions, also returns its type"
+  input list<Option<Integer>> inDims;
+  output Exp outExp;
+  output DAE.Type outType;
+algorithm
+  (outExp,outType) := matchcontinue(inDims)
+    local
+      Integer d;
+      list<Option<Integer>> dims;
+      Exp e;
+      list<Exp> eLst;
+      DAE.Type ty;
+    case {} then (DAE.RCONST(0.0), DAE.T_REAL_DEFAULT);
+    case SOME(d)::dims
+      equation
+        (e, ty) = makeZeroExpression(dims);
+        eLst = Util.listFill(e,d);
+      then
+        (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),SOME(d)::dims),false,eLst), (DAE.T_ARRAY(DAE.DIM(SOME(d)),ty),NONE));      
+  end matchcontinue;
+end makeZeroExpression;  
 
 end Exp;
 

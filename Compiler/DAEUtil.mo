@@ -4758,29 +4758,6 @@ algorithm
   end matchcontinue;
 end isIfEquation;
 
-public function makeZeroExpression
-" creates a Real or array<Real> zero expression with given dimensions, also returns its type"
-  input list<Option<Integer>> inDims;
-  output DAE.Exp outExp;
-  output DAE.Type outType;
-algorithm
-  (outExp,outType) := matchcontinue(inDims)
-    local
-      Integer d;
-      list<Option<Integer>> dims;
-      DAE.Exp e;
-      list<DAE.Exp> eLst;
-      DAE.Type ty;
-    case {} then (DAE.RCONST(0.0), DAE.T_REAL_DEFAULT);
-    case SOME(d)::dims
-      equation
-        (e, ty) = makeZeroExpression(dims);
-        eLst = Util.listFill(e,d);
-      then
-        (DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(),SOME(d)::dims),false,eLst), (DAE.T_ARRAY(DAE.DIM(SOME(d)),ty),NONE));      
-  end matchcontinue;
-end makeZeroExpression;  
-
 public function splitElements_dispatch
 "@author: adrpo
   This function will split DAE elements into:

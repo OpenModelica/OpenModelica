@@ -5487,7 +5487,7 @@ algorithm
         (_,_,DAE.PROP(ety,c),_,_) = elabExp(cache, env, exp, impl, NONE,false);
         failure(equality(c=DAE.C_VAR));
         dims = Types.getRealOrIntegerDimensions(ety);
-        (e,ty) = DAEUtil.makeZeroExpression(dims);
+        (e,ty) = Exp.makeZeroExpression(dims);
       then
         (cache,e,DAE.PROP(ty,DAE.C_CONST),DAE.DAE({}, DAE.AVLTREENODE(NONE, 0, NONE, NONE)));  
 
