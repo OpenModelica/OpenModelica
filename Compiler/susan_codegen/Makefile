@@ -1,7 +1,10 @@
 .PHONY : all
 
-OMC = ../../build/bin/omc.exe
+OMC = ../../build/bin/omc
 
-all :
+all : TplCodegen.mo
+TplCodegen.mo : TplCodegen.tpl
 	@echo " ** Susan Test ** "
-	$(OMC) +d=failtrace SusanTest.tpl
+	$(OMC) +d=failtrace TplCodegen.tpl
+	cp -puf TplCodegen.mo ../
+	@echo " "

@@ -140,6 +140,7 @@ simcode:
 	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
 else 
 simcode:
+	$(MAKE) -C susan_codegen/
 	$(MAKE) -C susan_codegen/SimCode/
 endif
 $(SUSANMO): simcode
