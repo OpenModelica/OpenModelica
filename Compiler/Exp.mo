@@ -1019,7 +1019,7 @@ algorithm
         // I do belive this has something to do with variable replacement and DAELow.
         // TODO: investigate reason, until then keep as is.
         // I do believe that this is the same bug as adrians qual-ident bug below.
-    case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
+    /*case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
         s1 = n2 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
@@ -1032,7 +1032,7 @@ algorithm
         s1 = n1 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
         true = stringEqual(s1,n2);
       then
-        true;
+        true;*/
     // enumerations
     case (cr1 as DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       local list<Subscript> idx1_1,idx2_1;
