@@ -79,8 +79,9 @@ $(PARSER_OBJS) : parser flat_parser
 walker.stamp: walker.g modelica_parserTokenTypes.txt
 	@rm -f walker.tmp
 	@touch walker.tmp
+	@touch $<
 	$(ANTLR) $(ANTLRFLAGS) $<
-	touch -c $(walkergen)
+	@touch -c $(walkergen)
 	@mv -f walker.tmp $@
 $(walkergen): walker.stamp
 	## Recover from the removal of $@
@@ -90,11 +91,12 @@ $(walkergen): walker.stamp
 	fi
 
 exprparse.stamp: expression_parser.g modelica_parserTokenTypes.txt
-	rm -f exprparse.tmp
-	touch exprparse.tmp
+	@rm -f exprparse.tmp
+	@touch exprparse.tmp
+	@touch $<
 	$(ANTLR) -glib $(PARSE_HOME)/src/modelica_parser.g $(ANTLRFLAGS) $<
-	touch -c $(exprparsegen)
-	mv -f exprparse.tmp $@
+	@touch -c $(exprparsegen)
+	@mv -f exprparse.tmp $@
 $(exprparsegen): exprparse.stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \
@@ -103,7 +105,7 @@ $(exprparsegen): exprparse.stamp
 	fi
 
 modelica_parserTokenTypes.txt : parser flat_parser
-	ln -sf $(PARSE_HOME)/src/modelica_parserTokenTypes.txt $@
+	cp -p $(PARSE_HOME)/src/modelica_parserTokenTypes.txt $@
 
 clean:
 	-rm -f *.o *~ core *.core walker absyn_builder.a

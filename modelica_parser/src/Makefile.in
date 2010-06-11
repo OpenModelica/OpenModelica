@@ -50,8 +50,10 @@ libmodelica_parser.a: $(OBJS)
 lexer.stamp: modelica_lexer.g
 	@rm -f lexer.tmp
 	@touch lexer.tmp
+	@touch $<
+	rm -f $(lexergen)
 	$(ANTLR) $(ANTLRFLAGS) $<
-	touch $(lexergen)
+	@touch -c $(lexergen)
 	@mv -f lexer.tmp $@
 $(lexergen): lexer.stamp
 	## Recover from the removal of $@
@@ -61,11 +63,12 @@ $(lexergen): lexer.stamp
 	fi
 
 parser.stamp: modelica_parser.g $(lexergen)
-	rm -f parser.tmp
-	touch parser.tmp
+	@rm -f parser.tmp
+	@touch parser.tmp
+	@touch $<
 	$(ANTLR) $(ANTLRFLAGS) $<
-	touch $(parsergen)
-	mv -f parser.tmp $@
+	@touch -c $(parsergen)
+	@mv -f parser.tmp $@
 $(parsergen): parser.stamp
 	## Recover from the removal of $@
 	@if test -f $@; then :; else \
@@ -85,7 +88,7 @@ test: test.o libmodelica_parser.a
 depend: $(DFILES)
 
 clean:
-	-rm -f *.o *~ core *.core libmodelica_parser.a
+	-rm -f *.o *~ core *.core libmodelica_parser.a $(lexergen) $(parsergen) *.stamp
 
 reallyclean: clean
 	-rm -f $(lexergen) $(parsergen)
