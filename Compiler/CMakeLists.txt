@@ -12,7 +12,7 @@ SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo
 		  Inline.mo Inst.mo InstExtends.mo Interactive.mo 
 		  Lookup.mo Main.mo MMath.mo MetaUtil.mo Mod.mo ModUtil.mo 
 		  PartFn.mo Patternm.mo Prefix.mo PrefixUtil.mo Static.mo 
-		  SimCode.mo SimCodeC.mo SimCodeCSharp.mo SimCodegen.mo 
+		  SimCode.mo SimCodeC.mo SimCodeCSharp.mo 
 		  Types.mo TaskGraph.mo Tpl.mo TplAbsyn.mo TplCodegen.mo 
 		  TplParser.mo TplMain.mo Util.mo UnitAbsyn.mo 
 		  UnitAbsynBuilder.mo UnitChecker.mo Values.mo ValuesUtil.mo 

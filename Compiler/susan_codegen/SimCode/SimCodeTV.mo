@@ -71,6 +71,8 @@ package SimCode
     record SIMULATION
       Boolean genDiscrete;
     end SIMULATION;
+    record FUNCTION_CONTEXT
+    end FUNCTION_CONTEXT;
     record OTHER
     end OTHER;
   end Context;
@@ -82,6 +84,12 @@ package SimCode
       Option<DAE.Exp> value;
       list<DAE.Exp> instDims;
     end VARIABLE;  
+
+    record FUNCTION_PTR
+      String name;
+      DAE.ExpType ty;
+      list<Variable> args;
+    end FUNCTION_PTR;
   end Variable;
   
   uniontype Statement
@@ -104,7 +112,7 @@ package SimCode
       DAE.Exp exp;
     end SES_RESIDUAL;
     record SES_SIMPLE_ASSIGN
-      DAE.ComponentRef componentRef;
+      DAE.Exp cref;
       DAE.Exp exp;
     end SES_SIMPLE_ASSIGN;
     record SES_ARRAY_CALL_ASSIGN
@@ -190,7 +198,7 @@ package SimCode
   uniontype SimVar
     record SIMVAR
       DAE.ComponentRef name;
-      DAE.ComponentRef origName;
+      DAELow.VarKind varKind;
       String comment;
       Integer index;
       Boolean isFixed;
@@ -265,8 +273,9 @@ package SimCode
     record SIMNOEXTARG end SIMNOEXTARG;
   end SimExtArg;
   
-  constant Context contextSimulationNonDescrete;
-  constant Context contextSimulationDescrete;
+  constant Context contextSimulationNonDiscrete;
+  constant Context contextSimulationDiscrete;
+  constant Context contextFunction;
   constant Context contextOther;  
 
   function valueblockVars
@@ -278,11 +287,17 @@ package SimCode
     input DAE.ComponentRef cref;
     output Boolean isScalar;
   end crefSubIsScalar;
-  
+	
   function crefNoSub
     input DAE.ComponentRef cref;
     output Boolean noSub;
   end crefNoSub;
+
+  function crefIsScalar
+    input DAE.ComponentRef cref;
+		input Context context;
+    output Boolean isScalar;
+  end crefIsScalar;
 
   function crefSubs
     input DAE.ComponentRef cref;
@@ -300,11 +315,22 @@ package SimCode
     input Integer increment;
     output Integer outInt;
   end incrementInt;
-
 end SimCode;
 
 
 package DAELow
+
+  uniontype VarKind "- Variable kind"
+    record VARIABLE end VARIABLE;
+    record STATE end STATE;
+    record STATE_DER end STATE_DER;
+    record DUMMY_DER end DUMMY_DER;
+    record DUMMY_STATE end DUMMY_STATE;
+    record DISCRETE end DISCRETE;
+    record PARAM end PARAM;
+    record CONST end CONST;
+    record EXTOBJ Absyn.Path fullClassName; end EXTOBJ;
+  end VarKind;
 
   uniontype ZeroCrossing
     record ZERO_CROSSING
@@ -886,6 +912,16 @@ end Util;
 
 package Exp
 
+	function crefHasScalarSubscripts
+		input DAE.ComponentRef cr;
+		output Boolean hasScalarSubs;
+	end crefHasScalarSubscripts;
+
+	function crefStripLastSubs
+		input DAE.ComponentRef inComponentRef;
+		output DAE.ComponentRef outComponentRef;
+	end crefStripLastSubs;
+
   function getEnumIndexfromCref
     input DAE.ComponentRef inComponentRef;
     output Integer outEnumIndex;
@@ -897,5 +933,11 @@ package Exp
   end typeof;
 
 end Exp;
+
+package RTOpts
+  function acceptMetaModelicaGrammar
+    output Boolean outBoolean;
+  end acceptMetaModelicaGrammar;
+end RTOpts;
 
 //end SimCodeTV;

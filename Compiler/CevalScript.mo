@@ -60,7 +60,6 @@ public import Dependency;
 public import Values;
 
 protected import SimCode;
-protected import SimCodegen;
 protected import AbsynDep;
 protected import ConnectionGraph;
 protected import ClassInf;
@@ -2285,84 +2284,21 @@ algorithm
   (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp,addDummy)
     local
-      String filenameprefix,cname_str,filename,funcfilename,makefilename,file_dir;
-      Absyn.Path classname;
-      list<SCode.Class> p_1,sp;
-      DAE.DAElist dae_1,dae;
-      list<Env.Frame> env;
-      list<DAE.Element> dael;
-      list<Interactive.InstantiatedClass> ic_1,ic;
-      DAELow.DAELow dlow,dlow_1,indexed_dlow,indexed_dlow_1;
-      list<Integer>[:] m,mT;
-      Integer[:] ass1,ass2;
-      list<list<Integer>> comps;
-      Absyn.ComponentRef a_cref;
-      list<String> libs;
-      DAE.ComponentRef cr;
-      Interactive.InteractiveSymbolTable st;
-      Absyn.Program p,ptot;
-      list<Interactive.InteractiveVariable> iv;
-      list<Interactive.CompiledCFunction> cf;
-      Ceval.Msg msg;
-      DAE.Exp fileprefix;
       Env.Cache cache;
-      String MakefileHeader;
+      list<Env.Frame> env;
+      DAELow.DAELow indexed_dlow;
+      Interactive.InteractiveSymbolTable st;
+      list<String> libs;
+      Ceval.Msg msg;
       Values.Value outValMsg;
-      list<DAE.Element> funcelems;
-      DAE.FunctionTree funcs;
-    //tpl based translation
+      DAE.Exp fileprefix;
+      String file_dir;
     case (cache,env,className,st,msg,fileprefix,addDummy) /* mo file directory */
       equation
-        true = RTOpts.debugFlag("tplmode");
         (cache, outValMsg, st, indexed_dlow, libs, file_dir) =
           SimCode.translateModel(cache,env,className,st,msg,fileprefix,addDummy);
       then
         (cache,outValMsg,st,indexed_dlow,libs,file_dir);
-
-
-    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,fileprefix,addDummy) /* mo file directory */
-      equation
-        false = RTOpts.debugFlag("tplmode");
-        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        ptot = Dependency.getTotalProgram(className,p);
-        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        (cache,env,_,dae) =
-        Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        dae = DAEUtil.transformIfEqToExpr(dae,false);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        dlow = DAELow.lower(dae, addDummy, true);
-        //funcs = DAEUtil.daeFunctionTree(dae);
-        //dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE()},dlow);
-        //dlow = DAELow.extendAllRecordEqns(dlow,funcs);
-        Debug.fprint("bltdump", "Lowered DAE:\n");
-        Debug.fcall("bltdump", DAELow.dump, dlow);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
-        (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
-        indexed_dlow = DAELow.translateDae(dlow_1,NONE);
-        indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
-        Debug.fprint("bltdump", "indexed DAE:\n");
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
-        Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
-        Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
-        Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
-        cname_str = Absyn.pathString(className);
-        filename = Util.stringAppendList({filenameprefix,".cpp"});
-        Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
-        funcfilename = Util.stringAppendList({filenameprefix,"_functions.cpp"});
-        makefilename = generateMakefilename(filenameprefix);
-        a_cref = Absyn.pathToCref(className);
-        file_dir = getFileDir(a_cref, p);
-        (cache,libs,funcelems,indexed_dlow_1,dae) = SimCodegen.generateFunctions(cache, env, p_1, dae, indexed_dlow_1, className, funcfilename);
-        indexed_dlow_1 = Inline.inlineCalls(SOME(funcelems),NONE(),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},indexed_dlow_1);
-        SimCodegen.generateSimulationCode(dae, /* dlow_1,*/ indexed_dlow_1, ass1, ass2, m, mT, comps, className, filename, funcfilename,file_dir);
-        SimCodegen.generateMakefile(makefilename, filenameprefix, libs, file_dir);
-        /*
-        s_call = Util.stringAppendList({"make -f ",cname_str, ".makefile\n"})
-        */
-      then
-        (cache,Values.STRING("The model has been translated"),st,indexed_dlow_1,libs,file_dir);
   end matchcontinue;
 end translateModel;
 
@@ -2579,7 +2515,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
+        SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
           starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str);
         win1 = getWithinStatement(classname);
         s3 = extractNoCleanCommand(noClean);
@@ -3657,8 +3593,8 @@ algorithm
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcpaths = SimCodegen.getCalledFunctions(dae, indexed_dlow_1);
-        funcelems = SimCodegen.generateFunctions2(p_1, funcpaths);
+        funcpaths = SimCode.getCalledFunctions(dae, indexed_dlow_1);
+        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
         XMLDump.dumpDAELow(indexed_dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
@@ -3697,8 +3633,8 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcpaths = SimCodegen.getCalledFunctions(dae, dlow_1);
-        funcelems = SimCodegen.generateFunctions2(p_1, funcpaths);
+        funcpaths = SimCode.getCalledFunctions(dae, dlow_1);
+        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
         XMLDump.dumpDAELow(dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
@@ -3983,7 +3919,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str);
+        SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str);
         makefilename = generateMakefilename(filenameprefix);
         Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, "");
@@ -4253,7 +4189,7 @@ algorithm
            cache, env_1, InnerOuter.emptyInstHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs getting functions: ");
-        calledfuncs = SimCodegen.getCalledFunctionsInFunction(path, gflist, d1);
+        calledfuncs = SimCode.getCalledFunctionsInFunction(path, gflist, d1);
         gflist = path :: gflist; // In case the function is recursive
         calledfuncs = Util.listSetDifference(calledfuncs, gflist); // Filter out things we already know will be ignored...
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);

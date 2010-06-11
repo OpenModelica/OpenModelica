@@ -245,7 +245,6 @@ algorithm
       Option<Values.Value> bindValue;
       DAE.InstDims arryDim;
       Integer index;
-      DAE.ComponentRef origVarName;
       list<Absyn.Path> className;
       Option<DAE.VariableAttributes> values;
       Option<SCode.Comment> comment;
@@ -259,13 +258,13 @@ algorithm
         (cdr_1,dae) = partEvalVarLst(cdr,dae);
       then
         (NONE :: cdr_1,dae);
-    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp,bindValue,arryDim,index,origVarName,
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp,bindValue,arryDim,index,
                          source,values,comment,flowPrefix,streamPrefix)) :: cdr,dae)
       equation
         (bindExp_1,dae) = elabExpOption(bindExp,dae);
         (cdr_1,dae) = partEvalVarLst(cdr,dae);
       then
-        (SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp_1,bindValue,arryDim,index,origVarName,
+        (SOME(DAELow.VAR(varName,varKind,varDirection,varType,bindExp_1,bindValue,arryDim,index,
                          source,values,comment,flowPrefix,streamPrefix)) :: cdr_1,dae);
     case(_,_)
       equation

@@ -3165,12 +3165,12 @@ content of a variable. In particular it takes:
 * comment: a comment associated to the variable.
 Please note that all the inputs must be passed as String variables.
 "
-  input String varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment;
+  input String varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment;
 algorithm
   _:=
-  matchcontinue (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment)
+  matchcontinue (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment)
       //local String str;
-    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,"")
+    case (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,"")
     equation
     /*
       str= Util.stringAppendList({"\n<Variable id=\"",varno,"\" name=\"",cr,"\" varKind=\"",kind,"\" varDirection=\"",dir,"\" varType=\"",var_type,"\" index=\"",indx,"\" origName=\"",
@@ -3183,13 +3183,12 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_DIRECTION);Print.printBuf("=\"");Print.printBuf(dir);
       Print.printBuf("\" ");Print.printBuf(VAR_TYPE);Print.printBuf("=\"");Print.printBuf(var_type);
       Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
-      Print.printBuf("\" ");Print.printBuf(VAR_ORIGNAME);Print.printBuf("=\"");Print.printBuf(old_name);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
       Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
       Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
       Print.printBuf("\">");
     then();
-    case (varno,cr,kind,dir,var_type,indx,old_name,varFixed,flowPrefix,streamPrefix,comment)
+    case (varno,cr,kind,dir,var_type,indx,varFixed,flowPrefix,streamPrefix,comment)
     equation
       Print.printBuf("\n<");Print.printBuf(VARIABLE);Print.printBuf(" ");Print.printBuf(VAR_ID);Print.printBuf("=\"");Print.printBuf(varno);
       Print.printBuf("\" ");Print.printBuf(VAR_NAME);Print.printBuf("=\"");Print.printBuf(cr);
@@ -3197,7 +3196,6 @@ algorithm
       Print.printBuf("\" ");Print.printBuf(VAR_DIRECTION);Print.printBuf("=\"");Print.printBuf(dir);
       Print.printBuf("\" ");Print.printBuf(VAR_TYPE);Print.printBuf("=\"");Print.printBuf(var_type);
       Print.printBuf("\" ");Print.printBuf(VAR_INDEX);Print.printBuf("=\"");Print.printBuf(indx);
-      Print.printBuf("\" ");Print.printBuf(VAR_ORIGNAME);Print.printBuf("=\"");Print.printBuf(old_name);
       Print.printBuf("\" ");Print.printBuf(VAR_FIXED);Print.printBuf("=\"");Print.printBuf(varFixed);
       Print.printBuf("\" ");Print.printBuf(VAR_FLOW);Print.printBuf("=\"");Print.printBuf(flowPrefix);
       Print.printBuf("\" ");Print.printBuf(VAR_STREAM);Print.printBuf("=\"");Print.printBuf(streamPrefix);
@@ -3347,7 +3345,6 @@ algorithm
                             bindValue = b,
                             arryDim = arry_Dim,
                             index = indx,
-                            origVarName = old_name,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -3355,7 +3352,7 @@ algorithm
                             streamPrefix = streamPrefix)) :: xs),varno,addMMLCode)
       equation
         dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),
-                     intString(indx),Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
+                     intString(indx),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),
                      dumpStreamStr(streamPrefix),unparseCommentOptionNoAnnotation(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the
@@ -3417,7 +3414,6 @@ algorithm
                             bindValue = b,
                             arryDim = arry_Dim,
                             index = indx,
-                            origVarName = old_name,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -3425,7 +3421,7 @@ algorithm
                             streamPrefix = streamPrefix)) :: xs),crefIdxLstArr,strIdxLstArr,varno,addMMLCode)
       equation
         dumpVariable(intString(varno),Exp.printComponentRefStr(cr),dumpKind(kind),dumpDirectionStr(dir),dumpTypeStr(var_type),intString(indx),
-                        Exp.crefStr(old_name),Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
+                        Util.boolString(DAELow.varFixed(v)),dumpFlowStr(flowPrefix),dumpStreamStr(streamPrefix),
                         DAEDump.dumpCommentOptionStr(comment));
         dumpBindValueExpression(e,b,addMMLCode);
         //The command below adds information to the XML about the dimension of the

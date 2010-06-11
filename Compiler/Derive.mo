@@ -54,7 +54,6 @@ protected import Exp;
 protected import Util;
 protected import Error;
 protected import Debug;
-protected import SimCodegen;
 
 public function differentiateEquationTime "function: differentiateEquationTime
   Differentiates an equation with respect to the time variable."
@@ -319,12 +318,11 @@ algorithm
     case (DAE.CREF(componentRef = DAE.CREF_IDENT(ident = "time",subscriptLst = {}),ty = tp),_) then DAE.RCONST(1.0);
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* special rule for DUMMY_STATES, they become DUMMY_DER */
       equation
-        ({DAELow.VAR(varKind=DAELow.DUMMY_STATE())},_) = DAELow.getVar(cr, timevars);
-        cr_str = Exp.printComponentRefStr(cr);
-        ty = Exp.crefType(cr);
-        cr_str_1 = SimCodegen.changeNameForDerivative(cr_str);
+        ({DAELow.VAR(varKind = DAELow.DUMMY_STATE())},_) = DAELow.getVar(cr, timevars);
+        cr = DAELow.crefPrefixDer(cr);
       then
-        DAE.CREF(DAE.CREF_IDENT(cr_str_1,ty,{}),DAE.ET_REAL());
+        DAE.CREF(cr, DAE.ET_REAL());
+        //DAE.CREF(DAE.CREF_IDENT(cr_str_1,ty,{}),DAE.ET_REAL());
 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions))
       equation
@@ -1203,6 +1201,14 @@ algorithm
           DAE.BINARY(DAE.CALL(Absyn.IDENT("cos"),{exp},b,c,tp,inl),DAE.POW(DAE.ET_REAL()),
           DAE.RCONST(2.0))),DAE.MUL(DAE.ET_REAL()),exp_1);
 
+    case (DAE.CALL(path = Absyn.IDENT("der"), expLst = {DAE.CREF(componentRef = cr)}), crx, differentiateIfExp)
+      equation
+        cr = DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, cr);
+        true = Exp.crefEqual(cr, crx);
+        rval = intReal(1);
+      then
+        DAE.RCONST(rval);
+        
        // derivative of arbitrary function, not dependent of variable, i.e. constant
 		case (DAE.CALL(fname,expl,b,c,tp,inl),tv,differentiateIfExp)
 		  local list<Boolean> bLst; DAE.ExpType tp;

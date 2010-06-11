@@ -110,9 +110,14 @@ struct mmc_string {
 #define mmc__mk__rcon(X) mmc_mk_rcon(X)
 #define mmc__mk__scon_rettype mmc_mk_scon_rettype
 #define mmc__mk__scon(X) mmc_mk_scon(X)
+#define mmc__mk__acon_rettype mmc_mk_acon_rettype
+#define mmc__mk__acon(X) (&(X))
+
 typedef modelica_metatype mmc_mk_icon_rettype;
 typedef modelica_metatype mmc_mk_rcon_rettype;
 typedef modelica_metatype mmc_mk_scon_rettype;
+typedef modelica_metatype mmc_mk_acon_rettype;
+
 mmc_mk_icon_rettype mmc_mk_icon(int);
 mmc_mk_rcon_rettype mmc_mk_rcon(double);
 mmc_mk_scon_rettype mmc_mk_scon(char*);
@@ -164,11 +169,14 @@ struct record_description {
 typedef modelica_integer  mmc__unbox__integer_rettype;
 typedef modelica_real     mmc__unbox__real_rettype;
 typedef modelica_string_t mmc__unbox__string_rettype;
+typedef base_array_t      mmc__unbox__array_rettype;
+
 modelica_real mmc_prim_get_real(void *p);
 
 #define mmc__unbox__integer(X) MMC_UNTAGFIXNUM(X)
 #define mmc__unbox__real(X) mmc_prim_get_real(X)
 #define mmc__unbox__string(X) MMC_STRINGDATA(X)
+#define mmc__unbox__array(X) (*((base_array_t*)X))
 
 #if defined(__cplusplus)
 }

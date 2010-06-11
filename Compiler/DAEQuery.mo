@@ -380,7 +380,6 @@ algorithm
                             varType = var_type,
                             bindExp = e,
                             index = indx,
-                            origVarName = old_name,
                             source = source,
                             values = dae_var_attr,
                             comment = comment,
@@ -418,7 +417,6 @@ algorithm
                               varType = var_type,
                               bindExp = e,
                               index = indx,
-                              origVarName = old_name,
                               source = source,
                               values = dae_var_attr,
                               comment = comment,
@@ -703,7 +701,7 @@ algorithm
       list<DAE.Exp> expl;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) =
+        ((DAELow.VAR(varKind = DAELow.STATE()) :: _),p) =
         DAELow.getVar(cr, vars) "If variable x is a state, der(x) is a variable in incidence matrix,
 	                               x is inserted as negative value, since it is needed by debugging and index
 	                               reduction using dummy derivatives" ;
@@ -713,25 +711,25 @@ algorithm
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.VARIABLE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(varKind = DAELow.VARIABLE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.DISCRETE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(varKind = DAELow.DISCRETE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.DUMMY_DER(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(varKind = DAELow.DUMMY_DER()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((DAELow.VAR(_,DAELow.DUMMY_STATE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(varKind = DAELow.DUMMY_STATE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;
@@ -863,7 +861,7 @@ algorithm
         pStr;
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ((DAELow.VAR(_,DAELow.STATE(),_,_,_,_,_,_,_,_,_,_,flowPrefix,streamPrefix) :: _),p) = DAELow.getVar(cr, vars);
+        ((DAELow.VAR(varKind = DAELow.STATE()) :: _),p) = DAELow.getVar(cr, vars);
         pStr = Util.listMap(p, intString);
       then
         pStr;

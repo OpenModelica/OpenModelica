@@ -50,7 +50,6 @@ SRCMO= Absyn.mo \
 	Prefix.mo \
 	PrefixUtil.mo \
 	Static.mo \
-	SimCodegen.mo \
 	Types.mo \
 	TaskGraph.mo \
 	UnitAbsyn.mo \

@@ -63,7 +63,7 @@ protected import System;
 protected import Util;
 protected import TaskGraph;
 protected import TaskGraphExt;
-protected import SimCodegen;
+protected import SimCode;
 protected import ErrorExt;
 protected import Error;
 protected import CevalScript;
@@ -872,7 +872,7 @@ end modpar;
 
 protected function simcodegen
 "function simcodegen
-  Genereates simulation code using the SimCodegen module"
+  Genereates simulation code using the SimCode module"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path inPath1;
@@ -921,11 +921,8 @@ algorithm
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
-        (cache,libs,funcelems,indexed_dlow_1,dae) = SimCodegen.generateFunctions(cache, env, p, dae, indexed_dlow_1, classname, funcfilename);
-        indexed_dlow_1 = Inline.inlineCalls(SOME(funcelems),NONE(),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},indexed_dlow_1);
-        SimCodegen.generateSimulationCode(dae, indexed_dlow_1, ass1, ass2, m, mt, comps, classname, filename, funcfilename,file_dir);
-        SimCodegen.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","");
-        SimCodegen.generateMakefile(makefilename, cname_str, libs, file_dir);
+        (_, _) = SimCode.generateModelCode(p, dae, indexed_dlow_1, classname, cname_str, file_dir, ass1, ass2, m, mt, comps);
+        SimCode.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","");
       then
         ();
     case (_,_,_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */

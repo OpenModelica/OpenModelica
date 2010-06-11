@@ -299,11 +299,11 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case(NONE,_) then NONE;
-    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,origVarName,source,values,comment,flowPrefix,streamPrefix)),fns)
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,origVarName,source,values,comment,flowPrefix,streamPrefix));
+        SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix));
     case(var,_) then var;
   end matchcontinue;
 end inlineVarOpt;

@@ -10343,7 +10343,7 @@ algorithm
       equation
         record_name = Exp.crefStr(recordCref);
         var_name = record_name +& "." +& var_name;
-        var_name = Util.modelicaStringToCStr(var_name, false);
+        //var_name = Util.modelicaStringToCStr(var_name, false);
       then
         DAE.CREF(DAE.CREF_IDENT(var_name, var_type, {}), var_type);
   end matchcontinue;

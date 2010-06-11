@@ -76,12 +76,6 @@ protected import Debug;
 protected import OptManager;
 protected import DAELow;
 
-protected constant list<ReplacePattern> replaceStringPatterns=
-         {REPLACEPATTERN(".",DAELow.pointStr),
-          REPLACEPATTERN("[",DAELow.leftBraketStr),REPLACEPATTERN("]",DAELow.rightBraketStr),
-          REPLACEPATTERN("(",DAELow.leftParStr),REPLACEPATTERN(")",DAELow.rightParStr),
-          REPLACEPATTERN(",",DAELow.commaStr)};
-
 public function sort "sorts a list given an ordering function.
 
 Uses the mergesort algorithm.
@@ -4590,115 +4584,6 @@ algorithm
         fail();
   end matchcontinue;
 end stringSplitAtChar2;
-
-public function modelicaStringToCStr "function modelicaStringToCStr
- this replaces symbols that are illegal in C to legal symbols
- see replaceStringPatterns to see the format. (example: \".\" becomes \"$P\")
-  author: x02lucpo"
-  input String str;
-  input Boolean changeDerCall "if true, first change 'DER(v)' to $derivativev";
-  output String res_str;
-algorithm
-
-  res_str := matchcontinue(str,changeDerCall)
-    case(str,false) // BoschRexroth specifics
-      equation
-        false = OptManager.getOption("translateDAEString");
-        then
-          str;
-    case(str,false)
-      equation
-        res_str = "$"+& modelicaStringToCStr1(str, replaceStringPatterns);
-        // debug_print("prefix$", res_str);
-      then res_str;
-    case(str,true) equation
-      str = modelicaStringToCStr2(str);
-    then str;
-  end matchcontinue;
-end modelicaStringToCStr;
-
-protected function modelicaStringToCStr2 "help function to modelicaStringToCStr,
-first  changes name 'der(v)' to $derivativev and 'pre(v)' to 'pre(v)' with applied rules for v"
-  input String derName;
-  output String outDerName;
-algorithm
-  outDerName := matchcontinue(derName)
-  local
-    String name;
-    list<String> names;
-    case(derName) equation
-      0 = System.strncmp(derName,"der(",4);
-      // adrpo: 2009-09-08
-      // the commented text: _::name::_ = listLast(System.strtok(derName,"()"));
-      // is wrong as der(der(x)) ends up beeing translated to $der$der instead
-      // of $der$der$x. Changed to the following 2 lines below!
-      _::names = (System.strtok(derName,"()"));
-      names = listMap1(names, modelicaStringToCStr, false);
-      name = DAELow.derivativeNamePrefix +& stringAppendList(names);
-    then name;
-    case(derName) equation
-      0 = System.strncmp(derName,"pre(",4);
-      _::name::_= System.strtok(derName,"()");
-      name = "pre(" +& modelicaStringToCStr(name,false) +& ")";
-    then name;
-    case(derName) then modelicaStringToCStr(derName,false);
-  end matchcontinue;
-end modelicaStringToCStr2;
-
-protected function modelicaStringToCStr1 ""
-  input String inString;
-  input list<ReplacePattern> inReplacePatternLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inString,inReplacePatternLst)
-    local
-      String str,str_1,res_str,from,to;
-      list<ReplacePattern> res;
-    case (str,{}) then str;
-    case (str,(REPLACEPATTERN(from = from,to = to) :: res))
-      equation
-        str_1 = modelicaStringToCStr1(str, res);
-        res_str = System.stringReplace(str_1, from, to);
-      then
-        res_str;
-    case (str,_)
-      equation
-        print("- Util.modelicaStringToCStr1 failed for str:"+&str+&"\n");
-      then
-        fail();
-  end matchcontinue;
-end modelicaStringToCStr1;
-
-public function cStrToModelicaString "function cStrToModelicaString
- this replaces symbols that have been replace to correct value for modelica string
- see replaceStringPatterns to see the format. (example: \"$p\" becomes \".\")
-  author: x02lucpo"
-  input String str;
-  output String res_str;
-algorithm
-  res_str := cStrToModelicaString1(str, replaceStringPatterns);
-end cStrToModelicaString;
-
-protected function cStrToModelicaString1
-  input String inString;
-  input list<ReplacePattern> inReplacePatternLst;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inString,inReplacePatternLst)
-    local
-      String str,str_1,res_str,from,to;
-      list<ReplacePattern> res;
-    case (str,{}) then str;
-    case (str,(REPLACEPATTERN(from = from,to = to) :: res))
-      equation
-        str_1 = cStrToModelicaString1(str, res);
-        res_str = System.stringReplace(str_1, to, from);
-      then
-        res_str;
-  end matchcontinue;
-end cStrToModelicaString1;
 
 public function boolOrList "function boolOrList
   Takes a list of boolean values and applies the boolean OR operator  to the list elements

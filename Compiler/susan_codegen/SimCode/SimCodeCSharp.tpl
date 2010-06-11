@@ -114,16 +114,16 @@ public double <%cref(name)%> { get { return parameters[<%index%>]; } set { param
 private static readonly SimVarInfo[] VariableInfosStatic = new[] {
 	<%{  
 		(vars.stateVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefSubscript(origName)%>", "<%comment%>", SimVarType.State, <%index%>, false)
+		new SimVarInfo( "<%crefSubscript(name)%>", "<%comment%>", SimVarType.State, <%index%>, false)
 		>> ;separator=",\n"),
 		(vars.derivativeVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefSubscript(origName)%>", "<%comment%>", SimVarType.StateDer, <%index%>, false)
+		new SimVarInfo( "<%crefSubscript(name)%>", "<%comment%>", SimVarType.StateDer, <%index%>, false)
 		>> ;separator=",\n"),
 		(vars.algVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefSubscript(origName)%>", "<%comment%>", SimVarType.Algebraic, <%index%>, false)
+		new SimVarInfo( "<%crefSubscript(name)%>", "<%comment%>", SimVarType.Algebraic, <%index%>, false)
 		>> ;separator=",\n"),
 		(vars.paramVars |> SIMVAR(__) => <<
-		new SimVarInfo( "<%crefSubscript(origName)%>", "<%comment%>", SimVarType.Parameter, <%index%>, true)
+		new SimVarInfo( "<%crefSubscript(name)%>", "<%comment%>", SimVarType.Parameter, <%index%>, true)
 		>> ;separator=",\n")
 	} ;separator=",\n\n"%>
 };
@@ -168,7 +168,7 @@ public <%name%>() {
 end modelDataMembers;
 
 template initFixed(list<SimVar> simVarLst) ::=
-  (simVarLst |> SIMVAR(__) => '<%isFixed%> /* <%crefSubscript(origName)%> */' ;separator=",\n")
+  (simVarLst |> SIMVAR(__) => '<%isFixed%> /* <%crefSubscript(name)%> */' ;separator=",\n")
 end initFixed;
 
 template functionDaeOutput(list<SimEqSystem> nonStateContEquations,
@@ -178,8 +178,8 @@ let()= System.tmpTickReset(1)
 /* for continuous time variables */
 public override void FunDAEOutput()
 {
-  <%nonStateContEquations |> it => equation_(it,contextSimulationNonDescrete) ;separator="\n"%>
-  <%removedEquations      |> it => equation_(it,contextSimulationNonDescrete) ;separator="\n"%>
+  <%nonStateContEquations |> it => equation_(it,contextSimulationNonDiscrete) ;separator="\n"%>
+  <%removedEquations      |> it => equation_(it,contextSimulationNonDiscrete) ;separator="\n"%>
 }
 >>
 end functionDaeOutput;
@@ -191,8 +191,8 @@ let()= System.tmpTickReset(1)
 /* for discrete time variables */
 public override void FunDAEOutput2()
 {
-  <%nonStateDiscEquations |> it => equation_(it,contextSimulationDescrete) ;separator="\n"%>
-  <%removedEquations      |> it => equation_(it,contextSimulationDescrete) ;separator="\n"%>
+  <%nonStateDiscEquations |> it => equation_(it,contextSimulationDiscrete) ;separator="\n"%>
+  <%removedEquations      |> it => equation_(it,contextSimulationDiscrete) ;separator="\n"%>
 }
 >>
 end functionDaeOutput2;
@@ -273,10 +273,10 @@ public override void FunUpdateDependents()
   //inUpdate=initial()?0:1;
   isInUpdate = ! isInit;
 
-  <%allEquations |> it => equation_(it, contextSimulationDescrete) ;separator="\n"%>
+  <%allEquations |> it => equation_(it, contextSimulationDiscrete) ;separator="\n"%>
   <%helpVarInfoLst |> (in1, exp, _)  =>
       let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationDescrete, &preExp)
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp)
       <<
       <%preExp%>
       helpVars[<%in1%>] = <%expPart%> ? 1.0 : 0.0;<%/*???TODO: ? 1.0 : 0.0;*/%>
@@ -297,10 +297,10 @@ public override void FunUpdateDepend()
 {
   isInUpdate = ! isInit;
   
-  <%allEquations |> it => equation_(it, contextSimulationDescrete) ;separator="\n"%>
+  <%allEquations |> it => equation_(it, contextSimulationDiscrete) ;separator="\n"%>
   <%helpVarInfoLst |> (in1, exp, _)  =>
       let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationDescrete, &preExp)
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp)
       <<
       <%preExp%>
       helpVars[<%in1%>] = <%expPart%> ? 1.0 : 0.0;<%/*???TODO: ? 1.0 : 0.0;*/%>
@@ -381,7 +381,7 @@ public override void FunWhen(int i)
       <%functionWhen_caseEquation(whenEq)%>
       <%reinits |> REINIT(__)  =>
         let &preExp = buffer ""
-        let valueExp = daeExp(value, contextSimulationDescrete, &preExp)
+        let valueExp = daeExp(value, contextSimulationDiscrete, &preExp)
       <<
       <%preExp%>
       <%cref(stateVar)%> = <%valueExp%>;
@@ -399,7 +399,7 @@ template functionWhen_caseEquation(Option<WhenEquation> it) ::=
 match it
 case SOME(weq as WHEN_EQ(__)) then
 let &preExp = buffer ""
-let expPart = daeExp(weq.right, contextSimulationDescrete, &preExp)
+let expPart = daeExp(weq.right, contextSimulationDiscrete, &preExp)
 <<
 Pre_<%cref(weq.left)%> = <%cref(weq.left)%>; //save()
 <%preExp%>
@@ -428,7 +428,7 @@ public override void InitialFun()
   //if (sim_verbose) {
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
     <<
-    //Debug.WriteLine("Setting variable start value: {0}(start={1})", "<%cref(componentRef)%>", <%cref(componentRef)%>);
+    //Debug.WriteLine("Setting variable start value: {0}(start={1})", "<%expCref(cref)%>", <%expCref(cref)%>);
     >> ;separator="\n"%>
   //}
 }
@@ -447,7 +447,7 @@ public override void InitialResidual()
       'initialResiduals[_i++] = 0;'
     else
       let &preExp = buffer ""
-      let expPart = daeExp(exp, contextSimulationNonDescrete, &preExp) // ??contextOther
+      let expPart = daeExp(exp, contextSimulationNonDiscrete, &preExp) // ??contextOther
       <<
       <%preExp%>
       initialResiduals[_i++] = <%expPart%>;
@@ -465,7 +465,7 @@ void ResidualFun<%index%>(int n, double[] xloc, double[] res, int iflag)
 {
    <%eqs |> SES_RESIDUAL(__) indexedby i0 =>
      let &preExp = buffer ""
-     let expPart = daeExp(exp, contextSimulationDescrete, &preExp)
+     let expPart = daeExp(exp, contextSimulationDiscrete, &preExp)
    <<
    <%preExp%>
    res[<%i0%>] = <%expPart%>;
@@ -527,7 +527,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp)
   <<
   <%preExp%>
-  <%cref(componentRef)%> = <%expPart%>;
+  <%expCref(cref)%> = <%expPart%>;
   >>
 case SES_LINEAR(__) then
   let uid = System.tmpTick()
@@ -559,16 +559,16 @@ case SES_MIXED(__) then
   	match discEqs
     case { discEq as SES_SIMPLE_ASSIGN(__) } then
       <<
-      <%cref(discEq.componentRef)%> = <%daeExp(discEq.exp, context, preDisc /*BUFC*/)%>;
-      double discrete_loc2_0 = <%cref(discEq.componentRef)%>;
+      <%expCref(discEq.cref)%> = <%daeExp(discEq.exp, context, preDisc /*BUFC*/)%>;
+      double discrete_loc2_0 = <%expCref(discEq.cref)%>;
       >>
   	case discEqs then
       <<
       var discrete_loc2 = new double[<%numDiscVarsStr%>];
       <%discEqs |> SES_SIMPLE_ASSIGN(__) indexedby i0 =>
         <<
-        <%cref(componentRef)%> = <%daeExp(exp, context, preDisc /*BUFC*/)%>;
-        discrete_loc2[<%i0%>] = <%cref(componentRef)%>;
+        <%expCref(cref)%> = <%daeExp(exp, context, preDisc /*BUFC*/)%>;
+        discrete_loc2[<%i0%>] = <%expCref(cref)%>;
         >>
         ;separator="\n"%>
       >>
@@ -660,6 +660,15 @@ template subscript(Subscript it) ::=
   case INDEX(exp = ICONST(__)) then exp.integer
   case _ then "SUBSCRIPT_NOT_CONSTANT"
 end subscript;
+
+template expCref(DAE.Exp cref)
+::=
+  match cref
+  case CREF(__) then '<%cref(componentRef)%>'
+  case CALL(path = IDENT(name = "der"), expLst = {arg as CREF(__)}) then
+    '$DER$<%cref(arg.componentRef)%>'
+  else "ERROR_NOT_A_CREF"
+end expCref;
 
 
 // SECTION: GENERAL TEMPLATES, PATHS
@@ -767,7 +776,7 @@ template foo(list<Exp> exps, list<Integer> ints, Text &varDecls) ::=
   match exps case (firstExp :: restExps) then
   match ints case (firstInt :: restInts) then
     let &preExp = buffer ""
-    let expPart = daeExp(firstExp, contextSimulationDescrete, &preExp, &varDecls) 
+    let expPart = daeExp(firstExp, contextSimulationDiscrete, &preExp, &varDecls) 
     <<
     <%preExp%>
     localData->helpVars[<%firstInt%>] = <%expPart%>;
@@ -780,7 +789,7 @@ template foo(list<Exp> exps, list<Integer> ints) ::=
   match exps case (firstExp :: restExps) then
   match ints case (firstInt :: restInts) then
     let &preExp = buffer ""
-    let expPart = daeExp(firstExp, contextSimulationDescrete, &preExp)
+    let expPart = daeExp(firstExp, contextSimulationDiscrete, &preExp)
     <<
     <%preExp%>
     localData->helpVars[<%firstInt%>] = <%expPart%>;

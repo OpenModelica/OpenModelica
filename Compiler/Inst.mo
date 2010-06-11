@@ -7578,18 +7578,19 @@ algorithm
       DAE.Subscript eSubscr;
 
     /* TODO: Fix slicing, e.g. DAE.SLICE, for impl=true */
-    case (DIMEXP(subscript = DAE.WHOLEDIM()),(impl as false))
+    /*case (DIMEXP(subscript = DAE.WHOLEDIM()),(impl as false))
       equation
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {":"});
       then
-        fail();
+        fail();*/
     case (DIMEXP(subscript = DAE.SLICE(exp = e)),(impl as false))
       equation
         s = Exp.printExpStr(e);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
         fail();
-    case (DIMEXP(subscript = (eSubscr as DAE.WHOLEDIM())),(impl as true)) then eSubscr;
+    //case (DIMEXP(subscript = (eSubscr as DAE.WHOLEDIM())),(impl as true)) then eSubscr;
+    case (DIMEXP(subscript = (eSubscr as DAE.WHOLEDIM())), _) then eSubscr;
     case (DIMINT(integer = i),_) then DAE.INDEX(DAE.ICONST(i));
     case (DIMEXP(subscript = (eSubscr as DAE.INDEX(exp = _))),_) then eSubscr;
   end matchcontinue;
@@ -13103,17 +13104,108 @@ algorithm
       then
         (cache,stmts,dae);
         
-    // for loops not conatining ALG_WHEN
+    // for loops not containing ALG_WHEN
     case (cache,env,ih,pre,inIterators,sl,initial_,impl,unrollForLoops)
       equation
         // do not unroll if it doesn't contain a when statement!
         false = containsWhenStatements(sl);
         (cache,stmts,dae) = instForStatement_dispatch(cache,env,ih,pre,inIterators,sl,initial_,impl,unrollForLoops);
+        stmts = replaceLoopDependentCrefs(stmts, inIterators);
       then
         (cache,stmts,dae);
 
   end matchcontinue;
 end instForStatement;
+
+protected function replaceLoopDependentCrefs
+  "Replaces all DAE.CREFs that are dependent on a loop variable with a
+  DAE.ASUB."
+  input list<Algorithm.Statement> inStatements;
+  input Absyn.ForIterators forIterators;
+  output list<Algorithm.Statement> outStatements;
+algorithm
+  (outStatements, _) := DAEUtil.traverseDAEEquationsStmts(inStatements,
+      replaceLoopDependentCrefInExp, forIterators);
+end replaceLoopDependentCrefs;
+
+protected function replaceLoopDependentCrefInExp
+  "Helper function for replaceLoopDependentCrefs."
+  input DAE.Exp inExpr;
+  input Absyn.ForIterators inForIterators;
+  output DAE.Exp outExpr;
+  output Absyn.ForIterators outForIterators;
+algorithm
+  (outExpr, outForIterators) := matchcontinue(inExpr, inForIterators)
+    case (cr_exp as DAE.CREF(componentRef = cr), _)
+      local
+        DAE.Exp cr_exp;
+        DAE.ComponentRef cr;
+        DAE.ExpType cr_type;
+        list<DAE.Subscript> cref_subs;
+        list<DAE.Exp> exp_subs;
+      equation
+        cref_subs = Exp.crefSubs(cr);
+        exp_subs = Util.listMap(cref_subs, Exp.subscriptExp);
+        true = isSubsLoopDependent(exp_subs, inForIterators);
+        cr = Exp.crefStripSubs(cr);
+        cr_type = Exp.crefType(cr);
+      then
+        (DAE.ASUB(DAE.CREF(cr, cr_type), exp_subs), inForIterators);
+    case (_, _) then (inExpr, inForIterators);
+  end matchcontinue;
+end replaceLoopDependentCrefInExp;
+
+protected function isSubsLoopDependent
+  "Checks if a list of subscripts contain any of a list of iterators."
+  input list<DAE.Exp> subscripts;
+  input Absyn.ForIterators iterators;
+  output Boolean loopDependent;
+algorithm
+  loopDependent := matchcontinue(subscripts, iterators)
+    case (_, {}) then false;
+    case (_, (iter_name, _) :: _)
+      local
+        Absyn.Ident iter_name;
+        DAE.Exp iter_exp;
+      equation
+        iter_exp = DAE.CREF(DAE.CREF_IDENT(iter_name, DAE.ET_INT(), {}), DAE.ET_INT()); 
+        true = isSubsLoopDependentHelper(subscripts, iter_exp);
+      then
+        true;
+    case (_, _ :: rest_iters)
+      local
+        Absyn.ForIterators rest_iters;
+        Boolean res;
+      equation
+        res = isSubsLoopDependent(subscripts, rest_iters);
+      then
+        res;
+  end matchcontinue;
+end isSubsLoopDependent;
+
+protected function isSubsLoopDependentHelper
+  "Helper for isLoopDependent.
+  Checks if a list of subscripts contains a certain iterator expression."
+  input list<DAE.Exp> subscripts;
+  input DAE.Exp iteratorExp;
+  output Boolean isDependent;
+algorithm
+  isDependent := matchcontinue(subscripts, iteratorExp)
+    local
+      DAE.Exp subscript;
+      list<DAE.Exp> rest;
+    case ({}, _) then false;
+    case (subscript :: rest, _)
+      equation
+        true = Exp.expContains(subscript, iteratorExp);
+      then true;
+    case (subscript :: rest, _)
+      equation
+        true = isSubsLoopDependentHelper(rest, iteratorExp);
+      then true;
+    case (_, _) then false;
+  end matchcontinue;
+end isSubsLoopDependentHelper;
 
 protected function instForStatement_dispatch 
 "function for instantiating a for statement"

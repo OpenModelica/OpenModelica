@@ -35,7 +35,6 @@ SimCodeC.mo \
 SimCodeCSharp.mo \
 TplCodegen.mo
 
-# The MO sources
 SRCMO= \
 Absyn.mo \
 AbsynDep.mo \
@@ -91,7 +90,6 @@ Prefix.mo \
 PrefixUtil.mo \
 Static.mo \
 SimCode.mo \
-SimCodegen.mo \
 $(SUSANMO) \
 Types.mo \
 TaskGraph.mo \
