@@ -70,13 +70,13 @@ install: install_scripts $(PROG)
 
 dinstall: install_scripts $(PROGD)
 
-omc_release: depend
+omc_release: .depend
 	(cd omc_release && $(MAKE))
 
-omc_debug: depend
+omc_debug: .depend
 	(cd omc_debug && $(MAKE))
 
-omc_profiler: depend
+omc_profiler: .depend
 	(cd omc_profiler && $(MAKE))
 
 #vctarget:
@@ -97,9 +97,6 @@ test:
 #	@for d in $(SUBDIRS); do \
 #		(cd $$d ; $(MAKE)) \
 #	done
-
-.depend:
-	touch .depend
 
 clean: .depend
 	@for d in $(SUBDIRS); do \
@@ -143,10 +140,11 @@ simcode:
 	@echo OpenModelica has not been compiled yet. Using previously generated SimCode files.
 else 
 simcode:
-	make -C susan_codegen/SimCode/
+	$(MAKE) -C susan_codegen/SimCode/
 endif
+$(SUSANMO): simcode
 
-depend: simcode
+.depend: $(ALLMO)
 	-$(RM) .depend
 	time $(RML) -fdump-depends $(SRCMO) > .depend
 
