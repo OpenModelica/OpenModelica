@@ -45,7 +45,7 @@
 
 spackage SimCodeC
 
-typeview "/home/per/workspace/modelica/Compiler/susan_codegen/SimCode/SimCodeTV.mo"
+typeview "SimCodeTV.mo"
 
 template translateModel(SimCode simCode) 
  "Generates C code and Makefile for compiling and running a simulation of a
