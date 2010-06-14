@@ -42,35 +42,23 @@ package Error
 
 public
 uniontype Severity "severity of message"
-  record ERROR "Error when tool can not succed in translation" end ERROR;
-
-  record WARNING "Warning when tool succeds but with warning" end WARNING;
-
-  record NOTIFICATION "Additional information to user, e.g. what
-				     actions tool has taken to succed in translation" end NOTIFICATION;
+  record ERROR "Error when tool can not succeed in translation" end ERROR;
+  record WARNING "Warning when tool succeeds but with warning" end WARNING;
+  record NOTIFICATION "Additional information to user, e.g., what actions tool has taken to succeed in translation" end NOTIFICATION;
 end Severity;
 
 public
 uniontype MessageType "runtime scripting /interpretation error"
   record SYNTAX "syntax errors" end SYNTAX;
-
   record GRAMMAR "grammar errors" end GRAMMAR;
-
-  record TRANSLATION "instantiation errors: up to
-					 flat modelica" end TRANSLATION;
-
-  record SYMBOLIC "Symbolic manipulation error,
-					 simcodegen, up to .exe file" end SYMBOLIC;
-
+  record TRANSLATION "instantiation errors: up to flat Modelica" end TRANSLATION;
+  record SYMBOLIC "Symbolic manipulation error, simcodegen, up to .exe file" end SYMBOLIC;
   record SIMULATION "Runtime simulation error" end SIMULATION;
-
   record SCRIPTING "runtime scripting /interpretation error" end SCRIPTING;
-
 end MessageType;
 
 public
-type ErrorID = Integer "Unique error id. Used to
-			  look up message string and type and severity";
+type ErrorID = Integer "Unique error id. Used to look up message string and type and severity";
 
 public
 type MessageTokens = list<String>   "\"Tokens\" to insert into message at
@@ -399,11 +387,11 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ILLEGAL_MODIFICATION,TRANSLATION(),ERROR(),
           "Illegal modification %s (of %s)"),(INTERNAL_ERROR,TRANSLATION(),ERROR(),"Internal error %s."),
           (TYPE_MISMATCH_ARRAY_EXP,TRANSLATION(),ERROR(),
-          "Type mismatch in array expression. %s is of type %s while the elements %s are of type %s."),
+          "Type mismatch in array expression: %s is of type %s while the elements %s are of type %s."),
           (TYPE_MISMATCH_MATRIX_EXP,TRANSLATION(),ERROR(),
-          "Type mismatch in matrix rows. %s is a row of %s, the rest of the matrix is of type %s."),
+          "Type mismatch in matrix rows: %s is a row of %s, the rest of the matrix is of type %s."),
           (MATRIX_EXP_ROW_SIZE,TRANSLATION(),ERROR(),
-          "Incompatible row length in matrix expression. %s is a row of size %s, the rest of the matrix rows are of size %s"),
+          "Incompatible row length in matrix expression: %s is a row of size %s, the rest of the matrix rows are of size %s."),
           (OPERAND_BUILTIN_TYPE,TRANSLATION(),ERROR(),
           "Operand of %s must be built-in type in %s."),
           (WRONG_TYPE_OR_NO_OF_ARGS,TRANSLATION(),ERROR(),
@@ -411,11 +399,11 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (DIFFERENT_DIM_SIZE_IN_ARGUMENTS,TRANSLATION(),ERROR(),
           "Different dimension sizes in arguments to %s."),
           (DER_APPLIED_TO_CONST,TRANSLATION(),ERROR(),
-          "der operator applied to constant expression der(%s)"),
+          "der operator applied to constant expression der(%s)."),
           (ARGUMENT_MUST_BE_INTEGER_OR_REAL,TRANSLATION(),ERROR(),
           "%s argument to %s must be an Integer or Real expression."),
           (ARGUMENT_MUST_BE_INTEGER,TRANSLATION(),ERROR(),
-          "%s argument to %s must be Integer expression"),
+          "%s argument to %s must be Integer expression."),
           (ARGUMENT_MUST_BE_DISCRETE_VAR,TRANSLATION(),ERROR(),
           "%s argument to %s must be discrete variable."),
           (TYPE_MUST_BE_SIMPLE,TRANSLATION(),ERROR(),
@@ -437,7 +425,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (SUBSCRIPT_NOT_INT_OR_INT_ARRAY,TRANSLATION(),ERROR(),
           "Subscript is not an integer or integer array in %s which is of type %s."),
           (TYPE_MISMATCH_IF_EXP,TRANSLATION(),ERROR(),
-          "Type mismatch in if-expression, true branch: %s has type %s, false branch: %s has type %s."),
+          "Type mismatch in if-expression: true branch %s has type %s while false branch %s has type %s."),
           (UNRESOLVABLE_TYPE,TRANSLATION(),ERROR(),
           "Cannot resolve type of expression %s."),
           (INCOMPATIBLE_TYPES,TRANSLATION(),ERROR(),
@@ -447,23 +435,23 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INHERIT_BASIC_WITH_COMPS,TRANSLATION(),ERROR(),
           "Class %s extends from a predefined type but contains components."),
           (MODIFIER_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
-          "Type mismatch in modifier, expected type %s, got modifier %s of type %s."),
+          "Type mismatch in modifier: expected type %s, got modifier %s of type %s."),
           (MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
-          "Type mismatch in modifier, declared type %s, got modifier %s of type %s."),
+          "Type mismatch in modifier: declared type %s, got modifier %s of type %s."),
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "An error occured while flattening model %s."),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
 		      "Expression %s in for-statement must be an array type."),
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
-		      "A break statement was found outside a loop."),
+		      "Break statement found outside a loop."),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
           "Duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s."),
           (DUPLICATE_CLASSES_NOT_EQUIVALENT,TRANSLATION(),ERROR(),
           "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s."),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),
-          "Variable %s in package %s is not constant."),
+          "Variable %s in package %s not constant."),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),
-          "Class %s has a recursive definition by containing an instance of itself."),
+          "Class %s has a recursive definition. It contains an instance of itself."),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
           "Parameter %s has no value, and is fixed during initialization (fixed=true)."),
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
@@ -473,7 +461,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INDEX_REDUCTION_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
           "Differentiated equation %s to %s for index reduction."),
           (SELECTED_STATE_DUE_TO_START_NOTIFICATION,SYMBOLIC(),NOTIFICATION(),
-          "Selecting %s as state since it has a start value and a potential state variable (appearing inside der()) was found in the same scope without start value."),
+          "Selecting %s as state since it has a start value and a potential state variable (appearing inside der()) was found in the same scope without a start value."),
 
           (DIFFERENT_VARIABLES_SOLVED_IN_ELSEWHEN,SYMBOLIC(),ERROR(),
           "The same variables must be solved in elsewhen clause as in the when clause."),
@@ -482,7 +470,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (SETTING_FIXED_ATTRIBUTE,TRANSLATION(),WARNING(),
           "Using overdeterimed solver for initialization. Setting fixed=false to the following variables: %s"),
           (PROPAGATE_START_VALUE,TRANSLATION(),WARNING(),
-          "Failed to propagate the start value from variable dummy state %s to state %s. Provide a start value for the selected state instead"),
+          "Failed to propagate start value from variable dummy state %s to state %s. Provide a start value for the selected state instead."),
           (SEMI_SUPPORTED_FUNCTION,TRANSLATION(),WARNING(),
           "Using non-standardized function %s. For full conformance with language specification please use appropriate function in e.g. Modelica.Math"),
           (GENERIC_TRANSLATION_ERROR,TRANSLATION(),ERROR(),
@@ -502,11 +490,11 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ILLEGAL_SUBSCRIPT,TRANSLATION(),ERROR(),
           "Illegal subscript %s for dimensions %s."),
           (ASSERT_FAILED,TRANSLATION(),ERROR(),
-          "Assert failed in function, message: %s."),
+          "Assertion failed in function, message: %s."),
           (ILLEGAL_EQUATION_TYPE, TRANSLATION(),ERROR(),
           "Illegal type in equation %s, only predefined types (Real, String, Integer, Boolean), enumeration types, or record types allowed in equation."),
           (FAILED_TO_EVALUATE_FUNCTION, TRANSLATION(),ERROR(),
-          "Failed to evaluate function: %s."),
+          "Failed to evaluate function %s."),
           (OVERDET_INITIAL_EQN_SYSTEM,SYMBOLIC(),WARNING(),
           "Overdetermined initial equation system, using solver for overdetermined systems."),
           /* Warning about package restriction, since MSL does not follow standard */
@@ -519,11 +507,11 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (ERROR_BUILTIN_DELAY,TRANSLATION(),ERROR(),
           "Built-in function delay(expr,delayTime,delayMax*) failed: %s"),
           (When_With_IF,TRANSLATION(),ERROR(),
-          "When equations using if-statements on form 'if a then b=c else b = d' not implemented yet, use 'b=if a then c else d' as work around\n%s"),
+          "When equations using if-statements on form 'if a then b=c else b=d' not implemented yet, use 'b=if a then c else d' as a workaround.\n%s"),
           (OUTER_MODIFICATION,TRANSLATION(),WARNING(),
           "Ignoring the modification on outer element: %s."),
           (REDUNDANT_GUESS,TRANSLATION(),WARNING(),
-          "Start value is assigned for variable: %s, but not used since %s."),
+          "Start value assigned for variable %s, but not used since %s."),
           (UNUSED_MODIFIER,TRANSLATION(),ERROR(),
           "In modifier %s"),
           (MISSING_INNER_PREFIX,TRANSLATION(),WARNING(),
@@ -924,4 +912,3 @@ algorithm
 end fixFilenameForTestsuite;
 
 end Error;
-
