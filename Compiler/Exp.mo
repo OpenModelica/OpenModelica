@@ -1019,7 +1019,7 @@ algorithm
         // I do belive this has something to do with variable replacement and DAELow.
         // TODO: investigate reason, until then keep as is.
         // I do believe that this is the same bug as adrians qual-ident bug below.
-    /*case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
+    case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = (idx2 as _::_)))
       equation
         0 = System.stringFind(n1, n2); // n2 should be first in n1!
         s1 = n2 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
@@ -1032,7 +1032,7 @@ algorithm
         s1 = n1 +& "[" +& printListStr(idx2, printSubscriptStr, ",") +& "]";
         true = stringEqual(s1,n2);
       then
-        true;*/
+        true;
     // enumerations
     case (cr1 as DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       local list<Subscript> idx1_1,idx2_1;
@@ -1073,7 +1073,7 @@ algorithm
 	  */
 	  // the following two cases replaces the one below
 	  // right cref is stringified!
-    /*case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT(ident = n2))
+    case (cr1 as DAE.CREF_QUAL(ident = n1),cr2 as DAE.CREF_IDENT(ident = n2))
       equation
         0 = System.stringFind(n2, n1); // n1 should be first in n2!
         s1 = printComponentRefStr(cr1);
@@ -1089,7 +1089,7 @@ algorithm
         s2 = printComponentRefStr(cr2);
         true = stringEqual(s1, s2);
       then
-        true;*/
+        true;
     // the crefs are not equal!
      case (_,_) then false;
   end matchcontinue;
@@ -8583,6 +8583,221 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end crefIsFirstArrayElt;
+
+public function stringifyComponentRef
+"function: stringifyComponentRef
+  Translates a ComponentRef into a DAE.CREF_IDENT by putting
+  the string representation of the ComponentRef into it.
+  See also stringigyCrefs.
+
+  NOTE: This function should not be used in OMC, since the OMC backend no longer
+    uses stringified components. It is still used by MathCore though."
+  input ComponentRef cr;
+  output ComponentRef outComponentRef;
+  list<Subscript> subs;
+  ComponentRef cr_1;
+  Ident crs;
+  Type ty;
+algorithm
+  subs := crefLastSubs(cr);
+  cr_1 := crefStripLastSubs(cr);
+  crs := printComponentRefStr(cr_1);
+  ty := crefLastType(cr) "The type of the stringified cr is taken from the last identifier";
+  outComponentRef := DAE.CREF_IDENT(crs,ty,subs);
+end stringifyComponentRef;
+
+public function stringifyCrefs
+"function: stringifyCrefs
+  This function takes an expression and transforms all component
+  reference  names contained in the expression to a simpler form.
+  For instance DAE.CREF_QUAL(\"a\",{}, DAE.CREF_IDENT(\"b\",{})) becomes
+  DAE.CREF_IDENT(\"a.b\",{})
+
+  NOTE: This function should not be used in OMC, since the OMC backend no longer
+    uses stringified components. It is still used by MathCore though."
+  input Exp inExp;
+  output Exp outExp;
+algorithm
+  outExp:=
+  matchcontinue (inExp)
+    local
+      Exp e,e1_1,e2_1,e1,e2,e_1,e3_1,e3;
+      ComponentRef cr_1,cr;
+      Type t;
+      Operator op;
+      list<Exp> expl_1,expl;
+      Absyn.Path p;
+      Boolean b;
+      Integer i;
+      Ident id;
+    case ((e as DAE.ICONST(integer = _))) then e;
+    case ((e as DAE.RCONST(real = _))) then e;
+    case ((e as DAE.SCONST(string = _))) then e;
+    case ((e as DAE.BCONST(bool = _))) then e;
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR))) then e;
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC))) then e;
+    case (DAE.CREF(componentRef = cr,ty = t))
+      equation
+        cr_1 = stringifyComponentRef(cr);
+      then
+        DAE.CREF(cr_1,t);
+    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+      then
+        DAE.BINARY(e1_1,op,e2_1);
+    case (DAE.UNARY(operator = op,exp = e))
+      equation
+        e_1 = stringifyCrefs(e);
+      then
+        DAE.UNARY(op,e_1);
+    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+      then
+        DAE.LBINARY(e1_1,op,e2_1);
+    case (DAE.LUNARY(operator = op,exp = e))
+      equation
+        e_1 = stringifyCrefs(e);
+      then
+        DAE.LUNARY(op,e_1);
+    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+      then
+        DAE.RELATION(e1_1,op,e2_1);
+    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+        e3_1 = stringifyCrefs(e3);
+      then
+        DAE.IFEXP(e1_1,e2_1,e3_1);
+    case (DAE.CALL(path = p,expLst = expl,tuple_ = t,builtin = b,ty=tp,inlineType=i))
+      local Boolean t;DAE.InlineType i; Type tp;
+      equation
+        expl_1 = Util.listMap(expl, stringifyCrefs);
+      then
+        DAE.CALL(p,expl_1,t,b,tp,i);
+    case (DAE.PARTEVALFUNCTION(path = p, expList = expl, ty = tp))
+      local Type tp;
+      equation
+        expl_1 = Util.listMap(expl, stringifyCrefs);
+      then
+        DAE.PARTEVALFUNCTION(p,expl_1,tp);
+    case (DAE.ARRAY(ty = t,scalar = b,array = expl))
+      equation
+        expl_1 = Util.listMap(expl, stringifyCrefs);
+      then
+        DAE.ARRAY(t,b,expl_1);
+    case ((e as DAE.MATRIX(ty = t,integer = b,scalar = expl)))
+      local
+        list<list<tuple<Exp, Boolean>>> expl_1,expl;
+        Integer b;
+      equation
+        expl_1 = stringifyCrefsMatrix(expl);
+      then
+        DAE.MATRIX(t,b,expl_1);
+    case (DAE.RANGE(ty = t,exp = e1,expOption = SOME(e2),range = e3))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+        e3_1 = stringifyCrefs(e3);
+      then
+        DAE.RANGE(t,e1_1,SOME(e2_1),e3_1);
+    case (DAE.RANGE(ty = t,exp = e1,expOption = NONE,range = e3))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e3_1 = stringifyCrefs(e3);
+      then
+        DAE.RANGE(t,e1_1,NONE,e3_1);
+    case (DAE.TUPLE(PR = expl))
+      equation
+        expl_1 = Util.listMap(expl, stringifyCrefs);
+      then
+        DAE.TUPLE(expl_1);
+    case (DAE.CAST(ty = t,exp = e1))
+      equation
+        e1_1 = stringifyCrefs(e1);
+      then
+        DAE.CAST(t,e1_1);
+    case (DAE.ASUB(exp = e1,sub = expl_1))
+      equation
+        e1_1 = stringifyCrefs(e1);
+      then
+        DAE.ASUB(e1_1,expl_1);
+    case (DAE.SIZE(exp = e1,sz = SOME(e2)))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+      then
+        DAE.SIZE(e1_1,SOME(e2_1));
+    case (DAE.SIZE(exp = e1,sz = NONE))
+      equation
+        e1_1 = stringifyCrefs(e1);
+      then
+        DAE.SIZE(e1_1,NONE);
+    case ((e as DAE.CODE(code = _))) then e;
+    case (DAE.REDUCTION(path = p,expr = e1,ident = id,range = e2))
+      equation
+        e1_1 = stringifyCrefs(e1);
+        e2_1 = stringifyCrefs(e2);
+      then
+        DAE.REDUCTION(p,e1_1,id,e2_1);
+    case DAE.END() then DAE.END();
+    case (e) then e;
+  end matchcontinue;
+end stringifyCrefs;
+
+protected function stringifyCrefsMatrix
+"function: stringifyCrefsMatrix
+  author: PA
+  Helper function to stringifyCrefs.
+  Handles matrix expresion list."
+  input list<list<tuple<Exp, Boolean>>> inTplExpBooleanLstLst;
+  output list<list<tuple<Exp, Boolean>>> outTplExpBooleanLstLst;
+algorithm
+  outTplExpBooleanLstLst:=
+  matchcontinue (inTplExpBooleanLstLst)
+    local
+      list<tuple<Exp, Boolean>> e_1,e;
+      list<list<tuple<Exp, Boolean>>> es_1,es;
+    case ({}) then {};
+    case ((e :: es))
+      equation
+        e_1 = stringifyCrefsMatrix2(e);
+        es_1 = stringifyCrefsMatrix(es);
+      then
+        (e_1 :: es_1);
+  end matchcontinue;
+end stringifyCrefsMatrix;
+
+protected function stringifyCrefsMatrix2
+"function: stringifyCrefsMatrix2
+  author: PA
+  Helper function to stringifyCrefsMatrix"
+  input list<tuple<Exp, Boolean>> inTplExpBooleanLst;
+  output list<tuple<Exp, Boolean>> outTplExpBooleanLst;
+algorithm
+  outTplExpBooleanLst:=
+  matchcontinue (inTplExpBooleanLst)
+    local
+      Exp e_1,e;
+      list<tuple<Exp, Boolean>> es_1,es;
+      Boolean b;
+    case ({}) then {};
+    case (((e,b) :: es))
+      equation
+        e_1 = stringifyCrefs(e);
+        es_1 = stringifyCrefsMatrix2(es);
+      then
+        ((e_1,b) :: es_1);
+  end matchcontinue;
+end stringifyCrefsMatrix2;
+
 public function dumpExpGraphviz
 "function: dumpExpGraphviz
   Creates a Graphviz Node from an Expression."
