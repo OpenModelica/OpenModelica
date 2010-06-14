@@ -36,12 +36,9 @@
 #include "simulation_runtime.h"
 
 #include <string>
+#include "ringbuffer.h"
 
 double tStart = 0;
-
-// we can remember the delay for max 10 expressions by default
-// this can be increased using realloc.
-long maxExpressions = 10;
 
 typedef struct _TimeAndValue
 {
@@ -57,20 +54,21 @@ typedef struct _ExpressionDelayBuffer
 } t_ExpressionDelayBuffer;
 
 // the delayStructure looks like a matrix (rows = expressionNumber+currentColumnIndex, columns={time, value})
-t_ExpressionDelayBuffer **delayStructure;
+typedef ringbuffer<t_TimeAndValue> t_buffer;
+t_buffer **delayStructure;
+extern const int numDelayExpressionIndex;
 
 void initDelay(double startTime)
 {
 	// get the start time of the simulation: time.start.
 	tStart = startTime;
 	// allocate the memory for rows
-	delayStructure = (t_ExpressionDelayBuffer**)malloc(maxExpressions
-			* sizeof(t_ExpressionDelayBuffer*));
-	// zero it out
-	for (long i = 0; i < maxExpressions; i++)
-		delayStructure[i] = 0;
+	delayStructure = new t_buffer*[numDelayExpressionIndex];
+  for (int i=0; i<numDelayExpressionIndex; i++)
+    delayStructure[i] = new t_buffer(1024);
 
-	//fprintf(stderr, "initDelay called with startTime = %lf\n", startTime);
+	if (sim_verbose)
+    fprintf(stderr, "initDelay called with startTime = %f\n", startTime);
 }
 
 /*
@@ -79,13 +77,13 @@ void initDelay(double startTime)
  *  the buffer in 'delayStruct' is not empty
  *  'time' is smaller than the last entry in 'delayStruct'
  */
-static int findTime(double time, t_ExpressionDelayBuffer *delayStruct)
+static int findTime(double time, t_buffer delayStruct)
 {
-	int start = 0, end = delayStruct->currentIndex;
+	int start = 0, end = delayStruct.length();
 	double t;
 	do {
 		int i = (start + end) / 2;
-		t = delayStruct->expressionDelayBuffer[i].time;
+		t = delayStruct[i].time;
 		if (t > time)
 			end = i;
 		else
@@ -96,12 +94,14 @@ static int findTime(double time, t_ExpressionDelayBuffer *delayStruct)
 
 void storeDelayedExpression(int exprNumber, double exprValue)
 {
+	double time = globalData->timeValue;
+
+  //fprintf(stderr, "storeDelayed %g:%g\n", time, exprValue);
 	if (exprNumber < 0) {
 		fprintf(stderr, "storeDelayedExpression: Invalid expression number %d.\n", exprNumber);
 		return;
 	}
 
-	double time = globalData->timeValue;
 
 	if (time < tStart) {
 		fprintf(stderr, "storeDelayedExpression: Time is smaller than starting time. Value ignored.\n");
@@ -109,74 +109,22 @@ void storeDelayedExpression(int exprNumber, double exprValue)
 	}
 
 	// Allocate more space for expressions
-	if (exprNumber >= maxExpressions) {
-		// increase the rows
-		long maxE = maxExpressions;
-		maxExpressions = exprNumber + 1;
-		delayStructure = (t_ExpressionDelayBuffer**)realloc(delayStructure,
-				maxExpressions * sizeof(t_ExpressionDelayBuffer*));
-		// zero the new part out
-		for (long i = maxE; i < maxExpressions; i++)
-			delayStructure[i] = 0;
-	}
+  assert(exprNumber < numDelayExpressionIndex);
 
-	t_ExpressionDelayBuffer *delayStruct = delayStructure[exprNumber];
-
-	// is the column allocated?
-	if (!delayStruct) {
-		// we haven't let's do it...
-		// we create memory for 1000 variable values at first, then we increase it using realloc if needed
-		assert(time == tStart);
-
-		delayStruct = (t_ExpressionDelayBuffer*)malloc(
-				sizeof(t_ExpressionDelayBuffer));
-		delayStructure[exprNumber] = delayStruct;
-		delayStruct->maxExpressionBuffer = 1000;
-		t_TimeAndValue *buffer = (t_TimeAndValue*)malloc(
-						delayStruct->maxExpressionBuffer * sizeof(t_TimeAndValue));
-		delayStruct->expressionDelayBuffer = buffer;
-
-		// now let's store the time and value!
-		buffer[0].time = time;
-		buffer[0].value = exprValue;
-		delayStruct->currentIndex = 1;
-	}
-	else {
-		assert(delayStruct->currentIndex > 0);
-
-		double lastTime = delayStruct->expressionDelayBuffer[delayStruct->currentIndex-1].time;
-
-		assert(time >= lastTime);
-
-		int index = delayStruct->currentIndex;
-    if (index >= delayStruct->maxExpressionBuffer) {
-      // it doesn't fit anymore, we need to re-alloc:
-      delayStruct->maxExpressionBuffer *= 2;
-      delayStruct->expressionDelayBuffer = (t_TimeAndValue*)realloc(
-              delayStruct->expressionDelayBuffer,
-              delayStruct->maxExpressionBuffer * sizeof(t_TimeAndValue));
-    }
-
-		//fprintf(stderr, "storeDelayedExpression: Assigned value for expression %d (index = %d, time = %lf, value = %lf)\n", exprNumber, index, time, exprValue);
-
-		// now let's store the time and value!
-		delayStruct->expressionDelayBuffer[index].time = time;
-		delayStruct->expressionDelayBuffer[index].value = exprValue;
-		delayStruct->currentIndex = index + 1;
-
-		assert(delayStruct->currentIndex <= delayStruct->maxExpressionBuffer);
-	}
+	t_buffer* delayStruct = delayStructure[exprNumber];
+  t_TimeAndValue tpl;
+  tpl.time = time;
+	tpl.value = exprValue;
+  delayStruct->append(tpl);
 }
 
-double delayImpl(int exprNumber, double exprValue, double time, double delayTime)
+double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double delayMax /* Unused */)
 {
 	//fprintf(stderr, "delayImpl: exprNumber = %d, exprValue = %lf, time = %lf, delayTime = %lf\n", exprNumber, exprValue, time, delayTime);
 
 	// Check for errors
-	if (exprNumber < 0) {
-		fprintf(stderr, "delayImpl: Invalid expression number %d.\n", exprNumber);
-		return exprValue;
-	}
+	assert(exprNumber >= 0);
+  assert(exprNumber < numDelayExpressionIndex);
 
 	if (time < tStart) {
 		fprintf(stderr, "delayImpl: Entered at time < starting time.\n");
@@ -188,11 +136,12 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
       std::string("Negative delay requested.\n"));
 	}
 
-	t_ExpressionDelayBuffer *delayStruct = delayStructure[exprNumber];
+	t_buffer* delayStruct = delayStructure[exprNumber];
+  int length = delayStruct->length();
 
-	if (!delayStruct || delayStruct->currentIndex == 0) {
+	if (length == 0) {
 	  // This occurs in the initialization phase
-	  //fprintf(stderr, "delayImpl: Missing initial value, using argument value instead.\n");
+	  // fprintf(stderr, "delayImpl: Missing initial value, using argument value instead.\n");
 	  return exprValue;
 	}
 
@@ -207,35 +156,38 @@ double delayImpl(int exprNumber, double exprValue, double time, double delayTime
 
 	if (time <= tStart + delayTime) {
 		//fprintf(stderr, "findTime: time <= tStart + delayTime\n");
-		return delayStruct->expressionDelayBuffer[0].value;
+		return (*delayStruct)[0].value;
 	}
 	else {
 		// return expr(time-delayTime)
 		assert(delayTime >= 0.0);
+    double skipToTimeStamp = time - delayMax;
 		double timeStamp = time - delayTime;
 		double time0, time1, value0, value1;
+    
+    int i;
 
 		// find the row for the lower limit
-		int i;
-    if (timeStamp > delayStruct->expressionDelayBuffer[delayStruct->currentIndex - 1].time) {
+    if (timeStamp > (*delayStruct)[length - 1].time) {
       // delay between the last accepted time step and the current time
-      time0 = delayStruct->expressionDelayBuffer[delayStruct->currentIndex - 1].time;
-      value0 = delayStruct->expressionDelayBuffer[delayStruct->currentIndex - 1].value;
+      time0 = (*delayStruct)[length - 1].time;
+      value0 = (*delayStruct)[length - 1].value;
       time1 = time;
       value1 = exprValue;
     }
     else {
-      i = findTime(timeStamp, delayStruct);
-      assert(i < delayStruct->currentIndex);
+      i = findTime(timeStamp, *delayStruct);
+      assert(i < length);
+      time0 = (*delayStruct)[i].time;
+      value0 = (*delayStruct)[i].value;
       // Was it the last value?
-      if (i+1 == delayStruct->currentIndex) {
+      if (i+1 == length) {
+        if (i>0 && delayMax == delayTime) (*delayStruct).dequeue_n_first(i-1);
         return value0;
       }
-      t_TimeAndValue *nearest = delayStruct->expressionDelayBuffer + i;
-      time0 = nearest[0].time;
-      value0 = nearest[0].value;
-      time1 = nearest[1].time;
-      value1 = nearest[1].value;
+      time1 = (*delayStruct)[i+1].time;
+      value1 = (*delayStruct)[i+1].value;
+      if (i>0 && delayMax == delayTime) (*delayStruct).dequeue_n_first(i-1);
     }
 
 		// was it an exact match?

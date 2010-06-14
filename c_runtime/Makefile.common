@@ -29,11 +29,12 @@ HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a
 
 .PHONY : libsendData.a libsendDataHumbug.a
-all : libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) install
+all : install
 
 #recompile all if a header changes!
 $(SIMOBJS) : $(HFILES)
 $(OBJS) : $(HFILES)
+simulation_delay.o : ringbuffer.h
 
 libc_runtime.a : $(OBJS) $(HFILES)
 	$(AR) $@ $(OBJS)

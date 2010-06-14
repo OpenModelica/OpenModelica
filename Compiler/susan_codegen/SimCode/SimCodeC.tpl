@@ -1032,22 +1032,21 @@ template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
 end functionCheckForDiscreteChanges;
 
 
-template functionStoreDelayed(list<tuple<DAE.Exp, DAE.Exp>> delayedExps)
+template functionStoreDelayed(DelayedExpression delayed)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
-  let storePart = (delayedExps |> (id, e) =>
+  let storePart = (match delayed case DELAYED_EXPRESSIONS(__) then (delayedExps |> (id, e) =>
       let &preExp = buffer "" /*BUFD*/
-      let idRes = daeExp(id, contextSimulationNonDiscrete,
-                       &preExp /*BUFC*/, &varDecls /*BUFC*/)
       let eRes = daeExp(e, contextSimulationNonDiscrete,
                       &preExp /*BUFC*/, &varDecls /*BUFC*/)
       <<
       <%preExp%>
-      storeDelayedExpression(<%idRes%>, <%eRes%>);
+      storeDelayedExpression(<%id%>, <%eRes%>);
       >>
-    )
+    ))
   <<
+  int numDelayExpressionIndex = <%match delayed case DELAYED_EXPRESSIONS(__) then maxDelayedIndex%>;
   int function_storeDelayed()
   {
     state mem_state;
@@ -3460,6 +3459,7 @@ template daeExpBinary(Exp exp, Context context, Text &preExp /*BUFP*/,
                       Text &varDecls /*BUFP*/)
  "Generates code for a binary expression."
 ::=
+
 match exp
 case BINARY(__) then
   let e1 = daeExp(exp1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -3736,7 +3736,8 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let tvar = tempDecl("modelica_real", &varDecls /*BUFC*/)
     let var1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let var2 = daeExp(d, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>);<%\n%>'
+    let var3 = daeExp(delayMax, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let &preExp += '<%tvar%> = delayImpl(<%index%>, <%var1%>, time, <%var2%>, <%var3%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="mmc_get_field"),

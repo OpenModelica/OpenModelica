@@ -33,7 +33,7 @@
 #define _SIMULATION_DELAY_H
 
 void initDelay(double startTime);
-double delayImpl(int exprNumber, double exprValue, double time, double delayTime);
+double delayImpl(int exprNumber, double exprValue, double time, double delayTime, double maxDelay);
 void storeDelayedExpression(int exprNumber, double exprValue);
 
 #endif

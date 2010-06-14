@@ -118,9 +118,17 @@ uniontype SimCode
     list<DAE.ComponentRef> discreteModelVars;
     ExtObjInfo extObjInfo;
     MakefileParams makefileParams;
-    list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
+    DelayedExpression delayedExps;
   end SIMCODE;
 end SimCode;
+
+// Delayed expressions type
+uniontype DelayedExpression
+  record DELAYED_EXPRESSIONS
+    list<tuple<Integer, DAE.Exp>> delayedExps;
+    Integer maxDelayedIndex;
+  end DELAYED_EXPRESSIONS;
+end DelayedExpression;
 
 // Root data structure containing information required for templates to
 // generate C functions for Modelica/MetaModelica functions.
@@ -1114,7 +1122,7 @@ algorithm
       String cname, filename, funcfilename, fileDir;
       list<list<Integer>> blt_states,blt_no_states,comps;
       list<list<Integer>> contBlocks,discBlocks;
-      Integer n_h,nres;
+      Integer n_h,nres,maxDelayedExpIndex;
       list<HelpVarInfo> helpVarInfo,helpVarInfo1;
       DAE.DAElist dae;
       DAELow.DAELow dlow,dlow2;
@@ -1140,7 +1148,7 @@ algorithm
       list<DAE.ComponentRef> discreteModelVars;
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
-      list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
+      list<tuple<Integer, DAE.Exp>> delayedExps;
       list<DAE.Exp> divLst;
       list<DAE.Statement> allDivStmts;
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,fileDir,functions,libs)
@@ -1175,7 +1183,7 @@ algorithm
         whenClauses = createSimWhenClauses(dlow2);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         makefileParams = createMakefileParams(libs);
-        delayedExps = extractDelayedExpressions(dlow2);
+        (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
         
         // replace div operator with div operator with check of Division by zero
         (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
@@ -1202,7 +1210,7 @@ algorithm
                           algorithmAndEquationAsserts, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
                           discreteModelVars, extObjInfo, makefileParams,
-                          delayedExps);
+                          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex));
       then
         simCode;
     case (_,_,_,_,_,_,_,_,_,_,_)
@@ -1215,9 +1223,10 @@ end createSimCode;
 
 protected function extractDelayedExpressions
   input DAELow.DAELow dlow;
-  output list<tuple<DAE.Exp, DAE.Exp>> delayedExps;
+  output list<tuple<Integer, DAE.Exp>> delayedExps;
+  output Integer maxDelayedExpIndex;
 algorithm
-  delayedExps := matchcontinue(dlow)
+  (delayedExps,maxDelayedExpIndex) := matchcontinue(dlow)
     local
       list<DAE.Exp> exps;
       list<list<DAE.Exp>> subexps;
@@ -1227,21 +1236,23 @@ algorithm
         subexps = Util.listMap(exps, DAELow.findDelaySubExpressions);
         exps = Util.listFlatten(subexps);
         delayedExps = Util.listMap(exps, extractIdAndExpFromDelayExp);
+        maxDelayedExpIndex = Util.listFold(Util.listMap(delayedExps, Util.tuple21), intMax, -1);
       then
-        delayedExps;
+        (delayedExps,maxDelayedExpIndex+1);
   end matchcontinue;
 end extractDelayedExpressions;
 
 function extractIdAndExpFromDelayExp
   input DAE.Exp delayCallExp;
-  output tuple<DAE.Exp, DAE.Exp> delayedExp;
+  output tuple<Integer, DAE.Exp> delayedExp;
 algorithm
   delayedExp :=
   matchcontinue (delayCallExp)
     local
       DAE.Exp id, e, delay, delayMax;
-    case (DAE.CALL(path=Absyn.IDENT("delay"), expLst={id,e,delay,delayMax}))
-      then ((id, e));
+      Integer i;
+    case (DAE.CALL(path=Absyn.IDENT("delay"), expLst={DAE.ICONST(i),e,delay,delayMax}))
+      then ((i, e));
   end matchcontinue;
 end extractIdAndExpFromDelayExp;
 
