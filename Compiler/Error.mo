@@ -439,7 +439,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
           "Type mismatch in modifier: declared type %s, got modifier %s of type %s."),
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
-          "An error occured while flattening class %s."),
+          "Flattening of class %s failed."),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
 		      "Expression %s in for-statement must be an array type."),
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
