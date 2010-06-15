@@ -21,6 +21,8 @@ LIBSENDDATA = lib@LIBSENDDATA@.a
 include Makefile.common
 
 libsendData.a :
-	cd ./sendData && qmake && $(MAKE) -f Makefile
-
+	cd ./sendData && qmake && if test -d sendData.xcodeproj/; then xcodebuild; else $(MAKE) -f Makefile; fi
 omdevinstall:
+
+Makefile: Makefile.in
+	cd $(top_builddir); ./config.status
