@@ -72,7 +72,6 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/wait.h>
 #include <time.h>
 #include "systemimpl.h"
 #include "rml.h"
@@ -96,6 +95,7 @@
 #include <dirent.h>
 #include <sys/param.h> /* MAXPATHLEN */
 #include <sys/unistd.h>
+#include <sys/wait.h> /* only available in Linux, not windows */
 #include <unistd.h>
 #include <dlfcn.h>
 
@@ -1462,7 +1462,7 @@ RML_END_LABEL
 /* is the same for both Windows/Linux */
 RML_BEGIN_LABEL(System__systemCall)
 {
-  int status,ret_val;
+  int status = -1,ret_val = -1;
   char* str = RML_STRINGDATA(rmlA0);
 
   if (rml_trace_enabled)
@@ -1472,10 +1472,14 @@ RML_BEGIN_LABEL(System__systemCall)
 
   status = system(str);
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  ret_val = status;
+#else
   if (WIFEXITED(status)) /* Did the process exit normally? */
     ret_val = WEXITSTATUS(status); /* Fetch the actual exit status */
   else
     ret_val = -1;
+#endif
 
   if (rml_trace_enabled)
   {
