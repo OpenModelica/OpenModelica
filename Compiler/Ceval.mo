@@ -1648,7 +1648,7 @@ algorithm
         (cache,Values.INTEGER(v),st);
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,impl,st,msg)
       equation
-        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
+        (cache,attr,tp,bind,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
         sizelst = Types.getDimensionSizes(tp);
         (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dim, impl, st, NONE, msg);
@@ -1676,14 +1676,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as true),st,msg)
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
+        (cache,attr,tp,bind,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=true, just silently fail" ;
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
+        (cache,attr,tp,bind,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions not known and impl=false, error message" ;
 
         false = Types.dimensionsKnown(tp);
         cr_str = Exp.printComponentRefStr(cr);
@@ -1695,14 +1695,14 @@ algorithm
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),dim,(impl as false),st,NO_MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,bind,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,attr,tp,bind,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         false = Types.dimensionsKnown(tp);
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
+        (cache,attr,tp,DAE.UNBOUND(),_,_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding" ;
         expstr = Exp.printExpStr(exp);
         Error.addMessage(Error.UNBOUND_VALUE, {expstr});
       then
@@ -1710,13 +1710,13 @@ algorithm
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as false),st,NO_MSG())
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,attr,tp,DAE.UNBOUND(),_,_,_,_) = Lookup.lookupVar(cache,env, cr);
       then
         fail();
     case (cache,env,(exp as DAE.CREF(componentRef = cr,ty = crtp)),dim,(impl as true),st,msg)
       local DAE.Exp dim;
       equation
-        (cache,attr,tp,DAE.UNBOUND(),_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
+        (cache,attr,tp,DAE.UNBOUND(),_,_,_,_) = Lookup.lookupVar(cache,env, cr) "For crefs without value binding. If impl=true just silently fail" ;
       then
         fail();
 
@@ -1726,7 +1726,7 @@ algorithm
         Values.Value v;
         DAE.Exp dim;
       equation 
-        (cache,attr,tp,binding,_,_,_) = Lookup.lookupVar(cache,env, cr)  ;     
+        (cache,attr,tp,binding,_,_,_,_) = Lookup.lookupVar(cache,env, cr)  ;     
         (cache,Values.INTEGER(dimv),st_1) = ceval(cache,env, dim, impl, st, NONE, msg);
         (cache,v) = cevalCrefBinding(cache,env, cr, binding, impl, msg);
         v2 = cevalBuiltinSize2(v, dimv);
@@ -4226,7 +4226,7 @@ algorithm
     // size(cr)
     case (cache,env,DAE.CREF(componentRef = cr,ty = tp),impl,st,msg)
       equation
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sizelst = Types.getDimensionSizes(tp);
         v = ValuesUtil.intlistToValue(sizelst);
       then
@@ -4661,7 +4661,7 @@ algorithm
 		// Try to lookup the variables binding and constant evaluate it.
 		case (cache, env, c, impl, msg)
 			equation
-				(cache, _, _, binding, const_for_range, _, _) = Lookup.lookupVar(cache, env, c);
+				(cache, _, _, binding, const_for_range, _, _, _) = Lookup.lookupVar(cache, env, c);
 				(cache, v) = cevalCref2(cache, env, c, binding, const_for_range, impl, msg);
 			then
 				(cache, v);
@@ -4669,7 +4669,7 @@ algorithm
     // failure in lookup and we have the MSG go-ahead to print the error
     case (cache,env,c,(impl as false),MSG())
       equation
-        failure((_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
+        failure((_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
         scope_str = Env.printEnvPathStr(env);
         str = Exp.printComponentRefStr(c);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {str,scope_str});
@@ -4679,7 +4679,7 @@ algorithm
     // failure in lookup but NO_MSG, silently fail and move along
     case (cache,env,c,(impl as false),NO_MSG())
       equation
-        failure((_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
+        failure((_,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, c));
       then
         fail();
   end matchcontinue;
@@ -4760,7 +4760,7 @@ algorithm
         Debug.fprint("tcvt", "+++++++ Ceval.cevalCrefBinding DAE.VALBOUND\n");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache, env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache, env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
@@ -4790,7 +4790,7 @@ algorithm
         failure(equality(rfn = "array"));
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
@@ -4802,7 +4802,7 @@ algorithm
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
       then
@@ -4813,7 +4813,7 @@ algorithm
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,res)= cevalSubscriptValue(cache,env, subsc, e_val, sizelst, impl, msg);
       then
@@ -4824,7 +4824,7 @@ algorithm
       equation
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache,env, exp, impl, NONE, NONE, msg);
         (cache,res) = cevalSubscriptValue(cache,env, subsc, v, sizelst, impl, msg);
@@ -4836,7 +4836,7 @@ algorithm
       equation 
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
-        (cache,_,tp,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
+        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
         (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
@@ -4854,14 +4854,15 @@ algorithm
       then
         fail();
 
-    case (cache,_,e1,DAE.EQBOUND(exp = exp),_,_)
+    case (cache,env,e1,inBinding,_,_)
       equation
-        /* FAILTRACE REMOVE
+        true = RTOpts.debugFlag("ceval");
         s1 = Exp.printComponentRefStr(e1);
-        s2 = Exp.printExpStr(exp);
-        str = Util.stringAppendList({"- Ceval.cevalCrefBinding: ",s1," = ",s2," failed\n"});
-        Debug.fprint("failtrace", str);
-        */
+        s2 = Types.printBindingStr(inBinding);
+        str = Env.printEnvPathStr(env);
+        str = Util.stringAppendList({"- Ceval.cevalCrefBinding: ", 
+                s1, " = [", s2, "] in env:", str, " failed\n"});
+        Debug.fprint("ceval", str);
       then
         fail();
   end matchcontinue;

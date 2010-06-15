@@ -1023,7 +1023,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // records
   case(value as Values.RECORD(_,vals,names,-1),env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     equation
-      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
       fr = Env.newFrame(false);
       complexEnv = makeComplexEnv({fr},nlist);
@@ -1036,7 +1036,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // any other values with ident cref
   case(value,env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     equation
-      (_,_,t,DAE.VALBOUND(value2),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t,DAE.VALBOUND(value2),_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       value = mergeValues(value2,value,subs,env,t); 
       env1 = updateVarinEnv(env,str,value,t);
     then
@@ -1044,20 +1044,20 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // any other values with qualified cref
   case(value,env,me as Absyn.CREF(Absyn.CREF_QUAL(str,subs,child))) 
     equation 
-      (_,_,t,DAE.VALBOUND(value2),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t,DAE.VALBOUND(value2),_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
     then
       env1;
   // failure
   case(_,_,Absyn.CREF(dbgcr)) 
-      equation
-        true = RTOpts.debugFlag("failtrace");
-        //(Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
-        dbgString = Dump.printComponentRefStr(dbgcr);
-        dbgString = Util.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
-        Debug.fprint("failtrace", dbgString);
-      then fail();
-  end matchcontinue;
+    equation
+      true = RTOpts.debugFlag("failtrace");
+      //(Absyn.CREF_IDENT(dbgString,_)) = Absyn.crefGetFirst(dbgcr);
+      dbgString = Dump.printComponentRefStr(dbgcr);
+      dbgString = Util.stringAppendList({"- Cevalfunc.setValue failed for ", dbgString,"\n"});
+      Debug.fprint("failtrace", dbgString);
+    then fail();
+end matchcontinue;
 end setValue;
 
 protected function addForLoopScope 
@@ -1105,7 +1105,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
   case( ( (frame as Env.FRAME(farg1, farg2, farg3, farg4, farg6, farg7,defineUnits) ) :: frames),inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
-      (_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
         Env.FRAME(farg1,farg22,farg3,farg4,farg6,farg7,defineUnits) :: frames;    
@@ -1199,12 +1199,12 @@ algorithm
 
     case(env,varName,newVal,ty)
       equation
-        (_,_,t,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        (_,_,t,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), env,DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
         // print("updateVarinEnv -> component: " +& varName +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         // print("updateVarinEnv -> component: " +& varName +& " ACTUAL ty: " +& Types.printTypeStr(t) +& "\n");
         env1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,ty,DAE.VALBOUND(newVal),NONE()), Env.VAR_TYPED(), {}); 
+          false,ty,DAE.VALBOUND(newVal),NONE()), Env.VAR_TYPED(), {}); 
       then
         env1;
     case(_,_,_,_) equation
@@ -1214,17 +1214,16 @@ algorithm
 end updateVarinEnv;
 
 protected function makeBinding "Function: makeBinding
-This function will evaluate possible mods(input) and if a bindingvalue is found it will
-return a DAE.VALBOUND otherwise a DAE.UNBOUND
-"
+This function will evaluate possible mods(input) 
+and if a bindingvalue is found it will return a 
+DAE.VALBOUND otherwise a DAE.UNBOUND"
   input SCode.Mod inMod;
   input Env.Env env;
   input DAE.Type baseType;
   input HashTable2.HashTable ht2;
   output DAE.Binding outBind;
 algorithm
-  outBind :=
-  matchcontinue(inMod,env,baseType, ht2)
+  outBind := matchcontinue(inMod,env,baseType, ht2)
     local
       tuple<Absyn.Exp,Boolean> absynExp;
       Absyn.Exp ae1;
@@ -1442,14 +1441,12 @@ end getBuiltInTypeFromName;
 
 protected function getOutputVarValues "Function: getOutPutVarValues
 This function get the output variables and looks them up in the env.
-NOTE: now we only return one value to fit Ceval.mo
-"
-input list<SCode.Element> elements;
-input Env.Env env;
-output list<Values.Value> res;
+NOTE: now we only return one value to fit Ceval.mo"
+  input list<SCode.Element> elements;
+  input Env.Env env;
+  output list<Values.Value> res;
 algorithm
-  res :=
-  matchcontinue(elements,env)
+  res := matchcontinue(elements,env)
       local
         list<SCode.Element> eles1;
         SCode.Element ele1;
@@ -1459,7 +1456,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,DAE.VALBOUND(value),_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        (_,_,_,DAE.VALBOUND(value),_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval;

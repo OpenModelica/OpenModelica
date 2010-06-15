@@ -52,6 +52,7 @@ public import Env;
 public import RTOpts;
 public import SCode;
 public import Util;
+public import Types;
 
 protected import Builtin;
 protected import Connect;
@@ -63,12 +64,11 @@ protected import Inst;
 protected import InstExtends;
 protected import InnerOuter;
 protected import Mod;
-protected import ModUtil;
 protected import Prefix;
 protected import Static;
-public import Types;
 protected import UnitAbsyn;
 protected import DAEUtil;
+// protected import ModUtil;
 
 public uniontype SearchStrategy
   record SEARCH_LOCAL_ONLY
@@ -627,14 +627,14 @@ algorithm
         f::prevFrames = listReverse(env);
         cref = Exp.pathToCref(path);
         cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-        (cache,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
+        (cache,_,_,_,_,_,_,_) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
       then
         (cache,true);
 
     // look into the parent scope
     case (cache,(_ :: fs),env,ident)
       equation
-        (cache,res) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
+        (cache,res) = moreLookupUnqualifiedImportedVarInFrame(cache, fs, env, ident);
       then
         (cache,res);
 
@@ -650,15 +650,16 @@ protected function lookupUnqualifiedImportedVarInFrame "function: lookupUnqualif
   input Env.Env inEnv;
   input SCode.Ident inIdent;
   output Env.Cache outCache;
-  output Env.Env outEnv;
+  output Env.Env outClassEnv;
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
   output Boolean outBoolean;
   output SplicedExpData splicedExpData;
+  output Env.Env outComponentEnv;  
 algorithm
-  (outCache,outEnv,outAttributes,outType,outBinding,constOfForIteratorRange,outBoolean,splicedExpData):=
+  (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,outBoolean,splicedExpData,outComponentEnv):=
   matchcontinue (inCache,inEnvItemLst,inEnv,inIdent)
     local
       Env.Frame fr,f;
@@ -667,7 +668,7 @@ algorithm
       String id,ident;
       Boolean encflag,more,unique;
       SCode.Restriction restr;
-      list<Env.Frame> env_1,env2,env,p_env,prevFrames;
+      list<Env.Frame> env_1,env2,env,classEnv,componentEnv,prevFrames;
       ClassInf.State ci_state;
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
@@ -684,17 +685,17 @@ algorithm
         f::prevFrames = listReverse(env);
         cref = Exp.pathToCref(path);
         cref = Exp.joinCrefs(cref,DAE.CREF_IDENT(ident,DAE.ET_OTHER(),{}));
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
-        (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
+        (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv) = lookupVarInPackages(cache,{f},cref,prevFrames,Util.makeStatefulBoolean(false));
+        (cache,more) = moreLookupUnqualifiedImportedVarInFrame(cache, fs, env, ident);
         unique = boolNot(more);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData);
+        (cache,classEnv,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv);
     // search in the parent scopes
     case (cache,(_ :: fs),env,ident)
       equation
-        (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData) = lookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
+        (cache,classEnv,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv) = lookupUnqualifiedImportedVarInFrame(cache,fs, env, ident);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData);
+        (cache,classEnv,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv);
   end matchcontinue;
 end lookupUnqualifiedImportedVarInFrame;
 
@@ -963,15 +964,15 @@ algorithm
       DAE.Attributes attr1;
     // unqualified component reference
     case(cache,env,cr as DAE.CREF_IDENT(ident=_)) equation
-      (cache,attr1,ty1,_,_,_) = lookupVarLocal(cache,env,cr);
+      (cache,attr1,ty1,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
     then (cache,attr1,ty1);
 
     // qualified component reference
     case(cache,env,cr as DAE.CREF_QUAL(ident=_)) equation
-       (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_,_,_) = lookupVarLocal(cache,env,cr);
+       (cache,attr1 as DAE.ATTR(f,streamPrefix,acc,var,dir,_),ty1,_,_,_,_,_) = lookupVarLocal(cache,env,cr);
       cr1 = Exp.crefStripLastIdent(cr);
       /* Find innerOuter attribute from "parent" */
-      (cache,DAE.ATTR(innerOuter=io),_,_,_,_) = lookupVarLocal(cache,env,cr1);
+      (cache,DAE.ATTR(innerOuter=io),_,_,_,_,_,_) = lookupVarLocal(cache,env,cr1);
     then (cache,DAE.ATTR(f,streamPrefix,acc,var,dir,io),ty1);
   end matchcontinue;
 end lookupConnectorVar;
@@ -1007,42 +1008,54 @@ looks in the types
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";
-  output SplicedExpData spliceExpData;
-  output Env.Env outEnv "only used for package constants";
+  output SplicedExpData outSplicedExpData;
+  output Env.Env outClassEnv "only used for package constants";
+  output Env.Env outComponentEnv "only used for package constants";
 algorithm
-  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,spliceExpData,outEnv):=
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,outSplicedExpData,outClassEnv,outComponentEnv) :=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Attributes attr;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding binding;
-      list<Env.Frame> env,p_env;
+      list<Env.Frame> env, componentEnv, classEnv;
       DAE.ComponentRef cref;
       Env.Cache cache;
       SplicedExpData splicedExpData;
       Option<DAE.Const> cnstForRange;
       Boolean mustBeConstant;
     
+    /*
+    case (cache,env,cref)
+      equation
+        true = RTOpts.debugFlag("lookup");
+        Debug.traceln("lookupVar: " +& 
+          Exp.printComponentRefStr(cref) +& 
+          " in env: " +& 
+          Env.printEnvPathStr(env) +& "\n");
+      then 
+        fail();    
+    */
     // try the old lookupVarInternal
     case (cache,env,cref) 
       equation 
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, env, cref, SEARCH_ALSO_BUILTIN());
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv) = lookupVarInternal(cache, env, cref, SEARCH_ALSO_BUILTIN());
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv);
 
     // then look in classes (implicitly instantiated packages)
     case (cache,env,cref)  
       equation
-        (cache,p_env,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
-        checkPackageVariableConstant(p_env,attr,ty,cref);
+        (cache,classEnv,attr,ty,binding,cnstForRange,splicedExpData,componentEnv) = lookupVarInPackages(cache,env,cref,{},Util.makeStatefulBoolean(false));
+        checkPackageVariableConstant(classEnv,attr,ty,cref);
         // optional exp.exp to return
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,p_env);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,classEnv,componentEnv);
 
     // fail if we couldn't find it
     case (_,env,cref) 
       equation
-        // Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& Exp.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
+        //Debug.fprintln("failtrace",  "- Lookup.lookupVar failed " +& Exp.printComponentRefStr(cref) +& " in " +& Env.printEnvPathStr(env));  
       then fail(); 
   end matchcontinue;
 end lookupVar;
@@ -1086,9 +1099,10 @@ public function lookupVarInternal "function: lookupVarInternal
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
   output SplicedExpData splicedExpData;
-  output Env.Env outEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
+  output Env.Env outClassEnv "the environment of the variable, typically the same as input, but e.g. for loop scopes can be 'stripped'";
+  output Env.Env outComponentEnv "the component environment of the variable";  
 algorithm
-  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outEnv) :=
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outClassEnv,outComponentEnv) :=
   matchcontinue (inCache,inEnv,inComponentRef,searchStrategy)
     local
       DAE.Attributes attr;
@@ -1103,31 +1117,31 @@ algorithm
       Env.Cache cache;
       Option<DAE.Exp> splicedExp;
       Option<DAE.Const> cnstForRange;
-      Env.Env env;
+      Env.Env env,componentEnv;
     
     // look into the current frame  
     case (cache,env as ((frame as Env.FRAME(optName = sid,clsAndVars = ht,imports = imps)) :: fs),ref,searchStrategy)
       equation
-          (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarF(cache, ht, ref);
+          (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv) = lookupVarF(cache, ht, ref);
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv);
 
     // look in the next frame, only if current frame is a for loop scope.
     case (cache,(f :: fs),ref,searchStrategy)
       equation
         true = frameIsImplAddedScope(f);
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env) = lookupVarInternal(cache, fs, ref,searchStrategy);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv) = lookupVarInternal(cache, fs, ref,searchStrategy);
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,env);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,env,componentEnv);
     
     // If not in top scope, look in top scope for builtin variables, e.g. time.
     case (cache,fs as _::_::_,ref,SEARCH_ALSO_BUILTIN())
       equation
         true = Builtin.variableIsBuiltin(ref);
         (f as Env.FRAME(clsAndVars = ht)) = Env.topFrame(fs);
-        (cache,attr,ty,binding,cnstForRange,splicedExpData) = lookupVarF(cache, ht, ref);
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,componentEnv) = lookupVarF(cache, ht, ref);
       then
-        (cache,attr,ty,binding,cnstForRange,splicedExpData,{f});
+        (cache,attr,ty,binding,cnstForRange,splicedExpData,{f},componentEnv);
   end matchcontinue;
 end lookupVarInternal;
 
@@ -1148,7 +1162,6 @@ algorithm
 end frameIsImplAddedScope;
 
 public function lookupVarInPackages "function: lookupVarInPackages
-
   This function is called when a lookup of a variable with qualified names
   does not have the first element as a component, e.g. A.B.C is looked up
   where A is not a component. This implies that A is a class, and this
@@ -1159,30 +1172,31 @@ public function lookupVarInPackages "function: lookupVarInPackages
   Arg1: The environment to search in
   Arg2: The variable to search for
   
-  Note: the splicedExpData is currently not relevant, since constants are always evaluated to a value. However, this might change in the future since
-  it makes more sense to calculate the constants during setup in runtime (to gain precision and postpone choice of precision to runtime).  
-"
+  Note: the splicedExpData is currently not relevant, since constants are always evaluated to a value. 
+        However, this might change in the future since it makes more sense to calculate the constants 
+        during setup in runtime (to gain precision and postpone choice of precision to runtime)."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input DAE.ComponentRef inComponentRef;
   input list<Env.Frame> inPrevFrames "Environment in reverse order. Contains frames we previously had in the scope. Will be looked up instead of the environment in order to avoid infinite recursion.";
   input Util.StatefulBoolean inState "If true, we have found a class. If the path was qualified, we should no longer look in a lower scope.";
   output Env.Cache outCache;
-  output Env.Env outEnv;
+  output Env.Env outClassEnv;
   output DAE.Attributes outAttributes;
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";
   output SplicedExpData splicedExpData "currently not relevant for constants, but might be used in the future";
+  output Env.Env outComponentEnv;
 algorithm 
-  (outCache,outEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData) :=
+  (outCache,outClassEnv,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv) :=
   matchcontinue (inCache,inEnv,inComponentRef,inPrevFrames,inState)
     local
       SCode.Class c;
       String n,id1,id,str,name;
       Boolean encflag;
       SCode.Restriction r;
-      list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames;
+      list<Env.Frame> env2,env3,env5,env,fs,p_env,prevFrames, classEnv, componentEnv;
       ClassInf.State ci_state;
       list<DAE.Var> types;
       DAE.Attributes attr;
@@ -1200,7 +1214,7 @@ algorithm
       Absyn.Path path,scope,ep,p,packp;
       Option<DAE.ComponentRef> filterCref;
       Env.Env dbgEnv;
-      Boolean unique;      
+      Boolean unique;
 
       // If we search for A1.A2....An.x while in scope A1.A2...An, just search for x. 
       // Must do like this to ensure finite recursion 
@@ -1208,9 +1222,9 @@ algorithm
       equation
         (SOME(f),prevFrames) = lookupPrevFrames(id,prevFrames);
         Util.setStatefulBoolean(inState,true);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,f::env,cref,prevFrames,inState);
+        (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv) = lookupVarInPackages(cache,f::env,cref,prevFrames,inState);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,classEnv,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
 
     // lookup of constants on form A.B in packages. First look in cache.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a class. */ 
@@ -1222,10 +1236,10 @@ algorithm
         path = Absyn.stripLast(path);
         f::fs = Env.cacheGet(scope,path,cache);
         Util.setStatefulBoolean(inState,true);
-        (cache,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarLocal(cache,f::fs, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv) = lookupVarLocal(cache,f::fs, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //print("found ");print(Exp.printComponentRefStr(cr));print(" in cache\n");
       then
-        (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,f::fs,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
         
     // lookup of constants on form A.B in packages. instantiate package and look inside.
     case (cache,env,cr as DAE.CREF_QUAL(ident = id,subscriptLst = {},componentRef = cref),prevFrames,inState) /* First part of name is a class. */ 
@@ -1241,18 +1255,18 @@ algorithm
           cache,env3,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, /*true*/false, ConnectionGraph.EMPTY, filterCref);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv) = lookupVarInPackages(cache,env5,cref,prevFrames,inState);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
         
     // Why is this done? It is already done done in lookupVar! 
     // BZ: This is due to recursive call when it might become DAE.CREF_IDENT calls. 
     case (cache,env,(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
-        (cache,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarLocal(cache, env, cr);
+        (cache,attr,ty,bind,cnstForRange,splicedExpData,classEnv,componentEnv) = lookupVarLocal(cache, env, cr);
         Util.setStatefulBoolean(inState,true);
       then
-        (cache,env,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
 
     // Search among qualified imports, e.g. import A.B; or import D=A.B; 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),DAE.CREF_IDENT(ident = id,subscriptLst = sb),prevFrames,inState)
@@ -1260,26 +1274,26 @@ algorithm
         cr = lookupQualifiedImportedVarInFrame(items, id);
         Util.setStatefulBoolean(inState,true);
         f::prevFrames = listReverse(env);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,{f},cr,prevFrames,inState);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv) = lookupVarInPackages(cache,{f},cr,prevFrames,inState);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
 
     // Search among unqualified imports, e.g. import A.B.* 
     case (cache,(env as (Env.FRAME(optName = sid,imports = items) :: _)),(cr as DAE.CREF_IDENT(ident = id,subscriptLst = sb)),prevFrames,inState)
       equation
-        (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
+        (cache,p_env,attr,ty,bind,cnstForRange,unique,splicedExpData,componentEnv) = lookupUnqualifiedImportedVarInFrame(cache,items, env, id);
         reportSeveralNamesError(unique,id);
         Util.setStatefulBoolean(inState,true);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
         
      // Search parent scopes
     case (cache,((f as Env.FRAME(optName = SOME(id))):: fs),cr,prevFrames,inState)
       equation
         false = Util.getStatefulBoolean(inState);
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData) = lookupVarInPackages(cache,fs,cr,f::prevFrames,inState);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv) = lookupVarInPackages(cache,fs,cr,f::prevFrames,inState);
       then
-        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData);
+        (cache,p_env,attr,ty,bind,cnstForRange,splicedExpData,componentEnv);
 
     case (cache,env,cr,prevFrames,inState)
       equation
@@ -1324,11 +1338,13 @@ public function lookupVarLocal "function: lookupVarLocal
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";  
   output SplicedExpData splicedExpData;
+  output Env.Env outClassEnv;
+  output Env.Env outComponentEnv;
 algorithm
   // adrpo: use lookupVarInternal as is the SAME but it doesn't search in the builtin scope!
-  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,_) :=
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outClassEnv,outComponentEnv) :=
   lookupVarInternal(inCache, inEnv, inComponentRef, SEARCH_LOCAL_ONLY());
-  /*
+  /* adrpo: remove this if no new problems appear!
   (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData):=
   matchcontinue (inCache,inEnv,inComponentRef)
     local
@@ -1369,24 +1385,26 @@ public function lookupIdentLocal "function: lookupIdentLocal
   output DAE.Var outVar;
   output Option<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementTypesModOption;
   output Env.InstStatus instStatus;
-  output Env.Env outEnv;
+  output Env.Env outComponentEnv;
 algorithm
-  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outEnv):=
+  (outCache,outVar,outTplSCodeElementTypesModOption,instStatus,outComponentEnv):=
   matchcontinue (inCache,inEnv,inIdent)
     local
       DAE.Var fv;
       Option<tuple<SCode.Element, DAE.Mod>> c;
       Env.InstStatus i;
-      list<Env.Frame> env,fs;
+      list<Env.Frame> env,fs,componentEnv;
       Option<String> sid;
       Env.AvlTree ht;
       String id;
       Env.Cache cache;
+      
     case (cache,env as (Env.FRAME(optName = sid, clsAndVars = ht) :: fs),id) /* component environment */
       equation
-        (cache,fv,c,i,env) = lookupVar2(cache, ht, id);
+        (cache,fv,c,i,componentEnv) = lookupVar2(cache, ht, id);
       then
-        (cache,fv,c,i,env);
+        (cache,fv,c,i,componentEnv);
+
   end matchcontinue;
 end lookupIdentLocal;
 
@@ -1471,10 +1489,7 @@ algorithm
 end lookupAndInstantiate;
 
 public function lookupIdent "function: lookupIdent
-
-  Same as lookup_ident_local, except check all frames
-
-"
+  Same as lookupIdentLocal, except check all frames"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input SCode.Ident inIdent;
@@ -1494,21 +1509,21 @@ algorithm
       String id;
       list<Env.Frame> rest;
       Env.Cache cache;
+
     case (cache,(Env.FRAME(optName = sid,clsAndVars = ht) :: _),id)
       equation
-        (cache,fv,c,i,_) = lookupVar2(cache,ht, id);
+        (cache,fv,c,i,_) = lookupVar2(cache, ht, id);
       then
         (cache,fv,c,i);
     case (cache,(_ :: rest),id)
       equation
-        (cache,fv,c,i) = lookupIdent(cache,rest, id);
+        (cache,fv,c,i) = lookupIdent(cache, rest, id);
       then
         (cache,fv,c,i);
   end matchcontinue;
 end lookupIdent;
 
 // Function lookup
-
 public function lookupFunctionsInEnv
 "function: lookupFunctionsInEnv
   Returns a list of types that the function has."
@@ -2446,9 +2461,10 @@ protected function lookupVarF "function: lookupVarF
   output DAE.Type outType;
   output DAE.Binding outBinding;
   output Option<DAE.Const> constOfForIteratorRange "SOME(constant-ness) of the range if this is a for iterator, NONE if this is not a for iterator";
-  output SplicedExpData splicedExpData;
+  output SplicedExpData splicedExpData;  
+  output Env.Env outComponentEnv; 
 algorithm
-  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData) :=
+  (outCache,outAttributes,outType,outBinding,constOfForIteratorRange,splicedExpData,outComponentEnv) :=
   matchcontinue (inCache,inBinTree,inComponentRef)
     local
       String n,id;
@@ -2460,7 +2476,7 @@ algorithm
       DAE.Binding bind,binding,binding2;
       Env.AvlTree ht;
       list<DAE.Subscript> ss;
-      list<Env.Frame> compenv;
+      list<Env.Frame> componentEnv;
       DAE.Attributes attr;
       DAE.ComponentRef ids;
       Env.Cache cache;
@@ -2476,13 +2492,13 @@ algorithm
       DAE.ExpType eType;
       DAE.Exp splicedExp;
       DAE.ExpType tty;
-      Option<DAE.Const> cnstForRange;        
+      Option<DAE.Const> cnstForRange;
       
 
     // Simple identifier
     case (cache,ht,ids as DAE.CREF_IDENT(ident = id,subscriptLst = ss) )
       equation 
-        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind,cnstForRange),_,_,_) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
         ss = addArrayDimensions(ty,ty_1,ss);
         tty = Types.elabType(ty);     
@@ -2490,18 +2506,18 @@ algorithm
         splicedExp = DAE.CREF(DAE.CREF_IDENT(id,ty2_2, ss),tty);
         //print("splicedExp ="+&Exp.dumpExpStr(splicedExp,0)+&"\n");
       then
-        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),ty));
+        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty_1,bind,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),ty),componentEnv);
 
     // Qualified variables looked up through component environment with a spliced exp
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       local Types.Type idTp;
       equation 
-        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind,cnstForRange),_,_,compenv) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         // outer variables are not local!
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_) = lookupVar(cache,compenv, ids);
+        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv) = lookupVar(cache, componentEnv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
@@ -2511,16 +2527,16 @@ algorithm
         eType = Types.elabType(ty);
         splicedExp = DAE.CREF(xCref,eType);
       then
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp));
+        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv);
 
     // Qualified componentname without spliced exp.
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       equation
-        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind,cnstForRange),_,_,compenv) = lookupVar2(cache,ht, id);
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_) = lookupVar(cache,compenv, ids);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
+        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
       then
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp));
+        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp),componentEnv);
   end matchcontinue;
 end lookupVarF;
 
@@ -2528,7 +2544,6 @@ protected function elabComponentRecursive "
 Helper function for lookupvarF, to return an ComponentRef if there is one."
   input Option<DAE.Exp> oCref;
   output list<DAE.ComponentRef> lref;
-
 algorithm
   lref := matchcontinue(oCref)
     local 

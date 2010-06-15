@@ -61,6 +61,7 @@ protected import Debug;
 protected import Exp;
 protected import Print;
 protected import Util;
+protected import System;
 
 public function printPrefixStr "function: printPrefixStr
   Prints a Prefix to a string."
@@ -556,6 +557,7 @@ algorithm
     // adrpo: handle prefixing of inner/outer variables
     case (cache,env,ih,DAE.CREF(componentRef = p,ty = t),pre)
       equation
+        true = System.getHasInnerOuterDefinitions();
         (cache,p_1) = prefixCrefInnerOuter(cache, env, ih, p, pre);
       then
         (cache,DAE.CREF(p_1,t));
@@ -564,7 +566,7 @@ algorithm
       equation
         // adrpo: ask for NONE() here as if we have SOME(...) it means 
         //        this is a for iterator and WE SHOULD NOT PREFIX IT!
-        (cache,_,_,_,NONE(),_) = Lookup.lookupVarLocal(cache, env, p);
+        (cache,_,_,_,NONE(),_,_,_) = Lookup.lookupVarLocal(cache, env, p);
         p_1 = prefixCref(pre, p);
       then
         (cache,DAE.CREF(p_1,t));
@@ -572,13 +574,13 @@ algorithm
     case (cache,env,_,e as DAE.CREF(componentRef = p,ty = t),pre)
       equation
         // adrpo: do NOT prefix if we have a for iterator!
-        (cache,_,_,_,SOME(_),_) = Lookup.lookupVarLocal(cache, env, p);
+        (cache,_,_,_,SOME(_),_,_,_) = Lookup.lookupVarLocal(cache, env, p);
       then
         (cache,e);
 
     case (cache,env,_,e as DAE.CREF(componentRef = p),pre)
       equation 
-        failure((_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
+        failure((_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
       then
         (cache,e);
     

@@ -1800,6 +1800,30 @@ algorithm
         failure(args = RTOpts.args({str_1}));
       then
         (cache,Values.BOOL(false),st);
+        
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.ARRAY(array = options)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        list<DAE.Exp> options;
+        list<String> strings;      
+      equation
+        strings = Util.listMap(options, sconstToString);
+        args = RTOpts.args(strings);
+      then
+        (cache,Values.BOOL(true),st);
+
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.ARRAY(array = options)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        list<DAE.Exp> options;
+        list<String> strings;
+      equation
+        strings = Util.listMap(options, sconstToString);
+        failure(args = RTOpts.args(strings));
+      then
+        (cache,Values.BOOL(false),st);
+        
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = _),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      then
+        (cache,Values.BOOL(false),st);        
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Integer res;
@@ -2123,6 +2147,16 @@ algorithm
     then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error"),Values.STRING("")}),st_1);
   end matchcontinue;
 end cevalInteractiveFunctions;
+
+protected function sconstToString
+"@author: adrpo
+  Transform an DAE.SCONST into a string.
+  Fails if the given DAE.Exp is not a DAE.SCONST."
+  input DAE.Exp exp;
+  output String str;
+algorithm
+  DAE.SCONST(str) := exp;
+end sconstToString;
 
 protected function setEcho
   input Boolean echo;
@@ -3355,7 +3389,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),st);
@@ -3380,7 +3414,7 @@ algorithm
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
         str = Exp.printExpStr(exp);
       then
@@ -3397,7 +3431,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname);
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.VALBOUND(v),_,_,_) = Lookup.lookupVar(cache, env, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v),_,_,_,_) = Lookup.lookupVar(cache, env, cref_1);
       then
         (cache,v,st);
 
@@ -3421,7 +3455,7 @@ algorithm
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.VALBOUND(v),_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v),_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
         (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
@@ -3465,8 +3499,7 @@ algorithm
   end matchcontinue;
 end setBuildTimeVisitor;
 
-protected function extractNoCleanCommand "Function: extractNoCleanCommand
-"
+protected function extractNoCleanCommand "Function: extractNoCleanCommand"
 input DAE.Exp inexpl;
 output String outString;
 algorithm outString := matchcontinue(inexpl)
@@ -3477,8 +3510,7 @@ algorithm outString := matchcontinue(inexpl)
 end extractNoCleanCommand;
 
 protected function getWithinStatement " function getWithinStatement
-To get a correct Within-path with unknown input-path.
-"
+To get a correct Within-path with unknown input-path."
   input Absyn.Path ip;
   output Absyn.Within op;
 algorithm op :=  matchcontinue(ip)
@@ -3490,9 +3522,8 @@ end getWithinStatement;
 
 protected function compileOrNot " function compileOrNot
 This function compares last-build-time vs last-edit-time, and if we have edited since we built last time
-it fails.
-"
-input Absyn.Class classIn;
+it fails."
+  input Absyn.Class classIn;
 algorithm _:= matchcontinue(classIn)
   local
     Absyn.Class c1;

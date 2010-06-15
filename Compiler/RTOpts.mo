@@ -125,7 +125,7 @@ public function simulationCg
 end simulationCg;
 
 public function simulationCodeTarget
-"@author adrpo
+"@author: adrpo
  returns: 'gcc' or 'msvc'
  usage: omc [+target=gcc|msvc], default to 'gcc'."
   output String outCodeTarget;
@@ -152,7 +152,7 @@ public function versionRequest
   end versionRequest;
 
 public function acceptMetaModelicaGrammar
-"@author adrpo 2007-06-11
+"@author: adrpo 2007-06-11
  returns: true if MetaModelica grammar is accepted or false otherwise
  usage: omc [+g=Modelica|MetaModelica], default to 'Modelica'."
   output Boolean outBoolean;
@@ -161,7 +161,7 @@ public function acceptMetaModelicaGrammar
 end acceptMetaModelicaGrammar;
 
 public function getAnnotationVersion
-"@author adrpo 2008-11-28
+"@author: adrpo 2008-11-28
    returns what flag was given at start
      omc [+annotationVersion=3.x]
    or via the API
@@ -172,7 +172,7 @@ public function getAnnotationVersion
 end getAnnotationVersion;
 
 public function setAnnotationVersion
-"@author adrpo 2008-11-28
+"@author: adrpo 2008-11-28
    setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input String annotationVersion;
@@ -180,7 +180,7 @@ public function setAnnotationVersion
 end setAnnotationVersion;
 
 public function getNoSimplify
-"@author adrpo 2008-12-13
+"@author: adrpo 2008-12-13
    returns what flag was given at start
      omc [+noSimplify]
    or via the API
@@ -190,7 +190,7 @@ public function getNoSimplify
 end getNoSimplify;
 
 public function setNoSimplify
-"@author adrpo 2008-12-13
+"@author: adrpo 2008-12-13
    setAnnotationVersion(\"3.x\");
    for annotations: 1.x or 2.x or 3.x"
   input Boolean noSimplify;

@@ -4350,6 +4350,13 @@ algorithm
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
       then
         (eqnl,(REINIT(cr,e,source) :: reinit));
+
+    case ((DAE.TERMINATE(message = e,source = source) :: xs),i)
+      equation
+        (eqnl,reinit) = lowerWhenEqn2(xs, i);
+        e_2 = Exp.stringifyCrefs(Exp.simplify(e));
+      then
+        ((WHEN_EQUATION(WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE),source) :: eqnl),reinit);
   end matchcontinue;
 end lowerWhenEqn2;
 
@@ -5083,10 +5090,14 @@ algorithm
         outputs =  Util.listMap1(crefs,Exp.makeCrefExp,DAE.ET_OTHER());
       then
         (inputs,outputs);
-        // v := expr   where v is array.
+
+    // v := expr   where v is array.
+    // adrpo: FIXME! TODO! this fails for 
+    //        model bug Real x[2]; algorithm x := {1,1}; end bug;
+    //        Error: Too few equations, underdetermined system. The model has 1 equation(s) and 2 variable(s) 
     case (vars,DAE.STMT_ASSIGN_ARR(tp,cr,e))
       equation
-        inputs = statesAndVarsExp(e,vars);
+        inputs = statesAndVarsExp(e,vars);        
       then (inputs,{DAE.CREF(cr,tp)});
 
     case(vars,DAE.STMT_IF(e,stmts,elsebranch))

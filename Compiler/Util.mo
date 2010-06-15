@@ -4284,7 +4284,9 @@ public function stringAppendList "function stringAppendList
   input list<String> inStringLst;
   output String outString;
 algorithm
-  outString:= stringAppendList_tail(inStringLst, "");
+  // adrpo: MetaModelica now contains this function!
+  // outString := RML.stringAppendList(inStringLst);
+  outString := stringAppendList_tail(inStringLst, "");
   /*
   outString:=
   matchcontinue (inStringLst)

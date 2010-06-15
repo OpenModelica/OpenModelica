@@ -2016,8 +2016,7 @@ algorithm
 end getOptionStr;
 
 protected function printAvlTreeStr "
-  Prints the avl tree to a string
-"
+  Prints the avl tree to a string"
   input AvlTree inAvlTree;
   output String outString;
 algorithm
@@ -2034,7 +2033,7 @@ algorithm
       equation
         s2 = getOptionStr(l, printAvlTreeStr);
         s3 = getOptionStr(r, printAvlTreeStr);
-        res = valueStr(rval) +& ",  " +& s2 +&",  " +& s3;
+        res = "\n" +& valueStr(rval) +& ",  " +& s2 +&",  " +& s3;
       then
         res;
     case (AVLTREENODE(value = NONE,left = l,right = r))
@@ -2083,6 +2082,116 @@ algorithm
     case _ then false;
   end matchcontinue;
 end isTopScope;
+
+public function getVariablesFromEnv 
+"@author: adrpo
+  returns the a list with all the variables in the given environment"
+  input Env inEnv;
+  output list<String> variables;
+algorithm
+  variables := matchcontinue (inEnv)
+    local
+      list<Ident> lst1,lst2,lst;
+      Frame fr;
+      Env frs;
+    // empty case
+    case {} then {};
+    // some environment
+    case (fr :: frs)
+      equation
+        lst1 = getVariablesFromFrame(fr);
+        // adrpo: TODO! FIXME! CHECK if we really don't need this!
+        // lst2 = getVariablesFromEnv(frs);
+        // lst = listAppend(lst1, lst2);
+      then
+        lst1;
+  end matchcontinue;
+end getVariablesFromEnv;
+
+protected function getVariablesFromFrame 
+"@author: adrpo
+  returns all variables in the frame as a list of strings."
+  input Frame inFrame;
+  output list<String> variables;
+algorithm
+  variables := matchcontinue (inFrame)
+    local
+      list<Ident> lst;
+      AvlTree ht;
+
+    case FRAME(clsAndVars = ht)
+      equation
+        lst = getVariablesFromAvlTree(ht);
+      then
+        lst;
+  end matchcontinue;
+end getVariablesFromFrame;
+
+protected function getVariablesFromAvlTree 
+"@author: adrpo
+  returns variables from the avl tree as a list of strings"
+  input AvlTree inAvlTree;
+  output list<String> variables;
+algorithm
+  variables := matchcontinue (inAvlTree)
+    local
+      AvlKey rkey;
+      list<String> lst0, lst1, lst2, lst;
+      AvlValue rval;
+      Option<AvlTree> l,r;
+      Integer h;
+
+    case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height = h,left = l,right = r))
+      equation
+        lst0 = getVariablesFromAvlValue(rval);
+        lst1 = getVariablesFromOptionAvlTree(l);
+        lst2 = getVariablesFromOptionAvlTree(r);
+        lst = listAppend(lst1, lst2);
+        lst = listAppend(lst0, lst);
+      then
+        lst;
+        
+    case (AVLTREENODE(value = NONE,left = l,right = r))
+      equation
+        lst1 = getVariablesFromOptionAvlTree(l);
+        lst2 = getVariablesFromOptionAvlTree(r);
+        lst = listAppend(lst1, lst2);
+      then
+        lst;
+  end matchcontinue;
+end getVariablesFromAvlTree;
+
+protected function getVariablesFromOptionAvlTree
+"@author: adrpo
+  returns the variables from the given optional tree as a list of strings.
+  if the tree is none then the function returns an empty list"
+  input Option<AvlTree> inAvlTreeOpt;
+  output list<String> variables;
+algorithm
+  variables := matchcontinue (inAvlTreeOpt)
+    local
+      list<String> lst1, lst2, lst;
+      AvlTree avl;
+    // handle nothingness
+    case (NONE()) then {};
+    // we have some value
+    case (SOME(avl)) then getVariablesFromAvlTree(avl);
+  end matchcontinue;
+end getVariablesFromOptionAvlTree;
+
+public function getVariablesFromAvlValue 
+"@author:adrpo
+  returns a list with one variable or an empty list"
+  input AvlValue v;
+  output list<String> variables;
+algorithm
+  variables := matchcontinue(v)
+    local 
+      String name; 
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name))) then {name};
+    case(_) then {};
+  end matchcontinue;
+end getVariablesFromAvlValue;
 
 end Env;
 

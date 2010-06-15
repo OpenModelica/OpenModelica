@@ -837,15 +837,17 @@ public function replacementTargets "Returns all targets of the replacement rules
   output list<DAE.ComponentRef> sources;
 algorithm
   sources := matchcontinue(repl)
-  local
-    list<DAE.Exp> targets;
-    list<DAE.ComponentRef> targets2;
-    HashTable2.HashTable ht;
+    local
+      list<DAE.Exp> targets;
+      list<DAE.ComponentRef> targets2;
+      HashTable2.HashTable ht;
+
     case (REPLACEMENTS(ht,_))
       equation
-          targets = HashTable2.hashTableValueList(ht);
-          targets2 = Util.listFlatten(Util.listMap(targets,Exp.getCrefFromExp));
-      then  targets2;
+        targets = HashTable2.hashTableValueList(ht);
+        targets2 = Util.listFlatten(Util.listMap(targets,Exp.getCrefFromExp));
+      then 
+        targets2;
   end matchcontinue;
 end replacementTargets;
 

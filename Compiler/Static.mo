@@ -87,9 +87,7 @@ uniontype Slot
   end SLOT;
 end Slot;
 
-protected import AbsynDep;
 protected import Ceval;
-protected import CevalScript;
 protected import ClassInf;
 protected import Connect;
 protected import Debug;
@@ -112,6 +110,8 @@ protected import Util;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import PrefixUtil;
+// protected import CevalScript;
+// protected import AbsynDep;
 
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
 	input Env.Cache inCache;
@@ -1459,7 +1459,7 @@ algorithm
         
     case(env,{},{}) then env;
     case(env,name::iter_names,c::iter_const) equation
-      (_,_,ty,bind,forIterConst,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}));
+      (_,_,ty,bind,forIterConst,_,_,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}));
       env = Env.extendFrameForIterator(env,name,ty,bind,constToVariabilityAtMostParam(c),forIterConst);
       //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
       env = updateIteratorConst(env,iter_names,iter_const);
@@ -5612,7 +5612,7 @@ algorithm
       equation
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_,dae) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
-        (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,DAE.ATTR(_,_,_,SCode.DISCRETE(),_,_),_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
       then
         (cache,DAE.CALL(Absyn.IDENT("change"),{exp_1},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),dae);
 
@@ -5636,7 +5636,7 @@ algorithm
       equation
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_,_) = elabExp(cache,env, exp, impl, NONE,true);
         Types.simpleType(tp1);
-        (cache,DAE.ATTR(_,_,_,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
+        (cache,_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1);
         Error.addMessage(Error.ARGUMENT_MUST_BE_DISCRETE_VAR, {"First","change"});
       then
         fail();
@@ -7459,6 +7459,15 @@ protected function elabCallInteractive "function: elabCallInteractive
 
     case (cache,env,Absyn.CREF_IDENT(name = "setDebugFlags"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("setDebugFlags"),{DAE.SCONST(str)},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
+    case (cache,env,Absyn.CREF_IDENT(name = "setCommandLineOptions"),{stringArray},{},impl,SOME(st))
+      local
+        Absyn.Exp stringArray;
+        DAE.Exp arr;
+      equation
+          (_, arr, _, _, _) = elabExp(Env.emptyCache(), {}, stringArray, false, NONE(), true);
+       then 
+         (cache, DAE.CALL(Absyn.IDENT("setCommandLineOptions"),{arr},false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
+
     case (cache,env,Absyn.CREF_IDENT(name = "cd"),{Absyn.STRING(value = str)},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("cd"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "cd"),{},{},impl,SOME(st)) then (cache, DAE.CALL(Absyn.IDENT("cd"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
@@ -8482,7 +8491,7 @@ algorithm
         DAE.ComponentRef cref;
       equation
         cref = pathToComponentRef(name);
-        (cache,_,(DAE.T_FUNCTION(funcArg = _),_),_,_,_,env) = Lookup.lookupVar(cache,env,cref);
+        (cache,_,(DAE.T_FUNCTION(funcArg = _),_),_,_,_,env,_) = Lookup.lookupVar(cache,env,cref);
         dae = DAEUtil.emptyDae;
       then (cache,dae);
 
@@ -9942,7 +9951,7 @@ algorithm
     case (cache,env,c,impl,doVect) /* impl */
       equation
         (cache,c_1,_,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
-        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_) = Lookup.lookupVar(cache, env, c_1);
+        (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_,_) = Lookup.lookupVar(cache, env, c_1);
         (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt,io, t, binding, doVect,splicedExpData);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect);        
       then
@@ -10405,7 +10414,7 @@ algorithm
     // if value not constant, but references another parameter, which has a value perform value propagation.
     case (cache,env,cr,acc,variability,forIteratorConstOpt,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData)
       equation
-        (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t,binding_1,_,_,_) = Lookup.lookupVar(cache, env, cref);
+        (cache,DAE.ATTR(_,_,acc_1,variability_1,_,io),t,binding_1,_,_,_,_) = Lookup.lookupVar(cache, env, cref);
         (cache,e,const,acc) = elabCref2(cache, env, cref, acc_1, variability_1,forIteratorConstOpt, io, t, binding_1,doVect,splicedExpData);
       then
         (cache,e,const,acc);
@@ -11184,7 +11193,7 @@ algorithm
       equation
         // Debug.traceln("Try elabSucscriptsDims " +& id);
         cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-        (cache,_,t,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,_,t,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n"); 
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
         ty = Types.elabType(t);
@@ -11198,7 +11207,7 @@ algorithm
       equation
         cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //print("env:");print(Env.printEnvStr(env));print("\n");
-        (cache,_,t,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,_,t,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
         crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter
         (cache,cr,const,dae) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
@@ -11215,7 +11224,7 @@ algorithm
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = ss as _::_,componentRef = subs),crefPrefix,impl)
       equation
         cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
-        (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);
         (cache,ss_1,const1,dae1) = elabSubscriptsDims(cache,env, ss, sl, impl);
@@ -11927,7 +11936,7 @@ algorithm
     case (cache,env,DAE.CREF_IDENT(ident = n,identType = ty2, subscriptLst = ss),prefixCr,impl) /* impl */
       equation
         cr = Exp.joinCrefs(prefixCr,DAE.CREF_IDENT(n,ty2,{}));
-        (cache,_,t,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
+        (cache,_,t,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache,env, ss, sl, impl, Ceval.MSG());
       then
@@ -11951,7 +11960,7 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Integer> sl;
       list<DAE.Subscript> ss_1,ss;
-      list<Env.Frame> env;
+      list<Env.Frame> env, componentEnv;
       Ident n;
       Boolean impl;
       DAE.ComponentRef c_1,c,cr;
@@ -11968,7 +11977,7 @@ algorithm
     // an unqualified component reference
     case (cache,env,DAE.CREF_IDENT(ident = n,subscriptLst = ss),impl) /* impl */ 
       equation 
-        (cache,_,t,_,_,_,_) = Lookup.lookupVar(cache, env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,_,t,_,_,_,_,_) = Lookup.lookupVar(cache, env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.MSG());
         ty2 = Types.elabType(t);
@@ -11978,11 +11987,12 @@ algorithm
     // a qualified component reference
     case (cache,env,DAE.CREF_QUAL(ident = n,subscriptLst = ss,componentRef = c),impl)
       equation
-        (cache,_,t,_,_,_,_) = Lookup.lookupVar(cache, env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,_,t,_,_,_,_,componentEnv) = Lookup.lookupVar(cache, env, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         ty2 = Types.elabType(t);
         sl = Types.getDimensionSizes(t);
         (cache,ss_1) = Ceval.cevalSubscripts(cache, env, ss, sl, impl, Ceval.MSG());
-       (cache,c_1) = canonCref2(cache, env, c, DAE.CREF_IDENT(n,ty2,ss), impl);
+       //(cache,c_1) = canonCref2(cache, env, c, DAE.CREF_IDENT(n,ty2,ss), impl);
+       (cache, c_1) = canonCref(cache, componentEnv, c, impl);
       then
         (cache,DAE.CREF_QUAL(n,ty2, ss_1,c_1));
 

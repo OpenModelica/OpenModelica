@@ -39,8 +39,7 @@ package DAE
   This module defines data structures for DAE equations and declarations of
   variables and functions. The DAE data structure is the result of flattening,
   containing only flat modelica, i.e. equations, algorithms, variables and
-  functions.
-"
+  functions."
 
 public import Absyn;
 public import ClassInf;

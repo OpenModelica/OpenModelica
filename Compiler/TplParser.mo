@@ -1075,7 +1075,7 @@ end templPackage;
 /*
 definitions(astDefs,templDefs):
 	'typeview' stringConstant:strRevList 
-	  { ads = typeviewDefsFromFile(stringAppendList(listReverse(strRevList), astDefs) }
+	  { ads = typeviewDefsFromFile(Util.stringAppendList(listReverse(strRevList), astDefs) }
 	  definitions(ads, templDefs):(ads,tds) 
 	  => (ads,tds)
 	| 
@@ -6000,7 +6000,7 @@ matchBinding_base:
 	  => LIST_MATCH(headMExp :: mrest)
 	|
 	stringConstant:strRevList 
-	  => STRING_MATCH(stringAppendList(listReverse(strRevList))
+	  => STRING_MATCH(Util.stringAppendList(listReverse(strRevList))
 	|
 	literalConstant:(str,litType) 
 	  => LITERAL_MATCH(str,litType)

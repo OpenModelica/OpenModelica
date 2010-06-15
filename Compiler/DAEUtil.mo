@@ -49,8 +49,7 @@ public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE
 public constant DAE.DAElist emptyDae = DAE.DAE({},emptyFuncTree);
 
 public function constStr "return the DAE.Const as a string. (VAR|PARAM|CONST)
-Used for debugging.
-"
+Used for debugging."
   input DAE.Const const;
   output String str;
 algorithm
@@ -378,10 +377,76 @@ public function removeVariables "Remove the variables in the list from the DAE"
   input list<DAE.ComponentRef> vars;
   output DAE.DAElist outDae;
 algorithm
-  outDae := Util.listFold(vars,removeVariable,dae);
+  // adrpo: TODO! FIXME! rather expensive function! 
+  //        implement this by walking dae once and check element with each var in the list
+  //        instead of walking the dae once for each var.
+  // outDae := Util.listFold(vars,removeVariable,dae);  
+  outDae := matchcontinue(dae, vars)
+    local
+      list<DAE.Element> elements;
+      DAE.FunctionTree functions;
+      
+    case (DAE.DAE(elements, functions), vars)
+      equation
+        elements = removeVariablesFromElements(elements, vars);
+      then
+        DAE.DAE(elements, functions);
+  end matchcontinue;
 end removeVariables;
 
-public function removeVariable "Remove the variable from the DAE"
+protected function removeVariablesFromElements
+"@author: adrpo
+  remove the variables that match for the element list"
+  input list<DAE.Element> inElements;
+  input list<DAE.ComponentRef> variableNames;
+  output list<DAE.Element> outElements;
+algorithm
+  outElements := matchcontinue(inElements,variableNames)
+    local
+      DAE.ComponentRef cr;
+      list<DAE.Element> rest, els, elist;
+      DAE.Element e,v; String id;
+      DAE.ElementSource source "the origin of the element";
+
+    // empty case
+    case({},_) then {};
+
+    // variable present, remove it
+    case(DAE.VAR(componentRef = cr)::rest, variableNames)
+      equation
+        // variable is in the list! jump over it
+        _::_ = Util.listSelect1(variableNames, cr, Exp.crefEqual);
+        els = removeVariablesFromElements(rest, variableNames);
+      then 
+        els;
+
+    // variable not present, keep it        
+    case((v as DAE.VAR(componentRef = cr))::rest, variableNames)
+      equation
+        // variable NOT in the list! jump over it
+        {} = Util.listSelect1(variableNames, cr, Exp.crefEqual);
+        els = removeVariablesFromElements(rest, variableNames);
+      then 
+        v::els;
+
+    // handle components
+    case(DAE.COMP(id,elist,source)::rest, variableNames)
+      equation
+        elist = removeVariablesFromElements(elist, variableNames);
+        els = removeVariablesFromElements(rest, variableNames);
+      then 
+        DAE.COMP(id,elist,source)::els;
+
+    // anything else, just keep it
+    case(v::rest, variableNames)
+      equation
+        els = removeVariablesFromElements(rest, variableNames);
+      then 
+        v::els;
+  end matchcontinue;
+end removeVariablesFromElements;
+
+protected function removeVariable "Remove the variable from the DAE"
   input DAE.ComponentRef var;
   input DAE.DAElist dae;
   output DAE.DAElist outDae;
@@ -3162,7 +3227,7 @@ This function traverses the entire dae.
 "
   input DAE.DAElist dae;
   output DAE.DAElist odae;
-algorithm (odae,_) := traverseDAE(dae, nameUniqueVisitor, 0);
+algorithm (odae,_) := traverseDAE(dae, nameUniqueVisitor,0);
 end nameUniqueOuterVars;
 
 protected function nameUniqueVisitor "
@@ -4276,7 +4341,7 @@ end valueStr;
 public function avlTreeNew "Return an empty tree"
   output DAE.AvlTree tree;
 algorithm
-  tree := DAE.AVLTREENODE(NONE,0,NONE,NONE);
+  tree := emptyFuncTree; // DAE.AVLTREENODE(NONE,0,NONE,NONE);
 end avlTreeNew;
 
 public function avlTreeToList "return tree as a flat list of tuples"
