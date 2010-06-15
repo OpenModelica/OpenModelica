@@ -1812,7 +1812,7 @@ algorithm
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "cd"),expLst = {DAE.SCONST(string = str)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* no such directory */
       equation
-        failure(0 = System.directoryExists(str));
+        failure(true = System.directoryExists(str));
         res = Util.stringAppendList({"Error, directory ",str," does not exist,"});
       then
         (cache,Values.STRING(res),st);
@@ -1944,8 +1944,7 @@ algorithm
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {DAE.SCONST(string = name)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */
       equation
-        rest = System.regularFileExists(name);
-        (rest > 0) = true;
+        false = System.regularFileExists(name);
       then
         (cache,Values.BOOL(false),st);
 
@@ -2470,14 +2469,14 @@ algorithm
       Ceval.Msg msg;
       Absyn.Within win1;
       Env.Cache cache;
-      Boolean cdToTemp;
+      Boolean cdToTemp,existFile;
     // do not recompile.
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
           expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,_,options})),
           (st_1 as Interactive.SYMBOLTABLE(ast = p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(_,edit)),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       // If we already have an up-to-date version of the binary file, we don't need to recompile.
       local String exeFile;
-        Real edit,build; Integer existFile;
+        Real edit,build;
         String s1,s2;
       equation
         //cdef = Interactive.getPathedClassInProgram(classname,p);
@@ -2495,7 +2494,7 @@ algorithm
         exeFile = Util.stringAppendList({filenameprefix, ".exe"});
         existFile = System.regularFileExists(exeFile);
         _ = System.cd(oldDir);
-        true = existFile == 0;
+        true = existFile;
     then
       (cache,filenameprefix,method_str,st2,init_filename);
     // compile the model
@@ -2651,7 +2650,7 @@ algorithm
     case (fileprefix,libs,file_dir,_) /* compilation failed */
       equation
         filename = Util.stringAppendList({fileprefix,".log"});
-        0 = System.regularFileExists(filename);
+        true = System.regularFileExists(filename);
         str = System.readFile(filename);
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
         Debug.fprintln("dynload", "compileModel: failed!");
@@ -2662,8 +2661,7 @@ algorithm
       equation
         command = Settings.getCompileCommand();
         false = Util.isEmptyString(command);
-        retVal = System.regularFileExists(command);
-        true = retVal <> 0;
+        false = System.regularFileExists(command);
         str=Util.stringAppendList({"command ",command," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then fail();
@@ -2679,8 +2677,7 @@ algorithm
          * here as it has to work on Linux too
          */
         s_call = Util.stringAppendList({"\"",omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile","\""});
-        retVal = System.regularFileExists(s_call);
-        true = retVal <> 0;
+        false = System.regularFileExists(s_call);
         str=Util.stringAppendList({"command ",s_call," not found. Check $OPENMODELICAHOME"});
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then

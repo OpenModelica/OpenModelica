@@ -1854,8 +1854,7 @@ algorithm
         lstVarVal = iv,compiledFunctions = cf,
         loadedFiles = lf))) /* it the rule above have failed then check if file exists without this omc crashes */
       equation
-        rest = System.regularFileExists(name);
-        (rest > 0) = true;
+        false = System.regularFileExists(name);
       then
         ("error",st);
 
@@ -1869,6 +1868,37 @@ algorithm
         failure(p1 = Parser.parse(name));
       then
         ("error",st);
+
+        /* Checks the installation of OpenModelica and tries to find common errors */
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "checkSettings"),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),st)
+      local
+        list<Values.Value> vals;
+        list<String> vars;
+        String omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd;
+        Boolean omcfound,gcc_res;
+      equation
+        vars = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","OS","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
+        omhome = Util.makeValueOrDefault(System.readEnv,"OPENMODELICAHOME","");
+        omlib = Util.makeValueOrDefault(System.readEnv,"OPENMODELICALIBRARY","");
+        omcpath = omhome +& "/bin/omc" +& System.getExeExt();
+        omcfound = System.regularFileExists(omcpath);
+        os = System.os();
+        usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
+        workdir = System.pwd();
+        platform = System.platform();
+        senddata = System.getSendDataLibs();
+        gcc = System.getCCompiler();
+        gcc_res = 0 == System.systemCall(gcc +& " -v");
+        confcmd = System.configureCommandLine();
+        vals = {Values.STRING(omhome),Values.STRING(omlib),
+                Values.STRING(omcpath),Values.BOOL(omcfound),
+                Values.STRING(usercflags),
+                Values.STRING(workdir),
+                Values.STRING(os),Values.STRING(senddata),
+                Values.STRING(gcc),Values.BOOL(gcc_res),Values.STRING(confcmd)};
+        res = ValuesUtil.valString(Values.RECORD(Absyn.IDENT("OpenModelica.Diagnostics.ImportantValues"),vals,vars,-1));
+      then (res,st);
 
     case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)},argNames = {})))}),
@@ -17702,8 +17732,7 @@ algorithm
     // See that the file exists
     case (file, s as SYMBOLTABLE(pAst,aDep,eAst,ic,iv,cf,lf))
       equation
-        result = System.regularFileExists(file);
-        (result > 0) = true;
+        false = System.regularFileExists(file);
       then
         ("error",s);
     // check if we have the stuff in the loadedFiles!
@@ -18040,8 +18069,7 @@ algorithm
     // See that the file exists
     case (file, s as SYMBOLTABLE(pAst,aDep,eAst,ic,iv,cf,lf))
       equation
-        result = System.regularFileExists(file);
-        (result > 0) = true;
+        false = System.regularFileExists(file);
       then
         ("error",s);
     // check if we have the stuff in the loadedFiles!

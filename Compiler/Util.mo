@@ -5871,7 +5871,32 @@ algorithm
         b;
     case (_,_,_) then false;        
   end matchcontinue;
-end optionEqual;  
+end optionEqual;
   
+public function makeValueOrDefault
+"Returns the value if the function call succeeds, otherwise the default"
+  input FuncAToB inFunc;
+  input Type_a inArg;
+  input Type_b default;
+  output Type_b res;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncAToB
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end FuncAToB;
+algorithm
+  res := matchcontinue (inFunc,inArg,default)
+    local
+      FuncAToB fn;
+    case (fn,inArg,_)
+      equation
+        res = fn(inArg);
+      then res;
+    case (_,_,default) then default;
+  end matchcontinue;
+end makeValueOrDefault;
+
 end Util;
 

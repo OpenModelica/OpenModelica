@@ -72,9 +72,11 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <time.h>
 #include "systemimpl.h"
 #include "rml.h"
+#include "config.h"
 
 /*
  * Platform specific includes and defines
@@ -341,6 +343,13 @@ int str_contain_char( const char* chars, const char chr)
     }
   return 0;
 }
+
+RML_BEGIN_LABEL(System__configureCommandLine)
+{
+  rmlA0 = (void*) mk_scon(CONFIGURE_COMMANDLINE);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /*  this removes chars in second from the beginning and end of the first
     string and returns it */
@@ -1453,7 +1462,7 @@ RML_END_LABEL
 /* is the same for both Windows/Linux */
 RML_BEGIN_LABEL(System__systemCall)
 {
-  int ret_val;
+  int status,ret_val;
   char* str = RML_STRINGDATA(rmlA0);
 
   if (rml_trace_enabled)
@@ -1461,7 +1470,12 @@ RML_BEGIN_LABEL(System__systemCall)
     fprintf(stderr, "System.systemCall: %s\n", str); fflush(stderr);
   }
 
-  ret_val = system(str);
+  status = system(str);
+
+  if (WIFEXITED(status)) /* Did the process exit normally? */
+    ret_val = WEXITSTATUS(status); /* Fetch the actual exit status */
+  else
+    ret_val = -1;
 
   if (rml_trace_enabled)
   {
@@ -1967,7 +1981,7 @@ RML_BEGIN_LABEL(System__directoryExists)
     }
     FindClose(sh);
   }
-  rmlA0 = (void*) mk_icon(ret_val);
+  rmlA0 = (void*) mk_icon(!ret_val);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -1997,7 +2011,7 @@ RML_BEGIN_LABEL(System__regularFileExists)
     FindClose(sh);
   }
 
-  rmlA0 = (void*) mk_icon(ret_val);
+  rmlA0 = (void*) mk_icon(!ret_val);
 
   RML_TAILCALLK(rmlSC);
 }
@@ -2840,18 +2854,18 @@ RML_BEGIN_LABEL(System__directoryExists)
 
   ret_val = stat(str, &buf);
   if (ret_val != 0 ) {
-    rmlA0 = (void*) mk_icon(1);
+    ret_val = 1;
   }
   else {
     if (buf.st_mode & S_IFDIR) {
-      rmlA0 = (void*) mk_icon(0);
+      ret_val = 0;
     }
     else {
-      rmlA0 = (void*) mk_icon(1);
+      ret_val = 1;
     }
   }
+  rmlA0 = (void*) mk_icon(!ret_val);
   RML_TAILCALLK(rmlSC);
-
 }
 RML_END_LABEL
 
@@ -2862,16 +2876,17 @@ RML_BEGIN_LABEL(System__regularFileExists)
   struct stat buf;
   ret_val = stat(str, &buf);
   if (ret_val != 0 ) {
-    rmlA0 = (void*) mk_icon(1);
+    ret_val = 1;
   }
   else {
     if (buf.st_mode & S_IFREG ) {
-      rmlA0 = (void*) mk_icon(0);
+      ret_val = 0;
     }
     else {
-      rmlA0 = (void*) mk_icon(1);
+      ret_val = 1;
     }
   }
+  rmlA0 = (void*) mk_icon(!ret_val);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

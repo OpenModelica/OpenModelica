@@ -4622,6 +4622,10 @@ fi
 
 
 GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config"
+
+ac_config_commands="$ac_config_commands config.h"
+
+
 ac_config_files="$ac_config_files ${GENERATED_AUTOCONF_FILES}"
 
 cat >confcache <<\_ACEOF
@@ -5188,6 +5192,7 @@ esac
 cat >>$CONFIG_STATUS <<_ACEOF || ac_write_fail=1
 # Files that config.status was made for.
 config_files="$ac_config_files"
+config_commands="$ac_config_commands"
 
 _ACEOF
 
@@ -5211,6 +5216,9 @@ Usage: $0 [OPTION]... [TAG]...
 
 Configuration files:
 $config_files
+
+Configuration commands:
+$config_commands
 
 Report bugs to the package provider."
 
@@ -5322,6 +5330,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
+    "config.h") CONFIG_COMMANDS="$CONFIG_COMMANDS config.h" ;;
     "${GENERATED_AUTOCONF_FILES}") CONFIG_FILES="$CONFIG_FILES ${GENERATED_AUTOCONF_FILES}" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -5335,6 +5344,7 @@ done
 # bizarre bug on SunOS 4.1.3.
 if $ac_need_defaults; then
   test "${CONFIG_FILES+set}" = set || CONFIG_FILES=$config_files
+  test "${CONFIG_COMMANDS+set}" = set || CONFIG_COMMANDS=$config_commands
 fi
 
 # Have a temporary directory for convenience.  Make it in the build tree
@@ -5513,7 +5523,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 fi # test -n "$CONFIG_FILES"
 
 
-eval set X "  :F $CONFIG_FILES      "
+eval set X "  :F $CONFIG_FILES      :C $CONFIG_COMMANDS"
 shift
 for ac_tag
 do
@@ -5722,9 +5732,21 @@ which seems to be undefined.  Please make sure it is defined." >&2;}
  ;;
 
 
-
+  :C)  { $as_echo "$as_me:${as_lineno-$LINENO}: executing $ac_file commands" >&5
+$as_echo "$as_me: executing $ac_file commands" >&6;}
+ ;;
   esac
 
+
+  case $ac_file$ac_mode in
+    "config.h":C)
+echo "/* Automatically generated */" > Compiler/runtime/config.unix.h
+echo -n "#define CONFIGURE_COMMANDLINE \"" >> Compiler/runtime/config.unix.h;
+echo -n Configured `date "+%Y-%m-%d %H:%M"` using arguments: `./config.status --config` | sed s/\"//g | sed s/\'//g >> Compiler/runtime/config.unix.h
+echo \" >> Compiler/runtime/config.unix.h;
+ ;;
+
+  esac
 done # for ac_tag
 
 

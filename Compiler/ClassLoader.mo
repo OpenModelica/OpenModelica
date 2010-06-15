@@ -107,7 +107,7 @@ protected function existRegularFile
   Checks if a file exists"
   input String filename;
 algorithm
-  0 := System.regularFileExists(filename);
+  true := System.regularFileExists(filename);
 end existRegularFile;
 
 public function existDirectoryFile
@@ -115,7 +115,7 @@ public function existDirectoryFile
   Checks if a directory exist"
   input String filename;
 algorithm
-  0 := System.directoryExists(filename);
+  true := System.directoryExists(filename);
 end existDirectoryFile;
 
 protected function loadClassFromMps
@@ -429,7 +429,7 @@ algorithm
 
     case name
       equation
-        0 = System.regularFileExists(name);
+        true = System.regularFileExists(name);
         (dir,"package.mo") = Util.getAbsoluteDirectoryAndFile(name);
         p1_1 = Parser.parse(name);
         pd = System.pathDelimiter();
@@ -440,7 +440,7 @@ algorithm
 
     case name
       equation
-        0 = System.regularFileExists(name);
+        true = System.regularFileExists(name);
         (dir,filename) = Util.getAbsoluteDirectoryAndFile(name);
         p1 = Parser.parse(name);
       then

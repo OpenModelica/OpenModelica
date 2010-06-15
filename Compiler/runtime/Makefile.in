@@ -47,7 +47,7 @@ omc_communication.cc omc_communication.h : omc_communication.idl
 omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
 dynload.o: systemimpl.h ../Absyn.h ../Values.h
-systemimpl.o : Makefile
+systemimpl.o : Makefile config.unix.h
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*

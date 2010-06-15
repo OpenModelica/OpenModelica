@@ -372,7 +372,7 @@ end groupDelimiter;
 
 public function regularFileExists
   input String inString;
-  output Integer outInteger "returns 0 if file exists";
+  output Boolean outBool;
 
   external "C" ;
 end regularFileExists;
@@ -394,7 +394,7 @@ end getPackageFileNames;
 
 public function directoryExists
   input String inString;
-  output Integer outInteger;
+  output Boolean outBool;
 
   external "C" ;
 end directoryExists;
@@ -678,6 +678,14 @@ Consider opening a socket and letting anyone run system() commands without authe
   output Boolean isRoot;
   external "C";
 end userIsRoot;
+
+public function configureCommandLine
+"Returns the date and command used to configure OpenModelica.
+On the platforms that don't configure options, like OMDev, the returned string
+is more generic and does not contain a date."
+  output String cmdLine;
+  external "C";
+end configureCommandLine;
 
 end System;
 

@@ -516,7 +516,7 @@ algorithm
       
     case (file)
       equation
-        0 = System.regularFileExists(file);
+        true = System.regularFileExists(file);
         src = System.readFile(file);
         chars = stringListStringChar( src );
         linfo = makeStartLineInfo(chars, file);        
@@ -524,7 +524,7 @@ algorithm
     
     case (file) 
       equation
-        false = (0 == System.regularFileExists(file));
+        false = System.regularFileExists(file);
         chars = {};
         linfo = makeStartLineInfo(chars, file);
         errStr = "No such file '" +& file +& "'.";        

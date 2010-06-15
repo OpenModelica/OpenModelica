@@ -629,8 +629,7 @@ algorithm
     case (f::_)
       local Integer r;
       equation
-        r = System.regularFileExists(f);
-        (r > 0) = true;  //could not find file
+        false = System.regularFileExists(f);
         print("File does not exist: "); print(f); print("\n");
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
@@ -640,8 +639,7 @@ algorithm
     case (f::_)
       local Integer r;
       equation
-        r = System.regularFileExists(f);
-        (r == 0) = true;  //found file but could not process
+        true = System.regularFileExists(f);
         print("Error processing file: "); print(f); print("\n");
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
@@ -1103,7 +1101,7 @@ algorithm
       String str;
     case (file,inSymbolTable)
       equation
-        0 = System.regularFileExists(file);
+        true = System.regularFileExists(file);
         str = Util.stringAppendList({"runScript(\"",file,"\")"});
         (_,_,outSymbolTable) = handleCommand(str,inSymbolTable);
       then
@@ -1111,8 +1109,7 @@ algorithm
     case (file,inSymbolTable)
        local Integer rest;
       equation
-        rest = System.regularFileExists(file);
-        (rest > 0) = true;  //could not found file
+        false = System.regularFileExists(file);
       then
         inSymbolTable;
     case (_,inSymbolTable)
