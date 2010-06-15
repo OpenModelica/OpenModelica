@@ -29,9 +29,9 @@
  */
 
 #if defined(__MINGW32__)
-#define CONFIG_LINE "Manually created Makefiles for OMDev"
+#define CONFIGURE_COMMANDLINE "Manually created Makefiles for OMDev"
 #elif defined(_MSC_VER)
-#define CONFIG_LINE "Manually created Makefiles for Visual Studio"
+#define CONFIGURE_COMMANDLINE "Manually created Makefiles for Visual Studio"
 #else
 #include "config.unix.h"
 #endif
