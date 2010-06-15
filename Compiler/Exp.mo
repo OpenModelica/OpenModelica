@@ -214,6 +214,29 @@ algorithm
   print("--------------------\n");
 end dumpExp;
 
+public function crefPrependIdent "prepends (e..g as a suffix) an identifier to a component reference, given the identifier, subscript and the type
+author: PA
+
+Example
+crefPrependIdent(a.b,c,{},Real) => a.b.c [Real]
+crefPrependIdent(a,c,{1},Integer[1]) => a.c[1] [Integer[1]]
+
+alternative names: crefAddSuffix, crefAddIdent
+"
+  input ComponentRef cr;
+  input String ident;  
+  input list<DAE.Subscript> subs;
+  input DAE.ExpType tp;
+  output ComponentRef newCr;
+algorithm
+  newCr := matchcontinue(cr,ident,subs,tp)
+  local DAE.ExpType tp1; String id1; list<DAE.Subscript> subs1;
+    case(DAE.CREF_IDENT(id1,tp1,subs1),ident,subs,tp) then DAE.CREF_QUAL(id1,tp1,subs1,DAE.CREF_IDENT(ident,tp,subs));
+    case(DAE.CREF_QUAL(id1,tp1,subs1,cr),ident,subs,tp) equation
+      cr = crefPrependIdent(cr,ident,subs,tp);
+    then DAE.CREF_QUAL(id1,tp1,subs1,cr);
+  end matchcontinue;
+end crefPrependIdent;
 
 public function crefToPath
 "function: crefToPath
