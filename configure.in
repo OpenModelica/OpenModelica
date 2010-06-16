@@ -9,8 +9,6 @@ AC_SUBST(rmlinc)
 AC_SUBST(omc_antlr_jar)
 AC_SUBST(antlrinc)
 AC_SUBST(antlrlib)
-AC_SUBST(readlineinc)
-AC_SUBST(readlinelib)
 AC_SUBST(LIBSOCKET)
 AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
@@ -109,37 +107,9 @@ else
   AC_MSG_RESULT([no])
 fi
 
-AC_MSG_CHECKING([for readline include])
-dnl First check in special place for pelab
-if test -d /home/pelab/pkg/gnu/include ; then
-  readlineinc="/home/pelab/pkg/gnu/include"
-  AC_MSG_RESULT([yes])
-else
-dnl Check in standard paths
-  readlineinc=`find /usr/include /usr/local/include -name readline.h | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
-  if test -z "$readlineinc" ; then
-     AC_MSG_RESULT([no])
-     AC_MSG_WARN([Could not find readline header files])
-  else
-     AC_MSG_RESULT([yes])
-  fi
-fi
-
-AC_MSG_CHECKING([for readline libs])
-dnl First check in special place for pelab
-if test -d /home/pelab/pkg/gnu/lib ; then
-  readlinelib="/home/pelab/pkg/gnu/lib"
-  AC_MSG_RESULT([yes])
-else
-dnl Check in standard paths
-  readlinelib=`find /usr/lib /usr/local/lib -name libreadline.a | tail -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
-  if test -z "$readlinelib" ; then
-     AC_MSG_RESULT([no])
-     AC_MSG_WARN([Could not find readline lib file])
-  else
-     AC_MSG_RESULT([yes])
-  fi
-fi
+AC_CHECK_HEADER(readline/readline.h,,AC_MSG_ERROR([readline missing]))
+AC_CHECK_HEADER(readline/history.h,,AC_MSG_ERROR([readline missing]))
+AC_SEARCH_LIBS(readline,readline,,[AC_MSG_ERROR([readline missing])])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

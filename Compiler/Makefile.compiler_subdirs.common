@@ -59,7 +59,7 @@ reallyclean: clean
 .PRECIOUS: Makefile $(ALLMO)
 
 Makefile: Makefile.in
-	$(top_builddir)/config.status Makefile
+	cd $(top_builddir); ./config.status
 
 ## dependencies
 include $(srcdir)/.depend
