@@ -28,7 +28,7 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = -lm -L$(RMLHOME)/lib/plain -lrml $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
   -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@
 
 PROG = omc

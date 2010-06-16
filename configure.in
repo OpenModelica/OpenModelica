@@ -280,27 +280,30 @@ AC_MSG_RESULT([$DESIRED_CORBA]);
 
 dnl Check for Qt
 
-AC_CHECK_PROG(HAVE_QMAKE,qmake,[yes],[no])
+AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake qmake-mac,"")
 
-if test "$HAVE_QMAKE" = "no"; then
-  QMAKE=""
-elif test "Darwin" = `uname`; then
-  QMAKE="qmake -spec macx-g++ -macx -o Makefile"
-else
-  QMAKE="qmake"
+if test -n "$QMAKE"; then
+  AC_MSG_CHECKING([for qmake arguments])
+  if test "Darwin" = `uname`; then
+    QMAKE="$QMAKE -spec macx-g++ -macx -o Makefile"
+  fi
+  AC_MSG_RESULT([$QMAKE])
 fi
 
 AC_MSG_CHECKING([for sendData-Qt]);
 AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot().],
 [
-  if test "$HAVE_QMAKE" = "no"; then
+  if test -z "$QMAKE"; then
     AC_MSG_ERROR("Cannot compile with libSendData unless qmake is present.");
   fi
   LIBSENDDATA="sendData"
   if test "Darwin" = `uname`; then
-  LIBSENDDATA_LDFLAGS="-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+    LIBSENDDATA_LDFLAGS="-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+    if test -d /opt/local/Library/Frameworks/; then
+      LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
+    fi
   else
-  LIBSENDDATA_LDFLAGS="-lsendData -lQtNetwork -lQtCore -lQtGui"
+    LIBSENDDATA_LDFLAGS="-lsendData -lQtNetwork -lQtCore -lQtGui"
   fi
   AC_MSG_RESULT([ok])
 ],
@@ -315,7 +318,7 @@ dnl Check for libCoin
 AC_MSG_CHECKING([for libCoin])
 AC_ARG_WITH(Coin, [  --with-Coin     Compile with support for plotting in 3D.],
 [
-  if test "$HAVE_QMAKE" = "no"; then
+  if test -z "$QMAKE"; then
     AC_MSG_ERROR("Cannot compile with libCoin unless qmake is present.");
   fi
   COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `

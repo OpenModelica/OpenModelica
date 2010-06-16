@@ -593,7 +593,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-HAVE_QMAKE
 EGREP
 GREP
 LEXLIB
@@ -4491,15 +4490,17 @@ $as_echo_n "checking for CORBA... " >&6; };
 $as_echo "$DESIRED_CORBA" >&6; };
 
 
-# Extract the first word of "qmake", so it can be a program name with args.
-set dummy qmake; ac_word=$2
+for ac_prog in qmake-qt4 qmake qmake-mac
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_HAVE_QMAKE+set}" = set; then :
+if test "${ac_cv_prog_QMAKE+set}" = set; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$HAVE_QMAKE"; then
-  ac_cv_prog_HAVE_QMAKE="$HAVE_QMAKE" # Let the user override the test.
+  if test -n "$QMAKE"; then
+  ac_cv_prog_QMAKE="$QMAKE" # Let the user override the test.
 else
 as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
 for as_dir in $PATH
@@ -4508,7 +4509,7 @@ do
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_HAVE_QMAKE="yes"
+    ac_cv_prog_QMAKE="$ac_prog"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -4516,26 +4517,31 @@ done
   done
 IFS=$as_save_IFS
 
-  test -z "$ac_cv_prog_HAVE_QMAKE" && ac_cv_prog_HAVE_QMAKE="no"
 fi
 fi
-HAVE_QMAKE=$ac_cv_prog_HAVE_QMAKE
-if test -n "$HAVE_QMAKE"; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $HAVE_QMAKE" >&5
-$as_echo "$HAVE_QMAKE" >&6; }
+QMAKE=$ac_cv_prog_QMAKE
+if test -n "$QMAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $QMAKE" >&5
+$as_echo "$QMAKE" >&6; }
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 
 
+  test -n "$QMAKE" && break
+done
+test -n "$QMAKE" || QMAKE=""""
 
-if test "$HAVE_QMAKE" = "no"; then
-  QMAKE=""
-elif test "Darwin" = `uname`; then
-  QMAKE="qmake -spec macx-g++ -macx -o Makefile"
-else
-  QMAKE="qmake"
+
+if test -n "$QMAKE"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for qmake arguments" >&5
+$as_echo_n "checking for qmake arguments... " >&6; }
+  if test "Darwin" = `uname`; then
+    QMAKE="$QMAKE -spec macx-g++ -macx -o Makefile"
+  fi
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $QMAKE" >&5
+$as_echo "$QMAKE" >&6; }
 fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sendData-Qt" >&5
@@ -4544,14 +4550,17 @@ $as_echo_n "checking for sendData-Qt... " >&6; };
 # Check whether --with-sendData-Qt was given.
 if test "${with_sendData_Qt+set}" = set; then :
   withval=$with_sendData_Qt;
-  if test "$HAVE_QMAKE" = "no"; then
+  if test -z "$QMAKE"; then
     as_fn_error "\"Cannot compile with libSendData unless qmake is present.\"" "$LINENO" 5;
   fi
   LIBSENDDATA="sendData"
   if test "Darwin" = `uname`; then
-  LIBSENDDATA_LDFLAGS="-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+    LIBSENDDATA_LDFLAGS="-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+    if test -d /opt/local/Library/Frameworks/; then
+      LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
+    fi
   else
-  LIBSENDDATA_LDFLAGS="-lsendData -lQtNetwork -lQtCore -lQtGui"
+    LIBSENDDATA_LDFLAGS="-lsendData -lQtNetwork -lQtCore -lQtGui"
   fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
@@ -4573,7 +4582,7 @@ $as_echo_n "checking for libCoin... " >&6; }
 # Check whether --with-Coin was given.
 if test "${with_Coin+set}" = set; then :
   withval=$with_Coin;
-  if test "$HAVE_QMAKE" = "no"; then
+  if test -z "$QMAKE"; then
     as_fn_error "\"Cannot compile with libCoin unless qmake is present.\"" "$LINENO" 5;
   fi
   COIN_LIBS=`coin-config --ldflags --libs | tr \\\\n \\ `

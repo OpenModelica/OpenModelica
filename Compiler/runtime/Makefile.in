@@ -29,7 +29,7 @@ endif
 SHELL	= /bin/sh
 CC	= gcc
 IDL	= @IDLCMD@
-CFLAGS	+= -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
+CFLAGS	+=  @CFLAGS@ -O3 -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
 CXXFLAGS = $(CFLAGS)
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c
 
