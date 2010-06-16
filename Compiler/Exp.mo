@@ -81,6 +81,8 @@ protected import Static;
 protected import Env;
 protected import System;
 protected import Builtin;
+protected import Values;
+protected import ValuesUtil;
 
 protected constant Exp rconstone=DAE.RCONST(1.0);
 
@@ -1762,16 +1764,34 @@ protected function simplifyBuiltinCalls "simplifies some builtin calls (with no 
   output Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
-  local list<DAE.Exp> v1,v2,expl; DAE.Exp e; Boolean scalar; DAE.ExpType tp;
-  case(e as DAE.CALL(path=Absyn.IDENT("cross"),builtin = true, expLst=expl)) equation
-    expl = Util.listMap(expl,simplify1);
-    {DAE.ARRAY(array=v1),DAE.ARRAY(array=v2)} = expl;
-    expl = Static.elabBuiltinCross2(v1,v2);
-    tp = typeof(e);
-    scalar = not isArrayType(unliftArray(tp)); // Since there is a bug somewherein simplify that gives wrong types for the arrays we take the type from cross instead
-    outExp = simplify(DAE.ARRAY(tp,scalar,expl));    
-  then outExp;
-
+    local
+      list<DAE.Exp> expl;
+      DAE.Exp e;
+      DAE.ExpType tp;
+    case (e as DAE.CALL(path = Absyn.IDENT("cross"), builtin = true, expLst = expl))
+      local
+        list<DAE.Exp> v1, v2;
+        Boolean scalar;
+      equation
+        expl = Util.listMap(expl, simplify1);
+        {DAE.ARRAY(array = v1),DAE.ARRAY(array = v2)} = expl;
+        expl = Static.elabBuiltinCross2(v1, v2);
+        tp = typeof(e);
+        // Since there is a bug somewhere in simplify that gives wrong types for arrays we take the type from cross.
+        scalar = not isArrayType(unliftArray(tp));
+        outExp = simplify(DAE.ARRAY(tp, scalar,expl));    
+      then outExp;
+    // Simplify built-in function fill. MathCore depends on this being done here, do not remove!
+    case (DAE.CALL(path = Absyn.IDENT("fill"), builtin = true, expLst = expl))
+      local
+        list<Values.Value> valueLst;
+      equation
+        expl = Util.listMap(expl, simplify1);
+        e::expl = expl;
+        valueLst = Util.listMap(expl, ValuesUtil.expValue);
+        (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE, NONE), valueLst, DAE.C_CONST);
+      then
+        outExp;
   end matchcontinue;
 end simplifyBuiltinCalls;
 
@@ -3687,7 +3707,7 @@ algorithm
         op = Util.if_(b,DAE.DIV(t2),DAE.DIV_SCALAR_ARRAY(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
-        exp;
+        exp; 
     case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = t),exp2 = e2),indx)
       equation
         e1_1 = simplifyAsub(e1, indx);

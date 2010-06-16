@@ -3350,9 +3350,12 @@ algorithm
   end matchcontinue;
 end elabBuiltinFill;
 
-protected function elabBuiltinFill2 "function: elabBuiltinFill2
-
-  Helper function to elab_builtin_fill
+public function elabBuiltinFill2
+"
+  function: elabBuiltinFill2
+  Helper function to: elabBuiltinFill
+  
+  Public since it is used by Exp.simplifyBuiltinCalls.
 "
 	input Env.Cache inCache;
 	input Env.Env inEnv;
