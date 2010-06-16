@@ -17,9 +17,6 @@ ANTLR_LIBP = -L@antlrlib@
 PARSE_INCP = -I$(top_builddir)/modelica_parser/src
 PARSE_LIBP = -L$(top_builddir)/modelica_parser/src
 
-READLINE_INCP = -I@readlineinc@
-READLINE_LIBP = -L@readlinelib@
-
 EXEEXT=@EXEEXT@
 
 USE_CORBA = @USE_CORBA@
@@ -35,12 +32,12 @@ else
   CORBALIB =
 endif
 
-INCP = $(ANTLR_INCP) $(PARSE_INCP) $(READLINE_INCP) $(CORBAIMPL) $(CORBAINC)
-LIBP = $(ANTLR_LIBP) $(PARSE_LIBP) $(READLINE_LIBP)
+INCP = $(ANTLR_INCP) $(PARSE_INCP) $(CORBAIMPL) $(CORBAINC)
+LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
 
-CFLAGS = $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
+CFLAGS = @CFLAGS@ $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
-LINKFLAGS = $(LIBP)
+LINKFLAGS = @LDFLAGS@ $(LIBP)
 
 LIBS = -lantlr -lmodelica_parser -lreadline  $(CORBALIB) -lm -lpthread
 
