@@ -3692,6 +3692,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = max_<%arr_tp_str%>(&<%expVar%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="min"), expLst={array}) then
+    let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let arr_tp_str = '<%expTypeFromExpArray(array)%>'
+    let tvar = tempDecl(expTypeFromExpModelica(array), &varDecls /*BUFC*/)
+    let &preExp += '<%tvar%> = min_<%arr_tp_str%>(&<%expVar%>);<%\n%>'
+    tvar
+
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="promote"), expLst={A, n}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let var2 = daeExp(n, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
