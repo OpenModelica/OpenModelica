@@ -18,10 +18,11 @@ JAVAMAKEFILE = Makefile
 INTERACTIVEMAKEFILE = Makefile
 INTERACTIVELIBS = "-lpthread"
 LIBSENDDATA = lib@LIBSENDDATA@.a
+QMAKE=@QMAKE@
 include Makefile.common
 
 libsendData.a :
-	cd ./sendData && qmake && if test -d sendData.xcodeproj/; then xcodebuild; else $(MAKE) -f Makefile; fi
+	cd ./sendData && $(QMAKE) && $(MAKE) -f Makefile
 omdevinstall:
 
 Makefile: Makefile.in

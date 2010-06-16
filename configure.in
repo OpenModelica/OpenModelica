@@ -29,6 +29,7 @@ AC_SUBST(SOQT_INCLUDE)
 AC_SUBST(HAVE_COIN)
 AC_SUBST(LIBSENDDATA)
 AC_SUBST(LIBSENDDATA_LDFLAGS)
+AC_SUBST(QMAKE)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -280,6 +281,14 @@ AC_MSG_RESULT([$DESIRED_CORBA]);
 dnl Check for Qt
 
 AC_CHECK_PROG(HAVE_QMAKE,qmake,[yes],[no])
+
+if test "$HAVE_QMAKE" = "no"; then
+  QMAKE=""
+elif test "Darwin" = `uname`; then
+  QMAKE="qmake -spec macx-g++ -macx -o Makefile"
+else
+  QMAKE="qmake"
+fi
 
 AC_MSG_CHECKING([for sendData-Qt]);
 AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot().],

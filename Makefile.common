@@ -1,4 +1,4 @@
-.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean
+.PHONY : all omc omcd debug release mosh clean .testvariables mkbuilddirs all omc omcd debug release mosh clean qtclean qtclean-common
 
 top_builddir = .
 builddir_bin=$(top_builddir)/build/bin
