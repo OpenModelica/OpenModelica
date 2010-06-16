@@ -737,7 +737,7 @@ package DAE
     end STMT_IF;
     record STMT_FOR
       ExpType type_;
-      Boolean boolean;
+      Boolean iterIsArray;
       Ident ident;
       Exp exp;
       list<Statement> statementLst;

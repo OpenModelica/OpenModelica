@@ -3658,7 +3658,7 @@ algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),func,extraArg)
     equation
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);

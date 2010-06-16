@@ -2932,73 +2932,84 @@ template algStmtForRange(DAE.Statement stmt, Context context, Text &varDecls /*B
 ::=
 match stmt
 case STMT_FOR(exp=rng as RANGE(__)) then
-	let identName = contextIteratorName(ident, context)
-  let stateVar = tempDecl("state", &varDecls /*BUFC*/)
-  let dvar = System.tmpTick() // a hack to be precisely the same as original ... see Codegen.generateAlgorithmStatement case FOR
-  let identType = expType(type_, boolean)
-  let r1 = tempDecl(identType, &varDecls /*BUFC*/)
-  let r2 = tempDecl(identType, &varDecls /*BUFC*/)
-  let r3 = tempDecl(identType, &varDecls /*BUFC*/)
-  let &preExp = buffer "" /*BUFD*/
-  let er1 = daeExp(rng.exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  let er2 = match rng.expOption case SOME(eo) then
-      daeExp(eo, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    else
-      "(1)"
-  let er3 = daeExp(rng.range, context, &preExp /*BUFC*/, &varDecls /*BUFC*/) 
-  <<
-  <%preExp%>
-  <%r1%> = <%er1%>; <%r2%> = <%er2%>; <%r3%> = <%er3%>;
-  {
-  <%identType%> <%identName%>;
-
-    for (<%identName%> = <%r1%>; in_range_<%expTypeShort(type_)%>(<%identName%>, <%r1%>, <%r3%>); <%identName%> += <%r2%>) {
-      <%stateVar%> = get_memory_state();
-      <%statementLst |> stmt => algStatement(stmt, context, &varDecls /*BUFC*/) ;separator="\n"%>
-      restore_memory_state(<%stateVar%>);
-    }
-  } /*end for*/
-  >>
+  let identType = expType(type_, iterIsArray)
+  let identTypeShort = expTypeShort(type_)
+  let stmtStr = (statementLst |> stmt => algStatement(stmt, context, &varDecls)
+                 ;separator="\n")
+  algStmtForRange_impl(rng, ident, identType, identTypeShort, stmtStr, context, &varDecls)
 end algStmtForRange;
 
+template algStmtForRange_impl(Exp range, Ident iterator, String type, String shortType, Text &body, Context context, Text &varDecls)
+ "The implementation of algStmtForRange, which is also used by daeExpReduction."
+::=
+match range
+case RANGE(__) then
+  let iterName = contextIteratorName(iterator, context)
+  let stateVar = tempDecl("state", &varDecls)
+  let startVar = tempDecl(type, &varDecls)
+  let stepVar = tempDecl(type, &varDecls)
+  let stopVar = tempDecl(type, &varDecls)
+  let &preExp = buffer ""
+  let startValue = daeExp(exp, context, &preExp, &varDecls)
+  let stepValue = match expOption case SOME(eo) then
+      daeExp(eo, context, &preExp, &varDecls)
+    else
+      "(1)"
+  let stopValue = daeExp(range, context, &preExp, &varDecls)
+  <<
+  <%preExp%>
+  <%startVar%> = <%startValue%>; <%stepVar%> = <%stepValue%>; <%stopVar%> = <%stopValue%>; 
+  {
+    for(<%type%> <%iterName%> = <%startValue%>; in_range_<%shortType%>(<%iterName%>, <%startVar%>, <%stopVar%>); <%iterName%> += <%stepVar%>) { 
+      <%stateVar%> = get_memory_state();
+      <%body%>
+      restore_memory_state(<%stateVar%>);
+    }
+  }
+  >>
+end algStmtForRange_impl;
 
 template algStmtForGeneric(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a for algorithm statement where range is not RANGE."
 ::=
 match stmt
 case STMT_FOR(__) then
-	let identName = contextIteratorName(ident, context)
-  let stateVar = tempDecl("state", &varDecls /*BUFC*/)
+  let iterType = expType(type_, iterIsArray)
   let arrayType = expTypeArray(type_)
-  let dvar = System.tmpTick() // a hack to be precisely the same as original ... see Codegen.generateAlgorithmStatement case FOR
-  let tvar = tempDecl("int", &varDecls /*BUFC*/)
-  let identType = expType(type_, boolean)
-  let ivar = tempDecl(identType, &varDecls /*BUFC*/)
-  let &preExp = buffer "" /*BUFD*/
-  let evar = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  let statements = (statementLst |> stmt =>
-      algStatement(stmt, context, &varDecls /*BUFC*/)
-    ;separator="\n")
-  let id = '<%identName%>'
-  let stmtStuff = if boolean then
-      'simple_index_alloc_<%identType%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
-    else
-      '<%id%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
-  <<
-  <%preExp%>
-  {
-  <%identType%> <%identName%>;
-
-    for (<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>) {
-      <%stateVar%> = get_memory_state();
-      <%stmtStuff%>
-      <%statements%>
-      restore_memory_state(<%stateVar%>);
-    }
-  } /* end for*/
-  >>
+  let stmtStr = (statementLst |> stmt => 
+    algStatement(stmt, context, &varDecls) ;separator="\n")
+  algStmtForGeneric_impl(exp, ident, iterType, arrayType, iterIsArray, stmtStr, 
+    context, &varDecls)
 end algStmtForGeneric;
 
+template algStmtForGeneric_impl(Exp exp, Ident iterator, String type, 
+  String arrayType, Boolean iterIsArray, Text &body, Context context, Text &varDecls)
+ "The implementation of algStmtForGeneric, which is also used by daeExpReduction."
+::=
+  let iterName = contextIteratorName(iterator, context)
+  let stateVar = tempDecl("state", &varDecls)
+  let tvar = tempDecl("int", &varDecls)
+  let ivar = tempDecl(type, &varDecls)
+  let &preExp = buffer ""
+  let evar = daeExp(exp, context, &preExp, &varDecls)
+  let stmtStuff = if iterIsArray then
+      'simple_index_alloc_<%type%>1(&<%evar%>, <%tvar%>, &<%ivar%>);'
+    else
+      '<%iterName%> = *(<%arrayType%>_element_addr1(&<%evar%>, 1, <%tvar%>));'
+  <<
+  <%preExp%> 
+  {
+  <%type%> <%iterName%>;
+  
+    for(<%tvar%> = 1; <%tvar%> <= size_of_dimension_<%arrayType%>(<%evar%>, 1); ++<%tvar%>) {
+      <%stateVar%> = get_memory_state();
+      <%stmtStuff%>
+      <%body%>
+      restore_memory_state(<%stateVar%>);
+    }
+  }
+  >>
+end algStmtForGeneric_impl;
 
 template algStmtWhile(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates a while algorithm statement."
@@ -3946,48 +3957,44 @@ template daeExpReduction(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a reduction expression."
 ::=
 match exp
-case REDUCTION(path=IDENT(name=op), range=RANGE(__)) then
-	let identName = contextIteratorName(ident, context)
-  let stateVar = tempDecl("state", &varDecls /*BUFC*/)
-  let identType = expTypeModelica(range.ty)
+case REDUCTION(path = IDENT(name = op)) then
+  let identType = expTypeFromExpModelica(expr)
   let accFun = daeExpReductionFnName(op, identType)
   let startValue = daeExpReductionStartValue(op, identType)
-  let res = tempDecl(identType, &varDecls /*BUFC*/)
-  let &tmpExpPre = buffer "" /*BUFD*/
-  let tmpExpVar = daeExp(expr, context, &tmpExpPre /*BUFC*/, &varDecls /*BUFC*/)
-  let cast = match accFun case "max" then
-      "(modelica_real)"
-    else match accFun case "min" then
-      "(modelica_real)"
-    else
-      ""
-  let r1 = tempDecl(identType, &varDecls /*BUFC*/)
-  let r2 = tempDecl(identType, &varDecls /*BUFC*/)
-  let r3 = tempDecl(identType, &varDecls /*BUFC*/)
-  let er1 = daeExp(range.exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  let er2 = match range.expOption case SOME(eo) then
-      daeExp(eo, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    else
-      "(1)"
-  let er3 = daeExp(range.range, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  let res = tempDecl(identType, &varDecls)
+  let &tmpExpPre = buffer ""
+  let tmpExpVar = daeExp(expr, context, &tmpExpPre, &varDecls)
+  let cast = match accFun case "max" then "(modelica_real)"
+                          case "min" then "(modelica_real)"
+                          else ""
+  let body =
+    <<
+    <%tmpExpPre%>
+    <%res%> = <%accFun%>(<%cast%>(<%res%>), <%cast%>(<%tmpExpVar%>));
+    >>
   let &preExp +=
     <<
     <%res%> = <%startValue%>;
-    <%r1%> = <%er1%>; <%r2%> = <%er2%>; <%r3%> = <%er3%>;
-    {
-      <%identType%> <%identName%>;
-
-      for (<%identName%> = <%r1%>; in_range_<%expTypeFromExpShort(expr)%>(<%identName%>, <%r1%>, <%r3%>); <%identName%> += <%r2%>) {
-        <%stateVar%> = get_memory_state();
-        <%tmpExpPre%>
-        <%res%> = <%accFun%>(<%cast%>(<%res%>), <%cast%>(<%tmpExpVar%>));
-        restore_memory_state(<%stateVar%>);
-      }
-    }
+    <%daeExpReductionLoop(exp, body, context, &varDecls)%>
     >>
   res
 end daeExpReduction;
 
+template daeExpReductionLoop(Exp exp, Text &body, Context context, Text &varDecls)
+ "Generates code for the loop part of a reduction expression by using the
+  appropriate for loop template."
+::=
+match exp
+case REDUCTION(range = RANGE(__)) then
+  let identType = expTypeModelica(range.ty)
+  let identTypeShort = expTypeFromExpShort(expr)
+  algStmtForRange_impl(range, ident, identType, identTypeShort, body, context, &varDecls)
+case REDUCTION(range = range) then
+  let identType = expTypeFromExpModelica(expr)
+  let arrayType = expTypeFromExpArray(expr)
+  algStmtForGeneric_impl(range, ident, identType, arrayType, false, body, context, &varDecls)
+end daeExpReductionLoop;
+  
 
 template daeExpReductionFnName(String reduction_op, String type)
  "Helper to daeExpReduction."

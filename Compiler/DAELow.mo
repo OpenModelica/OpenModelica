@@ -8750,7 +8750,7 @@ algorithm
        st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_IF(e1,stlst1,else_1)::st);
-  case (DAE.STMT_FOR(type_=t,boolean=b,ident=id,exp=e,statementLst=stlst)::rest,inExp2,inExp3)
+  case (DAE.STMT_FOR(type_=t,iterIsArray=b,ident=id,exp=e,statementLst=stlst)::rest,inExp2,inExp3)
     local 
       Boolean b;
       DAE.Ident id;
@@ -9072,7 +9072,7 @@ algorithm
        (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
     then
       (DAE.STMT_IF(e1,stlst1,else_1)::st,vars3);
-  case (DAE.STMT_FOR(type_=t,boolean=b,ident=id,exp=e,statementLst=stlst)::rest,inVariables)
+  case (DAE.STMT_FOR(type_=t,iterIsArray=b,ident=id,exp=e,statementLst=stlst)::rest,inVariables)
     local 
       Boolean b;
       DAE.Ident id;

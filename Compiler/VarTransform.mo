@@ -612,7 +612,7 @@ algorithm
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (DAE.STMT_IF(e_1,stmts2,el_1) :: xs_1);
-    case (((x as DAE.STMT_FOR(type_=tp,boolean=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),repl,condExpFunc)
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),repl,condExpFunc)
       equation
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         e_1 = replaceExp(e, repl, condExpFunc);

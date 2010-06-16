@@ -3410,7 +3410,7 @@ algorithm
       then
         (cfn,tnr3);
 
-    case (DAE.STMT_FOR(type_ = t,boolean = a,ident = i,exp = e,statementLst = stmts),tnr,
+    case (DAE.STMT_FOR(type_ = t,iterIsArray = a,ident = i,exp = e,statementLst = stmts),tnr,
                         context as CONTEXT(codeContext,expContext,loopContext))
       equation
         true = Exp.isRange(e);
@@ -3437,7 +3437,7 @@ algorithm
       then
         (cfn,tnr4);
 
-    case (DAE.STMT_FOR(type_ = t,boolean = a,ident = i,exp = e,statementLst = stmts),tnr,
+    case (DAE.STMT_FOR(type_ = t,iterIsArray = a,ident = i,exp = e,statementLst = stmts),tnr,
                         context as CONTEXT(codeContext,expContext,loopContext))
       equation
         (sdecl,svar,tnr_1) = generateTempDecl("state", tnr);

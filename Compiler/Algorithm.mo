@@ -681,7 +681,7 @@ algorithm
         exps = listAppend(exps1, elseexps);
       then
         (exp :: exps);
-    case DAE.STMT_FOR(type_ = expty,boolean = flag,ident = id,exp = exp,statementLst = stmts)
+    case DAE.STMT_FOR(type_ = expty,iterIsArray = flag,ident = id,exp = exp,statementLst = stmts)
       equation
         exps = getAllExpsStmts(stmts);
       then
