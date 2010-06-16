@@ -16,7 +16,7 @@ builddir_doc=$(top_builddir)/build/doc
 USE_CORBA = @USE_CORBA@
 
 RMLINCLUDE = @rmlinc@
-CFLAGS = @DEFS@ $(USE_CORBA) -DLDFLAGS_SENDDATA="\"@LIBSENDDATA_LDFLAGS@ -lpthread\""
+CFLAGS = @DEFS@ $(USE_CORBA)
 
 ifdef USE_CORBA
   CORBASRC = omc_communication.cc omc_communication_impl.cpp corbaimpl.cpp
@@ -47,7 +47,7 @@ omc_communication.cc omc_communication.h : omc_communication.idl
 omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
 dynload.o: systemimpl.h ../Absyn.h ../Values.h
-systemimpl.o : Makefile config.unix.h
+systemimpl.o : config.unix.h
 
 clean:
 	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*

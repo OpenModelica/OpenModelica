@@ -2265,7 +2265,7 @@ void System_5finit(void)
 
 RML_BEGIN_LABEL(System__getSendDataLibs)
 {
-  rmlA0 = (void*) mk_scon(LDFLAGS_SENDDATA) /* Defined in the Makefile; from the configure script */;
+  rmlA0 = (void*) mk_scon(LDFLAGS_SENDDATA);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

@@ -1,6 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
 
+AC_PREREQ([2.65])
 AC_INIT(c_runtime/boolean_array.c)
+AC_SUBST(date)
 AC_SUBST(rmlc_bin)
 AC_SUBST(rmlhome)
 AC_SUBST(rmlinc)
@@ -343,14 +345,14 @@ AC_ARG_WITH(BOOST, [  --with-BOOST=DIR        With BOOST library in DIR],
 ], [
 AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
+date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config"
+GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h"
 
-AC_CONFIG_COMMANDS([config.h], [
-echo "/* Automatically generated */" > Compiler/runtime/config.unix.h
-echo -n "#define CONFIGURE_COMMANDLINE \"" >> Compiler/runtime/config.unix.h;
-echo -n Configured `date "+%Y-%m-%d %H:%M"` using arguments: `./config.status --config` | sed s/\"//g | sed s/\'//g >> Compiler/runtime/config.unix.h]
-echo \" >> Compiler/runtime/config.unix.h;
-)
+AC_CONFIG_COMMANDS([config.unix.h.fix],
+[echo $ac_cs_config | tr -d \" | tr -d \' | sed s/\\//\\\\\\//g > tmp.$$;
+sed -i "s/@CONFIGURE_ARGS@/`cat tmp.$$`/" Compiler/runtime/config.unix.h
+rm -f tmp.$$
+])
 
 AC_OUTPUT(${GENERATED_AUTOCONF_FILES})

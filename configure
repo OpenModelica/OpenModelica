@@ -634,6 +634,7 @@ omc_antlr_jar
 rmlinc
 rmlhome
 rmlc_bin
+date
 target_alias
 host_alias
 build_alias
@@ -2151,6 +2152,7 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
 
 
 
@@ -4620,10 +4622,11 @@ $as_echo "Not compiling with BOOST" >&6; }; USE_MODPAR=""; BOOSTHOME=""
 
 fi
 
+date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config"
+GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h"
 
-ac_config_commands="$ac_config_commands config.h"
+ac_config_commands="$ac_config_commands config.unix.h.fix"
 
 
 ac_config_files="$ac_config_files ${GENERATED_AUTOCONF_FILES}"
@@ -5330,7 +5333,7 @@ cat >>$CONFIG_STATUS <<\_ACEOF || ac_write_fail=1
 for ac_config_target in $ac_config_targets
 do
   case $ac_config_target in
-    "config.h") CONFIG_COMMANDS="$CONFIG_COMMANDS config.h" ;;
+    "config.unix.h.fix") CONFIG_COMMANDS="$CONFIG_COMMANDS config.unix.h.fix" ;;
     "${GENERATED_AUTOCONF_FILES}") CONFIG_FILES="$CONFIG_FILES ${GENERATED_AUTOCONF_FILES}" ;;
 
   *) as_fn_error "invalid argument: \`$ac_config_target'" "$LINENO" 5;;
@@ -5739,11 +5742,9 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
-    "config.h":C)
-echo "/* Automatically generated */" > Compiler/runtime/config.unix.h
-echo -n "#define CONFIGURE_COMMANDLINE \"" >> Compiler/runtime/config.unix.h;
-echo -n Configured `date "+%Y-%m-%d %H:%M"` using arguments: `./config.status --config` | sed s/\"//g | sed s/\'//g >> Compiler/runtime/config.unix.h
-echo \" >> Compiler/runtime/config.unix.h;
+    "config.unix.h.fix":C) echo $ac_cs_config | tr -d \" | tr -d \' | sed s/\\//\\\\\\//g > tmp.$$;
+sed -i "s/@CONFIGURE_ARGS@/`cat tmp.$$`/" Compiler/runtime/config.unix.h
+rm -f tmp.$$
  ;;
 
   esac
