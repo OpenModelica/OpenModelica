@@ -5742,10 +5742,7 @@ $as_echo "$as_me: executing $ac_file commands" >&6;}
 
 
   case $ac_file$ac_mode in
-    "config.unix.h.fix":C) echo $ac_cs_config | tr -d \" | tr -d \' | sed s/\\//\\\\\\//g > tmp.$$;
-sed -i "s/@CONFIGURE_ARGS@/`cat tmp.$$`/" Compiler/runtime/config.unix.h
-rm -f tmp.$$
- ;;
+    "config.unix.h.fix":C) ./configure-post.sh $ac_cs_config ;;
 
   esac
 done # for ac_tag

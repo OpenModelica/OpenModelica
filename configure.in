@@ -349,10 +349,6 @@ date=`date "+%Y-%m-%d %H:%M:%S"`
 
 GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h"
 
-AC_CONFIG_COMMANDS([config.unix.h.fix],
-[echo $ac_cs_config | tr -d \" | tr -d \' | sed s/\\//\\\\\\//g > tmp.$$;
-sed -i "s/@CONFIGURE_ARGS@/`cat tmp.$$`/" Compiler/runtime/config.unix.h
-rm -f tmp.$$
-])
+AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 
 AC_OUTPUT(${GENERATED_AUTOCONF_FILES})
