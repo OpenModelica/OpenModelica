@@ -20283,6 +20283,32 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "min"), expLst = {i_array}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_array;
+        Tpl.Text txt_3;
+        Tpl.Text i_tvar;
+        Tpl.Text i_arr__tp__str;
+        Tpl.Text i_expVar;
+      equation
+        (i_expVar, i_preExp, i_varDecls) = daeExp(emptyTxt, i_array, i_context, i_preExp, i_varDecls);
+        i_arr__tp__str = expTypeFromExpArray(emptyTxt, i_array);
+        txt_3 = expTypeFromExpModelica(emptyTxt, i_array);
+        (i_tvar, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(txt_3), i_varDecls);
+        i_preExp = Tpl.writeText(i_preExp, i_tvar);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = min_"));
+        i_preExp = Tpl.writeText(i_preExp, i_arr__tp__str);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("(&"));
+        i_preExp = Tpl.writeText(i_preExp, i_expVar);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeText(txt, i_tvar);
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "promote"), expLst = {i_A, i_n}),
            i_context,
            i_preExp,

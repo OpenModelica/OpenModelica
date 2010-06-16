@@ -171,9 +171,11 @@ public function linuxDotSlash "If operating system is Linux/Unix, return a './',
   output String str;
 algorithm
   str := matchcontinue()
-    case() equation
-      "linux" = System.os();
-    then "./";
+    case()
+      equation
+        str = System.os();
+        true = ("linux" ==& str) or ("OSX" ==& str);
+      then "./";
     case() then "";
   end matchcontinue;
 end linuxDotSlash;

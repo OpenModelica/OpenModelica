@@ -2508,7 +2508,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__os)
 {
+#ifdef __APPLE_CC__
+  rmlA0 = (void*) mk_scon("OSX");
+#else
   rmlA0 = (void*) mk_scon("linux");
+#endif
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

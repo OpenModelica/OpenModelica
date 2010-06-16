@@ -550,7 +550,7 @@ end windowsNewline;
 public function os "Returns a string with the operating system name
 
 For linux: 'linux'
-For OSX: 'linux'
+For OSX: 'OSX'
 For Windows : 'Windows_NT' (the name of env var OS )
 
 Why it returns linux for OSX, we have no clue. But it does, so let's
