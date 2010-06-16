@@ -189,15 +189,18 @@ RML_BEGIN_LABEL(IOStreamExt__printReversedList)
   }
 
   /* allocate the string in the C heap */
-  str = (char*)malloc(len);
-
+  str = (char*)malloc(len+1);
   len_cur = len;
+
+  // re-initialize the lst
+  lst = rmlA0; /* the list buffer, reversed */
+
   while( RML_GETHDR(lst) == RML_CONSHDR )
   {
     void* car = RML_CAR(lst);
     len_car = RML_HDRSTRLEN(RML_GETHDR(car));
-    (void)memcpy(&str[len_cur-len_car], RML_STRINGDATA(car), len_car);
-    len_cur -= len_car;
+    (void)memcpy(&str[len_cur - len_car], RML_STRINGDATA(car), len_car);
+    len_cur = len_cur - len_car;
     lst = RML_CDR(lst);
   }
   str[len] = '\0';
@@ -210,7 +213,7 @@ RML_BEGIN_LABEL(IOStreamExt__printReversedList)
   else if (whereToPrint == 2) /* standard error */
   {
     fwrite(str, len, 1, stderr);
-    fflush(stdout);
+    fflush(stderr);
   }
   /* free the memory */
   free(str);
