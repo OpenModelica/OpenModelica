@@ -39,6 +39,7 @@
 #include <string>
 #include <iostream>
 #include <iomanip>
+#include <algorithm>
 using namespace std;
 
 //********************* for dasrt_step*********************
@@ -150,7 +151,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     // And then go back and start at t_0
 	globalData->timeValue += calcTiny(globalData->timeValue);
 	double* backupstats_new = new double[globalData->nStates];
-	backupstats_new = globalData->states;
+  std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
 	if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
 	else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
 	else if (flag == 3) dasrt_step(&current_stepsize,functionODE);
@@ -160,7 +161,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	InitialZeroCrossings();
 
 	globalData->timeValue = start;
-	globalData->states = backupstats_new;
+  std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
 	delete [] backupstats_new;
 
 	function_updateDepend();
