@@ -195,7 +195,7 @@ algorithm
   end matchcontinue;
 end elabExpListList;
 
-/*protected function cevalIfConstant "function: cevalIfConstant
+protected function cevalIfConstant "function: cevalIfConstant
   This function calls Ceval.ceval if the Constant parameter indicates
   C_CONST. If not constant, it also tries to simplify the expression using
   Exp.simplify"
@@ -279,7 +279,7 @@ algorithm
       then
         (cache,e_1,prop);
   end matchcontinue;
-end cevalIfConstant;*/
+end cevalIfConstant;
 
 public function elabExp "
 function: elabExp
@@ -2996,6 +2996,7 @@ algorithm
       DAE.Const c;
       DAE.Properties prop;
       DAE.DAElist dae,dae1,dae2;
+    
     case (cache,env,{s1},impl,typeChecker,fnName) /* impl */
       equation
         (cache,_,DAE.PROP(ty,c),_,dae1) = elabExp(cache, env, s1, impl, NONE,true);
@@ -3034,7 +3035,7 @@ algorithm
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae;
-
+    
     case (cache,env,{(exp as Absyn.CREF(componentRef = cr))},_,impl)
       equation
         (cache,(exp_1 as DAE.CREF(cr_1,_)),DAE.PROP(tp1,_),_,dae) = elabExp(cache,env, exp, impl, NONE,true);
@@ -7712,7 +7713,7 @@ algorithm
     case (cache,env,st,impl,id,tp,(Absyn.NAMEDARG(argName = id2,argValue = exp) :: xs),dexp)
       local Absyn.Exp exp;
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
         (cache,exp_1,DAE.PROP(t,c1),_,_) = elabExp(cache,env, exp, impl, st,true);
         (exp_2,_) = Types.matchType(exp_1, t, tp, true);
       then
@@ -9056,7 +9057,7 @@ algorithm
     case ({},{}) then ();
     case ((DAE.DIM(integerOption = SOME(i1)) :: ads1),(DAE.DIM(integerOption = SOME(i2)) :: ads2))
       equation
-        equality(i1 = i2);
+        true = intEq(i1, i2);
         sameArraydimLst(ads1, ads2);
       then
         ();
@@ -9803,12 +9804,12 @@ algorithm
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> ts;
     case (id,((id2,farg) :: ts))
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
       then
         farg;
     case (id,((farg as (id2,_)) :: ts))
       equation
-        failure(equality(id = id2));
+        false = stringEqual(id, id2);
         farg = findNamedArgType(id, ts);
       then
         farg;
@@ -9827,8 +9828,7 @@ protected function fillSlot
   input Boolean checkTypes "type checking only if true";
   output list<Slot> outSlotLst;
 algorithm
-  outSlotLst:=
-  matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst,checkTypes)
+  outSlotLst := matchcontinue (inFuncArg,inExp,inTypesArrayDimLst,inSlotLst,checkTypes)
     local
       Ident fa1,fa2,fa;
       DAE.Exp exp;
@@ -9837,30 +9837,37 @@ algorithm
       list<Slot> xs,newslots;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
       Slot s1;
+    
     case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = false) :: xs),checkTypes as true)
       equation
-        equality(fa1 = fa2);
+        true = stringEqual(fa1, fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
-        /* If not checking types, store actual type in slot so error message contains actual type */
+    
+    // If not checking types, store actual type in slot so error message contains actual type 
     case ((fa1,b),exp,ds,(SLOT(an = (fa2,_),true_ = false) :: xs),checkTypes as false)
       equation
-        equality(fa1 = fa2);
+        true = stringEqual(fa1, fa2);
       then
         (SLOT((fa2,b),true,SOME(exp),ds) :: xs);
-
+    
+    // fail if slot already filled
     case ((fa1,_),exp,ds,(SLOT(an = (fa2,b),true_ = true) :: xs),checkTypes )
       equation
-        equality(fa1 = fa2);
+        true = stringEqual(fa1, fa2);
         Error.addMessage(Error.FUNCTION_SLOT_ALLREADY_FILLED, {fa2});
       then
         fail();
+    
+    // no equal, fill slot
     case ((farg as (fa1,_)),exp,ds,((s1 as SLOT(an = (fa2,_))) :: xs),checkTypes)
       equation
-        failure(equality(fa1 = fa2));
+        false = stringEqual(fa1, fa2);
         newslots = fillSlot(farg, exp, ds, xs,checkTypes);
       then
         (s1 :: newslots);
+    
+    // failure
     case ((fa,_),_,_,_,_)
       equation
         Error.addMessage(Error.NO_SUCH_ARGUMENT, {fa});
@@ -10143,7 +10150,7 @@ algorithm bool := matchcontinue( subs, ty )
       ill = Util.listMap(ad,Util.genericOption);
       il = Util.listFlatten(ill);
       y = listLength(il);
-      equality(x = y );
+      true = intEq(x, y );
     then
       true;
   case(_,_) equation print(" not allowed qual_asub\n"); then false;
@@ -11661,10 +11668,10 @@ algorithm
 
     case (cache,env,e1,DAE.PROP(type_ = t1,constFlag = c1),e2,DAE.PROP(type_ = t2,constFlag = c2),e3,DAE.PROP(type_ = t3,constFlag = c3),impl,st)
       equation
-        failure(equality(t1 = DAE.T_BOOL_DEFAULT));
+        failure(equality(t1 = DAE.T_BOOL_DEFAULT()));
         e_str = Exp.printExpStr(e1);
         t_str = Types.unparseType(t1);
-        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR, {e_str,t_str});
+        Error.addMessage(Error.IF_CONDITION_TYPE_ERROR(), {e_str,t_str});
       then
         fail();
 
@@ -12004,13 +12011,13 @@ algorithm
       DAE.ComponentRef c1,c2;
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = s1),DAE.CREF_IDENT(ident = n2,subscriptLst = s2))
       equation
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         eqSubscripts(s1, s2);
       then
         ();
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = s1,componentRef = c1),DAE.CREF_QUAL(ident = n2,subscriptLst = s2,componentRef = c2))
       equation
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         eqSubscripts(s1, s2);
         eqCref(c1, c2);
       then
@@ -12043,61 +12050,61 @@ algorithm
 end eqSubscripts;
 
 protected function eqSubscript "function: eqSubscript
-
-  This function test whether two subscripts are equal.  Two
-  subscripts are equal if they have the same constructor, and if all
-  corresponding expressions are either syntactically equal, or if
-  they have the same constant value.
-"
+  This function test whether two subscripts are equal.  
+  Two subscripts are equal if they have the same constructor, and 
+  if all corresponding expressions are either syntactically equal, 
+  or if they have the same constant value."
   input DAE.Subscript inSubscript1;
   input DAE.Subscript inSubscript2;
 algorithm
-  _:=
-  matchcontinue (inSubscript1,inSubscript2)
+  _ := matchcontinue (inSubscript1,inSubscript2)
     local DAE.Exp s1,s2;
     case (DAE.WHOLEDIM(),DAE.WHOLEDIM()) then ();
     case (DAE.INDEX(exp = s1),DAE.INDEX(exp = s2))
       equation
-        equality(s1 = s2);
+        true = Exp.expEqual(s1, s2);
       then
         ();
   end matchcontinue;
 end eqSubscript;
 
-protected function elabArglist "- Argument type casting and operator de-overloading
+/*
+ * - Argument type casting and operator de-overloading
+ *
+ *  If a function is called with arguments that don\'t match the
+ *  expected parameter types, implicit type conversions are performed
+ *  in some cases.  Usually it is an integer argument that is promoted
+ *  to a real.
+ *
+ *  Many operators in Modelica are overloaded, meaning that they can
+ *  operate on several different types of arguments.  To describe what
+ *  it means to add, say, an integer and a real number, the
+ *  expressions have to be de-overloaded, with one operator for each
+ *  distinct operation.
+ */
 
-  If a function is called with arguments that don\'t match the
-  expected parameter types, implicit type conversions are performed
-  in some cases.  Usually it is an integer argument that is promoted
-  to a real.
-
-  Many operators in Modelica are overloaded, meaning that they can
-  operate on several different types of arguments.  To describe what
-  it means to add, say, an integer and a real number, the
-  expressions have to be de-overloaded, with one operator for each
-  distinct operation.
-
-
-  function: elabArglist
-
+protected function elabArglist 
+"function: elabArglist
   Given a list of parameter types and an argument list, this
-  function tries to match the two, promoting the type of arguments
-  when necessary.
-"
+  function tries to match the two, promoting the type of 
+  arguments when necessary."
   input list<DAE.Type> inTypesTypeLst;
   input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
   output list<DAE.Exp> outExpExpLst;
   output list<DAE.Type> outTypesTypeLst;
 algorithm
-  (outExpExpLst,outTypesTypeLst):=
-  matchcontinue (inTypesTypeLst,inTplExpExpTypesTypeLst)
+  (outExpExpLst,outTypesTypeLst) := matchcontinue (inTypesTypeLst,inTplExpExpTypesTypeLst)
     local
       DAE.Exp arg_1,arg;
       tuple<DAE.TType, Option<Absyn.Path>> atype_1,pt,atype;
       list<DAE.Exp> args_1;
       list<tuple<DAE.TType, Option<Absyn.Path>>> atypes_1,pts;
       list<tuple<DAE.Exp, tuple<DAE.TType, Option<Absyn.Path>>>> args;
+    
+    // empty lists
     case ({},{}) then ({},{});
+    
+    // we have something 
     case ((pt :: pts),((arg,atype) :: args))
       equation
         (arg_1,atype_1) = Types.matchType(arg, atype, pt, false);
@@ -12108,21 +12115,19 @@ algorithm
 end elabArglist;
 
 public function deoverload "function: deoverload
-
-  Given several lists of parameter types and one argument list, this
-  function tries to find one list of parameter types which is
-  compatible with the argument list.  It uses `elab_arglist\' to do
-  the matching, which means that automatic type conversions will be
-  made when necessary.  The new argument list, together with a new
-  operator that corresponds to the parameter type list is returned.
-
-  The basic principle is that the first operator that matches is
-  chosen.
-
+  Given several lists of parameter types and one argument list, 
+  this function tries to find one list of parameter types which 
+  is compatible with the argument list. It uses elabArglist to 
+  do the matching, which means that automatic type conversions 
+  will be made when necessary.  The new argument list, together 
+  with a new operator that corresponds to the parameter type list 
+  is returned.
+  
+  The basic principle is that the first operator that matches is chosen.
+  
   The third argument to the function is the expression containing
   the operation to be deoverloaded.  It is only used for error
-  messages.
-"
+  messages."
   input list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> inTplExpOperatorTypesTypeLstTypesTypeLst;
   input list<tuple<DAE.Exp, DAE.Type>> inTplExpExpTypesTypeLst;
   input Absyn.Exp inExp;
@@ -12130,8 +12135,7 @@ public function deoverload "function: deoverload
   output list<DAE.Exp> outExpExpLst;
   output DAE.Type outType;
 algorithm
-  (outOperator,outExpExpLst,outType):=
-  matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inExp)
+  (outOperator,outExpExpLst,outType) := matchcontinue (inTplExpOperatorTypesTypeLstTypesTypeLst,inTplExpExpTypesTypeLst,inExp)
     local
       list<DAE.Exp> args_1,exps;
       list<tuple<DAE.TType, Option<Absyn.Path>>> types_1,params,tps;
@@ -12142,6 +12146,7 @@ algorithm
       Absyn.Exp exp;
       Ident s,estr,tpsstr;
       list<Ident> exps_str,tps_str;
+    
     case (((op,params,rtype) :: _),args,_)
       equation
         //Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
@@ -12150,11 +12155,13 @@ algorithm
         rtype_1 = computeReturnType(op, types_1, rtype);
       then
         (op,args_1,rtype_1);
+    
     case ((_ :: xs),args,exp)
       equation
         (op,args_1,rtype) = deoverload(xs, args, exp);
       then
         (op,args_1,rtype);
+    
     case ({},args,exp)
       equation
         s = Dump.printExpStr(exp);
@@ -12172,122 +12179,121 @@ algorithm
 end deoverload;
 
 protected function computeReturnType "function: computeReturnType
-  This function determines the return type of an operator and the types of
-  the operands.
-"
+  This function determines the return type of 
+  an operator and the types of the operands."
   input DAE.Operator inOperator;
   input list<DAE.Type> inTypesTypeLst;
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType:=
-  matchcontinue (inOperator,inTypesTypeLst,inType)
+  outType := matchcontinue (inOperator,inTypesTypeLst,inType)
     local
       tuple<DAE.TType, Option<Absyn.Path>> typ1,typ2,rtype,etype,typ;
       Ident t1_str,t2_str;
       Integer n1,n2,m,n,m1,m2,p;
+    
     case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.ADD_ARR(ty = _),{typ1,typ2},_)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
-        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector addition",t1_str,t2_str});
+        Error.addMessage(Error.INCOMPATIBLE_TYPES(), {"vector addition",t1_str,t2_str});
       then
         fail();
-
+    
     case (DAE.SUB_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.SUB_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.SUB_ARR(ty = _),{typ1,typ2},_)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
-        Error.addMessage(Error.INCOMPATIBLE_TYPES,
-          {"vector subtraction",t1_str,t2_str});
+        Error.addMessage(Error.INCOMPATIBLE_TYPES(),{"vector subtraction",t1_str,t2_str});
       then
         fail();
-
+    
     case (DAE.MUL_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.MUL_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.MUL_ARR(ty = _),{typ1,typ2},_)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
-        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector elementwise multiplication",t1_str,t2_str});
+        Error.addMessage(Error.INCOMPATIBLE_TYPES,{"vector elementwise multiplication",t1_str,t2_str});
       then
         fail();
-
+    
     case (DAE.DIV_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.DIV_ARR(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.DIV_ARR(ty = _),{typ1,typ2},_)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
-        Error.addMessage(Error.INCOMPATIBLE_TYPES, {"vector elementwise division",t1_str,t2_str});
+        Error.addMessage(Error.INCOMPATIBLE_TYPES(),{"vector elementwise division",t1_str,t2_str});
       then
         fail();
-    /* Matrix[n,m]^i */
+    
+    // Matrix[n,m]^i
     case (DAE.POW_ARR(ty = _),{typ1,typ2},_)
       equation
         2 = nDims(typ1);
         n = dimSize(typ1, 1);
         m1 = dimSize(typ1, 2);
-        equality(n = m1);
+        true = intEq(n, m1);
       then
         typ1;
-
+    
     case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.POW_ARR2(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         typ1;
-
+    
     case (DAE.POW_ARR2(ty = _),{typ1,typ2},_)
       equation
         t1_str = Types.unparseType(typ1);
@@ -12295,19 +12301,19 @@ algorithm
         Error.addMessage(Error.INCOMPATIBLE_TYPES, {"elementwise vector^vector",t1_str,t2_str});
       then
         fail();
-
+    
     case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         rtype;
-
+    
     case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation
         true = Types.subtype(typ1, typ2);
       then
         rtype;
-
+    
     case (DAE.MUL_SCALAR_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation
         t1_str = Types.unparseType(typ1);
@@ -12315,8 +12321,8 @@ algorithm
         Error.addMessage(Error.INCOMPATIBLE_TYPES, {"scalar product",t1_str,t2_str});
       then
         fail();
-
-        /* Vector[n]*Matrix[n,m] */
+    
+    // Vector[n]*Matrix[n,m]
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation
         1 = nDims(typ1);
@@ -12324,12 +12330,13 @@ algorithm
         n1 = dimSize(typ1, 1);
         n2 = dimSize(typ2, 1);
         m = dimSize(typ2, 2);
-        equality(n1 = n2);
+        true = intEq(n1, n2);
         etype = elementType(typ1);
         rtype = (DAE.T_ARRAY(DAE.DIM(SOME(m)),etype),NONE);
       then
         rtype;
-        /* Matrix[n,m]*Vector[m] */
+    
+    // Matrix[n,m]*Vector[m]
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation
         2 = nDims(typ1);
@@ -12337,12 +12344,12 @@ algorithm
         n = dimSize(typ1, 1);
         m1 = dimSize(typ1, 2);
         m2 = dimSize(typ2, 1);
-        equality(m1 = m2);
+        true = intEq(m1, m2);
         etype = elementType(typ2);
         rtype = (DAE.T_ARRAY(DAE.DIM(SOME(n)),etype),NONE);
       then
         rtype;
-
+    
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_)
       equation
         2 = nDims(typ1);
@@ -12351,23 +12358,20 @@ algorithm
         m1 = dimSize(typ1, 2);
         m2 = dimSize(typ2, 1);
         p = dimSize(typ2, 2);
-        equality(m1 = m2);
+        true = intEq(m1, m2);
         etype = elementType(typ1);
-        rtype = (
-          DAE.T_ARRAY(DAE.DIM(SOME(n)),
-          (DAE.T_ARRAY(DAE.DIM(SOME(p)),etype),NONE)),NONE);
+        rtype = (DAE.T_ARRAY(DAE.DIM(SOME(n)), (DAE.T_ARRAY(DAE.DIM(SOME(p)),etype),NONE)),NONE);
       then
         rtype;
-
+    
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},rtype)
       equation
         t1_str = Types.unparseType(typ1);
         t2_str = Types.unparseType(typ2);
-        Error.addMessage(Error.INCOMPATIBLE_TYPES,
-          {"matrix multiplication",t1_str,t2_str});
+        Error.addMessage(Error.INCOMPATIBLE_TYPES(),{"matrix multiplication",t1_str,t2_str});
       then
         fail();
-
+    
     case (DAE.MUL_SCALAR_ARRAY(ty = _),{typ1,typ2},rtype) then typ2;  /* rtype */
 
     case (DAE.MUL_ARRAY_SCALAR(ty = _),{typ1,typ2},rtype) then typ1;  /* rtype */
@@ -12429,13 +12433,11 @@ algorithm
 end computeReturnType;
 
 public function nDims "function nDims
-  Returns the number of dimensions of a Type.
-"
+  Returns the number of dimensions of a Type."
   input DAE.Type inType;
   output Integer outInteger;
 algorithm
-  outInteger:=
-  matchcontinue (inType)
+  outInteger := matchcontinue (inType)
     local
       Integer ns;
       tuple<DAE.TType, Option<Absyn.Path>> t;
@@ -12449,21 +12451,19 @@ algorithm
       then
         ns + 1;
     case ((DAE.T_COMPLEX(_,_,SOME(t),_),_))
-    equation
-      ns = nDims(t);
+      equation
+        ns = nDims(t);
       then ns;
   end matchcontinue;
 end nDims;
 
 protected function dimSize "function: dimSize
-  Returns the dimension size of the given dimesion.
-"
+  Returns the dimension size of the given dimesion."
   input DAE.Type inType;
   input Integer inInteger;
   output Integer outInteger;
 algorithm
-  outInteger:=
-  matchcontinue (inType,inInteger)
+  outInteger := matchcontinue (inType,inInteger)
     local
       Integer n,d_1,d;
       tuple<DAE.TType, Option<Absyn.Path>> t;
@@ -12484,14 +12484,12 @@ algorithm
 end dimSize;
 
 protected function elementType "function: elementType
-  Returns the element type of a type, i.e. for arrays, return the element type, and for
-  bulitin scalar types return the type itself.
-"
+  Returns the element type of a type, i.e. for arrays, return the 
+  element type, and for bulitin scalar types return the type itself."
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType:=
-  matchcontinue (inType)
+  outType := matchcontinue (inType)
     local tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
     case ((t as (DAE.T_INTEGER(varLstInt = _),_))) then t;
     case ((t as (DAE.T_REAL(varLstReal = _),_))) then t;
