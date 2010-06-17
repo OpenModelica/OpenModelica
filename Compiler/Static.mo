@@ -195,7 +195,7 @@ algorithm
   end matchcontinue;
 end elabExpListList;
 
-protected function cevalIfConstant "function: cevalIfConstant
+/*protected function cevalIfConstant "function: cevalIfConstant
   This function calls Ceval.ceval if the Constant parameter indicates
   C_CONST. If not constant, it also tries to simplify the expression using
   Exp.simplify"
@@ -279,7 +279,7 @@ algorithm
       then
         (cache,e_1,prop);
   end matchcontinue;
-end cevalIfConstant;
+end cevalIfConstant;*/
 
 public function elabExp "
 function: elabExp
@@ -1351,33 +1351,7 @@ algorithm
       list<Values.Value> vallst;
       DAE.DAElist dae,dae1,dae2,dae3;
       DAE.Const cnst;
-      
-      /*Symbolically expand arrays if iterator is parameter or constant
-      */
-		/* peros - 2010-01-15
-		 * This case only works for one iterator, but since the next case that takes
-		 * care of any number of iterators was implemented it should no longer be
-		 * needed. This case might be slightly faster than the general case though,
-		 * so I'm leaving it here for a while to see if someone complains. */
-		/*case (cache,env,Absyn.CREF_IDENT("array",{}),exp,(afis as (iter,SOME(iterexp))::{}),impl,st,doVect)
-			local
-				Absyn.ForIterators afis;
-			equation
-				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_)
-				= elabExp(cache,env, iterexp, impl, st,doVect);
-				true = Types.isParameterOrConstant(iterconst);
-				env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
-				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.VAR());
-				(cache,Values.ARRAY(vallst),_) = Ceval.ceval(cache,env, iterexp_1, impl, NONE, NONE, Ceval.MSG());
-				(cache,exp_1,DAE.PROP(expty,expconst),st) = elabExp(cache,env_1, exp, impl, st,doVect) "const so that expr is elaborated to const" ;
-				expl = elabCallReduction2(exp_1, vallst, iter);
-				ty = (DAE.T_ARRAY(arraydim,expty),NONE);
-				b = not Types.isArray(expty);
-				etp = Types.elabType(ty);
-				const = Types.constAnd(expconst, iterconst);
-				prop = DAE.PROP(ty,const);
-			then
-			(cache,DAE.ARRAY(etp,b,expl),prop,st);*/
+
 		case (cache, env, Absyn.CREF_IDENT("array", {}), exp, iterators, impl, st, doVect)
 			local
 				list<list<Values.Value>> vals;
