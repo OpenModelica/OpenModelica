@@ -48,12 +48,12 @@ public import DAELow;
 public import SCode;
 public import Util;
 public import Values;
+public import Algorithm;
 
 type Ident = String;
   
 public type Functiontuple = tuple<Option<list<DAE.Element>>,Option<DAE.FunctionTree>,list<DAE.InlineType>>;  
 
-protected import Algorithm;
 protected import Debug;
 protected import DAEUtil;
 protected import Exp;
@@ -138,7 +138,7 @@ algorithm
   end matchcontinue;
 end inlineEquationArray;
 
-protected function inlineEqOpt "
+public function inlineEqOpt "
 function: inlineEqOpt
 	inlines function calls in equations"
 	input Option<DAELow.Equation> inEquationOption;
@@ -271,7 +271,7 @@ algorithm
   end matchcontinue;
 end inlineVariables;
 
-protected function inlineVarOpt
+public function inlineVarOpt
 "functio: inlineVarOpt
 	inlines calls in a variable option"
 	input Option<DAELow.Var> inVarOption;
@@ -308,7 +308,7 @@ algorithm
   end matchcontinue;
 end inlineVarOpt;
 
-protected function inlineMultiDimEqs
+public function inlineMultiDimEqs
 "function: inlineMultiDimEqs
 	inlines function calls in multi dim equations"
 	input DAELow.MultiDimEquation inMultiDimEquation;
@@ -336,7 +336,7 @@ algorithm
   end matchcontinue;
 end inlineMultiDimEqs;
 
-protected function inlineEventInfo
+public function inlineEventInfo
 "function: inlineEventInfo
 	inlines function calls in event info"
 	input DAELow.EventInfo inEventInfo;
@@ -439,7 +439,7 @@ algorithm
   end matchcontinue;
 end inlineReinitStmt;
 
-protected function inlineExtObjClasses
+public function inlineExtObjClasses
 "function: inlineExtObjClasses
 	inlines function calls in external object classes"
 	input DAELow.ExternalObjectClasses inExtObjClasses;
@@ -727,7 +727,7 @@ algorithm
   end matchcontinue;
 end inlineDAEElements;
 
-protected function inlineAlgorithm
+public function inlineAlgorithm
 "function: inlineAlgorithm
 	inline calls in an Algorithm.Algorithm"
 	input Algorithm.Algorithm inAlgorithm;
@@ -890,7 +890,7 @@ algorithm
   end matchcontinue;
 end inlineElse;
 
-protected function inlineExp "
+public function inlineExp "
 function: inlineExp
 	inlines calls in an DAE.Exp"
 	input DAE.Exp inExp;
