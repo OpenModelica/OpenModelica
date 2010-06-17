@@ -64,7 +64,6 @@ protected import AbsynDep;
 protected import ConnectionGraph;
 protected import ClassInf;
 protected import ClassLoader;
-protected import Codegen;
 protected import Connect;
 protected import DAEQuery;
 protected import DAEUtil;
@@ -4089,81 +4088,17 @@ algorithm
     case (cache, env, path)
       equation
         false = RTOpts.debugFlag("nogen");
-        true = RTOpts.debugFlag("tplmode");
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path);
-        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction starting " +& pathstr +& " */");
         (cache,dae as DAE.DAE(d,_),_) = cevalGenerateFunctionDAEs(cache, path, env, {});
 
-        uniontypePaths = Codegen.getUniontypePaths(d);
+        uniontypePaths = DAEUtil.getUniontypePaths(d);
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
 
-        cfilename = stringAppend(pathstr, ".c");
-        //Print.clearBuf();
-        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction generating function string */");
-        //Print.printBuf(constCfileHeader);
-        //libs = Codegen.generateFunctions(dae,metarecordTypes);
-        //Print.writeBuf(cfilename);
-        //Print.clearBuf();
-
-        Debug.fprintln("dynload", "CevalScript.cevalGenerateFunction: generating makefile for " +& pathstr);
-        //makefilename = generateMakefilename(pathstr);
-        //omhome = Settings.getInstallationDirectoryPath();
-        //omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
-        //MakefileHeader = generateMakefileHeader();
-        //libs = Util.listUnion(libs, libs); // un-double the libs
-        //libsstr = Util.stringDelimitList(libs, " ");
-        //str = Util.stringAppendList(
-          //{MakefileHeader,"\n.PHONY: ",pathstr,"\n",
-          //pathstr,": ",cfilename,"\n","\t $(LINK)",
-          //" $(CFLAGS)",
-          //" -o ",pathstr,"$(DLLEXT) ",cfilename,
-          //" $(LDFLAGS)",
-          //" ",libsstr," -lm \n"});
-        //System.writeFile(makefilename, str);
         SimCode.translateFunctions(pathstr, d, metarecordTypes);
         compileModel(pathstr, {}, "", "");
       then
         (cache, pathstr);
-    /* not template based translation */
-    case (cache, env, path)
-      equation
-        false = RTOpts.debugFlag("nogen");
-        false = RTOpts.debugFlag("tplmode");
-        (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
-        pathstr = generateFunctionName(path);
-        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction starting " +& pathstr +& " */");
-        (cache,dae as DAE.DAE(d,_),_) = cevalGenerateFunctionDAEs(cache, path, env, {});
-        uniontypePaths = Codegen.getUniontypePaths(d);
-        (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
-
-        cfilename = stringAppend(pathstr, ".c");
-        Print.clearBuf();
-        Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunction generating function string */");
-        Print.printBuf(constCfileHeader);
-        libs = Codegen.generateFunctions(dae,metarecordTypes);
-        Print.writeBuf(cfilename);
-        Print.clearBuf();
-
-        Debug.fprintln("dynload", "CevalScript.cevalGenerateFunction: generating makefile for " +& pathstr);
-        makefilename = generateMakefilename(pathstr);
-        omhome = Settings.getInstallationDirectoryPath();
-        omhome = System.trim(omhome, "\""); //Remove any quotation marks from omhome.
-        MakefileHeader = generateMakefileHeader();
-        libs = Util.listUnion(libs, libs); // un-double the libs
-        libsstr = Util.stringDelimitList(libs, " ");
-        str = Util.stringAppendList(
-          {MakefileHeader,"\n.PHONY: ",pathstr,"\n",
-          pathstr,": ",cfilename,"\n","\t $(LINK)",
-          " $(CFLAGS)",
-          " -o ",pathstr,"$(DLLEXT) ",cfilename,
-          " ",libsstr,
-          " $(LDFLAGS)",
-          " -lm \n"});
-        System.writeFile(makefilename, str);
-        compileModel(pathstr, {}, "", "");
-      then
-        (cache,pathstr);
     case (cache, env, path)
       equation
         false = RTOpts.debugFlag("nogen");

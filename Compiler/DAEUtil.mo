@@ -4960,4 +4960,107 @@ algorithm
   end matchcontinue;
 end splitElements_dispatch;
 
+public function matchValueblock
+"Used together with getMatchingExps"
+  input DAE.Exp inExpr;
+  output list<DAE.Exp> outExprLst;
+algorithm
+  outExprLst := matchcontinue (inExpr)
+    local
+      list<DAE.Exp> res, exps, exps2;
+      DAE.Exp e,resE;
+      list<DAE.Element> ld;
+      list<DAE.Statement> body;
+    case e as DAE.VALUEBLOCK(localDecls = ld,body = body,result = resE)
+      equation
+        exps = getAllExps(ld);
+        exps2 = Algorithm.getAllExpsStmts(body);
+        exps = listAppend(exps,exps2);
+        res = Exp.getMatchingExpsList(resE::exps,matchValueblock);
+      then e::res;
+  end matchcontinue;
+end matchValueblock;
+
+public function getUniontypePaths
+"Traverses DAE elements to find all Uniontypes, and return the paths
+of all of their records"
+  input list<DAE.Element> elements;
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths := matchcontinue elements
+    local
+      list<Absyn.Path> paths1;
+      list<Absyn.Path> paths2;
+      list<DAE.Exp> exps;
+      list<DAE.Element> els;
+    case elements
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        paths1 = getUniontypePaths2(elements);
+        exps = getAllExps(elements);
+        exps = Exp.getMatchingExpsList(exps, matchValueblock);
+        els = getDAEDeclsFromValueblocks(exps);
+        paths2 = getUniontypePaths2(els);
+        outPaths = listAppend(paths1, paths2);
+        outPaths = Util.listUnion(outPaths, outPaths); // Remove duplicates
+      then outPaths;
+    case _
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then {};
+    case _
+      equation
+        Debug.fprintln("failtrace", "- DAEUtil.getUniontypePaths failed");
+      then fail();
+  end matchcontinue;
+end getUniontypePaths;
+
+protected function getUniontypePaths2
+  input list<DAE.Element> elements;
+  output list<Absyn.Path> outPaths;
+algorithm
+  outPaths := matchcontinue elements
+    local
+      list<Absyn.Path> paths,paths1,paths2;
+      list<list<Absyn.Path>> listPaths;
+      list<DAE.Element> els,rest;
+      list<DAE.Type> tys;
+      DAE.Type ft;
+    case {} then {};
+    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = els)})::rest
+      equation
+        paths1 = getUniontypePaths2(els);
+        paths2 = getUniontypePaths2(rest);
+        paths = listAppend(paths1,paths2);
+      then paths;
+    case DAE.VAR(ty = ft)::rest
+      equation
+        tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
+        listPaths = Util.listMap(tys, Types.getUniontypePaths);
+        paths1 = getUniontypePaths2(rest);
+        listPaths = paths1::listPaths;
+        paths = Util.listFlatten(listPaths);
+      then paths;
+    case _::rest then getUniontypePaths2(rest);
+  end matchcontinue;
+end getUniontypePaths2;
+
+protected function getDAEDeclsFromValueblocks
+  input list<DAE.Exp> exps;
+  output list<DAE.Element> outEls;
+algorithm
+  outEls := matchcontinue (exps)
+    local
+      list<DAE.Exp> rest;
+      list<DAE.Element> els1,els2;
+    case {} then {};
+    case DAE.VALUEBLOCK(localDecls = els1)::rest
+      equation
+        els2 = getDAEDeclsFromValueblocks(rest);
+      then listAppend(els1,els2);
+    case _::rest then getDAEDeclsFromValueblocks(rest);
+  end matchcontinue;
+end getDAEDeclsFromValueblocks;
+
+
 end DAEUtil;

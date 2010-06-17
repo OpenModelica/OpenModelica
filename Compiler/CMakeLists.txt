@@ -2,7 +2,7 @@
 # The MO sources
 SET(SRCMO Absyn.mo AbsynDep.mo Algorithm.mo Builtin.mo 
           Ceval.mo CevalScript.mo Cevalfunc.mo ClassInf.mo
-		  ClassLoader.mo Codegen.mo Connect.mo ExpandableConnectors.mo 
+		  ClassLoader.mo Connect.mo ExpandableConnectors.mo 
 		  ConnectionGraph.mo Convert.mo DAE.mo DAELow.mo 
 		  DAEUtil.mo Derive.mo Debug.mo	DFA.mo Dump.mo 
 		  DumpGraphviz.mo Constants.mo Env.mo Error.mo 

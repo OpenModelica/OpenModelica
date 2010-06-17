@@ -7,7 +7,6 @@ SRCMO= Absyn.mo \
 	Cevalfunc.mo \
 	ClassInf.mo \
 	ClassLoader.mo \
-	Codegen.mo \
 	Connect.mo \
 	ExpandableConnectors.mo \
 	ConnectionGraph.mo \
