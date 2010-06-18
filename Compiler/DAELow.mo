@@ -5677,11 +5677,15 @@ algorithm
       equation
         e1 = Exp.simplify(e1);
         e2 = Exp.simplify(e2);
+        ty = Exp.typeof(e1);
+        i = Exp.sizeOf(ty);
         // inline 
         e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         // extend      
         complexEqs = extendRecordEqns(COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
+        // check  
+        true = intEq(i,listLength(complexEqs));
       then
         complexEqs;
     case (DAE.COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
@@ -5699,11 +5703,15 @@ algorithm
       equation
         e1 = Exp.simplify(e1);
         e2 = Exp.simplify(e2);
+        ty = Exp.typeof(e1);
+        i = Exp.sizeOf(ty);
         // inline 
         e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         // extend      
         complexEqs = extendRecordEqns(COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
+        // check  
+        true = intEq(i,listLength(complexEqs));
       then
         complexEqs;
     case (DAE.INITIAL_COMPLEX_EQUATION(lhs = e1, rhs = e2,source = source),funcs)
@@ -15881,9 +15889,11 @@ algorithm outEqnLst := matchcontinue(inExp,Source)
     list<Equation> eqnlst;
     list<tuple<DAE.Exp,DAE.Exp>> exptplst;
     list<list<DAE.Subscript>> subslst;
+    Exp.Type tp;
   case ((e1 as DAE.CREF(componentRef=cr),e2),source)
   equation 
-    false = Exp.isRecord(cr);
+    tp = Exp.typeof(e1);
+    false = DAEUtil.expTypeComplex(tp);
     (e1lst,subslst) = extendExp(e1);
     e2lst = Util.listMap1r(subslst,Exp.applyExpSubscripts,e2);
     exptplst = Util.listThreadTuple(e1lst,e2lst);
@@ -15892,7 +15902,8 @@ algorithm outEqnLst := matchcontinue(inExp,Source)
     eqnlst;
   case ((e1 as DAE.CREF(componentRef=cr),e2),source)
   equation 
-    false = Exp.isRecord(cr);
+    tp = Exp.typeof(e1);
+    false = DAEUtil.expTypeComplex(tp);
     (e1lst,{}) = extendExp(e1);
     e2lst = {e2};
     exptplst = Util.listThreadTuple(e1lst,e2lst);
@@ -15901,7 +15912,8 @@ algorithm outEqnLst := matchcontinue(inExp,Source)
     eqnlst;    
   case ((e1 as DAE.CREF(componentRef=cr),e2),source)
   equation 
-    true = Exp.isRecord(cr);
+    tp = Exp.typeof(e1);
+    true = DAEUtil.expTypeComplex(tp);
   then
      {COMPLEX_EQUATION(-1,e1,e2,source)};    
  end matchcontinue;
