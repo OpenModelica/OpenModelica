@@ -55,6 +55,11 @@
 #include "omc_communication.h"
 #endif
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+#else
+#include <wordexp.h>
+#endif
+
 using namespace std;
 
 /* Local functios */
@@ -72,29 +77,8 @@ void doSocketCommunication(const string*);
 
 /* Global variables */
 
-char* historyfile = "mosh_history";
+const char* historyfile = NULL;
 int maxhistoryfileentries = 3000;
-
-/* none of these are needed!
-
-pthread_mutex_t lock;
-pthread_mutex_t clientlock;
-
-// Condition variable for keeping omc waiting for client requests
-pthread_cond_t omc_waitformsg;
-pthread_mutex_t omc_waitlock;
-bool omc_waiting=false;
-
-// Condition variable for keeping corba waiting for returnvalue from omc
-pthread_cond_t corba_waitformsg;
-pthread_mutex_t corba_waitlock;
-bool corba_waiting=false;
-
-// we need to define these too.
-char* omc_cmd_message;
-char* omc_reply_message;
-
-*/
 
 /* Main function, handles options: -noserv -corba
    and calls appropriate function. */
@@ -103,6 +87,21 @@ int main(int argc, char* argv[])
   bool corba_comm=false;
   bool noserv=false;
 
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  historyfile = "mosh_history";
+#else
+  wordexp_t p;
+  char **w;
+  int i;
+  wordexp("~/.mosh_history",&p,0);
+  if (p.we_wordc == 1) {
+    w = p.we_wordv;
+    historyfile = strdup(w[0]);
+  } else {
+    historyfile = "mosh_history";
+  }
+  wordfree(&p);
+#endif
 
   char * omhome=check_omhome();
 
@@ -120,14 +119,15 @@ int main(int argc, char* argv[])
 	 << "Copyright 1997-2008, PELAB, Linkoping University" << endl << endl
 	 << "To get help on using Mosh and OpenModelica, type \"help()\" and press enter" << endl;
   }
+  const char* errorfile = "/tmp/omshell.log";
   if (corba_comm) {
     if (!noserv) {
       // Starting background server using corba
       char systemstr[1024];
-      sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > /tmp/error.log 2>&1 &", omhome);
+      sprintf(systemstr, "%s/bin/omc +d=interactiveCorba > %s 2>&1 &", omhome, errorfile);
       int res = system(systemstr);
       if (!scriptname)
-	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
+        cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
     }
     sleep(1); // wait a second for the server to start
     doCorbaCommunication(argc,argv,scriptname);
@@ -135,8 +135,8 @@ int main(int argc, char* argv[])
     if (!noserv) {
      // Starting background server using corba
       char systemstr[1024];
-      sprintf(systemstr,"%s/bin/omc +d=interactive > /tmp/error.log 2>&1 &",
-	      omhome);
+      sprintf(systemstr,"%s/bin/omc +d=interactive > %s 2>&1 &",
+	      omhome, errorfile);
       int res = system(systemstr);
       if (!scriptname)
 	cout << "Started server using:"<< systemstr << "\n res = " << res << endl;
@@ -154,7 +154,7 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 {
  CORBA::ORB_var orb = CORBA::ORB_init(argc,argv);
   char uri[300];
-  char *user = getenv("USER");
+  const char *user = getenv("USER");
   if (user == NULL) { user = "nobody"; }
   sprintf (uri, "file:///tmp/openmodelica.%s.objid",user);
 
@@ -164,10 +164,11 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
 
   char cd_buf[MAXPATHLEN];
   char cd_cmd[MAXPATHLEN+6];
-  getcwd(cd_buf,MAXPATHLEN);
-  sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
-  char* res = client->sendExpression(cd_cmd);
-  CORBA::string_free(res);
+  if (NULL != getcwd(cd_buf,MAXPATHLEN)) {
+    sprintf(cd_cmd,"cd(\"%s\")",cd_buf);
+    char* res = client->sendExpression(cd_cmd);
+    CORBA::string_free(res);
+  }
 
   if (scriptname) { // Execute script and output return value
     const char * str=("runScript(\""+*scriptname+"\")").c_str();
@@ -195,10 +196,10 @@ void doCorbaCommunication(int argc, char **argv, const string *scriptname)
       if (line == 0)  { line = strdup("quit()"); }
     }
     if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
-      add_history(line);
+      if (!done) add_history(line);
       char *res =client->sendExpression(line);
-      if (strcmp(line,"quit()") == 0) {
-	  sleep(1);
+      if (done) {
+        sleep(1);
       }
       cout << res;
       CORBA::string_free(res);
@@ -286,18 +287,18 @@ void doSocketCommunication(const string * scriptname)
       if (line == 0)  { line = strdup("quit()"); }
     }
     if (strcmp(line,"\n")!=0 && strcmp(line,"") != 0) {
-      add_history(line);
+      if (!done) add_history(line);
       int nbytes = write(sock,line,strlen(line)+1);
       if (nbytes == 0) {
-	cout << "Error writing to server" << endl;
-	done = true;
-	break;
+        cout << "Error writing to server" << endl;
+        done = true;
+        break;
       }
       int recvbytes = read(sock,buf,40000);
       if (recvbytes == 0) {
-	cout << "Recieved 0 bytes, exiting" << endl;
-	done = true;
-	break;
+        cout << "Recieved 0 bytes, exiting" << endl;
+        done = true;
+        break;
       }
       cout << buf;
     }
