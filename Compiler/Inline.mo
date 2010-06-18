@@ -981,7 +981,7 @@ algorithm
     case ({}) then {}; 
     case((c,e as (DAE.CREF(componentRef = cref)))::res)
       equation
-      true = Exp.isRecord(cref);
+//      true = Exp.isRecord(cref);
       DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e);
       new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
       res1 = extendCrefRecords(res);  
@@ -1009,10 +1009,12 @@ algorithm
       DAE.ExpType identType,eidentType,tp;
       list<DAE.Subscript> subscriptLst,esubscriptLst; 
       String name;
-    case(DAE.COMPLEX_VAR(name=name,tp=tp),DAE.CREF_IDENT(ident=ident,identType=identType,subscriptLst=subscriptLst),
-      DAE.CREF_IDENT(ident=eident,identType=eidentType,subscriptLst=esubscriptLst)) 
-      then ((DAE.CREF_QUAL(ident,identType,subscriptLst,DAE.CREF_IDENT(name,tp,{})),
-             DAE.CREF(DAE.CREF_QUAL(eident,eidentType,esubscriptLst,DAE.CREF_IDENT(name,tp,{})),tp))); 
+      DAE.ComponentRef c1,e1;
+    case(DAE.COMPLEX_VAR(name=name,tp=tp),c,e) 
+      equation
+      c1 = Exp.extendCref(c,tp,name,{});  
+      e1 = Exp.extendCref(e,tp,name,{});  
+      then ((c1,DAE.CREF(e1,tp))); 
     case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.extendCrefRecords1 failed");
