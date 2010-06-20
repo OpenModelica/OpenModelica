@@ -2288,13 +2288,23 @@ algorithm
         eqSystemsRest = createNonlinearResidualEquations(rest, aeqns);
       then
         SES_RESIDUAL(res_exp) :: eqSystemsRest;
-    ///* An array equation */
-    //case (rest as DAELow.ARRAY_EQUATION(aindx,_) :: _, aeqns, repl)
-    //  equation
-    //    (cfunc_1,cg_id_1,rest2,indx_1) = generateOdeSystem2NonlinearResidualsArrayEqn(aindx,rest,aeqns,indx,repl,cg_id);
-    //    (cfunc_2,cg_id_2) = generateOdeSystem2NonlinearResiduals2(rest2, aeqns,indx_1, repl, cg_id_1);
-    //    cfunc = Codegen.cMergeFns({cfunc_1,cfunc_2});
-    //  then (cfunc,cg_id_2);
+    /* An array equation */
+    case ((DAELow.ARRAY_EQUATION(index=aindx) :: rest), aeqns)
+      equation
+        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = aeqns[aindx];
+        tp = Exp.typeof(e1);
+        res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        res_exp = Exp.simplify(res_exp);
+        res_exp = replaceDerOpInExp(res_exp);        
+//        (cfunc_1,cg_id_1,rest2,indx_1) = generateOdeSystem2NonlinearResidualsArrayEqn(aindx,rest,aeqns,indx,repl,cg_id);
+        eqSystemsRest = createNonlinearResidualEquations(rest, aeqns);
+      then 
+        SES_RESIDUAL(res_exp) :: eqSystemsRest;
+    case (_,_)
+      equation
+        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"});
+      then
+        fail();    
   end matchcontinue;
 end createNonlinearResidualEquations;
 
@@ -2755,7 +2765,7 @@ algorithm
           
     /* Time varying jacobian. Linear system of equations that needs to
        be solved during runtime. */
-    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn)),SOME(jac),DAELow.JAC_TIME_VARYING(),block_,helpVarInfo)
+    case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),DAELow.JAC_TIME_VARYING(),block_,helpVarInfo)
       local
         list<DAELow.Var> dlowVars;
         list<SimVar> simVars;
@@ -2763,11 +2773,12 @@ algorithm
         list<DAE.Exp> beqs;
         list<tuple<Integer, Integer, DAELow.Equation>> jac;
         list<tuple<Integer, Integer, SimEqSystem>> simJac;
+        DAELow.MultiDimEquation[:] arrayEqs;
       equation
         dlowVars = DAELow.varList(v);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
         dlowEqs = DAELow.equationList(eqn);
-        beqs = Util.listMap1(dlowEqs, dlowEqToExp, v);
+        beqs = Util.listMap2(dlowEqs, dlowEqToExp, v, arrayEqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
         {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
@@ -3389,13 +3400,13 @@ end jacToSimjac;
 protected function dlowEqToExp
   input DAELow.Equation dlowEq;
   input DAELow.Variables v;
+  input DAELow.MultiDimEquation[:] arrayEqs;
   output DAE.Exp exp_;
 algorithm
   exp_ :=
-  matchcontinue (dlowEq, v)
+  matchcontinue (dlowEq, v, arrayEqs)
     local
-      Integer row;
-      Integer col;
+      Integer row, col, index;
       DAE.Exp e;
       DAE.Exp e1;
       DAE.Exp e2;
@@ -3404,12 +3415,12 @@ algorithm
       DAE.Exp rhs_exp_1;
       DAE.Exp rhs_exp_2;
       DAE.ExpType tp;
-    case (DAELow.RESIDUAL_EQUATION(exp=e), v)
+    case (DAELow.RESIDUAL_EQUATION(exp=e), v, arrayEqs)
       equation
         rhs_exp = DAELow.getEqnsysRhsExp(e, v);
         rhs_exp_1 = Exp.simplify(rhs_exp);
       then rhs_exp_1;
-    case (DAELow.EQUATION(exp=e1, scalar=e2), v)
+    case (DAELow.EQUATION(exp=e1, scalar=e2), v, arrayEqs)
       equation
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
@@ -3417,6 +3428,21 @@ algorithm
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
       then rhs_exp_2;
+    case (DAELow.ARRAY_EQUATION(index=index), v, arrayEqs)
+      equation
+        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = arrayEqs[index];
+        tp = Exp.typeof(e1);
+        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
+        rhs_exp_2 = Exp.simplify(rhs_exp_1);
+      then rhs_exp_2;        
+    case (dlowEq,_,_)
+      equation
+        DAELow.dumpEqns({dlowEq});
+        Error.addMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"});
+      then
+        fail();        
   end matchcontinue;
 end dlowEqToExp;
 
