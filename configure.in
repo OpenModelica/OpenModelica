@@ -277,7 +277,7 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
   fi
   
   LDFLAGS_BAK=$LDFLAGS
-  LDFLAGS+=$LIBSENDDATA_LDFLAGS
+  LDFLAGS+= $LIBSENDDATA_LDFLAGS
   AC_LINK_IFELSE([AC_LANG_PROGRAM()],AC_MSG_RESULT([ok]),AC_MSG_ERROR([Compilation failed using LDFLAGS='$LDFLAGS'. Try specifying your own LDFLAGS to link to Qt.]))
   LDFLAGS=$LDFLAGS_BAK
   LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendData $LIBSENDDATA_LDFLAGS"
