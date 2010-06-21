@@ -4623,7 +4623,7 @@ rm -f core conftest.err conftest.$ac_objext \
 else
 
   LIBSENDDATA="sendDataHumbug"
-  LIBSENDDATA_LDFLAGS="-lsendDataHumbug"
+  LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
 $as_echo "disabled" >&6; }
 
