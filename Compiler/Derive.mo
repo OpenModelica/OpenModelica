@@ -149,7 +149,7 @@ algorithm
       equation
         print("-differentiate_equation_time on complex equations not impl yet.\n");
       then
-        fail();        
+        fail();   
     case (DAELow.ARRAY_EQUATION(index = _),_,_,_,_,_,_)
       equation
         print("-differentiate_equation_time on array equations not impl yet.\n");
@@ -407,7 +407,17 @@ algorithm
       then
         exp;
 
-    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* list_member(cr,timevars) => false */  then DAE.RCONST(0.0);
+    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=aDim))),(timevars,functions)) /* list_member(cr,timevars) => false */ 
+      local 
+        list<Option<Integer>> aDim;
+        list<Integer> ilst; 
+      equation
+         // generade zeros
+         ilst = Util.listMap1(aDim,Util.getOptionOrDefault,0);
+         i = Util.listFold(ilst,intAdd,0);
+         expl_1 = Util.listFill(DAE.RCONST(0.0),i);  
+      then DAE.ARRAY(tp,true,expl_1);
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* list_member(cr,timevars) => false */ then DAE.RCONST(0.0);
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),(timevars,functions))
       equation
         e1_1 = differentiateExpTime(e1, (timevars,functions));
@@ -486,6 +496,18 @@ algorithm
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.ARRAY(tp,b,expl_1);
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2),(timevars,functions))
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);    
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),(timevars,functions))
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);             
     case ((e as DAE.MATRIX(ty = _)),_)
       equation
         Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,

@@ -4585,7 +4585,26 @@ algorithm
 
     /* array equations */
     case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
-      local MultiDimEquation e_1,e_2;
+      local 
+        MultiDimEquation e_1,e_2;
+        DAE.Exp e_11,e_21;
+        list<DAE.Exp> ea1,ea2;
+        list<tuple<DAE.Exp,DAE.Exp>> ealst;
+      equation
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
+        = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
+        e_1 = lowerArrEqn(e);
+        MULTIDIM_EQUATION(left=e_11 as DAE.ARRAY(scalar=true,array=ea1),
+                          right=e_21 as DAE.ARRAY(scalar=true,array=ea2),source=source)
+          = Inline.inlineMultiDimEqs(e_1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        ealst = Util.listThreadTuple(ea1,ea2);
+        re = Util.listMap1(ealst,generateEQUATION,source);
+        eqns = listAppend(re, eqns);
+      then
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
+    case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+      local 
+        MultiDimEquation e_1,e_2;
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
@@ -4593,7 +4612,7 @@ algorithm
         e_2 = Inline.inlineMultiDimEqs(e_1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_2 :: aeqns),algs,whenclauses_1,extObjCls);
-
+        
 		/* initial array equations */
 		case (DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2)) :: xs, funcs), 
 				states, vars, knvars, extVars, whenclauses)
