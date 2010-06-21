@@ -56,6 +56,7 @@ int modelTermination=0;
 long numpoints; // the number of points requested by init file
 
 int sim_verbose; // Flag for logging
+int sim_noemit; // Flag for not emitting data
 
 int acceptedStep=0; /* Flag for knowning when step is accepted and when solver searches for solution.
 If solver is only searching for a solution, asserts, etc. should not be triggered, causing faulty error messages to be printed
@@ -331,6 +332,7 @@ int initRuntimeAndSimulation(int argc, char**argv) {
 	}
 	/* verbose flag is set : -v */
 	sim_verbose = (int) flagSet("v", argc, argv);
+  sim_noemit = (int) flagSet("noemit", argc, argv);
 
 	interactiveSimuation = flagSet("interactive", argc, argv);
 

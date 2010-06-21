@@ -63,6 +63,7 @@
  */
 int emit()
 {
+  if (sim_noemit) return 0;
   storeExtrapolationData();
   if (actualPoints < maxPoints) {
 	  if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
@@ -70,7 +71,7 @@ int emit()
   }
   else {
     /* increase the maxPoints by (maxPoints-actualPoints) + 2000 */
-    maxPoints = maxPoints + (maxPoints-actualPoints) + 2000;
+    maxPoints = 2*maxPoints + (maxPoints-actualPoints) + 2000;
     /*
      * cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
      */
@@ -94,6 +95,7 @@ int emit()
  */
 void add_result(double *data, long *actualPoints)
 {
+  if (sim_noemit) return;
   //save time first
   //cerr << "adding result for time: " << time;
   //cerr.flush();
@@ -204,6 +206,7 @@ void deallocResult(){
 
 int deinitializeResult(const char * filename)
 {
+  if (sim_noemit) return 0;
   ofstream f(filename);
   if (!f)
   {

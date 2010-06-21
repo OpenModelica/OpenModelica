@@ -56,6 +56,7 @@ double old(double*);
 double old2(double*);
 
 extern int sim_verbose; // control debug output during simulation.
+extern int sim_noemit; // control emitting result data to file
 extern int acceptedStep; // !=0 when accepted step is calculated, 0 otherwise.
 extern int modelTermination; //// Becomes non-zero when user terminates simulation.
 
