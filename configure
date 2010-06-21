@@ -626,8 +626,6 @@ USE_CORBA
 LIBLPSOLVE55
 LIBNSL
 LIBSOCKET
-readlinelib
-readlineinc
 antlrlib
 antlrinc
 omc_antlr_jar
@@ -2152,8 +2150,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
-
 
 
 
@@ -4527,7 +4523,7 @@ $as_echo_n "checking for CORBA... " >&6; };
 $as_echo "$DESIRED_CORBA" >&6; };
 
 
-for ac_prog in qmake-qt4 qmake qmake-mac
+for ac_prog in qmake-qt4 qmake-mac qmake
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -4592,15 +4588,37 @@ if test "${with_sendData_Qt+set}" = set; then :
   fi
   LIBSENDDATA="sendData"
   if test "Darwin" = `uname`; then
-    LIBSENDDATA_LDFLAGS="-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+    LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
     if test -d /opt/local/Library/Frameworks/; then
       LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
     fi
   else
-    LIBSENDDATA_LDFLAGS="-lsendData -lQtNetwork -lQtCore -lQtGui"
+    LIBSENDDATA_LDFLAGS="-lQtNetwork -lQtCore -lQtGui"
   fi
+
+  LDFLAGS_BAK=$LDFLAGS
+  LDFLAGS+=$LIBSENDDATA_LDFLAGS
+  cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
 $as_echo "ok" >&6; }
+else
+  as_fn_error "Compilation failed using LDFLAGS='$LDFLAGS'. Try specifying your own LDFLAGS to link to Qt." "$LINENO" 5
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+  LDFLAGS=$LDFLAGS_BAK
+  LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendData $LIBSENDDATA_LDFLAGS"
 
 else
 

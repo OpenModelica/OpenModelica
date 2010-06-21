@@ -250,7 +250,7 @@ AC_MSG_RESULT([$DESIRED_CORBA]);
 
 dnl Check for Qt
 
-AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake qmake-mac,"")
+AC_CHECK_PROGS(QMAKE,qmake-qt4 qmake-mac qmake,"")
 
 if test -n "$QMAKE"; then
   AC_MSG_CHECKING([for qmake arguments])
@@ -268,14 +268,19 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
   fi
   LIBSENDDATA="sendData"
   if test "Darwin" = `uname`; then
-    LIBSENDDATA_LDFLAGS="-lsendData -framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
+    LIBSENDDATA_LDFLAGS="-framework QtNetwork -framework QtCore -framework QtGui -lz -framework Carbon"
     if test -d /opt/local/Library/Frameworks/; then
       LIBSENDDATA_LDFLAGS="-F/opt/local/Library/Frameworks/ $LIBSENDDATA_LDFLAGS"
     fi
   else
-    LIBSENDDATA_LDFLAGS="-lsendData -lQtNetwork -lQtCore -lQtGui"
+    LIBSENDDATA_LDFLAGS="-lQtNetwork -lQtCore -lQtGui"
   fi
-  AC_MSG_RESULT([ok])
+  
+  LDFLAGS_BAK=$LDFLAGS
+  LDFLAGS+=$LIBSENDDATA_LDFLAGS
+  AC_LINK_IFELSE([AC_LANG_PROGRAM()],AC_MSG_RESULT([ok]),AC_MSG_ERROR([Compilation failed using LDFLAGS='$LDFLAGS'. Try specifying your own LDFLAGS to link to Qt.]))
+  LDFLAGS=$LDFLAGS_BAK
+  LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendData $LIBSENDDATA_LDFLAGS"
 ],
 [
   LIBSENDDATA="sendDataHumbug"
