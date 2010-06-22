@@ -3128,7 +3128,7 @@ algorithm
     local
       Variables vars,knvars;
       BinTree mvars,states,mvars_1,mvars_2;
-      VarTransform.VariableReplacements repl,repl_1,repl_2;
+      VarTransform.VariableReplacements repl,repl_1,repl_2,repl_3;
       VarTransform.VariableReplacements aliasRepl, aliasRepl_1, aliasRepl_2;
       DAE.ComponentRef cr1,cr2;
       list<Equation> eqns_1,seqns_1,eqns;
@@ -3146,11 +3146,12 @@ algorithm
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+      repl_2 = addArrayReplacements(repl_1,cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1);
+      (eqns_1,seqns_1,mvars_2,repl_3,aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_2, aliasRepl_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_3,aliasRepl_2);
 
       // Swapped args
     case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
@@ -3160,11 +3161,12 @@ algorithm
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
+      repl_2 = addArrayReplacements(repl_1,cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1);
+      (eqns_1,seqns_1,mvars_2,repl_3, aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_2, aliasRepl_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_3,aliasRepl_2);
 
       // try next equation.
     case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl)
@@ -3178,6 +3180,43 @@ algorithm
         ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1);
   end matchcontinue;
 end removeSimpleEquations2;
+
+protected function addArrayReplacements
+  input VarTransform.VariableReplacements inRepl;
+  input DAE.ComponentRef inSrc;
+  input DAE.Exp inDst;
+  output VarTransform.VariableReplacements outRepl;
+algorithm
+  outRepl:=
+  matchcontinue (inRepl,inSrc,inDst)
+    local
+      VarTransform.VariableReplacements repl;
+      DAE.ComponentRef src,dst,cdst;
+      list<DAE.Subscript> indexes;
+    /* check   
+    case (repl,src,DAE.CREF(componentRef=dst))
+      equation
+        // has Subscripts
+        true = Exp.crefHaveSubs(src);
+        // in hashtable 
+        (cdst,indexes) = HashTable7.get(key, ht)); 
+        // check 
+        Util.listContains();         
+      then repl; */
+    /* add       
+    case (repl,src,DAE.CREF(componentRef=dst))
+      equation
+        // has Subscripts
+        true = Exp.crefHaveSubs(src);
+        // not in hashtable 
+        failure((_) = HashTable7.get(key, ht)); 
+        // add
+        cdst = Exp.crefStripSubs(dst);
+        ht_1 = HashTable7.add((cdst, {}),ht);         
+      then repl;   */     
+    case (repl,_,_) then repl;
+  end matchcontinue;
+end addArrayReplacements;
 
 public function countSimpleEquations
 "Counts the number of trivial/simple equations
@@ -8115,33 +8154,33 @@ algorithm
     case (dae,m,mt,nv,nf,i,inFunctions)
       equation
         eqns = DAEEXT.getMarkedEqns();
-        //print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
-        //print("\n");
+        print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        print("\n");
         diff_eqns = DAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        //print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
-        //print("\n");
+        print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
+        print("\n");
 
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns,_,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{},{});
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
-        //print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
-        //print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
+        print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
+        print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
-        //print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
+        print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
         reqns = eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
         (m,mt) = updateIncidenceMatrix(dae, m, mt, changedeqns);
-        //print("new DAE:");
-        //dump(dae);
-        //print("new IM:");
-        //dumpIncidenceMatrix(m);
+        print("new DAE:");
+        dump(dae);
+        print("new IM:");
+        dumpIncidenceMatrix(m);
       then
         (dae,m,mt);
 

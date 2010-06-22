@@ -1460,7 +1460,7 @@ algorithm
         DAE.REDUCTION(p,e1_1,id,r_1);
     case (e,repl,cond)
       equation
-        //Debug.fprintln("failtrace", "- VarTransform.replaceExp faied on: " +& Exp.printExpStr(e));
+        //Debug.fprintln("failtrace", "- VarTransform.replaceExp failed on: " +& Exp.printExpStr(e));
       then e;
   end matchcontinue;
 end replaceExp;
