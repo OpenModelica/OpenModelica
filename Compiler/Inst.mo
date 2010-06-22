@@ -1992,6 +1992,20 @@ algorithm b := matchcontinue(className)
 end matchcontinue;
 end isBuiltInClass;
 
+protected constant DAE.Type stateSelectType = (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
+          {
+          DAE.TYPES_VAR("never",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+             (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+          DAE.TYPES_VAR("avoid",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+             (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+          DAE.TYPES_VAR("default",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+             (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+          DAE.TYPES_VAR("prefer",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+             (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+          DAE.TYPES_VAR("always",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
+             (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE())
+          }),NONE);
+
 protected function instRealClass
 "function instRealClass
   Instantiation of the Real class"
@@ -2049,19 +2063,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("stateSelect",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instRealClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
-          {
-          DAE.TYPES_VAR("never",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("avoid",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("default",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("prefer",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
-          DAE.TYPES_VAR("always",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE())
-          }),NONE),p);
+        v = instBuiltinAttribute(cache,env,"stateSelect",optVal,exp,stateSelectType,p);
       then v::varLst;
     case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre)
       local String s1; DAE.SubMod smod; DAE.Mod mym;
@@ -14848,7 +14850,8 @@ algorithm
         (start_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "start",false);
         (fixed_val) = instBinding( mod, varLst, DAE.T_BOOL_DEFAULT,index_list, "fixed",false);
         (nominal_val) = instBinding(mod, varLst, DAE.T_REAL_DEFAULT,index_list, "nominal",false);
-        (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",true);
+        
+        (cache,exp_bind_select) = instEnumerationBinding(cache,env, mod, varLst, index_list, "stateSelect",stateSelectType,true);
         (stateSelect_value) = getStateSelectFromExpOption(exp_bind_select);
         //TODO: check for protected attribute (here and below matches)
       then
@@ -15098,11 +15101,12 @@ protected function instEnumerationBinding
   input list<DAE.Var> varLst;
   input list<Integer> inIntegerLst;
   input String inString;
+  input DAE.Type expected_type;
   input Boolean useConstValue "if true, use constant value in TYPED (if present)";
   output Env.Cache outCache;
   output Option<DAE.Exp> outExpExpOption;
 algorithm
-  (outCache,outExpExpOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString,useConstValue)
+  (outCache,outExpExpOption) := matchcontinue (inCache,inEnv,inMod,varLst,inIntegerLst,inString,expected_type,useConstValue)
     local
       Option<DAE.Exp> result;
       list<Env.Frame> env;
@@ -15110,12 +15114,15 @@ algorithm
       list<Integer> index_list;
       String bind_name;
       Env.Cache cache;
-    case (cache,env,mod,varLst,index_list,bind_name,useConstValue)
-      equation
-        result = instBinding(mod, varLst, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE), index_list, bind_name,useConstValue);
+      DAE.Mod mod2;
+      
+    case (cache,env,mod,varLst,index_list,bind_name,expected_type,useConstValue)
+      equation       
+        result = instBinding(mod, varLst, expected_type, index_list, bind_name,useConstValue);
       then
-        (cache,result);
-    case (cache,env,mod,varLst,index_list,bind_name,useConstValue)
+        (cache,result);     
+        
+    case (cache,env,mod,varLst,index_list,bind_name,expected_type,useConstValue)
       equation
         Error.addMessage(Error.TYPE_ERROR, {bind_name,"enumeration type"});
       then
