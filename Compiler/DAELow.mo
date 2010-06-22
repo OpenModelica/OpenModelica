@@ -5256,6 +5256,17 @@ algorithm
       list<Value> p;
       list<list<DAE.Exp>> lst;
       list<list<tuple<DAE.Exp, Boolean>>> mexp;
+      list<DAE.ExpVar> varLst;
+    /* Special Case for Records */
+    case ((e as DAE.CREF(componentRef = cr,ty = tp)),vars)
+      equation
+        true = Exp.isRecord(cr);
+        DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e);
+        expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
+        lst = Util.listMap1(expl, statesAndVarsExp, vars);
+        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+      then
+        res;           
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),vars)
       equation
         (_,_) = getVar(cr, vars);
@@ -5362,10 +5373,10 @@ algorithm
     case (DAE.BCONST(_),_) then {};
     case (DAE.SCONST(_),_) then {};
     // deal with possible failure
-    case (e,_)
+    case (e,vars)
       equation
         // adrpo: TODO! FIXME! this function fails for some of the expressions: cr.cr.cr[{1,2,3}] for example.
-        //Debug.fprintln("daelow", "- DAELow.statesAndVarsExp failed to extract states or vars from expression: " +& Exp.dumpExpStr(e,0));
+        // Debug.fprintln("daelow", "- DAELow.statesAndVarsExp failed to extract states or vars from expression: " +& Exp.dumpExpStr(e,0));
       then {};
   end matchcontinue;
 end statesAndVarsExp;
@@ -15845,8 +15856,8 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
     equation
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
-      e1lst = Util.listMap1(varLst,generateCrefsFromType,e1);
-      e2lst = Util.listMap1(varLst,generateCrefsFromType,e2);
+      e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
+      e2lst = Util.listMap1(varLst,generateCrefsExpFromType,e2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
       complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
       complexEqs = Util.listFlatten(complexEqsLst);
@@ -15861,7 +15872,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
       DAE.RECORD_CONSTRUCTOR(path=fname) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
-      e1lst = Util.listMap1(varLst,generateCrefsFromType,e1);
+      e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
       complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
       complexEqs = Util.listFlatten(complexEqsLst);
@@ -15874,7 +15885,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
 end matchcontinue;
 end extendRecordEqns;
 
-protected function generateCrefsFromType "
+protected function generateCrefsExpFromType "
 Author: Frenkel TUD 2010-05"
   input DAE.ExpVar inVar;
   input DAE.Exp inExp;
@@ -15892,7 +15903,7 @@ algorithm outCrefExp := matchcontinue(inVar,inExp)
   then
     e;
  end matchcontinue;
-end generateCrefsFromType;
+end generateCrefsExpFromType;
 
 protected function generateextendedRecordEqn "
 Author: Frenkel TUD 2010-05"
