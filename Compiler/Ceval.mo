@@ -4913,7 +4913,13 @@ algorithm
         res = ValuesUtil.makeArray(lst);
       then
         (cache,res);
-
+    // we have a wholedim, so just pass the whole array on.
+    case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(valueLst = _), (dim :: dims), impl, msg)
+      equation
+        (cache, res) = cevalSubscriptValue(cache, env, subs, subval, dims, impl, msg);
+      then
+        (cache, res);
+       
     // we have no subscripts but we have a value, return it
     case (cache,env,{},v,_,_,_) then (cache,v); 
 

@@ -1698,13 +1698,15 @@ algorithm
       list<Value> resl,resl2,vrest,rest;
       Value v1;
       Integer i;
-      list<Integer> dims,dims2;
-    case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = _::dims) :: rest))
+      list<Integer> dims;
+      Integer dim;
+    case ((Values.ARRAY(valueLst = (v1 :: vrest), dimLst = {dim}) :: rest))
       equation
-        (Values.ARRAY(resl,i::dims2),resl2) = matrixStripFirstColumn(rest);
+        (Values.ARRAY(resl,{i}),resl2) = matrixStripFirstColumn(rest);
         i = i+1;
+        dim = dim - 1;
       then
-        (Values.ARRAY((v1 :: resl),i::dims2),(Values.ARRAY(vrest,dims) :: resl2));
+        (Values.ARRAY((v1 :: resl),{i}),(Values.ARRAY(vrest,{dim}) :: resl2));
     case ({}) then (Values.ARRAY({},{0}),{});
   end matchcontinue;
 end matrixStripFirstColumn;

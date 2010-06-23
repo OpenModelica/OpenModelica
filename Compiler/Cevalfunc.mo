@@ -75,7 +75,7 @@ algorithm
         (_,c,env2)=Lookup.lookupClass(Env.emptyCache(),env,basefuncpath,true);
         retVal = cevalUserFunc(env2,callExp,inArgs,c,daeList);
       then
-        retVal;                         
+        retVal;      
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
          sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
                            classDef=SCode.PARTS(elementLst=elementList) ),daeList)
@@ -89,7 +89,7 @@ algorithm
         env3 = Env.openScope(env, false, SOME(str));
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2) "also output arguments";
         // print("evalfunc env: " +& Env.printEnvStr(env) +& "\n");
-        // print("evalfunc env1: " +& Env.printEnvStr(env1) +& "\n");        
+        // print("evalfunc env1: " +& Env.printEnvStr(env1) +& "\n");     
         env2 = evaluateStatements(env1,sc,ht2);
         retVals = getOutputVarValues(elementList, env2);
         retVal = convertOutputVarValues(retVals);
@@ -179,16 +179,52 @@ algorithm
         env1 = extendEnvWithInputArgs(env,eles1,vals1,restExps, ht2);
         then
           env1;
-    // handle an input component definition = call(...) where the variable is a record 
-    case(env, ((ele1 as SCode.COMPONENT(component = varName, 
-                                        typeSpec = Absyn.TPATH(path = apath), modifications=mod1, attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::eles1), 
-              (val1::vals1),((e1 as DAE.CALL(path = _))::restExps), ht2)
+    // handle imports
+    case (env, (ele1 as SCode.IMPORT(imp = imp as Absyn.NAMED_IMPORT(name =
+              "SI"))) :: eles1, vals1, restExps, ht2)
+      local
+        Absyn.Import imp;
+      equation
+        env1 = Env.extendFrameI(env, imp);
+        env1 = extendEnvWithInputArgs(env1, eles1, vals1, restExps, ht2);
+      then
+        env1;
+    case (env, (ele1 as SCode.IMPORT(imp = _)) :: eles1, vals1, restExps, ht2)
+      equation
+        env1 = extendEnvWithInputArgs(env, eles1, vals1, restExps, ht2);
+      then
+        env1;
+
+    // TODO: Use this case instead of the two cases above to be more general.
+    // The current solution will only add SI-import to the environment, because
+    // for some unknown reason it's much slower to constant evaluate the
+    // Modelica.Mechanics.MultiBody.Frames.axesRotations function by adding the
+    // imports to the environment than failing and using the dynamic loading
+    // instead.
+    /*case (env, (ele1 as SCode.IMPORT(imp = imp)) :: eles1, vals1, restExps, ht2)
+      local
+        Absyn.Import imp;
+      equation
+        env1 = Env.extendFrameI(env, imp);
+        env1 = extendEnvWithInputArgs(env1, eles1, vals1, restExps, ht2);
+      then
+        env1;*/
+
+    // handle an input component definition where the variable is a record 
+    case(env, ((ele1 as SCode.COMPONENT(
+                  component = varName,
+                  typeSpec = Absyn.TPATH(path = apath),
+                  modifications = mod1,
+                  attributes = SCode.ATTR(direction = Absyn.INPUT()))) :: eles1),
+               (val1 as Values.RECORD(record_ = _)) :: vals1, e1 :: restExps, ht2)
       equation
         (tty as (DAE.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); 
         compFrame = Env.newFrame(false);
         complexEnv = makeComplexEnv({compFrame},typeslst);
         env1 = Env.extendFrameV(env,
-          DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+          DAE.TYPES_VAR(
+            varName,
+            DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
             false,tty,DAE.VALBOUND(val1),NONE()), NONE, Env.VAR_TYPED(), complexEnv);
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
@@ -205,7 +241,7 @@ algorithm
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
-    // failed to hanle an input component 
+    // failed to handle an input component 
     case(_, ((ele1 as SCode.COMPONENT(component = varName, typeSpec = Absyn.TPATH(path = apath), attributes = SCode.ATTR(direction = Absyn.INPUT() ) ))::_), _,_, ht2)
       equation
         Debug.fprint("failtrace", "- Cevalfunc.extendEnvWithInputArgs with input variable failed\n");
@@ -257,27 +293,38 @@ end extendEnvWithInputArgs;
 
 protected function makeComplexForEnv "Function: makeComplexForEnv
 Special case for complex structure"
-  input DAE.Exp inExp "The call statement";
+  input DAE.Exp inExp;
   input Values.Value inVal "Values.RECORD";
   output DAE.Type oType;
-algorithm (oType) := matchcontinue(inExp, inVal)
-  local
-    Absyn.Path recordName;
-    DAE.ExpType ty;
-    DAE.Type cty,cty2;
-    list<DAE.Var> lv,lv2;
-    String pathName;
-    list<Values.Value> vals;
-    list<String> names;
+algorithm 
+  (oType) := matchcontinue(inExp, inVal)
+    local
+      Absyn.Path recordName;
+      DAE.ExpType ty;
+      DAE.Type cty,cty2;
+      list<DAE.Var> lv,lv2;
+      String pathName;
+      list<Values.Value> vals;
+      list<String> names;
 
-  case(DAE.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
-    equation
-      (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
-      lv2 = setValuesInRecord(lv,names,vals);
-      cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE);
-    then
-      cty2;
-end matchcontinue;
+     // A record constructor call.
+    case(DAE.CALL(recordName,_,_,_,ty,_), inVal as Values.RECORD(_,vals,names,-1))
+      equation
+        (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
+        lv2 = setValuesInRecord(lv,names,vals);
+        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE);
+      then
+        cty2;
+    // A component reference to a record instance.
+    case (DAE.CREF(ty = ty as DAE.ET_COMPLEX(name = recordName)),
+          inVal as Values.RECORD(orderd = vals, comp = names, index = -1))
+      equation
+        (cty as (DAE.T_COMPLEX(_,lv,_,_),_)) = Types.expTypetoTypesType(ty);
+        lv2 = setValuesInRecord(lv,names,vals);
+        cty2 = (DAE.T_COMPLEX(ClassInf.RECORD(recordName) ,lv2 , NONE, NONE),NONE);
+      then
+        cty2;
+  end matchcontinue;
 end makeComplexForEnv;
 
 protected function setValuesInRecord "Function: setValuesInRecord 
