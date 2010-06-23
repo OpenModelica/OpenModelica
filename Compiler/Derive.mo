@@ -410,11 +410,9 @@ algorithm
     case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=aDim))),(timevars,functions)) /* list_member(cr,timevars) => false */ 
       local 
         list<Option<Integer>> aDim;
-        list<Integer> ilst; 
       equation
          // generade zeros
-         ilst = Util.listMap1(aDim,Util.getOptionOrDefault,1);
-         i = Util.listReduce(ilst, int_mul);
+         i = Util.mulListIntegerOpt(aDim, 1);
          expl_1 = Util.listFill(DAE.RCONST(0.0),i);  
       then DAE.ARRAY(tp,true,expl_1);
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* list_member(cr,timevars) => false */ then DAE.RCONST(0.0);

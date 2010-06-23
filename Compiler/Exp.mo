@@ -580,6 +580,39 @@ algorithm
   end matchcontinue;
 end crefStripLastSubs;
 
+public function expStripLastSubs
+"function: expStripLastSubs
+  Strips the last subscripts of a Exp"
+  input Exp inExp;
+  output Exp outExp;
+algorithm
+  outExp:=
+  matchcontinue (inExp)
+    local
+      ComponentRef cr,cr_1;
+      Type ty;
+      Operator op;
+      Exp e,e_1;
+    case (DAE.CREF(componentRef=cr))
+      equation
+        ty = crefLastType(cr);
+        cr_1 = crefStripLastSubs(cr);
+      then DAE.CREF(cr_1,ty);
+    case (DAE.UNARY(operator=op,exp=e))
+      equation
+        ty = typeof(e);
+        e_1 = expStripLastSubs(e);
+        true = DAEUtil.expTypeArray(ty);
+      then DAE.UNARY(DAE.UMINUS_ARR(ty),e_1);
+    case (DAE.UNARY(operator=op,exp=e))
+      equation
+        ty = typeof(e);
+        e_1 = expStripLastSubs(e);
+        false = DAEUtil.expTypeArray(ty);
+      then DAE.UNARY(DAE.UMINUS(ty),e_1);        
+  end matchcontinue;
+end expStripLastSubs;
+
 public function crefSetLastSubs "
 "
   input ComponentRef inComponentRef;

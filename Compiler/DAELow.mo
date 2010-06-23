@@ -3088,7 +3088,7 @@ algorithm
       equation
         repl = VarTransform.emptyReplacements();
         aliasVarsRepl = VarTransform.emptyReplacements();
-        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl, aliasVarsRepl);
+        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl,_) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl, aliasVarsRepl,{});
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf);
         eqns_2 = BackendVarTransform.replaceEquations(eqns_1, vartransf);
         seqns_1 = BackendVarTransform.replaceEquations(seqns, vartransf);
@@ -3118,17 +3118,19 @@ protected function removeSimpleEquations2
   input BinTree states;
   input VarTransform.VariableReplacements repl;
   input VarTransform.VariableReplacements inAliasVarRepl "replacement of alias variables (a=b or a=-b)";
+  input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inAlst; 
   output list<Equation> outEqns;
   output list<Equation> outSimpleEqns;
   output BinTree outMvars;
   output VarTransform.VariableReplacements outRepl;
   output VarTransform.VariableReplacements outAliasVarRepl "replacement of alias variables (a=b or a=-b)";
+  output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outAlst; 
 algorithm
-  (outEqns,outSimpleEqns,outMvars,outRepl) := matchcontinue (eqns,vars,knvars,mvars,states,repl,aliasRepl)
+  (outEqns,outSimpleEqns,outMvars,outRepl,outAlst) := matchcontinue (eqns,vars,knvars,mvars,states,repl,aliasRepl,inAlst)
     local
       Variables vars,knvars;
       BinTree mvars,states,mvars_1,mvars_2;
-      VarTransform.VariableReplacements repl,repl_1,repl_2,repl_3;
+      VarTransform.VariableReplacements repl,repl_1,repl_2;
       VarTransform.VariableReplacements aliasRepl, aliasRepl_1, aliasRepl_2;
       DAE.ComponentRef cr1,cr2;
       list<Equation> eqns_1,seqns_1,eqns;
@@ -3136,87 +3138,49 @@ algorithm
       DAE.ExpType t;
       DAE.Exp e1,e2;
       DAE.ElementSource source "the element source";
+      list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> alst,alst1,alst2,alst3;
+      
+    case ({},vars,knvars,mvars,states,repl,aliasRepl,alst) then ({},{},mvars,repl,aliasRepl,alst);
 
-    case ({},vars,knvars,mvars,states,repl,aliasRepl) then ({},{},mvars,repl,aliasRepl);
-
-    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
+    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl,alst) equation
       {e} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
-      repl_2 = addArrayReplacements(repl_1,cr1, e2);
+      (repl_1,alst1) = VarTransform.addReplacementWithArrayCheck(repl,alst, cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_3,aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_2, aliasRepl_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2,alst2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1, alst1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_3,aliasRepl_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,alst2);
 
       // Swapped args
-    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
+    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl,alst) equation
       {EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
-      repl_2 = addArrayReplacements(repl_1,cr1, e2);
+      (repl_1,alst1) = VarTransform.addReplacementWithArrayCheck(repl,alst, cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_3, aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_2, aliasRepl_1);
+      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2, alst2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1, alst1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_3,aliasRepl_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,alst2);
 
       // try next equation.
-    case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl)
+    case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl,alst)
       local Equation eq1;
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},repl);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
-        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl, aliasRepl) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1,alst1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl, aliasRepl, alst) "Not a simple variable, check rest" ;
       then
-        ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1);
+        ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1,alst1);
   end matchcontinue;
 end removeSimpleEquations2;
-
-protected function addArrayReplacements
-  input VarTransform.VariableReplacements inRepl;
-  input DAE.ComponentRef inSrc;
-  input DAE.Exp inDst;
-  output VarTransform.VariableReplacements outRepl;
-algorithm
-  outRepl:=
-  matchcontinue (inRepl,inSrc,inDst)
-    local
-      VarTransform.VariableReplacements repl;
-      DAE.ComponentRef src,dst,cdst;
-      list<DAE.Subscript> indexes;
-    /* check   
-    case (repl,src,DAE.CREF(componentRef=dst))
-      equation
-        // has Subscripts
-        true = Exp.crefHaveSubs(src);
-        // in hashtable 
-        (cdst,indexes) = HashTable7.get(key, ht)); 
-        // check 
-        Util.listContains();         
-      then repl; */
-    /* add       
-    case (repl,src,DAE.CREF(componentRef=dst))
-      equation
-        // has Subscripts
-        true = Exp.crefHaveSubs(src);
-        // not in hashtable 
-        failure((_) = HashTable7.get(key, ht)); 
-        // add
-        cdst = Exp.crefStripSubs(dst);
-        ht_1 = HashTable7.add((cdst, {}),ht);         
-      then repl;   */     
-    case (repl,_,_) then repl;
-  end matchcontinue;
-end addArrayReplacements;
 
 public function countSimpleEquations
 "Counts the number of trivial/simple equations
