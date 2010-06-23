@@ -8118,33 +8118,33 @@ algorithm
     case (dae,m,mt,nv,nf,i,inFunctions)
       equation
         eqns = DAEEXT.getMarkedEqns();
-        print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
-        print("\n");
+        // print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
+        // print("\n");
         diff_eqns = DAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
-        print("\n");
+        // print("differentiating equations:");print(Util.stringDelimitList(Util.listMap(eqns_1,intString),","));
+        // print("\n");
 
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns,_,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{},{});
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
-        print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
-        print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
+        // print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
+        // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
-        print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
+        // print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
         reqns = eqnsForVarWithStates(mt, stateno);
         changedeqns = Util.listUnionOnTrue(deqns, reqns, int_eq);
         (dae,m,mt) = replaceDummyDer(state, dummy_der, dae, m, mt, changedeqns)
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
         (m,mt) = updateIncidenceMatrix(dae, m, mt, changedeqns);
-        print("new DAE:");
-        dump(dae);
-        print("new IM:");
-        dumpIncidenceMatrix(m);
+        //print("new DAE:");
+        //dump(dae);
+        //print("new IM:");
+        //dumpIncidenceMatrix(m);
       then
         (dae,m,mt);
 

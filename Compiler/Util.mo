@@ -313,6 +313,7 @@ Return the index of the element if found, otherwise fail.
   input list<Type_a> input1;
   input Type_a input2;
   input compareFunc cmpFunc;
+  input Boolean printError;
   output Integer isequal;
   partial function compareFunc
     input Type_a inp1;
@@ -320,23 +321,26 @@ Return the index of the element if found, otherwise fail.
     output Boolean resFunc;
   end compareFunc;
   replaceable type Type_a subtypeof Any;
-algorithm isequal := matchcontinue(input1,input2,cmpFunc)
-  local
-    Type_a a,b;
-    list<Type_a> al,bl;
-    case({},_,_) equation print("listFindWithCompareFunc failed - end of list\n"); then fail();
-    case(a::al,b,cmpFunc)
+algorithm
+  isequal := matchcontinue(input1,input2,cmpFunc,printError)
+    local
+      Type_a a,b;
+      list<Type_a> al,bl;
+    case(a::al,b,cmpFunc,_)
       equation
         true = cmpFunc(a,b);
-        then
-          0;
-    case(a::al,b,cmpFunc)
+      then
+        0;
+    case(a::al,b,cmpFunc,_)
       equation
         false = cmpFunc(a,b);
-        then
-          1+listFindWithCompareFunc(al,b,cmpFunc);
-    case(_,_,_) equation print(" generic-failure in listFindWithCompareFunc\n"); then fail();
-end matchcontinue;
+      then
+        1+listFindWithCompareFunc(al,b,cmpFunc,printError);
+    case({},_,_,true)
+      equation
+        print("listFindWithCompareFunc failed - end of list\n");
+      then fail();
+  end matchcontinue;
 end listFindWithCompareFunc;
 
 public function selectAndRemoveNth "

@@ -990,7 +990,7 @@ algorithm
         ce = Exp.expStripLastSubs(e);
         ty = Exp.crefLastType(src);
         // if exist 
-        i = Util.listFindWithCompareFunc(alst,(csrc,ce,0),keyEqual);
+        i = Util.listFindWithCompareFunc(alst,(csrc,ce,0),keyEqual,false);
         ((_,_,ind),alst1) = Util.selectAndRemoveNth(alst,i,0);
         // dec value
         ind_1 = ind - 1;
@@ -1004,7 +1004,7 @@ algorithm
         ce = Exp.expStripLastSubs(e);
         ty = Exp.crefLastType(src);
         // if not exist 
-        failure(_ = Util.listFindWithCompareFunc(alst,(csrc,ce,0),keyEqual));
+        failure(_ = Util.listFindWithCompareFunc(alst,(csrc,ce,0),keyEqual,false));
         // calc indexes
         i = Exp.sizeOf(ty);
         // add
