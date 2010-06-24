@@ -5666,16 +5666,16 @@ protected function lowerArrEqn
 algorithm
   outMultiDimEquation := matchcontinue (inElement)
     local
-			DAE.Exp e1, e2;
+			DAE.Exp e1, e2, e1_1, e2_1;
       list<Value> ds;
-      DAE.ElementSource source "the element source";
+      DAE.ElementSource source;
 
     case (DAE.ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source))
       equation
-        e1 = Exp.simplify(e1);
-        e2 = Exp.simplify(e2);
+        e1_1 = extendArrEqn(e1);
+        e2_1 = extendArrEqn(e2);
       then
-        MULTIDIM_EQUATION(ds,e1,e2,source);
+        MULTIDIM_EQUATION(ds,e1_1,e2_1,source);
 
 		case (DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source))
 			equation
@@ -5685,6 +5685,31 @@ algorithm
 				MULTIDIM_EQUATION(ds, e1, e2, source);
   end matchcontinue;
 end lowerArrEqn;
+
+protected function extendArrEqn
+  input DAE.Exp inExp;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue (inExp)
+    local
+      DAE.Exp e,e1,e2;
+      list<DAE.Exp> expl;
+      DAE.ExpType ty; 
+    case(e)
+      equation
+       e1 = Exp.simplify(e);
+       ({e2},_) = extendExp(e1); 
+      then
+        e2;        
+    case(e)
+      equation
+       e1 = Exp.simplify(e);
+       (expl,_) = extendExp(e1); 
+       ty = Exp.typeof(e1);
+      then
+        DAE.ARRAY(ty,true,expl); 
+  end matchcontinue;        
+end extendArrEqn;
 
 protected function lowerComplexEqn
 "function: lowerComplexEqn
@@ -8699,7 +8724,7 @@ algorithm
       Variables v_1,v,kv,ev;
       VarTransform.VariableReplacements av "alias-variables' hashtable";
       EquationArray eqns_1,eqns,seqns,ie,ie1;
-      MultiDimEquation[:] ae;
+      MultiDimEquation[:] ae,ae1,ae2,ae3;
       DAE.Algorithm[:] al,al1,al2,al3;
       EventInfo wc;
       list<Value> rest;
@@ -8713,15 +8738,15 @@ algorithm
         e_1 = e - 1;
         eqn = equationNth(eqns, e_1);
         ieLst = equationList(ie);
-        (eqn_1,al1) = replaceDummyDer2(state, dummyder, eqn, al);
-        (ieLst1,al2) = replaceDummyDerEqns(ieLst,state,dummyder, al1);
+        (eqn_1,al1,ae1) = replaceDummyDer2(state, dummyder, eqn, al, ae);
+        (ieLst1,al2,ae2) = replaceDummyDerEqns(ieLst,state,dummyder, al1,ae1);
         ie1 = listEquation(ieLst1);
-        (eqn_1,v_1,al3) = replaceDummyDerOthers(eqn_1, v,al2);
+        (eqn_1,v_1,al3,ae3) = replaceDummyDerOthers(eqn_1, v,al2,ae2);
         eqns_1 = equationSetnth(eqns, e_1, eqn_1)
          "incidence_row(v\'\',eqn\') => row\' &
 	        Util.list_replaceat(row\',e\',m) => m\' &
 	        transpose_matrix(m\') => mt\' &" ;
-        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,av,eqns_1,seqns,ie1,ae,al3,wc,eoc), m, mt, rest);
+        (dae,m,mt) = replaceDummyDer(state, dummyder, DAELOW(v_1,kv,ev,av,eqns_1,seqns,ie1,ae3,al3,wc,eoc), m, mt, rest);
       then
         (dae,m,mt);
 
@@ -8743,10 +8768,12 @@ protected function replaceDummyDer2
   input DAE.ComponentRef inComponentRef2;
   input Equation inEquation3;
   input DAE.Algorithm[:] inAlgs;
+  input MultiDimEquation[:] inMultiDimEquationArray;
   output Equation outEquation;
   output DAE.Algorithm[:] outAlgs;
+  output MultiDimEquation[:] outMultiDimEquationArray;
 algorithm
-  (outEquation,outAlgs) := matchcontinue (inComponentRef1,inComponentRef2,inEquation3,inAlgs)
+  (outEquation,outAlgs,outMultiDimEquationArray) := matchcontinue (inComponentRef1,inComponentRef2,inEquation3,inAlgs,inMultiDimEquationArray)
     local
       DAE.Exp dercall,e1_1,e2_1,e1,e2;
       DAE.ComponentRef st,dummyder,cr;
@@ -8755,47 +8782,60 @@ algorithm
       Equation res;
       WhenEquation elsepartRes;
       WhenEquation elsepart;
-      DAE.ElementSource source "the source of the element";
+      DAE.ElementSource source,source1;
       DAE.Algorithm[:] algs;
-    case (st,dummyder,EQUATION(exp = e1,scalar = e2,source = source),inAlgs)
+      MultiDimEquation[:] ae,ae1;
+      list<Integer> dimSize;
+    case (st,dummyder,EQUATION(exp = e1,scalar = e2,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) "scalar equation" ;
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
       then
-        (EQUATION(e1_1,e2_1,source),inAlgs);
-    case (st,dummyder,ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs)
+        (EQUATION(e1_1,e2_1,source),inAlgs,ae);
+    case (st,dummyder,ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
-        (expl1,_) = Exp.replaceListExp(expl, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));        
-      then (ARRAY_EQUATION(ds,expl1,source),inAlgs);  /* array equation */
-    case (st,dummyder,ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs)
+        (expl1,_) = Exp.replaceListExp(expl, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        i = ds+1;
+        MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
+        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));    
+        ae1 = arrayUpdate(ae,i,MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
+      then (ARRAY_EQUATION(ds,expl1,source),inAlgs,ae1);  /* array equation */
+    case (st,dummyder,ALGORITHM(index = indx,in_ = in_,out = out,source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (in_1,_) = Exp.replaceListExp(in_, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));        
         (out1,_) = Exp.replaceListExp(out, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));  
         algs = replaceDummyDerAlgs(indx,inAlgs,dercall, DAE.CREF(dummyder,DAE.ET_REAL()));     
-      then (ALGORITHM(indx,in_1,out1,source),algs);  /* Algorithms */
+      then (ALGORITHM(indx,in_1,out1,source),algs,ae);  /* Algorithms */
     case (st,dummyder,WHEN_EQUATION(whenEquation =
-          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE),source = source),inAlgs)
+          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=NONE),source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,NONE),source);
       then
-        (res,inAlgs);
+        (res,inAlgs,ae);
 
     case (st,dummyder,WHEN_EQUATION(whenEquation =
-          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),inAlgs)
+          WHEN_EQ(index = i,left = cr,right = e1,elsewhenPart=SOME(elsepart)),source = source),inAlgs,ae)
       equation
         dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
         (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
-        (WHEN_EQUATION(elsepartRes,source),algs) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart,source),inAlgs);
+        (WHEN_EQUATION(elsepartRes,source),algs,ae1) = replaceDummyDer2(st,dummyder, WHEN_EQUATION(elsepart,source),inAlgs,ae);
         res = WHEN_EQUATION(WHEN_EQ(i,cr,e1_1,SOME(elsepartRes)),source);
       then
-        (res,algs);
-
-    case (_,_,_,_)
+        (res,algs,ae1);
+    case (st,dummyder,COMPLEX_EQUATION(index=i,lhs = e1,rhs = e2,source = source),inAlgs,ae)
+      equation
+        dercall = DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(st,DAE.ET_REAL())},false,true,DAE.ET_REAL(),DAE.NO_INLINE()) "scalar equation" ;
+        (e1_1,_) = Exp.replaceExp(e1, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+        (e2_1,_) = Exp.replaceExp(e2, dercall, DAE.CREF(dummyder,DAE.ET_REAL()));
+      then
+        (COMPLEX_EQUATION(i,e1_1,e2_1,source),inAlgs,ae);
+     case (_,_,_,_,_)
       equation
         print("-DAELow.replaceDummyDer2 failed\n");
       then
@@ -9029,23 +9069,26 @@ protected function replaceDummyDerEqns
   input DAE.ComponentRef st;
   input DAE.ComponentRef dummyder;
   input DAE.Algorithm[:] inAlgs;
+  input MultiDimEquation[:] inMultiDimEquationArray;
   output list<Equation> outEqns;
   output DAE.Algorithm[:] outAlgs;
+  output MultiDimEquation[:] outMultiDimEquationArray;
 algorithm
-  (outEqns,outAlgs):=
-  matchcontinue (eqns,st,dummyder,inAlgs)
+  (outEqns,outAlgs,outMultiDimEquationArray):=
+  matchcontinue (eqns,st,dummyder,inAlgs,inMultiDimEquationArray)
     local
       DAE.ComponentRef st,dummyder;
       list<Equation> eqns1,eqns;
       Equation e,e1;
       DAE.Algorithm[:] algs,algs1;
-    case ({},st,dummyder,inAlgs) then ({},inAlgs);
-    case (e::eqns,st,dummyder,inAlgs)
+      MultiDimEquation[:] ae,ae1,ae2;
+    case ({},st,dummyder,inAlgs,ae) then ({},inAlgs,ae);
+    case (e::eqns,st,dummyder,inAlgs,ae)
       equation
-         (e1,algs) = replaceDummyDer2(st,dummyder,e,inAlgs);
-         (eqns1,algs1) = replaceDummyDerEqns(eqns,st,dummyder,algs);
+         (e1,algs,ae1) = replaceDummyDer2(st,dummyder,e,inAlgs,ae);
+         (eqns1,algs1,ae2) = replaceDummyDerEqns(eqns,st,dummyder,algs,ae1);
       then
-        (e1::eqns1,algs1);
+        (e1::eqns1,algs1,ae2);
   end matchcontinue;
 end replaceDummyDerEqns;
 
@@ -9063,59 +9106,75 @@ protected function replaceDummyDerOthers
   input Equation inEquation;
   input Variables inVariables;
   input DAE.Algorithm[:] inAlgs;
+  input MultiDimEquation[:] inMultiDimEquationArray;  
   output Equation outEquation;
   output Variables outVariables;
   output DAE.Algorithm[:] outAlgs;
+  output MultiDimEquation[:] outMultiDimEquationArray;
 algorithm
-  (outEquation,outVariables,outAlgs):=
-  matchcontinue (inEquation,inVariables,inAlgs)
+  (outEquation,outVariables,outAlgs,outMultiDimEquationArray):=
+  matchcontinue (inEquation,inVariables,inAlgs,inMultiDimEquationArray)
     local
       DAE.Exp e1_1,e2_1,e1,e2;
-      Variables vars_1,vars_2,vars;
+      Variables vars_1,vars_2,vars_3,vars;
       Value ds,i;
       list<DAE.Exp> expl,expl1,in_,in_1,out,out1;
       DAE.ComponentRef cr;
       WhenEquation elsePartRes;
       WhenEquation elsePart;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source,source1;
       Integer indx;
       DAE.Algorithm[:] al;
+      MultiDimEquation[:] ae,ae1;
+      list<Integer> dimSize;
 
-    case (EQUATION(exp = e1,scalar = e2,source = source),vars,inAlgs)
+    case (EQUATION(exp = e1,scalar = e2,source = source),vars,inAlgs,ae)
       equation
         (e1_1,vars_1) = replaceDummyDerOthersExp(e1, vars) "scalar equation" ;
         (e2_1,vars_2) = replaceDummyDerOthersExp(e2, vars_1);
       then
-        (EQUATION(e1_1,e2_1,source),vars_2,inAlgs);
+        (EQUATION(e1_1,e2_1,source),vars_2,inAlgs,ae);
 
-    case (ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),vars,inAlgs) 
+    case (ARRAY_EQUATION(index = ds,crefOrDerCref = expl,source = source),vars,inAlgs,ae) 
       equation
         (expl1,vars_1) = replaceDummyDerOthersExpLst(expl,vars);
-      then (ARRAY_EQUATION(ds,expl1,source),vars_1,inAlgs);  /* array equation */
+        i = ds+1;
+        MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
+        (e1_1,vars_2) = replaceDummyDerOthersExp(e1, vars_1);
+        (e2_1,vars_3) = replaceDummyDerOthersExp(e2, vars_2);       
+        ae1 = arrayUpdate(ae,i,MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
+      then (ARRAY_EQUATION(ds,expl1,source),vars_3,inAlgs,ae1);  /* array equation */
 
     case (WHEN_EQUATION(whenEquation =
-            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE),source = source),vars,inAlgs)
+            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE),source = source),vars,inAlgs,ae)
       equation
         (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE),source),vars_1,inAlgs);
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE),source),vars_1,inAlgs,ae);
 
     case (WHEN_EQUATION(whenEquation =
-            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars,inAlgs)
+            WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars,inAlgs,ae)
       equation
         (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
-        (WHEN_EQUATION(elsePartRes,source), vars_2,al) = replaceDummyDerOthers(WHEN_EQUATION(elsePart,source),vars_1,inAlgs);
+        (WHEN_EQUATION(elsePartRes,source), vars_2,al,ae1) = replaceDummyDerOthers(WHEN_EQUATION(elsePart,source),vars_1,inAlgs,ae);
       then
-        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,SOME(elsePartRes)),source),vars_2,al);
+        (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,SOME(elsePartRes)),source),vars_2,al,ae1);
 
-    case (ALGORITHM(index = indx,in_ = in_,out = out,source = source),vars,inAlgs)
+    case (ALGORITHM(index = indx,in_ = in_,out = out,source = source),vars,inAlgs,ae)
       equation
         (in_1,vars_1) = replaceDummyDerOthersExpLst(in_, vars);
         (out1,vars_2) = replaceDummyDerOthersExpLst(out, vars_1);
         (vars_2,al) = replaceDummyDerOthersAlgs(indx,vars_1,inAlgs);     
-      then (ALGORITHM(indx,in_1,out1,source),vars_2,al);
+      then (ALGORITHM(indx,in_1,out1,source),vars_2,al,ae);
 
-    case (_,_,_)
+   case (COMPLEX_EQUATION(index=i,lhs = e1,rhs = e2,source = source),vars,inAlgs,ae)      
+      equation
+       (e1_1,vars_1) = replaceDummyDerOthersExp(e1, vars) "scalar equation" ;
+        (e2_1,vars_2) = replaceDummyDerOthersExp(e2, vars_1);
+      then
+        (COMPLEX_EQUATION(i,e1,e2,source),vars_2,inAlgs,ae);
+
+    case (_,_,_,_)
       equation
         print("-DAELow.replaceDummyDerOthers failed\n");
       then
