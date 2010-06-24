@@ -39,6 +39,7 @@ package VarTransform
   This module contain a Binary tree representation of variable replacements
   along with some functions for performing replacements of variables in equations"
 
+public import ClassInf;
 public import DAE;
 public import HashTable2;
 public import HashTable3;
@@ -901,118 +902,140 @@ algorithm
   end matchcontinue;
 end addReplacement;
 
-public function addReplacementWithArrayCheck "function: addReplacementWithArrayCheck
-
-  Adds a replacement rule to the set of replacement rules given as argument.
-  If a replacement rule a->b already exists and we add a new rule b->c then
-  the rule a->b is updated to a->c. This is done using the make_transitive
-  function.
-"
-  input VariableReplacements repl;
-  input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inAlst;  
-  input DAE.ComponentRef inSrc;
-  input DAE.Exp inDst;
-  output VariableReplacements outRepl;
-  output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outAlst;
-algorithm
-  (outRepl,outAlst):=
-  matchcontinue (repl,inAlst,inSrc,inDst)
-    local
-      DAE.ComponentRef src,src_1,dst_1;
-      DAE.Exp dst,dst_1,olddst;
-      VariableReplacements repl,repl1;
-      HashTable2.HashTable ht,ht_1;
-      HashTable3.HashTable invHt,invHt_1;
-      String s1,s2,s3,s4,s;
-      list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> alst,alst1;
-    case ((repl as REPLACEMENTS(ht,invHt)),alst,src,dst) /* source dest */
-      equation
-        olddst = HashTable2.get(src, ht) "if rule a->b exists, fail" ;
-      then
-        fail();
-    case ((repl as REPLACEMENTS(ht,invHt)),alst,src,dst)
-      equation
-        (REPLACEMENTS(ht,invHt),src_1,dst_1) = makeTransitive(repl, src, dst);
-        /*s1 = Exp.printComponentRefStr(src);
-        s2 = Exp.printExpStr(dst);
-        s3 = Exp.printComponentRefStr(src_1);
-        s4 = Exp.printExpStr(dst_1);
-        s = Util.stringAppendList(
-          {"add_replacement(",s1,", ",s2,") -> add_replacement(",s3,
-          ", ",s4,")\n"});
-          print(s);
-        Debug.fprint("addrepl", s);*/
-        ht_1 = HashTable2.add((src_1, dst_1),ht);
-        invHt_1 = addReplacementInv(invHt, src_1, dst_1);
-        (repl1,alst1) = addArrayReplacements(REPLACEMENTS(ht_1,invHt_1),alst,src_1,dst_1);
-      then
-        (repl1,alst1);
-    case (_,_,_,_)
-      equation
-        print("-add_replacementWithArrayCheck failed\n");
-      then
-        fail();
-  end matchcontinue;
-end addReplacementWithArrayCheck;
-
-protected function addArrayReplacements
+public function addMultiDimReplacements
   input VariableReplacements inRepl;
-  input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inAlst;
-  input DAE.ComponentRef inSrc;
-  input DAE.Exp inDst;
   output VariableReplacements outRepl;
-  output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outAlst;
 algorithm
-  (outRepl,outAlst):=
-  matchcontinue (inRepl,inAlst,inSrc,inDst)
+  outRepl:=
+  matchcontinue (inRepl)
     local
+      HashTable2.HashTable ht,ht_1;
+      HashTable3.HashTable invHt,invHt_1;      
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst;
       VariableReplacements repl,repl1;
-      DAE.ComponentRef src,csrc;
-      list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> alst,alst1,alst2;      
+    case (repl as REPLACEMENTS(ht,invHt))
+      equation
+        tplLst = HashTable2.hashTableList(ht);
+        (repl1,_) = addMultiDimReplacements1(repl,tplLst);
+      then repl1;
+    case (repl) then repl;
+  end matchcontinue;
+end addMultiDimReplacements;
+
+protected function addMultiDimReplacements1
+  input VariableReplacements inRepl;
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst; 
+  output VariableReplacements outRepl;
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;  
+algorithm
+  (outRepl,outTplLst):=
+  matchcontinue (inRepl,inTplLst)
+    local
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,tplLst2,tplLst3,tplLst4,tplLst5;
+      VariableReplacements repl,repl1,repl2,repl3;
+    case (repl,{}) then (repl,{});
+    case (repl,tplLst)
+      equation
+        (repl1,_,tplLst1,tplLst2) = addMultiDimReplacements2(repl,{},tplLst,{});
+        tplLst3 = listAppend(tplLst1,tplLst2);
+        (repl2,tplLst4) = addMultiDimReplacements1(repl1,tplLst3);
+      then (repl2,tplLst4);
+  end matchcontinue;
+end addMultiDimReplacements1;
+
+protected function addMultiDimReplacements2
+  input VariableReplacements inRepl;
+  input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inRlst;
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst; 
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst1; 
+  output VariableReplacements outRepl;
+  output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outRlst;
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;  
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst1;  
+algorithm
+  (outRepl,outRlst,outTplLst,outTplLst1):=
+  matchcontinue (inRepl,inRlst,inTplLst,inTplLst1)
+    local
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,rest,tplLst_,tplLst_1,tplLst_2;
+      VariableReplacements repl,repl1,repl2;
+      tuple<DAE.ComponentRef,DAE.Exp> key;
+      DAE.ComponentRef sc;
+      DAE.Exp ce;      
+      list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> rlst,rlst1,rlst2,rlst3;
       Integer i,ind,ind_1;
-      Exp.Exp e,ce;
-      Exp.Type ty;
-    // add      
-    case (repl,{},src,e)
+    case (repl,rlst,{},tplLst_) then (repl,rlst,{},tplLst_);
+    case (repl,{},key::rest,tplLst_)
       equation
-        csrc = Exp.crefStripLastSubs(src);
-        ce = Exp.expStripLastSubs(e);
-        ty = Exp.crefLastType(src);
-        // calc indexes
-        i = Exp.sizeOf(ty);
-        // add
-        alst = {(csrc,ce,i)};
-      then (repl,alst);      
-    // check 
-    case (repl,alst,src,e)
+        (sc,ce,ind) = getArrayOrRecord(key);
+        (repl1,rlst1,tplLst1,tplLst_1) = addMultiDimReplacements2(repl,{(sc,ce,ind)},rest,tplLst_);
+      then (repl1,rlst1,tplLst1,tplLst_1);      
+    case (repl,rlst,key::rest,tplLst_)
       equation
-        csrc = Exp.crefStripLastSubs(src);
-        ce = Exp.expStripLastSubs(e);
-        ty = Exp.crefLastType(src);
+        (sc,ce,ind) = getArrayOrRecord(key);
         // if exist 
-        i = Util.listFindWithCompareFunc(alst,(csrc,ce,0),keyEqual,false);
-        ((_,_,ind),alst1) = Util.selectAndRemoveNth(alst,i,0);
+        i = Util.listFindWithCompareFunc(rlst,(sc,ce,0),keyEqual,false);
+        ((_,_,ind),rlst1) = Util.selectAndRemoveNth(rlst,i,0);
         // dec value
         ind_1 = ind - 1;
         // if ind_1 == 0 add
-        (repl1,alst2) = addArrayReplacements1((csrc,ce,ind_1),repl,alst1);
-      then (repl1,alst2); 
-    // add      
-    case (repl,alst,src,e)
+        (repl1,rlst2,tplLst_1) = addTplLst((sc,ce,ind_1),repl,rlst1,tplLst_);
+        (repl2,rlst3,tplLst1,tplLst_2) = addMultiDimReplacements2(repl1,rlst2,rest,tplLst_1);
+      then (repl2,rlst3,tplLst1,tplLst_2);
+    case (repl,rlst,key::rest,tplLst_)
       equation
-        csrc = Exp.crefStripLastSubs(src);
-        ce = Exp.expStripLastSubs(e);
-        ty = Exp.crefLastType(src);
-        // if not exist 
-        failure(_ = Util.listFindWithCompareFunc(alst,(csrc,ce,0),keyEqual,false));
-        // calc indexes
-        i = Exp.sizeOf(ty);
-        // add
-        alst1 = listAppend({(csrc,ce,i)},alst);
-      then (repl,alst1);        
-    case (repl,alst,_,_) then (repl,alst);
+        (sc,ce,ind) = getArrayOrRecord(key);
+        // if exist 
+        failure(_ = Util.listFindWithCompareFunc(rlst,(sc,ce,0),keyEqual,false));
+        rlst1 = listAppend({(sc,ce,ind)},rlst);
+        (repl1,rlst2,tplLst1,tplLst_1) = addMultiDimReplacements2(repl,rlst1,rest,tplLst_);
+      then (repl1,rlst2,tplLst1,tplLst_1);        
+    case (repl,rlst,key::rest,tplLst_)
+      equation
+        (repl1,rlst1,tplLst1,tplLst_1) = addMultiDimReplacements2(repl,rlst,rest,tplLst_);
+      then (repl1,rlst1,tplLst1,tplLst_1);        
   end matchcontinue;
-end addArrayReplacements;
+end addMultiDimReplacements2;
+
+protected function getArrayOrRecord
+  input tuple<DAE.ComponentRef,DAE.Exp> inKey;
+  output DAE.ComponentRef outCref;
+  output DAE.Exp outExp;
+  output Integer outInd;
+algorithm
+  (outCref,outExp,outInd):=
+  matchcontinue (inKey)
+    local
+      DAE.ComponentRef c,sc;
+      DAE.Exp e,ce;      
+      Integer ind;      
+      Exp.Type ty;
+      list<DAE.ExpVar> varLst;
+    case ((c,e))
+      equation
+        // is Array
+        (_::_) = Exp.crefLastSubs(c);
+        // stripLastIdent
+        sc = Exp.crefStripLastSubs(c);
+        ce = Exp.expStripLastSubs(e);
+        ty = Exp.crefLastType(c);
+        // calc indexes
+        ind = Exp.sizeOf(ty);       
+      then 
+        (sc,ce,ind);      
+    case ((c,e))
+      equation
+        // is Record
+        // stripLastIdent
+        sc = Exp.crefStripLastIdent(c);   
+        ce = Exp.expStripLastIdent(e);     
+        // is Record
+        DAE.ET_COMPLEX(varLst=varLst,complexClassType=ClassInf.RECORD(_)) = Exp.crefLastType(sc);
+        // add
+        ind = listLength(varLst);      
+      then 
+        (sc,ce,ind);
+  end matchcontinue;
+end getArrayOrRecord;
 
 protected function keyEqual
   input tuple<DAE.ComponentRef,DAE.Exp,Integer> key1;
@@ -1022,15 +1045,17 @@ algorithm
      res := Exp.crefEqual(Util.tuple31(key1),Util.tuple31(key2)) and Exp.expEqual(Util.tuple32(key1),Util.tuple32(key2));
 end keyEqual;
 
-protected function addArrayReplacements1
+protected function addTplLst
   input tuple<DAE.ComponentRef,DAE.Exp,Integer> inKey;
   input VariableReplacements inRepl;
   input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inAlst;
+  input list<tuple<DAE.ComponentRef,DAE.Exp>> inTplLst;
   output VariableReplacements outRepl;
   output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outAlst;
+  output list<tuple<DAE.ComponentRef,DAE.Exp>> outTplLst;
 algorithm
-  (outRepl,outAlst):=
-  matchcontinue (inKey,inRepl,inAlst)
+  (outRepl,outAlst,outTplLst):=
+  matchcontinue (inKey,inRepl,inAlst,inTplLst)
     local
       VariableReplacements repl,repl1;
       DAE.ComponentRef src,dst;
@@ -1039,22 +1064,25 @@ algorithm
       HashTable2.HashTable ht,ht_1;
       HashTable3.HashTable invHt,invHt_1;      
       list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> alst,alst1;
+      list<tuple<DAE.ComponentRef,DAE.Exp>> tplLst,tplLst1,tplLst2,tplLst3;
     // 0 add 
-    case ((src,e,i),repl as REPLACEMENTS(ht,invHt),alst)
+    case ((src,e,i),REPLACEMENTS(ht,invHt),alst,tplLst)
       equation
         true = intEq(i,1);
         // add to hashtable
         ht_1 = HashTable2.add((src, e),ht);
-        invHt_1 = addReplacementInv(invHt, src, e);        
-      then (REPLACEMENTS(ht_1,invHt_1),alst); 
+        invHt_1 = addReplacementInv(invHt, src, e);
+        tplLst1 = listAppend({(src, e)},tplLst);       
+        (repl,alst1,tplLst3,tplLst2) = addMultiDimReplacements2(REPLACEMENTS(ht_1,invHt_1),alst,tplLst1,{});
+      then (repl,alst1,tplLst2); 
     // do nothing       
-    case ((src,e,i),repl,alst)
+    case ((src,e,i),repl,alst,tplLst)
       equation
         false = intEq(i,1);        
         alst1 = listAppend({(src,e,i)},alst);
-      then (repl,alst1);        
+      then (repl,alst1,tplLst);        
   end matchcontinue;
-end addArrayReplacements1;
+end addTplLst;
 
 public function addReplacementNoTransitive "Similar to addReplacement but
 does not make transitive replacement rules.

@@ -529,6 +529,39 @@ algorithm
   end matchcontinue;
 end crefStripLastIdent;
 
+public function expStripLastIdent
+"function: expStripLastIdent
+  Strips the last subscripts of a Exp"
+  input Exp inExp;
+  output Exp outExp;
+algorithm
+  outExp:=
+  matchcontinue (inExp)
+    local
+      ComponentRef cr,cr_1;
+      Type ty;
+      Operator op;
+      Exp e,e_1;
+    case (DAE.CREF(componentRef=cr))
+      equation
+        ty = crefLastType(cr);
+        cr_1 = crefStripLastIdent(cr);
+      then DAE.CREF(cr_1,ty);
+    case (DAE.UNARY(operator=op,exp=e))
+      equation
+        ty = typeof(e);
+        e_1 = expStripLastIdent(e);
+        true = DAEUtil.expTypeArray(ty);
+      then DAE.UNARY(DAE.UMINUS_ARR(ty),e_1);
+    case (DAE.UNARY(operator=op,exp=e))
+      equation
+        ty = typeof(e);
+        e_1 = expStripLastIdent(e);
+        false = DAEUtil.expTypeArray(ty);
+      then DAE.UNARY(DAE.UMINUS(ty),e_1);        
+  end matchcontinue;
+end expStripLastIdent;
+
 public function crefStripFirstIdent
 "Strips the first part of a component reference,
 i.e the identifier and eventual subscripts"
@@ -828,6 +861,8 @@ algorithm
       Boolean res;
       Type t;
       Exp e;
+      list<Exp> ae;
+      list<Boolean> ab;
     case (DAE.ICONST(integer = ival))
       equation
         (ival == 0) = true;
@@ -845,6 +880,12 @@ algorithm
       then
         res;
     case(DAE.UNARY(DAE.UMINUS(_),e)) then isZero(e);
+    case(DAE.ARRAY(array = ae))
+      equation
+        ab = Util.listMap(ae,isZero);  
+        res = Util.boolAndList(ab);
+      then   
+        res;
     case (_) then false;
   end matchcontinue;
 end isZero;
@@ -2182,6 +2223,22 @@ algorithm
       then
         res;
 
+    case (e1,DAE.ADD_ARR(ty = _),e2)
+      equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        true = isZero(e1);
+      then
+        e2;
+
+    case (e1,DAE.ADD_ARR(ty = _),e2)
+      equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        true = isZero(e2);
+      then
+        e1;
+
     case (e1,DAE.SUB_ARR(ty = _),e2)
       equation
         tp = typeof(e1);
@@ -2190,6 +2247,23 @@ algorithm
         res = simplifyVectorBinary(e1, DAE.SUB(tp), e2);
       then
         res;
+
+    case (e1,DAE.SUB_ARR(ty = tp),e2)
+      equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        true = isZero(e1);
+        res = DAE.UNARY(DAE.UMINUS_ARR(tp),e2);
+      then
+        res;
+
+    case (e1,DAE.SUB_ARR(ty = _),e2)
+      equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);
+        true = isZero(e2);
+      then
+        e1;
 
     case (e1,DAE.MUL_ARR(ty = _),e2)
       equation

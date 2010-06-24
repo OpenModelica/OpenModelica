@@ -54,6 +54,7 @@ protected import Exp;
 protected import Util;
 protected import Error;
 protected import Debug;
+protected import Inline;
 
 public function differentiateEquationTime "function: differentiateEquationTime
   Differentiates an equation with respect to the time variable."
@@ -108,6 +109,8 @@ algorithm
         true = intEq(index,-1);
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
+        // e1_2 = Exp.simplify(e1_1);
+        // e2_2 = Exp.simplify(e2_1);
        then
         // because der(Record) is not jet implemented -> fail()
         //(DAELow.COMPLEX_EQUATION(index,e1_1,e2_1,source),al,inDerivedAlgs,ae,inDerivedMultiEqn,true);
@@ -120,13 +123,15 @@ algorithm
         DAELow.MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i_1];
         e1_1 = differentiateExpTime(e1, (timevars,inFunctions));
         e2_1 = differentiateExpTime(e2, (timevars,inFunctions));
-        ((_,(crefOrDerCref1,derCref1,_))) = Exp.traverseExp(e1_1,traversingcrefOrDerCrefFinder,({},{},timevars));
-        ((_,(crefOrDerCref2,derCref2,_))) = Exp.traverseExp(e2_1,traversingcrefOrDerCrefFinder,({},{},timevars));
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+        ((_,(crefOrDerCref1,derCref1,_))) = Exp.traverseExp(e1_2,traversingcrefOrDerCrefFinder,({},{},timevars));
+        ((_,(crefOrDerCref2,derCref2,_))) = Exp.traverseExp(e2_2,traversingcrefOrDerCrefFinder,({},{},timevars));
         crefOrDerCref11 = removeCrefFromDerCref(crefOrDerCref1,derCref1);
         crefOrDerCref21 = removeCrefFromDerCref(crefOrDerCref2,derCref2);
         crefOrDerCref3 = Util.listUnionOnTrue(crefOrDerCref11,crefOrDerCref21,Exp.expEqual);
         // only add algorithm if it is not already derived 
-        (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,DAELow.MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1),1,inDerivedMultiEqn);
+        (index1,ae1,derivedMultiEqn,add) = addArray(index,ae,DAELow.MULTIDIM_EQUATION(dimSize,e1_2,e2_2,source1),1,inDerivedMultiEqn);
        then
         //(DAELow.ARRAY_EQUATION(index1,{e1_1},source),al,inDerivedAlgs,ae1,derivedMultiEqn,add);
          // Until the array equations will be unrolled we should return true to add an equation for every element
@@ -137,12 +142,14 @@ algorithm
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1)}) = al[index+1];
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
+        e1_2 = Inline.inlineExp(e1_1,(NONE(),SOME(inFunctions),{DAE.NORM_INLINE()}));
+        e2 = Exp.simplify(e1_2);
         // outputs
-        (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e1_1,expExpLst,out,(timevars,inFunctions));
+        (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,inFunctions));
         // inputs
-        (in_1,_) = DAELow.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}));
+        (in_1,_) = DAELow.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2)}));
         // only add algorithm if it is not already derived 
-        (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e1_1)}),listLength(out1),inDerivedAlgs);
+        (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2)}),listLength(out1),inDerivedAlgs);
        then
         (DAELow.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     case (DAELow.COMPLEX_EQUATION(index = _),_,_,_,_,_,_)
@@ -481,8 +488,9 @@ algorithm
       equation
         // get Derivative function
         e1 = differentiateFunctionTime(e,(timevars,functions));
+        e2 = Inline.inlineExp(e1,(NONE(),SOME(functions),{DAE.NORM_INLINE()}));
       then
-        e1;        
+        e2;        
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))
       equation
         e_str = Exp.printExpStr(e);
@@ -673,7 +681,7 @@ algorithm
       DAELow.Variables timevars;
       Absyn.Path a,da;
       Boolean b,c;
-      DAE.InlineType inl;
+      DAE.InlineType inl,dinl;
       DAE.ExpType ty;
       DAE.FunctionTree functions;
       DAE.FunctionDefinition mapper;
@@ -687,20 +695,20 @@ algorithm
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
-         DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);
+         DAE.FUNCTION(type_=dtp,inlineType=dinl) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (true,_) = checkDerivativeFunctionInputs(blst,tp,dtp);
         (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
         dexpl = Util.listMap1(expl1,differentiateExpTime,(timevars,functions));
         expl1 = listAppend(expl,dexpl);
       then
-        DAE.CALL(da,expl1,b,c,ty,inl);
+        DAE.CALL(da,expl1,b,c,ty,dinl);
     case (DAE.CALL(path=a,expLst=expl,tuple_=b,builtin=c,ty=ty,inlineType=inl),(timevars,functions))
       equation
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
-        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);
+        DAE.FUNCTION(type_=dtp,inlineType=dinl) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
         // add Warning

@@ -926,9 +926,9 @@ algorithm
       DAE.ExpType t;
       list<DAE.ComponentRef> crefs;
       list<tuple<DAE.ComponentRef, DAE.Exp>> argmap;
-      DAE.Exp newExp,newExp1;
+      DAE.Exp newExp,newExp1, e1;
       DAE.InlineType inlineType;
-    case((DAE.CALL(p,args,tup,built,t,inlineType),fns))
+    case((e1 as DAE.CALL(p,args,tup,built,t,inlineType),fns))
       equation
         true = DAEUtil.convertInlineTypeToBool(inlineType);
         true = checkInlineType(inlineType,fns);
@@ -974,18 +974,18 @@ protected function extendCrefRecords
 algorithm
   outArgmap := matchcontinue(inArgmap)
     local
-      list<tuple<DAE.ComponentRef, DAE.Exp>> res,res1,res2,new;
+      list<tuple<DAE.ComponentRef, DAE.Exp>> res,res1,res2,new,new1;
       DAE.ComponentRef c,cref;
       DAE.Exp e;
       list<DAE.ExpVar> varLst;
     case ({}) then {}; 
     case((c,e as (DAE.CREF(componentRef = cref)))::res)
       equation
-//      true = Exp.isRecord(cref);
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e);
-      new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
       res1 = extendCrefRecords(res);  
-      res2 = listAppend(new,res1);
+      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cref);
+      new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
+      new1 = extendCrefRecords(new);
+      res2 = listAppend(new1,res1);
       then ((c,e)::res2);      
     case((c,e)::res)
       equation

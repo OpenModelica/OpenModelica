@@ -3079,7 +3079,7 @@ algorithm
   (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst):=
   matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inBinTree6)
     local
-      VarTransform.VariableReplacements repl,vartransf, aliasVarsRepl;
+      VarTransform.VariableReplacements repl,vartransf,vartransf1, aliasVarsRepl;
       list<Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
       list<MultiDimEquation> arreqns,arreqns1,arreqns2;
       BinTree movedvars_1,states;
@@ -3088,12 +3088,13 @@ algorithm
       equation
         repl = VarTransform.emptyReplacements();
         aliasVarsRepl = VarTransform.emptyReplacements();
-        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl,_) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl, aliasVarsRepl,{});
-        Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf);
-        eqns_2 = BackendVarTransform.replaceEquations(eqns_1, vartransf);
-        seqns_1 = BackendVarTransform.replaceEquations(seqns, vartransf);
-        ieqns_1 = BackendVarTransform.replaceEquations(ieqns, vartransf);
-        arreqns1 = BackendVarTransform.replaceMultiDimEquations(arreqns, vartransf);
+        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl, aliasVarsRepl);
+        vartransf1 = VarTransform.addMultiDimReplacements(vartransf);
+        Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf1);
+        eqns_2 = BackendVarTransform.replaceEquations(eqns_1, vartransf1);
+        seqns_1 = BackendVarTransform.replaceEquations(seqns, vartransf1);
+        ieqns_1 = BackendVarTransform.replaceEquations(ieqns, vartransf1);
+        arreqns1 = BackendVarTransform.replaceMultiDimEquations(arreqns, vartransf1);
         (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
         seqns_3 = listAppend(seqns_1, reqns) "& print_vars_statistics(vars\',knvars\')" ;
       then
@@ -3118,15 +3119,13 @@ protected function removeSimpleEquations2
   input BinTree states;
   input VarTransform.VariableReplacements repl;
   input VarTransform.VariableReplacements inAliasVarRepl "replacement of alias variables (a=b or a=-b)";
-  input list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  inAlst; 
   output list<Equation> outEqns;
   output list<Equation> outSimpleEqns;
   output BinTree outMvars;
   output VarTransform.VariableReplacements outRepl;
   output VarTransform.VariableReplacements outAliasVarRepl "replacement of alias variables (a=b or a=-b)";
-  output list<tuple<DAE.ComponentRef,DAE.Exp,Integer>>  outAlst; 
 algorithm
-  (outEqns,outSimpleEqns,outMvars,outRepl,outAlst) := matchcontinue (eqns,vars,knvars,mvars,states,repl,aliasRepl,inAlst)
+  (outEqns,outSimpleEqns,outMvars,outRepl,outAliasVarRepl) := matchcontinue (eqns,vars,knvars,mvars,states,repl,aliasRepl)
     local
       Variables vars,knvars;
       BinTree mvars,states,mvars_1,mvars_2;
@@ -3138,47 +3137,46 @@ algorithm
       DAE.ExpType t;
       DAE.Exp e1,e2;
       DAE.ElementSource source "the element source";
-      list<tuple<DAE.ComponentRef,DAE.Exp,Integer>> alst,alst1,alst2,alst3;
       
-    case ({},vars,knvars,mvars,states,repl,aliasRepl,alst) then ({},{},mvars,repl,aliasRepl,alst);
+    case ({},vars,knvars,mvars,states,repl,aliasRepl) then ({},{},mvars,repl,aliasRepl);
 
-    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl,alst) equation
+    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
       {e} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
-      (repl_1,alst1) = VarTransform.addReplacementWithArrayCheck(repl,alst, cr1, e2);
+      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2,alst2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1, alst1);
+      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,alst2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2);
 
       // Swapped args
-    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl,alst) equation
+    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl) equation
       {EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,_),e2,source) = simpleEquation(EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
-      (repl_1,alst1) = VarTransform.addReplacementWithArrayCheck(repl,alst, cr1, e2);
+      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2, alst2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1, alst1);
+      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,alst2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2);
 
       // try next equation.
-    case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl,alst)
+    case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl)
       local Equation eq1;
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},repl);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
-        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1,alst1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl, aliasRepl, alst) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl, aliasRepl) "Not a simple variable, check rest" ;
       then
-        ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1,alst1);
+        ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1);
   end matchcontinue;
 end removeSimpleEquations2;
 
@@ -6319,41 +6317,14 @@ algorithm
       DAE.Exp e1,e2,e,e3;
       list<list<Value>> lst;
       list<DAE.Exp> expl;
+      list<Var> varslst;
 
     case (DAE.CREF(componentRef = cr),vars)
       equation
-        ((VAR(varKind = STATE()) :: _),p) = getVar(cr, vars)
-        "If variable x is a state, der(x) is a variable in incidence matrix,
-	       x is inserted as negative value, since it is needed by debugging and
-	       index reduction using dummy derivatives" ;
-        p_1 = Util.listMap1r(p, int_sub, 0);
+        (varslst,p) = getVar(cr, vars);
+        p_1 = incidenceRowExp1(varslst,p,true);
       then
         p_1;
-    case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((VAR(varKind = STATE_DER()) :: _),p) = getVar(cr, vars);
-      then
-        p;
-    case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((VAR(varKind = VARIABLE()) :: _),p) = getVar(cr, vars);
-      then
-        p;
-    case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((VAR(varKind = DISCRETE()) :: _),p) = getVar(cr, vars);
-      then
-        p;
-    case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((VAR(varKind = DUMMY_DER()) :: _),p) = getVar(cr, vars);
-      then
-        p;
-    case (DAE.CREF(componentRef = cr),vars)
-      equation
-        ((VAR(varKind = DUMMY_STATE()) :: _),p) = getVar(cr, vars);
-      then
-        p;
     case (DAE.BINARY(exp1 = e1,exp2 = e2),vars)
       equation
         s1 = incidenceRowExp(e1, vars);
@@ -6395,20 +6366,17 @@ algorithm
         res;
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
-        ((VAR(varKind = STATE()) :: _),p) = getVar(cr, vars);
+        (varslst,p) = getVar(cr, vars);
+        p_1 = incidenceRowExp1(varslst,p,false);
       then
-        p;
+        p_1;        
     case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
       equation
         cr = DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, cr);
-        ((VAR(varKind = STATE_DER()) :: _),p) = getVar(cr, vars);
+        (varslst,p) = getVar(cr, vars);
+        p_1 = incidenceRowExp1(varslst,p,false);
       then
-        p;   
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
-      equation
-        (_,p) = getVar(cr, vars);
-      then
-        {};
+        p_1;
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"),expLst = {DAE.CREF(componentRef = cr)}),vars) then {};  /* pre(v) is considered a known variable */
     case (DAE.CALL(expLst = expl),vars)
       equation
@@ -6455,6 +6423,55 @@ algorithm
     case (_,_) then {};
   end matchcontinue;
 end incidenceRowExp;
+
+protected function incidenceRowExp1
+  input list<Var> inVarLst;
+  input list<Integer> inIntegerLst;
+  input Boolean notinder;
+  output list<Integer> outIntegerLst;
+algorithm
+  outIntegerLst := matchcontinue (inVarLst,inIntegerLst,notinder)
+    local
+       list<Var> rest;
+       Var v;
+       list<Integer> irest,res;
+       Integer i,i1;  
+       Boolean b;
+    case ({},{},_) then {};   
+    /*If variable x is a state, der(x) is a variable in incidence matrix,
+	       x is inserted as negative value, since it is needed by debugging and
+	       index reduction using dummy derivatives */ 
+    case (VAR(varKind = STATE()) :: rest,i::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b); 
+        i1 = Util.if_(b,-i,i);
+      then (i1::res);
+    case (VAR(varKind = STATE_DER()) :: rest,i::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b); 
+      then (i::res);        
+    case (VAR(varKind = VARIABLE()) :: rest,i::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b); 
+      then (i::res);
+    case (VAR(varKind = DISCRETE()) :: rest,i::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b); 
+      then (i::res);
+    case (VAR(varKind = DUMMY_DER()) :: rest,i::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b); 
+      then (i::res);
+    case (VAR(varKind = DUMMY_STATE()) :: rest,i::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b); 
+      then (i::res);                
+    case (_ :: rest,_::irest,b)
+      equation
+        res = incidenceRowExp1(rest,irest,b);  
+      then res;
+  end matchcontinue;      
+end incidenceRowExp1;
 
 protected function incidenceRowMatrixExp
 "function: incidenceRowMatrixExp
@@ -7669,7 +7686,7 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,(dae as DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions);
+        (ass1,ass2,(dae as DAELOW(v,kv,exv,av,e,re,ie,ae,al,ev,eoc)),m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts,inFunctions,{},{});
 				/* NOTE: Here it could be possible to run removeSimpleEquations again, since algebraic equations
 				could potentially be removed after a index reduction has been done. However, removing equations here
 				also require that e.g. zero crossings, array equations, etc. must be recalculated. */
@@ -7682,7 +7699,7 @@ algorithm
         memsize = nvars + nvars;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae_2,m,mt) = matchingAlgorithm2(dae, m_1, mt_1, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions);
+        (ass1,ass2,dae_2,m,mt,_,_) = matchingAlgorithm2(dae, m_1, mt_1, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions,{},{});
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
@@ -7700,7 +7717,7 @@ algorithm
         memsize = nvars + nvars "Worst case, all eqns are differentiated once. Create nvars2 assignment elements" ;
         assign1 = assignmentsCreate(nvars, memsize, 0);
         assign2 = assignmentsCreate(nvars, memsize, 0);
-        (ass1,ass2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions);
+        (ass1,ass2,dae,m,mt,_,_) = matchingAlgorithm2(dae, m, mt, nvars, neqns, 1, assign1, assign2, match_opts, inFunctions,{},{});
         vec1 = assignmentsVector(ass1);
         vec2 = assignmentsVector(ass2);
       then
@@ -7938,14 +7955,18 @@ protected function matchingAlgorithm2
   input Assignments inAssignments8;
   input MatchingOptions inMatchingOptions9;
   input DAE.FunctionTree inFunctions;
+  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
   output Assignments outAssignments1;
   output Assignments outAssignments2;
   output DAELow outDAELow3;
   output IncidenceMatrix outIncidenceMatrix4;
   output IncidenceMatrixT outIncidenceMatrixT5;
+  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
 algorithm
-  (outAssignments1,outAssignments2,outDAELow3,outIncidenceMatrix4,outIncidenceMatrixT5):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions)
+  (outAssignments1,outAssignments2,outDAELow3,outIncidenceMatrix4,outIncidenceMatrixT5,outDerivedAlgs,outDerivedMultiEqn):=
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inAssignments7,inAssignments8,inMatchingOptions9,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       Assignments ass1_1,ass2_1,ass1,ass2,ass1_2,ass2_2;
       DAELow dae;
@@ -7957,27 +7978,29 @@ algorithm
       EquationReduction r_simple;
       list<Value> eqn_lst,var_lst;
       String eqn_str,var_str;
+      list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1,derivedAlgs2;
+      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1,derivedMultiEqn2;      
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,derivedAlgs,derivedMultiEqn)
       equation
         (nv == i) = true;
         DAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false; eMark(i)=vMark(i)=false exit loop";
       then
-        (ass1_1,ass2_1,dae,m,mt);
+        (ass1_1,ass2_1,dae,m,mt,derivedAlgs,derivedMultiEqn);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts,inFunctions)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,match_opts,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         i_1 = i + 1;
         DAEEXT.initMarks(nv, nf);
         (ass1_1,ass2_1) = pathFound(m, mt, i, ass1, ass2) "eMark(i)=vMark(i)=false" ;
-        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts, inFunctions);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1) = matchingAlgorithm2(dae, m, mt, nv, nf, i_1, ass1_1, ass2_1, match_opts, inFunctions,derivedAlgs,derivedMultiEqn);
       then
-        (ass1_2,ass2_2,dae,m,mt);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION(),eq_cons,r_simple),inFunctions)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,(INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs,derivedMultiEqn)
       equation
-        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions) 
+        ((dae as DAELOW(VARIABLES(_,_,_,_,nv_1),VARIABLES(_,_,_,_,nkv),_,_,eqns,_,_,_,_,_,_)),m,mt,derivedAlgs1,derivedMultiEqn1) = reduceIndexDummyDer(dae, m, mt, nv, nf, i, inFunctions,derivedAlgs,derivedMultiEqn) 
         "path_found failed, Try index reduction using dummy derivatives.
 	       When a constraint exist between states and index reduction is needed
 	       the dummy derivative will select one of the states as a dummy state
@@ -8000,11 +8023,11 @@ algorithm
         nvd = nv_1 - nv;
         ass1_1 = assignmentsExpand(ass1, nvd);
         ass2_1 = assignmentsExpand(ass2, nvd);
-        (ass1_2,ass2_2,dae,m,mt) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (INDEX_REDUCTION(),eq_cons,r_simple),inFunctions);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2) = matchingAlgorithm2(dae, m, mt, nv_1, nf_1, i, ass1_1, ass2_1, (INDEX_REDUCTION(),eq_cons,r_simple),inFunctions,derivedAlgs1,derivedMultiEqn1);
       then
-        (ass1_2,ass2_2,dae,m,mt);
+        (ass1_2,ass2_2,dae,m,mt,derivedAlgs2,derivedMultiEqn2);
 
-    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_)
+    case (dae,m,mt,nv,nf,i,ass1,ass2,_,_,_,_)
       equation
         eqn_lst = DAEEXT.getMarkedEqns() "When index reduction also fails, the model is structurally singular." ;
         var_lst = DAEEXT.getMarkedVariables();
@@ -8099,12 +8122,16 @@ protected function reduceIndexDummyDer
   input Integer inInteger5;
   input Integer inInteger6;
   input DAE.FunctionTree inFunctions;
+  input list<tuple<Integer,Integer,Integer>> inDerivedAlgs;
+  input list<tuple<Integer,Integer,Integer>> inDerivedMultiEqn;  
   output DAELow outDAELow;
   output IncidenceMatrix outIncidenceMatrix;
   output IncidenceMatrixT outIncidenceMatrixT;
+  output list<tuple<Integer,Integer,Integer>> outDerivedAlgs;
+  output list<tuple<Integer,Integer,Integer>> outDerivedMultiEqn;  
 algorithm
-  (outDAELow,outIncidenceMatrix,outIncidenceMatrixT):=
-  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inFunctions)
+  (outDAELow,outIncidenceMatrix,outIncidenceMatrixT,outDerivedAlgs,outDerivedMultiEqn):=
+  matchcontinue (inDAELow1,inIncidenceMatrix2,inIncidenceMatrixT3,inInteger4,inInteger5,inInteger6,inFunctions,inDerivedAlgs,inDerivedMultiEqn)
     local
       list<Value> eqns,diff_eqns,eqns_1,stateindx,deqns,reqns,changedeqns;
       list<Key> states;
@@ -8114,8 +8141,10 @@ algorithm
       DAE.ComponentRef state,dummy_der;
       list<String> es;
       String es_1;
+      list<tuple<Integer,Integer,Integer>> derivedAlgs,derivedAlgs1;
+      list<tuple<Integer,Integer,Integer>> derivedMultiEqn,derivedMultiEqn1;      
 
-    case (dae,m,mt,nv,nf,i,inFunctions)
+    case (dae,m,mt,nv,nf,i,inFunctions,derivedAlgs,derivedMultiEqn)
       equation
         eqns = DAEEXT.getMarkedEqns();
         // print("marked equations:");print(Util.stringDelimitList(Util.listMap(eqns,intString),","));
@@ -8128,7 +8157,7 @@ algorithm
 				// Collect the states in the equations that are singular, i.e. composing a constraint between states.
 				// Note that states are collected from -all- marked equations, not only the differentiated ones.
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
-        (dae,m,mt,nv,nf,deqns,_,_) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,{},{});
+        (dae,m,mt,nv,nf,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
         // print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
         // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
@@ -8141,14 +8170,14 @@ algorithm
         "We need to change variables in the differentiated equations and in the equations having the dummy derivative" ;
         dae = makeAlgebraic(dae, state);
         (m,mt) = updateIncidenceMatrix(dae, m, mt, changedeqns);
-        //print("new DAE:");
-        //dump(dae);
-        //print("new IM:");
-        //dumpIncidenceMatrix(m);
+        // print("new DAE:");
+        // dump(dae);
+        // print("new IM:");
+        // dumpIncidenceMatrix(m);
       then
-        (dae,m,mt);
+        (dae,m,mt,derivedAlgs1,derivedMultiEqn1);
 
-    case (dae,m,mt,nv,nf,i,_)
+    case (dae,m,mt,nv,nf,i,_,_,_)
       equation
         eqns = DAEEXT.getMarkedEqns();
         diff_eqns = DAEEXT.getDifferentiatedEqns();
@@ -8166,7 +8195,7 @@ algorithm
       then
         fail();
 
-    case (_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_)
       equation
         print("-reduce_index_dummy_der failed\n");
       then
@@ -15121,7 +15150,7 @@ algorithm
         Debug.fcall("tearingdump", dumpIncidenceMatrix, m_1);
         Debug.fcall("tearingdump", dumpIncidenceMatrixT, mT_1);
         Debug.fcall("tearingdump", dump, dlow_1);
-        (ass1,ass2,dlow_2,m_2,mT_2) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew());
+        (ass1,ass2,dlow_2,m_2,mT_2,_,_) = matchingAlgorithm2(dlow_1, m_1, mT_1, nvars, neqns, 1, assign1, assign2, (NO_INDEX_REDUCTION(), EXACT(), KEEP_SIMPLE_EQN()),DAEUtil.avlTreeNew(),{},{});
         v1_1 = assignmentsVector(ass1);
         v2_1 = assignmentsVector(ass2);
         (comps) = strongComponents(m_2, mT_2, v1_1, v2_1);
@@ -15858,7 +15887,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
   case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CREF(componentRef=cr2),source = source),funcs)
     equation
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
+      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       e2lst = Util.listMap1(varLst,generateCrefsExpFromType,e2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
@@ -15874,7 +15903,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
     equation
       DAE.RECORD_CONSTRUCTOR(path=fname) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e1);
+      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
       complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
