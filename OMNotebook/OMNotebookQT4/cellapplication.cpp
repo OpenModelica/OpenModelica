@@ -183,8 +183,8 @@ namespace IAEX
 		}
 
 		// 2006-02-13 AF, create temp dir
-		if( !dir.exists( "OMNoteboook_tempfiles" ) )
-			dir.mkdir( "OMNoteboook_tempfiles" );
+		if( !dir.exists( "OMNotebook_tempfiles" ) )
+			dir.mkdir( "OMNotebook_tempfiles" );
 
 		// 2005-12-17 AF, Create instance (load styles) of stylesheet
 		// 2006-04-10 AF, use environment variable to find stylesheet.xml
@@ -363,7 +363,7 @@ namespace IAEX
 		}
 
 		// 2006-02-13 AF, remove temp dir
-		dir.rmdir( "OMNoteboook_tempfiles" );
+		dir.rmdir( "OMNotebook_tempfiles" );
 	}
 
 	/*!
@@ -432,7 +432,7 @@ namespace IAEX
 					{
 						// 2006-02-13 AF, store images in temp dir
 						QDir dir;
-						dir.setPath( dir.absolutePath() + "/OMNoteboook_tempfiles" );
+						dir.setPath( dir.absolutePath() + "/OMNotebook_tempfiles" );
 
 						QImageWriter writer( dir.absolutePath() + "/" + newImagename, "png" );
 						writer.setDescription( "Temporary OMNotebook image" );

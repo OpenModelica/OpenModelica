@@ -644,7 +644,7 @@ namespace IAEX
 		QDir dir;
 
 		// 2006-02-13 AF, store images in temp dir
-		dir.setPath( dir.absolutePath() + "/OMNoteboook_tempfiles" );
+		dir.setPath( dir.absolutePath() + "/OMNotebook_tempfiles" );
 
 		QString name;
 		while( true )
