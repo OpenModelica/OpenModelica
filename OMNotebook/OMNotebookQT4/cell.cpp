@@ -99,7 +99,7 @@ namespace IAEX
 	{
 		setMouseTracking(true);
 		setEnabled(true);
-
+		
 		mainlayout_ = new QGridLayout(this);
 		mainlayout_->setMargin(0);
 		mainlayout_->setSpacing(0);
@@ -107,7 +107,7 @@ namespace IAEX
 		setLayout( mainlayout_ );//AF
 		setLabel(new QLabel(this));
 
-		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
+		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
 		// PORT >> setBackgroundMode(Qt::PaletteBase);
 		setBackgroundRole( QPalette::Base );
 		setTreeWidget(new TreeView(this));
@@ -127,7 +127,7 @@ namespace IAEX
 
 		setLabel(new QLabel(this));
 
-		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
+		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
 		// PORT >> setBackgroundMode(Qt::PaletteBase);
 		setBackgroundRole( QPalette::Base );
 		setTreeWidget(new TreeView(this));
@@ -509,7 +509,7 @@ namespace IAEX
 			mainWidget_ = newWidget;
 			mainlayout_->addWidget(newWidget,1,1);
 
-			mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding));
+			mainWidget_->setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Minimum));
 
 			QPalette palette;
 			palette.setColor(mainWidget_->backgroundRole(), backgroundColor());
@@ -616,15 +616,15 @@ namespace IAEX
 			h = 32000;
 		}*/
 
-		setFixedHeight(h);
-
 		if(!treeView_)
 			throw logic_error("SetHeight(const int height): TreeView is not set.");
 
-		treeView_->setFixedHeight(h);
+        setMinimumHeight(h);
 
-		emit heightChanged();
-	}
+        treeView_->setFixedHeight(h);
+
+        emit heightChanged();
+   	}
 
 
 	/*! \brief Describes what will happen if a mousebutton is released

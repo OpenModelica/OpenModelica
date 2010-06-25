@@ -237,7 +237,6 @@ namespace IAEX
 		: Cell(parent),
 		oldHeight_( 0 )
 	{
-		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
 		setFocusPolicy(Qt::NoFocus);
 		createTextWidget();
 	}

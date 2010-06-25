@@ -353,7 +353,6 @@ namespace IAEX
 		layout_->setSpacing(0);
 
 		setTreeWidget(new InputTreeView(this));
-		setSizePolicy(QSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed));
 
 		//2005-10-07 AF, Porting, change from 'QWidget::' to 'Qt::'
 		setFocusPolicy(Qt::NoFocus);

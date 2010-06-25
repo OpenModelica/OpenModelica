@@ -88,9 +88,6 @@ namespace IAEX{
 
 		setMainWidget(main_);
 
-		mainWidget()->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-		setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
-
 		style_.setName( "cellgroup" );
 
 
