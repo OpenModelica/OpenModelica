@@ -1151,10 +1151,16 @@ algorithm
       list<tuple<Integer, DAE.Exp>> delayedExps;
       list<DAE.Exp> divLst;
       list<DAE.Statement> allDivStmts;
+      DAE.FunctionTree funcs;      
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,fileDir,functions,libs)
       equation
         cname = Absyn.pathString(class_);
 
+        // late Inline
+        funcs = DAEUtil.daeFunctionTree(dae);
+        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow);
+        Debug.fcall("lateInline", DAELow.dump, dlow);
+          
         (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
 
         (helpVarInfo, dlow2) = generateHelpVarInfo(dlow, comps);
@@ -3567,6 +3573,7 @@ algorithm
       Integer cg_id_1,cg_id;
       DAE.ComponentRef cr,eltcr,cr2;
       DAE.Exp e1,e2;
+      DAE.ExpType ty;      
     case (cr,eltcr,(e1 as DAE.CREF(componentRef = cr2)),e2)
       equation
         true = Exp.crefEqual(cr, cr2);
@@ -3577,6 +3584,28 @@ algorithm
         true = Exp.crefEqual(cr, cr2);
       then
       SES_ARRAY_CALL_ASSIGN(eltcr, e1);
+    case (cr,eltcr,(e1 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))),e2)
+      equation
+        true = Exp.crefEqual(cr, cr2);
+        ty = Exp.typeof(e2);
+      then
+        SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
+    case (cr,eltcr,e1,(e2 as DAE.UNARY(exp=DAE.CREF(componentRef = cr2))))
+      equation
+        true = Exp.crefEqual(cr, cr2);
+        ty = Exp.typeof(e1);
+      then
+      SES_ARRAY_CALL_ASSIGN(eltcr, DAE.UNARY(DAE.UMINUS_ARR(ty),e1));       
+    case (cr,eltcr,e1,DAE.UNARY(DAE.UMINUS_ARR(ty),e2))
+      equation
+         cr2 = getVectorizedCrefFromExp(e2);
+      then
+         SES_ARRAY_CALL_ASSIGN(cr2, DAE.UNARY(DAE.UMINUS_ARR(ty),e1));       
+    case (cr,eltcr,DAE.UNARY(DAE.UMINUS_ARR(ty),e1),e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
+      equation
+         cr2 = getVectorizedCrefFromExp(e1);
+      then
+         SES_ARRAY_CALL_ASSIGN(cr2, DAE.UNARY(DAE.UMINUS_ARR(ty),e2));
     case (cr,eltcr,e1,e2) /* e2 is array of crefs, {v{1},v{2},...v{n}} */
       equation
         cr2 = getVectorizedCrefFromExp(e2);

@@ -1672,6 +1672,17 @@ algorithm
       then
         DAE.CALL(path,exps_1,b,b2,t,b3);
 
+    /*  {-e[1],-e[2],-e[3]} = -{e[1],e[2],e[3]} */
+    case DAE.ARRAY( t, b,exps as ((DAE.UNARY(DAE.UMINUS(_),_) :: _)))
+      equation
+        (f::exps_1) = Util.listMap(exps, expStripLastSubs); //Strip last subscripts
+        bls = Util.listMap1(exps_1, expEqual,f);
+        true = Util.boolAndList(bls);
+        expl_1 = Util.listMap(exps,abs);
+        expl_1 = Util.listMap(expl_1,simplify1);
+        e = DAE.ARRAY(t,b,expl_1);
+      then  
+        DAE.UNARY(DAE.UMINUS_ARR(t),e);
     case DAE.ARRAY( t, b,exps_1)
       equation
         exps_1 = Util.listMap(exps_1,simplify1);

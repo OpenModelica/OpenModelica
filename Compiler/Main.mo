@@ -895,7 +895,7 @@ algorithm
       list<list<Integer>> comps;
       Env.Cache cache;
       Env.Env env;
-      list<DAE.Element> funcelems;
+
     case (cache,env,classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */
       equation
         Debug.fcall("execstat",print, "*** Main -> entering simcodgen: " +& realString(clock()) +& "\n" );

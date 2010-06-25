@@ -3485,6 +3485,7 @@ case BINARY(__) then
   case MUL(__) then '(<%e1%> * <%e2%>)'
   case DIV(__) then '(<%e1%> / <%e2%>)'
   case POW(__) then 'pow((modelica_real)<%e1%>, (modelica_real)<%e2%>)'
+  case UMINUS(__) then daeExpUnary(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/) 
   case ADD_ARR(__) then
     let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
     let var = tempDecl(type, &varDecls /*BUFC*/)
@@ -3495,22 +3496,41 @@ case BINARY(__) then
     let var = tempDecl(type, &varDecls /*BUFC*/)
     let &preExp += 'sub_alloc_<%type%>(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
+  case MUL_ARR(__) then  'daeExpBinary:ERR for MUL_ARR'  
+  case DIV_ARR(__) then  'daeExpBinary:ERR for DIV_ARR'  
+  case MUL_SCALAR_ARRAY(__) then
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFC*/)
+    let &preExp += 'mul_alloc_scalar_<%type%>(<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'    
   case MUL_ARRAY_SCALAR(__) then
     let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
     let var = tempDecl(type, &varDecls /*BUFC*/)
     let &preExp += 'mul_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
-    '<%var%>'
-  case DIV_ARRAY_SCALAR(__) then
-    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
-    let var = tempDecl(type, &varDecls /*BUFC*/)
-    let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
-    '<%var%>'
+    '<%var%>'  
+  case ADD_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for ADD_SCALAR_ARRAY'
+  case ADD_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for ADD_ARRAY_SCALAR'
+  case SUB_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for SUB_SCALAR_ARRAY'
+  case SUB_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for SUB_ARRAY_SCALAR'
+  case MUL_SCALAR_PRODUCT(__) then
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_scalar" else "real_scalar"
+    'mul_<%type%>_product(&<%e1%>, &<%e2%>)'
   case MUL_MATRIX_PRODUCT(__) then
     let typeShort = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer" else "real"
     let type = '<%typeShort%>_array'
     let var = tempDecl(type, &varDecls /*BUFC*/)
     let &preExp += 'mul_alloc_<%typeShort%>_matrix_product_smart(&<%e1%>, &<%e2%>, &<%var%>);<%\n%>'
     '<%var%>'
+  case DIV_ARRAY_SCALAR(__) then
+    let type = match ty case ET_ARRAY(ty=ET_INT(__)) then "integer_array" else "real_array"
+    let var = tempDecl(type, &varDecls /*BUFC*/)
+    let &preExp += 'div_alloc_<%type%>_scalar(&<%e1%>, <%e2%>, &<%var%>);<%\n%>'
+    '<%var%>'
+  case DIV_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for DIV_SCALAR_ARRAY'
+  case POW_ARRAY_SCALAR(__) then 'daeExpBinary:ERR for POW_ARRAY_SCALAR'
+  case POW_SCALAR_ARRAY(__) then 'daeExpBinary:ERR for POW_SCALAR_ARRAY'
+  case POW_ARR(__) then 'daeExpBinary:ERR for POW_ARR'
+  case POW_ARR2(__) then 'daeExpBinary:ERR for POW_ARR2'
   else "daeExpBinary:ERR"
 end daeExpBinary;
 
@@ -3525,10 +3545,10 @@ case UNARY(__) then
   match operator
   case UMINUS(__)     then '(-<%e%>)'
   case UPLUS(__)      then '(<%e%>)'
-  case UMINUS_ARR(ty=ET_ARRAY(ty=ET_REAL(__), arrayDimensions={NONE})) then
+  case UMINUS_ARR(ty=ET_ARRAY(ty=ET_REAL(__))) then
     let &preExp += 'usub_real_array(&<%e%>);<%\n%>'
     '<%e%>'
-  case UMINUS_ARR(__) then "unary minus for non-real arrays not implemented"
+  case UMINUS_ARR(__) then 'unary minus for non-real arrays not implemented'
   case UPLUS_ARR(__)  then "UPLUS_ARR_NOT_IMPLEMENTED"
   else "daeExpUnary:ERR"
 end daeExpUnary;
@@ -3912,17 +3932,25 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
                 sub={ICONST(integer=j)}),
               sub={ICONST(integer=k)}),
             sub={ICONST(integer=l)}) then
-    'ASUB_4D'
+    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let typeShort = expTypeFromExpShort(e)
+    '<%typeShort%>_get_4D(&<%e1%>, <%i%>, <%j%>, <%k%>, <%l%>)'            
   case ASUB(exp=ASUB(
               exp=ASUB(exp=e, sub={ICONST(integer=i)}),
               sub={ICONST(integer=j)}),
             sub={ICONST(integer=k)}) then
-    'ASUB_3D'
+    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let typeShort = expTypeFromExpShort(e)
+    '<%typeShort%>_get_3D(&<%e1%>, <%i%>, <%j%>, <%k%>)'            
   case ASUB(exp=ASUB(exp=e, sub={ICONST(integer=i)}),
             sub={ICONST(integer=j)}) then
-    'ASUB_2D'
-  case ASUB(exp=e, sub={ICONST(integer=i)}) then
-    'ASUB_ARRAY'
+    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let typeShort = expTypeFromExpShort(e)
+    '<%typeShort%>_get_2D(&<%e1%>, <%i%>, <%j%>)'            
+   case ASUB(exp=e, sub={ICONST(integer=i)}) then
+    let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let typeShort = expTypeFromExpShort(e)
+    '<%typeShort%>_get(&<%e1%>, <%i%>)'
   case ASUB(exp=cref as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(cref, subs), context,
                               &preExp /*BUFC*/, &varDecls /*BUFC*/)

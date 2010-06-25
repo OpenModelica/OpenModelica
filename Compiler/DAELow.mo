@@ -5705,7 +5705,7 @@ algorithm
       equation
        e1 = Exp.simplify(e);
        (expl,_) = extendExp(e1); 
-       ty = Exp.typeof(e1);
+       ty = Exp.typeof(e);
       then
         DAE.ARRAY(ty,true,expl); 
   end matchcontinue;        

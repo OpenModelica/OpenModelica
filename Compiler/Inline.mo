@@ -285,13 +285,13 @@ algorithm
       DAELow.VarKind varKind;
       DAE.VarDirection varDirection;
       DAELow.Type varType;
-      DAE.Exp e,e_1;
+      DAE.Exp e,e_1,startv,startv_1;
       Option<Values.Value> bindValue;
       DAE.InstDims arrayDim;
       Integer index;
       DAE.ComponentRef origVarName;
       list<Absyn.Path> className;
-      Option<DAE.VariableAttributes> values;
+      Option<DAE.VariableAttributes> values,values1;
       Option<SCode.Comment> comment;
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
@@ -299,6 +299,21 @@ algorithm
       DAE.ElementSource source "the origin of the element";
 
     case(NONE,_) then NONE;
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+      equation
+        e_1 = inlineExp(e,fns);
+        startv = DAEUtil.getStartAttrFail(values);
+        startv_1 = inlineExp(startv,fns);
+        values1 = DAEUtil.setStartAttr(values,startv_1);
+      then
+        SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e_1),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));
+    case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,NONE(),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
+      equation
+        startv = DAEUtil.getStartAttrFail(values);
+        startv_1 = inlineExp(startv,fns);
+        values1 = DAEUtil.setStartAttr(values,startv_1);
+      then
+        SOME(DAELow.VAR(varName,varKind,varDirection,varType,NONE(),bindValue,arrayDim,index,source,values1,comment,flowPrefix,streamPrefix));        
     case(SOME(DAELow.VAR(varName,varKind,varDirection,varType,SOME(e),bindValue,arrayDim,index,source,values,comment,flowPrefix,streamPrefix)),fns)
       equation
         e_1 = inlineExp(e,fns);
@@ -900,12 +915,13 @@ algorithm
   outExp := matchcontinue(inExp,inElementList)
     local
       Functiontuple fns;
-      DAE.Exp e,e_1;
+      DAE.Exp e,e_1,e_2;
     case(e,fns)
       equation
         ((e_1,fns)) = Exp.traverseExp(e,inlineCall,fns);
+        e_2 = Exp.simplify(e_1);
       then
-        e_1;
+        e_2;
     case(e,_) then e;
   end matchcontinue;
 end inlineExp;
