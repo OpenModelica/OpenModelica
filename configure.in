@@ -28,6 +28,7 @@ AC_SUBST(HAVE_COIN)
 AC_SUBST(LIBSENDDATA)
 AC_SUBST(LIBSENDDATA_LDFLAGS)
 AC_SUBST(QMAKE)
+AC_SUBST(EXE)
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -258,6 +259,12 @@ if test -n "$QMAKE"; then
     QMAKE="$QMAKE -spec macx-g++ -macx -o Makefile"
   fi
   AC_MSG_RESULT([$QMAKE])
+fi
+
+if test "Darwin" = `uname`; then
+  EXE=".app"
+else
+  EXE=""
 fi
 
 AC_MSG_CHECKING([for sendData-Qt]);

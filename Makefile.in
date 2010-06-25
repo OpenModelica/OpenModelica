@@ -12,6 +12,7 @@ docdir = @docdir@
 
 defaultMakefileTarget = Makefile
 QMAKE=@QMAKE@
+EXE=@EXE@
 
 include Makefile.common
 
@@ -26,9 +27,9 @@ omcd: c_runtime docs
 	(cd Compiler && $(MAKE) -f Makefile debug)
 
 qtclean-common:
-	rm -f OMNotebook/ext/ext OMNotebook/ext/OMPlotWindow
-	rm -f OMShell/OMShell OMShell/omc_communication.*
-	rm -f OMNotebook/OMNotebookQT4/OMNotebook OMNotebook/OMNotebookQT4/omc_communication.*
+	rm -rf OMNotebook/ext/ext$(EXE) OMNotebook/ext/OMPlotWindow$(EXE)
+	rm -rf OMShell/OMShell$(EXE) OMShell/omc_communication.*
+	rm -rf OMNotebook/OMNotebookQT4/OMNotebook$(EXE) OMNotebook/OMNotebookQT4/omc_communication.*
 ifeq ($(QMAKE),)
 qtclients:
 	@echo "*** OpenModelica configured without support for Qt"
@@ -40,17 +41,17 @@ qtclean: qtclean-common
 else
 qtclients: mkbuilddirs
 	echo "Coin3D (www.coin3d.org) and SoQt should be installed and in the path!"
-	(cd OMShell && (test -f omc_communication.cc || @IDLCMD@ ../Compiler/runtime/omc_communication.idl) && CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" $(QMAKE) && make && cp -p OMShell ../$(builddir_bin)/.)
-	(cd OMNotebook/ext && $(QMAKE) && make && cp -p OMPlotWindow ../../$(builddir_bin)/.)
+	(cd OMShell && (test -f omc_communication.cc || @IDLCMD@ ../Compiler/runtime/omc_communication.idl) && CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" $(QMAKE) && make && cp -rp OMShell$(EXE) ../$(builddir_bin)/.)
+	(cd OMNotebook/ext && $(QMAKE) && make && cp -rp OMPlotWindow$(EXE) ../../$(builddir_bin)/.)
 	(cd OMNotebook/OMNotebookQT4 && (test -f omc_communication.cc || @IDLCMD@ ../../Compiler/runtime/omc_communication.idl) && $(QMAKE) && make)
-	cp -p OMNotebook/OMNotebookQT4/OMNotebook $(builddir_bin)
+	cp -rp OMNotebook/OMNotebookQT4/OMNotebook$(EXE) $(builddir_bin)
 	cp -p OMNotebook/OMNotebookQT4/*.xml $(builddir_share)/omnotebook
 	cp -p OMNotebook/OMNotebookQT4/commands.xml $(builddir_share)/omshell
 
 qtclean: qtclean-common
-	rm -f OMNotebook/ext/ext OMNotebook/ext/OMPlotWindow
-	rm -f OMShell/OMShell OMShell/omc_communication.*
-	rm -f OMNotebook/OMNotebookQT4/OMNotebook OMNotebook/OMNotebookQT4/omc_communication.*
+	rm -rf OMNotebook/ext/ext$(EXE) OMNotebook/ext/OMPlotWindow$(EXE)
+	rm -rf OMShell/OMShell$(EXE) OMShell/omc_communication.*
+	rm -rf OMNotebook/OMNotebookQT4/OMNotebook$(EXE) OMNotebook/OMNotebookQT4/omc_communication.*
 	(cd OMShell && $(QMAKE) && make clean)
 	(cd OMNotebook/ext && $(QMAKE) && make clean)
 	(cd OMNotebook/OMNotebookQT4 && $(QMAKE) && make clean)
