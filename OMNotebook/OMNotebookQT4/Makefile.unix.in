@@ -30,6 +30,13 @@ endif
 build: $(NAME)
 	cp -p $(NAME) $(builddir_bin)
 	cp -p *.xml $(builddir_share)/omnotebook
+	(DRMODELICAPWD=`cd ../DrModelica/ && pwd` && \
+        DIRS=`cd ../DrModelica/ && find . -type d | grep -v svn` && \
+	(cd $(builddir_share)/omnotebook/drmodelica/ && \
+	mkdir -p $$DIRS) && \
+	cd ../DrModelica/ && \
+	find . -name \*.onb -exec cp {} $(builddir_share)/omnotebook/drmodelica/{} \;)
 
 Makefile.unix: Makefile.unix.in
 	cd $(top_builddir); ./config.status
+
