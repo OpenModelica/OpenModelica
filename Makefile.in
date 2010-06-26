@@ -39,22 +39,19 @@ qtclients:
 	@echo "*** OpenModelica configured without support for CORBA"
 qtclean: qtclean-common
 else
-qtclients: mkbuilddirs
-	echo "Coin3D (www.coin3d.org) and SoQt should be installed and in the path!"
-	(cd OMShell && (test -f omc_communication.cc || @IDLCMD@ ../Compiler/runtime/omc_communication.idl) && CORBALIBS="@CORBALIBS@" CORBAINCL="@CORBACFLAGS@" $(QMAKE) && make && cp -rp OMShell$(EXE) ../$(builddir_bin)/.)
-	(cd OMNotebook/ext && $(QMAKE) && make && cp -rp OMPlotWindow$(EXE) ../../$(builddir_bin)/.)
-	(cd OMNotebook/OMNotebookQT4 && (test -f omc_communication.cc || @IDLCMD@ ../../Compiler/runtime/omc_communication.idl) && $(QMAKE) && make)
-	cp -rp OMNotebook/OMNotebookQT4/OMNotebook$(EXE) $(builddir_bin)
-	cp -p OMNotebook/OMNotebookQT4/*.xml $(builddir_share)/omnotebook
-	cp -p OMNotebook/OMNotebookQT4/commands.xml $(builddir_share)/omshell
+omnotebook: mkbuilddirs
+	make -C OMNotebook/OMNotebookQT4 -f Makefile.unix 
+omshell: mkbuilddirs
+	make -C OMShell -f Makefile.unix
+omplotwindow: mkbuilddirs
+	make -C OMNotebook/ext -f Makefile.unix
+
+qtclients: omnotebook omshell omplotwindow
 
 qtclean: qtclean-common
-	rm -rf OMNotebook/ext/ext$(EXE) OMNotebook/ext/OMPlotWindow$(EXE)
-	rm -rf OMShell/OMShell$(EXE) OMShell/omc_communication.*
-	rm -rf OMNotebook/OMNotebookQT4/OMNotebook$(EXE) OMNotebook/OMNotebookQT4/omc_communication.*
-	(cd OMShell && $(QMAKE) && make clean)
-	(cd OMNotebook/ext && $(QMAKE) && make clean)
-	(cd OMNotebook/OMNotebookQT4 && $(QMAKE) && make clean)
+	make -C OMShell -f Makefile.unix clean
+	make -C OMNotebook/ext -f Makefile.unix clean
+	make -C OMNotebook/OMNotebookQT4 -f Makefile.unix clean
 endif
 
 fix-svn-eol-style:
