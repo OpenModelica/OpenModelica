@@ -619,7 +619,7 @@ namespace IAEX
 		if(!treeView_)
 			throw logic_error("SetHeight(const int height): TreeView is not set.");
 
-#ifdef __APPLE_CC
+#ifdef __APPLE_CC__
         setMinimumHeight(h);
 #else
         setFixedHeight(h);
