@@ -1,0 +1,31 @@
+top_builddir=../../
+builddir_bin=$(top_builddir)/build/bin/
+builddir_share=$(top_builddir)/build/share/
+runtimedir=$(top_builddir)/Compiler/runtime/
+
+QMAKE=@QMAKE@
+EXE=@EXE@
+NAME=OMPlotWindow
+
+.PHONY: always
+
+all: build
+
+Makefile:
+	$(QMAKE)
+
+clean: Makefile
+	rm -rf $(NAME) $(NAME)$(EXE) Makefile
+
+$(NAME)$(EXE): Makefile
+	make -f Makefile
+ifeq ($(EXE),.app)
+$(NAME): $(NAME)$(EXE) always
+	cp -p $</Contents/MacOS/$(NAME) $@
+endif
+
+build: $(NAME)
+	cp -p $(NAME) $(builddir_bin)
+
+Makefile.unix: Makefile.unix.in
+	cd $(top_builddir); ./config.status
