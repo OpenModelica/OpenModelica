@@ -24,7 +24,7 @@ mkbuilddirs:
 	mkdir -p $(builddir_inc)
 	mkdir -p $(builddir_java)
 	mkdir -p $(builddir_share)/omc/scripts
-	mkdir -p $(builddir_share)/omnotebook
+	mkdir -p $(builddir_share)/omnotebook/drmodelica
 	mkdir -p $(builddir_share)/omshell
 	mkdir -p $(builddir_doc)/omc/testmodels
 
@@ -129,7 +129,7 @@ install: install-dirs
 	cp -p ${builddir_doc}/omc/*.txt ${INSTALL_DOCDIR}
 	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/testmodels
 	# Shared data
-	cp -p ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook
+	cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook
 	cp -p ${builddir_share}/omshell/* ${INSTALL_SHAREDIR}/omshell
 	# Scripts
 	cp -p ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
