@@ -28,8 +28,9 @@ $(NAME): $(NAME)$(EXE) always
 endif
 
 build: $(NAME)
-	cp -p $(NAME) $(builddir_bin)
-	cp -p *.xml $(builddir_share)/omnotebook
+	cp -p $(NAME) $(builddir_bin)/
+	cp -p *.xml $(builddir_share)/omnotebook/
+	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/drmodelica/
 	(DRMODELICAPWD=`cd ../DrModelica/ && pwd` && \
         DIRS=`cd ../DrModelica/ && find . -type d | grep -v svn` && \
 	(cd $(builddir_share)/omnotebook/drmodelica/ && \
