@@ -119,7 +119,7 @@ install-dirs:
 install: install-dirs
 	echo Installing OpenModelica...
 	# Binaries
-	cp -p ${builddir_bin}/* ${INSTALL_BINDIR}
+	cp -rp ${builddir_bin}/* ${INSTALL_BINDIR}
 	# Libraries
 	cp -p ${builddir_lib}/* ${INSTALL_LIBDIR}
 	# Includes
