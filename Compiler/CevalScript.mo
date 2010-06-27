@@ -58,6 +58,7 @@ public import Env;
 public import Interactive;
 public import Dependency;
 public import Values;
+public import Inline;
 
 protected import SimCode;
 protected import AbsynDep;
@@ -3595,6 +3596,7 @@ algorithm
         list<list<Integer>> comps;
         list<Absyn.Path> funcpaths;
         list<DAE.Element> funcelems;
+        DAE.FunctionTree funcs;
       equation
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
@@ -3610,7 +3612,10 @@ algorithm
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        funcs = DAEUtil.daeFunctionTree(dae);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        // late Inline
+        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
@@ -3638,6 +3643,7 @@ algorithm
         list<SCode.Class> p_1,sp;
         list<Absyn.Path> funcpaths;
         list<DAE.Element> funcelems;
+        DAE.FunctionTree funcs;
       equation
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
         _ = Error.getMessagesStr() "Clear messages";
@@ -3653,7 +3659,10 @@ algorithm
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        funcs = DAEUtil.daeFunctionTree(dae);
+        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        // late Inline
+        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
         funcpaths = SimCode.getCalledFunctions(dae, dlow_1);
         funcelems = SimCode.generateFunctions2(p_1, funcpaths);

@@ -571,6 +571,7 @@ algorithm
       Ceval.Msg msg;
       Exp.Exp fileprefix;
       Env.Cache cache;
+      DAE.FunctionTree funcs;
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg,fileprefix,addDummy)
       equation
         /* calculate stuff that we need to create SimCode data structure */
@@ -584,7 +585,10 @@ algorithm
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        funcs = DAEUtil.daeFunctionTree(dae);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        // late Inline
+        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
@@ -1151,15 +1155,10 @@ algorithm
       list<tuple<Integer, DAE.Exp>> delayedExps;
       list<DAE.Exp> divLst;
       list<DAE.Statement> allDivStmts;
-      DAE.FunctionTree funcs;      
+            
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,fileDir,functions,libs)
       equation
         cname = Absyn.pathString(class_);
-
-        // late Inline
-        funcs = DAEUtil.daeFunctionTree(dae);
-        dlow = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow);
-        Debug.fcall("lateInline", DAELow.dump, dlow);
           
         (blt_states, blt_no_states) = DAELow.generateStatePartition(comps, dlow, ass1, ass2, m, mt);
 
@@ -5243,16 +5242,38 @@ protected function solveTrivialArrayEquation
 algorithm
   (outE1,outE2) := matchcontinue(v,e1,e2)
     local
-      Exp.Exp e12,e22,vTerm,res,rhs;
-      list<Exp.Exp> terms;
+      Exp.Exp e12,e22,vTerm,res,rhs,f;
+      list<Exp.Exp> terms,exps,exps_1,expl_1;
       Exp.Type tp;
-
+      Boolean b;
+      list<Boolean> bls; 
+      DAE.ComponentRef c;     
+    case (v,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))),e2)
+      equation
+        (f::exps_1) = Util.listMap(exps, Exp.expStripLastSubs); //Strip last subscripts
+        bls = Util.listMap1(exps_1, Exp.expEqual,f);
+        true = Util.boolAndList(bls);
+        c = Exp.crefStripLastSubs(c);
+        (e12,e22) = solveTrivialArrayEquation(v,DAE.CREF(c,tp),DAE.UNARY(DAE.UMINUS_ARR(tp),e2));
+      then  
+        (e12,e22);
+   case (v,e2,DAE.ARRAY( tp, b,exps as ((DAE.UNARY(DAE.UMINUS(_),DAE.CREF(componentRef=c)) :: _))))
+      equation
+        (f::exps_1) = Util.listMap(exps, Exp.expStripLastSubs); //Strip last subscripts
+        bls = Util.listMap1(exps_1, Exp.expEqual,f);
+        true = Util.boolAndList(bls);
+        c = Exp.crefStripLastSubs(c);
+        (e12,e22) = solveTrivialArrayEquation(v,DAE.UNARY(DAE.UMINUS_ARR(tp),e2),DAE.CREF(c,tp));
+      then  
+        (e12,e22);
     // Solve simple linear equations.
     case(v,e1,e2)
       equation
         tp = Exp.typeof(e1);
         res = Exp.simplify(DAE.BINARY(e1,DAE.SUB_ARR(tp),e2));
-        (vTerm as DAE.CREF(_,_),rhs) = Exp.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
+        (f,rhs) = Exp.getTermsContainingX(res,DAE.CREF(v,DAE.ET_OTHER()));
+        (vTerm as DAE.CREF(_,_)) = Exp.simplify(f);
+        rhs = Exp.simplify(rhs);
       then (vTerm,rhs);
 
     // not succeded to solve, return unsolved equation., catched later.

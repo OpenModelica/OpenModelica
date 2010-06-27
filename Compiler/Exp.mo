@@ -633,14 +633,14 @@ algorithm
       then DAE.CREF(cr_1,ty);
     case (DAE.UNARY(operator=op,exp=e))
       equation
-        ty = typeof(e);
         e_1 = expStripLastSubs(e);
+        ty = typeof(e_1);
         true = DAEUtil.expTypeArray(ty);
       then DAE.UNARY(DAE.UMINUS_ARR(ty),e_1);
     case (DAE.UNARY(operator=op,exp=e))
       equation
-        ty = typeof(e);
         e_1 = expStripLastSubs(e);
+        ty = typeof(e_1);
         false = DAEUtil.expTypeArray(ty);
       then DAE.UNARY(DAE.UMINUS(ty),e_1);        
   end matchcontinue;
@@ -886,6 +886,7 @@ algorithm
         res = Util.boolAndList(ab);
       then   
         res;
+    case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     case (_) then false;
   end matchcontinue;
 end isZero;
@@ -921,7 +922,7 @@ algorithm
         res = isConst(e);
       then
         res;
-        case (DAE.BINARY(e1,op,e2))
+    case (DAE.BINARY(e1,op,e2))
       equation
         b1 = isConst(e1);
         b2 = isConst(e2);
@@ -9647,6 +9648,36 @@ algorithm
         nonxt = DAE.UNARY(DAE.UMINUS(ty),nonxt1);
       then
         (xt,nonxt);
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = ty),exp2 = e2),(cr as DAE.CREF(componentRef = _)))
+      equation
+        (xt1,nonxt1) = getTermsContainingX(e1, cr);
+        (xt2,nonxt2) = getTermsContainingX(e2, cr);
+        xt = DAE.BINARY(xt1,DAE.ADD_ARR(ty),xt2);
+        nonxt = DAE.BINARY(nonxt1,DAE.ADD_ARR(ty),nonxt2);
+      then
+        (xt,nonxt);      
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = ty),exp2 = e2),(cr as DAE.CREF(componentRef = _)))
+      equation
+        (xt1,nonxt1) = getTermsContainingX(e1, cr);
+        (xt2,nonxt2) = getTermsContainingX(e2, cr);
+        xt = DAE.BINARY(xt1,DAE.SUB_ARR(ty),xt2);
+        nonxt = DAE.BINARY(nonxt1,DAE.SUB_ARR(ty),nonxt2);
+      then
+        (xt,nonxt);      
+    case (DAE.UNARY(operator = DAE.UPLUS_ARR(ty = ty),exp = e),(cr as DAE.CREF(componentRef = _)))
+      equation
+        (xt1,nonxt1) = getTermsContainingX(e, cr);
+        xt = DAE.UNARY(DAE.UPLUS_ARR(ty),xt1);
+        nonxt = DAE.UNARY(DAE.UPLUS_ARR(ty),nonxt1);
+      then
+        (xt,nonxt);
+    case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty = ty),exp = e),(cr as DAE.CREF(componentRef = _)))
+      equation
+        (xt1,nonxt1) = getTermsContainingX(e, cr);
+        xt = DAE.UNARY(DAE.UMINUS_ARR(ty),xt1);
+        nonxt = DAE.UNARY(DAE.UMINUS_ARR(ty),nonxt1);
+      then
+        (xt,nonxt);            
     case (e,(cr as DAE.CREF(componentRef = _)))
       equation
         res = expContains(e, cr);

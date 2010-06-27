@@ -73,6 +73,7 @@ protected import InnerOuter;
 protected import ClassLoader;
 protected import TplMain;
 protected import DAEDump;
+protected import Inline;
 
 protected function serverLoop
 "function: serverLoop
@@ -756,6 +757,7 @@ algorithm
       Env.Cache cache;
       Env.Env env;
       list<Integer> reseqn,tearvar;
+      DAE.FunctionTree funcs;
     case (cache,env,p,ap,dae,daeimpl,classname)
       local String str,strtearing;
       equation
@@ -768,7 +770,10 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        funcs = DAEUtil.daeFunctionTree(dae);
+        (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
+        // late Inline
+        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, dlow_1);
