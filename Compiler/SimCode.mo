@@ -2296,9 +2296,9 @@ algorithm
     /* An array equation */
     case ((DAELow.ARRAY_EQUATION(index=aindx) :: rest), aeqns)
       equation
-        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = aeqns[aindx];
+        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = aeqns[aindx+1];
         tp = Exp.typeof(e1);
-        res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        res_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         res_exp = Exp.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);        
 //        (cfunc_1,cg_id_1,rest2,indx_1) = generateOdeSystem2NonlinearResidualsArrayEqn(aindx,rest,aeqns,indx,repl,cg_id);
@@ -3435,11 +3435,11 @@ algorithm
       then rhs_exp_2;
     case (DAELow.ARRAY_EQUATION(index=index), v, arrayEqs)
       equation
-        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = arrayEqs[index];
+        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = arrayEqs[index+1];
         tp = Exp.typeof(e1);
-        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
-        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS_ARR(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
       then rhs_exp_2;        
     case (dlowEq,_,_)
@@ -5399,7 +5399,7 @@ algorithm
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
       equation
         eqn_lst = DAELow.equationList(eqnarr);
-        singleArrayEquation2(eqn_lst);
+        singleArrayEquation2(eqn_lst,NONE);
       then
         ();
   end matchcontinue;
@@ -5407,16 +5407,25 @@ end singleArrayEquation;
 
 protected function singleArrayEquation2
   input list<DAELow.Equation> inDAELowEquationLst;
+  input Option<Integer> Index;
 algorithm
   _:=
-  matchcontinue (inDAELowEquationLst)
-    local list<DAELow.Equation> res;
-    case ({}) then ();
-    case ((DAELow.ARRAY_EQUATION(index = _) :: res))
+  matchcontinue (inDAELowEquationLst,Index)
+    local 
+      list<DAELow.Equation> res;
+      Integer i,i1;
+    case ({},_) then ();
+    case ((DAELow.ARRAY_EQUATION(index = i) :: res),NONE)
       equation
-        singleArrayEquation2(res);
+        singleArrayEquation2(res,SOME(i));
       then
         ();
+    case ((DAELow.ARRAY_EQUATION(index = i) :: res),SOME(i1))
+      equation
+        true = intEq(i,i1);
+        singleArrayEquation2(res,SOME(i1));
+      then
+        ();        
   end matchcontinue;
 end singleArrayEquation2;
 

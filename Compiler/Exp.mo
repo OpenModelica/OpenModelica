@@ -4078,6 +4078,7 @@ algorithm
   local Type t;
     /* to avoid unnessecary --e */
     case(DAE.UNARY(DAE.UMINUS(t),e)) then e;
+    case(DAE.UNARY(DAE.UMINUS_ARR(t),e)) then e;
 
     /* -0 = 0 */
     case(e) equation
@@ -4086,8 +4087,14 @@ algorithm
 
     case(e) equation
       t = typeof(e);
+      true = isArrayType(t);
+      outExp = DAE.UNARY(DAE.UMINUS_ARR(t),e);
+    then outExp;
+    case(e) equation
+      t = typeof(e);
+      false = isArrayType(t);
       outExp = DAE.UNARY(DAE.UMINUS(t),e);
-  then outExp;
+    then outExp;
   end matchcontinue;
 end negate;
 
@@ -4122,29 +4129,98 @@ algorithm
      then
        res;
 
+   case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = _),exp2 = e2))
+      equation
+        f1 = allTerms(e1);
+        f2 = allTerms(e2);
+        res = listAppend(f1, f2);
+      then
+        res;
+   case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = _),exp2 = e2))
+     equation
+       f1 = allTerms(e1);
+       f2 = allTerms(e2);
+       f2_1 = Util.listMap(f2, negate);
+       res = listAppend(f1, f2_1);
+     then
+       res;
+
        /* terms( a*(b+c)) => {a*b, c*b} */
    case (e as DAE.BINARY(e1,DAE.MUL(tp),e2)) equation
      (f1 as _::_::_) = allTerms(e2);
      f1 = Util.listMap1(f1,makeProduct,e1);
      f1 = Util.listFlatten(Util.listMap(f1,allTerms));
    then f1;
-
+   case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e2);
+     f1 = Util.listMap1(f1,makeProduct,e1);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;
+   case (e as DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e2);
+     f1 = Util.listMap1(f1,makeProduct,e1);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;    
+   case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e2);
+     f1 = Util.listMap1(f1,makeProduct,e1);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1; 
      /* terms( (b+c)*a) => {b*a, c*a} */
    case (e as DAE.BINARY(e1,DAE.MUL(tp),e2)) equation
      (f1 as _::_::_) = allTerms(e1);
      f1 = Util.listMap1(f1,makeProduct,e2);
      f1 = Util.listFlatten(Util.listMap(f1,allTerms));
    then f1;
-
+   case (e as DAE.BINARY(e1,DAE.MUL_ARR(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeProduct,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;
+   case (e as DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeProduct,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;
+   case (e as DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeProduct,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;          
    /* terms( (b+c)/a) => {b/a, c/a} */
    case (e as DAE.BINARY(e1,DAE.DIV(tp),e2)) equation
      (f1 as _::_::_) = allTerms(e1);
      f1 = Util.listMap1(f1,makeFraction,e2);
      f1 = Util.listFlatten(Util.listMap(f1,allTerms));
    then f1;
+   case (e as DAE.BINARY(e1,DAE.DIV_ARR(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeFraction,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;  
+   case (e as DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeFraction,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1; 
+   case (e as DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(tp),e2)) equation
+     (f1 as _::_::_) = allTerms(e1);
+     f1 = Util.listMap1(f1,makeFraction,e2);
+     f1 = Util.listFlatten(Util.listMap(f1,allTerms));
+   then f1;              
    case ((e as DAE.BINARY(operator = DAE.MUL(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.MUL_ARR(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.MUL_SCALAR_ARRAY(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.MUL_ARRAY_SCALAR(ty = _)))) then {e};
    case ((e as DAE.BINARY(operator = DAE.DIV(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.DIV_ARR(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.DIV_ARRAY_SCALAR(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.DIV_SCALAR_ARRAY(ty = _)))) then {e};
    case ((e as DAE.BINARY(operator = DAE.POW(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.POW_ARR(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.POW_ARR2(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.POW_ARRAY_SCALAR(ty = _)))) then {e};
+   case ((e as DAE.BINARY(operator = DAE.POW_SCALAR_ARRAY(ty = _)))) then {e};
    case ((e as DAE.CREF(componentRef = cr))) then {e};
    case ((e as DAE.ICONST(integer = _))) then {e};
    case ((e as DAE.RCONST(real = _))) then {e};

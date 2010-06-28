@@ -4880,7 +4880,39 @@ algorithm
       list<Equation> eqns,eqns2,res;
       MultiDimEquation a;
       list<MultiDimEquation> algs;
+      list<DAE.Exp> a1,a2,a1_1,an;
+      list<tuple<DAE.Exp,DAE.Exp>> ealst;
+      DAE.ElementSource source;      
     case (vars,{},aindx) then ({},aindx);
+    case (vars,((a as MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1,scalar=true),right=DAE.ARRAY(array=a2,scalar=true),source=source)) :: algs),aindx)
+      equation
+        ealst = Util.listThreadTuple(a1,a2);
+        eqns = Util.listMap1(ealst,generateEQUATION,source);
+        aindx = aindx + 1;
+        (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
+        res = listAppend(eqns, eqns2);
+      then
+        (res,aindx);
+    case (vars,((a as MULTIDIM_EQUATION(left=DAE.UNARY(exp=DAE.ARRAY(array=a1,scalar=true)),right=DAE.ARRAY(array=a2,scalar=true),source=source)) :: algs),aindx)
+      equation
+        an = Util.listMap(a1,Exp.negate);
+        ealst = Util.listThreadTuple(an,a2);
+        eqns = Util.listMap1(ealst,generateEQUATION,source);
+        aindx = aindx + 1;
+        (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
+        res = listAppend(eqns, eqns2);
+      then
+        (res,aindx);              
+    case (vars,((a as MULTIDIM_EQUATION(left=DAE.ARRAY(array=a1,scalar=true),right=DAE.UNARY(exp=DAE.ARRAY(array=a2,scalar=true)),source=source)) :: algs),aindx)
+      equation
+        an = Util.listMap(a2,Exp.negate);
+        ealst = Util.listThreadTuple(a1,an);
+        eqns = Util.listMap1(ealst,generateEQUATION,source);
+        aindx = aindx + 1;
+        (eqns2,aindx) = lowerMultidimeqns2(vars, algs, aindx);
+        res = listAppend(eqns, eqns2);
+      then
+        (res,aindx);
     case (vars,(a :: algs),aindx)
       equation
         eqns = lowerMultidimeqn(vars, a, aindx);
@@ -5261,8 +5293,7 @@ algorithm
     /* Special Case for Records */
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),vars)
       equation
-        true = Exp.isRecord(cr);
-        DAE.ET_COMPLEX(varLst=varLst) = Exp.typeof(e);
+        DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr);
         expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
         res = Util.listListUnionOnTrue(lst, Exp.expEqual);
