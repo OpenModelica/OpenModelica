@@ -100,17 +100,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	long numpoints = long((stop-start)/step)+2;
 
-	// allocate data for storing results.
-	if (initializeResult(5*numpoints,globalData->nStates,globalData->nAlgebraic,globalData->nParameters)) {
-		cout << "Internal error, allocating result data structures"  << endl;
-		return -1;
-	}
 	if (initializeEventData()) {
 		cout << "Internal error, allocating event data structures" << endl;
 		return -1;
 	}
-
-	if (sim_verbose) { cout << "Allocated simulation data storage" << endl; }
 
 	if(bound_parameters()) {
 		printf("Error calculating bound parameters\n");
@@ -134,18 +127,18 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 				string("Error in initialization. Storing results and exiting.\n"));
 	}
 	saveall();
-	if(sim_verbose) { emit(); }
+	if(sim_verbose) { sim_result->emit(); }
 	// Calculate stable discrete state
 	// and initial ZeroCrossings
 	function_updateDepend();
-	if(sim_verbose) { emit(); }
+	if(sim_verbose) { sim_result->emit(); }
 	while(checkForDiscreteChanges()) {
 		if (sim_verbose) cout << "Discrete Var Changed!" << endl;
 		saveall();
 		function_updateDepend();
 	}
 	saveall();
-	if(sim_verbose) { emit(); }
+	if(sim_verbose) { sim_result->emit(); }
 
 	// Do a tiny step to initialize ZeroCrossing that are fulfilled
     // And then go back and start at t_0
@@ -157,7 +150,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	else if (flag == 3) dasrt_step(&current_stepsize,functionODE);
 	else euler_ex_step(&current_stepsize,functionODE);
 	functionDAE_output();
-	if(sim_verbose) { emit(); }
+	if(sim_verbose) { sim_result->emit(); }
 	InitialZeroCrossings();
 
 	globalData->timeValue = start;
@@ -165,14 +158,14 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	delete [] backupstats_new;
 
 	function_updateDepend();
-	if(sim_verbose) { emit(); }
+	if(sim_verbose) { sim_result->emit(); }
 	while(checkForDiscreteChanges()) {
 		if (sim_verbose) cout << "Discrete Var Changed!" << endl;
 		saveall();
 		function_updateDepend();
 	}
 	saveall();
-	emit();
+	sim_result->emit();
 
 	globalData->init=0;
 	
@@ -233,7 +226,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		
 		// Emit this time step
 		// TODO: check if time step equal to output point
-		emit();
+		sim_result->emit();
 
 	}
   } catch (TerminateSimulationException &e) {
@@ -246,22 +239,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	deinitializeEventData();
 
-	string* result_file =(string*)getFlagValue("r",argc,argv);
-	string result_file_cstr;
-	if (!result_file) {
-		result_file_cstr = string(globalData->modelName)+string("_res.plt");
-	} else {
-		result_file_cstr = *result_file;
-	}
-
-  // In interactive mode there is no need to write results to file.
-  if (isInteractiveSimulation()) {    
-    deallocResult();
-  } else {
-    if (deinitializeResult(result_file_cstr.c_str())) {
-      return -1;
-    }
-  }
 	return 0;
 }
 

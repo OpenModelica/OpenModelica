@@ -29,19 +29,18 @@
  *
  */
 
-/*
- * File: simulation_input.h
- */
+#include "simulation_result.h"
 
-#ifndef _SIMULATION_INPUT_H
-#define _SIMULATION_INPUT_H
+#ifndef _SIMULATION_RESULT_EMPTY_H
+#define _SIMULATION_RESULT_EMPTY_H
 
-#include "simulation_runtime.h"
+class simulation_result_empty : public simulation_result { 
+public:
 
-void read_input(int argc, char **argv,
-                DATA *simData,
-                double *start, double *stop,
-                double *stepSize, long *outputSteps,
-                double *tolerance, string* method, string* outputFormat);
+simulation_result_empty(const char* filename, long numpoints) : simulation_result(filename,numpoints) {};
+void emit() {storeExtrapolationData();};
+virtual const char* result_type() {return "no result file";};
+
+};
 
 #endif

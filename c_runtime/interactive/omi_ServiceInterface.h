@@ -96,9 +96,9 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
  * Calls the "read_input(...)" function from "simulation_input.cpp" and stores the simulation start data into
  * a set of variables from "omi_Calculation.cpp"
  */
-void getSimulationStartData(double*, long*, double*, string*);
+void getSimulationStartData(double*, long*, double*, string*, string*);
 
-int callSolverFromOM(string, double, double, double, long, double);
+int callSolverFromOM(string, string, double, double, double, long, double);
 
 bool denied_work_on_GD();
 bool allow_work_on_GD();

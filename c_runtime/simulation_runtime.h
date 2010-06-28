@@ -43,6 +43,7 @@
 #include "compat.h"
 #include "simulation_events.h"
 #include "simulation_delay.h"
+#include "simulation_result.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -190,6 +191,7 @@ extern DATA *globalData;
 
 extern long numpoints;
 extern int modelErrorCode;
+extern simulation_result *sim_result;
 
 /*
  * this is used for initialize the DATA structure that is used in
@@ -270,7 +272,7 @@ int initial_residual();
 void function_sampleInit();
 
 bool isInteractiveSimulation();
-int callSolver(int, char**, string, double, double, double, long, double);
+int callSolver(int, char**, string, string, double, double, double, long, double);
 
 double newTime(double t, double step,double stop);
 

@@ -53,7 +53,7 @@ void read_commented_value(ifstream &f, char **str);
  				DATA *simData,
                 double *start, double *stop,
                 double *stepSize, long *outputSteps,
-                double *tolerance, string* method)
+                double *tolerance, string* method, string* outputFormat)
 {
 
   string *filename=(string*)getFlagValue("f",argc,argv);
@@ -84,6 +84,8 @@ void read_commented_value(ifstream &f, char **str);
   if (sim_verbose) { cout << "read tolerance = " << *tolerance << " from init file." << endl; }
   read_commented_value(file,method);
   if (sim_verbose) { cout << "read method = " << *method << " from init file." << endl; }
+  read_commented_value(file,outputFormat);
+  if (sim_verbose) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
   int nxchk,nychk,npchk;
   int nystrchk,npstrchk;
   read_commented_value(file,&nxchk);

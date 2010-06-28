@@ -29,19 +29,20 @@
  *
  */
 
-/*
- * File: simulation_input.h
- */
+#include "simulation_result.h"
 
-#ifndef _SIMULATION_INPUT_H
-#define _SIMULATION_INPUT_H
+#ifndef _SIMULATION_RESULT_CSV_H
+#define _SIMULATION_RESULT_CSV_H
 
-#include "simulation_runtime.h"
+class simulation_result_csv : public simulation_result { 
+private:
+FILE* fout;
+public:
 
-void read_input(int argc, char **argv,
-                DATA *simData,
-                double *start, double *stop,
-                double *stepSize, long *outputSteps,
-                double *tolerance, string* method, string* outputFormat);
+simulation_result_csv(const char* filename, long numpoints);
+virtual ~simulation_result_csv();
+virtual void emit();
+virtual const char* result_type() {return "csv";};
+};
 
 #endif

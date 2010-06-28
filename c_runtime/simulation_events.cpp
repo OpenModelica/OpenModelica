@@ -141,7 +141,7 @@ void checkForInitialZeroCrossings(fortran_integer* jroot) {
       functionDAE_output();
     }
   }
-  emit();
+  sim_result->emit();
   CheckForNewEvents(&globalData->timeValue);
   StartEventIteration(&globalData->timeValue);
 
@@ -585,7 +585,7 @@ int CheckForNewEvent(int flag) {
 			function_updateDepend();
 			if (sim_verbose) {
 				cout << "Discrete Variable changed -> event iteration." << endl;
-				emit();
+				sim_result->emit();
 			}
 	  }
 	}
@@ -632,7 +632,7 @@ void EventHandle(){
 		
 		saveall();
 		function_updateDepend();
-	    if (sim_verbose) { emit();}
+	    if (sim_verbose) { sim_result->emit();}
 	    
 		EventQueue.pop_front();
 	}
@@ -686,7 +686,7 @@ void FindRoot(){
 	//determined continuous system
 	functionODE();
 	functionDAE_output();
-	emit();
+	sim_result->emit();
 	saveall();
 
 	//determined system at t_e + epsilon
@@ -696,7 +696,7 @@ void FindRoot(){
 	}
 	//determined complete system
 	function_updateDepend();
-    if (sim_verbose) {emit();}
+    if (sim_verbose) {sim_result->emit();}
     
 	delete[] states_left;
 	delete[] states_right;

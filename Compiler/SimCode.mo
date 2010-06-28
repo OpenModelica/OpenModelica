@@ -7083,8 +7083,9 @@ public function generateInitData
   input Real inTolerance;
   input String method;
   input String options;
+  input String outputFormat;
 algorithm
-  _ := matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method,options)
+  _ := matchcontinue (inDAELow1,inPath2,inString3,inString4,inReal5,inReal6,inReal7,inTolerance,method,options,outputFormat)
     local
       Real delta_time,step,start,stop,intervals,tolerance;
       String start_str,stop_str,step_str,tolerance_str,nx_str,ny_str,np_str,init_str,str,exe,filename;
@@ -7093,7 +7094,7 @@ algorithm
       DAELow.DAELow dlow;
       Absyn.Path class_;
 
-    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_) /* classname executable file name filename start time stop time intervals */
+    case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_,outputFormat) /* classname executable file name filename start time stop time intervals */
       equation
         delta_time = stop -. start;
         step = delta_time/.intervals;
@@ -7114,6 +7115,7 @@ algorithm
           step_str," // step value\n",
           tolerance_str, " // tolerance\n",
           "\"",method,"\" // method\n",
+          "\"",outputFormat,"\" // outputFormat\n",
           nx_str," // n states\n",
           ny_str," // n alg vars\n",
           np_str," //n parameters\n",
@@ -7124,7 +7126,7 @@ algorithm
       then
         ();
 
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         print("-SimCodegen.generateInitData failed\n");
       then

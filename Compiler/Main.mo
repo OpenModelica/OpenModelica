@@ -834,7 +834,7 @@ algorithm
         ();
     case (dae,ass1,ass2,comps)
       equation
-        indexed_dae = DAELow.translateDae(dae,NONE);
+        indexed_dae = DAELow.translateDae(dae,NONE());
         indexed_dae_1 = DAELow.calculateValues(indexed_dae);
         TaskGraph.buildTaskgraph(indexed_dae_1, ass1, ass2, comps);
         TaskGraphExt.dumpGraph("model.viz");
@@ -908,7 +908,7 @@ algorithm
         Print.clearErrorBuf();
         Print.clearBuf();
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> translateDae: " +& realString(clock()) +& "\n" );
-        indexed_dlow = DAELow.translateDae(dlow,NONE);
+        indexed_dlow = DAELow.translateDae(dlow,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fcall("dumpindxdae", DAELow.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
@@ -920,7 +920,7 @@ algorithm
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         (_, _) = SimCode.generateModelCode(p, dae, indexed_dlow_1, classname, cname_str, file_dir, ass1, ass2, m, mt, comps);
-        SimCode.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","");
+        SimCode.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","","plt");
       then
         ();
     case (_,_,_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */

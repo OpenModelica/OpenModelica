@@ -151,12 +151,6 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       cout << "Internal error, allocating event data structures" << endl;
       return -1;
     }
-    if (initializeResult(5*numpoints,globalData->nStates,globalData->nAlgebraic,globalData->nParameters)) {
-      cout << "Internal error, allocating result data structures"  << endl;
-      return -1;
-    }
-
-    if (sim_verbose) { cout << "Allocated simulation data storage" << endl; }
 
     if(bound_parameters()) {
       printf("Error calculating bound parameters\n");
@@ -210,7 +204,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
     function_storeDelayed();
 
-    if(emit()) { printf("Error, not enough space to save data"); return -1; }
+    sim_result->emit();
     calcEnabledZeroCrossings();
     globalData->init = 0;
     if (sim_verbose) { cout << "calling DDASRT from "<< globalData->timeValue << " to "<<
@@ -239,7 +233,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
     // alg vars too.
     acceptedStep=1;
     functionDAE_output();
-	function_storeDelayed(); //TODO NEW storeDelayed
+    function_storeDelayed(); //TODO NEW storeDelayed
     acceptedStep=0;
 
     tout = newTime(tout,step,stop);
@@ -252,8 +246,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
           cout  << std::setprecision(20) <<
             "Found event " << activeEvent(globalData->nZeroCrossing,jroot) << " at time " << globalData->timeValue << endl;
        	}
-        if (emit()) {printf("Too many points\n");
-        idid = -99; break;}
+        sim_result->emit();
 
         saveall();
         // Make a tiny step so we are sure that crossings have really occured.
@@ -289,7 +282,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
         // Store new values after event into delayed expressions buffers 
         function_storeDelayed();
 
-        emit();
+        sim_result->emit();
         if (sim_verbose) {
           cout << "Done checking events at time " << globalData->timeValue << endl;
 
@@ -333,9 +326,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
       if (numpoints < 0 || globalData->forceEmit) { /* Only emit if automatic or at "sample time" */
         if (globalData->forceEmit) globalData->forceEmit=0;
-        if(emit()) {
-          printf("Error, could not save data. Not enought space.\n");
-        }
+        sim_result->emit();
       }
       saveall();
 
@@ -383,9 +374,7 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
       status = 1;
     }
   }
-  if(emit()) {
-    printf("Error, could not save data. Not enought space.\n");
-  }
+  sim_result->emit();
   if (!continue_with_dassl(&idid,&atol,&rtol) || idid < 0)
   {
     cerr << "Error, simulation stopped at time: " << globalData->timeValue << " with idid: " << idid << endl;
@@ -401,22 +390,6 @@ int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, 
 
   deinitializeEventData();
 
-  string *result_file =(string*)getFlagValue("r",argc,argv);
-  string result_file_cstr;
-  if (!result_file) {
-    result_file_cstr = string(globalData->modelName)+string("_res.plt");
-  } else {
-    result_file_cstr = *result_file;
-  }
-
-  if (isInteractiveSimulation()) // In interactive mode there is no need to write results to file because all results will be used intern
-		deallocResult();
-	else {
-		if (deinitializeResult(result_file_cstr.c_str())) {
-			status = -1;
-
-		}
-	}
   return status;
 }
 

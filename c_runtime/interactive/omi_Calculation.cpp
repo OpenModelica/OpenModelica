@@ -51,10 +51,11 @@ int calculate() {
 	long outputSteps = 1; //unnecessary for interactive simulation
 	double tolerance = 1e-4;
 	string method;
+  string outputFormat;
 
-	getSimulationStartData(&stepSizeORG, &outputSteps,	&tolerance, &method);
+	getSimulationStartData(&stepSizeORG, &outputSteps,	&tolerance, &method, &outputFormat);
 	//TODO  20100217 pv catch correct stepSize value for calculation loop
-	if(debugCalculation) cout << "start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method;
+	if(debugCalculation) cout << "start: " << start << " stop: " << stop << " stepSize: " << stepSizeORG << " outputSteps: " << outputSteps << " method: " << method << " outputFormat: " << outputFormat;
 
 	set_lastEmittedTime(start);
 	set_forceEmit(0);
@@ -95,7 +96,7 @@ int calculate() {
 			}
 		}
 
-		retVal = callSolverFromOM(method, start, stop, stepSize, outputSteps,
+		retVal = callSolverFromOM(method, outputFormat, start, stop, stepSize, outputSteps,
 				tolerance);
 
 		if (retVal != 0){

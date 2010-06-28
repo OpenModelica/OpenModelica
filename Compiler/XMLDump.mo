@@ -823,7 +823,7 @@ This function prints a list from a list
 of array of CrefIndex elements in
 a XML format. See dumpCrefIdxLst for details.
 "
-  input list<DAELow.CrefIndex>[:] crefIdxLstArr;
+  input array<list<DAELow.CrefIndex>> crefIdxLstArr;
   input String Content;
   input Integer inInteger;
 algorithm

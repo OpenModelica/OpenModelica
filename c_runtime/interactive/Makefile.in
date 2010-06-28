@@ -21,3 +21,6 @@ libinteractive.a : $(OBJ)
 
 clean:
 	$(RM) -rf *.o *.a
+
+Makefile: Makefile.in
+	cd $(top_builddir); ./config.status

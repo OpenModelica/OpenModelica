@@ -35,13 +35,17 @@
 #include <iomanip>
 #include <time.h>
 #include <stdio.h>
+#include <string.h>
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
 #include "solver_main.h"
 #include "options.h"
 #include "omi_ServiceInterface.h"
-
+#include "simulation_result_bin.h"
+#include "simulation_result_empty.h"
+#include "simulation_result_plt.h"
+#include "simulation_result_csv.h"
 
 using namespace std;
 
@@ -49,7 +53,7 @@ bool interactiveSimuation = false; //This variable signals if an simulation sess
 
 /* Global Data */
 /***************/
-const string version = "20100513";
+const string version = "20100628";
 // Becomes non-zero when model terminates simulation.
 int modelTermination=0;
 
@@ -69,8 +73,11 @@ const std::string *init_method; // method for  initialization.
 // this is the globalData that is used in all the functions
 DATA *globalData = 0;
 
+// The simulation result
+simulation_result *sim_result;
+
 /* Flags for controlling logging to stdout */
-const int LOG_EVENTS =	1;
+const int LOG_EVENTS =  1;
 const int LOG_NONLIN_SYS = 2;
 const int LOG_DEBUG = 4;
 
@@ -91,26 +98,26 @@ int initRuntimeAndSimulation(int , char**);
 */
 double newTime(double t, double step, double stop)
 {
-	const double maxSolverStep=0.001;
-	double newTime;
-	if (step > maxSolverStep) { /* Prevent solver from taking larger step than maxSolverStep
-	NOTE: DASSL run into problems if the stepsize (TOUT-T) is too large, since it internally keeps track
-	of number of iterations and explain if it goes over 500.
-	 */
-		/* Take a max step size forward */
-		newTime=t+maxSolverStep;
+  const double maxSolverStep=0.001;
+  double newTime;
+  if (step > maxSolverStep) { /* Prevent solver from taking larger step than maxSolverStep
+  NOTE: DASSL run into problems if the stepsize (TOUT-T) is too large, since it internally keeps track
+  of number of iterations and explain if it goes over 500.
+   */
+    /* Take a max step size forward */
+    newTime=t+maxSolverStep;
 
-		/* If output interval point reached, choose that time instead. */
-		if (newTime - (globalData->lastEmittedTime+step) >= -1e-10) {
-			newTime = globalData->lastEmittedTime+step;
-			globalData->lastEmittedTime = newTime;
-			globalData->forceEmit = 1;
-		}
-	} else {
-	 newTime=(floor( (t+1e-10) / step) + 1.0)*step;
+    /* If output interval point reached, choose that time instead. */
+    if (newTime - (globalData->lastEmittedTime+step) >= -1e-10) {
+      newTime = globalData->lastEmittedTime+step;
+      globalData->lastEmittedTime = newTime;
+      globalData->forceEmit = 1;
+    }
+  } else {
+   newTime=(floor( (t+1e-10) / step) + 1.0)*step;
      globalData->lastEmittedTime = newTime;
-	 globalData->forceEmit = 1;
-	}
+   globalData->forceEmit = 1;
+  }
 
   // Small gain taking hints from the scheduled sample events. Needs to be done better.
   while (globalData->curSampleTimeIx < globalData->nSampleTimes && globalData->sampleTimes[globalData->curSampleTimeIx] < t)
@@ -119,10 +126,10 @@ double newTime(double t, double step, double stop)
     newTime = globalData->sampleTimes[globalData->curSampleTimeIx++] + 1e-15;
   } 
   // Do not exceed the stop time.
-	if (newTime > stop) {
-		newTime = stop;
-	}
-	return newTime;
+  if (newTime > stop) {
+    newTime = stop;
+  }
+  return newTime;
 }
 
 /** function storeExtrapolationData
@@ -136,54 +143,54 @@ double newTime(double t, double step, double stop)
  */
 void storeExtrapolationData()
 {
-	if (globalData->timeValue == globalData->oldTime && globalData->init!=1)
-	  return;
+  if (globalData->timeValue == globalData->oldTime && globalData->init!=1)
+    return;
 
-	int i;
-	for(i=0;i<globalData->nStates;i++) {
-		globalData->oldStates2[i]=globalData->oldStates[i];
-		globalData->oldStatesDerivatives2[i]=globalData->oldStatesDerivatives[i];
-		globalData->oldStates[i]=globalData->states[i];
-		globalData->oldStatesDerivatives[i]=globalData->statesDerivatives[i];
-	}
-	for(i=0;i<globalData->nAlgebraic;i++) {
-		globalData->oldAlgebraics2[i]=globalData->oldAlgebraics[i];
-		globalData->oldAlgebraics[i]=globalData->algebraics[i];
-	}
-	globalData->oldTime2 = globalData->oldTime;
-	globalData->oldTime = globalData->timeValue;
+  int i;
+  for(i=0;i<globalData->nStates;i++) {
+    globalData->oldStates2[i]=globalData->oldStates[i];
+    globalData->oldStatesDerivatives2[i]=globalData->oldStatesDerivatives[i];
+    globalData->oldStates[i]=globalData->states[i];
+    globalData->oldStatesDerivatives[i]=globalData->statesDerivatives[i];
+  }
+  for(i=0;i<globalData->nAlgebraic;i++) {
+    globalData->oldAlgebraics2[i]=globalData->oldAlgebraics[i];
+    globalData->oldAlgebraics[i]=globalData->algebraics[i];
+  }
+  globalData->oldTime2 = globalData->oldTime;
+  globalData->oldTime = globalData->timeValue;
 }
 
 double old(double* ptr)
 {
-	int index;
+  int index;
 
-	index = (int)(ptr-globalData->states);
-	if (index >=0 && index < globalData->nStates)
-		return globalData->oldStates[index];
-	index = (int)(ptr-globalData->statesDerivatives);
-	if (index >=0 && index < globalData->nStates)
-		return globalData->oldStatesDerivatives[index];
-	index = (int)(ptr-globalData->algebraics);
-	if (index >=0 && index < globalData->nAlgebraic)
-		return globalData->oldAlgebraics[index];
-	return 0.0;
+  index = (int)(ptr-globalData->states);
+  if (index >=0 && index < globalData->nStates)
+    return globalData->oldStates[index];
+  index = (int)(ptr-globalData->statesDerivatives);
+  if (index >=0 && index < globalData->nStates)
+    return globalData->oldStatesDerivatives[index];
+  index = (int)(ptr-globalData->algebraics);
+  if (index >=0 && index < globalData->nAlgebraic)
+    return globalData->oldAlgebraics[index];
+  return 0.0;
 }
 
 double old2(double* ptr)
 {
-	int index;
+  int index;
 
-	index = (int)(ptr-globalData->states);
-	if (index >=0 && index < globalData->nStates)
-		return globalData->oldStates2[index];
-	index = (int)(ptr-globalData->statesDerivatives);
-	if (index >=0 && index < globalData->nStates)
-		return globalData->oldStatesDerivatives2[index];
-	index = (int)(ptr-globalData->algebraics);
-	if (index >=0 && index < globalData->nAlgebraic)
-		return globalData->oldAlgebraics2[index];
-	return 0.0;
+  index = (int)(ptr-globalData->states);
+  if (index >=0 && index < globalData->nStates)
+    return globalData->oldStates2[index];
+  index = (int)(ptr-globalData->statesDerivatives);
+  if (index >=0 && index < globalData->nStates)
+    return globalData->oldStatesDerivatives2[index];
+  index = (int)(ptr-globalData->algebraics);
+  if (index >=0 && index < globalData->nAlgebraic)
+    return globalData->oldAlgebraics2[index];
+  return 0.0;
 }
 
  /* \brief determine verboselevel by investigating flag -lv=flags
@@ -193,17 +200,17 @@ double old2(double* ptr)
    */
 int verboseLevel(int argc, char**argv)
 {
-	int res = 0;
-	const string * flags = getFlagValue("lv",argc,argv);
+  int res = 0;
+  const string * flags = getFlagValue("lv",argc,argv);
 
-	if (!flags) return res; // no lv flag given.
+  if (!flags) return res; // no lv flag given.
 
-	if (flags->find("LOG_EVENTS",0) != string::npos) {
-		res |= LOG_EVENTS; }
+  if (flags->find("LOG_EVENTS",0) != string::npos) {
+    res |= LOG_EVENTS; }
 
-	if (flags->find("LOG_NONLIN_SYS",0) != string::npos) {
-		res |= LOG_NONLIN_SYS; }
-	return res;
+  if (flags->find("LOG_NONLIN_SYS",0) != string::npos) {
+    res |= LOG_NONLIN_SYS; }
+  return res;
 }
 
 /**
@@ -211,7 +218,7 @@ int verboseLevel(int argc, char**argv)
  * retuns true for interactive and false for non-interactive
  */
 bool isInteractiveSimulation(){
-	return interactiveSimuation;
+  return interactiveSimuation;
 }
 
 /**
@@ -219,54 +226,54 @@ bool isInteractiveSimulation(){
  * the runtime waits until a user shuts down the simulation
  */
 int startInteractiveSimulation(int argc, char**argv) {
-	int retVal = -1;
+  int retVal = -1;
 
-	initServiceInterfaceData(argc, argv);
+  initServiceInterfaceData(argc, argv);
 
-	//Create the Control Server Thread
-	Thread *threadSimulationControl = createControlThread();
-	threadSimulationControl->Join();
-	delete threadSimulationControl;
+  //Create the Control Server Thread
+  Thread *threadSimulationControl = createControlThread();
+  threadSimulationControl->Join();
+  delete threadSimulationControl;
 
-	std::cout << "simulation finished!" << std::endl;
-	return retVal; //TODO 20100211 pv return value implementation / error handling
+  std::cout << "simulation finished!" << std::endl;
+  return retVal; //TODO 20100211 pv return value implementation / error handling
 }
 
 /**
  * Starts a non-interactive simulation
  */
 int startNonInteractiveSimulation(int argc, char**argv){
-	int retVal = -1;
+  int retVal = -1;
 
-	  	  /* mesure time option is set : -mt */
-	  int measure_time_flag = (int)flagSet("mt",argc,argv);
-	  double measure_start_time = 0;
+      /* mesure time option is set : -mt */
+  int measure_time_flag = (int)flagSet("mt",argc,argv);
+  double measure_start_time = 0;
 
-	  double start = 0.0;
-	  double stop = 5.0;
-	  double stepSize = 0.05;
-	  long outputSteps = 500;
-	  double tolerance = 1e-4;
-	  string method;
-	  read_input(argc,argv,
-	             globalData,
-	             &start,&stop,&stepSize,&outputSteps,&tolerance,&method);
-	  globalData->lastEmittedTime = start;
-	  globalData->forceEmit=0;
+  double start = 0.0;
+  double stop = 5.0;
+  double stepSize = 0.05;
+  long outputSteps = 500;
+  double tolerance = 1e-4;
+  string method,outputFormat;
+  read_input(argc,argv,
+             globalData,
+             &start,&stop,&stepSize,&outputSteps,&tolerance,&method,&outputFormat);
+  globalData->lastEmittedTime = start;
+  globalData->forceEmit=0;
 
-    initSample(start);
-	  initDelay(start);
+  initSample(start);
+  initDelay(start);
 
-	  if (measure_time_flag)
-		  measure_start_time = clock();
+  if (measure_time_flag)
+    measure_start_time = clock();
 
-	  retVal = callSolver(argc, argv, method, start, stop, stepSize, outputSteps, tolerance);
+  retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
 
-	  if (measure_time_flag)
-	     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
-	  deInitializeDataStruc(globalData,ALL);
+  if (measure_time_flag)
+     cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
+  deInitializeDataStruc(globalData,ALL);
 
-	  return retVal;
+  return retVal;
 }
 
 /**
@@ -278,32 +285,51 @@ int startNonInteractiveSimulation(int argc, char**argv){
  * "rungekutta" calls a fourth-order Runge-Kutta Solver
  * "dassl2" calls a DASSL Solver with synchronous event handling
  */
-int callSolver(int argc, char**argv, string method, double start, double stop, double stepSize,
-		long outputSteps, double tolerance) {
-	int retVal = -1;
+int callSolver(int argc, char**argv, string method, string outputFormat, double start, double stop, double stepSize, long outputSteps, double tolerance) {
+  int retVal = -1;
 
-	/* */
-	  if (method == "") {
-		  if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
-		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-	  } else  if (method == std::string("euler")) {
-		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
-	  } else  if (method == std::string("rungekutta")) {
-		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
-	  } else  if (method == std::string("dassl2")) {
-		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
-	  } else if (method == std::string("dassl")) {
-		  if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-		  retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-	 } else {
-		 if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
-		 retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-	  }
+  // Create a result file
+  string *result_file =(string*)getFlagValue("r",argc,argv);
+  string result_file_cstr;
+  if (!result_file) {
+    result_file_cstr = string(globalData->modelName)+string("_res.")+outputFormat; /* TODO: Fix result file name based on mode */
+  } else {
+    result_file_cstr = *result_file;
+  }
+  if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty",outputFormat.c_str())) {
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(),5*numpoints);
+  } else if (0 == strcmp("csv",outputFormat.c_str())) {
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(),5*numpoints);
+  } else if (0 == strcmp("bin",outputFormat.c_str())) {
+    sim_result = new simulation_result_bin(result_file_cstr.c_str(),5*numpoints);
+  } else { /* Default to plt */
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(),5*numpoints);
+  }
+  if (sim_verbose) { cout << "Allocated simulation result data storage for method '" << sim_result->result_type() << "' and file='" << result_file_cstr << "'" << endl; }
 
-	return retVal;
+  if (method == "") {
+    if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
+    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+  } else  if (method == std::string("euler")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
+  } else  if (method == std::string("rungekutta")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+  } else  if (method == std::string("dassl2")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+  } else if (method == std::string("dassl")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+ } else {
+   if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
+   retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+  }
+
+  delete sim_result;
+  
+  return retVal;
 }
 
 /**
@@ -311,45 +337,45 @@ int callSolver(int argc, char**argv, string method, double start, double stop, d
  */
 int initRuntimeAndSimulation(int argc, char**argv) {
 
-	if (argc == 2 && flagSet("?", argc, argv)) {
-		    //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
-		cout << "usage: " << argv[0]
-				<< " <-f initfile> <-r result file> -m solver:{dassl, euler} -v <-interactive> <-port value>"
-				<< endl;
-		EXIT(0);
-	}
-	globalData = initializeDataStruc(ALL);
-	if (!globalData) {
-		std::cerr
-				<< "Error: Could not initialize the global data structure file"
-				<< std::endl;
-	}
-	//this sets the static variable that is in the file with the generated-model functions
-	setLocalData(globalData);
-	if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
-		std::cerr << "No variables in the model." << std::endl;
-		return 1;
-	}
-	/* verbose flag is set : -v */
-	sim_verbose = (int) flagSet("v", argc, argv);
+  if (argc == 2 && flagSet("?", argc, argv)) {
+        //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
+    cout << "usage: " << argv[0]
+        << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v <-interactive> <-port value>"
+        << endl;
+    EXIT(0);
+  }
+  globalData = initializeDataStruc(ALL);
+  if (!globalData) {
+    std::cerr
+        << "Error: Could not initialize the global data structure file"
+        << std::endl;
+  }
+  //this sets the static variable that is in the file with the generated-model functions
+  setLocalData(globalData);
+  if (globalData->nStates == 0 && globalData->nAlgebraic == 0) {
+    std::cerr << "No variables in the model." << std::endl;
+    return 1;
+  }
+  /* verbose flag is set : -v */
+  sim_verbose = (int) flagSet("v", argc, argv);
   sim_noemit = (int) flagSet("noemit", argc, argv);
 
-	interactiveSimuation = flagSet("interactive", argc, argv);
+  interactiveSimuation = flagSet("interactive", argc, argv);
 
-	if (interactiveSimuation && flagSet("port", argc, argv)) {
-		cout << "userPort" << endl;
-		string *portvalue = (string*) getFlagValue("port", argc, argv);
-		std::istringstream stream(*portvalue);
-		int userPort;
-		stream >> userPort;
-		setPortOfControlServer(userPort);
-	}
+  if (interactiveSimuation && flagSet("port", argc, argv)) {
+    cout << "userPort" << endl;
+    string *portvalue = (string*) getFlagValue("port", argc, argv);
+    std::istringstream stream(*portvalue);
+    int userPort;
+    stream >> userPort;
+    setPortOfControlServer(userPort);
+  }
 
-	int verbose_flags = verboseLevel(argc, argv);
-	sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
-	//sim_verbose = 1;
+  int verbose_flags = verboseLevel(argc, argv);
+  sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
+  //sim_verbose = 1;
 
-	return 0;
+  return 0;
 }
 
 /* \brief main function for simulator
@@ -363,19 +389,19 @@ int initRuntimeAndSimulation(int argc, char**argv) {
 
 int main(int argc, char**argv)
  {
-	int retVal = -1;
+  int retVal = -1;
 
-	if(initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
-		return 1;
+  if(initRuntimeAndSimulation(argc, argv)) //initRuntimeAndSimulation returns 1 if an error occurs
+    return 1;
 
-	if(interactiveSimuation){
-		//cout << "startInteractiveSimulation: " << version << endl;
-		retVal = startInteractiveSimulation(argc, argv);
-	} else{
-		//cout << "startNonInteractiveSimulation: " << version << endl;
-		retVal = startNonInteractiveSimulation(argc, argv);
-	}
+  if(interactiveSimuation){
+    //cout << "startInteractiveSimulation: " << version << endl;
+    retVal = startInteractiveSimulation(argc, argv);
+  } else{
+    //cout << "startNonInteractiveSimulation: " << version << endl;
+    retVal = startNonInteractiveSimulation(argc, argv);
+  }
 
-	deInitializeDataStruc(globalData, ALL);
-	EXIT(retVal);
+  deInitializeDataStruc(globalData, ALL);
+  EXIT(retVal);
 }

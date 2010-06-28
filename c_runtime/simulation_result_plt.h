@@ -29,19 +29,31 @@
  *
  */
 
-/*
- * File: simulation_input.h
- */
+#include "simulation_result.h"
 
-#ifndef _SIMULATION_INPUT_H
-#define _SIMULATION_INPUT_H
+#ifndef _SIMULATION_RESULT_PLT_H
+#define _SIMULATION_RESULT_PLT_H
 
-#include "simulation_runtime.h"
+class simulation_result_plt : public simulation_result { 
+private:
 
-void read_input(int argc, char **argv,
-                DATA *simData,
-                double *start, double *stop,
-                double *stepSize, long *outputSteps,
-                double *tolerance, string* method, string* outputFormat);
+double* simulationResultData;
+long currentPos;
+long actualPoints; // the number of actual points saved
+long maxPoints;
+long dataSize;
+
+void add_result(double *data, long *actualPoints);
+void deallocResult();
+void printPltLine(FILE* f, double time, double val);
+
+public:
+
+simulation_result_plt(const char* filename, long numpoints);
+virtual ~simulation_result_plt();
+virtual void emit();
+virtual const char* result_type() {return "plt";};
+
+};
 
 #endif

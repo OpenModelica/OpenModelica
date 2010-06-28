@@ -434,7 +434,7 @@ void fillSimDataNames_AND_SimDataNamesFilter_WithValuesFromGlobalData(
  * a set of variables from "omi_Calculation.cpp"
  */
 void getSimulationStartData(double *stepSize, long *outputSteps,
-		double *tolerance, string* method){
+		double *tolerance, string* method, string* outputFormat){
 
 	double start = 0.0; //unnecessary for interactive simulation
 	double stop = 1.0; //unnecessary for interactive simulation
@@ -442,7 +442,7 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 	gdMutex.Lock();
 
 	read_input(argcTEMP, argvTEMP, globalData, &start, &stop, stepSize,
-			outputSteps, tolerance, method);
+			outputSteps, tolerance, method, outputFormat);
 
 	gdMutex.Unlock();
 }
@@ -452,12 +452,12 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 /*
  * Calls the solver which is selected in the parameter string "method"
  */
-int callSolverFromOM(string method, double start, double stop, double stepSize,
+int callSolverFromOM(string method, string outputFormat, double start, double stop, double stepSize,
 		long outputSteps, double tolerance) {
 	int retVal = -1;
 	gdMutex.Lock();
 
-	retVal = callSolver(argcTEMP, argvTEMP, method, start, stop, stepSize, outputSteps, tolerance);
+	retVal = callSolver(argcTEMP, argvTEMP, method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
 
 	gdMutex.Unlock();
 	return retVal;

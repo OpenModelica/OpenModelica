@@ -113,6 +113,9 @@ protected import PrefixUtil;
 // protected import CevalScript;
 // protected import AbsynDep;
 
+protected constant DAE.Exp defaultOutputFormat = DAE.SCONST("plt");
+
+
 public function elabExpList "Expression elaboration of Absyn.Exp list, i.e. lists of expressions."
 	input Env.Cache inCache;
   input Env.Env inEnv;
@@ -6758,7 +6761,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       Boolean impl;
       Interactive.InteractiveSymbolTable st;
       Ident varid,cname_str,filename,str;
-      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1;
+      DAE.Exp filenameprefix,startTime,stopTime,numberOfIntervals,method,options,size_exp,exp_1,bool_exp_1,storeInTemp,noClean,tolerance,outputFormat;
       tuple<DAE.TType, Option<Absyn.Path>> recordtype;
       list<Absyn.NamedArg> args;
       list<DAE.Exp> vars_1;
@@ -6877,10 +6880,11 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",  DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
+        (cache,outputFormat) = getOptionalNamedArg(cache,env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT, args, defaultOutputFormat);
 			then
 				(cache, DAE.CALL(Absyn.IDENT("buildModel"),
 				{DAE.CODE(Absyn.C_TYPENAME(className), DAE.ET_OTHER()), startTime, stopTime,
-				numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},
+				numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},
 				false,true,DAE.ET_OTHER(),DAE.NO_INLINE),
 				DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
 
@@ -6898,10 +6902,11 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
+        (cache,outputFormat) = getOptionalNamedArg(cache,env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT, args, defaultOutputFormat);
       then
         (cache,DAE.CALL(Absyn.IDENT("buildModel"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
+          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
@@ -6918,14 +6923,15 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix", DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));  
+        (cache,outputFormat) = getOptionalNamedArg(cache,env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT, args, defaultOutputFormat);
       then
         (cache,DAE.CALL(Absyn.IDENT("buildModelBeast"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
+          numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
-      local Absyn.Path className; DAE.Exp storeInTemp,noClean,tolerance;
+      local Absyn.Path className;
       equation
         className = Absyn.crefToPath(cr);
         (cache,cr_1) = elabUntypedCref(cache, env, cr, impl);
@@ -6940,6 +6946,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, args, DAE.SCONST(""));
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+        (cache,outputFormat) = getOptionalNamedArg(cache,env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT, args, defaultOutputFormat);
         recordtype = (
           DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),
           {
@@ -6949,7 +6956,7 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,DAE.CALL(Absyn.IDENT("simulate"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
-          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
+          numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(recordtype,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "jacobian"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st)) /* Fill in rest of defaults here */
       equation

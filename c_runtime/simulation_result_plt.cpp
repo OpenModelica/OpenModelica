@@ -38,50 +38,36 @@
  *
  */
 
- #include <stdio.h>
- #include <errno.h>
- #include <string.h>
- #include <limits> /* adrpo - for std::numeric_limits in MSVC */
- #include "simulation_result.h"
- #include "simulation_runtime.h"
- #include "sendData/sendData.h"
- #include <sstream>
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <limits> /* adrpo - for std::numeric_limits in MSVC */
+#include "simulation_result_plt.h"
+#include "simulation_runtime.h"
+#include "sendData/sendData.h"
+#include <sstream>
+#include <time.h>
 
- double* simulationResultData=0;
- long currentPos=0;
- long actualPoints=0; // the number of actual points saved
- long maxPoints;
- long dataSize = 0;
 
- void add_result(double *data, long *actualPoints);
-
-/* \brief
- *
- * Emits data to result.
- *
- * \return zero on sucess, non-zero otherwise
- */
-int emit()
+void simulation_result_plt::emit()
 {
-  if (sim_noemit) return 0;
   storeExtrapolationData();
   if (actualPoints < maxPoints) {
 	  if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
-    return 0;
+    return;
   }
   else {
     /* increase the maxPoints by (maxPoints-actualPoints) + 2000 */
-    maxPoints = 2*maxPoints + (maxPoints-actualPoints) + 2000;
+    maxPoints = 1.4*maxPoints + (maxPoints-actualPoints) + 2000;
     /*
      * cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
      */
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
     if (!simulationResultData) {
-          cerr << "Error allocating simulation result data of size " << maxPoints * dataSize << endl;
-          return -1;
+      cerr << "Error allocating simulation result data of size " << maxPoints * dataSize << endl;
+      throw SimulationResultReallocException();
     }
     if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
-    return 0;
     /* adrpo - realloc the result array instead of fixed size!
      * cout << "Too many points: " << actualPoints << " max points: " << maxPoints << endl;
      * return -1;
@@ -89,13 +75,12 @@ int emit()
   }
 }
 
- /* \brief
+ /*
  * add the values of one step for all variables to the data
  * array to be able to later store this on file.
  */
-void add_result(double *data, long *actualPoints)
+void simulation_result_plt::add_result(double *data, long *actualPoints)
 {
-  if (sim_noemit) return;
   //save time first
   //cerr << "adding result for time: " << time;
   //cerr.flush();
@@ -145,16 +130,7 @@ void add_result(double *data, long *actualPoints)
   (*actualPoints)++;
 }
 
-/* \brief initialize result data structures
- *
- * \param numpoints, maximum number of points that can be stored.
- * \param nx number of states
- * \param ny number of variables
- * \param np number of parameters  (not used in this impl.)
- */
-
-int initializeResult(long numpoints,long nx, long ny, long np)
-
+simulation_result_plt::simulation_result_plt(const char* filename, long numpoints) : simulation_result(filename,numpoints)
 {
 	/*
 	 * Re-Initialization is important because the variables are global and used in every solving step
@@ -171,11 +147,11 @@ int initializeResult(long numpoints,long nx, long ny, long np)
 	numpoints = abs(numpoints);
 	maxPoints = abs(numpoints);
   }
-  dataSize = (nx*2+ny+1);
+  dataSize = (globalData->nStates*2+globalData->nAlgebraic+1);
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
   if (!simulationResultData) {
     cerr << "Error allocating simulation result data of size " << numpoints * dataSize << endl;
-    return -1;
+    throw SimulationResultMallocException();
   }
   currentPos = 0;
   char* enabled = getenv("enableSendData");
@@ -185,8 +161,6 @@ int initializeResult(long numpoints,long nx, long ny, long np)
   }
   if(Static::enabled())
   	initSendData(globalData->nStates, globalData->nAlgebraic, globalData->statesNames, globalData->stateDerivativesNames, globalData->algebraicsNames);
-
-  return 0;
 }
 
 /**
@@ -195,72 +169,87 @@ int initializeResult(long numpoints,long nx, long ny, long np)
  * the solvers will be called in a loop and they allocate
  * memory for the simulationResultData all the time
  */
-void deallocResult(){
+void simulation_result_plt::deallocResult(){
 	free(simulationResultData);
 }
 
-/* \brief
-* stores the result of all variables for all timesteps on a file
-* suitable for plotting, etc.
-*/
+void simulation_result_plt::printPltLine(FILE* f, double time, double val) {
+#if 0
+  fwrite(&time, sizeof(double), 1, f);
+  fputs(", ", f);
+  fwrite(&val, sizeof(double), 1, f);
+  fputs("\n", f);
+#else
+  // Double has max 16 digits precision
+  fprintf(f, "%.16g, %.16g\n", time, val);
+#endif
+}
 
-int deinitializeResult(const char * filename)
+/*
+* output the result before destroying the datastructure.
+*/
+simulation_result_plt::~simulation_result_plt()
 {
-  if (sim_noemit) return 0;
-  ofstream f(filename);
+  if(Static::enabled())
+  	closeSendData();
+
+  FILE* f = fopen(filename, "w");
   if (!f)
   {
-    cerr << "Error, couldn't create output file: [" << filename << "] because" << strerror(errno) << "." << endl;
-    return -1;
+    fprintf(stderr, "Error, couldn't create output file: [%s] because of %s", filename, strerror(errno));
+    deallocResult();
+    throw SimulationResultFileOpenException();
   }
 
+  clock_t  t0, t1;
+  t0 = clock();
+
   // Rather ugly numbers than unneccessary rounding.
-  f.precision(std::numeric_limits<double>::digits10 + 1);
-  f << "#Ptolemy Plot file, generated by OpenModelica" << "\n";
-  f << "#IntervalSize=" << actualPoints << "\n";
-  f << "TitleText: OpenModelica simulation plot" << "\n";
-  f << "XLabel: t" << "\n" << "\n";
+  //f.precision(std::numeric_limits<double>::digits10 + 1);
+  fprintf(f, "#Ptolemy Plot file, generated by OpenModelica\n");
+  fprintf(f, "#IntervalSize=%ld\n", actualPoints);
+  fprintf(f, "TitleText: OpenModelica simulation plot\n");
+  fprintf(f, "XLabel: t\n\n");
 
   int num_vars = 1+globalData->nStates*2+globalData->nAlgebraic;
 
   // time variable.
-  f << "DataSet: time"  << "\n";
+  fprintf(f, "DataSet: time\n");
   for(int i = 0; i < actualPoints; ++i)
-    f << simulationResultData[i*num_vars] << ", " << simulationResultData[i*num_vars]<< "\n";
-  f << "\n";
+    printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars]);
+  fprintf(f, "\n");
 
   for(int var = 0; var < globalData->nStates; ++var)
   {
-    f << "DataSet: " << globalData->statesNames[var] << "\n";
+    fprintf(f, "DataSet: %s\n", globalData->statesNames[var]);
     for(int i = 0; i < actualPoints; ++i)
-      f << simulationResultData[i*num_vars] << ", " << simulationResultData[i*num_vars + 1+var] << "\n";
-    f << "\n";
+      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+var]);
+    fprintf(f, "\n");
   }
 
   for(int var = 0; var < globalData->nStates; ++var)
   {
-    f << "DataSet: " << globalData->stateDerivativesNames[var]  << "\n";
+    fprintf(f, "DataSet: %s\n", globalData->stateDerivativesNames[var]);
     for(int i = 0; i < actualPoints; ++i)
-      f << simulationResultData[i*num_vars] << ", " << simulationResultData[i*num_vars + 1+globalData->nStates+var] << "\n";
-    f << "\n";
+      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+globalData->nStates+var]);
+    fprintf(f, "\n");
   }
 
   for(int var = 0; var < globalData->nAlgebraic; ++var)
   {
-    f << "DataSet: " << globalData->algebraicsNames[var] << "\n";
+    fprintf(f, "DataSet: %s\n", globalData->algebraicsNames[var]);
     for(int i = 0; i < actualPoints; ++i)
-      f << simulationResultData[i*num_vars] << ", " << simulationResultData[i*num_vars + 1+2*globalData->nStates+var] << "\n";
-    f << "\n";
+      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+var]);
+    fprintf(f, "\n");
   }
 
-  f.close();
-  if (!f)
+  deallocResult();
+  if (fclose(f))
   {
-    cerr << "Error, couldn't write to output file " << filename << endl;
-    return -1;
+    fprintf(stderr, "Error, couldn't write to output file %s\n", filename);
+    throw SimulationResultFileCloseException();
   }
 
-  if(Static::enabled())
-  	closeSendData();
-  return 0;
+  t1 = clock();
+  // printf ("\telapsed wall clock time for printing simulation results: %g\n", ((double) (t1 - t0))/CLOCKS_PER_SEC);
 }

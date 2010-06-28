@@ -33,16 +33,36 @@
  * File: simulation_runtime.h
  *
  * Description: This file is a C++ header file for the simulation runtime.
- * It contains solver functions and other simulation runtime specific functions
+ * It contains a prototype for the simulation result interface.
  *
  */
 
 #ifndef _SIMULATION_RESULT_H
 #define _SIMULATION_RESULT_H
 
-int emit();
-int initializeResult(long numpoints,long nx, long ny,long np);
-void deallocResult();
-int deinitializeResult(const char * filename);
+class SimulationResultBaseException {};
+class SimulationResultFileOpenException : SimulationResultBaseException {};
+class SimulationResultFileCloseException : SimulationResultBaseException {};
+class SimulationResultMallocException : SimulationResultBaseException {};
+class SimulationResultReallocException : SimulationResultBaseException {};
+
+/*
+ * numpoints, maximum number of points that can be stored.
+ * nx number of states
+ * ny number of variables
+ * np number of parameters  (not used in this impl.)
+ */
+class simulation_result { 
+protected:
+const char* filename;
+const long numpoints;
+public:
+
+simulation_result(const char* filename, long numpoints) : filename(filename), numpoints(numpoints) {};
+virtual ~simulation_result() {};
+virtual void emit() =0;
+virtual const char* result_type() = 0;
+
+};
 
 #endif
