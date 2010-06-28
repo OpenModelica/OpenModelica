@@ -91,21 +91,25 @@
 		<field name="$1">modelname</field>
 		<helptext>Save the model/class with name modelname in the file given by the strFile string argument.</helptext>
 	</command>
-	<command name="simulate($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4)">
+	<command name="simulate($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, method=$5, outputFormat=$6)">
 		<field name="$0">modelname</field>
 		<field name="$1">0</field>
 		<field name="$2">1</field>
 		<field name="$3">500</field>
 		<field name="$4">1e-4</field>
+    <field name="$5">"dassl"</field>
+    <field name="$6">"plt"</field>
 		<helptext>Translates a model and simulates it. Ex: simulate(dcmotor). Ex: simulate(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
-	<command name="buildModel($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, storeInTemp=$5)">
+	<command name="buildModel($0, startTime=$1, stopTime=$2, numberOfIntervals=$3, tolerance=$4, storeInTemp=$5, method=$6, outputFormat=$7)">
 		<field name="$0">modelname</field>
 		<field name="$1">0</field>
 		<field name="$2">1</field>
 		<field name="$3">500</field>
 		<field name="$4">1e-4</field>
 		<field name="$5">false</field>
+    <field name="$6">"dassl"</field>
+    <field name="$7">"plt"</field>
 		<helptext>Translates a model and simulates it. Ex: buildModel(dcmotor). Ex: buildMotor(dcmotor,startTime=0, stopTime=10, numberOfIntervals=1000).</helptext>
 	</command>
 	<command name="system($0)">
