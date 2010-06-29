@@ -53,7 +53,7 @@ bool interactiveSimuation = false; //This variable signals if an simulation sess
 
 /* Global Data */
 /***************/
-const string version = "20100628";
+const char* version = "20100629";
 // Becomes non-zero when model terminates simulation.
 int modelTermination=0;
 
@@ -270,6 +270,8 @@ int startNonInteractiveSimulation(int argc, char**argv){
 
   retVal = callSolver(argc, argv, method, outputFormat, start, stop, stepSize, outputSteps, tolerance);
 
+  deinitDelay();
+
   if (measure_time_flag)
      cout << "Time to calculate simulation: "<< (clock()-measure_start_time)/CLOCKS_PER_SEC <<" sec." << endl;
   deInitializeDataStruc(globalData,ALL);
@@ -404,5 +406,7 @@ int main(int argc, char**argv)
   }
 
   deInitializeDataStruc(globalData, ALL);
+  free(globalData);
+  fflush(NULL);
   EXIT(retVal);
 }

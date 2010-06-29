@@ -681,14 +681,44 @@ case EXTOBJINFO(__) then
       data->states = 0;
     }
   
+    if(flags & STATES && data->oldStates) {
+      free(data->oldStates);
+      data->oldStates = 0;
+    }
+
+    if(flags & STATES && data->oldStates2) {
+      free(data->oldStates2);
+      data->oldStates2 = 0;
+    }
+
     if(flags & STATESDERIVATIVES && data->statesDerivatives) {
       free(data->statesDerivatives);
       data->statesDerivatives = 0;
     }
   
+    if(flags & STATESDERIVATIVES && data->oldStatesDerivatives) {
+      free(data->oldStatesDerivatives);
+      data->oldStatesDerivatives = 0;
+    }
+  
+    if(flags & STATESDERIVATIVES && data->oldStatesDerivatives2) {
+      free(data->oldStatesDerivatives2);
+      data->oldStatesDerivatives2 = 0;
+    }
+  
     if(flags & ALGEBRAICS && data->algebraics) {
       free(data->algebraics);
       data->algebraics = 0;
+    }
+  
+    if(flags & ALGEBRAICS && data->oldAlgebraics) {
+      free(data->oldAlgebraics);
+      data->oldAlgebraics = 0;
+    }
+  
+    if(flags & ALGEBRAICS && data->oldAlgebraics2) {
+      free(data->oldAlgebraics2);
+      data->oldAlgebraics2 = 0;
     }
   
     if(flags & PARAMETERS && data->parameters) {
@@ -714,6 +744,14 @@ case EXTOBJINFO(__) then
       <%destructors |> (fnName, var) => '<%fnName%>(<%cref(var)%>);' ;separator="\n"%>
       free(data->extObjs);
       data->extObjs = 0;
+    }
+    if(flags & RAWSAMPLES && data->rawSampleExps) {
+      free(data->rawSampleExps);
+      data->rawSampleExps = 0;
+    }
+    if(flags & RAWSAMPLES && data->sampleTimes) {
+      free(data->sampleTimes);
+      data->sampleTimes = 0;
     }
   }
   >>

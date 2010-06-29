@@ -71,6 +71,11 @@ void initDelay(double startTime)
     fprintf(stderr, "initDelay called with startTime = %f\n", startTime);
 }
 
+void deinitDelay()
+{
+  delete[] delayStructure;
+}
+
 /*
  * Find row with greatest time that is smaller than or equal to 'time'
  * Conditions:

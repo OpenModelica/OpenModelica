@@ -104,6 +104,7 @@ void deinitializeEventData() {
   delete[] y_saved;
   delete[] gout;
   delete[] zeroCrossingEnabled;
+  delete[] str_saved;
 }
 
 /* \brief

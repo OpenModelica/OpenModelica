@@ -63,8 +63,7 @@ void read_commented_value(ifstream &f, char **str);
 
   ifstream file(filename->c_str());
   if (!file) {
-    cerr << "Error, can not read file " << *filename
-	 << " as indata to simulation." << endl;
+    cerr << "Error, can not read file " << *filename << " as indata to simulation." << endl;
     EXIT(-1);
   }
   //  cerr << "opened file" << endl;
@@ -100,8 +99,8 @@ void read_commented_value(ifstream &f, char **str);
     cerr << "nx in initfile: " << nxchk << " from model code :" << simData->nStates << endl;
     cerr << "ny in initfile: " << nychk << " from model code :" << simData->nAlgebraic << endl;
     cerr << "np in initfile: " << npchk << " from model code :" << simData->nParameters << endl;
-	cerr << "npstr in initfile: " << npstrchk << " from model code: " << simData->stringVariables.nParameters << endl;
-	cerr << "nystr in initfile: " << nystrchk << " from model code: " << simData->stringVariables.nAlgebraic <<  endl;
+    cerr << "npstr in initfile: " << npstrchk << " from model code: " << simData->stringVariables.nParameters << endl;
+    cerr << "nystr in initfile: " << nystrchk << " from model code: " << simData->stringVariables.nAlgebraic <<  endl;
     EXIT(-1);
   }
   for(int i = 0; i < simData->nStates; i++) { // Read x initial values
@@ -111,21 +110,21 @@ void read_commented_value(ifstream &f, char **str);
     	<< simData->states[i] << " from init file." << endl;
     }
   }
- for(int i = 0; i < simData->nStates; i++) { // Read der(x) initial values
+  for(int i = 0; i < simData->nStates; i++) { // Read der(x) initial values
     read_commented_value(file,&simData->statesDerivatives[i]);
     if (sim_verbose) {
     cout << "read " << getName(&simData->statesDerivatives[i]) << " = "
     	<< simData->statesDerivatives[i] << " from init file." << endl;
     }
   }
- for(int i = 0; i < simData->nAlgebraic; i++) { // Read y initial values
+  for(int i = 0; i < simData->nAlgebraic; i++) { // Read y initial values
     read_commented_value(file,&simData->algebraics[i]);
     if (sim_verbose) {
     cout << "read " << getName(&simData->algebraics[i]) << " = "
     	<< simData->algebraics[i] << " from init file." << endl;
     }
   }
- for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
+  for(int i = 0; i < simData->nParameters; i++) { // Read parameter values
     read_commented_value(file,&simData->parameters[i]);
     if (sim_verbose) {
     cout << "read " << getName(&simData->parameters[i]) << " = "
@@ -144,10 +143,11 @@ void read_commented_value(ifstream &f, char **str);
     cout << "read " <<simData->stringVariables.algebraics[i] << " from init file." << endl;
     }
   }
- file.close();
- if (sim_verbose) {
- 	cout << "Read parameter data from file " << *filename << endl;
- }
+  file.close();
+  if (sim_verbose) {
+    cout << "Read parameter data from file " << *filename << endl;
+  }
+  delete filename;
 }
 inline void read_commented_value(ifstream &f, string *str)
 {
