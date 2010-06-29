@@ -199,7 +199,7 @@
 			<Tool
 				Name="VCPostBuildEventTool"
 				Description="Copy OMPlotWindow.exe and xml files to build/bin"
-				CommandLine="copy $(TargetPath) $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\share\omnotebook&#x0D;&#x0A;"
+				CommandLine="copy $(TargetDir)\release\OMPlotWindow.exe $(InputDir)\..\..\build\bin\&#x0D;&#x0A;copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(InputDir)\..\..\build\share\omnotebook&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>

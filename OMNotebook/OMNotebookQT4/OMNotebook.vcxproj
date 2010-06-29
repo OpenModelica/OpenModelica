@@ -1,0 +1,568 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectName>OMNotebookQT4</ProjectName>
+    <ProjectGuid>{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}</ProjectGuid>
+    <RootNamespace>OMNotebookQT4</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</IgnoreImportLibrary>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IgnoreImportLibrary>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <WarningLevel>0</WarningLevel>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <EnableErrorChecks>None</EnableErrorChecks>
+    </Midl>
+    <ClCompile>
+      <Optimization>MaxSpeed</Optimization>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(QNBHOME)\NotebookParser;$(OMDEV)\include\mico-win32-msvc;$(OMDEV)\include;$(QTHOME)\include;$(QTHOME)\include\QtGui;$(QTHOME)\include\QtCore;$(QTHOME)\mkspecs\win32-msvc2008;$(COINDIR)\include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;COIN_DLL;SOQT_DLL;QT_NO_DEBUG;UNICODE;QT_LARGEFILE_SUPPORT;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <MinimalRebuild>false</MinimalRebuild>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>true</BufferSecurityCheck>
+      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <AssemblerListingLocation>$(Configuration)\</AssemblerListingLocation>
+      <ObjectFileName>$(Configuration)\</ObjectFileName>
+      <ProgramDataBaseFileName>$(Configuration)\</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>false</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CallingConvention>Cdecl</CallingConvention>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>qtmain.lib;QtGui4.lib;QtNetwork4.lib;QtXml4.lib;NotebookParser.lib;antlr.lib;mico2313.lib;QtCore4.lib;QtOpenGL4.lib;pltpkg2.lib;ws2_32.lib;imm32.lib;winmm.lib;coin3.lib;soqt1.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(Configuration)\OMNotebook.exe</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;..\NotebookParser\Release;$(QTHOME)\lib;..\Pltpkg2\Release;$(OMDEV)\lib\mico-win32-msvc\;$(COINDIR)\lib\;..\3Dpkg\Release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <StackReserveSize>6000000</StackReserveSize>
+      <OptimizeReferences>true</OptimizeReferences>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+    <PostBuildEvent>
+      <Message>Copying OMNotebook and xml files to build\bin</Message>
+      <Command>copy $(TargetDir)\OMNotebook.exe $(ProjectDir)\..\..\build\bin\
+copy $(ProjectDir)\*.xml $(ProjectDir)\..\..\build\share\omnotebook\
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <WarningLevel>0</WarningLevel>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <EnableErrorChecks>None</EnableErrorChecks>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions>-Zm200 -w34100 -w34189 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MinSpace</Optimization>
+      <AdditionalIncludeDirectories>$(QNBHOME)\NotebookParser;$(OMDEV)\include\mico-win32-msvc\;$(OMDEV)\include\;.;$(QTHOME)\include;$(QTHOME)\include\QtGui;$(QTHOME)\include\QtCore;$(QTHOME)\mkspecs\win32-msvc2008;$(COINDIR)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;QT_DEBUG;SOQT_DLL;COIN_DLL;UNICODE;QT_LARGEFILE_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <MinimalRebuild>true</MinimalRebuild>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <AssemblerListingLocation>Debug\</AssemblerListingLocation>
+      <ObjectFileName>Debug\</ObjectFileName>
+      <ProgramDataBaseFileName>Debug\</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>qtmaind.lib;QtCored4.lib;QtGuid4.lib;QtNetworkd4.lib;QtXmld4.lib;antlrd.lib;NotebookParser.lib;mico2313.lib;pltpkg2.lib;coin3d.lib;soqt1d.lib;3Dpkg.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>Debug\\OMNotebook.exe</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>$(OMDEV)\lib\antlr-win32-msvc\md-mdd\;..\NotebookParser\Debug;$(QTHOME)\lib;..\Pltpkg2\Debug;$(OMDEV)\lib\mico-win32-msvc\debug\;$(COINDIR)\lib\;$(SolutionDir)\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalManifestDependencies>type=%27win32%27  name=%27Microsoft.VC90.CRT%27 version=%279.0.21022.8%27  processorArchitecture=%27x86%27  publicKeyToken=%271fc8b3b9a1e18e3b%27;%(AdditionalManifestDependencies)</AdditionalManifestDependencies>
+      <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <DelayLoadDLLs>%(DelayLoadDLLs)</DelayLoadDLLs>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <SubSystem>Console</SubSystem>
+      <HeapReserveSize>0</HeapReserveSize>
+      <StackReserveSize>6000000</StackReserveSize>
+      <StackCommitSize>0</StackCommitSize>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="cell.cpp" />
+    <ClCompile Include="cellapplication.cpp" />
+    <ClCompile Include="cellcommandcenter.cpp" />
+    <ClCompile Include="cellcommands.cpp" />
+    <ClCompile Include="cellcursor.cpp" />
+    <ClCompile Include="celldocument.cpp" />
+    <ClCompile Include="cellfactory.cpp" />
+    <ClCompile Include="cellgroup.cpp" />
+    <ClCompile Include="cellparserfactory.cpp" />
+    <ClCompile Include="chaptercountervisitor.cpp" />
+    <ClCompile Include="commandcompletion.cpp" />
+    <ClCompile Include="evalthread.cpp" />
+    <ClCompile Include="graphcell.cpp" />
+    <ClCompile Include="highlighterthread.cpp" />
+    <ClCompile Include="indent.cpp" />
+    <ClCompile Include="inputcell.cpp" />
+    <ClCompile Include="notebook.cpp" />
+    <ClCompile Include="notebookparser.cpp" />
+    <ClCompile Include="notebooksocket.cpp" />
+    <ClCompile Include="omc_communication.cc" />
+    <ClCompile Include="omc_communicator.cpp" />
+    <ClCompile Include="omcinteractiveenvironment.cpp" />
+    <ClCompile Include="openmodelicahighlighter.cpp" />
+    <ClCompile Include="printervisitor.cpp" />
+    <ClCompile Include="puretextvisitor.cpp" />
+    <ClCompile Include="qcombobox_search.cpp" />
+    <ClCompile Include="qtapp.cpp" />
+    <ClCompile Include="searchform.cpp" />
+    <ClCompile Include="serializingvisitor.cpp" />
+    <ClCompile Include="stylesheet.cpp" />
+    <ClCompile Include="textcell.cpp" />
+    <ClCompile Include="textcursorcommands.cpp" />
+    <ClCompile Include="treeview.cpp" />
+    <ClCompile Include="updategroupcellvisitor.cpp" />
+    <ClCompile Include="updatelinkvisitor.cpp" />
+    <ClCompile Include="xmlparser.cpp" />
+    <ClCompile Include="moc_cell.cpp" />
+    <ClCompile Include="moc_cellapplication.cpp" />
+    <ClCompile Include="moc_cellcursor.cpp" />
+    <ClCompile Include="moc_celldocument.cpp" />
+    <ClCompile Include="moc_cellgroup.cpp" />
+    <ClCompile Include="moc_commandcompletion.cpp" />
+    <ClCompile Include="moc_document.cpp" />
+    <ClCompile Include="moc_documentview.cpp" />
+    <ClCompile Include="moc_graphcell.cpp" />
+    <ClCompile Include="moc_inputcell.cpp" />
+    <ClCompile Include="moc_notebook.cpp" />
+    <ClCompile Include="moc_notebooksocket.cpp" />
+    <ClCompile Include="moc_omc_communicator.cpp" />
+    <ClCompile Include="moc_qcomboboxsearch.cpp" />
+    <ClCompile Include="moc_searchform.cpp" />
+    <ClCompile Include="moc_stylesheet.cpp" />
+    <ClCompile Include="moc_textcell.cpp" />
+    <ClCompile Include="moc_treeview.cpp" />
+    <ClCompile Include="generatedfiles\qrc_res_qt.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="application.h" />
+    <CustomBuild Include="cell.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing cell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe cell.h -o moc_cell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_cell.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing cell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include cell.h -o moc_cell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_cell.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="cellapplication.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing cellapplication.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe cellapplication.h -o moc_cellapplication.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_cellapplication.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing cellapplication.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include cellapplication.h -o moc_cellapplication.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_cellapplication.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="cellcommandcenter.h" />
+    <ClInclude Include="cellcommands.h" />
+    <CustomBuild Include="cellcursor.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing cellcursor.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe cellcursor.h -o moc_cellcursor.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_cellcursor.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing cellcursor.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include cellcursor.h -o moc_cellcursor.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_cellcursor.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="celldocument.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing celldocument.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe celldocument.h -o moc_celldocument.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_celldocument.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing celldocument.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include celldocument.h -o moc_celldocument.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_celldocument.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="celldocumentview.h" />
+    <ClInclude Include="cellfactory.h" />
+    <CustomBuild Include="cellgroup.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing cellgroup.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe cellgroup.h -o moc_cellgroup.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_cellgroup.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing cellgroup.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include cellgroup.h -o moc_cellgroup.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_cellgroup.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="cellstyle.h" />
+    <ClInclude Include="chaptercountervisitor.h" />
+    <ClInclude Include="command.h" />
+    <ClInclude Include="commandcenter.h" />
+    <CustomBuild Include="commandcompletion.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing commandcompletion.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe commandcompletion.h -o moc_commandcompletion.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_commandcompletion.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing commandcompletion.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include commandcompletion.h -o moc_commandcompletion.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_commandcompletion.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="commandunit.h" />
+    <ClInclude Include="cursorcommands.h" />
+    <ClInclude Include="cursorposvisitor.h" />
+    <CustomBuild Include="document.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing document.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe document.h -o moc_document.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_document.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing document.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include document.h -o moc_document.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_document.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="documentview.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing documentview.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe documentview.h -o moc_documentview.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_documentview.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing documentview.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include documentview.h -o moc_documentview.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_documentview.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="evalthread.h" />
+    <ClInclude Include="factory.h" />
+    <CustomBuild Include="graphcell.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing graphcell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe graphcell.h -o moc_graphcell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_graphcell.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing graphcell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include graphcell.h -o moc_graphcell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_graphcell.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="graphcelldelegate.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+      </Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="highlighterthread.h" />
+    <ClInclude Include="imagesizedlg.h" />
+    <ClInclude Include="indent.h" />
+    <CustomBuild Include="inputcell.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing inputcell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe inputcell.h -o moc_inputcell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_inputcell.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing inputcell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include inputcell.h -o moc_inputcell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_inputcell.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="inputcelldelegate.h" />
+    <ClInclude Include="nbparser.h" />
+    <CustomBuild Include="notebook.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing notebook.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe notebook.h -o moc_notebook.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_notebook.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing notebook.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include notebook.h -o moc_notebook.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_notebook.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="notebookcommands.h" />
+    <ClInclude Include="notebookparser.h" />
+    <CustomBuild Include="notebooksocket.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing notebooksocket.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe notebooksocket.h -o moc_notebooksocket.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_notebooksocket.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing notebooksocket.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include notebooksocket.h -o moc_notebooksocket.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_notebooksocket.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="omc_communication.h" />
+    <CustomBuild Include="omc_communicator.hpp">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing omc_communicator.hpp...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe omc_communicator.hpp -o moc_omc_communicator.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_omc_communicator.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing omc_communicator.hpp...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include omc_communicator.hpp -o moc_omc_communicator.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_omc_communicator.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="omcinteractiveenvironment.h" />
+    <ClInclude Include="openmodelicahighlighter.h" />
+    <ClInclude Include="otherdlg.h" />
+    <ClInclude Include="parserfactory.h" />
+    <ClInclude Include="printervisitor.h" />
+    <ClInclude Include="puretextvisitor.h" />
+    <CustomBuild Include="qcombobox_search.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing qcombobox_search.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe qcombobox_search.h -o moc_qcomboboxsearch.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_qcomboboxsearch.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing qcombobox_search.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include qcombobox_search.h -o moc_qcomboboxsearch.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_qcomboboxsearch.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="removehighlightervisitor.h" />
+    <ClInclude Include="replaceallvisitor.h" />
+    <ClInclude Include="resource1.h" />
+    <ClInclude Include="rule.h" />
+    <CustomBuild Include="searchform.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing searchform.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe searchform.h -o moc_searchform.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_searchform.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing searchform.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include searchform.h -o moc_searchform.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_searchform.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="serializingvisitor.h" />
+    <ClInclude Include="stripstring.h" />
+    <CustomBuild Include="stylesheet.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing stylesheet.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe stylesheet.h -o moc_stylesheet.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_stylesheet.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing stylesheet.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include stylesheet.h -o moc_stylesheet.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_stylesheet.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="syntaxhighlighter.h" />
+    <CustomBuild Include="textcell.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing textcell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe textcell.h -o moc_textcell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_textcell.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing textcell.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include textcell.h -o moc_textcell.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_textcell.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="textcursorcommands.h" />
+    <CustomBuild Include="treeview.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing treeview.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe treeview.h -o moc_treeview.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">moc_treeview.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing treeview.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include treeview.h -o moc_treeview.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">moc_treeview.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="updategroupcellvisitor.h" />
+    <ClInclude Include="updatelinkvisitor.h" />
+    <ClInclude Include="visitor.h" />
+    <ClInclude Include="xmlnodename.h" />
+    <ClInclude Include="xmlparser.h" />
+    <ClInclude Include="ui_imagesizedlg.h" />
+    <ClInclude Include="ui_otherdlg.h" />
+    <ClInclude Include="ui_searchform.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="ImageSizeDlg.ui">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing ImageSizeDlg.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\uic.exe -o ui_imagesizedlg.h ImageSizeDlg.ui
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ui_imagesizedlg.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Uic%27ing ImageSizeDlg.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe -o ui_imagesizedlg.h ImageSizeDlg.ui
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ui_imagesizedlg.h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="OtherDlg.ui">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing OtherDlg.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\uic.exe -o ui_otherdlg.h OtherDlg.ui
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ui_otherdlg.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Uic%27ing OtherDlg.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe -o ui_otherdlg.h OtherDlg.ui
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ui_otherdlg.h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="searchform.ui">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing searchform.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">ui_searchform.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Uic%27ing searchform.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe -o ui_searchform.h searchform.ui
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">ui_searchform.h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <None Include="omnotebook_png.png" />
+    <CustomBuild Include="res_qt.qrc">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling resources...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\rcc.exe -o generatedfiles/qrc_res_qt.cpp res_qt.qrc
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">res_qt.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">generatedfiles/qrc_res_qt.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling resources...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\rcc.exe -o generatedfiles/qrc_res_qt.cpp res_qt.qrc
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">res_qt.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">generatedfiles/qrc_res_qt.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <None Include="omnotebook_icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\3Dpkg\3Dpkg.vcxproj">
+      <Project>{286f13c0-0e92-4179-a57e-e8c949054f46}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\ext\OMPlotWindow.vcxproj">
+      <Project>{79f27dd3-82fe-3aad-80b3-1255dc2db9d9}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\NotebookParser\NotebookParser.vcxproj">
+      <Project>{3700a59e-e33b-4ac7-8385-35d486aee4e0}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\Pltpkg2\Pltpkg2.vcxproj">
+      <Project>{d98c1dd4-008f-34b2-a980-0998ecf8427e}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

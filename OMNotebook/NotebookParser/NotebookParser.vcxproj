@@ -1,0 +1,138 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3700A59E-E33B-4AC7-8385-35D486AEE4E0}</ProjectGuid>
+    <RootNamespace>NotebookParser</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Debug\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Release\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(QNBHOME)\OMNotebookQT4;$(QTHOME)\include;$(QTHOME)\include\QtCore;$(OMDEV)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;UNICODE;QT_LARGEFILE_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)NotebookParser.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(QNBHOME)\OMNotebookQT4;$(QTHOME)\include;$(QTHOME)\include\QtCore;$(OMDEV)\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <DisableSpecificWarnings>4311; 4312;%(DisableSpecificWarnings)</DisableSpecificWarnings>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(OutDir)NotebookParser.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="AntlrNotebookLexer.cpp" />
+    <ClCompile Include="AntlrNotebookParser.cpp" />
+    <ClCompile Include="AntlrNotebookTreeParser.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="AntlrNotebookLexer.hpp" />
+    <ClInclude Include="AntlrNotebookParser.hpp" />
+    <ClInclude Include="AntlrNotebookParserTokenTypes.hpp" />
+    <ClInclude Include="AntlrNotebookTreeParser.hpp" />
+    <ClInclude Include="AntlrNotebookTreeParserTokenTypes.hpp" />
+    <ClInclude Include="notebookgrammarTokenTypes.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="lexer.g">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Performing custom build for Lexer</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool %(Filename).g
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Performing custom build for Lexer</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool %(Filename).g
+</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AntlrNotebookLexer.hpp;AntlrNotebookLexer.cpp;notebookgrammarTokenTypes.hpp;notebookgrammarTokenTypes.txt;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="parser.g">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Performing Custom Build Step for Parser</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool %(Filename).g
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">notebookgrammarTokenTypes.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Performing Custom Build Step for Parser</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool %(Filename).g
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">notebookgrammarTokenTypes.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AntlrNotebookParser.hpp;AntlrNotebookParser.cpp;AntlrNotebookParserTokenTypes.hpp;AntlrNotebookParserTokenTypes.txt;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="walker.g">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Performing Custom Build Step walker</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool %(Filename).g
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AntlrNotebookParserTokenTypes.txt;notebookgrammarTokenTypes.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Performing Custom Build Step walker</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">java -cp $(OMDev)\bin\antlr\antlr.jar antlr.Tool %(Filename).g
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AntlrNotebookParserTokenTypes.txt;notebookgrammarTokenTypes.txt;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AntlrNotebookTreeParser.cpp;AntlrNotebookTreeParser.hpp;AntlrNotebookTreeParserTokenTypes.hpp;AntlrNotebookTreeParserTokenTypes.txt;%(Outputs)</Outputs>
+    </CustomBuild>
+    <None Include="ReadMe.txt" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

@@ -1,36 +1,21 @@
-Microsoft Visual Studio Solution File, Format Version 10.00
-# Visual Studio 2008
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OMNotebookQT4", "OMNotebook.vcproj", "{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3700A59E-E33B-4AC7-8385-35D486AEE4E0} = {3700A59E-E33B-4AC7-8385-35D486AEE4E0}
-		{286F13C0-0E92-4179-A57E-E8C949054F46} = {286F13C0-0E92-4179-A57E-E8C949054F46}
-		{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9} = {79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}
-		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
-		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
-		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NotebookParser", "..\NotebookParser\NotebookParser.vcproj", "{3700A59E-E33B-4AC7-8385-35D486AEE4E0}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Pltpkg2", "..\Pltpkg2\Pltpkg2.vcproj", "{D98C1DD4-008F-34B2-A980-0998ECF8427E}"
-	ProjectSection(ProjectDependencies) = postProject
-		{286F13C0-0E92-4179-A57E-E8C949054F46} = {286F13C0-0E92-4179-A57E-E8C949054F46}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OMPlotWindow", "..\ext\OMPlotWindow.vcproj", "{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}"
-	ProjectSection(ProjectDependencies) = postProject
-		{286F13C0-0E92-4179-A57E-E8C949054F46} = {286F13C0-0E92-4179-A57E-E8C949054F46}
-		{D98C1DD4-008F-34B2-A980-0998ECF8427E} = {D98C1DD4-008F-34B2-A980-0998ECF8427E}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3Dpkg", "..\3Dpkg\3Dpkg.vcproj", "{286F13C0-0E92-4179-A57E-E8C949054F46}"
-EndProject
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "xml", "xml", "{1D94A336-1A53-4554-B9BA-5A875920F4FB}"
 	ProjectSection(SolutionItems) = preProject
 		commands.xml = commands.xml
 		modelicacolors.xml = modelicacolors.xml
 		stylesheet.xml = stylesheet.xml
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OMNotebookQT4", "OMNotebook.vcxproj", "{259725BE-54D2-3C8D-A8A8-4CF7BD839D28}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "NotebookParser", "..\NotebookParser\NotebookParser.vcxproj", "{3700A59E-E33B-4AC7-8385-35D486AEE4E0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Pltpkg2", "..\Pltpkg2\Pltpkg2.vcxproj", "{D98C1DD4-008F-34B2-A980-0998ECF8427E}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OMPlotWindow", "..\ext\OMPlotWindow.vcxproj", "{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "3Dpkg", "..\3Dpkg\3Dpkg.vcxproj", "{286F13C0-0E92-4179-A57E-E8C949054F46}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

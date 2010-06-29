@@ -1,0 +1,243 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{79F27DD3-82FE-3AAD-80B3-1255DC2DB9D9}</ProjectGuid>
+    <RootNamespace>ext</RootNamespace>
+    <Keyword>Qt4VSv1.0</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseOfMfc>false</UseOfMfc>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">.\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">debug\</IntDir>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</IgnoreImportLibrary>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">release\</IntDir>
+    <IgnoreImportLibrary Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</IgnoreImportLibrary>
+    <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</LinkIncremental>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Midl>
+      <WarningLevel>0</WarningLevel>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <EnableErrorChecks>None</EnableErrorChecks>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions>-Zm300 -w34100 -w34189 -Zm300 -w34100 -w34189 -w34100 -w34189 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(QTHOME)\include\QtCore;$(QTHOME)\include\QtGui;$(QTHOME)\include;.;$(QTHOME)\include\ActiveQt;debug;$(QTHOME)\mkspecs\win32-msvc2008;$(COINDIR)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;QT_LARGEFILE_SUPPORT;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;COIN_DLL;SOQT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <AssemblerListingLocation>debug\</AssemblerListingLocation>
+      <ObjectFileName>debug\</ObjectFileName>
+      <ProgramDataBaseFileName>.\</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>_WINDOWS;UNICODE;WIN32;QT_LARGEFILE_SUPPORT;QT_DLL;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>$(QTHOME)\lib\qtmaind.lib;$(QTHOME)\lib\QtGuid4.lib;$(QTHOME)\lib\QtCored4.lib;$(QTHOME)\lib\QtNetworkd4.lib;..\Pltpkg2\debug\pltpkg2.lib;3Dpkg.lib;soqt1d.lib;coin3d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>debug\OMPlotWindow.exe</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>$(QTHOME)\lib;$(COINDIR)\lib;$(SolutionDir)\Debug\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Midl>
+      <WarningLevel>0</WarningLevel>
+      <DefaultCharType>Unsigned</DefaultCharType>
+      <EnableErrorChecks>None</EnableErrorChecks>
+    </Midl>
+    <ClCompile>
+      <AdditionalOptions>-Zm300 -w34100 -w34189 -Zm300 -w34100 -w34189 -w34100 -w34189 %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>MaxSpeed</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+      <AdditionalIncludeDirectories>$(QTHOME)\include\QtCore;$(QTHOME)\include\QtGui;$(QTHOME)\include;.;$(QTHOME)\include\ActiveQt;Release;$(QTHOME)\mkspecs\win32-msvc2008;$(COINDIR)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>QT_NO_DEBUG;NDEBUG;_WINDOWS;UNICODE;WIN32;QT_LARGEFILE_SUPPORT;QT_DLL;QT_NO_DEBUG;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;NDEBUG;COIN_DLL;SOQT_DLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessToFile>false</PreprocessToFile>
+      <PreprocessSuppressLineNumbers>false</PreprocessSuppressLineNumbers>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <RuntimeTypeInfo>true</RuntimeTypeInfo>
+      <AssemblerListingLocation>release\</AssemblerListingLocation>
+      <ObjectFileName>release\</ObjectFileName>
+      <ProgramDataBaseFileName>.\</ProgramDataBaseFileName>
+      <WarningLevel>Level3</WarningLevel>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>QT_NO_DEBUG;NDEBUG;_WINDOWS;UNICODE;WIN32;QT_LARGEFILE_SUPPORT;QT_DLL;QT_NO_DEBUG;QT_GUI_LIB;QT_CORE_LIB;QT_THREAD_SUPPORT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
+    <Link>
+      <AdditionalDependencies>$(QTHOME)\lib\qtmain.lib;$(QTHOME)\lib\QtGui4.lib;$(QTHOME)\lib\QtCore4.lib;$(QTHOME)\lib\QtNetwork4.lib;..\Pltpkg2\Release\pltpkg2.lib;3Dpkg.lib;soqt1.lib;coin3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>release\OMPlotWindow.exe</OutputFile>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <AdditionalLibraryDirectories>$(QTHOME)\lib;$(COINDIR)\lib;$(SolutionDir)\Release\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>
+      </ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+    <PostBuildEvent>
+      <Message>Copy OMPlotWindow.exe and xml files to build/bin</Message>
+      <Command>copy $(TargetDir)\release\OMPlotWindow.exe $(ProjectDir)\..\..\build\bin\
+copy $(ProjectDir)\..\OMNotebookQT4\*.xml $(ProjectDir)\..\..\build\share\omnotebook
+</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Pltpkg2\compoundWidget.cpp" />
+    <ClCompile Include="..\Pltpkg2\curve.cpp" />
+    <ClCompile Include="e.cpp" />
+    <ClCompile Include="..\Pltpkg2\graphWidget.cpp" />
+    <ClCompile Include="..\Pltpkg2\graphWindow.cpp" />
+    <ClCompile Include="..\Pltpkg2\lineGroup.cpp" />
+    <ClCompile Include="..\Pltpkg2\variableData.cpp" />
+    <ClCompile Include="release\moc_compoundWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\include;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="release\moc_graphWidget.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\include;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="release\moc_GraphWindow.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <PreprocessorDefinitions Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\include;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <ClCompile Include="generatedfiles\qtres.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="qtres.qrc">
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\rcc.exe -o generatedfiles/qtres.cpp qtres.qrc
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">qtres.qrc;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">generatedfiles/qtres.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <None Include="..\OMNotebookQT4\omnotebook_png.png" />
+    <None Include="Resources\plotWindow.bmp" />
+    <None Include="Resources\plotWindow.ico" />
+    <None Include="Resources\plotWindow.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="..\Pltpkg2\compoundWidget.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC ..\Pltpkg2\compoundWidget.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"debug" -I"." -I$(QTHOME)\mkspecs\win32-msvc2008 -DWIN32 ..\Pltpkg2\compoundWidget.h -o debug\moc_compoundWidget.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Pltpkg2\compoundWidget.h;$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">debug\moc_compoundWidget.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC ..\Pltpkg2\compoundWidget.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I"$(QTHOME)\mkspecs\win32-msvc2008t" -DWIN32 ..\Pltpkg2\compoundWidget.h -o release\moc_compoundWidget.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Pltpkg2\compoundWidget.h;$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">release\moc_compoundWidget.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="..\Pltpkg2\curve.h" />
+    <ClInclude Include="..\Pltpkg2\graphScene.h" />
+    <CustomBuild Include="..\Pltpkg2\graphWidget.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC ..\Pltpkg2\graphWidget.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"debug" -I"." -I$(QTHOME)\mkspecs\win32-msvc2008 -DWIN32 ..\Pltpkg2\graphWidget.h -o debug\moc_graphWidget.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Pltpkg2\graphWidget.h;$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">debug\moc_graphWidget.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC ..\Pltpkg2\graphWidget.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I"$(QTHOME)\mkspecs\win32-msvc2008" -DWIN32 ..\Pltpkg2\graphWidget.h -o release\moc_graphWidget.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Pltpkg2\graphWidget.h;$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">release\moc_graphWidget.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <CustomBuild Include="..\Pltpkg2\GraphWindow.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">MOC ..\Pltpkg2\GraphWindow.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"debug" -I"." -I$(QTHOME)\mkspecs\win32-msvc2008 -DWIN32 ..\Pltpkg2\GraphWindow.h -o debug\moc_GraphWindow.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">..\Pltpkg2\GraphWindow.h;$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">debug\moc_GraphWindow.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">MOC ..\Pltpkg2\GraphWindow.h</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe  -DUNICODE -DWIN32 -DQT_LARGEFILE_SUPPORT -DQT_DLL -DQT_NO_DEBUG -DQT_GUI_LIB -DQT_CORE_LIB -DQT_THREAD_SUPPORT -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtCore" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include\QtGui" -I"$(QTHOME)\include" -I"." -I"$(QTHOME)\include\ActiveQt" -I"release" -I"." -I$(QTHOME)\/include -DWIN32 ..\Pltpkg2\GraphWindow.h -o release\moc_GraphWindow.cpp
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">..\Pltpkg2\GraphWindow.h;$(QTHOME)\bin\moc.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">release\moc_GraphWindow.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="..\Pltpkg2\label.h" />
+    <ClInclude Include="..\Pltpkg2\lineGroup.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="..\Pltpkg2\ui_compoundWidget.h" />
+    <ClInclude Include="..\Pltpkg2\ui_graphWindow.h" />
+    <ClInclude Include="..\Pltpkg2\variableData.h" />
+    <ClInclude Include="..\Pltpkg2\verticalLabel.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="OMPlotWindow.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\3Dpkg\3Dpkg.vcxproj">
+      <Project>{286f13c0-0e92-4179-a57e-e8c949054f46}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+    <ProjectReference Include="..\Pltpkg2\Pltpkg2.vcxproj">
+      <Project>{d98c1dd4-008f-34b2-a980-0998ecf8427e}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
