@@ -93,15 +93,19 @@ typedef modelica_real tanh_rettype;
 typedef modelica_real atan_rettype;
 typedef modelica_real exp_rettype;
 typedef modelica_real sqrt_rettype;
-typedef modelica_real abs_rettype;
-typedef modelica_real max_rettype;
-typedef modelica_real min_rettype;
 typedef modelica_real arctan_rettype;
 typedef modelica_real atan2_rettype;
 typedef modelica_real div_rettype;
 typedef modelica_real mod_rettype;
 typedef modelica_real rem_rettype;
 #define arctan atan
+
+/* Not correct - min,max,abs may return integers.
+ *  So don't generate code containing these types!
+ * bad typedef modelica_real abs_rettype;
+ * bad typedef modelica_real max_rettype;
+ * bad typedef modelica_real min_rettype;
+ */
 
 /* div is already defined in stdlib, so it's redefined here to modelica_div so
  * that it can be implemented without changing the name. Hopefully no one uses

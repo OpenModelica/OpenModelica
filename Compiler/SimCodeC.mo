@@ -20606,6 +20606,61 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "max"), expLst = {i_e1, i_e2}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_e2;
+        DAE.Exp i_e1;
+        Tpl.Text i_var2;
+        Tpl.Text i_var1;
+      equation
+        (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
+        (i_var2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e2, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("max("));
+        txt = Tpl.writeText(txt, i_var1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
+        txt = Tpl.writeText(txt, i_var2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "min"), expLst = {i_e1, i_e2}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_e2;
+        DAE.Exp i_e1;
+        Tpl.Text i_var2;
+        Tpl.Text i_var1;
+      equation
+        (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
+        (i_var2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e2, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("min("));
+        txt = Tpl.writeText(txt, i_var1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
+        txt = Tpl.writeText(txt, i_var2);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "abs"), expLst = {i_e1}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_e1;
+        Tpl.Text i_var1;
+      equation
+        (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("abs("));
+        txt = Tpl.writeText(txt, i_var1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "max"), expLst = {i_array}),
            i_context,
            i_preExp,

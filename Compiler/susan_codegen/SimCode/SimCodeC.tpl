@@ -3716,6 +3716,20 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%retVar%> = <%cast%>pre(<%cref(arg.componentRef)%>);<%\n%>'
     '<%retVar%>'
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="max"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'max(<%var1%>,<%var2%>)'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="min"), expLst={e1,e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    'min(<%var1%>,<%var2%>)'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="abs"), expLst={e1}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    'abs(<%var1%>)'
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let arr_tp_str = '<%expTypeFromExpArray(array)%>'
