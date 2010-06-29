@@ -1,0 +1,208 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Template|Win32">
+      <Configuration>Template</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B79AA7D4-B09D-4507-ABCE-D0619ADD8943}</ProjectGuid>
+    <RootNamespace>OMS</RootNamespace>
+    <Keyword>Qt4VSv1.0</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Template|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Template|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.\GeneratedFiles\Release;.\GeneratedFiles;$(OMDEV)\include\mico-win32-msvc;$(QTHOME)\include;$(ProjectDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;QT_NO_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>qtmain.lib;QtCore4.lib;QtGui4.lib;QtXml4.lib;mico2313.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)OMShell.exe</OutputFile>
+      <AdditionalLibraryDirectories>$(QTHOME)\lib;$(OMDEV)\lib\mico-win32-msvc\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy $(TargetPath) $(ProjectDir)..\build\bin</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.\GeneratedFiles\Debug;.\GeneratedFiles;%3b$(OMDEV)\include\mico-win32-msvc"%3b$(QTHOME)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;QT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>qtmaind.lib;QtCored4.lib;QtGuid4.lib;QtXmld4.lib;mico2311.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>$(OutDir)OMShell.exe</OutputFile>
+      <AdditionalLibraryDirectories>$(QTHOME)\lib;$(OMDEV)\lib\mico-win32-msvc\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="commandcompletion.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="omc_communication.cc" />
+    <ClCompile Include="omc_communicator.cpp" />
+    <ClCompile Include="omcinteractiveenvironment.cpp" />
+    <ClCompile Include="oms.cpp" />
+    <ClCompile Include="generatedfiles\release\moc_commandcompletion.cpp" />
+    <ClCompile Include="generatedfiles\release\moc_omc_communicator.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\release\moc_oms.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="GeneratedFiles\qrc_oms.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="commandcompletion.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing commandcompletion.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe -DWIN32 -DQT_DEBUG -I.\GeneratedFiles\Debug%3b.\GeneratedFiles%3b"$(MODELICAHOME)"%3b"$(MICOHOME)\include"%3b"$(QTHOME)\include" ".\commandcompletion.h" -o "GeneratedFiles\Debug\moc_commandcompletion.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;.\commandcompletion.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GeneratedFiles\Debug\moc_commandcompletion.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing commandcompletion.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DWIN32 -I.\GeneratedFiles\Release%3b.\GeneratedFiles%3b"$(OMDEV)\include\mico-win32-msvc"%3b"$(QTHOME)\include" ".\commandcompletion.h" -o "GeneratedFiles\Release\moc_commandcompletion.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;.\commandcompletion.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GeneratedFiles\Release\moc_commandcompletion.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="commandunit.h" />
+    <ClInclude Include="inputcelldelegate.h" />
+    <CustomBuild Include="omc_communicator.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing omc_communicator.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe -I.\GeneratedFiles\Debug%3b"$(QTHOME)\include" ".\omc_communicator.h" -o "GeneratedFiles\Debug\moc_omc_communicator.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;.\omc_communicator.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GeneratedFiles\Debug\moc_omc_communicator.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing omc_communicator.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -I -I$(QTHOME)\include -I.\GeneratedFiles\Release -I$(QTHOME)\include\QtCore -I$(QTHOME)\include\QtGui ".\omc_communicator.h" -o "GeneratedFiles\Release\moc_omc_communicator.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;.\omc_communicator.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GeneratedFiles\Release\moc_omc_communicator.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="omcinteractiveenvironment.h" />
+    <CustomBuild Include="oms.h">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Moc%27ing oms.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe -DWIN32 -DQT_DEBUG -I.\GeneratedFiles\Debug%3b.\GeneratedFiles%3b"$(MODELICAHOME)"%3b"$(MICOHOME)\include"%3b"$(QTHOME)\include" ".\oms.h" -o "GeneratedFiles\Debug\moc_oms.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTHOME)\bin\moc.exe;.\oms.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GeneratedFiles\Debug\moc_oms.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Moc%27ing oms.h...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe -DWIN32 -I.\GeneratedFiles\Release%3b.\GeneratedFiles%3b"$(OMDEV)\include\mico-win32-msvc"%3b"$(QTHOME)\include" ".\oms.h" -o "GeneratedFiles\Release\moc_oms.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\moc.exe;.\oms.h;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GeneratedFiles\Release\moc_oms.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <ClInclude Include="otherdlg.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="GeneratedFiles\ui_OtherDlg.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Resources\clear.bmp" />
+    <None Include="Resources\copy.bmp" />
+    <None Include="Resources\cut.bmp" />
+    <None Include="Resources\help.bmp" />
+    <None Include="Resources\OMS.bmp" />
+    <None Include="Resources\OMS.ico" />
+    <CustomBuild Include="oms.qrc">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Compiling Qt resource file: .\oms.qrc...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\rcc.exe" -name "oms" -no-compress ".\oms.qrc" -o "GeneratedFiles\qrc_oms.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\rcc.exe;Resources\OMS.bmp;Resources\OMS.ico;Resources\clear.bmp;Resources\copy.bmp;Resources\cut.bmp;Resources\help.bmp;Resources\paste.bmp;Resources\print.bmp;Resources\start.bmp;Resources\stop.bmp;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GeneratedFiles\qrc_oms.cpp;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Compiling Qt resource file: .\oms.qrc...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTHOME)\bin\rcc.exe" -name "oms" -no-compress ".\oms.qrc" -o "GeneratedFiles\qrc_oms.cpp"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\rcc.exe;Resources\OMS.bmp;Resources\OMS.ico;Resources\clear.bmp;Resources\copy.bmp;Resources\cut.bmp;Resources\help.bmp;Resources\paste.bmp;Resources\print.bmp;Resources\start.bmp;Resources\stop.bmp;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GeneratedFiles\qrc_oms.cpp;%(Outputs)</Outputs>
+    </CustomBuild>
+    <None Include="Resources\paste.bmp" />
+    <None Include="Resources\print.bmp" />
+    <None Include="Resources\start.bmp" />
+    <None Include="Resources\stop.bmp" />
+    <None Include="Resources\winmosh.bmp" />
+    <None Include="Resources\WinMosh.ico" />
+    <CustomBuild Include="OtherDlg.ui">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Uic%27ing OtherDlg.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">"$(QTDIR)\bin\uic.exe" -o "GeneratedFiles\ui_OtherDlg.h" ".\OtherDlg.ui"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">GeneratedFiles\ui_OtherDlg.h;%(Outputs)</Outputs>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Uic%27ing OtherDlg.ui...</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">"$(QTHOME)\bin\uic.exe" -o "GeneratedFiles\ui_OtherDlg.h" ".\OtherDlg.ui"
+</Command>
+      <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTHOME)\bin\uic.exe;%(AdditionalInputs)</AdditionalInputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">GeneratedFiles\ui_OtherDlg.h;%(Outputs)</Outputs>
+    </CustomBuild>
+    <None Include="README-UNIX.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="res.rc" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+  <ProjectExtensions>
+    <VisualStudio>
+      <UserProperties QtVersion="Qt-4.0.1" />
+    </VisualStudio>
+  </ProjectExtensions>
+</Project>
