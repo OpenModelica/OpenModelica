@@ -20735,6 +20735,21 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "abs"), expLst = {i_e1}, ty = DAE.ET_INT()),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_e1;
+        Tpl.Text i_var1;
+      equation
+        (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("std::abs("));
+        txt = Tpl.writeText(txt, i_var1);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "abs"), expLst = {i_e1}),
            i_context,
            i_preExp,
@@ -20744,7 +20759,7 @@ algorithm
         Tpl.Text i_var1;
       equation
         (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("abs("));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("fabs("));
         txt = Tpl.writeText(txt, i_var1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(")"));
       then (txt, i_preExp, i_varDecls);
@@ -20876,28 +20891,6 @@ algorithm
         i_preExp = Tpl.writeText(i_preExp, i_var1);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", &"));
         i_preExp = Tpl.writeText(i_preExp, i_tvar);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
-        txt = Tpl.writeText(txt, i_tvar);
-      then (txt, i_preExp, i_varDecls);
-
-    case ( txt,
-           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "abs"), expLst = {i_s1}),
-           i_context,
-           i_preExp,
-           i_varDecls )
-      local
-        DAE.Exp i_s1;
-        Tpl.Text i_s1Exp;
-        Tpl.Text txt_1;
-        Tpl.Text i_tvar;
-      equation
-        txt_1 = expTypeFromExpModelica(emptyTxt, i_s1);
-        (i_tvar, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(txt_1), i_varDecls);
-        (i_s1Exp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_s1, i_context, i_preExp, i_varDecls);
-        i_preExp = Tpl.writeText(i_preExp, i_tvar);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = fabs("));
-        i_preExp = Tpl.writeText(i_preExp, i_s1Exp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
         txt = Tpl.writeText(txt, i_tvar);

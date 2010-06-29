@@ -3779,9 +3779,13 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let var2 = daeExp(e2, context, &preExp, &varDecls)
     'min(<%var1%>,<%var2%>)'
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    'std::abs(<%var1%>)'
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="abs"), expLst={e1}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
-    'abs(<%var1%>)'
+    'fabs(<%var1%>)'
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="max"), expLst={array}) then
     let expVar = daeExp(array, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -3818,12 +3822,6 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'
     let tvar = tempDecl(arr_tp_str, &varDecls /*BUFC*/)
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
-    tvar
-  case CALL(tuple_=false, builtin=true,
-            path=IDENT(name="abs"), expLst={s1}) then
-    let tvar = tempDecl(expTypeFromExpModelica(s1), &varDecls /*BUFC*/)
-    let s1Exp = daeExp(s1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    let &preExp += '<%tvar%> = fabs(<%s1Exp%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
