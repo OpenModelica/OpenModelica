@@ -443,6 +443,7 @@ void getSimulationStartData(double *stepSize, long *outputSteps,
 
 	read_input(argcTEMP, argvTEMP, globalData, &start, &stop, stepSize,
 			outputSteps, tolerance, method, outputFormat);
+  callExternalObjectConstructors(globalData);
 
 	gdMutex.Unlock();
 }

@@ -91,7 +91,9 @@ case SIMCODE(__) then
   
   <%functionSetLocalData()%>
   
-  <%functionInitializeDataStruc(extObjInfo)%>
+  <%functionInitializeDataStruc()%>
+
+  <%functionCallExternalObjectConstructors(extObjInfo)%>
   
   <%functionDeInitializeDataStruc(extObjInfo)%>
   
@@ -229,6 +231,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   ;separator="\n"%>
   <%vars.stringAlgVars |> var =>
     globalDataVarDefine(var, "stringVariables.algebraics")
+  ;separator="\n"%>
+  <%vars.stringParamVars |> var =>
+    globalDataVarDefine(var, "stringVariables.parameters")
   ;separator="\n"%>
   
   static char init_fixed[NX+NX+NY+NP] = {
@@ -403,24 +408,12 @@ template functionSetLocalData()
 end functionSetLocalData;
 
 
-template functionInitializeDataStruc(ExtObjInfo extObjInfo)
+template functionInitializeDataStruc()
  "Generates function in simulation file."
 ::=
-match extObjInfo
-case EXTOBJINFO(__) then
-  let &varDecls = buffer "" /*BUFD*/
-  let &preExp = buffer "" /*BUFD*/
-  let ctorCalls = (constructors |> (var, fnName, args) =>
-      let argsStr = (args |> arg =>
-          daeExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-        ;separator=", ")
-      '<%cref(var)%> = <%fnName%>(<%argsStr%>);'
-    ;separator="\n")
   <<
   DATA* initializeDataStruc(DATA_FLAGS flags)
-  {
-    <%varDecls%>
-  
+  {  
     DATA* returnData = (DATA*)malloc(sizeof(DATA));
   
     if(!returnData) //error check
@@ -639,15 +632,37 @@ case EXTOBJINFO(__) then
         exit(-2);
       }
       memset(returnData->extObjs,0,sizeof(void*)*NEXT);
-      setLocalData(returnData); /* must be set since used by constructors*/
-      <%preExp%>
-      <%ctorCalls%>
-      <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
     }
     return returnData;
   }
+  
   >>
 end functionInitializeDataStruc;
+
+template functionCallExternalObjectConstructors(ExtObjInfo extObjInfo)
+ "Generates function in simulation file."
+::=
+match extObjInfo
+case EXTOBJINFO(__) then
+  let &varDecls = buffer "" /*BUFD*/
+  let &preExp = buffer "" /*BUFD*/
+  let ctorCalls = (constructors |> (var, fnName, args) =>
+      let argsStr = (args |> arg =>
+          daeExp(arg, contextOther, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+        ;separator=", ")
+      '<%cref(var)%> = <%fnName%>(<%argsStr%>);'
+    ;separator="\n")
+  <<
+  /* Has to be performed after _init.txt file has been read */
+  void callExternalObjectConstructors(DATA* localData) {
+    <%varDecls%>
+    <%preExp%>
+    <%ctorCalls%>
+    <%aliases |> (var1, var2) => '<%cref(var1)%> = <%cref(var2)%>;' ;separator="\n"%>
+  }
+
+  >>
+end functionCallExternalObjectConstructors;
 
 
 template functionDeInitializeDataStruc(ExtObjInfo extObjInfo)

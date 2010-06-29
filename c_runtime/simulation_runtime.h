@@ -238,6 +238,9 @@ functionDAE_output2();
 int
 functionDAE_res(double *t, double *x, double *xprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar);
 
+// Function for calling external object constructors
+void
+callExternalObjectConstructors(DATA*);
 
 int
 function_updateDependents();

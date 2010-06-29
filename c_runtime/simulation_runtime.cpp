@@ -258,6 +258,7 @@ int startNonInteractiveSimulation(int argc, char**argv){
   read_input(argc,argv,
              globalData,
              &start,&stop,&stepSize,&outputSteps,&tolerance,&method,&outputFormat);
+  callExternalObjectConstructors(globalData);
   globalData->lastEmittedTime = start;
   globalData->forceEmit=0;
 

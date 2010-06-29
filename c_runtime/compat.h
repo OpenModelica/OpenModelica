@@ -38,7 +38,7 @@
 /* We need to patch exit() on Unix systems
  * It does not change the exit code of simulations for some reason! */
 #include <unistd.h>
-#define EXIT(code) _exit(code)
+#define EXIT(code) {fflush(NULL); _exit(code);}
 #endif
 
 #endif
