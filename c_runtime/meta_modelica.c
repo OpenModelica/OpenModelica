@@ -36,7 +36,7 @@ const struct mmc_header mmc_prim_nil = { MMC_NILHDR };
 
 union mmc_double_as_words {
     double d;
-    mmc_uint_t data[2];
+    mmc_uint_t data[MMC_SIZE_DBL/MMC_SIZE_INT];
 };
 
 void *mmc_alloc_bytes(unsigned nbytes)
@@ -59,14 +59,16 @@ void mmc_prim_set_real(struct mmc_real *p, double d)
   union mmc_double_as_words u;
   u.d = d;
   p->data[0] = u.data[0];
-  p->data[1] = u.data[1];
+  if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
+    p->data[1] = u.data[1];
 }
 
 double mmc_prim_get_real(void *p)
 {
     union mmc_double_as_words u;
     u.data[0] = MMC_REALDATA(p)[0];
-    u.data[1] = MMC_REALDATA(p)[1];
+    if (MMC_SIZE_DBL/MMC_SIZE_INT > 1)
+      u.data[1] = MMC_REALDATA(p)[1];
     return u.d;
 }
 
@@ -465,3 +467,87 @@ void printAny(void* any) /* For debugging */
   EXIT(1);
 }
 
+void printTypeOfAny(void* any) /* for debugging */
+{
+  mmc_uint_t hdr;
+  int numslots;
+  unsigned ctor;
+  int i;
+  void *data;
+  struct record_description *desc;
+
+  if ((0 == ((mmc_sint_t)any & 1))) {
+    fprintf(stderr, "Integer");
+    return;
+  }
+  
+  hdr = MMC_GETHDR(any);
+
+  if (hdr == MMC_NILHDR) {
+    fprintf(stderr, "list<Any>");
+    return;
+  }
+
+  if (hdr == MMC_REALHDR) {
+    fprintf(stderr, "Real");
+    return;
+  }
+
+  if (MMC_HDRISSTRING(hdr)) {
+    fprintf(stderr, "String");
+    return;
+  }
+
+  numslots = MMC_HDRSLOTS(hdr);
+  ctor = 255 & (hdr >> 2);
+  
+  if (numslots>0 && ctor == MMC_ARRAY_TAG) { /* MetaModelica-style array */
+    fprintf(stderr, "meta_array<");
+    data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+    printTypeOfAny(data);
+    fprintf(stderr, ">");
+    return;
+  }
+  if (numslots>0 && ctor > 1) { /* RECORD */
+    desc = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1));
+    fprintf(stderr, "%s(", desc->name);
+    for (i=2; i<=numslots; i++) {
+      data = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),i));
+      fprintf(stderr, "%s = ", desc->fieldNames[i-2]);
+      printTypeOfAny(data);
+      if (i!=numslots)
+        fprintf(stderr, ", ");
+    }
+    fprintf(stderr, ")");
+    return;
+  }
+
+  if (numslots>0 && ctor == 0) { /* TUPLE */
+    fprintf(stderr, "tuple<");
+    printTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
+    fprintf(stderr, ">");
+    return;
+  }
+
+  if (numslots==0 && ctor==1) /* NONE() */ {
+    fprintf(stderr, "Option<Any>");
+    return;
+  }
+
+  if (numslots==1 && ctor==1) /* SOME(x) */ {
+    fprintf(stderr, "Option<");
+    printTypeOfAny(MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(any),1)));
+    fprintf(stderr, ">");
+    return;
+  }
+
+  if (numslots==2 && ctor==1) { /* CONS-PAIR */
+    fprintf(stderr, "list<");
+    printTypeOfAny(MMC_CAR(any));
+    fprintf(stderr, ">");
+    return;
+  }
+
+  fprintf(stderr, "%s:%d: %d slots; ctor %d - FAILED to detect the type\n", __FILE__, __LINE__, numslots, ctor);
+  EXIT(1);
+}

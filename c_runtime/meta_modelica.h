@@ -150,6 +150,7 @@ typedef modelica_boolean mmc__uniontype__metarecord__typedef__equal_rettype;
 mmc__uniontype__metarecord__typedef__equal_rettype mmc__uniontype__metarecord__typedef__equal(void*,int,int,modelica_string_t);
 
 void printAny(void*); /* For debugging */
+void printTypeOfAny(void*); /* For debugging */
 
 /*
  * Generated (Meta)Records should access a static, constant value of 
