@@ -190,6 +190,14 @@ RML_BEGIN_LABEL(IOStreamExt__printReversedList)
 
   /* allocate the string in the C heap */
   str = (char*)malloc(len+1);
+
+  if (str == NULL) /* we couldn't allocate the string */
+  {
+    fprintf(stderr, "\nIOStreamExt.printReversedList failed! Error: Could not allocate string of length %d! Not enough memory.", len+1);
+    fflush(stderr);
+    RML_TAILCALLK(rmlFC);
+  }
+
   len_cur = len;
 
   // re-initialize the lst

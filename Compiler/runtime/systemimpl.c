@@ -34,30 +34,6 @@
  * #define RML_DEBUG
  */
 
-/*
- * adrpo 2008-12-02
- * http://www.cse.yorku.ca/~oz/hash.html
- * hash functions which could be useful to replace System__hash:
- * djb2 hash
- * unsigned long hash(unsigned char *str)
- * {
- *   unsigned long hash = 5381;
- *   int c;
- *   while (c = *str++)  hash = ((hash << 5) + hash) + c; // hash * 33 + c
- *   return hash;
- * }
- *******
- * sdbm hash
- * static unsigned long sdbm(unsigned char* str)
- * {
- *   unsigned long hash = 0;
- *   int c;
- *   while (c = *str++) hash = c + (hash << 6) + (hash << 16) - hash;
- *   return hash;
- * }
- *
- */
-
 #if defined(__MINGW32__) || defined(_MSC_VER)
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -148,8 +124,32 @@ static void free_library(modelica_ptr_t lib);
 static void free_function(modelica_ptr_t func);
 
 /*
+ * adrpo 2008-12-02
+ * http://www.cse.yorku.ca/~oz/hash.html
+ * hash functions which could be useful to replace System__hash:
+ */
+/*** djb2 hash ***/
+static inline unsigned long djb2_hash(unsigned char *str)
+{
+  unsigned long hash = 5381;
+  int c;
+  while (c = *str++)  hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+  return hash;
+}
+
+/*** sdbm hash ***/
+static inline unsigned long sdbm_hash(unsigned char* str)
+{
+  unsigned long hash = 0;
+  int c;
+  while (c = *str++) hash = c + (hash << 6) + (hash << 16) - hash;
+  return hash;
+}
+
+/*
  * Common implementations
  */
+
 static int set_cc(char *str)
 {
   size_t len = strlen(str);
@@ -209,6 +209,21 @@ static int set_ldflags(char *str)
   memcpy(ldflags,str,len+1);
   return 0;
 }
+
+#if defined(_MSC_VER)
+__inline
+#else
+inline
+#endif
+RML_BEGIN_LABEL(System__hash)
+{
+  char *str = RML_STRINGDATA(rmlA0);
+  rml_uint_t hash = (rml_uint_t)djb2_hash(str);
+  // fprintf(stderr, "hashing: %s into: %d \n", str, hash); fflush(stderr); fflush(stdout);
+  rmlA0 = RML_PRIM_INT_ABS(RML_IMMEDIATE(RML_TAGFIXNUM(hash)));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(System__trimChar)
 {
@@ -1863,21 +1878,6 @@ RML_BEGIN_LABEL(System__moFiles)
 RML_END_LABEL
 
 
-
-
-#if !defined(_MSC_VER)
-inline
-#endif
-RML_BEGIN_LABEL(System__hash)
-{
-  char *str = RML_STRINGDATA(rmlA0);
-  int hash=0, c=0;
-  while( c = *str++ ) hash +=c;
-  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(hash));
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
 int fileExistsLocal(char * s){
   int ret=-1;
   WIN32_FIND_DATA FileData;
@@ -2765,17 +2765,6 @@ RML_BEGIN_LABEL(System__moFiles)
   free(files[i]);
   }
   rmlA0 = (void*) res;
-  RML_TAILCALLK(rmlSC);
-}
-RML_END_LABEL
-
-
-inline RML_BEGIN_LABEL(System__hash)
-{
-  char *str = RML_STRINGDATA(rmlA0);
-  long hash=0, c=0;
-  while( c = *str++ ) hash +=c;
-  rmlA0 = RML_IMMEDIATE(RML_TAGFIXNUM(hash));
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

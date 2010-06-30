@@ -69,9 +69,9 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDataset)
   size = RML_UNTAGFIXNUM(rmlA0);
 
   vars = (char**)malloc(sizeof(char*)*size);
-  for (i=0,p=lst;i<size;i++) {
-    vars[i]=RML_STRINGDATA(RML_CAR(p));
-    p=RML_CDR(p);
+  for (i=0, p=lst; i<size; i++) {
+    vars[i] = RML_STRINGDATA(RML_CAR(p));
+    p = RML_CDR(p);
   }
   rmlA0 = (void*)read_ptolemy_dataset(filename,size,vars,datasize);
   if (rmlA0 == NULL) {
@@ -90,7 +90,7 @@ RML_BEGIN_LABEL(SimulationResults__readPtolemyplotDatasetSize)
   char* filename = RML_STRINGDATA(rmlA0);
   void* p;
 
-  size=read_ptolemy_dataset_size(filename);
+  size = read_ptolemy_dataset_size(filename);
 
   rmlA0 = (void*)Values__INTEGER(mk_icon(size));
   if (rmlA0 == NULL) {
