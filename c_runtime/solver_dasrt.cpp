@@ -82,6 +82,7 @@ int activeEvent(int nRoots, fortran_integer *jroot)
 int dassl_main(int argc, char**argv,double &start,  double &stop, double &step, long &outputSteps,
                double &tolerance)
 {
+  long numpoints;
   int status=0;
 
   fortran_integer info[15];

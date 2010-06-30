@@ -57,21 +57,14 @@ void simulation_result_plt::emit()
     return;
   }
   else {
-    /* increase the maxPoints by (maxPoints-actualPoints) + 2000 */
     maxPoints = 1.4*maxPoints + (maxPoints-actualPoints) + 2000;
-    /*
-     * cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
-     */
+    // cerr << "realloc simulationResultData to a size of " << maxPoints * dataSize * sizeof(double) << endl;
     simulationResultData = (double*)realloc(simulationResultData, maxPoints * dataSize * sizeof(double));
     if (!simulationResultData) {
       cerr << "Error allocating simulation result data of size " << maxPoints * dataSize << endl;
       throw SimulationResultReallocException();
     }
-    if(!isInteractiveSimulation())add_result(simulationResultData,&actualPoints); //used for non-interactive simulation
-    /* adrpo - realloc the result array instead of fixed size!
-     * cout << "Too many points: " << actualPoints << " max points: " << maxPoints << endl;
-     * return -1;
-     */
+    add_result(simulationResultData,&actualPoints);
   }
 }
 
@@ -144,8 +137,8 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
   if (numpoints < 0 ) { // Automatic number of output steps
   	cerr << "Warning automatic output steps not supported in OpenModelica yet." << endl;
   	cerr << "Attempt to solve this by allocating large amount of result data." << endl;
-	numpoints = abs(numpoints);
-	maxPoints = abs(numpoints);
+    numpoints = abs(numpoints);
+    maxPoints = abs(numpoints);
   }
   dataSize = (globalData->nStates*2+globalData->nAlgebraic+1);
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));

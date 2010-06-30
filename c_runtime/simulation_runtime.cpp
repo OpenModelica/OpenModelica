@@ -57,8 +57,6 @@ const char* version = "20100629";
 // Becomes non-zero when model terminates simulation.
 int modelTermination=0;
 
-long numpoints; // the number of points requested by init file
-
 int sim_verbose; // Flag for logging
 int sim_noemit; // Flag for not emitting data
 
@@ -299,14 +297,15 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
   } else {
     result_file_cstr = *result_file;
   }
+  long maxSteps = 2*outputSteps+2*globalData->nSampleTimes;
   if (isInteractiveSimulation() || sim_noemit || 0 == strcmp("empty",outputFormat.c_str())) {
-    sim_result = new simulation_result_empty(result_file_cstr.c_str(),5*numpoints);
+    sim_result = new simulation_result_empty(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("csv",outputFormat.c_str())) {
-    sim_result = new simulation_result_csv(result_file_cstr.c_str(),5*numpoints);
+    sim_result = new simulation_result_csv(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("bin",outputFormat.c_str())) {
-    sim_result = new simulation_result_bin(result_file_cstr.c_str(),5*numpoints);
+    sim_result = new simulation_result_bin(result_file_cstr.c_str(),maxSteps);
   } else { /* Default to plt */
-    sim_result = new simulation_result_plt(result_file_cstr.c_str(),5*numpoints);
+    sim_result = new simulation_result_plt(result_file_cstr.c_str(),maxSteps);
   }
   if (sim_verbose) { cout << "Allocated simulation result data storage for method '" << sim_result->result_type() << "' and file='" << result_file_cstr << "'" << endl; }
 

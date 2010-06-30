@@ -98,8 +98,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	const string *init_method = getFlagValue("im",argc,argv);
 
-	long numpoints = long((stop-start)/step)+2;
-
 	if (initializeEventData()) {
 		cout << "Internal error, allocating event data structures" << endl;
 		return -1;

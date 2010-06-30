@@ -189,7 +189,6 @@ typedef struct sim_DATA {
 extern DATA *globalData;
 
 
-extern long numpoints;
 extern int modelErrorCode;
 extern simulation_result *sim_result;
 
