@@ -1841,46 +1841,56 @@ end matchcontinue;
 end expComponentRefStr;
 
 public function printComponentRefStr ""
-input ComponentRef cr;
-output String ostring;
-algorithm ostring := matchcontinue(cr)
-  local
-  String s1,s2;
-  ComponentRef child;
-  case(CREF_IDENT(s1,_)) then s1;
-  case(CREF_QUAL(s1,_,child))
-    equation
-    s2 = printComponentRefStr(child);
-    s1 = s1 +& "." +& s2;
-then s1;
-end matchcontinue;
+  input ComponentRef cr;
+  output String ostring;
+algorithm 
+  ostring := matchcontinue(cr)
+    local
+      String s1,s2;
+      ComponentRef child;
+    case(CREF_IDENT(s1,_)) then s1;
+    case(CREF_QUAL(s1,_,child))
+      equation
+        s2 = printComponentRefStr(child);
+        s1 = s1 +& "." +& s2;
+      then s1;
+  end matchcontinue;
 end printComponentRefStr;
+
+public function pathEqual "function: pathEqual
+  Returns true if two paths are equal."
+  input Path inPath1;
+  input Path inPath2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := ModUtil.pathEqual(inPath1, inPath2);
+end pathEqual;
 
 public function typeSpecEqual "
 Author BZ 2009-01
-Check wheter two type specs are equal or not.
-"
+Check wheter two type specs are equal or not."
   input TypeSpec a,b;
   output Boolean ob;
-algorithm ob := matchcontinue(a,b)
-  local
-    Path p1,p2;
-    Option<ArrayDim> oad1,oad2;
-    list<TypeSpec> lst1,lst2;
-  case(TPATH(p1,oad1), TPATH(p2,oad2))
-    equation
-      true = ModUtil.pathEqual(p1,p2);
-      true = optArrayDimEqual(oad1,oad2);
-    then true;
-  case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
-    equation
-      true = ModUtil.pathEqual(p1,p2);
-      true = Util.isListEqualWithCompareFunc(lst1,lst2,typeSpecEqual);
-      true = optArrayDimEqual(oad1,oad2);
+algorithm 
+  ob := matchcontinue(a,b)
+    local
+      Path p1,p2;
+      Option<ArrayDim> oad1,oad2;
+      list<TypeSpec> lst1,lst2;
+    case(TPATH(p1,oad1), TPATH(p2,oad2))
+      equation
+        true = ModUtil.pathEqual(p1,p2);
+        true = optArrayDimEqual(oad1,oad2);
+      then true;
+    case(TCOMPLEX(p1,lst1,oad1),TCOMPLEX(p2,lst2,oad2))
+      equation
+        true = ModUtil.pathEqual(p1,p2);
+        true = Util.isListEqualWithCompareFunc(lst1,lst2,typeSpecEqual);
+        true = optArrayDimEqual(oad1,oad2);
       then
         true;
-  case(_,_) then false;
-end matchcontinue;
+    case(_,_) then false;
+  end matchcontinue;
 end typeSpecEqual;
 
 public function optArrayDimEqual "
@@ -2193,14 +2203,12 @@ algorithm
 end pathPrefixOf;
 
 public function crefPrefixOf
-"
-  function: crefPrefixOf
+"function: crefPrefixOf
   Alternative names: crefIsPrefixOf, isPrefixOf, prefixOf
   Author: DH 2010-03
 
   Returns true if prefixCr is a prefix of cr, i.e., false otherwise.
-  Subscripts are NOT checked.
-"
+  Subscripts are NOT checked."
   input ComponentRef prefixCr;
   input ComponentRef cr;
   output Boolean out;
@@ -2222,15 +2230,20 @@ public function removePrefix "removes the prefix_path from path, and returns the
   output Path newPath;
 algorithm
   newPath := matchcontinue(prefix_path,path)
-  local Path p,p2; Ident id1,id2;
-    case (p,FULLYQUALIFIED(p2))
-      then removePrefix(p,p2);
-    case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) equation
-      equality(id1=id2);
-      then removePrefix(p,p2);
-      case(IDENT(id1),QUALIFIED(name=id2,path=p2)) equation
-        equality(id1=id2);
-        then p2;
+    local Path p,p2; Ident id1,id2;
+    // fullyqual path
+    case (p,FULLYQUALIFIED(p2)) then removePrefix(p,p2);
+    // qual
+    case (QUALIFIED(name=id1,path=p),QUALIFIED(name=id2,path=p2)) 
+      equation
+        true = stringEqual(id1, id2);
+      then 
+        removePrefix(p,p2);
+    // ids
+    case(IDENT(id1),QUALIFIED(name=id2,path=p2)) 
+      equation
+        true = stringEqual(id1, id2);
+      then p2;
   end matchcontinue;
 end removePrefix;
 
@@ -2251,27 +2264,30 @@ algorithm
     local
       Ident prefixIdent, ident;
       ComponentRef prefixRestCr, restCr;
+    // qual
     case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr)) 
       equation
-        equality(prefixIdent = ident);
-      then crefRemovePrefix(prefixRestCr, restCr);
+        true = stringEqual(prefixIdent, ident);
+      then 
+        crefRemovePrefix(prefixRestCr, restCr);
+    // id vs. qual
     case(CREF_IDENT(name = prefixIdent), CREF_QUAL(name = ident, componentRef = restCr)) 
       equation
-        equality(prefixIdent = ident);
+        true = stringEqual(prefixIdent, ident);
       then restCr;
+    // id vs. id
     case(CREF_IDENT(name = prefixIdent), CREF_IDENT(name = ident)) 
       equation
-        equality(prefixIdent = ident);
+        true = stringEqual(prefixIdent, ident);
       then CREF_IDENT("", {});
   end matchcontinue;
 end crefRemovePrefix;
 
 public function pathContains "
 Author BZ,
-checks if one Absyn.IDENT(..) is contained in path.
-"
-input Path p1,p2;
-output Boolean b;
+checks if one Absyn.IDENT(..) is contained in path."
+  input Path p1,p2;
+  output Boolean b;
 algorithm b := matchcontinue(p1,p2)
   local
     String str1,str2;
@@ -3427,28 +3443,26 @@ algorithm
 end setClassName;
 
 public function crefEqual "function: crefEqual
-  Checks if the name of a ComponentRef is
-  equal to the name of another ComponentRef, including subscripts.
- See also crefEqualNoSubs.
- "
+ Checks if the name of a ComponentRef is
+ equal to the name of another ComponentRef, including subscripts.
+ See also crefEqualNoSubs."
   input ComponentRef cr1;
   input ComponentRef cr2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (cr1,cr2)
+  outBoolean := matchcontinue (cr1,cr2)
     local
       Ident id,id2;
       list<Subscript> ss1,ss2;
     case (CREF_IDENT(name = id,subscripts=ss1),CREF_IDENT(name = id2,subscripts = ss2))
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
         true = subscriptsEqual(ss1,ss2);
       then
         true;
     case (CREF_QUAL(name = id,subScripts = ss1, componentRef = cr1),CREF_QUAL(name = id2,subScripts = ss2, componentRef = cr2))
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
         true = subscriptsEqual(ss1,ss2);
         true = crefEqual(cr1, cr2);
       then
@@ -3459,11 +3473,10 @@ end crefEqual;
 
 public function subscriptsEqual "
 Checks if two subscript lists are equal.
-See also crefEqual.
-"
-input list<Subscript> ss1;
-input list<Subscript> ss2;
-output Boolean equal;
+See also crefEqual."
+  input list<Subscript> ss1;
+  input list<Subscript> ss2;
+  output Boolean equal;
 algorithm
   equal := matchcontinue(ss1,ss2)
   local Exp e1,e2;
@@ -3477,25 +3490,24 @@ algorithm
 end subscriptsEqual;
 
 public function crefEqualNoSubs "
-  Checks if the name of a ComponentRef is
-  equal to the name of another ComponentRef without checking subscripts.
-  See also crefEqual."
+ Checks if the name of a ComponentRef is equal to the name 
+ of another ComponentRef without checking subscripts.
+ See also crefEqual."
   input ComponentRef cr1;
   input ComponentRef cr2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (cr1,cr2)
+  outBoolean := matchcontinue (cr1,cr2)
     local
       Ident id,id2;
     case (CREF_IDENT(name = id),CREF_IDENT(name = id2))
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
       then
         true;
     case (CREF_QUAL(name = id,componentRef = cr1),CREF_QUAL(name = id2,componentRef = cr2))
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
         true = crefEqualNoSubs(cr1, cr2);
       then
         true;
@@ -3508,8 +3520,7 @@ public function isPackageRestriction "function isPackageRestriction
   input Restriction inRestriction;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inRestriction)
+  outBoolean := matchcontinue (inRestriction)
     case (R_PACKAGE()) then true;
     case (_) then false;
   end matchcontinue;
@@ -3964,7 +3975,7 @@ algorithm
       case (id,{}) then false;
       case (id,(id1,_)::rest)
         equation
-          equality(id=id1);
+          true = stringEqual(id, id1);
         then true;
       case (id,(id1,_)::rest)
         equation
@@ -3979,19 +3990,19 @@ public function findIteratorInExpLst//This function is not tail-recursive, and I
   input list<Exp> inExpLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inExpLst)
+  outLst := matchcontinue(inString,inExpLst)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<Exp> rest;
       Exp exp;
-      case (id,{}) then {};
-      case (id,exp::rest)
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInExpLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+    case (id,{}) then {};
+    case (id,exp::rest)
+      equation
+        lst_1=findIteratorInExp(id,exp);
+        lst_2=findIteratorInExpLst(id,rest);
+        lst=listAppend(lst_1,lst_2);
+      then lst;
   end matchcontinue;
 end findIteratorInExpLst;
 
@@ -4000,19 +4011,19 @@ protected function findIteratorInExpLstLst//This function is not tail-recursive,
   input list<list<Exp>> inExpLstLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inExpLstLst)
+  outLst:=matchcontinue(inString,inExpLstLst)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<list<Exp>> rest;
       list<Exp> expLst;
-      case (id,{}) then {};
-      case (id,expLst::rest)
-        equation
-          lst_1=findIteratorInExpLst(id,expLst);
-          lst_2=findIteratorInExpLstLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+    case (id,{}) then {};
+    case (id,expLst::rest)
+      equation
+        lst_1=findIteratorInExpLst(id,expLst);
+        lst_2=findIteratorInExpLstLst(id,rest);
+        lst=listAppend(lst_1,lst_2);
+      then lst;
   end matchcontinue;
 end findIteratorInExpLstLst;
 
@@ -4021,23 +4032,24 @@ protected function findIteratorInNamedArgs
   input list<NamedArg> inNamedArgs;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inNamedArgs)
+  outLst := matchcontinue(inString,inNamedArgs)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       String id;
       list<NamedArg> rest;
       Exp exp;
-      case (id,{}) then {};
-      case (id,NAMEDARG(_,exp)::rest)
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInNamedArgs(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
+    case (id,{}) then {};
+    case (id,NAMEDARG(_,exp)::rest)
+      equation
+        lst_1=findIteratorInExp(id,exp);
+        lst_2=findIteratorInNamedArgs(id,rest);
+        lst=listAppend(lst_1,lst_2);
+      then lst;
   end matchcontinue;
 end findIteratorInNamedArgs;
 
-/*protected function findIteratorInForIteratorsBounds
+/*
+protected function findIteratorInForIteratorsBounds
   input String inString;
   input list<ForIterator> inForIterators;
   output list<tuple<ComponentRef, Integer>> outLst;
@@ -4070,29 +4082,29 @@ with the same name. It also returns information about whether it has found such 
   output Boolean outBool;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    (outBool,outLst):=matchcontinue(inString,inForIterators)
+  (outBool,outLst) := matchcontinue(inString,inForIterators)
     local
       list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
       Boolean bool;
       String id, id_1;
       list<ForIterator> rest;
       Exp exp;
-      case (_,{}) then (false,{});
-      case (id,(id_1,_)::_)
-        equation
-          equality(id=id_1);
-        then
-          (true,{});
-      case (id,(_,NONE)::rest)
-        equation
-          (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
-        then (bool,lst);
-      case (id,(_,SOME(exp))::rest)
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then (bool,lst);
+    case (_,{}) then (false,{});
+    case (id,(id_1,_)::_)
+      equation
+        true = stringEqual(id, id_1);
+      then
+        (true,{});
+    case (id,(_,NONE)::rest)
+      equation
+        (bool,lst)=findIteratorInForIteratorsBounds2(id,rest);
+      then (bool,lst);
+    case (id,(_,SOME(exp))::rest)
+      equation
+        lst_1=findIteratorInExp(id,exp);
+        (bool,lst_2)=findIteratorInForIteratorsBounds2(id,rest);
+        lst=listAppend(lst_1,lst_2);
+      then (bool,lst);
   end matchcontinue;
 end findIteratorInForIteratorsBounds2;
 
@@ -4101,17 +4113,17 @@ public function findIteratorInExp
   input Exp inExp;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inExp)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
-      String id;
-      Exp e_1,e_2,e_3;
-      list<Exp> expLst;
-      list<list<Exp>> expLstLst;
-      ComponentRef cref;
-      list<tuple<Exp, Exp>> elseIfBranch;
-      FunctionArgs funcArgs;
-      Option<Exp> expOpt;
+    outLst := matchcontinue(inString,inExp)
+      local
+        list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+        String id;
+        Exp e_1,e_2,e_3;
+        list<Exp> expLst;
+        list<list<Exp>> expLstLst;
+        ComponentRef cref;
+        list<tuple<Exp, Exp>> elseIfBranch;
+        FunctionArgs funcArgs;
+        Option<Exp> expOpt;
 
       case(id, CREF(cref))
         equation
@@ -4242,25 +4254,25 @@ protected function findIteratorInSubscripts
   input Integer inInt;
   output list<Integer> outIntLst;
 algorithm
-    outLst:=matchcontinue(inString,inSubLst,inInt)
+  outLst := matchcontinue(inString,inSubLst,inInt)
     local
       list<Integer> lst;
       Integer n, n_1;
       String id,name;
       list<Subscript> rest;
       Subscript sub;
-      case (_,{},_) then {};
-      case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
-        equation
-          equality(id=name);
-          n_1=n+1;
-          lst=findIteratorInSubscripts(id,rest,n_1);
-        then n::lst;
-      case (id,_::rest,n)
-        equation
-          n_1=n+1;
-          lst=findIteratorInSubscripts(id,rest,n_1);
-        then lst;
+    case (_,{},_) then {};
+    case (id,SUBSCRIPT(CREF(CREF_IDENT(name,{})))::rest,n)
+      equation
+        true = stringEqual(id, name);
+        n_1=n+1;
+        lst=findIteratorInSubscripts(id,rest,n_1);
+      then n::lst;
+    case (id,_::rest,n)
+      equation
+        n_1=n+1;
+        lst=findIteratorInSubscripts(id,rest,n_1);
+      then lst;
   end matchcontinue;
 end findIteratorInSubscripts;
 
@@ -4269,17 +4281,17 @@ protected function combineCRefAndIntLst
   input list<Integer> inIntLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inCRef,inIntLst)
+  outLst := matchcontinue(inCRef,inIntLst)
     local
       ComponentRef cref;
       list<Integer> rest;
       Integer i;
       list<tuple<ComponentRef, Integer>> lst;
-      case (_,{}) then {};
-      case (cref,i::rest)
-        equation
-          lst=combineCRefAndIntLst(cref,rest);
-        then (cref,i)::lst;
+    case (_,{}) then {};
+    case (cref,i::rest)
+      equation
+        lst=combineCRefAndIntLst(cref,rest);
+      then (cref,i)::lst;
   end matchcontinue;
 end combineCRefAndIntLst;
 
@@ -4289,18 +4301,18 @@ protected function qualifyCRefIntLst
   input list<tuple<ComponentRef, Integer>> inLst;
   output list<tuple<ComponentRef, Integer>> outLst;
 algorithm
-    outLst:=matchcontinue(inString,inSubLst,inLst)
+  outLst:=matchcontinue(inString,inSubLst,inLst)
     local
       ComponentRef cref;
       String name;
       list<Subscript> subLst;
       list<tuple<ComponentRef, Integer>> rest,lst;
       Integer i;
-      case (_,_,{}) then {};
-      case (name,subLst,(cref,i)::rest)
-        equation
-          lst=qualifyCRefIntLst(name,subLst,rest);
-        then (CREF_QUAL(name,subLst,cref),i)::lst;
+    case (_,_,{}) then {};
+    case (name,subLst,(cref,i)::rest)
+      equation
+        lst=qualifyCRefIntLst(name,subLst,rest);
+      then (CREF_QUAL(name,subLst,cref),i)::lst;
   end matchcontinue;
 end qualifyCRefIntLst;
 
@@ -4394,14 +4406,13 @@ public function importEqual "function: importEqual
   input Import im2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (im1,im2)
+  outBoolean := matchcontinue (im1,im2)
     local
       Ident id,id2;
       Path p1,p2;
     case (NAMED_IMPORT(name = id,path=p1),NAMED_IMPORT(name = id2,path=p2))
       equation
-        equality(id = id2);
+        true = stringEqual(id, id2);
         true = ModUtil.pathEqual(p1,p2);
       then
         true;
