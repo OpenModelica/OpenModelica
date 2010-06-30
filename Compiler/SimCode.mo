@@ -7547,6 +7547,27 @@ algorithm
   end matchcontinue;
 end printExpOptStrIfConst;
 
+public function makeCrefRecordExp
+"function: makeCrefRecordExp
+  Helper function to generate records."
+  input DAE.ComponentRef inCRefRecord;
+  input DAE.ExpVar inVar;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue (inCRefRecord,inVar)
+    local
+      DAE.ComponentRef cr,cr1;
+      String name;
+      DAE.ExpType tp;      
+    case (cr,DAE.COMPLEX_VAR(name=name,tp=tp))
+      equation
+        cr1 = Exp.extendCref(cr,tp,name,{});
+        outExp = Exp.makeCrefExp(cr1,tp);
+      then
+        outExp;
+  end matchcontinue;  
+end makeCrefRecordExp;
+
 /*****************************************************************************/
 /*                                                                           */
 /*                      END OF DIRTY SIMCODEGEN FUNCTIONS                    */

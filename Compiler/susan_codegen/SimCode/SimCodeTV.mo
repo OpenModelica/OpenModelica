@@ -322,6 +322,13 @@ package SimCode
     input Integer increment;
     output Integer outInt;
   end incrementInt;
+  
+  function makeCrefRecordExp
+    input DAE.ComponentRef inCRefRecord;
+    input DAE.ExpVar inVar;
+    output DAE.Exp outExp;
+  end makeCrefRecordExp;
+  
 end SimCode;
 
 

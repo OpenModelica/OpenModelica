@@ -3406,12 +3406,11 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
   match exp
   // A record cref without subscripts (i.e. a record instance) is handled
   // by daeExpRecordCrefRhs only in a simulation context, not in a function.
-  case CREF(componentRef = cr as CREF_IDENT(subscriptLst = {}),
-            ty = ET_COMPLEX(complexClassType = RECORD(path = _))) then
+  case CREF(componentRef = cr, ty = t as ET_COMPLEX(complexClassType = RECORD(path = _))) then
     match context case FUNCTION_CONTEXT(__) then
       daeExpCrefRhs2(exp, context, preExp, varDecls)
     else
-      daeExpRecordCrefRhs(cr, context, preExp, varDecls)
+      daeExpRecordCrefRhs(t, cr, context, preExp, varDecls)
   case CREF(componentRef = cr, ty = DAE.ET_FUNCTION_REFERENCE_FUNC(__)) then
     '(modelica_fnptr)boxptr_<%functionName(cr)%>'
   else daeExpCrefRhs2(exp, context, preExp, varDecls)
@@ -3489,7 +3488,8 @@ template daeExpCrefRhsArrayBox(Exp exp, Context context, Text &preExp /*BUFP*/,
 ::=
 match exp
 case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
-  match context case SIMULATION(__) then
+  match context 
+  case SIMULATION(__) then 
     // For context simulation array variables must be boxed into a real_array
     // object since they are represented only in a double array.
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFC*/)
@@ -3497,27 +3497,29 @@ case cref as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     let dimsValuesStr = (dims |> dim as SOME(i) => i ;separator=", ")
     let &preExp += '<%expTypeShort(aty)%>_array_create(&<%tmpArr%>, &<%arrayCrefCStr(cref.componentRef)%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     tmpArr
+  case OTHER(__) then 
+    // For context other array variables must be boxed into a real_array
+    // object since they are represented only in a double array.
+    let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFC*/)
+    let dimsLenStr = listLength(dims)
+    let dimsValuesStr = (dims |> dim as SOME(i) => i ;separator=", ")
+    let &preExp += '<%expTypeShort(aty)%>_array_create(&<%tmpArr%>, &<%arrayCrefCStr(cref.componentRef)%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
+    tmpArr    
 end daeExpCrefRhsArrayBox;
 
 
-template daeExpRecordCrefRhs(ComponentRef cr, Context context, Text &preExp /*BUFP*/,
+template daeExpRecordCrefRhs(DAE.ExpType ty, ComponentRef cr, Context context, Text &preExp /*BUFP*/,
                        Text &varDecls /*BUFP*/)
 ::=
-match cr
-case CREF_IDENT(identType = DAE.ET_COMPLEX(name = record_path, varLst = var_lst)) then
-  let record_name = cref(cr)
+match ty
+case DAE.ET_COMPLEX(name = record_path, varLst = var_lst) then
+  let vars = (var_lst |> v => '<%daeExp(makeCrefRecordExp(cr,v), context, &preExp /*BUFC*/, &varDecls /*BUFC*/)%>' ;separator=", ")
   let record_type_name = underscorePath(record_path)
   let ret_type = '<%record_type_name%>_rettype'
   let ret_var = tempDecl(ret_type, &varDecls)
-  let vars = (var_lst |> v => daeExpRecordMemberCref(v, record_name) ;separator=", ")
   let &preExp += '<%ret_var%> = _<%record_type_name%>(<%vars%>);<%\n%>'
   '<%ret_var%>.<%ret_type%>_1'
 end daeExpRecordCrefRhs;
-
-template daeExpRecordMemberCref(ExpVar var, Text recordName)
-::=
-match var case COMPLEX_VAR(name = var_name) then '<%recordName%>$P<%var_name%>'
-end daeExpRecordMemberCref;
 
 template daeExpBinary(Exp exp, Context context, Text &preExp /*BUFP*/,
                       Text &varDecls /*BUFP*/)
