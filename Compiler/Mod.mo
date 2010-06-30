@@ -2174,6 +2174,36 @@ algorithm str := matchcontinue(inSubs,depth)
 end matchcontinue;
 end prettyPrintSubs;
 
+public function prettyPrintSubmod "
+Prints a readable format of a sub-modifier, used in error reporting for built-in classes"
+  input DAE.SubMod inSub;
+  output String str;
+algorithm str := matchcontinue(inSub)
+  local
+    String s1,s2,id;
+    DAE.Mod m;
+    list<Integer> li;
+  case(DAE.NAMEMOD(id,(m as DAE.REDECL(finalPrefix=_))))
+    equation
+      s2 = " redeclare(" +& id +&  ")";
+    then
+      s2;
+  case(DAE.NAMEMOD(id,m))
+    equation
+      s2  = prettyPrintMod(m,0);
+      s2 = Util.if_(stringLength(s2) == 0, ""," = " +& s2);
+      s2 = id +& s2;
+    then
+      s2;
+  case(DAE.IDXMOD(li,m))
+    equation
+      s2  = prettyPrintMod(m,0);
+      s1 = "["+& Util.stringDelimitList(Util.listMap(li,intString),",")+&"]" +& " = " +& s2;
+    then
+      s1;
+end matchcontinue;
+end prettyPrintSubmod;
+
 public function printSubs1Str "function: printSubs1Str
   Helper function to printModStr"
   input list<DAE.SubMod> inTypesSubModLst;

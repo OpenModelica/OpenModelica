@@ -3176,7 +3176,7 @@ algorithm
         (cache,dimp,DAE.PROP(_,c1),_,dae1) = elabExp(cache, env, dim, impl, NONE, true)  ;
         (cache,arraycrefe,DAE.PROP(arrtp,_),_,dae2) = elabExp(cache, env, arraycr, impl, NONE, true);
         c2 = Types.dimensionsKnown(arrtp);
-        c2_1 = Types.boolConst(c2);
+        c2_1 = Types.boolConstSize(c2);
         c = Types.constAnd(c1, c2_1);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -3189,7 +3189,7 @@ algorithm
       equation
         (cache,arraycrefe,DAE.PROP(arrtp,_),_,dae1) = elabExp(cache,env, arraycr, impl, NONE,true)  ;
         c = Types.dimensionsKnown(arrtp);
-        c_1 = Types.boolConst(c);
+        c_1 = Types.boolConstSize(c);
         exp = DAE.SIZE(arraycrefe,NONE);
       then
         (cache,exp,DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_INTEGER_DEFAULT),NONE),c_1),dae1);

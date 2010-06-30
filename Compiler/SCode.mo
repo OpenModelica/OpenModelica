@@ -2271,6 +2271,22 @@ algorithm
     {"quantity", "min", "max", "start", "fixed"});
 end isValidEnumLiteral;
 
+public function variabilityOr 
+"returns the more constant of two Variabilities (considers VAR < DISCRETE < PARAM < CONST ), similarly to Types.constOr"
+  input Variability inConst1;
+  input Variability inConst2;
+  output Variability outConst;
+algorithm
+outConst := matchcontinue(inConst1, inConst2)
+  case (CONST,_) then CONST;   
+  case (_,CONST) then CONST;   
+  case (PARAM,_) then PARAM;   
+  case (_,PARAM) then PARAM;   
+  case (DISCRETE,_) then DISCRETE;   
+  case (_,DISCRETE) then DISCRETE;
+  case (_,_) then VAR;
+  end matchcontinue;
+end variabilityOr;           
 
 end SCode;
 

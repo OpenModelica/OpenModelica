@@ -2068,7 +2068,7 @@ algorithm
     case(cache,env,( mym as DAE.MOD(f,e,smod::submods,eqmod)),pre)
       local String s1; DAE.SubMod smod; DAE.Mod mym;
       equation
-        s1 = Mod.prettyPrintMod(mym,0) +& ", not found in the built-in class Real";
+        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Real";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
@@ -2125,7 +2125,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod;
       equation
-        s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class Integer";
+        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Integer";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
@@ -2161,7 +2161,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod;
       equation
-        s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class String";
+        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class String";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
@@ -2202,7 +2202,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod;
       equation
-        s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class Boolean";
+        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Boolean";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
@@ -2253,7 +2253,7 @@ algorithm
     case(cache,env,DAE.MOD(f,e,smod::submods,eqmod),pre)
       local String s1; DAE.SubMod smod;
       equation
-        s1 = Mod.prettyPrintMod(mods,0) +& ", not found in the built-in class Enumeration";
+        s1 = Mod.prettyPrintSubmod(smod) +& ", not processed in the built-in class Enumeration";
         Error.addMessage(Error.UNUSED_MODIFIER,{s1});
       then fail();
     case(cache,env,DAE.MOD(f,e,{},eqmod),pre) then {};
@@ -2277,26 +2277,38 @@ algorithm
   var := matchcontinue(cache,env,id,optVal,bind,expectedTp,bindProp)
     local
       Values.Value v; DAE.Type t_1,bindTp; DAE.Exp bind1;
+      DAE.Const c;
 
-    case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,_))
+    case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,c))
       equation
+        failure(equality(c=DAE.C_VAR));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
         false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()),NONE());
 
-    case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_))
+    case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
+        failure(equality(c=DAE.C_VAR));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()),NONE());
 
-    case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_))
+    case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
-         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
+        failure(equality(c=DAE.C_VAR));
+        (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM()),NONE());
 
+    case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
+      local String s;
+      equation
+        equality(c=DAE.C_VAR);
+        s = Exp.printExpStr(bind);
+        Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
+      then fail();  
+      
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_)) local String s1,s2;
       equation
         failure((_,_) = Types.matchType(bind,bindTp,expectedTp,true));
@@ -6759,7 +6771,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        eOpt = makeVariableBinding(ty,mod);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_CONST,pre,n);
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,source,false);
         dae = DAEUtil.joinDaes(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -6785,7 +6797,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        eOpt = makeVariableBinding(ty,mod);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_PARAM,pre,n);
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
@@ -6831,7 +6843,7 @@ algorithm
         //Debug.fprint("insttrind", "\n ******************\n ");
         //Debug.fprint("insttrind", "\n ");
         start = instStartBindingExp(mod, ty, idxs_1);
-        eOpt = makeVariableBinding(ty,mod);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_VAR,pre,n);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA);
         // adrpo: we cannot check this here as:
@@ -6943,21 +6955,65 @@ If the type is not externa object, the normal binding value is bound,
 Unless it is a complex var that not inherites a basic type. In that case DAE.Equation are generated."
   input DAE.Type tp;
   input DAE.Mod mod;
+  input DAE.Const const;
+  input Prefix.Prefix pre;
+  input Ident name;
   output Option<DAE.Exp> eOpt;
-algorithm eOpt := matchcontinue(tp,mod)
-  local DAE.Exp e,e1;DAE.Properties p;
+algorithm eOpt := matchcontinue(tp,mod,const,pre,name)
+  local 
+    DAE.Exp e,e1;DAE.Properties p;
+    DAE.Const c,c1;
+    Ident n;
+    Prefix.Prefix pr;
   case ((DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
-    DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_))))
+    DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_))),_,_,_)
     then SOME(e);
-  case(tp,mod)
+  case(tp,mod,c,pr,n)
     equation
       SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
-      (e1,_) = Types.matchProp(e,p,DAE.PROP(tp,DAE.C_VAR()),true);
+      (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
+      checkHigherVariability(c,c1,pr,n,e);
     then
       SOME(e1);
-  case (_,_) then NONE;
+  case (_,mod,_,_,_)
+    equation
+      failure(SOME(DAE.TYPED(_,_,_,_)) = Mod.modEquation(mod));
+    then NONE;
 end matchcontinue;
 end makeVariableBinding;
+
+protected function checkHigherVariability 
+"If the binding expression has higher variability that the component, generates an error.
+Helper to makeVariableBinding. Author -- alleb" 
+  input DAE.Const compConst;
+  input DAE.Const bindConst;
+  input Prefix.Prefix pre;
+  input Ident name;
+  input DAE.Exp binding;
+algorithm 
+  _ := matchcontinue(compConst,bindConst,pre,name,binding)
+  local
+    DAE.Const c,c1;
+    Prefix.Prefix p;
+    Ident n;
+    String sc,sc1,se,sn;
+    DAE.Exp e;
+  case (c,c1,_,_,_)
+    equation
+      equality(c=c1);
+    then ();
+  // Since c1 is generated by Types.matchProp, it can not be lower that c, so no need to check that it is higher            
+  case (c,c1,pre,n,e)
+    equation
+      sn = PrefixUtil.printPrefixStr2(pre)+&n;
+      sc = DAEUtil.constStr(c);
+      sc1 = DAEUtil.constStr(c1);
+      se = Exp.printExpStr(e);
+      Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{sn,sc,se,sc1});
+    then
+      fail();
+  end matchcontinue;
+end checkHigherVariability;        
 
 public function makeArrayType
 "function: makeArrayType

@@ -4730,6 +4730,22 @@ algorithm
   end matchcontinue;
 end boolConst;
 
+public function boolConstSize "function: boolConstSize
+  author: alleb
+  
+  A version of boolConst supposed to be used by Static.elabBuiltinSize.
+  Creates a Const value from a bool. If true, C_CONST,
+  if false C_PARAM."
+  input Boolean inBoolean;
+  output Const outConst;
+algorithm
+  outConst:=
+  matchcontinue (inBoolean)
+    case (false) then DAE.C_PARAM();
+    case (true) then DAE.C_CONST();
+  end matchcontinue;
+end boolConstSize;
+
 public function printPropStr "function: printPropStr
   Print the properties to a string."
   input Properties inProperties;

@@ -213,6 +213,7 @@ public constant ErrorID NESTED_WHEN=125;
 public constant ErrorID INVALID_ENUM_LITERAL=126;
 public constant ErrorID UNEXCPECTED_FUNCTION_INPUTS_WARNING=127;
 public constant ErrorID DUPLICATE_CLASSES_NOT_EQUIVALENT=128;
+public constant ErrorID HIGHER_VARIABILITY_BINDING=129;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -532,6 +533,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal derivative. der(%s) where %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
           "Identificator %s of implicit for iterator must be present as array subscript in the loop body."),
+          (HIGHER_VARIABILITY_BINDING(),TRANSLATION(),ERROR(),
+          "Component %s of variability %s has binding %s of higher variability %s."),
           
           (INCOMPATIBLE_TYPES_FUNC,SYMBOLIC(),ERROR(),
           "While deriving %s to %s, types of inputs: %s and type of %s: %s did not match"),

@@ -2470,7 +2470,7 @@ algorithm
       String n,id;
       Boolean f,streamPrefix;
       SCode.Accessibility acc;
-      SCode.Variability vt;
+      SCode.Variability vt,vt2;
       Absyn.Direction di;
       tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1,idTp;
       DAE.Binding bind,binding,binding2;
@@ -2512,12 +2512,12 @@ algorithm
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       local Types.Type idTp;
       equation 
-        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(_,_,_,vt2,_,_),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         // outer variables are not local!
         // this doesn't work yet!
         // false = Absyn.isOuter(io);
         //
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv) = lookupVar(cache, componentEnv, ids);
         (tCref::ltCref) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
@@ -2526,17 +2526,19 @@ algorithm
         xCref = DAE.CREF_QUAL(id,ty2_2,ss,tCref);
         eType = Types.elabType(ty);
         splicedExp = DAE.CREF(xCref,eType);
+        vt = SCode.variabilityOr(vt,vt2);
       then
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv);
+        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty,binding,cnstForRange,SPLICEDEXPDATA(SOME(splicedExp),idTp),componentEnv);
 
     // Qualified componentname without spliced exp.
     case (cache,ht,xCref as (DAE.CREF_QUAL(ident = id,subscriptLst = ss,componentRef = ids)))
       equation
-        (cache,DAE.TYPES_VAR(n,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv) = lookupVar(cache, componentEnv, ids);
+        (cache,DAE.TYPES_VAR(n,DAE.ATTR(_,_,_,vt2,_,_),_,ty2,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
+        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty,binding,cnstForRange,SPLICEDEXPDATA(texp,idTp),_,componentEnv) = lookupVar(cache, componentEnv, ids);
         {} = elabComponentRecursive((texp));
+        vt = SCode.variabilityOr(vt,vt2);
       then
-        (cache,attr,ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp),componentEnv);
+        (cache,DAE.ATTR(f,streamPrefix,acc,vt,di,io),ty,binding,cnstForRange,SPLICEDEXPDATA(NONE(),idTp),componentEnv);
   end matchcontinue;
 end lookupVarF;
 
