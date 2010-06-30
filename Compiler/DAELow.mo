@@ -12177,6 +12177,7 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   list<Var> dlowVars;
 algorithm
   dlowVars := varList(vars);
+  dlowVars := listReverse(dlowVars);
   res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp, dlowVars);
 end calculateJacobianRows;
 
@@ -12275,7 +12276,7 @@ algorithm
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(t),e2);
         cr = varCref(v);
         subs = Exp.crefLastSubs(cr);
-        new_exp = Exp.applyExpSubscripts(new_exp,subs);        
+        new_exp = Exp.applyExpSubscripts(new_exp,subs); 
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
