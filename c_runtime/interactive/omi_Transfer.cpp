@@ -296,7 +296,7 @@ void doTransfer(long nStates, long nAlgebraic, long nParameters) {
 		//if(debugTransfer) cout << "SimResDataForw_from_Transfer address: " << p_SimResDataForw_from_Transfer << endl;
 		//printSSDTransfer(nStates, nAlgebraic, nParameters);
 		sendMessageToClientGUI(nStates, nAlgebraic, nParameters);
-		delay(get_stepSize() * 1000); //TODO 20100427 pv The sending frequency should depend on the real time, **soft real time
+		delay((unsigned int)(get_stepSize() * 1000)); //TODO 20100427 pv The sending frequency should depend on the real time, **soft real time
 	}
 }
 
