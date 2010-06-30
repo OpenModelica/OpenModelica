@@ -229,9 +229,8 @@ algorithm
   outTypeALst:= listFill_tail(inTypeA, inInteger, {});
 end listFill;
 
-public function isEqual "Function: isEqual
-this function does equal(e1,e2) and returns true if it succedes.
-"
+public function isEqual "function: isEqual
+this function does equal(e1,e2) and returns true if it succedes."
   input Type_a input1;
   input Type_a input2;
   output Boolean isequal;
@@ -245,9 +244,8 @@ algorithm isequal := matchcontinue(input1,input2)
   end matchcontinue;
 end isEqual;
 
-public function isListEqual "Function: isEqual
-this function does equal(e1,e2) and returns true if it succedes.
-"
+public function isListEqual "function: isListEqual
+this function does equal(e1,e2) and returns true if it succedes."
   input list<Type_a> input1;
   input list<Type_a> input2;
   input Boolean equalLength;
@@ -269,13 +267,9 @@ algorithm isequal := matchcontinue(input1,input2,equalLength)
   end matchcontinue;
 end isListEqual;
 
-public function isListEmpty
-"
-  function: isListEmpty
+public function isListEmpty "function: isListEmpty
   Author: DH 2010-03
-  
-  Returns true if the given list is empty, false otherwise.
-" 
+  Returns true if the given list is empty, false otherwise." 
   input list<Type_a> inList;
   output Boolean out;
   replaceable type Type_a subtypeof Any;
@@ -308,8 +302,7 @@ end assertListEmpty;
 public function listFindWithCompareFunc "
 Author BZ 2009-04
 Search list for a provided element using the provided function.
-Return the index of the element if found, otherwise fail.
-"
+Return the index of the element if found, otherwise fail."
   input list<Type_a> input1;
   input Type_a input2;
   input compareFunc cmpFunc;
@@ -646,19 +639,18 @@ algorithm
 end listStripLast;
 
 public function listContains "function: listContains
-Checks wheter a list contains a value or not.
-"
+Checks wheter a list contains a value or not."
   input Type_a ele;
   input list<Type_a> elems;
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
 algorithm
-  contains:=
-  matchcontinue (ele,elems)
+  contains := matchcontinue (ele,elems)
     local
       Type_a a,b;
       list<Type_a> rest;
       Boolean bool;
+    
     case (_,{}) then false;
     case (a,b::rest)
       equation
@@ -674,15 +666,13 @@ algorithm
 end listContains;
 
 public function listNotContains "function: listNotContains
-Checks wheter a list contains a value or not.
-"
+Checks wheter a list contains a value or not."
   input Type_a ele;
   input list<Type_a> elems;
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
 algorithm
-  contains:=
-  matchcontinue (ele,elems)
+  contains := matchcontinue (ele,elems)
     local
       Type_a a,b;
       list<Type_a> rest;
@@ -702,8 +692,7 @@ algorithm
 end listNotContains;
 
 public function listContainsWithCompareFunc "function: listContains
-Checks wheter a list contains a value or not.
-"
+Checks wheter a list contains a value or not."
   input Type_a ele;
   input list<Type_a> elems;
   input compareFunc f;
@@ -715,8 +704,7 @@ Checks wheter a list contains a value or not.
   output Boolean contains;
   replaceable type Type_a subtypeof Any;
 algorithm
-  contains:=
-  matchcontinue (ele,elems,f)
+  contains := matchcontinue (ele,elems,f)
     local
       Type_a a,b;
       list<Type_a> rest;
@@ -745,8 +733,7 @@ public function listStripFirst "function: listStripLast
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALst)
+  outTypeALst := matchcontinue (inTypeALst)
     local
       Type_a a;
       list<Type_a> lstTmp,lst;
@@ -769,7 +756,6 @@ algorithm
   outTypeALst:= listFlatten_tail(inTypeALstLst, {});
 end listFlatten;
 
-
 public function listFlatten_tail
 "function: listFlatten_tail
  tail recursive helper to listFlatten"
@@ -778,8 +764,7 @@ public function listFlatten_tail
   output list<Type_a> outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALstLst, accTypeALst)
+  outTypeALst := matchcontinue (inTypeALstLst, accTypeALst)
     local
       list<Type_a> r_1,l,f;
       list<list<Type_a>> r;
@@ -2882,8 +2867,7 @@ protected function listPos "helper function to listPosition"
   output Integer outInteger;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outInteger:=
-  matchcontinue (inTypeA,inTypeALst,inInteger)
+  outInteger := matchcontinue (inTypeA,inTypeALst,inInteger)
     local
       Type_a x,y,i;
       list<Type_a> ys;
@@ -2915,8 +2899,7 @@ public function listGetMember "function: listGetMember
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeA:=
-  matchcontinue (inTypeA,inTypeALst)
+  outTypeA := matchcontinue (inTypeA,inTypeALst)
     local
       Type_a x,y,res;
       list<Type_a> ys;
@@ -2955,29 +2938,32 @@ algorithm
   outLst := matchcontinue(lst,positions,n)
   local Type_a l; Integer p;
     case(lst,{},n) then lst;
-    case(l::lst,p::positions,n) equation
-      true = p == n "remove";
-      positions = removeMatchesFirst(positions,n) "allows duplicate position elements";
-      lst = listDeletePositionsSorted2(lst,positions,n+1);
-    then lst;
-    case(l::lst,positions as (p::_),n) equation
-      false = p == n "keep";
-      lst = listDeletePositionsSorted2(lst,positions,n+1);
-    then l::lst;
+    case(l::lst,p::positions,n) 
+      equation
+        true = p == n "remove";
+        positions = removeMatchesFirst(positions,n) "allows duplicate position elements";
+        lst = listDeletePositionsSorted2(lst,positions,n+1);
+      then lst;
+    case(l::lst,positions as (p::_),n) 
+      equation
+        false = p == n "keep";
+        lst = listDeletePositionsSorted2(lst,positions,n+1);
+      then l::lst;
   end matchcontinue;
 end listDeletePositionsSorted2;
 
 protected function removeMatchesFirst "removes all matching elements that occur first in list. If first element doesn't match, return"
-input list<Integer> lst;
-input Integer n;
-output list<Integer> outLst;
+  input list<Integer> lst;
+  input Integer n;
+  output list<Integer> outLst;
 algorithm
   outLst := matchcontinue(lst,n)
-  local Integer l;
-    case(l::lst,n) equation
-      true = l == n;
-      lst=removeMatchesFirst(lst,n);
-    then lst;
+    local Integer l;
+    case(l::lst,n) 
+      equation
+        true = l == n;
+        lst = removeMatchesFirst(lst,n);
+      then lst;
     case(lst,n) then lst;
   end matchcontinue;
 end removeMatchesFirst;
@@ -2985,8 +2971,7 @@ end removeMatchesFirst;
 public function listDeletePositions "Takes a list and a list of positions and deletes the positions from the list.
 Note that positions are indexed from 0..n-1
 
-For example listDeletePositions({1,2,3,4,5},{2,0,3}) => {2,5}
-"
+For example listDeletePositions({1,2,3,4,5},{2,0,3}) => {2,5}"
   input list<Type_a> lst;
   input list<Integer> positions;
   output list<Type_a> outLst;
@@ -3249,8 +3234,7 @@ end listUnionEltOnTrue;
 
 public function equal "
 This function is intended to be a replacement for equality,
-when sending function as an input argument.
-"
+when sending function as an input argument."
   input Type_a arg1;
   input Type_a arg2;
   output Boolean b;
@@ -3651,22 +3635,20 @@ algorithm
 end listSetDifferenceOnTrue;
 
 public function listSetDifference "
-  Takes two lists and returns the set difference of the two lists A-B.
-  Example:
-    listSetDifferenceOnTrue({\"a\",\"b\",\"c\"},{\"a\",\"c\"}) => {\"b\"}
-    comparisons is done using the builtin equality mechanism.
-    "
+ Takes two lists and returns the set difference of the two lists A-B.
+ Example:
+   listSetDifferenceOnTrue({\"a\",\"b\",\"c\"},{\"a\",\"c\"}) => {\"b\"}
+   comparisons is done using the builtin equality mechanism."
   input list<Type_a> A;
   input list<Type_a> B;
-
   output list<Type_a> res;
   replaceable type Type_a subtypeof Any;
 algorithm
-  res :=
-  matchcontinue (A,B)
+  res := matchcontinue (A,B)
     local
       list<Type_a> a,a_1,a_2,xs;
       Type_a x1;
+    
     case (a,{}) then a;  /* A B */
     case (a,(x1 :: xs))
       equation
@@ -3696,8 +3678,7 @@ public function listListUnionOnTrue "function: listListUnionOnTrue
     output Boolean outBoolean;
   end FuncTypeType_aType_aToBoolean;
 algorithm
-  outTypeALst:=
-  matchcontinue (inTypeALstLst,inFuncTypeTypeATypeAToBoolean)
+  outTypeALst := matchcontinue (inTypeALstLst,inFuncTypeTypeATypeAToBoolean)
     local
       FuncTypeType_aType_aToBoolean p;
       list<Type_a> x,r1,res,x1,x2;
@@ -4202,32 +4183,32 @@ end splitTuple2List;
 public function filterList "
 Author BZ
 Taking a list of a generic type and a integer list which are the positions
-we are sopposed to remove. The final position is the offset, where to start from(normal = 0 ).
-"
+we are supposed to remove. The final position is the offset, where to start from(normal = 0 )."
   input list<Type_a> lst;
   input list<Integer> positions;
   input Integer pos;
   output list<Type_a> outList;
   replaceable type Type_a subtypeof Any;
-algorithm outList := matchcontinue(lst,positions,pos)
-  local
-    list<Type_a> tail,res;
-    Type_a head;
-    Integer x;
-    list<Integer> xs;
-  case({},_,_) then {};
-  case(lst,{},_) then lst;
-  case(head::tail,x::xs,pos)
-    equation
-    equality(x=pos);
-    res = filterList(tail,xs,pos+1);
-    then
-      res;
-  case(head::tail,x::xs,pos)
-    equation
-    res = filterList(tail,x::xs,pos+1);
-    then
-      head::res;
+algorithm 
+  outList := matchcontinue(lst,positions,pos)
+    local
+      list<Type_a> tail,res;
+      Type_a head;
+      Integer x;
+      list<Integer> xs;
+    case({},_,_) then {};
+    case(lst,{},_) then lst;
+    case(head::tail,x::xs,pos)
+      equation
+        equality(x=pos);
+        res = filterList(tail,xs,pos+1);
+      then
+        res;
+    case(head::tail,x::xs,pos)
+      equation
+        res = filterList(tail,x::xs,pos+1);
+      then
+        head::res;
 end matchcontinue;
 end filterList;
 
@@ -4235,16 +4216,14 @@ public function if_ "function: if_
   Takes a boolean and two values.
   Returns the first value (second argument) if the boolean value is
   true, otherwise the second value (third argument) is returned.
-  Example: if_(true,\"a\",\"b\") => \"a\"
-"
+  Example: if_(true,\"a\",\"b\") => \"a\""
   input Boolean inBoolean1;
   input Type_a inTypeA2;
   input Type_a inTypeA3;
   output Type_a outTypeA;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outTypeA:=
-  matchcontinue (inBoolean1,inTypeA2,inTypeA3)
+  outTypeA := matchcontinue (inBoolean1,inTypeA2,inTypeA3)
     local Type_a r;
     case (true,r,_) then r;
     case (false,_,r) then r;
@@ -4506,21 +4485,22 @@ protected function stringReplaceChar2
   input String inString3;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inStringLst1,inString2,inString3)
+  outStringLst := matchcontinue (inStringLst1,inString2,inString3)
     local
       list<String> res,rest,strList, charList2;
       String firstChar,fromChar,toChar;
+    
     case ({},_,_) then {};
     case ((firstChar :: rest),fromChar,"") // added special case for removal of char.
       equation
-        equality(firstChar = fromChar);
+        true = stringEqual(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, "");
       then
         (res);
+    
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        equality(firstChar = fromChar);
+        true = stringEqual(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
         charList2 = string_list_string_char(toChar);
         res = listAppend(charList2,res);
@@ -4529,10 +4509,11 @@ algorithm
 
     case ((firstChar :: rest),fromChar,toChar)
       equation
-        failure(equality(firstChar = fromChar));
+        false = stringEqual(firstChar, fromChar);
         res = stringReplaceChar2(rest, fromChar, toChar);
       then
         (firstChar :: res);
+    
     case (strList,_,_)
       equation
         print("- Util.stringReplaceChar2 failed\n");
@@ -4548,8 +4529,7 @@ public function stringSplitAtChar "function stringSplitAtChar
   input String inString2;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inString1,inString2)
+  outStringLst := matchcontinue (inString1,inString2)
     local
       list<String> chrList;
       list<String> stringList;
@@ -4571,22 +4551,23 @@ protected function stringSplitAtChar2
   input list<String> inStringLst3;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inStringLst1,inString2,inStringLst3)
+  outStringLst := matchcontinue (inStringLst1,inString2,inStringLst3)
     local
       list<String> chr_rest_1,chr_rest,chrList,rest,strList;
       String res;
       list<String> res_str;
       String firstChar,chr;
+    
     case ({},_,chr_rest)
       equation
         chr_rest_1 = listReverse(chr_rest);
         res = string_char_list_string(chr_rest_1);
       then
         {res};
+    
     case ((firstChar :: rest),chr,chr_rest)
       equation
-        equality(firstChar = chr);
+        true = stringEqual(firstChar, chr);
         chrList = listReverse(chr_rest) "this is needed because it returns the reversed list" ;
         res = string_char_list_string(chrList);
         res_str = stringSplitAtChar2(rest, chr, {});
@@ -4595,7 +4576,7 @@ algorithm
     case ((firstChar :: rest),chr,chr_rest)
       local list<String> res;
       equation
-        failure(equality(firstChar = chr));
+        false = stringEqual(firstChar, chr);
         res = stringSplitAtChar2(rest, chr, (firstChar :: chr_rest));
       then
         res;
