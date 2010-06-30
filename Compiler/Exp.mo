@@ -552,13 +552,13 @@ algorithm
       Boolean b;
     case (DAE.CREF(componentRef=cr))
       equation
-        ty = crefLastType(cr);
         cr_1 = crefStripLastIdent(cr);
+        ty = crefLastType(cr_1);
       then DAE.CREF(cr_1,ty);
     case (DAE.UNARY(operator=op,exp=e))
       equation
-        ty = typeof(e);
         e_1 = expStripLastIdent(e);
+        ty = typeof(e_1);
         b = DAEUtil.expTypeArray(ty);
         op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
       then DAE.UNARY(op1,e_1);
