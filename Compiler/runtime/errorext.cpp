@@ -176,6 +176,7 @@ extern "C"
     	errorMessageQueue.pop();
     }
   }
+
   RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
   {
 	  char* id = RML_STRINGDATA(rmlA0);
@@ -186,6 +187,7 @@ extern "C"
 	  RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+
   RML_BEGIN_LABEL(ErrorExt__delCheckpoint)
   {
 	  char* id = RML_STRINGDATA(rmlA0);
@@ -211,6 +213,7 @@ extern "C"
 	  RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+
   RML_BEGIN_LABEL(ErrorExt__rollBack)
   {
 	  char* id = RML_STRINGDATA(rmlA0);
@@ -248,18 +251,21 @@ extern "C"
 	  RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+
   RML_BEGIN_LABEL(ErrorExt__errorOn)
   {
     error_on = true;
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+
   RML_BEGIN_LABEL(ErrorExt__errorOff)
   {
     error_on = false;
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+
   /* Function to give feedback to the user on which component the error is "on" */
   RML_BEGIN_LABEL(ErrorExt__updateCurrentComponent)
   {
@@ -274,9 +280,9 @@ extern "C"
 	RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
+
   RML_BEGIN_LABEL(ErrorExt__addMessage)
   {
-
     int errorID = RML_UNTAGFIXNUM(rmlA0);
     char* tp = RML_STRINGDATA(rmlA1);
     char* severity = RML_STRINGDATA(rmlA2);
