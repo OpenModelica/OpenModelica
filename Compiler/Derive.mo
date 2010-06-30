@@ -1008,12 +1008,26 @@ algorithm
       then
         DAE.BINARY(e1_1,DAE.ADD(tp),e2_1);
 
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = tp),exp2 = e2),tv,differentiateIfExp)
+      equation
+        e1_1 = differentiateExp(e1, tv,differentiateIfExp);
+        e2_1 = differentiateExp(e2, tv,differentiateIfExp);
+      then
+        DAE.BINARY(e1_1,DAE.ADD_ARR(tp),e2_1);        
+
     case (DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = tp),exp2 = e2),tv,differentiateIfExp)
       equation
         e1_1 = differentiateExp(e1, tv,differentiateIfExp);
         e2_1 = differentiateExp(e2, tv,differentiateIfExp);
       then
         DAE.BINARY(e1_1,DAE.SUB(tp),e2_1);
+
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = tp),exp2 = e2),tv,differentiateIfExp)
+      equation
+        e1_1 = differentiateExp(e1, tv,differentiateIfExp);
+        e2_1 = differentiateExp(e2, tv,differentiateIfExp);
+      then
+        DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);
 
     case (DAE.BINARY(exp1 = (e1 as DAE.CREF(componentRef = cr)),operator = DAE.POW(ty = tp),exp2 = e2),tv,differentiateIfExp) /* ax^(a-1) */
       equation

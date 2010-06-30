@@ -3250,6 +3250,13 @@ algorithm
         true = Exp.isZero(e);
       then
         (e1,e2,src);
+    case (EQUATION(DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),e,src),false)
+      equation
+        true = RTOpts.eliminationLevel() > 0;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then
+        (e1,e2,src);        
     	// a-b = 0 swap
     case (EQUATION(DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB(_),e2 as DAE.CREF(_,_)),e,src),true)
       equation
@@ -3258,6 +3265,13 @@ algorithm
         true = Exp.isZero(e);
       then
         (e2,e1,src);
+    case (EQUATION(DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),e,src),true)
+      equation
+        true = RTOpts.eliminationLevel() > 0;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then
+        (e2,e1,src);        
         // 0 = a-b
     case (EQUATION(e,DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB(_),e2 as DAE.CREF(_,_)),src),false)
       equation
@@ -3266,7 +3280,13 @@ algorithm
         true = Exp.isZero(e);
       then
         (e1,e2,src);
-
+    case (EQUATION(e,DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),src),false)
+      equation
+        true = RTOpts.eliminationLevel() > 0;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then
+        (e1,e2,src);
         // 0 = a-b  swap
     case (EQUATION(e,DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB(_),e2 as DAE.CREF(_,_)),src),false)
       equation
@@ -3275,49 +3295,79 @@ algorithm
         true = Exp.isZero(e);
       then
         (e2,e1,src);
-
+    case (EQUATION(e,DAE.BINARY(e1 as  DAE.CREF(_,_),DAE.SUB_ARR(_),e2 as DAE.CREF(_,_)),src),false)
+      equation
+        true = RTOpts.eliminationLevel() > 0;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then
+        (e2,e1,src);
         // a + b = 0
      case (EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),e,src),false) equation
        true = RTOpts.eliminationLevel() > 1;
        true = RTOpts.eliminationLevel() <> 3;
       true = Exp.isZero(e);
       then (e1,DAE.UNARY(DAE.UMINUS(t),e2),src);
-
+     case (EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),e,src),false) equation
+       true = RTOpts.eliminationLevel() > 1;
+       true = RTOpts.eliminationLevel() <> 3;
+      true = Exp.isZero(e);
+      then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e2),src);
         // a + b = 0 swap
      case (EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),e,src),true) equation
        true = RTOpts.eliminationLevel() > 1;
        true = RTOpts.eliminationLevel() <> 3;
        true = Exp.isZero(e);
      then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
-
+     case (EQUATION(DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),e,src),true) equation
+       true = RTOpts.eliminationLevel() > 1;
+       true = RTOpts.eliminationLevel() <> 3;
+       true = Exp.isZero(e);
+     then (e2,DAE.UNARY(DAE.UMINUS_ARR(t),e1),src);
       // 0 = a+b
     case (EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),src),false) equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
       true = Exp.isZero(e);
       then (e1,DAE.UNARY(DAE.UMINUS(t),e2),src);
-
+    case (EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),src),false) equation
+      true = RTOpts.eliminationLevel() > 1;
+      true = RTOpts.eliminationLevel() <> 3;
+      true = Exp.isZero(e);
+      then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e2),src);
       // 0 = a+b swap
     case (EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD(t),e2 as DAE.CREF(_,_)),src),true) equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
       true = Exp.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
-
+    case (EQUATION(e,DAE.BINARY(e1 as DAE.CREF(_,_),DAE.ADD_ARR(t),e2 as DAE.CREF(_,_)),src),true) equation
+      true = RTOpts.eliminationLevel() > 1;
+      true = RTOpts.eliminationLevel() <> 3;
+      true = Exp.isZero(e);
+      then (e2,DAE.UNARY(DAE.UMINUS_ARR(t),e1),src);
      // a = -b
     case (EQUATION(e1 as DAE.CREF(_,_),e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(_,_)),src),swap)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
       then (e1,e2,src);
-
+    case (EQUATION(e1 as DAE.CREF(_,_),e2 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(_,_)),src),swap)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
+        true = RTOpts.eliminationLevel() <> 3;
+      then (e1,e2,src);
       // -a = b => a = -b
     case (EQUATION(DAE.UNARY(DAE.UMINUS(t),e1 as DAE.CREF(_,_)),e2 as DAE.CREF(_,_),src),swap)
       equation
       true = RTOpts.eliminationLevel() > 1;
       true = RTOpts.eliminationLevel() <> 3;
     then (e1,DAE.UNARY(DAE.UMINUS(t),e2),src);
-
+    case (EQUATION(DAE.UNARY(DAE.UMINUS_ARR(t),e1 as DAE.CREF(_,_)),e2 as DAE.CREF(_,_),src),swap)
+      equation
+      true = RTOpts.eliminationLevel() > 1;
+      true = RTOpts.eliminationLevel() <> 3;
+    then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e2),src);
       // -b - a = 0 => a = -b
     case (EQUATION(DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),e,src),false)
       equation
@@ -3325,7 +3375,12 @@ algorithm
         true = RTOpts.eliminationLevel() <> 3;
         true = Exp.isZero(e);
       then (e1,e2,src);
-
+    case (EQUATION(DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),e,src),false)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then (e1,e2,src);
       // -b - a = 0 => a = -b swap
     case (EQUATION(DAE.BINARY(DAE.UNARY(DAE.UMINUS(t),e2 as DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),e,src),true)
       equation
@@ -3333,7 +3388,12 @@ algorithm
         true = RTOpts.eliminationLevel() <> 3;
         true = Exp.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
-
+    case (EQUATION(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(t),e2 as DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),e,src),true)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
         // 0 = -b - a => a = -b
     case (EQUATION(e,DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS(_),DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),src),false)
       equation
@@ -3341,7 +3401,12 @@ algorithm
         true = RTOpts.eliminationLevel() <> 3;
         true = Exp.isZero(e);
       then (e1,e2,src);
-
+    case (EQUATION(e,DAE.BINARY(e2 as DAE.UNARY(DAE.UMINUS_ARR(_),DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),src),false)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then (e1,e2,src);
         // 0 = -b - a => a = -b swap
     case (EQUATION(e,DAE.BINARY(DAE.UNARY(DAE.UMINUS(t),e2 as DAE.CREF(_,_)),DAE.SUB(_),e1 as DAE.CREF(_,_)),src),true)
       equation
@@ -3349,13 +3414,23 @@ algorithm
         true = RTOpts.eliminationLevel() <> 3;
         true = Exp.isZero(e);
       then (e2,DAE.UNARY(DAE.UMINUS(t),e1),src);
-
+    case (EQUATION(e,DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(t),e2 as DAE.CREF(_,_)),DAE.SUB_ARR(_),e1 as DAE.CREF(_,_)),src),true)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
+        true = RTOpts.eliminationLevel() <> 3;
+        true = Exp.isZero(e);
+      then (e2,DAE.UNARY(DAE.UMINUS_ARR(t),e1),src);
         // -a = -b
     case (EQUATION(DAE.UNARY(DAE.UMINUS(_),e1 as DAE.CREF(_,_)),DAE.UNARY(DAE.UMINUS(_),e2 as DAE.CREF(_,_)),src),swap)
       equation
         true = RTOpts.eliminationLevel() > 1;
         true = RTOpts.eliminationLevel() <> 3;
       then (e1,e2,src);
+    case (EQUATION(DAE.UNARY(DAE.UMINUS_ARR(_),e1 as DAE.CREF(_,_)),DAE.UNARY(DAE.UMINUS_ARR(_),e2 as DAE.CREF(_,_)),src),swap)
+      equation
+        true = RTOpts.eliminationLevel() > 1;
+        true = RTOpts.eliminationLevel() <> 3;
+      then (e1,e2,src);        
         // a = constant
     case (EQUATION(e1 as DAE.CREF(_,_),e,src),swap) equation
       true = RTOpts.eliminationLevel() > 1;
@@ -3367,6 +3442,10 @@ algorithm
       true = RTOpts.eliminationLevel() > 1;
       true = Exp.isConst(e);
       then (e1,DAE.UNARY(DAE.UMINUS(t),e),src);
+    case (EQUATION(DAE.UNARY(DAE.UMINUS_ARR(t),e1 as DAE.CREF(_,_)),e,src),swap) equation
+      true = RTOpts.eliminationLevel() > 1;
+      true = Exp.isConst(e);
+      then (e1,DAE.UNARY(DAE.UMINUS_ARR(t),e),src);        
   end matchcontinue;
 end simpleEquation;
 
@@ -4587,17 +4666,15 @@ algorithm
     /* array equations */
     case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local 
-        MultiDimEquation e_1,e_2;
         DAE.Exp e_11,e_21;
         list<DAE.Exp> ea1,ea2;
         list<tuple<DAE.Exp,DAE.Exp>> ealst;
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
-        e_1 = lowerArrEqn(e);
         MULTIDIM_EQUATION(left=e_11 as DAE.ARRAY(scalar=true,array=ea1),
                           right=e_21 as DAE.ARRAY(scalar=true,array=ea2),source=source)
-          = Inline.inlineMultiDimEqs(e_1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+          = lowerArrEqn(e,funcs);
         ealst = Util.listThreadTuple(ea1,ea2);
         re = Util.listMap1(ealst,generateEQUATION,source);
         eqns = listAppend(re, eqns);
@@ -4605,27 +4682,25 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
     case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local 
-        MultiDimEquation e_1,e_2;
+        MultiDimEquation e_1;
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
-        e_1 = lowerArrEqn(e);
-        e_2 = Inline.inlineMultiDimEqs(e_1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e_1 = lowerArrEqn(e,funcs);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,(e_2 :: aeqns),algs,whenclauses_1,extObjCls);
+        (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),algs,whenclauses_1,extObjCls);
         
 		/* initial array equations */
 		case (DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2)) :: xs, funcs), 
 				states, vars, knvars, extVars, whenclauses)
 			local 
-				MultiDimEquation e_1, e_2;
+				MultiDimEquation e_1;
 			equation
 				(vars, knvars, extVars, eqns, reqns, ieqns, aeqns, algs, whenclauses_1, extObjCls)
 				= lower2(DAE.DAE(xs, funcs), states, vars, knvars, extVars, whenclauses);
-				e_1 = lowerArrEqn(e);
-				e_2 = Inline.inlineMultiDimEqs(e_1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+				e_1 = lowerArrEqn(e,funcs);
 			then
-				(vars, knvars, extVars, eqns, reqns, ieqns, (e_2 :: aeqns), algs, whenclauses_1, extObjCls);
+				(vars, knvars, extVars, eqns, reqns, ieqns, (e_1 :: aeqns), algs, whenclauses_1, extObjCls);
 
     /* When equations */
 //    case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
@@ -5693,27 +5768,32 @@ protected function lowerArrEqn
   Helper function to lower2.
   Transform a DAE.Element to MultiDimEquation."
   input DAE.Element inElement;
+  input DAE.FunctionTree funcs;
   output MultiDimEquation outMultiDimEquation;
 algorithm
-  outMultiDimEquation := matchcontinue (inElement)
+  outMultiDimEquation := matchcontinue (inElement,funcs)
     local
-			DAE.Exp e1, e2, e1_1, e2_1;
+			DAE.Exp e1, e2, e1_1, e2_1, e1_2, e2_2;
       list<Value> ds;
       DAE.ElementSource source;
 
-    case (DAE.ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source))
+    case (DAE.ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source),funcs)
       equation
-        e1_1 = extendArrEqn(e1);
-        e2_1 = extendArrEqn(e2);
+        e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_2 = extendArrEqn(e1_1);
+        e2_2 = extendArrEqn(e2_1);
       then
-        MULTIDIM_EQUATION(ds,e1_1,e2_1,source);
+        MULTIDIM_EQUATION(ds,e1_2,e2_2,source);
 
-		case (DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source))
+		case (DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source),funcs)
 			equation
-				e1 = Exp.simplify(e1);
-				e2 = Exp.simplify(e2);
+        e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_2 = extendArrEqn(e1_1);
+        e2_2 = extendArrEqn(e2_1);
 			then
-				MULTIDIM_EQUATION(ds, e1, e2, source);
+				MULTIDIM_EQUATION(ds, e1_2, e2_2, source);
   end matchcontinue;
 end lowerArrEqn;
 
@@ -12094,8 +12174,10 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   input IncidenceMatrixT mt;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, Equation>>> res;
+  list<Var> dlowVars;
 algorithm
-  res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp);
+  dlowVars := varList(vars);
+  res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp, dlowVars);
 end calculateJacobianRows;
 
 protected function calculateJacobianRows2 "function: calculateJacobianRows2
@@ -12110,10 +12192,11 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  input list<Var> dlowVars;
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp)
+  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,dlowVars)
     local
       Value eqn_indx_1,eqn_indx;
       list<tuple<Value, Value, Equation>> l1,l2,res;
@@ -12122,12 +12205,14 @@ algorithm
       Variables vars;
       MultiDimEquation[:] ae;
       list<Value>[:] m,mt;
-    case ({},_,_,_,_,_,_) then SOME({});
-    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp)
+      list<Var> resvars;
+      Var v;
+    case ({},_,_,_,_,_,_,_) then SOME({});
+    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp,v::resvars)
       equation
         eqn_indx_1 = eqn_indx + 1;
-        SOME(l1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1,differentiateIfExp);
-        SOME(l2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx,differentiateIfExp);
+        SOME(l1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1,differentiateIfExp,resvars);
+        SOME(l2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx,differentiateIfExp,v);
         res = listAppend(l1, l2);
       then
         SOME(res);
@@ -12154,10 +12239,11 @@ protected function calculateJacobianRow "function: calculateJacobianRow
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
+  input Var v;
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
 algorithm
   outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp)
+  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,v)
     local
       list<Value> var_indxs,var_indxs_1,var_indxs_2,ds;
       list<tuple<Value, Value, Equation>> eqns;
@@ -12167,8 +12253,11 @@ algorithm
       list<Value>[:] m,mt;
       Value eqn_indx,indx;
       list<DAE.Exp> in_,out,expl;
+      Exp.Type t;
+      DAE.ComponentRef cr;
+      list<DAE.Subscript> subs;      
     // residual equations
-    case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp)
+    case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,v)
       equation
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: ascending index" ;
@@ -12177,12 +12266,16 @@ algorithm
       then
         SOME(eqns);
     // algorithms give no jacobian
-    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp) then NONE;
+    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp,v) then NONE;
     // array equations
-    case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp)
+    case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp,v)
       equation
         MULTIDIM_EQUATION(ds,e1,e2,_) = ae[indx + 1];
-        new_exp = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
+        t = Exp.typeof(e1);
+        new_exp = DAE.BINARY(e1,DAE.SUB_ARR(t),e2);
+        cr = varCref(v);
+        subs = Exp.crefLastSubs(cr);
+        new_exp = Exp.applyExpSubscripts(new_exp,subs);        
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         var_indxs_2 = listReverse(var_indxs_1);
@@ -12295,19 +12388,25 @@ algorithm
       DAE.ComponentRef cr;
       DAE.ExpType tp;
       DAE.ElementSource source "origin of the element";
+      DAE.Operator op;
+      Boolean b;
 
     case (EQUATION(exp = e1,scalar = e2,source = source))
       equation
          //Exp.dumpExpWithTitle("equationToResidualForm 1\n",e2);
         tp = Exp.typeof(e2);
-        e = Exp.simplify(DAE.BINARY(e1,DAE.SUB(tp),e2));
+        b = DAEUtil.expTypeArray(tp);
+        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
+        e = Exp.simplify(DAE.BINARY(e1,op,e2));
       then
         RESIDUAL_EQUATION(e,source);
     case (SOLVED_EQUATION(componentRef = cr,exp = exp,source = source))
       equation
          //Exp.dumpExpWithTitle("equationToResidualForm 2\n",exp);
         tp = Exp.typeof(exp);
-        e = Exp.simplify(DAE.BINARY(DAE.CREF(cr,tp),DAE.SUB(tp),exp));
+        b = DAEUtil.expTypeArray(tp);
+        op = Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));        
+        e = Exp.simplify(DAE.BINARY(DAE.CREF(cr,tp),op,exp));
       then
         RESIDUAL_EQUATION(e,source);
     case ((e as RESIDUAL_EQUATION(exp = _,source = source)))
@@ -16093,7 +16192,7 @@ algorithm
         subslst = arrayDimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
-        expl = Util.listMap1(crlst,Exp.makeCrefExp,t);
+        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
       then 
         (expl,subslst1);
 /*        

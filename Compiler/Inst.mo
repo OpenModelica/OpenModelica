@@ -11762,7 +11762,7 @@ algorithm
         ty2 = Types.elabType(t);
         c1_1 = Exp.extendCref(c1,ty2, n, {});
         c2_1 = Exp.extendCref(c2,ty2, n, {});
-        dae1 = instEqEquation2(DAE.CREF(c1_1,t1), DAE.CREF(c2_1,t2), t, source, initial_);
+        dae1 = instEqEquation2(DAE.CREF(c1_1,ty2), DAE.CREF(c2_1,ty2), t, source, initial_);
         dae2 = instEqEquation2(DAE.CREF(c1,t1), DAE.CREF(c2,t2), (DAE.T_COMPLEX(cs,vs,bc,ec),p), source, initial_);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then

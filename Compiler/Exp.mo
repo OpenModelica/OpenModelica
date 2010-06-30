@@ -547,8 +547,9 @@ algorithm
     local
       ComponentRef cr,cr_1;
       Type ty;
-      Operator op;
+      Operator op,op1;
       Exp e,e_1;
+      Boolean b;
     case (DAE.CREF(componentRef=cr))
       equation
         ty = crefLastType(cr);
@@ -558,14 +559,9 @@ algorithm
       equation
         ty = typeof(e);
         e_1 = expStripLastIdent(e);
-        true = DAEUtil.expTypeArray(ty);
-      then DAE.UNARY(DAE.UMINUS_ARR(ty),e_1);
-    case (DAE.UNARY(operator=op,exp=e))
-      equation
-        ty = typeof(e);
-        e_1 = expStripLastIdent(e);
-        false = DAEUtil.expTypeArray(ty);
-      then DAE.UNARY(DAE.UMINUS(ty),e_1);        
+        b = DAEUtil.expTypeArray(ty);
+        op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
+      then DAE.UNARY(op1,e_1);
   end matchcontinue;
 end expStripLastIdent;
 
@@ -631,8 +627,9 @@ algorithm
     local
       ComponentRef cr,cr_1;
       Type ty;
-      Operator op;
+      Operator op,op1;
       Exp e,e_1;
+      Boolean b;
     case (DAE.CREF(componentRef=cr))
       equation
         ty = crefLastType(cr);
@@ -642,14 +639,9 @@ algorithm
       equation
         e_1 = expStripLastSubs(e);
         ty = typeof(e_1);
-        true = DAEUtil.expTypeArray(ty);
-      then DAE.UNARY(DAE.UMINUS_ARR(ty),e_1);
-    case (DAE.UNARY(operator=op,exp=e))
-      equation
-        e_1 = expStripLastSubs(e);
-        ty = typeof(e_1);
-        false = DAEUtil.expTypeArray(ty);
-      then DAE.UNARY(DAE.UMINUS(ty),e_1);        
+        b = DAEUtil.expTypeArray(ty);
+        op1 = Util.if_(b,DAE.UMINUS_ARR(ty),DAE.UMINUS(ty));
+      then DAE.UNARY(op1,e_1);
   end matchcontinue;
 end expStripLastSubs;
 
@@ -2418,8 +2410,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(unliftArray(atp));
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.MUL(tp),DAE.MUL_SCALAR_ARRAY(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.MUL_SCALAR_ARRAY(atp2),DAE.MUL(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2433,8 +2425,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);        
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.MUL(tp),DAE.MUL_SCALAR_ARRAY(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.MUL_SCALAR_ARRAY(atp2),DAE.MUL(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2448,8 +2440,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(unliftArray(atp));
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.MUL(tp),DAE.MUL_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.MUL_ARRAY_SCALAR(atp2),DAE.MUL(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2463,8 +2455,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.MUL(tp),DAE.MUL_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.MUL_ARRAY_SCALAR(atp2),DAE.MUL(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2478,8 +2470,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.ADD(tp),DAE.ADD_SCALAR_ARRAY(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.ADD_SCALAR_ARRAY(atp2),DAE.ADD(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2493,8 +2485,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.ADD(tp),DAE.ADD_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.ADD_ARRAY_SCALAR(atp2),DAE.ADD(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2508,8 +2500,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.SUB(tp),DAE.SUB_SCALAR_ARRAY(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.SUB_SCALAR_ARRAY(atp2),DAE.SUB(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2523,8 +2515,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.SUB(tp),DAE.SUB_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.SUB_ARRAY_SCALAR(atp2),DAE.SUB(tp));
         res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
@@ -2538,8 +2530,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.DIV(tp),DAE.DIV_SCALAR_ARRAY(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.DIV_SCALAR_ARRAY(atp2),DAE.DIV(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2553,8 +2545,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(unliftArray(atp));
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.DIV(tp),DAE.DIV_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.DIV_ARRAY_SCALAR(atp2),DAE.DIV(tp));
         res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
@@ -2568,8 +2560,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.DIV(tp),DAE.DIV_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.DIV_ARRAY_SCALAR(atp2),DAE.DIV(tp));
         res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
@@ -2583,8 +2575,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.POW(tp),DAE.POW_SCALAR_ARRAY(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.POW_SCALAR_ARRAY(atp2),DAE.POW(tp));
         res = simplifyVectorScalar(s1, op2, a1);
       then
         res;
@@ -2598,8 +2590,8 @@ algorithm
         tp = typeof(s1);
         atp = typeof(a1);
         atp2 = unliftArray(atp);
-        b = typeBuiltin(atp2);
-        op2 = Util.if_(b,DAE.POW(tp),DAE.POW_ARRAY_SCALAR(atp2));
+        b = DAEUtil.expTypeArray(atp2);
+        op2 = Util.if_(b,DAE.POW_ARRAY_SCALAR(atp2),DAE.POW(tp));
         res = simplifyVectorScalar(a1, op2, s1);
       then
         res;
@@ -3801,12 +3793,13 @@ algorithm
       list<tuple<Exp, Boolean>> expl;
       list<Boolean> bls;
       ComponentRef cr;
+      Real r;
     case (DAE.UNARY(operator = DAE.UMINUS_ARR(ty = t),exp = e),indx)
       equation
         e_1 = simplifyAsub(e, indx);
         t2 = typeof(e_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.UMINUS(t2),DAE.UMINUS_ARR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.UMINUS_ARR(t2),DAE.UMINUS(t2));
         exp = simplify1(DAE.UNARY(op2,e_1));
       then
         exp;
@@ -3814,8 +3807,8 @@ algorithm
       equation
         e_1 = simplifyAsub(e, indx);
         t2 = typeof(e_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.UPLUS(t2),DAE.UPLUS_ARR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.UPLUS_ARR(t2),DAE.UPLUS(t2));
         exp=simplify1(DAE.UNARY(op2,e_1));
       then
         exp;
@@ -3825,8 +3818,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.SUB(t2),DAE.SUB_ARR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.SUB_ARR(t2),DAE.SUB(t2));
         exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
@@ -3835,8 +3828,8 @@ algorithm
         e2_1 = simplifyAsub(e2, indx);
         e1_1 = simplify1(e1);
         t2 = typeof(e2_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.MUL(t2),DAE.MUL_SCALAR_ARRAY(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.MUL_SCALAR_ARRAY(t2),DAE.MUL(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3845,8 +3838,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.MUL(t2),DAE.MUL_ARRAY_SCALAR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.MUL_ARRAY_SCALAR(t2),DAE.MUL(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3855,8 +3848,8 @@ algorithm
         e2_1 = simplifyAsub(e2, indx);
         e1_1 = simplify1(e1);
         t2 = typeof(e2_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.ADD(t2),DAE.ADD_SCALAR_ARRAY(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.ADD_SCALAR_ARRAY(t2),DAE.ADD(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3865,8 +3858,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.ADD(t2),DAE.ADD_ARRAY_SCALAR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.ADD_ARRAY_SCALAR(t2),DAE.ADD(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3875,8 +3868,8 @@ algorithm
         e2_1 = simplifyAsub(e2, indx);
         e1_1 = simplify1(e1);
         t2 = typeof(e2_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.SUB(t2),DAE.SUB_SCALAR_ARRAY(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.SUB_SCALAR_ARRAY(t2),DAE.SUB(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3885,8 +3878,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.SUB(t2),DAE.SUB_ARRAY_SCALAR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.SUB_ARRAY_SCALAR(t2),DAE.SUB(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3912,8 +3905,8 @@ algorithm
         e2_1 = simplifyAsub(e2, indx);
         e1_1 = simplify1(e1);
         t2 = typeof(e2_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.DIV(t2),DAE.DIV_SCALAR_ARRAY(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.DIV_SCALAR_ARRAY(t2),DAE.DIV(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3922,8 +3915,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.DIV(t2),DAE.DIV_ARRAY_SCALAR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.DIV_ARRAY_SCALAR(t2),DAE.DIV(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3932,8 +3925,8 @@ algorithm
         e2_1 = simplifyAsub(e2, indx);
         e1_1 = simplify1(e1);
         t2 = typeof(e2_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.POW(t2),DAE.POW_SCALAR_ARRAY(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.POW_SCALAR_ARRAY(t2),DAE.POW(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3942,8 +3935,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplify1(e2);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op = Util.if_(b,DAE.POW(t2),DAE.POW_ARRAY_SCALAR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op = Util.if_(b,DAE.POW_ARRAY_SCALAR(t2),DAE.POW(t2));
         exp = simplify1(DAE.BINARY(e1_1,op,e2_1));
       then
         exp;
@@ -3953,8 +3946,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.ADD(t2),DAE.ADD_ARR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.ADD_ARR(t2),DAE.ADD(t2));
         exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
@@ -3964,8 +3957,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.MUL(t2),DAE.MUL_ARR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.MUL_ARR(t2),DAE.MUL(t2));
         exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
@@ -3975,8 +3968,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.DIV(t2),DAE.DIV_ARR(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.DIV_ARR(t2),DAE.DIV(t2));
         exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
@@ -3986,8 +3979,8 @@ algorithm
         e1_1 = simplifyAsub(e1, indx);
         e2_1 = simplifyAsub(e2, indx);
         t2 = typeof(e1_1);
-        b = typeBuiltin(t2);
-        op2 = Util.if_(b,DAE.POW(t2),DAE.POW_ARR2(t2));
+        b = DAEUtil.expTypeArray(t2);
+        op2 = Util.if_(b,DAE.POW_ARR2(t2),DAE.POW(t2));
         exp = simplify1(DAE.BINARY(e1_1,op2,e2_1));
       then
         exp;
@@ -4156,7 +4149,10 @@ protected
   Type t;
 algorithm
   outExp := matchcontinue(e)
-  local Type t;
+  local 
+    Type t;
+    Operator op;
+    Boolean b;
     /* to avoid unnessecary --e */
     case(DAE.UNARY(DAE.UMINUS(t),e)) then e;
     case(DAE.UNARY(DAE.UMINUS_ARR(t),e)) then e;
@@ -4168,14 +4164,9 @@ algorithm
 
     case(e) equation
       t = typeof(e);
-      true = isArrayType(t);
-      outExp = DAE.UNARY(DAE.UMINUS_ARR(t),e);
-    then outExp;
-    case(e) equation
-      t = typeof(e);
-      false = isArrayType(t);
-      outExp = DAE.UNARY(DAE.UMINUS(t),e);
-    then outExp;
+      b = DAEUtil.expTypeArray(t);
+      op = Util.if_(b,DAE.UMINUS_ARR(t),DAE.UMINUS(t));
+    then DAE.UNARY(op,e);
   end matchcontinue;
 end negate;
 
@@ -4656,8 +4647,8 @@ algorithm
       Operator op;
     case(e1,e2) equation
       etp = typeof(e1);
-      scalar = typeBuiltin(etp);
-      op = Util.if_(scalar,DAE.DIV(etp),DAE.DIV_ARRAY_SCALAR(etp));
+      scalar = DAEUtil.expTypeArray(etp);
+      op = Util.if_(scalar,DAE.DIV_ARRAY_SCALAR(etp),DAE.DIV(etp));
     then DAE.BINARY(e1,op,e2);
   end matchcontinue;
 end makeFraction;
@@ -4714,8 +4705,8 @@ algorithm
 
     case(e1,e2) equation
       etp = typeof(e1);
-      scalar = typeBuiltin(etp);
-      op = Util.if_(scalar,DAE.SUB(etp),DAE.SUB_ARR(etp));
+      scalar = DAEUtil.expTypeArray(etp);
+      op = Util.if_(scalar,DAE.SUB_ARR(etp),DAE.SUB(etp));
     then DAE.BINARY(e1,op,e2);
   end matchcontinue;
 end makeDiff;
@@ -4736,6 +4727,8 @@ algorithm
       list<Exp> rest,lst;
       list<Ident> explst;
       Ident str;
+      Operator op;
+      Boolean b;
     case ({}) then DAE.RCONST(0.0);
     case ({e1}) then e1;
 		case ({e1, e2})
@@ -4749,7 +4742,9 @@ algorithm
 		case ({e1, e2})
 			equation
         tp = typeof(e1) "Take type info from e1, ok since type checking already performed." ;
-			then DAE.BINARY(e1, DAE.ADD(tp), e2);
+        b = DAEUtil.expTypeArray(tp);
+        op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
+			then DAE.BINARY(e1, op, e2);			  
 				//res = DAE.BINARY(e1, DAE.ADD(tp), e2);
 			//then res;
     /*case ({e1,e2})
@@ -4765,7 +4760,9 @@ algorithm
         b1 = isZero(e1);
         e2 = makeSum(rest);
         tp = typeof(e2);
-        res = DAE.BINARY(e1,DAE.ADD(tp),e2);
+        b = DAEUtil.expTypeArray(tp);
+        op = Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));        
+        res = DAE.BINARY(e1,op,e2);
         res = Util.if_(b1,e2,res);
       then
         res;
@@ -6000,6 +5997,8 @@ algorithm
     // +e => e
     case (_,DAE.UPLUS(ty = ty),e1) 
       then e1;
+    case (_,DAE.UPLUS_ARR(ty = ty),e1) 
+      then e1;
     
     // -x => 0 - x
     case (_,DAE.UMINUS(ty = ty),DAE.ICONST(integer = i))
@@ -6021,7 +6020,11 @@ algorithm
          e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2));
       then
         e_1;
-    
+    case (_,DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = ty1),exp2 = e2))
+      equation
+         e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2)) "-(a*b) => (-a)*b" ;
+      then
+        e_1;
     // -0 => 0
     case (_,DAE.UMINUS(ty = ty),e1)
       equation
@@ -6029,43 +6032,68 @@ algorithm
         true = isZero(e1_1);
       then
         e1_1;
-    
-    //  -(a-b) => b - a
+    case (_,DAE.UMINUS_ARR(ty = ty),e1)
+      equation
+        e1_1 = simplify1(e1);
+        true = isZero(e1_1);
+      then
+        e1_1;
+    //  -(a-b) => b - a        
     case (_,DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB(ty = ty1),exp2 = e2))
       equation
-        e_1 = simplify1(DAE.BINARY(e2,DAE.SUB(ty1),e1));
+        e_1 = simplify1(DAE.BINARY(e2,DAE.SUB(ty1),e1)) "-(a-b) => b-a" ;
       then
         e_1;
-    
-    // -(a + b) => -b - a
+    case (_,DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARR(ty = ty1),exp2 = e2))
+      equation
+        e_1 = simplify1(DAE.BINARY(e2,DAE.SUB_ARR(ty1),e1)) "-(a-b) => b-a" ;
+      then
+        e_1;
+    // -(a + b) => -b - a    
     case (_,DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = ty1),exp2 = e2))
       equation
-        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.ADD(ty1),DAE.UNARY(DAE.UMINUS(ty),e2)));
+        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.ADD(ty1),DAE.UNARY(DAE.UMINUS(ty),e2))) "-(a+b) => -b-a" ;
       then
         e_1;
-    
+    case (_,DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARR(ty = ty1),exp2 = e2))
+      equation
+        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.ADD_ARR(ty1),DAE.UNARY(DAE.UMINUS_ARR(ty),e2))) "-(a+b) => -b-a" ;
+      then
+        e_1;
     // -( a / b) => -a / b
     case (_,DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.DIV(ty = ty1),exp2 = e2))
       equation
-        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.DIV(ty1),e2));
+        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.DIV(ty1),e2)) "-(a/b) => -a/b" ;
       then
         e_1;
-    
-    // -(a * b) => -a * b 
+    case (_,DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARR(ty = ty1),exp2 = e2))
+      equation
+        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.DIV_ARR(ty1),e2)) "-(a/b) => -a/b" ;
+      then
+        e_1; 
+    // -(a * b) => -a * b    
     case (_,DAE.UMINUS(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL(ty = ty1),exp2 = e2))
       equation
-        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2));
+        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS(ty),e1),DAE.MUL(ty1),e2)) "-(ab) => -ab" ;
       then
         e_1;
-    
-    // --a => a
-    case (_,DAE.UMINUS(ty = _),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1))
+    case (_,DAE.UMINUS_ARR(ty = ty),DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = ty1),exp2 = e2))
+      equation
+        e_1 = simplify1(DAE.BINARY(DAE.UNARY(DAE.UMINUS_ARR(ty),e1),DAE.MUL_ARR(ty1),e2)) "-(ab) => -ab" ;
+      then
+        e_1;        
+     // --a => a   
+     case (_,DAE.UMINUS(ty = _),DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = e1)) /* --a => a */
       equation
         e1_1 = simplify1(e1);
       then
         e1_1;
-    
-    // anything else stays the same
+    case (_,DAE.UMINUS_ARR(ty = _),DAE.UNARY(operator = DAE.UMINUS_ARR(ty = _),exp = e1)) /* --a => a */
+      equation
+        e1_1 = simplify1(e1);
+      then
+        e1_1;
+    // anything else stays the same    
     case (e,_,_) then e;
   end matchcontinue;
 end simplifyUnary;
@@ -10360,10 +10388,13 @@ public function expAdd
   input Exp e2;
   output Exp outExp;
   Type tp;
+  Boolean b;
+  Operator op;
 algorithm
   tp := typeof(e1);
-  true := typeBuiltin(tp) "	array_elt_type(tp) => tp\'" ;
-  outExp := DAE.BINARY(e1,DAE.ADD(tp),e2);
+  b := DAEUtil.expTypeArray(tp) "	array_elt_type(tp) => tp\'" ;
+  op := Util.if_(b,DAE.ADD_ARR(tp),DAE.ADD(tp));
+  outExp := DAE.BINARY(e1,op,e2);
 end expAdd;
 
 public function expMul
@@ -10374,10 +10405,13 @@ public function expMul
   input Exp e2;
   output Exp outExp;
   Type tp;
+  Boolean b;
+  Operator op;
 algorithm
   tp := typeof(e1);
-  true := typeBuiltin(tp) "	array_elt_type(tp) => tp\'" ;
-  outExp := DAE.BINARY(e1,DAE.MUL(tp),e2);
+  b := DAEUtil.expTypeArray(tp) "	array_elt_type(tp) => tp\'" ;
+  op := Util.if_(b,DAE.MUL_ARR(tp),DAE.MUL(tp));
+  outExp := DAE.BINARY(e1,op,e2);
 end expMul;
 
 public function makeCrefExpNoType "similar to makeCrefExp but picks type from componentref"
@@ -11600,8 +11634,8 @@ algorithm
     then e1;
     case(e1,e2) equation
       etp = typeof(e1);
-      scalar = typeBuiltin(etp);
-      op = Util.if_(scalar,DAE.DIV(etp),DAE.DIV_ARRAY_SCALAR(etp));
+      scalar = DAEUtil.expTypeArray(etp);
+      op = Util.if_(scalar,DAE.DIV_ARRAY_SCALAR(etp),DAE.DIV(etp));
     then DAE.BINARY(e1,op,e2);
   end matchcontinue;
 end makeDiv;
@@ -12175,10 +12209,13 @@ public function expSub
   input Exp e2;
   output Exp outExp;
   Type tp;
+  Boolean b;
+  Operator op;
 algorithm
   tp := typeof(e1);
-  true := typeBuiltin(tp);
-  outExp := DAE.BINARY(e1,DAE.SUB(tp),e2);
+  b := DAEUtil.expTypeArray(tp);
+  op := Util.if_(b,DAE.SUB_ARR(tp),DAE.SUB(tp));
+  outExp := DAE.BINARY(e1,op,e2);
 end expSub;
 
 public function expDiv "
@@ -12189,10 +12226,13 @@ function expDiv
   input Exp e2;
   output Exp outExp;
   Type tp;
+  Boolean b;
+  Operator op;  
 algorithm
   tp := typeof(e1);
-  true := typeBuiltin(tp);
-  outExp := DAE.BINARY(e1,DAE.DIV(tp),e2);
+  b := DAEUtil.expTypeArray(tp);
+  op := Util.if_(b,DAE.DIV_ARR(tp),DAE.DIV(tp));
+  outExp := DAE.BINARY(e1,op,e2);
 end expDiv;
 
 public function expLn

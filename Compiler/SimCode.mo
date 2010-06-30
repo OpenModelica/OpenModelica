@@ -2779,11 +2779,13 @@ algorithm
         list<tuple<Integer, Integer, DAELow.Equation>> jac;
         list<tuple<Integer, Integer, SimEqSystem>> simJac;
         DAELow.MultiDimEquation[:] arrayEqs;
+        list<tuple<DAELow.Equation,DAELow.Var>> dlowEqsVars;
       equation
         dlowVars = DAELow.varList(v);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
         dlowEqs = DAELow.equationList(eqn);
-        beqs = Util.listMap2(dlowEqs, dlowEqToExp, v, arrayEqs);
+        dlowEqsVars = Util.listThreadTuple(dlowEqs,dlowVars);
+        beqs = Util.listMap2(dlowEqsVars, dlowEqToExp, v, arrayEqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
         {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
@@ -3403,29 +3405,28 @@ algorithm
 end jacToSimjac;
 
 protected function dlowEqToExp
-  input DAELow.Equation dlowEq;
+  input tuple<DAELow.Equation,DAELow.Var> dlowEqVar;
   input DAELow.Variables v;
   input DAELow.MultiDimEquation[:] arrayEqs;
   output DAE.Exp exp_;
 algorithm
   exp_ :=
-  matchcontinue (dlowEq, v, arrayEqs)
+  matchcontinue (dlowEqVar, v, arrayEqs)
     local
       Integer row, col, index;
       DAE.Exp e;
-      DAE.Exp e1;
-      DAE.Exp e2;
-      DAE.Exp new_exp;
-      DAE.Exp rhs_exp;
-      DAE.Exp rhs_exp_1;
-      DAE.Exp rhs_exp_2;
-      DAE.ExpType tp;
-    case (DAELow.RESIDUAL_EQUATION(exp=e), v, arrayEqs)
+      DAE.Exp e1,e2,new_exp,rhs_exp,rhs_exp_1,rhs_exp_2,rhs_exp_3;
+      DAE.ExpType tp,tp1;
+      DAELow.Equation dlowEq;
+      DAELow.Var c;
+      DAE.ComponentRef cr;
+      list<DAE.Subscript> subs;
+    case ((DAELow.RESIDUAL_EQUATION(exp=e),_), v, arrayEqs)
       equation
         rhs_exp = DAELow.getEqnsysRhsExp(e, v);
         rhs_exp_1 = Exp.simplify(rhs_exp);
       then rhs_exp_1;
-    case (DAELow.EQUATION(exp=e1, scalar=e2), v, arrayEqs)
+    case ((DAELow.EQUATION(exp=e1, scalar=e2),_), v, arrayEqs)
       equation
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
@@ -3433,16 +3434,32 @@ algorithm
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
       then rhs_exp_2;
-    case (DAELow.ARRAY_EQUATION(index=index), v, arrayEqs)
+    case ((DAELow.ARRAY_EQUATION(index=index),c), v, arrayEqs)
       equation
         DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = arrayEqs[index+1];
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
-        rhs_exp_1 = DAE.UNARY(DAE.UMINUS_ARR(tp),rhs_exp);
+        tp1 = Exp.typeof(rhs_exp);
+        true = DAEUtil.expTypeArray(tp1);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS_ARR(tp1),rhs_exp);
+        cr = DAELow.varCref(c);
+        subs = Exp.crefLastSubs(cr);
+        rhs_exp_2 = Exp.applyExpSubscripts(rhs_exp_1,subs);
+        rhs_exp_3 = Exp.simplify(rhs_exp_2);
+      then rhs_exp_3;     
+    case ((DAELow.ARRAY_EQUATION(index=index),c), v, arrayEqs)
+      equation
+        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = arrayEqs[index+1];
+        tp = Exp.typeof(e1);
+        new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
+        rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
+        tp1 = Exp.typeof(rhs_exp);
+        false = DAEUtil.expTypeArray(tp1);
+        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp1),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
-      then rhs_exp_2;        
-    case (dlowEq,_,_)
+      then rhs_exp_2;            
+    case ((dlowEq,_),_,_)
       equation
         DAELow.dumpEqns({dlowEq});
         Error.addMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"});
