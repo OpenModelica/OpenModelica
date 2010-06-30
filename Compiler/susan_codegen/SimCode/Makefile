@@ -1,6 +1,6 @@
 .PHONY : all 
 
-OMC = ../../../build/bin/omc
+OMC = OPENMODELICAHOME=`pwd`/../../../build/ ../../../build/bin/omc
 
 all : SimCodeC.mo SimCodeCSharp.mo
 
