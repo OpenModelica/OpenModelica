@@ -28,6 +28,7 @@ $(NAME): $(NAME)$(EXE) always
 endif
 
 build: $(NAME)
+	mkdir -p $(builddir_share)/omnotebook/drmodelica/
 	cp -p $(NAME) $(builddir_bin)/
 	cp -p *.xml $(builddir_share)/omnotebook/
 	cp -p OMNotebookHelp.onb $(builddir_share)/omnotebook/drmodelica/
