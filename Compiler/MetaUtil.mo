@@ -621,18 +621,19 @@ algorithm
   outBoolean := matchcontinue(cl,re)
     local
       SCode.Restriction re1,re2;
+    
     case(SCode.CLASS(restriction = re1),re2)
       equation
         equality(re1 = re2);
       then true;
+    
     case(_,_) then false;
   end matchcontinue;
 end classHasRestriction;
 
 public function createMetaClassesInProgram "function: createMetaClassesInProgram
   Adds metarecord classes to the AST. This function handles a whole program,
-  including packages.
-"
+  including packages."
   input Absyn.Program program;
   output Absyn.Program out;
 algorithm
@@ -643,23 +644,25 @@ algorithm
       Absyn.Within w;
       Absyn.Program p;
       Absyn.TimeStamp ts;
+    
     case (program)
       equation
         false = RTOpts.acceptMetaModelicaGrammar();
       then program;
+    
     case (Absyn.PROGRAM(classes = classes,within_ = w,globalBuildTimes=ts))
       equation
         metaClasses = Util.listMap(classes, createMetaClasses);
         metaClassesFlat = Util.listFlatten(metaClasses);
         classes = Util.listMap(classes, createMetaClassesFromPackage);
         classes = listAppend(classes, metaClassesFlat);
-      then Absyn.PROGRAM(classes,w,ts);
+      then 
+        Absyn.PROGRAM(classes,w,ts);
   end matchcontinue;
 end createMetaClassesInProgram;
 
 protected function createMetaClassesFromPackage "function: createMetaClassesFromPackages
-  Helper function to createMetaClassesInProgram
-"
+  Helper function to createMetaClassesInProgram"
   input Absyn.Class cl;
   output Absyn.Class out;
 algorithm
@@ -676,11 +679,13 @@ algorithm
       Absyn.Info        info;
       list<Absyn.ClassPart> classParts;
       Option<String>  comment;
+    
     case (Absyn.CLASS(body=Absyn.PARTS(classParts=classParts,comment=comment),name=name,partialPrefix=partialPrefix,finalPrefix=finalPrefix,encapsulatedPrefix=encapsulatedPrefix,restriction=restriction,info=info))
       equation
         classParts = Util.listMap(classParts,createMetaClassesFromClassParts);
         body = Absyn.PARTS(classParts,comment);
       then Absyn.CLASS(name,partialPrefix,finalPrefix,encapsulatedPrefix,restriction,body,info);
+    
     case (cl) then cl;
   end matchcontinue;
 end createMetaClassesFromPackage;
@@ -693,16 +698,19 @@ algorithm
     local
       list<Absyn.ElementItem> els;
       list<list<Absyn.ElementItem>> lels;
+    
     case (Absyn.PUBLIC(els))
       equation
         lels = Util.listMap(els, createMetaClassesFromElementItem);
         els = Util.listFlatten(lels);
       then Absyn.PUBLIC(els);
+    
     case (Absyn.PROTECTED(els))
       equation
         lels = Util.listMap(els, createMetaClassesFromElementItem);
         els = Util.listFlatten(lels);
       then Absyn.PROTECTED(els);
+    
     case (classPart) then classPart;
   end matchcontinue;
 end createMetaClassesFromClassParts;
@@ -764,60 +772,59 @@ public function createMetaClasses
 input Absyn.Class cl;
 output list<Absyn.Class> clstout;
 algorithm
-clstout := matchcontinue(cl)
-  local
-    list<Absyn.ClassPart> cls;
-    list<Absyn.ElementItem> els;
-    list<Absyn.Class> cllst;
-
-    SCode.ClassDef d_1;
-    SCode.Restriction r_1;
-    Absyn.Class c;
-    String n;
-    Boolean p,f,e;
-    Absyn.Restriction r;
-    Absyn.ClassDef d;
-    Absyn.Info file_info;
-  case(c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,body = d as
-      Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _)
-      ,info = file_info))
+  clstout := matchcontinue(cl)
+    local
+      list<Absyn.ClassPart> cls;
+      list<Absyn.ElementItem> els;
+      list<Absyn.Class> cllst;
+      SCode.ClassDef d_1;
+      SCode.Restriction r_1;
+      Absyn.Class c;
+      String n;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Absyn.ClassDef d;
+      Absyn.Info file_info;
+    
+    case(c as Absyn.CLASS(name = n,partialPrefix = p,finalPrefix = f,encapsulatedPrefix = e,restriction = r,
+         body = d as Absyn.PARTS(classParts = cls as {Absyn.PUBLIC(contents = els)},comment = _),info = file_info))
       equation
         r_1 = SCodeUtil.translateRestriction(c, r); // uniontype will not get elaborated!
         equality(r_1 = SCode.R_UNIONTYPE);
         els = fixElementItems(els,n,0);
         cllst = convertElementsToClasses(els);
-        then cllst;
-  case(_) then {};
-end matchcontinue;
+      then cllst;
+    case(_) then {};
+  end matchcontinue;
 end createMetaClasses;
 
 //Added by simbj
 //Helper function
 function convertElementsToClasses
   input list<Absyn.ElementItem> els;
-
   output list<Absyn.Class> outcls;
-  algorithm
-    outcls := matchcontinue(els)
+algorithm
+  outcls := matchcontinue(els)
     local
       list<Absyn.ElementItem> rest;
-      Absyn.Class c;
-      Integer index;
-      String uniontypeName;
-      case({}) then {};
-      case(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = c)))::rest)
-        local list<Absyn.Class> clst;
-          String n;
-          Boolean p,f,e;
-          Absyn.Restriction r;
-          Absyn.ClassDef b;
-          String fn;
-          Boolean ro;
-          Integer lns,cns,lne,cne;
-        equation
-          clst = convertElementsToClasses(rest);
-        then c::clst;
-    end matchcontinue;
+      Absyn.Class c;      
+      list<Absyn.Class> clst;
+      String uniontypeName, n;
+      Boolean p,f,e;
+      Absyn.Restriction r;
+      Absyn.ClassDef b;
+      String fn;
+      Boolean ro;
+      Integer index,lns,cns,lne,cne;   
+    
+    case({}) then {};
+    
+    case(Absyn.ELEMENTITEM(element = Absyn.ELEMENT(specification = Absyn.CLASSDEF(class_ = c)))::rest)
+      equation
+        clst = convertElementsToClasses(rest);
+      then 
+        c::clst;
+  end matchcontinue;
 end convertElementsToClasses;
 
 /* Removed 2009-08-19. The args are now generated like any Modelica components.
@@ -912,8 +919,7 @@ end reparseType;
 
 public function mmc_mk_box "function: mmc_mk_box
   Chooses mmc_mk_box<n>(ctor, ...) or mmc_mk_box(<n>
-  depending on the size of the box. /sjoelund
-"
+  depending on the size of the box. /sjoelund"
   input Integer numBoxes;
   input String val;
   output String out;
@@ -928,21 +934,20 @@ end mmc_mk_box;
 
 //Generates the mk_box<size>(<index>,<data>::<data>)
 public function listToBoxes "function: listToBoxes
-MetaModelica extension, added by simbj
-"
+MetaModelica extension, added by simbj"
   input list<String> varList;
   input list<DAE.ExpType> expList;
   input Integer index;
   input String name;
   output String outString;
 algorithm
-  outString :=
-  matchcontinue (varList,expList,index,name)
+  outString := matchcontinue (varList,expList,index,name)
     local
       String boxStr,expStr;
       list<String> varList;
       Integer numberOfVariables,index;
       String tmp1,tmp2,tmp3,tmp4,tmp5;
+    
     case (varList,expList,index,name)
       equation
         numberOfVariables = listLength(expList)+1;
@@ -956,6 +961,7 @@ algorithm
         expStr = Util.stringAppendList({tmp2,",&",name,"__desc",expStr});
         expStr = mmc_mk_box(numberOfVariables, expStr);
       then expStr;
+    
     case (_,_,_,_)
       equation
         Debug.fprint("failtrace", "- MetaUtil.listToBoxes failed\n");
