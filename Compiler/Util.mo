@@ -3619,6 +3619,7 @@ algorithm
       list<Type_a> a,a_1,a_2,xs;
       FuncTypeType_aType_aToBoolean cond;
       Type_a x1;
+    case ({},_,cond) then {};  /* Empty - B = Empty */      
     case (a,{},cond) then a;  /* A B */
     case (a,(x1 :: xs),cond)
       equation
@@ -3649,6 +3650,7 @@ algorithm
       list<Type_a> a,a_1,a_2,xs;
       Type_a x1;
     
+    case ({},_) then {};  /* Empty - B = Empty */    
     case (a,{}) then a;  /* A B */
     case (a,(x1 :: xs))
       equation
