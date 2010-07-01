@@ -42,55 +42,59 @@ public import UnitAbsyn;
 public import MMath;
 public import UnitAbsynBuilder;
 
-
-
 protected import Debug;
 protected import Error;
 protected import OptManager;
 protected import HashTable;
-
-
-
 
 public function check "Check if a list of unit terms are consistent"
   input UnitAbsyn.UnitTerms tms;
   input UnitAbsyn.InstStore st;
   output UnitAbsyn.InstStore outSt;
 algorithm
-   (outSt) := matchcontinue(tms,st)
-   local
-     UnitAbsyn.Store st1,st2,st3;
-     UnitAbsyn.UnitTerms rest1;
-     UnitAbsyn.UnitTerm tm1;
-     Option<UnitAbsyn.UnitCheckResult> res;
-     UnitAbsyn.SpecUnit su1,su2;
-     String s1,s2,s3;
-     HashTable.HashTable ht;
-
-     case(_,st) equation
-       false = OptManager.getOption("unitChecking");
-     then (st);
-
-     //No more terms?
-     case({},UnitAbsyn.INSTSTORE(st1,ht,res))
-     then UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.CONSISTENT()));
-     //Is consistent?
-     case(tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) equation
-       (UnitAbsyn.CONSISTENT,_,st2) = checkTerm(tm1,st1);
-       (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
-       then(st);
-     //Is inconsistent?
-     case(tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) equation
-       (UnitAbsyn.INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
-       s1 = UnitAbsynBuilder.printTermsStr({tm1});
-       s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
-       s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
-       Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});
-       then UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.INCONSISTENT(su1,su2)));
-     case(_,_) equation
+  (outSt) := matchcontinue(tms,st)
+    local
+      UnitAbsyn.Store st1,st2,st3;
+      UnitAbsyn.UnitTerms rest1;
+      UnitAbsyn.UnitTerm tm1;
+      Option<UnitAbsyn.UnitCheckResult> res;
+      UnitAbsyn.SpecUnit su1,su2;
+      String s1,s2,s3;
+      HashTable.HashTable ht;
+    
+    case (_,st) 
+      equation
+        false = OptManager.getOption("unitChecking");
+      then (st);
+    
+    // No more terms?
+    case ({},UnitAbsyn.INSTSTORE(st1,ht,res))
+      then UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.CONSISTENT()));
+    
+    // Is consistent?
+    case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) 
+      equation
+        (UnitAbsyn.CONSISTENT,_,st2) = checkTerm(tm1,st1);
+        (st) = check(rest1,UnitAbsyn.INSTSTORE(st2,ht,SOME(UnitAbsyn.CONSISTENT())));
+      then(st);
+     
+     // Is inconsistent?
+     case (tm1::rest1,UnitAbsyn.INSTSTORE(st1,ht,res)) 
+       equation
+         (UnitAbsyn.INCONSISTENT(su1,su2),_,st2) = checkTerm(tm1,st1);
+         s1 = UnitAbsynBuilder.printTermsStr({tm1});
+         s2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su1));
+         s3 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su2));
+         Error.addMessage(Error.INCONSISTENT_UNITS,{s1,s2,s3});
+       then 
+         UnitAbsyn.INSTSTORE(st1,ht,SOME(UnitAbsyn.INCONSISTENT(su1,su2)));
+     
+     // failtrace
+     case (_,_) equation
        Debug.fprint("failtrace", "UnitChecker::check() failed\n");
        print("check failed\n");
-      then fail();
+      then 
+        fail();
    end matchcontinue;
 end check;
 
@@ -100,14 +104,18 @@ public function isComplete "returns true if the store is complete, else false"
   output UnitAbsyn.Store stout;
 algorithm
   complete := matchcontinue(st)
-  local Option<UnitAbsyn.Unit>[:] vector; Integer indx;
-    list<Option<UnitAbsyn.Unit>> lst;
-    Boolean comp;
-    UnitAbsyn.Store st2;
-    case(UnitAbsyn.STORE(vector,indx)) equation
-      lst = arrayList(vector);
-      (comp,st2) = completeCheck(lst,1,UnitAbsyn.STORE(vector,indx));
-   then(comp,st2);
+    local 
+      Option<UnitAbsyn.Unit>[:] vector; Integer indx;
+      list<Option<UnitAbsyn.Unit>> lst;
+      Boolean comp;
+      UnitAbsyn.Store st2;
+    
+    case (UnitAbsyn.STORE(vector,indx)) 
+      equation
+        lst = arrayList(vector);
+        (comp,st2) = completeCheck(lst,1,UnitAbsyn.STORE(vector,indx));
+      then 
+        (comp,st2);
   end matchcontinue;
 end isComplete;
 
@@ -119,20 +127,28 @@ protected function completeCheck "help function to isComplete"
   output UnitAbsyn.Store stout;
 algorithm
   _ := matchcontinue(lst,indx,st)
-  local
-    UnitAbsyn.Unit u1,u2;
-    Boolean comp1;
-    UnitAbsyn.Store st2,st3,st4;
-    case({},_,st2) then (true,st2);
-    case(SOME(u1)::lst,indx,st2) equation
-      (u2,st3) = normalize(indx,st2);
-      false = unitHasUnknown(u2);
-      (comp1,st4) = completeCheck(lst,indx+1,st3);
-    then(comp1,st3);
-    case(SOME(u1)::lst,indx,st2) equation
-      (u2,st3) = normalize(indx,st2);
-      true = unitHasUnknown(u2);
-    then(false,st2);
+    local
+      UnitAbsyn.Unit u1,u2;
+      Boolean comp1;
+      UnitAbsyn.Store st2,st3,st4;
+    
+    case ({},_,st2) then (true,st2);
+    
+    case (SOME(u1)::lst,indx,st2) 
+      equation
+        (u2,st3) = normalize(indx,st2);
+        false = unitHasUnknown(u2);
+        (comp1,st4) = completeCheck(lst,indx+1,st3);
+      then 
+        (comp1,st3);
+    
+    case (SOME(u1)::lst,indx,st2) 
+      equation
+        (u2,st3) = normalize(indx,st2);
+        true = unitHasUnknown(u2);
+      then 
+        (false,st2);
+    
     case(NONE::_,_,st2) then (true,st2);
   end matchcontinue;
 end completeCheck;
@@ -145,60 +161,77 @@ public function checkTerm "check if one term is ok"
   output UnitAbsyn.Store outSt;
 algorithm
    (result,outFailingTm,outUnit,outSt) := matchcontinue(tm,st)
-   local
-     UnitAbsyn.Store st1,st2,st3,st4;
-     UnitAbsyn.UnitCheckResult res1,res2,res3,res4;
-     UnitAbsyn.Store st1,st2,st3,st4;
-     UnitAbsyn.UnitTerm ut1,ut2;
-     UnitAbsyn.SpecUnit su1,su2,su3;
-     MMath.Rational expo1;
-     Integer loc;
-     case(UnitAbsyn.ADD(ut1,ut2,_),st1) equation
-       (res1,su1,st2) = checkTerm(ut1,st1);
-       (res2,su2,st3) = checkTerm(ut2,st2);
-       (res3,st4) = unify(su1,su2,st3);
-       res4 = chooseResult(res1,res2,res3);
-       then(res4,su1,st4);
-     case(UnitAbsyn.SUB(ut1,ut2,_),st1) equation
-       (res1,su1,st2) = checkTerm(ut1,st1);
-       (res2,su2,st3) = checkTerm(ut2,st2);
-       (res3,st4) = unify(su1,su2,st3);
-       res4 = chooseResult(res1,res2,res3);
-       then(res4,su1,st4);
-     case(UnitAbsyn.MUL(ut1,ut2,_),st1) equation
-       (res1,su1,st2) = checkTerm(ut1,st1);
-       (res2,su2,st3) = checkTerm(ut2,st2);
-       su3 = mulSpecUnit(su1,su2);
-       res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
+     local
+       UnitAbsyn.Store st1,st2,st3,st4;
+       UnitAbsyn.UnitCheckResult res1,res2,res3,res4;
+       UnitAbsyn.Store st1,st2,st3,st4;
+       UnitAbsyn.UnitTerm ut1,ut2;
+       UnitAbsyn.SpecUnit su1,su2,su3;
+       MMath.Rational expo1;
+       Integer loc;
+     
+     case (UnitAbsyn.ADD(ut1,ut2,_),st1) 
+       equation
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         (res3,st4) = unify(su1,su2,st3);
+         res4 = chooseResult(res1,res2,res3);
+       then (res4,su1,st4);
+     
+     case (UnitAbsyn.SUB(ut1,ut2,_),st1) 
+       equation
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         (res3,st4) = unify(su1,su2,st3);
+         res4 = chooseResult(res1,res2,res3);
+       then (res4,su1,st4);
+     
+     case (UnitAbsyn.MUL(ut1,ut2,_),st1) 
+       equation
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         su3 = mulSpecUnit(su1,su2);
+         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
        then(res4,su3,st3);
-     case(UnitAbsyn.DIV(ut1,ut2,_),st1) equation
-       (res1,su1,st2) = checkTerm(ut1,st1);
-       (res2,su2,st3) = checkTerm(ut2,st2);
-       su3 = divSpecUnit(su1,su2);
-       res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
+     
+     case (UnitAbsyn.DIV(ut1,ut2,_),st1) 
+       equation
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         su3 = divSpecUnit(su1,su2);
+         res4 = chooseResult(res1,res2,UnitAbsyn.CONSISTENT);
        then(res4,su3,st3);
-     case(UnitAbsyn.EQN(ut1,ut2,_),st1) equation
-       (res1,su1,st2) = checkTerm(ut1,st1);
-       (res2,su2,st3) = checkTerm(ut2,st2);
-       (res3,st4) = unify(su1,su2,st3);
-       res4 = chooseResult(res1,res2,res3);
+     
+     case (UnitAbsyn.EQN(ut1,ut2,_),st1) 
+       equation
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         (res2,su2,st3) = checkTerm(ut2,st2);
+         (res3,st4) = unify(su1,su2,st3);
+         res4 = chooseResult(res1,res2,res3);
        then(res4,su1,st4);
-     case(UnitAbsyn.LOC(loc,_),st1) equation
-       (UnitAbsyn.UNSPECIFIED) = UnitAbsynBuilder.find(loc,st1);
+     
+     case (UnitAbsyn.LOC(loc,_),st1) 
+       equation
+         (UnitAbsyn.UNSPECIFIED) = UnitAbsynBuilder.find(loc,st1);
        then(UnitAbsyn.CONSISTENT,UnitAbsyn.SPECUNIT((MMath.RATIONAL(1,1),UnitAbsyn.TYPEPARAMETER("",loc))::{},{}),st1);
-     case(UnitAbsyn.LOC(loc,_),st1) equation
-       (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
+     
+     case (UnitAbsyn.LOC(loc,_),st1) 
+       equation
+         (UnitAbsyn.SPECIFIED(su1)) = UnitAbsynBuilder.find(loc,st1);
        then(UnitAbsyn.CONSISTENT,su1,st1);
-     case(UnitAbsyn.POW(ut1,expo1,_),st1) equation
-       (res1,su1,st2) = checkTerm(ut1,st1);
-       su2 = powSpecUnit(su1,expo1);
+     
+     case (UnitAbsyn.POW(ut1,expo1,_),st1) 
+       equation
+         (res1,su1,st2) = checkTerm(ut1,st1);
+         su2 = powSpecUnit(su1,expo1);
        then(res1,su2,st2);
-     case(_,_) equation
-       Debug.fprint("failtrace", "UnitChecker::checkTerm() failed\n");
-      then fail();
+     
+     case (_,_) 
+       equation
+         Debug.fprint("failtrace", "UnitChecker::checkTerm() failed\n");
+       then fail();
    end matchcontinue;
 end checkTerm;
-
 
 protected function chooseResult "Returns the first result that is UnitAbsyn.INCONSISTENT. If not, CONISTENT will be returned"
   input UnitAbsyn.UnitCheckResult res1;
@@ -234,36 +267,41 @@ algorithm
   (outresult,outSt) := unifyunits(su1,su2,st2);
 end unify;
 
-
 protected function isSpecUnitEq "checks if twp spec units are equal (presupposed that they have no unknowns"
   input UnitAbsyn.SpecUnit insu1;
   input UnitAbsyn.SpecUnit insu2;
   output Boolean res;
 algorithm
   res := matchcontinue(insu1,insu2)
-  local
-    Boolean r1;
-    Integer i1a,i1b,i2a,i2b;
-    list<MMath.Rational> rest1,rest2;
+    local
+      Boolean r1;
+      Integer i1a,i1b,i2a,i2b;
+      list<MMath.Rational> rest1,rest2;
+    
     case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,{}))
       then true;
-    case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1)) equation
-      r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},{}), UnitAbsyn.SPECUNIT({},rest1));
+    
+    case(UnitAbsyn.SPECUNIT(_,{}),UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1)) 
+      equation
+        r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},{}), UnitAbsyn.SPECUNIT({},rest1));
       then r1;
-    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1),UnitAbsyn.SPECUNIT(_,{})) equation
-      r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},{}));
+    
+    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(0,_)::rest1),UnitAbsyn.SPECUNIT(_,{})) 
+      equation
+        r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},{}));
       then r1;
-    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i1a,i1b)::rest1),
-      UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i2a,i2b)::rest2)) equation
-        equality(i1a = i2a);
-        equality(i1b = i2b);
+    
+    case(UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i1a,i1b)::rest1), UnitAbsyn.SPECUNIT(_,MMath.RATIONAL(i2a,i2b)::rest2)) 
+      equation
+        true = intEq(i1a, i2a);
+        true = intEq(i1b, i2b);
         r1 = isSpecUnitEq(UnitAbsyn.SPECUNIT({},rest1),UnitAbsyn.SPECUNIT({},rest2));
       then r1;
+    
     case(_,_)
       then false;
   end matchcontinue;
 end isSpecUnitEq;
-
 
 protected function unifyunits
   input UnitAbsyn.SpecUnit insu1;
@@ -273,28 +311,38 @@ protected function unifyunits
   output UnitAbsyn.Store outSt;
 algorithm
   (outresult,outSt) := matchcontinue(insu1,insu2,st)
-  local
-    UnitAbsyn.SpecUnit su1,su2,su3,su4;
-    UnitAbsyn.Store st1,st2;
-    Integer loc1;
-    //No unknown and the same on both sides
-    case(su1,su2,st1) equation
-      false = hasUnknown(su1);
-      false = hasUnknown(su2);
-      true = isSpecUnitEq(su1,su2);
-      then(UnitAbsyn.CONSISTENT,st1);
-    //No unknown, but different on the sides
-    case(su1,su2,st1) equation
-      false = hasUnknown(su1);
-      false = hasUnknown(su2);
-      then(UnitAbsyn.INCONSISTENT(su1,su2),st1);
-    //Move the unknown to left side and substitute
-    case(su1,su2,st1) equation
-      su3 = divSpecUnit(su2,su1);
-      (loc1,su4) = getUnknown(su3);
-      st2 = UnitAbsynBuilder.update(UnitAbsyn.SPECIFIED(su4),loc1,st1);
-      then(UnitAbsyn.CONSISTENT,st2);
-    //Unknowns are cancelling each other out
+    local
+      UnitAbsyn.SpecUnit su1,su2,su3,su4;
+      UnitAbsyn.Store st1,st2;
+      Integer loc1;
+    
+    // No unknown and the same on both sides
+    case(su1,su2,st1) 
+      equation
+        false = hasUnknown(su1);
+        false = hasUnknown(su2);
+        true = isSpecUnitEq(su1,su2);
+      then
+        (UnitAbsyn.CONSISTENT,st1);
+    
+    // No unknown, but different on the sides
+    case(su1,su2,st1) 
+      equation
+        false = hasUnknown(su1);
+        false = hasUnknown(su2);
+      then
+        (UnitAbsyn.INCONSISTENT(su1,su2),st1);
+    
+    // Move the unknown to left side and substitute
+    case(su1,su2,st1) 
+      equation
+        su3 = divSpecUnit(su2,su1);
+        (loc1,su4) = getUnknown(su3);
+        st2 = UnitAbsynBuilder.update(UnitAbsyn.SPECIFIED(su4),loc1,st1);
+      then
+        (UnitAbsyn.CONSISTENT,st2);
+    
+    // Unknowns are cancelling each other out
     case(_,_,st1)
       then(UnitAbsyn.CONSISTENT,st1);
   end matchcontinue;
@@ -306,7 +354,6 @@ algorithm
   UnitAbsyn.SPECIFIED(su) := UnitAbsynBuilder.str2unit("1",NONE);
 end newDimlessSpecUnit;
 
-
 public function getUnknown "gets the first unknown in a specified unit"
   input UnitAbsyn.SpecUnit suin;
   output Integer loc;
@@ -314,31 +361,33 @@ public function getUnknown "gets the first unknown in a specified unit"
 algorithm
   (loc,suout) := matchcontinue(suin)
     local
-     UnitAbsyn.SpecUnit su1,su2;
-     MMath.Rational expo1,expo2;
-     Integer loc1;
-     String name;
-     list<MMath.Rational> unitvec1;
-     list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1;
-    case(UnitAbsyn.SPECUNIT((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1,unitvec1)) equation
-      su1 = divSpecUnit(newDimlessSpecUnit(),UnitAbsyn.SPECUNIT(rest1,unitvec1));
-      expo2 = MMath.divRational(MMath.RATIONAL(1,1), expo1);
-      su2 = powSpecUnit(su1,expo2);
+      UnitAbsyn.SpecUnit su1,su2;
+      MMath.Rational expo1,expo2;
+      Integer loc1;
+      String name;
+      list<MMath.Rational> unitvec1;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1;
+    
+    case(UnitAbsyn.SPECUNIT((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1,unitvec1)) 
+      equation
+        su1 = divSpecUnit(newDimlessSpecUnit(),UnitAbsyn.SPECUNIT(rest1,unitvec1));
+        expo2 = MMath.divRational(MMath.RATIONAL(1,1), expo1);
+        su2 = powSpecUnit(su1,expo2);
       then (loc1,su2);
-    case(_) equation
-      Debug.fprint("failtrace", "UnitChecker::getUnknown() failed\n");
-    then fail();
+    
+    case(_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::getUnknown() failed\n");
+      then 
+        fail();
   end matchcontinue;
 end getUnknown;
-
-
 
 public function hasUnknown
   input UnitAbsyn.SpecUnit su;
   output Boolean res;
 algorithm
   res := matchcontinue(su)
-  local
     case(UnitAbsyn.SPECUNIT({},_)) then false;
     case(UnitAbsyn.SPECUNIT(_,_)) then true;
     case(_) equation
@@ -352,15 +401,15 @@ public function unitHasUnknown
   output Boolean res;
 algorithm
   res := matchcontinue(u)
-  local
-    UnitAbsyn.SpecUnit su;
-    case(UnitAbsyn.SPECIFIED(su)) equation
-      false = hasUnknown(su);
+    local
+      UnitAbsyn.SpecUnit su;
+    case(UnitAbsyn.SPECIFIED(su)) 
+      equation
+        false = hasUnknown(su);
       then false;
     case(_) then true;
   end matchcontinue;
 end unitHasUnknown;
-
 
 public function mulSpecUnit "Multiplying two units corresponds to adding the units and joining the typeParameter list."
   input UnitAbsyn.SpecUnit u1;
@@ -368,16 +417,23 @@ public function mulSpecUnit "Multiplying two units corresponds to adding the uni
   output UnitAbsyn.SpecUnit u;
 algorithm
   u := matchcontinue(u1,u2)
-  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4;
-    list<MMath.Rational> units,units1,units2;
-    case(UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2)) equation
-      tparams3 = listAppend(tparams1,tparams2);
-      tparams4 = normalizeParamsExponents(tparams3);
-      units = mulUnitVec(units1,units2);
-    then UnitAbsyn.SPECUNIT(tparams4,units);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::mulSpecUnit() failed\n");
-    then fail();
+    local 
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4;
+      list<MMath.Rational> units,units1,units2;
+    
+    case (UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2)) 
+      equation
+        tparams3 = listAppend(tparams1,tparams2);
+        tparams4 = normalizeParamsExponents(tparams3);
+        units = mulUnitVec(units1,units2);
+      then 
+        UnitAbsyn.SPECUNIT(tparams4,units);
+    
+    case (_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::mulSpecUnit() failed\n");
+      then 
+        fail();
   end matchcontinue;
 end mulSpecUnit;
 
@@ -387,27 +443,37 @@ public function mulUnitVec "multiplication of two unit vector"
   output list<MMath.Rational> outunitvec;
 algorithm
   outunitvec := matchcontinue(inunitvec1,inunitvec2)
-  local
-    MMath.Rational expo1,expo2,expo3;
-    list<MMath.Rational> rest1,rest2,rest3;
+    local
+      MMath.Rational expo1,expo2,expo3;
+      list<MMath.Rational> rest1,rest2,rest3;
+    
+    // empty list
     case ({},{}) then {};
-    case(expo1::rest1,expo2::rest2) equation
-      expo3 = MMath.addRational(expo1,expo2);
-      rest3 = mulUnitVec(rest1,rest2);
-    then (expo3::rest3);
-    case(expo1::rest1,{}) equation
-      rest3 = mulUnitVec(rest1,{});
-    then (expo1::rest3);
-    case({},expo1::rest1) equation
-      rest3 = mulUnitVec({},rest1);
-    then (expo1::rest3);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::powUnitVec() failed\n");
-    then fail();
+    
+    case(expo1::rest1,expo2::rest2) 
+      equation
+        expo3 = MMath.addRational(expo1,expo2);
+        rest3 = mulUnitVec(rest1,rest2);
+      then 
+        (expo3::rest3);
+    
+    case(expo1::rest1,{}) 
+      equation
+        rest3 = mulUnitVec(rest1,{});
+      then 
+        (expo1::rest3);
+    
+    case({},expo1::rest1) 
+      equation
+        rest3 = mulUnitVec({},rest1);
+      then (expo1::rest3);
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::powUnitVec() failed\n");
+      then fail();
   end matchcontinue;
 end mulUnitVec;
-
-
 
 public function divSpecUnit "Divide two specified units"
   input UnitAbsyn.SpecUnit u1;
@@ -415,17 +481,23 @@ public function divSpecUnit "Divide two specified units"
   output UnitAbsyn.SpecUnit u;
 algorithm
   u := matchcontinue(u1,u2)
-  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4,tparams5;
-    list<MMath.Rational> units,units1,units2;
-    case(UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2)) equation
-      tparams3 = negParamList(tparams2,{});
-      tparams4 = listAppend(tparams1,tparams3);
-      tparams5 = normalizeParamsExponents(tparams4);
-      units = divUnitVec(units1,units2);
-    then UnitAbsyn.SPECUNIT(tparams5,units);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::divSpecUnit() failed\n");
-    then fail();
+    local 
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> tparams1,tparams2,tparams3,tparams4,tparams5;
+      list<MMath.Rational> units,units1,units2;
+    
+    case(UnitAbsyn.SPECUNIT(tparams1,units1),UnitAbsyn.SPECUNIT(tparams2,units2)) 
+      equation
+        tparams3 = negParamList(tparams2,{});
+        tparams4 = listAppend(tparams1,tparams3);
+        tparams5 = normalizeParamsExponents(tparams4);
+        units = divUnitVec(units1,units2);
+      then 
+        UnitAbsyn.SPECUNIT(tparams5,units);
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::divSpecUnit() failed\n");
+      then fail();
   end matchcontinue;
 end divSpecUnit;
 
@@ -435,27 +507,38 @@ public function divUnitVec "division of two unit vectors"
   output list<MMath.Rational> outunitvec;
 algorithm
   outunitvec := matchcontinue(inunitvec1,inunitvec2)
-  local
-    MMath.Rational expo1,expo2,expo3;
-    list<MMath.Rational> rest1,rest2,rest3;
+    local
+      MMath.Rational expo1,expo2,expo3;
+      list<MMath.Rational> rest1,rest2,rest3;
+    
     case ({},{}) then {};
-    case(expo1::rest1,expo2::rest2) equation
-      expo3 = MMath.subRational(expo1,expo2);
-      rest3 = divUnitVec(rest1,rest2);
-    then (expo3::rest3);
-    case(expo1::rest1,{}) equation
-      rest3 = divUnitVec(rest1,{});
-    then (expo1::rest3);
-    case({},expo1::rest1) equation
-      expo2 = MMath.subRational(MMath.RATIONAL(0,1),expo1);
-      rest3 = divUnitVec({},rest1);
-    then (expo2::rest3);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::powUnitVec() failed\n");
-    then fail();
+    
+    case(expo1::rest1,expo2::rest2) 
+      equation
+        expo3 = MMath.subRational(expo1,expo2);
+        rest3 = divUnitVec(rest1,rest2);
+      then 
+        (expo3::rest3);
+    
+    case(expo1::rest1,{}) 
+      equation
+        rest3 = divUnitVec(rest1,{});
+      then 
+        (expo1::rest3);
+    
+    case({},expo1::rest1) 
+      equation
+        expo2 = MMath.subRational(MMath.RATIONAL(0,1),expo1);
+        rest3 = divUnitVec({},rest1);
+      then 
+        (expo2::rest3);
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::powUnitVec() failed\n");
+      then fail();
   end matchcontinue;
 end divUnitVec;
-
 
 public function powSpecUnit "Power of a specified unit"
   input UnitAbsyn.SpecUnit suin;
@@ -463,18 +546,24 @@ public function powSpecUnit "Power of a specified unit"
   output UnitAbsyn.SpecUnit uout;
 algorithm
   u := matchcontinue(suin,expo)
-  local list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2;
-    list<MMath.Rational> unitvec1,unitvec2;
-    case(UnitAbsyn.SPECUNIT(params1,unitvec1),expo) equation
-      params2 = powUnitParams(params1,expo);
-      unitvec2 = powUnitVec(unitvec1,expo);
-    then UnitAbsyn.SPECUNIT(params2,unitvec2);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::powSpecUnit() failed\n");
-    then fail();
+    local 
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2;
+      list<MMath.Rational> unitvec1,unitvec2;
+    
+    case(UnitAbsyn.SPECUNIT(params1,unitvec1),expo) 
+      equation
+        params2 = powUnitParams(params1,expo);
+        unitvec2 = powUnitVec(unitvec1,expo);
+      then 
+        UnitAbsyn.SPECUNIT(params2,unitvec2);
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::powSpecUnit() failed\n");
+      then 
+        fail();
   end matchcontinue;
 end powSpecUnit;
-
 
 public function powUnitParams "exponent power of the unit type parameters"
   input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> inparams;
@@ -482,18 +571,24 @@ public function powUnitParams "exponent power of the unit type parameters"
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;
 algorithm
   outparams := matchcontinue(inparams,expo)
-  local
-    MMath.Rational expo1,expo2,expo3;
-    UnitAbsyn.TypeParameter param;
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1,rest2;
+    local
+      MMath.Rational expo1,expo2,expo3;
+      UnitAbsyn.TypeParameter param;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1,rest2;
+    
     case ({},_) then {};
-    case((expo1,param)::rest1,expo2) equation
-      expo3 = MMath.multRational(expo1,expo2);
-      rest2 = powUnitParams(rest1,expo2);
-    then ((expo3,param)::rest2);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::powUnitParams() failed\n");
-    then fail();
+    
+    case((expo1,param)::rest1,expo2) 
+      equation
+        expo3 = MMath.multRational(expo1,expo2);
+        rest2 = powUnitParams(rest1,expo2);
+      then 
+        ((expo3,param)::rest2);
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::powUnitParams() failed\n");
+      then fail();
   end matchcontinue;
 end powUnitParams;
 
@@ -503,20 +598,25 @@ public function powUnitVec "exponent power of the unit vector"
   output list<MMath.Rational> outunitvec;
 algorithm
   outunitvec := matchcontinue(inunitvec,expo)
-  local
-    MMath.Rational expo1,expo2,expo3;
-    list<MMath.Rational> rest1,rest2;
+    local
+      MMath.Rational expo1,expo2,expo3;
+      list<MMath.Rational> rest1,rest2;
+    
     case ({},_) then {};
-    case(expo1::rest1,expo2) equation
-      expo3 = MMath.multRational(expo1,expo2);
-      rest2 = powUnitVec(rest1,expo2);
-    then (expo3::rest2);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::powUnitVec() failed\n");
-    then fail();
+    
+    case(expo1::rest1,expo2) 
+      equation
+        expo3 = MMath.multRational(expo1,expo2);
+        rest2 = powUnitVec(rest1,expo2);
+      then 
+        (expo3::rest2);
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::powUnitVec() failed\n");
+      then fail();
   end matchcontinue;
 end powUnitVec;
-
 
 protected function negParamList
   input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> ine;
@@ -524,23 +624,27 @@ protected function negParamList
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> oute;
 algorithm
   oute := matchcontinue(ine,ac)
-  local
-    MMath.Rational qr;
-    Integer i1,i2,indx;
-    String name;
-    UnitAbsyn.TypeParameter p;
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,pres,ac2;
+    local
+      MMath.Rational qr;
+      Integer i1,i2,indx;
+      String name;
+      UnitAbsyn.TypeParameter p;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,pres,ac2;
+    
     case ({},ac2) then ac2;
-    case ((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))::rest,ac2) equation
-      qr = MMath.multRational(MMath.RATIONAL(-1,1),MMath.RATIONAL(i1,i2));
-      pres = negParamList(rest,(qr,UnitAbsyn.TYPEPARAMETER(name,indx))::ac2);
-    then pres;
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::negParamList() failed\n");
-    then fail();
+    
+    case ((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,indx))::rest,ac2) 
+      equation
+        qr = MMath.multRational(MMath.RATIONAL(-1,1),MMath.RATIONAL(i1,i2));
+        pres = negParamList(rest,(qr,UnitAbsyn.TYPEPARAMETER(name,indx))::ac2);
+      then pres;
+    
+    case(_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::negParamList() failed\n");
+      then fail();
   end matchcontinue;
 end negParamList;
-
 
 public function normalize "normalizes the unit pointed by 'loc'. Returns the normalized unit."
   input Integer loc;
@@ -557,7 +661,6 @@ algorithm
    unit := u2;
 end normalize;
 
-
 public function normalizeOnUnit "switch on each kind of unit"
   input UnitAbsyn.Unit u;
   input UnitAbsyn.Store st;
@@ -565,21 +668,27 @@ public function normalizeOnUnit "switch on each kind of unit"
   output UnitAbsyn.Store outSt;
 algorithm
   (unit,outSt) := matchcontinue(u,st)
-  local
-    UnitAbsyn.Unit u1;
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2,params3;
-    list<MMath.Rational> unitvec1,unitvec2;
-    UnitAbsyn.Store st2;
-    UnitAbsyn.SpecUnit su2,su3;
+    local
+      UnitAbsyn.Unit u1;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params1,params2,params3;
+      list<MMath.Rational> unitvec1,unitvec2;
+      UnitAbsyn.Store st2;
+      UnitAbsyn.SpecUnit su2,su3;
+    
     case (UnitAbsyn.UNSPECIFIED,st)
       then (UnitAbsyn.UNSPECIFIED,st);
-    case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params1,unitvec1)),st) equation
-      (UnitAbsyn.SPECUNIT(params2,unitvec2),st2) = normalizeParamsValues(params1,UnitAbsyn.SPECUNIT({},unitvec1),st);
-      params3 = normalizeParamsExponents(params2);
-      then (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params3,unitvec2)),st2);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::normalizeOnUnit() failed\n");
-    then fail();
+    
+    case (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params1,unitvec1)),st) 
+      equation
+        (UnitAbsyn.SPECUNIT(params2,unitvec2),st2) = normalizeParamsValues(params1,UnitAbsyn.SPECUNIT({},unitvec1),st);
+        params3 = normalizeParamsExponents(params2);
+      then 
+        (UnitAbsyn.SPECIFIED(UnitAbsyn.SPECUNIT(params3,unitvec2)),st2);
+    
+    case (_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::normalizeOnUnit() failed\n");
+      then fail();
   end matchcontinue;
 end normalizeOnUnit;
 
@@ -588,31 +697,44 @@ protected function normalizeParamsExponents "normalize the exponents of a parame
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;
 algorithm
   outparams := matchcontinue(inparams)
-  local
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1,rest2,rest3;
-    String name;
-    Integer loc1;
-    MMath.Rational expo1,expo2,expo3;
-    tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
-    //Case: No more elements in list
+    local
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest1,rest2,rest3;
+      String name;
+      Integer loc1;
+      MMath.Rational expo1,expo2,expo3;
+      tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
+    
+    // Case: No more elements in list
     case ({}) then {};
-    //Case: Found duplicate parameter in list
-    case ((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1) equation
-      (true,expo2,rest2) = getParam(rest1,loc1);
-      expo3 = MMath.addRational(expo1,expo2);
-      rest3 = normalizeParamsExponents((expo3,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest2);
-      then rest3;
-    //Case: No duplicates in list and exponent IS zero
-    case ((MMath.RATIONAL(0,1),_)::rest1) equation
-      rest2 = normalizeParamsExponents(rest1);
-      then (rest2);
-    //Case: No duplicates in list and exponent is not zero
-    case (param::rest1) equation
-      rest2 = normalizeParamsExponents(rest1);
-      then (param::rest2);
-    case(_) equation
-      Debug.fprint("failtrace", "UnitChecker::normalizeParamsExponents() failed\n");
-    then fail();
+    
+    // Case: Found duplicate parameter in list
+    case ((expo1,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest1) 
+      equation
+        (true,expo2,rest2) = getParam(rest1,loc1);
+        expo3 = MMath.addRational(expo1,expo2);
+        rest3 = normalizeParamsExponents((expo3,UnitAbsyn.TYPEPARAMETER(name,loc1))::rest2);
+      then 
+        rest3;
+    
+    // Case: No duplicates in list and exponent IS zero
+    case ((MMath.RATIONAL(0,1),_)::rest1) 
+      equation
+        rest2 = normalizeParamsExponents(rest1);
+      then 
+        rest2;
+    
+    // Case: No duplicates in list and exponent is not zero
+    case (param::rest1) 
+      equation
+        rest2 = normalizeParamsExponents(rest1);
+      then 
+        (param::rest2);
+    
+    case (_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::normalizeParamsExponents() failed\n");
+      then 
+        fail();
   end matchcontinue;
 end normalizeParamsExponents;
 
@@ -624,27 +746,34 @@ protected function getParam "returns the next param in list and removes it from 
   output list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> outparams;
 algorithm
   (expo,outparams) := matchcontinue(inparams,loc)
-  local
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,rest2;
-    String name;
-    Integer loc2;
-    MMath.Rational expo;
-    Boolean found2;
-    tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
+    local
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest,rest2;
+      String name;
+      Integer loc2;
+      MMath.Rational expo;
+      Boolean found2;
+      tuple<MMath.Rational,UnitAbsyn.TypeParameter> param;
+    
     case ({},loc) then (false,MMath.RATIONAL(1,1),{});
-    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,loc) equation
-      equality(loc2 = loc);
-      then (true,expo,rest);
-    case (param::rest,loc) equation
-      (found2,expo,rest2) = getParam(rest,loc);
-      then (found2,expo,param::rest2);
-    case(_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::getParam() failed\n");
-    then fail();
+    
+    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc2))::rest,loc) 
+      equation
+        true = intEq(loc2, loc);
+      then 
+        (true,expo,rest);
+    
+    case (param::rest,loc) 
+      equation
+        (found2,expo,rest2) = getParam(rest,loc);
+      then 
+        (found2,expo,param::rest2);
+    
+    case (_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::getParam() failed\n");
+      then fail();
   end matchcontinue;
 end getParam;
-
-
 
 protected function normalizeParamsValues "normalize the values that the the list of unit parameters points at"
   input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> inparams;
@@ -654,23 +783,29 @@ protected function normalizeParamsValues "normalize the values that the the list
   output UnitAbsyn.Store outSt;
 algorithm
   (outparams,uout,outSt) := matchcontinue(inparams,suin,st)
-  local
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
-    UnitAbsyn.Store st2,st3;
-    UnitAbsyn.Unit u2;
-    UnitAbsyn.SpecUnit su2,su3;
-    String name;
-    Integer loc;
-    MMath.Rational expo;
+    local
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
+      UnitAbsyn.Store st2,st3;
+      UnitAbsyn.Unit u2;
+      UnitAbsyn.SpecUnit su2,su3;
+      String name;
+      Integer loc;
+      MMath.Rational expo;
+    
     case ({},suin,st) then (suin,st);
-    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,suin,st) equation
-      (u2,st2) = normalize(loc,st);
-      su2 = mulSpecUnitWithNorm(suin,u2,name,loc,expo);
-      (su3,st3) = normalizeParamsValues(rest,su2,st2);
-      then (su3,st3);
-    case(_,_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::normalizeParamsValues() failed\n");
-    then fail();
+    
+    case ((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::rest,suin,st) 
+      equation
+        (u2,st2) = normalize(loc,st);
+        su2 = mulSpecUnitWithNorm(suin,u2,name,loc,expo);
+        (su3,st3) = normalizeParamsValues(rest,su2,st2);
+      then 
+        (su3,st3);
+    
+    case (_,_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::normalizeParamsValues() failed\n");
+      then fail();
   end matchcontinue;
 end normalizeParamsValues;
 
@@ -683,72 +818,76 @@ protected function mulSpecUnitWithNorm
   output UnitAbsyn.SpecUnit suout;
 algorithm
   suout := matchcontinue(suin,normunit,name,loc,expo)
-  local
-    input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
-    list<MMath.Rational> unitvec;
-    UnitAbsyn.SpecUnit su2,sunorm,su3,su4;
+    local
+      input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
+      list<MMath.Rational> unitvec;
+      UnitAbsyn.SpecUnit su2,sunorm,su3,su4;
+    
     case (UnitAbsyn.SPECUNIT(params,unitvec),UnitAbsyn.UNSPECIFIED,name,loc,expo)
       then (UnitAbsyn.SPECUNIT((expo,UnitAbsyn.TYPEPARAMETER(name,loc))::params,unitvec));
-    case (su2,UnitAbsyn.SPECIFIED(sunorm),name,loc,expo) equation
-      su3 = powSpecUnit(sunorm,expo);
-      su4 = mulSpecUnit(su2,su3);
-      then su4;
-    case(_,_,_,_,_) equation
-      Debug.fprint("failtrace", "UnitChecker::mulSpecUnitWithNorm() failed\n");
-    then fail();
+    
+    case (su2,UnitAbsyn.SPECIFIED(sunorm),name,loc,expo) 
+      equation
+        su3 = powSpecUnit(sunorm,expo);
+        su4 = mulSpecUnit(su2,su3);
+      then 
+        su4;
+    
+    case(_,_,_,_,_) 
+      equation
+        Debug.fprint("failtrace", "UnitChecker::mulSpecUnitWithNorm() failed\n");
+      then fail();
   end matchcontinue;
 end mulSpecUnitWithNorm;
 
-
-
-
 public function printSpecUnit
-protected
   input String text;
   input UnitAbsyn.SpecUnit su;
 algorithm
   _ := matchcontinue(text,su)
-  local
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
-    list<MMath.Rational> unitvec;
-    String str;
-    case(str,UnitAbsyn.SPECUNIT(params,unitvec)) equation
-	  print(str);
-	  print(" \"");
-	  print(UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su)));
-	  print("\" {");
-	  printSpecUnitParams(params);
-	  print("}\n");
-	  then ();
-	end matchcontinue;
+    local
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
+      list<MMath.Rational> unitvec;
+      String str;
+    
+    case(str,UnitAbsyn.SPECUNIT(params,unitvec)) 
+      equation
+        print(str);
+        print(" \"");
+        print(UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(su)));
+        print("\" {");
+        printSpecUnitParams(params);
+        print("}\n");
+      then ();
+  end matchcontinue;
 end printSpecUnit;
 
 public function printSpecUnitParams
   input list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> params;
 algorithm
   _ := matchcontinue(params)
-  local
-    String name;
-    Integer i1,i2,loc;
-    list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
-    case({})
+    local
+      String name;
+      Integer i1,i2,loc;
+      list<tuple<MMath.Rational,UnitAbsyn.TypeParameter>> rest;
+    
+    case({}) then ();
+    
+    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,loc))::rest) 
+      equation
+        print("(\"");
+        print(name);
+        print("\",");
+        print(intString(loc));
+        print(")^(");
+        print(intString(i1));
+        print("/");
+        print(intString(i2));
+        print("),");
+        printSpecUnitParams(rest);
       then ();
-    case((MMath.RATIONAL(i1,i2),UnitAbsyn.TYPEPARAMETER(name,loc))::rest) equation
-       print("(\"");
-       print(name);
-       print("\",");
-       print(intString(loc));
-       print(")^(");
-       print(intString(i1));
-       print("/");
-       print(intString(i2));
-       print("),");
-       printSpecUnitParams(rest);
-     then ();
 	end matchcontinue;
 end printSpecUnitParams;
-
-
 
 public function testUnitOp "Test unit operations"
 protected
@@ -758,28 +897,30 @@ algorithm
   print("test");
 end testUnitOp;
 
-
 public function printResult "Print out the result from the unit check"
   input UnitAbsyn.UnitCheckResult res;
 algorithm
   _ := matchcontinue(res)
-  local
-    UnitAbsyn.SpecUnit u1,u2;
-    String str1,str2;
-    case (UnitAbsyn.CONSISTENT) equation
-      print("\n---\nThe system of units is consistent.\n---\n");
+    local
+      UnitAbsyn.SpecUnit u1,u2;
+      String str1,str2;
+    
+    case (UnitAbsyn.CONSISTENT) 
+      equation
+        print("\n---\nThe system of units is consistent.\n---\n");
       then ();
-    case (UnitAbsyn.INCONSISTENT(u1,u2)) equation
-      print("\n---\nThe system of units is inconsistent. \"");
-      str1 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u1));
-      print(str1);
-      print("\" != \"");
-      str2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u2));
-      print(str2);
-      print("\"\n---\n");
+    
+    case (UnitAbsyn.INCONSISTENT(u1,u2)) 
+      equation
+        print("\n---\nThe system of units is inconsistent. \"");
+        str1 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u1));
+        print(str1);
+        print("\" != \"");
+        str2 = UnitAbsynBuilder.unit2str(UnitAbsyn.SPECIFIED(u2));
+        print(str2);
+        print("\"\n---\n");
       then ();
   end matchcontinue;
 end printResult;
-
 
 end UnitChecker;

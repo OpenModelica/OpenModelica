@@ -73,12 +73,14 @@ algorithm
       String str,s,rest_1,s_1,s_2;
       Prefix.ComponentPrefix rest;
       Prefix.ClassPrefix cp;
+      list<Integer> ss;
+      
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
     case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";      
     case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE()),_) then str;
-    case Prefix.PREFIX(Prefix.PRE(str,_,Prefix.NOCOMPPRE()),_)
+    case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE()),_)
       equation
-        s = stringAppend(str, "[]");
+        s = stringAppend(str, "[" +& Util.stringDelimitList(Util.listMap(ss, intString), ", ") +& "]");
       then
         s;
     case Prefix.PREFIX(Prefix.PRE(str,{},rest),cp)
@@ -88,12 +90,12 @@ algorithm
         s_1 = stringAppend(s, str);
       then
         s_1;
-    case Prefix.PREFIX(Prefix.PRE(str,_,rest),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,ss,rest),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
-        s_2 = stringAppend(s_1, "[]");
+        s_2 = stringAppend(s_1, "[" +& Util.stringDelimitList(Util.listMap(ss, intString), ", ") +& "]");
       then
         s_2;
   end matchcontinue;
@@ -139,8 +141,12 @@ algorithm
       String i;
       list<Integer> s;
       Prefix.ComponentPrefix p;
-    case (i,s,Prefix.PREFIX(p,_),vt) then Prefix.PREFIX(Prefix.PRE(i,s,p),Prefix.CLASSPRE(vt));
-    case(i,s,Prefix.NOPRE(),vt) then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE()),Prefix.CLASSPRE(vt));
+      
+    case (i,s,Prefix.PREFIX(p,_),vt) 
+      then Prefix.PREFIX(Prefix.PRE(i,s,p),Prefix.CLASSPRE(vt));
+    
+    case(i,s,Prefix.NOPRE(),vt) 
+      then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE()),Prefix.CLASSPRE(vt));
   end matchcontinue;
 end prefixAdd;
 
@@ -154,23 +160,24 @@ algorithm
       list<Integer> b;
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix c;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c),cp)) then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE()),cp);
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c),cp)) 
+      then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE()),cp);
   end matchcontinue;
 end prefixFirst;
 
 public function prefixLast "function: prefixLast
-
-  Returns the last NONPRE Prefix of a prefix
-"
+  Returns the last NONPRE Prefix of a prefix"
   input Prefix inPrefix;
   output Prefix outPrefix;
 algorithm
-  outPrefix:=
-  matchcontinue (inPrefix)
-    local Prefix.ComponentPrefix p;
+  outPrefix := matchcontinue (inPrefix)
+    local 
+      Prefix.ComponentPrefix p;
       Prefix res;
       Prefix.ClassPrefix cp;
+    
     case ((res as Prefix.PREFIX(Prefix.PRE(next = Prefix.NOCOMPPRE()),cp))) then res;
+    
     case (Prefix.PREFIX(Prefix.PRE(next = p),cp))
       equation
         res = prefixLast(Prefix.PREFIX(p,cp));
@@ -189,6 +196,7 @@ algorithm
     local
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix compPre;
+      Prefix.ComponentPrefixOpt iop;
     // we can't remove what it isn't there!
     case (Prefix.NOPRE()) then Prefix.NOPRE();
     // if there isn't any next prefix, return Prefix.NOPRE!
@@ -225,13 +233,13 @@ public function prefixPath "function: prefixPath
   input Prefix inPrefix;
   output Absyn.Path outPath;
 algorithm
-  outPath:=
-  matchcontinue (inPath,inPrefix)
+  outPath := matchcontinue (inPath,inPrefix)
     local
       Absyn.Path p,p_1;
       String s;
       Prefix.ComponentPrefix ss;
       Prefix.ClassPrefix cp;
+    
     case (p,Prefix.NOPRE()) then p;
     case (p,Prefix.PREFIX(Prefix.PRE(prefix = s,next = Prefix.NOCOMPPRE()),cp))
       equation
@@ -257,6 +265,7 @@ algorithm
       Absyn.Path p;
       Prefix.ComponentPrefix ss;
       Prefix.ClassPrefix cp;
+    
     case Prefix.NOPRE()
       equation
         /*Print.printBuf("#-- Error: Cannot convert empty prefix to a path\n");*/
@@ -308,10 +317,8 @@ algorithm
       list<Integer> s;
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
-    case (Prefix.NOPRE(),NONE)
-      equation
-      then
-        fail();
+    
+    case (Prefix.NOPRE(),NONE) then fail();
     case (Prefix.NOPRE(),SOME(cref)) then cref;
     case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then cref;
     case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),NONE)
@@ -572,7 +579,7 @@ algorithm
     case (cache,env,ih,DAE.CREF(componentRef = p,ty = t),pre)
       equation
         true = System.getHasInnerOuterDefinitions();
-        (cache,p_1) = prefixCrefInnerOuter(cache, env, ih, p, pre);
+        p_1 = InnerOuter.prefixOuterCrefWithTheInnerPrefix(ih, p, pre);
       then
         (cache,DAE.CREF(p_1,t));
 

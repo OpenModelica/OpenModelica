@@ -623,33 +623,39 @@ algorithm
       Element elt,comp,cdef;
       String id2,id1;
       list<Element> xs;
+    
     case (id2,((comp as COMPONENT(component = id1)) :: _))
       equation
-        equality(id1 = id2);
+        true = stringEqual(id1, id2);
       then
         comp;
+    
     case (id2,(COMPONENT(component = id1) :: xs))
       equation
-        failure(equality(id1 = id2));
+        false = stringEqual(id1, id2);
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
+    
     case (id2,(CLASSDEF(name = id1) :: xs))
       equation
-        failure(equality(id1 = id2));
+        false = stringEqual(id1, id2);
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
+    
     case (id2,(EXTENDS(baseClassPath = _) :: xs))
       equation
         elt = getElementNamedFromElts(id2, xs);
       then
         elt;
+    
     case (id2,((cdef as CLASSDEF(name = id1)) :: _))
       equation
-        equality(id1 = id2);
+        true = stringEqual(id1, id2);
       then
         cdef;
+    
     // Try next.
     case (id2, _:: xs)
       equation
@@ -1379,8 +1385,8 @@ public function elementEqual
      case (DEFINEUNIT(name1,os1,or1), DEFINEUNIT(name2,os2,or2))      
        equation
          b1 = stringEqual(name1,name2);
-         equality(os1=os2);
-         equality(or1=or2);
+         equality(os1 = os2);
+         equality(or1 = or2);
        then b1;
      case(_,_) then false;
    end matchcontinue;
@@ -2064,14 +2070,14 @@ algorithm
         then lst;
       case (id,EQ_FOR(id_1,e_1,eeqLst,_))
         equation
-          failure(equality(id=id_1));
+          false = stringEqual(id, id_1);
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
       case (id,EQ_FOR(id_1,e_1,eeqLst,_))
         equation
-          equality(id=id_1);
+          true = stringEqual(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
       case (id,EQ_WHEN(e_1,eeqLst,ew,_))
@@ -2267,8 +2273,7 @@ public function isValidEnumLiteral
   "Checks if a string is a valid enumeration literal."
   input String literal;
 algorithm
-  true := Util.listNotContains(literal, 
-    {"quantity", "min", "max", "start", "fixed"});
+  true := Util.listNotContains(literal, {"quantity", "min", "max", "start", "fixed"});
 end isValidEnumLiteral;
 
 public function variabilityOr 

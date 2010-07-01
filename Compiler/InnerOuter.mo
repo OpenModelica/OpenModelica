@@ -376,9 +376,9 @@ Then uses the first common part of the replacement destination.
 ex:
  m1.m2.m3, m1.m2.m3.m4, m2.m3.m4
  ==> m2.$unique'ified$m3"
-input DAE.ComponentRef inCr;
-input list<DAE.ComponentRef> src,dst;
-output DAE.ComponentRef outCr;
+  input DAE.ComponentRef inCr;
+  input list<DAE.ComponentRef> src,dst;
+  output DAE.ComponentRef outCr;
 algorithm outCr := matchcontinue(inCr,src,dst)
   local DAE.ComponentRef s,d,cr1,cr2;
   case(inCr,s::src,d::dst)
@@ -542,15 +542,18 @@ protected function stripCommonCrefPart
   output DAE.ComponentRef outInnerCr;
 algorithm
   (outOuterCr,outInnerCr) := matchcontinue(outerCr,innerCr)
-  local
-    DAE.Ident id1,id2;
-    list<DAE.Subscript> subs1,subs2;
-  	DAE.ComponentRef cr1,cr2,cr11,cr22;
+    local
+      DAE.Ident id1,id2;
+      list<DAE.Subscript> subs1,subs2;
+      DAE.ComponentRef cr1,cr2,cr11,cr22;
+    
     case(DAE.CREF_QUAL(id1,_,subs1,cr1),DAE.CREF_QUAL(id2,_,subs2,cr2))
       equation
-        equality(id1=id2);
+        true = stringEqual(id1, id2);
         (cr11,cr22) = stripCommonCrefPart(cr1,cr2);
-      then (cr11,cr22);
+      then 
+        (cr11,cr22);
+    
     case(cr1,cr2) then (cr1,cr2);
   end matchcontinue;
 end stripCommonCrefPart;
@@ -2043,7 +2046,7 @@ algorithm
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation
-        print("-InstHierarchyHashTable.add failed\n");
+        print("- InnerOuter.add failed\n");
       then
         fail();
   end matchcontinue;
@@ -2080,7 +2083,7 @@ algorithm
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
     case (_,_)
       equation
-        print("-InstHierarchyHashTable.addNoUpdCheck failed\n");
+        print("- InnerOuter.addNoUpdCheck failed\n");
       then
         fail();
   end matchcontinue;
@@ -2138,21 +2141,23 @@ public function get1 "help function to get"
   output Value value;
   output Integer indx;
 algorithm
-  (value,indx):= matchcontinue (key,hashTable)
+  (value, indx) := matchcontinue (key,hashTable)
     local
       Integer hval,hashindx,indx,indx_1,bsize,n;
       list<tuple<Key,Integer>> indexes;
       Value v;
       list<tuple<Key,Integer>>[:] hashvec;
       ValueArray varr;
-      Key key2;
+      Key k;
+    
     case (key,(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation
         hval = hashFunc(key);
         hashindx = intMod(hval, bsize);
         indexes = hashvec[hashindx + 1];
         indx = get2(key, indexes);
-        v = valueArrayNth(varr, indx);
+        (k, v) = valueArrayNth(varr, indx);
+        true = keyEqual(k, key);
       then
         (v,indx);
   end matchcontinue;
@@ -2383,20 +2388,24 @@ public function valueArrayNth
   Retrieve the n:th Vale from ValueArray, index from 0..n-1."
   input ValueArray valueArray;
   input Integer pos;
+  output Key key;
   output Value value;
 algorithm
-  value := matchcontinue (valueArray,pos)
+  (key, value) := matchcontinue (valueArray,pos)
     local
+      Key k;
       Value v;
       Integer n,pos,len;
       Option<tuple<Key,Value>>[:] arr;
       String ps,lens,ns;
+    
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;
-        SOME((_,v)) = arr[pos + 1];
+        SOME((k,v)) = arr[pos + 1];
       then
-        v;
+        (k, v);
+    
     case (VALUE_ARRAY(numberOfElements = n,valueArray = arr),pos)
       equation
         (pos < n) = true;

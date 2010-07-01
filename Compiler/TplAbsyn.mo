@@ -593,13 +593,11 @@ public function inlineLastFunIfSingleCall
   input list<MMExp> inStmts;
   input TypedIdents inLocals;
   input list<MMDeclaration> inAccMMDecls;
-  
   output list<MMExp> outStmts;
   output TypedIdents outLocals;
   output list<MMDeclaration> outMMDecls;
 algorithm
-  (outStmts, outLocals, outMMDecls)
-  := matchcontinue (inInArgs, inOutArgs, inStmts, inLocals, inAccMMDecls)
+  (outStmts, outLocals, outMMDecls) := matchcontinue (inInArgs, inOutArgs, inStmts, inLocals, inAccMMDecls)
     local
       list<MMExp> stmts;
       Ident fidCalled, fidLast;
@@ -612,18 +610,16 @@ algorithm
           {}, 
           MM_FUN(_, fidLast, iargsL, oargsL, locals, stmts, NONE) :: accMMDecls)
       equation
-        equality(fidCalled = fidLast);
+        true = stringEqual(fidCalled, fidLast);
         equality(iargs = iargsL);
         equality(oargs = oargsL);
       then ( stmts, locals, accMMDecls );
     
-    //otherwise nothing
+    // otherwise nothing
     case ( _, _, stmts, locals, accMMDecls)
       then ( stmts, locals, accMMDecls );
-    
   end matchcontinue;           
 end inlineLastFunIfSingleCall;
-
 
 //prepend "i" in front of the ident to obey the MM rule that no identifier can start with "_"
 public function encodeIdent
@@ -2161,17 +2157,17 @@ algorithm
       TypeSignature itype, otype;
       list<String> inlst, outlst;
       list<ASTDef> astdefs;
-              
-    //equals with no prefix ... internal only for defined tempates  
+    
+    // equals with no prefix ... internal only for defined tempates  
     case ((inid,itype), (outid,otype), TEMPL_PACKAGE(astDefs = astdefs))
       equation
-        equality(inid = outid);
+        true = stringEqual(inid, outid);
         TEXT_TYPE() = deAliasedType(itype, astdefs);
         TEXT_TYPE() = deAliasedType(otype, astdefs);
       then
         ();
     
-    //equals with usage of in/out prefixes ... for external templates from an ast definition
+    // equals with usage of in/out prefixes ... for external templates from an ast definition
     case ((inid,itype), (outid,otype), TEMPL_PACKAGE(astDefs = astdefs))
       equation
         ("i" :: "n" :: inlst) = stringListStringChar(inid);
@@ -2181,12 +2177,10 @@ algorithm
         TEXT_TYPE() = deAliasedType(otype, astdefs);
       then
         ();
-  
-  //otherwise fail
     
+    //otherwise fail
   end matchcontinue;           
 end areTextInOutArgs;
-
 
 public function typeAdaptMMArgsForFun
   input list<tuple<MMExp, TypeSignature>> inArgValues;
@@ -3694,14 +3688,14 @@ algorithm
       Ident ident;
       TypeSignature mtype;
       TypedIdents locals;
-      
+    
     // special case when no local statement where added to an empty text
     case ( ident, TEXT_TYPE(), locals)
       equation
-        equality(ident = emptyTxt);
+        true = stringEqual(ident, emptyTxt);
       then 
         locals;
-        
+    
     case ( ident, mtype, locals)
       equation
         failure( _ = lookupTupleList(locals, ident) );
@@ -4175,16 +4169,16 @@ algorithm
       StringToken st;
       String reason;         
     
-    //local scope (Text variables)  
+    // local scope (Text variables)  
     case (IDENT(ident = ident), 
           scEnv as (LOCAL_SCOPE(ident = locId, idType = idtype) :: _), _)
       equation
         ident = encodeIdent(ident);
-        equality(ident = locId);
+        true = stringEqual(ident, locId);
       then
         (MM_IDENT(IDENT(ident)), idtype, scEnv);
     
-    //local scope failed - look up in the immediate scope 
+    // local scope failed - look up in the immediate scope 
     case (path,  
           (scope as LOCAL_SCOPE(ident = _)) :: scEnv, tplPackage)
       equation
@@ -4194,13 +4188,13 @@ algorithm
       then
         (mmexp, idtype, scope :: scEnv);
     
-    //plain 'it'
+    // plain 'it'
     case (IDENT(ident = "it"), scEnv, _  )
       equation
         (ident, idtype, scEnv) = resolveIt(scEnv);
       then
         (MM_IDENT(IDENT(ident)), idtype, scEnv);
-        
+    
     // 'it.path' in a function scope is error 
     //-> fail ... must be checked here to prevent trying looking up the scope that can be possibly successful, but semantically wrong ('it' cannot skip its scope up) 
     case ( path as PATH_IDENT(ident = "it"), 
@@ -4368,16 +4362,14 @@ algorithm
     
     case ( path, MM_IDENT(IDENT(txtIdent)), TEXT_TYPE(), intxt)
       equation
-        equality(txtIdent = intxt);
+        true = stringEqual(txtIdent, intxt);
         Debug.fprint("failtrace", "Error - trying to use '" +& pathIdentString(path) +& "' Text recursively during self evaluation. Use an additional Text variable if a self addition/duplication is needed, like  # b = a # a += 'pref<b>' ... \n");
       then
         false;
-        
-    case ( _, _, _, _) then true;
     
+    case ( _, _, _, _) then true;
   end matchcontinue;           
 end ensureNotUsingTheSameText;
-
 
 public function makeMMExpFromTemplateConstant
   input TemplateDef inTplDef;
@@ -4389,7 +4381,6 @@ algorithm
   (outMMExp, outConstType) := matchcontinue (inTplDef, inTemplIdent)
     local
       MatchingExp mexp;
-      
       PathIdent path;
       Ident ident;
       TypeSignature idtype, lt;
@@ -4402,20 +4393,20 @@ algorithm
       StringToken st;
       String litstr, reason;           
       
-    //string constants are of StringToken type and does not involve a type conversion, use them through idents 
+    // string constants are of StringToken type and does not involve a type conversion, use them through idents 
     case ( STR_TOKEN_DEF(value = st), ident)
       equation
         ident = "c_" +& ident; //no encoding needed, just prefix, it is a constant
       then
         (MM_IDENT(IDENT(ident)), STRING_TOKEN_TYPE());
         
-    //literal constants of primitive types besides string : INTEGER_TYPE, REAL_TYPE or BOOLEAN_TYPE
-    //make them inline  
+    // literal constants of primitive types besides string : INTEGER_TYPE, REAL_TYPE or BOOLEAN_TYPE
+    // make them inline  
     case ( LITERAL_DEF(value = litstr, litType = lt), _)
       then
         (MM_LITERAL(litstr), lt);
     
-    //Error - a template in a value context ... maybe, this can be with lower priority, after of trying of imlicit record lookup
+    // Error - a template in a value context ... maybe, this can be with lower priority, after of trying of imlicit record lookup
     case ( TEMPLATE_DEF(_,_,_,_), ident)
       equation
         reason = "Unresolved identifier - the template '" +& ident +& "'in a value context found (missing parenthesis ?) .";
@@ -4424,7 +4415,7 @@ algorithm
       then
         ( MM_IDENT(IDENT(ident)), idtype);
                     
-    //should not ever happen
+    // should not ever happen
     case ( _, _ )
       equation
         Debug.fprint("failtrace", "-!!!makeMMExpFromTemplateConstant failed\n");
@@ -4432,7 +4423,6 @@ algorithm
         fail();
   end matchcontinue;           
 end makeMMExpFromTemplateConstant;
-
 
 public function resolveIt
   input ScopeEnv inScopeEnv;
@@ -4547,7 +4537,7 @@ algorithm
     case (ident, _, 
           scEnv as (LOCAL_SCOPE(ident = locId, idType = idtype) :: _), _)
       equation
-        equality(ident = locId);
+        true = stringEqual(ident, locId);
       then
         (ident, idtype, scEnv);
     
@@ -4600,7 +4590,7 @@ algorithm
              extArgs = extargs,
              itName = itname) ::_ ), astdefs  )
       equation
-        equality(ident = itname);
+        true = stringEqual(ident, itname);
         (ident, idtype, scEnv) = resolveIt(scEnv);        
       then
         (ident, idtype, scEnv);
@@ -4691,7 +4681,7 @@ algorithm
           inmexp as BIND_AS_MATCH(
                       bindIdent = bid ), mtype, _ )
       equation
-        equality(id = bid);
+        true = stringEqual(id, bid);
       then 
         ( mtype, inmexp );
     
@@ -4700,7 +4690,7 @@ algorithm
              bindIdent = bid,
              matchingExp = mexp ), mtype, astDefs )
       equation
-        equality(id = bid);
+        true = stringEqual(id, bid);
         ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs); 
       then 
         ( valtype, BIND_AS_MATCH(bid, mexp) );
@@ -4720,7 +4710,7 @@ algorithm
           inmexp as BIND_MATCH(
                       bindIdent = bid ), mtype, _ )
       equation
-        equality(id = bid);
+        true = stringEqual(id, bid);
       then 
         ( mtype, inmexp );        
     
@@ -4728,12 +4718,11 @@ algorithm
            inmexp as BIND_MATCH(
              bindIdent = bid ), mtype, astDefs )
       equation
-        equality(id = bid);
+        true = stringEqual(id, bid);
         reason = "Unresolved path '" +& inid +& "' after first dot - only the first part '" +& id +& "' resolved as a bind match.";
         valtype = UNRESOLVED_TYPE(reason); 
       then 
         (valtype , inmexp );
-    
     
     case ( inid, path, 
            RECORD_MATCH(
@@ -4905,47 +4894,43 @@ public function updateFieldMatchingsForField
   
   output list<tuple<Ident, MatchingExp>> outFieldMatchings;
 algorithm 
-  (outFieldMatchings) 
-    := matchcontinue (inIdent, inField, inFieldMatchings)
+  (outFieldMatchings) := matchcontinue (inIdent, inField, inFieldMatchings)
     local
       Ident inid, fieldid, ident;
       PathIdent path;
       TypeSignature mtype, valtype;
       list<ASTDef> astDefs;
-      
       list<tuple<Ident, MatchingExp>> fms;
       tuple<Ident, MatchingExp> fm;
       MatchingExp mexp;
       TypedIdents fields;
-      
+    
     case ( inid, fieldid, {} )
       then 
         ( {(fieldid, BIND_MATCH(inid))} );
-        
+    
     case ( inid, fieldid,(ident, mexp) :: fms)
       equation
-        equality(fieldid = ident);
-        mexp = makeBindAs(inid, mexp); //cannot fail   
+        true = stringEqual(fieldid, ident);
+        mexp = makeBindAs(inid, mexp); // cannot fail   
       then 
         ( (fieldid, mexp) :: fms );
     
     case ( inid, fieldid, fm :: fms )
       equation
-        //failure(equation(fieldid = ident));
+        // failure(equation(fieldid = ident));
         fms = updateFieldMatchingsForField(inid, fieldid, fms);
       then 
         ( fm :: fms );
     
-    //should not ever happen
+    // should not ever happen
     case ( _, _, _)
       equation
         Debug.fprint("failtrace", "-!!!updateFieldMatchingsForField failed.\n");
       then
         fail();
-        
   end matchcontinue;
 end updateFieldMatchingsForField;
-
 
 public function makeBindAs 
   input Ident inIdent;
@@ -4953,17 +4938,16 @@ public function makeBindAs
   
   output MatchingExp outMExp;
 algorithm 
-  (outMExp) 
-    := matchcontinue (inIdent, inMExp)
+  (outMExp) := matchcontinue (inIdent, inMExp)
     local
       Ident inid, bid;
       MatchingExp mexp, inmexp;
-      
+    
     case ( inid, inmexp as BIND_AS_MATCH(
                              bindIdent = bid,
                              matchingExp = mexp ) )
       equation
-        equality(inid = bid);
+        true = stringEqual(inid, bid);
       then 
         inmexp;
     
@@ -4971,7 +4955,7 @@ algorithm
                    bindIdent = bid,
                    matchingExp = mexp ) )
       equation
-        //failure(equality(inid = bid));
+        // false = stringEqual(inid, bid);
         mexp = makeBindAs(inid, mexp); //we should do this to handle multiple path ambiguity ... i.e. when mexpr is  (c as REC(fld = a as REC2(fld2 = b)))  and  c.fld.fl2, a.fld2 and b are used simultanosly, then we will get (c as REC(fld = a as REC2(fld2 = b as c_fld_fld2 as a_fld)))   
       then 
         BIND_AS_MATCH(bid, mexp);
@@ -4979,7 +4963,7 @@ algorithm
     case ( inid, inmexp as BIND_MATCH(
                              bindIdent = bid ) )
       equation
-        equality(inid = bid);
+        true = stringEqual(inid, bid);
       then 
         inmexp;
     
@@ -4990,8 +4974,7 @@ algorithm
     */
     case ( inid, mexp )
       then 
-        BIND_AS_MATCH(inid, mexp);    
-    
+        BIND_AS_MATCH(inid, mexp);
     
     //should not ever happen
     case ( _, _)
@@ -4999,7 +4982,6 @@ algorithm
         Debug.fprint("failtrace", "-!!!makeBindAs failed.\n");
       then
         fail();
-        
   end matchcontinue;
 end makeBindAs;
 
@@ -5015,8 +4997,7 @@ public function lookupUpdateMExpDotPathRecord
   output TypeSignature outValueType;
   output list<tuple<Ident, MatchingExp>> outFieldMatchings;
 algorithm 
-  (outValueType, outFieldMatchings) 
-    := matchcontinue (inIdent, inField, inPathIdent, inFieldMatchings, inMType, inASTDefs)
+  (outValueType, outFieldMatchings) := matchcontinue (inIdent, inField, inPathIdent, inFieldMatchings, inMType, inASTDefs)
     local
       Ident inid, fieldid, ident;
       PathIdent path;
@@ -5027,7 +5008,7 @@ algorithm
       tuple<Ident, MatchingExp> fm;
       MatchingExp mexp;
       String reason;
-      
+    
     case ( inid, fieldid, path, {}, mtype, astDefs )
       equation
         reason = "Unresolved path '" +& inid +& "', cannot follow the path after a dot, no record match available to look down the path after '" +& fieldid +& "'.\n"; 
@@ -5037,14 +5018,14 @@ algorithm
     
     case ( inid, fieldid, path, (ident, mexp) :: fms, mtype, astDefs )
       equation
-        equality(fieldid = ident);
-         ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs);        
+        true = stringEqual(fieldid, ident);
+        ( valtype, mexp ) = lookupUpdateMExpDotPath(inid, path, mexp, mtype, astDefs);        
       then 
         ( valtype, (ident, mexp) :: fms );
     
     case ( inid, fieldid, path, fm :: fms, mtype, astDefs )
       equation
-        //failure( equality(fieldid = ident) );
+        // false = stringEqual(fieldid, ident) );
         ( valtype, fms ) = lookupUpdateMExpDotPathRecord(inid, fieldid, path, fms, mtype, astDefs);        
       then 
         ( valtype, fm :: fms );
@@ -5052,11 +5033,10 @@ algorithm
     //shold not ever happen
     case ( inid, _, _, _, _, _)
       equation
-				true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "-!!!lookupUpdateMExpDotPathRecord failed for ident '" +& inid +& "'.\n");
       then
         fail();
-        
   end matchcontinue;
 end lookupUpdateMExpDotPathRecord;
 
@@ -5738,8 +5718,7 @@ public function getFields
   
   output TypedIdents outFields;
 algorithm 
-  (outFields) 
-    := matchcontinue (inTagIdent, inTypeInfo, inTypeIdent)
+  (outFields) := matchcontinue (inTagIdent, inTypeInfo, inTypeIdent)
     local
       TypeSignature mtype;
       Ident typeident, tagident;
@@ -5766,14 +5745,14 @@ algorithm
     
     case ( tagident, TI_RECORD_TYPE(fields = fields), typeident )
       equation
-        equality(tagident = typeident);
+        true = stringEqual(tagident, typeident);
       then 
         fields;
     
     case ( tagident, TI_RECORD_TYPE(fields = fields), typeident )
       equation
 				true = RTOpts.debugFlag("failtrace");
-        failure(equality(tagident = typeident));
+        false = stringEqual(tagident, typeident);
         Debug.fprint("failtrace", "Error - getFields failed to match the tag '" +& tagident +& "', the type '" +& typeident +& "' expected.\n");
       then 
         fail();
@@ -5811,12 +5790,10 @@ algorithm
     
     case ( tagident, TI_RECORD_TYPE(fields = _), typeident )
       equation
-        equality(tagident = typeident);
+        true = stringEqual(tagident, typeident);
       then ();
-
   end matchcontinue;
 end isRecordTag;
-
 
 public function fullyQualifyASTDefs 
   input list<ASTDef> inASTDefs;  
@@ -5829,9 +5806,7 @@ algorithm
       list<ASTDef> restAstDefs;
       Boolean isdefault;
     
-    case ( {})
-      then 
-        {};
+    case ( {} ) then {};
       
     case ( AST_DEF(
             importPackage = importckg,
@@ -6177,7 +6152,6 @@ algorithm
       then lookupTupleList(rest, itemA);   
   end matchcontinue;
 end lookupTupleList;
-
 
 protected function updateTupleList
   input list<tuple<Type_a,Type_b>> inList;

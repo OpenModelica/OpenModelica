@@ -570,40 +570,45 @@ algorithm
 end pathString2;
 
 public function pathEqual "function: pathEqual
-
-  Returns true if two paths are equal.
-"
+  Returns true if two paths are equal."
   input Absyn.Path inPath1;
   input Absyn.Path inPath2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inPath1,inPath2)
+  outBoolean := matchcontinue (inPath1, inPath2)
     local
       String id1,id2;
       Boolean res;
       Absyn.Path path1,path2;
+    // fully qual vs. path
     case (Absyn.FULLYQUALIFIED(path1),path2) then pathEqual(path1,path2);
+    // path vs. fully qual
     case (path1,Absyn.FULLYQUALIFIED(path2)) then pathEqual(path1,path2);
-    case (path1,path2)
+    // ident vs. ident 
+    case (Absyn.IDENT(id1),Absyn.IDENT(id2))
       equation
-        equality(path1 = path2);
+        true = stringEqual(id1, id2);
       then
         true;
+    // qual ident vs. qual ident 
+    case (Absyn.QUALIFIED(id1, path1),Absyn.QUALIFIED(id2, path2))
+      equation
+        true = stringEqual(id1, id2);
+        true = pathEqual(path1, path2);
+      then
+        true;    
+    // other return false
     case (_,_) then false;
   end matchcontinue;
 end pathEqual;
 
 public function typeSpecEqual "function: typeSpecEqual
-
-  Returns true if two type specifications are equal.
-"
+  Returns true if two type specifications are equal."
   input Absyn.TypeSpec inTySpec1;
   input Absyn.TypeSpec inTySpec2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inTySpec1,inTySpec2)
+  outBoolean := matchcontinue (inTySpec1,inTySpec2)
     local
       String id1,id2;
       Boolean res;
@@ -623,8 +628,7 @@ algorithm
 end typeSpecEqual;
 
 public function pathStringReplaceDot "function: pathStringReplaceDot
-  Helper function to path_string.
-"
+  Helper function to pathString."
   input Absyn.Path inPath;
   input String inString;
   output String outString;
@@ -652,8 +656,6 @@ algorithm
         ss;
   end matchcontinue;
 end pathStringReplaceDot;
-
-
 
 end ModUtil;
 

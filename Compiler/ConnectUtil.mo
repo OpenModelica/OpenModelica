@@ -974,7 +974,7 @@ algorithm
     // deal with non empty Connect.EQU
     case (Connect.EQU((cr1,_)::equRest1), Connect.EQU((cr2,_)::equRest2))
       equation
-        true = Exp.crefEqual(cr1, cr2); // equality(cr1 = cr2);
+        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
         true = setsEqual(Connect.EQU(equRest1),Connect.EQU(equRest2));
       then
         true;
@@ -982,7 +982,7 @@ algorithm
     case (Connect.FLOW((cr1,face1,_)::flowRest1), Connect.FLOW((cr2,face2,_)::flowRest2))
       equation
         true = faceEqual(face1, face2);
-        true = Exp.crefEqual(cr1, cr2); // equality(cr1 = cr2);
+        true = Exp.crefEqualNoStringCompare(cr1, cr2); // equality(cr1 = cr2);
         true = setsEqual(Connect.FLOW(flowRest1),Connect.FLOW(flowRest2));
       then
         true;

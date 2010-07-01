@@ -815,7 +815,7 @@ algorithm
   end matchcontinue;
 end differentiateFunctionTime1;
 
-protected function checkDerFunctionConds"
+protected function checkDerFunctionConds "
 Author: Frenkel TUD"
   input list<Boolean> inblst;
   input list<tuple<Integer,DAE.derivativeCond>> crlst;
@@ -824,53 +824,62 @@ Author: Frenkel TUD"
   output list<Boolean> outblst;
 algorithm
   blst := matchcontinue(inblst,crlst,expl,inVarsandFuncs)
-  local 
-    Integer i,i_1;
-    DAE.Exp e,de;
-    list<Boolean> bl,bl1;
-    Boolean[:] ba;
-    Absyn.Path p1,p2;
+    local 
+      Integer i,i_1;
+      DAE.Exp e,de;
+      list<Boolean> bl,bl1;
+      Boolean[:] ba;
+      Absyn.Path p1,p2;
+    
     // no conditions
     case(inblst,{},expl,inVarsandFuncs) then inblst;
+    
     // zeroDerivative
     case(inblst,(i,DAE.ZERO_DERIVATIVE())::crlst,expl,inVarsandFuncs)
-    equation
-      i_1 = i-1;
-      // get expression
-      e = listNth(expl,i_1);
-      // diverentiate exp
-      de = differentiateExpTime(e,inVarsandFuncs);
-      // is diverentiated exp zero
-      true = Exp.isZero(de);
-      // remove input from list
-      ba = listArray(inblst);
-      ba = arrayUpdate(ba,i,false);
-      bl1 = arrayList(ba);
-      bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
-    then bl;
+      equation
+        i_1 = i-1;
+        // get expression
+        e = listNth(expl,i_1);
+        // diverentiate exp
+        de = differentiateExpTime(e,inVarsandFuncs);
+        // is diverentiated exp zero
+        true = Exp.isZero(de);
+        // remove input from list
+        ba = listArray(inblst);
+        ba = arrayUpdate(ba,i,false);
+        bl1 = arrayList(ba);
+        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+      then 
+        bl;
+    
     // noDerivative
     case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.CALL(path=p1)))::crlst,expl,inVarsandFuncs)
-    equation
-      i_1 = i-1;
-      // get expression
-      DAE.CALL(path=p2) = listNth(expl,i_1);
-      equality(p1 = p2);
-      // path equal
-      // remove input from list
-      ba = listArray(inblst);
-      ba = arrayUpdate(ba,i,false);
-      bl1 = arrayList(ba);      
-      bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
-    then bl;
+      equation
+        i_1 = i-1;
+        // get expression
+        DAE.CALL(path=p2) = listNth(expl,i_1);
+        true = Absyn.pathEqual(p1, p2);
+        // path equal
+        // remove input from list
+        ba = listArray(inblst);
+        ba = arrayUpdate(ba,i,false);
+        bl1 = arrayList(ba);      
+        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+      then 
+        bl;
+    
     // noDerivative  
     case(inblst,(i,DAE.NO_DERIVATIVE(binding=DAE.ICONST(_)))::crlst,expl,inVarsandFuncs)
-    equation
-      // remove input from list
-      ba = listArray(inblst);
-      ba = arrayUpdate(ba,i,false);
-      bl1 = arrayList(ba);      
-      bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
-    then bl;      
+      equation
+        // remove input from list
+        ba = listArray(inblst);
+        ba = arrayUpdate(ba,i,false);
+        bl1 = arrayList(ba);      
+        bl = checkDerFunctionConds(bl1,crlst,expl,inVarsandFuncs); 
+      then 
+        bl;
+    
+    // failure
     case (_,_,_,_)
       equation
         Debug.fprintln("failtrace", "-Derive.checkDerFunctionConds failed\n");

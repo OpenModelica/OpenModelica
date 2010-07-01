@@ -1029,37 +1029,36 @@ algorithm
       list<Env.Frame> env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
+    
     case (sub,{},_,_) then {sub};
+    
     case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: tail),env,pre)
       equation
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         m = merge(m1, m2, env, pre);
       then
         (DAE.NAMEMOD(n1,m) :: tail);
+    
     case (DAE.IDXMOD(integerLst = i1,mod = m1),(DAE.IDXMOD(integerLst = i2,mod = m2) :: tail),env,pre)
       equation
         equality(i1 = i2);
         m = merge(m1, m2, env, pre);
       then
         (DAE.IDXMOD(i1,m) :: tail);
+    
     case (sub1,sub2,_,_) then (sub1 :: sub2);
   end matchcontinue;
 end insertSubmod;
 
-public function lookupModificationP "
-  - Lookup
-
-  function: lookupModificationP
-
+// - Lookup
+public function lookupModificationP "function: lookupModificationP
   This function extracts a modification from inside another
-  modification, using a name to look up submodifications.
-"
+  modification, using a name to look up submodifications."
   input DAE.Mod inMod;
   input Absyn.Path inPath;
   output DAE.Mod outMod;
 algorithm
-  outMod:=
-  matchcontinue (inMod,inPath)
+  outMod := matchcontinue (inMod,inPath)
     local
       DAE.Mod mod,m,mod_1;
       Ident n;
@@ -1078,7 +1077,7 @@ algorithm
         mod_1;
     case (_,_)
       equation
-        Print.printBuf("- lookup_modification_p failed\n");
+        Print.printBuf("- Mod.lookupModificationP failed\n");
       then
         fail();
   end matchcontinue;
@@ -1113,14 +1112,12 @@ end lookupCompModification;
 public function lookupCompModification12 "function: lookupCompModification
 Author: BZ, 2009-07
 Function for looking up modifiers on specific component.
-And put it in a DAE.Mod(Types.NAMEDMOD(comp,mod)) format.
-"
+And put it in a DAE.Mod(Types.NAMEDMOD(comp,mod)) format."
   input DAE.Mod inMod;
   input Absyn.Ident inIdent;
   output DAE.Mod outMod;
 algorithm
-  outMod:=
-  matchcontinue (inMod,inIdent)
+  outMod := matchcontinue (inMod,inIdent)
     local
       DAE.Mod mod,mod1,mod2,m;
       list<DAE.SubMod> subs;
@@ -1128,21 +1125,23 @@ algorithm
       Option<DAE.EqMod> eqMod;
       Absyn.Each e;
       Boolean f;
-      case(inMod,inIdent)
-        equation
-          DAE.NOMOD() = lookupCompModification(inMod,inIdent);
-          then
-            DAE.NOMOD();
-      case(inMod,inIdent)
-        equation
-          (m as DAE.MOD(_,_, {}, SOME(_))) = lookupCompModification(inMod,inIdent);
-        then
-          m;
-      case(inMod,inIdent)
-        equation
-          m = lookupCompModification(inMod,inIdent);
-          then
-            DAE.MOD(false, Absyn.NON_EACH(), {DAE.NAMEMOD(inIdent,m)},NONE);
+    case(inMod,inIdent)
+      equation
+        DAE.NOMOD() = lookupCompModification(inMod,inIdent);
+      then
+        DAE.NOMOD();
+    
+    case(inMod,inIdent)
+      equation
+        (m as DAE.MOD(_,_, {}, SOME(_))) = lookupCompModification(inMod,inIdent);
+      then
+        m;
+    
+    case(inMod,inIdent)
+      equation
+        m = lookupCompModification(inMod,inIdent);
+      then
+        DAE.MOD(false, Absyn.NON_EACH(), {DAE.NAMEMOD(inIdent,m)},NONE);
   end matchcontinue;
 end lookupCompModification12;
 
@@ -1155,21 +1154,22 @@ protected function lookupComplexCompModification "Lookups a component modificati
   output DAE.Mod outMod;
 algorithm
   outMod := matchcontinue(eqMod,n,finalPrefix,each_)
-  local list<Values.Value> values;
-    list<String> names;
-    list<DAE.Var> varLst;
-    DAE.Mod mod;
-    DAE.Exp e;
-
+    local 
+      list<Values.Value> values;
+      list<String> names;
+      list<DAE.Var> varLst;
+      DAE.Mod mod;
+      DAE.Exp e;
+    
     case(NONE,_,_,_) then DAE.NOMOD();
-
+    
     case(SOME(DAE.TYPED(e,SOME(Values.RECORD(_,values,names,-1)),
                         DAE.PROP((DAE.T_COMPLEX(complexVarLst = varLst),_),_),_)),
          n,finalPrefix,each_) 
       equation
         mod = lookupComplexCompModification2(values,names,varLst,n,finalPrefix,each_);
       then mod;
-
+    
     case(_,_,_,_) then DAE.NOMOD();
   end matchcontinue;
 end lookupComplexCompModification;
@@ -1242,7 +1242,7 @@ algorithm
     case ({},_) then DAE.NOMOD();
     case ((DAE.NAMEMOD(ident = n,mod = mod) :: _),m)
       equation
-        equality(n = m);
+        true = stringEqual(n, m);
       then
         mod;
     case ((x :: xs),n)
@@ -1303,16 +1303,13 @@ algorithm
 end lookupIdxModification;
 
 protected function lookupIdxModification2 "function: lookupIdxModification2
-
-  This function does part of the job for `lookup_idx_modification\'.
-"
+  This function does part of the job for lookupIdxModification."
   input list<DAE.SubMod> inTypesSubModLst;
   input Integer inInteger;
   output DAE.Mod outMod;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  (outMod,outTypesSubModLst):=
-  matchcontinue (inTypesSubModLst,inInteger)
+  (outMod,outTypesSubModLst) := matchcontinue (inTypesSubModLst,inInteger)
     local
       list<DAE.SubMod> subs_1,subs,xs_1;
       Integer x,y,idx;
@@ -1320,37 +1317,44 @@ algorithm
       Option<DAE.EqMod> eq;
       list<Integer> xs;
       Ident name;
+    
     case ({},_) then (DAE.NOMOD(),{});
+    
     case ((DAE.IDXMOD(integerLst = {x},mod = mod) :: subs),y) /* FIXME: Redeclaration */
       equation
-        equality(x = y);
+        true = intEq(x, y);
         (DAE.NOMOD(),subs_1) = lookupIdxModification2(subs,y);
       then
         (mod,subs_1);
+
     case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),y)
       equation
-        equality(x = y);
+        true = intEq(x, y);
         (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,(DAE.IDXMOD(xs,mod) :: subs_1));
+    
     case ((DAE.IDXMOD(integerLst = (x :: xs),mod = mod) :: subs),y)
       equation
-        failure(equality(x = y));
+        false = intEq(x, y);
         (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,subs_1);
+    
     case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
       equation
         DAE.NOMOD() = lookupIdxModification3(nmod, y);
         (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,subs_1);
+    
     case ((DAE.NAMEMOD(ident = name,mod = nmod) :: subs),y)
       equation
         nmod_1 = lookupIdxModification3(nmod, y);
         (mod_1,subs_1) = lookupIdxModification2(subs,y);
       then
         (mod_1,(DAE.NAMEMOD(name,nmod_1) :: subs_1));
+    
     case ((x :: xs),idx)
       local
         DAE.SubMod x;
@@ -1359,31 +1363,30 @@ algorithm
         (mod,xs_1) = lookupIdxModification2(xs,idx);
       then
         (mod,(x :: xs_1));
+    
     case (_,_)
       equation
-       Debug.fprint("failtrace", "-lookupIdxModification2 failed\n");
+       Debug.fprint("failtrace", "- Mod.lookupIdxModification2 failed\n");
       then
         fail();
   end matchcontinue;
 end lookupIdxModification2;
 
 protected function lookupIdxModification3 "function: lookupIdxModification3
-
   Helper function to lookup_idx_modification2.
   when looking up index of a named mod, e.g. y={1,2,3}, it should
-  subscript the expression {1,2,3} to corresponding index.
-"
+  subscript the expression {1,2,3} to corresponding index."
   input DAE.Mod inMod;
   input Integer inInteger;
   output DAE.Mod outMod;
 algorithm
-  outMod:=
-  matchcontinue (inMod,inInteger)
+  outMod := matchcontinue (inMod,inInteger)
     local
       Option<DAE.EqMod> eq_1,eq;
       Boolean f;
       list<DAE.SubMod> subs,subs_1;
       Integer idx;
+    
     case (DAE.NOMOD(),_) then DAE.NOMOD();  /* indx */
     case (DAE.REDECL(finalPrefix = _),_) then DAE.NOMOD();
     case (DAE.MOD(finalPrefix = f,each_ = Absyn.NON_EACH(),subModLst = subs,eqModOption = eq),idx)
@@ -1531,17 +1534,15 @@ algorithm outMod:= matchcontinue (inMod1)
   end matchcontinue;
 end merge2;
 
-//  - Merging
-//
-//  The merge function merges to modifications to one. The first
-//  argument is the \"outer\" modification that should take precedence
-//  over the \"inner\" modifications.
+// - Merging
+// 
+// The merge function merges to modifications to one. 
+// The first argument is the *outer* modification that 
+// should take precedence over the *inner* modifications.
 
-
-protected function doMerge "
-  function: merge
-  This function merges to modificiations into one.  The first
-  modifications takes precedence over the second."
+protected function doMerge "function: merge 
+  This function merges to modificiations into one.
+  The first modifications takes precedence over the second."
   input DAE.Mod inMod1;
   input DAE.Mod inMod2;
   input Env.Env inEnv3;
@@ -1567,25 +1568,26 @@ algorithm
       Option<Absyn.Exp> cond;
       Option<Absyn.ConstrainClass> cc;
       Option<Absyn.Info> info;
-    case (m,DAE.NOMOD(),_,_)
-    then m;
-      /* redeclaring same component */
+    
+    case (m,DAE.NOMOD(),_,_) then m;
+    
+    // redeclaring same component
     case (DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst =
     {(SCode.COMPONENT(component = id1,innerOuter=io,finalPrefix = f,replaceablePrefix = r,protectedPrefix = p,
       attributes = attr,typeSpec = tp,modifications = m1,comment=comment,condition=cond,info=info),_)}),
       DAE.REDECL(finalPrefix = f2,tplSCodeElementModLst =
       {(SCode.COMPONENT(component = id2,modifications = m2,comment = comment2,cc=cc),_)}),env,pre)
       equation
-        equality(id1 = id2);
+        true = stringEqual(id1, id2);
         m1_1 = elabUntypedMod(m2, env, pre);
         m2_1 = elabUntypedMod(m2, env, pre);
         m_2 = merge(m1_1, m2_1, env, pre);
       then
         DAE.REDECL(f1,{(SCode.COMPONENT(id1,io,f,r,p,attr,tp,SCode.NOMOD(),comment,cond,info,cc),m_2)});
 
-        /* luc_pop : this shoud return the first mod because it have been merged in merge_subs */
+    // luc_pop : this shoud return the first mod because it have been merged in merge_subs
     case ((mod as DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {(SCode.COMPONENT(component = id1),_)}))),(mods as DAE.MOD(subModLst = subs)),env,pre) then mod;
-
+    
     case ((icm as DAE.MOD(subModLst = subs)),DAE.REDECL(finalPrefix = f1,tplSCodeElementModLst = (els as {( (celm as SCode.COMPONENT(component = id1)),cm)})),env,pre)
       local
         DAE.Mod cm,icm;
@@ -1595,9 +1597,11 @@ algorithm
       then
         DAE.REDECL(f1,{(celm,cm)});
 
-        /* When modifiers are identical */
+    // When modifiers are identical
     case (outer_,inner_,_,_)
-      equation
+      equation                
+        // adrpo: TODO! FIXME! why isn't modEqual working here??!! 
+        // true = modEqual(outer_, inner_);        
         equality(outer_ = inner_);
       then
         outer_;
@@ -1608,11 +1612,11 @@ algorithm
         ass = mergeEq(ass1, ass2);
       then
         DAE.MOD(finalPrefix,each_,subs,ass);
-
-        /* Case when we have a modifier on a redeclared class
-         * This is of current date BZ:2008-03-04 not completly working.
-         * see testcase mofiles/Modification14.mo
-         */
+    
+    /* Case when we have a modifier on a redeclared class
+     * This is of current date BZ:2008-03-04 not completly working.
+     * see testcase mofiles/Modification14.mo
+     */
     case (mm1 as DAE.MOD(subModLst = subs), mm2 as DAE.REDECL(finalPrefix = false,tplSCodeElementModLst = (els as {((elementOne as SCode.CLASSDEF(name = id1)),mm3)})),env,pre)
       local SCode.Element elementOne;
       equation
@@ -1665,32 +1669,36 @@ Helper function for mergeSubs, used to detect failures in Mod.merge
   output DAE.SubMod outSubMod;
   output list<DAE.SubMod> outTypesSubModLst;
 algorithm
-  (outTypesSubModLst,outSubMod):=
-  matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
+  (outTypesSubModLst,outSubMod) := matchcontinue (inSubMod,inTypesSubModLst,inEnv,inPrefix)
     local
-      DAE.SubMod m,s,s1,s2;
-      DAE.Mod m1,m2;
+      DAE.SubMod sm,s,s1,s2;
+      DAE.Mod m,m1,m2;
       Ident n1,n2;
       list<DAE.SubMod> ss,ss_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
-      list<Integer> i1,i2;
-    case (m,{},_,_) then (m,{});
-      /* Modifications in the list take precedence */
-    case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: ss),env,pre)
-      local DAE.Mod m;
+      list<Integer> i1,i2;      
+    
+    // empty list  
+    case (sm,{},_,_) then (sm,{});
+    
+    // named mods, modifications in the list take precedence
+    case (DAE.NAMEMOD(ident = n1,mod = m1),(DAE.NAMEMOD(ident = n2,mod = m2) :: ss),env,pre)      
       equation
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         m = merge(m1, m2, env, pre);
       then
         (DAE.NAMEMOD(n1,m),ss);
-    case (DAE.IDXMOD(integerLst = i1,mod = m1),(DAE.IDXMOD(integerLst = i2,mod = m2) :: ss),env,pre)
-      local DAE.Mod m;
+    
+    // indexed mods, modifications in the list take precedence
+    case (DAE.IDXMOD(integerLst = i1,mod = m1),(DAE.IDXMOD(integerLst = i2,mod = m2) :: ss),env,pre)      
       equation
         equality(i1 = i2);
         m = merge(m1, m2, env, pre);
       then
         (DAE.IDXMOD(i1,m),ss);
+    
+    // handle next
     case (s1,(s2::ss),env,pre)
       equation
         true = verifySubMerge(s1,s2);
@@ -1701,12 +1709,10 @@ algorithm
 end mergeSubs2_2;
 
 protected function mergeSubs2 "function: mergeSubs2
-
-  This function helps in the merging of two lists of `DAE.SubMod\'s.  It
-  compares one `DAE.SubMod\' against a list of other `DAE.SubMod\'s, and if
-  there is one with the same name,  it is kept and the one `DAE.SubMod\'
-  given in the second argument is discarded.
-"
+  This function helps in the merging of two lists of DAE.SubMods.  
+  It compares one DAE.SubMod against a list of other DAE.SubMods, 
+  and if there is one with the same name, it is kept and the one 
+  DAE.SubMod given in the second argument is discarded."
   input list<DAE.SubMod> inTypesSubModLst;
   input DAE.SubMod inSubMod;
   input Env.Env inEnv;
@@ -1714,32 +1720,37 @@ protected function mergeSubs2 "function: mergeSubs2
   output list<DAE.SubMod> outTypesSubModLst;
   output DAE.SubMod outSubMod;
 algorithm
-  (outTypesSubModLst,outSubMod):=
-  matchcontinue (inTypesSubModLst,inSubMod,inEnv,inPrefix)
+  (outTypesSubModLst,outSubMod) := matchcontinue (inTypesSubModLst,inSubMod,inEnv,inPrefix)
     local
-      DAE.SubMod m,s,s1,s2;
-      DAE.Mod m1,m2;
+      DAE.SubMod sm,s,s1,s2;
+      DAE.Mod m,m1,m2;
       Ident n1,n2;
       list<DAE.SubMod> ss,ss_1;
       list<Env.Frame> env;
       Prefix.Prefix pre;
       list<Integer> i1,i2;
-    case ({},m,_,_) then ({},m);
-      /* Modifications in the list take precedence */
+      DAE.Mod m;
+    
+    // empty list
+    case ({},sm,_,_) then ({},sm);
+    
+    // named mods, modifications in the list take precedence
     case ((DAE.NAMEMOD(ident = n1,mod = m1) :: ss),DAE.NAMEMOD(ident = n2,mod = m2),env,pre)
-      local DAE.Mod m;
       equation
-        equality(n1 = n2);
+        true = stringEqual(n1, n2);
         m = merge(m1, m2, env, pre);
       then
         (ss,DAE.NAMEMOD(n1,m));
+    
+    // indexed mods, modifications in the list take precedence
     case ((DAE.IDXMOD(integerLst = i1,mod = m1) :: ss),DAE.IDXMOD(integerLst = i2,mod = m2),env,pre)
-      local DAE.Mod m;
       equation
         equality(i1 = i2);
         m = merge(m1, m2, env, pre);
       then
         (ss,DAE.IDXMOD(i1,m));
+    
+    // handle rest
     case ((s1 :: ss),s2,env,pre)
       equation
         true = verifySubMerge(s1,s2);
@@ -1750,37 +1761,40 @@ algorithm
 end mergeSubs2;
 
 protected function verifySubMerge "
-Function to verify that we did not fail the cases where we should merge subs
-(helper function for mergeSubs2)
-"
+function to verify that we did not fail the cases where 
+we should merge subs (helper function for mergeSubs2)"
   input DAE.SubMod sub1;
   input DAE.SubMod sub2;
   output Boolean b;
-algorithm b := matchcontinue(sub1,sub2)
-  local list<Integer> i1,i2; String n1,n2;
-  case (DAE.NAMEMOD(ident = n1),DAE.NAMEMOD(ident = n2))
-    equation equality(n1 = n2);
-    then false;
-  case (DAE.IDXMOD(integerLst = i1),DAE.IDXMOD(integerLst = i2))
-    equation equality(i1 = i2);
-    then false;
-  case(_,_) then true;
-end matchcontinue;
+algorithm 
+  b := matchcontinue(sub1,sub2)
+    local list<Integer> i1,i2; String n1,n2;
+    
+    case (DAE.NAMEMOD(ident = n1),DAE.NAMEMOD(ident = n2))
+      equation 
+        true = stringEqual(n1, n2);
+      then false;
+    
+    case (DAE.IDXMOD(integerLst = i1),DAE.IDXMOD(integerLst = i2))
+      equation 
+        equality(i1 = i2);
+      then false;
+    
+    case(_,_) then true;
+  end matchcontinue;
 end verifySubMerge;
 
 protected function mergeEq "function: mergeEq
-
-  The outer modification, given in the first argument, takes
-  precedence over the inner modifications.
-"
+  The outer modification, given in the first argument, 
+  takes precedence over the inner modifications."
   input Option<DAE.EqMod> inTypesEqModOption1;
   input Option<DAE.EqMod> inTypesEqModOption2;
   output Option<DAE.EqMod> outTypesEqModOption;
 algorithm
-  outTypesEqModOption:=
-  matchcontinue (inTypesEqModOption1,inTypesEqModOption2)
+  outTypesEqModOption := matchcontinue (inTypesEqModOption1,inTypesEqModOption2)
     local Option<DAE.EqMod> e;
-    case ((e as SOME(DAE.TYPED(modifierAsExp = _))),_) then e;  /* Outer assignments take precedence */
+    // Outer assignments take precedence
+    case ((e as SOME(DAE.TYPED(modifierAsExp = _))),_) then e;
     case ((e as SOME(DAE.UNTYPED(_))),_) then e;
     case (NONE,e) then e;
   end matchcontinue;
@@ -1810,7 +1824,8 @@ same as modEqual with the difference that we allow:
   output Boolean equal;
 algorithm
   equal := matchcontinue(mod1,mod2)
-    local Boolean b1,b2,b3,b4,f1,f2;
+    local 
+      Boolean b1,b2,b3,b4,f1,f2;
       Absyn.Each each1,each2;
       list<DAE.SubMod> submods1,submods2;
       Option<DAE.EqMod> eqmod1,eqmod2;
@@ -1915,7 +1930,7 @@ algorithm
     case ({},{}) then true;
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
-        equality(id1=id2);
+        true = stringEqual(id1,id2);
         b1 = modEqual(mod1,mod2);
         b2 = subModsEqual(subModLst1,subModLst2);
         equal = Util.boolAndList({b1,b2});
@@ -1967,27 +1982,31 @@ protected function subModsEqual "Returns true if two submod lists are equal."
   output Boolean equal;
 algorithm
   equal := matchcontinue(subModLst1,subModLst2)
-  local	DAE.Ident id1,id2;
-    DAE.Mod mod1,mod2;
-    Boolean b1,b2,b3;
-    list<Integer> indx1,indx2;
-    list<Boolean> blst1;
+    local	DAE.Ident id1,id2;
+      DAE.Mod mod1,mod2;
+      Boolean b1,b2,b3;
+      list<Integer> indx1,indx2;
+      list<Boolean> blst1;
+    
     case ({},_) then true;
+    
     case (DAE.NAMEMOD(id1,mod1)::subModLst1,DAE.NAMEMOD(id2,mod2)::subModLst2)
       equation
-        equality(id1=id2);
+        true = stringEqual(id1,id2);
         b1 = modEqual(mod1,mod2);
         b2 = subModsEqual(subModLst1,subModLst2);
         equal = Util.boolAndList({b1,b2});
       then equal;
-        case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2)
+    
+    case (DAE.IDXMOD(indx1,mod1)::subModLst1,DAE.IDXMOD(indx2,mod2)::subModLst2)
       equation
         blst1 = Util.listThreadMap(indx1,indx2,intEq);
         b2 = modEqual(mod1,mod2);
         b3 = subModsEqual(subModLst1,subModLst2);
         equal = Util.boolAndList(b2::b3::blst1);
       then equal;
-        case(_,_) then false;
+    
+    case(_,_) then false;
   end matchcontinue;
 end subModsEqual;
 

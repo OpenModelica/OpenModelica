@@ -220,7 +220,7 @@ algorithm
         Debug.fcall0("dumpgraphviz", Print.clearBuf);
         Debug.fprint("dump", "\nTrying to parse class definition...\n");
         (p,msg) = Parser.parsestring(str);
-        equality(msg = "Ok") "Always succeeds, check msg for errors" ;
+        true = stringEqual(msg, "Ok") "Always succeeds, check msg for errors" ;
         Interactive.typeCheckFunction(p, isymb) "fails here if the string is not \"Ok\"" ;
         p_1 = Interactive.addScope(p, vars);
         vars_1 = Interactive.updateScope(p, vars);
@@ -244,7 +244,7 @@ algorithm
         Debug.fprint("dump",
           "\nNot a class definition, trying expresion parser\n");
         (exp,msg) = Parser.parsestringexp(str);
-        equality(msg = "Ok") "always succeeds, check msg for errors" ;
+        true = stringEqual(msg, "Ok") "always succeeds, check msg for errors" ;
         (evalstr,newisymb) = Interactive.evaluate(exp, isymb, false);
         Debug.fprint("dump", "\n--------------- Parsed expression ---------------\n");
         Debug.fcall("dump", Dump.dumpIstmt, exp);
@@ -259,10 +259,9 @@ algorithm
         Debug.fcall0("failtrace", Print.clearBuf);
         (p,msg) = Parser.parsestring(str);
         (p,expmsg) = Parser.parsestringexp(str);
-        failure(equality(msg = "Ok"));
-        failure(equality(expmsg = "Ok"));
-        Debug.fprint("failtrace",
-          "\nBoth parser and expression parser failed: \n");
+        false = stringEqual(msg, "Ok");
+        false = stringEqual(expmsg, "Ok");
+        Debug.fprint("failtrace", "\nBoth parser and expression parser failed: \n");
         Debug.fprintl("failtrace", {"parser: \n",msg,"\n"});
         Debug.fprintl("failtrace", {"expparser: \n",expmsg,"\n"});
         res = makeDebugResult("failtrace", msg);
@@ -279,23 +278,28 @@ algorithm
 end handleCommand;
 
 protected function makeClassDefResult "creates a list of classes of the program to be returned from evaluate"
-input Absyn.Program p;
-output String res;
+  input Absyn.Program p;
+  output String res;
 algorithm
   res := matchcontinue(p)
-  local list<Absyn.Path> names;
-    Absyn.Within w;
-    Absyn.Path scope;
-    list<Absyn.Class> cls;
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope))) equation
-      names = Util.listMap(cls,Absyn.className);
-      names = Util.listMap1(names,Absyn.joinPaths,scope);
-      res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
-    then res;
-    case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())) equation
-      names = Util.listMap(cls,Absyn.className);
-      res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
-    then res;
+    local 
+      list<Absyn.Path> names;
+      Absyn.Within w;
+      Absyn.Path scope;
+      list<Absyn.Class> cls;
+    
+    case(Absyn.PROGRAM(classes=cls,within_=Absyn.WITHIN(scope))) 
+      equation
+        names = Util.listMap(cls,Absyn.className);
+        names = Util.listMap1(names,Absyn.joinPaths,scope);
+        res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
+      then res;
+    
+    case(Absyn.PROGRAM(classes=cls,within_=Absyn.TOP())) 
+      equation
+        names = Util.listMap(cls,Absyn.className);
+        res = "{" +& Util.stringDelimitList(Util.listMap(names,Absyn.pathString),",") +& "}";
+      then res;
   end matchcontinue;
 end makeClassDefResult;
 
@@ -304,23 +308,24 @@ protected function isModelicaFile
   Succeeds if filename ends with .mo or .mof"
   input String inString;
 algorithm
-  _:=
-  matchcontinue (inString)
+  _ := matchcontinue (inString)
     local
       list<String> lst;
       String last,filename;
+    
     case (filename)
       equation
         lst = System.strtok(filename, ".");
-        (last :: _) = listReverse(lst);
-        equality(last = "mo");
+        last :: _ = listReverse(lst);
+        true = stringEqual(last, "mo");
       then
         ();
+    
     case (filename)
       equation
         lst = System.strtok(filename, ".");
-        (last :: _) = listReverse(lst);
-        equality(last = "mof");
+        last :: _ = listReverse(lst);
+        true = stringEqual(last, "mof");
       then
         ();
   end matchcontinue;
@@ -334,8 +339,8 @@ protected function isFlatModelicaFile
   String last;
 algorithm
   lst := System.strtok(filename, ".");
-  (last :: _) := listReverse(lst);
-  equality(last := "mof");
+  last :: _ := listReverse(lst);
+  true := stringEqual(last, "mof");
 end isFlatModelicaFile;
 
 protected function isModelicaScriptFile
@@ -346,8 +351,8 @@ protected function isModelicaScriptFile
   String last;
 algorithm
   lst := System.strtok(filename, ".");
-  (last :: _) := listReverse(lst);
-  equality(last := "mos");
+  last :: _ := listReverse(lst);
+  true := stringEqual(last, "mos");
 end isModelicaScriptFile;
 
 protected function isCodegenTemplateFile
@@ -358,10 +363,9 @@ protected function isCodegenTemplateFile
   String last;
 algorithm
   lst := System.strtok(filename, ".");
-  (last :: _) := listReverse(lst);
-  equality(last := "tpl");
+  last :: _ := listReverse(lst);
+  true := stringEqual(last, "tpl");
 end isCodegenTemplateFile;
-
 
 protected function versionRequest
 algorithm
@@ -506,8 +510,7 @@ protected function translateFile
   list of libraries and .mo-files if the file is a .mo-file"
   input list<String> inStringLst;
 algorithm
-  _:=
-  matchcontinue (inStringLst)
+  _ := matchcontinue (inStringLst)
     local
       Absyn.Program p, pLibs;
       list<SCode.Class> scode;

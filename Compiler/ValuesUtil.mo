@@ -1176,14 +1176,14 @@ algorithm
         (Values.ARRAY(r1,dims) :: r2);
     case (sval ,(Values.INTEGER(integer = v2) :: rest))
       equation
-        equality(v2 = 0);
+        true = intEq(v2, 0);
         s2 = valString(sval);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
       then
         fail();
     case (sval ,(Values.REAL(real = v2_1) :: rest))
       equation
-        equality(v2_1 = 0.0);
+        true = realEq(v2_1, 0.0);
         s2 = valString(sval);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0.0",s2});
       then
@@ -1191,8 +1191,8 @@ algorithm
     case ((sval as Values.INTEGER(integer = v1)),(Values.INTEGER(integer = v2) :: rest))
       local Real r1;
       equation
-        v1_1=intReal(v1);
-        v2_1=intReal(v2);
+        v1_1 = intReal(v1);
+        v2_1 = intReal(v2);
         r1 = v1_1/.v2_1;
         r2 = divScalarArrayelt(sval, rest);
       then
@@ -1627,7 +1627,7 @@ algorithm
       list<Integer> dims;
     case ((sval as Values.REAL(real = v1)),vlst)
       equation
-        equality(v1 = 0.0);
+        true = realEq(v1, 0.0);
         s2 = unparseValues(vlst);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0.0",s2});
       then
@@ -1635,7 +1635,7 @@ algorithm
     case ((sval as Values.INTEGER(integer = v1)),vlst)
       local Integer v1;
       equation
-        equality(v1 = 0);
+        true = intEq(v1, 0);
         s2 = unparseValues(vlst);
         Error.addMessage(Error.DIVISION_BY_ZERO, {"0",s2});
       then
@@ -1683,17 +1683,14 @@ algorithm
 end divArrayeltScalar;
 
 protected function matrixStripFirstColumn "function: matrixStripFirstColumn
-
   This function takes a Value list representing a matrix and strips the
   first column of the matrix, i.e. for each sub list it removes the first
-  element. Returning both the stripped column and the resulting matrix.
-"
+  element. Returning both the stripped column and the resulting matrix."
   input list<Value> inValueLst;
   output Value outValue;
   output list<Value> outValueLst;
 algorithm
-  (outValue,outValueLst):=
-  matchcontinue (inValueLst)
+  (outValue,outValueLst) := matchcontinue (inValueLst)
     local
       list<Value> resl,resl2,vrest,rest;
       Value v1;
@@ -1707,6 +1704,7 @@ algorithm
         dim = dim - 1;
       then
         (Values.ARRAY((v1 :: resl),{i}),(Values.ARRAY(vrest,{dim}) :: resl2));
+    
     case ({}) then (Values.ARRAY({},{0}),{});
   end matchcontinue;
 end matrixStripFirstColumn;

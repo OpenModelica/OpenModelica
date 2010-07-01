@@ -61,7 +61,8 @@ algorithm
         print("\nProcessing file '" +& file +& "'\n");
         
         destFile = System.stringReplace(file +& "*", ".tpl*", ".mo");
-        failure(equality(file = destFile));
+        false = stringEqual(file, destFile);
+        
         //print(destFile);
         
         tplPackage = TplParser.templPackageFromFile(file);
@@ -104,24 +105,21 @@ public function testStringEquality
   
   output Integer outNotPassedCnt;
 algorithm
-  outPassed := 
-  matchcontinue (inStringReturned, inStringShouldBe, inPrintResult, inPrintErrorBuffer, inTestLabel, inNotPassedCnt)
+  outPassed := matchcontinue (inStringReturned, inStringShouldBe, inPrintResult, inPrintErrorBuffer, inTestLabel, inNotPassedCnt)
     local
-      //Tpl.Tokens toks, txttoks;
+      // Tpl.Tokens toks, txttoks;
       String strRet, strShouldBe, strLabel, strRes, strErrBuf;
       Boolean printResult, printErrBuf;
       Integer notPassedCnt;
       Tpl.Text txt;
+    
     case ( strRet, strShouldBe, printResult, printErrBuf, strLabel, notPassedCnt)
       equation
-        equality(strRet = strShouldBe);
-        print("\n**************************************************\n" 
-                   +& strLabel);
+        true = stringEqual(strRet, strShouldBe);
+        print("\n**************************************************\n" +& strLabel);
         
-        strRes = Util.if_(printResult,
-           "  returned <<\n" +& strRet +& ">>\n"
-          ,"\n result not shown \n");        
-        print(strRes); 
+        strRes = Util.if_(printResult, "  returned <<\n" +& strRet +& ">>\n", "\n result not shown \n");
+        print(strRes);
         
         strErrBuf = Print.getErrorString();
         strErrBuf = Util.if_(strErrBuf ==& "","",
@@ -129,14 +127,13 @@ algorithm
                                 "### Error Buffer is NOT empty - not shown ###\n"));
         print(strErrBuf);
         print("*** OK ***\n");
-        Print.clearErrorBuf();              
+        Print.clearErrorBuf();
       then 
         notPassedCnt;
     
-    
     case ( strRet, strShouldBe, printResult,printErrBuf, strLabel, notPassedCnt)
       equation
-        failure(equality(strRet = strShouldBe));
+        false = stringEqual(strRet, strShouldBe);
         print("\n##################################################\n" 
                 +& strLabel );
                 

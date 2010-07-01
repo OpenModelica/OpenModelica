@@ -159,14 +159,14 @@ algorithm
       equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
-        equality(last = "mo");
+        true = stringEqual(last, "mo");
       then
         ();
     case (filename)
       equation
         lst = System.strtok(filename, ".");
         (last :: _) = listReverse(lst);
-        equality(last = "mof");
+        true = stringEqual(last, "mof");
       then
         ();
   end matchcontinue;
@@ -181,7 +181,7 @@ protected function isFlatModelicaFile
 algorithm
   lst := System.strtok(filename, ".");
   (last :: _) := listReverse(lst);
-  equality(last := "mof");
+  true := stringEqual(last, "mof");
 end isFlatModelicaFile;
 
 protected function versionRequest

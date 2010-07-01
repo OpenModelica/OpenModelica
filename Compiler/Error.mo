@@ -685,42 +685,33 @@ algorithm
   res := ErrorExt.printErrorsNoWarning();
 end printErrorsNoWarning;
 
-public function printMessagesStrLst "function: print_messages_str
-
-  Returns all messages as a list of strings, one for each message.
-"
+public function printMessagesStrLst "function: printMessagesStr
+  Returns all messages as a list of strings, one for each message."
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue ()
+  outStringLst := matchcontinue ()
     case () then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLst;
 
 public function printMessagesStrLstType "function: printMessagesStrLstType
-
    Returns all messages as a list of strings, one for each message.
-   Filters out messages of certain type.
-"
+   Filters out messages of certain type."
   input MessageType inMessageType;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inMessageType)
+  outStringLst := matchcontinue (inMessageType)
     case (_) then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLstType;
 
 public function printMessagesStrLstSeverity "function: printMessagesStrLstSeverity
-
-   Returns all messages as a list of strings, one for each message.
-  Filters out messages of certain severity
-"
+  Returns all messages as a list of strings, one for each message.
+  Filters out messages of certain severity"
   input Severity inSeverity;
   output list<String> outStringLst;
 algorithm
-  outStringLst:=
-  matchcontinue (inSeverity)
+  outStringLst := matchcontinue (inSeverity)
     case (_) then {"Not impl. yet"};
   end matchcontinue;
 end printMessagesStrLstSeverity;
@@ -817,19 +808,20 @@ protected function lookupMessage2
   output Severity outSeverity;
   output String outString;
 algorithm
-  (outMessageType,outSeverity,outString):=
-  matchcontinue (inTplErrorIDMessageTypeSeverityStringLst,inErrorID)
+  (outMessageType,outSeverity,outString) := matchcontinue (inTplErrorIDMessageTypeSeverityStringLst,inErrorID)
     local
       ErrorID id1,id2,id;
       MessageType msg_type;
       Severity severity;
       String msg;
       list<tuple<ErrorID, MessageType, Severity, String>> rest;
+    
     case (((id1,msg_type,severity,msg) :: _),id2)
       equation
-        equality(id1 = id2);
+        true = intEq(id1, id2);
       then
         (msg_type,severity,msg);
+    
     case ((_ :: rest),id)
       equation
         (msg_type,severity,msg) = lookupMessage2(rest, id);

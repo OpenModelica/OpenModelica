@@ -361,58 +361,62 @@ helper function for setValuesInRecord"
   input list<String> invarName; // eq 
   input list<Values.Value> inValue; // eq
   output DAE.Var oType;
-algorithm oType := matchcontinue(inVars,invarName,inValue)
-  local
-    String varName3,varName2;
-    list<String> varNames;
-    DAE.Attributes a;
-    Boolean p;
-    DAE.Type t,ty2;
-    DAE.Binding b;
-    Values.Value val;
-    list<Values.Value> values;
-    DAE.Var tv,tv1;
-    list<DAE.Var> tvs,rest;
-    Option<DAE.Const> constOfForIteratorRange;
-    list<DAE.Var> typeslst,lv2;
-    list<Values.Value> vals;
-    list<String> names;
-    Absyn.Path fpath;
-    
+algorithm 
+  oType := matchcontinue(inVars,invarName,inValue)
+    local
+      String varName3,varName2;
+      list<String> varNames;
+      DAE.Attributes a;
+      Boolean p;
+      DAE.Type t,ty2;
+      DAE.Binding b;
+      Values.Value val;
+      list<Values.Value> values;
+      DAE.Var tv,tv1;
+      list<DAE.Var> tvs,rest;
+      Option<DAE.Const> constOfForIteratorRange;
+      list<DAE.Var> typeslst,lv2;
+      list<Values.Value> vals;
+      list<String> names;
+      Absyn.Path fpath;  
 
-  // unbound, try to take the value from the type
-  case(DAE.TYPES_VAR(varName2,a,p,t,DAE.UNBOUND(),constOfForIteratorRange),{},{})
-    equation
-      val = typeOfValue(t);
-      tv = DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val),constOfForIteratorRange);
-    then
-      tv;
-  // value bound      
-  case(tv as DAE.TYPES_VAR(binding = DAE.VALBOUND(val)),{},{})
-    then
-      tv;
-  // complex types (records)
-  case(DAE.TYPES_VAR(varName3,a,p,t as (DAE.T_COMPLEX(complexVarLst = typeslst),_),b,constOfForIteratorRange),
-       varName2::varNames, (val as Values.RECORD(fpath,vals,names,-1))::values)
-    equation
-      equality(varName3 = varName2);
-      lv2 = setValuesInRecord(typeslst,names,vals);
-      ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE);
-      tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val),constOfForIteratorRange);
-    then tv;
-  case(DAE.TYPES_VAR(varName3,a,p,t,b,constOfForIteratorRange) ,varName2::varNames, val::values)
-    equation
-      equality(varName3 = varName2);
-      tv = DAE.TYPES_VAR(varName3,a,p,t,DAE.VALBOUND(val),constOfForIteratorRange);
-    then tv;
-  case(tv1,varName3::varNames, val::values)
-    equation
-      tv = setValuesInRecord2(tv1,varNames,values);
-    then tv;
-end matchcontinue;
+    // unbound, try to take the value from the type
+    case(DAE.TYPES_VAR(varName2,a,p,t,DAE.UNBOUND(),constOfForIteratorRange),{},{})
+      equation
+        val = typeOfValue(t);
+        tv = DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val),constOfForIteratorRange);
+      then
+        tv;
+    
+    // value bound      
+    case(tv as DAE.TYPES_VAR(binding = DAE.VALBOUND(val)),{},{})
+      then
+        tv;
+  
+    // complex types (records)
+    case(DAE.TYPES_VAR(varName3,a,p,t as (DAE.T_COMPLEX(complexVarLst = typeslst),_),b,constOfForIteratorRange),
+         varName2::varNames, (val as Values.RECORD(fpath,vals,names,-1))::values)
+      equation
+        true = stringEqual(varName3, varName2);
+        lv2 = setValuesInRecord(typeslst,names,vals);
+        ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE);
+        tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val),constOfForIteratorRange);
+      then tv;
+    
+    case(DAE.TYPES_VAR(varName3,a,p,t,b,constOfForIteratorRange) ,varName2::varNames, val::values)
+      equation
+        true = stringEqual(varName3, varName2);
+        tv = DAE.TYPES_VAR(varName3,a,p,t,DAE.VALBOUND(val),constOfForIteratorRange);
+      then tv;
+    
+    case(tv1,varName3::varNames, val::values)
+      equation
+        tv = setValuesInRecord2(tv1,varNames,values);
+      then tv;
+  end matchcontinue;
 end setValuesInRecord2;
 
-protected function makeComplexEnv "Function: makeComplexEnv
+protected function makeComplexEnv "function: makeComplexEnv
 This function extends the env with a complex var."
   input Env.Env env;
   input list<DAE.Var> tvars; 
@@ -1170,7 +1174,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
   end matchcontinue;
 end setQualValue;
 
-protected function setQualValue2 "Function: setQualValue2
+protected function setQualValue2 "function: setQualValue2
 Helper function for setQualValue"
   input Env.AvlTree env;
   input Values.Value inVal;
@@ -1197,26 +1201,27 @@ algorithm oenv := matchcontinue(env,inVal,inCr ,hashKey)
 
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval as Env.VAR(fv,c,i,varEnv))),h,oleft,oright), inVal, inCr as Absyn.CREF_QUAL(str,_,child) ,hashKey)
       equation
-        equality(rkey = str);
+        true = stringEqual(rkey, str);
         true = Absyn.crefIsIdent(child);
         varEnv2 = setValue(inVal,varEnv,Absyn.CREF(child));
       then
         Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,Env.VAR(fv,c,i,varEnv2))),h,oleft,oright);
 
-    /*case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval as Env.VAR(fv,c,i,varEnv))),h,oleft,oright), inVal, inCr as Absyn.CREF_QUAL(str,_,child) ,hashKey)
+    /*
+    case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval as Env.VAR(fv,c,i,varEnv))),h,oleft,oright), inVal, inCr as Absyn.CREF_QUAL(str,_,child) ,hashKey)
       equation
-        equality(rkey = str);
+        true = stringEqual(rkey, str);
         varEnv2 = setQualValue(varEnv,inVal,child);
-        then
-          Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,Env.VAR(fv,c,i,varEnv2))),h,oleft,oright);
-        // Check right
+      then
+        Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,Env.VAR(fv,c,i,varEnv2))),h,oleft,oright);
+    // Check right
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,oleft,SOME(right)), inVal, inCr ,hashKey)
       equation
         true = System.strcmp(key,rkey) > 0;
         right = setQualValue2(right,inVal,inCr,hashKey);
       then
         Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,oleft,SOME(right));
-        // Check left
+    // Check left
     case(Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,SOME(left),oright), inVal, inCr ,hashKey)
       equation
         true = System.strcmp(key,rkey) 0;
@@ -1225,7 +1230,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr ,hashKey)
         left = setQualValue2(left,inVal,inCr,hashKey);
       then
         Env.AVLTREENODE(SOME(Env.AVLTREEVALUE(rkey,rval)),h,SOME(left),oright);
-        */
+    */
   end matchcontinue;
 end setQualValue2;
 

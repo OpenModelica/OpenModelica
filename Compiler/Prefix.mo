@@ -53,13 +53,15 @@ uniontype Prefix "A Prefix has a component prefix and a class prefix.
 The component prefix consist of a name an a list of constant valued subscripts.
 The class prefix contains the variability of the class, i.e unspecified, parameter or constant."
 
-  record NOPRE "No prefix information" end NOPRE ;
+  record NOPRE "No prefix information" end NOPRE;
 
   record PREFIX
-       ComponentPrefix compPre "component prefixes are stored in inverse order c.b.a";
-       ClassPrefix classPre;
+    ComponentPrefix compPre "component prefixes are stored in inverse order c.b.a";    
+    ClassPrefix classPre "the class prefix, i.e. variability, var, discrete, param, const";
   end PREFIX;
 end Prefix;
+
+type ComponentPrefixOpt = Option<ComponentPrefix> "a type alias for an optional component prefix";
 
 uniontype ComponentPrefix  
 "Prefix for component name, e.g. a.b[2].c. 
@@ -69,6 +71,7 @@ uniontype ComponentPrefix
     list<Integer> subscripts "subscripts" ;
     ComponentPrefix next "next prefix" ;
   end PRE;
+  
   record NOCOMPPRE end NOCOMPPRE;
 end ComponentPrefix;
 

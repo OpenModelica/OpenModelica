@@ -1399,16 +1399,13 @@ algorithm
 end equivtypes;
 
 public function subtype "function: subtype
-
-  Is the first type a subtype of the second type?  This function
-  specifies the rules for subtyping in Modelica.
-"
+  Is the first type a subtype of the second type?  
+  This function specifies the rules for subtyping in Modelica."
   input Type inType1;
   input Type inType2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inType1,inType2)
+  outBoolean := matchcontinue (inType1,inType2)
     local
       Boolean res;
       Ident l1,l2;
@@ -1420,97 +1417,99 @@ algorithm
       ClassInf.State st1,st2;
       Option<Type> bc1,bc2;
       list<Type> type_list1,type_list2;
+    
     case ((DAE.T_ANYTYPE(_),_),(_,_)) then true;
     case ((_,_),(DAE.T_ANYTYPE(_),_)) then true;
     case ((DAE.T_INTEGER(varLstInt = _),_),(DAE.T_INTEGER(varLstInt = _),_)) then true;
     case ((DAE.T_REAL(varLstReal = _),_),(DAE.T_REAL(varLstReal = _),_)) then true;
     case ((DAE.T_STRING(varLstString = _),_),(DAE.T_STRING(varLstString = _),_)) then true;
     case ((DAE.T_BOOL(varLstBool = _),_),(DAE.T_BOOL(varLstBool = _),_)) then true;
-    /* TODO Frenkel TUD check if this is correct */
-//    case ((DAE.T_ENUM(),_),(DAE.T_ENUM(),_)) then true;
+    
     case ((DAE.T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),(DAE.T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
       local
         Option<Integer> oi,oi_1;
         Absyn.Path tp,tp_1;
       equation
-        equality(l2 = l1);
-        res = subtype((DAE.T_ENUMERATION(oi,tp,rest1,vl1),p1),
-          (DAE.T_ENUMERATION(oi_1,tp_1,rest2,vl2),p2));
+        true = stringEqual(l2, l1);
+        res = subtype((DAE.T_ENUMERATION(oi,tp,rest1,vl1),p1),(DAE.T_ENUMERATION(oi_1,tp_1,rest2,vl2),p2));
       then
         res;
+    
     case ((DAE.T_ENUMERATION(names = {}),_),(DAE.T_ENUMERATION(names = _),_)) then true;
+    
     case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
         true;
+    
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
         true;
-        /* Array */
+    
+    // Array
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i1)),arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i2)),arrayType = t2),_))
       equation
-        equality(i1 = i2);
+        true = intEq(i1, i2);
         true = subtype(t1, t2);
       then
         true;
 
-        /* Complex type */
+    // Complex type
     case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = bc1),_),(DAE.T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = bc2),_))
       equation
         true = subtypeVarlist(els1, els2);
       then
         true;
-
-        /* A complex type that extends a basic type is checked 
-        against the baseclass basic type */         
+    
+    // A complex type that extends a basic type is checked against the baseclass basic type         
     case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp)),_),tp2) 
       equation 
         res = subtype(tp, tp2);
       then
         res;
-        /* A complex type that extends a basic type is checked 
-        against the baseclass basic type */         
+    
+    // A complex type that extends a basic type is checked against the baseclass basic type         
     case (tp1,(DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = SOME(tp2)),_)) 
       equation 
         res = subtype(tp1, tp2);
       then
         res;
-
-        /* Check of tuples, similar to complex. Just that
-       identifier name do not have to be checked. Only types are checked. */ 
+    
+    // Check of tuples, similar to complex. Just that identifier name do not have to be checked. Only types are checked. 
     case ((DAE.T_TUPLE(tupleType = type_list1),_),(DAE.T_TUPLE(tupleType = type_list2),_)) 
       equation 
         true = subtypeTypelist(type_list1, type_list2);
       then
         true;
-
-        /* Part of MetaModelica extension. KS */
-    case ((DAE.T_LIST((DAE.T_NOTYPE(),_)),_),(DAE.T_LIST(_),_)) then true;   // The empty list is represented with NO_TYPE()
+    
+    // Part of MetaModelica extension. KS
+    case ((DAE.T_LIST((DAE.T_NOTYPE(),_)),_),(DAE.T_LIST(_),_)) then true; // The empty list is represented with NO_TYPE()
     case ((DAE.T_LIST(_),_),(DAE.T_LIST((DAE.T_NOTYPE(),_)),_)) then true;
     case ((DAE.T_LIST(t1),_),(DAE.T_LIST(t2),_)) then subtype(t1,t2);
     case ((DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),_)) then subtype(t1,t2);
     case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_))
-      local list<Type> tList1,tList2; Boolean ret; equation
+      local list<Type> tList1,tList2; Boolean ret; 
+      equation
         ret = subtypeTypelist(tList1,tList2);
       then ret;
     case ((DAE.T_METAOPTION((DAE.T_NOTYPE(),_)),_),(DAE.T_METAOPTION(_),_)) then true;
-    //case ((DAE.T_METAOPTION(_),_),(DAE.T_METAOPTION((DAE.T_NOTYPE(),_)),_)) then true;
     case ((DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),_))
       equation
         failure((DAE.T_NOTYPE(),_) = t2);
       then subtype(t1,t2);
+    
     case ((DAE.T_BOXED(t1),_),(DAE.T_BOXED(t2),_)) then subtype(t1,t2);
     case ((DAE.T_BOXED(t1),_),t2) equation true = isBoxedType(t2); then subtype(t1,t2);
     case (t1,(DAE.T_BOXED(t2),_)) equation true = isBoxedType(t1); then subtype(t1,t2);
-
+    
     case ((DAE.T_POLYMORPHIC(l1),_),(DAE.T_POLYMORPHIC(l2),_)) then l1 ==& l2;
     case ((DAE.T_NOTYPE(),_),_) then true;
     case (_,(DAE.T_NOTYPE(),_)) then true;
     case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_)) then true;
-
+    
     // MM Function Reference. sjoelund
     case ((DAE.T_FUNCTION(farg1,t1,_),_),(DAE.T_FUNCTION(farg2,t2,_),_))
       local list<FuncArg> farg1,farg2; list<Type> tList1,tList2;
@@ -1520,12 +1519,13 @@ algorithm
         true = subtypeTypelist(tList1,tList2);
         true = subtype(t1,t2);
       then true;
-
+    
     case(t1 as (DAE.T_METARECORD(_,_),_), t2 as (DAE.T_METARECORD(_,_),_))
       equation
         equality(t1 = t2);
       then true;
-        // <uniontype> = <uniontype>
+    
+    // <uniontype> = <uniontype>
     case((DAE.T_UNIONTYPE(lst1),_),(DAE.T_UNIONTYPE(lst2),_))
       local
         list<Absyn.Path> lst1,lst2;
@@ -1546,19 +1546,16 @@ algorithm
 end subtype;
 
 protected function subtypeTypelist "PR. function: subtypeTypelist
-
-  This function checks if the both `Type\' lists matches types, element
-  by element.
-"
+  This function checks if the both Type lists matches types, element by element."
   input list<Type> inTypeLst1;
   input list<Type> inTypeLst2;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inTypeLst1,inTypeLst2)
+  outBoolean := matchcontinue (inTypeLst1,inTypeLst2)
     local
       Type t1,t2;
       list<Type> rest1,rest2;
+    
     case ({},{}) then true;
     case ((t1 :: rest1),(t2 :: rest2))
       equation
@@ -1585,9 +1582,9 @@ algorithm
       Type t1,t2;
       list<Var> l,vs;
       Ident n;
-
+    
     case (_,{}) then true; 
-
+    
     case (l,(DAE.TYPES_VAR(name = n,type_ = t2) :: vs))
       equation
         DAE.TYPES_VAR(_,_,_,t1,_,_) = varlistLookup(l, n);
@@ -1595,7 +1592,7 @@ algorithm
         true = subtypeVarlist(l, vs);
       then
         true;
-
+    
     case (_,_) then false;  /* default */ 
   end matchcontinue;
 end subtypeVarlist;
@@ -1611,13 +1608,13 @@ algorithm
       Var v;
       Ident n,name;
       list<Var> vs;
-
+    
     case (((v as DAE.TYPES_VAR(name = n)) :: _),name)
       equation
-        equality(n = name);
+        true = stringEqual(n, name);
       then
         v;
-
+    
     case ((v :: vs),name)
       equation
         v = varlistLookup(vs, name);
@@ -1645,27 +1642,27 @@ algorithm
       Binding bnd;
       ArrayDim dim;
       Option<DAE.Const> cnstForRange;      
-
+    
     case (t,n)
       equation
         true = basicType(t);
         v = lookupInBuiltin(t, n);
       then
         v;
-
+    
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_),id)
       equation
         v = lookupComponent2(cs, id);
       then
         v;
-
+    
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = (DAE.T_COMPLEX(complexClassType = st,complexVarLst = cs,complexTypeOption = bc),_)),_),id)
       equation
         DAE.TYPES_VAR(n,attr,prot,ty,bnd,cnstForRange) = lookupComponent2(cs, id);
         ty_1 = (DAE.T_ARRAY(dim,ty),NONE);
       then
         DAE.TYPES_VAR(n,attr,prot,ty_1,bnd,cnstForRange);
-
+    
     case (_,id) 
       equation
         // Print.printBuf("- Looking up " +& id +& " in noncomplex type\n");  
@@ -1772,17 +1769,18 @@ protected function lookupComponent2 "function: lookupComponent2
   input Ident inIdent;
   output Var outVar;
 algorithm
-  outVar:=
-  matchcontinue (inVarLst,inIdent)
+  outVar := matchcontinue (inVarLst,inIdent)
     local
       Var v;
       Ident n,m;
       list<Var> vs;
+    
     case (((v as DAE.TYPES_VAR(name = n)) :: _),m)
       equation
-        equality(n = m);
+        true = stringEqual(n, m);
       then
         v;
+    
     case ((v :: vs),n)
       equation
         v = lookupComponent2(vs, n);
@@ -1792,14 +1790,12 @@ algorithm
 end lookupComponent2;
 
 public function makeArray "function: makeArray
-   This function makes an array type given a Type and an Absyn.ArrayDim
-"
+  This function makes an array type given a Type and an Absyn.ArrayDim"
   input Type inType;
   input Absyn.ArrayDim inArrayDim;
   output Type outType;
 algorithm
-  outType:=
-  matchcontinue (inType,inArrayDim)
+  outType := matchcontinue (inType,inArrayDim)
     local
       Type t;
       Integer len;
@@ -4200,7 +4196,7 @@ algorithm
       local Absyn.Path path1,path2;
       equation
         true = subtype(t1,t2);
-        equality(path1 = path2);
+        true = Absyn.pathEqual(path1, path2);
         t2 = (DAE.T_BOXED(t1),NONE);
         l = Util.listMap(v, getVarName);
         tys1 = Util.listMap(v, getVarType);

@@ -286,7 +286,7 @@ algorithm
 
     case Absyn.DERIVED(typeSpec = t,attributes = attr,arguments = a,comment = cmt)
       equation
-        Debug.fprintln("translate", "translating derived class: " +& Dump.unparseTypeSpec(t));
+        // Debug.fprintln("translate", "translating derived class: " +& Dump.unparseTypeSpec(t));
         mod = translateMod(SOME(Absyn.CLASSMOD(a,NONE)), false, Absyn.NON_EACH()) "TODO: attributes of derived classes" ;
         scodeCmt = translateComment(cmt);
       then
@@ -294,8 +294,7 @@ algorithm
 
     case Absyn.PARTS(classParts = parts,comment = cmtString)
       equation
-        Debug.fprintln("translate", "translating class parts");
-        //debug_print("translating-parts:", Dump.unparseClassPartStrLst(1, parts, true));
+        // Debug.fprintln("translate", "translating class parts");
         els = translateClassdefElements(parts);
         anns = translateClassdefAnnotations(parts);
         eqs = translateClassdefEquations(parts);
@@ -310,7 +309,7 @@ algorithm
 
     case Absyn.ENUMERATION(Absyn.ENUMLITERALS(enumLiterals = lst), cmt)
       equation
-        Debug.fprintln("translate", "translating enumerations");
+        // Debug.fprintln("translate", "translating enumerations");
         lst_1 = translateEnumlist(lst);
         scodeCmt = translateComment(cmt);
       then
@@ -318,21 +317,21 @@ algorithm
 
     case Absyn.ENUMERATION(Absyn.ENUM_COLON(), cmt)
       equation
-        Debug.fprintln("translate", "translating enumeration of ':'");
+        // Debug.fprintln("translate", "translating enumeration of ':'");
         scodeCmt = translateComment(cmt);
       then
         SCode.ENUMERATION({},scodeCmt);
 
     case Absyn.OVERLOAD(pathLst,cmt)
       equation
-        Debug.fprintln("translate", "translating overloaded");
+        // Debug.fprintln("translate", "translating overloaded");
         scodeCmt = translateComment(cmt);
       then
         SCode.OVERLOAD(pathLst,scodeCmt);
 
     case Absyn.CLASS_EXTENDS(baseClassName = name,modifications = cmod,comment = cmtString,parts = parts)
       equation
-        Debug.fprintln("translate", "translating model extends " +& name +& " ... end " +& name +& ";");
+        // Debug.fprintln("translate", "translating model extends " +& name +& " ... end " +& name +& ";");
         els = translateClassdefElements(parts);
         anns = translateClassdefAnnotations(parts);
         eqs = translateClassdefEquations(parts);
@@ -346,7 +345,7 @@ algorithm
 
     case Absyn.PDER(functionName = path,vars = vars, comment=cmt)
       equation
-        Debug.fprintln("translate", "translating pder( " +& Absyn.pathString(path) +& ", vars)");
+        // Debug.fprintln("translate", "translating pder( " +& Absyn.pathString(path) +& ", vars)");
         scodeCmt = translateComment(cmt);
       then
         SCode.PDER(path,vars,scodeCmt);
@@ -961,7 +960,7 @@ algorithm
                      class_ = (cl as Absyn.CLASS(name = n,partialPrefix = pa,finalPrefix = fi,encapsulatedPrefix = e,restriction = re,
                                                  body = de,info = file_info))),info)
       equation
-        Debug.fprintln("translate", "translating local class: " +& n);
+        // Debug.fprintln("translate", "translating local class: " +& n);
         re_1 = translateRestriction(cl, re); // uniontype will not get translated!
         de_1 = translateClassdef(de);
       then
@@ -970,7 +969,7 @@ algorithm
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = NONE),info)
       local Absyn.Path n;
       equation
-        Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
+        // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
         ns = Absyn.pathString(n);
       then
@@ -979,7 +978,7 @@ algorithm
     case (cc,finalPrefix,_,repl,prot,Absyn.EXTENDS(path = n,elementArg = args,annotationOpt = SOME(absann)),info)
       local Absyn.Path n; Absyn.Annotation absann; SCode.Annotation ann;
       equation
-        Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
+        // Debug.fprintln("translate", "translating extends: " +& Absyn.pathString(n));
         mod = translateMod(SOME(Absyn.CLASSMOD(args,NONE)), false, Absyn.NON_EACH());
         ns = Absyn.pathString(n);
         ann = translateAnnotation(absann);
@@ -993,7 +992,7 @@ algorithm
       components = (Absyn.COMPONENTITEM(component = Absyn.COMPONENT(name = n,arrayDim = d,modification = m),comment = comment,condition=cond) :: xs)),info)
       local Absyn.Variability pa;
       equation
-        Debug.fprintln("translate", "translating component: " +& n);
+        // Debug.fprintln("translate", "translating component: " +& n);
         setHasInnerOuterDefinitionsHandler(io);
         xs_1 = translateElementspec(cc, finalPrefix, io, repl, prot, Absyn.COMPONENTS(attr,t,xs), info);
         mod = translateMod(m, false, Absyn.NON_EACH());
@@ -1006,7 +1005,7 @@ algorithm
 
     case (cc,finalPrefix,_,repl,prot,Absyn.IMPORT(import_ = imp),_)
       equation
-        Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
+        // Debug.fprintln("translate", "translating import: " +& Dump.unparseImportStr(imp));
       then
         {SCode.IMPORT(imp)};
   end matchcontinue;

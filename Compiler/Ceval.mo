@@ -2088,7 +2088,6 @@ algorithm
         print("\n");
        	print("prefix =");print(Exp.printComponentRefStr(prefix));print("\n");*/
        //	print("env:");print(Env.printEnvStr(env));
-
       then
         (cache,res);
   end matchcontinue;
@@ -4019,6 +4018,7 @@ algorithm
       String RowString,matrixDimensionString;
       Env.Cache cache;
       Values.Value v;
+    
     case (cache,env,s1,impl,st,matrixDimension,row,{},msg)
       equation
         s2 = DAE.ICONST(row);
@@ -4032,12 +4032,14 @@ algorithm
         (cache,retExp) = cevalBuiltinDiagonal2(cache,env, s1, impl, st, matrixDimension, newRow, {v}, msg);
       then
         (cache,retExp);
+    
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
       equation
         s2 = DAE.ICONST(row);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, DAE.ASUB(s1,{s2}), impl, st, NONE, msg);
-
-        failure(equality(matrixDimension = row));
+        
+        false = intEq(matrixDimension, row);
+        
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.REAL(0.0), correctDim);
         correctPlace = row - 1;
@@ -4068,7 +4070,8 @@ algorithm
       equation
         s2 = DAE.ICONST(row);
         (cache,Values.INTEGER(rv2),_) = ceval(cache,env, DAE.ASUB(s1,{s2}), impl, st, NONE, msg);
-        failure(equality(matrixDimension = row));
+        
+        false = intEq(matrixDimension, row);
 
         correctDim = matrixDimension - 1;
         zeroList = Util.listFill(Values.INTEGER(0), correctDim);
@@ -4083,7 +4086,7 @@ algorithm
         (cache,retExp);
     case (cache,env,s1,impl,st,matrixDimension,row,listIN,msg)
       equation
-        equality(matrixDimension = row);
+        true = intEq(matrixDimension, row);
       then
         (cache,listIN);
     case (_,_,_,_,_,matrixDimension,row,list_,MSG())
@@ -4778,7 +4781,7 @@ algorithm
     case (cache,env,DAE.CREF_IDENT(ident = id,subscriptLst = subsc),DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,MSG()) 
       equation 
         DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
-        equality(rfn = "array");
+        true = stringEqual(rfn, "array");
         Debug.fprintln("ceval", "#- Ceval.cevalCrefBinding: Array evaluation");
       then
         fail();
@@ -4787,7 +4790,7 @@ algorithm
     case (cache,env,cr,DAE.EQBOUND(exp = exp,constant_ = DAE.C_CONST()),impl,msg) 
       equation 
         DAE.REDUCTION(path = Absyn.IDENT(name = rfn),expr = elexp,ident = iter,range = iterexp) = exp;
-        failure(equality(rfn = "array"));
+        false = stringEqual(rfn, "array");
         cr_1 = Exp.crefStripLastSubs(cr) "lookup without subscripts, so dimension sizes can be determined." ;
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
@@ -5436,7 +5439,7 @@ algorithm
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation
-        print("-CevalHashTable.add failed\n");
+        print("- CevalHashTable.add failed\n");
       then
         fail();
   end matchcontinue;
@@ -5473,7 +5476,7 @@ algorithm
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
     case (_,_)
       equation
-        print("-CevalHashTable.addNoUpdCheck failed\n");
+        print("- CevalHashTable.addNoUpdCheck failed\n");
       then
         fail();
   end matchcontinue;
