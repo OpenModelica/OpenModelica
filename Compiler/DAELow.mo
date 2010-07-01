@@ -5373,7 +5373,15 @@ algorithm
         lst = Util.listMap1(expl, statesAndVarsExp, vars);
         res = Util.listListUnionOnTrue(lst, Exp.expEqual);
       then
-        res;           
+        res;  
+    /* Special Case for unextended arrays */
+    case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),vars)
+      equation
+        (expl,_) = extendExp(e);
+        lst = Util.listMap1(expl, statesAndVarsExp, vars);
+        res = Util.listListUnionOnTrue(lst, Exp.expEqual);
+      then
+        res; 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),vars)
       equation
         (_,_) = getVar(cr, vars);
@@ -12142,7 +12150,7 @@ algorithm
   matchcontinue (inVariables,inEquationArray,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,differentiateIfExp)
     local
       list<Equation> eqn_lst,eqn_lst_1;
-      list<tuple<Value, Value, Equation>> jac,jac_1;
+      list<tuple<Value, Value, Equation>> jac;
       Variables vars;
       EquationArray eqns;
       MultiDimEquation[:] ae;
@@ -12152,9 +12160,8 @@ algorithm
         eqn_lst = equationList(eqns);
         eqn_lst_1 = Util.listMap(eqn_lst, equationToResidualForm);
         SOME(jac) = calculateJacobianRows(eqn_lst_1, vars, ae, m, mt,differentiateIfExp);
-        jac_1 = listReverse(jac);
       then
-        SOME(jac_1);
+        SOME(jac);
     case (_,_,_,_,_,_) then NONE;  /* no analythic jacobian available */
   end matchcontinue;
 end calculateJacobian;
@@ -12177,7 +12184,6 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   list<Var> dlowVars;
 algorithm
   dlowVars := varList(vars);
-  dlowVars := listReverse(dlowVars);
   res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp, dlowVars);
 end calculateJacobianRows;
 
@@ -12246,7 +12252,7 @@ algorithm
   outTplIntegerIntegerEquationLstOption:=
   matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,v)
     local
-      list<Value> var_indxs,var_indxs_1,var_indxs_2,ds;
+      list<Value> var_indxs,var_indxs_1,ds;
       list<tuple<Value, Value, Equation>> eqns;
       DAE.Exp e,e1,e2,new_exp;
       Variables vars;
@@ -12262,8 +12268,7 @@ algorithm
       equation
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: ascending index" ;
-        var_indxs_2 = listReverse(var_indxs_1);
-        SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_2,differentiateIfExp);
+        SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         SOME(eqns);
     // algorithms give no jacobian
@@ -12279,8 +12284,7 @@ algorithm
         new_exp = Exp.applyExpSubscripts(new_exp,subs); 
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
-        var_indxs_2 = listReverse(var_indxs_1);
-        SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_2,differentiateIfExp);
+        SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         SOME(eqns);
   end matchcontinue;

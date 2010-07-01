@@ -2464,6 +2464,9 @@ algorithm
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
         vars_1 = DAELow.listVar(cont_var1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(cont_eqn);
         cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
@@ -2485,6 +2488,9 @@ algorithm
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
         vars_1 = DAELow.listVar(cont_var1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(cont_eqn);
         cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
@@ -2518,6 +2524,9 @@ algorithm
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(var_lst_1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(eqn_lst);
         subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
         m = DAELow.incidenceMatrix(subsystem_dae);
@@ -2545,6 +2554,9 @@ algorithm
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = DAELow.listVar(var_lst_1);
+        // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
+        // is  twisted, simple reverse one list
+        eqn_lst = listReverse(eqn_lst);
         eqns_1 = DAELow.listEquation(eqn_lst);
         subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
         m = DAELow.incidenceMatrix(subsystem_dae);
