@@ -2829,7 +2829,7 @@ algorithm
        be solved during runtime. */
     case (mixedEvent,_,(d as DAELow.DAELOW(orderedVars = v,knownVars = kv,orderedEqs = eqn, arrayEqs = arrayEqs)),SOME(jac),DAELow.JAC_TIME_VARYING(),block_,helpVarInfo)
       local
-        list<DAELow.Var> dlowVars,dlowVars1;
+        list<DAELow.Var> dlowVars;
         list<SimVar> simVars;
         list<DAELow.Equation> dlowEqs;
         list<DAE.Exp> beqs;
@@ -2841,8 +2841,7 @@ algorithm
         dlowVars = DAELow.varList(v);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
         dlowEqs = DAELow.equationList(eqn);
-        dlowVars1 = listReverse(dlowVars);
-        dlowEqsVars = Util.listThreadTuple(dlowEqs,dlowVars1);
+        dlowEqsVars = Util.listThreadTuple(dlowEqs,dlowVars);
         beqs = Util.listMap2(dlowEqsVars, dlowEqToExp, v, arrayEqs);
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
