@@ -137,7 +137,7 @@ algorithm
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation
-        print("-HashTable.add failed\n");
+        print("- HashTable2.add failed\n");
       then
         fail();
   end matchcontinue;
@@ -177,7 +177,7 @@ algorithm
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
           case (_,_)
       equation
-        print("-HashTable2.addNoUpdCheck failed\n");
+        print("- HashTable2.addNoUpdCheck failed\n");
       then
         fail();
   end matchcontinue;

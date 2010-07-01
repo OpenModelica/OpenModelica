@@ -237,7 +237,7 @@ algorithm
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation
-        print("-HashTable.add failed\n");
+        print("- HashTable.add failed\n");
       then
         fail();
   end matchcontinue;
@@ -295,7 +295,8 @@ algorithm
       tuple<Key,Value> v,newv;
       Key key;
       Value value;
-      /* Adding when not existing previously */
+    
+    // adding when not existing previously 
     case ((v as (key,value)),(hashTable as HASHTABLE(hashvec,varr,bsize,n)))
       equation
         hval = hashFunc(key);
@@ -306,9 +307,11 @@ algorithm
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
-          case (_,_)
+    
+    // failure
+    case (_,_)
       equation
-        print("-HashTable.addNoUpdCheck failed\n");
+        print("- HashTable.addNoUpdCheck failed\n");
       then
         fail();
   end matchcontinue;

@@ -175,7 +175,7 @@ algorithm
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation
-        print("-HashTable.add failed\n");
+        print("- HashTableCG.add failed\n");
       then
         fail();
   end matchcontinue;
