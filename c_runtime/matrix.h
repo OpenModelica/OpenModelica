@@ -325,7 +325,7 @@ found_solution=0;\
 }\
 if (!found_solution ) { \
 cur_value_indx++; \
-if (cur_value_indx > numValues/size) { \
+if (cur_value_indx >= numValues/size) { \
 	found_solution=-1; \
 } else {\
 /* try next set of values*/ \
