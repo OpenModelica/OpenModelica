@@ -2442,6 +2442,7 @@ algorithm
       DAELow.JacobianType jac_tp;
       String s;
       DAELow.MultiDimEquation[:] ae;
+      list<DAELow.MultiDimEquation> mdelst;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
       Integer[:] ass1,ass2;
@@ -2460,6 +2461,8 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
+        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
+        ae = listArray(mdelst);        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
@@ -2484,6 +2487,8 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
+        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
+        ae = listArray(mdelst);        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
@@ -2522,6 +2527,8 @@ algorithm
         true = RTOpts.debugFlag("tearing");
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
+        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
+        ae = listArray(mdelst);        
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
@@ -2551,6 +2558,8 @@ algorithm
         // extract the variables and equations of the block.
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
+        mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
+        ae = listArray(mdelst);        
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = DAELow.listVar(var_lst_1);
@@ -2891,14 +2900,35 @@ algorithm
         fail();
   end matchcontinue;
 end createOdeSystem2;
-         
+     
 protected function replaceDerOpInEquationList
   "Replaces all der(cref) with $DER.cref in a list of equations."
   input list<DAELow.Equation> inEqns;
   output list<DAELow.Equation> outEqns;
 algorithm
   outEqns := Util.listMap(inEqns, replaceDerOpInEquation);
-end replaceDerOpInEquationList;
+end replaceDerOpInEquationList;     
+         
+protected function replaceDerOpMultiDimEquations
+"Replaces all der(cref) with $DER.cref in an multidimequation."
+	input DAELow.MultiDimEquation inMultiDimEquation;
+	output DAELow.MultiDimEquation outMultiDimEquation;
+algorithm
+  outMultiDimEquation := matchcontinue(inMultiDimEquation)
+    local
+      list<Integer> ilst;
+      DAE.Exp e1,e1_1,e2,e2_1;
+      DAE.ElementSource source;
+
+    case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2,source))
+      equation
+        e1_1 = replaceDerOpInExp(e1);
+        e2_1 = replaceDerOpInExp(e2);
+      then
+        DAELow.MULTIDIM_EQUATION(ilst,e1_1,e2_1,source);
+    case(inMultiDimEquation) then inMultiDimEquation; 
+  end matchcontinue;
+end replaceDerOpMultiDimEquations;
 
 protected function replaceDerOpInEquation
   "Replaces all der(cref) with $DER.cref in an equation."
@@ -2954,7 +2984,7 @@ algorithm
     local
       DAE.ComponentRef cr, der_cr;
       DAE.Exp cref_exp;
-      DAE.ComponentRef cref;  
+      DAE.ComponentRef cref; 
     case ((DAE.CALL(path = Absyn.IDENT("der"),
                     expLst = {DAE.CREF(componentRef = cr)}),
            SOME(cref)))

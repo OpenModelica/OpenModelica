@@ -5789,8 +5789,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e1_2 = extendArrEqn(e1_1);
-        e2_2 = extendArrEqn(e2_1);
+        e1_2 = extendArrExp(e1_1,funcs);
+        e2_2 = extendArrExp(e2_1,funcs);
       then
         MULTIDIM_EQUATION(ds,e1_2,e2_2,source);
 
@@ -5798,37 +5798,53 @@ algorithm
 			equation
         e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e1_2 = extendArrEqn(e1_1);
-        e2_2 = extendArrEqn(e2_1);
+        e1_2 = extendArrExp(e1_1,funcs);
+        e2_2 = extendArrExp(e2_1,funcs);
 			then
 				MULTIDIM_EQUATION(ds, e1_2, e2_2, source);
   end matchcontinue;
 end lowerArrEqn;
 
-protected function extendArrEqn
+protected function extendArrExp "
+Author: Frenkel TUD 2010-07"
   input DAE.Exp inExp;
+  input DAE.FunctionTree funcs;  
   output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inExp)
-    local
-      DAE.Exp e,e1,e2;
-      list<DAE.Exp> expl;
-      DAE.ExpType ty; 
-    case(e)
+algorithm 
+  outExp := matchcontinue(inExp,funcs)
+    local DAE.Exp e;
+    case(inExp,funcs)
       equation
-       e1 = Exp.simplify(e);
-       ({e2},_) = extendExp(e1); 
+        ((e,_)) = Exp.traverseExp(inExp, traversingextendArrExp, funcs);
       then
-        e2;        
-    case(e)
-      equation
-       e1 = Exp.simplify(e);
-       (expl,_) = extendExp(e1); 
-       ty = Exp.typeof(e);
-      then
-        DAE.ARRAY(ty,true,expl); 
-  end matchcontinue;        
-end extendArrEqn;
+        e;
+  end matchcontinue;
+end extendArrExp;
+
+protected function traversingextendArrExp "
+Author: Frenkel TUD 2010-07."
+  input tuple<DAE.Exp, DAE.FunctionTree > inExp;
+  output tuple<DAE.Exp, DAE.FunctionTree > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    DAE.FunctionTree funcs;
+    DAE.ComponentRef cr;
+    list<DAE.ComponentRef> crlst;
+    DAE.ExpType t,ty;
+    list<Option<Integer>> ad;
+    list<list<DAE.Subscript>> subslst,subslst1;
+    list<DAE.Exp> expl;
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
+    equation
+        subslst = arrayDimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+    then
+      ((DAE.ARRAY(t,true,expl), funcs ));
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingextendArrExp;
 
 protected function lowerComplexEqn
 "function: lowerComplexEqn
