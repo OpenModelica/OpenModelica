@@ -4605,7 +4605,7 @@ if test "${with_sendData_Qt+set}" = set; then :
   fi
 
   LDFLAGS_BAK=$LDFLAGS
-  LDFLAGS+= $LIBSENDDATA_LDFLAGS
+  LDFLAGS+="$LIBSENDDATA_LDFLAGS"
   cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
