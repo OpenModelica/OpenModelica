@@ -4096,6 +4096,35 @@ algorithm
   end matchcontinue;
 end functionName;
 
+public function getFunctionNames "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
+  input list<DAE.Element> elts;
+  output list<Absyn.Path> name;
+algorithm
+  name:= matchcontinue(elts)
+    local
+      list<Absyn.Path> functionPaths;
+      Absyn.Path name;
+      list<DAE.Element> rest;
+    // empty case
+    case({}) then {};
+    // function
+    case(DAE.FUNCTION(path=name)::rest)
+      equation
+        functionPaths = getFunctionNames(rest); 
+      then name::functionPaths;
+    // record constructors
+    case(DAE.RECORD_CONSTRUCTOR(path=name)::rest) 
+      equation
+        functionPaths = getFunctionNames(rest); 
+      then name::functionPaths;
+    // anything else
+    case(_::rest) 
+      equation
+        functionPaths = getFunctionNames(rest); 
+      then functionPaths;        
+  end matchcontinue;
+end getFunctionNames;
+
 public function addDaeFunction "add functions present in the element list to the function tree"
   input DAE.DAElist dae;
   output DAE.DAElist outDae;
@@ -4393,15 +4422,13 @@ algorithm
 end avlTreeAddLst;
 
 public function avlTreeAdd "
- Add a tuple (key,value) to the AVL tree.
- "
+ Add a tuple (key,value) to the AVL tree."
   input DAE.AvlTree inAvlTree;
   input DAE.AvlKey inKey;
   input DAE.AvlValue inValue;
   output DAE.AvlTree outAvlTree;
 algorithm
-  outAvlTree:=
-  matchcontinue (inAvlTree,inKey,inValue)
+  outAvlTree := matchcontinue (inAvlTree,inKey,inValue)
     local
       DAE.AvlKey key,rkey;
       DAE.AvlValue value,rval;
@@ -4416,7 +4443,7 @@ algorithm
       /* Replace this node.*/
     case (DAE.AVLTREENODE(value = SOME(DAE.AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-        equality(rkey = key);
+        true = ModUtil.pathEqual(rkey, key);
         bt = balance(DAE.AVLTREENODE(SOME(DAE.AVLTREEVALUE(rkey,value)),h,left,right));
       then
         bt;

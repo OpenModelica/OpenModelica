@@ -2425,7 +2425,7 @@ algorithm
   end matchcontinue;
 end unparseType;
 
-protected function unparseDimensions
+public function unparseDimensions
 "prints dimensions to a string"
   input DAE.InstDims dims;
   input Boolean printTypeDimension "use true here when printing components in functions as these are not vectorized! Otherwise, use false";

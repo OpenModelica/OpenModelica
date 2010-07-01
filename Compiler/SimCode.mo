@@ -654,24 +654,54 @@ algorithm
   (libs, functions, outDAELow, outDAE) :=
   matchcontinue (inProgram,inDAElist,inDAELow,inPath,inString)
     local
-      list<Absyn.Path> funcpaths;
+      list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;
       list<String> debugpathstrs,libs1,libs2,includes;
       String debugpathstr,debugstr,filenameprefix, str;
-      list<DAE.Element> funcelems,part_func_elems, elements;
+      list<DAE.Element> funcelems,part_func_elems, elements, funcRefElems, funcNormal;
       list<SCode.Class> p;
       DAE.DAElist dae;
       DAELow.DAELow dlow;
       Absyn.Path path;
       list<Function> fns;
       SimCode sc;
-    case (p,(dae as DAE.DAE(elementLst = elements)),dlow,path,filenameprefix)
+      DAE.FunctionTree funcs;
+      
+    case (p,(dae as DAE.DAE(elementLst = elements, functions = funcs)),dlow,path,filenameprefix)
       equation
-        funcpaths = getCalledFunctions(dae, dlow);
-        //Debug.fprint("info", "Found called functions: ") "debug" ;
-        //debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
-        //debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-        //Debug.fprintln("info", debugpathstr) "debug" ;
-        funcelems = generateFunctions2(p, funcpaths);
+        // get all the used functions from the function tree
+        funcNormal = Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22);
+        
+        // get all the function references:
+        funcRefPaths = getCalledFunctionReferences(dae, dlow);
+        // get the paths of the normal functions
+        funcNormalPaths = DAEUtil.getFunctionNames(funcNormal);
+
+        // remove all normal functions from the list of function references
+        funcPaths = Util.listSetDifferenceOnTrue(funcRefPaths, funcNormalPaths, ModUtil.pathEqual); 
+        
+        // adrpo: debugging to see if the union of functions are ok
+        // debugpathstrs = Util.listMap(funcRefPaths, Absyn.pathString);
+        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ");
+        // print("Refs:   " +& debugpathstr +& "\n");
+        // debugpathstrs = Util.listMap(funcNormalPaths, Absyn.pathString);
+        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ");
+        // print("Normal: " +& debugpathstr +& "\n");         
+        // debugpathstrs = Util.listMap(funcPaths, Absyn.pathString);
+        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ");
+        // print("Ref-Normal: " +& debugpathstr +& "\n");         
+        
+        // generate functions for the function references
+        funcRefElems = generateFunctions2(p, funcPaths);
+        
+        // append the normal functions with the function references
+        funcelems = listAppend(funcRefElems, funcNormal);
+        
+        // print ("Detected DAE functions: "+& intString(listLength(funcelems)) +& "\n");
+        
+        // Debug.fprint("info", "Found called functions: ") "debug" ;
+        // debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
+        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
+        // Debug.fprintln("info", debugpathstr) "debug" ;
 
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
@@ -716,6 +746,31 @@ algorithm
   calledfuncs := Util.listMap(listAppend(fcallexps_1,fcallexps_2), getCallPath);
   res := removeDuplicatePaths(calledfuncs);
 end getCalledFunctions;
+
+public function getCalledFunctionReferences
+"Goes through the DAELow structure, finds all function references calls, 
+ and returns them in a list. Removes duplicates."
+  input DAE.DAElist dae;
+  input DAELow.DAELow dlow;
+  output list<Absyn.Path> res;
+  list<Exp.Exp> explist,fcallexps;
+  list<Absyn.Path> calledfuncs;
+algorithm
+  res := matchcontinue(dae, dlow)
+  case (dae, dlow)
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then {};
+    case (dae, dlow)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        explist = DAELow.getAllExps(dlow);
+        fcallexps = getMatchingExpsList(explist, matchFnRefs);
+        calledfuncs = Util.listMap(fcallexps, getCallPath);
+        res = removeDuplicatePaths(calledfuncs);
+      then res;
+  end matchcontinue;     
+end getCalledFunctionReferences;
 
 protected function generateExternalObjectIncludes
 "Generates the library paths for external objects"
@@ -838,7 +893,7 @@ algorithm
 
     /* Modelica functions. */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_DEF(body = daeElts)},
+                       functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
                        type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
                        partialPrefix=false), rt)
       equation
@@ -855,7 +910,7 @@ algorithm
          rt_1);
     /* External functions. */
     case (DAE.FUNCTION(path = fpath,
-                       functions = {DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)},
+                       functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
                        type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
       equation
         DAE.EXTERNALDECL(ident=extfnname, external_=extargs,
@@ -892,8 +947,9 @@ algorithm
         (RECORD_CONSTRUCTOR(name, funArgs, recordDecls),
          rt_1);
     case (comp,rt)
-      equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.elaborateFunction failed"});
+      equation 
+        str = "SimCode.elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(comp);
+        Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
   end matchcontinue;
@@ -6365,8 +6421,7 @@ protected function generateFunctions3
   input list<Absyn.Path> inAbsynPathLst3;
   output list<DAE.Element> outDAEElementLst;
 algorithm
-  outDAEElementLst:=
-  matchcontinue (inProgram1,inAbsynPathLst2,inAbsynPathLst3)
+  outDAEElementLst := matchcontinue (inProgram1,inAbsynPathLst2,inAbsynPathLst3)
     local
       list<Absyn.Path> allpaths,subfuncs,allpaths_1,paths_1,paths;
       DAE.DAElist fdae,dae,patched_dae;

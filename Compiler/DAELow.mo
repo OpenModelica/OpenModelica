@@ -7294,7 +7294,7 @@ algorithm
         indx = getVarUsingName2(cr, indexes);
         ((v as VAR(varName = cr2))) = vararrayNth(varr, indx);
         name_str = Exp.printComponentRefStr(cr2);
-        equality(name_str = cr);
+        true = stringEqual(name_str, cr);
         indx_1 = indx + 1;
       then
         (v,indx_1);
@@ -7389,7 +7389,7 @@ algorithm
       list<StringIndex> vs;
     case (cr,(STRINGINDEX(str = cr2,index = v) :: _))
       equation
-        equality(cr = cr2);
+        true = stringEqual(cr, cr2);
       then
         v;
     case (cr,(v :: vs))
@@ -9967,9 +9967,9 @@ protected function varHasSameLastIdent
   Helper funciton to varStateSelectHeuristicPrio3.
   Returns true if the variable has the same name (the last identifier)
   as the variable name given as second argument."
-input Var v;
-input DAE.ComponentRef cr;
-output Boolean b;
+  input Var v;
+  input DAE.ComponentRef cr;
+  output Boolean b;
 algorithm
   b := matchcontinue(v,cr)
     local DAE.ComponentRef cr2; DAE.Ident id1,id2;
@@ -9977,7 +9977,7 @@ algorithm
       equation
         id1 = Exp.crefLastIdent(cr);
         id2 = Exp.crefLastIdent(cr2);
-        equality(id1 = id2);
+        true = stringEqual(id1, id2);
       then true;
     case(_,_) then false;
   end matchcontinue;
@@ -16102,7 +16102,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
       complexEqsLst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
       complexEqs1 = Util.listFlatten(complexEqsLst1);
     then
-      complexEqs1;       
+      complexEqs1;
   case(eqn,_) then {eqn};      
 end matchcontinue;
 end extendRecordEqns;

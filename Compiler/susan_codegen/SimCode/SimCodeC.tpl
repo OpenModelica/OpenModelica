@@ -137,6 +137,8 @@ case SIMCODE(__) then
   <%functionBoundParameters(parameterEquations)%>
   
   <%functionCheckForDiscreteVarChanges(helpVarInfo, discreteModelVars)%>
+  
+  
   >>
 end simulationFile;
 
@@ -1630,6 +1632,7 @@ template simulationFunctionsFile(list<Function> functions)
   #ifdef __cplusplus
   }
   #endif
+  
   >>
 end simulationFunctionsFile;
 
@@ -1878,15 +1881,26 @@ template dotPath(Path path)
   case FULLYQUALIFIED(__) then dotPath(path)
 end dotPath;
 
+template replaceDotAndUnderscore(String str)
+ "Replace _ with __ and dot in identifiers with _"
+::=
+  match str
+  case name then
+    let str_dots = System.stringReplace(name,".", "_")  
+    let str_underscores = System.stringReplace(str_dots, "_", "__")
+    '<%str_underscores%>'
+end replaceDotAndUnderscore;
 
 template underscorePath(Path path)
- "Generate paths with components separated by underscores."
+ "Generate paths with components separated by underscores.
+  Replaces also the . in identifiers with _. 
+  The dot might happen for world.gravityAccleration"
 ::=
   match path
   case QUALIFIED(__) then
-    '<%System.stringReplace(name, "_", "__")%>_<%underscorePath(path)%>'
+    '<%replaceDotAndUnderscore(name)%>_<%underscorePath(path)%>'
   case IDENT(__) then
-    System.stringReplace(name, "_", "__")
+    replaceDotAndUnderscore(name)
   case FULLYQUALIFIED(__) then
     underscorePath(path)
 end underscorePath;
@@ -3669,6 +3683,7 @@ case rel as RELATION(__) then
     case EQUAL(ty = ET_STRING(__))     then '(!strcmp(<%e1%>, <%e2%>))'
     case EQUAL(ty = ET_INT(__))        then '(<%e1%> == <%e2%>)'
     case EQUAL(ty = ET_REAL(__))       then '(<%e1%> == <%e2%>)'
+    case EQUAL(ty = ET_ENUMERATION(__))then '(<%e1%> == <%e2%>)'    
     case NEQUAL(ty = ET_BOOL(__))      then '((!<%e1%> && <%e2%>) || (<%e1%> && !<%e2%>))'
     case NEQUAL(ty = ET_STRING(__))    then '(strcmp(<%e1%>, <%e2%>))'
     case NEQUAL(ty = ET_INT(__))       then '(<%e1%> != <%e2%>)'
@@ -4379,10 +4394,11 @@ template expTypeShort(DAE.ExpType type)
  "Generate type helper."
 ::=
   match type
-  case ET_INT(__)         then "integer"
+  case ET_INT(__)         then "integer"  
   case ET_REAL(__)        then "real"
   case ET_STRING(__)      then "string"
   case ET_BOOL(__)        then "boolean"
+  case ET_ENUMERATION(__) then "integer"  
   case ET_OTHER(__)       then "complex"
   case ET_ARRAY(__)       then expTypeShort(ty)   
   case ET_COMPLEX(complexClassType=EXTERNAL_OBJ(__))
