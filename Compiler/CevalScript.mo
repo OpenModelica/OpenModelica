@@ -136,7 +136,7 @@ algorithm
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       Values.Value ret_val,simValue,size_value,value,v;
       DAE.Exp filenameprefix,exp,starttime,stoptime,tolerance,interval,method,size_expression,
-             funcref,bool_exp,storeInTemp,noClean,options, asInSimulationCode,addOriginalIncidenceMatrix,
+             funcref,bool_exp,storeInTemp,noClean,options, translationLevel,addOriginalIncidenceMatrix,
              addSolvingInfo,addMathMLCode,dumpResiduals;
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
@@ -2099,7 +2099,7 @@ algorithm
         path = Absyn.IDENT(name = "dumpXMLDAE"),
         expLst =
         {DAE.CODE(Absyn.C_TYPENAME(className),_),
-         asInSimulationCode,
+         translationLevel,
          addOriginalIncidenceMatrix,
          addSolvingInfo,
          addMathMLCode,
@@ -2115,7 +2115,7 @@ algorithm
         local
           String xml_filename,xml_contents;
       equation
-        (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache, env, exp, st_1, msg);
+        (cache,st,xml_filename,xml_contents) = dumpXMLDAE(cache,env, exp, st_1, msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(xml_filename),Values.STRING(xml_contents)}),st);
 
@@ -2125,7 +2125,7 @@ algorithm
         expLst =
         {
         DAE.CODE(Absyn.C_TYPENAME(className),_),
-        asInSimulationCode,
+        translationLevel,
         addOriginalIncidenceMatrix,
         addSolvingInfo,
         addMathMLCode,
@@ -2138,7 +2138,7 @@ algorithm
         instClsLst = ic,
         lstVarVal = iv,
         compiledFunctions = cf)),msg) /* failing build_model */
-    then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error"),Values.STRING("")}),st_1);
+    then (cache,ValuesUtil.makeArray({Values.STRING("Xml dump error."),Values.STRING("")}),st_1);
   end matchcontinue;
 end cevalInteractiveFunctions;
 
@@ -3563,9 +3563,9 @@ algorithm
   (outCache,outInteractiveSymbolTable3,xml_filename,xml_contents):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
-      Boolean cdToTemp,asInSimulationCode;
+      Boolean cdToTemp;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
-      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir;
+      String file_dir,cname_str,init_filename,method_str,filenameprefix,makefilename,oldDir,tempDir,translationLevel;
       list<SCode.Class> sp;
       list<Interactive.InstantiatedClass> ic;
       list<Interactive.InteractiveVariable> iv;
@@ -3580,8 +3580,92 @@ algorithm
       Interactive.InteractiveSymbolTable st,st_1;
       Ceval.Msg msg;
       Values.Value ret_val;
+      
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
-      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.BCONST(bool=true),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
+      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        Boolean x;
+        Integer[:] ass1,ass2;
+        DAE.DAElist dae_1,dae;
+        DAELow.DAELow dlow;
+        list<Integer>[:] m,mT;
+        list<DAE.Element> dael;
+        list<Interactive.InstantiatedClass> ic_1,ic;
+        list<SCode.Class> p_1,sp;
+        list<list<Integer>> comps;
+        list<Absyn.Path> funcpaths;
+        list<DAE.Element> funcelems;
+      equation
+        //translationLevel=DAE.SCONST(string="flat")
+        true=stringEqual(translationLevel,"flat");
+        _ = Error.getMessagesStr() "Clear messages";
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        cname_str = Absyn.pathString(classname);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
+        dae = DAEUtil.transformIfEqToExpr(dae_1,false);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
+        dlow = DAELow.lower(dae, true, true);//Verificare cosa fa
+        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        funcpaths = SimCode.getCalledFunctions(dae, dlow);
+        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
+        Print.clearBuf();
+        XMLDump.dumpDAELow(dlow,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        xml_contents = Print.getString();
+        Print.clearBuf();
+        System.writeFile(xml_filename,xml_contents);
+      then
+        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
+      
+    case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
+      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),
+                addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
+      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      local
+        Boolean x;
+        DAE.DAElist dae_1,dae;
+        DAELow.DAELow dlow,dlow_1;
+        list<Integer>[:] m,mT;
+        list<DAE.Element> dael;
+        list<Interactive.InstantiatedClass> ic_1,ic;
+        list<SCode.Class> p_1,sp;
+        list<Absyn.Path> funcpaths;
+        list<DAE.Element> funcelems;
+      equation
+        //translationLevel=DAE.SCONST(string="optimiser")
+        //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
+        true=stringEqual(translationLevel,"optimiser");
+        _ = Error.getMessagesStr() "Clear messages";
+        (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
+        oldDir = System.pwd();
+        changeToTempDirectory(cdToTemp);
+        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
+        cname_str = Absyn.pathString(classname);
+        p_1 = SCodeUtil.translateAbsyn2SCode(p);
+        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
+        dae = DAEUtil.transformIfEqToExpr(dae_1,false);
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
+        dlow = DAELow.lower(dae, true, true);
+        m = DAELow.incidenceMatrix(dlow);
+        mT = DAELow.transposeMatrix(m);
+        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
+        funcpaths = SimCode.getCalledFunctions(dae, dlow_1);
+        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
+        Print.clearBuf();
+        XMLDump.dumpDAELow(dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        xml_contents = Print.getString();
+        Print.clearBuf();
+        System.writeFile(xml_filename,xml_contents);
+      then
+        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
+      
+    case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
+      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
       (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
         Boolean x;
@@ -3595,9 +3679,10 @@ algorithm
         list<list<Integer>> comps;
         list<Absyn.Path> funcpaths;
         list<DAE.Element> funcelems;
-        DAE.FunctionTree funcs;
       equation
+        //translationLevel=DAE.SCONST(string="backEnd")
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
+        true=stringEqual(translationLevel,"backEnd");
         _ = Error.getMessagesStr() "Clear messages";
         (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
@@ -3611,10 +3696,7 @@ algorithm
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        funcs = DAEUtil.daeFunctionTree(dae);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
-        // late Inline
-        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
@@ -3623,50 +3705,6 @@ algorithm
         funcelems = SimCode.generateFunctions2(p_1, funcpaths);
         Print.clearBuf();
         XMLDump.dumpDAELow(indexed_dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
-        xml_contents = Print.getString();
-        Print.clearBuf();
-        System.writeFile(xml_filename,xml_contents);
-      then
-        (cache,st,xml_contents,stringAppend("The model has been dumped to xml file: ",xml_filename));
-
-    case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
-      expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.BCONST(bool=false),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
-      (st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      local
-        Boolean x;
-        DAE.DAElist dae_1,dae;
-        DAELow.DAELow dlow,dlow_1;
-        list<Integer>[:] m,mT;
-        list<DAE.Element> dael;
-        list<Interactive.InstantiatedClass> ic_1,ic;
-        list<SCode.Class> p_1,sp;
-        list<Absyn.Path> funcpaths;
-        list<DAE.Element> funcelems;
-        DAE.FunctionTree funcs;
-      equation
-        //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
-        _ = Error.getMessagesStr() "Clear messages";
-        (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
-        oldDir = System.pwd();
-        changeToTempDirectory(cdToTemp);
-        (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        cname_str = Absyn.pathString(classname);
-        p_1 = SCodeUtil.translateAbsyn2SCode(p);
-        (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformIfEqToExpr(dae_1,false);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
-        dlow = DAELow.lower(dae, true, true);
-        m = DAELow.incidenceMatrix(dlow);
-        mT = DAELow.transposeMatrix(m);
-        funcs = DAEUtil.daeFunctionTree(dae);
-        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
-        // late Inline
-        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
-        xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcpaths = SimCode.getCalledFunctions(dae, dlow_1);
-        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
-        Print.clearBuf();
-        XMLDump.dumpDAELow(dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);

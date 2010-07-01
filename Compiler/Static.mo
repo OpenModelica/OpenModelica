@@ -7620,32 +7620,36 @@ protected function elabCallInteractive "function: elabCallInteractive
         className = Absyn.crefToPath(cr);
       then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()), DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
-      local Absyn.Path className; DAE.Exp storeInTemp,asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
+
+     case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st))
+      local 
+        Absyn.Path className;
+        DAE.Exp storeInTemp,translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals;
       equation
         className = Absyn.crefToPath(cr);
         cname_str = Absyn.pathString(className);
-        (cache,asInSimulationCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "asInSimulationCode",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+        (cache,translationLevel) = getOptionalNamedArg(cache, env, SOME(st), impl, "translationLevel",
+                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST("flat"));
         (cache,addOriginalIncidenceMatrix) = getOptionalNamedArg(cache,env, SOME(st), impl, "addOriginalIncidenceMatrix",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+                                                      DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,addSolvingInfo) = getOptionalNamedArg(cache,env, SOME(st), impl, "addSolvingInfo",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+                                                      DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,addMathMLCode) = getOptionalNamedArg(cache,env, SOME(st), impl, "addMathMLCode",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+                                                      DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,dumpResiduals) = getOptionalNamedArg(cache,env, SOME(st), impl, "dumpResiduals",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+                                                      DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
         (cache,filenameprefix) = getOptionalNamedArg(cache,env, SOME(st), impl, "fileNamePrefix",
-          DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
+                                                      DAE.T_STRING_DEFAULT, args, DAE.SCONST(cname_str));
         (cache,storeInTemp) = getOptionalNamedArg(cache,env, SOME(st), impl, "storeInTemp",
-          DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
+                                                      DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false));
       then
         (cache,DAE.CALL(Absyn.IDENT("dumpXMLDAE"),
-          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),asInSimulationCode,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
+          {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
           DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
   end matchcontinue;
 end elabCallInteractive;
+
 
 protected function elabVariablenames "function: elabVariablenames
   This function elaborates variablenames to DAE.Exp. A variablename can
