@@ -671,6 +671,7 @@ algorithm
         // get all the used functions from the function tree
         funcNormal = Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22);
         
+        /* adrpo: this is not needed anymore as ALL the functions are now in the DAE
         // get all the function references:
         funcRefPaths = getCalledFunctionReferences(dae, dlow);
         // get the paths of the normal functions
@@ -695,6 +696,8 @@ algorithm
         
         // append the normal functions with the function references
         funcelems = listAppend(funcRefElems, funcNormal);
+        */
+        funcelems = funcNormal;
         
         // print ("Detected DAE functions: "+& intString(listLength(funcelems)) +& "\n");
         
