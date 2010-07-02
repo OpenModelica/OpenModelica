@@ -110,8 +110,8 @@ install-dirs:
 	mkdir -p ${INSTALL_INCLUDEDIR}
 	mkdir -p ${INSTALL_DOCDIR}
 	mkdir -p ${INSTALL_DOCDIR}/testmodels
-	test ! -d ${builddir_share}/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook
-	test ! -d ${builddir_share}/shell/ || mkdir -p ${INSTALL_SHAREDIR}/omshell
+	test ! -d ${builddir_share}/omnotebook/ || mkdir -p ${INSTALL_SHAREDIR}/omnotebook/
+	test ! -d ${builddir_share}/omshell/ || mkdir -p ${INSTALL_SHAREDIR}/omshell/
 	mkdir -p ${INSTALL_SHAREDIR}/omc/scripts ${INSTALL_JAVADIR}
 
 
@@ -128,8 +128,8 @@ install: install-dirs
 	cp -p ${builddir_doc}/omc/*.txt ${INSTALL_DOCDIR}
 	cp -p ${builddir_doc}/omc/testmodels/* ${INSTALL_DOCDIR}/testmodels
 	# Shared data
-	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook
-	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/* ${INSTALL_SHAREDIR}/omshell
+	test ! -d ${builddir_share}/omnotebook/ || cp -rp ${builddir_share}/omnotebook/* ${INSTALL_SHAREDIR}/omnotebook/
+	test ! -d ${builddir_share}/omshell/ || cp -p ${builddir_share}/omshell/* ${INSTALL_SHAREDIR}/omshell/
 	# Scripts
 	cp -p ${builddir_share}/omc/scripts/* ${INSTALL_SHAREDIR}/omc/scripts
 	# Java
