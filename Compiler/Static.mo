@@ -360,20 +360,8 @@ algorithm
     case (cache,_,Absyn.END(),impl,st,doVect)
     then (cache,DAE.END(),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_CONST()),st,DAEUtil.emptyDae);
 
-       /*--------------------------------*/
-       /* Part of MetaModelica extension. KS */
-        case (cache,env,Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),impl,st,doVect)
-      local DAE.Exp e;
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        e = DAE.META_OPTION(NONE());
-        prop1 = DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_CONST());
-      then
-        (cache,e,prop1,st,DAEUtil.emptyDae);
-      /*-------------------------------------*/
-
-     case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect) // BoschRexroth specifics
-       local DAE.Type ty;
+    case (cache,env,Absyn.CREF(componentRef = cr),impl,st,doVect) // BoschRexroth specifics
+      local DAE.Type ty;
       equation
         false = OptManager.getOption("cevalEquation");
         (cache,exp,prop as DAE.PROP(ty,DAE.C_PARAM()),_,dae) = elabCref(cache,env, cr, impl,doVect);
@@ -9970,6 +9958,15 @@ algorithm
         dae = DAEUtil.joinDaeLst({dae1,dae2});
       then
         (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO(),dae);
+
+    // MetaModelica extension
+    case (cache,env,Absyn.CREF_IDENT("NONE",{}),impl,doVect)
+      local DAE.Exp e;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        e = DAE.META_OPTION(NONE());
+      then
+        (cache,e,DAE.PROP((DAE.T_METAOPTION((DAE.T_NOTYPE(),NONE)),NONE()),DAE.C_CONST()),SCode.RO(),DAEUtil.emptyDae);
 
     case (cache,env,c,impl,doVect)
       equation
