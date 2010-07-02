@@ -74,6 +74,7 @@ public import SCode;
 public import SCodeUtil;
 public import Values;
 
+protected import DAEDump;
 
 public type Ident = String;
 
@@ -8298,7 +8299,7 @@ algorithm
         tys = Util.listMap(vars, Types.getVarType);
         fargs = Util.listThreadTuple(fieldNames, tys);
         slots = makeEmptySlots(fargs);
-        (cache,args_1,newslots,constlist,_,_) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl,{});
+        (cache,args_1,newslots,constlist,_,dae1) = elabInputArgs(cache,env, args, nargs, slots, true /*checkTypes*/ ,impl,{});
         const = Util.listReduce(constlist, Types.constAnd);
         tyconst = elabConsts(t, const);
         prop = getProperties(t, tyconst);
@@ -8306,7 +8307,7 @@ algorithm
         args_2 = expListFromSlots(newslots2);
         (cache, fqPath) = Inst.makeFullyQualified(cache, env_1, fn);
       then
-        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,DAEUtil.emptyDae);
+        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,dae1);
         /* ------ */
 
     case (cache,env,fn,args,nargs,impl,stopElab,st) /* ..Other functions */
@@ -9922,7 +9923,7 @@ algorithm
       Boolean doVect;
       DAE.ExpType et;
       Absyn.InnerOuter io;
-      DAE.DAElist dae;
+      DAE.DAElist dae,dae1,dae2;
       String str,fn_str,scope;
       DAE.Properties props;
       Lookup.SplicedExpData splicedExpData;
@@ -9952,18 +9953,21 @@ algorithm
       then
         (cache,exp,DAE.PROP(t,const),acc_1,dae);
 
-    // MetaModelica Partial Function. sjoelund
+    // MetaModelica Partial Function
     case (cache,env,c,impl,doVect)
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
-        (cache,typelist,dae) = Lookup.lookupFunctionsInEnv(cache,env,path);
+        (cache,typelist,dae1) = Lookup.lookupFunctionsInEnv(cache,env,path);
         t :: _ = typelist;
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = Exp.toExpCref(c);
         exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC());
+        // This is not done by lookup - only elabCall. So we should do it here.
+        (cache,dae2) = instantiateDaeFunction(cache,env,path,false,NONE,true);
+        dae = DAEUtil.joinDaeLst({dae1,dae2});
       then
         (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO(),dae);
 
