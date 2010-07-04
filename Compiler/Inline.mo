@@ -335,7 +335,7 @@ algorithm
       Functiontuple fns;
       list<Integer> ilst;
       DAE.Exp e1,e1_1,e2,e2_1;
-      DAE.ElementSource source "the origin of the element";
+      DAE.ElementSource source;
 
     case(DAELow.MULTIDIM_EQUATION(ilst,e1,e2,source),fns)
       equation
@@ -994,18 +994,31 @@ algorithm
       DAE.ComponentRef c,cref;
       DAE.Exp e;
       list<DAE.ExpVar> varLst;
+      list<DAE.Exp> expl;
+      list<Option<Integer>> ad;
+      list<DAE.ComponentRef> crlst;
+      list<list<tuple<DAE.Exp, Boolean>>> scalar;
+      list<tuple<DAE.Exp, Boolean>> flatscalar;
+      list<list<DAE.Subscript>> subslst,subslst1;      
     case ({}) then {}; 
-    case((c,e as (DAE.CREF(componentRef = cref)))::res)
+    case((c,e as (DAE.CREF(componentRef = cref,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
       equation
-      res1 = extendCrefRecords(res);  
-      DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cref);
-      new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
-      new1 = extendCrefRecords(new);
-      res2 = listAppend(new1,res1);
-      then ((c,e)::res2);      
+        res1 = extendCrefRecords(res);  
+        new = Util.listMap2(varLst,extendCrefRecords1,c,cref);
+        new1 = extendCrefRecords(new);
+        res2 = listAppend(new1,res1);
+      then ((c,e)::res2);  
+    case((c,e as (DAE.CALL(expLst = expl,ty=DAE.ET_COMPLEX(varLst=varLst))))::res)
+      equation
+        res1 = extendCrefRecords(res);  
+        crlst = Util.listMap1(varLst,extendCrefRecords2,c);
+        new = Util.listThreadTuple(crlst,expl);
+        new1 = extendCrefRecords(new);
+        res2 = listAppend(new1,res1);
+      then ((c,e)::res2);    
     case((c,e)::res)
       equation
-      res1 = extendCrefRecords(res);  
+        res1 = extendCrefRecords(res);  
       then ((c,e)::res1);
   end matchcontinue;
 end extendCrefRecords;
@@ -1021,15 +1034,13 @@ algorithm
   outArg := matchcontinue(ev,c,e)
     local
       list<DAE.ExpVar> varLst;
-      DAE.Ident ident,eident;
-      DAE.ExpType identType,eidentType,tp;
-      list<DAE.Subscript> subscriptLst,esubscriptLst; 
+      DAE.ExpType tp;
       String name;
       DAE.ComponentRef c1,e1;
     case(DAE.COMPLEX_VAR(name=name,tp=tp),c,e) 
       equation
-      c1 = Exp.extendCref(c,tp,name,{});  
-      e1 = Exp.extendCref(e,tp,name,{});  
+        c1 = Exp.extendCref(c,tp,name,{});  
+        e1 = Exp.extendCref(e,tp,name,{});  
       then ((c1,DAE.CREF(e1,tp))); 
     case(_,_,_)
       equation
@@ -1038,6 +1049,31 @@ algorithm
         fail();                   
   end matchcontinue;
 end extendCrefRecords1;
+
+protected function extendCrefRecords2
+"function: extendCrefRecords1
+	helper for extendCrefRecords"
+	input DAE.ExpVar ev;
+	input DAE.ComponentRef c;
+	output DAE.ComponentRef outArg;
+algorithm
+  outArg := matchcontinue(ev,c)
+    local
+      list<DAE.ExpVar> varLst;
+      DAE.ExpType tp;
+      String name;
+      DAE.ComponentRef c1;
+    case(DAE.COMPLEX_VAR(name=name,tp=tp),c) 
+      equation
+        c1 = Exp.extendCref(c,tp,name,{});  
+      then c1; 
+    case(_,_)
+      equation
+        Debug.fprintln("failtrace","Inline.extendCrefRecords2 failed");
+      then
+        fail();                   
+  end matchcontinue;
+end extendCrefRecords2;
 
 protected function getFunctionBody
 "function: getFunctionBody

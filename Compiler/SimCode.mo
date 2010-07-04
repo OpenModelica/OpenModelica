@@ -2444,7 +2444,7 @@ algorithm
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       String s;
-      DAELow.MultiDimEquation[:] ae;
+      DAELow.MultiDimEquation[:] ae,ae1;
       list<DAELow.MultiDimEquation> mdelst;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
@@ -2465,7 +2465,7 @@ algorithm
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
         mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae = listArray(mdelst);        
+        ae1 = listArray(mdelst);        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
@@ -2474,12 +2474,12 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true);
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         equations_ = createOdeSystem2(false, false, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then
@@ -2491,7 +2491,7 @@ algorithm
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         true = isMixedSystem(var_lst,eqn_lst);
         mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae = listArray(mdelst);        
+        ae1 = listArray(mdelst);        
         (cont_eqn,cont_var,disc_eqn,disc_var) = splitMixedEquations(eqn_lst, var_lst);
         // States are solved for der(x) not x.
         cont_var1 = Util.listMap(cont_var, transformXToXd);
@@ -2500,13 +2500,13 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(cont_eqn);
-        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
+        cont_subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(cont_subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations.
         // Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,true);
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,true);
         jac_tp = DAELow.analyzeJacobian(cont_subsystem_dae, jac);
         {equation_} = createOdeSystem2(true, true, cont_subsystem_dae, jac, jac_tp, block_,helpVarInfo);
         simVarsDisc = Util.listMap(disc_var, dlowvarToSimvar);
@@ -2531,14 +2531,14 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2) "extract the variables and equations of the block." ;
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae = listArray(mdelst);        
+        ae1 = listArray(mdelst);        
         var_lst_1 = Util.listMap(var_lst, transformXToXd); // States are solved for der(x) not x.
         vars_1 = DAELow.listVar(var_lst_1);
         // because listVar orders the elements not like listEquation the pairs of (var is solved in equation)
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);        
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc) "not used" ;
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc) "not used" ;
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
@@ -2550,7 +2550,7 @@ algorithm
         comps_flat = Util.listFlatten(comps_1);
         rf = Util.listFlatten(r);
         tf = Util.listFlatten(t);
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_3, mT_3,false) "calculate jacobian. If constant, linear system of equations. Otherwise nonlinear" ;
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
         equation_ = generateTearingSystem(v1_1,v2_1,comps_flat,rf,tf,false,genDiscrete,subsystem_dae_2, jac, jac_tp, helpVarInfo);
       then
@@ -2562,7 +2562,7 @@ algorithm
         (eqn_lst,var_lst) = Util.listMap32(block_, getEquationAndSolvedVar, eqns, vars, ass2);
         eqn_lst = replaceDerOpInEquationList(eqn_lst);
         mdelst = Util.listMap(arrayList(ae),replaceDerOpMultiDimEquations);
-        ae = listArray(mdelst);        
+        ae1 = listArray(mdelst);        
         // States are solved for der(x) not x.
         var_lst_1 = Util.listMap(var_lst, transformXToXd);
         vars_1 = DAELow.listVar(var_lst_1);
@@ -2570,12 +2570,12 @@ algorithm
         // is  twisted, simple reverse one list
         eqn_lst = listReverse(eqn_lst);
         eqns_1 = DAELow.listEquation(eqn_lst);
-        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
+        subsystem_dae = DAELow.DAELOW(vars_1,knvars,exvars,av,eqns_1,se,ie,ae1,al,ev,eoc);
         m = DAELow.incidenceMatrix(subsystem_dae);
         m_1 = DAELow.absIncidenceMatrix(m);
         mt_1 = DAELow.transposeMatrix(m_1);
         // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
-        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae, m_1, mt_1,false);
+        jac = DAELow.calculateJacobian(vars_1, eqns_1, ae1, m_1, mt_1,false);
         jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac);
         equations_ = createOdeSystem2(false, genDiscrete, subsystem_dae, jac, jac_tp, block_,helpVarInfo);
       then

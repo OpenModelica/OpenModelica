@@ -5781,7 +5781,7 @@ protected function lowerArrEqn
 algorithm
   outMultiDimEquation := matchcontinue (inElement,funcs)
     local
-			DAE.Exp e1, e2, e1_1, e2_1, e1_2, e2_2;
+			DAE.Exp e1,e2,e1_1,e2_1,e1_2,e2_2;
       list<Value> ds;
       DAE.ElementSource source;
 
@@ -5818,6 +5818,7 @@ algorithm
         ((e,_)) = Exp.traverseExp(inExp, traversingextendArrExp, funcs);
       then
         e;
+    case(inExp,funcs) then inExp;        
   end matchcontinue;
 end extendArrExp;
 
@@ -5832,20 +5833,79 @@ algorithm outExp := matchcontinue(inExp)
     list<DAE.ComponentRef> crlst;
     DAE.ExpType t,ty;
     list<Option<Integer>> ad;
+    Integer i,j;
     list<list<DAE.Subscript>> subslst,subslst1;
     list<DAE.Exp> expl;
+    DAE.Exp e,e_new;
+    list<DAE.ExpVar> varLst;
+    Absyn.Path name;
+    tuple<DAE.Exp, DAE.FunctionTree > restpl;  
+    list<list<tuple<DAE.Exp, Boolean>>> scalar;
+  // CASE for Matrix    
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {SOME(i),SOME(j)})), funcs) )
+    equation
+        subslst = arrayDimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        scalar = makeMatrix(expl,j,j,{});
+        e_new = DAE.MATRIX(t,i,scalar);
+        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);   
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
     equation
         subslst = arrayDimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        e_new = DAE.ARRAY(t,true,expl);
+        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
     then
-      ((DAE.ARRAY(t,true,expl), funcs ));
+      (restpl);          
+  case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst)), funcs) )
+    equation
+        expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
+        e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
+        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
   case(inExp) then inExp;
 end matchcontinue;
 end traversingextendArrExp;
 
+protected function makeMatrix
+  input list<DAE.Exp> expl;
+  input Integer r;
+  input Integer n;
+  input list<tuple<DAE.Exp, Boolean>> incol;
+  output list<list<tuple<DAE.Exp, Boolean>>> scalar;
+algorithm
+  scalar := matchcontinue (expl, r, n, incol)
+    local 
+      DAE.Exp e;
+      list<DAE.Exp> rest;
+      list<list<tuple<DAE.Exp, Boolean>>> res;
+      list<tuple<DAE.Exp, Boolean>> col;
+  case({},r,n,incol)
+    equation
+      col = listReverse(incol);
+    then {col};  
+  case(e::rest,r,n,incol)
+    equation
+      true = intEq(r,0);
+      col = listReverse(incol);
+      res = makeMatrix(e::rest,n,n,{});
+    then      
+      (col::res);
+  case(e::rest,r,n,incol)
+    equation
+      res = makeMatrix(rest,r-1,n,(e,true)::incol);
+    then      
+      res;
+  end matchcontinue;
+end makeMatrix;
+  
 protected function lowerComplexEqn
 "function: lowerComplexEqn
   Helper function to lower2.
@@ -16230,7 +16290,7 @@ algorithm
  end matchcontinue;
 end extendExp;
 
-protected function arrayDimensionsToRange "
+public function arrayDimensionsToRange "
 Author: Frenkel TUD 2010-05"
   input list<Option<Integer>> dims;
   output list<list<DAE.Subscript>> outRangelist;
@@ -16271,7 +16331,7 @@ algorithm
   end matchcontinue;
 end rangesToSubscript;
 
-protected function rangesToSubscripts "
+public function rangesToSubscripts "
 Author: Frenkel TUD 2010-05"
   input list<list<DAE.Subscript>> inRangelist;
   output list<list<DAE.Subscript>> outSubslst;
