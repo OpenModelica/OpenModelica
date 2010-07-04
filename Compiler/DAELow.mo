@@ -12935,6 +12935,7 @@ algorithm
 
         noScalar_map1 = getAllElements(noScalar_map);
         sort_map = sortNoScalarList(noScalar_map1);
+        //print("\nsort_map:\n");
         //dumpSortMap(sort_map);
         // connect scalars and sortet non scalars
         mergedvar_map = listAppend(scalar_map,sort_map);
@@ -12970,7 +12971,9 @@ algorithm
     case ((item,a,b)::{})
       equation
         print(intString(a));
+        print(";");
         print(intString(b));
+        print(";");
         dumpVars({item});
       then
         ();      
@@ -13216,7 +13219,7 @@ algorithm
   matchcontinue (var1,inlist)
     local
       list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
-			DAE.ComponentRef varName1, varName2;
+			DAE.ComponentRef varName1, varName2,c2,c1;
       Var var1,var2;
       Boolean ins;
       Integer typ1,typ2,place1,place2;
@@ -13224,7 +13227,9 @@ algorithm
 		case ((var1 as VAR(varName = varName1), typ1, place1), (var2 as VAR(varName = varName2), typ2, place2) :: rest)
 			equation
 				(var_lst, var_lst1) = getAllElements1((var1, typ1, place1), rest);
-				ins = Exp.crefEqualNoStringCompare(varName1, varName2); 
+        c1 = Exp.crefStripLastSubs(varName1);
+        c2 = Exp.crefStripLastSubs(varName2);				
+				ins = Exp.crefEqualNoStringCompare(c1, c2); 
 				var_lst2 = listAppendTyp(ins, (var2, typ2, place2), var_lst);
 				var_lst3 = listAppendTyp(boolNot(ins), (var2, typ2, place2), var_lst1);
 			then
@@ -13362,15 +13367,20 @@ algorithm
   matchcontinue (invar1,invar2)
     local
       DAE.Ident origName1,origName2;
+      DAE.ComponentRef varName1, varName2,c1,c2;
       list<DAE.Subscript> arryDim, arryDim1;
       list<DAE.Subscript> subscriptLst, subscriptLst1;
       Boolean out_val;
-    case (VAR(varName = DAE.CREF_IDENT(origName1,_,subscriptLst),arryDim = arryDim),VAR(varName = DAE.CREF_IDENT(origName2,_,subscriptLst1),arryDim = arryDim1))
+    case (VAR(varName = varName1,arryDim = arryDim),VAR(varName = varName2,arryDim = arryDim1))
       equation
-        (origName1 ==& origName2) = true;
+        c1 = Exp.crefStripLastSubs(varName1);
+        c2 = Exp.crefStripLastSubs(varName2);
+        true = Exp.crefEqualNoStringCompare(c1, c2); 
+        subscriptLst = Exp.crefLastSubs(varName1);
+        subscriptLst1 = Exp.crefLastSubs(varName2);
         out_val = comparingNonScalars1(subscriptLst,subscriptLst1,arryDim,arryDim1);
       then
-        out_val;
+        out_val;        
     case (_,_) then false;
   end matchcontinue;
 end comparingNonScalars;

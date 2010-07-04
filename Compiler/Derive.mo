@@ -328,14 +328,14 @@ algorithm
         ({DAELow.VAR(varKind = DAELow.DUMMY_STATE())},_) = DAELow.getVar(cr, timevars);
         cr = DAELow.crefPrefixDer(cr);
       then
-        DAE.CREF(cr, DAE.ET_REAL());
+        DAE.CREF(cr, tp);
         //DAE.CREF(DAE.CREF_IDENT(cr_str_1,ty,{}),DAE.ET_REAL());
 
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions))
       equation
         (_,_) = DAELow.getVar(cr, timevars);
       then
-        DAE.CALL(Absyn.IDENT("der"),{e},false,true,DAE.ET_REAL(),DAE.NO_INLINE());
+        DAE.CALL(Absyn.IDENT("der"),{e},false,true,tp,DAE.NO_INLINE());
 
     case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
