@@ -1086,14 +1086,14 @@ algorithm
     local
       list<DAE.Element> flst,fn;
       DAE.FunctionTree ftree;
-    case(p,(SOME(flst),_,_))
-    equation
-      DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) :: _ = DAEUtil.getNamedFunction(p,flst);  
-    then fn;
     case(p,(_,SOME(ftree),_))
-    equation
-      DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) = DAEUtil.avlTreeGet(ftree,p); 
-    then fn;   
+      equation
+        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) = DAEUtil.avlTreeGet(ftree,p); 
+      then fn;   
+    case(p,(SOME(flst),_,_))
+      equation
+        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) = DAEUtil.getNamedFunctionFromElementList(p,flst);  
+      then fn;
     case(_,_)
       equation
         Debug.fprintln("failtrace","Inline.getFunctionBody failed");

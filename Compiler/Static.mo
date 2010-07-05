@@ -8106,28 +8106,28 @@ algorithm
   (outCache,outExp,outProperties,outDae) :=
   matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> t,outtype,restype,functype;
-      list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> fargs;
+      DAE.Type t,outtype,restype,functype,tp1;
+      list<tuple<Ident, DAE.Type>> fargs;
       list<Env.Frame> env_1,env_2,env;
       list<Slot> slots,newslots,newslots2,slots2;
-      list<DAE.Exp> args_1,args_2;
+      list<DAE.Exp> args_1,args_2,args1;
       list<DAE.Const> constlist;
       DAE.Const const;
       DAE.TupleConst tyconst;
       DAE.Properties prop,prop_1;
       SCode.Class cl;
-      Absyn.Path fn,fn_1;
+      Absyn.Path fn,fn_1,fqPath;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs, translatedNArgs;
       Boolean impl,tuple_,builtin;
       DAE.InlineType inline;
       Option<Interactive.InteractiveSymbolTable> st;
-      list<tuple<DAE.TType, Option<Absyn.Path>>> typelist,ktypelist;
+      list<DAE.Type> typelist,ktypelist,tys;
       list<DAE.ArrayDim> vect_dims;
       DAE.Exp call_exp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope;
-      String s,name;
+      String s,name,argStr,id;
       Env.Cache cache;
       DAE.ExpType tp;
       SCode.Mod mod;
@@ -8136,6 +8136,12 @@ algorithm
       Option<Absyn.Modification> absynOptMod;
       ClassInf.State complexClassType;
       DAE.DAElist dae,dae1,dae2,dae3,dae4,outDae;
+      SCode.Class c;
+      SCode.Restriction re;
+      Integer index;
+      list<String> fieldNames;
+      list<DAE.Var> vars;
+      
 
     /* Record constructors that might have come from Graphical expressions with unknown array sizes */
     /*
@@ -8267,16 +8273,7 @@ algorithm
 
     /* ------ */
     case (cache,env,fn,args,nargs,impl,stopElab,st) /* Metamodelica extension, added by simbj */
-      local
-        SCode.Class c;
-        SCode.Restriction re;
-        SCode.Ident id;
-        Integer index;
-        list<String> fieldNames;
-        list<DAE.Type> tys;
-        list<DAE.Var> vars;
-        Absyn.Path fqPath;
-       equation
+      equation
         true = RTOpts.acceptMetaModelicaGrammar();
         false = Util.getStatefulBoolean(stopElab);
         (cache,t as (DAE.T_METARECORD(index,vars),_),env_1) = Lookup.lookupType(cache, env, fn, false);
@@ -8352,7 +8349,6 @@ algorithm
         fail();
 
     case (cache,env,fn,args,nargs,impl,stopElab,st) /* no matching type found, with -one- candidate */
-      local list<DAE.Exp> args1; String argStr; DAE.Type tp1;
       equation
         (cache,typelist as {tp1},_) = Lookup.lookupFunctionsInEnv(cache, env, fn);
         (cache,args_1,constlist,restype,functype,vect_dims,slots,_) =
@@ -8396,7 +8392,7 @@ algorithm
         Error.addMessage(Error.LOOKUP_ERROR, {fn_str,scope});
       then
         fail();
-
+    
     case (cache,env,fn,args,nargs,impl,stopElab,st)
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -9900,7 +9896,9 @@ algorithm
       DAE.Const const;
       SCode.Accessibility acc,acc_1;
       SCode.Variability variability;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      Option<Absyn.Path> optPath;
+      DAE.Type t;
+      DAE.TType tt;
       DAE.Binding binding;
       DAE.Exp exp;
       list<Env.Frame> env;
@@ -9908,7 +9906,7 @@ algorithm
       Boolean impl;
       Ident s,scope;
       Env.Cache cache;
-      Boolean doVect;
+      Boolean doVect,isBuiltinFunc;
       DAE.ExpType et;
       Absyn.InnerOuter io;
       DAE.DAElist dae,dae1,dae2;
@@ -9940,21 +9938,24 @@ algorithm
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect);        
       then
         (cache,exp,DAE.PROP(t,const),acc_1,dae);
-
+        
     // MetaModelica Partial Function
     case (cache,env,c,impl,doVect)
       equation
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,typelist,dae1) = Lookup.lookupFunctionsInEnv(cache,env,path);
-        t :: _ = typelist;
+        (cache, isBuiltinFunc) = isBuiltinFunc(cache, path);
+        {t} = typelist;
+        (tt,optPath) = t;
+        t = (tt, Util.if_(isBuiltinFunc, SOME(path), optPath)) "builtin functions store NONE there";
         (_,SOME(fpath)) = t;
         t = Types.makeFunctionPolymorphicReference(t);
         c = Absyn.pathToCref(fpath);
         expCref = Exp.toExpCref(c);
-        exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC());
+        exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFunc));
         // This is not done by lookup - only elabCall. So we should do it here.
-        (cache,dae2) = instantiateDaeFunction(cache,env,path,false,NONE,true);
+        (cache,dae2) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE,true);
         dae = DAEUtil.joinDaeLst({dae1,dae2});
       then
         (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO(),dae);

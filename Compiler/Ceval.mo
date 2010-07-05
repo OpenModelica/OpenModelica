@@ -224,7 +224,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,DAE.CREF(componentRef = c, ty = DAE.ET_FUNCTION_REFERENCE_FUNC()),impl,st,_,msg)
+    case (cache,env,DAE.CREF(componentRef = c, ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)),impl,st,_,msg)
       local
         DAE.ComponentRef c;
       equation

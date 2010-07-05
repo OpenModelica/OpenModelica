@@ -703,6 +703,7 @@ algorithm
       list<tuple<DAE.ComponentRef,DAE.ElementSource>> cs;
       DAE.ElementSource src,src1,src2;
       DAE.FunctionTree funcs;
+      list<Absyn.Info> infoLst;
       list<Absyn.Within> partOfLst;
       list<Option<DAE.ComponentRef>> instanceOptLst;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst;
@@ -712,9 +713,9 @@ algorithm
     case ((x,src1) :: ((y,src2) :: cs))
       equation
         DAE.DAE(eq,funcs) = equEquations(((y,src2) :: cs));
-        DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
+        DAE.SOURCE(infoLst, partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
         // do not propagate connects from different sources! use the crefs directly!
-        src = DAE.SOURCE(partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
+        src = DAE.SOURCE(infoLst, partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
       then
         (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq,funcs));
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();

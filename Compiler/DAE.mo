@@ -104,6 +104,7 @@ end VarProtection;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
+    list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from; info does not yet exist in Absyn, but here is where it will end up";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
     list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
@@ -111,7 +112,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE({},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE({},{},{},{},{});
 
 public uniontype Element
   record VAR
@@ -896,6 +897,7 @@ uniontype ExpType "- Basic types
   record ET_FUNCTION_REFERENCE_VAR "MetaModelica Function Reference that is a variable"
   end ET_FUNCTION_REFERENCE_VAR;
   record ET_FUNCTION_REFERENCE_FUNC "MetaModelica Function Reference that is a direct reference to a function"
+    Boolean builtin;
   end ET_FUNCTION_REFERENCE_FUNC;
 
   //MetaModelica Uniontype, MetaModelica extension, simbj

@@ -1083,8 +1083,8 @@ algorithm
       Integer numArgs;
     case(dae,p1,p2,numArgs)
       equation
-        {fn1} = DAEUtil.getNamedFunction(p1,dae);
-        {fn2} = DAEUtil.getNamedFunction(p2,dae);
+        fn1 = DAEUtil.getNamedFunctionFromElementList(p1,dae);
+        fn2 = DAEUtil.getNamedFunctionFromElementList(p2,dae);
         newPath = makeNewFnPath(p1,p2);
         newFn = buildNewFunction2(fn1,fn2,newPath,dae,numArgs);
       then
@@ -1724,8 +1724,7 @@ algorithm
     // fix calls to function pointer
     case((DAE.CALL(orig_p,args,tup,false,ty,inl),(p,inputs,dae,current)))
       equation
-        tmp = DAEUtil.getNamedFunction(orig_p,dae); // if function exists, do not replace call
-        false = Util.isListNotEmpty(tmp);
+        failure(_ = DAEUtil.getNamedFunctionFromElementList(orig_p,dae)); // if function exists, do not replace call
         crefs = Util.listMap(inputs,DAEUtil.varCref);
         args2 = Util.listMap(crefs,Exp.crefExp);
         args_1 = listAppend(args,args2);
@@ -1749,7 +1748,7 @@ algorithm
       DAE.Exp e;
     case({},_) then fail();
     case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR()) :: cdr,newArgs) then listAppend(newArgs,cdr);
-    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()) :: cdr,newArgs) then listAppend(newArgs,cdr);
+    case(DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)) :: cdr,newArgs) then listAppend(newArgs,cdr);
     case(e :: cdr,newArgs)
       equation
         cdr_1 = replaceFnRef(cdr,newArgs);

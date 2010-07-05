@@ -669,35 +669,7 @@ algorithm
     case (p,(dae as DAE.DAE(elementLst = elements, functions = funcs)),dlow,path,filenameprefix)
       equation
         // get all the used functions from the function tree
-        funcNormal = Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22);
-        
-        /* adrpo: this is not needed anymore as ALL the functions are now in the DAE
-        // get all the function references:
-        funcRefPaths = getCalledFunctionReferences(dae, dlow);
-        // get the paths of the normal functions
-        funcNormalPaths = DAEUtil.getFunctionNames(funcNormal);
-
-        // remove all normal functions from the list of function references
-        funcPaths = Util.listSetDifferenceOnTrue(funcRefPaths, funcNormalPaths, ModUtil.pathEqual); 
-        
-        // adrpo: debugging to see if the union of functions are ok
-        // debugpathstrs = Util.listMap(funcRefPaths, Absyn.pathString);
-        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ");
-        // print("Refs:   " +& debugpathstr +& "\n");
-        // debugpathstrs = Util.listMap(funcNormalPaths, Absyn.pathString);
-        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ");
-        // print("Normal: " +& debugpathstr +& "\n");         
-        // debugpathstrs = Util.listMap(funcPaths, Absyn.pathString);
-        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ");
-        // print("Ref-Normal: " +& debugpathstr +& "\n");         
-        
-        // generate functions for the function references
-        funcRefElems = generateFunctions2(p, funcPaths);
-        
-        // append the normal functions with the function references
-        funcelems = listAppend(funcRefElems, funcNormal);
-        */
-        funcelems = funcNormal;
+        funcelems = Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22);
         
         // print ("Detected DAE functions: "+& intString(listLength(funcelems)) +& "\n");
         
@@ -977,7 +949,7 @@ algorithm
         Exp.Type res_exp_ty;
         list<Variable> var_args;
       equation
-        expType = Types.elabType(tty);
+        //expType = Types.elabType(tty);
         res_exp_ty = Types.elabType(res_ty);
         var_args = Util.listMap(args, typesSimFunctionArg);
       then
@@ -2641,7 +2613,7 @@ algorithm
         // get Tearingvar from crs
         // to use listNth cref and eqn_lst have to start at 1 and not at 0 -> right shift
         crefs1 = Util.listAddElementFirst(DAE.CREF_IDENT("shift",DAE.ET_REAL(),{}),crefs);
-        eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.SOURCE({},{},{},{})),eqn_lst);
+        eqn_lst1 = Util.listAddElementFirst(DAELow.EQUATION(DAE.RCONST(0.0),DAE.RCONST(0.0),DAE.emptyElementSource),eqn_lst);
         tcrs = Util.listMap1r(t,listNth,crefs1);
         repl = makeResidualReplacements(tcrs);
         // get residual eqns and other eqns
@@ -5881,30 +5853,23 @@ algorithm
     local
       String pathstr,debugpathstr;
       Absyn.Path path;
+      DAE.Element funcelem;
       list<DAE.Element> elements,funcelems;
       list<Exp.Exp> explist,fcallexps,fcallexps_1, fnrefs;
       list<Absyn.ComponentRef> crefs;
       list<Absyn.Path> calledfuncs,res1,res2,res,acc;
       list<String> debugpathstrs;
       DAE.DAElist dae;
-
-    case (path,acc,DAE.DAE(elementLst = elements)) /* Don\'t fail here, ceval will generate the function later */
-      equation
-        {} = DAEUtil.getNamedFunction(path, elements);
-        pathstr = Absyn.pathString(path);
-        Debug.fprintln("failtrace", "SimCode.getCalledFunctionsInFunction: Class " 
-          +& pathstr +& " not found in global scope.");
-      then
-        path::acc;
-
-    case (path,acc,(dae as DAE.DAE(elementLst = elements)))
+      
+    case (path,acc,dae)
       local
         list<DAE.Element> varlist;
         list<list<DAE.Element>> varlistlist;
         list<Absyn.Path> varfuncs, fnpaths, fns, referencedFuncs, reffuncs;
       equation
         false = listMember(path,acc);
-        funcelems = DAEUtil.getNamedFunction(path, elements);
+        funcelem = DAEUtil.getNamedFunction(path, dae);
+        funcelems = {funcelem};
         explist = DAEUtil.getAllExps(funcelems);
         fcallexps = getMatchingExpsList(explist, matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
@@ -5939,6 +5904,16 @@ algorithm
         Debug.fprintln("info", debugpathstr) "debug" ;
       then
         res;
+
+    case (path,acc,dae) /* Don\'t fail here, ceval will generate the function later */
+      equation
+        false = listMember(path,acc);
+        failure(_ = DAEUtil.getNamedFunction(path, dae));
+        pathstr = Absyn.pathString(path);
+        Debug.fprintln("failtrace", "SimCode.getCalledFunctionsInFunction: Class " 
+          +& pathstr +& " not found in global scope.");
+      then
+        path::acc;
 
     case (path,acc,_)
       equation
@@ -6928,7 +6903,7 @@ algorithm
       DAE.Exp e; 
       DAE.ExpType t;
       list<DAE.Exp> expLst, expLst2;
-    case((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC()))) then {e};
+    case((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = false)))) then {e};
     case(DAE.PARTEVALFUNCTION(ty = DAE.ET_FUNCTION_REFERENCE_VAR(),path=p,expList=expLst))
       local
         DAE.ComponentRef cref; Absyn.Path p;

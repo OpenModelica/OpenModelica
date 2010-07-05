@@ -1931,7 +1931,7 @@ algorithm
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys1),NONE));
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys1),NONE()));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -1995,16 +1995,16 @@ end isBuiltInClass;
 protected constant DAE.Type stateSelectType = (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
           DAE.TYPES_VAR("never",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("avoid",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("default",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("prefer",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("always",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.UNBOUND(),NONE())
-          }),NONE);
+             (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE())
+          }),NONE());
 
 protected function instRealClass
 "function instRealClass
@@ -2233,17 +2233,17 @@ algorithm
    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE()),p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE()),p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE()),p);
       then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
@@ -7584,10 +7584,10 @@ algorithm
         eq = Mod.modEquation(mod_3);
         
         owncref = Absyn.CREF_IDENT(name,{});
-        (cache,dims,dae3) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE,true, false)
+        (cache,dims,dae3) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE(),true, false)
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;
         /* Instantiate the component */
-        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE, io, finalPrefix, info, ConnectionGraph.EMPTY);
+        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE(), io, finalPrefix, info, ConnectionGraph.EMPTY);
         
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
         
@@ -7698,7 +7698,7 @@ algorithm
   outIntegerOption := matchcontinue (inDimExp)
     local Integer i;
     case DIMINT(integer = i) then SOME(i);
-    case DIMEXP(subscript = _) then NONE;
+    case DIMEXP(subscript = _) then NONE();
   end matchcontinue;
 end instDimType;
 
@@ -15205,8 +15205,8 @@ algorithm
 //    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT());
 //    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("prefer",_,{})),Exp.ENUM()))) then SOME(DAE.PREFER());
 //    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("always",_,{})),Exp.ENUM()))) then SOME(DAE.ALWAYS());
-    case (NONE) then NONE;
-    case (_) then NONE;
+    case (NONE()) then NONE();
+    case (_) then NONE();
   end matchcontinue;
 end getStateSelectFromExpOption;
 

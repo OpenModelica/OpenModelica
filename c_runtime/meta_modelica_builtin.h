@@ -233,6 +233,7 @@ typedef modelica_integer tick_rettype;
 typedef modelica_real mmc__clock_rettype;
 
 if__exp_rettype if__exp(modelica_boolean, modelica_metatype, modelica_metatype);
+void boxptr_print(modelica_metatype);
 void print(modelica_string_t);
 tick_rettype tick();
 mmc__clock_rettype mmc__clock();

@@ -640,6 +640,11 @@ tick_rettype tick()
   return curTick++;
 }
 
+void boxptr_print(modelica_metatype str)
+{
+  fprintf(stdout, "%s", MMC_STRINGDATA(str));
+}
+
 void print(char* str)
 {
   fprintf(stdout, "%s", str);

@@ -9168,7 +9168,7 @@ algorithm
     case ((e as DAE.SCONST(string = _))) then e;
     case ((e as DAE.BCONST(bool = _))) then e;
     case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_VAR))) then e;
-    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC))) then e;
+    case ((e as DAE.CREF(ty = DAE.ET_FUNCTION_REFERENCE_FUNC(builtin = _)))) then e;
     case (DAE.CREF(componentRef = cr,ty = t))
       equation
         cr_1 = stringifyComponentRef(cr);

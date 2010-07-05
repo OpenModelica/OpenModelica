@@ -2118,41 +2118,19 @@ algorithm
   end matchcontinue;
 end toModelicaFormExp;
 
-public function getNamedFunction "function: getNamedFunction
-
-  return the FUNCTION with the given name. Returns empty list if not found
-  TODO: Only top level functions are checked. Add recursing into the DAE
-  and path name checking.
-  TODO: External functions?
-"
-  input Absyn.Path inPath;
-  input list<DAE.Element> inElementLst;
-  output list<DAE.Element> outElementLst;
+public function getNamedFunction "Return the FUNCTION with the given name. Fails if not found.
+First tries to use the DAE.FunctionTree; if that fails, fall back to the old method of checking
+top-level functions."
+  input Absyn.Path path;
+  input DAE.DAElist dae;
+  output DAE.Element outElement;
 algorithm
-  outElementLst:=
-  matchcontinue (inPath,inElementLst)
+  outElement := matchcontinue (path,dae)
     local
-      Absyn.Path path,elpath;
-      DAE.Element el;
-      list<DAE.Element> rest,res;
-    case (path,{})
-      //equation print(" function " +& Absyn.pathString(path) +& " not found \n");
-        then {};
-    case (path,((el as DAE.FUNCTION(path = elpath)) :: rest))
-      equation
-        true = ModUtil.pathEqual(path, elpath);
-      then
-        {el};
-    case (path,((el as DAE.RECORD_CONSTRUCTOR(path = elpath)) :: rest))
-      equation
-        true = ModUtil.pathEqual(path, elpath);
-      then
-        {el};
-    case (path,(el :: rest))
-      equation
-        res = getNamedFunction(path, rest);
-      then
-        res;
+      list<DAE.Element> elements;
+      DAE.FunctionTree functions;
+    case (path,DAE.DAE(functions = functions)) then avlTreeGet(functions, path);
+    case (path,DAE.DAE(elementLst = elements)) then getNamedFunctionFromElementList(path,elements);
     case (_,_)
       equation
         Debug.fprintln("failtrace", "- DAEUtil.getNamedFunction failed");
@@ -2160,6 +2138,32 @@ algorithm
         fail();
   end matchcontinue;
 end getNamedFunction;
+
+public function getNamedFunctionFromElementList "
+  TODO: Only top level functions are checked. Add recursing into the DAE
+  and path name checking.
+  TODO: External functions?
+"
+  input Absyn.Path inPath;
+  input list<DAE.Element> inElementLst;
+  output DAE.Element outElement;
+algorithm
+  outElement := matchcontinue (inPath,inElementLst)
+    local
+      Absyn.Path path,elpath;
+      DAE.Element el;
+      list<DAE.Element> rest,res;
+    case (path,((el as DAE.FUNCTION(path = elpath)) :: rest))
+      equation
+        true = ModUtil.pathEqual(path, elpath);
+      then el;
+    case (path,((el as DAE.RECORD_CONSTRUCTOR(path = elpath)) :: rest))
+      equation
+        true = ModUtil.pathEqual(path, elpath);
+      then el;
+    case (path,(el :: rest)) then getNamedFunctionFromElementList(path, rest);
+  end matchcontinue;
+end getNamedFunctionFromElementList;
 
 public function getAllExps "function: getAllExps
 
@@ -3951,24 +3955,25 @@ algorithm
   end matchcontinue;
 end addComponentType;
 
-public function addElementSourceType
+protected function addElementSourceType
   input DAE.ElementSource inSource;
   input Absyn.Path classPath;
   output DAE.ElementSource outSource;
 algorithm
   outSource := matchcontinue(inSource, classPath)
     local
+      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
 
-    case (DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
-      then DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
+    case (DAE.SOURCE(infoLst, partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
+      then DAE.SOURCE(infoLst, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
   end matchcontinue;
 end addElementSourceType;
 
-public function addElementSourceTypeOpt
+protected function addElementSourceTypeOpt
   input DAE.ElementSource inSource;
   input Option<Absyn.Path> classPathOpt;
   output DAE.ElementSource outSource;
@@ -3992,13 +3997,14 @@ public function addElementSourcePartOf
 algorithm
   outSource := matchcontinue(inSource, withinPath)
     local
+      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
 
-    case (DAE.SOURCE(partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
-      then DAE.SOURCE(withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
+    case (DAE.SOURCE(infoLst,partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
+      then DAE.SOURCE(infoLst,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
   end matchcontinue;
 end addElementSourcePartOf;
 
@@ -4032,14 +4038,15 @@ algorithm
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
+      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
 
     // a NONE means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (DAE.SOURCE(partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
-      then DAE.SOURCE(partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
+    case (DAE.SOURCE(infoLst,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
+      then DAE.SOURCE(infoLst,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
   end matchcontinue;
 end addElementSourceInstanceOpt;
 
@@ -4052,6 +4059,7 @@ algorithm
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
+      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
@@ -4059,8 +4067,8 @@ algorithm
 
     // a top level
     case (inSource, NONE()) then inSource;
-    case (inSource as DAE.SOURCE(partOfLst,instanceOptLst,connectEquationOptLst,typeLst), connectEquationOpt)
-      then DAE.SOURCE(partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst);
+    case (inSource as DAE.SOURCE(infoLst,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), connectEquationOpt)
+      then DAE.SOURCE(infoLst,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst);
   end matchcontinue;
 end addElementSourceConnectOpt;
 
@@ -4110,6 +4118,7 @@ algorithm
     // function
     case(DAE.FUNCTION(path=name)::rest)
       equation
+        Debug.traceln("adding func " +& Absyn.pathString(name));
         functionPaths = getFunctionNames(rest); 
       then name::functionPaths;
     // record constructors
@@ -4191,18 +4200,20 @@ public function mergeSources
 algorithm
   mergedSrc := matchcontinue(src1,src2)
     local
+      list<Absyn.Info> infoLst1,infoLst2,infoLst3;
       list<Absyn.Within> partOfLst1,partOfLst2,p;
       list<Option<DAE.ComponentRef>> instanceOptLst1,instanceOptLst2,i;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
       list<Absyn.Path> typeLst1,typeLst2,t;
-    case (DAE.SOURCE(partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1),
-          DAE.SOURCE(partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2))
+    case (DAE.SOURCE(infoLst1, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1),
+          DAE.SOURCE(infoLst2, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2))
       equation
+        infoLst3 = listAppend(infoLst1, infoLst2);
         p = listAppend(partOfLst1, partOfLst2);
         i = listAppend(instanceOptLst1, instanceOptLst2);
         c = listAppend(connectEquationOptLst1, connectEquationOptLst1);
         t = listAppend(typeLst1, typeLst2);
-      then DAE.SOURCE(p,i,c,t);
+      then DAE.SOURCE(infoLst3,p,i,c,t);
  end matchcontinue;
 end mergeSources;
 

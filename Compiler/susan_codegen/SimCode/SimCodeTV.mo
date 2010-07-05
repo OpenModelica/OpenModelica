@@ -456,7 +456,9 @@ package DAE
       ExpType ty;
     end ET_METAOPTION;
     record ET_FUNCTION_REFERENCE_VAR end ET_FUNCTION_REFERENCE_VAR;
-    record ET_FUNCTION_REFERENCE_FUNC end ET_FUNCTION_REFERENCE_FUNC;
+    record ET_FUNCTION_REFERENCE_FUNC
+      Boolean builtin;
+    end ET_FUNCTION_REFERENCE_FUNC;
     record ET_UNIONTYPE end ET_UNIONTYPE;
     record ET_BOXED
       ExpType ty;

@@ -2033,7 +2033,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
     DLLExport 
     int in_<%fname%>(type_description * inArgs, type_description * outVar);
     >>
-  <<
+  if outVars then <<
   <%outVars |> VARIABLE(__) => '#define <%fname%>_rettype<%boxStr%>_<%i1%> targ<%i1%>' ;separator="\n"%>
   typedef struct <%fname%>_rettype<%boxStr%>_s 
   {
@@ -2048,6 +2048,10 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
 
   DLLExport 
   <%fname%>_rettype<%boxStr%> <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
+  >> else <<
+
+  DLLExport 
+  void <%boxPtrStr%>_<%fname%>(<%fargsStr%>);
   >>
 end functionHeaderImpl;
 
@@ -2215,10 +2219,10 @@ match fn
 case FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = '<%fname%>_rettype'
+  let retType = if outVars then '<%fname%>_rettype' else "void"
   let &varDecls = buffer "" /*BUFD*/
   let &varInits = buffer "" /*BUFD*/
-  let retVar = tempDecl(retType, &varDecls /*BUFC*/)
+  let retVar = if outVars then tempDecl(retType, &varDecls /*BUFC*/)
   let stateVar = tempDecl("state", &varDecls /*BUFC*/)
   let _ = (variableDeclarations |> var =>
       varInit(var, "", i1, &varDecls /*BUFC*/, &varInits /*BUFC*/)
@@ -2246,15 +2250,15 @@ case FUNCTION(__) then
     _return:
     <%outVarsStr%>
     restore_memory_state(<%stateVar%>);
-    return <%retVar%>;
+    return <%if outVars then retVar%>;
   }
 
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
-    <%retType%> out;
+    <%if outVars then '<%retType%> out;'%>
     <%functionArguments |> arg => readInVar(arg) ;separator="\n"%>
-    out = _<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
+    <%if outVars then "out = "%>_<%fname%>(<%functionArguments |> var => funArgName(var) ;separator=", "%>);
     <%if outVars then (outVars |> var => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
@@ -2349,11 +2353,11 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
 ::=
   let() = System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = '<%fname%>_rettype'
-  let retTypeBoxed = '<%retType%>boxed'
+  let retType = if outvars then '<%fname%>_rettype' else "void"
+  let retTypeBoxed = if outvars then '<%retType%>boxed' else "void"
   let &varDecls = buffer ""
-  let retVar = tempDecl(retTypeBoxed, &varDecls)
-  let funRetVar = tempDecl(retType, &varDecls)
+  let retVar = if outvars then tempDecl(retTypeBoxed, &varDecls)
+  let funRetVar = if outvars then tempDecl(retType, &varDecls)
   let stateVar = tempDecl("state", &varDecls)
   let &varBox = buffer ""
   let &varUnbox = buffer ""
@@ -2368,7 +2372,7 @@ template functionBodyBoxedImpl(Absyn.Path name, list<Variable> funargs, list<Var
     <%varDecls%>
     <%stateVar%> = get_memory_state();
     <%varBox%>
-    <%funRetVar%> = _<%fname%>(<%args%>);
+    <%if outvars then '<%funRetVar%> = '%>_<%fname%>(<%args%>);
     <%varUnbox%>
     <%retStr%>
     restore_memory_state(<%stateVar%>);
@@ -2437,17 +2441,21 @@ end funArgUnbox;
 template unboxVariable(String varName, ExpType varType, Text &preExp, Text &varDecls)
 ::=
 match varType
+case ET_LIST(__)
+case ET_METATUPLE(__)
+case ET_METAOPTION(__)
+case ET_UNIONTYPE(__)
+case ET_POLYMORPHIC(__)
+case ET_META_ARRAY(__)
+case ET_BOXED(__) then varName
 case ET_COMPLEX(complexClassType = RECORD(__)) then
   unboxRecord(varName, varType, &preExp, &varDecls)
 else
   let shortType = mmcExpTypeShort(varType)
-  if shortType then
-    let type = 'mmc__unbox__<%shortType%>_rettype'
-    let tmpVar = tempDecl('mmc__unbox__<%shortType%>_rettype', &varDecls)
-    let &preExp += '<%tmpVar%> = mmc__unbox__<%shortType%>(<%varName%>);<%\n%>'
-    tmpVar
-  else
-    varName
+  let type = 'mmc__unbox__<%shortType%>_rettype'
+  let tmpVar = tempDecl('mmc__unbox__<%shortType%>_rettype', &varDecls)
+  let &preExp += '<%tmpVar%> = mmc__unbox__<%shortType%>(<%varName%>);<%\n%>'
+  tmpVar
 end unboxVariable;
 
 template unboxRecord(String recordVar, ExpType ty, Text &preExp, Text &varDecls)
@@ -2611,15 +2619,18 @@ match var
 case var as FUNCTION_PTR(__) then
   let typelist = (args |> arg => mmcVarType(arg) ;separator=", ")
   let rettype = '<%name%>_rettype'
-  <<
-  #define <%rettype%>_1 targ1
-  typedef struct <%rettype%>_s
-  {
-    <%args |> arg indexedby i1 => 
-      <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
-  } <%rettype%>;
-  <%rettype%>(*_<%name%>)(<%typelist%>) = (<%rettype%>(*)(<%typelist%>))<%name%>;
-  >>
+  match ty
+    case ET_NORETCALL() then 'void(*_<%name%>)(<%typelist%>) = (void(*)(<%typelist%>))<%name%>;'
+    else <<
+    #define <%rettype%>_1 targ1
+    typedef struct <%rettype%>_s
+    {
+      <%args |> arg indexedby i1 => 
+        <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
+    } <%rettype%>;
+    <%rettype%>(*_<%name%>)(<%typelist%>) = (<%rettype%>(*)(<%typelist%>))<%name%>;
+    >>
+  end match
 end functionArg;
   
 template varOutput(Variable var, String dest, Integer i, Text &varDecls /*BUFP*/,
@@ -3872,7 +3883,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let argStr = daeExp(s1, context, &preExp, &varDecls)
     unboxRecord(argStr, ty, &preExp, &varDecls)
   // no return calls
-  case CALL(tuple_=false, ty=ET_NORETCALL(__)) then
+  case CALL(ty=ET_NORETCALL(__)) then
     let argStr = (expLst |> exp => '<%daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)%>' ;separator=", ")
     let funName = '<%underscorePath(path)%>'
     let &preExp += '<%daeExpCallBuiltinPrefix(builtin)%><%funName%>(<%argStr%>);<%\n%>'
@@ -4430,8 +4441,15 @@ template mmcExpTypeShort(DAE.ExpType type)
   case ET_STRING(__)                  then "string"
   case ET_BOOL(__)                    then "integer"
   case ET_ARRAY(__)                   then "array"
-  case ET_BOXED(__)                   then "metatype"
+  case ET_LIST(__)
+  case ET_METATUPLE(__)
+  case ET_METAOPTION(__)
+  case ET_UNIONTYPE(__)
+  case ET_POLYMORPHIC(__)
+  case ET_META_ARRAY(__)
+  case ET_BOXED(__)                  then "metatype"
   case ET_FUNCTION_REFERENCE_VAR(__)  then "fnptr"
+  else "mmcExpTypeShort:ERROR"
 end mmcExpTypeShort;
 
 template expType(DAE.ExpType ty, Boolean array)
