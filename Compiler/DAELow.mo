@@ -5887,6 +5887,8 @@ algorithm
       list<DAE.Exp> rest;
       list<list<tuple<DAE.Exp, Boolean>>> res;
       list<tuple<DAE.Exp, Boolean>> col;
+      Exp.Type tp;
+      Boolean builtin;      
   case({},r,n,incol)
     equation
       col = listReverse(incol);
@@ -5900,7 +5902,9 @@ algorithm
       (col::res);
   case(e::rest,r,n,incol)
     equation
-      res = makeMatrix(rest,r-1,n,(e,true)::incol);
+      tp = Exp.typeof(e);
+      builtin = Exp.typeBuiltin(tp);
+      res = makeMatrix(rest,r-1,n,(e,builtin)::incol);
     then      
       res;
   end matchcontinue;
@@ -12025,9 +12029,7 @@ algorithm
         indx_1 = indx - 1;
         MULTIDIM_EQUATION(ds,e1,e2,_) = arreqn[indx + 1];
         tp = Exp.typeof(e1);
-        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2)
-         "NOTE: illegal to use SUB for arrays, but we only need
-                to check if constant or not, expr not saved.." ;
+        new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
         rhs_exp = getEqnsysRhsExp(new_exp, vars);
         true = Exp.isConst(rhs_exp);
         res = rhsConstant2(rest, dae);
@@ -12257,10 +12259,8 @@ protected function calculateJacobianRows "function: calculateJacobianRows
   input IncidenceMatrixT mt;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output Option<list<tuple<Integer, Integer, Equation>>> res;
-  list<Var> dlowVars;
 algorithm
-  dlowVars := varList(vars);
-  res := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp, dlowVars);
+  (res,_) := calculateJacobianRows2(eqns, vars, ae, m, mt, 1,differentiateIfExp, {});
 end calculateJacobianRows;
 
 protected function calculateJacobianRows2 "function: calculateJacobianRows2
@@ -12275,11 +12275,12 @@ protected function calculateJacobianRows2 "function: calculateJacobianRows2
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
-  input list<Var> dlowVars;
+  input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
+  output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
-  outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,dlowVars)
+  (outTplIntegerIntegerEquationLstOption,outEntrylst):=
+  matchcontinue (inEquationLst,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
     local
       Value eqn_indx_1,eqn_indx;
       list<tuple<Value, Value, Equation>> l1,l2,res;
@@ -12288,17 +12289,16 @@ algorithm
       Variables vars;
       MultiDimEquation[:] ae;
       list<Value>[:] m,mt;
-      list<Var> resvars;
-      Var v;
-    case ({},_,_,_,_,_,_,_) then SOME({});
-    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp,v::resvars)
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2; 
+    case ({},_,_,_,_,_,_,inEntrylst) then (SOME({}),inEntrylst);
+    case ((eqn :: eqns),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         eqn_indx_1 = eqn_indx + 1;
-        SOME(l1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1,differentiateIfExp,resvars);
-        SOME(l2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx,differentiateIfExp,v);
+        (SOME(l1),entrylst1) = calculateJacobianRows2(eqns, vars, ae, m, mt, eqn_indx_1,differentiateIfExp,inEntrylst);
+        (SOME(l2),entrylst2) = calculateJacobianRow(eqn, vars, ae, m, mt, eqn_indx,differentiateIfExp,entrylst1);
         res = listAppend(l1, l2);
       then
-        SOME(res);
+        (SOME(res),entrylst2);
   end matchcontinue;
 end calculateJacobianRows2;
 
@@ -12322,13 +12322,15 @@ protected function calculateJacobianRow "function: calculateJacobianRow
   input IncidenceMatrixT inIncidenceMatrixT;
   input Integer inInteger;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
-  input Var v;
+  input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output Option<list<tuple<Integer, Integer, Equation>>> outTplIntegerIntegerEquationLstOption;
+  output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
-  outTplIntegerIntegerEquationLstOption:=
-  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,v)
+  (outTplIntegerIntegerEquationLstOption,outEntrylst):=
+  matchcontinue (inEquation,inVariables,inMultiDimEquationArray,inIncidenceMatrix,inIncidenceMatrixT,inInteger,differentiateIfExp,inEntrylst)
     local
       list<Value> var_indxs,var_indxs_1,ds;
+      list<Option<Integer>> ad;
       list<tuple<Value, Value, Equation>> eqns;
       DAE.Exp e,e1,e2,new_exp;
       Variables vars;
@@ -12337,34 +12339,86 @@ algorithm
       Value eqn_indx,indx;
       list<DAE.Exp> in_,out,expl;
       Exp.Type t;
-      DAE.ComponentRef cr;
-      list<DAE.Subscript> subs;      
+      list<DAE.Subscript> subs;   
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;   
     // residual equations
-    case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,v)
+    case (RESIDUAL_EQUATION(exp = e),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: ascending index" ;
         SOME(eqns) = calculateJacobianRow2(e, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
-        SOME(eqns);
+        (SOME(eqns),inEntrylst);
     // algorithms give no jacobian
-    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp,v) then NONE;
+    case (ALGORITHM(index = indx,in_ = in_,out = out),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst) then (NONE,inEntrylst);
     // array equations
-    case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp,v)
+    case (ARRAY_EQUATION(index = indx,crefOrDerCref = expl),vars,ae,m,mt,eqn_indx,differentiateIfExp,inEntrylst)
       equation
         MULTIDIM_EQUATION(ds,e1,e2,_) = ae[indx + 1];
         t = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(t),e2);
-        cr = varCref(v);
-        subs = Exp.crefLastSubs(cr);
+        ad = Util.listMap(ds,Util.makeOption);
+        (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
         new_exp = Exp.applyExpSubscripts(new_exp,subs); 
         var_indxs = varsInEqn(m, eqn_indx);
         var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
-        SOME(eqns);
+        (SOME(eqns),entrylst1);
   end matchcontinue;
 end calculateJacobianRow;
+
+public function getArrayEquationSub"function: getArrayEquationSub
+  author: Frenkel TUD
+  helper for calculateJacobianRow and SimCode.dlowEqToExp"
+  input Integer Index;
+  input list<Option<Integer>> inAD;
+  input list<tuple<Integer,list<list<DAE.Subscript>>>> inList;
+  output list<DAE.Subscript> outSubs;
+  output list<tuple<Integer,list<list<DAE.Subscript>>>> outList;
+algorithm
+  (outSubs,outList) := 
+  matchcontinue (Index,inAD,inList)
+    local
+      Integer i,ie;
+      list<Option<Integer>> ad;
+      list<DAE.Subscript> subs,subs1;
+      list<list<DAE.Subscript>> subslst,subslst1;
+      list<tuple<Integer,list<list<DAE.Subscript>>>> rest,entrylst;
+      tuple<Integer,list<list<DAE.Subscript>>> entry;
+    // new entry  
+    case (i,ad,{})
+      equation
+        subslst = arrayDimensionsToRange(ad);
+        (subs::subslst1) = rangesToSubscripts(subslst);
+      then
+        (subs,{(i,subslst1)});
+    // found last entry
+    case (i,ad,(entry as (ie,{subs}))::rest)
+      equation
+        true = intEq(i,ie);
+      then   
+        (subs,rest);         
+    // found entry
+    case (i,ad,(entry as (ie,subs::subslst))::rest)
+      equation
+        true = intEq(i,ie);
+      then   
+        (subs,(ie,subslst)::rest); 
+    // next entry  
+    case (i,ad,(entry as (ie,subslst))::rest)
+      equation
+        false = intEq(i,ie);
+        (subs1,entrylst) = getArrayEquationSub(i,ad,rest);
+      then   
+        (subs1,entry::entrylst); 
+    case (_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- DAELow.getArrayEquationSub failed");
+      then
+        fail();          
+  end matchcontinue;      
+end getArrayEquationSub;
 
 protected function makeResidualEqn "function: makeResidualEqn
   author: PA

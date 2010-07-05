@@ -3845,6 +3845,14 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'transpose_alloc_<%arr_tp_str%>(&<%var1%>, &<%tvar%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="cross"), expLst={v1, v2}) then
+    let var1 = daeExp(v1, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let var2 = daeExp(v2, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let arr_tp_str = '<%expTypeFromExpArray(v1)%>'
+    let tvar = tempDecl(arr_tp_str, &varDecls /*BUFC*/)
+    let &preExp += 'cross_alloc_<%arr_tp_str%>(&<%var1%>, &<%var2%>, &<%tvar%>);<%\n%>'
+    tvar    
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="identity"), expLst={A}) then
     let var1 = daeExp(A, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let arr_tp_str = '<%expTypeFromExpArray(A)%>'

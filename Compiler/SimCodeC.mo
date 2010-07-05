@@ -21376,6 +21376,36 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "cross"), expLst = {i_v1, i_v2}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_v2;
+        DAE.Exp i_v1;
+        Tpl.Text i_tvar;
+        Tpl.Text i_arr__tp__str;
+        Tpl.Text i_var2;
+        Tpl.Text i_var1;
+      equation
+        (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_v1, i_context, i_preExp, i_varDecls);
+        (i_var2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_v2, i_context, i_preExp, i_varDecls);
+        i_arr__tp__str = expTypeFromExpArray(emptyTxt, i_v1);
+        (i_tvar, i_varDecls) = tempDecl(emptyTxt, Tpl.textString(i_arr__tp__str), i_varDecls);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("cross_alloc_"));
+        i_preExp = Tpl.writeText(i_preExp, i_arr__tp__str);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("(&"));
+        i_preExp = Tpl.writeText(i_preExp, i_var1);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", &"));
+        i_preExp = Tpl.writeText(i_preExp, i_var2);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", &"));
+        i_preExp = Tpl.writeText(i_preExp, i_tvar);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeText(txt, i_tvar);
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "identity"), expLst = {i_A}),
            i_context,
            i_preExp,

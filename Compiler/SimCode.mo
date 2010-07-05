@@ -2832,13 +2832,11 @@ algorithm
         list<tuple<Integer, Integer, DAELow.Equation>> jac;
         list<tuple<Integer, Integer, SimEqSystem>> simJac;
         DAELow.MultiDimEquation[:] arrayEqs;
-        list<tuple<DAELow.Equation,DAELow.Var>> dlowEqsVars;
       equation
         dlowVars = DAELow.varList(v);
         simVars = Util.listMap(dlowVars, dlowvarToSimvar);
         dlowEqs = DAELow.equationList(eqn);
-        dlowEqsVars = Util.listThreadTuple(dlowEqs,dlowVars);
-        beqs = Util.listMap2(dlowEqsVars, dlowEqToExp, v, arrayEqs);
+        (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, arrayEqs, {});
         simJac = Util.listMap1(jac, jacToSimjac, v);
       then
         {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
@@ -3479,49 +3477,52 @@ algorithm
 end jacToSimjac;
 
 protected function dlowEqToExp
-  input tuple<DAELow.Equation,DAELow.Var> dlowEqVar;
+  input DAELow.Equation dlowEq;
   input DAELow.Variables v;
   input DAELow.MultiDimEquation[:] arrayEqs;
+  input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output DAE.Exp exp_;
+  output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
-  exp_ :=
-  matchcontinue (dlowEqVar, v, arrayEqs)
+  (exp_,outEntrylst) :=
+  matchcontinue (dlowEq, v, arrayEqs, inEntrylst)
     local
       Integer row, col, index;
       DAE.Exp e;
       DAE.Exp e1,e2,new_exp,new_exp1,rhs_exp,rhs_exp_1,rhs_exp_2;
       DAE.ExpType tp,tp1;
       DAELow.Equation dlowEq;
-      DAELow.Var c;
-      DAE.ComponentRef cr;
+      list<Integer> ds;
+      list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
-    case ((DAELow.RESIDUAL_EQUATION(exp=e),_), v, arrayEqs)
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1;  
+     case (DAELow.RESIDUAL_EQUATION(exp=e), v, arrayEqs,inEntrylst)
       equation
         rhs_exp = DAELow.getEqnsysRhsExp(e, v);
         rhs_exp_1 = Exp.simplify(rhs_exp);
-      then rhs_exp_1;
-    case ((DAELow.EQUATION(exp=e1, scalar=e2),_), v, arrayEqs)
+      then (rhs_exp_1,inEntrylst);
+    case (DAELow.EQUATION(exp=e1, scalar=e2), v, arrayEqs,inEntrylst)
       equation
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
-      then rhs_exp_2;
-    case ((DAELow.ARRAY_EQUATION(index=index),c), v, arrayEqs)
+      then (rhs_exp_2,inEntrylst);
+    case (DAELow.ARRAY_EQUATION(index=index), v, arrayEqs,inEntrylst)
       equation
-        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = arrayEqs[index+1];
+        DAELow.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = arrayEqs[index+1];
         tp = Exp.typeof(e1);
         new_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
-        cr = DAELow.varCref(c);
-        subs = Exp.crefLastSubs(cr);
+        ad = Util.listMap(ds,Util.makeOption);
+        (subs,entrylst1) = DAELow.getArrayEquationSub(index,ad,inEntrylst);
         new_exp1 = Exp.applyExpSubscripts(new_exp,subs);
         rhs_exp = DAELow.getEqnsysRhsExp(new_exp1, v);
         tp1 = Exp.typeof(rhs_exp);
         rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp1),rhs_exp);
         rhs_exp_2 = Exp.simplify(rhs_exp_1);
-      then rhs_exp_2;     
-    case ((dlowEq,_),_,_)
+      then (rhs_exp_2,entrylst1);     
+    case (dlowEq,_,_,_)
       equation
         DAELow.dumpEqns({dlowEq});
         Error.addMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"});
@@ -3529,6 +3530,52 @@ algorithm
         fail();        
   end matchcontinue;
 end dlowEqToExp;
+
+protected function listMap3passthrough "function listMap3passthrough
+  Takes a list and a function and three extra arguments passed to the function.
+  The function produces one new value which is used for creating a new list.
+  The 3.th extra agruments are passed through"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bType_cType_dToType_e inFuncTypeTypeATypeBTypeCTypeDToTypeE;
+  input Type_b inTypeB;
+  input Type_c inTypeC;
+  input Type_d inTypeD;
+  output list<Type_e> outTypeELst;
+  output Type_d outTypeD;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bType_cType_dToType_e
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    input Type_c inTypeC;
+    input Type_d inTypeD;
+    output Type_e outTypeE;
+    output Type_d outTypeD;
+  end FuncTypeType_aType_bType_cType_dToType_e;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+  replaceable type Type_d subtypeof Any;
+  replaceable type Type_e subtypeof Any;
+algorithm
+  outTypeELst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeATypeBTypeCTypeDToTypeE,inTypeB,inTypeC,inTypeD)
+    local
+      Type_e f_1;
+      list<Type_e> r_1;
+      Type_a f;
+      list<Type_a> r;
+      FuncTypeType_aType_bType_cType_dToType_e fn;
+      Type_b extraarg1;
+      Type_c extraarg2;
+      Type_d extraarg3,extraarg31,extraarg32;
+    case ({},_,_,_,extraarg3) then ({},extraarg3);
+    case ((f :: r),fn,extraarg1,extraarg2,extraarg3)
+      equation
+        (r_1,extraarg31) = listMap3passthrough(r, fn, extraarg1, extraarg2, extraarg3);
+        (f_1,extraarg32) = fn(f, extraarg1, extraarg2, extraarg31);
+      then
+        ((f_1 :: r_1),extraarg32);
+  end matchcontinue;
+end listMap3passthrough;
 
 protected function createSingleArrayEqnCode
   input DAELow.DAELow inDAELow;

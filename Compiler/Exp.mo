@@ -868,6 +868,8 @@ algorithm
       Exp e;
       list<Exp> ae;
       list<Boolean> ab;
+      list<list<tuple<Exp, Boolean>>> scalar;      
+      list<tuple<Exp, Boolean>> aelstlst;       
     case (DAE.ICONST(integer = ival))
       equation
         (ival == 0) = true;
@@ -891,6 +893,14 @@ algorithm
         res = Util.boolAndList(ab);
       then   
         res;
+    case (DAE.MATRIX(scalar = scalar))  
+      equation
+        aelstlst = Util.listFlatten(scalar);
+        ae = Util.listMap(aelstlst,Util.tuple21);
+        ab = Util.listMap(ae,isConst);  
+        res = Util.boolAndList(ab);
+      then   
+        res;         
     case(DAE.UNARY(DAE.UMINUS_ARR(_),e)) then isZero(e);
     case (_) then false;
   end matchcontinue;
@@ -913,6 +923,10 @@ algorithm
       Operator op;
       Exp e,e1,e2;
       Type t;
+      list<Exp> ae;
+      list<Boolean> ab;
+      list<list<tuple<Exp, Boolean>>> scalar;      
+      list<tuple<Exp, Boolean>> aelstlst;      
     case (DAE.ICONST(integer = ival)) then true;
     case (DAE.RCONST(real = rval)) then true;
     case (DAE.BCONST(bool = bval)) then true;
@@ -935,6 +949,20 @@ algorithm
       then
         res;
     case (DAE.CREF(_,DAE.ET_ENUMERATION(index = SOME(_)))) then true;
+    case (DAE.ARRAY(array = ae))  
+      equation
+        ab = Util.listMap(ae,isConst);  
+        res = Util.boolAndList(ab);
+      then   
+        res;   
+    case (DAE.MATRIX(scalar = scalar))  
+      equation
+        aelstlst = Util.listFlatten(scalar);
+        ae = Util.listMap(aelstlst,Util.tuple21);
+        ab = Util.listMap(ae,isConst);  
+        res = Util.boolAndList(ab);
+      then   
+        res;            
     case (_) then false;
   end matchcontinue;
 end isConst;
