@@ -14,6 +14,7 @@ AC_SUBST(LIBNSL)
 AC_SUBST(LIBLPSOLVE55)
 AC_SUBST(USE_CORBA)
 AC_SUBST(QT_USE_CORBA)
+AC_SUBST(CORBA_QMAKE_INCLUDES)
 AC_SUBST(CORBACFLAGS)
 AC_SUBST(CORBALIBS)
 AC_SUBST(IDLCMD)
@@ -207,7 +208,7 @@ if test ! "$WANT_MICO" = "no"; then
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_MICO"
   QT_USE_CORBA="USE_MICO"
-  CORBACFLAGS=-I`mico-config --prefix`/include;
+  CORBA_QMAKE_INCLUDES="`mico-config --prefix`/include";
   CORBALIBS=`mico-config --libs`;
   IDLCMD="idl";
   DESIRED_CORBA="mico"
@@ -224,6 +225,8 @@ elif test ! "$WANT_ORBIT2" = "no"; then
   USE_CORBA="-DUSE_CORBA -DUSE_ORBIT"
   QT_USE_CORBA="USE_ORBIT2"
   CORBACFLAGS=`orbit2-config --cflags`;
+  # Don't have orbit2-config installed to verify
+  CORBA_QMAKE_INCLUDES=`orbit2-config --prefix`/include/;
   CORBALIBS=`orbit2-config --libs`;
   IDLCMD="orbit-idl-2";
   DESIRED_CORBA="orbit2"
@@ -231,11 +234,13 @@ elif test ! "$WANT_ORBIT2" = "no"; then
 elif test ! "$WANT_OMNIORB" = "no"; then
   if test "$WANT_OMNIORB" = "yes"; then
     WANT_OMNIORB="/usr";
+  else
+    CORBA_QMAKE_INCLUDES="-I$WANT_OMNIORB/include";
+    CORBACFLAGS="-I$CORBA_QMAKE_INCLUDES";
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
   QT_USE_CORBA="USE_OMNIORB"
   CORBALIBS="-lomniORB4 -lomnithread -lpthread";
-  CORBACFLAGS="-I$WANT_OMNIORB/include";
   IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
   DESIRED_CORBA="omniorb"
 else
