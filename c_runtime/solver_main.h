@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-CurrentYear, Link?ping University,
+ * Copyright (c) 1998-CurrentYear, Linköping University,
  * Department of Computer and Information Science,
- * SE-58183 Link?ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Link?ping University, either from the above address,
+ * from Linköping University, either from the above address,
  * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
  * http://www.openmodelica.org, and in the OpenModelica distribution. 
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
@@ -69,6 +69,12 @@ extern "C" {
 
 	       double dlamch_(char*,int);
 } // extern "C"
+
+void euler_ex_step (double* step, int (*f)() );
+
+void rungekutta_step (double* step, int (*f)());
+
+void dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
 
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
                 double &tolerance,int flag);

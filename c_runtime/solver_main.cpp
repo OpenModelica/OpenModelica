@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Link?pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 Link?ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Link?pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -42,7 +42,6 @@
 #include <algorithm>
 using namespace std;
 
-//********************* for dasrt_step*********************
 #define MAXORD 5
 
 //provides a dummy Jacobian to be used with DASSL
@@ -72,11 +71,22 @@ double calcTiny(double tout)
   }
 }
 
-//*********************end of dasrt_step**********************************
+fortran_integer info[15];
+double reltol = 1.0e-5;
+double abstol = 1.0e-5;
+fortran_integer idid = 0;
+fortran_integer ipar = 0;
 
-void euler_ex_step (double* step, int (*f)() );
-void rungekutta_step (double* step, int (*f)());
-void dasrt_step (double* step, int (*f)());
+// work arrays for DASSL
+fortran_integer liw;
+fortran_integer lrw;
+double *rwork;
+fortran_integer *iwork;
+fortran_integer NG_var=0;	//->see ddasrt.c LINE 250 (number of constraint functions)
+fortran_integer *jroot;
+
+// Used when calculating residual for its side effects. (alg. var calc)
+double *dummy_delta;
 
 int euler_in_use;
 
@@ -84,19 +94,25 @@ int euler_in_use;
 int solver_main(int argc, char** argv, double &start,  double &stop, double &step, long &outputSteps,
 		       double &tolerance, int flag)
 {
-  acceptedStep = 1; // euler only takes accepted steps
+	acceptedStep = 1; // euler only takes accepted steps
 
 	//Workaround for Relation in simulation_events
 	euler_in_use = 1;
 
-	//double sim_time;
+	//Flags for event handling
 	int dideventstep = 0;
+	bool reset = false;
+
+
 	double laststep = 0;
 	double current_stepsize = step;
 	double offset = 0;
 	globalData->oldTime = start;
 
+	double uround = dlamch_("P",1);
+
 	const string *init_method = getFlagValue("im",argc,argv);
+
 
 	if (initializeEventData()) {
 		cout << "Internal error, allocating event data structures" << endl;
@@ -140,20 +156,22 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	// Do a tiny step to initialize ZeroCrossing that are fulfilled
     // And then go back and start at t_0
-	globalData->timeValue += calcTiny(globalData->timeValue);
+	current_stepsize = calcTiny(globalData->timeValue);
 	double* backupstats_new = new double[globalData->nStates];
-  std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
+    std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
+    
 	if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
 	else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
-	else if (flag == 3) dasrt_step(&current_stepsize,functionODE);
+	else if (flag == 3) dasrt_step(&current_stepsize,start,stop,reset,functionODE);
 	else euler_ex_step(&current_stepsize,functionODE);
 	functionDAE_output();
 	if(sim_verbose) { sim_result->emit(); }
 	InitialZeroCrossings();
 
 	globalData->timeValue = start;
-  std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
+    std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
 	delete [] backupstats_new;
+	reset = true;
 
 	function_updateDepend();
 	if(sim_verbose) { sim_result->emit(); }
@@ -172,7 +190,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	
 	if (sim_verbose)  {
-		cout << "Performed initial value calutation." << endl;
+		cout << "Performed initial value calculation." << endl;
 		cout << "Start numerical solver from "<< globalData->timeValue << " to "<< stop << endl; 
 	}
 
@@ -185,11 +203,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		if (dideventstep == 1){
 			offset = globalData->timeValue-laststep;
 			dideventstep = 0;
-			if (globalData->timeValue == globalData->oldTime)
-				globalData->timeValue += step - offset;
+			if (offset+2*uround > step)
+				offset = 0;
 		}else{
 			offset = 0;
-			globalData->timeValue += step;
 		}
 		current_stepsize = step-offset;
 
@@ -204,7 +221,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 		if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
 		else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
-		else if (flag == 3) dasrt_step(&current_stepsize,functionODE);
+		else if (flag == 3) dasrt_step(&current_stepsize,start,stop,reset,functionODE);
 		else euler_ex_step(&current_stepsize,functionODE);
 		functionDAE_output();
 
@@ -215,8 +232,12 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		
 		function_storeDelayed();
 
+		if (reset)
+			reset = false;
+
 		//Check for Events
 		if (CheckForNewEvent(INTERVAL) == 2){
+			reset = true;
 			dideventstep = 1;
 		}else{
 			laststep = globalData->timeValue;
@@ -242,7 +263,8 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 void euler_ex_step (double* step, int (*f)())
 {	
-	for(int i=0; i < globalData->nStates; i++) {
+	globalData->timeValue += *step;
+	for(int i=0; i < globalData->nStates; i++)	{
 		globalData->states[i] = globalData->states[i] + globalData->statesDerivatives[i] * (*step);
 	}
 	f();
@@ -250,6 +272,7 @@ void euler_ex_step (double* step, int (*f)())
 
 void rungekutta_step (double* step, int (*f)())
 {	
+	globalData->timeValue += *step;
 	int s=4,i,j,l;
 	double b[4] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
 	double c[4] = {0,0.5,0.5,1};
@@ -257,9 +280,8 @@ void rungekutta_step (double* step, int (*f)())
 	double sum=0;
 	double* backupstats = new double[globalData->nStates];
 
-	for(i=0; i < globalData->nStates; i++) {
-		backupstats[i] = globalData->states[i];
-	}
+	std::copy(globalData->states, globalData->states + globalData->nStates, backupstats);
+	
 	double** k;
 
 	k = new double*[s];
@@ -296,86 +318,121 @@ void rungekutta_step (double* step, int (*f)())
 	f();
 }
 /*
- * brute force approach for DASSL with correct event handling
- *   - For now most feature of DASSL are not in use.
- *   + The feature will be introduced successively.
+ * DASSL with synchronous treating of when equation
+ *   - without integrated ZeroCrossing method.
+ *   + ZeroCrossing are handled outside DASSL
  */
-void dasrt_step (double* step, int (*f)())
+void dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)())
 {
-	//double uround = dlamch_("P",1);
 	double tout;
-	fortran_integer info[15];
-	double rtol = 1.0e-5;
-	double atol = 1.0e-5;
-	fortran_integer idid = 0;
-	fortran_integer ipar = 0;
-
-	// work arrays for dassl
-	fortran_integer liw = 20+globalData->nStates;
-	fortran_integer lrw = 52+(MAXORD+4)*globalData->nStates+globalData->nStates*globalData->nStates+3*globalData->nZeroCrossing;
-	double *rwork = new double[lrw];
-	fortran_integer *iwork = new fortran_integer[liw];
-	fortran_integer NG_var=0;	//->siehe ddasrt.c ZEILE 250
-	fortran_integer jroot=0;    // without event handling
-	//fortran_integer *jroot = new fortran_integer[globalData->nZeroCrossing];
-
-	// Used when calculating residual for its side effects. (alg. var calc)
-	double *dummy_delta = new double[globalData->nStates];
-
 	int i;
-	for(i=0; i<15; i++)
-	    info[i] = 0;
-    for(i=0; i<liw; i++)
-    	iwork[i] = 0;
-    for(i=0; i<lrw; i++)
-    	rwork[i] = 0.0;
-    for(i=0; i<globalData->nHelpVars; i++)
-    	globalData->helpVars[i] = 0;
+	extern fortran_integer info[15];
+	extern double reltol;
+	extern double abstol;
+	extern fortran_integer idid;
+	extern fortran_integer ipar;
+	extern fortran_integer liw;
+	extern fortran_integer lrw;
+	extern double *rwork;
+	extern fortran_integer *iwork;
+	extern fortran_integer NG_var;	//->see ddasrt.c LINE 250 (number of constraint functions)
+	extern fortran_integer *jroot;
+	extern double *dummy_delta;
 
-    try
-    {
-    	do
-    	{
-    		// Calculate time steps until tout is reached.
-    		info[0]=0;
-    		globalData->timeValue -=  *step;
+	if(globalData->timeValue == start){
+		if (sim_verbose){
+			cout << "**Calling DDASRT the first time..." << endl;
+		}
+		// work arrays for DASSL
+		liw = 20+globalData->nStates;
+		lrw = 52+(MAXORD+4)*globalData->nStates+globalData->nStates*globalData->nStates+3*globalData->nZeroCrossing;
+		rwork = new double[lrw];
+		iwork = new fortran_integer[liw];
+		jroot = new fortran_integer[globalData->nZeroCrossing];
+		// Used when calculating residual for its side effects. (alg. var calc)
+		dummy_delta = new double[globalData->nStates];
+
+		for(i=0; i<15; i++)
+			info[i] = 0;
+		for(i=0; i<liw; i++)
+			iwork[i] = 0;
+		for(i=0; i<lrw; i++)
+			rwork[i] = 0.0;
+		for(i=0; i<globalData->nHelpVars; i++)
+			globalData->helpVars[i] = 0;
+		/*********************************************************************/
+		//info[2] = 1;		//intermediate-output mode
+		/*********************************************************************/
+		//info[3] = 1;		//go not past TSTOP
+		//rwork[0] = stop;	//TSTOP
+		/*********************************************************************/
+		//info[6] = 1;		//prohibit code to decide max. stepsize on its own
+		//rwork[1] = *step;	//define max. stepsize
+		/*********************************************************************/
+	}
+
+	if (trigger){
+		if (sim_verbose){
+			cout << "Event-management forced reset of DDASRT... " << endl;
+		}
+		info[0]=0;	// obtain reset
+	}
+
+	// Calculate time steps until TOUT is reached (DASSL calculates beyond TOUT unless info[6] is set to 1!)
+    try{
+    	do{
     		tout = globalData->timeValue + *step;
+
+    		if (sim_verbose){
+				cout << "**Calling DDASRT from " << globalData->timeValue << " to " << tout << "..." << endl;
+			}
+
 			DDASRT(functionDAE_res, &globalData->nStates, &globalData->timeValue, globalData->states,
 					globalData->statesDerivatives, &tout,
-					info, &rtol, &atol,
+					info, &reltol, &abstol,
 					&idid, rwork, &lrw, iwork, &liw, globalData->algebraics,
 					&ipar, dummyJacobianMINE, dummy_zeroCrossing,
-					&NG_var, &jroot);
-
-			if (idid < 0)
-					{
-					  fflush(stderr); fflush(stdout);
-					  if (idid == -1)
-						info[0] = 1; // try again
-					  if(!continue_MINE(&idid,&atol,&rtol))
-						throw TerminateSimulationException(globalData->timeValue);
+					&NG_var, jroot);
+/*
+			if (sim_verbose){
+				cout << " value of idid: " << idid << endl;
+				cout << " step size H to be attempted on next step: " << rwork[2] << endl;
+				cout << " current value of independent variable: " << rwork[3] << endl;
+				cout << " stepsize used on last successful step : " << rwork[6] << endl;
+				cout << " number of steps taken so far: " << iwork[10] << endl << endl;
+			}
+*/
+			if (idid < 0){
+			  fflush(stderr); fflush(stdout);
+			  if (idid == -1){
+					if (sim_verbose){
+						cout << "DDASRT will try again..." << endl;
 					}
-					info[0]=1;
-					 // Since residual function calculates
-					functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0);
-					// alg vars too.
-					//acceptedStep=1;
-					functionDAE_output();  // discrete variables are separated so that they can be emitted before and after the event.
-					function_storeDelayed();
-					//acceptedStep=0;
+					info[0] = 1; // try again
+			  }
+			  if(!continue_MINE(&idid,&abstol,&reltol))
+				throw TerminateSimulationException(globalData->timeValue);
+			}
+
+			// Since residual function calculates alg vars too.
+			functionDAE_res(&globalData->timeValue,globalData->states,globalData->statesDerivatives,dummy_delta,0,0,0);
 		}
-		while (&step >= 0 && idid == 1 && globalData->timeValue < tout);
+		while(idid==-1 && globalData->timeValue <= stop);
     }
-    catch(TerminateSimulationException &e)
-    {
+    catch(TerminateSimulationException &e){
         cout << e.getMessage() << endl;
     }
 
-	//Free dassl specific work arrays.
-	  delete [] iwork;
-	  delete [] rwork;
-	  //delete [] jroot;		//only for active event handling
-	  delete [] dummy_delta;
+    if(tout > stop){
+    	if (sim_verbose){
+			cout << "**Deleting work arrays after last DDASRT call..." << endl;
+		}
+    	//free DASSL specific work arrays.
+		delete [] iwork;
+		delete [] rwork;
+		delete [] jroot;
+		delete [] dummy_delta;
+    }
 }
 
 bool continue_MINE(fortran_integer* idid, double* atol, double *rtol)
@@ -387,7 +444,7 @@ bool continue_MINE(fortran_integer* idid, double* atol, double *rtol)
   case 2:
   case 3:
   case 4:
-    /* 1-4 are means success */
+    /* 1-4 means success */
     break;
   case -1:
     std::cerr << "DDASRT: A large amount of work has been expended.(About 500 steps). Trying to continue ..." << std::endl;
