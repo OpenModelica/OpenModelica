@@ -45,10 +45,11 @@ using namespace std;
 #define MAXORD 5
 
 //provides a dummy Jacobian to be used with DASSL
-int dummyJacobianMINE(double *t, double *y, double *yprime, double *pd, fortran_integer *cj, double *rpar, fortran_integer* ipar)
+int dummyJacobianMINE(double *t, double *y, double *yprime, double *pd, double *cj, double *rpar, fortran_integer* ipar)
 {
 	return 0;
 }
+
 int dummy_zeroCrossing(fortran_integer *neqm, double *t, double *y, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar)
 {
 	return 0;
@@ -112,6 +113,8 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	double uround = dlamch_("P",1);
 
 	const string *init_method = getFlagValue("im",argc,argv);
+
+	int retValIntration;
 
 
 	if (initializeEventData()) {
@@ -203,7 +206,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		if (dideventstep == 1){
 			offset = globalData->timeValue-laststep;
 			dideventstep = 0;
-			if (offset+2*uround > step)
+			if (offset+10*uround > step)
 				offset = 0;
 		}else{
 			offset = 0;
@@ -219,10 +222,14 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		 *
 		 */
 
-		if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
-		else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
-		else if (flag == 3) dasrt_step(&current_stepsize,start,stop,reset,functionODE);
-		else euler_ex_step(&current_stepsize,functionODE);
+		if (flag == 1) {
+			retValIntration = euler_ex_step(&current_stepsize,functionODE);
+		} else if (flag == 2){
+			retValIntration = rungekutta_step(&current_stepsize,functionODE);
+		} else if (flag == 3){
+			retValIntration = dasrt_step(&current_stepsize,start,stop,reset,functionODE);
+		}
+
 		functionDAE_output();
 
 		// functionDAE_output2() contains all discrete Values
@@ -244,8 +251,13 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		}
 		
 		// Emit this time step
-		// TODO: check if time step equal to output point
 		sim_result->emit();
+
+		if (retValIntration){
+			throw TerminateSimulationException(globalData->timeValue,
+					string("Error in Simulation. Solver exit with error.\n"));
+		}
+
 
 	}
   } catch (TerminateSimulationException &e) {
@@ -261,16 +273,17 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	return 0;
 }
 
-void euler_ex_step (double* step, int (*f)())
+int euler_ex_step (double* step, int (*f)())
 {	
 	globalData->timeValue += *step;
 	for(int i=0; i < globalData->nStates; i++)	{
 		globalData->states[i] = globalData->states[i] + globalData->statesDerivatives[i] * (*step);
 	}
 	f();
+	return 0;
 }
 
-void rungekutta_step (double* step, int (*f)())
+int rungekutta_step (double* step, int (*f)())
 {	
 	globalData->timeValue += *step;
 	int s=4,i,j,l;
@@ -316,13 +329,15 @@ void rungekutta_step (double* step, int (*f)())
 		globalData->states[i] = backupstats[i] + (*step) * sum;
 	}
 	f();
+	return 0;
 }
 /*
  * DASSL with synchronous treating of when equation
  *   - without integrated ZeroCrossing method.
- *   + ZeroCrossing are handled outside DASSL
+ *   + ZeroCrossing are handled outside DASSL.
+ *   + if no event occurs outside DASSL perform a warm-start
  */
-void dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)())
+int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)())
 {
 	double tout;
 	int i;
@@ -421,6 +436,13 @@ void dasrt_step (double* step, double &start, double &stop, bool &trigger, int (
     }
     catch(TerminateSimulationException &e){
         cout << e.getMessage() << endl;
+    	//free DASSL specific work arrays.
+		delete [] iwork;
+		delete [] rwork;
+		delete [] jroot;
+		delete [] dummy_delta;
+        return 1;
+
     }
 
     if(tout > stop){
@@ -433,6 +455,7 @@ void dasrt_step (double* step, double &start, double &stop, bool &trigger, int (
 		delete [] jroot;
 		delete [] dummy_delta;
     }
+    return 0;
 }
 
 bool continue_MINE(fortran_integer* idid, double* atol, double *rtol)

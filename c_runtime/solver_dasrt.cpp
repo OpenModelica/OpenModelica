@@ -1,9 +1,9 @@
 /*
 * This file is part of OpenModelica.
 *
-* Copyright (c) 1998-2010, Linköpings University,
+* Copyright (c) 1998-2010, Linkï¿½pings University,
 * Department of Computer and Information Science,
-* SE-58183 Linköping, Sweden.
+* SE-58183 Linkï¿½ping, Sweden.
 *
 * All rights reserved.
 *
@@ -14,7 +14,7 @@
 *
 * The OpenModelica software and the Open Source Modelica
 * Consortium (OSMC) Public License (OSMC-PL) are obtained
-* from Linköpings University, either from the above address,
+* from Linkï¿½pings University, either from the above address,
 * from the URL: http://www.ida.liu.se/projects/OpenModelica
 * and in the OpenModelica distribution.
 *
@@ -47,7 +47,7 @@ using namespace std;
 bool continue_with_dassl(fortran_integer* idid, double* atol, double *rtol);
 
 // dummy Jacobian
-int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, fortran_integer *cj, double *rpar, fortran_integer* ipar)
+int dummyJacobianDASSL(double *t, double *y, double *yprime, double *pd, double *cj, double *rpar, fortran_integer* ipar)
 {
   return 0;
   //provides a dummy Jacobian to be used with DASSL

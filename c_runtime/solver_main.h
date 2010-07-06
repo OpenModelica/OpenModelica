@@ -61,7 +61,7 @@ extern "C" {
 	       fortran_integer *liw,
 	       double *rpar,
 	       fortran_integer *ipar,
-	       int (*jac) (double *t, double *y, double *yprime, double *delta, fortran_integer *ires, double *rpar, fortran_integer* ipar),
+	       int (*jac) (double *t, double *y, double *yprime, double *delta, double *cj, double *rpar, fortran_integer* ipar),
 	       int (*g) (fortran_integer *neqm, double *t, double *y, fortran_integer *ng, double *gout, double *rpar, fortran_integer* ipar),
 	       fortran_integer *ng,
 	       fortran_integer *jroot
@@ -70,11 +70,11 @@ extern "C" {
 	       double dlamch_(char*,int);
 } // extern "C"
 
-void euler_ex_step (double* step, int (*f)() );
+int euler_ex_step (double* step, int (*f)() );
 
-void rungekutta_step (double* step, int (*f)());
+int rungekutta_step (double* step, int (*f)());
 
-void dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
+int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
 
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
                 double &tolerance,int flag);

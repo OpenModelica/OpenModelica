@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, Linköpings University,
+ * Copyright (c) 1998-2010, Linkï¿½pings University,
  * Department of Computer and Information Science,
- * SE-58183 Linköping, Sweden.
+ * SE-58183 Linkï¿½ping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from Linköpings University, either from the above address,
+ * from Linkï¿½pings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -342,7 +342,7 @@ int initRuntimeAndSimulation(int argc, char**argv) {
   if (argc == 2 && flagSet("?", argc, argv)) {
         //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
     cout << "usage: " << argv[0]
-        << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v <-interactive> <-port value>"
+        << " <-f initfile> <-r result file> -m solver:{dassl, dassl2, rungekutta, euler} -v <-interactive> <-port value>"
         << endl;
     EXIT(0);
   }
