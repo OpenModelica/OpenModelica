@@ -897,7 +897,7 @@ algorithm
       equation
         aelstlst = Util.listFlatten(scalar);
         ae = Util.listMap(aelstlst,Util.tuple21);
-        ab = Util.listMap(ae,isConst);  
+        ab = Util.listMap(ae,isZero);  
         res = Util.boolAndList(ab);
       then   
         res;         
