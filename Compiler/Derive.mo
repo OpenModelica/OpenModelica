@@ -220,6 +220,12 @@ algorithm outExp := matchcontinue(inExp)
       (_,_) = DAELow.getVar(cr, timevars);
     then
       ((e, (e::crefOrDerCref,e1::derCref,timevars) ));
+  // der(der(CREF))    
+  case ( (e as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={e1 as DAE.CALL(path = Absyn.IDENT(name = "der"),expLst={DAE.CREF(componentRef = cr)})}), (crefOrDerCref,derCref,timevars)) )
+    equation
+      (_,_) = DAELow.getVar(cr, timevars);
+    then
+      ((e, (e::crefOrDerCref,e1::derCref,timevars) ));      
   case(inExp) then inExp;
 end matchcontinue;
 end traversingcrefOrDerCrefFinder;
@@ -319,6 +325,7 @@ algorithm
       DAE.ExpType ty;
       DAE.FunctionTree functions;
       DAE.Element func;
+      list<list<tuple<DAE.Exp, Boolean>>> explstlst,explstlst1; 
 
     case (DAE.ICONST(integer = _),_) then DAE.RCONST(0.0);
     case (DAE.RCONST(real = _),_) then DAE.RCONST(0.0);
@@ -402,6 +409,43 @@ algorithm
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(log(x)) = der(x)/x" ;
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),e);
+
+    case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+      equation
+        isMax(fname);
+        expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
+      then
+        DAE.CALL(fname,expl_1,false,true,tp,inl);
+
+    case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+      equation
+        isMin(fname);
+        expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
+      then
+        DAE.CALL(fname,expl_1,false,true,tp,inl);
+
+    case (e0 as DAE.CALL(path = fname,expLst = {e},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+      equation
+        isSqrt(fname);
+        e_1 = differentiateExpTime(e, (timevars,functions)) "sqrt(x) = der(x)/(2*sqrt(x))" ;
+      then
+        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
+          DAE.BINARY(DAE.RCONST(2.0),DAE.MUL(DAE.ET_REAL()),e0));
+
+    case (DAE.CALL(path = fname,expLst = {e1,e2},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+      equation
+        isCross(fname);
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(DAE.CALL(fname,{e1,e2_1},false,true,tp,inl),DAE.ADD_ARR(tp),DAE.CALL(fname,{e1_1,e2},false,true,tp,inl));
+
+    case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
+      equation
+        isTranspose(fname);
+        expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
+      then
+        DAE.CALL(fname,expl_1,false,true,tp,inl);
 
     case (e0 as DAE.BINARY(exp1 = e1,operator = DAE.POW(tp),exp2 = (e2 as DAE.RCONST(_))),(timevars,functions)) /* ax^(a-1) */
       equation
@@ -513,14 +557,65 @@ algorithm
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);             
-    case ((e as DAE.MATRIX(ty = _)),_)
+        DAE.BINARY(e1_1,DAE.SUB_ARR(tp),e2_1);  
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARR(ty = tp),exp2 = e2),(timevars,functions)) /* f\'g + fg\' */
       equation
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,
-          {"differentiation of matrix expressions",
-          "use nested vectors instead"});
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
-        e;
+        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARR(tp),e2_1),DAE.ADD_ARR(tp),
+          DAE.BINARY(e1_1,DAE.MUL_ARR(tp),e2));    
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_SCALAR_ARRAY(ty = tp),exp2 = e2),(timevars,functions)) /* f\'g + fg\' */
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_SCALAR_ARRAY(tp),e2_1),DAE.ADD_ARR(tp),
+          DAE.BINARY(e1_1,DAE.MUL_SCALAR_ARRAY(tp),e2));  
+    case (DAE.BINARY(exp1 = e1,operator = DAE.MUL_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions)) /* f\'g + fg\' */
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1),DAE.ADD_ARR(tp),
+          DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2));     
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_SCALAR_ARRAY(ty = tp),exp2 = e2),(timevars,functions))
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(e1_1,DAE.ADD_SCALAR_ARRAY(tp),e2_1); 
+    case (DAE.BINARY(exp1 = e1,operator = DAE.ADD_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions))
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(e1_1,DAE.ADD_ARRAY_SCALAR(tp),e2_1);  
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_SCALAR_ARRAY(ty = tp),exp2 = e2),(timevars,functions))
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(e1_1,DAE.SUB_SCALAR_ARRAY(tp),e2_1);  
+    case (DAE.BINARY(exp1 = e1,operator = DAE.SUB_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions))
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(e1_1,DAE.SUB_ARRAY_SCALAR(tp),e2_1);      
+    case (DAE.BINARY(exp1 = e1,operator = DAE.DIV_ARRAY_SCALAR(ty = tp),exp2 = e2),(timevars,functions)) /* (f\'g - fg\' ) / g^2 */
+      equation
+        e1_1 = differentiateExpTime(e1, (timevars,functions));
+        e2_1 = differentiateExpTime(e2, (timevars,functions));
+      then
+        DAE.BINARY(
+          DAE.BINARY(DAE.BINARY(e1_1,DAE.MUL_ARRAY_SCALAR(tp),e2),DAE.SUB_ARR(tp),
+          DAE.BINARY(e1,DAE.MUL_ARRAY_SCALAR(tp),e2_1)),DAE.DIV_ARRAY_SCALAR(tp),DAE.BINARY(e2,DAE.MUL(tp),e2));                                                               
+    case ((e as DAE.MATRIX(ty = tp,integer=i,scalar=explstlst)),(timevars,functions))
+      equation
+        explstlst1 = differentiateMatrixTime(explstlst,(timevars,functions));
+      then
+        DAE.MATRIX(tp,i,explstlst1);
     case (DAE.TUPLE(PR = expl),(timevars,functions))
       equation
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
@@ -553,6 +648,53 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateExpTime;
+
+protected function differentiateMatrixTime
+"function: differentiateMatrixTime
+  author: Frenkel TUD
+   Helper function to differentiateExpTime, differentiate matrix expressions."
+  input list<list<tuple<DAE.Exp, Boolean>>> inTplExpBooleanLstLst;
+  input tuple<DAELow.Variables,DAE.FunctionTree> inVariables;
+  output list<list<tuple<DAE.Exp, Boolean>>> outTplExpBooleanLstLst;
+algorithm
+  outTplExpBooleanLstLst:=
+  matchcontinue (inTplExpBooleanLstLst,inVariables)
+    local
+      list<tuple<DAE.Exp, Boolean>> row_1,row;
+      list<list<tuple<DAE.Exp, Boolean>>> rows_1,rows;
+    case ({},_) then ({});
+    case ((row :: rows),inVariables)
+      equation
+        row_1 = differentiateMatrixTime1(row, inVariables);
+        rows_1 = differentiateMatrixTime(rows, inVariables);
+      then
+        (row_1 :: rows_1);
+  end matchcontinue;
+end differentiateMatrixTime;
+
+protected function differentiateMatrixTime1
+"function: traverseExpMatrix2
+  author: Frenkel TUD
+  Helper function to differentiateMatrixTime."
+  input list<tuple<DAE.Exp, Boolean>> inTplExpBooleanLst;
+  input tuple<DAELow.Variables,DAE.FunctionTree> inVariables;
+  output list<tuple<DAE.Exp, Boolean>> outTplExpBooleanLst;
+algorithm
+  outTplExpBooleanLst:=
+  matchcontinue (inTplExpBooleanLst,inVariables)
+    local
+      DAE.Exp e_1,e;
+      list<tuple<DAE.Exp, Boolean>> rest_1,rest;
+      Boolean b;
+    case ({},_) then ({});
+    case (((e,b) :: rest),inVariables)
+      equation
+        e_1 = differentiateExpTime(e, inVariables);
+        rest_1 = differentiateMatrixTime1(rest, inVariables);
+      then
+        ((e_1,b) :: rest_1);
+  end matchcontinue;
+end differentiateMatrixTime1;
 
 protected function differentiateFunctionTimeOutputs"
 Author: Frenkel TUD"
@@ -1519,5 +1661,50 @@ algorithm
     case (Absyn.FULLYQUALIFIED(inPath)) equation isTan(inPath); then ();
   end matchcontinue;
 end isTan;
+
+public function isMax
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "max")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "max")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
+  end matchcontinue;
+end isMax;
+
+public function isMin
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "min")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "min")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
+  end matchcontinue;
+end isMin;
+
+public function isCross
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "cross")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cross")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
+  end matchcontinue;
+end isCross;
+
+public function isTranspose
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "transpose")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "transpose")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
+  end matchcontinue;
+end isTranspose;
+
 end Derive;
 

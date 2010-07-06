@@ -2372,7 +2372,7 @@ algorithm
         print("Array Equations :\n");
         print("===============\n");
         ae_lst = arrayList(ae);
-        dumpArrayEqns(ae_lst);
+        dumpArrayEqns(ae_lst,0);
 
         print("Algorithms:\n");
         print("===============\n");
@@ -2883,20 +2883,22 @@ protected function dumpArrayEqns
 "function: dumpArrayEqns
   helper function to dump"
   input list<MultiDimEquation> inMultiDimEquationLst;
+  input Integer inInteger;
 algorithm
-  _ := matchcontinue (inMultiDimEquationLst)
+  _ := matchcontinue (inMultiDimEquationLst,inInteger)
     local
-      String s1,s2,s;
+      String s1,s2,s,is;
       DAE.Exp e1,e2;
       list<MultiDimEquation> es;
-    case ({}) then ();
-    case ((MULTIDIM_EQUATION(left = e1,right = e2) :: es))
+    case ({},_) then ();
+    case ((MULTIDIM_EQUATION(left = e1,right = e2) :: es),inInteger)
       equation
+        is = intString(inInteger);
         s1 = Exp.printExpStr(e1);
         s2 = Exp.printExpStr(e2);
-        s = Util.stringAppendList({s1," = ",s2,"\n"});
+        s = Util.stringAppendList({is," : ",s1," = ",s2,"\n"});
         print(s);
-        dumpArrayEqns(es);
+        dumpArrayEqns(es,inInteger + 1);
       then
         ();
   end matchcontinue;
@@ -8383,8 +8385,8 @@ algorithm
         (states,stateindx) = statesInEqns(eqns, dae, m, mt) "" ;
         (dae,m,mt,nv,nf,deqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(dae, m, mt, nv, nf, eqns_1,inFunctions,derivedAlgs,derivedMultiEqn);
         (state,stateno) = selectDummyState(states, stateindx, dae, m, mt);
-        // print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
-        // print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
+        //  print("Selected ");print(Exp.printComponentRefStr(state));print(" as dummy state\n");
+        //  print(" From candidates:");print(Util.stringDelimitList(Util.listMap(states,Exp.printComponentRefStr),", "));print("\n");
         dae = propagateDummyFixedAttribute(dae, eqns_1, state, stateno);
         (dummy_der,dae) = newDummyVar(state, dae)  ;
         // print("Chosen dummy: ");print(Exp.printComponentRefStr(dummy_der));print("\n");
@@ -9329,8 +9331,8 @@ algorithm
 
     case (EQUATION(exp = e1,scalar = e2,source = source),vars,inAlgs,ae)
       equation
-        (e1_1,vars_1) = replaceDummyDerOthersExp(e1, vars) "scalar equation" ;
-        (e2_1,vars_2) = replaceDummyDerOthersExp(e2, vars_1);
+        ((e1_1,vars_1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars) "scalar equation" ;
+        ((e2_1,vars_2)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars_1);
       then
         (EQUATION(e1_1,e2_1,source),vars_2,inAlgs,ae);
 
@@ -9339,22 +9341,22 @@ algorithm
         (expl1,vars_1) = replaceDummyDerOthersExpLst(expl,vars);
         i = ds+1;
         MULTIDIM_EQUATION(dimSize=dimSize,left=e1,right = e2,source=source1) = ae[i];
-        (e1_1,vars_2) = replaceDummyDerOthersExp(e1, vars_1);
-        (e2_1,vars_3) = replaceDummyDerOthersExp(e2, vars_2);       
+        ((e1_1,vars_2)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars_1);
+        ((e2_1,vars_3)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars_2);       
         ae1 = arrayUpdate(ae,i,MULTIDIM_EQUATION(dimSize,e1_1,e2_1,source1));
       then (ARRAY_EQUATION(ds,expl1,source),vars_3,inAlgs,ae1);  /* array equation */
 
     case (WHEN_EQUATION(whenEquation =
             WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=NONE),source = source),vars,inAlgs,ae)
       equation
-        (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
+        ((e2_1,vars_1)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars);
       then
         (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,NONE),source),vars_1,inAlgs,ae);
 
     case (WHEN_EQUATION(whenEquation =
             WHEN_EQ(index = i,left = cr,right = e2,elsewhenPart=SOME(elsePart)),source = source),vars,inAlgs,ae)
       equation
-        (e2_1,vars_1) = replaceDummyDerOthersExp(e2, vars);
+        ((e2_1,vars_1)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars);
         (WHEN_EQUATION(elsePartRes,source), vars_2,al,ae1) = replaceDummyDerOthers(WHEN_EQUATION(elsePart,source),vars_1,inAlgs,ae);
       then
         (WHEN_EQUATION(WHEN_EQ(i,cr,e2_1,SOME(elsePartRes)),source),vars_2,al,ae1);
@@ -9368,10 +9370,10 @@ algorithm
 
    case (COMPLEX_EQUATION(index=i,lhs = e1,rhs = e2,source = source),vars,inAlgs,ae)      
       equation
-       (e1_1,vars_1) = replaceDummyDerOthersExp(e1, vars) "scalar equation" ;
-        (e2_1,vars_2) = replaceDummyDerOthersExp(e2, vars_1);
+        ((e1_1,vars_1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars) "scalar equation" ;
+        ((e2_1,vars_2)) = Exp.traverseExp(e2,replaceDummyDerOthersExp,vars_1);
       then
-        (COMPLEX_EQUATION(i,e1,e2,source),vars_2,inAlgs,ae);
+        (COMPLEX_EQUATION(i,e1_1,e2_1,source),vars_2,inAlgs,ae);
 
     case (_,_,_,_)
       equation
@@ -9427,28 +9429,28 @@ algorithm
   case ({},inVariables) then ({},inVariables);
   case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
-        (e_1,vars1) = replaceDummyDerOthersExp(e1,vars);
+        ((e_1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1_1,vars1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
-      (DAE.STMT_ASSIGN(t,e1,e_1)::st,vars2);
+      (DAE.STMT_ASSIGN(t,e_1,e1_1)::st,vars2);
   case (DAE.STMT_TUPLE_ASSIGN(type_=t,expExpLst=elst,exp=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (elst1,vars1) = replaceDummyDerOthersExpLst(elst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_TUPLE_ASSIGN(t,elst1,e1)::st,vars2);
   case (DAE.STMT_ASSIGN_ARR(type_=t,componentRef=cr,exp=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
-        (DAE.CREF(componentRef = cr1),vars1) = replaceDummyDerOthersExp(DAE.CREF(cr,DAE.ET_REAL()),vars);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((DAE.CREF(componentRef = cr1),vars1)) = Exp.traverseExp(DAE.CREF(cr,DAE.ET_REAL()),replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_ASSIGN_ARR(t,cr1,e1)::st,vars2);
   case (DAE.STMT_IF(exp=e,statementLst=stlst,else_=else_)::rest,inVariables)
     equation
-       (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+       ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
        (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
        (else_1,vars2) = replaceDummyDerOthersAlgs2(else_,vars1);
        (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
@@ -9459,14 +9461,14 @@ algorithm
       Boolean b;
       DAE.Ident id;
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_FOR(t,b,id,e1,stlst1)::st,vars2);
   case (DAE.STMT_WHILE(exp=e,statementLst=stlst)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
@@ -9474,7 +9476,7 @@ algorithm
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=SOME(s),helpVarIndices=helpVarIndices)::rest,inVariables)
     local list<Integer> helpVarIndices;
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         ({s1},vars2) = replaceDummyDerOthersAlgs1({s},vars1);
         (st,vars3) = replaceDummyDerOthersAlgs1(rest,vars2);
@@ -9483,34 +9485,34 @@ algorithm
   case (DAE.STMT_WHEN(exp=e,statementLst=stlst,elseWhen=NONE(),helpVarIndices=helpVarIndices)::rest,inVariables)
     local list<Integer> helpVarIndices;
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
       (DAE.STMT_WHEN(e1,stlst1,NONE(),helpVarIndices)::st,vars2);
   case (DAE.STMT_ASSERT(cond=e1,msg=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
-        (e_1,vars1) = replaceDummyDerOthersExp(e1,vars);
+        ((e_1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1_1,vars1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
-      (DAE.STMT_ASSERT(e1,e_1)::st,vars2);
+      (DAE.STMT_ASSERT(e_1,e1_1)::st,vars2);
   case (DAE.STMT_TERMINATE(msg=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
     then
       (DAE.STMT_TERMINATE(e1)::st,vars1);
   case (DAE.STMT_REINIT(var=e1,value=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
-        (e_1,vars1) = replaceDummyDerOthersExp(e1,vars);
+        ((e_1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
+        ((e1_1,vars1)) = Exp.traverseExp(e1,replaceDummyDerOthersExp,vars);
         (st,vars2) = replaceDummyDerOthersAlgs1(rest,vars1);
     then
-      (DAE.STMT_REINIT(e1,e_1)::st,vars2);
+      (DAE.STMT_REINIT(e_1,e1_1)::st,vars2);
   case (DAE.STMT_NORETCALL(exp=e)::rest,inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
     then
       (DAE.STMT_NORETCALL(e1)::st,vars1);
@@ -9583,7 +9585,7 @@ algorithm
   case (DAE.NOELSE(),inVariables) then (DAE.NOELSE(),inVariables);
   case (DAE.ELSEIF(exp=e,statementLst=stlst,else_=else_),inVariables)
     equation
-        (e1,vars) = replaceDummyDerOthersExp(e,inVariables);
+        ((e1,vars)) = Exp.traverseExp(e,replaceDummyDerOthersExp,inVariables);
         (stlst1,vars1) = replaceDummyDerOthersAlgs1(stlst,vars);
         (else_1,vars2) = replaceDummyDerOthersAlgs2(else_,vars1);
     then
@@ -9618,7 +9620,7 @@ algorithm
     case ({},vars) then ({},vars); 
     case (e::rest,vars)
       equation
-        (e1,vars1) = replaceDummyDerOthersExp(e,vars);
+        ((e1,vars1)) = Exp.traverseExp(e,replaceDummyDerOthersExp,vars);
         (elst,vars2) = replaceDummyDerOthersExpLst(rest,vars1);
       then
        (e1::elst,vars2); 
@@ -9629,19 +9631,16 @@ protected function replaceDummyDerOthersExp
 "function: replaceDummyDerOthersExp
   author: PA
   Helper function for replaceDummyDer_others"
-  input DAE.Exp inExp;
-  input Variables inVariables;
-  output DAE.Exp outExp;
-  output Variables outVariables;
+  input tuple<DAE.Exp,Variables> inExp;
+  output tuple<DAE.Exp,Variables> outExp;
 algorithm
-  (outExp,outVariables) := matchcontinue (inExp,inVariables)
+  (outExp) := matchcontinue (inExp)
     local
-      DAE.Exp e,e1_1,e2_1,e1,e2,e3_1,e3;
-      Variables vars,vars1,vars2,vars3,vars_1;
-      DAE.Operator op;
+      DAE.Exp e;
+      Variables vars,vars_1;
       DAE.VarDirection a;
       Type b;
-      Option<DAE.Exp> c,f;
+      Option<DAE.Exp> c;
       Option<Values.Value> d;
       Value g;
       DAE.ComponentRef dummyder,dummyder_1,cr;
@@ -9651,58 +9650,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
 
-    case ((e as DAE.ICONST(integer = _)),vars) then (e,vars);
-
-    case ((e as DAE.RCONST(real = _)),vars) then (e,vars);
-
-    case ((e as DAE.SCONST(string = _)),vars) then (e,vars);
-
-    case ((e as DAE.BCONST(bool = _)),vars) then (e,vars);
-
-    case ((e as DAE.CREF(componentRef = _)),vars) then (e,vars);
-
-    case (DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),vars)
-      equation
-        (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
-        (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
-      then
-        (DAE.BINARY(e1_1,op,e2_1),vars2);
-
-    case (DAE.LBINARY(exp1 = e1,operator = op,exp2 = e2),vars)
-      equation
-        (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
-        (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
-      then
-        (DAE.LBINARY(e1_1,op,e2_1),vars2);
-
-    case (DAE.UNARY(operator = op,exp = e1),vars)
-      equation
-        (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
-      then
-        (DAE.UNARY(op,e1_1),vars1);
-
-    case (DAE.LUNARY(operator = op,exp = e1),vars)
-      equation
-        (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
-      then
-        (DAE.LUNARY(op,e1_1),vars1);
-
-    case (DAE.RELATION(exp1 = e1,operator = op,exp2 = e2),vars)
-      equation
-        (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
-        (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
-      then
-        (DAE.RELATION(e1_1,op,e2_1),vars2);
-
-    case (DAE.IFEXP(expCond = e1,expThen = e2,expElse = e3),vars)
-      equation
-        (e1_1,vars1) = replaceDummyDerOthersExp(e1, vars);
-        (e2_1,vars2) = replaceDummyDerOthersExp(e2, vars1);
-        (e3_1,vars3) = replaceDummyDerOthersExp(e3, vars2);
-      then
-        (DAE.IFEXP(e1_1,e2_1,e3_1),vars3);
-
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),vars)
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)})}),vars))
       local list<DAE.Subscript> e;
       equation
         ((VAR(_,STATE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(der(s)) s is state => der_der_s" ;
@@ -9710,27 +9658,27 @@ algorithm
         dummyder = crefPrefixDer(dummyder);
         vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b, NONE, NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
-        (DAE.CREF(dummyder,DAE.ET_REAL()),vars_1);
+        ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
       local list<DAE.Subscript> e;
       equation
         ((VAR(_,DUMMY_DER(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(der_s)) der_s is dummy var => der_der_s" ;
         dummyder = crefPrefixDer(cr);
         vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b, NONE, NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
-        (DAE.CREF(dummyder,DAE.ET_REAL()),vars_1);
+        ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
-    case (DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars)
+    case ((DAE.CALL(path = Absyn.IDENT(name = "der"),expLst = {DAE.CREF(componentRef = cr)}),vars))
       local list<DAE.Subscript> e;
       equation
         ((VAR(_,VARIABLE(),a,b,c,d,e,g,source,dae_var_attr,comment,flowPrefix,streamPrefix) :: _),_) = getVar(cr, vars) "der(v) v is alg var => der_v" ;
         dummyder = crefPrefixDer(cr);
         vars_1 = addVar(VAR(dummyder, DUMMY_DER(), a, b, NONE, NONE, e, 0, source, dae_var_attr, comment, flowPrefix, streamPrefix), vars);
       then
-        (DAE.CREF(dummyder,DAE.ET_REAL()),vars_1);
+        ((DAE.CREF(dummyder,DAE.ET_REAL()),vars_1));
 
-    case (e,vars) then (e,vars);
+    case ((e,vars)) then ((e,vars));
 
   end matchcontinue;
 end replaceDummyDerOthersExp;
@@ -10455,7 +10403,7 @@ algorithm
         DAEEXT.markDifferentiated(e) "length gives index of new equation Mark equation as differentiated so it won\'t be differentiated again" ;
         (dae,m,mt,nv,nf,reqns,derivedAlgs1,derivedMultiEqn1) = differentiateEqns(DAELOW(v,kv,ev,av,eqns,seqns,ie,ae1,al1,wc,eoc), m, mt, nv, nf, es, inFunctions,derivedAlgs,derivedMultiEqn);
       then
-        (dae,m,mt,nv,nf,(leneqns :: (e :: reqns)),derivedAlgs1,derivedMultiEqn1);        
+        (dae,m,mt,nv,nf,(e :: reqns),derivedAlgs1,derivedMultiEqn1);        
     case (_,_,_,_,_,_,_,_,_)
       equation
         print("-differentiate_eqns failed\n");
@@ -16225,7 +16173,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       e2lst = Util.listMap1(varLst,generateCrefsExpFromType,e2);
       exptpllst = Util.listThreadTuple(e1lst,e2lst);
-      complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
+      complexEqsLst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
       complexEqs = Util.listFlatten(complexEqsLst);
       // nested Records
       complexEqsLst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
@@ -16240,7 +16188,7 @@ algorithm outEqnLst := matchcontinue(inEqn,inFuncs)
       DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);
       exptpllst = Util.listThreadTuple(e1lst,expLst);
-      complexEqsLst = Util.listMap1(exptpllst,generateextendedRecordEqn,source);
+      complexEqsLst = Util.listMap2(exptpllst,generateextendedRecordEqn,source,funcs);
       complexEqs = Util.listFlatten(complexEqsLst);
       // nested Records
       complexEqsLst1 = Util.listMap1(complexEqs,extendRecordEqns,funcs);
@@ -16275,10 +16223,11 @@ protected function generateextendedRecordEqn "
 Author: Frenkel TUD 2010-05"
   input tuple<DAE.Exp,DAE.Exp> inExp;
   input DAE.ElementSource Source;
+  input DAE.FunctionTree inFuncs;
   output list<Equation> outEqnLst;
-algorithm outEqnLst := matchcontinue(inExp,Source)
+algorithm outEqnLst := matchcontinue(inExp,Source,inFuncs)
   local
-    DAE.Exp e1,e2;
+    DAE.Exp e1,e2,e2_1;
     list<DAE.Exp> e1lst, e2lst;
     DAE.ElementSource source;
     DAE.ComponentRef cr;
@@ -16286,27 +16235,29 @@ algorithm outEqnLst := matchcontinue(inExp,Source)
     list<tuple<DAE.Exp,DAE.Exp>> exptplst;
     list<list<DAE.Subscript>> subslst;
     Exp.Type tp;
-  case ((e1 as DAE.CREF(componentRef=cr),e2),source)
+  case ((e1 as DAE.CREF(componentRef=cr),e2),source,inFuncs)
   equation 
     tp = Exp.typeof(e1);
     false = DAEUtil.expTypeComplex(tp);
     (e1lst,subslst) = extendExp(e1);
-    e2lst = Util.listMap1r(subslst,Exp.applyExpSubscripts,e2);
+    e2_1 = extendArrExp(e2,inFuncs);
+    e2lst = Util.listMap1r(subslst,Exp.applyExpSubscripts,e2_1);
     exptplst = Util.listThreadTuple(e1lst,e2lst);
     eqnlst = Util.listMap1(exptplst,generateEQUATION,source);
   then
     eqnlst;
-  case ((e1 as DAE.CREF(componentRef=cr),e2),source)
+  case ((e1 as DAE.CREF(componentRef=cr),e2),source,inFuncs)
   equation 
     tp = Exp.typeof(e1);
     false = DAEUtil.expTypeComplex(tp);
     (e1lst,{}) = extendExp(e1);
-    e2lst = {e2};
+    e2_1 = extendArrExp(e2,inFuncs);
+    e2lst = {e2_1};
     exptplst = Util.listThreadTuple(e1lst,e2lst);
     eqnlst = Util.listMap1(exptplst,generateEQUATION,source);
   then
     eqnlst;    
-  case ((e1 as DAE.CREF(componentRef=cr),e2),source)
+  case ((e1 as DAE.CREF(componentRef=cr),e2),source,inFuncs)
   equation 
     tp = Exp.typeof(e1);
     true = DAEUtil.expTypeComplex(tp);
