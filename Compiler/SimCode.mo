@@ -2204,7 +2204,7 @@ algorithm
         failure(_ = solve(e1, e2, varexp));
         index = tick();
         index = eqNum; // Use the equation number as unique index
-        resEqs = createNonlinearResidualEquations({eqn}, ae);
+        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, {});
       then
         SES_NONLINEAR(index, resEqs, {cr});
     /* state nonlinear */
@@ -2219,7 +2219,7 @@ algorithm
         failure(_ = solve(e1, e2, varexp));
         index = tick();
         index = eqNum; // Use the equation number as unique index
-        resEqs = createNonlinearResidualEquations({eqn}, ae);
+        (resEqs,_) = createNonlinearResidualEquations({eqn}, ae, {});
       then
         SES_NONLINEAR(index, resEqs, {cr_1});
 
@@ -2293,10 +2293,12 @@ end addHindexForCondition;
 protected function createNonlinearResidualEquations
   input list<DAELow.Equation> eqs;
   input DAELow.MultiDimEquation[:] arrayEqs;
+  input list<tuple<Integer,list<list<DAE.Subscript>>>> inEntrylst;
   output list<SimEqSystem> eqSystems;
+  output list<tuple<Integer,list<list<DAE.Subscript>>>> outEntrylst;
 algorithm
-  eqSystems :=
-  matchcontinue (eqs, arrayEqs)
+  (eqSystems,outEntrylst) :=
+  matchcontinue (eqs, arrayEqs,inEntrylst)
     local
       Integer cg_id,cg_id_1,indx_1,cg_id_2,indx,aindx;
       DAE.ExpType tp;
@@ -2306,37 +2308,42 @@ algorithm
       DAELow.MultiDimEquation[:] aeqns;
       VarTransform.VariableReplacements repl;
       list<SimEqSystem> eqSystemsRest;
-    case ({}, _)
-      then {};
-    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest), aeqns)
+      list<Integer> ds;
+      list<Option<Integer>> ad;
+      list<DAE.Subscript> subs;
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;      
+    case ({}, _, inEntrylst) then ({},inEntrylst);
+    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, inEntrylst)
       equation
         tp = Exp.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
         res_exp = Exp.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);
-        eqSystemsRest = createNonlinearResidualEquations(rest, aeqns);
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
       then
-        SES_RESIDUAL(res_exp) :: eqSystemsRest;
-    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: rest), aeqns)
+        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
+    case ((DAELow.RESIDUAL_EQUATION(exp = e) :: rest), aeqns, inEntrylst)
       equation
         res_exp = Exp.simplify(e);
         res_exp = replaceDerOpInExp(res_exp);
-        eqSystemsRest = createNonlinearResidualEquations(rest, aeqns);
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
       then
-        SES_RESIDUAL(res_exp) :: eqSystemsRest;
+        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
     /* An array equation */
-    case ((DAELow.ARRAY_EQUATION(index=aindx) :: rest), aeqns)
+    case ((DAELow.ARRAY_EQUATION(index=aindx) :: rest), aeqns, inEntrylst)
       equation
-        DAELow.MULTIDIM_EQUATION(left=e1, right=e2) = aeqns[aindx+1];
+        DAELow.MULTIDIM_EQUATION(dimSize=ds,left=e1, right=e2) = aeqns[aindx+1];
         tp = Exp.typeof(e1);
         res_exp = DAE.BINARY(e1,DAE.SUB_ARR(tp),e2);
+        ad = Util.listMap(ds,Util.makeOption);
+        (subs,entrylst1) = DAELow.getArrayEquationSub(aindx,ad,inEntrylst);
+        res_exp = Exp.applyExpSubscripts(res_exp,subs);        
         res_exp = Exp.simplify(res_exp);
         res_exp = replaceDerOpInExp(res_exp);        
-//        (cfunc_1,cg_id_1,rest2,indx_1) = generateOdeSystem2NonlinearResidualsArrayEqn(aindx,rest,aeqns,indx,repl,cg_id);
-        eqSystemsRest = createNonlinearResidualEquations(rest, aeqns);
+        (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, entrylst1);
       then 
-        SES_RESIDUAL(res_exp) :: eqSystemsRest;
-    case (_,_)
+        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst2);
+    case (_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"});
       then
@@ -2626,7 +2633,7 @@ algorithm
         daelow1=DAELow.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
         // generade code for other equations
         simeqnsystem = Util.listMap4(block_1,createEquation,daelow1, ass1, ass2, helpVarInfo);
-        resEqs = createNonlinearResidualEquations(reqns, ae);
+        (resEqs,_) = createNonlinearResidualEquations(reqns, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
         simeqnsystem1 = listAppend(simeqnsystem,resEqs);
       then
@@ -2849,7 +2856,7 @@ algorithm
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
         crefs = Util.listMap(var_lst, DAELow.varCref);
-        resEqs = createNonlinearResidualEquations(eqn_lst, ae);
+        (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
         {SES_NONLINEAR(index, resEqs, crefs)};
@@ -2862,7 +2869,7 @@ algorithm
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
         crefs = Util.listMap(var_lst, DAELow.varCref);
-        resEqs = createNonlinearResidualEquations(eqn_lst, ae);
+        (resEqs,_) = createNonlinearResidualEquations(eqn_lst, ae, {});
         index = Util.listFirst(block_); // use first equation nr as index
       then
         {SES_NONLINEAR(index, resEqs, crefs)};
