@@ -31,11 +31,29 @@ AC_SUBST(LIBSENDDATA_LDFLAGS)
 AC_SUBST(QMAKE)
 AC_SUBST(EXE)
 
+dnl Disables the default CFLAGS="-g -O2"
+if test -z "$CFLAGS"; then
+CFLAGS="-O3 -march=native"
+fi
+
 dnl Checks for programs.
 AC_PROG_CC
 AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_LEX
+
+if test "`uname -m`" = "x86_64"; then
+
+AC_MSG_CHECKING([64-bit CFLAGS])
+
+if echo $CFLAGS | grep -q -- -fPIC; then
+  AC_MSG_RESULT([already got -fPIC])
+else
+  CFLAGS+=" -fPIC"
+  AC_MSG_RESULT([adding -fPIC])
+fi
+
+fi
 
 dnl check for environment variables
 

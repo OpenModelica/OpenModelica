@@ -607,6 +607,7 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
+FPUFLAGS
 EXE
 QMAKE
 LIBSENDDATA_LDFLAGS
@@ -2183,6 +2184,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+if test -z "$CFLAGS"; then
+CFLAGS=" "
+fi
+
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3298,6 +3304,48 @@ $as_echo "#define YYTEXT_POINTER 1" >>confdefs.h
 
 fi
 rm -f conftest.l $LEX_OUTPUT_ROOT.c
+
+fi
+
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking CPU architecture" >&5
+$as_echo_n "checking CPU architecture... " >&6; }
+
+MARCH=`echo $CFLAGS | grep -- -march | sed 's/^.*-march=\(.*\) .*\$/\1/'`
+if test -n "$MARCH"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MARCH" >&5
+$as_echo "$MARCH" >&6; }
+else
+  CFLAGS+=" -march=native"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: -march=native" >&5
+$as_echo "-march=native" >&6; }
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking optimizations" >&5
+$as_echo_n "checking optimizations... " >&6; }
+
+OLEVEL=`echo $CFLAGS | grep -- -O | sed 's/^.*-O\(.\).*\$/\1/'`
+if test -n "$OLEVEL"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: -O$OLEVEL" >&5
+$as_echo "-O$OLEVEL" >&6; }
+else
+  CFLAGS="-O3 $CFLAGS"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: -O3" >&5
+$as_echo "-O3" >&6; }
+fi
+
+if test "`uname -m`" = "x86_64"; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking 64-bit CFLAGS" >&5
+$as_echo_n "checking 64-bit CFLAGS... " >&6; }
+
+if echo $CFLAGS | grep -q -- -fPIC; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: already got -fPIC" >&5
+$as_echo "already got -fPIC" >&6; }
+else
+  CFLAGS+=" -fPIC"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: adding -fPIC" >&5
+$as_echo "adding -fPIC" >&6; }
+fi
 
 fi
 

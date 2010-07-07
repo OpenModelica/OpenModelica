@@ -2251,15 +2251,8 @@ void System_5finit(void)
   set_linker("g++ -shared -export-dynamic");
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
-  /*
-   * if we are on i386 or x86_64 then use the
-   * SSE instructions, not the normal i387 FPU
-   */
-  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
-#else
-  set_cflags("${MODELICAUSERCFLAGS}");
-#endif
+  /* GCC knows best how to optimize for this CPU */
+  set_cflags("-march=native ${MODELICAUSERCFLAGS}");
   set_ldflags("-lc_runtime");
 }
 
