@@ -273,7 +273,7 @@ algorithm
       list<SCode.Element> els;
       list<SCode.Annotation> anns;
       list<SCode.Equation> eqs,initeqs;
-      list<SCode.Algorithm> als,initals;
+      list<SCode.AlgorithmSection> als,initals;
       Option<Absyn.ExternalDecl> decl;
       list<Absyn.ClassPart> parts;
       list<String> vars;
@@ -587,14 +587,15 @@ protected function translateClassdefAlgorithms
 "function: translateClassdefAlgorithms
   Convert an Absyn.ClassPart list to an Algorithm list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<SCode.Algorithm> outAlgorithmLst;
+  output list<SCode.AlgorithmSection> outAlgorithmLst;
 algorithm
   outAlgorithmLst := matchcontinue (inAbsynClassPartLst)
     local
-      list<SCode.Algorithm> als,als_1;
-      list<Absyn.Algorithm> al_1;
+      list<SCode.AlgorithmSection> als,als_1;
+      list<SCode.Statement> al_1;
       list<Absyn.AlgorithmItem> al;
       list<Absyn.ClassPart> rest;
+      Absyn.ClassPart cp;
     case {} then {};
     case ((Absyn.ALGORITHMS(contents = al) :: rest))
       equation
@@ -603,11 +604,16 @@ algorithm
         als_1 = (SCode.ALGORITHM(al_1) :: als);
       then
         als_1;
-    case (_ :: rest) /* ignore everthing other than algorithms */
+    case (cp :: rest) /* ignore everthing other than algorithms */
       equation
+        failure(Absyn.ALGORITHMS(contents = _) = cp); 
         als = translateClassdefAlgorithms(rest);
       then
         als;
+    case _
+      equation
+        Debug.fprintln("failtrace", "- SCodeUtil.translateClassdefAlgorithms failed");
+      then fail();
   end matchcontinue;
 end translateClassdefAlgorithms;
 
@@ -615,20 +621,20 @@ protected function translateClassdefInitialalgorithms
 "function: translateClassdefInitialalgorithms
   Convert an Absyn.ClassPart list to an initial Algorithm list."
   input list<Absyn.ClassPart> inAbsynClassPartLst;
-  output list<SCode.Algorithm> outAlgorithmLst;
+  output list<SCode.AlgorithmSection> outAlgorithmLst;
 algorithm
   outAlgorithmLst := matchcontinue (inAbsynClassPartLst)
     local
-      list<SCode.Algorithm> als,als_1;
-      list<Absyn.Algorithm> al_1;
+      list<SCode.AlgorithmSection> als,als_1;
+      list<SCode.Statement> stmts;
       list<Absyn.AlgorithmItem> al;
       list<Absyn.ClassPart> rest;
     case {} then {};
     case ((Absyn.INITIALALGORITHMS(contents = al) :: rest))
       equation
-        al_1 = translateClassdefAlgorithmitems(al);
+        stmts = translateClassdefAlgorithmitems(al);
         als = translateClassdefInitialalgorithms(rest);
-        als_1 = (SCode.ALGORITHM(al_1) :: als);
+        als_1 = (SCode.ALGORITHM(stmts) :: als);
       then
         als_1;
     case (_ :: rest) /* ignore everthing other than algorithms */
@@ -639,31 +645,147 @@ algorithm
   end matchcontinue;
 end translateClassdefInitialalgorithms;
 
-protected function translateClassdefAlgorithmitems
+public function translateClassdefAlgorithmitems
 "function: translateClassdefAlgorithmitems
-  Convert an Absyn.AlgorithmItem list to an Absyn.Algorithm list.
-  Comments are lost."
+  Filter out comments."
   input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  output list<Absyn.Algorithm> outAbsynAlgorithmLst;
+  output list<SCode.Statement> outAbsynAlgorithmLst;
 algorithm
   outAbsynAlgorithmLst := matchcontinue (inAbsynAlgorithmItemLst)
     local
-      list<Absyn.Algorithm> res;
-      Absyn.Algorithm alg;
       list<Absyn.AlgorithmItem> rest;
+      list<SCode.Statement> res;
+      Absyn.Algorithm alg;
+      SCode.Statement stmt;
+      Option<Absyn.Comment> comment;
+      Option<SCode.Comment> scomment;
+      Absyn.Info info;
     case {} then {};
-    case ((Absyn.ALGORITHMITEM(algorithm_ = alg) :: rest))
+    case (Absyn.ALGORITHMITEM(algorithm_ = alg, comment = comment, info = info) :: rest)
       equation
+        scomment = translateComment(comment);
+        stmt = translateClassdefAlgorithmItem(alg,scomment,info);
         res = translateClassdefAlgorithmitems(rest);
       then
-        (alg :: res);
-    case (_ :: rest)
+        (stmt :: res);
+    case (Absyn.ALGORITHMITEMANN(annotation_ = _) :: rest)
       equation
         res = translateClassdefAlgorithmitems(rest);
       then
         res;
   end matchcontinue;
 end translateClassdefAlgorithmitems;
+
+protected function translateClassdefAlgorithmItem
+"Translates an Absyn algorithm (statement) into SCode statement"
+  input Absyn.Algorithm alg;
+  input Option<SCode.Comment> comment;
+  input Absyn.Info info;
+  output SCode.Statement stmt;
+algorithm
+  stmt := matchcontinue (alg,comment,info)
+    local
+      Absyn.ForIterators iterators;
+      Absyn.ComponentRef functionCall;
+      Absyn.ForIterators iterators;
+      Absyn.FunctionArgs functionArgs;
+      Absyn.Exp assignComponent,value,boolExpr,elseIfBoolExpr;
+      list<Absyn.Exp> conditions,switchCases;
+      list<SCode.Statement> stmts,stmts1,stmts2;
+      list<list<SCode.Statement>> stmtsList;
+      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> branches;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> sbranches;
+      list<Absyn.AlgorithmItem> body,elseIfBody,elseBody;
+      list<list<Absyn.AlgorithmItem>> algItemsList;
+      Absyn.AlgorithmItem algi;
+      String labelName;
+      
+    case (Absyn.ALG_ASSIGN(assignComponent,value),comment,info)
+    then SCode.ALG_ASSIGN(assignComponent,value,comment,info);
+    
+    case (Absyn.ALG_IF(boolExpr,body,branches,elseBody),comment,info)
+      equation
+        stmts1 = translateClassdefAlgorithmitems(body);
+        stmts2 = translateClassdefAlgorithmitems(elseBody);
+        sbranches = translateBranches(branches);
+      then SCode.ALG_IF(boolExpr,stmts1,sbranches,stmts2,comment,info);
+
+    case (Absyn.ALG_FOR(iterators,body),comment,info)
+      equation
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_FOR(iterators,stmts,comment,info);
+  
+    case (Absyn.ALG_WHILE(boolExpr,body),comment,info)
+      equation
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_WHILE(boolExpr,stmts,comment,info);
+        
+    case (Absyn.ALG_WHEN_A(boolExpr,body,branches),comment,info)
+      equation
+        branches = (boolExpr,body)::branches;
+        sbranches = translateBranches(branches);
+      then SCode.ALG_WHEN_A(sbranches,comment,info);
+
+    case (Absyn.ALG_NORETCALL(functionCall,functionArgs),comment,info)
+    then SCode.ALG_NORETCALL(functionCall,functionArgs,comment,info);
+    
+    case (Absyn.ALG_RETURN(),comment,info)
+    then SCode.ALG_RETURN(comment,info);
+    
+    case (Absyn.ALG_BREAK(),comment,info)
+    then SCode.ALG_BREAK(comment,info);
+    
+    case (Absyn.ALG_TRY(body),comment,info)
+      equation
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_TRY(stmts,comment,info);
+        
+    case (Absyn.ALG_CATCH(body),comment,info)
+      equation
+        stmts = translateClassdefAlgorithmitems(body);
+      then SCode.ALG_CATCH(stmts,comment,info);
+    
+    case (Absyn.ALG_THROW(),comment,info)
+    then SCode.ALG_THROW(comment,info);
+    
+    case (Absyn.ALG_MATCHCASES(switchCases),comment,info)
+    then SCode.ALG_MATCHCASES(switchCases,comment,info);
+      
+    case (Absyn.ALG_GOTO(labelName),comment,info)
+    then SCode.ALG_GOTO(labelName,comment,info);
+    
+    case (Absyn.ALG_FAILURE(algi),comment,info)
+      equation
+        {stmt} = translateClassdefAlgorithmitems({algi});
+      then SCode.ALG_FAILURE(stmt,comment,info);
+    
+    /*
+    case (_,comment,info)
+      equation
+        debug_print("- translateClassdefAlgorithmItem: ", alg);
+      then fail();
+    */
+  end matchcontinue;
+end translateClassdefAlgorithmItem;
+
+protected function translateBranches
+"Converts the else-if or else-when branches from algorithm statements into SCode form"
+  input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> branches;
+  output list<tuple<Absyn.Exp,list<SCode.Statement>>> sbranches;
+algorithm
+  sbranches := matchcontinue branches
+    local
+      Absyn.Exp e;
+      list<SCode.Statement> stmts;
+      list<Absyn.AlgorithmItem> al;
+    case {} then {};
+    case ((e,al)::branches)
+      equation
+        stmts = translateClassdefAlgorithmitems(al);
+        sbranches = translateBranches(branches); 
+      then (e,stmts)::sbranches;
+  end matchcontinue;
+end translateBranches;
 
 protected function translateClassdefExternaldecls
 "function: translateClassdefExternaldecls

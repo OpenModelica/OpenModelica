@@ -58,7 +58,6 @@ public import Env;
 public import Interactive;
 public import Dependency;
 public import Values;
-public import Inline;
 
 protected import SimCode;
 protected import AbsynDep;

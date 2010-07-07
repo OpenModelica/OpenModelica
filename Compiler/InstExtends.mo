@@ -87,8 +87,8 @@ protected function instExtendsList "
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
   output list<SCode.Equation> outSCodeEquationLst5;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst6;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst7;
+  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
+  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst7;
 algorithm
   (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
   matchcontinue (inCache,inEnv,inIH,inMod,inSCodeElementLst,inState,inClassName,inBoolean,isPartialInst)
@@ -101,7 +101,7 @@ algorithm
       DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
       list<SCode.Element> importelts,els,els_1,rest,cdefelts,extendselts,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
-      list<SCode.Algorithm> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
+      list<SCode.AlgorithmSection> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
       Absyn.Path tp_1,tp;
       ClassInf.State new_ci_state,ci_state;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts1,compelts2,compelts,compelts3;
@@ -256,8 +256,8 @@ public function instExtendsAndClassExtendsList "
   output list<tuple<SCode.Element, DAE.Mod>> outTplSCodeElementModLst;
   output list<SCode.Equation> outSCodeNormalEquationLst;
   output list<SCode.Equation> outSCodeInitialEquationLst;
-  output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
-  output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
+  output list<SCode.AlgorithmSection> outSCodeNormalAlgorithmLst;
+  output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
 protected
   list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLstTpl3;
   list<SCode.Element> cdefelts,tmpelts;
@@ -297,8 +297,8 @@ protected function instExtendsAndClassExtendsList2 "
   output list<tuple<SCode.Element, DAE.Mod, Boolean>> outTplSCodeElementModLst;
   output list<SCode.Equation> outSCodeNormalEquationLst;
   output list<SCode.Equation> outSCodeInitialEquationLst;
-  output list<SCode.Algorithm> outSCodeNormalAlgorithmLst;
-  output list<SCode.Algorithm> outSCodeInitialAlgorithmLst;
+  output list<SCode.AlgorithmSection> outSCodeNormalAlgorithmLst;
+  output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
 algorithm
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
   instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
@@ -329,7 +329,7 @@ algorithm
       Option<SCode.Comment> comment;
       list<SCode.Element> els,els1,els2;
       list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
-      list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
+      list<SCode.AlgorithmSection> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> compelts;
       SCode.Mod mods;
       DAE.Mod emod;
@@ -373,7 +373,7 @@ algorithm
       Option<SCode.Comment> comment1,comment2;
       list<SCode.Element> els,els1,els2;
       list<SCode.Equation> nEqn,nEqn1,nEqn2,inEqn,inEqn1,inEqn2;
-      list<SCode.Algorithm> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
+      list<SCode.AlgorithmSection> nAlg,nAlg1,nAlg2,inAlg,inAlg1,inAlg2;
       list<tuple<SCode.Element, DAE.Mod, Boolean>> rest,elsAndMods;
       tuple<SCode.Element, DAE.Mod, Boolean> first;
       SCode.Mod mods;
@@ -434,8 +434,8 @@ public function instDerivedClasses
   output list<SCode.Element> outSCodeElementLst2;
   output list<SCode.Equation> outSCodeEquationLst3;
   output list<SCode.Equation> outSCodeEquationLst4;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst5;
-  output list<SCode.Algorithm> outSCodeAlgorithmLst6;
+  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst5;
+  output list<SCode.AlgorithmSection> outSCodeAlgorithmLst6;
 algorithm
   (outCache,outEnv1,outIH,outSCodeElementLst2,outSCodeEquationLst3,outSCodeEquationLst4,outSCodeAlgorithmLst5,outSCodeAlgorithmLst6):=
   matchcontinue (inCache,inEnv,inIH,inMod,inClass,inBoolean)
@@ -444,7 +444,7 @@ algorithm
       list<Env.Frame> env,cenv;
       DAE.Mod mod;
       list<SCode.Equation> eq,ieq;
-      list<SCode.Algorithm> alg,ialg;
+      list<SCode.AlgorithmSection> alg,ialg;
       SCode.Class c;
       Absyn.Path tp;
       SCode.Mod dmod;
@@ -770,7 +770,7 @@ algorithm
     local
       list<SCode.Element> elts;
       list<SCode.Equation> ne,ie;
-      list<SCode.Algorithm> na,ia;
+      list<SCode.AlgorithmSection> na,ia;
       Option<Absyn.ExternalDecl> ed;
       list<SCode.Annotation> ann;
       Option<SCode.Comment> c;
@@ -926,14 +926,14 @@ protected function fixAlgorithm
 "
   input Env.Cache cache;
   input Env.Env env;
-  input SCode.Algorithm alg;
+  input SCode.AlgorithmSection alg;
   input HashTableStringToPath.HashTable ht;
   output Env.Cache outCache;
-  output SCode.Algorithm outAlg;
+  output SCode.AlgorithmSection outAlg;
 algorithm
   (outCache,outAlg) := matchcontinue (cache,env,alg,ht)
     local
-      list<Absyn.Algorithm> stmts;
+      list<SCode.Statement> stmts;
     case (cache,env,SCode.ALGORITHM(stmts),ht)
       equation
         (cache,stmts) = fixList(cache,env,stmts,ht,fixStatement);
@@ -948,38 +948,13 @@ protected function fixListAlgorithmItem
 "
   input Env.Cache cache;
   input Env.Env env;
-  input list<Absyn.AlgorithmItem> alg;
+  input list<SCode.Statement> alg;
   input HashTableStringToPath.HashTable ht;
   output Env.Cache outCache;
-  output list<Absyn.AlgorithmItem> outAlg;
+  output list<SCode.Statement> outAlg;
 algorithm
-  (outCache,outAlg) := fixList(cache,env,alg,ht,fixAlgorithmItem);
+  (outCache,outAlg) := fixList(cache,env,alg,ht,fixStatement);
 end fixListAlgorithmItem;
-
-protected function fixAlgorithmItem
-" All of the fix functions do the following:
-  Analyzes the SCode datastructure and replace paths with a new path (from
-  local lookup or fully qualified in the environment.
-"
-  input Env.Cache cache;
-  input Env.Env env;
-  input Absyn.AlgorithmItem algi;
-  input HashTableStringToPath.HashTable ht;
-  output Env.Cache outCache;
-  output Absyn.AlgorithmItem outAlg;
-algorithm
-  (outCache,outAlg) := matchcontinue (cache,env,algi,ht)
-    local
-      Absyn.Algorithm alg;
-      Absyn.Annotation ann;
-      Option<Absyn.Comment> comment;
-    case (cache,env,Absyn.ALGORITHMITEM(alg,comment),ht)
-      equation
-        (cache,alg) = fixStatement(cache,env,alg,ht);
-      then (cache,Absyn.ALGORITHMITEM(alg,comment));
-    case (cache,env,Absyn.ALGORITHMITEMANN(ann),ht) then (cache,algi);
-  end matchcontinue;
-end fixAlgorithmItem;
 
 protected function fixStatement
 " All of the fix functions do the following:
@@ -988,52 +963,52 @@ protected function fixStatement
 "
   input Env.Cache cache;
   input Env.Env env;
-  input Absyn.Algorithm stmt;
+  input SCode.Statement stmt;
   input HashTableStringToPath.HashTable ht;
   output Env.Cache outCache;
-  output Absyn.Algorithm outStmt;
+  output SCode.Statement outStmt;
 algorithm
   (outCache,outStmt) := matchcontinue (cache,env,stmt,ht)
     local
       Absyn.Exp exp,exp1,exp2;
       Absyn.ComponentRef cref;
       Absyn.FunctionArgs fargs;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseifbranch,whenlst;
-      list<Absyn.AlgorithmItem> truebranch,elsebranch,forbody,algil;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifbranch,whenlst;
+      list<SCode.Statement> truebranch,elsebranch,forbody,algil;
       Absyn.ForIterators iterators;
-    case (cache,env,Absyn.ALG_ASSIGN(exp1,exp2),ht)
+      Option<SCode.Comment> comment;
+      Absyn.Info info;
+    case (cache,env,SCode.ALG_ASSIGN(exp1,exp2,comment,info),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,Absyn.ALG_ASSIGN(exp1,exp2));
-    case (cache,env,Absyn.ALG_IF(exp,truebranch,elseifbranch,elsebranch),ht)
+      then (cache,SCode.ALG_ASSIGN(exp1,exp2,comment,info));
+    case (cache,env,SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
-        (cache,truebranch) = fixList(cache,env,truebranch,ht,fixAlgorithmItem);
+        (cache,truebranch) = fixList(cache,env,truebranch,ht,fixStatement);
         (cache,elseifbranch) = fixListTuple2(cache,env,elseifbranch,ht,fixExp,fixListAlgorithmItem);
-        (cache,elsebranch) = fixList(cache,env,elsebranch,ht,fixAlgorithmItem);
-      then (cache,Absyn.ALG_IF(exp,truebranch,elseifbranch,elsebranch));
-    case (cache,env,Absyn.ALG_FOR(iterators,forbody),ht)
+        (cache,elsebranch) = fixList(cache,env,elsebranch,ht,fixStatement);
+      then (cache,SCode.ALG_IF(exp,truebranch,elseifbranch,elsebranch,comment,info));
+    case (cache,env,SCode.ALG_FOR(iterators,forbody,comment,info),ht)
       equation
         (cache,iterators) = fixList(cache,env,iterators,ht,fixForIterator);
-        (cache,forbody) = fixList(cache,env,forbody,ht,fixAlgorithmItem);
-      then (cache,Absyn.ALG_FOR(iterators,forbody));
-    case (cache,env,Absyn.ALG_WHEN_A(exp,algil,whenlst),ht)
+        (cache,forbody) = fixList(cache,env,forbody,ht,fixStatement);
+      then (cache,SCode.ALG_FOR(iterators,forbody,comment,info));
+    case (cache,env,SCode.ALG_WHEN_A(whenlst,comment,info),ht)
       equation
-        (cache,exp) = fixExp(cache,env,exp,ht);
-        (cache,algil) = fixList(cache,env,algil,ht,fixAlgorithmItem);
         (cache,whenlst) = fixListTuple2(cache,env,whenlst,ht,fixExp,fixListAlgorithmItem);
-      then (cache,Absyn.ALG_WHEN_A(exp,algil,whenlst));
-    case (cache,env,Absyn.ALG_NORETCALL(cref,fargs),ht)
+      then (cache,SCode.ALG_WHEN_A(whenlst,comment,info));
+    case (cache,env,SCode.ALG_NORETCALL(cref,fargs,comment,info),ht)
       equation
         (cache,fargs) = fixFarg(cache,env,fargs,ht);
         (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,Absyn.ALG_NORETCALL(cref,fargs));
-    case (cache,env,Absyn.ALG_RETURN(),ht) then (cache,Absyn.ALG_RETURN());
-    case (cache,env,Absyn.ALG_BREAK(),ht) then (cache,Absyn.ALG_BREAK());
+      then (cache,SCode.ALG_NORETCALL(cref,fargs,comment,info));
+    case (cache,env,SCode.ALG_RETURN(comment,info),ht) then (cache,SCode.ALG_RETURN(comment,info));
+    case (cache,env,SCode.ALG_BREAK(comment,info),ht) then (cache,SCode.ALG_BREAK(comment,info));
     case (cache,env,stmt,ht)
       equation
-        Debug.fprintln("failtrace", "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(4,Absyn.ALGORITHMITEM(stmt,NONE())));
+        Debug.fprintln("failtrace", "- Inst.fixStatement failed: " +& Dump.unparseAlgorithmStr(4,SCode.statementToAlgorithmItem(stmt)));
       then fail();
   end matchcontinue;
 end fixStatement;

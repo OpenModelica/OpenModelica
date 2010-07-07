@@ -2831,7 +2831,7 @@ algorithm
       DAE.Mod mods,emods,m,mod_1,mods_1,mods_2,checkMods;
       Prefix.Prefix pre;
       list<SCode.Equation> eqs,initeqs,eqs2,initeqs2,eqs_1,initeqs_1;
-      list<SCode.Algorithm> alg,initalg,alg2,initalg2,alg_1,initalg_1;
+      list<SCode.AlgorithmSection> alg,initalg,alg2,initalg2,alg_1,initalg_1;
       SCode.Restriction re,r;
       Boolean prot,impl,enc2;
       InstDims inst_dims,inst_dims_1;
@@ -4096,7 +4096,7 @@ algorithm
       DAE.Mod emods,mods,m,mod_1,mods_1,mods_2;
       list<tuple<SCode.Element, Mod>> extcomps,allEls2,lst_constantEls;
       list<SCode.Equation> eqs2,initeqs2,eqs,initeqs;
-      list<SCode.Algorithm> alg2,initalg2,alg,initalg;
+      list<SCode.AlgorithmSection> alg2,initalg2,alg,initalg;
       Prefix.Prefix pre;
       Connect.Sets csets;
       SCode.Restriction re,r;
@@ -12231,7 +12231,7 @@ protected function instAlgorithm
   input Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Algorithm inAlgorithm;
+  input SCode.AlgorithmSection inAlgorithm;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -12250,11 +12250,11 @@ algorithm
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
-      list<Absyn.Algorithm> statements;
+      list<SCode.Statement> statements;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
-      SCode.Algorithm algSCode;
+      SCode.AlgorithmSection algSCode;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
@@ -12293,7 +12293,7 @@ protected function instInitialAlgorithm
   input Prefix inPrefix;
   input Connect.Sets inSets;
   input ClassInf.State inState;
-  input SCode.Algorithm inAlgorithm;
+  input SCode.AlgorithmSection inAlgorithm;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -12312,7 +12312,7 @@ algorithm
       list<DAE.Statement> statements_1;
       Connect.Sets csets;
       ClassInf.State ci_state;
-      list<Absyn.Algorithm> statements;
+      list<SCode.Statement> statements;
       Boolean impl;
       Env.Cache cache;
       Prefix pre;
@@ -12349,7 +12349,7 @@ protected function instStatements
   input Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix inPre;
-  input list<Absyn.Algorithm> inAbsynAlgorithmLst;
+  input list<SCode.Statement> inAbsynAlgorithmLst;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
@@ -12362,8 +12362,8 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       list<DAE.Statement> stmts1,stmts2,stmts;
-      Absyn.Algorithm x;
-      list<Absyn.Algorithm> xs;
+      SCode.Statement x;
+      list<SCode.Statement> xs;
       Env.Cache cache;
       Prefix pre;
       DAE.DAElist dae,dae1,dae2;
@@ -12391,7 +12391,7 @@ public function instAlgorithmItems
   input Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix inPre;
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
+  input list<SCode.Statement> inAbsynAlgorithmItemLst;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
@@ -12404,8 +12404,8 @@ algorithm
       list<Env.Frame> env;
       Boolean impl;
       list<DAE.Statement> stmts1,stmts2,stmts;
-      Absyn.Algorithm x;
-      list<Absyn.AlgorithmItem> xs;
+      SCode.Statement x;
+      list<SCode.Statement> xs;
       Env.Cache cache;
       Prefix pre;
       DAE.DAElist dae,dae1,dae2;
@@ -12415,7 +12415,7 @@ algorithm
     case (cache,env,ih,pre,{},initial_,impl,unrollForLoops) then (cache,{},DAEUtil.emptyDae);
 
     // algorithms
-    case (cache,env,ih,pre,(Absyn.ALGORITHMITEM(algorithm_ = x) :: xs),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,x :: xs,initial_,impl,unrollForLoops)
       equation 
         (cache,stmts1,dae1) = instStatement(cache, env, ih, pre, x, initial_, impl, unrollForLoops);
         (cache,stmts2,dae2) = instAlgorithmItems(cache, env, ih, pre, xs, initial_, impl, unrollForLoops);
@@ -12424,12 +12424,6 @@ algorithm
       then
         (cache,stmts,dae);
     
-    // annotations are ignored.
-    case (cache,env,ih,pre,(Absyn.ALGORITHMITEMANN(annotation_ = _) :: xs),initial_,impl,unrollForLoops)
-      equation         
-        (cache,stmts,dae) = instAlgorithmItems(cache, env, ih, pre, xs, initial_, impl, unrollForLoops);
-      then
-        (cache,stmts,dae);
   end matchcontinue;
 end instAlgorithmItems;
 
@@ -12442,7 +12436,7 @@ function: instStatement
   input Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix inPre;
-  input Absyn.Algorithm inAlgorithm;
+  input SCode.Statement inAlgorithm;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
@@ -12468,20 +12462,22 @@ algorithm
       String s,i;
       list<DAE.Statement> tb_1,fb_1,sl_1,stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> eib_1;
-      list<Absyn.AlgorithmItem> tb,fb,sl,elseWhenSt;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib,el,elseWhenRest;
-      Absyn.Algorithm alg;
+      list<SCode.Statement> tb,fb,sl,elseWhenSt;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> eib,el,elseWhenRest;
+      SCode.Statement alg;
       Env.Cache cache;
       Prefix pre; 
       Absyn.ForIterators forIterators;
       DAE.DAElist dae,dae1,dae2,dae3,dae4;
       InstanceHierarchy ih;
+      Option<SCode.Comment> comment;
+      Absyn.Info info;
 
     //------------------------------------------
     // Part of MetaModelica list extension. KS
     //------------------------------------------
     /* v := Array(...); */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = Absyn.ARRAY(expList)),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = Absyn.ARRAY(expList)),initial_,impl,unrollForLoops)
       local
         list<Absyn.Exp> expList;
         DAE.Type t2;
@@ -12509,9 +12505,9 @@ algorithm
     //-----------------------------------------//
 
     /* v := array(for-iterator); */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c),
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(c),
       // Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-         Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,rangeList))),initial_,impl,unrollForLoops)
+         value = Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(e1,rangeList))),initial_,impl,unrollForLoops)
       local
         Absyn.Exp e1,vb;
         Absyn.ForIterators rangeList;
@@ -12540,13 +12536,13 @@ algorithm
         (cache,{stmt},dae);
 
     /* v := Function(for-iterator); */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(Absyn.CREF(c1),
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(c1),
       // Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,id,e2))),impl)
-         Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,rangeList))),initial_,impl,unrollForLoops)
+         value = Absyn.CALL(c2,Absyn.FOR_ITER_FARG(e1,rangeList)),comment = comment, info = info),initial_,impl,unrollForLoops)
       local
         Absyn.Exp e1,vb;
         Absyn.ForIterators rangeList;
-        Absyn.Algorithm absynStmt;
+        SCode.Statement absynStmt;
         list<Absyn.Ident> tempLoopVarNames;
         Absyn.ComponentRef c1,c2;
         list<Absyn.ElementItem> declList,tempLoopVars;
@@ -12566,7 +12562,7 @@ algorithm
         vb_body = listAppend(tempLoopVarsInit,vb_body);
         vb = Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS(vb_body),
         Absyn.CALL(c2,Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT("VEC__",{}))},{})));
-        absynStmt = Absyn.ALG_ASSIGN(Absyn.CREF(c1),vb);
+        absynStmt = SCode.ALG_ASSIGN(Absyn.CREF(c1),vb,comment,info);
 
         (cache,stmts,dae3) = instStatement(cache,env,ih,pre,absynStmt,initial_,impl,unrollForLoops);
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
@@ -12574,8 +12570,8 @@ algorithm
         (cache,stmts,dae);
 
     /* v := expr; */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl,unrollForLoops) 
-      equation 
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl,unrollForLoops) 
+      equation     
         (cache,cre,cprop,acc,dae1) = Static.elabCref(cache, env, cr, impl, false);
         (cache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
         (cache,ce_1) = Static.canonCref(cache, env, ce, impl);
@@ -12587,7 +12583,7 @@ algorithm
         (cache,{stmt},dae);
 
         /* der(x) := ... */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = 
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = 
           (e2 as Absyn.CALL(function_ = Absyn.CREF_IDENT(name="der"),functionArgs=(Absyn.FUNCTIONARGS(args={Absyn.CREF(cr)})) )),value = e),
           initial_,impl,unrollForLoops)
       local
@@ -12605,7 +12601,7 @@ algorithm
         (cache,{stmt},dae);
 
     // v[i] := expr (in e.g. for loops)
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr),value = e),initial_,impl,unrollForLoops)
       equation 
         (cache,cre,cprop,acc,dae1) = Static.elabCref(cache,env, cr, impl,false);
         (cache,cre2) = PrefixUtil.prefixExp(cache, env, ih, cre, pre);
@@ -12617,7 +12613,7 @@ algorithm
         (cache,{stmt},dae);
 
     // (v1,v2,..,vn) := func(...)
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl,unrollForLoops)
       equation 
         (cache,(e_1 as DAE.CALL(path=_)),eprop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true);
          (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -12629,16 +12625,16 @@ algorithm
         (cache,{stmt},dae);
 
       // MetaModelica Matchcontinue - should come before the error message about tuple assignment
-    case (cache,env,ih,pre,e as Absyn.ALG_ASSIGN(_,Absyn.MATCHEXP(_,_,_,_,_)),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,e as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(_,_,_,_,_)),initial_,impl,unrollForLoops)
       local
-        Absyn.Algorithm e;
+        SCode.Statement e;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,stmt) = createMatchStatement(cache,env,ih,pre,e,impl);
       then (cache,{stmt},DAEUtil.emptyDae);
 
     /* Tuple with rhs constant */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl,unrollForLoops)
       local DAE.Exp unvectorisedExpl;
       equation 
         (cache,(e_1 as DAE.TUPLE(_)),eprop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true);
@@ -12651,7 +12647,7 @@ algorithm
         (cache,{stmt},dae);
 
     /* Tuple with rhs not CALL or CONSTANT => Error */
-    case (cache,env,ih,pre,Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e),initial_,impl,unrollForLoops)
       equation 
         s = Dump.printExpStr(e);
         Error.addMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY, {s});
@@ -12659,7 +12655,7 @@ algorithm
         fail();
         
     /* If statement*/
-    case (cache,env,ih,pre,Absyn.ALG_IF(ifExp = e,trueBranch = tb,elseIfAlgorithmBranch = eib,elseBranch = fb),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_IF(boolExpr = e,trueBranch = tb,elseIfBranch = eib,elseBranch = fb),initial_,impl,unrollForLoops)
       equation 
         (cache,e_1,prop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);        
@@ -12672,7 +12668,7 @@ algorithm
         (cache,{stmt},dae);
         
     /* For loop */
-    case (cache,env,ih,pre,Absyn.ALG_FOR(iterators = forIterators,forBody = sl),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_FOR(iterators = forIterators,forBody = sl),initial_,impl,unrollForLoops)
 //      local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
 //        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache, env, e, impl, NONE, true);
@@ -12685,7 +12681,7 @@ algorithm
         (cache,stmts,dae);
         
     /* While loop */
-    case (cache,env,ih,pre,Absyn.ALG_WHILE(boolExpr = e,whileBody = sl),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_WHILE(boolExpr = e,whileBody = sl),initial_,impl,unrollForLoops)
       equation 
         (cache,e_1,prop,_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);        
@@ -12696,7 +12692,7 @@ algorithm
         (cache,{stmt},dae);
 
     /* When clause without elsewhen */
-    case (cache,env,ih,pre,Absyn.ALG_WHEN_A(boolExpr = e,whenBody = sl,elseWhenAlgorithmBranch = {}),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_WHEN_A(branches = {(e,sl)}),initial_,impl,unrollForLoops)
       equation 
         false = containsWhenStatements(sl);
         (cache,e_1,prop,_,dae1) = Static.elabExp(cache, env, e, impl, NONE, true);
@@ -12708,11 +12704,10 @@ algorithm
         (cache,{stmt},dae);
         
     /* When clause with elsewhen branch */
-    case (cache,env,ih,pre,Absyn.ALG_WHEN_A(boolExpr = e,whenBody = sl,
-          elseWhenAlgorithmBranch = (elseWhenC,elseWhenSt)::elseWhenRest),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_WHEN_A(branches = (e,sl)::(elseWhenRest as _::_), comment = comment, info = info),initial_,impl,unrollForLoops)
       equation 
         false = containsWhenStatements(sl);
-        (cache,{stmt1},dae1) = instStatement(cache,env,ih,pre,Absyn.ALG_WHEN_A(elseWhenC,elseWhenSt,elseWhenRest),initial_,impl,unrollForLoops);
+        (cache,{stmt1},dae1) = instStatement(cache,env,ih,pre,SCode.ALG_WHEN_A(elseWhenRest,comment,info),initial_,impl,unrollForLoops);
         (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);        
         (cache,sl_1,dae3) = instAlgorithmItems(cache, env, ih, pre, sl, initial_, impl, unrollForLoops);
@@ -12722,18 +12717,18 @@ algorithm
         (cache,{stmt},dae);
 
     // Check for nested when clauses, which are invalid.
-    case (_,env,ih,_,alg as Absyn.ALG_WHEN_A(whenBody = sl),_,_,_)
+    case (_,env,ih,_,alg as SCode.ALG_WHEN_A(branches = (_,sl)::_),_,_,_)
       local
         String alg_str, scope_str;
       equation
         true = containsWhenStatements(sl);
-        alg_str = Dump.unparseAlgorithmStr(0,Absyn.ALGORITHMITEM(alg,NONE()));
+        alg_str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
         scope_str = Env.printEnvPathStr(env);
         Error.addMessage(Error.NESTED_WHEN, {scope_str, alg_str});
       then fail();
                         
     /* assert(cond,msg) */
-    case (cache,env,ih,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+    case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
           functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg},argNames = {})),initial_,impl,unrollForLoops)
       equation 
         (cache,cond_1,cprop,_,dae1) = Static.elabExp(cache, env, cond, impl, NONE, true);
@@ -12746,7 +12741,7 @@ algorithm
         (cache,{stmt},dae);
         
     /* terminate(msg) */
-    case (cache,env,ih,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),
+    case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "terminate"),
           functionArgs = Absyn.FUNCTIONARGS(args = {msg},argNames = {})),initial_,impl,unrollForLoops)
       equation 
         (cache,msg_1,msgprop,_,dae) = Static.elabExp(cache, env, msg, impl, NONE, true);
@@ -12756,7 +12751,7 @@ algorithm
         (cache,{stmt},dae);
         
     /* reinit(variable,value) */
-    case (cache,env,ih,pre,Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),
+    case (cache,env,ih,pre,SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "reinit"),
           functionArgs = Absyn.FUNCTIONARGS(args = {var,value},argNames = {})),initial_,impl,unrollForLoops)
       equation 
         (cache,var_1,varprop,_,dae1) = Static.elabExp(cache, env, var, impl, NONE, true);
@@ -12769,7 +12764,7 @@ algorithm
         (cache,{stmt},dae);
         
     /* generic NORETCALL */
-    case (cache,env,ih,pre,(Absyn.ALG_NORETCALL(callFunc,callArgs)),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,(SCode.ALG_NORETCALL(functionCall = callFunc, functionArgs = callArgs)),initial_,impl,unrollForLoops)
       local 
         Absyn.ComponentRef callFunc;
         Absyn.FunctionArgs callArgs;
@@ -12788,14 +12783,14 @@ algorithm
         (cache,{stmt},dae);
          
     /* break */
-    case (cache,env,ih,pre,Absyn.ALG_BREAK,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_BREAK(comment = comment, info = info),initial_,impl,unrollForLoops)
       equation 
         stmt = DAE.STMT_BREAK();
       then
         (cache,{stmt},DAEUtil.emptyDae);
         
     /* return */
-    case (cache,env,ih,pre,Absyn.ALG_RETURN,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_RETURN(comment = comment, info = info),initial_,impl,unrollForLoops)
       equation 
         stmt = DAE.STMT_RETURN();
       then
@@ -12805,7 +12800,7 @@ algorithm
     // Part of MetaModelica extension. KS
     //------------------------------------------
     /* try */
-    case (cache,env,ih,pre,Absyn.ALG_TRY(sl),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_TRY(tryBody = sl, comment = comment, info = info),initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,sl_1,dae) = instAlgorithmItems(cache, env, ih, pre, sl, initial_, impl, unrollForLoops);
@@ -12814,7 +12809,7 @@ algorithm
         (cache,{stmt},dae);
         
     /* catch */
-    case (cache,env,ih,pre,Absyn.ALG_CATCH(sl),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_CATCH(catchBody = sl, comment = comment, info = info),initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,sl_1,dae) = instAlgorithmItems(cache, env, ih, pre, sl, initial_, impl, unrollForLoops);
@@ -12823,7 +12818,7 @@ algorithm
         (cache,{stmt},dae);
 
     /* throw */
-    case (cache,env,ih,pre,Absyn.ALG_THROW(),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_THROW(comment = comment, info = info),initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         stmt = DAE.STMT_THROW();
@@ -12831,7 +12826,7 @@ algorithm
         (cache,{stmt},DAEUtil.emptyDae);
 
     /* GOTO */
-    case (cache,env,ih,pre,Absyn.ALG_GOTO(s),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_GOTO(labelName = s, comment = comment, info = info),initial_,impl,unrollForLoops)
       local
         String s;
       equation
@@ -12840,7 +12835,7 @@ algorithm
       then
         (cache,{stmt},DAEUtil.emptyDae);
 
-    case (cache,env,ih,pre,Absyn.ALG_LABEL(s),initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_LABEL(labelName = s, comment = comment, info = info),initial_,impl,unrollForLoops)
       local
         String s;
       equation
@@ -12850,7 +12845,7 @@ algorithm
         (cache,{stmt},DAEUtil.emptyDae);
     
       // Helper statement for matchcontinue
-    case (cache,env,ih,pre,Absyn.ALG_MATCHCASES(absynExpList),_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(switchCases = absynExpList, comment = comment, info = info),_,impl,unrollForLoops)
       local
         list<Absyn.Exp> absynExpList;
         list<DAE.Exp> expExpList;
@@ -12866,7 +12861,7 @@ algorithm
       local String str;
       equation 
         true = RTOpts.debugFlag("failtrace");
-        str = Dump.unparseAlgorithmStr(0,Absyn.ALGORITHMITEM(alg,NONE()));
+        str = Dump.unparseAlgorithmStr(0,SCode.statementToAlgorithmItem(alg));
         Debug.fprintln("failtrace", "- Inst.instStatement failed: " +& str);
         //Debug.fcall("failtrace", Dump.printAlgorithm, alg);
         //Debug.fprint("failtrace", "\n");
@@ -12879,29 +12874,25 @@ protected function containsWhenStatements
 "@author: adrpo
   this functions returns true if the given
   statement list contains when statements"
-  input list<Absyn.AlgorithmItem> statementList;
+  input list<SCode.Statement> statementList;
   output Boolean hasWhenStatements;
 algorithm
   hasWhenStatements := matchcontinue(statementList)
     local
-      list<Absyn.AlgorithmItem> rest, tb, eb, lst;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> eib;
+      list<SCode.Statement> rest, tb, eb, lst;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> eib;
       Boolean b, b1, b2, b3, b4; list<Boolean> blst;
-      list<list<Absyn.AlgorithmItem>> slst;
+      list<list<SCode.Statement>> slst;
 
     // handle nothingness
     case ({}) then false;
 
-    // ignore annotations and move on
-    case (Absyn.ALGORITHMITEMANN(_)::rest)
-      then containsWhenStatements(rest);
-
     // yeha! we have a when!
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHEN_A(boolExpr=_))::_) 
+    case (SCode.ALG_WHEN_A(branches=_)::_) 
       then true;
 
     // search deeper inside if
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_IF(trueBranch=tb, elseIfAlgorithmBranch=eib, elseBranch=eb))::rest)
+    case (SCode.ALG_IF(trueBranch=tb, elseIfBranch=eib, elseBranch=eb)::rest)
       equation
          b1 = containsWhenStatements(tb);
          b2 = containsWhenStatements(eb);
@@ -12914,7 +12905,7 @@ algorithm
       then b;
 
     // search deeper inside for
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_FOR(forBody = lst))::rest)
+    case (SCode.ALG_FOR(forBody = lst)::rest)
       equation
          b1 = containsWhenStatements(lst);
          b2 = containsWhenStatements(rest);
@@ -12922,7 +12913,7 @@ algorithm
       then b;
 
     // search deeper inside for
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_WHILE(whileBody = lst))::rest)
+    case (SCode.ALG_WHILE(whileBody = lst)::rest)
       equation
          b1 = containsWhenStatements(lst);
          b2 = containsWhenStatements(rest);
@@ -12930,7 +12921,7 @@ algorithm
       then b;
 
     // search deeper inside catch
-    case (Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_CATCH(catchBody = lst))::rest)
+    case (SCode.ALG_CATCH(catchBody = lst)::rest)
       equation
          b1 = containsWhenStatements(lst);
          b2 = containsWhenStatements(rest);
@@ -12953,7 +12944,7 @@ protected function loopOverRange
   input Prefix inPrefix;
   input Ident inIdent;
   input Values.Value inValue;
-  input list<Absyn.AlgorithmItem> inAlgItmLst;
+  input list<SCode.Statement> inAlgItmLst;
   input SCode.Initial inInitial;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
@@ -12970,7 +12961,7 @@ algorithm
       String i;
       Values.Value fst,v;
       list<Values.Value> rest;
-      list<Absyn.AlgorithmItem> algs;
+      list<SCode.Statement> algs;
       SCode.Initial initial_;
       Boolean impl;
       Env.Cache cache;
@@ -13017,7 +13008,7 @@ protected function unrollForLoop
   input InstanceHierarchy inIH;
   input Prefix inPrefix;
   input Absyn.ForIterators inIterators;
-  input list<Absyn.AlgorithmItem> inForBody;
+  input list<SCode.Statement> inForBody;
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";  
@@ -13031,7 +13022,7 @@ algorithm
 	    list<Env.Frame> env,env_1;
 	    Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
-	    list<Absyn.AlgorithmItem> sl;
+	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
 	    Boolean impl;
 	    tuple<DAE.TType, Option<Absyn.Path>> t;
@@ -13086,9 +13077,7 @@ algorithm
       equation
         (cache,stmts,dae) = 
            unrollForLoop(cache, env, ih, pre, {(i, SOME(e))},
-              {Absyn.ALGORITHMITEM(
-                 Absyn.ALG_FOR(restIterators, sl),
-                 NONE())},
+              {SCode.ALG_FOR(restIterators, sl,NONE(),Absyn.dummyInfo)},
               initial_, impl,unrollForLoops);
       then
         (cache,stmts,dae);
@@ -13098,9 +13087,7 @@ algorithm
         // only report errors for when in for loops
         // true = containsWhenStatements(sl);
         str = Dump.unparseAlgorithmStr(0, 
-               Absyn.ALGORITHMITEM(
-                 Absyn.ALG_FOR(inIterators, sl),
-                 NONE()));
+               SCode.statementToAlgorithmItem(SCode.ALG_FOR(inIterators, sl,NONE(),Absyn.dummyInfo)));
         Error.addMessage(Error.UNROLL_LOOP_CONTAINING_WHEN(), {str});
         Debug.fprintln("failtrace", "- Inst.unrollForLoop failed on: " +& str);
       then
@@ -13115,7 +13102,7 @@ protected function instForStatement
   input InstanceHierarchy inIH;
   input Prefix inPrefix;
   input Absyn.ForIterators inIterators;
-  input list<Absyn.AlgorithmItem> inForBody;
+  input list<SCode.Statement> inForBody;
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model"; 
@@ -13129,7 +13116,7 @@ algorithm
 	    list<Env.Frame> env,env_1;
 	    Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
-	    list<Absyn.AlgorithmItem> sl;
+	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
 	    Boolean impl;
 	    tuple<DAE.TType, Option<Absyn.Path>> t;
@@ -13284,7 +13271,7 @@ protected function instForStatement_dispatch
   input InstanceHierarchy inIH;
   input Prefix inPrefix;
   input Absyn.ForIterators inIterators;
-  input list<Absyn.AlgorithmItem> inForBody;
+  input list<SCode.Statement> inForBody;
   input SCode.Initial inInitial;
   input Boolean inBool;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model"; 
@@ -13298,10 +13285,10 @@ algorithm
 	    list<Env.Frame> env,env_1;
 	    Prefix pre;
 	    list<Absyn.ForIterator> restIterators, iterators;
-	    list<Absyn.AlgorithmItem> sl;
+	    list<SCode.Statement> sl;
 	    SCode.Initial initial_;
 	    Boolean impl;
-	    tuple<DAE.TType, Option<Absyn.Path>> t;
+	    DAE.Type t;
 	    DAE.Exp e_1,e_2;
 	    list<DAE.Statement> sl_1,stmts;
 	    String i;
@@ -13367,20 +13354,18 @@ algorithm
     //    then
     //     fail();
     
-    case (cache,env,ih,pre,(i,NONE)::restIterators,sl,initial_,impl,unrollForLoops)
+    case (cache,env,ih,pre,(i,NONE())::restIterators,sl,initial_,impl,unrollForLoops)
       equation
         // false = containsWhenStatements(sl); 
-        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
-        equality(lst={});
+        {} = SCode.findIteratorInStatements(i,sl);
         Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});
       then
         fail();
         
-    case (cache,env,ih,pre,{(i,NONE)},sl,initial_,impl,unrollForLoops) //The verison w/o assertions
+    case (cache,env,ih,pre,{(i,NONE())},sl,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl);
-        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
-        failure(equality(lst={}));
+        (lst as _::_) = SCode.findIteratorInStatements(i,sl);
         tpl=Util.listFirst(lst);
         // e = Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
@@ -13395,8 +13380,7 @@ algorithm
     case (cache,env,ih,pre,(i,NONE)::restIterators,sl,initial_,impl,unrollForLoops) //The verison w/o assertions
       equation
         // false = containsWhenStatements(sl); 
-        lst=Absyn.findIteratorInAlgorithmItemLst(i,sl);
-        failure(equality(lst={}));
+        (lst as _::_) = SCode.findIteratorInStatements(i,sl);
         tpl=Util.listFirst(lst);
         // e = Absyn.RANGE(1,NONE,Absyn.CALL(Absyn.CREF_IDENT("size",{}),Absyn.FUNCTIONARGS({Absyn.CREF(acref),Absyn.INTEGER(dimNum)},{})));
         e=rangeExpression(tpl);
@@ -13440,7 +13424,7 @@ protected function createMatchStatement
   input Env.Env env;
   input InstanceHierarchy ih;
   input Prefix pre;
-  input Absyn.Algorithm alg;
+  input SCode.Statement alg;
   input Boolean inBoolean;
   output Env.Cache outCache;
   output DAE.Statement outStmt;
@@ -13464,7 +13448,7 @@ algorithm
       // TODO: Someone with MetaModelica interests needs to collect the dae:s from elabExp and propagate them upwards.
 
     // _ := matchcontinue(...) ...
-    case (localCache,localEnv,ih,localPre,Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD()),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.WILD()), value = e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
       local
         Absyn.Exp exp;
         DAE.Exp e_1,e_2;
@@ -13480,7 +13464,7 @@ algorithm
       then (localCache,stmt);
 
     // v1 := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,Absyn.ALG_ASSIGN(Absyn.CREF(cr),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr), value = e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
       local
         DAE.Exp e_1,e_2;
       equation
@@ -13496,7 +13480,7 @@ algorithm
         (localCache,stmt);
 
     // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,Absyn.ALG_ASSIGN(Absyn.TUPLE(expl),e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expl), value = e as Absyn.MATCHEXP(_,_,_,_,_)),impl)
       local
         DAE.Exp e_1,e_2;
       equation
@@ -13527,7 +13511,7 @@ protected function instElseIfs
   input Env inEnv;
   input InstanceHierarchy inIH;
   input Prefix inPre;
-  input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
+  input list<tuple<Absyn.Exp, list<SCode.Statement>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input SCode.Initial initial_;
   input Boolean inBoolean;
   input Boolean unrollForLoops "we should unroll for loops if they are part of an algorithm in a model";
@@ -13545,8 +13529,8 @@ algorithm
       list<DAE.Statement> stmts;
       list<tuple<DAE.Exp, DAE.Properties, list<DAE.Statement>>> tail_1;
       Absyn.Exp e;
-      list<Absyn.AlgorithmItem> l;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> tail;
+      list<SCode.Statement> l;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> tail;
       Env.Cache cache;
       Prefix pre;
       DAE.DAElist dae,dae1,dae2,dae3;
@@ -15636,7 +15620,7 @@ algorithm
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(id2,{},NONE()),NONE(),NONE())}),
             Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
         localAccVars2 = listAppend(localAccVars2,elem);
-        elem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(id2,{})),Absyn.INTEGER(0)),NONE())};
+        elem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(id2,{})),Absyn.INTEGER(0)),NONE(),Absyn.dummyInfo)};
         localAccTempLoopInit = listAppend(localAccTempLoopInit,elem2);
         n = n+1;
         (localAccVars1,localAccVars2,localAccTempLoopInit) = createTempLoopVars(restIdRange,localAccVars1,localAccVars2,localAccTempLoopInit,n);
@@ -15673,12 +15657,12 @@ algorithm
         subList = createArrayIndexing(localIdList,{});
         arrayRef = createArrayReference(localArrayId,subList);
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
-          Absyn.BINARY(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),Absyn.ADD(),Absyn.INTEGER(1))),NONE())};
-        stmt2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(arrayRef,localIterExp),NONE())};
+          Absyn.BINARY(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),Absyn.ADD(),Absyn.INTEGER(1))),NONE(),Absyn.dummyInfo)};
+        stmt2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(arrayRef,localIterExp),NONE(),Absyn.dummyInfo)};
         stmt1 = listAppend(stmt1,stmt2);
-        stmt2 = {Absyn.ALGORITHMITEM(Absyn.ALG_FOR({(id,SOME(rangeExp))},stmt1),NONE())};
+        stmt2 = {Absyn.ALGORITHMITEM(Absyn.ALG_FOR({(id,SOME(rangeExp))},stmt1),NONE(),Absyn.dummyInfo)};
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
-          Absyn.INTEGER(0)),NONE())};
+          Absyn.INTEGER(0)),NONE(),Absyn.dummyInfo)};
         stmt3 = listAppend(stmt2,stmt1);
       then (stmt3,DAEUtil.emptyDae);
 
@@ -15688,11 +15672,11 @@ algorithm
       equation
         (stmt2,_) = createForIteratorAlgorithm(localIterExp,rest,localIdList,restTempLoopVars,localArrayId);
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
-          Absyn.BINARY(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),Absyn.ADD(),Absyn.INTEGER(1))),NONE())};
+          Absyn.BINARY(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),Absyn.ADD(),Absyn.INTEGER(1))),NONE(),Absyn.dummyInfo)};
         stmt1 = listAppend(stmt1,stmt2);
-        stmt2 = {Absyn.ALGORITHMITEM(Absyn.ALG_FOR({(id,SOME(rangeExp))},stmt1),NONE())};
+        stmt2 = {Absyn.ALGORITHMITEM(Absyn.ALG_FOR({(id,SOME(rangeExp))},stmt1),NONE(),Absyn.dummyInfo)};
         stmt1 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(tempLoopVar,{})),
-          Absyn.INTEGER(0)),NONE())};
+          Absyn.INTEGER(0)),NONE(),Absyn.dummyInfo)};
         stmt3 = listAppend(stmt2,stmt1);
       then (stmt3,DAEUtil.emptyDae);
   end matchcontinue;

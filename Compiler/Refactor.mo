@@ -353,18 +353,19 @@ algorithm
       Absyn.Annotation a;
       list<Absyn.ElementArg> annList;
       Absyn.Path cPath;
+      Absyn.Info info;
 
     case(Absyn.EQUATIONITEMANN(annotation_ = Absyn.ANNOTATION(elementArgs = annList)),p,_,_)
       equation
         annList = transformClassAnnList(annList,{"Class"},{},p); //ClasS!??!
       then Absyn.EQUATIONITEMANN(Absyn.ANNOTATION(annList));
 
-    case(Absyn.EQUATIONITEM(equation_ = e, comment =
+    case(Absyn.EQUATIONITEM(equation_ = e, info = info, comment =
       SOME(Absyn.COMMENT(annotation_ = SOME(Absyn.ANNOTATION(elementArgs = annList)),comment = com))),p,_,_)
       equation
         annList = transformConnectAnnList(annList,{"Connect"},{},p); //Connectannotation
       then
-        Absyn.EQUATIONITEM(e,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)));
+        Absyn.EQUATIONITEM(e,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
     case(ei,p,_,_) then ei;
   end matchcontinue;
 end refactorGraphAnnInEqItem;
@@ -386,19 +387,20 @@ algorithm
       Option<String> com;
       list<Absyn.ElementArg> annList;
       Absyn.Path cPath;
+      Absyn.Info info;
     case(Absyn.ALGORITHMITEMANN(annotation_ =  Absyn.ANNOTATION(elementArgs = annList) ),p,_,_)
       equation
         annList = transformClassAnnList(annList,{"Class"},{},p);
       then
         Absyn.ALGORITHMITEMANN(Absyn.ANNOTATION(annList));
 
-    case(Absyn.ALGORITHMITEM(algorithm_ = alg, comment =
+    case(Absyn.ALGORITHMITEM(algorithm_ = alg, info = info, comment =
       SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com))),p,_,_)
       equation
         //        a = transformGraphAnn(a,p); whut?
 
       then
-        Absyn.ALGORITHMITEM(alg,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)));
+        Absyn.ALGORITHMITEM(alg,SOME(Absyn.COMMENT(SOME(Absyn.ANNOTATION(annList)),com)),info);
 
     case(algI,p,_,_) then algI;
 

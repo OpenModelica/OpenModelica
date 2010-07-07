@@ -90,7 +90,7 @@ algorithm
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2) "also output arguments";
         // print("evalfunc env: " +& Env.printEnvStr(env) +& "\n");
         // print("evalfunc env1: " +& Env.printEnvStr(env1) +& "\n");     
-        env2 = evaluateStatements(env1,sc,ht2);
+        env2 = evaluateFunctionStatements(env1,sc,ht2);
         retVals = getOutputVarValues(elementList, env2);
         retVal = convertOutputVarValues(retVals);
         ErrorExt.rollBack("cevalUserFunc");
@@ -559,7 +559,7 @@ algorithm
   end matchcontinue;
 end qualReplacer;
 
-protected function evaluateStatements "
+protected function evaluateFunctionStatements "
 Intermediate step for evaluating algorithms.
 Takes an Envirnoment that includes function variables and a hashtable witch represents constant values for crefs.
 Updates the envirnoment with the evaluated values(output)
@@ -570,24 +570,22 @@ Updates the envirnoment with the evaluated values(output)
   output Env.Env outVal;
 algorithm outVal := matchcontinue(env,sc,ht2)
   local
-    list<SCode.Equation> eqs1,eqs2;
-    list<SCode.Algorithm> algs1,algs2;
+    list<SCode.AlgorithmSection> algs1,algs2;
     Env.Env env1;
     HashTable2.HashTable ht2;
 
   case(env, SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
-                        classDef=SCode.PARTS(normalEquationLst=eqs1,
-                                             initialEquationLst=eqs2,
+                        classDef=SCode.PARTS(normalEquationLst={},
+                                             initialEquationLst={},
                                              normalAlgorithmLst=algs1,
-                                             initialAlgorithmLst=algs2)),
-       ht2)
+                                             initialAlgorithmLst=algs2)),ht2)
     equation
 
       env1 = evaluateAlgorithmsList(env,algs1,ht2);
     then
       env1;
 end matchcontinue;
-end evaluateStatements;
+end evaluateFunctionStatements;
 
 protected function generateHashMap "
 Author BZ
@@ -614,63 +612,61 @@ end generateHashMap;
 protected function evaluateAlgorithmsList "
 helper function for evaluateAlgorithms"
   input Env.Env env;
-  input list<SCode.Algorithm> inAlgs;
+  input list<SCode.AlgorithmSection> inAlgs;
   input HashTable2.HashTable ht2;
   output Env.Env outEnv;
 algorithm outEnv := matchcontinue(env,inAlgs,ht2)
   local
-    list<SCode.Algorithm> algs;
-    SCode.Algorithm alg;
-    list<Absyn.Algorithm> alglst;
+    list<SCode.AlgorithmSection> algs;
+    list<SCode.Statement> stmts;
     Env.Env env1,env2;
 
   case(env,{},_) then env;
-  case(env, (alg as SCode.ALGORITHM(alglst)) :: algs,ht2)
+  case(env, SCode.ALGORITHM(stmts) :: algs,ht2)
     equation
-      (env1) = evaluateAlgorithms(env,alglst,ht2);
+      (env1) = evaluateStatements(env,stmts,ht2);
       (env2) = evaluateAlgorithmsList(env1,algs,ht2);
     then
       env2;
 end matchcontinue;
 end evaluateAlgorithmsList;
 
-protected function evaluateAlgorithms "Function: evaluateAlgorithms
-helper function for evaluateAlgorithmsList"
+protected function evaluateStatements "helper function for evaluateAlgorithmsList"
   input Env.Env env;
-  input list<Absyn.Algorithm> inAlgs;
+  input list<SCode.Statement> inAlgs;
   input HashTable2.HashTable ht2;
   output Env.Env outEnv;
 algorithm
   outEnv := matchcontinue(env,inAlgs,ht2)
     local
-      list<Absyn.Algorithm> algs;
-      Absyn.Algorithm alg;
+      list<SCode.Statement> stmts;
+      SCode.Statement stmt;
       Env.Env env1,env2;
 
     case(env,{},_) then env;
-    case(env, alg :: algs, ht2)
+    case(env, stmt :: stmts, ht2)
       equation
-        (env1) = evaluateAlgorithm(env, alg, ht2);
-        (env2) = evaluateAlgorithms(env1,algs, ht2);
+        (env1) = evaluateStatement(env, stmt, ht2);
+        (env2) = evaluateStatements(env1,stmts, ht2);
       then
         env2;
-    case(env,alg::algs, ht2)
+    case(env,stmt::stmts, ht2)
       equation
-        Debug.fprintln("failtrace", "- Cevalfunc.evaluateAlgorithms failed on algorithm:" +& Dump.unparseAlgorithmStr(0, Absyn.ALGORITHMITEM(alg, NONE())));
+        Debug.fprintln("failtrace", "- Cevalfunc.evaluateAlgorithms failed on algorithm:" +& Dump.unparseAlgorithmStr(0, SCode.statementToAlgorithmItem(stmt)));
       then 
         fail();          
   end matchcontinue;  
-end evaluateAlgorithms;
+end evaluateStatements;
 
-protected function evaluateAlgorithm "Function: evaluateAlgorithm
+protected function evaluateStatement "Function: evaluateAlgorithm
 perform constant evaluation of Algorithm statements, eg. assign, for loop,etc.
 "
   input Env.Env env;
-  input Absyn.Algorithm alg;
+  input SCode.Statement stmt;
   input HashTable2.HashTable ht2;
   output Env.Env outEnv;
 algorithm 
-  outEnv := matchcontinue(env,alg,ht2) 
+  outEnv := matchcontinue(env,stmt,ht2) 
     local 
       Absyn.Exp ae1,ae2,ae3,cond,msg;
       list<Absyn.Exp> crefexps;
@@ -682,15 +678,16 @@ algorithm
       list<Values.Value> values;
       list<DAE.Type> types;
       DAE.Properties prop;
-      list<Absyn.AlgorithmItem> algitemlst;
+      list<SCode.Statement> algitemlst;
+      Boolean b;
       String varName;
       String estr; 
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> elseifexpitemlist,branches1,branches2;
-      tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> trueBranch;
-      list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifexpitemlist,trueBranch,elseBranch,branches1,branches2;
+      tuple<Absyn.Exp, list<SCode.Statement>> trueBranch;
+      list<SCode.Statement> algitemlist,elseitemlist;
 
     // algorithm assign      
-    case(env, Absyn.ALG_ASSIGN(ae1 as Absyn.CREF(_), ae2),ht2)
+    case(env, SCode.ALG_ASSIGN(assignComponent = ae1 as Absyn.CREF(_), value = ae2),ht2)
       equation
         (_,e1,DAE.PROP(t,_),_,_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false);
         e1 = replaceComplex(e1,ht2); 
@@ -699,7 +696,7 @@ algorithm
       then
         env1;
     // assign, tuple assign
-    case(env, Absyn.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
+    case(env, SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
       equation
         (_,resExp,prop,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
         resExp = replaceComplex(resExp,ht2);
@@ -709,14 +706,14 @@ algorithm
       then
         env1;
     //while case
-    case(env, Absyn.ALG_WHILE(boolExpr = ae1,whileBody = algitemlst),ht2)
+    case(env, SCode.ALG_WHILE(boolExpr = ae1,whileBody = algitemlst),ht2)
       equation
         value = evaluateSingleExpression(ae1,env,NONE,ht2);
         env1  = evaluateConditionalStatement(value, ae1, algitemlst,env,ht2);
       then
         env1;
     // for loop with a range without step
-    case(env, Absyn.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE, stop=ae2)))},forBody = algitemlst),ht2)
+    case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1,step=NONE, stop=ae2)))},forBody = algitemlst),ht2)
       equation 
         start = evaluateSingleExpression(ae1,env,NONE,ht2);
         // constant range due to ceval of start/stop
@@ -727,7 +724,7 @@ algorithm
       then
         env2;
     // for loop with a range with step
-    case(env, Absyn.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1, step=SOME(ae2), stop=ae3)))},forBody = algitemlst),ht2)
+    case(env, SCode.ALG_FOR({(varName, SOME(Absyn.RANGE(start=ae1, step=SOME(ae2), stop=ae3)))},forBody = algitemlst),ht2)
       equation
         start = evaluateSingleExpression(ae1,env,NONE,ht2);
         // constant range due to ceval of start/stop/step
@@ -738,7 +735,7 @@ algorithm
       then
         env2;
     // some other expression for range, such as an array!
-    case(env, Absyn.ALG_FOR({(varName, SOME(ae1))},forBody = algitemlst),ht2)
+    case(env, SCode.ALG_FOR({(varName, SOME(ae1))},forBody = algitemlst),ht2)
       equation
         (Values.ARRAY(valueLst = values)) = evaluateSingleExpression(ae1,env,NONE,ht2);
         start = listNth(values,0);
@@ -748,15 +745,15 @@ algorithm
       then
         env2;
     // error for unknown range
-    case(env,Absyn.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
+    case(env,SCode.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
       equation
-        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true);
+        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE() ,true);
         estr = Exp.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then
         fail();
     // if-case
-    case(env, Absyn.ALG_IF(ifExp = ae1,trueBranch = algitemlst,elseIfAlgorithmBranch = elseifexpitemlist, elseBranch = elseitemlist),ht2)
+    case(env, SCode.ALG_IF(boolExpr = ae1, trueBranch = algitemlst, elseIfBranch = elseifexpitemlist, elseBranch = elseitemlist),ht2)
       equation
         trueBranch = (ae1,algitemlst);
         branches1 = (trueBranch :: elseifexpitemlist);
@@ -765,7 +762,7 @@ algorithm
       then
         env1;
     // assert(true, ...) gives nothing!
-    case(env, Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+    case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
         (_,econd,_,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true);
@@ -773,7 +770,7 @@ algorithm
       then
         env;
     // assert(false, ...) gives error!
-    case(env, Absyn.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
+    case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
         (_,econd,_,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true);
@@ -784,11 +781,11 @@ algorithm
       then
         fail();
   end matchcontinue;
-end evaluateAlgorithm;
+end evaluateStatement;
 
 protected function evaluateIfStatementLst "
   Evaluates all parts of a if statement (i.e. a list of exp  statements)"
-  input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inIfs;
+  input list<tuple<Absyn.Exp, list<SCode.Statement>>> inIfs;
   input Env.Env env;
   input HashTable2.HashTable ht2;
   output Env.Env oenv;
@@ -796,8 +793,8 @@ algorithm oenv := matchcontinue(inIfs,env,ht2)
   local
       Values.Value value;
       Absyn.Exp ae1;
-      list<Absyn.AlgorithmItem> algitemlst;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
+      list<SCode.Statement> algitemlst;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> algrest;
       Env.Env env1;
 
   case({},env,ht2) then env;
@@ -817,8 +814,8 @@ protected function evaluatePartOfIfStatement "function: evaluatePartOfIfStatemen
   Note that we are sending the expression as an value, so that it does not need to be evaluated twice."
   input Values.Value inValue;
   input Absyn.Exp inExp;
-  input list<Absyn.AlgorithmItem> inAbsynAlgorithmItemLst;
-  input list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
+  input list<SCode.Statement> inAbsynAlgorithmItemLst;
+  input list<tuple<Absyn.Exp, list<SCode.Statement>>> inTplAbsynExpAbsynAlgorithmItemLstLst;
   input Env.Env env;
   input HashTable2.HashTable ht2;
   output Env.Env oenv;
@@ -827,8 +824,8 @@ algorithm
     local
       Env.Env env1;
       Boolean exp_val;
-      list<Absyn.AlgorithmItem> algitemlst;
-      list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> algrest;
+      list<SCode.Statement> algitemlst;
+      list<tuple<Absyn.Exp, list<SCode.Statement>>> algrest;
       String estr,tstr;
       tuple<DAE.TType, Option<Absyn.Path>> vtype;
       Values.Value value;
@@ -906,12 +903,12 @@ Evaluates a forloop while the for-values are in an array."
   input Env.Env env; 
   input String varName;
   input list<Values.Value> forValues;
-  input list<Absyn.AlgorithmItem> statements;
+  input list<SCode.Statement> statements;
   input HashTable2.HashTable ht2;
   output Env.Env oenv;
 algorithm oenv:= matchcontinue(env,varName,forValues,statements,ht2)
   local
-    list<Absyn.AlgorithmItem> statements;
+    list<SCode.Statement> statements;
     Values.Value value;
     list<Values.Value> values;
     Env.Env env1,env2,env3;
@@ -931,7 +928,7 @@ protected function evaluateForLoopRange "Function: evaluateForLoopArray
 Evaluates a forloop while the for-values are a range ex. 1:1:10."
   input Env.Env env;
   input String varName;
-  input list<Absyn.AlgorithmItem> statements;
+  input list<SCode.Statement> statements;
   input Values.Value start;
   input Values.Value step;
   input Values.Value stop;
@@ -939,7 +936,7 @@ Evaluates a forloop while the for-values are a range ex. 1:1:10."
   output Env.Env oenv;
 algorithm oenv:= matchcontinue(env,varName,statements,start,step,stop,ht2)
   local    
-    list<Absyn.AlgorithmItem> statements;
+    list<SCode.Statement> statements;
     Values.Value newVal;
     list<Values.Value> values;
     Env.Env env1,env2,env3;
@@ -968,14 +965,14 @@ If true, evaluate body then update condition and call itself again.
 "
   input Values.Value cond "Current condition, Values.( true/false)";
   input Absyn.Exp updateExp "The expression to generate next condition";
-  input list<Absyn.AlgorithmItem> algitemlst "The statements in the body";
+  input list<SCode.Statement> algitemlst "The statements in the body";
   input Env.Env env;
   input HashTable2.HashTable ht2;
   output Env.Env oenv;
 algorithm oenv := matchcontinue(cond,updateExp,algitemlst,env,ht2)
   local
-    Absyn.AlgorithmItem algi;
-    list<Absyn.AlgorithmItem> algis;
+    SCode.Statement algi;
+    list<SCode.Statement> algis;
     Env.Env env1,env2;
     Values.Value value, value2;
     DAE.Exp e1;
@@ -993,27 +990,22 @@ end evaluateConditionalStatement;
 protected function evaluateConditionalStatement2 "
 A intermediate-function for evaluation algorithm statements.
 "
-input list<Absyn.AlgorithmItem> inalgs;
+input list<SCode.Statement> stmts;
 input Env.Env env;
 input HashTable2.HashTable ht2;
 output Env.Env oenv;
-algorithm oenv := matchcontinue(inalgs,env,ht2)
+algorithm oenv := matchcontinue(stmts,env,ht2)
   local
-    Absyn.Algorithm alg;
+    SCode.Statement stmt;
     Env.Env env1,env2;
-    list<Absyn.AlgorithmItem> rest;
+    list<SCode.Statement> rest;
   case({},env,ht2) then env;
-  case(Absyn.ALGORITHMITEM(alg,_)::rest,env,ht2)
+  case(stmt::rest,env,ht2)
     equation
-      env1 = evaluateAlgorithm(env,alg,ht2);
+      env1 = evaluateStatement(env,stmt,ht2);
       env2 = evaluateConditionalStatement2(rest,env1,ht2);
       then
         env2;
-  case(Absyn.ALGORITHMITEMANN(_)::rest,env,ht2)
-    equation
-      env1 = evaluateConditionalStatement2(rest,env,ht2);
-    then
-      env1;
 end matchcontinue;
 end evaluateConditionalStatement2;
 

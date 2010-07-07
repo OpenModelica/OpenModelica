@@ -77,7 +77,7 @@ algorithm
       equation
         left = fromExpExpToAbsynExp(exp1);
         right = fromExpExpToAbsynExp(exp2);
-        stmt = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE())};
+        stmt = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE(),Absyn.dummyInfo /* TODO: Use the elementsource from the DAE.EQUATION? */)};
         localAccList1 = listAppend(localAccList1,stmt);
         (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);

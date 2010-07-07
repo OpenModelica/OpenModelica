@@ -1405,17 +1405,17 @@ equation returns [void* ast]
 			{
                 if (fa)
 				{
-                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none());
+                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 				else if (eq1 && eq2)
 				{
                     ast = mk_cons(eq2,mk_nil());
                     ast = Absyn__FUNCTIONARGS(mk_cons(eq1,ast),mk_nil());
-                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none());
+                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 				else
 				{
-                    ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none());
+                    ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 			}
 		)
@@ -1463,17 +1463,17 @@ algorithm returns [void* ast]
 	  		    // Commented out because we don't use failure or equality in algorithms!
 				if (fa) // adrpo: 2009-10-27 is actually used in DAE.isNotVar!
 				{
-                  ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none());
+                  ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 				else if (ea1 && ea2)
 				{
                   ast = mk_cons(ea2,mk_nil());
                   ast = Absyn__FUNCTIONARGS(mk_cons(ea1,ast),mk_nil());
-                  ast = Absyn__EQUATIONITEM(Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none());
+                  ast = Absyn__EQUATIONITEM(Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 				else
 				{
-                  ast = Absyn__ALGORITHMITEM(ast,cmt ? mk_some(cmt) : mk_none());
+                  ast = Absyn__ALGORITHMITEM(ast,cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 			}
 		)

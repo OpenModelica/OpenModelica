@@ -512,7 +512,7 @@ algorithm
       equation
         lhs = Absyn.CREF(Absyn.CREF_IDENT(var,{}));
         rhs = Absyn.CREF(Absyn.CREF_IDENT(localVar,{}));
-        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(lhs,rhs),NONE())};
+        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(lhs,rhs),NONE(),Absyn.dummyInfo)};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
 
         (localCache,temp1,temp3,localConstTagEnv) = renameMain(expr,localVar,localAsBinds,localCache,localEnv,localConstTagEnv);
@@ -534,7 +534,7 @@ algorithm
         Absyn.Exp rhs;
       equation
         rhs = Absyn.CREF(Absyn.CREF_IDENT(localVar,{}));
-        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(cr),rhs),NONE())};
+        localAsBinds2 = {Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(Absyn.CREF(cr),rhs),NONE(),Absyn.dummyInfo)};
         localAsBinds = listAppend(localAsBinds,localAsBinds2);
 
         pat = DFA.RP_WILDCARD(localVar);

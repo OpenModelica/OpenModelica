@@ -3003,14 +3003,15 @@ algorithm
       list<Absyn.EquationItem> res_1,res;
       Absyn.Equation equation_1,equation_;
       Option<Absyn.Comment> cmt;
+      Absyn.Info info;
       Absyn.ComponentRef old_comp,new_comp;
     case ({},_,_) then {};  /* the old name for the component */
-    case ((Absyn.EQUATIONITEM(equation_ = equation_,comment = cmt) :: res),old_comp,new_comp)
+    case ((Absyn.EQUATIONITEM(equation_ = equation_,comment = cmt,info=info) :: res),old_comp,new_comp)
       equation
         res_1 = renameComponentInEquationList(res, old_comp, new_comp);
         equation_1 = renameComponentInEquation(equation_, old_comp, new_comp);
       then
-        (Absyn.EQUATIONITEM(equation_1,cmt) :: res_1);
+        (Absyn.EQUATIONITEM(equation_1,cmt,info) :: res_1);
     case ((equation_ :: res),old_comp,new_comp)
       local Absyn.EquationItem equation_1,equation_;
       equation
@@ -11058,12 +11059,13 @@ algorithm
       String str2,str,res;
       Absyn.ComponentRef model_;
       Absyn.Program p;
+      Absyn.Info info;
       Integer n;
     case (model_,p,n)
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        Absyn.EQUATIONITEM(eq,cmt) = getNthConnectionitemInClass(cdef, n);
+        Absyn.EQUATIONITEM(equation_ = eq, comment = cmt) = getNthConnectionitemInClass(cdef, n);
         str2 = getStringComment(cmt);
         str = getConnectionStr(eq);
         res = Util.stringAppendList({"{",str,", ",str2,"}"});
@@ -11132,7 +11134,7 @@ algorithm
       equation
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},w,ts), p);
       then
         ("Ok",newp);
@@ -11142,7 +11144,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),NONE(),Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_),ts), p);
       then
         ("Ok",newp);
@@ -11151,7 +11153,7 @@ algorithm
         modelpath = Absyn.crefToPath(model_);
         cdef = getPathedClassInProgram(modelpath, p);
         cmt = annotationListToAbsynComment(nargs, NONE);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},w,ts), p);
       then
         ("Ok",newp);
@@ -11161,7 +11163,7 @@ algorithm
         cdef = getPathedClassInProgram(modelpath, p);
         package_ = Absyn.stripLast(modelpath);
         cmt = annotationListToAbsynComment(nargs, NONE);
-        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt));
+        newcdef = addToEquation(cdef, Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),cmt,Absyn.dummyInfo));
         newp = updateProgram(Absyn.PROGRAM({newcdef},Absyn.WITHIN(package_),ts), p);
       then
         ("Ok",newp);
@@ -11635,13 +11637,14 @@ algorithm
       list<Absyn.EquationItem> es,es_1;
       String cmt;
       Absyn.EquationItem e;
-    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),comment = eqcmt) :: es),cr1,cr2,cmt)
+      Absyn.Info info;
+    case ((Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),comment = eqcmt, info = info) :: es),cr1,cr2,cmt)
       equation
         true = Absyn.crefEqual(cr1, c1);
         true = Absyn.crefEqual(cr2, c2);
         eqcmt_1 = setClassCommentInCommentOpt(eqcmt, cmt);
       then
-        (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt_1) :: es);
+        (Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(c1,c2),eqcmt_1,info) :: es);
     case ((e :: es),cr1,cr2,cmt)
       equation
         es_1 = setConnectionCommentInEquations(es, cr1, cr2, cmt);
@@ -16942,10 +16945,11 @@ algorithm
     local
       Option<Absyn.Comment> cmt;
       Absyn.Equation eqn,eqn1;
-    case(Absyn.EQUATIONITEM(eqn,cmt))
+      Absyn.Info info;
+    case(Absyn.EQUATIONITEM(eqn,cmt,info))
       equation
         eqn1 = transformFlatEquation(eqn);
-      then Absyn.EQUATIONITEM(eqn1,cmt);
+      then Absyn.EQUATIONITEM(eqn1,cmt,info);
     case(eqnitem as Absyn.EQUATIONITEMANN(annotation_=_))
     then eqnitem;
   end matchcontinue;
@@ -17107,10 +17111,11 @@ algorithm
     local
       Option<Absyn.Comment> cmt;
       Absyn.Algorithm alg,alg1;
-    case(Absyn.ALGORITHMITEM(alg,cmt))
+      Absyn.Info info;
+    case(Absyn.ALGORITHMITEM(alg,cmt,info))
       equation
         alg1 = transformFlatAlgorithm(alg);
-      then Absyn.ALGORITHMITEM(alg1,cmt);
+      then Absyn.ALGORITHMITEM(alg1,cmt,info);
     case(algitem as Absyn.ALGORITHMITEMANN(_)) then algitem;
   end matchcontinue;
 end transformFlatAlgorithmItem;

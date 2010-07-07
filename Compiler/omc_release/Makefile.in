@@ -42,4 +42,4 @@ include $(srcdir)/Makefile.compiler_subdirs.common
 	# You're using the proper Unix Makefile. Thanks for making my life easier.
 
 $(PROG): $(SRCO) $(SUBDIRS) $(top_builddir)/c_runtime/sendData/*.cpp
-	g++ $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS) $(PLTPKGFLAGS)
+	g++ $(CFLAGS) -o $(PROG)$(EXEEXT) $(SRCO) $(AST) $(RTOBJ) $(LDFLAGS)

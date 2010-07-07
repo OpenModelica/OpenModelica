@@ -174,8 +174,8 @@ uniontype ClassDef
     list<Element>              elementLst          "the list of elements";
     list<Equation>             normalEquationLst   "the list of equations";
     list<Equation>             initialEquationLst  "the list of initial equations";
-    list<Algorithm>            normalAlgorithmLst  "the list of algorithms";
-    list<Algorithm>            initialAlgorithmLst "the list of initial algorithms";
+    list<AlgorithmSection>     normalAlgorithmLst  "the list of algorithms";
+    list<AlgorithmSection>     initialAlgorithmLst "the list of initial algorithms";
     Option<Absyn.ExternalDecl> externalDecl        "used by external functions" ;
     list<Annotation>           annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>            comment             "the class comment";
@@ -187,8 +187,8 @@ uniontype ClassDef
     list<Element>    elementLst          "the list of elements";
     list<Equation>   normalEquationLst   "the list of equations";
     list<Equation>   initialEquationLst  "the list of initial equations";
-    list<Algorithm>  normalAlgorithmLst  "the list of algorithms";
-    list<Algorithm>  initialAlgorithmLst "the list of initial algorithms";
+    list<AlgorithmSection>  normalAlgorithmLst  "the list of algorithms";
+    list<AlgorithmSection>  initialAlgorithmLst "the list of initial algorithms";
     list<Annotation> annotationLst       "the list of annotations found in between class elements, equations and algorithms";
     Option<Comment>  comment             "the class comment";
   end CLASS_EXTENDS;
@@ -310,17 +310,115 @@ uniontype EEquation
 
 end EEquation;
 
-public
-uniontype Algorithm "- Algorithms
+public uniontype AlgorithmSection "- Algorithms
   The Absyn module uses the terminology from the
   grammar, where algorithm means an algorithmic
   statement. But here, an Algorithm means a whole
   algorithm section."
   record ALGORITHM "the algorithm section"
-    list<Absyn.Algorithm> statements "the algorithm statements" ;
+    list<Statement> statements "the algorithm statements" ;
   end ALGORITHM;
 
-end Algorithm;
+end AlgorithmSection;
+
+public uniontype Statement "The Statement type describes one algorithm statement in an algorithm section."
+  record ALG_ASSIGN
+    Absyn.Exp assignComponent "assignComponent" ;
+    Absyn.Exp value "value" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_ASSIGN;
+
+  record ALG_IF
+    Absyn.Exp boolExpr;
+    list<Statement> trueBranch;
+    list<tuple<Absyn.Exp, list<Statement>>> elseIfBranch;
+    list<Statement> elseBranch;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_IF;
+
+  record ALG_FOR
+    Absyn.ForIterators iterators;
+    list<Statement> forBody "forBody" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_FOR;
+
+  record ALG_WHILE
+    Absyn.Exp boolExpr "boolExpr" ;
+    list<Statement> whileBody "whileBody" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_WHILE;
+
+  record ALG_WHEN_A
+    list<tuple<Absyn.Exp, list<Statement>>> branches;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_WHEN_A;
+
+  record ALG_NORETCALL
+    Absyn.ComponentRef functionCall "functionCall" ;
+    Absyn.FunctionArgs functionArgs "functionArgs; general fcalls without return value" ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_NORETCALL;
+
+  record ALG_RETURN
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_RETURN;
+
+  record ALG_BREAK
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_BREAK;
+
+  // Part of MetaModelica extension. KS
+  record ALG_TRY
+    list<Statement> tryBody;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_TRY;
+
+  record ALG_CATCH
+    list<Statement> catchBody;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_CATCH;
+
+  record ALG_THROW
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_THROW;
+
+  record ALG_MATCHCASES
+    list<Absyn.Exp> switchCases;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_MATCHCASES;
+
+  record ALG_GOTO
+    String labelName;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_GOTO;
+
+  record ALG_LABEL
+    String labelName;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_LABEL;
+
+  record ALG_FAILURE
+    Statement equ;
+    Option<Comment> comment;
+    Absyn.Info info;
+  end ALG_FAILURE;
+  //-------------------------------
+
+end Statement;
 
 public
 uniontype Element "- Elements
@@ -1035,7 +1133,7 @@ algorithm
       String s1,res,s2,s3,baseClassName;
       list<Element> elts;
       list<Equation> eqns,ieqns;
-      list<Algorithm> alg,ial;
+      list<AlgorithmSection> alg,ial;
       Option<Absyn.ExternalDecl> ext;
       Absyn.TypeSpec typeSpec;
       Mod mod;
@@ -1498,8 +1596,8 @@ protected function classDefEqual
          list<Annotation> anns1,anns2;
          list<Equation> eqns1,eqns2;
          list<Equation> ieqns1,ieqns2;
-         list<Algorithm> algs1,algs2;
-         list<Algorithm> ialgs1,ialgs2;
+         list<AlgorithmSection> algs1,algs2;
+         list<AlgorithmSection> ialgs1,ialgs2;
          list<Boolean> blst1,blst2,blst3,blst4,blst5,blst6,blst;
          Absyn.ElementAttributes attr1,attr2;
          Absyn.TypeSpec tySpec1, tySpec2;
@@ -1618,13 +1716,13 @@ end subscriptEqual;
 protected function algorithmEqual
 "function algorithmEqual
   Returns true if two Algorithm's are equal."
-  input Algorithm alg1;
-  input Algorithm alg2;
+  input AlgorithmSection alg1;
+  input AlgorithmSection alg2;
   output Boolean equal;
 algorithm
   equal := matchcontinue(alg1,alg2)
     local
-      list<Absyn.Algorithm> a1,a2;
+      list<Statement> a1,a2;
       list<Boolean> blst;
     case(ALGORITHM(a1),ALGORITHM(a2))
       equation
@@ -1637,23 +1735,26 @@ end algorithmEqual;
 protected function algorithmEqual2
 "function algorithmEqual2
   Returns true if two Absyn.Algorithm are equal."
-  input Absyn.Algorithm a1;
-  input Absyn.Algorithm a2;
+  input Statement ai1;
+  input Statement ai2;
   output Boolean equal;
 algorithm
-  equal := matchcontinue(a1,a2)
+  equal := matchcontinue(ai1,ai2)
     local
+      Absyn.Algorithm alg1,alg2;
+      Statement a1,a2;
       Absyn.ComponentRef cr1,cr2;
       Absyn.Exp e1,e2,e11,e12,e21,e22;
       Boolean b1,b2;
 
-    case(Absyn.ALG_ASSIGN(Absyn.CREF(cr1),e1),Absyn.ALG_ASSIGN(Absyn.CREF(cr2),e2))
+    case(ALG_ASSIGN(assignComponent = Absyn.CREF(cr1), value = e1),
+        ALG_ASSIGN(assignComponent = Absyn.CREF(cr2), value = e2))
       equation
         b1 = Absyn.crefEqual(cr1,cr2);
         b2 = Absyn.expEqual(e1,e2);
         equal = boolAnd(b1,b2);
       then equal;
-    case(Absyn.ALG_ASSIGN(e11 as Absyn.TUPLE(_),e12),Absyn.ALG_ASSIGN(e21 as Absyn.TUPLE(_),e22))
+    case(ALG_ASSIGN(assignComponent = e11 as Absyn.TUPLE(_), value = e12),ALG_ASSIGN(assignComponent = e21 as Absyn.TUPLE(_), value = e22))
       equation
         b1 = Absyn.expEqual(e11,e21);
         b2 = Absyn.expEqual(e12,e22);
@@ -1662,20 +1763,18 @@ algorithm
     // base it on equality for now as the ones below are not implemented!
     case(a1, a2)
       equation
-        equality(a1 = a2);
+        Absyn.ALGORITHMITEM(algorithm_ = alg1) = statementToAlgorithmItem(a1);
+        Absyn.ALGORITHMITEM(algorithm_ = alg2) = statementToAlgorithmItem(a2);
+        // Don't compare comments and line numbers
+        equality(alg1 = alg2);
       then
         true;
-    case(a1, a2)
-      equation
-        failure(equality(a1 = a2));
-      then
-        false;
     // maybe replace failure/equality with these:
-    case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false; // TODO: ALG_IF
-    case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false; // TODO: ALG_FOR
-    case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false; // TODO: ALG_WHILE
-    case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; //TODO: ALG_WHILE
-    case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; //TODO: ALG_NORETCALL
+    //case(Absyn.ALG_IF(_,_,_,_),Absyn.ALG_IF(_,_,_,_)) then false; // TODO: ALG_IF
+    //case (Absyn.ALG_FOR(_,_),Absyn.ALG_FOR(_,_)) then false; // TODO: ALG_FOR
+    //case (Absyn.ALG_WHILE(_,_),Absyn.ALG_WHILE(_,_)) then false; // TODO: ALG_WHILE
+    //case(Absyn.ALG_WHEN_A(_,_,_),Absyn.ALG_WHEN_A(_,_,_)) then false; //TODO: ALG_WHILE
+    //case (Absyn.ALG_NORETCALL(_,_),Absyn.ALG_NORETCALL(_,_)) then false; //TODO: ALG_NORETCALL
     case(_,_) then false;
    end matchcontinue;
  end algorithmEqual2;
@@ -2291,7 +2390,229 @@ outConst := matchcontinue(inConst1, inConst2)
   case (_,DISCRETE) then DISCRETE;
   case (_,_) then VAR;
   end matchcontinue;
-end variabilityOr;           
+end variabilityOr;
+
+public function statementToAlgorithmItem
+"Transforms SCode.Statement back to Absyn.AlgorithmItem. Discards the comment.
+Only to be used to unparse statements again."
+  input Statement stmt;
+  output Absyn.AlgorithmItem algi; 
+algorithm
+  algi := matchcontinue stmt
+    local
+      Absyn.ComponentRef functionCall;
+      Absyn.Exp assignComponent;
+      Absyn.Exp boolExpr;
+      Absyn.Exp value;
+      Absyn.ForIterators iterators;
+      Absyn.FunctionArgs functionArgs;
+      Absyn.Info info;
+      list<Absyn.Exp> switchCases,conditions;
+      list<list<Statement>> stmtsList;
+      list<Statement> body,trueBranch,elseBranch;
+      list<tuple<Absyn.Exp, list<Statement>>> branches;
+      Option<Comment> comment;
+      Statement equ;
+      String labelName;
+      Absyn.AlgorithmItem alg;
+      list<Absyn.AlgorithmItem> algs1,algs2;
+      list<list<Absyn.AlgorithmItem>> algsLst;
+      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> abranches;
+      
+    case ALG_ASSIGN(assignComponent,value,comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(assignComponent,value),NONE(),info);
+    
+    case ALG_IF(boolExpr,trueBranch,branches,elseBranch,comment,info)
+      equation
+        algs1 = Util.listMap(trueBranch,statementToAlgorithmItem);
+
+        conditions = Util.listMap(branches, Util.tuple21);
+        stmtsList = Util.listMap(branches, Util.tuple22);
+        algsLst = Util.listListMap(stmtsList, statementToAlgorithmItem);
+        abranches = Util.listThreadTuple(conditions,algsLst);
+
+        algs2 = Util.listMap(elseBranch,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_IF(boolExpr,algs1,abranches,algs2),NONE(),info);
+    
+    case ALG_FOR(iterators,body,comment,info)
+      equation
+        algs1 = Util.listMap(body,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_FOR(iterators,algs1),NONE(),info);
+  
+    case ALG_WHILE(boolExpr,body,comment,info)
+      equation
+        algs1 = Util.listMap(body,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(boolExpr,algs1),NONE(),info);
+        
+    case ALG_WHEN_A(branches,comment,info)
+      equation
+        (boolExpr::conditions) = Util.listMap(branches, Util.tuple21);
+        stmtsList = Util.listMap(branches, Util.tuple22);
+        (algs1::algsLst) = Util.listListMap(stmtsList, statementToAlgorithmItem);
+        abranches = Util.listThreadTuple(conditions,algsLst);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_WHEN_A(boolExpr,algs1,abranches),NONE(),info);
+
+    case ALG_NORETCALL(functionCall,functionArgs,comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(functionCall,functionArgs),NONE(),info);
+    
+    case ALG_RETURN(comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_RETURN(),NONE(),info);
+    
+    case ALG_BREAK(comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),NONE(),info);
+    
+    case ALG_TRY(body,comment,info)
+      equation
+        algs1 = Util.listMap(body,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algs1),NONE(),info);
+        
+    case ALG_CATCH(body,comment,info)
+      equation
+        algs1 = Util.listMap(body,statementToAlgorithmItem);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_CATCH(algs1),NONE(),info);
+    
+    case ALG_THROW(comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),NONE(),info);
+    
+    case ALG_MATCHCASES(switchCases,comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_MATCHCASES(switchCases),NONE(),info);
+      
+    case ALG_GOTO(labelName,comment,info)
+    then Absyn.ALGORITHMITEM(Absyn.ALG_GOTO(labelName),NONE(),info);
+    
+    case ALG_FAILURE(equ,comment,info)
+      equation
+        alg = statementToAlgorithmItem(equ);
+      then Absyn.ALGORITHMITEM(Absyn.ALG_FAILURE(alg),NONE(),info);
+  end matchcontinue;
+end statementToAlgorithmItem;
+
+protected function findIteratorInStatement
+  input String inString;
+  input Statement inAlg;
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inAlg)
+    local
+      String id;
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
+      list<list<tuple<Absyn.ComponentRef, Integer>>> lst_lst;
+      Absyn.Exp e_1,e_2;
+      list<Statement> algLst_1,algLst_2;
+      list<tuple<Absyn.Exp, list<Statement>>> branches, elseIfBranch;
+      list<Absyn.ForIterator> forIterators;
+      Absyn.FunctionArgs funcArgs;
+      Statement algItem;
+      Boolean bool;
+
+      case (id,ALG_ASSIGN(assignComponent = e_1, value = e_2))
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e_1);
+          lst_2=Absyn.findIteratorInExp(id,e_2);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,ALG_IF(boolExpr = e_1, trueBranch = algLst_1, elseIfBranch = elseIfBranch, elseBranch = algLst_2))
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e_1);
+          lst_2=findIteratorInStatements(id,algLst_1);
+          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
+          lst_4=findIteratorInStatements(id,algLst_2);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
+        then lst;
+/*      case (id, ALG_FOR(forIterators,algLst_1))
+        equation
+          true=iteratorPresentAmongIterators(id,forIterators);
+          lst=findIteratorInForIteratorsBounds(id,forIterators);
+        then lst;
+      case (id, ALG_FOR(forIterators,algLst_1))
+        equation
+          false=iteratorPresentAmongIterators(id,forIterators);
+          lst_1=findIteratorInStatements(id,algLst_1);
+          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
+          lst=listAppend(lst_1,lst_2);
+        then lst; */
+      case (id, ALG_FOR(iterators = forIterators, forBody = algLst_1))
+        equation
+          lst_1=findIteratorInStatements(id,algLst_1);
+          (bool,lst_2)=Absyn.findIteratorInForIteratorsBounds2(id,forIterators);
+          lst_1=Util.if_(bool, {}, lst_1);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id, ALG_WHILE(boolExpr = e_1, whileBody = algLst_1))
+        equation
+          lst_1=Absyn.findIteratorInExp(id,e_1);
+          lst_2=findIteratorInStatements(id,algLst_1);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+      case (id,ALG_WHEN_A(branches = {})) then {};
+      case (id,ALG_WHEN_A(branches = (e_1,algLst_1)::branches))
+        equation
+          lst_1=Absyn.findIteratorInExpLst(id,Util.listMap(branches,Util.tuple21));
+          lst_lst = Util.listMap1r(Util.listMap(branches,Util.tuple22),findIteratorInStatements,id);
+          lst=Util.listFlatten(lst_1::lst_lst);
+        then lst;
+      case (id,ALG_NORETCALL(functionArgs = funcArgs))
+        equation
+          lst=Absyn.findIteratorInFunctionArgs(id,funcArgs);
+        then lst;
+      case (id,ALG_TRY(tryBody = algLst_1))
+        equation
+          lst=findIteratorInStatements(id,algLst_1);
+        then lst;
+      case (id,ALG_CATCH(catchBody = algLst_1))
+        equation
+          lst=findIteratorInStatements(id,algLst_1);
+        then lst;
+      case (_,_) then {};
+  end matchcontinue;
+end findIteratorInStatement;
+
+public function findIteratorInStatements "
+Used by Inst.instForStatement
+"
+//This function is not tail-recursive, and I don't know how to fix it -- alleb
+  input String inString;
+  input list<Statement> inAlgItemLst;
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst := matchcontinue(inString,inAlgItemLst)
+    local
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2;
+      String id;
+      list<Statement> rest;
+      Statement algItem;
+      case (id,{}) then {};
+      case (id,algItem::rest)
+        equation
+          lst_1=findIteratorInStatement(id,algItem);
+          lst_2=findIteratorInStatements(id,rest);
+          lst=listAppend(lst_1,lst_2);
+        then lst;
+  end matchcontinue;
+end findIteratorInStatements;
+
+protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
+  input String inString;
+  input list<tuple<Absyn.Exp, list<Statement>>> inElseIfBranch;
+  output list<tuple<Absyn.ComponentRef, Integer>> outLst;
+algorithm
+    outLst:=matchcontinue(inString,inElseIfBranch)
+    local
+      list<tuple<Absyn.ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
+      String id;
+      list<tuple<Absyn.Exp, list<Statement>>> rest;
+      Absyn.Exp exp;
+      list<Statement> algItemLst;
+      case (id,{}) then {};
+      case (id,(exp,algItemLst)::rest)
+        equation
+          lst_1=Absyn.findIteratorInExp(id,exp);
+          lst_2=findIteratorInStatements(id,algItemLst);
+          lst_3=findIteratorInElseIfBranch(id,rest);
+          lst=Util.listFlatten({lst_1,lst_2,lst_3});
+        then lst;
+  end matchcontinue;
+end findIteratorInElseIfBranch;
 
 end SCode;
 

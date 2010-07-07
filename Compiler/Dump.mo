@@ -5809,12 +5809,15 @@ algorithm
       Absyn.Equation equation_;
       Option<Absyn.Comment> comment;
       Absyn.Annotation annotation_;
-    case Absyn.EQUATIONITEM(equation_,comment)
+      Absyn.Info info;
+    case Absyn.EQUATIONITEM(equation_,comment,info)
       equation
         Print.printBuf("\nrecord Absyn.EQUATIONITEM equation_ = ");
         printEquationAsCorbaString(equation_);
         Print.printBuf(", comment = ");
         printOption(comment, printCommentAsCorbaString);
+        Print.printBuf(", info = ");
+        printInfo(info);
         Print.printBuf(" end Absyn.EQUATIONITEM;");
       then ();
     case Absyn.EQUATIONITEMANN(annotation_)
@@ -5908,12 +5911,15 @@ algorithm
       Absyn.Algorithm algorithm_;
       Option<Absyn.Comment> comment;
       Absyn.Annotation annotation_;
-    case Absyn.ALGORITHMITEM(algorithm_,comment)
+      Absyn.Info info;
+    case Absyn.ALGORITHMITEM(algorithm_,comment,info)
       equation
         Print.printBuf("\nrecord Absyn.ALGORITHMITEM algorithm_ = ");
         printAlgorithmAsCorbaString(algorithm_);
         Print.printBuf(", comment = ");
         printOption(comment, printCommentAsCorbaString);
+        Print.printBuf(", info = ");
+        printInfo(info);
         Print.printBuf(" end Absyn.ALGORITHMITEM;");
       then ();
     case Absyn.ALGORITHMITEMANN(annotation_)

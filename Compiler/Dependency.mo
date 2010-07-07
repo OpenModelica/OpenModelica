@@ -659,7 +659,7 @@ algorithm
      Absyn.ForIterators forIter;
    case({},optPath,cname,(d,p,env,ht)) then d;
 
-   case(Absyn.EQUATIONITEM(Absyn.EQ_IF(e,teqns,elseifeqns,feqns),_)::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_IF(e,teqns,elseifeqns,feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsinElseIfEqns(elseifeqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(teqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
@@ -667,36 +667,36 @@ algorithm
      d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
    then d;
 
-   case(Absyn.EQUATIONITEM(Absyn.EQ_EQUALS(e1,e2),_)::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_EQUALS(e1,e2))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInExp(e1,optPath,cname,(d,p,env,ht));
      d = buildClassDependsInExp(e2,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
    then d;
 
-   case(Absyn.EQUATIONITEM(Absyn.EQ_CONNECT(_,_),_)::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_CONNECT(_,_))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
    then d;
 
-   case(Absyn.EQUATIONITEM(Absyn.EQ_FOR({(_,SOME(e))},feqns),_)::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,SOME(e))},feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
    then d;
 
    /* adrpo: TODO! add the full ForIterators support */
-   case(Absyn.EQUATIONITEM(Absyn.EQ_FOR({(_,NONE)},feqns),_)::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_FOR({(_,NONE)},feqns))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsinEqns(feqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
    then d;
 
-   case(Absyn.EQUATIONITEM(Absyn.EQ_WHEN_E(e,whenEqns,elseWhenEqns),_)::eqns,optPath,cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_WHEN_E(e,whenEqns,elseWhenEqns))::eqns,optPath,cname,(d,p,env,ht)) equation
      d = buildClassDependsInExp(e,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(whenEqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinElseIfEqns(elseWhenEqns,optPath,cname,(d,p,env,ht));
      d = buildClassDependsinEqns(eqns,optPath,cname,(d,p,env,ht));
    then d;
 
-   case(Absyn.EQUATIONITEM(Absyn.EQ_NORETCALL(cr,fargs),_)::eqns,optPath as SOME(cname2),cname,(d,p,env,ht)) equation
+   case(Absyn.EQUATIONITEM(equation_ = Absyn.EQ_NORETCALL(cr,fargs))::eqns,optPath as SOME(cname2),cname,(d,p,env,ht)) equation
      d = buildClassDependsInFuncargs(fargs,optPath,cname,(d,p,env,ht));
      path = Absyn.crefToPath(cr);
      usesName = absynMakeFullyQualified(path,optPath,cname,env,p);

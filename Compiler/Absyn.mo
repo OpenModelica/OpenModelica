@@ -452,6 +452,7 @@ uniontype EquationItem "Several component declarations can be grouped together i
   record EQUATIONITEM
     Equation equation_ "equation" ;
     Option<Comment> comment "comment" ;
+    Info info "line number" ;
   end EQUATIONITEM;
 
   record EQUATIONITEMANN
@@ -465,6 +466,7 @@ uniontype AlgorithmItem "Info specific for an algorithm item."
   record ALGORITHMITEM
     Algorithm algorithm_ "algorithm" ;
     Option<Comment> comment "comment" ;
+    Info info "line number" ;
   end ALGORITHMITEM;
 
   record ALGORITHMITEMANN
@@ -1197,11 +1199,12 @@ algorithm
       TypeA arg,arg_1;
       Equation eq,eq_1;
       Option<Comment> oc;
-    case(EQUATIONITEM(eq,oc),rel,arg)
+      Info info;
+    case(EQUATIONITEM(eq,oc,info),rel,arg)
       equation
         ((eq_1,arg_1)) = traverseEquation(eq,rel,arg);
       then
-        ((EQUATIONITEM(eq_1,oc),arg_1));
+        ((EQUATIONITEM(eq_1,oc,info),arg_1));
     case(ei,rel,arg) then ((ei,arg));
   end matchcontinue;
 end traverseEquationItem;
@@ -1366,11 +1369,12 @@ algorithm
       Algorithm alg,alg_1;
       Option<Comment> oc;
       AlgorithmItem ai;
-    case(ALGORITHMITEM(alg,oc),rel,arg)
+      Info info;
+    case(ALGORITHMITEM(alg,oc,info),rel,arg)
       equation
         ((alg_1,arg_1)) = traverseAlgorithm(alg,rel,arg);
       then
-        ((ALGORITHMITEM(alg_1,oc),arg_1));
+        ((ALGORITHMITEM(alg_1,oc,info),arg_1));
     case(ai,_,arg) then ((ai,arg));
   end matchcontinue;
 end traverseAlgorithmItem;
@@ -3754,150 +3758,6 @@ algorithm v3 := matchcontinue(v1,v2)
 end matchcontinue;
 end propagateAbsynDirection;
 
-protected function findIteratorInAlgorithmItem
-  input String inString;
-  input AlgorithmItem inAlgItem;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst:=matchcontinue(inString,inAlgItem)
-    local
-      list<tuple<ComponentRef, Integer>> lst;
-      Algorithm alg;
-      String id;
-      case (id,ALGORITHMITEM(algorithm_=alg))
-        equation
-          lst=findIteratorInAlgorithm(id,alg);
-        then lst;
-      case (_,_) then {};
-  end matchcontinue;
-end findIteratorInAlgorithmItem;
-
-protected function findIteratorInAlgorithm
-  input String inString;
-  input Algorithm inAlg;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst:=matchcontinue(inString,inAlg)
-    local
-      String id;
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3,lst_4;
-      Exp e_1,e_2;
-      list<AlgorithmItem> algLst_1,algLst_2;
-      list<tuple<Exp, list<AlgorithmItem>>> elseIfBranch;
-      list<ForIterator> forIterators;
-      FunctionArgs funcArgs;
-      AlgorithmItem algItem;
-      Boolean bool;
-
-      case (id,ALG_ASSIGN(e_1,e_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInExp(id,e_2);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,ALG_IF(e_1,algLst_1,elseIfBranch,algLst_2))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
-          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
-          lst_4=findIteratorInAlgorithmItemLst(id,algLst_2);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3,lst_4});
-        then lst;
-/*      case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          true=iteratorPresentAmongIterators(id,forIterators);
-          lst=findIteratorInForIteratorsBounds(id,forIterators);
-        then lst;
-      case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          false=iteratorPresentAmongIterators(id,forIterators);
-          lst_1=findIteratorInAlgorithmItemLst(id,algLst_1);
-          lst_2=findIteratorInForIteratorsBounds(id,forIterators);
-          lst=listAppend(lst_1,lst_2);
-        then lst; */
-      case (id, ALG_FOR(forIterators,algLst_1))
-        equation
-          lst_1=findIteratorInAlgorithmItemLst(id,algLst_1);
-          (bool,lst_2)=findIteratorInForIteratorsBounds2(id,forIterators);
-          lst_1=Util.if_(bool, {}, lst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id, ALG_WHILE(e_1,algLst_1))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-      case (id,ALG_WHEN_A(e_1,algLst_1,elseIfBranch))
-        equation
-          lst_1=findIteratorInExp(id,e_1);
-          lst_2=findIteratorInAlgorithmItemLst(id,algLst_1);
-          lst_3=findIteratorInElseIfBranch(id,elseIfBranch);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
-        then lst;
-      case (id,ALG_NORETCALL(_,funcArgs))
-        equation
-          lst=findIteratorInFunctionArgs(id,funcArgs);
-        then lst;
-      case (id,ALG_TRY(algLst_1))
-        equation
-          lst=findIteratorInAlgorithmItemLst(id,algLst_1);
-        then lst;
-      case (id,ALG_CATCH(algLst_1))
-        equation
-          lst=findIteratorInAlgorithmItemLst(id,algLst_1);
-        then lst;
-      case (_,_) then {};
-  end matchcontinue;
-end findIteratorInAlgorithm;
-
-public function findIteratorInAlgorithmItemLst"
-Used by Inst.instForStatement
-"
-//This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<AlgorithmItem> inAlgItemLst;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst:=matchcontinue(inString,inAlgItemLst)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2;
-      String id;
-      list<AlgorithmItem> rest;
-      AlgorithmItem algItem;
-      case (id,{}) then {};
-      case (id,algItem::rest)
-        equation
-          lst_1=findIteratorInAlgorithmItem(id,algItem);
-          lst_2=findIteratorInAlgorithmItemLst(id,rest);
-          lst=listAppend(lst_1,lst_2);
-        then lst;
-  end matchcontinue;
-end findIteratorInAlgorithmItemLst;
-
-protected function findIteratorInElseIfBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
-  input String inString;
-  input list<tuple<Exp, list<AlgorithmItem>>> inElseIfBranch;
-  output list<tuple<ComponentRef, Integer>> outLst;
-algorithm
-    outLst:=matchcontinue(inString,inElseIfBranch)
-    local
-      list<tuple<ComponentRef, Integer>> lst,lst_1,lst_2,lst_3;
-      String id;
-      list<tuple<Exp, list<AlgorithmItem>>> rest;
-      Exp exp;
-      list<AlgorithmItem> algItemLst;
-      case (id,{}) then {};
-      case (id,(exp,algItemLst)::rest)
-        equation
-          lst_1=findIteratorInExp(id,exp);
-          lst_2=findIteratorInAlgorithmItemLst(id,algItemLst);
-          lst_3=findIteratorInElseIfBranch(id,rest);
-          lst=Util.listFlatten({lst_1,lst_2,lst_3});
-        then lst;
-  end matchcontinue;
-end findIteratorInElseIfBranch;
-
 protected function findIteratorInElseIfExpBranch //This function is not tail-recursive, and I don't know how to fix it -- alleb
   input String inString;
   input list<tuple<Exp, Exp>> inElseIfBranch;
@@ -4074,7 +3934,7 @@ algorithm
   end matchcontinue;
 end findIteratorInForIteratorsBounds; */
 
-protected function findIteratorInForIteratorsBounds2 "
+public function findIteratorInForIteratorsBounds2 "
 This is a fixed version of the function; it stops looking for the iterator when it finds another iterator
 with the same name. It also returns information about whether it has found such an iterator"
   input String inString;

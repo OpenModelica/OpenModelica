@@ -280,6 +280,7 @@ public function appendFile
 end appendFile;
 
 public function readFile
+"Does not fail. Returns strings describing the error instead."
   input String inString;
   output String outString;
 
