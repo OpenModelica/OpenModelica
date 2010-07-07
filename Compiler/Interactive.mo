@@ -1874,10 +1874,10 @@ algorithm
       local
         list<Values.Value> vals;
         list<String> vars;
-        String omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file;
-        Boolean omcfound,gcc_res,touch_res,rm_res;
+        String omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname;
+        Boolean omcfound,gcc_res,touch_res,rm_res,uname_res;
       equation
-        vars = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
+        vars = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
         omhome = Util.makeValueOrDefault(System.readEnv,"OPENMODELICAHOME","");
         omlib = Util.makeValueOrDefault(System.readEnv,"OPENMODELICALIBRARY","");
         omcpath = omhome +& "/bin/omc" +& System.getExeExt();
@@ -1887,6 +1887,8 @@ algorithm
         usercflags = Util.makeValueOrDefault(System.readEnv,"MODELICAUSERCFLAGS","");
         workdir = System.pwd();
         touch_res = 0 == System.systemCall("touch " +& touch_file);
+        uname_res = 0 == System.systemCall("uname -a > " +& touch_file);
+        uname = System.readFile(touch_file);
         rm_res = 0 == System.systemCall("rm " +& touch_file);
         platform = System.platform();
         senddata = System.getSendDataLibs();
@@ -1899,8 +1901,12 @@ algorithm
                 Values.STRING(workdir),
                 Values.BOOL(touch_res),
                 Values.BOOL(rm_res),
-                Values.STRING(os),Values.STRING(senddata),
-                Values.STRING(gcc),Values.BOOL(gcc_res),Values.STRING(confcmd)};
+                Values.STRING(os),
+                Values.STRING(uname),
+                Values.STRING(senddata),
+                Values.STRING(gcc),
+                Values.BOOL(gcc_res),
+                Values.STRING(confcmd)};
         res = ValuesUtil.valString(Values.RECORD(Absyn.IDENT("OpenModelica.Diagnostics.ImportantValues"),vals,vars,-1));
       then (res,st);
 
