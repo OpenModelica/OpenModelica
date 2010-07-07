@@ -4315,13 +4315,20 @@ algorithm
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
-      Option<DAE.ComponentRef> arrayCref;
-    case (SIMVAR(name, kind, comment, index, isFixed, type_, isDiscrete, arrayCref))
+      DAE.ComponentRef arrayCref;
+    case (SIMVAR(name, kind, comment, index, isFixed, type_, isDiscrete, NONE()))
       equation
         name = DAELow.crefPrefixDer(name);
       then
         SIMVAR(name, DAELow.STATE_DER(), comment, index, isFixed, type_,
-               isDiscrete, arrayCref);
+               isDiscrete, NONE());      
+    case (SIMVAR(name, kind, comment, index, isFixed, type_, isDiscrete, SOME(arrayCref)))
+      equation
+        name = DAELow.crefPrefixDer(name);
+        arrayCref = DAELow.crefPrefixDer(arrayCref);
+      then
+        SIMVAR(name, DAELow.STATE_DER(), comment, index, isFixed, type_,
+               isDiscrete, SOME(arrayCref));
   end matchcontinue;
 end derVarFromStateVar;
 
