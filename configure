@@ -2209,15 +2209,15 @@ fi
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for fpmath" >&5
-$as_echo_n "checking for fpmath... " >&6; }
-if echo $CFLAGS | grep -q -- -fpmath=; then
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for -mfpmath" >&5
+$as_echo_n "checking for -mfpmath... " >&6; }
+if echo $CFLAGS | grep -q -- -mfpmath=; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
-  CFLAGS+=" -fpmath=sse"
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: adding -fpmath=sse" >&5
-$as_echo "adding -fpmath=sse" >&6; }
+  CFLAGS+=" -mfpmath=sse"
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: adding -mfpmath=sse" >&5
+$as_echo "adding -mfpmath=sse" >&6; }
 fi
 
 fi # End x86-specific CFLAGS
