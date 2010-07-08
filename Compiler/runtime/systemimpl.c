@@ -2252,7 +2252,11 @@ void System_5finit(void)
 #endif
 
   /* GCC knows best how to optimize for this CPU */
-  set_cflags("-march=native ${MODELICAUSERCFLAGS}");
+#ifdef __APPLE_CC__
+  set_cflags("-msse2 -mfpmath=sse ${MODELICAUSERCFLAGS}");
+#else
+  set_cflags("-march=native -mfpmath=sse ${MODELICAUSERCFLAGS}");
+#endif
   set_ldflags("-lc_runtime");
 }
 
