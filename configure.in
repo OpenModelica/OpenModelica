@@ -56,9 +56,12 @@ fi
 fi
 
 dnl Simulations spin forever unless -msse2 -mfpmath=sse is set
-AC_MSG_CHECKING([for -mfpmath])
-if echo $CFLAGS | grep -q -- -mfpmath=; then
-  AC_MSG_RESULT([yes])
+dnl Or if -ffloat-store  is set
+AC_MSG_CHECKING([for floating point bugs])
+if echo $CFLAGS | grep -q -- -ffloat-store; then
+  AC_MSG_RESULT([have -ffloat-store])
+if echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
+  AC_MSG_RESULT([have SSE2])
 else
   CFLAGS+=" -msse2 -mfpmath=sse"
   AC_MSG_RESULT([adding -msse2 -mfpmath=sse])

@@ -2209,11 +2209,14 @@ fi
 
 fi
 
-{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for -mfpmath" >&5
-$as_echo_n "checking for -mfpmath... " >&6; }
-if echo $CFLAGS | grep -q -- -mfpmath=; then
-  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for floating point bugs" >&5
+$as_echo_n "checking for floating point bugs... " >&6; }
+if echo $CFLAGS | grep -q -- -ffloat-store; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: have -ffloat-store" >&5
+$as_echo "have -ffloat-store" >&6; }
+if echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: have SSE2" >&5
+$as_echo "have SSE2" >&6; }
 else
   CFLAGS+=" -msse2 -mfpmath=sse"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: adding -msse2 -mfpmath=sse" >&5
