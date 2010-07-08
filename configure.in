@@ -40,13 +40,9 @@ CFLAGS="-O3 -march=native"
 fi
 fi
 
-dnl Checks for programs.
-AC_PROG_CC
-AC_PROG_CPP
-AC_PROG_MAKE_SET
-AC_PROG_LEX
+if test "Darwin" != `uname`; then
 
-if test "`uname -m`" = "x86_64" && "Darwin" != `uname`; then
+if test "`uname -m`" = "x86_64"; then
 
 AC_MSG_CHECKING([x86_64 CFLAGS])
 
@@ -58,6 +54,23 @@ else
 fi
 
 fi
+
+dnl Simulations spin forever unless -fpmath=sse is set
+AC_MSG_CHECKING([for fpmath])
+if echo $CFLAGS | grep -q -- -fpmath=; then
+  AC_MSG_RESULT([yes])
+else
+  CFLAGS+=" -fpmath=sse"
+  AC_MSG_RESULT([adding -fpmath=sse])
+fi
+
+fi # End x86-specific CFLAGS
+
+dnl Checks for programs.
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_MAKE_SET
+AC_PROG_LEX
 
 dnl check for environment variables
 
