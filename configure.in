@@ -55,13 +55,13 @@ fi
 
 fi
 
-dnl Simulations spin forever unless -fpmath=sse is set
-AC_MSG_CHECKING([for fpmath])
-if echo $CFLAGS | grep -q -- -fpmath=; then
+dnl Simulations spin forever unless -mfpmath=sse is set
+AC_MSG_CHECKING([for -mfpmath])
+if echo $CFLAGS | grep -q -- -mfpmath=; then
   AC_MSG_RESULT([yes])
 else
-  CFLAGS+=" -fpmath=sse"
-  AC_MSG_RESULT([adding -fpmath=sse])
+  CFLAGS+=" -mfpmath=sse"
+  AC_MSG_RESULT([adding -mfpmath=sse])
 fi
 
 fi # End x86-specific CFLAGS
