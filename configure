@@ -2215,7 +2215,7 @@ if echo $CFLAGS | grep -q -- -mfpmath=; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 else
-  CFLAGS+=" -mfpmath=sse"
+  CFLAGS+=" -msse -mfpmath=sse"
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: adding -mfpmath=sse" >&5
 $as_echo "adding -mfpmath=sse" >&6; }
 fi

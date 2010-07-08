@@ -60,7 +60,7 @@ AC_MSG_CHECKING([for -mfpmath])
 if echo $CFLAGS | grep -q -- -mfpmath=; then
   AC_MSG_RESULT([yes])
 else
-  CFLAGS+=" -mfpmath=sse"
+  CFLAGS+=" -msse -mfpmath=sse"
   AC_MSG_RESULT([adding -mfpmath=sse])
 fi
 
