@@ -60,7 +60,7 @@ dnl Or if -ffloat-store  is set
 AC_MSG_CHECKING([for floating point bugs])
 if echo $CFLAGS | grep -q -- -ffloat-store; then
   AC_MSG_RESULT([have -ffloat-store])
-if echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
+elif echo $CFLAGS | grep -q -- -msse2 && echo $CFLAGS | grep -q -- -mfpmath=sse; then
   AC_MSG_RESULT([have SSE2])
 else
   CFLAGS+=" -msse2 -mfpmath=sse"
