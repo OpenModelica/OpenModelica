@@ -4029,8 +4029,11 @@ algorithm
        e1_1 = simplifyAsub(e1, indx);
        e2_1 = simplifyAsub(e2, indx);
     then DAE.IFEXP(cond,e1_1,e2_1);
-      
-    case(e,indx) then DAE.ASUB(e, {DAE.ICONST(indx)});
+     
+    case(e,indx)
+      equation
+       e1 = simplify1(e);
+    then DAE.ASUB(e1, {DAE.ICONST(indx)});
   end matchcontinue;
 end simplifyAsub;
 
