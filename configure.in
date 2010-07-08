@@ -33,7 +33,11 @@ AC_SUBST(EXE)
 
 dnl Disables the default CFLAGS="-g -O2"
 if test -z "$CFLAGS"; then
+if  test "Darwin" = `uname`; then
+CFLAGS="-O3"
+else
 CFLAGS="-O3 -march=native"
+fi
 fi
 
 dnl Checks for programs.
@@ -42,9 +46,9 @@ AC_PROG_CPP
 AC_PROG_MAKE_SET
 AC_PROG_LEX
 
-if test "`uname -m`" = "x86_64"; then
+if test "`uname -m`" = "x86_64" && "Darwin" != `uname`; then
 
-AC_MSG_CHECKING([64-bit CFLAGS])
+AC_MSG_CHECKING([x86_64 CFLAGS])
 
 if echo $CFLAGS | grep -q -- -fPIC; then
   AC_MSG_RESULT([already got -fPIC])
