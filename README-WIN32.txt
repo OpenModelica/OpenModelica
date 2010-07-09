@@ -6,11 +6,13 @@
              Last update 2005-09-26 David Broman
              Last update 2009-11-10 Adrian Pop
              Last update 2010-04-27 Adrian Pop
+             Last update 2010-07-09 Adrian Pop
+             
 
 The following step-by-step guides explain how to compile the
 Open Modelica Compiler using:
-- Microsoft Visual Studio 2008
-under Windows XP.
+- Microsoft Visual Studio 2010
+under Windows 7.
 See the file:
 - README.Cygwin.or.Linux.txt
    for a general overview and how to compile it under a UNIX systems.
@@ -25,10 +27,10 @@ Checkout the sources from Subversion:
    pass: none      <- write none here
 
 ------------------------------------------------------------------------------------------------
-       Compiling OMC using  Microsoft Visual Studio 2008
+       Compiling OMC using  Microsoft Visual Studio 2010
 ------------------------------------------------------------------------------------------------
 
-0.  Install MS Visual Studio 2008
+0.  Install MS Visual Studio 2010
 
 1.  Install OMDev from http://www.ida.liu.se/~adrpo/omc/omdev/mingw/
     Do all the steps in trunk\README-OMDev-MINGW.txt
@@ -52,7 +54,7 @@ Checkout the sources from Subversion:
 
 5.  Open the visual studio solution located at path:
     trunk\Compiler\VC7\omc\omc.sln
-    - VS 2008 Express will not be able to build the Setup project
+    - VS 2010 Express will not be able to build the Setup project
       as there are no deployment projects available in this version.
 
 6. In the VS development environment, select from the menu:
