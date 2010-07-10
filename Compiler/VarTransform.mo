@@ -582,29 +582,30 @@ algorithm
       DAE.Statement x;
       Boolean b1;
       Algorithm.Ident id1;
+      DAE.ElementSource source;
     case ({},_,_) then {};
-    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),repl,condExpFunc)
+    case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e,source = source) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         e_2 = replaceExp(e2, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN(tp,e_2,e_1) :: xs_1);
-    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1);
+    case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         expl2 = Util.listMap2(expl1, replaceExp, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1);
-    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),repl,condExpFunc)
+        (DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1);
+    case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e,source = source) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         (e_2 as DAE.CREF(cr_1,_)) = replaceExp(DAE.CREF(cr,DAE.ET_OTHER()), repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1);
-    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el)) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1);
+    case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el,source = source)) :: xs),repl,condExpFunc)
       local Algorithm.Else el,el_1;
       equation
         el_1 = replaceEquationsElse(el,repl,condExpFunc);
@@ -612,22 +613,22 @@ algorithm
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_IF(e_1,stmts2,el_1) :: xs_1);
-    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),repl,condExpFunc)
+        (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1);
+    case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2) :: xs_1);
-    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts)) :: xs),repl,condExpFunc)
+        (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source) :: xs_1);
+    case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts,source = source)) :: xs),repl,condExpFunc)
       equation
         stmts2 = replaceEquationsStmts(stmts,repl,condExpFunc);
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHILE(e_1,stmts2) :: xs_1);
-    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=ew,helpVarIndices=li)) :: xs),repl,condExpFunc)
+        (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1);
+    case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=ew,helpVarIndices=li,source = source)) :: xs),repl,condExpFunc)
       local Option<DAE.Statement> ew,ew_1; list<Integer> li;
       equation
         ew_1 = replaceOptEquationsStmts(ew,repl,condExpFunc);
@@ -635,41 +636,41 @@ algorithm
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_WHEN(e_1,stmts2,ew_1,li) :: xs_1);
-    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2)) :: xs),repl,condExpFunc)
+        (DAE.STMT_WHEN(e_1,stmts2,ew_1,li,source) :: xs_1);
+    case (((x as DAE.STMT_ASSERT(cond = e, msg=e2,source = source)) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         e_2 = replaceExp(e2, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_ASSERT(e_1,e_2) :: xs_1);
-    case (((x as DAE.STMT_TERMINATE(msg = e)) :: xs),repl,condExpFunc)
+        (DAE.STMT_ASSERT(e_1,e_2,source) :: xs_1);
+    case (((x as DAE.STMT_TERMINATE(msg = e,source = source)) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_TERMINATE(e_1) :: xs_1);
-    case (((x as DAE.STMT_REINIT(var = e,value=e2)) :: xs),repl,condExpFunc)
+        (DAE.STMT_TERMINATE(e_1,source) :: xs_1);
+    case (((x as DAE.STMT_REINIT(var = e,value=e2,source = source)) :: xs),repl,condExpFunc)
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         e_2 = replaceExp(e2, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_REINIT(e_1,e_2) :: xs_1);
-    case ((x as DAE.STMT_NORETCALL(e)) :: xs,repl,condExpFunc)
+        (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1);
+    case ((x as DAE.STMT_NORETCALL(exp = e,source = source)) :: xs,repl,condExpFunc)
       local Absyn.Path fnName;
       equation
         e_1 = replaceExp(e, repl, condExpFunc);
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
-        (DAE.STMT_NORETCALL(e_1) :: xs_1);
-    case (((x as DAE.STMT_RETURN()) :: xs),repl,condExpFunc)
+        (DAE.STMT_NORETCALL(e_1,source) :: xs_1);
+    case (((x as DAE.STMT_RETURN(source = source)) :: xs),repl,condExpFunc)
       equation
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then
         (x :: xs_1);
 
-    case (((x as DAE.STMT_BREAK()) :: xs),repl,condExpFunc)
+    case (((x as DAE.STMT_BREAK(source = source)) :: xs),repl,condExpFunc)
       equation
         xs_1 = replaceEquationsStmts(xs, repl,condExpFunc);
       then

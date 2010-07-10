@@ -3628,7 +3628,8 @@ public function traverseDAEEquationsStmts "function: traverseDAEEquationsStmts
   output Type_a oextraArg;
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
-algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
+algorithm
+  (outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
     local
       DAE.Exp e_1,e_2,e,e2;
       list<DAE.Exp> expl1,expl2;
@@ -3639,103 +3640,104 @@ algorithm(outStmts,oextraArg) := matchcontinue(inStmts,func,extraArg)
       Boolean b1;
       String id1;
       list<Integer> li;
+      DAE.ElementSource source;
   case ({},_,extraArg) then ({},extraArg);
 
-  case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e) :: xs),func,extraArg)
+  case ((DAE.STMT_ASSIGN(type_ = tp,exp1 = e2,exp = e, source = source) :: xs),func,extraArg)
     equation
       (e_1,extraArg) = func(e, extraArg);
       (e_2,extraArg) = func(e2, extraArg);
       (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_ASSIGN(tp,e_2,e_1) :: xs_1,extraArg);
+    then (DAE.STMT_ASSIGN(tp,e_2,e_1,source) :: xs_1,extraArg);
 
-  case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e) :: xs),func,extraArg)
+  case ((DAE.STMT_TUPLE_ASSIGN(type_ = tp,expExpLst = expl1, exp = e, source = source) :: xs),func,extraArg)
     equation
       (e_1, extraArg) = func(e, extraArg);
       (expl2, extraArg) = traverseDAEExpList(expl1,func,extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1) :: xs_1),extraArg);
+    then ((DAE.STMT_TUPLE_ASSIGN(tp,expl2,e_1,source) :: xs_1),extraArg);
 
-  case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e) :: xs),func,extraArg)
+  case ((DAE.STMT_ASSIGN_ARR(type_ = tp,componentRef = cr, exp = e, source = source) :: xs),func,extraArg)
     equation
       (e_1, extraArg) = func(e, extraArg);
       (e_2 as DAE.CREF(cr_1,_), extraArg) = func(DAE.CREF(cr,DAE.ET_OTHER()), extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1) :: xs_1,extraArg);
+    then (DAE.STMT_ASSIGN_ARR(tp,cr_1,e_1,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_FOR(type_=tp,iterIsArray=b1,ident=id1,exp=e,statementLst=stmts, source = source)) :: xs),func,extraArg)
     equation
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2) :: xs_1,extraArg);
+    then (DAE.STMT_FOR(tp,b1,id1,e_1,stmts2,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHILE(exp = e,statementLst=stmts, source = source)) :: xs),func,extraArg)
     equation
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_WHILE(e_1,stmts2) :: xs_1,extraArg);
+    then (DAE.STMT_WHILE(e_1,stmts2,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE,helpVarIndices=li)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=NONE,helpVarIndices=li, source = source)) :: xs),func,extraArg)
     equation
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_WHEN(e_1,stmts2,NONE,li) :: xs_1,extraArg);
+    then (DAE.STMT_WHEN(e_1,stmts2,NONE,li,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_WHEN(exp = e,statementLst=stmts,elseWhen=SOME(ew),helpVarIndices=li, source = source)) :: xs),func,extraArg)
     equation
       ({ew_1}, extraArg) = traverseDAEEquationsStmts({ew},func,extraArg);
       (stmts2, extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li) :: xs_1,extraArg);
+    then (DAE.STMT_WHEN(e_1,stmts2,SOME(ew),li,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_ASSERT(cond = e, msg=e2)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_ASSERT(cond = e, msg=e2, source = source)) :: xs),func,extraArg)
     equation
       (e_1, extraArg) = func(e, extraArg);
       (e_2, extraArg) = func(e2, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_ASSERT(e_1,e_2) :: xs_1,extraArg);
+    then (DAE.STMT_ASSERT(e_1,e_2,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_TERMINATE(msg = e)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_TERMINATE(msg = e, source = source)) :: xs),func,extraArg)
     equation
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_TERMINATE(e_1) :: xs_1,extraArg);
+    then (DAE.STMT_TERMINATE(e_1,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_REINIT(var = e,value=e2)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_REINIT(var = e,value=e2, source = source)) :: xs),func,extraArg)
     equation
       (e_1, extraArg) = func(e, extraArg);
       (e_2, extraArg) = func(e2, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_REINIT(e_1,e_2) :: xs_1,extraArg);
+    then (DAE.STMT_REINIT(e_1,e_2,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_NORETCALL(e)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_NORETCALL(exp = e, source = source)) :: xs),func,extraArg)
     local Absyn.Path fnName;
     equation
       (e_1, extraArg) = func(e, extraArg);
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_NORETCALL(e_1) :: xs_1,extraArg);
+    then (DAE.STMT_NORETCALL(e_1,source) :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_RETURN()) :: xs),func,extraArg)
+  case (((x as DAE.STMT_RETURN(source = source)) :: xs),func,extraArg)
     equation
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (x :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_BREAK()) :: xs),func,extraArg)
+  case (((x as DAE.STMT_BREAK(source = source)) :: xs),func,extraArg)
     equation
       (xs_1, extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
     then (x :: xs_1,extraArg);
 
-  case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el)) :: xs),func,extraArg)
+  case (((x as DAE.STMT_IF(exp=e,statementLst=stmts,else_ = el, source = source)) :: xs),func,extraArg)
     local Algorithm.Else el,el_1;
     equation
       (el_1,extraArg) = traverseDAEEquationsStmtsElse(el,func,extraArg);
       (stmts2,extraArg) = traverseDAEEquationsStmts(stmts,func,extraArg);
       (e_1,extraArg) = func(e, extraArg);
       (xs_1,extraArg) = traverseDAEEquationsStmts(xs, func, extraArg);
-    then (DAE.STMT_IF(e_1,stmts2,el_1) :: xs_1,extraArg);
+    then (DAE.STMT_IF(e_1,stmts2,el_1,source) :: xs_1,extraArg);
 
   case ((x :: xs),func,extraArg)
     equation
@@ -3835,6 +3837,17 @@ algorithm
       case (NONE(),_,extraArg) then (NONE(),extraArg);
   end matchcontinue;
 end traverseDAEVarAttr;
+
+public function getElementSourceFileInfo
+"Gets the file information associated with an element.
+If there are several candidates, select the first one."
+  input DAE.ElementSource source;
+  output Absyn.Info info;
+algorithm
+  info := matchcontinue source
+    case DAE.SOURCE(info = info) then info;
+  end matchcontinue;
+end getElementSourceFileInfo;
 
 public function getElementSourceTypes
 "@author: adrpo
@@ -3962,14 +3975,14 @@ protected function addElementSourceType
 algorithm
   outSource := matchcontinue(inSource, classPath)
     local
-      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
 
-    case (DAE.SOURCE(infoLst, partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
-      then DAE.SOURCE(infoLst, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
+    case (DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst), classPath)
+      then DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, classPath::typeLst);
   end matchcontinue;
 end addElementSourceType;
 
@@ -3997,14 +4010,14 @@ public function addElementSourcePartOf
 algorithm
   outSource := matchcontinue(inSource, withinPath)
     local
-      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Path> typeLst "the absyn type of the element" ;
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
 
-    case (DAE.SOURCE(infoLst,partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
-      then DAE.SOURCE(infoLst,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
+    case (DAE.SOURCE(info,partOfLst, instanceOptLst, connectEquationOptLst, typeLst), withinPath)
+      then DAE.SOURCE(info,withinPath::partOfLst, instanceOptLst, connectEquationOptLst, typeLst);
   end matchcontinue;
 end addElementSourcePartOf;
 
@@ -4029,6 +4042,23 @@ algorithm
   end matchcontinue;
 end addElementSourcePartOfOpt;
 
+public function addElementSourceFileInfo
+  input DAE.ElementSource source;
+  input Absyn.Info fileInfo;
+  output DAE.ElementSource outSource;
+algorithm
+  outSource := matchcontinue (source,fileInfo)
+    local
+      list<Absyn.Path> typeLst "the absyn type of the element" ;
+      list<Absyn.Within> partOfLst "the models this element came from" ;
+      list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
+      list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
+      Absyn.Info info;
+    case (DAE.SOURCE(_,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), info)
+      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst);
+  end matchcontinue;
+end addElementSourceFileInfo;
+
 public function addElementSourceInstanceOpt
   input DAE.ElementSource inSource;
   input Option<DAE.ComponentRef> instanceOpt;
@@ -4038,15 +4068,15 @@ algorithm
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
-      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
       list<Absyn.Path> typeLst "the classes where the type of the element is defined" ;
 
     // a NONE means top level (equivalent to NO_PRE, SOME(cref) means subcomponent
-    case (DAE.SOURCE(infoLst,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
-      then DAE.SOURCE(infoLst,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
+    case (DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), instanceOpt)
+      then DAE.SOURCE(info,partOfLst,instanceOpt::instanceOptLst,connectEquationOptLst,typeLst);
   end matchcontinue;
 end addElementSourceInstanceOpt;
 
@@ -4059,7 +4089,7 @@ algorithm
     local
       Absyn.Path classPath;
       DAE.ElementSource src;
-      list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from";
+      Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
       list<Absyn.Within> partOfLst "the models this element came from" ;
       list<Option<DAE.ComponentRef>> instanceOptLst "the instance this element is part of" ;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst "this element came from this connect" ;
@@ -4067,8 +4097,8 @@ algorithm
 
     // a top level
     case (inSource, NONE()) then inSource;
-    case (inSource as DAE.SOURCE(infoLst,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), connectEquationOpt)
-      then DAE.SOURCE(infoLst,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst);
+    case (inSource as DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOptLst,typeLst), connectEquationOpt)
+      then DAE.SOURCE(info,partOfLst,instanceOptLst,connectEquationOpt::connectEquationOptLst,typeLst);
   end matchcontinue;
 end addElementSourceConnectOpt;
 
@@ -4200,33 +4230,34 @@ public function mergeSources
 algorithm
   mergedSrc := matchcontinue(src1,src2)
     local
-      list<Absyn.Info> infoLst1,infoLst2,infoLst3;
+      Absyn.Info info;
       list<Absyn.Within> partOfLst1,partOfLst2,p;
       list<Option<DAE.ComponentRef>> instanceOptLst1,instanceOptLst2,i;
       list<Option<tuple<DAE.ComponentRef, DAE.ComponentRef>>> connectEquationOptLst1,connectEquationOptLst2,c;
       list<Absyn.Path> typeLst1,typeLst2,t;
-    case (DAE.SOURCE(infoLst1, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1),
-          DAE.SOURCE(infoLst2, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2))
+    case (DAE.SOURCE(info, partOfLst1, instanceOptLst1, connectEquationOptLst1, typeLst1),
+          DAE.SOURCE(_ /* Discard */, partOfLst2, instanceOptLst2, connectEquationOptLst2, typeLst2))
       equation
-        infoLst3 = listAppend(infoLst1, infoLst2);
         p = listAppend(partOfLst1, partOfLst2);
         i = listAppend(instanceOptLst1, instanceOptLst2);
         c = listAppend(connectEquationOptLst1, connectEquationOptLst1);
         t = listAppend(typeLst1, typeLst2);
-      then DAE.SOURCE(infoLst3,p,i,c,t);
+      then DAE.SOURCE(info,p,i,c,t);
  end matchcontinue;
 end mergeSources;
 
 function createElementSource
 "@author: adrpo
  set the various sources of the element"
+  input Absyn.Info fileInfo;
   input Option<Absyn.Path> partOf "the model(s) this element came from";
   input Option<DAE.ComponentRef> instanceOpt "the instance(s) this element is part of";
   input Option<tuple<DAE.ComponentRef, DAE.ComponentRef>> connectEquationOpt "this element came from this connect(s)";
   input Option<Absyn.Path> typeOpt "the classes where the type(s) of the element is defined";
   output DAE.ElementSource source;
 algorithm
-  source := addElementSourcePartOfOpt(DAE.emptyElementSource, partOf);
+  source := addElementSourceFileInfo(DAE.emptyElementSource, fileInfo);
+  source := addElementSourcePartOfOpt(source, partOf);
   source := addElementSourceInstanceOpt(source, instanceOpt);
   source := addElementSourceConnectOpt(source, connectEquationOpt);
   source := addElementSourceTypeOpt(source, typeOpt);
@@ -5099,6 +5130,5 @@ algorithm
     case _::rest then getDAEDeclsFromValueblocks(rest);
   end matchcontinue;
 end getDAEDeclsFromValueblocks;
-
 
 end DAEUtil;

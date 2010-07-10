@@ -58,6 +58,8 @@ header "post_include_hpp" {
 	#include <string>
 	#include "MyAST.h"
 
+  // Easy to use macro. The old way also duplicated all file names anyway.
+  #define INFO(i,readWrite) Absyn__INFO(mk_scon((char*)(modelicafilename.c_str())),readWrite,mk_icon(i?i->getLine():0),mk_icon(i?i->getColumn():0),mk_icon(i?i->getEndLine():0),mk_icon(i?i->getEndColumn():0),Absyn__TIMESTAMP(mk_rcon(i?i->getLastBuildTime():0),mk_rcon(i?i->getLastEditTime():0)))
 }
 
 options {
@@ -89,7 +91,7 @@ tokens {
     double getCurrentTime(void)
     {             
       time_t t;
-      double elapsedTime;             // the time elapsed as double
+      // double elapsedTime;             // the time elapsed as double
       time( &t );
       return difftime(t, 0);
     }
@@ -317,17 +319,7 @@ class_definition [bool final] returns [ void* ast ]
                 RML_PRIM_MKBOOL(e != 0),
                 restr,
                 class_spec,
-                Absyn__INFO(
-                  mk_scon((char*)(modelicafilename.c_str())),
-                  RML_PRIM_MKBOOL(modelicafileReadOnly),
-                  mk_icon(classDef?classDef->getLine():0),
-                  mk_icon(classDef?classDef->getColumn():0),
-                  mk_icon(classDef?classDef->getEndLine():0),
-                  mk_icon(classDef?classDef->getEndColumn():0),
-                  Absyn__TIMESTAMP(
-                  mk_rcon(classDef?classDef->getLastBuildTime():0),
-                  mk_rcon(classDef?classDef->getLastEditTime():0))
-                  )
+                INFO(classDef,RML_PRIM_MKBOOL(modelicafileReadOnly))
             );
             if (name) free(name);
         }
@@ -664,17 +656,7 @@ element returns [void* ast]
 		( e_spec = i_clause:import_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"),
-                    e_spec, Absyn__INFO(
-                              mk_scon((char*)(modelicafilename.c_str())),
-                              RML_PRIM_MKBOOL(0), /* false */
-                              mk_icon(i_clause->getLine()),
-                              mk_icon(i_clause->getColumn()),
-                              mk_icon(i_clause->getEndLine()),
-                              mk_icon(i_clause->getEndColumn()),
-                              Absyn__TIMESTAMP(
-                              mk_rcon(i_clause->getLastBuildTime()),
-                              mk_rcon(i_clause->getLastEditTime()))
-                              ),mk_none());
+                    e_spec, INFO(i_clause,RML_FALSE), mk_none());
 			}
 	    | #(DEFINEUNIT i2:IDENT (na = named_arguments)? )
 	      {
@@ -684,17 +666,7 @@ element returns [void* ast]
 		| e_spec = e_clause:extends_clause
 			{
 				ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"),
-                    e_spec, Absyn__INFO(
-                              mk_scon((char*)(modelicafilename.c_str())),
-                              RML_PRIM_MKBOOL(0), /* false */
-                              mk_icon(e_clause->getLine()),
-                              mk_icon(e_clause->getColumn()),
-                              mk_icon(e_clause->getEndLine()),
-                              mk_icon(e_clause->getEndColumn()),
-                              Absyn__TIMESTAMP(
-                              mk_rcon(e_clause->getLastBuildTime()),
-                              mk_rcon(e_clause->getLastEditTime()))
-                              ),mk_none());
+                    e_spec, INFO(e_clause,RML_FALSE),mk_none());
 			}
 		| #(decl:DECLARATION
                 (re:REDECLARE)?
@@ -707,18 +679,8 @@ element returns [void* ast]
 							ast = Absyn__ELEMENT(final,
                                 keywords ? mk_some(keywords) : mk_none(),
                                 innerouter,
-								mk_scon("component"),e_spec,
-                                Absyn__INFO(
-                        			  mk_scon((char*)(modelicafilename.c_str())),
-		                              RML_FALSE,
-		                              mk_icon(decl->getLine()),
-		                              mk_icon(decl->getColumn()),
-		                              mk_icon(decl->getEndLine()),
-		                              mk_icon(decl->getEndColumn()),
-		                              Absyn__TIMESTAMP(
-		                              mk_rcon(decl->getLastBuildTime()),
-		                              mk_rcon(decl->getLastEditTime()))
-                                     ),mk_none());
+                                mk_scon("component"),e_spec,
+                                INFO(decl, RML_FALSE),mk_none());
 
 						}
 					| r:REPLACEABLE
@@ -730,17 +692,7 @@ element returns [void* ast]
 								keywords ? mk_some(keywords) : mk_none(),
 								innerouter,
 								mk_scon("replaceable_component"),e_spec,
-                                Absyn__INFO(
-                                    mk_scon((char*)(modelicafilename.c_str())),
-	                                RML_FALSE,
-	                                mk_icon(decl->getLine()),
-	                                mk_icon(decl->getColumn()),
-	                                mk_icon(decl->getEndLine()),
-	                                mk_icon(decl->getEndColumn()),
-	                                Absyn__TIMESTAMP(
-	                                mk_rcon(decl->getLastBuildTime()),
-		                            mk_rcon(decl->getLastEditTime()))
-                                    ),
+                                INFO(decl, RML_FALSE),
 								constr? mk_some(Absyn__CONSTRAINCLASS(constr, cmt? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
@@ -763,17 +715,7 @@ element returns [void* ast]
                                 innerouter,
                                 mk_scon("??"),
                                 ast,
-                                Absyn__INFO(
-                                   mk_scon((char*)(modelicafilename.c_str())),
-	                               RML_FALSE,
-	                               mk_icon(def->getLine()),
-	                               mk_icon(def->getColumn()),
-	                               mk_icon(def->getEndLine()),
-	                               mk_icon(def->getEndColumn()),
-	                               Absyn__TIMESTAMP(
-	                               mk_rcon(def->getLastBuildTime()),
-		                           mk_rcon(def->getLastEditTime()))
-                                   ),mk_none());
+                                INFO(def, RML_FALSE),mk_none());
 
 						}
 					|
@@ -786,23 +728,13 @@ element returns [void* ast]
                             ast = Absyn__CLASSDEF(rd ? RML_TRUE : RML_FALSE,
 								class_def);
 							ast = Absyn__ELEMENT(
-                                final,
+                final,
 								keywords ? mk_some(keywords) : mk_none(),
-                                innerouter,
+                innerouter,
 								mk_scon("??"),
 								ast,
-                          Absyn__INFO(
-                              mk_scon((char*)(modelicafilename.c_str())),
-                              RML_FALSE,
-                              mk_icon(def->getLine()),
-                              mk_icon(def->getColumn()),
-	                      mk_icon(def->getEndLine()),
-	                          mk_icon(def->getEndColumn()),
-	                          Absyn__TIMESTAMP(
-	                          mk_rcon(def->getLastBuildTime()),
-	                          mk_rcon(def->getLastEditTime()))
-                              ),
-                                constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
+                INFO(def, RML_FALSE),
+                constr ? mk_some(Absyn__CONSTRAINCLASS(constr,cmt ? mk_some(cmt):mk_none())) : mk_none());
 						}
 					)
 				)
@@ -1389,6 +1321,7 @@ equation returns [void* ast]
 	void *cmt = 0;
   void *eq1 = 0;
   void *eq2 = 0;
+  void *info = 0;
 }
 	:
 		#(i:EQUATION_STATEMENT
@@ -1403,19 +1336,21 @@ equation returns [void* ast]
 			)
 			(cmt = comment)?
 			{
-                if (fa)
+        info = INFO(i, RML_PRIM_MKBOOL(modelicafileReadOnly));
+
+        if (fa)
 				{
-                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
+                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none(),info);
 				}
 				else if (eq1 && eq2)
 				{
                     ast = mk_cons(eq2,mk_nil());
                     ast = Absyn__FUNCTIONARGS(mk_cons(eq1,ast),mk_nil());
-                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
+                    ast = Absyn__EQUATIONITEM(Absyn__EQ_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none(), info);
 				}
 				else
 				{
-                    ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
+                    ast = Absyn__EQUATIONITEM(ast,cmt ? mk_some(cmt) : mk_none(), info);
 				}
 			}
 		)
@@ -1433,16 +1368,16 @@ equation_funcall returns [void* ast]
 		}
 	;
 
-algorithm returns [void* ast]
+algorithm returns [void* ast = 0]
 {
   	void* cmt = 0;
   	void* e1  = 0;
   	void* e2  = 0;
   	void* ea1  = 0;
-  	void* ea2  = 0;  	
+  	void* ea2  = 0;
 }
 	:
-		#(ALGORITHM_STATEMENT
+		#(alg:ALGORITHM_STATEMENT
 			(#(ASSIGN e1 = simple_expression e2 = expression
 				{
 					ast = Absyn__ALG_5fASSIGN(e1,e2);
@@ -1463,16 +1398,17 @@ algorithm returns [void* ast]
 	  		    // Commented out because we don't use failure or equality in algorithms!
 				if (fa) // adrpo: 2009-10-27 is actually used in DAE.isNotVar!
 				{
-                  ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
+                  ast = Absyn__ALGORITHMITEM(Absyn__ALG_5fFAILURE(ast),cmt ? mk_some(cmt) : mk_none(), INFO(alg,RML_PRIM_MKBOOL(modelicafileReadOnly)));
 				}
 				else if (ea1 && ea2)
 				{
                   ast = mk_cons(ea2,mk_nil());
                   ast = Absyn__FUNCTIONARGS(mk_cons(ea1,ast),mk_nil());
-                  ast = Absyn__EQUATIONITEM(Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
+                  ast = Absyn__EQUATIONITEM(Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),ast),cmt ? mk_some(cmt) : mk_none(), INFO(alg,RML_PRIM_MKBOOL(modelicafileReadOnly)));
 				}
 				else
 				{
+                  /* This sadly does not work. It's the only part we really want to know line numbers on, too :) */
                   ast = Absyn__ALGORITHMITEM(ast,cmt ? mk_some(cmt) : mk_none(), RML_GVAL_VALUE(Absyn__dummyInfo));
 				}
 			}

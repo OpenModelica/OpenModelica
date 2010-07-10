@@ -257,18 +257,21 @@ uniontype EEquation
     list<list<EEquation>> thenBranch "the true (then) branch" ;
     list<EEquation>       elseBranch "the false (else) branch" ;
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_IF;
 
   record EQ_EQUALS "the equality equation"
     Absyn.Exp expLeft  "the expression on the left side of the operator";
     Absyn.Exp expRight "the expression on the right side of the operator";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_EQUALS;
 
   record EQ_CONNECT "the connect equation"
     Absyn.ComponentRef crefLeft  "the connector/component reference on the left side";
     Absyn.ComponentRef crefRight "the connector/component reference on the right side";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_CONNECT;
 
   record EQ_FOR "the for equation"
@@ -276,6 +279,7 @@ uniontype EEquation
     Absyn.Exp       range        "the range of the index";
     list<EEquation> eEquationLst "the equation list";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_FOR;
 
   record EQ_WHEN "the when equation"
@@ -283,29 +287,34 @@ uniontype EEquation
     list<EEquation>  eEquationLst "the equation list";
     list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst "the elsewhen expression and equation list";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_WHEN;
 
   record EQ_ASSERT "the assert equation"
     Absyn.Exp condition "the assert condition";
     Absyn.Exp message   "the assert message";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_ASSERT;
 
   record EQ_TERMINATE "the terminate equation"
     Absyn.Exp message "the terminate message";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_TERMINATE;
 
   record EQ_REINIT "a reinit equation"
     Absyn.ComponentRef cref      "the variable to initialize";
     Absyn.Exp          expReinit "the new value" ;
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_REINIT;
 
   record EQ_NORETCALL "function calls without return value"
     Absyn.ComponentRef functionName "the function nanme";
     Absyn.FunctionArgs functionArgs "the function arguments";
     Option<Comment> comment;
+    Absyn.Info info;
   end EQ_NORETCALL;
 
 end EEquation;
@@ -579,7 +588,7 @@ algorithm
         res = Util.stringAppendList({"reinit(",s1,", ",s2,");"});
       then
         res;
-    case(EQ_NORETCALL(cr,fargs,_))
+    case(EQ_NORETCALL(functionName = cr, functionArgs = fargs))
       equation
         s1 = Dump.printComponentRefStr(cr);
         s2 = Dump.printFunctionArgsStr(fargs);
@@ -1814,7 +1823,7 @@ algorithm
       Absyn.Ident id1,id2;
       list<EEquation> fb1,fb2,eql1,eql2,elst1,elst2;
 
-    case (EQ_IF(ifcond1,tb1,fb1,_),EQ_IF(ifcond2,tb2,fb2,_))
+    case (EQ_IF(condition = ifcond1, thenBranch = tb1, elseBranch = fb1),EQ_IF(condition = ifcond2, thenBranch = tb2, elseBranch = fb2))
       equation
         blst1 = equationEqual22(tb1,tb2);//Util.listThreadMap(tb1,tb2,equationEqual2);
         blst2 = Util.listThreadMap(fb1,fb2,equationEqual2);
@@ -1822,38 +1831,38 @@ algorithm
         blst = Util.listFlatten({blst1,blst2,blst3});
         equal = Util.boolAndList(blst);
       then equal;
-    case(EQ_EQUALS(e11,e12,_),EQ_EQUALS(e21,e22,_))
+    case(EQ_EQUALS(expLeft = e11, expRight = e12),EQ_EQUALS(expLeft = e21, expRight = e22))
       equation
         b1 = Absyn.expEqual(e11,e21);
         b2 = Absyn.expEqual(e12,e22);
         equal = boolAnd(b1,b2);
       then equal;
-    case(EQ_CONNECT(cr11,cr12,_),EQ_CONNECT(cr21,cr22,_))
+    case(EQ_CONNECT(crefLeft = cr11, crefRight = cr12),EQ_CONNECT(crefLeft = cr21, crefRight = cr22))
       equation
         b1 = Absyn.crefEqual(cr11,cr21);
         b2 = Absyn.crefEqual(cr12,cr22);
         equal = boolAnd(b1,b2);
       then equal;
-    case (EQ_FOR(id1,exp1,eql1,_),EQ_FOR(id2,exp2,eql2,_))
+    case (EQ_FOR(index = id1, range = exp1, eEquationLst = eql1),EQ_FOR(index = id2, range = exp2, eEquationLst = eql2))
       equation
         blst1 = Util.listThreadMap(eql1,eql2,equationEqual2);
         b1 = Absyn.expEqual(exp1,exp2);
         b2 = stringEqual(id1,id2);
         equal = Util.boolAndList(b1::b2::blst1);
       then equal;
-    case (EQ_WHEN(cond1,elst1,_,_),EQ_WHEN(cond2,elst2,_,_)) // TODO: elsewhen not checked yet.
+    case (EQ_WHEN(condition = cond1, eEquationLst = elst1),EQ_WHEN(condition = cond2, eEquationLst = elst2)) // TODO: elsewhen not checked yet.
       equation
         blst1 = Util.listThreadMap(elst1,elst2,equationEqual2);
         b1 = Absyn.expEqual(cond1,cond2);
         equal = Util.boolAndList(b1::blst1);
       then equal;
-    case (EQ_ASSERT(c1,m1,_),EQ_ASSERT(c2,m2,_))
+    case (EQ_ASSERT(condition = c1, message = m1),EQ_ASSERT(condition = c2, message = m2))
       equation
         b1 = Absyn.expEqual(c1,c2);
         b2 = Absyn.expEqual(m1,m2);
         equal = boolAnd(b1,b2);
       then equal;
-    case (EQ_REINIT(cr1,e1,_),EQ_REINIT(cr2,e2,_))
+    case (EQ_REINIT(cref = cr1, expReinit = e1),EQ_REINIT(cref = cr2, expReinit = e2))
       equation
         b1 = Absyn.expEqual(e1,e2);
         b2 = Absyn.crefEqual(cr1,cr2);
@@ -2148,61 +2157,61 @@ algorithm
       Absyn.FunctionArgs fArgs;
       list<tuple<Absyn.Exp, list<EEquation>>> ew;
 
-      case (id,EQ_IF(eLst,eeqLstLst,eeqLst,_))
+      case (id,EQ_IF(condition = eLst, thenBranch = eeqLstLst, elseBranch = eeqLst))
         equation
           lst_1=Absyn.findIteratorInExpLst(id,eLst);
           lst_2=findIteratorInEEquationLstLst(id,eeqLstLst);
           lst_3=findIteratorInEEquationLst(id,eeqLst);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-      case (id,EQ_EQUALS(e_1,e_2,_))
+      case (id,EQ_EQUALS(expLeft = e_1, expRight = e_2))
         equation
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_CONNECT(cr_1,cr_2,_))
+      case (id,EQ_CONNECT(crefLeft = cr_1, crefRight = cr_2))
         equation
           lst_1=Absyn.findIteratorInCRef(id,cr_1);
           lst_2=Absyn.findIteratorInCRef(id,cr_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_FOR(id_1,e_1,eeqLst,_))
+      case (id,EQ_FOR(index = id_1, range = e_1, eEquationLst = eeqLst))
         equation
           false = stringEqual(id, id_1);
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_FOR(id_1,e_1,eeqLst,_))
+      case (id,EQ_FOR(index = id_1, range = e_1, eEquationLst = eeqLst))
         equation
           true = stringEqual(id, id_1);
           lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
-      case (id,EQ_WHEN(e_1,eeqLst,ew,_))
+      case (id,EQ_WHEN(condition = e_1, eEquationLst = eeqLst, tplAbsynExpEEquationLstLst = ew))
         equation
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=findIteratorInEEquationLst(id,eeqLst);
           lst_3=findIteratorInElsewhen(id,ew);
           lst=Util.listFlatten({lst_1,lst_2,lst_3});
         then lst;
-      case (id,EQ_ASSERT(e_1,e_2,_))
+      case (id,EQ_ASSERT(condition = e_1, message = e_2))
         equation
           lst_1=Absyn.findIteratorInExp(id,e_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_TERMINATE(e_1,_))
+      case (id,EQ_TERMINATE(message = e_1))
         equation
           lst=Absyn.findIteratorInExp(id,e_1);
         then lst;
-      case (id,EQ_REINIT(cr_1,e_2,_))
+      case (id,EQ_REINIT(cref = cr_1, expReinit = e_2))
         equation
           lst_1=Absyn.findIteratorInCRef(id,cr_1);
           lst_2=Absyn.findIteratorInExp(id,e_2);
           lst=listAppend(lst_1,lst_2);
         then lst;
-      case (id,EQ_NORETCALL(_,fArgs,_))
+      case (id,EQ_NORETCALL(functionArgs = fArgs))
         equation
           lst=Absyn.findIteratorInFunctionArgs(id,fArgs);
         then lst;

@@ -786,92 +786,93 @@ algorithm
       Boolean b;
       Ident i;
       list<Integer> ilst;
-    case(DAE.STMT_ASSIGN(t,e1,e2),fns)
+      DAE.ElementSource source;
+    case(DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        DAE.STMT_ASSIGN(t,e1_1,e2_1);
-    case(DAE.STMT_TUPLE_ASSIGN(t,explst,e),fns)
+        DAE.STMT_ASSIGN(t,e1_1,e2_1,source);
+    case(DAE.STMT_TUPLE_ASSIGN(t,explst,e,source),fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
         e_1 = inlineExp(e,fns);
       then
-        DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1);
-    case(DAE.STMT_ASSIGN_ARR(t,cref,e),fns)
+        DAE.STMT_TUPLE_ASSIGN(t,explst_1,e_1,source);
+    case(DAE.STMT_ASSIGN_ARR(t,cref,e,source),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        DAE.STMT_ASSIGN_ARR(t,cref,e_1);
-    case(DAE.STMT_IF(e,stmts,a_else),fns)
+        DAE.STMT_ASSIGN_ARR(t,cref,e_1,source);
+    case(DAE.STMT_IF(e,stmts,a_else,source),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
         a_else_1 = inlineElse(a_else,fns);
       then
-        DAE.STMT_IF(e_1,stmts_1,a_else_1);
-    case(DAE.STMT_FOR(t,b,i,e,stmts),fns)
+        DAE.STMT_IF(e_1,stmts_1,a_else_1,source);
+    case(DAE.STMT_FOR(t,b,i,e,stmts,source),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_FOR(t,b,i,e_1,stmts_1);
-    case(DAE.STMT_WHILE(e,stmts),fns)
+        DAE.STMT_FOR(t,b,i,e_1,stmts_1,source);
+    case(DAE.STMT_WHILE(e,stmts,source),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_WHILE(e_1,stmts_1);
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst),fns)
+        DAE.STMT_WHILE(e_1,stmts_1,source);
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
         stmt_1 = inlineStatement(stmt,fns);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst);
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst),fns)
+        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source);
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst,source),fns)
       equation
         e_1 = inlineExp(e,fns);
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst);
-    case(DAE.STMT_ASSERT(e1,e2),fns)
+        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst,source);
+    case(DAE.STMT_ASSERT(e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        DAE.STMT_ASSERT(e1_1,e2_1);
-    case(DAE.STMT_TERMINATE(e),fns)
+        DAE.STMT_ASSERT(e1_1,e2_1,source);
+    case(DAE.STMT_TERMINATE(e,source),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        DAE.STMT_TERMINATE(e_1);
-    case(DAE.STMT_REINIT(e1,e2),fns)
+        DAE.STMT_TERMINATE(e_1,source);
+    case(DAE.STMT_REINIT(e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
         e2_1 = inlineExp(e2,fns);
       then
-        DAE.STMT_REINIT(e1_1,e2_1);
-    case(DAE.STMT_NORETCALL(e),fns)
+        DAE.STMT_REINIT(e1_1,e2_1,source);
+    case(DAE.STMT_NORETCALL(e,source),fns)
       equation
         e_1 = inlineExp(e,fns);
       then
-        DAE.STMT_NORETCALL(e_1);
-    case(DAE.STMT_TRY(stmts),fns)
+        DAE.STMT_NORETCALL(e_1,source);
+    case(DAE.STMT_TRY(stmts,source),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_TRY(stmts_1);
-    case(DAE.STMT_CATCH(stmts),fns)
+        DAE.STMT_TRY(stmts_1,source);
+    case(DAE.STMT_CATCH(stmts,source),fns)
       equation
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
-        DAE.STMT_CATCH(stmts_1);
-    case(DAE.STMT_MATCHCASES(explst),fns)
+        DAE.STMT_CATCH(stmts_1,source);
+    case(DAE.STMT_MATCHCASES(explst,source),fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
       then
-        DAE.STMT_MATCHCASES(explst_1);
+        DAE.STMT_MATCHCASES(explst_1,source);
     case(stmt,_) then stmt;
   end matchcontinue;
 end inlineStatement;
@@ -1117,9 +1118,9 @@ algorithm
         Debug.fprintln("failtrace","Inline.getRhsExp failed - cannot inline such a function");
       then
         fail();
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(_,_,res)})) :: _) then res;
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(_,_,res)})):: _) then res;
-    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(_,_,res)})) :: _) then res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN(exp=res)})) :: _) then res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exp=res)})):: _) then res;
+    case(DAE.ALGORITHM(algorithm_ = DAE.ALGORITHM_STMTS({DAE.STMT_ASSIGN_ARR(exp=res)})) :: _) then res;
     case(_ :: cdr)
       equation
         res = getRhsExp(cdr);

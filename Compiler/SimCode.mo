@@ -4719,30 +4719,31 @@ algorithm
       Exp.Type ty;
       Boolean scalar;
       list<Integer> helpVarIndices1,helpVarIndices;
-    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,NONE,_))
+      DAE.ElementSource source;
+    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,NONE,_,source))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
-      then (helpvars1,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices),nextInd1);
+      then (helpvars1,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,NONE,helpVarIndices,source),nextInd1);
 
-    case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE,_))
-      then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE,{nextInd}),nextInd+1);
+    case (nextInd, DAE.STMT_WHEN(condition,statementLst,NONE,_,source))
+      then ({(nextInd,condition,-1)},DAE.STMT_WHEN(condition, statementLst,NONE,{nextInd},source),nextInd+1);
 
-    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_))
+    case (nextInd, DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el),statementLst,SOME(elseWhen),_,source))
       equation
 				(helpvars1,el1,nextInd1) = generateHelpVarsInArrayCondition(nextInd,el);
 				helpVarIndices1 = Util.listIntRange(nextInd1-nextInd);
 				helpVarIndices = Util.listMap1(helpVarIndices1,intAdd,nextInd-1);
         (helpvars2,statement,nextInd2) = generateHelpVarsInStatement(nextInd1,elseWhen);
         helpvars = listAppend(helpvars1,helpvars2);
-      then (helpvars,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices),nextInd1);
+      then (helpvars,DAE.STMT_WHEN(DAE.ARRAY(ty,scalar,el1), statementLst,SOME(statement),helpVarIndices,source),nextInd1);
 
-    case (nextInd, DAE.STMT_WHEN(condition,statementLst,SOME(elseWhen),_))
+    case (nextInd, DAE.STMT_WHEN(condition,statementLst,SOME(elseWhen),_,source))
       equation
         (helpvars1,statement,nextInd1) = generateHelpVarsInStatement(nextInd+1,elseWhen);
       then ((nextInd,condition,-1)::helpvars1,
-        DAE.STMT_WHEN(condition, statementLst,SOME(statement),{nextInd}),nextInd1);
+        DAE.STMT_WHEN(condition, statementLst,SOME(statement),{nextInd},source),nextInd1);
 
     case (nextInd, statement) then ({},statement,nextInd);
 
@@ -7179,7 +7180,7 @@ Author: Frenkel TUD 2010-04"
 algorithm outStm := matchcontinue(inExp)
   local
     DAE.Exp e;
-  case(inExp) then DAE.STMT_NORETCALL(inExp);
+  case(inExp) then DAE.STMT_NORETCALL(inExp,DAE.emptyElementSource);
 end matchcontinue;
 end generateParameterDivisionbyZeroTestEqn;
 

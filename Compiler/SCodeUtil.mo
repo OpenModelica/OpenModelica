@@ -1194,14 +1194,15 @@ algorithm
       list<Absyn.EquationItem> es;
       Option<Absyn.Comment> acom;
       Option<SCode.Comment> com;
+      Absyn.Info info;
 
     case {} then {};
 
-    case (Absyn.EQUATIONITEM(equation_ = e,comment = acom) :: es)
+    case (Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es)
       equation
         // Debug.fprintln("translate", "translating equation: " +& Dump.unparseEquationStr(0, e));
         com = translateComment(acom);
-        e_1 = translateEquation(e,com);
+        e_1 = translateEquation(e,com,info);
         es_1 = translateEquations(es);
       then
         (SCode.EQUATION(e_1) :: es_1);
@@ -1229,14 +1230,15 @@ algorithm
       list<Absyn.EquationItem> es;
       Option<Absyn.Comment> acom;
       Option<SCode.Comment> com;
+      Absyn.Info info;
 
     case {} then {};
 
-    case (Absyn.EQUATIONITEM(equation_ = e,comment = acom) :: es)
+    case (Absyn.EQUATIONITEM(equation_ = e,comment = acom,info = info) :: es)
       equation
         // Debug.fprintln("translate", "translating equation: " +& Dump.unparseEquationStr(0, e));
         com = translateComment(acom);
-        e_1 = translateEquation(e,com);
+        e_1 = translateEquation(e,com,info);
         es_1 = translateEEquations(es);
       then
         (e_1 :: es_1);
@@ -1285,9 +1287,10 @@ protected function translateEquation
   PR Arrays seem to keep their Absyn.mo structure."
   input Absyn.Equation inEquation;
   input Option<SCode.Comment> inComment;
+  input Absyn.Info info;
   output SCode.EEquation outEEquation;
 algorithm
-  outEEquation := matchcontinue (inEquation,inComment)
+  outEEquation := matchcontinue (inEquation,inComment,info)
     local
       list<SCode.EEquation> tb_1,fb_1,eb_1,l_1;
       Absyn.Exp e,ee,econd_1,cond,econd,e1,e2;
@@ -1303,16 +1306,17 @@ algorithm
       Absyn.FunctionArgs fargs;
       list<Absyn.ForIterator> restIterators;
       Option<SCode.Comment> com;
+      Absyn.Info info;
 
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com)
+    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = {},equationElseItems = fb),com,info)
       equation
         tb_1 = translateEEquations(tb);
         fb_1 = translateEEquations(fb);
       then
-        SCode.EQ_IF({e},{tb_1},fb_1,com);
+        SCode.EQ_IF({e},{tb_1},fb_1,com,info);
 
     /* else-if branches are put as if branches in false branch */
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com)
+    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = eis,equationElseItems = fb),com,info)
       local
         list<Absyn.Exp> conditions;
         list<list<Absyn.EquationItem>> trueBranches;
@@ -1322,9 +1326,9 @@ algorithm
         trueEEquations = Util.listMap(trueBranches,translateEEquations);
         fb_1 = translateEEquations(fb);
       then
-        SCode.EQ_IF(conditions,trueEEquations,fb_1,com);
+        SCode.EQ_IF(conditions,trueEEquations,fb_1,com,info);
 
-    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com)
+    case (Absyn.EQ_IF(ifExp = e,equationTrueItems = tb,elseIfBranches = ((ee,ei) :: eis),equationElseItems = fb),com,info)
       equation
         /* adrpo: we do handle else if clauses in OpenModelica, what do we do with this??!
         eq = translateEquation(Absyn.EQ_IF(e,tb,{},{Absyn.EQUATIONITEM(Absyn.EQ_IF(ee,ei,eis,fb),NONE)}));
@@ -1334,60 +1338,60 @@ algorithm
       then
         fail();
 
-    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = ((econd,eb) :: elsewhen_)),com)
+    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = ((econd,eb) :: elsewhen_)),com,info)
       equation
         tb_1 = translateEEquations(tb);
-        SCode.EQ_WHEN(econd_1,eb_1,elsewhen_1,com) = translateEquation(Absyn.EQ_WHEN_E(econd,eb,elsewhen_),com);
+        SCode.EQ_WHEN(econd_1,eb_1,elsewhen_1,com,info) = translateEquation(Absyn.EQ_WHEN_E(econd,eb,elsewhen_),com,info);
       then
-        SCode.EQ_WHEN(cond,tb_1,((econd_1,eb_1) :: elsewhen_1),com);
+        SCode.EQ_WHEN(cond,tb_1,((econd_1,eb_1) :: elsewhen_1),com,info);
 
-    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = {}),com)
+    case (Absyn.EQ_WHEN_E(whenExp = cond,whenEquations = tb,elseWhenEquations = {}),com,info)
       equation
         tb_1 = translateEEquations(tb);
       then
-        SCode.EQ_WHEN(cond,tb_1,{},com);
+        SCode.EQ_WHEN(cond,tb_1,{},com,info);
 
-    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com) then SCode.EQ_EQUALS(e1,e2,com);
-    case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com) then SCode.EQ_CONNECT(c1,c2,com);
+    case (Absyn.EQ_EQUALS(leftSide = e1,rightSide = e2),com,info) then SCode.EQ_EQUALS(e1,e2,com,info);
+    case (Absyn.EQ_CONNECT(connector1 = c1,connector2 = c2),com,info) then SCode.EQ_CONNECT(c1,c2,com,info);
 
-    case (Absyn.EQ_FOR(iterators = {(i,SOME(e))},forEquations = l),com) /* for loop with a single iterator with explicit range */
+    case (Absyn.EQ_FOR(iterators = {(i,SOME(e))},forEquations = l),com,info) /* for loop with a single iterator with explicit range */
       equation
         l_1 = translateEEquations(l);
       then
-        SCode.EQ_FOR(i,e,l_1,com);
+        SCode.EQ_FOR(i,e,l_1,com,info);
 
-    case (Absyn.EQ_FOR(iterators = {(i,NONE())},forEquations = l),com) /* for loop with a single iterator with implicit range */
+    case (Absyn.EQ_FOR(iterators = {(i,NONE())},forEquations = l),com,info) /* for loop with a single iterator with implicit range */
       equation
         l_1 = translateEEquations(l);
       then
-        SCode.EQ_FOR(i,Absyn.END(),l_1,com);
+        SCode.EQ_FOR(i,Absyn.END(),l_1,com,info);
 
-    case (Absyn.EQ_FOR(iterators = (i,SOME(e))::(restIterators as _::_),forEquations = l),com) /* for loop with multiple iterators */
+    case (Absyn.EQ_FOR(iterators = (i,SOME(e))::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
       equation
-        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com);
+        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info);
       then
-        SCode.EQ_FOR(i,e,{eq},com);
+        SCode.EQ_FOR(i,e,{eq},com,info);
 
-    case (Absyn.EQ_FOR(iterators = (i,NONE())::(restIterators as _::_),forEquations = l),com) /* for loop with multiple iterators */
+    case (Absyn.EQ_FOR(iterators = (i,NONE())::(restIterators as _::_),forEquations = l),com,info) /* for loop with multiple iterators */
       equation
-        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com);
+        eq = translateEquation(Absyn.EQ_FOR(restIterators,l),com,info);
       then
-        SCode.EQ_FOR(i,Absyn.END(),{eq},com);
+        SCode.EQ_FOR(i,Absyn.END(),{eq},com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("assert", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com)
-      then SCode.EQ_ASSERT(e1,e2,com);
+                            functionArgs = Absyn.FUNCTIONARGS(args = {e1,e2},argNames = {})),com,info)
+      then SCode.EQ_ASSERT(e1,e2,com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("terminate", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com)
-      then SCode.EQ_TERMINATE(e1,com);
+                            functionArgs = Absyn.FUNCTIONARGS(args = {e1},argNames = {})),com,info)
+      then SCode.EQ_TERMINATE(e1,com,info);
 
     case (Absyn.EQ_NORETCALL(functionName = Absyn.CREF_IDENT("reinit", _),
-                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),e2},argNames = {})),com)
-      then SCode.EQ_REINIT(cr,e2,com);
+                            functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),e2},argNames = {})),com,info)
+      then SCode.EQ_REINIT(cr,e2,com,info);
 
-    case (Absyn.EQ_NORETCALL(fname,fargs),com)
-      then SCode.EQ_NORETCALL(fname,fargs,com);
+    case (Absyn.EQ_NORETCALL(fname,fargs),com,info)
+      then SCode.EQ_NORETCALL(fname,fargs,com,info);
   end matchcontinue;
 end translateEquation;
 

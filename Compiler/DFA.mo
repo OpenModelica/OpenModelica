@@ -1018,8 +1018,7 @@ algorithm
           Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
             firstType,
             {Absyn.COMPONENTITEM(Absyn.COMPONENT(firstPathVar,{},NONE())
-            ,NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0,Absyn.TIMESTAMP(0.0,0.0)),NONE()))};
+            ,NONE(),NONE())}),Absyn.dummyInfo,NONE()))};
         localAccElemList = listAppend(localAccElemList,elem);
         localAccElemList = createPathVarDeclarations(restPathVars,restTypes,localAccElemList);
     then localAccElemList;

@@ -623,13 +623,9 @@ algorithm
   end matchcontinue;
 end addMessage;
 
-public function addSourceMessage "function: addSourceMessage
-
+public function addSourceMessage "
   Adds a message given ID, tokens and source file info.
   The rest of the info is looked up in the message table.
-  
-  Not used 2010-03-26. I'll keep it here in case MathCore uses it,
-  but changes made here do not fix things in OpenModelica!
 "
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
@@ -655,7 +651,7 @@ algorithm
           eline, ecol, isReadOnly, file, msg, tokens);
       then
         ();
-    case (error_id,tokens,sinfo)
+    case (error_id,tokens,_)
       equation
         failure((_,_,_) = lookupMessage(error_id));
         Print.printErrorBuf("#Internal error, error message with id ");

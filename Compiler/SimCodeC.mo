@@ -15350,7 +15350,7 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           (i_s as DAE.STMT_BREAK()),
+           (i_s as DAE.STMT_BREAK(source = _)),
            _,
            i_varDecls )
       local
@@ -15381,7 +15381,7 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           (i_s as DAE.STMT_THROW()),
+           (i_s as DAE.STMT_THROW(source = _)),
            _,
            i_varDecls )
       local
@@ -15392,7 +15392,7 @@ algorithm
       then (txt, i_varDecls);
 
     case ( txt,
-           (i_s as DAE.STMT_RETURN()),
+           (i_s as DAE.STMT_RETURN(source = _)),
            _,
            i_varDecls )
       local

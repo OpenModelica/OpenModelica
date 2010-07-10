@@ -78,7 +78,7 @@ algorithm
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e1,e2;
       DAELow.Variables timevars;
       DAELow.Equation dae_equation;
-      DAE.ElementSource source,source1;
+      DAE.ElementSource source,source1,sourceStmt;
       Absyn.Path p;
       DAE.FunctionDefinition mapper;
       DAE.Type tp;
@@ -141,16 +141,16 @@ algorithm
     case (DAELow.ALGORITHM(index = index,in_=in_,out=out,source=source),timevars,inFunctions,al,inDerivedAlgs,ae,inDerivedMultiEqn)
       equation
         // get Allgorithm
-        DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1)}) = al[index+1];
+        DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
         e1_2 = Inline.inlineExp(e1_1,(NONE(),SOME(inFunctions),{DAE.NORM_INLINE()}));
         e2 = Exp.simplify(e1_2);
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,inFunctions));
         // inputs
-        (in_1,_) = DAELow.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2)}));
+        (in_1,_) = DAELow.lowerAlgorithmInputsOutputs(timevars,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)}));
         // only add algorithm if it is not already derived 
-        (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2)}),listLength(out1),inDerivedAlgs);
+        (index,a1,derivedAlgs,add) = addArray(index,al,DAE.ALGORITHM_STMTS({DAE.STMT_TUPLE_ASSIGN(exptyp,expExpLst1,e2,sourceStmt)}),listLength(out1),inDerivedAlgs);
        then
         (DAELow.ALGORITHM(index,in_1,out1,source),a1,derivedAlgs,ae,inDerivedMultiEqn,add);
     case (DAELow.COMPLEX_EQUATION(index = _),_,_,_,_,_,_)

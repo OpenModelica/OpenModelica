@@ -801,102 +801,103 @@ algorithm
       Ident i;
       list<Integer> ilst;
       DAE.Statement stmt,stmt_1;
+      DAE.ElementSource source;
     case({},dae) then ({},dae);
-    case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae)
+    case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_ASSIGN(ty,e1_1,e2_1) :: cdr_1,dae);
-    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e) :: cdr,dae)
+        (DAE.STMT_ASSIGN(ty,e1_1,e2_1,source) :: cdr_1,dae);
+    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e,source) :: cdr,dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1) :: cdr_1,dae);
-    case(DAE.STMT_IF(e,stmts,els) :: cdr,dae)
+        (DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1,source) :: cdr_1,dae);
+    case(DAE.STMT_IF(e,stmts,els,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (els_1,dae) = elabElse(els,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_IF(e_1,stmts_1,els_1) :: cdr_1,dae);
-    case(DAE.STMT_FOR(ty,b,i,e,stmts) :: cdr,dae)
+        (DAE.STMT_IF(e_1,stmts_1,els_1,source) :: cdr_1,dae);
+    case(DAE.STMT_FOR(ty,b,i,e,stmts,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_FOR(ty,b,i,e_1,stmts_1) :: cdr_1,dae);
-    case(DAE.STMT_WHILE(e,stmts) :: cdr,dae)
+        (DAE.STMT_FOR(ty,b,i,e_1,stmts_1,source) :: cdr_1,dae);
+    case(DAE.STMT_WHILE(e,stmts,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_WHILE(e_1,stmts_1) :: cdr_1,dae);
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst) :: cdr,dae)
+        (DAE.STMT_WHILE(e_1,stmts_1,source) :: cdr_1,dae);
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         ({stmt_1},dae) = elabStmts({stmt},dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst) :: cdr_1,dae);
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst) :: cdr,dae)
+        (DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source) :: cdr_1,dae);
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst) :: cdr_1,dae);
-    case(DAE.STMT_ASSERT(e1,e2) :: cdr,dae)
+        (DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst,source) :: cdr_1,dae);
+    case(DAE.STMT_ASSERT(e1,e2,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_ASSERT(e1_1,e2_1) :: cdr_1,dae);
-    case(DAE.STMT_TERMINATE(e) :: cdr,dae)
+        (DAE.STMT_ASSERT(e1_1,e2_1,source) :: cdr_1,dae);
+    case(DAE.STMT_TERMINATE(e,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_TERMINATE(e_1) :: cdr_1,dae);
-    case(DAE.STMT_REINIT(e1,e2) :: cdr,dae)
+        (DAE.STMT_TERMINATE(e_1,source) :: cdr_1,dae);
+    case(DAE.STMT_REINIT(e1,e2,source) :: cdr,dae)
       equation
         ((e1_1,dae)) = Exp.traverseExp(e1,elabExp,dae);
         ((e2_1,dae)) = Exp.traverseExp(e2,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_REINIT(e1_1,e2_1) :: cdr_1,dae);
-    case(DAE.STMT_NORETCALL(e) :: cdr,dae)
+        (DAE.STMT_REINIT(e1_1,e2_1,source) :: cdr_1,dae);
+    case(DAE.STMT_NORETCALL(e,source) :: cdr,dae)
       equation
         ((e_1,dae)) = Exp.traverseExp(e,elabExp,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_NORETCALL(e_1) :: cdr_1,dae);
-    case(DAE.STMT_TRY(stmts) :: cdr,dae)
+        (DAE.STMT_NORETCALL(e_1,source) :: cdr_1,dae);
+    case(DAE.STMT_TRY(stmts,source) :: cdr,dae)
       equation
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_TRY(stmts_1) :: cdr_1,dae);
-    case(DAE.STMT_CATCH(stmts) :: cdr,dae)
+        (DAE.STMT_TRY(stmts_1,source) :: cdr_1,dae);
+    case(DAE.STMT_CATCH(stmts,source) :: cdr,dae)
       equation
         (stmts_1,dae) = elabStmts(stmts,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_CATCH(stmts_1) :: cdr_1,dae);
-    case(DAE.STMT_MATCHCASES(elst) :: cdr,dae)
+        (DAE.STMT_CATCH(stmts_1,source) :: cdr_1,dae);
+    case(DAE.STMT_MATCHCASES(elst,source) :: cdr,dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_MATCHCASES(elst_1) :: cdr_1,dae);
+        (DAE.STMT_MATCHCASES(elst_1,source) :: cdr_1,dae);
     case(stmt :: cdr,dae)
       equation
         (cdr_1,dae) = elabStmts(cdr,dae);
@@ -1510,108 +1511,109 @@ algorithm
       list<Integer> ilst;
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> elst,elst_1;
+      DAE.ElementSource source;
     case({},_,_,_,_) then {};
-    case(DAE.STMT_ASSIGN(ty,e1,e2) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
         ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_ASSIGN(ty,e1_1,e2_1) :: cdr_1;
-    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e) :: cdr,dae,p,inputs,current)
+        DAE.STMT_ASSIGN(ty,e1_1,e2_1,source) :: cdr_1;
+    case(DAE.STMT_TUPLE_ASSIGN(ty,elst,e,source) :: cdr,dae,p,inputs,current)
       equation
         elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1) :: cdr_1;
-    case(DAE.STMT_ASSIGN_ARR(ty,cref,e) :: cdr,dae,p,inputs,current)
+        DAE.STMT_TUPLE_ASSIGN(ty,elst_1,e_1,source) :: cdr_1;
+    case(DAE.STMT_ASSIGN_ARR(ty,cref,e,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_ASSIGN_ARR(ty,cref,e_1) :: cdr_1;
-    case(DAE.STMT_IF(e,stmts,el) :: cdr,dae,p,inputs,current)
+        DAE.STMT_ASSIGN_ARR(ty,cref,e_1,source) :: cdr_1;
+    case(DAE.STMT_IF(e,stmts,el,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         el_1 = fixCallsElse(el,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_IF(e_1,stmts_1,el_1) :: cdr_1;
-    case(DAE.STMT_FOR(ty,b,i,e,stmts) :: cdr,dae,p,inputs,current)
+        DAE.STMT_IF(e_1,stmts_1,el_1,source) :: cdr_1;
+    case(DAE.STMT_FOR(ty,b,i,e,stmts,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_FOR(ty,b,i,e_1,stmts_1) :: cdr_1;
-    case(DAE.STMT_WHILE(e,stmts) :: cdr,dae,p,inputs,current)
+        DAE.STMT_FOR(ty,b,i,e_1,stmts_1,source) :: cdr_1;
+    case(DAE.STMT_WHILE(e,stmts,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_WHILE(e_1,stmts_1) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst) :: cdr,dae,p,inputs,current)
+        DAE.STMT_WHILE(e_1,stmts_1,source) :: cdr_1;
+    case(DAE.STMT_WHEN(e,stmts,SOME(stmt),ilst,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         {stmt,stmt_1} = fixCallsAlg({stmt},dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst) :: cdr_1;
-    case(DAE.STMT_WHEN(e,stmts,NONE,ilst) :: cdr,dae,p,inputs,current)
+        DAE.STMT_WHEN(e_1,stmts_1,SOME(stmt_1),ilst,source) :: cdr_1;
+    case(DAE.STMT_WHEN(e,stmts,NONE,ilst,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst) :: cdr_1;
-    case(DAE.STMT_ASSERT(e1,e2) :: cdr,dae,p,inputs,current)
+        DAE.STMT_WHEN(e_1,stmts_1,NONE,ilst,source) :: cdr_1;
+    case(DAE.STMT_ASSERT(e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
         ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_ASSERT(e1_1,e2_1) :: cdr_1;
-    case(DAE.STMT_TERMINATE(e) :: cdr,dae,p,inputs,current)
+        DAE.STMT_ASSERT(e1_1,e2_1,source) :: cdr_1;
+    case(DAE.STMT_TERMINATE(e,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_TERMINATE(e_1) :: cdr_1;
-    case(DAE.STMT_REINIT(e1,e2) :: cdr,dae,p,inputs,current)
+        DAE.STMT_TERMINATE(e_1,source) :: cdr_1;
+    case(DAE.STMT_REINIT(e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
         ((e1_1,_)) = Exp.traverseExp(e1,fixCall,(p,inputs,dae,current));
         ((e2_1,_)) = Exp.traverseExp(e2,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_REINIT(e1_1,e2_1) :: cdr_1;
-    case(DAE.STMT_NORETCALL(e) :: cdr,dae,p,inputs,current)
+        DAE.STMT_REINIT(e1_1,e2_1,source) :: cdr_1;
+    case(DAE.STMT_NORETCALL(e,source) :: cdr,dae,p,inputs,current)
       equation
         ((e_1,_)) = Exp.traverseExp(e,fixCall,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_NORETCALL(e) :: cdr_1;
-    case(DAE.STMT_TRY(stmts) :: cdr,dae,p,inputs,current)
+        DAE.STMT_NORETCALL(e,source) :: cdr_1;
+    case(DAE.STMT_TRY(stmts,source) :: cdr,dae,p,inputs,current)
       equation
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_TRY(stmts_1) :: cdr_1;
-    case(DAE.STMT_CATCH(stmts) :: cdr,dae,p,inputs,current)
+        DAE.STMT_TRY(stmts_1,source) :: cdr_1;
+    case(DAE.STMT_CATCH(stmts,source) :: cdr,dae,p,inputs,current)
       equation
         stmts_1 = fixCallsAlg(stmts,dae,p,inputs,current);
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_CATCH(stmts_1) :: cdr_1;
-    case(DAE.STMT_MATCHCASES(elst) :: cdr,dae,p,inputs,current)
+        DAE.STMT_CATCH(stmts_1,source) :: cdr_1;
+    case(DAE.STMT_MATCHCASES(elst,source) :: cdr,dae,p,inputs,current)
       equation
         elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_MATCHCASES(elst_1) :: cdr_1;
+        DAE.STMT_MATCHCASES(elst_1,source) :: cdr_1;
     case(stmt :: cdr,dae,p,inputs,current)
       equation
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);

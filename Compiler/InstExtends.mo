@@ -855,52 +855,53 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> whenlst;
       Option<SCode.Comment> comment;
       Absyn.FunctionArgs fargs;
-    case (cache,env,SCode.EQ_IF(expl,eqll,eql,comment),ht)
+      Absyn.Info info;
+    case (cache,env,SCode.EQ_IF(expl,eqll,eql,comment,info),ht)
       equation
         (cache,expl) = fixList(cache,env,expl,ht,fixExp);
         (cache,eqll) = fixListList(cache,env,eqll,ht,fixEEquation);
         (cache,eql) = fixList(cache,env,eql,ht,fixEEquation);
-      then (cache,SCode.EQ_IF(expl,eqll,eql,comment));
-    case (cache,env,SCode.EQ_EQUALS(exp1,exp2,comment),ht)
+      then (cache,SCode.EQ_IF(expl,eqll,eql,comment,info));
+    case (cache,env,SCode.EQ_EQUALS(exp1,exp2,comment,info),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,SCode.EQ_EQUALS(exp1,exp2,comment));
-    case (cache,env,SCode.EQ_CONNECT(cref1,cref2,comment),ht)
+      then (cache,SCode.EQ_EQUALS(exp1,exp2,comment,info));
+    case (cache,env,SCode.EQ_CONNECT(cref1,cref2,comment,info),ht)
       equation
         (cache,cref1) = fixCref(cache,env,cref1,ht);
         (cache,cref2) = fixCref(cache,env,cref2,ht);
-      then (cache,SCode.EQ_CONNECT(cref1,cref2,comment));
-    case (cache,env,SCode.EQ_FOR(id,exp,eql,comment),ht)
+      then (cache,SCode.EQ_CONNECT(cref1,cref2,comment,info));
+    case (cache,env,SCode.EQ_FOR(id,exp,eql,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
         (cache,eql) = fixList(cache,env,eql,ht,fixEEquation);
-      then (cache,SCode.EQ_FOR(id,exp,eql,comment));
-    case (cache,env,SCode.EQ_WHEN(exp,eql,whenlst,comment),ht)
+      then (cache,SCode.EQ_FOR(id,exp,eql,comment,info));
+    case (cache,env,SCode.EQ_WHEN(exp,eql,whenlst,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
         (cache,eql) = fixList(cache,env,eql,ht,fixEEquation);
         (cache,whenlst) = fixListTuple2(cache,env,whenlst,ht,fixExp,fixListEEquation);
-      then (cache,SCode.EQ_WHEN(exp,eql,whenlst,comment));
-    case (cache,env,SCode.EQ_ASSERT(exp1,exp2,comment),ht)
+      then (cache,SCode.EQ_WHEN(exp,eql,whenlst,comment,info));
+    case (cache,env,SCode.EQ_ASSERT(exp1,exp2,comment,info),ht)
       equation
         (cache,exp1) = fixExp(cache,env,exp1,ht);
         (cache,exp2) = fixExp(cache,env,exp2,ht);
-      then (cache,SCode.EQ_ASSERT(exp1,exp2,comment));
-    case (cache,env,SCode.EQ_TERMINATE(exp,comment),ht)
+      then (cache,SCode.EQ_ASSERT(exp1,exp2,comment,info));
+    case (cache,env,SCode.EQ_TERMINATE(exp,comment,info),ht)
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
-      then (cache,SCode.EQ_TERMINATE(exp,comment));
-    case (cache,env,SCode.EQ_REINIT(cref,exp,comment),ht)
+      then (cache,SCode.EQ_TERMINATE(exp,comment,info));
+    case (cache,env,SCode.EQ_REINIT(cref,exp,comment,info),ht)
       equation
         (cache,cref) = fixCref(cache,env,cref,ht);
         (cache,exp) = fixExp(cache,env,exp,ht);
-      then (cache,SCode.EQ_REINIT(cref,exp,comment));
-    case (cache,env,SCode.EQ_NORETCALL(cref,fargs,comment),ht)
+      then (cache,SCode.EQ_REINIT(cref,exp,comment,info));
+    case (cache,env,SCode.EQ_NORETCALL(cref,fargs,comment,info),ht)
       equation
         (cache,fargs) = fixFarg(cache,env,fargs,ht);
         (cache,cref) = fixCref(cache,env,cref,ht);
-      then (cache,SCode.EQ_NORETCALL(cref,fargs,comment));
+      then (cache,SCode.EQ_NORETCALL(cref,fargs,comment,info));
   end matchcontinue;
 end fixEEquation;
 

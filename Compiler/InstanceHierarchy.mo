@@ -346,15 +346,16 @@ algorithm
     Absyn.Path p;
     Absyn.ComponentRef cr1, cr2;
     Option<SCode.Comment> cmt;
+    Absyn.Info info;
 
     case (NONE(), e) then e;
 
-    case (SOME(p), SCode.EQ_CONNECT(cr1, cr2, cmt))
+    case (SOME(p), SCode.EQ_CONNECT(cr1, cr2, cmt, info))
       equation
         cr1 = Absyn.joinCrefs(Absyn.pathToCref(p), cr1);
         cr2 = Absyn.joinCrefs(Absyn.pathToCref(p), cr2);
       then
-         SCode.EQ_CONNECT(cr1, cr2, cmt);
+         SCode.EQ_CONNECT(cr1, cr2, cmt, info);
   end matchcontinue;
 end addScopeToConnects;
 
@@ -372,14 +373,14 @@ algorithm
       InstanceConnects result;
       list<Absyn.ComponentRef> act;
 
-    case (scope, SCode.EQUATION(equ as SCode.EQ_CONNECT(_, _, _))::rest, CONNECTS(eqs,act))
+    case (scope, SCode.EQUATION(equ as SCode.EQ_CONNECT(crefLeft = _))::rest, CONNECTS(eqs,act))
       equation
         equ = addScopeToConnects(scope,equ);
         result = addConnects(scope, rest, CONNECTS(equ::eqs,act));
       then
         result;
 
-    case (scope, SCode.EQUATION(SCode.EQ_FOR(_, _, eEquationLst, _))::rest, CONNECTS(eqs,act))
+    case (scope, SCode.EQUATION(SCode.EQ_FOR(eEquationLst = eEquationLst))::rest, CONNECTS(eqs,act))
       equation
         eEquationLst = filterConnects(eEquationLst);
         eEquationLst = Util.listMap1r(eEquationLst, addScopeToConnects, scope);
@@ -410,7 +411,7 @@ algorithm
 
     case ({}) then {};
 
-    case ((equ as SCode.EQ_CONNECT(_, _, _))::rest)
+    case ((equ as SCode.EQ_CONNECT(crefLeft = _))::rest)
       equation
         other = filterConnects(rest);
       then

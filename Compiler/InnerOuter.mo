@@ -712,12 +712,13 @@ algorithm
       Prefix.Prefix scope;
       InstHierarchy ih;
       DAE.ElementSource source "the origin of the element";
+      Absyn.Info info;
 
     // handle empty
     case(cache,env,ih,pre,{},setLst,crs,_) then ({},setLst,crs,{});
       
     // an inner only outer connect  
-    case(cache,env,ih,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::outerConnects,setLst,crs,topCall)
+    case(cache,env,ih,pre,Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source as DAE.SOURCE(info = info))::outerConnects,setLst,crs,topCall)
       equation
         cr1Outer = cr1;
         cr2Outer = cr2;
@@ -748,7 +749,7 @@ algorithm
         (setLst,crs,added) = ConnectUtil.addOuterConnectToSets(cr1,cr2,io1,io2,f1,f2,setLst,crs);
         
         // if no connection set available (added = false), create new one
-        setLst = addOuterConnectIfEmpty(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2);
+        setLst = addOuterConnectIfEmpty(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info);
         
         (outerConnects,setLst,crs,innerOuterConnects) =
           retrieveOuterConnections2(cache,env,ih,pre,outerConnects,setLst,crs,topCall);
@@ -759,7 +760,7 @@ algorithm
         (outerConnects,setLst,crs,innerOuterConnects);
     
     // this case is for innerouter declarations, since we do not have them in environment we need to treat them in a special way 
-    case(cache,env,ih,pre,(oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source))::outerConnects,setLst,crs,true)
+    case(cache,env,ih,pre,(oc as Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source as DAE.SOURCE(info = info)))::outerConnects,setLst,crs,true)
       local Boolean b1,b2,b3,b4;
       equation
         (b1,b3) = innerOuterBooleans(io1);
@@ -774,7 +775,7 @@ algorithm
         io2 = convertInnerOuterInnerToOuter(io2);
         (setLst,crs,added) = ConnectUtil.addOuterConnectToSets(cr1,cr2,io1,io2,f1,f2,setLst,crs);
         /* If no connection set available (added = false), create new one */
-        setLst = addOuterConnectIfEmptyNoEnv(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2);
+        setLst = addOuterConnectIfEmptyNoEnv(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info);
         (outerConnects,setLst,crs,innerOuterConnects) =
         retrieveOuterConnections2(cache,env,ih,pre,outerConnects,setLst,crs,true);
       then
@@ -824,9 +825,10 @@ protected function addOuterConnectIfEmpty
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io2;
   input Connect.Face f2;
+  input Absyn.Info info;
   output list<Connect.Set> outSetLst;
 algorithm
-  outSetLst := matchcontinue(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2)
+  outSetLst := matchcontinue(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
      local SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
        Boolean flowPrefix;
@@ -836,25 +838,25 @@ algorithm
        InstHierarchy ih;
 
     // if it was added, return the same
-    case(cache,env,ih,pre,setLst,true,_,_,_,_,_,_)
+    case(cache,env,ih,pre,setLst,true,_,_,_,_,_,_,_)
       then setLst;
     
     // if it was not added, add it (search for both components)
-    case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2)
+    case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         (cache,DAE.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (cache,DAE.ATTR(         _,_,_,vt2,_,_),t2,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,io1,io2,ConnectionGraph.EMPTY);
+        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then
         setLst;
 
     // This can fail, for innerouter, the inner part is not declared in env so instead the call to addOuterConnectIfEmptyNoEnv will succed.
-    case(cache,env,ih,pre,setLst,_,cr1,_,_,cr2,_,_)
+    case(cache,env,ih,pre,setLst,_,cr1,_,_,cr2,_,_,_)
       equation
         //print("Failed lookup: " +& Exp.printComponentRefStr(cr1) +& "\n");
         //print("Failed lookup: " +& Exp.printComponentRefStr(cr2) +& "\n");
@@ -886,9 +888,10 @@ protected function addOuterConnectIfEmptyNoEnv
   input DAE.ComponentRef cr2;
   input Absyn.InnerOuter io2;
   input Connect.Face f2;
+  input Absyn.Info info;
   output list<Connect.Set> outSetLst;
 algorithm
-  outSetLst := matchcontinue(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2)
+  outSetLst := matchcontinue(cache,env,inIH,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
@@ -899,10 +902,10 @@ algorithm
        InstHierarchy ih;
 
     // if it was added, return the same
-    case(cache,env,ih,pre,setLst,true,_,_,_,_,_,_) then setLst;
+    case(cache,env,ih,pre,setLst,true,_,_,_,_,_,_,_) then setLst;
     
     // if it was not added, add it (first component found: cr1)
-    case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2)
+    case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
@@ -911,14 +914,14 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2,ConnectionGraph.EMPTY);
+        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
     then
       setLst;
 
     // if it was not added, add it (first component found: cr2)
-    case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2)
+    case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         pre = Prefix.NOPRE();
         (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
@@ -927,13 +930,13 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2,ConnectionGraph.EMPTY);
+        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then setLst;
     
     // fail
-    case(cache,env,ih,pre,setLst,_,_,_,_,_,_,_)
+    case(cache,env,ih,pre,setLst,_,_,_,_,_,_,_,_)
       equation print("failure in: addOuterConnectIfEmptyNOENV\n");
         then fail();
   end matchcontinue;

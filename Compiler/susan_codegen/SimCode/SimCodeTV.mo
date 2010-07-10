@@ -728,21 +728,25 @@ package DAE
       ExpType type_;
       Exp exp1;
       Exp exp;
+      ElementSource source;
     end STMT_ASSIGN;
     record STMT_ASSIGN_ARR
       ExpType type_;
       ComponentRef componentRef;
       Exp exp;
+      ElementSource source;
     end STMT_ASSIGN_ARR;
     record STMT_TUPLE_ASSIGN
       ExpType type_;
       list<Exp> expExpLst;
       Exp exp;
+      ElementSource source;
     end STMT_TUPLE_ASSIGN;
     record STMT_IF
       Exp exp;
       list<Statement> statementLst;
       Else else_;
+      ElementSource source;
     end STMT_IF;
     record STMT_FOR
       ExpType type_;
@@ -750,38 +754,49 @@ package DAE
       Ident ident;
       Exp exp;
       list<Statement> statementLst;
+      ElementSource source;
     end STMT_FOR;
     record STMT_WHILE
       Exp exp;
       list<Statement> statementLst;
+      ElementSource source;
     end STMT_WHILE;
     record STMT_WHEN
       Exp exp;
       list<Statement> statementLst;
       Option<Statement> elseWhen;
       list<Integer> helpVarIndices;
+      ElementSource source;
     end STMT_WHEN;
     record STMT_ASSERT
       Exp cond;
       Exp msg;
+      ElementSource source;
     end STMT_ASSERT;
     record STMT_RETURN
+      ElementSource source;
     end STMT_RETURN;
     record STMT_MATCHCASES
       list<Exp> caseStmt;
+      ElementSource source;
     end STMT_MATCHCASES;
     record STMT_BREAK
+      ElementSource source;
     end STMT_BREAK;
     record STMT_TRY
       list<Statement> tryBody;
+      ElementSource source;
     end STMT_TRY;
     record STMT_CATCH
       list<Statement> catchBody;
+      ElementSource source;
     end STMT_CATCH;
     record STMT_THROW
+      ElementSource source;
     end STMT_THROW;
     record STMT_NORETCALL
       Exp exp;
+      ElementSource source;
     end STMT_NORETCALL;
   end Statement;
 

@@ -1470,19 +1470,19 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    case (DAE.STMT_RETURN(),i)
+    case (DAE.STMT_RETURN(source = _),i)
       equation
         indent(i);
         Print.printBuf("return;\n");
       then
         ();
-    case (DAE.STMT_BREAK(),i)
+    case (DAE.STMT_BREAK(source = _),i)
       equation
         indent(i);
         Print.printBuf("break;\n");
       then
         ();
-    case (DAE.STMT_REINIT(e1,e2),i)
+    case (DAE.STMT_REINIT(var = e1, value = e2),i)
            local DAE.Exp e1,e2;
       equation
         indent(i);
@@ -1493,7 +1493,7 @@ algorithm
         Print.printBuf(");\n");
       then
         ();
-    case (DAE.STMT_TRY(stmts),i)
+    case (DAE.STMT_TRY(tryBody = stmts),i)
       equation
         indent(i);
         Print.printBuf("try\n");
@@ -1501,7 +1501,7 @@ algorithm
         Print.printBuf("end try;\n");
       then
         ();
-    case (DAE.STMT_CATCH(stmts),i)
+    case (DAE.STMT_CATCH(catchBody = stmts),i)
       equation
         indent(i);
         Print.printBuf("catch\n");
@@ -1509,7 +1509,7 @@ algorithm
         Print.printBuf("end catch;\n");
       then
         ();
-    case (DAE.STMT_MATCHCASES(expl),i)
+    case (DAE.STMT_MATCHCASES(caseStmt = expl),i)
       equation
         indent(i);
         Print.printBuf("matchcases ");
@@ -1717,7 +1717,7 @@ algorithm
       then
         str;
 
-    case (DAE.STMT_NORETCALL(e),i)
+    case (DAE.STMT_NORETCALL(exp = e),i)
       equation
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
@@ -1725,13 +1725,13 @@ algorithm
       then
         str;
 
-    case (DAE.STMT_BREAK(),i)
+    case (DAE.STMT_BREAK(source = _),i)
       equation
         s1 = indentStr(i);
         str = stringAppend(s1, "break;\n");
       then
         str;
-    case (DAE.STMT_REINIT(e1,e2),i)
+    case (DAE.STMT_REINIT(var = e1, value = e2),i)
       local DAE.Exp e1,e2; String e1_str,e2_str;
         equation
           s1 = indentStr(i);

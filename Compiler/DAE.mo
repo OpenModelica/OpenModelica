@@ -104,7 +104,7 @@ end VarProtection;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
-    list<Absyn.Info> infoLst "the line and column numbers of the equations and algorithms this element came from; info does not yet exist in Absyn, but here is where it will end up";
+    Absyn.Info info "the line and column numbers of the equations and algorithms this element came from; info does not yet exist in Absyn, but here is where it will end up";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
     list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
@@ -112,7 +112,7 @@ uniontype ElementSource "gives information about the origin of the element"
   end SOURCE;
 end ElementSource;
 
-public constant ElementSource emptyElementSource = SOURCE({},{},{},{},{});
+public constant ElementSource emptyElementSource = SOURCE(Absyn.dummyInfo,{},{},{},{});
 
 public uniontype Element
   record VAR
@@ -465,24 +465,28 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ExpType type_;
     Exp exp1;
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSIGN;
 
   record STMT_TUPLE_ASSIGN
     ExpType type_;
     list<Exp> expExpLst;
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_TUPLE_ASSIGN;
 
   record STMT_ASSIGN_ARR
     ExpType type_;
     ComponentRef componentRef;
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSIGN_ARR;
 
   record STMT_IF
     Exp exp;
     list<Statement> statementLst;
     Else else_;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_IF;
 
   record STMT_FOR
@@ -491,11 +495,13 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     Ident ident;
     Exp exp;
     list<Statement> statementLst;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_FOR;
 
   record STMT_WHILE
     Exp exp;
     list<Statement> statementLst;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_WHILE;
 
   record STMT_WHEN
@@ -503,55 +509,68 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     list<Statement> statementLst;
     Option<Statement> elseWhen;
     list<Integer> helpVarIndices;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_WHEN;
 
   record STMT_ASSERT "assert(cond,msg)"
     Exp cond;
     Exp msg;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_ASSERT;
 
   record STMT_TERMINATE "terminate(msg)"
     Exp msg;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_TERMINATE;
 
   record STMT_REINIT
     Exp var "Variable";
     Exp value "Value ";
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_REINIT;
 
   record STMT_NORETCALL "call with no return value, i.e. no equation.
 		   Typically sideeffect call of external function."
     Exp exp;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_NORETCALL;
 
   record STMT_RETURN
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_RETURN;
 
   record STMT_BREAK
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_BREAK;
 
   // MetaModelica extension. KS
   record STMT_TRY
     list<Statement> tryBody;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_TRY;
 
   record STMT_CATCH
     list<Statement> catchBody;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_CATCH;
 
   record STMT_THROW
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_THROW;
 
   record STMT_GOTO
     String labelName;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_GOTO;
 
   record STMT_LABEL
     String labelName;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_LABEL;
 
   record STMT_MATCHCASES "matchcontinue helper"
     list<Exp> caseStmt;
+    ElementSource source "the origin of the component/equation/algorithm";
   end STMT_MATCHCASES;
 
   //-----
