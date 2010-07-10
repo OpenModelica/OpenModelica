@@ -679,7 +679,6 @@ enable_option_checking
 with_static_lpsolve
 with_CORBA
 with_MICO
-with_ORBIT2
 with_omniORB
 with_sendData_Qt
 with_Coin
@@ -1305,7 +1304,6 @@ Optional Packages:
   --with-static-lpsolve=DIR  (default to dynamic linking; searches /usr if no other directory is provided)
   --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)
   --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)
-  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)
   --with-omniORB=DIR     use omniORB installed in DIR
   --with-sendData-Qt     Compile with support for plot().
   --with-Coin     Compile with support for plotting in 3D.
@@ -4455,14 +4453,6 @@ if test "${with_MICO+set}" = set; then :
 fi
 
 
-# Check whether --with-ORBIT2 was given.
-if test "${with_ORBIT2+set}" = set; then :
-  withval=$with_ORBIT2; WANT_ORBIT2="$withval"
-else
-  WANT_ORBIT2="no"
-fi
-
-
 # Check whether --with-omniORB was given.
 if test "${with_omniORB+set}" = set; then :
   withval=$with_omniORB; WANT_OMNIORB="$withval"
@@ -4474,8 +4464,10 @@ fi
 if test ! "$WANT_MICO" = "no"; then
   if test "$WANT_MICO" = "yes"; then
     MICO="mico-config";
+    IDLCMD="idl";
   else
     MICO="$WANT_MICO/bin/mico-config";
+   IDLCMD="$WANT_MICO/bin/idl";
   fi
   if test "$USE_CORBA" = "no"; then
     as_fn_error "failed to find mico-corba" "$LINENO" 5
@@ -4487,9 +4479,13 @@ $as_echo_n "checking mico version... " >&6; }
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_MICO"
   QT_USE_CORBA="USE_MICO"
-  CORBA_QMAKE_INCLUDES="`mico-config --prefix`/include";
-  CORBALIBS=`mico-config --libs`;
-  IDLCMD="idl";
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking mico settings" >&5
+$as_echo_n "checking mico settings... " >&6; }
+  CORBACFLAGS=-I`$MICO --prefix`/include;
+  CORBA_QMAKE_INCLUDES=`$MICO --prefix`/include;
+  CORBALIBS=`$MICO --libs`;
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CORBACFLAGS $USE_CORBA $QT_USE_CORBA" >&5
+$as_echo "$CORBACFLAGS $USE_CORBA $QT_USE_CORBA" >&6; }
   DESIRED_CORBA="mico"
 elif test ! "$WANT_ORBIT2" = "no"; then
   if test "$WANT_ORBIT2" = "yes"; then

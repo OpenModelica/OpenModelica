@@ -228,14 +228,16 @@ dnl should we use corba?
 
 AC_ARG_WITH(CORBA,  [  --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[WANT_MICO="no"])
 AC_ARG_WITH(MICO,   [  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
-AC_ARG_WITH(ORBIT2, [  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)],[WANT_ORBIT2="$withval"],[WANT_ORBIT2="no"])
+dnl AC_ARG_WITH(ORBIT2, [  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)],[WANT_ORBIT2="$withval"],[WANT_ORBIT2="no"])
 AC_ARG_WITH(omniORB,[  --with-omniORB=DIR     use omniORB installed in DIR],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
 
 if test ! "$WANT_MICO" = "no"; then
   if test "$WANT_MICO" = "yes"; then
     MICO="mico-config";
+    IDLCMD="idl";
   else
     MICO="$WANT_MICO/bin/mico-config";
+   IDLCMD="$WANT_MICO/bin/idl";
   fi
   if test "$USE_CORBA" = "no"; then
     AC_MSG_ERROR([failed to find mico-corba])
@@ -246,9 +248,11 @@ if test ! "$WANT_MICO" = "no"; then
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_MICO"
   QT_USE_CORBA="USE_MICO"
-  CORBA_QMAKE_INCLUDES="`mico-config --prefix`/include";
-  CORBALIBS=`mico-config --libs`;
-  IDLCMD="idl";
+  AC_MSG_CHECKING([mico settings])
+  CORBACFLAGS=-I`$MICO --prefix`/include;
+  CORBA_QMAKE_INCLUDES=`$MICO --prefix`/include;
+  CORBALIBS=`$MICO --libs`;
+  AC_MSG_RESULT([$CORBACFLAGS $USE_CORBA $QT_USE_CORBA])
   DESIRED_CORBA="mico"
 elif test ! "$WANT_ORBIT2" = "no"; then
   if test "$WANT_ORBIT2" = "yes"; then
