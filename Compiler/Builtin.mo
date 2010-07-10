@@ -2947,7 +2947,60 @@ algorithm
   end matchcontinue;
 end isTan;
 
+public function isCross ""
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "cross")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cross")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isCross(inPath); then ();
+  end matchcontinue;
+end isCross;
 
+public function isMax
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "max")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "max")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
+  end matchcontinue;
+end isMax;
+
+public function isMin
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "min")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "min")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isMin(inPath); then ();
+  end matchcontinue;
+end isMin;
+
+public function isTranspose
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "transpose")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "transpose")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isTranspose(inPath); then ();
+  end matchcontinue;
+end isTranspose;
+
+public function isSkew
+  input Absyn.Path inPath;
+algorithm
+  _:=
+  matchcontinue (inPath)
+    case (Absyn.IDENT(name = "skew")) then ();
+    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "skew")))) then ();
+    case (Absyn.FULLYQUALIFIED(inPath)) equation isSkew(inPath); then ();
+  end matchcontinue;
+end isSkew;
 
 public function simpleInitialEnv "
 val array2array=  (DAE.T_FUNCTION({(\"x\",(DAE.T_ARRAY)},

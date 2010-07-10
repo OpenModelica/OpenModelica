@@ -2125,6 +2125,88 @@ algorithm
         Print.printBuf(")");
       then
         ();
+    case DAE.ARRAY_EQUATION(exp = e1,array = e2)
+      equation
+        Print.printBuf("ARRAY_EQUATION(");
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(")");
+      then
+        ();   
+    case DAE.INITIAL_ARRAY_EQUATION(exp = e1,array = e2)
+      equation
+        Print.printBuf("INITIAL_ARRAY_EQUATION(");
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(")");
+      then
+        ();            
+    case DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2)
+      equation
+        Print.printBuf("COMPLEX_EQUATION(");
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(")");
+      then
+        ();  
+    case DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)
+      equation
+        Print.printBuf("INITIAL_COMPLEX_EQUATION(");
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(")");
+      then
+        ();   
+    case DAE.IF_EQUATION(condition1 = _)
+      equation
+        Print.printBuf("IF_EQUATION()");
+      then
+        ();     
+    case DAE.INITIAL_IF_EQUATION(condition1 = _)
+      equation
+        Print.printBuf("INITIAL_IF_EQUATION()");
+      then
+        ();  
+    case DAE.WHEN_EQUATION(condition = _)
+      equation
+        Print.printBuf("WHEN_EQUATION()");
+      then
+        (); 
+    case DAE.EXTOBJECTCLASS(path = _)
+      equation
+        Print.printBuf("EXTOBJECTCLASS()");
+      then
+        (); 
+    case DAE.ASSERT(condition = e1,message = e2)
+      equation
+        Print.printBuf("ASSERT(");
+        Exp.printExp(e1);
+        Print.printBuf(",");
+        Exp.printExp(e2);
+        Print.printBuf(")");
+      then
+        ();  
+    case DAE.TERMINATE(message = e1)
+      equation
+        Print.printBuf("TERMINATE(");
+        Exp.printExp(e1);
+        Print.printBuf(")");
+      then
+        ();  
+    case DAE.REINIT(exp = e1)
+      equation
+        Print.printBuf("REINIT()");
+      then
+        ();  
+    case DAE.NORETCALL(functionName = _)
+      equation
+        Print.printBuf("NORETCALL()");
+      then
+        ();         
     case _
       equation
         Print.printBuf("UNKNOWN ");

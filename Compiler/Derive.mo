@@ -49,6 +49,7 @@ public import RTOpts;
 public import DAEUtil;
 public import DAELow;
 public import Types;
+public import Builtin;
 
 protected import Exp;
 protected import Util;
@@ -346,7 +347,7 @@ algorithm
 
     case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isSin(fname);
+        Builtin.isSin(fname);
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(sin(x)) = der(x)cos(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
@@ -354,7 +355,7 @@ algorithm
 
     case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isCos(fname);
+        Builtin.isCos(fname);
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(cos(x)) = -der(x)sin(x)" ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
@@ -363,7 +364,7 @@ algorithm
         // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isACos(fname);
+        Builtin.isACos(fname);
         e_1 = differentiateExpTime(e, (timevars,functions))  ;
       then
         DAE.UNARY(DAE.UMINUS(DAE.ET_REAL()),DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
@@ -373,7 +374,7 @@ algorithm
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isASin(fname);
+        Builtin.isASin(fname);
         e_1 = differentiateExpTime(e, (timevars,functions))  ;
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
@@ -383,14 +384,14 @@ algorithm
         // der(arctan(x)) = der(x)/1+x^2
       case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isATan(fname);
+        Builtin.isATan(fname);
         e_1 = differentiateExpTime(e, (timevars,functions))  ;
       then
        DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),DAE.BINARY(DAE.RCONST(1.0),DAE.ADD(DAE.ET_REAL()),DAE.BINARY(e,DAE.MUL(DAE.ET_REAL()),e)));
 
     case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isExp(fname);
+        Builtin.isExp(fname);
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(exp(x)) = der(x)exp(x)" ;
       then
         DAE.BINARY(e_1,DAE.MUL(DAE.ET_REAL()),
@@ -398,35 +399,35 @@ algorithm
 
         case (DAE.CALL(path = fname,expLst = {e}),(timevars,functions))
       equation
-        isLog(fname);
+        Builtin.isLog(fname);
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(log(x)) = der(x)/x";
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),e);
 
     case (DAE.CALL(path = fname,expLst = {e},tuple_ = false,builtin = true),(timevars,functions))
       equation
-        isLog(fname);
+        Builtin.isLog(fname);
         e_1 = differentiateExpTime(e, (timevars,functions)) "der(log(x)) = der(x)/x" ;
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),e);
 
     case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        isMax(fname);
+        Builtin.isMax(fname);
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);
 
     case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        isMin(fname);
+        Builtin.isMin(fname);
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);
 
     case (e0 as DAE.CALL(path = fname,expLst = {e},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        isSqrt(fname);
+        Builtin.isSqrt(fname);
         e_1 = differentiateExpTime(e, (timevars,functions)) "sqrt(x) = der(x)/(2*sqrt(x))" ;
       then
         DAE.BINARY(e_1,DAE.DIV(DAE.ET_REAL()),
@@ -434,7 +435,7 @@ algorithm
 
     case (DAE.CALL(path = fname,expLst = {e1,e2},tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        isCross(fname);
+        Builtin.isCross(fname);
         e1_1 = differentiateExpTime(e1, (timevars,functions));
         e2_1 = differentiateExpTime(e2, (timevars,functions));
       then
@@ -442,7 +443,7 @@ algorithm
 
     case (DAE.CALL(path = fname,expLst = expl,tuple_=false,builtin = true,ty=tp,inlineType=inl),(timevars,functions))
       equation
-        isTranspose(fname);
+        Builtin.isTranspose(fname);
         expl_1 = Util.listMap1(expl, differentiateExpTime, (timevars,functions));
       then
         DAE.CALL(fname,expl_1,false,true,tp,inl);
@@ -1258,7 +1259,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
      local  DAE.ExpType tp;
       equation
-        isTanh(fname);
+        Builtin.isTanh(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1269,7 +1270,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isCosh(fname);
+        Builtin.isCosh(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1280,7 +1281,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isSinh(fname);
+        Builtin.isSinh(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1291,7 +1292,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isSin(fname);
+        Builtin.isSin(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1301,7 +1302,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isCos(fname);
+        Builtin.isCos(fname);
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1312,7 +1313,7 @@ algorithm
        // der(arccos(x)) = -der(x)/sqrt(1-x^2)
     case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
       equation
-        isACos(fname);
+        Builtin.isACos(fname);
         true = Exp.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
@@ -1323,7 +1324,7 @@ algorithm
         // der(arcsin(x)) = der(x)/sqrt(1-x^2)
       case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
       equation
-        isASin(fname);
+        Builtin.isASin(fname);
         true = Exp.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
@@ -1334,7 +1335,7 @@ algorithm
         // der(arctan(x)) = der(x)/1+x^2
       case (DAE.CALL(path = fname,expLst = {e}),tv,differentiateIfExp)
       equation
-        isATan(fname);
+        Builtin.isATan(fname);
         true = Exp.expContains(e, DAE.CREF(tv,DAE.ET_REAL()));
         e_1 = differentiateExp(e, tv,differentiateIfExp)  ;
       then
@@ -1343,7 +1344,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isExp(fname) "exp(x) => x\'  exp(x)" ;
+        Builtin.isExp(fname) "exp(x) => x\'  exp(x)" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1351,7 +1352,7 @@ algorithm
 
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c),tv,differentiateIfExp)
       equation
-        isLog(fname) "log(x) => x\'  1/x" ;
+        Builtin.isLog(fname) "log(x) => x\'  1/x" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1361,7 +1362,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isLog10(fname) "log10(x) => x\'1/(xlog(10))" ;
+        Builtin.isLog10(fname) "log10(x) => x\'1/(xlog(10))" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1373,7 +1374,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
+        Builtin.isSqrt(fname) "sqrt(x) => 1(2  sqrt(x))  der(x)" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1385,7 +1386,7 @@ algorithm
     case (DAE.CALL(path = fname,expLst = (exp :: {}),tuple_ = b,builtin = c,ty=tp,inlineType=inl),tv,differentiateIfExp)
       local DAE.ExpType tp;
       equation
-        isTan(fname) "tan x => 1/((cos x)^2)" ;
+        Builtin.isTan(fname) "tan x => 1/((cos x)^2)" ;
         true = Exp.expContains(exp, DAE.CREF(tv,DAE.ET_REAL()));
         exp_1 = differentiateExp(exp, tv,differentiateIfExp);
       then
@@ -1507,204 +1508,6 @@ algorithm
         fail();
   end matchcontinue;
 end differentiateExp;
-
-public function isTanh
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "tanh")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tanh")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isTanh(inPath); then ();
-  end matchcontinue;
-end isTanh;
-
-public function isCosh
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "cosh")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cosh")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isCosh(inPath); then ();
-  end matchcontinue;
-end isCosh;
-
-public function isACos
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arccos")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "acos")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isACos(inPath); then ();
-  end matchcontinue;
-end isACos;
-
-public function isASin
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arcsin")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "asin")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isASin(inPath); then ();
-  end matchcontinue;
-end isASin;
-
-public function isATan
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arctan")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan(inPath); then ();
-  end matchcontinue;
-end isATan;
-
-public function isATan2
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "arctan2")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "atan2")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isATan2(inPath); then ();
-  end matchcontinue;
-end isATan2;
-
-public function isSinh
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "sinh")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sinh")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSinh(inPath); then ();
-  end matchcontinue;
-end isSinh;
-
-public function isSin
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "sin")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sin")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSin(inPath); then ();
-  end matchcontinue;
-end isSin;
-
-public function isCos
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "cos")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cos")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isCos(inPath); then ();
-  end matchcontinue;
-end isCos;
-
-public function isExp
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "exp")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "exp")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isExp(inPath);  then ();
-  end matchcontinue;
-end isExp;
-
-public function isLog
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "log")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog(inPath); then ();
-  end matchcontinue;
-end isLog;
-
-public function isLog10
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "log10")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "log10")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isLog10(inPath); then ();
-  end matchcontinue;
-end isLog10;
-
-public function isSqrt
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "sqrt")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "sqrt")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isSqrt(inPath); then ();
-  end matchcontinue;
-end isSqrt;
-
-public function isTan
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "tan")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "tan")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isTan(inPath); then ();
-  end matchcontinue;
-end isTan;
-
-public function isMax
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "max")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "max")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
-  end matchcontinue;
-end isMax;
-
-public function isMin
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "min")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "min")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
-  end matchcontinue;
-end isMin;
-
-public function isCross
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "cross")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "cross")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
-  end matchcontinue;
-end isCross;
-
-public function isTranspose
-  input Absyn.Path inPath;
-algorithm
-  _:=
-  matchcontinue (inPath)
-    case (Absyn.IDENT(name = "transpose")) then ();
-    case (Absyn.QUALIFIED(name = "Modelica",path = Absyn.QUALIFIED(name = "Math",path = Absyn.IDENT(name = "transpose")))) then ();
-    case (Absyn.FULLYQUALIFIED(inPath)) equation isMax(inPath); then ();
-  end matchcontinue;
-end isTranspose;
 
 end Derive;
 

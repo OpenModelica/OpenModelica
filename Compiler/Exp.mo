@@ -1953,7 +1953,11 @@ protected function simplifyBuiltinConstantCalls "simplifies some builtin calls i
   output Exp outExp;
 algorithm
   outExp := matchcontinue(exp)
-  local Real r,v1,v2; Integer i; Absyn.Path path; Exp e,e1;
+  local 
+    Real r,v1,v2; 
+    Integer i; 
+    Absyn.Path path; Exp e,e1;
+    Boolean b;
     
     // der(constant) ==> 0
     case(DAE.CALL(path=Absyn.IDENT("der"),expLst ={e})) 
@@ -2025,6 +2029,28 @@ algorithm
         r = System.log(getRealConst(e));
       then 
         DAE.RCONST(r);
+        
+    // min function
+    case(DAE.CALL(path=path,expLst={e, e1})) 
+      equation
+        Builtin.isMin(path);
+        v1 = getRealConst(e);
+        v2 = getRealConst(e1);
+        b = v1 <=. v2;
+        r = Util.if_(b,v1,v2);
+      then 
+        DAE.RCONST(r);  
+
+    // max function
+    case(DAE.CALL(path=path,expLst={e, e1})) 
+      equation
+        Builtin.isMax(path);
+        v1 = getRealConst(e);
+        v2 = getRealConst(e1);
+        b = v1 >=. v2;
+        r = Util.if_(b,v1,v2);
+      then 
+        DAE.RCONST(r);              
   end matchcontinue;
 end simplifyBuiltinConstantCalls;
 
@@ -2312,6 +2338,8 @@ algorithm
 
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);        
         e_1 = simplifyMatrixProduct(e1, e2);
       then
         e_1;
@@ -2321,7 +2349,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyVectorBinary(e1, DAE.ADD(tp), e2);
+        a1 = simplifyVectorBinary(e1, DAE.ADD(tp), e2);
+        res = simplify1(a1);
       then
         res;
 
@@ -2346,7 +2375,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyVectorBinary(e1, DAE.SUB(tp), e2);
+        a1 = simplifyVectorBinary(e1, DAE.SUB(tp), e2);
+        res = simplify1(a1);
       then
         res;
 
@@ -2372,7 +2402,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyVectorBinary(e1, DAE.MUL(tp), e2);
+        a1 = simplifyVectorBinary(e1, DAE.MUL(tp), e2);
+        res = simplify1(a1);
       then
         res;
 
@@ -2381,7 +2412,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyVectorBinary(e1, DAE.DIV(tp), e2);
+        a1 = simplifyVectorBinary(e1, DAE.DIV(tp), e2);
+        res = simplify1(a1);
       then
         res;
 
@@ -2400,7 +2432,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyVectorBinary(e1, DAE.POW(tp), e2);
+        a1 = simplifyVectorBinary(e1, DAE.POW(tp), e2);
+        res = simplify1(a1);
       then
         res;
 
@@ -2615,12 +2648,16 @@ algorithm
 
     case (e1,DAE.MUL_SCALAR_PRODUCT(ty = tp),e2)
       equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);         
         res = simplifyScalarProduct(e1, e2);
       then
         res;
 
     case (e1,DAE.MUL_MATRIX_PRODUCT(ty = tp),e2)
       equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);         
         res = simplifyScalarProduct(e1, e2);
       then
         res;
@@ -2630,7 +2667,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyMatrixBinary(e1, DAE.ADD(tp), e2);
+        a1 = simplifyMatrixBinary(e1, DAE.ADD(tp), e2);
+        res = simplify1(a1);
       then
         res;
 
@@ -2639,7 +2677,8 @@ algorithm
         tp = typeof(e1);
         e1 = simplify1(e1);
         e2 = simplify1(e2);
-        res = simplifyMatrixBinary(e1, DAE.SUB(tp), e2);
+        a1 = simplifyMatrixBinary(e1, DAE.SUB(tp), e2);
+        res = simplify1(a1);
       then
         res;         
   end matchcontinue;
@@ -2864,6 +2903,8 @@ algorithm
       list<tuple<Exp, Boolean>> e,e1,e2;
       Operator op,op2;
       list<list<tuple<Exp, Boolean>>> es_1,es1,es2;
+      list<Exp> el1,el2;
+      Exp exp1;      
     case (DAE.MATRIX(ty = tp1,integer=integer1,scalar = {e1}),
           op,
          DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}))
@@ -2883,6 +2924,50 @@ algorithm
         DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.MATRIX(tp1,i1,es1), op, DAE.MATRIX(tp2,i2,es2));
       then
         DAE.MATRIX(tp1,integer1,(e :: es_1));
+        
+    // because identity is array of array    
+    case (DAE.ARRAY(ty=tp1,scalar=false,array={exp1 as DAE.ARRAY(array=el2)}),
+          op,
+         DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}))
+      equation
+        op2 = removeOperatorDimension(op);
+        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e = simplifyMatrixBinary1(e1,op2,e2);
+      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */        
+        
+    case (DAE.ARRAY(ty=tp1,scalar=false,array=((exp1 as DAE.ARRAY(array=el2))::el1)),
+          op,     
+          DAE.MATRIX(ty = tp2,integer=integer2,scalar = (e2 :: es2)))
+      equation
+        op2 = removeOperatorDimension(op);
+        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e = simplifyMatrixBinary1(e1,op2,e2);
+        i2 = integer2-1;       
+        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
+      then
+        DAE.MATRIX(tp2,integer2,(e :: es_1));
+     
+    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar = {e2}),
+          op,
+         DAE.ARRAY(ty=tp1,scalar=false,array={exp1 as DAE.ARRAY(array=el2)}))
+      equation
+        op2 = removeOperatorDimension(op);
+        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e = simplifyMatrixBinary1(e1,op2,e2);
+      then DAE.MATRIX(tp2,integer2,{e});  /* resulting operator */        
+        
+    case (DAE.MATRIX(ty = tp2,integer=integer2,scalar = (e2 :: es2)),
+          op,     
+          DAE.ARRAY(ty=tp1,scalar=false,array=((exp1 as DAE.ARRAY(array=el2))::el1)))
+      equation
+        op2 = removeOperatorDimension(op);
+        e1 = Util.listMap1(el2,Util.makeTuple2,false);
+        e = simplifyMatrixBinary1(e1,op2,e2);
+        i2 = integer2-1;       
+        DAE.MATRIX(_,_,es_1) = simplifyMatrixBinary(DAE.ARRAY(tp1,false,el1), op, DAE.MATRIX(tp2,i2,es2));
+      then
+        DAE.MATRIX(tp2,integer2,(e :: es_1));     
+                  
   end matchcontinue;
 end simplifyMatrixBinary;
 
@@ -3253,7 +3338,7 @@ algorithm
 end simplifyBinaryAddConstants;
 
 protected function simplifyBinaryMulConstants
-"function: simplifyBinaryAddConstants
+"function: simplifyBinaryMulConstants
   author: PA
   Multiplies all expressions in the list, given that they are constant."
   input list<Exp> inExpLst;
@@ -3905,6 +3990,8 @@ algorithm
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),indx)
      local Exp e;
       equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);        
         e = simplifyMatrixProduct(e1,e2);
         e = simplifyAsub(e, indx);
       then
@@ -3913,6 +4000,8 @@ algorithm
     case (exp as DAE.BINARY(exp1 = e1,operator = DAE.MUL_MATRIX_PRODUCT(ty = t),exp2 = e2),indx)
      local Exp e;
       equation
+        e1 = simplify1(e1);
+        e2 = simplify1(e2);        
         e = simplifyScalarProduct(e1,e2);
         e = simplifyAsub(e, indx);
       then
@@ -4029,7 +4118,6 @@ algorithm
        e1_1 = simplifyAsub(e1, indx);
        e2_1 = simplifyAsub(e2, indx);
     then DAE.IFEXP(cond,e1_1,e2_1);
-     
     case(e,indx)
       equation
        e1 = simplify1(e);

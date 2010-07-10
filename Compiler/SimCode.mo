@@ -597,6 +597,7 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, indexed_dlow_1);
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
+        Debug.fcall("bltdump", DAELow.dumpComponents, comps);
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
         a_cref = Absyn.pathToCref(className);
         file_dir = CevalScript.getFileDir(a_cref, p);
@@ -2769,12 +2770,12 @@ algorithm
       SimEqSystem equation_;
 
     /* A single array equation */
-    case (mixedEvent,_,dae,jac,jac_tp,block_,helpVarInfo)
+    case (mixedEvent,genDiscrete,dae,jac,jac_tp,block_,helpVarInfo)
       equation
         singleArrayEquation(dae); // fails if not single array eq
-        equation_ = createSingleArrayEqnCode(dae, jac);
+        equations_ = createSingleArrayEqnCode(mixedEvent,genDiscrete,dae,jac,jac_tp,block_,helpVarInfo);
       then
-        {equation_};
+        equations_;
     /* A single algorithm section for several variables. */
     case (mixedEvent,genDiscrete,dae,jac,jac_tp,block_,helpVarInfo)
       equation
@@ -3585,33 +3586,52 @@ algorithm
 end listMap3passthrough;
 
 protected function createSingleArrayEqnCode
+  input Boolean mixedEvent "true if generating the mixed system event code";
+  input Boolean genDiscrete;
   input DAELow.DAELow inDAELow;
   input Option<list<tuple<Integer, Integer, DAELow.Equation>>> inTplIntegerIntegerDAELowEquationLstOption;
-  output SimEqSystem equation_;
+  input DAELow.JacobianType inJacobianType;
+  input list<Integer> block_;
+  input list<HelpVarInfo> helpVarInfo; 
+  output list<SimEqSystem> equations_;  
 algorithm
-  equation_ :=
-  matchcontinue (inDAELow,inTplIntegerIntegerDAELowEquationLstOption)
+  equations_ :=
+  matchcontinue
+    (mixedEvent,genDiscrete,inDAELow,inTplIntegerIntegerDAELowEquationLstOption,inJacobianType,block_,helpVarInfo) 
     local
       Integer indx,cg_id_1,cg_id;
       list<Integer> ds;
       DAE.Exp e1,e2;
+      list<DAE.Exp> ea1,ea2;
+      list<tuple<DAE.Exp,DAE.Exp>> ealst;
+      list<DAELow.Equation> re;
       DAE.ComponentRef cr,origname,cr_1;
-      DAELow.Variables vars,knvars;
-      DAELow.EquationArray eqns,se,ie;
+      DAELow.Variables vars,knvars,exvars;
+      DAELow.EquationArray eqns,se,ie,eqns_1;
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
       DAELow.EventInfo ev;
-      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
+      Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac,jac1;
+      DAELow.JacobianType jac_tp;
+      list<Integer>[:] m,m_1,mt_1;
       DAE.ElementSource source "the origin of the element";
+      VarTransform.VariableReplacements av;
+      DAELow.ExternalObjectClasses eoc;
+      DAELow.DAELow subsystem_dae;
+      SimEqSystem equation_;
 
-    case (DAELow.DAELOW(orderedVars = vars,
+    case (mixedEvent,genDiscrete,
+          DAELow.DAELOW(orderedVars = vars,
                         knownVars = knvars,
+                        externalObjects = exvars,
+                        aliasVars = av,
                         orderedEqs = eqns,
                         removedEqs = se,
                         initialEqs = ie,
                         arrayEqs = ae,
                         algorithms = al,
-                        eventInfo = ev),jac) /* eqn code cg var_id extra functions */
+                        eventInfo = ev,
+                        extObjClasses = eoc),jac,inJacobianType,block_,helpVarInfo) /* eqn code cg var_id extra functions */
       local String cr_1_str;
       equation
         (DAELow.ARRAY_EQUATION(index=indx) :: _) = DAELow.equationList(eqns);
@@ -3622,8 +3642,39 @@ algorithm
         (e1,e2) = solveTrivialArrayEquation(cr_1,e1,e2);
         equation_ = createSingleArrayEqnCode2(cr_1, cr_1, e1, e2);
       then
-        equation_;
-    case (_,_)
+        {equation_};
+    case (mixedEvent,genDiscrete,
+          DAELow.DAELOW(orderedVars = vars,
+                        knownVars = knvars,
+                        externalObjects = exvars,
+                        aliasVars = av,
+                        orderedEqs = eqns,
+                        removedEqs = se,
+                        initialEqs = ie,
+                        arrayEqs = ae,
+                        algorithms = al,
+                        eventInfo = ev,
+                        extObjClasses = eoc),jac,inJacobianType,block_,helpVarInfo) /* eqn code cg var_id extra functions */
+      local String cr_1_str;
+      equation
+        (DAELow.ARRAY_EQUATION(index=indx) :: _) = DAELow.equationList(eqns);
+        DAELow.MULTIDIM_EQUATION(ds,e1,e2,source) = ae[indx + 1];
+        DAE.ARRAY(scalar=true,array=ea1) = e1;
+        DAE.ARRAY(scalar=true,array=ea2) = e2;
+        ealst = Util.listThreadTuple(ea1,ea2);
+        re = Util.listMap1(ealst,DAELow.generateEQUATION,source);
+        eqns_1 = DAELow.listEquation(re); 
+        subsystem_dae = DAELow.DAELOW(vars,knvars,exvars,av,eqns_1,se,ie,ae,al,ev,eoc);
+         m = DAELow.incidenceMatrix(subsystem_dae);
+        m_1 = DAELow.absIncidenceMatrix(m);
+        mt_1 = DAELow.transposeMatrix(m_1);
+        // calculate jacobian. If constant, linear system of equations. Otherwise nonlinear
+        jac1 = DAELow.calculateJacobian(vars, eqns, ae, m_1, mt_1,false);
+        jac_tp = DAELow.analyzeJacobian(subsystem_dae, jac1);
+        equations_ = createOdeSystem2(mixedEvent, genDiscrete, subsystem_dae, jac1, jac_tp, block_,helpVarInfo);             
+      then
+        equations_;          
+    case (_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR,{"array equations currently only supported on form v = functioncall(...)"});
       then
