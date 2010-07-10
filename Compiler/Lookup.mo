@@ -1914,7 +1914,7 @@ algorithm
       String id;
       SCode.Restriction restr;
       list<Env.Frame> env;
-      list<SCode.Algorithm> initStmts;
+      list<SCode.AlgorithmSection> initStmts;
       list<Absyn.Algorithm> initAbsynStmts;
       Absyn.Info info;
 
