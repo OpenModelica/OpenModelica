@@ -4452,6 +4452,7 @@ if test "${with_MICO+set}" = set; then :
   withval=$with_MICO; WANT_MICO="$withval"
 fi
 
+WANT_ORBIT2="no"
 
 # Check whether --with-omniORB was given.
 if test "${with_omniORB+set}" = set; then :
@@ -4546,14 +4547,23 @@ fi
 elif test ! "$WANT_OMNIORB" = "no"; then
   if test "$WANT_OMNIORB" = "yes"; then
     WANT_OMNIORB="/usr";
+    IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
   else
-    CORBA_QMAKE_INCLUDES="-I$WANT_OMNIORB/include";
+    CORBA_QMAKE_INCLUDES="$WANT_OMNIORB/include";
     CORBACFLAGS="-I$CORBA_QMAKE_INCLUDES";
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $WANT_OMNIORB/bin/omniidl" >&5
+$as_echo_n "checking for $WANT_OMNIORB/bin/omniidl... " >&6; };
+    if test -f "$WANT_OMNIORB/bin/omniidl"; then
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: ok" >&5
+$as_echo "ok" >&6; }
+    else
+    as_fn_error "not found" "$LINENO" 5
+    fi
+    IDLCMD="$WANT_OMNIORB/bin/omniidl -bcxx -Wbh=.h -Wbs=.cc";
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
   QT_USE_CORBA="USE_OMNIORB"
   CORBALIBS="-lomniORB4 -lomnithread -lpthread";
-  IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
   DESIRED_CORBA="omniorb"
 else
   USE_CORBA="";

@@ -229,6 +229,7 @@ dnl should we use corba?
 AC_ARG_WITH(CORBA,  [  --with-CORBA=DIR       use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[WANT_MICO="no"])
 AC_ARG_WITH(MICO,   [  --with-MICO=DIR        use mico corba installed in DIR (or use mico-config)],[WANT_MICO="$withval"],[])
 dnl AC_ARG_WITH(ORBIT2, [  --with-ORBIT2=DIR      use orbit2 installed in DIR (or use orbit2-config)],[WANT_ORBIT2="$withval"],[WANT_ORBIT2="no"])
+WANT_ORBIT2="no"
 AC_ARG_WITH(omniORB,[  --with-omniORB=DIR     use omniORB installed in DIR],[WANT_OMNIORB="$withval"],[WANT_OMNIORB="no"])
 
 if test ! "$WANT_MICO" = "no"; then
@@ -276,14 +277,21 @@ elif test ! "$WANT_ORBIT2" = "no"; then
 elif test ! "$WANT_OMNIORB" = "no"; then
   if test "$WANT_OMNIORB" = "yes"; then
     WANT_OMNIORB="/usr";
+    IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
   else
-    CORBA_QMAKE_INCLUDES="-I$WANT_OMNIORB/include";
+    CORBA_QMAKE_INCLUDES="$WANT_OMNIORB/include";
     CORBACFLAGS="-I$CORBA_QMAKE_INCLUDES";
+    AC_MSG_CHECKING([for $WANT_OMNIORB/bin/omniidl]);
+    if test -f "$WANT_OMNIORB/bin/omniidl"; then
+    AC_MSG_RESULT([ok])
+    else
+    AC_MSG_ERROR([not found])
+    fi
+    IDLCMD="$WANT_OMNIORB/bin/omniidl -bcxx -Wbh=.h -Wbs=.cc";
   fi
   USE_CORBA="-DUSE_CORBA -DUSE_OMNIORB";
   QT_USE_CORBA="USE_OMNIORB"
   CORBALIBS="-lomniORB4 -lomnithread -lpthread";
-  IDLCMD="omniidl -bcxx -Wbh=.h -Wbs=.cc";
   DESIRED_CORBA="omniorb"
 else
   USE_CORBA="";
