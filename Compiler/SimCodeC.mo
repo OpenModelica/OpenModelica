@@ -9218,6 +9218,12 @@ algorithm
       then txt;
 
     case ( txt,
+           DAE.ET_ENUMERATION(index = _) )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("int"));
+      then txt;
+
+    case ( txt,
            _ )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("OTHER_EXT_TYPE"));

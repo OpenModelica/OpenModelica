@@ -2133,6 +2133,7 @@ template extType(ExpType type)
   case ET_POLYMORPHIC(__)
   case ET_META_ARRAY(__)
   case ET_BOXED(__)       then "void*"
+  case ET_ENUMERATION(__) then "int"
   else "OTHER_EXT_TYPE"
 end extType;
 
