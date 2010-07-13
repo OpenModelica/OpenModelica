@@ -199,92 +199,6 @@ algorithm
   end matchcontinue;
 end elabExpListList;
 
-protected function cevalIfConstant "function: cevalIfConstant
-  This function calls Ceval.ceval if the Constant parameter indicates
-  C_CONST. If not constant, it also tries to simplify the expression using
-  Exp.simplify"
-	input Env.Cache inCache;
-  input DAE.Exp inExp;
-  input DAE.Properties inProperties;
-  input DAE.Const inConst;
-  input Boolean inBoolean;
-  input Env.Env inEnv;
-  output Env.Cache outCache;
-  output DAE.Exp outExp;
-  output DAE.Properties outProperties;
-algorithm
-  (outCache,outExp,outProperties):=
-  matchcontinue (inCache,inExp,inProperties,inConst,inBoolean,inEnv)
-    local
-      DAE.Exp e_1,e;
-      String before, after;
-      DAE.Properties prop;
-      Boolean impl;
-      Values.Value v;
-      DAE.Type tp;
-      tuple<DAE.TType, Option<Absyn.Path>> vt;
-      DAE.Const c,const;
-      list<Env.Frame> env;
-      Env.Cache cache;
-
-    case (cache,e,(prop as DAE.PROP(constFlag = c,type_=tp)),DAE.C_PARAM(),_,_) // BoschRexroth specifics
-       equation
-        false = OptManager.getOption("cevalEquation");
-      then
-        (cache,e,DAE.PROP(tp,DAE.C_VAR()));
-    case (cache,e,(prop as DAE.PROP_TUPLE(tupleConst = c,type_=tp)),DAE.C_PARAM(),_,_) // BoschRexroth specifics
-      local DAE.TupleConst c;
-      equation
-        false = OptManager.getOption("cevalEquation");
-        print(" tuple non constant evaluation not implemented yet\n");
-      then
-        fail();//(cache,e,DAE.PROP_TUPLE(tp,DAE.C_VAR()));
-
-    case (cache,e,prop,DAE.C_VAR(),_,_)
-      equation
-        e_1 = Exp.simplify(e);
-      then
-        (cache,e_1,prop);
-        
-    case (cache,e as DAE.CALL(arg1,arg2,arg3,arg4,DAE.ET_ARRAY(arrayDimensions = dims),inl),prop,DAE.C_PARAM(),_,env)
-      local 
-        Values.Value val;
-        DAE.Type cevalType;
-        DAE.ExpType cTe;
-        Absyn.Path arg1;
-        list<DAE.Exp> arg2;
-        Boolean arg3,arg4;
-        list<Option<Integer>> dims;
-        DAE.InlineType inl;
-      equation
-        true = Exp.arrayContainWholeDimension(dims);
-        (_,val,_) = Ceval.ceval(cache,env,e,true,NONE,NONE,Ceval.MSG());
-        cevalType = Types.typeOfValue(val);
-        cTe = Types.elabType(cevalType);
-      then
-        (cache,DAE.CALL(arg1,arg2,arg3,arg4,cTe,inl),DAE.PROP(cevalType,DAE.C_PARAM));
-        
-    case (cache,e,prop,DAE.C_PARAM(),_,_)
-      equation
-        e_1 = Exp.simplify(e);
-      then
-        (cache,e_1,prop);
-
-    case (cache,e,prop,DAE.C_CONST(),impl as false,env)
-      equation
-        (cache,v,_) = Ceval.ceval(cache,env, e, impl, NONE, NONE, Ceval.MSG());
-        e_1 = valueExp(v);
-      then
-        (cache,e_1,prop);
-
-    case (cache,e,prop,_,_,_)
-      equation
-        e_1 = Exp.simplify(e);
-      then
-        (cache,e_1,prop);
-  end matchcontinue;
-end cevalIfConstant;
-
 public function elabExp "
 function: elabExp
   Static analysis of expressions means finding out the properties of
@@ -384,11 +298,11 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp);                
         exp_1 = replaceOperatorWithFcall(DAE.BINARY(e1_2,op_1,e2_2), c);
+        exp_1 = Exp.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,exp_1, prop, c, impl, env);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,exp_2,prop_1,st_2,dae);
+        (cache,exp_1,prop,st_2,dae);
 
     case (cache,env,(exp as Absyn.UNARY(op = op,exp = e)),impl,st,doVect)
       local Absyn.Exp exp;
@@ -397,10 +311,10 @@ algorithm
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp);
         exp_1 = replaceOperatorWithFcall(DAE.UNARY(op_1,e_2), c);
+        exp_1 = Exp.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,exp_1, prop, c, impl, env);
       then
-        (cache,exp_2,prop_1,st_1,dae1);
+        (cache,exp_1,prop,st_1,dae1);
     case (cache,env,(exp as Absyn.LBINARY(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect)
       local Absyn.Exp exp;
       equation
@@ -410,11 +324,11 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp);
         exp_1 = replaceOperatorWithFcall(DAE.LBINARY(e1_2,op_1,e2_2), c);
+        exp_1 = Exp.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,exp_1, prop, c, impl, env);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,exp_2,prop_1,st_2,dae);
+        (cache,exp_1,prop,st_2,dae);
     case (cache,env,(exp as Absyn.LUNARY(op = op,exp = e)),impl,st,doVect)
       local Absyn.Exp exp;
       equation
@@ -422,10 +336,10 @@ algorithm
         (cache,ops) = operators(cache,op, env, t, (DAE.T_NOTYPE(),NONE));
         (op_1,{e_2},rtype) = deoverload(ops, {(e_1,t)}, exp);
         exp_1 = replaceOperatorWithFcall(DAE.LUNARY(op_1,e_2), c);
+        exp_1 = Exp.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,exp_1, prop, c, impl, env);
       then
-        (cache,exp_2,prop_1,st_1,dae);
+        (cache,exp_1,prop,st_1,dae);
     case (cache,env,(exp as Absyn.RELATION(exp1 = e1,op = op,exp2 = e2)),impl,st,doVect)
       local Absyn.Exp exp;
       equation
@@ -435,12 +349,12 @@ algorithm
         (cache,ops) = operators(cache,op, env, t1, t2);
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp);
         exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2), c);
+        exp_1 = Exp.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,exp_1, prop, c, impl, env);
         warnUnsafeRelations(c,t1,t2,e1_2,e2_2,op_1);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,exp_2,prop_1,st_2,dae);
+        (cache,exp_1,prop,st_2,dae);
     case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect) /* Conditional expressions */
       local DAE.Exp e;
       equation
@@ -484,7 +398,6 @@ algorithm
             Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
             (cache,e,prop,st_1) = elabCall(cache,env, fn, args, nargs, impl, st);
             c = Types.propAllConst(prop);
-            (cache,e_1,prop_1) = cevalIfConstant(cache,e, prop, c, impl, env);
             Debug.fprintln("sei", "elab_exp CALL done");
           then
             (cache,e_1,prop_1,st_1);    */
@@ -510,10 +423,10 @@ algorithm
         Debug.fprintln("sei", "elab_exp CALL...") "Function calls PA. Only positional arguments are elaborated for now. TODO: Implement elaboration of named arguments." ;
         (cache,e,prop,st_1,dae) = elabCall(cache,env, fn, args, nargs, impl, st);
         c = Types.propAllConst(prop);
-        (cache,e_1,prop_1) = cevalIfConstant(cache,e, prop, c, impl, env);
+        e = Exp.simplify(e);
         Debug.fprintln("sei", "elab_exp CALL done");
       then
-        (cache,e_1,prop_1,st_1,dae);
+        (cache,e,prop,st_1,dae);
     // stefan
     /*case (cache,env,e1 as Absyn.PARTEVALFUNCTION(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,st,doVect)
       local DAE.Exp e;
@@ -547,9 +460,9 @@ algorithm
       equation
         (cache,e,prop,st_1,dae) = elabCallReduction(cache,env, fn, exp, iterators, impl, st,doVect);
         c = Types.propAllConst(prop);
-        (cache, e_1, prop_1) = cevalIfConstant(cache, e, prop, c, impl, env);
+        e = Exp.simplify(e);
       then
-        (cache,e_1,prop,st_1,dae);
+        (cache,e,prop,st_1,dae);
     case (cache,env,Absyn.RANGE(start = start,step = NONE,stop = stop),impl,st,doVect)
       equation
         (cache,start_1,DAE.PROP(start_t,c_start),st_1,dae1) = elabExp(cache,env, start, impl, st,doVect) "Range expressions without step value, e.g. 1:5" ;
@@ -557,7 +470,9 @@ algorithm
         (start_2,NONE,stop_2,rt) = deoverloadRange((start_1,start_t), NONE, (stop_1,stop_t));
         const = Types.constAnd(c_start, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, NONE, stop_2, const, rt, impl);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,DAE.RANGE(rt,start_2,NONE,stop_2), DAE.PROP(t,const), const, impl, env);
+        exp_2 = DAE.RANGE(rt, start_2, NONE, stop_2);
+        prop_1 = DAE.PROP(t, const);
+        exp_2 = Exp.simplify(exp_2);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,exp_2,prop_1,st_2,dae);
@@ -571,7 +486,9 @@ algorithm
         c1 = Types.constAnd(c_start, c_step);
         const = Types.constAnd(c1, c_stop);
         (cache,t) = elabRangeType(cache,env, start_2, SOME(step_2), stop_2, const, rt, impl);
-        (cache,exp_2,prop_1) = cevalIfConstant(cache,DAE.RANGE(rt,start_2,SOME(step_2),stop_2), DAE.PROP(t,const), const, impl, env);
+        exp_2 = DAE.RANGE(rt, start_2, SOME(step_2), stop_2);
+        prop_1 = DAE.PROP(t, const);
+        exp_2 = Exp.simplify(exp_2);
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
         (cache,exp_2,prop_1,st_3,dae);
@@ -5371,7 +5288,7 @@ algorithm
     case (cache,env,{exp},_,impl)
       equation
         (cache,exp_1,DAE.PROP((DAE.T_BOOL(_),_),c),_,dae) = elabExp(cache, env, exp, impl, NONE,true);
-        exp_2 = valueExp(Values.BOOL(false));
+        exp_2 = ValuesUtil.valueExp(Values.BOOL(false));
       then
         (cache,exp_2,DAE.PROP(DAE.T_BOOL_DEFAULT,c),dae);
     case (_,env,_,_,_)
@@ -10325,7 +10242,7 @@ algorithm
     case (cache,env,cr,acc,SCode.CONST(),_,io,tt,binding,doVect,_)
       equation
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
-        e = valueExp(v);
+        e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
@@ -10340,7 +10257,7 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
-        e = valueExp(v);
+        e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
@@ -10358,7 +10275,7 @@ algorithm
         cr_1 = fillCrefSubscripts(cr, tt);
         e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
         (cache,v,_) = Ceval.ceval(cache,env,e_1,false,NONE,NONE,Ceval.MSG());
-        e = valueExp(v);
+        e = ValuesUtil.valueExp(v);
         et = Types.typeOfValue(v);
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
@@ -11446,14 +11363,16 @@ algorithm
       Absyn.Exp sub;
       Env.Cache cache;
       DAE.DAElist dae;
-
+      DAE.Properties prop;
+      
     // no subscript      
     case (cache,_,Absyn.NOSUB(),impl) then (cache,DAE.WHOLEDIM(),DAE.C_CONST(),DAEUtil.emptyDae);
 
     // some subscript, try to elaborate it
     case (cache,env,Absyn.SUBSCRIPT(subScript = sub),impl)
       equation
-        (cache,sub_1,DAE.PROP(ty,const),_,dae) = elabExp(cache,env, sub, impl, NONE,true);
+        (cache,sub_1,prop as DAE.PROP(ty,const),_,dae) = elabExp(cache,env, sub, impl, NONE,true); 
+        (cache, sub_1, prop as DAE.PROP(ty, _)) = Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
         sub_2 = elabSubscriptType(ty, sub, sub_1);
       then
         (cache,sub_2,const,dae);
@@ -11767,148 +11686,6 @@ algorithm
         const;
   end matchcontinue;
 end constIfexp;
-
-public function valueExp "Transforms a Value into an Exp"
-  input Values.Value inValue;
-  output DAE.Exp outExp;
-algorithm
-  outExp := matchcontinue (inValue)
-    local
-      Integer dim;
-      list<DAE.Exp> explist;
-      tuple<DAE.TType, Option<Absyn.Path>> vt;
-      DAE.ExpType t;
-      DAE.Exp e;
-      Values.Value v;
-      list<Values.Value> xs,xs2,vallist;
-      list<DAE.Type> typelist;
-      DAE.ComponentRef cr;
-      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
-      list<tuple<DAE.Exp, Boolean>> mexpl2;
-      list<Integer> dims;
-      list<Option<Integer>> optDims;
-      Integer i;
-      Real r;
-      String s;
-      Boolean b;
-      list<DAE.Exp> expl;
-      list<DAE.ExpType> tpl;
-      list<String> namelst;
-      list<DAE.ExpVar> varlst;
-      String name, str;
-      Integer ix;
-      Absyn.Path path;
-      list<String> names;
-
-    case (Values.INTEGER(integer = i)) then DAE.ICONST(i); 
-    case (Values.REAL(real = r))       then DAE.RCONST(r);
-    case (Values.STRING(string = s))   then DAE.SCONST(s);
-    case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
-
-    case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
-    case (Values.ARRAY(valueLst = {}, dimLst = dims))
-      equation
-        optDims = Util.listMap(dims, Util.makeOption);
-      then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), optDims),false,{});
-
-    /* Matrix */
-    case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = _::dims))
-      equation
-        failure(Values.ARRAY(valueLst = _) = v);
-        explist = Util.listMap((v :: xs), valueExp);      
-        DAE.MATRIX(t,dim,mexpl) = valueExp(Values.ARRAY(xs2,dims));
-        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
-      then DAE.MATRIX(t,dim,mexpl2::mexpl);
-
-    /* Matrix last row*/
-    case(Values.ARRAY(valueLst = {Values.ARRAY(valueLst=v::xs)}))
-      equation
-        failure(Values.ARRAY(valueLst = _) = v);
-        dim = listLength(v::xs);
-        explist = Util.listMap((v :: xs), valueExp);
-        vt = Types.typeOfValue(v);
-        t = Types.elabType(vt);
-        dim = listLength(v::xs);
-        t = Exp.liftArrayR(t,SOME(dim));
-        t = Exp.liftArrayR(t,SOME(dim));
-        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
-      then DAE.MATRIX(t,dim,{mexpl2});
-
-    /* Generic array */
-    case (Values.ARRAY(valueLst = (v :: xs)))
-      equation
-        explist = Util.listMap((v :: xs), valueExp);
-        vt = Types.typeOfValue(v);
-        t = Types.elabType(vt);
-        dim = listLength(v::xs);
-        t = Exp.liftArrayR(t,SOME(dim));
-        b = Types.isArray(vt);
-        b = boolNot(b);
-      then
-        DAE.ARRAY(t,b,explist);
-
-    case (Values.TUPLE(valueLst = vallist))
-      equation
-        explist = Util.listMap(vallist, valueExp);
-      then
-        DAE.TUPLE(explist);
-
-    case(Values.RECORD(path,vallist,namelst,-1))
-      equation
-        expl=Util.listMap(vallist,valueExp);
-        tpl = Util.listMap(expl,Exp.typeof);
-        varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
-      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE);
-
-    case(Values.ENUM(ix,path,names))
-      equation
-        t = DAE.ET_ENUMERATION(SOME(ix),Absyn.IDENT(""),names,{});
-        cr = Exp.pathToCref(path);
-        cr = Exp.crefSetLastType(cr,t);
-      then DAE.CREF(cr,t);
-
-    case (Values.TUPLE(vallist))
-      equation
-        explist = Util.listMap(vallist, valueExp);
-      then DAE.TUPLE(explist);
-
-    /* MetaModelica types */
-    case (Values.OPTION(SOME(v)))
-      equation
-        e = valueExp(v);
-      then DAE.META_OPTION(SOME(e));
-
-    case (Values.OPTION(NONE)) then DAE.META_OPTION(NONE);
-
-    case (Values.META_TUPLE(vallist))
-      equation
-        explist = Util.listMap(vallist, valueExp);
-      then DAE.META_TUPLE(explist);
-
-    case (Values.LIST(vallist))
-      equation
-        explist = Util.listMap(vallist, valueExp);
-        typelist = Util.listMap(vallist, Types.typeOfValue);
-        (explist,vt,_) = Types.listMatchSuperType(explist, typelist, {}, Types.matchTypeRegular, true);
-        t = Types.elabType(vt);
-      then DAE.LIST(t, explist);
-
-      /* MetaRecord */
-    case (Values.RECORD(path,vallist,namelst,ix))
-      equation
-        true = ix >= 0;
-        expl=Util.listMap(vallist,valueExp);
-      then DAE.METARECORDCALL(path,expl,namelst,ix);
-
-    case (v)
-      equation
-        Debug.fprintln("failtrace", "Static.valueExp failed for "+&ValuesUtil.valString(v)+&"\n");
-
-        Error.addMessage(Error.INTERNAL_ERROR, {"Static.valueExp failed"});
-      then
-        fail();
-  end matchcontinue;
-end valueExp;
 
 protected function canonCref2 "function: canonCref2
   This function relates a DAE.ComponentRef to its canonical form,

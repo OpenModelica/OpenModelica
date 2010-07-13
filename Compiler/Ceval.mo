@@ -92,6 +92,7 @@ protected import InnerOuter;
 protected import Prefix;
 protected import Connect;
 protected import ErrorExt;
+protected import OptManager;
 
 public function ceval "
   This function is used when the value of a constant expression is
@@ -260,7 +261,7 @@ algorithm
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,vallst) = cevalList(cache, env, expl, impl, st, msg);
-      then (cache,Values.META_TUPLE(vallst),st);
+      then (cache,Values.TUPLE(vallst),st);
 
     case (cache,env,DAE.CREF(componentRef = c),(impl as false),SOME(st),_,msg)
       local
@@ -905,6 +906,120 @@ algorithm
   end matchcontinue;
 end ceval;
 
+public function cevalIfConstant
+  "This function constant evaluates an expression if the expression is constant,
+   or if the expression is a call of parameter constness whose return type
+   contains unknown dimensions (in which case we need to determine the size of
+   those dimensions)."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input DAE.Properties inProp;
+  input Boolean impl;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
+algorithm
+  (inCache, outExp, outProp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
+    local 
+        DAE.Exp e;
+        Values.Value v;
+        Env.Cache cache;
+        DAE.Properties prop;
+    case (_, _, e as DAE.CALL(ty = DAE.ET_ARRAY(arrayDimensions = _)), 
+        DAE.PROP(constFlag = DAE.C_PARAM()), _)
+      equation
+        (e, prop) = cevalWholedimRetCall(e, inCache, inEnv);
+      then
+        (inCache, e, prop);
+    case (_, _, e, DAE.PROP(constFlag = DAE.C_PARAM(), type_ = tp), _) // BoschRexroth specifics
+      local DAE.Type tp;
+      equation
+        false = OptManager.getOption("cevalEquation");
+      then
+        (inCache, e, DAE.PROP(tp, DAE.C_VAR()));
+    case (_, _, e, DAE.PROP(constFlag = DAE.C_CONST()), _)
+      equation
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE, NONE, NO_MSG());
+        e = ValuesUtil.valueExp(v);
+      then
+        (cache, e, inProp);
+    case (_, _, e, _, _)
+      equation
+        DAE.C_CONST() = Types.propAllConst(inProp);
+        (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE, NONE, NO_MSG());
+        e = ValuesUtil.valueExp(v);
+      then
+        (cache, e, inProp);
+    case (_, _, e, _, _) // BoschRexroth specifics
+      equation
+        false = OptManager.getOption("cevalEquation");
+        DAE.C_PARAM() = Types.propAllConst(inProp);
+        print(" tuple non constant evaluation not implemented yet\n");
+      then
+        fail();
+    case (_, _, _, _, _) then (inCache, inExp, inProp);
+  end matchcontinue;
+end cevalIfConstant;
+
+protected function cevalWholedimRetCall
+  "Helper function to cevalIfConstant. Determines the size of any unknown
+   dimensions in a function calls return type."
+  input DAE.Exp inExp;
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  output DAE.Exp outExp;
+  output DAE.Properties outProp;
+algorithm
+  (outExp, outProp) := matchcontinue(inExp, inCache, inEnv)
+     case (e as DAE.CALL(path = p, expLst = el, tuple_ = t, builtin = b, 
+             ty = DAE.ET_ARRAY(arrayDimensions = dims), inlineType = i), _, _)
+       local
+         DAE.Exp e;
+         Absyn.Path p;
+         list<DAE.Exp> el;
+         Boolean t, b;
+         DAE.InlineType i;
+         list<Option<Integer>> dims;
+         Values.Value v;
+         DAE.Type cevalType;
+         DAE.ExpType cevalExpType;
+       equation
+         true = Exp.arrayContainWholeDimension(dims);
+         (_, v, _) = ceval(inCache, inEnv, e, true, NONE, NONE, MSG());
+         cevalType = Types.typeOfValue(v);
+         cevalExpType = Types.elabType(cevalType);
+       then
+         (DAE.CALL(p, el, t, b, cevalExpType, i), DAE.PROP(cevalType, DAE.C_PARAM));
+  end matchcontinue;
+end cevalWholedimRetCall;
+
+public function cevalRangeIfConstant
+  "Constant evaluates the limits of a range if they are constant."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input DAE.Exp inExp;
+  input DAE.Properties inProp;
+  input Boolean impl;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+algorithm
+  (outCache, outExp, outProp) := matchcontinue(inCache, inEnv, inExp, inProp, impl)
+    case (_, _, DAE.RANGE(ty = ty, exp = e1, range = e2, expOption = e3), _, _)
+      local
+        DAE.Exp e1, e2;
+        Option<DAE.Exp> e3;
+        DAE.ExpType ty;
+        Env.Cache cache;
+      equation
+        (cache, e1, _) = cevalIfConstant(inCache, inEnv, e1, inProp, impl);
+        (cache, e2, _) = cevalIfConstant(cache, inEnv, e2, inProp, impl);
+      then
+        (inCache, DAE.RANGE(ty, e1, e3, e2));
+    case (_, _, _, _, _) then (inCache, inExp);
+  end matchcontinue;
+end cevalRangeIfConstant;
+
 protected function cevalBuiltin
 "function: cevalBuiltin
   Helper for ceval. Parts for builtin calls are moved here, for readability.
@@ -1160,7 +1275,7 @@ algorithm
         cevalIsExternalObjectConstructor(cache,funcpath,env);
       then
         fail();
-
+        
     // adrpo: 2009-11-17 re-enable the Cevalfunc after dealing with record constructors!
     case (cache,env,(e as DAE.CALL(path = funcpath,expLst = expl,builtin = builtin)),vallst,impl,st,dim,msg)
       local Env.Cache garbageCache;
@@ -5038,7 +5153,7 @@ algorithm
     case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
       equation
         (cache,v1 as Values.INTEGER(indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
-        e1_1 = Static.valueExp(v1);
+        e1_1 = ValuesUtil.valueExp(v1);
         true = indx <= dim;
       then
         (cache,DAE.INDEX(e1_1));
@@ -5047,7 +5162,7 @@ algorithm
     case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
       equation
         (cache,v1 as Values.ENUM(index = indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
-        e1_1 = Static.valueExp(v1);
+        e1_1 = ValuesUtil.valueExp(v1);
         true = indx <= dim;
       then
         (cache,DAE.INDEX(e1_1));
@@ -5056,7 +5171,7 @@ algorithm
     case (cache,env,DAE.SLICE(exp = e1),dim,impl,msg)
       equation
         (cache,v1,_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
-        e1_1 = Static.valueExp(v1);
+        e1_1 = ValuesUtil.valueExp(v1);
         true = dimensionSliceInRange(v1,dim);
       then
         (cache,DAE.SLICE(e1_1));

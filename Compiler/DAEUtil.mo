@@ -2297,6 +2297,11 @@ algorithm
         lhsCrefs = listAppend(crefs1,lhsCrefs);
       then
         lhsCrefs;
+    case(DAE.ARRAY_EQUATION(exp = DAE.CREF(cref, _)) :: rest)
+      equation
+        lhsCrefs = verifyWhenEquationStatements(rest);
+      then
+        cref :: lhsCrefs;
     case(DAE.EQUEQUATION(cr1=cref,cr2=_)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);

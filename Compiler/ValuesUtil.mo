@@ -55,6 +55,7 @@ protected import System;
 protected import Util;
 protected import RTOpts;
 protected import ClassInf;
+protected import Types;
 
 public function typeConvert "function: typeConvert
   Apply type conversion on a list of Values"
@@ -873,6 +874,148 @@ algorithm
     case DAE.BCONST(bool = b) then Values.BOOL(b);
   end matchcontinue;
 end expValue;
+
+public function valueExp "Transforms a Value into an Exp"
+  input Values.Value inValue;
+  output DAE.Exp outExp;
+algorithm
+  outExp := matchcontinue (inValue)
+    local
+      Integer dim;
+      list<DAE.Exp> explist;
+      tuple<DAE.TType, Option<Absyn.Path>> vt;
+      DAE.ExpType t;
+      DAE.Exp e;
+      Values.Value v;
+      list<Values.Value> xs,xs2,vallist;
+      list<DAE.Type> typelist;
+      DAE.ComponentRef cr;
+      list<list<tuple<DAE.Exp, Boolean>>> mexpl;
+      list<tuple<DAE.Exp, Boolean>> mexpl2;
+      list<Integer> dims;
+      list<Option<Integer>> optDims;
+      Integer i;
+      Real r;
+      String s;
+      Boolean b;
+      list<DAE.Exp> expl;
+      list<DAE.ExpType> tpl;
+      list<String> namelst;
+      list<DAE.ExpVar> varlst;
+      String name, str;
+      Integer ix;
+      Absyn.Path path;
+      list<String> names;
+
+    case (Values.INTEGER(integer = i)) then DAE.ICONST(i); 
+    case (Values.REAL(real = r))       then DAE.RCONST(r);
+    case (Values.STRING(string = s))   then DAE.SCONST(s);
+    case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
+
+    case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
+    case (Values.ARRAY(valueLst = {}, dimLst = dims))
+      equation
+        optDims = Util.listMap(dims, Util.makeOption);
+      then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), optDims),false,{});
+
+    /* Matrix */
+    case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = _::dims))
+      equation
+        failure(Values.ARRAY(valueLst = _) = v);
+        explist = Util.listMap((v :: xs), valueExp);      
+        DAE.MATRIX(t,dim,mexpl) = valueExp(Values.ARRAY(xs2,dims));
+        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
+      then DAE.MATRIX(t,dim,mexpl2::mexpl);
+
+    /* Matrix last row*/
+    case(Values.ARRAY(valueLst = {Values.ARRAY(valueLst=v::xs)}))
+      equation
+        failure(Values.ARRAY(valueLst = _) = v);
+        dim = listLength(v::xs);
+        explist = Util.listMap((v :: xs), valueExp);
+        vt = Types.typeOfValue(v);
+        t = Types.elabType(vt);
+        dim = listLength(v::xs);
+        t = Exp.liftArrayR(t,SOME(dim));
+        t = Exp.liftArrayR(t,SOME(dim));
+        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
+      then DAE.MATRIX(t,dim,{mexpl2});
+
+    /* Generic array */
+    case (Values.ARRAY(valueLst = (v :: xs)))
+      equation
+        explist = Util.listMap((v :: xs), valueExp);
+        vt = Types.typeOfValue(v);
+        t = Types.elabType(vt);
+        dim = listLength(v::xs);
+        t = Exp.liftArrayR(t,SOME(dim));
+        b = Types.isArray(vt);
+        b = boolNot(b);
+      then
+        DAE.ARRAY(t,b,explist);
+
+    case (Values.TUPLE(valueLst = vallist))
+      equation
+        explist = Util.listMap(vallist, valueExp);
+      then
+        DAE.TUPLE(explist);
+
+    case(Values.RECORD(path,vallist,namelst,-1))
+      equation
+        expl=Util.listMap(vallist,valueExp);
+        tpl = Util.listMap(expl,Exp.typeof);
+        varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
+      then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE);
+
+    case(Values.ENUM(ix,path,names))
+      equation
+        t = DAE.ET_ENUMERATION(SOME(ix),Absyn.IDENT(""),names,{});
+        cr = Exp.pathToCref(path);
+        cr = Exp.crefSetLastType(cr,t);
+      then DAE.CREF(cr,t);
+
+    case (Values.TUPLE(vallist))
+      equation
+        explist = Util.listMap(vallist, valueExp);
+      then DAE.TUPLE(explist);
+
+    /* MetaModelica types */
+    case (Values.OPTION(SOME(v)))
+      equation
+        e = valueExp(v);
+      then DAE.META_OPTION(SOME(e));
+
+    case (Values.OPTION(NONE)) then DAE.META_OPTION(NONE);
+
+    case (Values.META_TUPLE(vallist))
+      equation
+        explist = Util.listMap(vallist, valueExp);
+      then DAE.META_TUPLE(explist);
+
+    case (Values.LIST(vallist))
+      equation
+        explist = Util.listMap(vallist, valueExp);
+        typelist = Util.listMap(vallist, Types.typeOfValue);
+        (explist,vt,_) = Types.listMatchSuperType(explist, typelist, {}, Types.matchTypeRegular, true);
+        t = Types.elabType(vt);
+      then DAE.LIST(t, explist);
+
+      /* MetaRecord */
+    case (Values.RECORD(path,vallist,namelst,ix))
+      equation
+        true = ix >= 0;
+        expl=Util.listMap(vallist,valueExp);
+      then DAE.METARECORDCALL(path,expl,namelst,ix);
+
+    case (v)
+      equation
+        Debug.fprintln("failtrace", "ValuesUtil.valueExp failed for "+&valString(v)+&"\n");
+
+        Error.addMessage(Error.INTERNAL_ERROR, {"ValuesUtil.valueExp failed"});
+      then
+        fail();
+  end matchcontinue;
+end valueExp;
 
 
 public function valueReal "function: valueReal

@@ -259,6 +259,36 @@ algorithm
   end matchcontinue;
 end makeAssignment2;
 
+public function makeAssignmentsList
+  input list<DAE.Exp> lhsExps;
+  input list<DAE.Properties> lhsProps;
+  input list<DAE.Exp> rhsExps;
+  input list<DAE.Properties> rhsProps;
+  input SCode.Accessibility accessibility;
+  input SCode.Initial initial_;
+  input DAE.ElementSource source;
+  output list<Statement> assignments;
+algorithm
+  assignments := matchcontinue(lhsExps, lhsProps, rhsExps, rhsProps,
+      accessibility, initial_, source)
+    case ({}, {}, {}, {}, _, _, _) then {};
+    case (lhs :: rest_lhs, lhs_prop :: rest_lhs_prop, 
+          rhs :: rest_rhs, rhs_prop :: rest_rhs_prop, _, _, _)
+      local
+        DAE.Exp lhs, rhs;
+        list<DAE.Exp> rest_lhs, rest_rhs;
+        DAE.Properties lhs_prop, rhs_prop;
+        list<DAE.Properties> rest_lhs_prop, rest_rhs_prop;
+        DAE.Statement ass;
+        list<DAE.Statement> rest_ass;
+      equation
+        ass = makeAssignment(lhs, lhs_prop, rhs, rhs_prop, accessibility, initial_, source); 
+        rest_ass = makeAssignmentsList(rest_lhs, rest_lhs_prop, rest_rhs, rest_rhs_prop, accessibility, initial_, source);
+      then
+        ass :: rest_ass;
+  end matchcontinue;
+end makeAssignmentsList;
+
 public function makeTupleAssignment "function: makeTupleAssignment
   This function creates an `DAE.STMT_TUPLE_ASSIGN\' construct, and checks that the
   assignment is semantically valid, which means that the component

@@ -74,7 +74,6 @@ protected import Debug;
 protected import Exp;
 protected import Print;
 protected import Util;
-protected import Static;
 protected import RTOpts;
 protected import ValuesUtil;
 
@@ -1087,7 +1086,7 @@ algorithm
     case (((v as Values.RECORD(index=_)) :: rest),(id :: ids))
       equation
         ty = typeOfValue(v);
-        exp = Static.valueExp(v);
+        exp = ValuesUtil.valueExp(v);
         DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
         DAE.MOD(false,Absyn.NON_EACH(),
@@ -1098,7 +1097,7 @@ algorithm
     case ((v as Values.ENUM(index = _)) :: rest,(id :: ids))
       equation
         ty = typeOfValue(v);
-        exp = Static.valueExp(v);
+        exp = ValuesUtil.valueExp(v);
         DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
         DAE.MOD(false,Absyn.NON_EACH(),
@@ -1110,7 +1109,7 @@ algorithm
 
     case ((v as Values.ARRAY(valueLst = vals)) :: rest,(id :: ids))
       equation
-        exp = Static.valueExp(v);
+        exp = ValuesUtil.valueExp(v);
         ty = typeOfValue(v);
         DAE.MOD(_,_,res,_) = valuesToMods(rest, ids);
       then
@@ -1231,7 +1230,7 @@ algorithm
       local
         list<DAE.Exp> explist;
       equation
-        explist = Util.listMap(vl, Static.valueExp);
+        explist = Util.listMap(vl, ValuesUtil.valueExp);
         ts = Util.listMap(vl, typeOfValue);
         (_,tp,_) = listMatchSuperType(explist, ts, {}, matchTypeRegular, true);
       then
@@ -3512,6 +3511,47 @@ algorithm
   t := getPropType(p);
   b := isArray(t);
 end isPropArray;
+
+public function propTuplePropList
+  "Splits a PROP_TUPLE into a list of PROPs."
+  input Properties prop_tuple;
+  output list<Properties> prop_list;
+algorithm
+  prop_list := matchcontinue(prop_tuple)
+    case (DAE.PROP_TUPLE(type_ = (DAE.T_TUPLE(tupleType = tl), _),
+                         tupleConst = DAE.TUPLE_CONST(tupleConstLst = cl)))
+      local
+        list<Properties> pl;
+        list<Type> tl;
+        list<TupleConst> cl;
+      equation
+        pl = propTuplePropList2(tl, cl);
+      then
+        pl;
+  end matchcontinue;
+end propTuplePropList;
+
+protected function propTuplePropList2
+  "Helper function to propTuplePropList"
+  input list<Type> tl;
+  input list<TupleConst> cl;
+  output list<Properties> pl;
+algorithm
+  pl := matchcontinue(tl, cl)
+    case ({}, {}) then {};
+    case (t :: t_rest, DAE.SINGLE_CONST(c) :: c_rest)
+      local
+        Type t;
+        list<Type> t_rest;
+        Const c;
+        list<TupleConst> c_rest;
+        list<Properties> p_rest;
+      equation
+        p_rest = propTuplePropList2(t_rest, c_rest);
+      then
+        (DAE.PROP(t, c) :: p_rest);
+  end matchcontinue;
+end propTuplePropList2;
 
 public function getPropType "function: getPropType
   author: LS

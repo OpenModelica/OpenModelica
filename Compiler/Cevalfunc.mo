@@ -685,11 +685,12 @@ algorithm
       list<tuple<Absyn.Exp, list<SCode.Statement>>> elseifexpitemlist,trueBranch,elseBranch,branches1,branches2;
       tuple<Absyn.Exp, list<SCode.Statement>> trueBranch;
       list<SCode.Statement> algitemlist,elseitemlist;
+      DAE.Properties prop;
 
     // algorithm assign      
     case(env, SCode.ALG_ASSIGN(assignComponent = ae1 as Absyn.CREF(_), value = ae2),ht2)
       equation
-        (_,e1,DAE.PROP(t,_),_,_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false);
+        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false);
         e1 = replaceComplex(e1,ht2); 
         (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
@@ -1394,6 +1395,7 @@ algorithm oval := matchcontinue(inType)
     then Values.ENUM(idx,path,names);
 //       then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0);
 //  case((DAE.T_ENUM,_)) then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0);
+  case((DAE.T_METATUPLE(types = _), _)) then Values.META_TUPLE({});
   case((DAE.T_COMPLEX(ClassInf.RECORD(path), typesVar,_,_),_))
     local
       list<DAE.Var> typesVar;

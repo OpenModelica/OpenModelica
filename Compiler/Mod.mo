@@ -125,6 +125,7 @@ algorithm
         (cache,subs_1,dae1) = elabSubmods(cache, env, ih, pre, subs, impl);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
         (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache, env, e_1, prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
         "Bug: will cause elaboration of parameters without value to fail,
@@ -520,6 +521,7 @@ algorithm
       equation
         (cache,subs_1,dae1) = updateSubmods(cache, env, ih, pre, subs, impl);
         (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
+        (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         Debug.fprint("updmod", "Updated mod: ");
@@ -1193,7 +1195,7 @@ algorithm
       equation
         true = (name1 ==& name2);
         true = (name2 ==& name);
-        e = Static.valueExp(v);
+        e = ValuesUtil.valueExp(v);
       then DAE.MOD(finalPrefix,each_,{},SOME(DAE.TYPED(e,SOME(v),DAE.PROP(tp,DAE.C_CONST()),NONE())));
 
     case(_::values,_::names,_::vars,name,finalPrefix,each_) equation

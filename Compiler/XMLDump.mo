@@ -82,7 +82,6 @@ public import Absyn;
 public import DAE;
 public import DAEEXT;
 public import DAELow;
-public import Static;
 public import Values;
 public import SCode;
 public import RTOpts;
@@ -95,6 +94,7 @@ protected import ModUtil;
 protected import Print;
 protected import Util;
 protected import DAEDump;
+protected import ValuesUtil;
 
 
   protected constant String HEADER        = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
@@ -2639,7 +2639,7 @@ as one attribute of a within a specific XML element.
 It takes the optional Values.Value and element name
 as input an prints on a new line a string to the
 standard output like:
-<Content = \"Exp.printExpStr(Static.valueExp(Optional<Values.Value>)/>
+<Content = \"Exp.printExpStr(ValuesUtil.valueExp(Optional<Values.Value>)/>
 "
   input Option<Values.Value> inValueValueOption;
   input String Content;
@@ -2653,8 +2653,8 @@ algorithm
     case (NONE,_,_)  then ();
     case (SOME(v),Content,addMMLCode)
       equation
-        dumpStrOpenTagAttr(Content,EXP_STRING,Exp.printExpStr(Static.valueExp(v)));
-        dumpExp(Static.valueExp(v),addMMLCode);
+        dumpStrOpenTagAttr(Content,EXP_STRING,Exp.printExpStr(ValuesUtil.valueExp(v)));
+        dumpExp(ValuesUtil.valueExp(v),addMMLCode);
         dumpStrCloseTag(Content);
       then ();
   end matchcontinue;
