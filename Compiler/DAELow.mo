@@ -4509,7 +4509,7 @@ algorithm
       DAE.Exp e1,e2,c;
       list<Value> ds;
       Value count,count_1;
-      DAE.Algorithm a,a1;
+      DAE.Algorithm a,a1,a2;
       DAE.DAElist dae;
       DAE.ExpType ty;
       DAE.ComponentRef cr;
@@ -4600,10 +4600,11 @@ algorithm
       equation
         a = lowerTupleEquation(e);
         a1 = Inline.inlineAlgorithm(a,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        a2 = extendAlgorithm(a1,SOME(funcs));
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         	= lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a1::algs,whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a2::algs,whenclauses_1,extObjCls,states);
 
 		/* tuple-tuple assignments are split into one equation for each tuple
 		 * element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6; */
@@ -4761,8 +4762,9 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
        a1 = Inline.inlineAlgorithm(a,(NONE(),SOME(funcs),{DAE.NORM_INLINE()})); 
+       a2 = extendAlgorithm(a1,SOME(funcs));
       then
-        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,(a1 :: algs),whenclauses_1,extObjCls,states);
+        (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,(a2 :: algs),whenclauses_1,extObjCls,states);
 
     /* flat class / COMP */
     case (DAE.DAE(DAE.COMP(dAElist = daeElts) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
@@ -5298,6 +5300,8 @@ algorithm
       list<DAE.Exp> inputs,inputs1,inputs2,inputs3,outputs,outputs1,outputs2;
       list<DAE.ComponentRef> crefs;
       DAE.Exp exp1;
+      list<Option<Integer>> ad;
+      list<list<DAE.Subscript>> subslst,subslst1;
 			// a := expr;
     case (vars,DAE.STMT_ASSIGN(type_ = tp,exp1 = exp1,exp = e))
       equation
@@ -5328,13 +5332,14 @@ algorithm
         (inputs,outputs);
 
     // v := expr   where v is array.
-    // adrpo: FIXME! TODO! this fails for 
-    //        model bug Real x[2]; algorithm x := {1,1}; end bug;
-    //        Error: Too few equations, underdetermined system. The model has 1 equation(s) and 2 variable(s) 
-    case (vars,DAE.STMT_ASSIGN_ARR(type_ = tp, componentRef = cr, exp = e))
+    case (vars,DAE.STMT_ASSIGN_ARR(type_ = DAE.ET_ARRAY(ty=tp,arrayDimensions=ad), componentRef = cr, exp = e))
       equation
-        inputs = statesAndVarsExp(e,vars);        
-      then (inputs,{DAE.CREF(cr,tp)});
+        inputs = statesAndVarsExp(e,vars);  
+        subslst = arrayDimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crefs = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        expl = Util.listMap1(crefs,Exp.makeCrefExp,tp);             
+      then (inputs,expl);
 
     case(vars,DAE.STMT_IF(exp = e, statementLst = stmts, else_ = elsebranch))
       equation
@@ -5455,7 +5460,7 @@ algorithm
     /* Special Case for unextended arrays */
     case ((e as DAE.CREF(componentRef = cr,ty = DAE.ET_ARRAY(arrayDimensions=_))),vars)
       equation
-        e1 = extendArrExp(e,NONE());
+        (e1,_) = extendArrExp(e,NONE());
         res = statesAndVarsExp(e1, vars);
       then
         res; 
@@ -5866,8 +5871,8 @@ algorithm
       equation
         e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e1_2 = extendArrExp(e1_1,SOME(funcs));
-        e2_2 = extendArrExp(e2_1,SOME(funcs));
+        (e1_2,_) = extendArrExp(e1_1,SOME(funcs));
+        (e2_2,_) = extendArrExp(e2_1,SOME(funcs));
         e1_3 = Exp.simplify(e1_2);
         e2_3 = Exp.simplify(e2_2);
       then
@@ -5877,8 +5882,8 @@ algorithm
 			equation
         e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e1_2 = extendArrExp(e1_1,SOME(funcs));
-        e2_2 = extendArrExp(e2_1,SOME(funcs));
+        (e1_2,_) = extendArrExp(e1_1,SOME(funcs));
+        (e2_2,_) = extendArrExp(e2_1,SOME(funcs));
         e1_3 = Exp.simplify(e1_2);
         e2_3 = Exp.simplify(e2_2);
       then
@@ -5886,20 +5891,38 @@ algorithm
   end matchcontinue;
 end lowerArrEqn;
 
+protected function extendAlgorithm "
+Author: Frenkel TUD 2010-07"
+  input DAE.Algorithm inAlg;
+  input Option<DAE.FunctionTree> funcs;  
+  output DAE.Algorithm outAlg;
+algorithm 
+  outAlg := matchcontinue(inAlg,funcs)
+    local list<DAE.Statement> statementLst;
+    case(DAE.ALGORITHM_STMTS(statementLst=statementLst),funcs)
+      equation
+        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, extendArrExp, funcs);
+      then
+        DAE.ALGORITHM_STMTS(statementLst);
+    case(inAlg,funcs) then inAlg;        
+  end matchcontinue;
+end extendAlgorithm;
+
 protected function extendArrExp "
 Author: Frenkel TUD 2010-07"
   input DAE.Exp inExp;
-  input Option<DAE.FunctionTree> funcs;  
+  input Option<DAE.FunctionTree> infuncs;  
   output DAE.Exp outExp;
+  output Option<DAE.FunctionTree> outfuncs;  
 algorithm 
-  outExp := matchcontinue(inExp,funcs)
+  (outExp,outfuncs) := matchcontinue(inExp,infuncs)
     local DAE.Exp e;
-    case(inExp,funcs)
+    case(inExp,infuncs)
       equation
-        ((e,_)) = Exp.traverseExp(inExp, traversingextendArrExp, funcs);
+        ((e,outfuncs)) = Exp.traverseExp(inExp, traversingextendArrExp, infuncs);
       then
-        e;
-    case(inExp,funcs) then inExp;        
+        (e,outfuncs);
+    case(inExp,infuncs) then (inExp,infuncs);        
   end matchcontinue;
 end extendArrExp;
 
@@ -16278,8 +16301,8 @@ algorithm
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
   equation 
-    e1_1 = extendArrExp(e1,SOME(inFuncs));
-    e2_1 = extendArrExp(e2,SOME(inFuncs));
+    (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
+    (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
     e2_2 = Exp.simplify(e2_1);
     dss = Util.listMap(ad,Util.genericOption);
     ds = Util.listFlatten(dss);
@@ -16290,8 +16313,8 @@ algorithm
   equation 
     tp = Exp.typeof(e1);
     false = DAEUtil.expTypeComplex(tp);
-    e1_1 = extendArrExp(e1,SOME(inFuncs));
-    e2_1 = extendArrExp(e2,SOME(inFuncs));
+    (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
+    (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
     e2_2 = Exp.simplify(e2_1);
     eqn = generateEQUATION((e1_1,e2_2),source);
   then

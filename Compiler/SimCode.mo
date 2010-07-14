@@ -5412,7 +5412,7 @@ algorithm
       list<DAELow.Equation> eqns;
 				/* A single algorithm section (consists of several eqns) is not mixed system */
       case (vs,eqns) equation
-        singleAlgorithmSection2(eqns);
+        singleAlgorithmSection2(eqns,NONE());
       then false;
     case (vs,eqns)
       equation
@@ -5555,7 +5555,7 @@ algorithm
     case (DAELow.DAELOW(orderedVars = vars,orderedEqs = eqnarr))
       equation
         eqn_lst = DAELow.equationList(eqnarr);
-        singleAlgorithmSection2(eqn_lst);
+        singleAlgorithmSection2(eqn_lst,NONE());
       then
         ();
   end matchcontinue;
@@ -5563,14 +5563,23 @@ end singleAlgorithmSection;
 
 protected function singleAlgorithmSection2
   input list<DAELow.Equation> inDAELowEquationLst;
+  input Option<Integer> Index;  
 algorithm
   _:=
-  matchcontinue (inDAELowEquationLst)
-    local list<DAELow.Equation> res;
-    case ({}) then ();
-    case ((DAELow.ALGORITHM(index = _) :: res))
+  matchcontinue (inDAELowEquationLst,Index)
+    local 
+      list<DAELow.Equation> res;
+      Integer i,i1;
+    case ({},_) then ();
+    case ((DAELow.ALGORITHM(index = i) :: res),NONE())
       equation
-        singleAlgorithmSection2(res);
+        singleAlgorithmSection2(res,SOME(i));
+      then
+        ();      
+    case ((DAELow.ALGORITHM(index = i) :: res),SOME(i1))
+      equation
+        true = intEq(i,i1);
+        singleAlgorithmSection2(res,SOME(i1));
       then
         ();
   end matchcontinue;
