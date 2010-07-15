@@ -2720,6 +2720,11 @@ algorithm
         expl_1 = simplifyScalarProductVectorMatrix(expl1, expl2);
       then
         DAE.ARRAY(tp2,sc,expl_1);
+    case (DAE.ARRAY(ty = tp as DAE.ET_ARRAY(arrayDimensions= _::_::{}),array = expl1),exp as DAE.ARRAY(ty = tp2,scalar = sc,array = expl2))
+      equation 
+        expl_1 = simplifyScalarProductMatrixVector1(expl1, expl2);
+      then
+        DAE.ARRAY(tp2,sc,expl_1);       
   end matchcontinue;
 end simplifyScalarProduct;
 
@@ -2758,6 +2763,29 @@ algorithm
         (exp :: res);
   end matchcontinue;
 end simplifyScalarProductMatrixVector;
+
+protected function simplifyScalarProductMatrixVector1
+"function: simplifyScalarProductMatrixVector1
+  Simplifies scalar product of matrix  vector."
+  input list<Exp> inExpLst;
+  input list<Exp> inExpLst1;
+  output list<Exp> outExpLst;
+algorithm
+  outExpLst:=
+  matchcontinue (inExpLst,inExpLst1)
+    local
+      list<Exp> row,rows,res,v1,expl;
+      Exp exp;
+    case ({},_) then {};
+    case ((DAE.ARRAY(array=row) :: rows),v1)
+      equation
+        expl = Util.listThreadMap(row, v1, expMul);
+        exp = simplify1(Util.listReduce(expl, expAdd));
+        res = simplifyScalarProductMatrixVector1(rows, v1);
+      then
+        (exp :: res);
+  end matchcontinue;
+end simplifyScalarProductMatrixVector1;
 
 protected function simplifyScalarProductVectorMatrix
 "function: simplifyScalarProductVectorMatrix
