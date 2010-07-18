@@ -3697,7 +3697,7 @@ algorithm
       DAELow.EquationArray eqns,se,ie;
       DAELow.MultiDimEquation[:] ae;
       Algorithm.Algorithm[:] al;
-      Algorithm.Algorithm alg;
+      Algorithm.Algorithm alg,alg1;
       DAELow.EventInfo ev;
       list<Exp.ComponentRef> solvedVars,algOutVars;
       list<Exp.Exp> algOutExpVars;
@@ -3714,7 +3714,7 @@ algorithm
         algOutVars = Util.listMap(algOutExpVars,Exp.expCref);
         // The variables solved for and the output variables of the algorithm must be the same.
         true = Util.listSetEqualOnTrue(solvedVars,algOutVars,Exp.crefEqual);
-        DAE.ALGORITHM_STMTS(algStatements) = alg;
+        DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg,NONE());
         equation_ = SES_ALGORITHM(algStatements);
       then equation_;
     /* Error message, inverse algorithms not supported yet */

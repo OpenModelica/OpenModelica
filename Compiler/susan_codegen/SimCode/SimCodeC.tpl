@@ -2970,13 +2970,40 @@ case STMT_TUPLE_ASSIGN(exp=CALL(__)) then
   let retStruct = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  <%expExpLst |> cr as CREF(__) =>
-    let lhsStr = scalarLhsCref(cr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    '<%lhsStr%> = <%retStruct%>.targ<%i1%>;'
+  <%expExpLst |> cr =>
+    let rhsStr = '<%retStruct%>.targ<%i1%>'
+    writeLhsCref(cr, rhsStr, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   ;separator="\n"%>
   >>
 end algStmtTupleAssign;
 
+template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BUFP*/,
+              Text &varDecls /*BUFP*/)
+ "Generates code for writing a returnStructur to var."
+::=
+match exp
+case CREF(ty= t as DAE.ET_ARRAY(__)) then
+  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+  >> 
+case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
+  copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+  >> 
+case CREF(__) then
+  let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%lhsStr%> = <%rhsStr%>;
+  >>   
+case UNARY(exp = e as CREF(__)) then
+  let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  <<
+  <%lhsStr%> = -<%rhsStr%>;
+  >>   
+end writeLhsCref;
 
 template algStmtIf(DAE.Statement stmt, Context context, Text &varDecls /*BUFP*/)
  "Generates an if algorithm statement."

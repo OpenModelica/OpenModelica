@@ -6014,6 +6014,85 @@ algorithm
   end matchcontinue;
 end makeMatrix;
   
+public function collateAlgorithm "
+Author: Frenkel TUD 2010-07"
+  input DAE.Algorithm inAlg;
+  input Option<DAE.FunctionTree> infuncs;  
+  output DAE.Algorithm outAlg;
+algorithm 
+  outAlg := matchcontinue(inAlg,infuncs)
+    local list<DAE.Statement> statementLst;
+    case(DAE.ALGORITHM_STMTS(statementLst=statementLst),infuncs)
+      equation
+        (statementLst,_) = DAEUtil.traverseDAEEquationsStmts(statementLst, collateArrExp, infuncs);
+      then
+        DAE.ALGORITHM_STMTS(statementLst);
+    case(inAlg,infuncs) then inAlg;        
+  end matchcontinue;
+end collateAlgorithm;
+
+public function collateArrExp "
+Author: Frenkel TUD 2010-07"
+  input DAE.Exp inExp;
+  input Option<DAE.FunctionTree> infuncs;  
+  output DAE.Exp outExp;
+  output Option<DAE.FunctionTree> outfuncs;  
+algorithm 
+  (outExp,outfuncs) := matchcontinue(inExp,infuncs)
+    local DAE.Exp e;
+    case(inExp,infuncs)
+      equation
+        ((e,outfuncs)) = Exp.traverseExp(inExp, traversingcollateArrExp, infuncs);
+      then
+        (e,outfuncs);
+    case(inExp,infuncs) then (inExp,infuncs);        
+  end matchcontinue;
+end collateArrExp;  
+  
+protected function traversingcollateArrExp "
+Author: Frenkel TUD 2010-07."
+  input tuple<DAE.Exp, Option<DAE.FunctionTree> > inExp;
+  output tuple<DAE.Exp, Option<DAE.FunctionTree> > outExp;
+algorithm outExp := matchcontinue(inExp)
+  local
+    Option<DAE.FunctionTree> funcs;
+    DAE.ComponentRef cr;
+    DAE.ExpType ty;
+    Integer i;
+    DAE.Exp e,e1,e1_1,e1_2;
+    Boolean b;
+    case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.CREF(componentRef = cr)),_)::_)::_),funcs))
+      equation
+        e1_1 = Exp.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Exp.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));
+    case ((e as DAE.MATRIX(ty=ty,integer=i,scalar=(((e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr))),_)::_)::_),funcs))
+      equation
+        e1_1 = Exp.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Exp.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));        
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.CREF(componentRef = cr))::_),funcs))
+      equation
+        e1_1 = Exp.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Exp.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));  
+    case ((e as DAE.ARRAY(ty=ty,scalar=b,array=(e1 as DAE.UNARY(exp = DAE.CREF(componentRef = cr)))::_),funcs))
+      equation
+        e1_1 = Exp.expStripLastSubs(e1);
+        (e1_2,_) = extendArrExp(e1_1,funcs);
+        true = Exp.expEqual(e,e1_2);
+      then     
+        ((e1_1,funcs));               
+  case(inExp) then inExp;
+end matchcontinue;
+end traversingcollateArrExp;  
+  
 protected function lowerComplexEqn
 "function: lowerComplexEqn
   Helper function to lower2.
