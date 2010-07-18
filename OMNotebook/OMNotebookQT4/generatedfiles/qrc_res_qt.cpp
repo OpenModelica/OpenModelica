@@ -1,8 +1,8 @@
 /****************************************************************************
 ** Resource object code
 **
-** Created: Mon 28. Jun 10:39:28 2010
-**      by: The Resource Compiler for Qt version 4.4.3
+** Created: Sun 18. Jul 20:43:36 2010
+**      by: The Resource Compiler for Qt version 4.7.0
 **
 ** WARNING! All changes made in this file will be lost!
 *****************************************************************************/
@@ -1411,10 +1411,10 @@ static const unsigned char qt_resource_struct[] = {
 
 QT_BEGIN_NAMESPACE
 
-extern bool qRegisterResourceData
+extern Q_CORE_EXPORT bool qRegisterResourceData
     (int, const unsigned char *, const unsigned char *, const unsigned char *);
 
-extern bool qUnregisterResourceData
+extern Q_CORE_EXPORT bool qUnregisterResourceData
     (int, const unsigned char *, const unsigned char *, const unsigned char *);
 
 QT_END_NAMESPACE
