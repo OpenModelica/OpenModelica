@@ -888,10 +888,10 @@ algorithm
         DAE.Exp exp;
         ReductionOperator op;
       equation
-        (cache, Values.ARRAY(vals,_), st_1) = ceval(cache, env, iterexp, impl, st, dimOpt, msg);
+        (cache, Values.ARRAY(valueLst = vals), st_1) = ceval(cache, env, iterexp, impl, st, dimOpt, msg);
         env = Env.openScope(env, false, SOME(Env.forScopeName));
         op = lookupReductionOp(reductionName);
-        (cache, value, st_1) = cevalReduction(cache, env, op, exp, iter, vals, impl, st, dimOpt, msg);
+        (cache, value, st_1) = cevalReduction(cache, env, reductionName, op, exp, iter, vals, impl, st, dimOpt, msg);
       then (cache, value, st_1);
 
     // ceval can fail and that is ok, caught by other rules... 
@@ -944,14 +944,14 @@ algorithm
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
-    case (_, _, e, _, _)
+    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _)
       equation
         DAE.C_CONST() = Types.propAllConst(inProp);
         (cache, v, _) = ceval(inCache, inEnv, e, impl, NONE, NONE, NO_MSG());
         e = ValuesUtil.valueExp(v);
       then
         (cache, e, inProp);
-    case (_, _, e, _, _) // BoschRexroth specifics
+    case (_, _, e, DAE.PROP_TUPLE(tupleConst = _), _) // BoschRexroth specifics
       equation
         false = OptManager.getOption("cevalEquation");
         DAE.C_PARAM() = Types.propAllConst(inProp);
@@ -5261,54 +5261,66 @@ algorithm
 end dimensionSliceInRange;
 
 protected function cevalReduction
-	"Help function to ceval. Evaluates reductions calls, such as
-		'sum(i for i in 1:5)'"
-	input Env.Cache cache;
-	input Env.Env env;
-	input ReductionOperator op;
-	input DAE.Exp exp;
-	input DAE.Ident iteratorName;
-	input list<Values.Value> values;
-	input Boolean implicitInstantiation;
-	input Option<Interactive.InteractiveSymbolTable> symbolTable;
-	input Option<Integer> dim;
-	input Msg msg;
-	output Env.Cache newCache;
-	output Values.Value result;
-	output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
+  "Help function to ceval. Evaluates reductions calls, such as
+    'sum(i for i in 1:5)'"
+  input Env.Cache cache;
+  input Env.Env env;
+  input DAE.Ident opName;
+  input ReductionOperator op;
+  input DAE.Exp exp;
+  input DAE.Ident iteratorName;
+  input list<Values.Value> values;
+  input Boolean implicitInstantiation;
+  input Option<Interactive.InteractiveSymbolTable> symbolTable;
+  input Option<Integer> dim;
+  input Msg msg;
+  output Env.Cache newCache;
+  output Values.Value result;
+  output Option<Interactive.InteractiveSymbolTable> newSymbolTable;
 
-	partial function ReductionOperator
-		input Values.Value v1;
-		input Values.Value v2;
-		output Values.Value res;
-	end ReductionOperator;
+  partial function ReductionOperator
+    input Values.Value v1;
+    input Values.Value v2;
+    output Values.Value res;
+  end ReductionOperator;
 algorithm
-	(newCache, result, newSymbolTable) := matchcontinue(cache, env, op,
-		exp, iteratorName, values, implicitInstantiation, symbolTable, dim, msg)
-		local
-			Values.Value value, value2, reduced_value;
-			list<Values.Value> rest_values;
-			Env.Env new_env;
-			Env.Cache new_cache;
-			Option<Interactive.InteractiveSymbolTable> new_st;
-		case (new_cache, new_env, _, _, _, value :: {}, _, new_st, _, _)
-			equation
-			  // range is constant!
-				new_env = Env.extendFrameForIterator(env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
-				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
-					implicitInstantiation, new_st, dim, msg);
-				then (new_cache, value, new_st);
-		case (new_cache, new_env, _, _, _, value :: rest_values, _, new_st, _, _)
-			equation
-			  // range is constant!
-				(new_cache, value2, new_st) = cevalReduction(new_cache, new_env, op, exp, 
-					iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
-				new_env = Env.extendFrameForIterator(new_env, iteratorName, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
-				(new_cache, value, new_st) = ceval(new_cache, new_env, exp,
-					implicitInstantiation, new_st, dim, msg);
-				reduced_value = op(value, value2);
-			then (cache, reduced_value, new_st);
-	end matchcontinue;
+  (newCache, result, newSymbolTable) := matchcontinue(cache, env, opName, op,
+    exp, iteratorName, values, implicitInstantiation, symbolTable, dim, msg)
+    local
+      Values.Value value, value2, reduced_value;
+      list<Values.Value> rest_values;
+      Env.Env new_env;
+      Env.Cache new_cache;
+      Option<Interactive.InteractiveSymbolTable> new_st;
+      DAE.ExpType exp_type; 
+      DAE.Type iter_type;
+    case (_, _, _, _, _, _, {}, _, _, _, _)
+      equation
+        value = reductionEmptyRangeValue(opName);
+      then
+        (cache, value, symbolTable);
+    case (new_cache, new_env, _, _, _, _, value :: {}, _, new_st, _, _)
+      equation
+        // range is constant!
+        exp_type = Exp.typeof(exp);
+        iter_type = Types.expTypetoTypesType(exp_type);
+        new_env = Env.extendFrameForIterator(env, iteratorName, iter_type, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
+        (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
+          implicitInstantiation, new_st, dim, msg);
+        then (new_cache, value, new_st);
+    case (new_cache, new_env, _, _, _, _, value :: rest_values, _, new_st, _, _)
+      equation
+        // range is constant!
+        (new_cache, value2, new_st) = cevalReduction(new_cache, new_env, opName, op, exp, 
+          iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
+        exp_type = Exp.typeof(exp);
+        iter_type = Types.expTypetoTypesType(exp_type);
+        new_env = Env.extendFrameForIterator(new_env, iteratorName, iter_type, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
+        (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
+          implicitInstantiation, new_st, dim, msg);
+        reduced_value = op(value, value2);
+      then (cache, reduced_value, new_st);
+  end matchcontinue;
 end cevalReduction;
 
 protected function valueAdd
@@ -5317,14 +5329,7 @@ protected function valueAdd
 	input Values.Value v2;
 	output Values.Value res;
 algorithm
-	res := matchcontinue(v1, v2)
-		case (Values.INTEGER(i1), Values.INTEGER(i2))
-			local Integer i1, i2, res;
-			equation res = i1 + i2; then Values.INTEGER(res);
-		case (Values.REAL(r1), Values.REAL(r2))
-			local Real r1, r2, res;
-			equation res = r1 +. r2; then Values.REAL(res);
-	end matchcontinue;
+	{res} := ValuesUtil.addElementwiseArrayelt({v1}, {v2});
 end valueAdd;
 
 protected function valueMul
@@ -5394,7 +5399,20 @@ algorithm
 	end matchcontinue;
 end lookupReductionOp;
 
-
+protected function reductionEmptyRangeValue
+  "Returns the default value for a reduction where the range is empty, 
+   according to the OM standard 10.3.4.1."
+  input DAE.Ident opName;
+  output Values.Value value;
+algorithm
+  value := matchcontinue(opName)
+    case "max" then Values.REAL(-1e60);
+    case "min" then Values.REAL(1e60);
+    case "product" then Values.INTEGER(1);
+    case "sum" then Values.INTEGER(0);
+  end matchcontinue;
+end reductionEmptyRangeValue;
+   
 // ************************************************************************
 //    hash table implementation for storing function pointes for DLLs/SOs
 // ************************************************************************

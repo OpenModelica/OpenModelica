@@ -11054,20 +11054,6 @@ algorithm
         // (cache,env,ih,dae,csets,ci_state_1);
         //------------------------------------------------------
 
-    /* v = array(For-constructor)  */
-    case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = Absyn.CREF(arrName),
-     //  Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,id,e2))),initial_,impl)
-         expRight = Absyn.CALL(Absyn.CREF_IDENT("array",{}),Absyn.FOR_ITER_FARG(itExp,rangeIdList)), info = info),initial_,impl,graph)
-      equation
-        // rangeIdList = {(id,e2)};
-        idList = extractLoopVars(rangeIdList,{});
-        // Transform this function call into a number of nested for-loops
-        (eq,dae1) = createForIteratorEquations(itExp,rangeIdList,idList,arrName,info);
-        (cache,env,ih,dae2,csets_1,ci_state_1,graph) = instEquationCommon(cache,env,ih,mods,pre,csets,ci_state,eq,initial_,impl,graph);
-        dae = DAEUtil.joinDaes(dae1,dae2);
-      then
-        (cache,env,ih,dae,csets_1,ci_state_1,graph);
-        
     /* equality equations e1 = e2 */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
       local Option<Interactive.InteractiveSymbolTable> c1,c2;

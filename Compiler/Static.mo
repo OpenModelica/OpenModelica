@@ -1348,7 +1348,7 @@ algorithm
     case(env,{},{}) then env;
     case(env,name::iter_names,c::iter_const) equation
       (_,_,ty,bind,forIterConst,_,_,_) = Lookup.lookupVarLocal(Env.emptyCache(),env,DAE.CREF_IDENT(name,DAE.ET_OTHER(),{}));
-      env = Env.extendFrameForIterator(env,name,ty,bind,constToVariabilityAtMostParam(c),forIterConst);
+      env = Env.extendFrameForIterator(env,name,ty,bind,constToVariability(c),forIterConst);
       //print("updating "+&name+&" to const:"+&DAEUtil.constStr(c)+&"\n");
       env = updateIteratorConst(env,iter_names,iter_const);
     then env;
@@ -1426,17 +1426,16 @@ algorithm
 	end matchcontinue;
 end elabArrayIterators;
 
-protected function constToVariabilityAtMostParam "translates an DAE.Const to a SCode.Variability, but makes C_CONST into PARAM, since cevalIfConstant 
-will otherwise mess things up"
+protected function constToVariability "translates an DAE.Const to a SCode.Variability"
   input DAE.Const const;
   output SCode.Variability variability;
 algorithm
   variability := matchcontinue(const)
     case(DAE.C_VAR())  then SCode.VAR();
     case(DAE.C_PARAM()) then SCode.PARAM();
-    case(DAE.C_CONST()) then SCode.PARAM();
+    case(DAE.C_CONST()) then SCode.CONST();
   end matchcontinue;
-end constToVariabilityAtMostParam;
+end constToVariability;
   
 protected function expandArray
 	"Symbolically expands an array with the help of elabCallReduction2."
@@ -10166,7 +10165,7 @@ protected function elabCref2
   elabCref has a binding, and if that binding is constant.
   If the binding is a VALBOUND binding, the value is substituted.
   Constant values are e.g.:
-    1+5, c1+c2, ps12, where c1 and c2 are Modelica constants,
+    1+5, c1+c2, ps1+ps2, where c1 and c2 are Modelica constants,
                       ps1 and ps2 are structural parameters.
 
   Non Constant values are e.g.:
@@ -10239,7 +10238,7 @@ algorithm
         (cache,e,DAE.C_VAR(),acc);
 
     // a constant -> evaluate binding
-    case (cache,env,cr,acc,SCode.CONST(),_,io,tt,binding,doVect,_)
+    case (cache,env,cr,acc,SCode.CONST(),NONE,io,tt,binding,doVect,_)
       equation
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
         e = ValuesUtil.valueExp(v);
@@ -10247,6 +10246,13 @@ algorithm
         (e_1,_) = Types.matchType(e, et, tt, true);
       then
         (cache,e_1,DAE.C_CONST(),SCode.RO());
+    
+    // a constant with some for iterator constness -> don't constant evaluate
+    case (cache,env,cr,acc,SCode.CONST(),SOME(_),io,tt,binding,doVect,_)
+      equation
+        expTy = Types.elabType(tt);
+      then
+        (cache,DAE.CREF(cr,expTy),DAE.C_CONST(),SCode.RO());
 
     // evaluate parameters only if "evalparam" is set; TODO! also ceval if annotation Evaluate=true.
     case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.VALBOUND(valBound = v),doVect,Lookup.SPLICEDEXPDATA(_,idTp))

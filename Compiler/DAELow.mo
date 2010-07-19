@@ -424,6 +424,7 @@ protected import Util;
 protected import DAEDump;
 protected import IOStream;
 protected import Inline;
+protected import ValuesUtil;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
@@ -4452,7 +4453,7 @@ algorithm
         ((WHEN_EQUATION(WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE),source) :: eqnl),reinit);
   end matchcontinue;
 end lowerWhenEqn2;
-
+        
 protected function isStateOrAlgvar
   "@author adrpo
    check if this variable is a state or algebraic"
@@ -5358,27 +5359,28 @@ algorithm
         inputs = Util.listListUnionOnTrue({inputs1, inputs2}, Exp.expEqual);
      then (inputs,{});
 
-		case(vars, DAE.STMT_FOR(ident = iteratorName, exp = e, statementLst = stmts))
-			local
-				DAE.Ident iteratorName;
-				DAE.Exp iteratorExp;
-				list<DAE.Exp> arrayVars, nonArrayVars;
-				list<list<DAE.Exp>> arrayElements;
-				list<DAE.Exp> flattenedElements;
-			equation
-				(inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
-				inputs2 = statesAndVarsExp(e, vars);
-				// Split the output variables into variables that depend on the loop
-				// variable and variables that don't.
-				iteratorExp = DAE.CREF(DAE.CREF_IDENT(iteratorName, DAE.ET_INT(), {}), DAE.ET_INT());
-				(arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, isLoopDependent, iteratorExp);
-				// Explode array variables into their array elements.
-				// I.e. var[i] => var[1], var[2], var[3] etc.
-				arrayElements = Util.listMap3(arrayVars, explodeArrayVars, iteratorExp, e, vars);
-				flattenedElements = Util.listFlatten(arrayElements);
-				inputs = Util.listUnion(inputs1, inputs2);
-				outputs = Util.listUnion(nonArrayVars, flattenedElements);
-			then (inputs, outputs);
+    case(vars, DAE.STMT_FOR(ident = iteratorName, exp = e, statementLst = stmts))
+      local
+        DAE.Ident iteratorName;
+        DAE.Exp iteratorExp;
+        list<DAE.Exp> arrayVars, nonArrayVars;
+        list<list<DAE.Exp>> arrayElements;
+        list<DAE.Exp> flattenedElements;
+      equation
+        (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+        inputs2 = statesAndVarsExp(e, vars);
+        // Split the output variables into variables that depend on the loop
+        // variable and variables that don't.
+        iteratorExp = DAE.CREF(DAE.CREF_IDENT(iteratorName, DAE.ET_INT(), {}), DAE.ET_INT());
+        (arrayVars, nonArrayVars) = Util.listSplitOnTrue1(outputs1, isLoopDependent, iteratorExp);
+        arrayVars = Util.listMap(arrayVars, devectorizeArrayVar);
+        // Explode array variables into their array elements.
+        // I.e. var[i] => var[1], var[2], var[3] etc.
+        arrayElements = Util.listMap3(arrayVars, explodeArrayVars, iteratorExp, e, vars);
+        flattenedElements = Util.listFlatten(arrayElements);
+        inputs = Util.listUnion(inputs1, inputs2);
+        outputs = Util.listUnion(nonArrayVars, flattenedElements);
+      then (inputs, outputs);
 			  
 		case(vars, DAE.STMT_WHILE(exp = e, statementLst = stmts))
 			equation
@@ -5658,6 +5660,29 @@ algorithm
   end matchcontinue;
 end isLoopDependentHelper;
 
+public function devectorizeArrayVar
+  input DAE.Exp arrayVar;
+  output DAE.Exp newArrayVar;
+algorithm
+  newArrayVar := matchcontinue(arrayVar)
+    local 
+      DAE.ComponentRef cr;
+      DAE.ExpType ty;
+      list<DAE.Exp> subs;
+    case (DAE.ASUB(exp = DAE.ARRAY(array = (DAE.CREF(componentRef = cr, ty = ty) :: _)), sub = subs))
+      equation
+        cr = Exp.crefStripLastSubs(cr);
+      then
+        DAE.ASUB(DAE.CREF(cr, ty), subs);
+    case (DAE.ASUB(exp = DAE.MATRIX(scalar = (((DAE.CREF(componentRef = cr, ty = ty), _) :: _) :: _)), sub = subs))
+      equation
+        cr = Exp.crefStripLastSubs(cr);
+      then
+        DAE.ASUB(DAE.CREF(cr, ty), subs);
+    case (_) then arrayVar;
+  end matchcontinue;
+end devectorizeArrayVar;
+
 protected function explodeArrayVars
   "Explodes an array variable into its elements. Takes a variable that is a CREF
   or ASUB, the name of the iterator variable and a range expression that the
@@ -5685,7 +5710,7 @@ algorithm
         newElements = generateArrayElements(clonedElements, indices, iteratorExp);
       then newElements;
         
-    case (DAE.ASUB(exp = _), _, _, _)
+    case (DAE.ASUB(exp = DAE.CREF(componentRef = _)), _, _, _)
       equation
         // If the range is constant, then we can use it to generate only those
         // array elements that are actually used.
@@ -5693,7 +5718,7 @@ algorithm
         clonedElements = Util.listFill(arrayVar, listLength(indices));
         newElements = generateArrayElements(clonedElements, indices, iteratorExp);
       then newElements;
-
+        
     case (DAE.CREF(componentRef = cref), _, _, _)
       equation
         (arrayElements, _) = getVar(cref, vars);
@@ -5701,7 +5726,7 @@ algorithm
         varExprs = Util.listMap(varCrefs, Exp.crefExp);
       then varExprs;
 
-    case (DAE.ASUB(DAE.CREF(cref, _), _), _, _, _)
+    case (DAE.ASUB(exp = DAE.CREF(componentRef = cref)), _, _, _)
       equation
         // If the range is not constant, then we just extract all array elements
         // of the array.
@@ -5709,21 +5734,36 @@ algorithm
         varCrefs = Util.listMap(arrayElements, varCref);
         varExprs = Util.listMap(varCrefs, Exp.crefExp);
       then varExprs;
+      
+    case (DAE.ASUB(exp = e), _, _, _)
+      local DAE.Exp e;
+      equation
+        varExprs = Exp.flattenArrayExpToList(e);
+      then
+        varExprs;
   end matchcontinue;
 end explodeArrayVars;
 
 protected function rangeIntExprs
-  "Tries to convert a range to a list of integer expressions. This is only
-  possible if the range already is an DAE.ARRAY. Returns a list of integer
-  expressions if possible, or fails. Used by explodeArrayVars."
+  "Tries to convert a range to a list of integer expressions. Returns a list of
+  integer expressions if possible, or fails. Used by explodeArrayVars."
   input DAE.Exp range;
   output list<DAE.Exp> integers;
 algorithm
   integers := matchcontinue(range)
     local
       list<DAE.Exp> arrayElements;
-    case (DAE.ARRAY(_, _, arrayElements))
+    case (DAE.ARRAY(array = arrayElements))
       then arrayElements;
+    case (DAE.RANGE(exp = DAE.ICONST(integer = start), range = DAE.ICONST(integer = stop), expOption = NONE))
+      local
+        Integer start, stop;
+        list<Values.Value> vals;
+      equation
+        vals = Ceval.cevalRange(start, 1, stop);
+        arrayElements = Util.listMap(vals, ValuesUtil.valueExp);
+      then
+        arrayElements;  
     case (_) then fail();
   end matchcontinue;
 end rangeIntExprs;
