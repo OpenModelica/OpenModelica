@@ -4956,6 +4956,11 @@ algorithm
         subsc = Exp.crefLastSubs(cr);
         (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr_1) "DAE.CREF_IDENT(id,{})" ;
         sizelst = Types.getDimensionSizes(tp);
+                
+        // TODO: Ugly hack to prevent infinite recursion. If we have a binding r = r that
+        // can for instance come from a modifier, this can cause an infinite loop here if r has no value.
+        false=isRecursiveBinding(cr,exp); 
+        
         (cache,v,_) = ceval(cache, env, exp, impl, NONE, NONE, msg);
         (cache,res) = cevalSubscriptValue(cache, env, subsc, v, sizelst, impl, msg);
       then
@@ -4985,6 +4990,20 @@ algorithm
         fail();
   end matchcontinue;
 end cevalCrefBinding;
+
+protected function isRecursiveBinding " help function to cevalCrefBinding"
+input DAE.ComponentRef cr;
+input DAE.Exp exp;
+output Boolean res;
+algorithm
+  res := matchcontinue(cr,exp)
+    case(cr,exp) equation
+      res = Util.boolOrList(Util.listMap1(Exp.getCrefFromExp(exp),Exp.crefEqual,cr));
+    then res;
+    case(_,_) then false;
+  end matchcontinue;
+end isRecursiveBinding;
+  
 
 protected function cevalSubscriptValue "function: cevalSubscriptValue
   Helper function to cevalCrefBinding. It applies

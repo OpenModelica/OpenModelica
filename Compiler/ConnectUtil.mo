@@ -528,7 +528,7 @@ algorithm
       
     // no deleted components
     case(sets as Connect.SETS(s,crs,{},outerConn),pre,isTopScope,graph)
-      equation        
+      equation 
         dae = equations2(sets);
       then 
         (dae, graph);
@@ -538,6 +538,7 @@ algorithm
       equation
         cr = deletedComp;
         s = removeComponentInSets(cr,s);
+        
         // remove all branches/connections/roots in the connection graph leading to the deleted components
         graph = ConnectionGraph.removeDeletedComponentsFromCG(graph, cr);
         // recursive call with all the rest of deleted components. 
@@ -568,7 +569,7 @@ algorithm
       equation
         //print("Deleting: " +& Exp.printComponentRefStr(compName) +& "\n");
         crs = Util.listSelect1(crs,compName,crefTupleNotPrefixOf);
-        //print("Result Connect.EQU after remove: " +& Util.stringDelimitList(Util.listMap(crs, Exp.printComponentRefStr), ", ") +& "\n");
+        //print("Result Connect.EQU after remove: " +& Util.stringDelimitList(Util.listMap(Util.listMap(crs,Util.tuple21), Exp.printComponentRefStr), ", ") +& "\n");
         s = removeComponentInSets(compName,s);
       then Connect.EQU(crs)::s;
     // we have a flow component
@@ -576,7 +577,7 @@ algorithm
       equation
         //print("Deleting: " +& Exp.printComponentRefStr(compName) +& "\n");
         fcrs = Util.listSelect1(fcrs,compName,flowTupleNotPrefixOf);
-        //print("Result Connect.FLOW after remove: " +& Util.stringDelimitList(Util.listMap(Util.listMap(fcrs, Util.tuple21), Exp.printComponentRefStr), ", ") +& "\n");
+        //print("Result Connect.FLOW after remove: " +& Util.stringDelimitList(Util.listMap(Util.listMap(fcrs, Util.tuple31), Exp.printComponentRefStr), ", ") +& "\n");
         s = removeComponentInSets(compName,s);
       then Connect.FLOW(fcrs)::s;
     // failure
