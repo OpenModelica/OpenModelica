@@ -52,11 +52,11 @@ public import SCode;
 public import RTOpts;
 public import Prefix;
 public import InnerOuter;
+public import ClassInf;
 
 type Prefix = Prefix.Prefix;
 type InstanceHierarchy = InnerOuter.InstHierarchy "an instance hierarchy";
 
-protected import ClassInf;
 protected import Debug;
 protected import Exp;
 protected import Print;
@@ -77,20 +77,20 @@ algorithm
       
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
     case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";      
-    case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE()),_) then str;
-    case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE()),_)
+    case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE(),_),_) then str;
+    case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE(),_),_)
       equation
         s = stringAppend(str, "[" +& Util.stringDelimitList(Util.listMap(ss, intString), ", ") +& "]");
       then
         s;
-    case Prefix.PREFIX(Prefix.PRE(str,{},rest),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,{},rest,_),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
       then
         s_1;
-    case Prefix.PREFIX(Prefix.PRE(str,ss,rest),cp)
+    case Prefix.PREFIX(Prefix.PRE(str,ss,rest,_),cp)
       equation
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
@@ -134,19 +134,20 @@ public function prefixAdd "function: prefixAdd
   input list<Integer> inIntegerLst;
   input Prefix inPrefix;
   input SCode.Variability vt;
+  input ClassInf.State ci_state;
   output Prefix outPrefix;
 algorithm
-  outPrefix := matchcontinue (inIdent,inIntegerLst,inPrefix,vt)
+  outPrefix := matchcontinue (inIdent,inIntegerLst,inPrefix,vt,ci_state)
     local
       String i;
       list<Integer> s;
       Prefix.ComponentPrefix p;
       
-    case (i,s,Prefix.PREFIX(p,_),vt) 
-      then Prefix.PREFIX(Prefix.PRE(i,s,p),Prefix.CLASSPRE(vt));
+    case (i,s,Prefix.PREFIX(p,_),vt,ci_state) 
+      then Prefix.PREFIX(Prefix.PRE(i,s,p,ci_state),Prefix.CLASSPRE(vt));
     
-    case(i,s,Prefix.NOPRE(),vt) 
-      then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE()),Prefix.CLASSPRE(vt));
+    case(i,s,Prefix.NOPRE(),vt,ci_state) 
+      then Prefix.PREFIX(Prefix.PRE(i,s,Prefix.NOCOMPPRE(),ci_state),Prefix.CLASSPRE(vt));
   end matchcontinue;
 end prefixAdd;
 
@@ -160,8 +161,9 @@ algorithm
       list<Integer> b;
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix c;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c),cp)) 
-      then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE()),cp);
+      ClassInf.State ci_state;
+    case (Prefix.PREFIX(Prefix.PRE(prefix = a,subscripts = b,next = c,ci_state=ci_state),cp)) 
+      then Prefix.PREFIX(Prefix.PRE(a,b,Prefix.NOCOMPPRE(),ci_state),cp);
   end matchcontinue;
 end prefixFirst;
 
@@ -317,20 +319,21 @@ algorithm
       list<Integer> s;
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
+      ClassInf.State ci_state;
     
     case (Prefix.NOPRE(),NONE) then fail();
     case (Prefix.NOPRE(),SOME(cref)) then cref;
     case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then cref;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),NONE)
+    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE)
       equation
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1)));
+        cref_1 = prefixToCref2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1)));
       then
         cref_1;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
+    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1,cref)));
+        cref_1 = prefixToCref2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1,cref)));
       then
         cref_1;
   end matchcontinue;
@@ -460,78 +463,6 @@ algorithm
     */
   end matchcontinue;
 end prefixCrefInnerOuter;
-
-public function searchForInnerPrefix "function: searchForInnerPrefix
-  Search for the prefix of the inner when the cref is 
-  an qualified outer component refence. Some clever 
-  handling is needed here as the prefix/cref can look
-  like bar2/world.someCrap, so we should search for
-    bar2.world/someCrap then
-    bar2/someCrap then
-    /someCrap
-    bar2/world
-    /world"
-	input Env.Cache inCache;
-  input Env.Env inEnv;
-  input InstanceHierarchy inIH;
-  input DAE.ComponentRef inCref;
-  input Prefix inPrefix;
-  input Absyn.InnerOuter inInnerOuter;
-  output Env.Cache outCache;
-  output Prefix outInnerPrefix;
-algorithm
-  (outCache,outInnerPrefix) := matchcontinue (inCache,inEnv,inIH,inCref,inPrefix,inInnerOuter)
-    local
-      Env.Cache cache;
-      Env.Env env;
-      InstanceHierarchy ih;
-      Prefix innerPrefix, pre;
-      Absyn.InnerOuter io;
-      DAE.ComponentRef crefPrefix, cref, newCref;
-      String n;
-
-    // adrpo: prefix normally if we have an inner outer variable!
-    case (cache,env,ih,cref as DAE.CREF_IDENT(ident=n),pre,io)
-      equation
-        // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
-        InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) = 
-           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);        
-      then
-        (cache,innerPrefix);      
-
-    // adrpo: prefix normally if we have an inner outer variable!
-    case (cache,env,ih,cref as DAE.CREF_QUAL(ident=_),pre,io)
-      equation
-        // strip the last one to get the prefix
-        crefPrefix = Exp.crefStripLastIdent(cref);
-        // get the last one
-        n = Exp.crefLastIdent(cref);
-        // suffix the prefix with the cref prefix
-        pre = prefixAddCref(pre, crefPrefix);
-        // search in the instance hierarchy for the *CORRECT* prefix for this outer variable!
-        InnerOuter.INST_INNER(innerPrefix=innerPrefix, instResult=SOME(_)) = 
-           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
-      then
-        (cache,innerPrefix);
-        
-    // adrpo: not found in the case above, strip last and call it recursively!
-    case (cache,env,ih,cref as DAE.CREF_QUAL(ident=_),pre,io)
-      equation
-        // strip the last one
-        crefPrefix = Exp.crefStripLastIdent(cref);
-        (cache, innerPrefix) = searchForInnerPrefix(cache, env, ih, crefPrefix, pre, io); 
-      then
-        (cache,innerPrefix);
-        
-    // failure!
-    case (cache,env,ih,cref,pre,io)
-      equation
-        Debug.fprintln("failtrace", "- PrefixUtil.searchForInnerPrefix failed to find the inner prefix for: " +& 
-           printPrefixStr(pre) +& "/" +& Exp.printComponentRefStr(cref));  
-      then
-        fail();
-  end matchcontinue;
-end searchForInnerPrefix;
 
 public function prefixExp "function: prefixExp
   Add the supplied prefix to all component references in an expression."
@@ -1199,34 +1130,5 @@ algorithm
       then (localCache,stmt);
   end matchcontinue;
 end prefixElse;
-
-public function prefixAddCref "function: prefixAddCref
-  This function is used to extend a prefix with a given component refence:
-  Example: 
-    prefix: a.b + cref: c.d => a.b.c.d"
-  input Prefix inPrefix;
-  input DAE.ComponentRef inCref;
-  output Prefix outPrefix;
-algorithm
-  outPrefix := matchcontinue (inPrefix,inCref)
-    local
-      Prefix.Prefix pre;
-      String id;
-      DAE.ComponentRef next;
-
-    case(pre, DAE.CREF_IDENT(ident=id))
-      equation
-        pre = prefixAdd(id, {}, pre, SCode.VAR());
-      then 
-        pre;
-
-    case(pre, DAE.CREF_QUAL(ident=id, componentRef=next))
-      equation
-        pre = prefixAdd(id, {}, pre, SCode.VAR());
-        pre = prefixAddCref(pre, next);
-      then 
-        pre;
-  end matchcontinue;
-end prefixAddCref;
 
 end PrefixUtil;

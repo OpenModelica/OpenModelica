@@ -11134,14 +11134,14 @@ algorithm
         //print("env:");print(Env.printEnvStr(env));print("\n");
         (cache,_,t,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
-        crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter
+        crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const,dae) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
       then
         (cache,DAE.CREF_QUAL(id,ty,{},cr),const,dae);
     // QUAL,with no subscripts second case => look for class
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
       equation
-        crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR()); // variability doesn't matter
+        crefPrefix = PrefixUtil.prefixAdd(id,{},crefPrefix,SCode.VAR(),ClassInf.UNKNOWN(Absyn.IDENT(""))); // variability doesn't matter
         (cache,cr,const,dae) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
       then
         (cache,DAE.CREF_QUAL(id,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),{},cr),const,dae);
@@ -11155,7 +11155,7 @@ algorithm
         (cache,ss_1,const1,dae1) = elabSubscriptsDims(cache,env, ss, sl, impl);
         //indexes = Exp.subscriptsInt(ss_1);
         //crefPrefix = Prefix.prefixAdd(id,indexes,crefPrefix,vt);
-        crefPrefix = PrefixUtil.prefixAdd(id, {}, crefPrefix, vt);
+        crefPrefix = PrefixUtil.prefixAdd(id, {}, crefPrefix, vt,ClassInf.UNKNOWN(Absyn.IDENT("")));
         (cache,cr,const2,dae2) = elabCrefSubs(cache,env, subs,crefPrefix,impl);
         const = Types.constAnd(const1, const2);
         dae = DAEUtil.joinDaes(dae1,dae2);

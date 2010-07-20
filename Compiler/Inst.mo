@@ -5593,7 +5593,7 @@ algorithm
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
-        pre_1 = PrefixUtil.prefixAdd(n, {}, pre,vt);
+        pre_1 = PrefixUtil.prefixAdd(n, {}, pre,vt,ci_state);
         ns = PrefixUtil.printPrefixStr(pre_1);
         // Debug.fcall (\"instdb\", Env.print_env, env)
         Error.addMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns});
@@ -6688,6 +6688,8 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
+      String ss1;
+      SCode.Restriction r;
 
     // Rules for instantation of function variables (e.g. input and output
 
@@ -6756,13 +6758,13 @@ algorithm
         (cache,env_1,ih,store,dae,csets,arrty,graph);
 
     // Constants
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl as SCode.CLASS(name=ss1,restriction=r),
           SCode.ATTR(flowPrefix = flowPrefix,streamPrefix=streamPrefix,
                      accesibility = acc,variability = (vt as SCode.CONST()),direction = dir),
           prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         idxs_1 = listReverse(idxs);
-        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt);
+        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) = instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST());
         subs = Exp.intSubscripts(idxs_1);
@@ -6780,13 +6782,13 @@ algorithm
         (cache,env_1,ih,store,dae,csets_1,ty,graph);
 
     // Parameters
-    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,
+    case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl as SCode.CLASS(name=ss1,restriction=r),
           SCode.ATTR(flowPrefix = flowPrefix,streamPrefix = streamPrefix,
                      accesibility = acc,variability = (vt as SCode.PARAM()),direction = dir),
           prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         idxs_1 = listReverse(idxs);
-        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt);
+        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
         //print(" instantiateVarparam: " +& PrefixUtil.printPrefixStr(pre) +& " . " +& n +& " mod: " +&  Mod.printModStr(mod) +& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
@@ -6811,14 +6813,13 @@ algorithm
 
     // Scalar Variables, different from the ones above since variable binings are expanded to equations.
     // Exception: external objects, see below.
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=ss1)),
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl as SCode.CLASS(name=ss1,restriction=r)),
           SCode.ATTR(flowPrefix = flowPrefix, streamPrefix = streamPrefix,
                      accesibility = acc,variability = vt,direction = dir),
           prot,{},idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
-          local String ss1;
       equation
         idxs_1 = listReverse(idxs);
-        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt);
+        pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
         // prefix_str = PrefixUtil.printPrefixStr(pre_1);
         // Debug.fprint("insttr", "ICLASS " +& ss1 +& " prefix: " +& prefix_str +& " ");
         // Debug.fprintln("insttr", Env.printEnvPathStr(env) +& "." +& ss1 +& " mods: " +& Mod.printModStr(mod));

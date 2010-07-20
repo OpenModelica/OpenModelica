@@ -47,6 +47,7 @@ package Prefix
 
 
 public import SCode;
+public import ClassInf;
 
 public
 uniontype Prefix "A Prefix has a component prefix and a class prefix.
@@ -70,6 +71,7 @@ uniontype ComponentPrefix
     String prefix "prefix name" ;
     list<Integer> subscripts "subscripts" ;
     ComponentPrefix next "next prefix" ;
+    ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
   end PRE;
   
   record NOCOMPPRE end NOCOMPPRE;
