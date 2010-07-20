@@ -214,6 +214,7 @@ public constant ErrorID INVALID_ENUM_LITERAL=126;
 public constant ErrorID UNEXCPECTED_FUNCTION_INPUTS_WARNING=127;
 public constant ErrorID DUPLICATE_CLASSES_NOT_EQUIVALENT=128;
 public constant ErrorID HIGHER_VARIABILITY_BINDING=129;
+public constant ErrorID STRUCT_SINGULAR_EQUATION=130;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -318,6 +319,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Too many equations, overdetermined system. The model has %s equation(s) and %s variable(s)"),
           (STRUCT_SINGULAR_SYSTEM,SYMBOLIC(),ERROR(),
           "Model is structurally singular, error found sorting equations %s for variables %s"),
+          (STRUCT_SINGULAR_EQUATION,SYMBOLIC(),ERROR(),
+          "Model is structurally singular in equation %s."),
           (STRUCT_SINGULAR_SYSTEM_CONNECTORS,SYMBOLIC(),ERROR(),
           "Model is structurally singular, the following connectors are not connected from the outside: %s"),
           (NON_EXISTING_DERIVATIVE,SYMBOLIC(),ERROR(),
