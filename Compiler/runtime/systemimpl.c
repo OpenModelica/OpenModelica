@@ -211,7 +211,7 @@ static int set_ldflags(char *str)
 }
 
 #if defined(_MSC_VER)
-__inline
+
 #else
 inline
 #endif
