@@ -11339,7 +11339,7 @@ algorithm
         DAE.ComponentRef cr_2; DAE.ExpType t; DAE.Properties tprop1,tprop2;
         DAE.FunctionTree funcs;
       equation 
-        (cache,e1_1 as DAE.CREF(cr_1,t),tprop1,_,fdae1) = Static.elabCref(cache,env, cr, impl,true) "reinit statement" ;
+        (cache,e1_1 as DAE.CREF(cr_1,t),tprop1,_,fdae1) = Static.elabCref(cache,env, cr, impl,false) "reinit statement" ;
         (cache, e1_1, tprop1) = Ceval.cevalIfConstant(cache, env, e1_1, tprop1, impl);
         (cache,e2_1,tprop2,_,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl);
