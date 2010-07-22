@@ -10238,7 +10238,7 @@ algorithm
         (cache,e,DAE.C_VAR(),acc);
 
     // a constant -> evaluate binding
-    case (cache,env,cr,acc,SCode.CONST(),NONE,io,tt,binding,doVect,_)
+    case (cache,env,cr,acc,SCode.CONST(),_,io,tt,binding,doVect,_)
       equation
         (cache,v) = Ceval.cevalCrefBinding(cache,env,cr,binding,false,Ceval.MSG());
         e = ValuesUtil.valueExp(v);
@@ -10248,7 +10248,7 @@ algorithm
         (cache,e_1,DAE.C_CONST(),SCode.RO());
     
     // a constant with some for iterator constness -> don't constant evaluate
-    case (cache,env,cr,acc,SCode.CONST(),SOME(_),io,tt,binding,doVect,_)
+    case (cache,env,cr,acc,SCode.CONST(),SOME(_),io,tt,_,doVect,_)
       equation
         expTy = Types.elabType(tt);
       then
