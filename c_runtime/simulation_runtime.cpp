@@ -31,11 +31,11 @@
 #include <string>
 #include <limits>
 #include <list>
-#include <math.h>
+#include <cmath>
 #include <iomanip>
-#include <time.h>
-#include <stdio.h>
-#include <string.h>
+#include <ctime>
+#include <cstdio>
+#include <cstring>
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
@@ -46,6 +46,7 @@
 #include "simulation_result_empty.h"
 #include "simulation_result_plt.h"
 #include "simulation_result_csv.h"
+#include "simulation_result_mat.h"
 
 using namespace std;
 
@@ -304,6 +305,8 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
     sim_result = new simulation_result_csv(result_file_cstr.c_str(),maxSteps);
   } else if (0 == strcmp("bin",outputFormat.c_str())) {
     sim_result = new simulation_result_bin(result_file_cstr.c_str(),maxSteps);
+  } else if (0 == strcmp("mat",outputFormat.c_str())) {
+    sim_result = new simulation_result_mat(result_file_cstr.c_str(),start,stop);
   } else { /* Default to plt */
     sim_result = new simulation_result_plt(result_file_cstr.c_str(),maxSteps);
   }
