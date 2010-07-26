@@ -16,7 +16,7 @@ INSTALL_DOCDIR     = ${DESTDIR}${docdir}/omc
 INSTALL_SHAREDIR   = ${DESTDIR}${datadir}/
 INSTALL_JAVADIR    = ${DESTDIR}${datadir}/omc/java
 
-.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test install-dirs
+.PHONY : c_runtime omc omcd release debug qtclient mosh all mkbuilddirs test install-dirs susan susan_all susgen sustst
 
 mkbuilddirs:
 	mkdir -p $(builddir_bin)
@@ -51,6 +51,9 @@ testlog:
 
 testmos:
 	(cd testsuite/mosfiles; time $(MAKE) -f Makefile)
+
+testmo:
+	(cd testsuite/mofiles; time $(MAKE) -f Makefile test)
 	
 testmeta:
 	(cd testsuite/meta; time $(MAKE) -f Makefile)
@@ -65,19 +68,18 @@ testSummary:
 mosh: omc
 	$(MAKE) -C mosh/src -f $(defaultMakefileTarget)
 
-susan: all
-	$(MAKE) -C Compiler/susan_codegen
 
-sus: 
-	$(MAKE) -C Compiler/susan_codegen
+susan_all: susan susgen
 
-tpl_simcode: tpl_sc susan tpl_gen
+susan: all sustst	
 
-tpl_sc:
-	$(MAKE) -C Compiler/susan_codegen/SimCode
+sustst:
+	(cd Compiler/susan_codegen && $(MAKE) -f Makefile test)
 
-tpl_gen:
-	$(MAKE) -C Compiler/susan_codegen/SimCode/GenTest
+susgen:
+	(cd Compiler/susan_codegen/SimCode/GenTest && $(MAKE) -f Makefile)
+
+
 
 distclean: clean
 	(cd Compiler && $(MAKE) -f $(defaultMakefileTarget) reallyclean)

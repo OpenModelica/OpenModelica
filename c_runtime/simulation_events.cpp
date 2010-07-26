@@ -31,7 +31,7 @@
 #include "simulation_events.h"
 #include "simulation_runtime.h"
 #include "simulation_result.h"
-#include "utility.h"
+//#include "utility.h" // ppriv 2010-06-23 - removed "utility.h" due to clash of abs() macro from "f2c.h" with <math.h> in MSVC (abs is intrinsic function instead macro) and no usage here
 #include <math.h>
 #include <string.h> // adrpo - 2006-12-05 -> for memset
 #include <list>
@@ -55,7 +55,7 @@ static list<long> EventQueue;
  *
  * \return zero if successful.
  */
-int initializeEventData() {	
+int initializeEventData() {
   /*
 	 * Re-Initialization is important because the variables are global and used in every solving step
 	 */
@@ -378,7 +378,7 @@ int compdbl(const void* a, const void* b) {
   const double epsilon = 0.00000000000001;
 
   if (diff < epsilon && diff > -epsilon)
-    return 0;  
+    return 0;
   return (*v1 > *v2 ? 1 : -1);
 }
 
@@ -421,7 +421,7 @@ void initSample(double start) {
   /* not used yet
    * long measure_start_time = clock();
    */
-  
+
   if (sim_verbose) printf("Notice: Calculated time of sample events is not yet used!\n");
   function_sampleInit();
   /* This code will generate an array of time values when sample generates events.
@@ -436,7 +436,7 @@ void initSample(double start) {
   int max_events = 0;
   int ix = 0;
   int nuniq;
-  
+
   for (i=0; i<num_samples; i++) {
     if (stop >= globalData->rawSampleExps[i].start)
       max_events += (int)((stop - globalData->rawSampleExps[i].start)/globalData->rawSampleExps[i].interval+1);
@@ -459,7 +459,7 @@ void initSample(double start) {
   globalData->sampleTimes = events;
   globalData->curSampleTimeIx = 0;
   globalData->nSampleTimes = nuniq;
-  
+
 }
 
 void saveall() {
@@ -569,17 +569,17 @@ bool change(double& var) {
 }
 
 /*
- * All event functions from here, are till now only used in Euler  
- * 
+ * All event functions from here, are till now only used in Euler
+ *
 */
 
 //
 // This function checks for Events in Intervall=[oldTime,timeValue]
-// If a zerocrossing Function cause a sign chage, root finding  
+// If a zerocrossing Function cause a sign chage, root finding
 // process will start
 //
 int CheckForNewEvent(int flag) {
-	
+
 	if (flag != INTERVAL){
 		while(checkForDiscreteChanges()) {
 			saveall();
@@ -610,27 +610,27 @@ int CheckForNewEvent(int flag) {
 	}else if(!EventQueue.empty()){
 		EventHandle();
 		return 1;
-	}	
+	}
 	return 0;
 }
 
 //
-// This function handle events and change all 
+// This function handle events and change all
 // needed variables for an event
 //
 void EventHandle(){
-	
+
 	while(!EventQueue.empty()){
 		long event_id;
-		
-		event_id = EventQueue.front(); 
-	
+
+		event_id = EventQueue.front();
+
 		if (sim_verbose) cout << "Handle Event ID: " << event_id << endl;
 		if (zeroCrossingEnabled[event_id] == 1){
 			zeroCrossingEnabled[event_id] = -1;}
 		else if (zeroCrossingEnabled[event_id] == -1){
 			zeroCrossingEnabled[event_id] = 1;}
-		
+
 		saveall();
 		function_updateDepend();
 	    if (sim_verbose) { sim_result->emit();}
@@ -641,7 +641,7 @@ void EventHandle(){
 }
 
 //
-// This function perform a root finding for 
+// This function perform a root finding for
 // Intervall=[oldTime,timeValue]
 //
 void FindRoot(){
@@ -655,10 +655,10 @@ void FindRoot(){
 	}
 
 	long int event_id =0;
-	
+
 	double *states_right = new double[globalData->nStates];
 	double *states_left = new double[globalData->nStates];
-	
+
 	double time_left = globalData->oldTime;
 	double time_right = globalData->timeValue;
 
@@ -670,8 +670,8 @@ void FindRoot(){
 
 	// Search for event time and event_id with Bisection method
 	EventTime = BiSection(&time_left,&time_right, states_left, states_right, &event_id);
-	
-	
+
+
 	if (sim_verbose) {
 		cout << "Found event " << event_id << " at time: "<< EventTime << endl;
 		cout << "Time at Point left: " << time_left << endl;
@@ -701,54 +701,54 @@ void FindRoot(){
     
 	delete[] states_left;
 	delete[] states_right;
-	
+
 	EventHandle();
 }
 
-// 
+//
 // Method to find root in Intervall[oldTime,timeValue]
 //
-double BiSection(double* a, double* b, double* states_a, double* states_b,long int* event_id )	
+double BiSection(double* a, double* b, double* states_a, double* states_b,long int* event_id )
 {
-	
+
 	//double TTOL =  DBL_EPSILON*fabs(2*b-a)*100;
 	double TTOL = 1e-06;
 	double c;
 
 	if (sim_verbose){
-			cout << "Check Intervall [" << *a << "," << *b << "]" << endl; 
+			cout << "Check Intervall [" << *a << "," << *b << "]" << endl;
 			cout << "TTOL is set to: " << TTOL << endl;
 	}
-	
+
 	while ( fabs(*b-*a) > TTOL){
-		
+
 		c = (*a+*b)/2.0;
 		globalData->timeValue = c;
-		
-		//calculates states at time c 
+
+		//calculates states at time c
 		for(int i=0;i<globalData->nStates;i++){
-			globalData->states[i] = (states_a[i] + states_b[i]) / 2.0; 
+			globalData->states[i] = (states_a[i] + states_b[i]) / 2.0;
 		}
-		
-		//calculates Values dependents on new states 
+
+		//calculates Values dependents on new states
 		functionODE();
 		functionDAE_output();
-	
+
 		if ( CheckZeroCrossings(event_id)){ //If Zerocrossing in left Section
-			
+
 			for(int i=0;i<globalData->nStates;i++){
 				states_b[i] = globalData->states[i];
 			}
 			*b = c;
 		}else{   //else Zerocrossing in right Section
-			
+
 			for(int i=0;i<globalData->nStates;i++){
 				states_a[i] = globalData->states[i];
 			}
 			*a = c;
-		} 
+		}
 	}
-	
+
 	c = (*a+*b)/2.0;
 	return c;
 }
@@ -775,7 +775,7 @@ void InitialZeroCrossings() {
   if (sim_verbose) {
     cout << "checkForIntialZeroCrossings" << endl;
   }
-  
+
   function_onlyZeroCrossings(gout,&globalData->timeValue);
   for (int i = 0; i < globalData->nZeroCrossing; i++) {
     if (gout[i] < 0) {

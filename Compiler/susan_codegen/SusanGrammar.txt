@@ -67,14 +67,15 @@ one-line-templ( EndEsc):
 	
 STRING(EndEsc ): //always is processed on one line //no escaping
 	( ^'<%' | ^EndEsc )+  //take whatever except '<%' and  EndEsc if SOME, or '>>' if NONE 
-	     
+
+
 /* expression operators precedence and associativity (from lowest to highest)
  *   ; option  |  no assoc. -  n-ary
- *   |> =>     |  no assoc. - ternary (binary de-facto) //will be left assoc.
+ *   |> =>     |  no assoc. - ternary (binary de-facto) //will be left assoc. in the future
  *   then,else |  no assoc. //to allow nesting of if and/or match ... else always belongs to closest form (if or match)
- *   let       |  no assoc. - binary or ternary // the precedence for the result expression here ... the bounded expression is full expression - similar to ... let b = (bounded-expr) in result-expr  
- *   match     |  no assoc. 
- *   if        |  no assoc.
+ *   let (in)  |  no assoc. - binary // the precedence for the invisible 'in' binary operator here ... the bounded expression is full expression - ... let b = bounded-expr in result-expr ... is similar to ... let b = (bounded-expr) in result-expr  
+ *   match     |  no assoc. //precedence for argument
+ *   if        |  no assoc. //precedence for argument
  *   ,         |  no assoc. - n-ary //preserve this precedence for future usage
  *   not       |  unary
  *   +         |  left assoc. - binary
@@ -83,6 +84,7 @@ STRING(EndEsc ): //always is processed on one line //no escaping
  *   &         |  unary
  *   (), {}    |  no assoc.
  */ 
+ 	     
 expression:
 	template
 	|
@@ -98,7 +100,7 @@ expression:
 	|
 	map-expr
 	|
-	'{' expression (, expression )* '}'   // list construction with possible mixed scalars and lists 
+	'{' expression (',' expression )* '}'   // list construction with possible mixed scalars and lists 
 	                                      //… useful in map/concatenation context
 	                                      //TODO: decide if mix of scalars / list values are allowed
 	|
@@ -544,7 +546,6 @@ templArgs_rest
 	|
 	_  => {}
 
-
 expression(lesc,resc):
 	expressionNoOptions(lesc,resc):exp  escapedOptions:opts	
 	  => makeEscapedExp(exp, opts)
@@ -645,9 +646,9 @@ expressionIf(lesc,resc):
 expressionPlus(lesc,resc):
 	expression_base(lesc,resc):bexp  plusTailOpt(lesc,resc,bexp):exp
 	  => exp
-		
+
 plusTailOpt(lesc,resc,bexp):	
-	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation ... same as '<expression><expression>'
 	  => TEMPLATE(bexp::exp::expLst, "+", "");
 	|
 	_ => bexp 
@@ -656,7 +657,7 @@ concatPlus_rest(lesc,resc):
 	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  =>  exp::expLst
 	|
 	_ => {}
-
+	
 
 expression_base(lesc,resc):
 	stringConstant:strRevList 
@@ -681,7 +682,9 @@ expression_base(lesc,resc):
 	|// TODO: create an optional/error reporting variant of pathIdent
 	pathIdent:name  boundValueOrFunCall(name,lesc,resc):exp  =>  exp
 	
-	
+
+
+
 	
 boundValueOrFunCall(name,lesc,resc):
 	funCall(name,lesc,resc):exp  => exp
@@ -1040,4 +1043,124 @@ fieldBinding_rest:
 	|
 	_ => {}
 	 
+
+// ************************************************
+// **** alternative expression - experimental *****
+// ************************************************
+
+/* expression operators precedence and associativity (from lowest to highest)
+ *   then,else |  no assoc. //to allow nesting of if and/or match ... else always belongs to closest form (if or match)
+ *   let (in)  |  no assoc. - binary // the precedence for the invisible 'in' binary operator here ... the bounded expression is full expression - similar to ... let b = (bounded-expr) in result-expr  
+ *   ; option  |  no assoc. -  n-ary
+ *   |> =>     |  no assoc. - ternary (binary de-facto) //will be left assoc. in the future
+ *   ,         |  no assoc. - n-ary //preserve this precedence for future usage
+ *   not       |  unary (only for if)
+ *   +         |  left assoc. - binary
+ *   match,if  |  no assoc. //precedence for argument
+ *   f()       |  unary
+ *   . //dot   |  left assoc. - binary       
+ *   &         |  unary
+ *   (), {}    |  no assoc.
+ */ 
+
+
+expression(lesc,resc):
+	expressionBinary(lesc,resc):exp => exp
+	|
+	expressionUnary(lesc,resc):exp => exp
+
+expressionUnary(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", ""); //TODO: should be a LET_EXPRESSION()	
+	|
+	matchExp(lesc,resc):exp 
+	  => exp
+	|
+	conditionExp(lesc,resc):exp 
+	  => exp
+
+/*	
+expressionLet(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst
+	   => TEMPLATE(lexp::expLst}, "let", ""); //TODO: should be a LET_EXPRESSION()	
+	
+expressionMatch(lesc,resc):
+	matchExp(lesc,resc):exp 
+	  => exp
+	|
+	expressionIf(lesc,resc):exp
+	  => exp
+*/
+
+
+expressionBinary(lesc,resc):	
+	expressionMap(lesc,resc):exp  escapedOptions:opts	
+	  => makeEscapedExp(exp, opts)
+
+expressionMap(lesc,resc):
+	expressionPlus(lesc,resc):headExp  mapTailOpt(lesc,resc,headExp):exp
+	  => exp
+
+expressionPlus(lesc,resc):
+	expression_base(lesc,resc):bexp  plusTailOpt(lesc,resc,bexp):exp
+	  => exp
+
+mapTailOpt(headExp,lesc,resc):
+	'|>' matchBinding:mexp  
+	indexedByOpt:idxNmOpt //TODO: 'indexedby' in TplAbsyn	
+	'=>' expressionMapTailRight(lesc,resc):exp  =>  MAP(headExp,mexp,exp)
+	|
+	_ => headExp
+
+expressionMapTailRight(lesc,resc):
+	expressionPlus(lesc,resc):exp
+	  => exp
+	|
+	expressionUnary(lesc,resc):exp
+	  => exp
+
+plusTailOpt(lesc,resc,bexp):	
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst   //  concatenation … same as "<expression><expression>"
+	  => TEMPLATE(bexp::exp::expLst, "+", "");
+	|
+	'+' expressionUnary(lesc,resc):exp
+	  => TEMPLATE({bexp,exp}, "+", "")
+	|
+	_ => bexp 
+
+concatPlus_rest(lesc,resc):
+	'+' expression_base(lesc,resc):exp  concatExp_rest(lesc,resc):expLst  
+	  =>  exp::expLst
+	|
+	'+' expressionUnary(lesc,resc):exp
+	  => { exp }
+	|
+	_ => {}
+
+escapedOptions(lesc,resc):
+	';' identifier:id  escOptionExp(lesc,resc):expOpt  escapedOptions(lesc,resc):opts
+	=> (id, expOpt) :: opts
+	|
+	_ => {} 
+
+escOptionExp(lesc,resc):
+	'=' expressionNoOptions(lesc,resc):exp
+	  => SOME(exp)
+	|
+	_ => NONE
+
+
+indexedByOpt:
+	'indexedby' identifier:id
+		=> SOME(id)
+	|
+	_ => NONE
+
+		
+concatLetExp_rest(lesc,resc):
+	'let' letExp(lesc,resc):lexp  concatLetExp_rest(lesc,resc):expLst 
+	  =>  lexp::expLst
+	|
+	expression(lesc,resc):exp
+	  => {exp}
 

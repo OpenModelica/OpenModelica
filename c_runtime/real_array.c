@@ -7,16 +7,16 @@
  *
  * All rights reserved.
  *
- * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3 
- * AND THIS OSMC PUBLIC LICENSE (OSMC-PL). 
- * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S  
+ * THIS PROGRAM IS PROVIDED UNDER THE TERMS OF GPL VERSION 3
+ * AND THIS OSMC PUBLIC LICENSE (OSMC-PL).
+ * ANY USE, REPRODUCTION OR DISTRIBUTION OF THIS PROGRAM CONSTITUTES RECIPIENT'S
  * ACCEPTANCE OF THE OSMC PUBLIC LICENSE.
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
  * from Linköping University, either from the above address,
- * from the URLs: http://www.ida.liu.se/projects/OpenModelica or  
- * http://www.openmodelica.org, and in the OpenModelica distribution. 
+ * from the URLs: http://www.ida.liu.se/projects/OpenModelica or
+ * http://www.openmodelica.org, and in the OpenModelica distribution.
  * GNU version 3 is obtained from: http://www.gnu.org/copyleft/gpl.html.
  *
  * This program is distributed WITHOUT ANY WARRANTY; without
@@ -277,55 +277,65 @@ void indexed_assign_real_array(real_array_t* source,
 			       index_spec_t* dest_spec)
 {
     int* idx_vec1;
-    int* idx_vec2;
+    /*int* idx_vec2;*/
     int* idx_size;
-		int quit;
-		int i/*,j*/;
-		state mem_state;
+	int quit;
+	int i,j;
+	state mem_state;
 
-		assert(base_array_ok(source));
-		assert(base_array_ok(dest));
-		assert(index_spec_ok(dest_spec));
-		assert(index_spec_fit_base_array(dest_spec, dest));
-		/*for (i = 0,j = 0; i < dest_spec->ndims; ++i)
-		{
-			if (dest_spec->dim_size[i] != 0) ++j;
-		}
-		assert(j == source->ndims);*/
+	assert(base_array_ok(source));
+	assert(base_array_ok(dest));
+	assert(index_spec_ok(dest_spec));
+	assert(index_spec_fit_base_array(dest_spec, dest));
+	for (i = 0,j = 0; i < dest_spec->ndims; ++i)
+	{
+		if (dest_spec->dim_size[i] != 0) ++j;
+	}
+	assert(j == source->ndims);
 
-		mem_state = get_memory_state();
-		idx_vec1 = size_alloc(dest->ndims);
-		idx_vec2 = size_alloc(source->ndims);
-		idx_size = size_alloc(dest_spec->ndims);
+	mem_state = get_memory_state();
+	idx_vec1 = size_alloc(dest->ndims);
+	/* idx_vec2 = size_alloc(source->ndims); */
+	idx_size = size_alloc(dest_spec->ndims);
 
-		for (i = 0; i < dest_spec->ndims; ++i) {
-			idx_vec1[i] = 0;
+	for (i = 0; i < dest_spec->ndims; ++i) {
+		idx_vec1[i] = 0;
 
-			if (dest_spec->index[i])
-				idx_size[i] = imax(dest_spec->dim_size[i],1);
-			else
-				idx_size[i] = dest->dim_size[i];
-		}
+		if (dest_spec->index[i]) /* is 'S' or 'A' */
+			idx_size[i] = imax(dest_spec->dim_size[i],1);
+		else /* is 'W' */
+			idx_size[i] = dest->dim_size[i];
+	}
 
-		quit = 0;
-		while (1) {
-			/*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
-				if (dest_spec->dim_size[i] != 0) {
-					idx_vec2[j] = idx_vec1[i];
-					++j;
-				}
-			}*/
-			real_set(dest,
-					calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
-					real_get(source,
-						calc_base_index(source->ndims, idx_vec1, source)));
+	quit = 0;
+	j = 0;
+	while (1) {
+		/*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
+						if (dest_spec->dim_size[i] != 0) {
+							idx_vec2[j] = idx_vec1[i];
+							++j;
+						}
+		}*/
+		/*for (i = 0, j = 0; i < dest_spec->ndims; ++i) {
+			if ((dest_spec->index_type[i] == 'W')
+				 ||
+				 (dest_spec->index_type[i] == 'A')) {
+				 idx_vec2[j] = idx_vec1[i];
+				++j;
+			}
+		}*/
+		real_set(dest,
+				calc_base_index_spec(dest->ndims, idx_vec1, dest, dest_spec),
+				 real_get(source, j++));
+					/*	 calc_base_index(source->ndims, idx_vec1, source)));*/
+					/* calc_base_index(source->ndims, idx_vec2, source)));*/
 
-			quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
+		quit = next_index(dest_spec->ndims, idx_vec1, idx_size);
 
-			if (quit) break;
-		}
-
-		restore_memory_state(mem_state);
+		if (quit) break;
+	}
+	assert(j == base_array_nr_of_elements(source));
+	restore_memory_state(mem_state);
 }
 
 /*
@@ -344,7 +354,7 @@ void index_real_array(real_array_t* source,
 		      real_array_t* dest)
 {
     int* idx_vec1;
-    int* idx_vec2;
+    /* int* idx_vec2; */
     int* idx_size;
     int quit;
     int j;
@@ -365,23 +375,29 @@ void index_real_array(real_array_t* source,
             ++j;
 		}
     assert(j == dest->ndims);*/
+    for (i = 0,j = 0; i < source_spec->ndims; ++i) 	{
+    	if (source_spec->dim_size[i] != 0) ++j;
+    }
+    assert(j == dest->ndims);
 
     mem_state = get_memory_state();
     idx_vec1 = size_alloc(source->ndims);  /*indices in the source array*/
-    idx_vec2 = size_alloc(dest->ndims); /* indices in the destination array*/
+    /* idx_vec2 = size_alloc(dest->ndims); / * indices in the destination array* / */
     idx_size = size_alloc(source_spec->ndims);
 
     for (i = 0; i < source->ndims; ++i) idx_vec1[i] = 0;
     for (i = 0; i < source_spec->ndims; ++i) {
-        if (source_spec->index[i])
-            idx_size[i] = imax(source_spec->dim_size[i],1);
-        else
+        if (source_spec->index[i]) /* is 'S' or 'A' */
+            idx_size[i] = imax(source_spec->dim_size[i],1); /* the imax() is not needed, because there is (idx[d] >= size[d]) in the next_index(), but ... */
+        else /* is 'W' */
             idx_size[i] = source->dim_size[i];
     }
 
     quit = 0;
+    j = 0;
     while (1) {
-        for (i = 0, j = 0; i < source->ndims; ++i) {
+        /*
+    	for (i = 0, j = 0; i < source->ndims; ++i) {
             if ((source_spec->index_type[i] == 'W')
                 ||
                 (source_spec->index_type[i] == 'A')) {
@@ -389,8 +405,8 @@ void index_real_array(real_array_t* source,
                 j++;
             }
         }
-
-        real_set(dest, calc_base_index(dest->ndims, idx_vec2, dest),
+        */
+        real_set(dest, j++,  /* calc_base_index(dest->ndims, idx_vec2, dest), */
                  real_get(source,
                           calc_base_index_spec(source->ndims, idx_vec1,
                                                source, source_spec)));
@@ -398,7 +414,7 @@ void index_real_array(real_array_t* source,
         quit = next_index(source->ndims, idx_vec1, idx_size);
         if (quit) break;
     }
-
+    assert(j == base_array_nr_of_elements(dest));
     restore_memory_state(mem_state);
 }
 
@@ -419,12 +435,14 @@ void index_alloc_real_array(real_array_t* source,
 {
     int i;
     int j;
-    int ndimsdiff;
+    /*int ndimsdiff;*/
 
     assert(base_array_ok(source));
     assert(index_spec_ok(source_spec));
     assert(index_spec_fit_base_array(source_spec, source));
 
+
+    /*
     ndimsdiff = 0;
     for (i = 0; i < source_spec->ndims; ++i) {
         if ((source_spec->index_type[i] == 'W')
@@ -433,16 +451,53 @@ void index_alloc_real_array(real_array_t* source,
             ndimsdiff--;
     }
 
+    / * !!! this is a major bug here, it should be
+     * dest->ndims = -ndimsdiff;
+     * for example in
+     * (to be allocated)dest := source[{2,3}];
+     * it leads to 0 ndims ... 1 - 1
+     * and, in the next lines,
+     * memory was written after its allocated area (not used in fact)
+     * /
     dest->ndims = source->ndims + ndimsdiff;
+    assert(dest->ndims > 0); / * dest->ndims <= 0 was happenning ... * /
     dest->dim_size = size_alloc(dest->ndims);
 
     for (i = 0,j = 0; i < dest->ndims; ++i) {
-        while (source_spec->index_type[i+j] == 'S') ++j; /* Skip scalars */
-        if (source_spec->index_type[i+j] == 'W') { /*take whole dimension from source*/
+    	/ * !!! a little bug is here !!!
+    	 * When source_spec is in line with dest, everything is ok,
+    	 * for every dest dimension there has to be a 'W' or 'A',
+    	 * but when the input is incorrect, what is not tested/asserted yet,
+    	 * there can be the last index_type[i+j] == 'S'
+    	 * --> index out of bounds
+    	 * --> corrupted memory in the next lines --> nondeterministic behavior
+    	 * /
+        while (source_spec->index_type[i+j] == 'S') ++j; / * Skip scalars * /
+        if (source_spec->index_type[i+j] == 'W') { / *take whole dimension from source* /
             dest->dim_size[i]=source->dim_size[i+j];
-        } else if (source_spec->index_type[i+j] == 'A') { /* Take dimension size from splice*/
+        } else if (source_spec->index_type[i+j] == 'A') { / * Take dimension size from splice* /
             dest->dim_size[i]=source_spec->dim_size[i+j];
         }
+    }
+    */
+
+    for (i = 0, j = 0; i < source_spec->ndims; ++i) {
+       	if (source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
+       		++j;
+       	}
+    }
+    dest->ndims = j;
+    dest->dim_size = size_alloc(dest->ndims);
+
+    for (i = 0, j = 0; i < source_spec->ndims; ++i) {
+    	if (source_spec->dim_size[i] != 0) { /* is 'W' or 'A' */
+    		if(source_spec->index[i]) /* is 'A' */
+    			dest->dim_size[j] = source_spec->dim_size[i];
+    		else  /* is 'W' */
+    			dest->dim_size[j] = source->dim_size[i];
+
+    		++j;
+    	}
     }
 
     alloc_real_array_data(dest);

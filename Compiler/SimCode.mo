@@ -119,6 +119,7 @@ uniontype SimCode
     ExtObjInfo extObjInfo;
     MakefileParams makefileParams;
     DelayedExpression delayedExps;
+    DAELow.DAELow daeLow "hidden from typeview - exprerimental; used by cref2simvar() for cref -> SIMVAR mapping available in templates";
   end SIMCODE;
 end SimCode;
 
@@ -438,7 +439,7 @@ algorithm
 	isScalar := matchcontinue(cref, context)
 		local
 			Boolean res;
-		case (_, FUNCTION_CONTEXT)
+		case (_, FUNCTION_CONTEXT())
 			equation
 				res = crefNoSub(cref);
 			then
@@ -467,7 +468,7 @@ algorithm
     case (DAE.CREF_QUAL(subscriptLst=subs1, componentRef=cref1))
       equation
         subs2 = crefSubs(cref1);
-        subs = Util.listFlatten({subs1, subs2});
+        subs = Util.listFlatten({subs1, subs2}); // ??? is this the same as listAppend(subs1, subs2);
       then subs;
   end matchcontinue;
 end crefSubs;
@@ -504,6 +505,43 @@ public function incrementInt
 algorithm
   outInt := inInt + increment;
 end incrementInt;
+
+public function cref2simvar
+"Used by templates to find SIMVAR for given cref (to gain representaion index info mainly)."
+  input DAE.ComponentRef inCref;
+  input SimCode simCode;
+  output SimVar outSimVar;
+algorithm
+  outSimVar := matchcontinue(inCref, simCode)
+    local
+      DAELow.Variables vars;
+      DAELow.Var daelowvar;
+      DAE.ComponentRef cref, badcref;
+      SimVar sv;
+    
+    case (DAE.CREF_QUAL(ident = "$DER", componentRef = cref), SIMCODE(daeLow = DAELow.DAELOW(orderedVars = vars))) 
+      equation
+        ((daelowvar :: _), _) = DAELow.getVar(cref, vars);
+        sv = dlowvarToSimvar(daelowvar);
+      then derVarFromStateVar(sv);
+    
+    case (cref, SIMCODE(daeLow = DAELow.DAELOW(orderedVars = vars))) 
+      equation
+        ((daelowvar :: _), _) = DAELow.getVar(cref, vars);        
+      then dlowvarToSimvar(daelowvar);
+    
+    case (cref, SIMCODE(daeLow = DAELow.DAELOW(knownVars = vars))) 
+      equation
+        ((daelowvar :: _), _) = DAELow.getVar(cref, vars);        
+      then dlowvarToSimvar(daelowvar);
+    
+    case (cref, _)
+      equation
+        badcref = DAE.CREF_IDENT("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
+      then
+        SIMVAR(badcref, DAELow.STATE(), "", -1, false, DAE.ET_REAL, false,NONE);
+  end matchcontinue;
+end cref2simvar;
 
 public function generateModelCode
   "Generates code for a model by creating a SimCode structure and calling the
@@ -1247,7 +1285,8 @@ algorithm
                           algorithmAndEquationAsserts, zeroCrossings,
                           zeroCrossingsNeedSave, helpVarInfo, whenClauses,
                           discreteModelVars, extObjInfo, makefileParams,
-                          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex));
+                          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+                          dlow);
       then
         simCode;
     case (_,_,_,_,_,_,_,_,_,_,_)

@@ -41,7 +41,10 @@
 #include "solver_dasrt.h"
 #include "solver_main.h"
 #include "options.h"
+// ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
+#ifndef NO_INTERACTIVE_DEPENDENCY
 #include "omi_ServiceInterface.h"
+#endif
 #include "simulation_result_bin.h"
 #include "simulation_result_empty.h"
 #include "simulation_result_plt.h"
@@ -227,6 +230,8 @@ bool isInteractiveSimulation(){
 int startInteractiveSimulation(int argc, char**argv) {
   int retVal = -1;
 
+// ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
+#ifndef NO_INTERACTIVE_DEPENDENCY 
   initServiceInterfaceData(argc, argv);
 
   //Create the Control Server Thread
@@ -235,6 +240,9 @@ int startInteractiveSimulation(int argc, char**argv) {
   delete threadSimulationControl;
 
   std::cout << "simulation finished!" << std::endl;
+#else
+	std::cout << "Interactive Simulation not supported when LEAST_DEPENDENCY is defined!!!" << std::endl;
+#endif
   return retVal; //TODO 20100211 pv return value implementation / error handling
 }
 
@@ -365,6 +373,8 @@ int initRuntimeAndSimulation(int argc, char**argv) {
   sim_verbose = (int) flagSet("v", argc, argv);
   sim_noemit = (int) flagSet("noemit", argc, argv);
 
+// ppriv - NO_INTERACTIVE_DEPENDENCY - for simpler debugging in Visual Studio
+#ifndef NO_INTERACTIVE_DEPENDENCY
   interactiveSimuation = flagSet("interactive", argc, argv);
 
   if (interactiveSimuation && flagSet("port", argc, argv)) {
@@ -375,7 +385,7 @@ int initRuntimeAndSimulation(int argc, char**argv) {
     stream >> userPort;
     setPortOfControlServer(userPort);
   }
-
+#endif
   int verbose_flags = verboseLevel(argc, argv);
   sim_verbose = verbose_flags ? verbose_flags : sim_verbose;
   //sim_verbose = 1;

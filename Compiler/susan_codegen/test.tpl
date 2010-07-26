@@ -332,8 +332,24 @@ testMap3(list<list<Integer>> lstOfLst) ::=
 testMap4(list<list<Integer>> lstOfLst) ::= lstOfLst map it -> it map it -> mapInt(it)
 testMap5(list<Integer> ints) ::= (ints map i -> mapString(mapInt(i)) ", ")
 
-or
+arg |> (ptrn => templ)
 
+arg |> (ptrn => templ)
+ 
+or
+ arg |> (ptrn indexedby i0 => arg (map prtn -> templ);separator=",") 
+     |> (ptrn2 => templ)
+ arg |> (map ptrn => templ)
+ arg |> (mapi ptrn,i0 => templ)
+ arg |> (map ptrn indexedby i0 => templ)
+ 
+ arg |> (map ptrn => 
+             arg |> (map ptrn => templ)) 
+ arg |> (ptrn => templ(s,a))
+
+arg1, arg2 |> (ptrn1,ptrn2 => templ) |> (ptrn => templ)
+arg |> tmpl |> tmpl2 
+ 
 testMap(list<Integer> ints) ::= (ints | i -> mapInt(i) | mi -> mapString(mi) ;separ = ", ")
 testMap2(list<Integer> ints) ::= (ints | int -> mapInt(int) | st -> mapIntString(int, st) ;separ = ", ")
 testMap3(list<list<Integer>> lstOfLst) ::= 
