@@ -1008,13 +1008,16 @@ algorithm
     local
       DAE.ComponentRef c,sc;
       DAE.Exp e,ce;      
-      Integer ind;      
+      Integer ind,indx;      
       Exp.Type ty;
       list<DAE.ExpVar> varLst;
+      list<DAE.Exp> expl,expl1;
+      list<DAE.Subscript> subs;
+    // c[?] = e[?]  
     case ((c,e))
       equation
         // is Array
-        (_::_) = Exp.crefLastSubs(c);
+        (_::_) = Exp.expLastSubs(e);
         // stripLastIdent
         sc = Exp.crefStripLastSubs(c);
         ce = Exp.expStripLastSubs(e);

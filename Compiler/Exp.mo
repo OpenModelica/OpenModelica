@@ -485,6 +485,29 @@ algorithm
   end matchcontinue;
 end crefLastSubs;
 
+public function expLastSubs
+"function: expLastSubs
+  Return the last subscripts of a Exp"
+  input Exp inExp;
+  output list<Subscript> outSubscriptLst;
+algorithm
+  outSubscriptLst:=
+  matchcontinue (inExp)
+    local
+      ComponentRef cr;
+      list<Subscript> subs;
+      Exp e;
+    case (DAE.CREF(componentRef=cr))
+      equation
+        subs = crefLastSubs(cr);
+      then subs;
+    case (DAE.UNARY(exp=e))
+      equation
+        subs = expLastSubs(e);
+      then subs;
+  end matchcontinue;
+end expLastSubs;
+
 public function crefStripPrefix
 "Strips a prefix/cref from a component reference"
   input ComponentRef cref;
