@@ -191,7 +191,10 @@ uniontype SimVar
     DAE.ComponentRef name;
     DAELow.VarKind varKind;
     String comment;
+    String unit;
+    String displayUnit;
     Integer index;
+    Option<DAE.Exp> initialValue;
     Boolean isFixed;
     Exp.Type type_;
     Boolean isDiscrete;
@@ -539,7 +542,7 @@ algorithm
       equation
         badcref = DAE.CREF_IDENT("ERROR_cref2simvar_failed", DAE.ET_REAL, {});
       then
-        SIMVAR(badcref, DAELow.STATE(), "", -1, false, DAE.ET_REAL, false,NONE);
+        SIMVAR(badcref, DAELow.STATE(), "", "", "", -1, NONE(), false, DAE.ET_REAL, false,NONE);
   end matchcontinue;
 end cref2simvar;
 
@@ -4400,24 +4403,25 @@ algorithm
     local
       DAE.ComponentRef name;
       DAELow.VarKind kind;
-      String comment;
+      String comment, unit, displayUnit;
       Integer index;
+      Option<DAE.Exp> initVal;
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
       DAE.ComponentRef arrayCref;
-    case (SIMVAR(name, kind, comment, index, isFixed, type_, isDiscrete, NONE()))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, NONE()))
       equation
         name = DAELow.crefPrefixDer(name);
       then
-        SIMVAR(name, DAELow.STATE_DER(), comment, index, isFixed, type_,
+        SIMVAR(name, DAELow.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
                isDiscrete, NONE());      
-    case (SIMVAR(name, kind, comment, index, isFixed, type_, isDiscrete, SOME(arrayCref)))
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, SOME(arrayCref)))
       equation
         name = DAELow.crefPrefixDer(name);
         arrayCref = DAELow.crefPrefixDer(arrayCref);
       then
-        SIMVAR(name, DAELow.STATE_DER(), comment, index, isFixed, type_,
+        SIMVAR(name, DAELow.STATE_DER(), comment, unit, displayUnit, index, NONE(), isFixed, type_,
                isDiscrete, SOME(arrayCref));
   end matchcontinue;
 end derVarFromStateVar;
@@ -4587,21 +4591,22 @@ algorithm
     local
       DAE.ComponentRef name;
       DAELow.VarKind kind;
-      String comment;
+      String comment, unit, displayUnit;
       Integer index;
+      Option<DAE.Exp> initVal;
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
       Option<DAE.ComponentRef> arrayCref;
       list<DAE.ComponentRef> initCrefs;
       String varNameStr;
-    case (SIMVAR(name, kind, comment, index, isFixed, type_, isDiscrete, arrayCref), initialEqs)
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref), initialEqs)
       equation
         initCrefs = DAELow.equationsCrefs(initialEqs);
         (_ :: _) = Util.listSelect1(initCrefs, name, Exp.crefEqual);
         varNameStr = Exp.printComponentRefStr(name);
         Error.addMessage(Error.SETTING_FIXED_ATTRIBUTE, {varNameStr});
-      then SIMVAR(name, kind, comment, index, false, type_, isDiscrete, arrayCref);
+      then SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, false, type_, isDiscrete, arrayCref);
     case (_, _)
       then simvarIn;
   end matchcontinue;
@@ -6533,7 +6538,8 @@ algorithm
       DAE.Stream streamPrefix;
       Option<SCode.Comment> comment;
       DAELow.Type tp;
-      String orignameStr, commentStr, name;
+      String orignameStr, commentStr, name, unit, displayUnit;
+      Option<DAE.Exp> initVal;
       Boolean isFixed;
       Exp.Type type_;
       Boolean isDiscrete;
@@ -6550,12 +6556,14 @@ algorithm
                                  streamPrefix = streamPrefix)))
     equation
       commentStr = unparseCommentOptionNoAnnotationNoQuote(comment);
+      (unit, displayUnit) = extractVarUnit(dae_var_attr);
+      initVal = getInitialValue(dlowVar);
       isFixed = DAELow.varFixed(dlowVar);
       type_ = DAELow.makeExpType(tp);
       isDiscrete = isVarDiscrete(tp, kind);
       arrayCref = getArrayCref(dlowVar);
     then
-      SIMVAR(cr, kind, commentStr, indx, isFixed, type_, isDiscrete,
+      SIMVAR(cr, kind, commentStr, unit, displayUnit, indx, initVal, isFixed, type_, isDiscrete,
              arrayCref);
   end matchcontinue;
 end dlowvarToSimvar;
@@ -7798,5 +7806,108 @@ end makeCrefRecordExp;
 /*                      END OF DIRTY SIMCODEGEN FUNCTIONS                    */
 /*                                                                           */
 /*****************************************************************************/
+
+protected function extractVarUnit
+"Extract variable's unit and displayUnit as strings from 
+ DAE.VariablesAttributes structures.
+ 
+ Author: asodja, 2010-03-11
+"
+  input Option<DAE.VariableAttributes> var_attr;
+  output String unitStr;
+  output String displayUnitStr;
+algorithm
+  (unitStr, displayUnitStr) := matchcontinue(var_attr)
+    local
+      DAE.Exp uexp, duexp;
+    case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = SOME(duexp) )) )
+      equation
+        unitStr = Exp.printExpStr(uexp);
+        unitStr = System.stringReplace(unitStr,"\"","");
+        unitStr = System.stringReplace(unitStr,"\\","\\\\");
+        displayUnitStr = Exp.printExpStr(duexp);
+        displayUnitStr = System.stringReplace(displayUnitStr,"\"","");        
+        displayUnitStr = System.stringReplace(displayUnitStr,"\\","\\\\");
+      then (unitStr, displayUnitStr);
+    case ( SOME(DAE.VAR_ATTR_REAL(unit = SOME(uexp), displayUnit = NONE)) )
+      equation
+        unitStr = Exp.printExpStr(uexp);
+        unitStr = System.stringReplace(unitStr,"\"","");
+        unitStr = System.stringReplace(unitStr,"\\","\\\\");
+      then (unitStr, unitStr);        
+    case (_)
+      then ("","");
+  end matchcontinue;
+end extractVarUnit;
+
+protected function getInitialValue
+"Extract initial value from DAELow.Variable, if it has any
+
+(merged and modified generateInitData3 and generateInitData4)"
+  input DAELow.Var daelowVar;
+  output Option<DAE.Exp> initVal;
+algorithm
+  initVal := matchcontinue(daelowVar)
+    local
+      Option<DAE.VariableAttributes> dae_var_attr;
+      Values.Value value;
+      DAE.Exp e;
+    case (DAELow.VAR(varKind = DAELow.VARIABLE(), varType = DAELow.STRING(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.VARIABLE(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.DISCRETE(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.STATE(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.DUMMY_DER(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.DUMMY_STATE(), values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttrFail(dae_var_attr);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+      then
+        SOME(e);
+    case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = SOME(value)))
+      equation
+        e = ValuesUtil.valueExp(value);
+      then
+        SOME(e);
+    /* String - Parameters without value binding. Investigate if it has start value */
+    case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = NONE, values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttr(dae_var_attr);
+      then
+        SOME(e);
+    /* Parameters without value binding. Investigate if it has start value */
+    case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = NONE, values = dae_var_attr))
+      equation
+        e = DAEUtil.getStartAttr(dae_var_attr);
+      then
+        SOME(e);
+    else
+      NONE();
+  end matchcontinue;
+end getInitialValue;
+
 
 end SimCode;

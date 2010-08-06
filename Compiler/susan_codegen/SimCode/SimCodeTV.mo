@@ -207,7 +207,10 @@ package SimCode
       DAE.ComponentRef name;
       DAELow.VarKind varKind;
       String comment;
+      String unit;
+      String displayUnit;
       Integer index;
+      Option<DAE.Exp> initialValue;
       Boolean isFixed;
       DAE.ExpType type_;
       Boolean isDiscrete;
