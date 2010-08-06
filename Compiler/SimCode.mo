@@ -7855,53 +7855,63 @@ algorithm
     case (DAELow.VAR(varKind = DAELow.VARIABLE(), varType = DAELow.STRING(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.VARIABLE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.DISCRETE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.DUMMY_DER(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.DUMMY_STATE(), values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttrFail(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
+        true = Exp.isConst(e);
       then
         SOME(e);
     case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = SOME(value)))
       equation
         e = ValuesUtil.valueExp(value);
+        true = Exp.isConst(e);
       then
         SOME(e);
     /* String - Parameters without value binding. Investigate if it has start value */
     case (DAELow.VAR(varKind = DAELow.PARAM(), varType = DAELow.STRING(), bindValue = NONE, values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     /* Parameters without value binding. Investigate if it has start value */
     case (DAELow.VAR(varKind = DAELow.PARAM(), bindValue = NONE, values = dae_var_attr))
       equation
         e = DAEUtil.getStartAttr(dae_var_attr);
+        true = Exp.isConst(e);
       then
         SOME(e);
     else
