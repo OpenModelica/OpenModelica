@@ -11349,7 +11349,7 @@ algorithm
         (cache,e2_1,tprop2,_,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,true);
         (cache, e2_1, tprop2) = Ceval.cevalIfConstant(cache, env, e2_1, tprop2, impl);
         (e2_1,_) = Types.matchProp(e2_1,tprop2,tprop1,true);
-        (cache,e1_1,e2_1,tprop1,fdae2) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl);
+        (cache,e1_1,e2_1,tprop1,fdae3) = condenseArrayEquation(cache,env,Absyn.CREF(cr),e2,e1_1,e2_1,tprop1,tprop2,impl);
         (cache,e2_2) = PrefixUtil.prefixExp(cache, env, ih, e2_1, pre);
         (cache,e1_2) = PrefixUtil.prefixExp(cache, env, ih, e1_1, pre);
 
@@ -11358,7 +11358,7 @@ algorithm
 
         DAE.DAE(daeElts,funcs) = instEqEquation(e1_2, tprop1, e2_2, tprop2, source, initial_, impl);
         daeElts = Util.listMap(daeElts,makeDAEArrayEqToReinitForm);
-        dae = DAEUtil.joinDaeLst({DAE.DAE(daeElts,funcs), fdae1,fdae2});
+        dae = DAEUtil.joinDaeLst({DAE.DAE(daeElts,funcs),fdae1,fdae2,fdae3});
       then
         (cache,env,ih,dae,csets,ci_state,graph);
       
