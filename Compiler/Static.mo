@@ -4338,32 +4338,58 @@ protected function sameDimensions "function: sameDimensions
 algorithm
   tpl_1 := Util.listMap(tpl, Types.getPropType);
   dimsizes := Util.listMap(tpl_1, Types.getDimensionSizes);
-  res := sameDimensions2(dimsizes);
+  res := sameDimensions2(dimsizes,1,-1);
 end sameDimensions;
+
+protected function sameDimensionsExceptionDimX "function: sameDimensionsExceptionDimX
+
+  This function returns true of all the properties, containing types,
+  have the same dimensions, otherwise false.
+"
+  input list<DAE.Properties> tpl;
+  input Integer dimException;
+  output Boolean res;
+  list<tuple<DAE.TType, Option<Absyn.Path>>> tpl_1;
+  list<list<Integer>> dimsizes;
+algorithm
+  tpl_1 := Util.listMap(tpl, Types.getPropType);
+  dimsizes := Util.listMap(tpl_1, Types.getDimensionSizes);
+  res := sameDimensions2(dimsizes,1,dimException);
+end sameDimensionsExceptionDimX;
 
 protected function sameDimensions2
   input list<list<Integer>> inIntegerLstLst;
+  input Integer dim;
+  input Integer dimException;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inIntegerLstLst)
+  matchcontinue (inIntegerLstLst,dim,dimException)
     local
       list<list<Integer>> l,restelts;
       list<Integer> elts;
-    case (l)
+      Integer dim1,dim2;
+    case (l,_,_)
       equation
         {} = Util.listFlatten(l);
       then
         true;
-    case (l)
+    case (l,dim,dimException)
       equation
+        true = dim == dimException;
+        restelts = Util.listMap(l, Util.listRest);
+        true = sameDimensions2(restelts,dim+1,dimException);
+      then true;
+    case (l,dim,dimException)
+      equation
+        false = dim == dimException;
         elts = Util.listMap(l, Util.listFirst);
         restelts = Util.listMap(l, Util.listRest);
         true = sameDimensions3(elts);
-        true = sameDimensions2(restelts);
+        true = sameDimensions2(restelts,dim+1,dimException);
       then
         true;
-    case (_) then false;
+    case (_,_,_) then false;
   end matchcontinue;
 end sameDimensions2;
 
@@ -5584,7 +5610,7 @@ algorithm
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),const1),_,dae1) = elabExp(cache,env, dim, impl, NONE,true);
         (cache,Values.INTEGER(dim),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
         (cache,matrices_1,props,_,dae2) = elabExpList(cache,env, matrices, impl, NONE,true);
-        true = sameDimensions(props);
+        true = sameDimensionsExceptionDimX(props,dim);
         const2 = elabArrayConst(props);
         const = Types.constAnd(const1, const2);
         num_matrices = listLength(matrices_1);
