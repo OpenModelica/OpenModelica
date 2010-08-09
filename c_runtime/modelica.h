@@ -129,6 +129,8 @@ typedef modelica_real    smooth_rettype;
 typedef modelica_boolean change_rettype;
 typedef modelica_integer integer_rettype;
 typedef modelica_real    sign_rettype;
+#define semiLinear(x,positiveSlope,negativeSlope) (x>=0?positiveSlope:negativeSlope)
+typedef modelica_real    semiLinear_rettype;
 
 /* sign function */
 #define sign(v) (v>0?1:(v<0?-1:0))
