@@ -2982,17 +2982,23 @@ template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BU
  "Generates code for writing a returnStructur to var."
 ::=
 match exp
-/*case CREF(ty= t as DAE.ET_ARRAY(__)) then
+case CREF(ty= t as DAE.ET_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  <<
-  copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
-  >> 
+  match context case SIMULATION(__) then
+    <<
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    >> 
+  else
+    '<%lhsStr%> = <%rhsStr%>;'
 case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
   let lhsStr = scalarLhsCref(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  <<
-  usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
-  copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
-  >> */
+  match context case SIMULATION(__) then
+    <<
+    usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
+    copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
+    >>
+  else
+    '<%lhsStr%> = -<%rhsStr%>;'
 case CREF(__) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
