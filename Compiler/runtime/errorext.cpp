@@ -40,18 +40,18 @@
 using namespace std;
 
 void add_message(int errorID,
-		 char* type,
-		 char* severity,
-		 char* message,
-		 std::list<std::string> tokens);
+     char* type,
+     char* severity,
+     char* message,
+     std::list<std::string> tokens);
 
 extern "C" {
   void c_add_message(int errorID,
-		     char* type,
-		     char* severity,
-		     char* message,
-		     char** ctokens,
-		     int nTokens)
+         char* type,
+         char* severity,
+         char* message,
+         char** ctokens,
+         int nTokens)
   {
     std::list<std::string> tokens;
     for (int i=nTokens-1; i>=0; i--) {
@@ -61,12 +61,12 @@ extern "C" {
   }
 }
 struct absyn_info{
-	std::string fn;
-	bool wr;
-	int rs;
-	int re;
-	int cs;
-	int ce;
+  std::string fn;
+  bool wr;
+  int rs;
+  int re;
+  int cs;
+  int ce;
 };
 // if error_on is true, message is added, otherwise not.
 bool error_on=true;
@@ -80,32 +80,32 @@ bool error_on=true;
 
   /* Adds a message without file info. */
   void add_message(int errorID,
-		   char* type,
-		   char* severity,
-		   char* message,
-		   std::list<std::string> tokens)
+       char* type,
+       char* severity,
+       char* message,
+       std::list<std::string> tokens)
   {
-	  std::string tmp("");
-	  if(currVariable.length()>0){
-	  	tmp = "Variable "+currVariable+": " +message;
-	  }
-	  else{
-	  	tmp=message;
-	  }
+    std::string tmp("");
+    if(currVariable.length()>0){
+      tmp = "Variable "+currVariable+": " +message;
+    }
+    else{
+      tmp=message;
+    }
     if(!haveInfo){
-    	ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
-    	if (errorMessageQueue.empty() ||
-	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
+      ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
+      if (errorMessageQueue.empty() ||
+      (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
            //std::cout << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
            errorMessageQueue.push(msg);
         }
     }
     else{
-    	ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens,
-    	    finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr/*not important?*/,finfo.fn);
+      ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens,
+          finfo.rs,finfo.cs,finfo.re,finfo.ce,finfo.wr/*not important?*/,finfo.fn);
 
-    	if (errorMessageQueue.empty() ||
-	    (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
+      if (errorMessageQueue.empty() ||
+      (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
            //std::cout << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
            //std::cout << "values: " << finfo.rs << " " << finfo.ce << std::endl;
            errorMessageQueue.push(msg);
@@ -115,46 +115,46 @@ bool error_on=true;
  /* sets the current_variable(which is beeing instantiated) */
   void update_current_component(char* newVar,bool wr, char* fn, int rs, int re, int cs, int ce)
   {
-	currVariable = std::string(newVar);
-	if( (rs+re+cs+ce) > 0)
-	{
-		finfo.wr = wr;
-		finfo.fn = fn;
-		finfo.rs = rs;
-		finfo.re = re;
-		finfo.cs = cs;
-		finfo.ce = ce;
-		haveInfo = true;
-	}
-	else
-	{haveInfo = false;}
+  currVariable = std::string(newVar);
+  if( (rs+re+cs+ce) > 0)
+  {
+    finfo.wr = wr;
+    finfo.fn = fn;
+    finfo.rs = rs;
+    finfo.re = re;
+    finfo.cs = cs;
+    finfo.ce = ce;
+    haveInfo = true;
+  }
+  else
+  {haveInfo = false;}
   }
   /* Adds a message with file information */
   void add_source_message(int errorID,
-			  char* type,
-			  char* severity,
-			  char* message,
-			  std::list<std::string> tokens,
-			  int startLine,
-			  int startCol,
-			  int endLine,
-			  int endCol,
-			  bool isReadOnly,
-			  char* filename)
+        char* type,
+        char* severity,
+        char* message,
+        std::list<std::string> tokens,
+        int startLine,
+        int startCol,
+        int endLine,
+        int endCol,
+        bool isReadOnly,
+        char* filename)
   {
     ErrorMessage* msg = new ErrorMessage((long)errorID,
-		     std::string(type),
-		     std::string(severity),
-		     std::string(message),
-		     tokens,
-		     (long)startLine,
-		     (long)startCol,
-		     (long)endLine,
-		     (long)endCol,
-		     isReadOnly,
-		     std::string(filename));
+         std::string(type),
+         std::string(severity),
+         std::string(message),
+         tokens,
+         (long)startLine,
+         (long)startCol,
+         (long)endLine,
+         (long)endCol,
+         isReadOnly,
+         std::string(filename));
     if (errorMessageQueue.empty() ||
-	(!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
+  (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
       /*std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;*/
       errorMessageQueue.push(msg);
     }
@@ -173,82 +173,82 @@ extern "C"
     // empty the queue.
     while(!errorMessageQueue.empty()) {
         delete errorMessageQueue.top();
-    	errorMessageQueue.pop();
+      errorMessageQueue.pop();
     }
   }
 
   RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
   {
-	  char* id = RML_STRINGDATA(rmlA0);
+    char* id = RML_STRINGDATA(rmlA0);
 
-	  checkPoints.push_back(make_pair(errorMessageQueue.size(),string(id)));
-	  //printf("checkPoint(%s)\n",id);
-	  //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",errorMessageQueue.size(),id);
-	  RML_TAILCALLK(rmlSC);
+    checkPoints.push_back(make_pair(errorMessageQueue.size(),string(id)));
+    //printf("checkPoint(%s)\n",id);
+    //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",(int)errorMessageQueue.size(),id);
+    RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(ErrorExt__delCheckpoint)
   {
-	  char* id = RML_STRINGDATA(rmlA0);
-	 //printf("delCheckpoint(%s)\n",id);
-	  if(checkPoints.size() > 0){
-		  //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
+    char* id = RML_STRINGDATA(rmlA0);
+    //printf("delCheckpoint(%s)\n",id);
+    if(checkPoints.size() > 0){
+      //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
 
-		  // extract last checkpoint
-		  pair<int,string> cp;
-		  cp = checkPoints[checkPoints.size()-1];
-		  if (0 != strcmp(cp.second.c_str(),id)) {
-			  printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
-					  cp.second.c_str(),
-					  id);
-			  exit(-1);
-		  }
-		  checkPoints.pop_back();
-	  }
-	  else{
-		  printf(" ERROREXT: nothing to delete when calling delCheckPoint(%s)\n",id);
-		  exit(-1);
-	  }
-	  RML_TAILCALLK(rmlSC);
+      // extract last checkpoint
+      pair<int,string> cp;
+      cp = checkPoints[checkPoints.size()-1];
+      if (0 != strcmp(cp.second.c_str(),id)) {
+        printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+            id,
+            cp.second.c_str());
+        exit(-1);
+      }
+      checkPoints.pop_back();
+    }
+    else{
+      printf(" ERROREXT: nothing to delete when calling delCheckPoint(%s)\n",id);
+      exit(-1);
+    }
+    RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
   RML_BEGIN_LABEL(ErrorExt__rollBack)
   {
-	  char* id = RML_STRINGDATA(rmlA0);
-	  //printf("rollBack(%s)\n",id);
-	  if(checkPoints.size() > 0){
-		  //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
-		  std::string res("");
-		  //printf(res.c_str());
-		  //printf(" rollback from: %d to: %d\n",errorMessageQueue.size(),checkPoints.back().first);
-		  while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
-			  //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back().first);
-			  /*if(!errorMessageQueue.empty()){
-				  res = res+errorMessageQueue.top()->getMessage()+string("\n");
-				  printf( (string("Deleted: ") + res).c_str());
-			  }*/
-			  errorMessageQueue.pop();
-		  }
-		  /*if(!errorMessageQueue.empty()){
-		  	res = res+errorMessageQueue.top()->getMessage()+string("\n");
-		    printf("(%d)new bottom message: %s\n",checkPoints.size(),res.c_str());
-		  }*/
-		  pair<int,string> cp;
-		  cp = checkPoints[checkPoints.size()-1];
-		  if (0 != strcmp(cp.second.c_str(),id)) {
-			  printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
-					  cp.second.c_str(),
-					  id);
-			  exit(-1);
-		  }
-		  checkPoints.pop_back();
-	  } else {
-		  printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
-	      exit(-1);
+    char* id = RML_STRINGDATA(rmlA0);
+    //printf("rollBack(%s)\n",id);
+    if(checkPoints.size() > 0){
+      //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
+      std::string res("");
+      //printf(res.c_str());
+      //printf(" rollback from: %d to: %d\n",errorMessageQueue.size(),checkPoints.back().first);
+      while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
+        //printf("*** %d deleted %d ***\n",errorMessageQueue.size(),checkPoints.back().first);
+        /*if(!errorMessageQueue.empty()){
+          res = res+errorMessageQueue.top()->getMessage()+string("\n");
+          printf( (string("Deleted: ") + res).c_str());
+        }*/
+        errorMessageQueue.pop();
       }
-	  RML_TAILCALLK(rmlSC);
+      /*if(!errorMessageQueue.empty()){
+        res = res+errorMessageQueue.top()->getMessage()+string("\n");
+        printf("(%d)new bottom message: %s\n",checkPoints.size(),res.c_str());
+      }*/
+      pair<int,string> cp;
+      cp = checkPoints[checkPoints.size()-1];
+      if (0 != strcmp(cp.second.c_str(),id)) {
+        printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+            id,
+            cp.second.c_str());
+        exit(-1);
+      }
+      checkPoints.pop_back();
+    } else {
+      printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
+        exit(-1);
+      }
+    RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
@@ -269,15 +269,15 @@ extern "C"
   /* Function to give feedback to the user on which component the error is "on" */
   RML_BEGIN_LABEL(ErrorExt__updateCurrentComponent)
   {
-	char* newVar = RML_STRINGDATA(rmlA0);
-	bool write = RML_STRINGDATA(rmlA1);
-	char* fileName = RML_STRINGDATA(rmlA2);
-	int rs = RML_UNTAGFIXNUM(rmlA3);
-	int re = RML_UNTAGFIXNUM(rmlA4);
-	int cs = RML_UNTAGFIXNUM(rmlA5);
-	int ce = RML_UNTAGFIXNUM(rmlA6);
-	update_current_component(newVar,write,fileName,rs,re,cs,ce);
-	RML_TAILCALLK(rmlSC);
+  char* newVar = RML_STRINGDATA(rmlA0);
+  bool write = RML_STRINGDATA(rmlA1);
+  char* fileName = RML_STRINGDATA(rmlA2);
+  int rs = RML_UNTAGFIXNUM(rmlA3);
+  int re = RML_UNTAGFIXNUM(rmlA4);
+  int cs = RML_UNTAGFIXNUM(rmlA5);
+  int ce = RML_UNTAGFIXNUM(rmlA6);
+  update_current_component(newVar,write,fileName,rs,re,cs,ce);
+  RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
 
@@ -291,8 +291,8 @@ extern "C"
     std::list<std::string> tokens;
     if (error_on) {
       while(RML_GETHDR(tokenlst) != RML_NILHDR) {
-	tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
-	tokenlst=RML_CDR(tokenlst);
+  tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
+  tokenlst=RML_CDR(tokenlst);
       }
       add_message(errorID,tp,severity,message,tokens);
       //printf(" Adding message, size: %d, %s\n",errorMessageQueue.size(),message);
@@ -318,8 +318,8 @@ extern "C"
 
     if (error_on) {
       while(RML_GETHDR(tokenlst) != RML_NILHDR) {
-	tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
-	tokenlst=RML_CDR(tokenlst);
+  tokens.push_back(string(RML_STRINGDATA(RML_CAR(tokenlst))));
+  tokenlst=RML_CDR(tokenlst);
       }
 
       add_source_message(errorID,tp,severity,message,tokens,sline,scol,eline,ecol,isReadOnly,filename);
@@ -337,15 +337,15 @@ extern "C"
 
   RML_BEGIN_LABEL(ErrorExt__getNumErrorMessages)
       {
-	  int res=0;
+    int res=0;
 
-	  stack<ErrorMessage*> queueCopy(errorMessageQueue);
-	  while (!queueCopy.empty()) {
-		if (queueCopy.top()->getSeverity().compare(std::string("Error")) == 0) {
-			res++;
-		}
-		queueCopy.pop();
-	  }
+    stack<ErrorMessage*> queueCopy(errorMessageQueue);
+    while (!queueCopy.empty()) {
+    if (queueCopy.top()->getSeverity().compare(std::string("Error")) == 0) {
+      res++;
+    }
+    queueCopy.pop();
+    }
       rmlA0 = mk_icon(res);
       RML_TAILCALLK(rmlSC);
       }
@@ -358,7 +358,7 @@ extern "C"
       //if(strncmp(errorMessageQueue.top()->getSeverity(),"Error")==0){
       if(errorMessageQueue.top()->getSeverity().compare(std::string("Error"))==0){
 
-    	  res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+        res = errorMessageQueue.top()->getMessage()+string("\n")+res;
       }
       delete errorMessageQueue.top();
       errorMessageQueue.pop();
@@ -399,8 +399,8 @@ extern "C"
   RML_BEGIN_LABEL(ErrorExt__clearMessages)
    {
      while(!errorMessageQueue.empty()) {
-    	delete errorMessageQueue.top();
-    	errorMessageQueue.pop();
+      delete errorMessageQueue.top();
+      errorMessageQueue.pop();
      }
      RML_TAILCALLK(rmlSC);
    }

@@ -3893,16 +3893,14 @@ Rollsback errors on builtin classes and deletes checkpoint for other classes.
   input Absyn.Path p;
 algorithm _ := matchcontinue(p)
   local String n;
-  case(p)
+  case (p)
     equation
       n = Absyn.pathString(p);
       true = isBuiltInClass(n);
       ErrorExt.rollBack("instBasictypeBaseclass");
     then ();
-  case(p)
+  case _
     equation
-      n = Absyn.pathString(p);
-      false = isBuiltInClass(n);
       ErrorExt.delCheckpoint("instBasictypeBaseclass");
     then ();
 end matchcontinue;
@@ -8136,13 +8134,20 @@ algorithm
     /* Special case when instantiating Real[0]. We need to know the type */
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
-        ErrorExt.setCheckpoint("instArray");
+        ErrorExt.setCheckpoint("instArray Real[0]");
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
            instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (0 :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
-        daeLst = DAEUtil.extractFunctions(daeLst);   
-        ErrorExt.rollBack("instArray");
+        daeLst = DAEUtil.extractFunctions(daeLst); 
+        ErrorExt.rollBack("instArray Real[0]");
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
+
+    /* Keep the errors if we somehow fail */
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      equation
+        ErrorExt.delCheckpoint("instArray Real[0]");
+      then
+        fail();
 
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
