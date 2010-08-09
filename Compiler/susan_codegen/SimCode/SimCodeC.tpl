@@ -2982,7 +2982,7 @@ template writeLhsCref(Exp exp, String rhsStr, Context context, Text &preExp /*BU
  "Generates code for writing a returnStructur to var."
 ::=
 match exp
-case CREF(ty= t as DAE.ET_ARRAY(__)) then
+/*case CREF(ty= t as DAE.ET_ARRAY(__)) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
@@ -2992,7 +2992,7 @@ case UNARY(exp = e as CREF(ty= t as DAE.ET_ARRAY(__))) then
   <<
   usub_<%expTypeShort(t)%>_array(&<%rhsStr%>);<%\n%>
   copy_<%expTypeShort(t)%>_array_data_mem(&<%rhsStr%>, &<%lhsStr%>);
-  >> 
+  >> */
 case CREF(__) then
   let lhsStr = scalarLhsCref(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
@@ -4138,7 +4138,7 @@ template daeExpSize(Exp exp, Context context, Text &preExp /*BUFP*/,
   case SIZE(exp=CREF(__), sz=SOME(dim)) then
     let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let dimPart = daeExp(dim, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    let resVar = tempDecl("size_t", &varDecls /*BUFC*/)
+    let resVar = tempDecl("modelica_integer", &varDecls /*BUFC*/)
     let typeStr = '<%expTypeArray(exp.ty)%>'
     let &preExp += '<%resVar%> = size_of_dimension_<%typeStr%>(<%expPart%>, <%dimPart%>);<%\n%>'
     resVar

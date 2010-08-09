@@ -15747,56 +15747,6 @@ algorithm
       Tpl.Text i_varDecls;
 
     case ( txt,
-           (i_exp as DAE.CREF(ty = (i_t as DAE.ET_ARRAY(ty = _)))),
-           i_rhsStr,
-           i_context,
-           i_preExp,
-           i_varDecls )
-      local
-        DAE.ExpType i_t;
-        DAE.Exp i_exp;
-        Tpl.Text i_lhsStr;
-      equation
-        (i_lhsStr, i_preExp, i_varDecls) = scalarLhsCref(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("copy_"));
-        txt = expTypeShort(txt, i_t);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_array_data_mem(&"));
-        txt = Tpl.writeStr(txt, i_rhsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", &"));
-        txt = Tpl.writeText(txt, i_lhsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
-      then (txt, i_preExp, i_varDecls);
-
-    case ( txt,
-           DAE.UNARY(exp = (i_e as DAE.CREF(ty = (i_t as DAE.ET_ARRAY(ty = _))))),
-           i_rhsStr,
-           i_context,
-           i_preExp,
-           i_varDecls )
-      local
-        DAE.ExpType i_t;
-        DAE.Exp i_e;
-        Tpl.Text i_lhsStr;
-      equation
-        (i_lhsStr, i_preExp, i_varDecls) = scalarLhsCref(emptyTxt, i_e, i_context, i_preExp, i_varDecls);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("usub_"));
-        txt = expTypeShort(txt, i_t);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_array(&"));
-        txt = Tpl.writeStr(txt, i_rhsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
-                                    "\n",
-                                    "copy_"
-                                }, false));
-        txt = expTypeShort(txt, i_t);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("_array_data_mem(&"));
-        txt = Tpl.writeStr(txt, i_rhsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(", &"));
-        txt = Tpl.writeText(txt, i_lhsStr);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
-      then (txt, i_preExp, i_varDecls);
-
-    case ( txt,
            (i_exp as DAE.CREF(componentRef = _)),
            i_rhsStr,
            i_context,
@@ -22896,7 +22846,7 @@ algorithm
       equation
         (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
         (i_dimPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_dim, i_context, i_preExp, i_varDecls);
-        (i_resVar, i_varDecls) = tempDecl(emptyTxt, "size_t", i_varDecls);
+        (i_resVar, i_varDecls) = tempDecl(emptyTxt, "modelica_integer", i_varDecls);
         i_typeStr = expTypeArray(emptyTxt, i_exp_ty);
         i_preExp = Tpl.writeText(i_preExp, i_resVar);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = size_of_dimension_"));
