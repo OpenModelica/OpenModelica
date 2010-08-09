@@ -53,7 +53,7 @@ libf2c/libf2c.a :
 	ranlib $@
 
 libsendDataHumbug.a :
-	make -C sendData -f Makefile.humbug
+	$(MAKE) -C sendData -f Makefile.humbug
 
 install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall
 	cp $(HFILES) $(builddir_inc)/
@@ -61,9 +61,9 @@ install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(
 	cp libf2c/libf2c.* $(builddir_lib)/
 	cp sendData/release/$(LIBSENDDATA) $(builddir_lib)/
 	cp interactive/libinteractive.a $(builddir_lib)/
-	@make -C java_interface -f $(JAVAMAKEFILE) && \
-	make -C java_interface -f $(JAVAMAKEFILE) install || \
-	make -C java_interface -f $(JAVAMAKEFILE) install-nomodelica
+	@$(MAKE) -C java_interface -f $(JAVAMAKEFILE) && \
+	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install || \
+	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) install-nomodelica
 
 clean :
 	$(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
