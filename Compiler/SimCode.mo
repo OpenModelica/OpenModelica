@@ -2350,11 +2350,13 @@ algorithm
       list<DAELow.Equation> rest,rest2;
       DAELow.MultiDimEquation[:] aeqns;
       VarTransform.VariableReplacements repl;
+      DAELow.Equation eq;
       list<SimEqSystem> eqSystemsRest;
       list<Integer> ds;
       list<Option<Integer>> ad;
       list<DAE.Subscript> subs;
-      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;      
+      list<tuple<Integer,list<list<DAE.Subscript>>>> entrylst1,entrylst2;
+      DAE.ComponentRef left;      
     case ({}, _, inEntrylst) then ({},inEntrylst);
     case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest), aeqns, inEntrylst)
       equation
@@ -2386,9 +2388,28 @@ algorithm
         (eqSystemsRest,entrylst2) = createNonlinearResidualEquations(rest, aeqns, entrylst1);
       then 
         (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst2);
-    case (_,_,_)
+        
+    case ((eq as DAELow.WHEN_EQUATION(whenEquation = DAELow.WHEN_EQ(left = left, right = e2)))::rest,aeqns,inEntrylst)
       equation
-        Error.addMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"});
+        // This following does not work. It does not take index or elseWhen into account.
+        // The generated code for the when-equation also does not solve a linear system; it uses the variables directly.
+        /*
+        tp = Exp.typeof(e2);
+        e1 = DAE.CREF(left,tp);
+        res_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
+        res_exp = Exp.simplify(res_exp);
+        res_exp = replaceDerOpInExp(res_exp);
+        (eqSystemsRest,entrylst1) = createNonlinearResidualEquations(rest, aeqns, inEntrylst);
+      then
+        (SES_RESIDUAL(res_exp) :: eqSystemsRest,entrylst1);
+        */
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"non-linear equations within when-equations","Perform non-linear operations outside the when-equation (this is slower, but works)"},DAELow.equationInfo(eq));
+      then
+        fail();
+        
+    case (eq::_,_,_)
+      equation
+        Error.addSourceMessage(Error.INTERNAL_ERROR, {"SimCode.createNonlinearResidualEquations failed"},DAELow.equationInfo(eq));
       then
         fail();    
   end matchcontinue;
@@ -3575,7 +3596,7 @@ algorithm
     case (dlowEq,_,_,_)
       equation
         DAELow.dumpEqns({dlowEq});
-        Error.addMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"});
+        Error.addSourceMessage(Error.INTERNAL_ERROR,{"dlowEqToExp failed"},DAELow.equationInfo(dlowEq));
       then
         fail();        
   end matchcontinue;

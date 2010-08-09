@@ -14179,7 +14179,7 @@ algorithm
   end matchcontinue;
 end printEquationNo;
 
-protected function printEquation "function: printEquation
+public function printEquation "function: printEquation
   author: PA
 
   Helper function to print_equations
@@ -16617,5 +16617,27 @@ algorithm
   outCref := DAE.CREF(DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, inCref),
       DAE.ET_REAL());
 end makeDerCref;
+
+public function equationSource "Retrieve the source from a DAELow equation"
+  input Equation eq;
+  output DAE.ElementSource source;
+algorithm
+  source := matchcontinue eq
+    case EQUATION(source=source) then source;
+    case ARRAY_EQUATION(source=source) then source;
+    case SOLVED_EQUATION(source=source) then source;
+    case RESIDUAL_EQUATION(source=source) then source;
+    case WHEN_EQUATION(source=source) then source;
+    case ALGORITHM(source=source) then source;
+    case COMPLEX_EQUATION(source=source) then source;
+  end matchcontinue;
+end equationSource;
+
+public function equationInfo "Retrieve the line number information from a DAELow equation"
+  input Equation eq;
+  output Absyn.Info info;
+algorithm
+  info := DAEUtil.getElementSourceFileInfo(equationSource(eq));
+end equationInfo;
 
 end DAELow;
