@@ -5889,5 +5889,13 @@ algorithm
   end matchcontinue;
 end makeValueOrDefault;
 
+public function xmlEscape "Escapes a String so that it can be used in xml"
+  input String s1;
+  output String s2;
+algorithm
+  s2 := stringReplaceChar(s1,"<","&lt;");
+  s2 := stringReplaceChar(s2,">","&gt;");
+end xmlEscape;
+
 end Util;
 
