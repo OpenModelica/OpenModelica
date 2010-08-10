@@ -64,6 +64,7 @@ extern "C"
 		options.insert(std::pair<std::string,bool>("reportMatchingError",false));
 		options.insert(std::pair<std::string,bool>("envCache",true));
 		options.insert(std::pair<std::string,bool>("collectZCFromSmooth", true)); // If true zero crossings are collected from expr in smooth(N, expr)
+    options.insert(std::pair<std::string,bool>("noVectorization", false));
 		//options.insert(std::pair<std::string,bool>("dummy",false));
 
 /*		for(stringMap::const_iterator it = options.begin(); it != options.end(); ++it)

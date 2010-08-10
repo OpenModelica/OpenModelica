@@ -197,5 +197,9 @@ public function setNoSimplify
   external "C";
 end setNoSimplify;
 
+public function vectorizationLimit
+  output Integer limit;
+end vectorizationLimit;
+
 end RTOpts;
 

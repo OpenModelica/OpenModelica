@@ -61,6 +61,7 @@ int simulation_cg;
 int silent;
 char* simulation_code_target = "gcc";
 char* class_to_instantiate = "";
+int vectorization_limit;
 
 /*
  * adrpo 2007-06-11
@@ -115,6 +116,7 @@ void RTOpts_5finit(void)
   annotation_version = "2.x";
   showErrorMessages = 0;
   noSimplify = 0;
+  vectorization_limit = 20;
 }
 
 /*
@@ -449,6 +451,18 @@ RML_BEGIN_LABEL(RTOpts__args)
         class_to_instantiate = (char*)malloc(strlen(arg) * sizeof(char));
         strcpy(class_to_instantiate, arg + 3);
         break;
+      // vectorization limit used by Static.crefVectorize.
+      case 'v':
+        if (arg[2] != '=') {
+          fprintf(stderr, "# Flag Usage:  +v=<vectorization limit>");
+          RML_TAILCALLK(rmlFC); /* fail */
+        }
+        vectorization_limit = (int)atoi(&arg[3]);
+        if (vectorization_limit < 0) {
+          vectorization_limit = 20;
+          fprintf(stderr, "Warning, invalid vectorization limit (using default limit %ld\n", vectorization_limit);
+        }
+        break;
       default:
         fprintf(stderr, "# Unknown option: %s\n", arg);
         RML_TAILCALLK(rmlFC); /* fail */
@@ -670,5 +684,13 @@ RML_BEGIN_LABEL(RTOpts__getNoSimplify)
 {
   rmlA0 = noSimplify?RML_TRUE:RML_FALSE;
   RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(RTOpts__vectorizationLimit)
+{
+  rmlA0 = mk_icon(vectorization_limit);
+	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

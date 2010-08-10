@@ -10450,7 +10450,7 @@ public function crefVectorize
   input DAE.Type inType;
   input Option<DAE.Exp> splicedExp;
   input DAE.ExpType crefIdType "the type of the last cref ident, without considering subscripts. picked up from splicedExpData and used for crefs in vectorized exp";
-  input Boolean applyLimits "if true, only perform for small sized arrays (dimsize <20)"; 
+  input Boolean applyLimits "if true, only perform for small sized arrays (dimsize < vectorization limit (default 20))"; 
   output DAE.Exp outExp;
 algorithm
   outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType,applyLimits)
@@ -10477,14 +10477,14 @@ algorithm
         e = crefVectorize(doVect,e,t,NONE,crefIdType,applyLimits);
       then e;
 
-    // component reference and an array type with dimensions less than 20
+    // component reference and an array type with dimensions less than vectorization limit
     case (_,DAE.CREF(componentRef = cr_2,ty = t2),
            (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType =
                                  (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_)),
            SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
       equation
-        b1 = (ds < 20);
-        b2 = (ds2 < 20);
+        b1 = (ds < RTOpts.vectorizationLimit());
+        b2 = (ds2 < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
         e = tryToConvertArrayToMatrix(e);
@@ -10494,26 +10494,26 @@ algorithm
     case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
       equation
         false = Types.isArray(t);
-        true = (ds < 20) or not applyLimits;
+        true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
       then
         e;
 
-    /* matrix sizes > 20 is not vectorized */
+    /* matrix sizes > vectorization limit is not vectorized */
     case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_),_,crefIdType,applyLimits) 
       equation 
-        b1 = (ds < 20);
-        b2 = (ds2 < 20);
+        b1 = (ds < RTOpts.vectorizationLimit());
+        b2 = (ds2 < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = createCrefArray2d(cr, 1, ds, ds2, exptp, t,crefIdType);
       then
         e;
         
-    /* vectorsizes > 20 is not vectorized */ 
+    /* vectorsizes > vectorization limit is not vectorized */ 
     case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_),_,crefIdType,applyLimits) 
       equation 
         false = Types.isArray(t);
-        true = (ds < 20) or not applyLimits;
+        true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
         e;
