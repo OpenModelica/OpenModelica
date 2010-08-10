@@ -10987,7 +10987,7 @@ algorithm
       Boolean impl,cond;
       String n,i,s;
       Absyn.Exp e2,e1,e,ee;
-      list<Absyn.Exp> conditions;
+      list<Absyn.Exp> conditions,crs;
       DAE.Exp e1_1,e2_1,e1_2,e2_2,e_1,e_2;
       DAE.Properties prop1,prop2;
       list<SCode.EEquation> b,tb1,fb,el,eel;
@@ -11063,7 +11063,8 @@ algorithm
 
     /* equality equations e1 = e2 */
     case (cache,env,ih,mods,pre,csets,ci_state,SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
-      local Option<Interactive.InteractiveSymbolTable> c1,c2;
+      local
+        Option<Interactive.InteractiveSymbolTable> c1,c2;
       equation 
          // Do static analysis and constant evaluation of expressions. 
         // Gives expression and properties 
@@ -11072,6 +11073,9 @@ algorithm
         // Also the function call\'s in parameters are type checked with
         // the functions definition\'s inparameters. This is done with
         // regard to the position of the input arguments.
+        
+        // equality equation (cr1,...,crn) = fn(...)?
+        checkTupleCallEquation(e1,e2);
 
         //  Returns the output parameters from the function.
         (cache,e1_1,prop1,c1,fdae1) = Static.elabExp(cache,env, e1, impl, NONE,true /*do vectorization*/); 
@@ -11092,6 +11096,13 @@ algorithm
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
+        
+    case (cache,env,ih,mods,pre,csets,ci_state,eqn as SCode.EQ_EQUALS(expLeft = e1,expRight = e2,info = info),initial_,impl,graph)
+      equation 
+        failure(checkTupleCallEquation(e1,e2));
+        s = SCode.equationStr(eqn);
+        Error.addSourceMessage(Error.TUPLE_ASSIGN_FUNCALL_ONLY,{s},info);
+      then fail();
 
     /* if-equation         
        If the condition is constant this case will select the correct branch and remove the if-equation*/ 
@@ -11466,6 +11477,24 @@ algorithm
         fail();
   end matchcontinue;
 end instEquationCommon;
+
+protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call"
+  input Absyn.Exp left;
+  input Absyn.Exp right;
+algorithm
+  _ := matchcontinue (left,right)
+    local
+      list<Absyn.Exp> crs;
+    case (Absyn.TUPLE(crs),Absyn.CALL(functionArgs = _))
+      equation
+        _ = Util.listMap(crs,Absyn.expCref);
+      then ();
+    case (left,_)
+      equation
+        failure(Absyn.TUPLE(_) = left);
+      then ();
+  end matchcontinue;
+end checkTupleCallEquation;
 
 protected function instEquationNoRetCallVectorization "creates DAE for NORETCALLs and also performs vectorization if needed"
   input DAE.Exp expCall;
