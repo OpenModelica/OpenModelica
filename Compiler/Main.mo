@@ -1163,6 +1163,8 @@ algorithm
   print("\t+d=noevalfunc              do not use the function interpreter, uses dynamic loading instead.\n");
   print("\t                           default is to use the function interpreter.\n");
   print("\t+i=classpath               instantiate the class given by the fully qualified path.\n"); 
+  print("\t+v=N                       sets the vectorization limit, arrays and matrices with dimensions\n");
+  print("\t                           larger than N will not be vectorized (default 20).\n");
   print("\n");
   print("* Examples:\n");
   print("\tomc Model.mo               will produce flattened Model on standard output\n");
