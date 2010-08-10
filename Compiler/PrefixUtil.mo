@@ -518,7 +518,7 @@ algorithm
       equation
         // adrpo: ask for NONE() here as if we have SOME(...) it means 
         //        this is a for iterator and WE SHOULD NOT PREFIX IT!
-        (cache,_,_,_,NONE(),_,_,_) = Lookup.lookupVarLocal(cache, env, p);
+        (cache,_,_,_,NONE(),_,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
         p_1 = prefixCref(pre, p);
       then
         (cache,DAE.CREF(p_1,t));
@@ -526,13 +526,13 @@ algorithm
     case (cache,env,_,e as DAE.CREF(componentRef = p,ty = t),pre)
       equation
         // adrpo: do NOT prefix if we have a for iterator!
-        (cache,_,_,_,SOME(_),_,_,_) = Lookup.lookupVarLocal(cache, env, p);
+        (cache,_,_,_,SOME(_),_,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
       then
         (cache,e);
 
     case (cache,env,_,e as DAE.CREF(componentRef = p),pre)
       equation 
-        failure((_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache, env, p));
       then
         (cache,e);
     

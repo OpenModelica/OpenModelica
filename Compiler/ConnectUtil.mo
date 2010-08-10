@@ -1437,7 +1437,7 @@ algorithm
     case (cache,{},_,_,_) then (cache,DAEUtil.emptyDae);
     case (cache,(cr :: xs),env,prefix,deletedComponents)
       equation
-        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
         dimSizes = Types.getDimensionSizes(tp);
         (_,dimSizesOpt) = Types.flattenArrayTypeOpt(tp);
@@ -1452,7 +1452,7 @@ algorithm
         (cache,res);
     case (cache,(cr :: xs),env,prefix,deletedComponents) // For scalars.
       equation
-        (cache,_,tp,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
+        (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
         (cache,DAE.DAE(elts,funcs)) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         cr2 = PrefixUtil.prefixCref(prefix,cr);
@@ -1953,7 +1953,7 @@ algorithm
     // is a qualified cref and is a connector => OUTSIDE 
     case (env,ih,DAE.CREF_QUAL(ident = id,componentRef = cr)) 
       equation
-       (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_,_) 
+       (_,_,(DAE.T_COMPLEX(complexClassType=ClassInf.CONNECTOR(_,_)),_),_,_,_,_,_,_) 
          = Lookup.lookupVar(Env.emptyCache(),env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
       then Connect.OUTSIDE();
 

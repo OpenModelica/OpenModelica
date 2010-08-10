@@ -844,8 +844,8 @@ algorithm
     // if it was not added, add it (search for both components)
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (cache,DAE.ATTR(         _,_,_,vt2,_,_),t2,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(         _,_,_,vt2,_,_),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
@@ -907,7 +907,7 @@ algorithm
     // if it was not added, add it (first component found: cr1)
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
         t2 = t1;
         vt2 = vt1;
@@ -924,7 +924,7 @@ algorithm
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         pre = Prefix.NOPRE();
-        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         t1 = t2;
         vt1 = vt2;
         io1 = removeOuter(io1);
@@ -976,8 +976,8 @@ algorithm
     case(cache,env,ih,cr1,cr2)
       equation
         ErrorExt.setCheckpoint("lookupVarInnerOuterAttr");
-        (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
-        (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (_,DAE.ATTR(innerOuter=io1),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (_,DAE.ATTR(innerOuter=io2),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner1,isOuter1) = innerOuterBooleans(io1);
         (isInner2,isOuter2) = innerOuterBooleans(io2);
         isInner = isInner1 or isInner2;
@@ -988,7 +988,7 @@ algorithm
     // try to find var cr1 (lookup can fail for one of them)
     case(cache,env,ih,cr1,cr2)
       equation        
-        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (isInner,isOuter) = innerOuterBooleans(io);
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then
@@ -996,7 +996,7 @@ algorithm
      // ..else try cr2 (lookup can fail for one of them)
     case(cache,env,ih,cr1,cr2)
       equation
-        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (_,DAE.ATTR(innerOuter=io),_,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         (isInner,isOuter) = innerOuterBooleans(io);
         ErrorExt.rollBack("lookupVarInnerOuterAttr");
       then (isInner,isOuter);

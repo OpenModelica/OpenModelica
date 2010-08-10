@@ -8961,7 +8961,8 @@ algorithm
       SCode.Class cl;
       DAE.ComponentRef crPath;
       Env.Frame f;
-      Env.Env fs;          
+      Env.Env fs;
+      String name;
 
     // Special cases: assert and reinit can not be handled by builtin.mo, since they do not have return type 
     case(cache,env,path as Absyn.IDENT("assert")) then (cache,path);
@@ -8999,8 +9000,8 @@ algorithm
     case (cache,(f::fs) ,path) 
       equation 
         crPath = Exp.pathToCref(path);
-        (cache,_,_,_,_,_,env,_) = Lookup.lookupVarInternal(cache, {f}, crPath, Lookup.SEARCH_ALSO_BUILTIN());
-        path3 = makeFullyQualified2(env,Absyn.pathLastIdent(path));
+        (cache,_,_,_,_,_,env,_,name) = Lookup.lookupVarInternal(cache, {f}, crPath, Lookup.SEARCH_ALSO_BUILTIN());
+        path3 = makeFullyQualified2(env,name);
       then
         (cache,Absyn.FULLYQUALIFIED(path3));
 
@@ -9008,8 +9009,8 @@ algorithm
     case (cache,env,path)
       equation 
           crPath = Exp.pathToCref(path); 
-         (cache,env,_,_,_,_,_,_) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
-          path3 = makeFullyQualified2(env,Absyn.pathLastIdent(path));
+         (cache,env,_,_,_,_,_,_,name) = Lookup.lookupVarInPackages(cache, env, crPath, {}, Util.makeStatefulBoolean(false));
+          path3 = makeFullyQualified2(env,name);
       then
         (cache,Absyn.FULLYQUALIFIED(path3));    
     
@@ -10290,13 +10291,13 @@ algorithm
 
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        (cache,attr,ty,bnd,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,attr,ty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,DAE.EXTARG(cref,attr,ty));
 
     case (cache,env,DAE.CREF(componentRef = cref,ty = crty),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        failure((_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref));
+        failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref));
         crefstr = Exp.printComponentRefStr(cref);
         scope = Env.printEnvPathStr(env);
         Error.addMessage(Error.LOOKUP_VARIABLE_ERROR, {crefstr,scope});
@@ -10305,7 +10306,7 @@ algorithm
 
     case (cache,env,DAE.SIZE(exp = DAE.CREF(componentRef = cref,ty = crty),sz = SOME(dim)),DAE.PROP(type_ = ty,constFlag = cnst))
       equation
-        (cache,attr,varty,bnd,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
+        (cache,attr,varty,bnd,_,_,_,_,_) = Lookup.lookupVarLocal(cache,env, cref);
       then
         (cache,DAE.EXTARGSIZE(cref,attr,varty,dim));
 
@@ -11222,7 +11223,7 @@ algorithm
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(elementLst);        
         env_1 = addForLoopScope(env, i, DAE.T_INTEGER_DEFAULT, SCode.VAR(), SOME(DAE.C_CONST()));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_) 
+        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals,{len}), el, initial_, impl,graph);
@@ -11245,7 +11246,7 @@ algorithm
              Lookup.lookupClass(cache, env, typePath, false);
         len = listLength(enumLst);        
         env_1 = addForLoopScope(env, i, DAE.T_INTEGER_DEFAULT, SCode.VAR(), SOME(DAE.C_CONST()));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_) 
+        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         vals = Ceval.cevalRange(1,1,len);
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals,{len}), el, initial_, impl,graph);
@@ -11270,7 +11271,7 @@ algorithm
         e=rangeExpression(tpl);
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_) 
+        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph);
@@ -11284,7 +11285,7 @@ algorithm
       equation 
         (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_) 
+        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph);
@@ -13076,7 +13077,7 @@ algorithm
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});        
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_) 
+        (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(_,_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache, env_1, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds";
         (cache,stmts,dae) = loopOverRange(cache, env_1, ih, pre, i, v, sl, source, initial_, impl, unrollForLoops);
@@ -18142,8 +18143,8 @@ algorithm
         
         // get the environments of the expandable connectors
         // which contain all the virtual components.
-        (_,_,_,_,_,_,_,env1) = Lookup.lookupVar(cache, env, c1_2);
-        (_,_,_,_,_,_,_,env2) = Lookup.lookupVar(cache, env, c2_2);
+        (_,_,_,_,_,_,_,env1,_) = Lookup.lookupVar(cache, env, c1_2);
+        (_,_,_,_,_,_,_,env2,_) = Lookup.lookupVar(cache, env, c2_2);
         
         Debug.fprintln("expandable", 
           "1 connect(expandable, expandable)(" +& 
@@ -18230,8 +18231,8 @@ algorithm
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
-        (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable) = Lookup.lookupVar(cache, env, c1_2);
-        (_,_,_,_,_,_,_,envComponent) = Lookup.lookupVar(cache, env, c2_2);
+        (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
+        (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
         
         Debug.fprintln("expandable", 
           "2 connect(expandable, existing)(" +& 

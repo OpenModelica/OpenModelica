@@ -1151,7 +1151,7 @@ algorithm
       equation
         id = Absyn.crefFirstIdent(cref);
         //Debug.fprintln("debug","Try lookupV " +& id);
-        (_,_,_,_,_,_,env,_) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
         env = Env.openScope(env,true,SOME(id));
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
