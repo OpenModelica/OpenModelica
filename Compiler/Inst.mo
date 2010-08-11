@@ -5587,7 +5587,6 @@ algorithm
                            attributes=SCode.ATTR(variability=vt),typeSpec = Absyn.TPATH(t,_),cc=cc),_),_,_,_)
       local Absyn.ComponentRef tref; SCode.Variability vt;
       equation
-        true = RTOpts.debugFlag("failtrace");
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
@@ -5595,7 +5594,8 @@ algorithm
         ns = PrefixUtil.printPrefixStr(pre_1);
         // Debug.fcall (\"instdb\", Env.print_env, env)
         Error.addMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns});
-        Debug.fprintln("failtrace", "Lookup class failed:" +& Absyn.pathString(t));
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("Lookup class failed:" +& Absyn.pathString(t));
       then
         fail();
 
