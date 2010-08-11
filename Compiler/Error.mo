@@ -215,6 +215,8 @@ public constant ErrorID UNEXCPECTED_FUNCTION_INPUTS_WARNING=127;
 public constant ErrorID DUPLICATE_CLASSES_NOT_EQUIVALENT=128;
 public constant ErrorID HIGHER_VARIABILITY_BINDING=129;
 public constant ErrorID STRUCT_SINGULAR_EQUATION=130;
+public constant ErrorID IF_EQUATION_WARNING=131;
+public constant ErrorID IF_EQUATION_UNBALANCED_2=132;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -554,11 +556,13 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INCOMPLETE_UNITS, TRANSLATION(),NOTIFICATION(),"The system of units is incomplete. Please provide unit information to the model by e.g. using types from the SIunits package."),
           (IF_EQUATION_NO_ELSE, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have an else branch, in equation."),
           (IF_EQUATION_UNBALANCED, TRANSLATION(),ERROR(),"In equation %s. If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
+          (IF_EQUATION_UNBALANCED_2,SYMBOLIC(),ERROR(),"If-equation with conditions that are not parameter expressions must have the same number of equations in each branch, equation count is %s for each respective branch."),
           (LINSPACE_ILLEGAL_SIZE_ARG,TRANSLATION(),ERROR(),"In expression %s, third argument to linspace must be >= 2"),
           (INTERACTIVE_ASSIGN, SCRIPTING(),ERROR(), "Interactive assignment of %s failed for expression %s."),
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
-          (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix.")
+          (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
+          (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring%s")
           
           };
 

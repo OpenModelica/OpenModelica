@@ -2661,7 +2661,7 @@ algorithm
         result = DAE.DAE((subresult :: rest_result),funcs);
       then
         result;
-    case (DAE.DAE((el :: rest),funcs),onlyConstantEval)
+    case (DAE.DAE((el as (DAE.IF_EQUATION(source = _))):: rest,funcs),onlyConstantEval)
       equation
         elts= ifEqToExpr(el,onlyConstantEval);
         res2 = transformIfEqToExpr(DAE.DAE(rest,funcs),onlyConstantEval);
@@ -2670,6 +2670,7 @@ algorithm
         res;
     case (DAE.DAE((el :: rest),funcs),onlyConstantEval)
       equation
+        failure(DAE.IF_EQUATION(source = _) = el);
         DAE.DAE(elts,funcs) = transformIfEqToExpr(DAE.DAE(rest,funcs),onlyConstantEval);
       then
         DAE.DAE((el :: elts),funcs);
@@ -2792,7 +2793,7 @@ algorithm
     // handle the default case.
     case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
       equation
-        _ = countEquationsInBranches(true_branch, false_branch);
+        _ = countEquationsInBranches(true_branch, false_branch, source);
         fbsExp = makeEquationLstToResidualExpLst(false_branch);
         tbsExp = Util.listMap(true_branch, makeEquationLstToResidualExpLst);
         equations = makeEquationsFromResiduals(cond, tbsExp, fbsExp, source);
@@ -2801,30 +2802,14 @@ algorithm
     case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval as true)
       then
         {elt};
-    case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval) // only display failure on if equation
+    case (elt as DAE.IF_EQUATION(source=source),onlyConstantEval) // only display failure on if equation
       equation
+        // TODO: Do errors in the other functions...
         elt_str = DAEDump.dumpElementsStr({elt});
         Debug.fprintln("failtrace", "- DAEUtil.ifEqToExpr failed " +& elt_str);
       then fail();
   end matchcontinue;
 end ifEqToExpr;
-
-protected function ifEqToExpr2
-  input list<list<DAE.Element>> tbs;
-  output Integer len;
-algorithm len := matchcontinue(tbs)
-  local
-    list<DAE.Element> tb;
-    Integer recLen;
-  case(tb::{}) then countEquations(tb);
-  case(tb::tbs)
-    equation
-      recLen = ifEqToExpr2(tbs);
-      recLen = Util.if_(intEq(recLen,countEquations(tb)),recLen,-1);
-    then
-      recLen;
-end matchcontinue;
-end ifEqToExpr2;
 
 protected function countEquations
   input list<DAE.Element> equations;
@@ -2834,6 +2819,7 @@ algorithm
     local
       list<list<DAE.Element>> tb;
       list<DAE.Element> rest,fb;
+      DAE.ElementSource source;
       DAE.Element elt;
       Integer nr,n;
     // empty case
@@ -2845,14 +2831,14 @@ algorithm
     case (DAE.TERMINATE(message=_)::rest)
       then countEquations(rest);
     // For an if-equation, count equations in branches    
-    case (DAE.IF_EQUATION(equations2=tb,equations3=fb)::rest)
+    case (DAE.IF_EQUATION(equations2=tb,equations3=fb,source=source)::rest)
       equation
-        n = countEquationsInBranches(tb,fb);
+        n = countEquationsInBranches(tb,fb,source);
         nr = countEquations(rest);
       then nr + n;  
-    case (DAE.INITIAL_IF_EQUATION(equations2=tb,equations3=fb)::rest)
+    case (DAE.INITIAL_IF_EQUATION(equations2=tb,equations3=fb,source=source)::rest)
       equation
-        n = countEquationsInBranches(tb,fb);
+        n = countEquationsInBranches(tb,fb,source);
         nr = countEquations(rest);
       then nr + n;  
     // any other case, just add 1
@@ -2866,23 +2852,35 @@ end countEquations;
 
 protected function countEquationsInBranches "
 Checks that the number of equations is the same in all branches
-of an if-equation and returns this number"
+of an if-equation"
   input list<list<DAE.Element>> trueBranches;
   input list<DAE.Element> falseBranch;
+  input DAE.ElementSource source;
   output Integer nrOfEquations;
 algorithm
-  nrOfEquations := matchcontinue(trueBranches,falseBranch)
+  nrOfEquations := matchcontinue(trueBranches,falseBranch,source)
     local
-      list<list<DAE.Element>> tb;
-      list<DAE.Element> fb;
-      Integer nt,nf;
-    case (tb,fb)
+      list<Boolean> b;
+      list<String> strs;
+      String str;
+      Integer nrOfEquations;
+      list<Integer> nrOfEquationsBranches;
+    case (trueBranches,falseBranch,source)
       equation
-        nt = ifEqToExpr2(tb);
-        nf = countEquations(fb);
-        true=intEq(nt,nf);
-      then
-        nt;   
+        nrOfEquations = countEquations(falseBranch);
+        nrOfEquationsBranches = Util.listMap(trueBranches, countEquations);
+        b = Util.listMap1(nrOfEquationsBranches, intEq, nrOfEquations);
+        true = Util.listReduce(b,boolAnd);
+      then (nrOfEquations);
+    case (trueBranches,falseBranch,source)
+      equation
+        nrOfEquations = countEquations(falseBranch);
+        nrOfEquationsBranches = Util.listMap(trueBranches, countEquations);
+        strs = Util.listMap(nrOfEquationsBranches, intString);
+        str = Util.stringDelimitList(strs,",");
+        str = "{" +& str +& "," +& intString(nrOfEquations) +& "}";
+        Error.addSourceMessage(Error.IF_EQUATION_UNBALANCED_2,{str},getElementSourceFileInfo(source));
+      then fail();
   end matchcontinue;
 end countEquationsInBranches;
 
@@ -3056,15 +3054,34 @@ protected function makeEquationLstToResidualExpLst
 algorithm
   oExpLst := matchcontinue(eqLst)
     local
-      list<DAE.Element> eqs;
-      list<DAE.Exp> exps;
-      list<list<DAE.Exp>> expsLst;
-    case (eqs)
+      list<DAE.Element> rest;
+      list<DAE.Exp> exps1,exps2,exps;
+      DAE.Element eq;
+      DAE.Exp exp;
+      DAE.ElementSource source;
+      String str;
+    case ({}) then {};
+    case (eq::rest)
       equation
-        expsLst = Util.listMap(eqs, makeEquationToResidualExpLst); 
-        exps = Util.listFlatten(expsLst);
+        exps1 = makeEquationToResidualExpLst(eq);
+        exps2 = makeEquationLstToResidualExpLst(rest); 
+        exps = listAppend(exps1,exps2);
       then 
         exps;
+    case ((eq as DAE.ASSERT(source = source))::rest)
+      equation
+        str = DAEDump.dumpEquationStr(eq);
+        str = Util.stringReplaceChar(str,"\n","");
+        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
+        exps = makeEquationLstToResidualExpLst(rest);
+      then exps;
+    case ((eq as DAE.TERMINATE(source = source))::rest)
+      equation
+        str = DAEDump.dumpEquationStr(eq);
+        str = Util.stringReplaceChar(str,"\n","");
+        Error.addSourceMessage(Error.IF_EQUATION_WARNING,{str},getElementSourceFileInfo(source));
+        exps = makeEquationLstToResidualExpLst(rest);
+      then exps;
   end matchcontinue;
 end makeEquationLstToResidualExpLst;         
 
