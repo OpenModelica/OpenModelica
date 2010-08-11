@@ -5351,7 +5351,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         ci_state = ClassInf.trans(ci_state, ClassInf.FOUND_COMPONENT(n));
-        vn = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,vn) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& PrefixUtil.printPrefixStr(pre) +& "." +& n);
         //The class definition is fetched from the environment. Then the set of modifications 
         //is calculated. The modificions is the result of merging the modifications from 
@@ -5491,7 +5491,7 @@ algorithm
         // Fails if multiple decls not identical
         alreadyDeclared = checkMultiplyDeclared(cache,env,mods,pre,csets,ci_state,(comp,cmod),inst_dims,impl);
         //checkRecursiveDefinition(env,t);
-        vn = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,vn) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         // Debug.fprintln("insttr", "ICOMP " +& Env.printEnvPathStr(env) +& "/" +& PrefixUtil.printPrefixStr(pre) +& "." +& n);
 
         // The class definition is fetched from the environment. Then the set of modifications
@@ -6314,7 +6314,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph) =
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
 
-        cref = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
 
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
@@ -6338,7 +6338,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         false = Absyn.isInner(io);
         // we should have here any kind of modification!
         false = Mod.modEqual(mod, DAE.NOMOD());
-        cref = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(cref);
         s2 = Mod.prettyPrintMod(mod, 0);
         s = s1 +&  " " +& s2;
@@ -6368,8 +6368,8 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // add outer prefix + component name and its corresponding inner prefix to the IH
-        crefOuter = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
-        crefInner = PrefixUtil.prefixCref(innerPrefix, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         ih = InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);   
 
         // outer dae has no meaning!
@@ -6393,7 +6393,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // display an error message!
-        crefOuter = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2});
@@ -6420,7 +6420,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // display an error message!
-        crefOuter = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
         Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2});
@@ -6444,7 +6444,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
         // add it to the instance hierarchy
-        cref = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
@@ -6488,7 +6488,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
     case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         true = RTOpts.debugFlag("failtrace");
-        cref = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         Debug.fprintln("failtrace", "- Inst.instVar failed while instatiating variable: " +&
           Exp.printComponentRefStr(cref) +& " " +& Mod.prettyPrintMod(mod, 0) +&
           " in scope: " +& Env.printEnvPathStr(env));
@@ -6720,7 +6720,7 @@ algorithm
 
         //Generate variable with default binding
         ty_2 = Types.elabType(ty_1);
-        cr = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,ty_2,{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,ty_2,{}));
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -6740,7 +6740,7 @@ algorithm
         ClassInf.isFunction(ci_state);
          //Instantiate type of the component, skip dae/not flattening
         (cache,env_1,ih,store,dae1,csets,ty,st,_,_) = instClass(cache, env, ih, store, mod, pre, csets, cl, inst_dims, impl, INNER_CALL(), ConnectionGraph.EMPTY) ;
-        cr = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,DAE.ET_OTHER(),{}));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
         //Do all dimensions...
         dims_1 = instDimExpLst(dims, impl);
@@ -6767,7 +6767,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST());
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,subs));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
@@ -6792,7 +6792,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,subs));
         start = instStartBindingExp(mod, ty, idxs_1);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
 
@@ -6828,7 +6828,7 @@ algorithm
         dae1_1 = propagateAttributes(dae1, dir,io,vt);
         subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        cr = PrefixUtil.prefixCref(pre, DAE.CREF_IDENT(n,identType,subs));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,subs));
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
@@ -8113,7 +8113,7 @@ algorithm
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
         ty_1 = Types.elabType(ty);
-        cr = PrefixUtil.prefixCref(pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre,DAE.CREF_IDENT(n,ty_1,{})) "check their types";
         (e_1,_) = Types.matchProp(e,p,DAE.PROP(ty,DAE.C_VAR()),true);
 
         // set the source of this element
@@ -11381,7 +11381,7 @@ algorithm
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
         (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false);
-        cr_ = PrefixUtil.prefixCref(pre, cr_);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addDefiniteRoot(graph, cr_);
       then
         (cache,env,ih,fdae,csets,ci_state,graph);    
@@ -11395,7 +11395,7 @@ algorithm
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; 
       equation 
         (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false);
-        cr_ = PrefixUtil.prefixCref(pre, cr_);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, 0.0);
       then
         (cache,env,ih,fdae,csets,ci_state,graph);        
@@ -11407,7 +11407,7 @@ algorithm
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
         (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false);
-        cr_ = PrefixUtil.prefixCref(pre, cr_);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
         (cache,env,ih,fdae,csets,ci_state,graph);             
@@ -11419,7 +11419,7 @@ algorithm
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Real priority;
       equation 
         (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false);
-        cr_ = PrefixUtil.prefixCref(pre, cr_);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, priority);
       then
         (cache,env,ih,fdae,csets,ci_state,graph);
@@ -11431,7 +11431,7 @@ algorithm
       local Absyn.ComponentRef cr; DAE.ComponentRef cr_; DAE.ExpType t; Integer priority;
       equation 
         (cache,DAE.CREF(cr_,t),_,_,fdae) = Static.elabCref(cache,env, cr, false /* ??? */,false);
-        cr_ = PrefixUtil.prefixCref(pre, cr_);
+        (cache,cr_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr_);
         graph = ConnectionGraph.addPotentialRoot(graph, cr_, intReal(priority));
       then
         (cache,env,ih,fdae,csets,ci_state,graph);
@@ -11444,8 +11444,8 @@ algorithm
       equation 
         (cache,DAE.CREF(cr1_,t),_,_,fdae1) = Static.elabCref(cache,env, cr1, false /* ??? */,false);
         (cache,DAE.CREF(cr2_,t),_,_,fdae2) = Static.elabCref(cache,env, cr2, false /* ??? */,false);
-        cr1_ = PrefixUtil.prefixCref(pre, cr1_);
-        cr2_ = PrefixUtil.prefixCref(pre, cr2_);
+        (cache,cr1_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr1_);
+        (cache,cr2_) = PrefixUtil.prefixCref(cache,env,ih,pre, cr2_);
         graph = ConnectionGraph.addBranch(graph, cr1_, cr2_);
         fdae = DAEUtil.joinDaes(fdae1,fdae2);
       then
@@ -14089,8 +14089,8 @@ algorithm
     /* flow - with a subtype of Real */
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_REAL(varLstReal = _),_),vt1,c2,f2,(DAE.T_REAL(varLstReal = _),_),vt2,true,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -14104,8 +14104,8 @@ algorithm
       equation
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -14118,8 +14118,8 @@ algorithm
     case (cache,env,ih,sets as(Connect.SETS(deletedComponents=dc)),pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph,info)
       local list<Boolean> bolist,bolist2;
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         bolist = Util.listMap1(dc,Exp.crefNotPrefixOf,c1_1);
         bolist2 = Util.listMap1(dc,Exp.crefNotPrefixOf,c2_1);
         bolist = listAppend(bolist,bolist2);
@@ -14143,8 +14143,8 @@ algorithm
     /* Same as above, but returns empty (removed conditional var) */
     case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         true = SCode.isParameterOrConst(vt1) and SCode.isParameterOrConst(vt2) ;
         true = Types.basicType(t1);
         true = Types.basicType(t2);
@@ -14155,8 +14155,8 @@ algorithm
     /* connection of two Reals */        
     case (cache,env,ih,sets,pre,c1,_,(DAE.T_REAL(varLstReal = _),_),vt1,c2,_,(DAE.T_REAL(varLstReal = _),_),vt2,false,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -14168,8 +14168,8 @@ algorithm
     /* connection of two Integers */
     case (cache,env,ih,sets,pre,c1,_,(DAE.T_INTEGER(varLstInt = _),_),vt1,c2,_,(DAE.T_INTEGER(varLstInt = _),_),vt2,false,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -14181,8 +14181,8 @@ algorithm
     /* connection of two Booleans */
     case (cache,env,ih,sets,pre,c1,_,(DAE.T_BOOL(_),_),vt1,c2,_,(DAE.T_BOOL(_),_),vt2,false,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -14194,8 +14194,8 @@ algorithm
     /* Connection of two Strings */
     case (cache,env,ih,sets,pre,c1,_,(DAE.T_STRING(_),_),vt1,c2,_,(DAE.T_STRING(_),_),vt2,false,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
@@ -14222,8 +14222,8 @@ algorithm
         list<Option<Integer>> odims,odims2;
         list<Integer> dims,dims2;
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         DAE.ET_ARRAY(_,odims) = Types.elabType(inType6);
         DAE.ET_ARRAY(_,odims2) = Types.elabType(inType9);
         dims = Util.listFlatten(Util.listMap(odims,Util.genericOption));
@@ -14251,8 +14251,8 @@ algorithm
         DAE.DAElist equalityConstraintDAE;
         SCode.Class equalityConstraintFunction;
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         // Connect components ignoring equality constraints
         (cache,env,ih,sets_1,dae,_) =
         connectComponents(
@@ -14311,8 +14311,8 @@ algorithm
     /* Connection of complex connector, e.g. Pin */
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1),_),vt1,c2,f2,(DAE.T_COMPLEX(complexVarLst = l2),_),vt2,_,io1,io2,graph,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         (cache,_,ih,sets_1,dae,graph) = connectVars(cache,env,ih, sets, c1_1, f1, l1,vt1, c2_1, f2, l2,vt2,io1,io2,graph,info);
       then
         (cache,env,ih,sets_1,dae,graph);
@@ -14320,8 +14320,8 @@ algorithm
     /* Error */
     case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,io1,io2,_,info)
       equation
-        c1_1 = PrefixUtil.prefixCref(pre, c1);
-        c2_1 = PrefixUtil.prefixCref(pre, c2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
         c1_str = Exp.printComponentRefStr(c1);
         t1_str = Types.unparseType(t1);
         c2_str = Exp.printComponentRefStr(c2);
@@ -16763,7 +16763,7 @@ algorithm
       dae = Util.if_(b,dae,DAEUtil.extractFunctions(dae));
       // if the condition is false the connection graph stays the same!!
       graph = Util.if_(b,graphNew,graphOld);
-      cr = PrefixUtil.prefixCref(pre,DAE.CREF_IDENT(compName,DAE.ET_OTHER(),{}));
+      (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,pre,DAE.CREF_IDENT(compName,DAE.ET_OTHER(),{}));
       sets = ConnectUtil.addDeletedComponent(b,cr,sets);
     then (cache,dae,sets,graph,dae1);
 
@@ -18317,7 +18317,8 @@ algorithm
         
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
         // declare the added component in the DAE!
-        daeExpandable = daeDeclare(PrefixUtil.prefixCref(pre, c1_2), state, ty1, 
+        (cache,c1_2) = PrefixUtil.prefixCref(cache,env,ih,pre, c1_2);
+        daeExpandable = daeDeclare(c1_2, state, ty1, 
            SCode.ATTR({}, flowPrefix1, streamPrefix1, acc1, vt1, dir1), 
            false, NONE, {}, NONE, NONE(), NONE(), io1, false, source, true);
         

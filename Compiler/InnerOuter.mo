@@ -331,7 +331,7 @@ algorithm
     case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets)
       equation
         (_,true) = innerOuterBooleans(io1);
-        cr3 = PrefixUtil.prefixCref(scope,cr1);
+        (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr1);
         // adrpo: not needed as the sources/targets are send from up ABOVE :)
         src = sources; // VarTransform.replacementSources(repl);
         dst = targets; // VarTransform.replacementTargets(repl);
@@ -346,7 +346,7 @@ algorithm
     case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs,repl,sources,targets)
       equation
         (_,true) = innerOuterBooleans(io2);
-        cr3 = PrefixUtil.prefixCref(scope,cr2);
+        (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr2);
         // adrpo: not needed as the sources/targets are send from up ABOVE :)
         src = sources; // VarTransform.replacementSources(repl);
         dst = targets; // VarTransform.replacementTargets(repl);
@@ -421,7 +421,7 @@ algorithm
     case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs)
       equation
         (_,true) = innerOuterBooleans(io1);
-        // cr3 = PrefixUtil.prefixCref(scope,cr1);
+        // (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr1);
         // ncr1 = cr3;
         ncr1 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing left: " +&
@@ -436,7 +436,7 @@ algorithm
     case(Connect.OUTERCONNECT(scope,cr1,io1,f1,cr2,io2,f2,source)::ocs)
       equation
         (_,true) = innerOuterBooleans(io2);
-        // cr3 = PrefixUtil.prefixCref(scope,cr2);
+        // (_,cr3) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,scope,cr2);
         // ncr2 = cr3;        
         ncr2 = PrefixUtil.prefixToCref(scope);
         // Debug.fprintln("ios", "changeInnerOuterInOuterConnect: changing right: " +&
@@ -1225,7 +1225,7 @@ algorithm
         // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
 
         // put the name as the last prefix
-        cref = PrefixUtil.prefixCref(prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
 
         // search in instance hierarchy
         (instInner as INST_INNER(innerPrefix, _, io, _, _)) = get(cref, ht);
@@ -1249,7 +1249,7 @@ algorithm
         // Debug.fprintln("innerouter", "InnerOuter.lookupInnerInIH : stripping and looking for: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& name);
         
         // put the name as the last prefix
-        cref = PrefixUtil.prefixCref(prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
         
         // search in instance hierarchy we had a failure
         failure(instInner = get(cref, ht));
@@ -1353,7 +1353,7 @@ public function switchInnerToOuterAndPrefix
                    absynCommentOption = comment,
                    innerOuter=Absyn.INNER()) :: r),io,pre)
       equation
-        cr = PrefixUtil.prefixCref(pre, cr);
+        (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,pre, cr);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
         (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
@@ -1427,7 +1427,7 @@ public function prefixOuterDaeVars
                    absynCommentOption = comment,
                    innerOuter=io) :: r),crefPrefix)
       equation
-        cr = PrefixUtil.prefixCref(crefPrefix, cr);
+        (_,cr) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,crefPrefix, cr);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
         (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
@@ -1685,7 +1685,7 @@ algorithm
       equation
         false = Absyn.isInner(inInnerOuter);
         // prefix the name!
-        cref = PrefixUtil.prefixCref(inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
         // print ("InnerOuter.updateInstHierarchy jumping over non-inner: " +& Exp.printComponentRefStr(cref) +& "\n");
       then
         ih;*/
@@ -1705,7 +1705,7 @@ algorithm
          inInstInner as INST_INNER(_, name, io, _, _))
       equation
         // prefix the name!
-        cref = PrefixUtil.prefixCref(inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
         // add to hashtable!
         // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy adding: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name +& " to IH");
@@ -1717,7 +1717,7 @@ algorithm
     case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(_, name, io, _, _))
       equation
         // prefix the name!
-        cref = PrefixUtil.prefixCref(inPrefix, DAE.CREF_IDENT("UNKNOWN", DAE.ET_OTHER(), {}));
+        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT("UNKNOWN", DAE.ET_OTHER(), {}));
         // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy failure for: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then
@@ -1801,7 +1801,7 @@ algorithm
     // we have some outer references, search for our prefix + cref in them 
     case ({TOP_INSTANCE(_, _, outerPrefixes)}, inOuterComponentRef, inPrefix)
       equation
-        fullCref = PrefixUtil.prefixCref(inPrefix, inOuterComponentRef);
+        (_,fullCref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, inOuterComponentRef);
 
         // this will fail if we don't find it so prefixing can happen in the calling function
         (outerCrefPrefix, innerCrefPrefix) = searchForInnerPrefix(fullCref, outerPrefixes);

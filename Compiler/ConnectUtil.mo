@@ -1443,7 +1443,7 @@ algorithm
         (_,dimSizesOpt) = Types.flattenArrayTypeOpt(tp);
         dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
         (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
-        cr2 = PrefixUtil.prefixCref(prefix,cr);
+        (cache,cr2) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,prefix,cr);
         arrType = DAE.ET_ARRAY(DAE.ET_REAL(),dimSizesOpt);
         dimExps = {DAE.ICONST(0),DAE.ICONST(0),DAE.ICONST(0)};
         res1 = generateZeroflowArrayEquations(cr2, dimSizes, DAE.RCONST(0.0));
@@ -1455,7 +1455,7 @@ algorithm
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
         (cache,DAE.DAE(elts,funcs)) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
-        cr2 = PrefixUtil.prefixCref(prefix,cr);
+        (cache,cr2) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
         (cache,DAE.DAE(DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.emptyElementSource) :: elts,funcs));

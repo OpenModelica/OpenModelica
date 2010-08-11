@@ -11143,7 +11143,7 @@ algorithm
     case (cache,env,Absyn.CREF_IDENT(name = id,subscripts = ss),crefPrefix,impl)
       equation
         // Debug.traceln("Try elabSucscriptsDims " +& id);
-        cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         // print("elabCrefSubs type of: " +& id +& " is " +& Types.printTypeStr(t) +& "\n"); 
         // Debug.traceln("    elabSucscriptsDims " +& id +& " got var");
@@ -11156,7 +11156,7 @@ algorithm
     // QUAL,with no subscripts => looking for var
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = {},componentRef = subs),crefPrefix,impl)
       equation
-        cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //print("env:");print(Env.printEnvStr(env));print("\n");
         (cache,_,t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         ty = Types.elabType(t);
@@ -11174,7 +11174,7 @@ algorithm
     // QUAL,with constant subscripts
     case (cache,env,cr as Absyn.CREF_QUAL(name = id,subScripts = ss as _::_,componentRef = subs),crefPrefix,impl)
       equation
-        cr = PrefixUtil.prefixCref(crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,crefPrefix,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         (cache,DAE.ATTR(_,_,_,vt,_,_),t,_,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr);
         sl = Types.getDimensions(t);
         ty = Types.elabType(t);

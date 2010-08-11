@@ -286,32 +286,40 @@ public function prefixCref "function: prefixCref
   Prefix a ComponentRef variable by adding the supplied prefix to
   it and returning a new ComponentRef.
   LS: Changed to call prefixToCref which is more general now"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy inIH;
   input Prefix pre;
   input DAE.ComponentRef cref;
+  output Env.Cache outCache;
   output DAE.ComponentRef cref_1;
   DAE.ComponentRef cref_1;
 algorithm
-  cref_1 := prefixToCref2(pre, SOME(cref));
+  (outCache,cref_1) := prefixToCref2(cache,env,inIH,pre, SOME(cref));
 end prefixCref;
 
 public function prefixToCref "function: prefixToCref
   Convert a prefix to a component reference."
   input Prefix pre;
-  output DAE.ComponentRef cref_1;
+  output DAE.ComponentRef cref_1;  
   DAE.ComponentRef cref_1;
 algorithm
-  cref_1 := prefixToCref2(pre, NONE());
+  (_,cref_1) := prefixToCref2(Env.emptyCache(),{},InnerOuter.emptyInstHierarchy,pre, NONE());
 end prefixToCref;
 
 protected function prefixToCref2 "function: prefixToCref2
   Convert a prefix to a component reference. Converting Prefix.NOPRE with no
   component reference is an error because a component reference cannot be
   empty"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy inIH;
   input Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
+  output Env.Cache outCache;
   output DAE.ComponentRef outComponentRef;
 algorithm
-  outComponentRef := matchcontinue (inPrefix,inExpComponentRefOption)
+  (outComponentRef,outCache) := matchcontinue (cache,env,inIH,inPrefix,inExpComponentRefOption)
     local
       DAE.ComponentRef cref,cref_1;
       list<DAE.Subscript> s_1;
@@ -321,21 +329,22 @@ algorithm
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
     
-    case (Prefix.NOPRE(),NONE) then fail();
-    case (Prefix.NOPRE(),SOME(cref)) then cref;
-    case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then cref;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE)
+    case (cache,env,inIH,Prefix.NOPRE(),NONE) then fail();
+    case (cache,env,inIH,Prefix.NOPRE(),SOME(cref)) then (cache,cref);
+    case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
+    case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE)
       equation
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1)));
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1)));
       then
-        cref_1;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
+        (cache,cref_1);
+    case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
+        (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
         s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCref2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1,cref)));
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1,cref)));
       then
-        cref_1;
+        (cache,cref_1);
   end matchcontinue;
 end prefixToCref2;
 
@@ -350,10 +359,10 @@ end prefixToCrefOpt;
 
 public function prefixToCrefOpt2 "function: prefixToCrefOpt2
   Convert a prefix to a component reference. Converting Prefix.NOPRE with no
-  component reference gives a NONE"
+  component reference gives a NONE" 
   input Prefix inPrefix;
   input Option<DAE.ComponentRef> inExpComponentRefOption;
-  output Option<DAE.ComponentRef> outComponentRefOpt;
+  output Option<DAE.ComponentRef> outComponentRefOpt;  
 algorithm
   outComponentRefOpt := matchcontinue (inPrefix,inExpComponentRefOption)
     local
@@ -374,7 +383,7 @@ algorithm
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1)));
       then
         cref_1;
-    case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
+    case (inPrefix as Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
         s_1 = Exp.intSubscripts(s);
         cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1,cref)));
@@ -382,6 +391,77 @@ algorithm
         cref_1;
   end matchcontinue;
 end prefixToCrefOpt2;
+
+protected function prefixSubscriptsInCref "help function to prefixToCrefOpt2, deals with prefixing expressions in subscripts"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy inIH;
+  input Prefix pre;
+  input DAE.ComponentRef cr;
+  output Env.Cache outCache;
+  output DAE.ComponentRef outCr;
+algorithm
+  (outCache,outCr) := matchcontinue(cache,env,inIH,pre,cr)
+  local 
+    DAE.Ident id; 
+    DAE.ExpType tp;
+    list<DAE.Subscript> subs;
+    
+    case(cache,env,inIH,pre,DAE.CREF_IDENT(id,tp,subs)) equation
+     (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
+    then (cache,DAE.CREF_IDENT(id,tp,subs));
+    case(cache,env,inIH,pre,DAE.CREF_QUAL(id,tp,subs,cr)) equation
+      (cache,cr) = prefixSubscriptsInCref(cache,env,inIH,pre,cr);
+      (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
+    then (cache,DAE.CREF_QUAL(id,tp,subs,cr));   
+  end  matchcontinue;
+end prefixSubscriptsInCref;
+
+protected function prefixSubscripts "help function to prefixSubscriptsInCref, adds prefix to subscripts"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy inIH;
+  input Prefix pre;
+  input list<DAE.Subscript> subs;
+  output Env.Cache outCache;
+  output list<DAE.Subscript> outSubs;
+algorithm
+  (outCache,outSubs) := matchcontinue(cache,env,inIH,pre,subs)
+  local DAE.Subscript sub; 
+  
+    case(cache,env,inIH,pre,{}) then (cache,{});
+  
+    case(cache,env,inIH,pre,sub::subs) equation
+    (cache,sub) = prefixSubscript(cache,env,inIH,pre,sub);
+    (cache,subs) = prefixSubscripts(cache,env,inIH,pre,subs);
+    then (cache,sub::subs);   
+  end matchcontinue;
+end prefixSubscripts;
+
+protected function prefixSubscript "help function to prefixSubscripts, adds prefix to one subscript, if it is an expression"
+  input Env.Cache cache;
+  input Env.Env env;
+  input InstanceHierarchy inIH;
+  input Prefix pre;
+  input DAE.Subscript sub;
+  output Env.Cache outCache;
+  output DAE.Subscript outSub;
+algorithm
+  (outCache,outSub) := matchcontinue(cache,env,inIH,pre,sub)
+  local DAE.Exp exp;
+    
+    case(cache,env,inIH,pre,DAE.WHOLEDIM()) then (cache,DAE.WHOLEDIM());
+    
+    case(cache,env,inIH,pre,DAE.SLICE(exp)) equation
+      (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
+    then (cache,DAE.SLICE(exp));
+    
+    case(cache,env,inIH,pre,DAE.INDEX(exp)) equation
+      (cache,exp) = prefixExp(cache,env,inIH,exp,pre);
+    then (cache,DAE.INDEX(exp));
+    
+  end matchcontinue;  
+end prefixSubscript;
 
 public function prefixCrefInnerOuter "function: prefixCrefInnerOuter
   Search for the prefix of the inner when the cref is 
@@ -519,7 +599,7 @@ algorithm
         // adrpo: ask for NONE() here as if we have SOME(...) it means 
         //        this is a for iterator and WE SHOULD NOT PREFIX IT!
         (cache,_,_,_,NONE(),_,_,_,_) = Lookup.lookupVarLocal(cache, env, p);
-        p_1 = prefixCref(pre, p);
+        (cache,p_1) = prefixCref(cache,env,ih,pre, p);
       then
         (cache,DAE.CREF(p_1,t));
 
@@ -795,29 +875,6 @@ algorithm
   end matchcontinue;
 end prefixExpList;
 
-public function prefixCrefList "function: prefixCrefList
-  This function prefixes a list of component 
-  references using the prefixCref function."
-  input Prefix inPrefix;
-  input list<DAE.ComponentRef> inExpComponentRefLst;
-  output list<DAE.ComponentRef> outExpComponentRefLst;
-algorithm
-  outExpComponentRefLst := matchcontinue (inPrefix,inExpComponentRefLst)
-    local
-      DAE.ComponentRef cr_1,cr;
-      list<DAE.ComponentRef> crlist_1,crlist;
-      Prefix p;
-
-    case (_,{}) then {}; 
-    case (p,(cr :: crlist))
-      equation
-        cr_1 = prefixCref(p, cr);
-        crlist_1 = prefixCrefList(p, crlist);
-      then
-        (cr_1 :: crlist_1);
-  end matchcontinue;
-end prefixCrefList;
-
 //--------------------------------------------
 //   PART OF THE WORKAROUND FOR VALUEBLOCKS. KS
 protected function prefixDecls "function: prefixDecls
@@ -863,7 +920,7 @@ algorithm
     	list<DAE.Element> rest,temp;
     	DAE.Element elem;
     equation
-      cRef = prefixCref(pre,cRef);
+      (localCache,cRef) = prefixCref(localCache,localEnv,ih,pre,cRef);
       elem = DAE.VAR(cRef,v1,v2,prot,ty,binding,dims,flowPrefix,streamPrefix,source,vAttr,com,inOut);
       localAccList = listAppend(localAccList,Util.listCreate(elem));
       (localCache,temp) = prefixDecls(localCache,localEnv,ih,rest,localAccList,pre);
@@ -951,7 +1008,7 @@ algorithm
     		DAE.Statement elem;
     		list<DAE.Statement> elems;
     	equation
-    	  cRef = prefixCref(pre,cRef);
+    	  (localCache,cRef) = prefixCref(localCache,localEnv,ih,pre,cRef);
     	  (localCache,e) = prefixExp(localCache,localEnv,ih,e,pre);
     	  elem = DAE.STMT_ASSIGN_ARR(t,cRef,e,source);
     	  localAccList = listAppend(localAccList,Util.listCreate(elem));
