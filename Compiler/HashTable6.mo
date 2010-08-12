@@ -524,7 +524,7 @@ algorithm
       equation
         (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
-        rexpandsize = rsize*.0.4;
+        rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;

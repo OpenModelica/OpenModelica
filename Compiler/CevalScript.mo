@@ -3524,7 +3524,7 @@ algorithm _:= matchcontinue(classIn)
     Real tb,te;
     case(c1 as Absyn.CLASS(info = nfo as Absyn.INFO(buildTimes = Absyn.TIMESTAMP(tb,te))))
     equation
-    true = (tb >.te);
+    true = (tb >. te);
      then ();
     case(_) then fail();
 end matchcontinue;

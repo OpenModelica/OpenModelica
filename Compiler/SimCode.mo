@@ -7377,7 +7377,7 @@ algorithm
     case (dlow,class_,exe,filename,start,stop,intervals,tolerance,method,_,outputFormat) /* classname executable file name filename start time stop time intervals */
       equation
         delta_time = stop -. start;
-        step = delta_time/.intervals;
+        step = delta_time /. intervals;
         start_str = realString(start);
         stop_str = realString(stop);
         step_str = realString(step);
@@ -7935,8 +7935,7 @@ algorithm
         true = Exp.isConst(e);
       then
         SOME(e);
-    else
-      NONE();
+    case (_) then NONE();
   end matchcontinue;
 end getInitialValue;
 

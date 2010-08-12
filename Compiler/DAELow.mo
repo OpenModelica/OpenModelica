@@ -7158,7 +7158,7 @@ algorithm
       equation
         (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
-        rexpandsize = rsize*.0.4;
+        rexpandsize = rsize*. 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
@@ -8432,7 +8432,7 @@ algorithm
       equation
         (s == ms) = true "Out of bounds, increase and copy." ;
         msr = intReal(ms);
-        msr_1 = msr*.0.4;
+        msr_1 = msr *. 0.4;
         ms_1 = realInt(msr_1);
         s_1 = s + 1;
         ms_2 = ms_1 + ms;
@@ -10741,7 +10741,7 @@ algorithm
       equation
         (n < size) = false;
         rsize = intReal(size);
-        rexpandsize = rsize*.0.4;
+        rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;
@@ -10807,7 +10807,7 @@ public function listEquation "function: listEquation
 algorithm
   len := listLength(lst);
   rlen := intReal(len);
-  rlen_1 := rlen*.1.4;
+  rlen_1 := rlen *. 1.4;
   size := realInt(rlen_1);
   optarr := fill(NONE, size);
   eqn_optlst := Util.listMap(lst, Util.makeOption);

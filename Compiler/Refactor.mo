@@ -988,7 +988,7 @@ algorithm
 
       equation
 
-        aspect = (realAbs(ry2-.ry1)*.(realAbs(cry2-.cry1)))/.(realAbs(rx2-.rx1)*.(realAbs(crx2-.crx1)));
+        aspect = (realAbs(ry2 -. ry1) *. (realAbs(cry2 -. cry1))) /. (realAbs(rx2 -. rx1) *. (realAbs(crx2 -. crx1)));
 
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("aspectRatio",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(aspect)))),NONE);
@@ -1018,10 +1018,8 @@ algorithm
       Absyn.Ident n;
 
     case(x1,x2,n)
-
-      equation
-
-                value = (x1+.x2)/.2.0;
+      equation        
+        value = (x1 +. x2) /. 2.0;
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(n,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(value)))),NONE);
 
@@ -1051,7 +1049,7 @@ algorithm
     case(arx1,arx2,crx1,crx2)
 
       equation
-        scaleFac = (realAbs(arx1-.arx2))/.(realAbs(crx1-.crx2));
+        scaleFac = (realAbs(arx1 -. arx2)) /. (realAbs(crx1 -. crx2));
       then
         Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT("scale",{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.REAL(scaleFac)))),NONE);
 
@@ -1073,7 +1071,7 @@ protected function getFlipAnn"function: getFlipAnn
 
 algorithm
 
-  value := val1>.val2;
+  value := val1 >. val2;
   flip := Absyn.MODIFICATION(false,Absyn.NON_EACH,Absyn.CREF_IDENT(name,{}),SOME(Absyn.CLASSMOD({},SOME(Absyn.BOOL(value)))),NONE);
 
 end getFlipAnn;
@@ -3018,7 +3016,7 @@ algorithm
 
     case(Absyn.UNARY(exp = Absyn.REAL(value = realVal)))
 
-    then -.realVal;
+    then -. realVal;
 
     case(Absyn.INTEGER(value = intVal))
 
@@ -3026,7 +3024,7 @@ algorithm
 
     case(Absyn.UNARY(exp = Absyn.INTEGER(value = intVal)))
 
-    then -.intReal(intVal);
+    then -. intReal(intVal);
   end matchcontinue;
 
 end getValueFromExp;

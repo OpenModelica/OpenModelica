@@ -1579,7 +1579,7 @@ algorithm
       equation
         sv = realSin(rv);
         cv = realCos(rv);
-        rv_1 = sv/.cv;
+        rv_1 = sv/. cv;
       then
         Values.REAL(rv_1);
     case ("tanh",SOME("tanh"),{Values.REAL(real = rv)},_)
@@ -3248,7 +3248,7 @@ algorithm
         (cache,Values.REAL(rv),_) = ceval(cache,env, exp, impl, st, NONE, msg);
         sv = realSin(rv);
         cv = realCos(rv);
-        rv_1 = sv/.cv;
+        rv_1 = sv/. cv;
       then
         (cache,Values.REAL(rv_1),st);
   end matchcontinue;
@@ -3442,7 +3442,7 @@ algorithm
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rv_1 = rv1/.rv2;
+        rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,System.realCeil(rv_1),realFloor(rv_1));
       then
@@ -3452,7 +3452,7 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rv_1 = rv1/.rv2;
+        rv_1 = rv1/. rv2;
          b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,System.realCeil(rv_1),realFloor(rv_1));
       then
@@ -3462,7 +3462,7 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
-        rv_1 = rv1/.rv2;
+        rv_1 = rv1/. rv2;
         b = rv_1 <. 0.0;
         rv_2 = Util.if_(b,System.realCeil(rv_1),realFloor(rv_1));
       then
@@ -3536,9 +3536,9 @@ algorithm
       equation
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rva = rv1/.rv2;
+        rva = rv1/. rv2;
         rvb = realFloor(rva);
-        rvc = rvb*.rv2;
+        rvc = rvb*. rv2;
         rvd = rv1 -. rvc;
       then
         (cache,Values.REAL(rvd),st);
@@ -3547,9 +3547,9 @@ algorithm
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         rv1 = intReal(ri);
         (cache,Values.REAL(rv2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
-        rva = rv1/.rv2;
+        rva = rv1 /. rv2;
         rvb = realFloor(rva);
-        rvc = rvb*.rv2;
+        rvc = rvb *. rv2;
         rvd = rv1 -. rvc;
       then
         (cache,Values.REAL(rvd),st);
@@ -3558,9 +3558,9 @@ algorithm
         (cache,Values.REAL(rv1),_) = ceval(cache,env, exp1, impl, st, NONE, msg);
         (cache,Values.INTEGER(ri),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv2 = intReal(ri);
-        rva = rv1/.rv2;
+        rva = rv1 /. rv2;
         rvb = realFloor(rva);
-        rvc = rvb*.rv2;
+        rvc = rvb *. rv2;
         rvd = rv1 -. rvc;
       then
         (cache,Values.REAL(rvd),st);
@@ -3570,9 +3570,9 @@ algorithm
         (cache,Values.INTEGER(ri2),_) = ceval(cache,env, exp2, impl, st, NONE, msg);
         rv1 = intReal(ri1);
         rv2 = intReal(ri2);
-        rva = rv1/.rv2;
+        rva = rv1 /. rv2;
         rvb = realFloor(rva);
-        rvc = rvb*.rv2;
+        rvc = rvb *. rv2;
         rvd = rv1 -. rvc;
         ri_1 = realInt(rvd);
       then
@@ -5856,7 +5856,7 @@ algorithm
       equation
         (n < size) = false "Do NOT have splace to add array elt. Expand with factor 1.4" ;
         rsize = intReal(size);
-        rexpandsize = rsize*.0.4;
+        rexpandsize = rsize *. 0.4;
         expandsize = realInt(rexpandsize);
         expandsize_1 = intMax(expandsize, 1);
         newsize = expandsize_1 + size;

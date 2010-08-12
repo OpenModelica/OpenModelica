@@ -2033,7 +2033,7 @@ algorithm
         Builtin.isTan(path);
         v1 = realSin(getRealConst(e));
         v2 = realCos(getRealConst(e));
-        r = v1/.v2;
+        r = v1 /. v2;
       then 
         DAE.RCONST(r);
     
@@ -5626,47 +5626,49 @@ algorithm
     case (DAE.MUL(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
       local Real e3,e1,e2;
       equation
-        e3 = e1*.e2;
+        e3 = e1 *. e2;
       then
         DAE.RCONST(e3);
     case (DAE.MUL(ty = _),DAE.RCONST(real = e1),DAE.ICONST(integer = e2))
       local Real e3,e1;
       equation
          e2_1 = intReal(e2);
-        e3 = e1*.e2_1;
+        e3 = e1 *. e2_1;
       then
         DAE.RCONST(e3);
     case (DAE.MUL(ty = _),DAE.ICONST(integer = e1),DAE.RCONST(real = e2))
       local Real e3,e2;
       equation
         e1_1 = intReal(e1);
-        e3 = e1_1*.e2;
+        e3 = e1_1 *. e2;
       then
         DAE.RCONST(e3);
     case (DAE.DIV(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))
-     	local 	Exp val;
+     	local
+     	  Exp val;
       equation
 	   		val = safeIntOp(e1,e2,DIVOP);
       then
         val;
     case (DAE.DIV(ty = _),DAE.RCONST(real = e1),DAE.RCONST(real = e2))
-      local Real e3,e1,e2;
+      local
+        Real e3,e1,e2;
       equation
-        e3 = e1/.e2;
+        e3 = e1 /. e2;
       then
         DAE.RCONST(e3);
     case (DAE.DIV(ty = _),DAE.RCONST(real = e1),DAE.ICONST(integer = e2))
       local Real e3,e1;
       equation
         e2_1 = intReal(e2);
-        e3 = e1/.e2_1;
+        e3 = e1 /. e2_1;
       then
         DAE.RCONST(e3);
     case (DAE.DIV(ty = _),DAE.ICONST(integer = e1),DAE.RCONST(real = e2))
       local Real e3,e2;
       equation
         e1_1 = intReal(e1);
-        e3 = e1_1/.e2;
+        e3 = e1_1 /. e2;
       then
         DAE.RCONST(e3);
     case (DAE.POW(ty = _),DAE.ICONST(integer = e1),DAE.ICONST(integer = e2))

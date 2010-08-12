@@ -1361,7 +1361,7 @@ is\\n verbatim!
         //notPassedCnt = testTranslateTplFile("SimCodeC", false, true, notPassedCnt);
         
         
-        print("All tests took " +& realString(clock()-.tstart) +& " seconds.\n");        
+        print("All tests took " +& realString(clock() -. tstart) +& " seconds.\n");        
         str = Util.if_(notPassedCnt == 0, 
           "\n ***** All a) tests OK *****\n\n", 
           "\n #### " +& intString(notPassedCnt) +& " test" +& Util.if_(notPassedCnt > 1,"s","") +& " DID NOT passed ####\n\n");

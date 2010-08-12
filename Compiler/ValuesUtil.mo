@@ -1114,7 +1114,7 @@ algorithm
       list<Integer> dims;
     case (Values.REAL(real = r))
       equation
-        r_1 = -.r;
+        r_1 = -. r;
       then
         Values.REAL(r_1);
     case (Values.INTEGER(integer = i))
@@ -1208,7 +1208,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v1*.v2_1;
+        r1 = v1 *. v2_1;
         r2 = multScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1216,14 +1216,14 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v1_1*.v2;
+        r1 = v1_1 *. v2;
         r2 = multScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v1,v2;
       equation
-        r1 = v1*.v2;
+        r1 = v1 *. v2;
         r2 = multScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1264,7 +1264,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v1+.v2_1;
+        r1 = v1 +. v2_1;
         r2 = addScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1272,14 +1272,15 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v1_1+.v2;
+        r1 = v1_1 +. v2;
         r2 = addScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
-      local Real r1,v1,v2;
+      local
+        Real r1,v1,v2;
       equation
-        r1 = v1+.v2;
+        r1 = v1 +. v2;
         r2 = addScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1336,7 +1337,7 @@ algorithm
       equation
         v1_1 = intReal(v1);
         v2_1 = intReal(v2);
-        r1 = v1_1/.v2_1;
+        r1 = v1_1 /. v2_1;
         r2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1344,7 +1345,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v1/.v2_1;
+        r1 = v1 /. v2_1;
         r2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1352,14 +1353,14 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v1_1/.v2;
+        r1 = v1_1 /. v2;
         r2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v1,v2;
       equation
-        r1 = v1/.v2;
+        r1 = v1 /. v2;
         r2 = divScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1400,7 +1401,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v1-.v2_1;
+        r1 = v1 -. v2_1;
         r2 = subScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1408,14 +1409,14 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v1_1-.v2;
+        r1 = v1_1 -. v2;
         r2 = subScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v1,v2;
       equation
-        r1 = v1-.v2;
+        r1 = v1 -. v2;
         r2 = subScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1450,7 +1451,7 @@ algorithm
       equation
         v1_1=intReal(v1);
         v2_1=intReal(v2);
-        r1 = v1_1^.v2_1;
+        r1 = v1_1 ^. v2_1;
         r2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1458,7 +1459,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v1^.v2_1;
+        r1 = v1 ^. v2_1;
         r2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1466,14 +1467,14 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v1_1^.v2;
+        r1 = v1_1 ^. v2;
         r2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v1,v2;
       equation
-        r1 = v1^.v2;
+        r1 = v1 ^. v2;
         r2 = powScalarArrayelt(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1514,7 +1515,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v2_1-.v1;
+        r1 = v2_1 -. v1;
         r2 = subArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1522,14 +1523,14 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v2-.v1_1;
+        r1 = v2 -. v1_1;
         r2 = subArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v1,v2;
       equation
-        r1 = v2-.v1;
+        r1 = v2 -. v1;
         r2 = subArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1564,7 +1565,7 @@ algorithm
       equation
         v1_1=intReal(v1);
         v2_1=intReal(v2);
-        r1 = v2_1^.v1_1;
+        r1 = v2_1 ^. v1_1;
         r2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1572,7 +1573,7 @@ algorithm
       local Real r1,v1;
       equation
         v2_1 = intReal(v2);
-        r1 = v2_1^.v1;
+        r1 = v2_1 ^. v1;
         r2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1580,14 +1581,14 @@ algorithm
       local Real r1,v2;
       equation
         v1_1 = intReal(v1);
-        r1 = v2^.v1_1;
+        r1 = v2 ^. v1_1;
         r2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v1,v2;
       equation
-        r1 = v2^.v1;
+        r1 = v2 ^. v1;
         r2 = powArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1626,7 +1627,7 @@ algorithm
     case ((Values.REAL(real = v1) :: (v1lst as (_ :: _))),(Values.REAL(real = v2) :: (v2lst as (_ :: _))))
       local Real r1,r2,res,v1,v2;
       equation
-        r1 = v1*.v2;
+        r1 = v1 *. v2;
         Values.REAL(r2) = multScalarProduct(v1lst, v2lst);
         res = r1 +. r2;
       then
@@ -1634,7 +1635,7 @@ algorithm
     case ({Values.REAL(real = v1)},{Values.REAL(real = v2)})
       local Real res,v1,v2;
       equation
-        res = v1*.v2;
+        res = v1 *. v2;
       then
         Values.REAL(res);
     case ((Values.ARRAY(valueLst = v2lst) :: rest),(vlst as (Values.INTEGER(integer = _) :: _)))
@@ -1800,7 +1801,7 @@ algorithm
       local Real r1;
       equation
         v2_1 = intReal(v2);
-        r1 = v2_1/.v1;
+        r1 = v2_1 /. v1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
@@ -1810,14 +1811,14 @@ algorithm
         Integer v1;
       equation
         v1_1 = intReal(v1);
-        r1 = v2/.v1_1;
+        r1 = v2 /. v1_1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);
     case ((sval as Values.REAL(real = v1)),(Values.REAL(real = v2) :: rest))
       local Real r1,v2;
       equation
-        r1 = v2/.v1;
+        r1 = v2 /. v1;
         r2 = divArrayeltScalar(sval, rest);
       then
         (Values.REAL(r1) :: r2);

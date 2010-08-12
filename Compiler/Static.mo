@@ -1886,7 +1886,7 @@ algorithm
         (cache,Values.REAL(stepv),_) = Ceval.ceval(cache,env, step, impl, NONE, NONE, Ceval.MSG());
         (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
         n = stopv -. startv;
-        n_1 = n/.stepv;
+        n_1 = n /. stepv;
         n_3 = realFloor(n_1);
         n_4 = realInt(n_3);
         n_2 = n_4 + 1;

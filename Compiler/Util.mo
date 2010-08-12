@@ -134,7 +134,7 @@ public function isRealGreater "Author: BZ"
 input Real lhs;
 input Real rhs;
 output Boolean b;
-algorithm b := lhs>.rhs;
+algorithm b := lhs>. rhs;
 end isRealGreater;
 
 protected function merge "help function to sort, merges two sorted lists"
