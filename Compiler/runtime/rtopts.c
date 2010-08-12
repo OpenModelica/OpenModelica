@@ -61,7 +61,7 @@ int simulation_cg;
 int silent;
 char* simulation_code_target = "gcc";
 char* class_to_instantiate = "";
-int vectorization_limit;
+long vectorization_limit;
 
 /*
  * adrpo 2007-06-11
@@ -257,6 +257,16 @@ int check_debug_flag(char const* strdata)
   }
 
   return flg;
+}
+
+void set_vectorization_limit(long limit)
+{
+  if(limit < 0) {
+    vectorization_limit = 20;
+    fprintf(stderr, "Warning, invalid vectorization limit (using default limit %ld\n", vectorization_limit);
+  } else {
+    vectorization_limit = limit;
+  }
 }
 
 #define VERSION_OPT1        "++v"
@@ -457,11 +467,7 @@ RML_BEGIN_LABEL(RTOpts__args)
           fprintf(stderr, "# Flag Usage:  +v=<vectorization limit>");
           RML_TAILCALLK(rmlFC); /* fail */
         }
-        vectorization_limit = (int)atoi(&arg[3]);
-        if (vectorization_limit < 0) {
-          vectorization_limit = 20;
-          fprintf(stderr, "Warning, invalid vectorization limit (using default limit %ld\n", vectorization_limit);
-        }
+        set_vectorization_limit(atol(&arg[3]));
         break;
       default:
         fprintf(stderr, "# Unknown option: %s\n", arg);
@@ -691,6 +697,14 @@ RML_END_LABEL
 RML_BEGIN_LABEL(RTOpts__vectorizationLimit)
 {
   rmlA0 = mk_icon(vectorization_limit);
+	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setVectorizationLimit)
+{
+  long limit = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  set_vectorization_limit(limit);
 	RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

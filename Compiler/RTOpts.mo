@@ -198,8 +198,17 @@ public function setNoSimplify
 end setNoSimplify;
 
 public function vectorizationLimit
+  "Returns the vectorization limit that is used to determine how large an array
+  can be before it no longer is expanded by Static.crefVectorize."
   output Integer limit;
+  external "C";
 end vectorizationLimit;
+
+public function setVectorizationLimit
+  "Sets the vectorization limit, see vectorizationLimit above."
+  input Integer limit;
+  external "C";
+end setVectorizationLimit;
 
 end RTOpts;
 

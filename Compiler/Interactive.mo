@@ -1665,6 +1665,23 @@ algorithm
       then
         (top_names_str,newst);
 
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setVectorizationLimit"),
+      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.INTEGER(value = limit)},
+        argNames = {})))}), st)
+      local
+        Integer limit;
+        Boolean res;
+      equation
+        RTOpts.setVectorizationLimit(limit);
+      then
+        ("true", st); 
+    
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setVectorizationLimit")))}),st)
+      then
+        ("false", st);
+
   end matchcontinue;
 end evaluateGraphicalApi2;
 
