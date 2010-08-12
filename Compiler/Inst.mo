@@ -12164,7 +12164,9 @@ algorithm
         (i <= sz) = true;
         ae1 = DAE.ICONST(i);
         e1_1 = Exp.simplify(DAE.ASUB(e1,{ae1}));
+        e1_1 = Exp.unliftExp(e1_1);
         e2_1 = Exp.simplify(DAE.ASUB(e2,{ae1}));
+        e2_1 = Exp.unliftExp(e2_1);
         dae1 = instEqEquation2(e1_1, e2_1, t, source, initial_);
         i_1 = i + 1;
         dae2 = instArrayElEq(e1, e2, t, i_1, sz, source, initial_);

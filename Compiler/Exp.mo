@@ -5185,6 +5185,40 @@ algorithm
   end matchcontinue;
 end unliftArray;
 
+public function unliftExp
+  input Exp inExp;
+  output Exp outExp;
+algorithm
+  outExp := matchcontinue(inExp)
+    local
+      Type ty;
+    case DAE.CREF(componentRef = cr, ty = ty)
+      local 
+        DAE.ComponentRef cr;
+      equation
+        ty = unliftArray(ty);
+      then
+        DAE.CREF(cr, ty);
+    case DAE.ARRAY(ty = ty, scalar = s, array = a)
+      local
+        Boolean s;
+        list<Exp> a;
+      equation
+        ty = unliftArray(ty);
+      then
+        DAE.ARRAY(ty, s, a);
+    case DAE.MATRIX(ty = ty, integer = i, scalar = s)
+      local
+        Integer i;
+        list<list<tuple<Exp, Boolean>>> s;
+      equation
+        ty = unliftArray(ty);
+      then
+        DAE.MATRIX(ty, i, s);
+    case (_) then inExp;
+  end matchcontinue;
+end unliftExp;
+
 public function isWholeDim ""
   input DAE.Subscript s;
   output Boolean b;
