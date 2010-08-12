@@ -30,6 +30,21 @@
 
 header {
 
+#define EAT_METAMODELICA_REAL_OP(void) { \
+char la1 = LA(1); \
+char la2 = LA(2); \
+if (la1=='.'&&(la2==' '||la2=='\t'||la2=='\n'||la2=='\r')) \
+  match("."); \
+}
+#define EAT_METAMODELICA_REAL_OR_STRING_OP(void) { \
+char la1 = LA(1); \
+char la2 = LA(2); \
+if (la1=='&') \
+  match("&"); \
+else if (la1=='.'&&(la2==' '||la2=='\t'||la2=='\n'||la2=='\r')) \
+  match("."); \
+}
+
 }
 
 options {
@@ -153,15 +168,15 @@ RBRACK		: ']'	;
 LBRACE		: '{'	;
 RBRACE		: '}'	;
 COLON		: ':' ( (':' { $setType(COLONCOLON);}) | ('='{$setType(ASSIGN);}) )?;
-PLUS		: '+'('.'|'&')? ;
-MINUS		: '-'('.')? ;
-STAR		: '*'('.')? ;
+PLUS		: "+"{EAT_METAMODELICA_REAL_OR_STRING_OP();};
+MINUS		: '-'{EAT_METAMODELICA_REAL_OP();};
+STAR		: '*'{EAT_METAMODELICA_REAL_OP();};
 COMMA		: ',';
-LESS		: '<' ( ('.' {$setType(LESS);})|('='('.')? {$setType(LESSEQ);})|('>'('.')? {$setType(LESSGT);}) )? ;
-GREATER		: '>' ( ('.' {$setType(GREATER);})|('='('.')? {$setType(GREATEREQ);}) )? ;
-EQUALS		: '=' ('='(('.')|('&'))? {$setType(EQEQ);} )?;
+LESS		: '<' ( ('=' {$setType(LESSEQ);})|('>' {$setType(LESSGT);}) )? {EAT_METAMODELICA_REAL_OP();};
+GREATER : '>' ('=' {$setType(GREATEREQ);})? {EAT_METAMODELICA_REAL_OP();};
+EQUALS		: '=' ('=' {$setType(EQEQ); EAT_METAMODELICA_REAL_OR_STRING_OP();} )?;
 SEMICOLON	: ';' ;
-POWER		: '^'('.')? ;
+POWER		: '^' {EAT_METAMODELICA_REAL_OP();};
 /* MetaModelica operators */
 MOD         : '%'   ;
 
@@ -173,11 +188,10 @@ WS :
 	{ $setType(antlr::Token::SKIP); }
 	;
 
-SLASH : '/' {$setType(SLASH);}
-        ( '.' {$setType(SLASH);}
-        | '/' ( ~('\r'|'\n') )* {$setType(antlr::Token::SKIP);}
+SLASH : '/' {$setType(SLASH); EAT_METAMODELICA_REAL_OP();}
+        ( '/' ( ~('\r'|'\n') )* {$setType(antlr::Token::SKIP);}
 		| '*' ( options { generateAmbigWarnings=false; } : ML_COMMENT_CHAR | {LA(2)!='/'}? '*')* '*''/' {$setType(antlr::Token::SKIP);}
-		)?        
+		)?
 		;
 
 protected
