@@ -1018,7 +1018,6 @@ algorithm
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
     case (DAE.VAR(componentRef = id,
-                  kind = DAE.VARIABLE(),
                   ty = daeType,
                   binding = binding,
                   dims = inst_dims
