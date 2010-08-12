@@ -1682,6 +1682,15 @@ algorithm
       then
         ("false", st);
 
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getVectorizationLimit")))}),st)
+      local
+        Integer limit;
+      equation
+        limit = RTOpts.vectorizationLimit();
+        resstr = intString(limit);
+      then
+        (resstr, st);
   end matchcontinue;
 end evaluateGraphicalApi2;
 
