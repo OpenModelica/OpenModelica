@@ -217,6 +217,7 @@ public constant ErrorID HIGHER_VARIABILITY_BINDING=129;
 public constant ErrorID STRUCT_SINGULAR_EQUATION=130;
 public constant ErrorID IF_EQUATION_WARNING=131;
 public constant ErrorID IF_EQUATION_UNBALANCED_2=132;
+public constant ErrorID EQUATION_GENERIC_FAILURE=133;
 
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
@@ -562,7 +563,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (MATCH_SHADOWING, TRANSLATION(),ERROR(), " Local variable '%s' shadows input or result variables in a {match,matchcontinue} expression."),
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
-          (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring%s")
+          (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring%s"),
+          (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s")
           
           };
 

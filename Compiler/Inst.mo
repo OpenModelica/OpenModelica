@@ -11469,9 +11469,10 @@ algorithm
                
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph) 
       equation 
-        true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- instEquationCommon failed for eqn: ");
         s = SCode.equationStr(eqn);
+        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(eqn));
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "- instEquationCommon failed for eqn: ");        
         Debug.fprint("failtrace", s +& " in scope:" +& Env.getScopeName(env) +& "\n");
       then
         fail();
@@ -11744,7 +11745,7 @@ algorithm
         t2_str = Types.unparseType(t2);
         s1 = Util.stringAppendList({e1_str,"=",e2_str});
         s2 = Util.stringAppendList({t1_str,"=",t2_str});
-        Error.addMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2});
+        Error.addSourceMessage(Error.EQUATION_TYPE_MISMATCH_ERROR, {s1,s2}, DAEUtil.getElementSourceFileInfo(source));
         Debug.fprintln("failtrace", "- Inst.instEqEquation failed with type mismatch in equation: " +& s1 +& " tys: " +& s2);
       then
         fail();        

@@ -2623,5 +2623,22 @@ algorithm
   end matchcontinue;
 end findIteratorInElseIfBranch;
 
+public function equationFileInfo
+  input EEquation eq;
+  output Absyn.Info info;
+algorithm
+  info := matchcontinue eq
+    case EQ_IF(info=info) then info;
+    case EQ_EQUALS(info=info) then info;
+    case EQ_CONNECT(info=info) then info;
+    case EQ_FOR(info=info) then info;
+    case EQ_WHEN(info=info) then info;
+    case EQ_ASSERT(info=info) then info;
+    case EQ_TERMINATE(info=info) then info;
+    case EQ_REINIT(info=info) then info;
+    case EQ_NORETCALL(info=info) then info;
+  end matchcontinue;
+end equationFileInfo;
+
 end SCode;
 
