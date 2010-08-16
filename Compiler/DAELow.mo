@@ -16615,12 +16615,11 @@ algorithm
 end crefPrefixDer;
 
 public function makeDerCref
-  "Appends $DER to a cref and constructs a DAE.CREF from the resulting cref."
+  "Appends $DER to a cref and constructs a DAE.CREF_QUAL from the resulting cref."
   input DAE.ComponentRef inCref;
-  output DAE.Exp outCref;
+  output DAE.ComponentRef outCref;
 algorithm
-  outCref := DAE.CREF(DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, inCref),
-      DAE.ET_REAL());
+  outCref := DAE.CREF_QUAL("$DER", DAE.ET_REAL(), {}, inCref);
 end makeDerCref;
 
 public function equationSource "Retrieve the source from a DAELow equation"

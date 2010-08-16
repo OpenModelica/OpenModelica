@@ -303,7 +303,7 @@ uniontype SimEqSystem
     DAE.Exp exp;
   end SES_RESIDUAL;
   record SES_SIMPLE_ASSIGN
-    DAE.Exp cref;
+    DAE.ComponentRef cref;
     DAE.Exp exp;
   end SES_SIMPLE_ASSIGN;
   record SES_ARRAY_CALL_ASSIGN
@@ -2222,7 +2222,7 @@ algorithm
         varexp = DAE.CREF(cr,DAE.ET_REAL());
         exp_ = solve(e1, e2, varexp);
       then
-        SES_SIMPLE_ASSIGN(varexp, exp_);
+        SES_SIMPLE_ASSIGN(cr, exp_);
     /* single equation: state */
     case (eqNum,
           DAELow.DAELOW(orderedVars=vars, orderedEqs=eqns),
@@ -2230,10 +2230,10 @@ algorithm
       equation
         (DAELow.EQUATION(e1, e2,_), v as DAELow.VAR(varName = cr, varKind = DAELow.STATE()))
           = getEquationAndSolvedVar(eqNum, eqns, vars, ass2);
-        varexp = DAELow.makeDerCref(cr);
-        exp_ = solve(e1, e2, varexp);
+        cr = DAELow.makeDerCref(cr);
+        exp_ = solve(e1, e2, DAE.CREF(cr,DAE.ET_REAL()));
       then
-        SES_SIMPLE_ASSIGN(varexp, exp_);
+        SES_SIMPLE_ASSIGN(cr, exp_);
     /* non-state non-linear */
     case (e,
           DAELow.DAELOW(orderedVars=vars,orderedEqs=eqns,arrayEqs=ae),
@@ -2765,7 +2765,7 @@ algorithm
         expr = solve(e1, e2, varexp);
         restEqs = extractDiscEqs(eqns, vs);
       then
-        SES_SIMPLE_ASSIGN(varexp, expr) :: restEqs;
+        SES_SIMPLE_ASSIGN(cr, expr) :: restEqs;
   end matchcontinue;
 end extractDiscEqs;
 
@@ -3041,9 +3041,9 @@ algorithm
                     expLst = {DAE.CREF(componentRef = cr)}),
            NONE()))
       equation
-        cref_exp = DAELow.makeDerCref(cr);
+        cr = DAELow.makeDerCref(cr);
       then
-        ((cref_exp, NONE()));
+        ((DAE.CREF(cr,DAE.ET_REAL()), NONE()));
     case (_) then inExp;
   end matchcontinue;
 end replaceDerOpInExpTraverser;
@@ -3939,7 +3939,7 @@ algorithm
       DAE.ComponentRef cr;
       DAE.Exp exp_;
     case (DAELow.SOLVED_EQUATION(cr, exp_, _))
-      then SES_SIMPLE_ASSIGN(DAE.CREF(cr, DAE.ET_REAL()), exp_);
+      then SES_SIMPLE_ASSIGN(cr, exp_);
     case (DAELow.RESIDUAL_EQUATION(exp_, _))
       then SES_RESIDUAL(exp_);
   end matchcontinue;
@@ -7204,11 +7204,11 @@ algorithm
         (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
       then
         (SES_RESIDUAL(e),divLst);      
-    case (SES_SIMPLE_ASSIGN(cref = e2, exp = e),inDlowMode)
+    case (SES_SIMPLE_ASSIGN(cref = cr, exp = e),inDlowMode)
       equation
         (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);
       then
-        (SES_SIMPLE_ASSIGN(e2, e),divLst);      
+        (SES_SIMPLE_ASSIGN(cr, e),divLst);      
     case (SES_ARRAY_CALL_ASSIGN(componentRef = cr, exp = e),inDlowMode)
       equation
         (e,divLst) = DAELow.addDivExpErrorMsgtoExp(e,inDlowMode);

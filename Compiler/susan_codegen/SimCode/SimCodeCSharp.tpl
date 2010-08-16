@@ -595,7 +595,7 @@ public override void InitialFun()
   //if (sim_verbose) {
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
     <<
-    //Debug.WriteLine("Setting variable start value: {0}(start={1})", "<%expCref(cref, simCode)%>", <%expCref(cref, simCode)%>);
+    //Debug.WriteLine("Setting variable start value: {0}(start={1})", "<%cref(cref, simCode)%>", <%cref(cref, simCode)%>);
     >> ;separator="\n"%>
   //}
 }
@@ -703,7 +703,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let expPart = daeExpToReal(exp, context, &preExp, simCode)
   <<
   <%preExp%>
-  <%expCref(cref, simCode)%> = <%expPart%>;
+  <%cref(cref, simCode)%> = <%expPart%>;
   >>
 case SES_LINEAR(__) then
   let uid = System.tmpTick()
@@ -739,23 +739,23 @@ case SES_MIXED(__) then
     discEqs |> discEq as SES_SIMPLE_ASSIGN(__) indexedby i0 =>
         <<
         double discrete_loc2_<%i0%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
-        <%expCref(discEq.cref, simCode)%> = discrete_loc2_<%i0%>;
+        <%cref(discEq.cref, simCode)%> = discrete_loc2_<%i0%>;
         >>
         ;separator="\n"
   	/*
   	match discEqs
     case { discEq as SES_SIMPLE_ASSIGN(__) } then
       <<
-      <%expCref(discEq.cref, simCode)%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
-      double discrete_loc2_0 = <%expCref(discEq.cref, simCode)%>;
+      <%cref(discEq.cref, simCode)%> = <%daeExpToReal(discEq.exp, context, &preDisc, simCode)%>;
+      double discrete_loc2_0 = <%cref(discEq.cref, simCode)%>;
       >>
   	case discEqs then
       <<
       var discrete_loc2 = new double[<%numDiscVarsStr%>];
       <%discEqs |> discEq as SES_SIMPLE_ASSIGN(__) indexedby i0 =>
         <<
-        <%expCref(discEq.cref, simCode)%> = <%daeExpToReal(exp, context, &preDisc, simCode)%>;
-        discrete_loc2[<%i0%>] = <%expCref(discEq.cref, simCode)%>;
+        <%cref(discEq.cref, simCode)%> = <%daeExpToReal(exp, context, &preDisc, simCode)%>;
+        discrete_loc2[<%i0%>] = <%cref(discEq.cref, simCode)%>;
         >>
         ;separator="\n"%>
       >>
@@ -873,15 +873,6 @@ template contextCref(ComponentRef cr, Context context, SimCode simCode)
   case FUNCTION_CONTEXT(__) then crefStr(cr, simCode)
   else cref(cr, simCode)
 end contextCref;
-
-template expCref(DAE.Exp ecr, SimCode simCode)
-::=
-  match ecr
-  case CREF(__) then cref(componentRef, simCode)
-  case CALL(path = IDENT(name = "der"), expLst = { CREF(componentRef = cr)}) then
-    derCref(cr, simCode)
-  else "ERROR_NOT_A_CREF"
-end expCref;
 
 template crefStr(ComponentRef cr, SimCode simCode)
  "Generates the name of a variable for variable name array."
@@ -1610,6 +1601,13 @@ template daeExpArray(ExpType ty, Boolean scalar, list<Exp> array, Context contex
 	  let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(ty)%>1(<%listLength(array)%>,-1,new[]{<%params%>});<%\n%>'
 	  arrayVar
 end daeExpArray;
+
+
+template daeExpMatrix(Exp exp, Context context, Text &preExp, SimCode simCode)
+::= <<
+ERROR_DAE_EXP_MATRIX_NOT_YET_IMPLEMENTED
+>>
+end daeExpMatrix;
 
 
 template daeExpCast(Exp cexp, Context context, Text &preExp, SimCode simCode)

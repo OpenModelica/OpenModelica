@@ -3987,12 +3987,12 @@ algorithm
            SimCode.SES_SIMPLE_ASSIGN(cref = i_cref) :: rest )
       local
         list<SimCode.SimEqSystem> rest;
-        DAE.Exp i_cref;
+        DAE.ComponentRef i_cref;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("if (sim_verbose) { printf(\"Setting variable start value: %s(start=%f)\\n\", \""));
-        txt = expCref(txt, i_cref);
+        txt = cref(txt, i_cref);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("\", "));
-        txt = expCref(txt, i_cref);
+        txt = cref(txt, i_cref);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("); }"));
         txt = Tpl.nextIter(txt);
         txt = lm_99(txt, rest);
@@ -5053,7 +5053,7 @@ algorithm
            i_context,
            i_varDecls )
       local
-        DAE.Exp i_cref;
+        DAE.ComponentRef i_cref;
         DAE.Exp i_exp;
         Tpl.Text i_expPart;
         Tpl.Text i_preExp;
@@ -5062,7 +5062,7 @@ algorithm
         (i_expPart, i_preExp, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preExp, i_varDecls);
         txt = Tpl.writeText(txt, i_preExp);
         txt = Tpl.softNewLine(txt);
-        txt = expCref(txt, i_cref);
+        txt = cref(txt, i_cref);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = Tpl.writeText(txt, i_expPart);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
@@ -5536,14 +5536,14 @@ algorithm
            i_context )
       local
         list<SimCode.SimEqSystem> rest;
-        DAE.Exp i_cref;
+        DAE.ComponentRef i_cref;
         DAE.Exp i_exp;
         Integer i_i0;
         Tpl.Text i_expPart;
       equation
         i_i0 = Tpl.getIteri_i0(txt);
         (i_expPart, i_preDisc, i_varDecls) = daeExp(emptyTxt, i_exp, i_context, i_preDisc, i_varDecls);
-        txt = expCref(txt, i_cref);
+        txt = cref(txt, i_cref);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" = "));
         txt = Tpl.writeText(txt, i_expPart);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
@@ -5552,7 +5552,7 @@ algorithm
                                 }, false));
         txt = Tpl.writeStr(txt, intString(i_i0));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = "));
-        txt = expCref(txt, i_cref);
+        txt = cref(txt, i_cref);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
         (txt, i_varDecls, i_preDisc) = lm_134(txt, rest, i_varDecls, i_preDisc, i_context);

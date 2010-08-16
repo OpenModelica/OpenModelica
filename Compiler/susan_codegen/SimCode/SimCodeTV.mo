@@ -119,7 +119,7 @@ package SimCode
       DAE.Exp exp;
     end SES_RESIDUAL;
     record SES_SIMPLE_ASSIGN
-      DAE.Exp cref; //ppriv: should be DAE.ComponentRef
+      DAE.ComponentRef cref;
       DAE.Exp exp;
     end SES_SIMPLE_ASSIGN;
     record SES_ARRAY_CALL_ASSIGN

@@ -1225,7 +1225,7 @@ template functionInitial(list<SimEqSystem> initialEquations)
     <%eqPart%>
   
     <%initialEquations |> SES_SIMPLE_ASSIGN(__) =>
-      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%expCref(cref)%>", <%expCref(cref)%>); }'
+      'if (sim_verbose) { printf("Setting variable start value: %s(start=%f)\n", "<%cref(cref)%>", <%cref(cref)%>); }'
     ;separator="\n"%>
   
     return 0;
@@ -1356,6 +1356,7 @@ end functionCheckForDiscreteVarChanges;
 template zeroCrossingsTpl(list<ZeroCrossing> zeroCrossings, Text &varDecls /*BUFP*/)
  "Generates code for zero crossings."
 ::=
+
   (zeroCrossings |> ZERO_CROSSING(__) indexedby i0 =>
     zeroCrossingTpl(i0, relation_, &varDecls /*BUFC*/)
   ;separator="\n")
@@ -1469,7 +1470,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  <%expCref(cref)%> = <%expPart%>;
+  <%cref(cref)%> = <%expPart%>;
   >>
 end equationSimpleAssign;
 
@@ -1541,8 +1542,8 @@ case SES_MIXED(__) then
   let discLoc2 = (discEqs |> SES_SIMPLE_ASSIGN(__) indexedby i0 =>
       let expPart = daeExp(exp, context, &preDisc /*BUFC*/, &varDecls /*BUFC*/)
       <<
-      <%expCref(cref)%> = <%expPart%>;
-      discrete_loc2[<%i0%>] = <%expCref(cref)%>;
+      <%cref(cref)%> = <%expPart%>;
+      discrete_loc2[<%i0%>] = <%cref(cref)%>;
       >>
     ;separator="\n")
   <<
