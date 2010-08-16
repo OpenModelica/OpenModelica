@@ -5452,6 +5452,11 @@ algorithm
 		    inputs = statesAndVarsExp(e, vars);
 		  then
 		    (inputs, {});
+		case(_, _)
+		  equation
+		    Debug.fprintln("failtrace", "- DAELow.lowerStatementInputsOutputs failed\n");
+		  then 
+		    fail();
   end matchcontinue;
 end lowerStatementInputsOutputs;
 

@@ -2938,16 +2938,43 @@ case STMT_ASSIGN_ARR(exp=e, componentRef=cr, type_=t) then
   if ispec then
     <<
     <%preExp%>
-    indexed_assign_<%expTypeArray(t)%>(&<%expPart%>, &<%arrayCrefStr(cr)%>, &<%ispec%>);
+    <%indexedAssign(t, expPart, cr, ispec, context, &varDecls)%>
     >>
   else
     <<
     <%preExp%>
-    copy_<%expTypeArray(t)%>_data(&<%expPart%>, &<%arrayCrefStr(cr)%>);
+    <%copyArrayData(t, expPart, cr, context)%>
     >>
 end algStmtAssignArr;
 
+template indexedAssign(DAE.ExpType ty, String exp, DAE.ComponentRef cr, 
+  String ispec, Context context, Text &varDecls)
+::=
+  let type = expTypeArray(ty)
+  let cref = contextArrayCref(cr, context)
+  match context
+  case FUNCTION_CONTEXT(__) then
+    'indexed_assign_<%type%>(&<%exp%>, &<%cref%>, &<%ispec%>);'
+  else
+    let tmp = tempDecl("real_array", &varDecls)
+    <<
+    indexed_assign_<%type%>(&<%exp%>, &<%tmp%>, &<%ispec%>);
+    copy_<%type%>_data_mem(&<%tmp%>, &<%cref%>);
+    >>
+end indexedAssign;
 
+template copyArrayData(DAE.ExpType ty, String exp, DAE.ComponentRef cr,
+  Context context)
+::=
+  let type = expTypeArray(ty)
+  let cref = contextArrayCref(cr, context)
+  match context
+  case FUNCTION_CONTEXT(__) then
+    'copy_<%type%>_data(&<%exp%>, &<%cref%>);'
+  else
+    'copy_<%type%>_data_mem(&<%exp%>, &<%cref%>);'
+end copyArrayData;
+    
 template algStmtTupleAssign(DAE.Statement stmt, Context context,
                    Text &varDecls /*BUFP*/)
  "Generates a tuple assigment algorithm statement."

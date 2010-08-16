@@ -241,10 +241,12 @@ algorithm
         DAE.STMT_ASSIGN(t,e1,rhs_1);
       */
     case (DAE.CREF(componentRef = c,ty = crt),lhprop,rhs,rhprop,source)
+      local DAE.Type ty;
       equation
         (rhs_1,_) = Types.matchProp(rhs, rhprop, lhprop, false /* Don't duplicate errors */);
         true = Types.isPropArray(lhprop);
-        t = getPropExpType(lhprop);
+        ty = Types.getPropType(lhprop);
+        t = Types.elabType(ty);
       then
         DAE.STMT_ASSIGN_ARR(t,c,rhs_1,source);
 
