@@ -307,14 +307,14 @@ template globalDataVarDefine(SimVar simVar, String arrayName)
  "Generates a define statement for a varable in the global data section."
 ::=
   match simVar
-  case s as SIMVAR(arrayCref=SOME(c)) then
+  case SIMVAR(arrayCref=SOME(c)) then
     <<
     #define <%cref(c)%> localData-><%arrayName%>[<%index%>]
-    #define <%simVarStr(s)%> localData-><%arrayName%>[<%index%>]
+    #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     >>
-  case s as SIMVAR(__) then
+  case SIMVAR(__) then
     <<
-    #define <%simVarStr(s)%> localData-><%arrayName%>[<%index%>]
+    #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
     >>
 end globalDataVarDefine;
 
@@ -356,17 +356,17 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   const char* getName(double* ptr)
   {
-    <%vars.stateVars |> s as SIMVAR(__) =>
-      'if (&<%simVarStr(s)%> == ptr) return state_names[<%index%>];'
+    <%vars.stateVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return state_names[<%index%>];'
     ;separator="\n"%>
-    <%vars.derivativeVars |> s as SIMVAR(__) =>
-      'if (&<%simVarStr(s)%> == ptr) return derivative_names[<%index%>];'
+    <%vars.derivativeVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return derivative_names[<%index%>];'
     ;separator="\n"%>
-    <%vars.algVars |> s as SIMVAR(__) =>
-      'if (&<%simVarStr(s)%> == ptr) return algvars_names[<%index%>];'
+    <%vars.algVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return algvars_names[<%index%>];'
     ;separator="\n"%>
-    <%vars.paramVars |> s as SIMVAR(__) =>
-      'if (&<%simVarStr(s)%> == ptr) return param_names[<%index%>];'
+    <%vars.paramVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return param_names[<%index%>];'
     ;separator="\n"%>
     return "";
   }
@@ -831,8 +831,8 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   int input_function()
   {
-    <%vars.inputVars |> s as SIMVAR(__) indexedby i0 =>
-      '<%simVarStr(s)%> = localData->inputVars[<%i0%>];'
+    <%vars.inputVars |> SIMVAR(__) indexedby i0 =>
+      '<%cref(name)%> = localData->inputVars[<%i0%>];'
     ;separator="\n"%>
     return 0;
   }
@@ -848,8 +848,8 @@ case MODELINFO(vars=SIMVARS(__)) then
   <<
   int output_function()
   {
-    <%vars.outputVars |> s as SIMVAR(__) indexedby i0 =>
-      'localData->outputVars[<%i0%>] = <%simVarStr(s)%>;'
+    <%vars.outputVars |> SIMVAR(__) indexedby i0 =>
+      'localData->outputVars[<%i0%>] = <%cref(name)%>;'
     ;separator="\n"%>
     return 0;
   }
@@ -955,7 +955,7 @@ template functionHandleZeroCrossing(list<list<SimVar>> zeroCrossingsNeedSave)
       <%zeroCrossingsNeedSave |> vars indexedby i0 =>
         <<
         case <%i0%>:
-          <%vars |> s as SIMVAR(__) => 'save(<%simVarStr(s)%>);' ;separator="\n"%>
+          <%vars |> SIMVAR(__) => 'save(<%cref(name)%>);' ;separator="\n"%>
           break;
         >>
       ;separator="\n"%>
@@ -1524,7 +1524,7 @@ case SES_LINEAR(__) then
      '<%preExp%>set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
   ;separator="\n"%>
   solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
-  <%vars |> s as SIMVAR(__) indexedby i0 => '<%simVarStr(s)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
+  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
   >>
 end equationLinear;
 
@@ -1549,14 +1549,14 @@ case SES_MIXED(__) then
   mixed_equation_system(<%numDiscVarsStr%>);
   double values[<%valuesLenStr%>] = {<%values ;separator=", "%>};
   int value_dims[<%numDiscVarsStr%>] = {<%value_dims ;separator=", "%>};
-  <%discVars |> var as SIMVAR(__) indexedby i0 => 'discrete_loc[<%i0%>] = <%simVarStr(var)%>;' ;separator="\n"%>
+  <%discVars |> SIMVAR(__) indexedby i0 => 'discrete_loc[<%i0%>] = <%cref(name)%>;' ;separator="\n"%>
   {
     <%contEqs%>
   }
   <%preDisc%>
   <%discLoc2%>
   {
-    double *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> var as SIMVAR(__) => '&<%simVarStr(var)%>' ;separator=", "%>};
+    double *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '&<%cref(name)%>' ;separator=", "%>};
     check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
   }
   mixed_equation_system_end(<%numDiscVarsStr%>);
@@ -1840,19 +1840,6 @@ template subscriptStr(Subscript subscript)
   case WHOLEDIM(__) then "WHOLEDIM"
   else "UNKNOWN_SUBSCRIPT"
 end subscriptStr;
- 
-template simVarStr(SimVar simVar)
-::=
-  match simVar
-  case SIMVAR(__) then '<%varKindStr(varKind)%><%cref(name)%>'
-end simVarStr;
-
-template varKindStr(DAELow.VarKind varKind)
-::=
-  match varKind
-  case STATE_DER(__) then ''//'$DER'
-  else ''
-end varKindStr;
 
 template expCref(DAE.Exp ecr)
 ::=
@@ -1877,6 +1864,7 @@ template dotPath(Path path)
 ::=
   match path
   case QUALIFIED(__)      then '<%name%>.<%dotPath(path)%>'
+
   case IDENT(__)          then name
   case FULLYQUALIFIED(__) then dotPath(path)
 end dotPath;
