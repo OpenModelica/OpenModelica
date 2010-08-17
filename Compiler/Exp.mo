@@ -10039,7 +10039,7 @@ algorithm
         false = expContains(lhs, crexp);
         res_1 = simplify1(lhs);
       then
-        res_1;
+        res_1;    
 
     // solving linear equation system using newton iteration ( converges directly )
     case (lhs,rhs,(cr as DAE.CREF(componentRef = _)))
@@ -10107,9 +10107,11 @@ algorithm
     local
       Exp lhs,lhsder,lhsder_1,lhszero,lhszero_1,rhs,rhs_1,e1,e2,crexp;
       ComponentRef cr;
+    
     // e1 e2 e3 
     case (e1,e2,(crexp as DAE.CREF(componentRef = cr)))
       equation
+        false = hasOnlyFactors(e1,e2);
         lhs = DAE.BINARY(e1,DAE.SUB(DAE.ET_REAL()),e2);
         lhsder = Derive.differentiateExpCont(lhs, cr);
         lhsder_1 = simplify(lhsder);
@@ -10169,6 +10171,32 @@ algorithm
         fail();
   end matchcontinue;
 end solve2;
+
+protected function hasOnlyFactors "help function to solve2, returns true if equation e1 == e2, has either e1 == 0 or e2 == 0 and the expression only contains
+factors, e.g. a*b*c = 0. In this case we can not solve the equation"
+  input Exp e1;
+  input Exp e2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(e1,e2)
+    case(e1,e2) equation
+      true = isZero(e1);
+      // More than two factors
+      _::_::_ = factors(e2);
+      //.. and more than two crefs
+      _::_::_ = getCrefFromExp(e2);
+    then true;
+      
+      // Swapped args
+    case(e2,e1) equation
+      true = isZero(e1);
+      _::_::_ = factors(e2);
+      _::_::_ = getCrefFromExp(e2);
+    then true;
+    
+    case(_,_) then false;      
+  end matchcontinue;
+end hasOnlyFactors;
 
 public function getTermsContainingX
 "function getTermsContainingX
