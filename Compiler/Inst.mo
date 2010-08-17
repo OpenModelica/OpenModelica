@@ -10944,7 +10944,86 @@ algorithm
   end matchcontinue;
 end instEInitialEquation;
 
-protected function instEquationCommon 
+protected function instEquationCommon
+"function: instEquationCommon 
+  The DAE output of the translation contains equations which
+  in most cases directly corresponds to equations in the source.
+  Some of them are also generated from `connect\' clauses.
+ 
+  This function takes an equation from the source and generates DAE
+  equations and connection sets."
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.EEquation inEEquation;
+  input SCode.Initial inInitial;
+  input Boolean inBoolean;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm 
+  (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
+  instEquationCommon2(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,Error.getNumErrorMessages());
+end instEquationCommon;
+
+protected function instEquationCommon2
+"function: instEquationCommon 
+  The DAE output of the translation contains equations which
+  in most cases directly corresponds to equations in the source.
+  Some of them are also generated from `connect\' clauses.
+ 
+  This function takes an equation from the source and generates DAE
+  equations and connection sets."
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.EEquation inEEquation;
+  input SCode.Initial inInitial;
+  input Boolean inBoolean;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Integer errorCount;
+  output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm 
+  (outCache,outEnv,outIH,outDae,outSets,outState,outGraph):=
+  matchcontinue(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,errorCount)
+    local
+      String s;
+    case (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph,_)
+      equation
+        (outCache,outEnv,outIH,outDae,outSets,outState,outGraph) = instEquationCommonWork(inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inEEquation,inInitial,inBoolean,inGraph);
+      then (outCache,outEnv,outIH,outDae,outSets,outState,outGraph);
+        // We only want to print a generic error message if no other error message was printed
+        // Providing two error messages for the same error is confusing (but better than none) 
+    case (_,_,_,_,_,_,_,inEEquation,_,_,_,errorCount)
+      equation
+        true = errorCount == Error.getNumErrorMessages();
+        s = SCode.equationStr(inEEquation);
+        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(inEEquation));
+      then
+        fail();
+  end matchcontinue;
+end instEquationCommon2;
+
+protected function instEquationCommonWork
 "function: instEquationCommon 
   The DAE output of the translation contains equations which
   in most cases directly corresponds to equations in the source.
@@ -11469,15 +11548,14 @@ algorithm
                
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph) 
       equation
-        s = SCode.equationStr(eqn);
-        Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(eqn));
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- instEquationCommon failed for eqn: ");        
+        s = SCode.equationStr(eqn);
+        Debug.fprint("failtrace", "- instEquationCommonWork failed for eqn: ");        
         Debug.fprint("failtrace", s +& " in scope:" +& Env.getScopeName(env) +& "\n");
       then
         fail();
   end matchcontinue;
-end instEquationCommon;
+end instEquationCommonWork;
 
 protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call.
 Returns the error on failure."

@@ -6122,7 +6122,6 @@ algorithm
                                 }, false));
         txt = Tpl.writeText(txt, i_numDiscVarsStr);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
-        txt = inlineDerivativeVarArgs(txt, i_discVars);
       then (txt, i_varDecls);
 
     case ( txt,
