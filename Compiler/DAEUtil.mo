@@ -2637,7 +2637,7 @@ algorithm
   end matchcontinue;
 end getAllExpsExtarg;
 
-public function transformIfEqToExpr
+protected function transformIfEqToExpr
 "function: transformIfEqToExpr
   transform all if equations to ordinary equations involving if-expressions"
   input DAE.DAElist inDAElist;
@@ -5152,5 +5152,14 @@ algorithm
     case _::rest then getDAEDeclsFromValueblocks(rest);
   end matchcontinue;
 end getDAEDeclsFromValueblocks;
+
+public function transformationsBeforeBackend
+  input DAE.DAElist dae;
+  output DAE.DAElist d;
+algorithm
+  d := dae;
+  // Transform if equations to if expression before going into code generation.
+  d := transformIfEqToExpr(d,false);
+end transformationsBeforeBackend;
 
 end DAEUtil;

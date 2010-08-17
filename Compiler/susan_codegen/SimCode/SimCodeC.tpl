@@ -1460,6 +1460,40 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 end equation_;
 
 
+template inlineDerivative(ComponentRef c)
+::= match c
+case CREF_QUAL(ident = "$DER") then <<
+
+inlineDerivative(&<%cref(c)%>);
+>>
+end inlineDerivative;
+
+
+template inlineDerivativeArray(String arr, ComponentRef c)
+::= match c
+case CREF_QUAL(ident = "$DER") then <<
+
+inlineDerivativeArray(size_of_dimension_real_array(<%arr%>,1),&<%cref(c)%>);
+>>
+end inlineDerivativeArray;
+
+
+template inlineDerivativeVarArgs(list<SimVar> simvars)
+::= let ders = simvars |> var => (match var case SIMVAR(name = cr as CREF_QUAL(ident = "$DER")) then '&<%cref(cr)%>') ;separator="," if ders then <<
+
+inlineDerivativeVarArgs(<%ders%>, NULL);
+>>
+end inlineDerivativeVarArgs;
+
+
+template inlineDerivativeVarArgsCrefs(list<ComponentRef> crefs)
+::= let ders = crefs |> cr => (match cr case CREF_QUAL(ident = "$DER") then '&<%cref(cr)%>') ;separator="," if ders then <<
+
+inlineDerivativeVarArgs(<%ders%>, NULL);
+>>
+end inlineDerivativeVarArgsCrefs;
+
+
 template equationSimpleAssign(SimEqSystem eq, Context context,
                               Text &varDecls /*BUFP*/)
  "Generates an equation that is just a simple assignment."
@@ -1470,7 +1504,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  <%cref(cref)%> = <%expPart%>;
+  <%cref(cref)%> = <%expPart%>;<%inlineDerivative(cref)%>
   >>
 end equationSimpleAssign;
 
@@ -1485,7 +1519,7 @@ case SES_ARRAY_CALL_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  copy_real_array_data_mem(&<%expPart%>, &<%cref(componentRef)%>);
+  copy_real_array_data_mem(&<%expPart%>, &<%cref(componentRef)%>);<%inlineDerivativeArray(expPart,componentRef)%>
   >>
 end equationArrayCallAssign;
 
@@ -1525,7 +1559,7 @@ case SES_LINEAR(__) then
      '<%preExp%>set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
   ;separator="\n"%>
   solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
-  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%>
+  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineDerivativeVarArgs(vars)%>
   >>
 end equationLinear;
 
@@ -1581,7 +1615,7 @@ case SES_NONLINEAR(__) then
   ;separator="\n"%>
   solve_nonlinear_system(residualFunc<%index%>, <%index%>);
   <%crefs |> name indexedby i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
-  end_nonlinear_system();
+  end_nonlinear_system();<%inlineDerivativeVarArgsCrefs(crefs)%>
   >>
 end equationNonlinear;
 

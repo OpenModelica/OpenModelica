@@ -76,7 +76,7 @@ typedef enum {
 
   NO_INIT_OF_VECTORS        = 0x00000000,
   STATES                  	= 0x00000001,
-  STATESDERIVATIVES      	= 0x00000002,
+  STATESDERIVATIVES      	  = 0x00000002,
   HELPVARS                	= 0x00000004,
   ALGEBRAICS              	= 0x00000008,
   PARAMETERS              	= 0x00000010,
@@ -84,7 +84,7 @@ typedef enum {
   INPUTVARS               	= 0x00000040,
   OUTPUTVARS              	= 0x00000080,
   INITFIXED               	= 0x00000100,
-  EXTERNALVARS			  	= 0x00000200,
+  EXTERNALVARS			  	    = 0x00000200,
 
   /*in initializeDataStruc these are not allocated with malloc!*/
   MODELNAME               	= 0x00000400,
@@ -143,6 +143,7 @@ typedef struct sim_DATA {
   double* oldStatesDerivatives,*oldStatesDerivatives2;
   double* oldAlgebraics,*oldAlgebraics2;
   double oldTime,oldTime2;
+  double current_stepsize;
 
   char* initFixed; // Fixed attribute for all variables and parameters
   int init; // =1 during initialization, 0 otherwise.
@@ -277,6 +278,10 @@ bool isInteractiveSimulation();
 int callSolver(int, char**, string, string, double, double, double, long, double);
 
 double newTime(double t, double step,double stop);
+
+extern void (*inlineDerivative)(double*);
+extern void (*inlineDerivativeArray)(int,double*);
+extern void (*inlineDerivativeVarArgs)(double*,...);
 
 #define MODELICA_ASSERT(cond,msg) do { if (!(cond)&& acceptedStep) { modelTermination=1; \
 throw TerminateSimulationException(string(msg)); } } while(0)

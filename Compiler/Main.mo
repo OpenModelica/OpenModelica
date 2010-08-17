@@ -591,8 +591,8 @@ algorithm
         Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
 
-        // Transform if equations to if expression before going into code generation.
-        d = DAEUtil.transformIfEqToExpr(d,false);
+        // Do any transformations required before going into code generation, e.g. if-equations to expressions.
+        d = DAEUtil.transformationsBeforeBackend(d);
         
         str = Print.getString();
         silent = RTOpts.silent();

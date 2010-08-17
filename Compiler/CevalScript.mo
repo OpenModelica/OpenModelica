@@ -254,7 +254,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_, dae) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1, path);
-        dae  = DAEUtil.transformIfEqToExpr(dae,false);
+        dae  = DAEUtil.transformationsBeforeBackend(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
         ((daelow as DAELow.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
@@ -2269,7 +2269,7 @@ algorithm
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) =
         Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        dae  = DAEUtil.transformIfEqToExpr(dae_1,false);
+        dae  = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         a_cref = Absyn.pathToCref(className);
         file_dir = getFileDir(a_cref, p);
@@ -3259,7 +3259,7 @@ algorithm
 
         (cache, env, _, dae) =
         Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
-        dae  = DAEUtil.transformIfEqToExpr(dae,false);
+        dae  = DAEUtil.transformationsBeforeBackend(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
@@ -3606,7 +3606,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformIfEqToExpr(dae_1,false);
+        dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);//Verificare cosa fa
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
@@ -3646,7 +3646,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformIfEqToExpr(dae_1,false);
+        dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);
@@ -3690,7 +3690,7 @@ algorithm
         cname_str = Absyn.pathString(classname);
         p_1 = SCodeUtil.translateAbsyn2SCode(p);
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
-        dae = DAEUtil.transformIfEqToExpr(dae_1,false);
+        dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);
         m = DAELow.incidenceMatrix(dlow);

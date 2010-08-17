@@ -620,7 +620,7 @@ algorithm
         ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
-        dae = DAEUtil.transformIfEqToExpr(dae,false);
+        dae = DAEUtil.transformationsBeforeBackend(dae);
         dlow = DAELow.lower(dae, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);

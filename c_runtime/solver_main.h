@@ -70,12 +70,6 @@ extern "C" {
 	       double dlamch_(char*,int);
 } // extern "C"
 
-int euler_ex_step (double* step, int (*f)() );
-
-int rungekutta_step (double* step, int (*f)());
-
-int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
-
 int solver_main( int argc, char** argv,double &start,  double &stop, double &step, long &outputSteps,
                 double &tolerance,int flag);
 

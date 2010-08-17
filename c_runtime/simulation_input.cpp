@@ -73,6 +73,7 @@ void read_commented_value(ifstream &f, char **str);
   if (sim_verbose) { cout << "read stop = " << *stop << " from init file." << endl; }
   read_commented_value(file,stepSize);
   if (sim_verbose) { cout << "read stepSize = " << *stepSize << " from init file." << endl; }
+  globalData->current_stepsize = *stepSize;
   if (stepSize < 0) { // stepSize < 0 => Automatic number of outputs
   	*outputSteps = -1;
   } else {

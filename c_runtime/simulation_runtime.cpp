@@ -131,6 +131,7 @@ double newTime(double t, double step, double stop)
   if (newTime > stop) {
     newTime = stop;
   }
+  globalData->current_stepsize = newTime-t;
   return newTime;
 }
 
@@ -332,10 +333,16 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
   } else  if (method == std::string("dassl2")) {
     if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
     retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+  } else  if (method == std::string("inline-euler")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,4);
+  } else  if (method == std::string("inline-rungekutta")) {
+    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,5);
   } else if (method == std::string("dassl")) {
     if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
     retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
- } else {
+  } else {
    if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
   }
@@ -345,11 +352,26 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
   return retVal;
 }
 
+void (*inlineDerivative)(double*) = 0;
+void (*inlineDerivativeArray)(int,double*) = 0;
+void (*inlineDerivativeVarArgs)(double*,...) = 0;
+
+void noInlineDerivative(double* d) {
+}
+
+void noInlineDerivativeArray(int n, double* d) {
+}
+
+void noInlineDerivativeVarArgs(double*,...) {
+}
+
 /**
  * Initialization is the same for interactive or non-interactive simulation
  */
 int initRuntimeAndSimulation(int argc, char**argv) {
-
+  inlineDerivative = noInlineDerivative;
+  inlineDerivativeArray = noInlineDerivativeArray;
+  inlineDerivativeVarArgs = noInlineDerivativeVarArgs;
   if (argc == 2 && flagSet("?", argc, argv)) {
         //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
     cout << "usage: " << argv[0]

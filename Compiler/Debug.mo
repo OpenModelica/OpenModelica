@@ -274,6 +274,38 @@ algorithm
   end matchcontinue;
 end fcallret1;
 
+public function bcallret1
+"function: bcallret1
+  Boolean-controlled calling of given function (2nd arg).
+  The passed function gets 1 arguments.
+  The last parameter is returned if the boolean is false."
+  input Boolean inBool;
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
+  input Type_a inTypeA;
+  input Type_b inTypeB;
+  output Type_b outTypeB;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeB := matchcontinue (inBool,inFuncTypeTypeAToTypeB,inTypeA,inTypeB)
+    local
+      Type_b res,def;
+      String flag;
+      FuncTypeType_aToType_b func;
+      Type_a arg;
+    case (true,func,arg,def)
+      equation
+        res = func(arg);
+      then
+        res;
+    case (_,_,_,def) then def;
+  end matchcontinue;
+end bcallret1;
+
 public function bcall
 "function: bcall
   bool controlled calling of function."

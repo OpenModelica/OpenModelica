@@ -40,7 +40,17 @@
 #include <iostream>
 #include <iomanip>
 #include <algorithm>
+#include <cstdarg>
 using namespace std;
+
+// Internal definitions; do not expose
+void inline_euler_solve(double*);
+void inline_euler_solve_array(int,double*);
+void inline_euler_solve_va(double*,...);
+int inline_step (double* step, int (*f)() );
+int euler_ex_step (double* step, int (*f)() );
+int rungekutta_step (double* step, int (*f)());
+int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
 
 #define MAXORD 5
 
@@ -86,12 +96,34 @@ fortran_integer *iwork;
 fortran_integer NG_var=0;	//->see ddasrt.c LINE 250 (number of constraint functions)
 fortran_integer *jroot;
 
+// work array for inline implementation
+double *inline_work_states;
+
 // Used when calculating residual for its side effects. (alg. var calc)
 double *dummy_delta;
 
 int euler_in_use;
 
-/* The main function for a solver with synchronous event handling*/
+int solver_main_step(int flag, double* step, double &start, double &stop, bool &reset, int (*f)()) {
+  switch (flag) {
+	case 2:
+    return rungekutta_step(&globalData->current_stepsize,functionODE);
+  case 3:
+    return dasrt_step(&globalData->current_stepsize,start,stop,reset,functionODE);
+  case 4:
+    return inline_step(&globalData->current_stepsize,functionODE);
+  case 1:
+  default:
+    return euler_ex_step(&globalData->current_stepsize,functionODE);
+  }
+}	
+
+/* The main function for a solver with synchronous event handling
+flag 1=explicit euler
+     2=rungekutta
+     3=dassl
+     4=inline explicit euler
+*/
 int solver_main(int argc, char** argv, double &start,  double &stop, double &step, long &outputSteps,
 		       double &tolerance, int flag)
 {
@@ -106,7 +138,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 
 	double laststep = 0;
-	double current_stepsize = step;
 	double offset = 0;
 	globalData->oldTime = start;
 
@@ -116,6 +147,15 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	int retValIntration;
 
+  // Enable inlining solvers
+  switch (flag) {
+  case 4:
+    inlineDerivative = inline_euler_solve;
+    inlineDerivativeArray = inline_euler_solve_array;
+    inlineDerivativeVarArgs = inline_euler_solve_va;
+    inline_work_states = (double*) malloc(globalData->nStates*sizeof(double));
+    break;
+  }
 
 	if (initializeEventData()) {
 		cout << "Internal error, allocating event data structures" << endl;
@@ -159,20 +199,18 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	// Do a tiny step to initialize ZeroCrossing that are fulfilled
     // And then go back and start at t_0
-	current_stepsize = calcTiny(globalData->timeValue);
+	globalData->current_stepsize = calcTiny(globalData->timeValue);
 	double* backupstats_new = new double[globalData->nStates];
     std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
-    
-	if (flag == 1) euler_ex_step(&current_stepsize,functionODE);
-	else if (flag == 2) rungekutta_step(&current_stepsize,functionODE);
-	else if (flag == 3) dasrt_step(&current_stepsize,start,stop,reset,functionODE);
-	else euler_ex_step(&current_stepsize,functionODE);
+  
+  solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
 	functionDAE_output();
 	if(sim_verbose) { sim_result->emit(); }
 	InitialZeroCrossings();
 
 	globalData->timeValue = start;
-    std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
+  globalData->current_stepsize = step;
+  std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
 	delete [] backupstats_new;
 	reset = true;
 
@@ -211,7 +249,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		}else{
 			offset = 0;
 		}
-		current_stepsize = step-offset;
+		globalData->current_stepsize = step-offset;
 
 		/* do one integration step
 		 *
@@ -222,13 +260,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		 *
 		 */
 
-		if (flag == 1) {
-			retValIntration = euler_ex_step(&current_stepsize,functionODE);
-		} else if (flag == 2){
-			retValIntration = rungekutta_step(&current_stepsize,functionODE);
-		} else if (flag == 3){
-			retValIntration = dasrt_step(&current_stepsize,start,stop,reset,functionODE);
-		}
+    retValIntration = solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
 
 		functionDAE_output();
 
@@ -270,6 +302,42 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 
 	deinitializeEventData();
 
+	return 0;
+}
+
+void inline_euler_solve(double* stateDer) {
+  long i = stateDer-globalData->statesDerivatives;
+  inline_work_states[i] = globalData->states[i] + globalData->statesDerivatives[i] * globalData->current_stepsize;
+}
+
+void inline_euler_solve_array(int n, double* stateDer) {
+  int i0 = stateDer-globalData->statesDerivatives;
+  for (int i = i0; i < i0+n; i++) {
+    inline_work_states[i] = globalData->states[i] + globalData->statesDerivatives[i] * globalData->current_stepsize;
+  }
+}
+
+void inline_euler_solve_va(double* fst, ...) {
+  long i;
+  
+  va_list ap;
+  va_start(ap,fst);
+  do {
+    i = fst-globalData->statesDerivatives;
+    inline_work_states[i] = globalData->states[i] + globalData->statesDerivatives[i] * globalData->current_stepsize;
+    fst = va_arg(ap, double*);
+  } while (fst != NULL);
+  va_end(ap);
+}
+
+int inline_step(double* step, int (*f)())
+{	
+  double* tmp;
+	globalData->timeValue += *step;
+  tmp = globalData->states;
+  globalData->states = inline_work_states;
+  inline_work_states = tmp;
+	f();
 	return 0;
 }
 

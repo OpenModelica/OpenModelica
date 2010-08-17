@@ -11468,7 +11468,7 @@ algorithm
         (cache,env,ih,dae,csets,ci_state,graph);
                
     case (_,env,ih,_,_,_,_,eqn,_,impl,graph) 
-      equation 
+      equation
         s = SCode.equationStr(eqn);
         Error.addSourceMessage(Error.EQUATION_GENERIC_FAILURE, {s}, SCode.equationFileInfo(eqn));
         true = RTOpts.debugFlag("failtrace");
@@ -11479,7 +11479,8 @@ algorithm
   end matchcontinue;
 end instEquationCommon;
 
-protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call"
+protected function checkTupleCallEquation "Check if the two expressions make up a proper tuple function call.
+Returns the error on failure."
   input Absyn.Exp left;
   input Absyn.Exp right;
 algorithm
