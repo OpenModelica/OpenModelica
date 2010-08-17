@@ -2637,7 +2637,7 @@ algorithm
   end matchcontinue;
 end getAllExpsExtarg;
 
-protected function transformIfEqToExpr
+public function transformIfEqToExpr
 "function: transformIfEqToExpr
   transform all if equations to ordinary equations involving if-expressions"
   input DAE.DAElist inDAElist;
