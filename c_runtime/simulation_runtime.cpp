@@ -321,30 +321,34 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
   }
   if (sim_verbose) { cout << "Allocated simulation result data storage for method '" << sim_result->result_type() << "' and file='" << result_file_cstr << "'" << endl; }
 
-  if (method == "") {
-    if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
-    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
-  } else  if (method == std::string("euler")) {
-    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
-  } else  if (method == std::string("rungekutta")) {
-    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
-  } else  if (method == std::string("dassl2")) {
-    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
-  } else  if (method == std::string("inline-euler")) {
-    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,4);
-  } else  if (method == std::string("inline-rungekutta")) {
-    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-    retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,5);
-  } else if (method == std::string("dassl")) {
-    if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
-    retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+  if (_omc_force_solver != NULL) {
+    if (method == std::string(_omc_force_solver)) {
+      if (sim_verbose) { cout << "Recognized forced solver: "<< method <<"." << endl; }
+      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,4);
+    } else {
+      cout << "Solver: "<< method <<" was chosen, but the executable requires " << _omc_force_solver << "." << endl;
+      return 1;
+    }
   } else {
-   if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
-   retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+    if (method == "") {
+      if (sim_verbose) { cout << "No Recognized solver, using dassl." << endl; }
+      retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+    } else  if (method == std::string("euler")) {
+      if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,1);
+    } else  if (method == std::string("rungekutta")) {
+      if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,2);
+    } else  if (method == std::string("dassl2")) {
+      if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+      retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
+    } else if (method == std::string("dassl")) {
+      if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
+      retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+    } else {
+     if (sim_verbose) {  cout << "Unrecognized solver: "<< method <<", using dassl." << endl; }
+     retVal = dassl_main(argc,argv,start,stop,stepSize,outputSteps,tolerance);
+    }
   }
 
   delete sim_result;
@@ -352,26 +356,10 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
   return retVal;
 }
 
-void (*inlineDerivative)(double*) = 0;
-void (*inlineDerivativeArray)(int,double*) = 0;
-void (*inlineDerivativeVarArgs)(double*,...) = 0;
-
-void noInlineDerivative(double* d) {
-}
-
-void noInlineDerivativeArray(int n, double* d) {
-}
-
-void noInlineDerivativeVarArgs(double*,...) {
-}
-
 /**
  * Initialization is the same for interactive or non-interactive simulation
  */
 int initRuntimeAndSimulation(int argc, char**argv) {
-  inlineDerivative = noInlineDerivative;
-  inlineDerivativeArray = noInlineDerivativeArray;
-  inlineDerivativeVarArgs = noInlineDerivativeVarArgs;
   if (argc == 2 && flagSet("?", argc, argv)) {
         //cout << "usage: " << argv[0]  << " <-f initfile> <-r result file> -m solver:{dassl, euler} -v" << endl;
     cout << "usage: " << argv[0]

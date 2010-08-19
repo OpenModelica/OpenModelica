@@ -18,19 +18,55 @@ java_interface.o meta_modelica.o meta_modelica_builtin.o ModelicaUtilities.o $(E
 SIMOBJS = $(FOBJS) simulation_runtime.o simulation_init.o simulation_input.o simulation_events.o \
 solver_dasrt.o solver_main.o simulation_result_plt.o simulation_result_csv.o simulation_result_bin.o simulation_result_mat.o simulation_delay.o tables.o options.o dgesv_aux.o $(EXTRA_SIMOBJS)
 
-HFILES = blaswrap.h f2c.h integer_array.h memory_pool.h modelica_string.h \
-  base_array.h inline.h real_array.h string_array.h boolean_array.h \
-  index_spec.h matrix.h \
-  modelica.h read_write.h simulation_runtime.h simulation_events.h utility.h division.h \
-  simulation_init.h simulation_input.h solver_dasrt.h solver_main.h \
-  simulation_result.h simulation_result_plt.h simulation_result_csv.h simulation_result_bin.h simulation_result_empty.h simulation_result_mat.h ringbuffer.h \
-  meta_modelica.h meta_modelica_builtin.h sendData/sendData.h sendData/humbug.h \
-  java_interface.h jni.h jni_md.h jni_md_solaris.h jni_md_windows.h \
-  simulation_delay.h fortran_types.h ModelicaUtilities.h compat.h
+HFILES = \
+base_array.h \
+blaswrap.h \
+boolean_array.h \
+compat.h \
+division.h \
+f2c.h \
+fortran_types.h \
+index_spec.h \
+inline.h \
+integer_array.h \
+java_interface.h \
+jni.h \
+jni_md.h \
+jni_md_solaris.h \
+jni_md_windows.h \
+matrix.h \
+memory_pool.h \
+meta_modelica_builtin.h \
+meta_modelica.h \
+modelica.h \
+modelica_string.h \
+ModelicaUtilities.h \
+read_write.h \
+real_array.h \
+ringbuffer.h \
+sendData/humbug.h \
+sendData/sendData.h \
+simulation_delay.h \
+simulation_events.h \
+simulation_init.h \
+simulation_inline_solver.h \
+simulation_input.h \
+simulation_result_bin.h \
+simulation_result_csv.h \
+simulation_result_empty.h \
+simulation_result.h \
+simulation_result_mat.h \
+simulation_result_plt.h \
+simulation_runtime.h \
+solver_dasrt.h \
+solver_main.h \
+string_array.h \
+utility.h
 
 LIBS = libc_runtime.a libsim.a interactive/libinteractive.a
 
 .PHONY : libsendData.a libsendDataHumbug.a
+
 all : install
 
 #recompile all if a header changes!

@@ -44,9 +44,6 @@
 using namespace std;
 
 // Internal definitions; do not expose
-void inline_euler_solve(double*);
-void inline_euler_solve_array(int,double*);
-void inline_euler_solve_va(double*,...);
 int inline_step (double* step, int (*f)() );
 int euler_ex_step (double* step, int (*f)() );
 int rungekutta_step (double* step, int (*f)());
@@ -97,7 +94,7 @@ fortran_integer NG_var=0;	//->see ddasrt.c LINE 250 (number of constraint functi
 fortran_integer *jroot;
 
 // work array for inline implementation
-double *inline_work_states;
+double **inline_work_states;
 
 // Used when calculating residual for its side effects. (alg. var calc)
 double *dummy_delta;
@@ -122,7 +119,7 @@ int solver_main_step(int flag, double* step, double &start, double &stop, bool &
 flag 1=explicit euler
      2=rungekutta
      3=dassl
-     4=inline explicit euler
+     4=inline
 */
 int solver_main(int argc, char** argv, double &start,  double &stop, double &step, long &outputSteps,
 		       double &tolerance, int flag)
@@ -148,13 +145,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	int retValIntration;
 
   // Enable inlining solvers
-  switch (flag) {
-  case 4:
-    inlineDerivative = inline_euler_solve;
-    inlineDerivativeArray = inline_euler_solve_array;
-    inlineDerivativeVarArgs = inline_euler_solve_va;
-    inline_work_states = (double*) malloc(globalData->nStates*sizeof(double));
-    break;
+  if (flag == 4) {
+    inline_work_states = (double**) malloc(inline_work_states_ndims*sizeof(double*));
+    for (int i=0; i<inline_work_states_ndims; i++)
+      inline_work_states[i] = (double*) malloc(globalData->nStates*sizeof(double));
   }
 
 	if (initializeEventData()) {
@@ -201,7 +195,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     // And then go back and start at t_0
 	globalData->current_stepsize = calcTiny(globalData->timeValue);
 	double* backupstats_new = new double[globalData->nStates];
-    std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
+  std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
   
   solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
 	functionDAE_output();
@@ -305,39 +299,12 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	return 0;
 }
 
-void inline_euler_solve(double* stateDer) {
-  long i = stateDer-globalData->statesDerivatives;
-  inline_work_states[i] = globalData->states[i] + globalData->statesDerivatives[i] * globalData->current_stepsize;
-}
-
-void inline_euler_solve_array(int n, double* stateDer) {
-  int i0 = stateDer-globalData->statesDerivatives;
-  for (int i = i0; i < i0+n; i++) {
-    inline_work_states[i] = globalData->states[i] + globalData->statesDerivatives[i] * globalData->current_stepsize;
-  }
-}
-
-void inline_euler_solve_va(double* fst, ...) {
-  long i;
-  
-  va_list ap;
-  va_start(ap,fst);
-  do {
-    i = fst-globalData->statesDerivatives;
-    inline_work_states[i] = globalData->states[i] + globalData->statesDerivatives[i] * globalData->current_stepsize;
-    fst = va_arg(ap, double*);
-  } while (fst != NULL);
-  va_end(ap);
-}
-
 int inline_step(double* step, int (*f)())
 {	
   double* tmp;
 	globalData->timeValue += *step;
-  tmp = globalData->states;
-  globalData->states = inline_work_states;
-  inline_work_states = tmp;
-	f();
+  f();
+  std::swap(globalData->states,inline_work_states[0]);
 	return 0;
 }
 
@@ -354,10 +321,11 @@ int euler_ex_step (double* step, int (*f)())
 int rungekutta_step (double* step, int (*f)())
 {	
 	globalData->timeValue += *step;
-	int s=4,i,j,l;
-	double b[4] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
-	double c[4] = {0,0.5,0.5,1};
-	double a[][4] = { {0,0,0,0}, {0.5,0,0,0}, {0,0.5,0,0}, {0,0,1,0}};
+	const int s=4;
+  int i,j,l;
+	const double b[4] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
+	const double c[4] = {0,0.5,0.5,1};
+	const double a[][4] = { {0,0,0,0}, {0.5,0,0,0}, {0,0.5,0,0}, {0,0,1,0}};
 	double sum=0;
 	double* backupstats = new double[globalData->nStates];
 

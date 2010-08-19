@@ -1523,6 +1523,30 @@ algorithm
         ("error",st);
 
     case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "appendEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
+        Absyn.STRING(value = value)},argNames = {})))}),
+        (st as SYMBOLTABLE(
+          ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
+          lstVarVal = iv,compiledFunctions = cf,
+          loadedFiles = lf))) /* adrpo added 2005-11-24 */
+      equation
+        resstr = Util.makeValueOrDefault(System.readEnv, name, "");
+        rest = System.setEnv(name, resstr +& value, true);
+        resstr = System.readEnv(name);
+      then
+        (resstr,st);
+
+    case (ISTMTS(interactiveStmtLst =
+      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "appendEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
+        Absyn.STRING(value = value)},argNames = {})))}),
+        (st as SYMBOLTABLE(
+          ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
+          lstVarVal = iv,compiledFunctions = cf,
+          loadedFiles = lf)))
+      then
+        ("error",st);
+        
+    case (ISTMTS(interactiveStmtLst =
       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),
       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
       st) /* adrpo added 2005-12-16 */

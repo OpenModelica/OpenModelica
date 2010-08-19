@@ -44,6 +44,7 @@
 #include "simulation_events.h"
 #include "simulation_delay.h"
 #include "simulation_result.h"
+#include "simulation_inline_solver.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -278,10 +279,6 @@ bool isInteractiveSimulation();
 int callSolver(int, char**, string, string, double, double, double, long, double);
 
 double newTime(double t, double step,double stop);
-
-extern void (*inlineDerivative)(double*);
-extern void (*inlineDerivativeArray)(int,double*);
-extern void (*inlineDerivativeVarArgs)(double*,...);
 
 #define MODELICA_ASSERT(cond,msg) do { if (!(cond)&& acceptedStep) { modelTermination=1; \
 throw TerminateSimulationException(string(msg)); } } while(0)
