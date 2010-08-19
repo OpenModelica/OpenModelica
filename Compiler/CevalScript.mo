@@ -2726,6 +2726,23 @@ algorithm
   end matchcontinue;
 end compileModel;
 
+protected function readEnvNoFail
+"@author: adrpo
+ System.readEnv can fail, if it does this function returns the empty string"
+  input String variableName;
+  output String variableValue;
+algorithm
+    variableValue := matchcontinue(variableName)
+      local String vValue;
+      case (variableName)
+        equation
+          vValue = System.readEnv(variableName);
+        then
+          vValue;
+      case (variableName) then "";
+  end matchcontinue;
+end readEnvNoFail;
+
 protected function setCompileCommandEnvironmentFromSolverMethod
 "Inline solver methods require extra environment variables set"
   input String method;
@@ -2733,14 +2750,21 @@ protected function setCompileCommandEnvironmentFromSolverMethod
 algorithm
   env := matchcontinue method
     local
-      String str;
+      String str, modelicaUserCFlags;
+      
     case "inline-euler"
       equation
-        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_EULER\" && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_EULER\" ");
+        modelicaUserCFlags = readEnvNoFail("MODELICAUSERCFLAGS");
+        // adrpo: In Windows it seems that command set X="%var% some other stuff" && echo %X% 
+        //        DOES NOT EXPAND X correctly, that's why we read and use the environment variable directly
+        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=" +& modelicaUserCFlags +& " -D_OMC_INLINE_EULER && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_EULER\" ");
       then str;
     case "inline-rungekutta"
       equation
-        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_RK\" && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_RK\" ");
+        modelicaUserCFlags = readEnvNoFail("MODELICAUSERCFLAGS");         
+        // adrpo: In Windows it seems that command set X="%var% some other stuff" && echo %X% 
+        //        DOES NOT EXPAND X correctly, that's why we read and use the environment variable directly
+        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=" +& modelicaUserCFlags +&" -D_OMC_INLINE_RK && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_RK\" ");
       then str;
     case _ then "";
   end matchcontinue;
