@@ -129,7 +129,7 @@ const double _omc_rk_c[1] = {0.0};
 #define end_inline(void)
 
 #define inline_integrate(x)
-#define inline_integrate_array(x)
+#define inline_integrate_array(sz,x)
 
 #endif
 

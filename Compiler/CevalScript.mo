@@ -2551,7 +2551,7 @@ algorithm
         s3 = extractNoCleanCommand(noClean);
         makefilename = generateMakefilename(filenameprefix);
         Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
-        compileModel(filenameprefix, libs, file_dir, s3);
+        compileModel(filenameprefix, libs, file_dir, s3, method_str);
         Debug.fprintln("dynload", "buildModel: Compiling done.");
         _ = System.cd(oldDir);
         p = setBuildTime(p,classname);
@@ -2629,15 +2629,16 @@ protected function compileModel "function: compileModel
   input list<String> inLibsList;
   input String inFileDir;
   input String noClean;
+  input String solverMethod "inline solvers requires setting environment variables";
 algorithm
-  _:= matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean)
+  _:= matchcontinue (inFilePrefix,inLibsList,inFileDir,noClean,solverMethod)
     local
-      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str;
+      String pd,omhome,omhome_1,cd_path,libsfilename,libs_str,s_call,fileprefix,file_dir,command,filename,str,extra_command;
       list<String> libs;
 
     // If compileCommand not set, use $OPENMODELICAHOME\bin\Compile
     // adrpo 2009-11-29: use ALL THE TIME $OPENMODELICAHOME/bin/Compile
-    case (fileprefix,libs,file_dir,noClean)
+    case (fileprefix,libs,file_dir,noClean,solverMethod)
       equation
         // if compileCommand is set to g++ use $OPENMODELICAHOME/bin/Compile
         // MathCore needs compileCommand to be set to g++ in Compiler/runtime/settingsimpl.c
@@ -2650,9 +2651,13 @@ algorithm
         cd_path = System.pwd();
         libsfilename = stringAppend(fileprefix, ".libs");
         libs_str = Util.stringDelimitList(libs, " ");
+        
         System.writeFile(libsfilename, libs_str);
+        extra_command = setCompileCommandEnvironmentFromSolverMethod(solverMethod);
+        // We only need to set OPENMODELICAHOME on Windows, and set doesn't work in bash shells anyway
+        omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=" +& omhome_1 +& " && ", "OPENMODELICAHOME=\"$OPENMODELICAHOME\" ");
         s_call =
-        Util.stringAppendList({"set OPENMODELICAHOME=",omhome_1,"&& ",
+        Util.stringAppendList({omhome,extra_command,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
         Debug.fprintln("dynload", "compileModel: running " +& s_call);
         0 = System.systemCall(s_call)  ;
@@ -2678,7 +2683,7 @@ algorithm
       then
         ();
     */
-    case (fileprefix,libs,file_dir,_) /* compilation failed */
+    case (fileprefix,libs,file_dir,_,_) /* compilation failed */
       equation
         filename = Util.stringAppendList({fileprefix,".log"});
         true = System.regularFileExists(filename);
@@ -2687,7 +2692,7 @@ algorithm
         Debug.fprintln("dynload", "compileModel: failed!");
       then
         fail();
-    case (fileprefix,libs,file_dir,_)
+    case (fileprefix,libs,file_dir,_,_)
       local Integer retVal;
       equation
         command = Settings.getCompileCommand();
@@ -2697,7 +2702,7 @@ algorithm
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then fail();
 
-    case (fileprefix,libs,file_dir,_) /* compilation failed\\n */
+    case (fileprefix,libs,file_dir,_,_) /* compilation failed\\n */
       local Integer retVal;
       equation
         omhome = Settings.getInstallationDirectoryPath();
@@ -2713,13 +2718,33 @@ algorithm
         Error.addMessage(Error.SIMULATOR_BUILD_ERROR, {str});
       then
         fail();
-    case (fileprefix,libs,file_dir,_)
+    case (fileprefix,libs,file_dir,_,_)
       equation
         Print.printErrorBuf("#- Error building simulation code. Ceval.compileModel failed.\n ");
       then
         fail();
   end matchcontinue;
 end compileModel;
+
+protected function setCompileCommandEnvironmentFromSolverMethod
+"Inline solver methods require extra environment variables set"
+  input String method;
+  output String env;
+algorithm
+  env := matchcontinue method
+    local
+      String str;
+    case "inline-euler"
+      equation
+        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_EULER\" && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_EULER\" ");
+      then str;
+    case "inline-rungekutta"
+      equation
+        str = Util.if_(System.os() ==& "Windows_NT", "set MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_RK\" && ", "MODELICAUSERCFLAGS=\"$MODELICAUSERCFLAGS -D_OMC_INLINE_RK\" ");
+      then str;
+    case _ then "";
+  end matchcontinue;
+end setCompileCommandEnvironmentFromSolverMethod;
 
 protected function winCitation "function: winCitation
   author: PA
@@ -3989,13 +4014,13 @@ algorithm
         SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
         makefilename = generateMakefilename(filenameprefix);
         Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
-        compileModel(filenameprefix, libs, file_dir, "");
+        compileModel(filenameprefix, libs, file_dir, "", method_str);
         Debug.fprintln("dynload", "buildModel: Compiling done.");
         /* SimCodegen.generateMakefileBeast(makefilename, filenameprefix, libs, file_dir); */
         win1 = getWithinStatement(classname);
         p2 = Absyn.PROGRAM({cdef},win1,ts);
         s3 = extractNoCleanCommand(noClean);
-        compileModel(filenameprefix, libs, file_dir,s3);
+        compileModel(filenameprefix, libs, file_dir,s3,method_str);
         _ = System.cd(oldDir);
         /* (p as Absyn.PROGRAM(globalBuildTimes=Absyn.TIMESTAMP(r1,r2))) = Interactive.updateProgram2(p2,p,false); */
         st2 = st; // Interactive.replaceSymbolTableProgram(st,p);
@@ -4136,7 +4161,7 @@ algorithm
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
 
         SimCode.translateFunctions(pathstr, d, metarecordTypes);
-        compileModel(pathstr, {}, "", "");
+        compileModel(pathstr, {}, "", "", "");
       then
         (cache, pathstr);
     case (cache, env, path)
