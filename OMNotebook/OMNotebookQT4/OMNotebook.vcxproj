@@ -106,8 +106,9 @@
       </DataExecutionPrevention>
     </Link>
     <PostBuildEvent>
-      <Message>Copying OMNotebook and xml files to build\bin</Message>
-      <Command>copy $(TargetDir)\OMNotebook.exe $(ProjectDir)\..\..\build\bin\
+      <Message>Copying OMNotebook and xml files to build\share\omnotebook</Message>
+      <Command>mkdir $(ProjectDir)\..\..\build\share\omnotebook\
+copy $(ProjectDir)\Release\OMNotebook.exe $(ProjectDir)\..\..\build\bin\
 copy $(ProjectDir)\*.xml $(ProjectDir)\..\..\build\share\omnotebook\
 </Command>
     </PostBuildEvent>

@@ -1,7 +1,7 @@
 /****************************************************************************
 ** Resource object code
 **
-** Created: Sun 18. Jul 20:45:46 2010
+** Created: Fri Aug 20 01:08:54 2010
 **      by: The Resource Compiler for Qt version 4.7.0
 **
 ** WARNING! All changes made in this file will be lost!
@@ -10,7 +10,7 @@
 #include <QtCore/qglobal.h>
 
 static const unsigned char qt_resource_data[] = {
-  // C:/bin/cygwin/home/adrpo/dev/OpenModelica/OMNotebook/ext/Resources/plotWindow.bmp
+  // C:/dev/OpenModelica/OMNotebook/ext/Resources/plotWindow.bmp
   0x0,0x0,0x2,0x76,
   0x42,
   0x4d,0x76,0x2,0x0,0x0,0x0,0x0,0x0,0x0,0x76,0x0,0x0,0x0,0x28,0x0,0x0,
