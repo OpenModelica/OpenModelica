@@ -1978,7 +1978,7 @@ algorithm
   outExp := matchcontinue(exp)
   local 
     Real r,v1,v2; 
-    Integer i; 
+    Integer i, j; 
     Absyn.Path path; Exp e,e1;
     Boolean b;
     
@@ -2053,25 +2053,39 @@ algorithm
       then 
         DAE.RCONST(r);
         
-    // min function
+    // min function on integers
+    case(DAE.CALL(path=path,expLst={DAE.ICONST(i), DAE.ICONST(j)}))
+      equation
+        Builtin.isMin(path);
+        i = intMin(i, j);
+      then
+        DAE.ICONST(i);
+
+    // min function on reals
     case(DAE.CALL(path=path,expLst={e, e1})) 
       equation
         Builtin.isMin(path);
         v1 = getRealConst(e);
         v2 = getRealConst(e1);
-        b = v1 <=. v2;
-        r = Util.if_(b,v1,v2);
+        r = realMin(v1, v2);
       then 
         DAE.RCONST(r);  
 
-    // max function
+    // min function on integers
+    case(DAE.CALL(path=path,expLst={DAE.ICONST(i), DAE.ICONST(j)}))
+      equation
+        Builtin.isMax(path);
+        i = intMax(i, j);
+      then
+        DAE.ICONST(i);
+
+    // max function on reals
     case(DAE.CALL(path=path,expLst={e, e1})) 
       equation
         Builtin.isMax(path);
         v1 = getRealConst(e);
         v2 = getRealConst(e1);
-        b = v1 >=. v2;
-        r = Util.if_(b,v1,v2);
+        r = realMax(v1, v2);
       then 
         DAE.RCONST(r);              
   end matchcontinue;
