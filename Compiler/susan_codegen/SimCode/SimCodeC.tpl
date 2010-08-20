@@ -1014,10 +1014,8 @@ template functionUpdateDependents(list<SimEqSystem> allEquations,
     inUpdate=initial()?0:1;
   
     mem_state = get_memory_state();
-    begin_inline();
     <%eqs%>
     <%hvars%>
-    end_inline();
     restore_memory_state(mem_state);
   
     inUpdate=0;
@@ -1044,9 +1042,7 @@ template functionUpdateDepend(list<SimEqSystem> allEquationsPlusWhen)
     inUpdate=initial()?0:1;
   
     mem_state = get_memory_state();
-    begin_inline();
     <%eqs%>
-    end_inline();
     restore_memory_state(mem_state);
   
     inUpdate=0;
@@ -1201,7 +1197,11 @@ template functionOde(list<SimEqSystem> stateContEquations)
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let stateContPart = (stateContEquations |> eq =>
-      equation_(eq, contextOther, &varDecls /*BUFC*/)
+      equation_(eq, contextSimulationNonDiscrete, &varDecls /*BUFC*/)
+    ;separator="\n")
+  let &varDecls2 = buffer "" /*BUFD*/
+  let stateContPartInline = (stateContEquations |> eq =>
+      equation_(eq, contextInlineSolver, &varDecls2 /*BUFC*/)
     ;separator="\n")
   <<
   int functionODE()
@@ -1210,13 +1210,31 @@ template functionOde(list<SimEqSystem> stateContEquations)
     <%varDecls%>
   
     mem_state = get_memory_state();
-    begin_inline();
     <%stateContPart%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+
+  #if defined(_OMC_ENABLE_INLINE)
+  int functionODE_inline()
+  {
+    state mem_state;
+    <%varDecls2%>
+  
+    mem_state = get_memory_state();
+    begin_inline();
+    <%stateContPartInline%>
     end_inline();
     restore_memory_state(mem_state);
   
     return 0;
   }
+  #else
+  int functionODE_inline()
+  {
+  }
+  #endif
   >>
 end functionOde;
 
@@ -1471,8 +1489,8 @@ template equation_(SimEqSystem eq, Context context, Text &varDecls /*BUFP*/)
 end equation_;
 
 
-template inlineArray(String arr, ComponentRef c)
-::= match c
+template inlineArray(Context context, String arr, ComponentRef c)
+::= match context case INLINE_CONTEXT(__) then match c
 case CREF_QUAL(ident = "$DER") then <<
 
 inline_integrate_array(size_of_dimension_real_array(<%arr%>,1),<%cref(c)%>);
@@ -1480,8 +1498,8 @@ inline_integrate_array(size_of_dimension_real_array(<%arr%>,1),<%cref(c)%>);
 end inlineArray;
 
 
-template inlineVars(list<SimVar> simvars)
-::= match simvars
+template inlineVars(Context context, list<SimVar> simvars)
+::= match context case INLINE_CONTEXT(__) then match simvars
 case {} then ''
 else <<
 
@@ -1490,8 +1508,8 @@ else <<
 end inlineVars;
 
 
-template inlineCrefs(list<ComponentRef> crefs)
-::= match crefs
+template inlineCrefs(Context context, list<ComponentRef> crefs)
+::= match context case INLINE_CONTEXT(__) then match crefs
 case {} then ''
 else <<
 
@@ -1500,8 +1518,8 @@ else <<
 end inlineCrefs;
 
 
-template inlineCref(ComponentRef cr)
-::= match cr case CREF_QUAL(ident = "$DER") then <<
+template inlineCref(Context context, ComponentRef cr)
+::= match context case INLINE_CONTEXT(__) then match cr case CREF_QUAL(ident = "$DER") then <<
 
 inline_integrate(<%cref(cr)%>);
 >>
@@ -1518,7 +1536,7 @@ case SES_SIMPLE_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  <%cref(cref)%> = <%expPart%>;<%inlineCref(cref)%>
+  <%cref(cref)%> = <%expPart%>;<%inlineCref(context,cref)%>
   >>
 end equationSimpleAssign;
 
@@ -1533,7 +1551,7 @@ case SES_ARRAY_CALL_ASSIGN(__) then
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   <<
   <%preExp%>
-  copy_real_array_data_mem(&<%expPart%>, &<%cref(componentRef)%>);<%inlineArray(expPart,componentRef)%>
+  copy_real_array_data_mem(&<%expPart%>, &<%cref(componentRef)%>);<%inlineArray(context,expPart,componentRef)%>
   >>
 end equationArrayCallAssign;
 
@@ -1573,7 +1591,7 @@ case SES_LINEAR(__) then
      '<%preExp%>set_vector_elt(<%bname%>, <%i0%>, <%expPart%>);'
   ;separator="\n"%>
   solve_linear_equation_system<%mixedPostfix%>(<%aname%>, <%bname%>, <%size%>, <%uid%>);
-  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(vars)%>
+  <%vars |> SIMVAR(__) indexedby i0 => '<%cref(name)%> = get_vector_elt(<%bname%>, <%i0%>);' ;separator="\n"%><%inlineVars(context,vars)%>
   >>
 end equationLinear;
 
@@ -1629,7 +1647,7 @@ case SES_NONLINEAR(__) then
   ;separator="\n"%>
   solve_nonlinear_system(residualFunc<%index%>, <%index%>);
   <%crefs |> name indexedby i0 => '<%cref(name)%> = nls_x[<%i0%>];' ;separator="\n"%>
-  end_nonlinear_system();<%inlineCrefs(crefs)%>
+  end_nonlinear_system();<%inlineCrefs(context,crefs)%>
   >>
 end equationNonlinear;
 
@@ -1880,6 +1898,7 @@ end subscriptsStr;
 template subscriptStr(Subscript subscript)
  "Generates a single subscript.
   Only works for constant integer indicies."
+
 ::=
   let &preExp = buffer ""
   let &varDecls = buffer ""
@@ -3654,9 +3673,9 @@ template daeExpCrefRhsArrayBox(Exp ecr, Context context, Text &preExp /*BUFP*/,
 ::=
 match ecr
 case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
-  match context 
-  case SIMULATION(__) //TODO: ?? is it the same as "else than FUNCTION_CONTEXT" ? 
-  case OTHER(__)      then
+  match context
+  case FUNCTION_CONTEXT(__) then ''
+  else
     // For context simulation and other array variables must be boxed into a real_array
     // object since they are represented only in a double array.
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFC*/)

@@ -172,6 +172,7 @@ typedef struct sim_DATA {
   const char** inputComments;
   const char** outputComments;
 
+  double startTime; //the start time of the simulation
   double timeValue; //the time for the simulation
   //used in some generated function
   // this is not changed by initializeDataStruc
@@ -259,6 +260,7 @@ function_storeDelayed();
 // function for calculating states on explicit ODE form
 /*used in functionDAE_res function*/
 int functionODE();
+int functionODE_inline();
 
 // function for calculate initial values from initial equations
 // and fixed start attibutes

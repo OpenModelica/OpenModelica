@@ -381,13 +381,16 @@ uniontype Context
   end FUNCTION_CONTEXT;
   record OTHER
   end OTHER;
+  record INLINE_CONTEXT
+  end INLINE_CONTEXT;
 end Context;
 
 
-public constant Context contextSimulationNonDiscrete = SIMULATION(false);
-public constant Context contextSimulationDiscrete    = SIMULATION(true);
-public constant Context contextFunction              = FUNCTION_CONTEXT();
-public constant Context contextOther                 = OTHER();
+public constant Context contextSimulationNonDiscrete  = SIMULATION(false);
+public constant Context contextSimulationDiscrete     = SIMULATION(true);
+public constant Context contextInlineSolver           = INLINE_CONTEXT();
+public constant Context contextFunction               = FUNCTION_CONTEXT();
+public constant Context contextOther                  = OTHER();
 
 
 public function valueblockVars

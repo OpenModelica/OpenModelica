@@ -82,6 +82,8 @@ package SimCode
     end FUNCTION_CONTEXT;
     record OTHER
     end OTHER;
+    record INLINE_CONTEXT
+    end INLINE_CONTEXT;
   end Context;
   
   uniontype Variable
@@ -285,6 +287,7 @@ package SimCode
   
   constant Context contextSimulationNonDiscrete;
   constant Context contextSimulationDiscrete;
+  constant Context contextInlineSolver;
   constant Context contextFunction;
   constant Context contextOther;  
 

@@ -54,10 +54,12 @@ extern const int inline_work_states_ndims;
 extern const char* _omc_force_solver;
 
 #if defined(_OMC_INLINE_EULER)
+
+#define _OMC_ENABLE_INLINE
 #define _OMC_FORCE_SOLVER "inline-euler"
 #define _OMC_SOLVER_WORK_STATES_NDIMS 1
 
-#define begin_inline(void) {
+#define begin_inline(void) { globalData->timeValue += globalData->current_stepsize;
 #define end_inline(void) }
 
 #define inline_integrate(derx) { long _omc_index = &derx-globalData->statesDerivatives; inline_work_states[0][_omc_index] = globalData->states[_omc_index] + globalData->statesDerivatives[_omc_index] * globalData->current_stepsize; }
@@ -68,6 +70,8 @@ extern const char* _omc_force_solver;
 
 #elif defined(_OMC_INLINE_RK)
 
+#define _OMC_ENABLE_INLINE
+
 #define _OMC_FORCE_SOLVER "inline-rungekutta"
 #define _OMC_SOLVER_WORK_STATES_NDIMS 4
 
@@ -76,16 +80,17 @@ extern const char* _omc_force_solver;
 #define _OMC_RK_NEXT_RESULT_DIM 2 /* We need to swap these every step due to mixed systems code generation */
 #define _OMC_RK_NEXT_X_VECTOR_DIM 3
 
-#if 0
+#if 1
+/* RK4 */
 const int _omc_rk_s = 4;
 const double _omc_rk_b[4] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
-const double _omc_rk_c[4] = {-1.0,-0.5,-0.5,1};
+const double _omc_rk_c[4] = {0.0,0.5,0.5,1.0};
 #endif
-#if 1
+#if 0
 /* euler */
 const int _omc_rk_s = 1;
 const double _omc_rk_b[1] = {1.0};
-const double _omc_rk_c[1] = {0.0};
+const double _omc_rk_c[1] = {1.0};
 #endif
 
 #define begin_inline(void) { /* begin block */ \
@@ -94,9 +99,8 @@ const double _omc_rk_c[1] = {0.0};
   memcpy(inline_work_states[_OMC_RK_X_BACKUP_DIM],globalData->states,globalData->nStates*sizeof(double)); \
   double _omc_rk_time_backup = globalData->timeValue; \
   for (int _omc_rk_ix = 0; _omc_rk_ix < _omc_rk_s; _omc_rk_ix++) { /* begin for */ \
-    double _omc_rk_cur_step = _omc_rk_c[_omc_rk_ix]  * globalData->current_stepsize; \
+    double _omc_rk_cur_step = _omc_rk_c[_omc_rk_ix] * globalData->current_stepsize; \
     globalData->timeValue = _omc_rk_time_backup + _omc_rk_cur_step;
-
 
 #define inline_integrate(derx) { \
   long _omc_index = &derx-globalData->statesDerivatives; \
@@ -117,7 +121,6 @@ const double _omc_rk_c[1] = {0.0};
     std::swap(globalData->states,inline_work_states[_OMC_RK_NEXT_X_VECTOR_DIM]); \
   } /* end for*/ \
   std::swap(globalData->states,inline_work_states[_OMC_RK_X_BACKUP_DIM]); \
-  globalData->timeValue = _omc_rk_time_backup; \
 } /* end block */
 
 #else

@@ -108,7 +108,7 @@ int solver_main_step(int flag, double* step, double &start, double &stop, bool &
   case 3:
     return dasrt_step(&globalData->current_stepsize,start,stop,reset,functionODE);
   case 4:
-    return inline_step(&globalData->current_stepsize,functionODE);
+    return inline_step(&globalData->current_stepsize,functionODE_inline);
   case 1:
   default:
     return euler_ex_step(&globalData->current_stepsize,functionODE);
@@ -302,7 +302,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 int inline_step(double* step, int (*f)())
 {	
   double* tmp;
-	globalData->timeValue += *step;
   f();
   std::swap(globalData->states,inline_work_states[0]);
 	return 0;
