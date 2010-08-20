@@ -871,21 +871,24 @@ template functionDaeRes()
   {
     int i;
     double temp_xd[NX];
+    double temp_alg[NY];
     double* statesBackup;
     double* statesDerivativesBackup;
+    double* algebraicsBackup;
     double timeBackup;
   
     statesBackup = localData->states;
     statesDerivativesBackup = localData->statesDerivatives;
+    algebraicsBackup = localData->algebraics;
     timeBackup = localData->timeValue;
     localData->states = x;
-  
-    for (i=0; i<localData->nStates; i++) {
-      temp_xd[i] = localData->statesDerivatives[i];
-    }
-  
+    
     localData->statesDerivatives = temp_xd;
+    localData->algebraics = temp_alg;
     localData->timeValue = *t;
+  
+    memcpy(localData->statesDerivatives, statesDerivativesBackup, localData->nStates*sizeof(double));
+    memcpy(localData->algebraics, algebraicsBackup, localData->nAlgebraic*sizeof(double));
   
     functionODE();
   
@@ -897,6 +900,7 @@ template functionDaeRes()
   
     localData->states = statesBackup;
     localData->statesDerivatives = statesDerivativesBackup;
+    localData->algebraics = algebraicsBackup;
     localData->timeValue = timeBackup;
   
     if (modelErrorCode) {
