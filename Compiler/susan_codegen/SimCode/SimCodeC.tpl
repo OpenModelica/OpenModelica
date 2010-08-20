@@ -1546,13 +1546,24 @@ template equationArrayCallAssign(SimEqSystem eq, Context context,
  "Generates equation on form 'cref_array = call(...)'."
 ::=
 match eq
-case SES_ARRAY_CALL_ASSIGN(__) then
+
+case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
   let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-  <<
-  <%preExp%>
-  copy_real_array_data_mem(&<%expPart%>, &<%cref(componentRef)%>);<%inlineArray(context,expPart,componentRef)%>
-  >>
+  match expTypeFromExpShort(eqn.exp)
+  case "integer" then
+    let tvar = tempDecl("integer_array", &varDecls /*BUFC*/)
+    let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+    <<
+    <%preExp%>
+    copy_real_array_data_mem(&<%tvar%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    >>
+  case "real" then
+    <<
+    <%preExp%>
+    copy_real_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,expPart,eqn.componentRef)%>
+    >>
+  else "#error \"No runtime support for this sort of array call\""
 end equationArrayCallAssign;
 
 
@@ -2609,6 +2620,7 @@ end readInVarRecordMembers;
 
 template writeOutVar(Variable var, Integer index)
  "Generates code for writing a variable to outVar."
+
 ::=
   match var
   case VARIABLE(ty=ET_COMPLEX(complexClassType=RECORD(__))) then
