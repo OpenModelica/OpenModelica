@@ -85,6 +85,7 @@ protected import DAEUtil;
 protected import Algorithm;
 protected import Values;
 protected import ValuesUtil;
+protected import Prefix;
 
 protected constant Exp rconstone=DAE.RCONST(1.0);
 
@@ -1965,7 +1966,7 @@ algorithm
         expl = Util.listMap(expl, simplify1);
         e::expl = expl;
         valueLst = Util.listMap(expl, ValuesUtil.expValue);
-        (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE, NONE), valueLst, DAE.C_CONST);
+        (_,outExp,_) = Static.elabBuiltinFill2(Env.emptyCache(), Env.emptyEnv, e, (DAE.T_NOTYPE, NONE), valueLst, DAE.C_CONST,Prefix.NOPRE());
       then
         outExp;
   end matchcontinue;
@@ -11046,7 +11047,7 @@ algorithm
   outExp:=matchcontinue(inExp)
   local ComponentRef e_cref; Absyn.ComponentRef cref;
     case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_)) equation
-      (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false);
+      (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE);
       then DAE.CREF(e_cref,DAE.ET_OTHER());
   end matchcontinue;
 end CodeVarToCref;

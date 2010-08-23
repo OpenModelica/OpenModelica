@@ -266,7 +266,7 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
       local DAE.Exp e_1;
       equation
-        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true);
+        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true,Prefix.NOPRE());
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache,env, e_1, impl, st, NONE, msg);
       then
         (cache,exp);

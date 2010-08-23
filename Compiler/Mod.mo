@@ -124,7 +124,7 @@ algorithm
       equation
         (cache,subs_1,dae1) = elabSubmods(cache, env, ih, pre, subs, impl);
         // print("Mod.elabMod: calling elabExp on mod exp: " +& Dump.printExpStr(e) +& " in env: " +& Env.printEnvPathStr(env) +& "\n");
-        (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
+        (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache, env, e_1, prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre)
@@ -520,7 +520,7 @@ algorithm
     case (cache,env,ih,pre,(m as DAE.MOD(finalPrefix = f,each_ = each_,subModLst = subs,eqModOption = SOME(DAE.UNTYPED(e)))),impl)
       equation
         (cache,subs_1,dae1) = updateSubmods(cache, env, ih, pre, subs, impl);
-        (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true);
+        (cache,e_1,prop,_,dae2) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         (cache,e_val) = elabModValue(cache,env,e_1,prop);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -757,7 +757,7 @@ algorithm
         (cache,{DAE.NAMEMOD(i,m_1)},dae);
     case (cache,env,ih,pre,SCode.IDXMOD(subscriptLst = ss,an = m),impl)
       equation
-        (cache,ss_1,DAE.C_CONST(),dae1) = Static.elabSubscripts(cache,env, ss, impl);
+        (cache,ss_1,DAE.C_CONST(),dae1) = Static.elabSubscripts(cache,env, ss, impl,pre);
         (cache,m_1,dae2) = elabMod(cache, env, ih, pre, m, impl);
         smods = makeIdxmods(ss_1, m_1);
         dae = DAEUtil.joinDaes(dae1,dae2);

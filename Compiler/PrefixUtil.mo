@@ -102,7 +102,7 @@ algorithm
 end printPrefixStr;
 
 public function printPrefixStr2 "function: printPrefixStr2
-  Prints a Prefix to a string. Designed to be used in Error messages"
+  Prints a Prefix to a string. Designed to be used in Error messages to produce qualified component names"
   input Prefix inPrefix;
   output String outString;
 algorithm
@@ -114,6 +114,20 @@ algorithm
   case p then printPrefixStr(p)+&".";        
   end matchcontinue;
 end printPrefixStr2;
+
+public function printPrefixStr3 "function: printPrefixStr2
+  Prints a Prefix to a string as a component name. Designed to be used in Error messages"
+  input Prefix inPrefix;
+  output String outString;
+algorithm
+  outString :=  matchcontinue (inPrefix)
+  local 
+    Prefix p;
+  case Prefix.NOPRE() then "<NO COMPONENT>";
+  case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<NO COMPONENT>";
+  case p then printPrefixStr(p);        
+  end matchcontinue;
+end printPrefixStr3;
 
 public function printPrefix "function: printPrefix
   Prints a prefix to the Print buffer."
