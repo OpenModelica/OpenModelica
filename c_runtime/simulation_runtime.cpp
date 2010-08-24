@@ -334,7 +334,7 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
     if (sim_verbose) { cout << "Recognized solver: "<< method <<"." << endl; }
     retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,3);
   } else  if (method == std::string("inline-euler")) {
-    if (std::string(_omc_force_solver) != std::string("inline-euler")) {
+    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-euler")) {
       cout << "Recognized solver: "<< method <<", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_EULER." << endl;
       retVal = 1;
     } else {
@@ -342,7 +342,7 @@ int callSolver(int argc, char**argv, string method, string outputFormat, double 
       retVal = solver_main(argc,argv,start,stop,stepSize,outputSteps,tolerance,4);
     }
   } else  if (method == std::string("inline-rungekutta")) {
-    if (std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
+    if (!_omc_force_solver || std::string(_omc_force_solver) != std::string("inline-rungekutta")) {
       cout << "Recognized solver: "<< method <<", but the executable was not compiled with support for it. Compile with -D_OMC_INLINE_RK." << endl;
       retVal = 1;
     } else {

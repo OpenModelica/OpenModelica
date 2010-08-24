@@ -44,7 +44,6 @@
 using namespace std;
 
 // Internal definitions; do not expose
-int inline_step (double* step, int (*f)() );
 int euler_ex_step (double* step, int (*f)() );
 int rungekutta_step (double* step, int (*f)());
 int dasrt_step (double* step, double &start, double &stop, bool &trigger, int (*f)());
@@ -108,7 +107,7 @@ int solver_main_step(int flag, double* step, double &start, double &stop, bool &
   case 3:
     return dasrt_step(&globalData->current_stepsize,start,stop,reset,functionODE);
   case 4:
-    return inline_step(&globalData->current_stepsize,functionODE_inline);
+    return functionODE_inline();
   case 1:
   default:
     return euler_ex_step(&globalData->current_stepsize,functionODE);
@@ -299,14 +298,6 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	return 0;
 }
 
-int inline_step(double* step, int (*f)())
-{	
-  double* tmp;
-  f();
-  std::swap(globalData->states,inline_work_states[0]);
-	return 0;
-}
-
 int euler_ex_step (double* step, int (*f)())
 {	
 	globalData->timeValue += *step;
@@ -340,7 +331,14 @@ int rungekutta_step (double* step, int (*f)())
 		}
 	}
 
-	for(j=0;j<s;j++){
+
+  /* We calculate k[0] before returning from this function.
+   * We only want to calculate f() 4 times per call */
+  for(int i=0; i < globalData->nStates; i++) {
+    k[0][i] = globalData->statesDerivatives[i];
+  }
+
+	for(j=1;j<s;j++){
 
 		globalData->timeValue = globalData->oldTime + c[j]  * (*step);
 		for(int i=0; i < globalData->nStates; i++) {
