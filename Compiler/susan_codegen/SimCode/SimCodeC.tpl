@@ -4118,14 +4118,9 @@ template daeExpMatrix(Exp exp, Context context, Text &preExp /*BUFP*/,
  "Generates code for a matrix expression."
 ::=
   match exp
-  case MATRIX(scalar={{}}) then
-    // special case for empty matrix: create dimensional array Real[0,1]
-    let arrayTypeStr = expTypeArray(ty)
-    let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFC*/)
-    let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, 2, 0, 1);<%\n%>'
-    tmp
-  case MATRIX(scalar={}) then
-    // special case for empty array: create dimensional array Real[0,1]
+  case MATRIX(scalar={{}})  // special case for empty matrix: create dimensional array Real[0,1]
+  case MATRIX(scalar={})    // special case for empty array: create dimensional array Real[0,1] 
+    then    
     let arrayTypeStr = expTypeArray(ty)
     let tmp = tempDecl(arrayTypeStr, &varDecls /*BUFC*/)
     let &preExp += 'alloc_<%arrayTypeStr%>(&<%tmp%>, 2, 0, 1);<%\n%>'
@@ -4218,18 +4213,18 @@ template daeExpAsub(Exp exp, Context context, Text &preExp /*BUFP*/,
     let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let typeShort = expTypeFromExpShort(e)
     '<%typeShort%>_get_2D(&<%e1%>, <%incrementInt(i,-1)%>, <%incrementInt(j,-1)%>)'            
-   case ASUB(exp=e, sub={ICONST(integer=i)}) then
+  case ASUB(exp=e, sub={ICONST(integer=i)}) then
     let e1 = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let typeShort = expTypeFromExpShort(e)
     '<%typeShort%>_get(&<%e1%>, <%incrementInt(i,-1)%>)'
   case ASUB(exp=ecr as CREF(__), sub=subs) then
     let arrName = daeExpCrefRhs(buildCrefExpFromAsub(ecr, subs), context,
                               &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    match context case SIMULATION(__) then
-      arrayScalarRhs(ecr.ty, subs, arrName, context,
-                     &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    else
+    match context case FUNCTION_CONTEXT(__)  then
       arrName
+    else
+      arrayScalarRhs(ecr.ty, subs, arrName, context, &preExp, &varDecls)
+      
   else
     'OTHER_ASUB'
 end daeExpAsub;

@@ -159,7 +159,7 @@ case var as VARIABLE(__) then
         ;separator=", ")
     <<
     <%preDimsExp%>
-    var <%varName%> = new <%expTypeArray(var.ty)%><%listLength(instDims)%>(<%instDimsInit%>);<% 
+    var <%varName%> = new <%expTypeArray(var.ty,listLength(instDims))%>(<%instDimsInit%>);<% 
       //special \n solution ... the new line is dependent on this line, but the varInit as a whole does not put \n
       match var.value  case SOME(CREF(componentRef = cr)) then 
       '<%\n%><%varName%>.CopyFrom(<%crefStr(cr,simCode)%>);'
@@ -980,6 +980,22 @@ template algStatement(DAE.Statement it, Context context, SimCode simCode) ::=
     <%preExp%>
     <%expPart1%> = <%expPart2%>;
     >>
+  //works only for array name as IDENT with subscripts 
+  case STMT_ASSIGN_ARR(componentRef = CREF_IDENT(subscriptLst=subs as (_ :: _))) then
+     let &preExp = buffer ""
+     let expPart = daeExp(exp, context, &preExp, simCode)
+     let spec = daeExpCrefRhsIndexSpec(subs, context, &preExp, simCode)
+     <<
+     <%preExp%>
+     <%componentRef.ident%>.AssignSpec(<%spec%>, <%expPart%>.A);
+     >>
+  case STMT_ASSIGN_ARR(__) then
+     let &preExp = buffer ""
+     let expPart = daeExp(exp, context, &preExp, simCode)
+     <<
+     <%preExp%>
+     ArrayCopy(<%expPart%>.A, <%contextCref(componentRef, context, simCode)%>.A);
+     >>     
   case STMT_IF(__) then
     let &preExp = buffer ""
     let condExp = daeExp(exp, context, &preExp, simCode)
@@ -1228,8 +1244,9 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
       else contextCref(cr, context, simCode)
     else if crefSubIsScalar(cr) then
       // The array subscript results in a scalar
+      //let ety = match ecr.ty case ET_ARRAY(__) then "array" else "noarray"
       let arrName = contextCref(crefStripLastSubs(cr), context, simCode)
-      //let arrayType = expTypeArray(ecr.ty)
+      //let arrayType = expTypeArray(ecr.ty,listLength(crefSubs(cr)))
       //let dimsLenStr = listLength(crefSubs(cr))
       //let dimsValuesStr = (crefSubs(cr) |> INDEX(__) => daeExp(exp, context, &preExp, simCode) ;separator=", ")
       <<
@@ -1239,12 +1256,11 @@ template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) 
       >>
     else
       // The array subscript denotes a slice
-      let arrName = cref(cr, simCode)
-      let arrayType = expTypeArray(ecr.ty)
-      let spec1 = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp, simCode)
-      let &tmp = buffer ""
-      let &preExp += 'daeExpCrefRhs_SLICE_NOT_YET!!!TODO: <%tempDecl(arrayType, tmp)%> = index_alloc_<%arrayType%>(&<%arrName%>, &<%spec1%>, &<%tmp%>);<%\n%>'
-      tmp
+      let arrName = contextCref(crefStripLastSubs(cr), context, simCode)
+      //let crsubs = crefSubs(cr)
+      //let arrayType = expTypeArray(ecr.ty, listLength(crsubs))
+      let spec = daeExpCrefRhsIndexSpec(crefSubs(cr), context, &preExp, simCode)
+      '<%arrName%>.Array1Spec(<%spec%>)'
   else
     "UNKNOWN_RHS_CREF"  
 end daeExpCrefRhs;
@@ -1253,12 +1269,14 @@ template daeExpCrefRhsArrayBox(Exp exp, Context context, Text &preExp, SimCode s
 match exp
 case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
   match context 
-  case SIMULATION(__) //TODO: ?? is it the same as "else than FUNCTION_CONTEXT" ? 
-  case OTHER(__)      then
+  case FUNCTION_CONTEXT(__) then ""
+  else
+  //case SIMULATION(__) //TODO: ?? is it the same as "else than FUNCTION_CONTEXT" ? 
+  //case OTHER(__)      then
     // For context simulation and other array variables must be boxed into a real_array
     // object since they are represented only in a double array.
     let &tmpArr = buffer ""
-    let arrType = expTypeArray(aty) + listLength(dims)
+    let arrType = expTypeArray(aty, listLength(dims))
     let dimsValuesStr = (dims |> SOME(i) => i ;separator=", ")
     let &preExp += match cref2simvar(ecr.componentRef, simCode) case SIMVAR(__) then  
          '<%tempDecl("var", &tmpArr)%> = new <%arrType%>(<%dimsValuesStr%>, <%index%>-1, <%representationArrayName(varKind)%>);<%\n%>'
@@ -1267,29 +1285,21 @@ end daeExpCrefRhsArrayBox;
 
 
 template daeExpCrefRhsIndexSpec(list<Subscript> subs, Context context, Text &preExp, SimCode simCode) ::=
-let nridx_str = listLength(subs)
-let idx_str = (subs |> it =>
-               match it
-               case INDEX(__) then
-                 let expPart = daeExp(exp, context, &preExp, simCode)
-                 <<
-                 (1), make_index_array(1, <%expPart%>), 'S'
-                 >>
-               case WHOLEDIM(__) then
-                 <<
-                 (1), (0), 'W'
-                 >>
-               case SLICE(__) then
-                 let expPart = daeExp(exp, context, &preExp, simCode)
-                 let &tmp = buffer ""
-                 let &preExp += '!!!TODO:<%tempDecl("int", tmp)%> = size_of_dimension_integer_array(<%expPart%>, 1);<%\n%>'
-                 <<
-                 <%tmp%>, integer_array_make_index_array(&<%expPart%>), 'A'
-                 >>
-             ;separator=", ")
-let &tmp = buffer "" 
-let &preExp += '!!!TODO:<%tempDecl("index_spec_t", tmp)%> = create_index_spec(&<%tmp%>, <%nridx_str%>, <%idx_str%>);<%\n%>'
-tmp
+  subs |> sub => match sub
+       case INDEX(__) then
+         'new int[]{<%daeExp(exp, context, &preExp, simCode)%>-1}'
+       case WHOLEDIM(__) then
+         "null"
+       case SLICE(__) then
+         match exp
+         case ARRAY(scalar=true, ty=ET_INT(__)) then
+           <<
+           new int[]{<% array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>-1' 
+                        ;separator=","
+                      %>
+           >>
+         else "UKNOWN_SLICE_EXP"
+  ;separator=", "
 end daeExpCrefRhsIndexSpec;
 
 
@@ -1313,7 +1323,7 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
     'ASUB_3D'
   case ASUB(exp=ASUB(exp=e, sub={ICONST(integer=i)}),
             sub={ICONST(integer=j)}) then
-    'ASUB_2D'
+    '<%daeExp(e, context, &preExp, simCode)%>[<%i%>,<%j%>]'
   case ASUB(exp=e, sub={ICONST(integer=i)}) then
     'ASUB_ARRAY'
   case ASUB(exp=ecr as CREF(componentRef = cr), sub = subs) then
@@ -1368,16 +1378,16 @@ end asubSubsripts;
 // TODO: Optimize as in Codegen
 // TODO: Use this function in other places where almost the same thing is hard
 //       coded
+// not used yet 
 template arrayScalarRhs(ExpType ty, list<Exp> subs, Text arrName, Context context,
                         Text &preExp, SimCode simCode)
  "Helper to daeExpAsub."
 ::=
-  let arrayType = expTypeArray(ty)
-  let dimsLenStr = listLength(subs)
+  let arrayType = expTypeArray(ty, listLength(subs))
   let dimsValuesStr = (subs |> exp => daeExp(exp, context, &preExp, simCode)
                        ;separator=", ")
   <<
-  (*ASR<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
+  (*ASR<%arrayType%>_element_addr(&<%arrName%>, <%/*dimsLen*/%>, <%dimsValuesStr%>))
   >>
 end arrayScalarRhs;
 
@@ -1593,20 +1603,42 @@ end daeExpCall;
 
 
 template daeExpArray(ExpType ty, Boolean scalar, list<Exp> array, Context context, Text &preExp, SimCode simCode) ::=
-  if not scalar then "NON_SCALAR_ARRAY_notYetImplemeted"
-  else
-	  let &arrayVar = buffer ""
+  if scalar then 
+  	  let &arrayVar = buffer ""
 	  let params = array |> e => '(<%expTypeFromExp(e)%>)<%daeExp(e, context, &preExp, simCode)%>' 
 	               ;separator=", "
-	  let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(ty)%>1(<%listLength(array)%>,-1,new[]{<%params%>});<%\n%>'
+	  let &preExp += '<%tempDecl("var",&arrayVar)%> = new <%expTypeArray(ty,1)%>(<%listLength(array)%>,-1,new[]{<%params%>});<%\n%>'
 	  arrayVar
+  else
+      "NON_SCALAR_ARRAY_notYetImplemeted"
 end daeExpArray;
 
-
-template daeExpMatrix(Exp exp, Context context, Text &preExp, SimCode simCode)
-::= <<
-ERROR_DAE_EXP_MATRIX_NOT_YET_IMPLEMENTED
->>
+template daeExpMatrix(Exp mexp, Context context, Text &preExp, SimCode simCode)
+ "Generates code for a cast expression."
+::=
+  match mexp
+  case MATRIX(scalar={{}}) // special case for empty matrix: create dimensional array Real[0,1]
+  case MATRIX(scalar={})   // special case for empty array: create dimensional array Real[0,1] 
+    then
+    let &tmp = buffer ""
+    let &preExp += '<%tempDecl("var",&tmp)%> = new <%expTypeArray(ty,2)%>(0,1);<%\n%>'
+    tmp
+  //only scalar orthogonal matrix for now
+  case m as MATRIX(scalar=(row1::_)) then
+    let &tmp = buffer ""
+    let matArr = m.scalar |> row =>
+                       (row |> (elem,isScalar) =>
+                           if isScalar then daeExp(elem, context, &preExp, simCode)
+                           else "MATRIX_NON_SCALAR_NYI"
+                        ;separator=", ")
+                 ;separator=",\n" 
+    let &preExp += 
+       <<
+       <%tempDecl("var",&tmp)%> = new <%expTypeArray(m.ty,2)%>(<%listLength(m.scalar)%>,<%listLength(row1)%>,-1, new[]{
+         <%matArr ;anchor%>
+       });<%\n%>
+       >>
+    tmp     
 end daeExpMatrix;
 
 
@@ -1650,7 +1682,7 @@ template varType(Variable var)
 match var
 case var as VARIABLE(__) then
   if instDims then
-    '<%expTypeArray(var.ty)%><%listLength(instDims)%>'
+    expTypeArray(var.ty, listLength(instDims))
   else
     expTypeArrayIf(var.ty)
 end varType;
@@ -1682,13 +1714,13 @@ template expType(DAE.ExpType ty, Boolean isArray)
  "Generate type helper."
 ::=
   if isArray 
-  then 'expType_<%expTypeArray(ty)%>_NOT_YET'
+  then 'expType_<%expTypeArray(ty,0)%>_NOT_YET'
   else expTypeShort(ty)
 end expType;
 
-template expTypeArray(DAE.ExpType ty) ::=
+template expTypeArray(DAE.ExpType ty, Integer dims) ::=
 <<
-<%expTypeShort(ty)%>Array
+SimArray<%dims%><<%expTypeShort(ty)%>>
 >>
 end expTypeArray;
 
@@ -1696,7 +1728,7 @@ template expTypeArrayIf(DAE.ExpType ty)
  "Generate type helper."
 ::=
   match ty
-  case ET_ARRAY(__) then '<%expTypeShort(ty)%>Array<%listLength(arrayDimensions)%>'
+  case ET_ARRAY(__) then expTypeArray(ty, listLength(arrayDimensions))
   else expTypeShort(ty)
 end expTypeArrayIf;
 

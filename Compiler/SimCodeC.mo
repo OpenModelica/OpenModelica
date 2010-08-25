@@ -23288,46 +23288,46 @@ protected function fun_504
   input SimCode.Context in_i_context;
   input Tpl.Text in_i_varDecls;
   input Tpl.Text in_i_preExp;
-  input Tpl.Text in_i_arrName;
   input list<DAE.Exp> in_i_subs;
   input DAE.ExpType in_i_ecr_ty;
+  input Tpl.Text in_i_arrName;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_varDecls;
   output Tpl.Text out_i_preExp;
 algorithm
   (out_txt, out_i_varDecls, out_i_preExp) :=
-  matchcontinue(in_txt, in_i_context, in_i_varDecls, in_i_preExp, in_i_arrName, in_i_subs, in_i_ecr_ty)
+  matchcontinue(in_txt, in_i_context, in_i_varDecls, in_i_preExp, in_i_subs, in_i_ecr_ty, in_i_arrName)
     local
       Tpl.Text txt;
       Tpl.Text i_varDecls;
       Tpl.Text i_preExp;
-      Tpl.Text i_arrName;
       list<DAE.Exp> i_subs;
       DAE.ExpType i_ecr_ty;
+      Tpl.Text i_arrName;
 
     case ( txt,
-           (i_context as SimCode.SIMULATION(genDiscrete = _)),
+           SimCode.FUNCTION_CONTEXT(),
            i_varDecls,
            i_preExp,
-           i_arrName,
+           _,
+           _,
+           i_arrName )
+      equation
+        txt = Tpl.writeText(txt, i_arrName);
+      then (txt, i_varDecls, i_preExp);
+
+    case ( txt,
+           i_context,
+           i_varDecls,
+           i_preExp,
            i_subs,
-           i_ecr_ty )
+           i_ecr_ty,
+           i_arrName )
       local
         SimCode.Context i_context;
       equation
         (txt, i_preExp, i_varDecls) = arrayScalarRhs(txt, i_ecr_ty, i_subs, Tpl.textString(i_arrName), i_context, i_preExp, i_varDecls);
-      then (txt, i_varDecls, i_preExp);
-
-    case ( txt,
-           _,
-           i_varDecls,
-           i_preExp,
-           i_arrName,
-           _,
-           _ )
-      equation
-        txt = Tpl.writeText(txt, i_arrName);
       then (txt, i_varDecls, i_preExp);
   end matchcontinue;
 end fun_504;
@@ -23499,7 +23499,7 @@ algorithm
       equation
         ret_1 = SimCode.buildCrefExpFromAsub(i_ecr, i_subs);
         (i_arrName, i_preExp, i_varDecls) = daeExpCrefRhs(emptyTxt, ret_1, i_context, i_preExp, i_varDecls);
-        (txt, i_varDecls, i_preExp) = fun_504(txt, i_context, i_varDecls, i_preExp, i_arrName, i_subs, i_ecr_ty);
+        (txt, i_varDecls, i_preExp) = fun_504(txt, i_context, i_varDecls, i_preExp, i_subs, i_ecr_ty, i_arrName);
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
