@@ -1127,8 +1127,9 @@ end readSettingsFile;
 
 function printUsage
 algorithm
-  print("OpenModelica Compiler version: "); print(Settings.getVersionNr()); print("\n");
-  print("http://www.OpenModelica.org\n");
+  print("OpenModelica Compiler "); print(Settings.getVersionNr());
+  print(" Copyright Linkoping University 1997-2010\n");
+  print("Distributed under OMSC-PL and GPL, see www.openmodelica.org\n");
   print("Please check the System Guide for full information about flags.\n");
   print("Usage: omc [-runtimeOptions +omcOptions] (Model.mo | Model.mof | Script.mos) [Libraries | .mo(f)-files] \n");
   print("* Libraries: Fully qualified names of libraries to load before processing Model or Script.\n");
