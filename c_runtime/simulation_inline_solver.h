@@ -95,7 +95,6 @@ const double _omc_rk_c[1] = {1.0};
 #endif
 
 #define begin_inline(void) { /* begin block */ \
-  int zix = &$DER$z-globalData->statesDerivatives; \
   double _omc_rk_time_backup = globalData->timeValue; \
   static int initial = 1; \
   if (initial) { \

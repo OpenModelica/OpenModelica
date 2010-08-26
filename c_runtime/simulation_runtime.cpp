@@ -36,6 +36,7 @@
 #include <ctime>
 #include <cstdio>
 #include <cstring>
+#include <cassert>
 #include "simulation_runtime.h"
 #include "simulation_input.h"
 #include "solver_dasrt.h"
@@ -151,49 +152,17 @@ void storeExtrapolationData()
 
   int i;
   for(i=0;i<globalData->nStates;i++) {
-    globalData->oldStates2[i]=globalData->oldStates[i];
-    globalData->oldStatesDerivatives2[i]=globalData->oldStatesDerivatives[i];
-    globalData->oldStates[i]=globalData->states[i];
-    globalData->oldStatesDerivatives[i]=globalData->statesDerivatives[i];
+    globalData->old_states2[i]=globalData->old_states[i];
+    globalData->old_statesDerivatives2[i]=globalData->old_statesDerivatives[i];
+    globalData->old_states[i]=globalData->states[i];
+    globalData->old_statesDerivatives[i]=globalData->statesDerivatives[i];
   }
   for(i=0;i<globalData->nAlgebraic;i++) {
-    globalData->oldAlgebraics2[i]=globalData->oldAlgebraics[i];
-    globalData->oldAlgebraics[i]=globalData->algebraics[i];
+    globalData->old_algebraics2[i]=globalData->old_algebraics[i];
+    globalData->old_algebraics[i]=globalData->algebraics[i];
   }
   globalData->oldTime2 = globalData->oldTime;
   globalData->oldTime = globalData->timeValue;
-}
-
-double old(double* ptr)
-{
-  int index;
-
-  index = (int)(ptr-globalData->states);
-  if (index >=0 && index < globalData->nStates)
-    return globalData->oldStates[index];
-  index = (int)(ptr-globalData->statesDerivatives);
-  if (index >=0 && index < globalData->nStates)
-    return globalData->oldStatesDerivatives[index];
-  index = (int)(ptr-globalData->algebraics);
-  if (index >=0 && index < globalData->nAlgebraic)
-    return globalData->oldAlgebraics[index];
-  return 0.0;
-}
-
-double old2(double* ptr)
-{
-  int index;
-
-  index = (int)(ptr-globalData->states);
-  if (index >=0 && index < globalData->nStates)
-    return globalData->oldStates2[index];
-  index = (int)(ptr-globalData->statesDerivatives);
-  if (index >=0 && index < globalData->nStates)
-    return globalData->oldStatesDerivatives2[index];
-  index = (int)(ptr-globalData->algebraics);
-  if (index >=0 && index < globalData->nAlgebraic)
-    return globalData->oldAlgebraics2[index];
-  return 0.0;
 }
 
  /* \brief determine verboselevel by investigating flag -lv=flags

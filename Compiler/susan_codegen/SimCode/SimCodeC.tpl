@@ -193,6 +193,9 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   
   static DATA* localData = 0;
   #define time localData->timeValue
+  #define $P$old$Ptime localData->oldTime
+  #define $P$current_step_size globalData->current_stepsize
+
   extern "C" { // adrpo: this is needed for Visual C++ compilation to work!
     const char *model_name="<%name%>";
     const char *model_dir="<%directory%>";
@@ -316,10 +319,14 @@ template globalDataVarDefine(SimVar simVar, String arrayName)
     <<
     #define <%cref(c)%> localData-><%arrayName%>[<%index%>]
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
+    #define $P$old<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
+    #define $P$old2<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
     >>
   case SIMVAR(__) then
     <<
     #define <%cref(name)%> localData-><%arrayName%>[<%index%>]
+    #define $P$old<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
+    #define $P$old2<%cref(name)%> localData->old_<%arrayName%>[<%index%>]
     >>
 end globalDataVarDefine;
 
@@ -441,30 +448,30 @@ template functionInitializeDataStruc()
   
     if(flags & STATES && returnData->nStates) {
       returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->oldStates = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->oldStates2 = (double*) malloc(sizeof(double)*returnData->nStates);
-      assert(returnData->states&&returnData->oldStates&&returnData->oldStates2);
+      returnData->old_states = (double*) malloc(sizeof(double)*returnData->nStates);
+      returnData->old_states2 = (double*) malloc(sizeof(double)*returnData->nStates);
+      assert(returnData->states&&returnData->old_states&&returnData->old_states2);
       memset(returnData->states,0,sizeof(double)*returnData->nStates);
-      memset(returnData->oldStates,0,sizeof(double)*returnData->nStates);
-      memset(returnData->oldStates2,0,sizeof(double)*returnData->nStates);
+      memset(returnData->old_states,0,sizeof(double)*returnData->nStates);
+      memset(returnData->old_states2,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->states = 0;
-      returnData->oldStates = 0;
-      returnData->oldStates2 = 0;
+      returnData->old_states = 0;
+      returnData->old_states2 = 0;
     }
   
     if(flags & STATESDERIVATIVES && returnData->nStates) {
       returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->oldStatesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
-      returnData->oldStatesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);
-      assert(returnData->statesDerivatives&&returnData->oldStatesDerivatives&&returnData->oldStatesDerivatives2);
+      returnData->old_statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);
+      returnData->old_statesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);
+      assert(returnData->statesDerivatives&&returnData->old_statesDerivatives&&returnData->old_statesDerivatives2);
       memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);
-      memset(returnData->oldStatesDerivatives,0,sizeof(double)*returnData->nStates);
-      memset(returnData->oldStatesDerivatives2,0,sizeof(double)*returnData->nStates);
+      memset(returnData->old_statesDerivatives,0,sizeof(double)*returnData->nStates);
+      memset(returnData->old_statesDerivatives2,0,sizeof(double)*returnData->nStates);
     } else {
       returnData->statesDerivatives = 0;
-      returnData->oldStatesDerivatives = 0;
-      returnData->oldStatesDerivatives2 = 0;
+      returnData->old_statesDerivatives = 0;
+      returnData->old_statesDerivatives2 = 0;
     }
   
     if(flags & HELPVARS && returnData->nHelpVars) {
@@ -477,16 +484,16 @@ template functionInitializeDataStruc()
   
     if(flags & ALGEBRAICS && returnData->nAlgebraic) {
       returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-      returnData->oldAlgebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-      returnData->oldAlgebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
-      assert(returnData->algebraics&&returnData->oldAlgebraics&&returnData->oldAlgebraics2);
+      returnData->old_algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
+      returnData->old_algebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);
+      assert(returnData->algebraics&&returnData->old_algebraics&&returnData->old_algebraics2);
       memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);
-      memset(returnData->oldAlgebraics,0,sizeof(double)*returnData->nAlgebraic);
-      memset(returnData->oldAlgebraics2,0,sizeof(double)*returnData->nAlgebraic);
+      memset(returnData->old_algebraics,0,sizeof(double)*returnData->nAlgebraic);
+      memset(returnData->old_algebraics2,0,sizeof(double)*returnData->nAlgebraic);
     } else {
       returnData->algebraics = 0;
-      returnData->oldAlgebraics = 0;
-      returnData->oldAlgebraics2 = 0;
+      returnData->old_algebraics = 0;
+      returnData->old_algebraics2 = 0;
       returnData->stringVariables.algebraics = 0;
     }
   
@@ -688,14 +695,14 @@ case EXTOBJINFO(__) then
       data->states = 0;
     }
   
-    if(flags & STATES && data->oldStates) {
-      free(data->oldStates);
-      data->oldStates = 0;
+    if(flags & STATES && data->old_states) {
+      free(data->old_states);
+      data->old_states = 0;
     }
 
-    if(flags & STATES && data->oldStates2) {
-      free(data->oldStates2);
-      data->oldStates2 = 0;
+    if(flags & STATES && data->old_states2) {
+      free(data->old_states2);
+      data->old_states2 = 0;
     }
 
     if(flags & STATESDERIVATIVES && data->statesDerivatives) {
@@ -703,14 +710,14 @@ case EXTOBJINFO(__) then
       data->statesDerivatives = 0;
     }
   
-    if(flags & STATESDERIVATIVES && data->oldStatesDerivatives) {
-      free(data->oldStatesDerivatives);
-      data->oldStatesDerivatives = 0;
+    if(flags & STATESDERIVATIVES && data->old_statesDerivatives) {
+      free(data->old_statesDerivatives);
+      data->old_statesDerivatives = 0;
     }
   
-    if(flags & STATESDERIVATIVES && data->oldStatesDerivatives2) {
-      free(data->oldStatesDerivatives2);
-      data->oldStatesDerivatives2 = 0;
+    if(flags & STATESDERIVATIVES && data->old_statesDerivatives2) {
+      free(data->old_statesDerivatives2);
+      data->old_statesDerivatives2 = 0;
     }
   
     if(flags & ALGEBRAICS && data->algebraics) {
@@ -718,14 +725,14 @@ case EXTOBJINFO(__) then
       data->algebraics = 0;
     }
   
-    if(flags & ALGEBRAICS && data->oldAlgebraics) {
-      free(data->oldAlgebraics);
-      data->oldAlgebraics = 0;
+    if(flags & ALGEBRAICS && data->old_algebraics) {
+      free(data->old_algebraics);
+      data->old_algebraics = 0;
     }
   
-    if(flags & ALGEBRAICS && data->oldAlgebraics2) {
-      free(data->oldAlgebraics2);
-      data->oldAlgebraics2 = 0;
+    if(flags & ALGEBRAICS && data->old_algebraics2) {
+      free(data->old_algebraics2);
+      data->old_algebraics2 = 0;
     }
   
     if(flags & PARAMETERS && data->parameters) {
@@ -1657,7 +1664,7 @@ case SES_NONLINEAR(__) then
   <%crefs |> name indexedby i0 =>
     <<
     nls_x[<%i0%>] = extraPolate(<%cref(name)%>);
-    nls_xold[<%i0%>] = old(&<%cref(name)%>);
+    nls_xold[<%i0%>] = $P$old<%cref(name)%>;
     >>
   ;separator="\n"%>
   solve_nonlinear_system(residualFunc<%index%>, <%index%>);
@@ -1826,7 +1833,7 @@ template contextIteratorName(Ident name, Context context)
 ::=
 	match context
 	case FUNCTION_CONTEXT(__) then name
-	else "$" + name
+	else "$P" + name
 end contextIteratorName;
 
 template cref(ComponentRef cr)
@@ -1835,7 +1842,7 @@ template cref(ComponentRef cr)
   match cr
   case CREF_IDENT(ident = "xloc") then crefStr(cr)
   case CREF_IDENT(ident = "time") then "time"
-  else "$" + crefToCStr(cr)
+  else "$P" + crefToCStr(cr)
 end cref;
 
 template crefToCStr(ComponentRef cr)
@@ -1843,7 +1850,6 @@ template crefToCStr(ComponentRef cr)
 ::=
   match cr
   case CREF_IDENT(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>'
-  case CREF_QUAL(ident = "$DER") then 'DER$<%crefToCStr(componentRef)%>'
   case CREF_QUAL(__) then '<%ident%><%subscriptsToCStr(subscriptLst)%>$P<%crefToCStr(componentRef)%>'
   else "CREF_NOT_IDENT_OR_QUAL"
 end crefToCStr;
@@ -1884,7 +1890,7 @@ template contextArrayCref(ComponentRef cr, Context context)
 end contextArrayCref;
 
 template arrayCrefCStr(ComponentRef cr)
-::= '$<%arrayCrefCStr2(cr)%>'
+::= '$P<%arrayCrefCStr2(cr)%>'
 end arrayCrefCStr;
 
 template arrayCrefCStr2(ComponentRef cr)
@@ -1929,7 +1935,7 @@ template expCref(DAE.Exp ecr)
   match ecr
   case CREF(__) then cref(componentRef)
   case CALL(path = IDENT(name = "der"), expLst = {arg as CREF(__)}) then
-    '$DER<%cref(arg.componentRef)%>'
+    '$P$DER<%cref(arg.componentRef)%>'
   else "ERROR_NOT_A_CREF"
 end expCref;
 
@@ -3958,7 +3964,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     '<%var%>'
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="der"), expLst={arg as CREF(__)}) then
-    '$DER<%cref(arg.componentRef)%>'
+    '$P$DER<%cref(arg.componentRef)%>'
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="pre"), expLst={arg as CREF(__)}) then
     let retType = '<%expTypeArrayIf(arg.ty)%>'

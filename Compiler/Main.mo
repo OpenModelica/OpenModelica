@@ -576,6 +576,8 @@ algorithm
 
         d = fixModelicaOutput(d_1);
 
+        d = Debug.bcallret1(RTOpts.debugFlag("transformsbeforedump"),DAEUtil.transformationsBeforeBackend,d,d);
+
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
@@ -592,7 +594,7 @@ algorithm
         Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
 
         // Do any transformations required before going into code generation, e.g. if-equations to expressions.
-        d = DAEUtil.transformationsBeforeBackend(d);
+        d = Debug.bcallret1(boolNot(RTOpts.debugFlag("transformsbeforedump")),DAEUtil.transformationsBeforeBackend,d,d);
         
         str = Print.getString();
         silent = RTOpts.silent();

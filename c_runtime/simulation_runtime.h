@@ -53,10 +53,6 @@
 
 using namespace std;
 
-// To retrive the last two values of a variable.
-double old(double*);
-double old2(double*);
-
 extern int sim_verbose; // control debug output during simulation.
 extern int sim_noemit; // control emitting result data to file
 extern int acceptedStep; // !=0 when accepted step is calculated, 0 otherwise.
@@ -140,9 +136,9 @@ typedef struct sim_DATA {
   double* initialResiduals;
 
   // Old values used for extrapolation
-  double* oldStates,*oldStates2;
-  double* oldStatesDerivatives,*oldStatesDerivatives2;
-  double* oldAlgebraics,*oldAlgebraics2;
+  double* old_states,*old_states2;
+  double* old_statesDerivatives,*old_statesDerivatives2;
+  double* old_algebraics,*old_algebraics2;
   double oldTime,oldTime2;
   double current_stepsize;
 

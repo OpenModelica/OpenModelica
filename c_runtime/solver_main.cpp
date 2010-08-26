@@ -136,6 +136,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	double laststep = 0;
 	double offset = 0;
 	globalData->oldTime = start;
+	globalData->timeValue = start;
 
 	double uround = dlamch_("P",1);
 
@@ -177,7 +178,10 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 				string("Error in initialization. Storing results and exiting.\n"));
 	}
 	saveall();
-	if(sim_verbose) { sim_result->emit(); }
+	if(sim_verbose) {
+    sim_result->emit();
+  } else
+    storeExtrapolationData();
 	// Calculate stable discrete state
 	// and initial ZeroCrossings
 	function_updateDepend();

@@ -44,6 +44,7 @@ public import DAE;
 public import Env;
 public import SCode;
 public import Values;
+public import HashTable;
 
 public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
 public constant DAE.DAElist emptyDae = DAE.DAE({},emptyFuncTree);
@@ -5153,6 +5154,48 @@ algorithm
   end matchcontinue;
 end getDAEDeclsFromValueblocks;
 
+public function transformDerInline
+"Simple euler inline of the equation system; only does explicit euler, and only der(cref)"
+  input DAE.DAElist dae;
+  output DAE.DAElist d;
+algorithm
+  d := matchcontinue dae
+    local
+      HashTable.HashTable ht;
+    case dae
+      equation
+        false = RTOpts.debugFlag("frontend-inline-euler");
+      then dae;
+    case dae
+      equation
+        ht = HashTable.emptyHashTable();
+        (d,ht) = traverseDAE(dae,simpleInlineDerEuler,ht);
+      then d;
+  end matchcontinue;
+end transformDerInline;
+
+public function simpleInlineDerEuler
+"Simple euler inline of the equation system; only does explicit euler, and only der(cref)"
+  input DAE.Exp exp;
+  input HashTable.HashTable crs0;
+  output DAE.Exp exp1;
+  output HashTable.HashTable crs1;
+algorithm
+  (exp1,crs1) := matchcontinue (exp,crs0)
+    local
+      DAE.ComponentRef cr;
+    case (DAE.CALL(path=Absyn.IDENT("der"),expLst={exp as DAE.CREF(componentRef = cr, ty = DAE.ET_REAL())}),crs0)
+      equation
+        exp = DAE.BINARY(
+          DAE.BINARY(exp,DAE.SUB(DAE.ET_REAL()),DAE.CREF(DAE.CREF_QUAL("$old",DAE.ET_REAL(),{},cr),DAE.ET_REAL())),
+          DAE.DIV(DAE.ET_REAL()),
+          DAE.CREF(DAE.CREF_IDENT("$current_step_size",DAE.ET_REAL(),{}),DAE.ET_REAL()));
+        crs1 = HashTable.add((cr,0),crs0);
+      then (exp,crs1);
+    case (exp,crs0) then (exp,crs0);
+  end matchcontinue;
+end simpleInlineDerEuler;
+
 public function transformationsBeforeBackend
   input DAE.DAElist dae;
   output DAE.DAElist d;
@@ -5160,6 +5203,8 @@ algorithm
   d := dae;
   // Transform if equations to if expression before going into code generation.
   d := transformIfEqToExpr(d,false);
+  // Don't even run the function to try and do this; it doesn't work very well
+  // d := transformDerInline(d);
 end transformationsBeforeBackend;
 
 end DAEUtil;

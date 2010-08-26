@@ -36,7 +36,7 @@ LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_g -lpthread $(ANTLR_LIBP) -
   -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@ 
 
 PROG = omcd
-RMLC	= @rmlc_bin@ -g -Wc,-O3 #-Wr,-East,-Ecps,-Efol
+RMLC	= @rmlc_bin@ -g -Wc,-O1 #-Wr,-East,-Ecps,-Efol
 RML	= $(RMLHOME)/bin/rml
 RMLCFLAGS = -Wr,-ftrace
 

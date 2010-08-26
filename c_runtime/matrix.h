@@ -299,8 +299,8 @@ int ldfjac = size;
 #define end_nonlinear_system() } do {} while(0)
 
 #define extraPolate(v) (localData->oldTime == localData->oldTime2 ) ? v: \
-((old(&v)-old2(&v))/(localData->oldTime-localData->oldTime2)*localData->timeValue \
-+(localData->oldTime*old2(&v)-localData->oldTime2*old(&v))/ \
+((($P$old##v)-($P$old2##v))/(localData->oldTime-localData->oldTime2)*localData->timeValue \
++(localData->oldTime*($P$old2##v)-localData->oldTime2*($P$old##v))/ \
 (localData->oldTime-localData->oldTime2))
 #define mixed_equation_system(size) do { \
 int found_solution = 0; \

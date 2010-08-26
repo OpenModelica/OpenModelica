@@ -1117,6 +1117,9 @@ algorithm
                                     "\n",
                                     "static DATA* localData = 0;\n",
                                     "#define time localData->timeValue\n",
+                                    "#define $P$old$Ptime localData->oldTime\n",
+                                    "#define $P$current_step_size globalData->current_stepsize\n",
+                                    "\n",
                                     "extern \"C\" { // adrpo: this is needed for Visual C++ compilation to work!\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
@@ -1478,6 +1481,24 @@ algorithm
         txt = Tpl.writeStr(txt, i_arrayName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
         txt = Tpl.writeStr(txt, intString(i_index));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "]\n",
+                                    "#define $P$old"
+                                }, false));
+        txt = cref(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" localData->old_"));
+        txt = Tpl.writeStr(txt, i_arrayName);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
+        txt = Tpl.writeStr(txt, intString(i_index));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "]\n",
+                                    "#define $P$old2"
+                                }, false));
+        txt = cref(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" localData->old_"));
+        txt = Tpl.writeStr(txt, i_arrayName);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
+        txt = Tpl.writeStr(txt, intString(i_index));
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("]"));
       then txt;
 
@@ -1491,6 +1512,24 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("#define "));
         txt = cref(txt, i_name);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(" localData->"));
+        txt = Tpl.writeStr(txt, i_arrayName);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
+        txt = Tpl.writeStr(txt, intString(i_index));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "]\n",
+                                    "#define $P$old"
+                                }, false));
+        txt = cref(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" localData->old_"));
+        txt = Tpl.writeStr(txt, i_arrayName);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
+        txt = Tpl.writeStr(txt, intString(i_index));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "]\n",
+                                    "#define $P$old2"
+                                }, false));
+        txt = cref(txt, i_name);
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(" localData->old_"));
         txt = Tpl.writeStr(txt, i_arrayName);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("["));
         txt = Tpl.writeStr(txt, intString(i_index));
@@ -1884,30 +1923,30 @@ algorithm
                                    "\n",
                                    "  if(flags & STATES && returnData->nStates) {\n",
                                    "    returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-                                   "    returnData->oldStates = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-                                   "    returnData->oldStates2 = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-                                   "    assert(returnData->states&&returnData->oldStates&&returnData->oldStates2);\n",
+                                   "    returnData->old_states = (double*) malloc(sizeof(double)*returnData->nStates);\n",
+                                   "    returnData->old_states2 = (double*) malloc(sizeof(double)*returnData->nStates);\n",
+                                   "    assert(returnData->states&&returnData->old_states&&returnData->old_states2);\n",
                                    "    memset(returnData->states,0,sizeof(double)*returnData->nStates);\n",
-                                   "    memset(returnData->oldStates,0,sizeof(double)*returnData->nStates);\n",
-                                   "    memset(returnData->oldStates2,0,sizeof(double)*returnData->nStates);\n",
+                                   "    memset(returnData->old_states,0,sizeof(double)*returnData->nStates);\n",
+                                   "    memset(returnData->old_states2,0,sizeof(double)*returnData->nStates);\n",
                                    "  } else {\n",
                                    "    returnData->states = 0;\n",
-                                   "    returnData->oldStates = 0;\n",
-                                   "    returnData->oldStates2 = 0;\n",
+                                   "    returnData->old_states = 0;\n",
+                                   "    returnData->old_states2 = 0;\n",
                                    "  }\n",
                                    "\n",
                                    "  if(flags & STATESDERIVATIVES && returnData->nStates) {\n",
                                    "    returnData->statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-                                   "    returnData->oldStatesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-                                   "    returnData->oldStatesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);\n",
-                                   "    assert(returnData->statesDerivatives&&returnData->oldStatesDerivatives&&returnData->oldStatesDerivatives2);\n",
+                                   "    returnData->old_statesDerivatives = (double*) malloc(sizeof(double)*returnData->nStates);\n",
+                                   "    returnData->old_statesDerivatives2 = (double*) malloc(sizeof(double)*returnData->nStates);\n",
+                                   "    assert(returnData->statesDerivatives&&returnData->old_statesDerivatives&&returnData->old_statesDerivatives2);\n",
                                    "    memset(returnData->statesDerivatives,0,sizeof(double)*returnData->nStates);\n",
-                                   "    memset(returnData->oldStatesDerivatives,0,sizeof(double)*returnData->nStates);\n",
-                                   "    memset(returnData->oldStatesDerivatives2,0,sizeof(double)*returnData->nStates);\n",
+                                   "    memset(returnData->old_statesDerivatives,0,sizeof(double)*returnData->nStates);\n",
+                                   "    memset(returnData->old_statesDerivatives2,0,sizeof(double)*returnData->nStates);\n",
                                    "  } else {\n",
                                    "    returnData->statesDerivatives = 0;\n",
-                                   "    returnData->oldStatesDerivatives = 0;\n",
-                                   "    returnData->oldStatesDerivatives2 = 0;\n",
+                                   "    returnData->old_statesDerivatives = 0;\n",
+                                   "    returnData->old_statesDerivatives2 = 0;\n",
                                    "  }\n",
                                    "\n",
                                    "  if(flags & HELPVARS && returnData->nHelpVars) {\n",
@@ -1920,16 +1959,16 @@ algorithm
                                    "\n",
                                    "  if(flags & ALGEBRAICS && returnData->nAlgebraic) {\n",
                                    "    returnData->algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n",
-                                   "    returnData->oldAlgebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n",
-                                   "    returnData->oldAlgebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n",
-                                   "    assert(returnData->algebraics&&returnData->oldAlgebraics&&returnData->oldAlgebraics2);\n",
+                                   "    returnData->old_algebraics = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n",
+                                   "    returnData->old_algebraics2 = (double*) malloc(sizeof(double)*returnData->nAlgebraic);\n",
+                                   "    assert(returnData->algebraics&&returnData->old_algebraics&&returnData->old_algebraics2);\n",
                                    "    memset(returnData->algebraics,0,sizeof(double)*returnData->nAlgebraic);\n",
-                                   "    memset(returnData->oldAlgebraics,0,sizeof(double)*returnData->nAlgebraic);\n",
-                                   "    memset(returnData->oldAlgebraics2,0,sizeof(double)*returnData->nAlgebraic);\n",
+                                   "    memset(returnData->old_algebraics,0,sizeof(double)*returnData->nAlgebraic);\n",
+                                   "    memset(returnData->old_algebraics2,0,sizeof(double)*returnData->nAlgebraic);\n",
                                    "  } else {\n",
                                    "    returnData->algebraics = 0;\n",
-                                   "    returnData->oldAlgebraics = 0;\n",
-                                   "    returnData->oldAlgebraics2 = 0;\n",
+                                   "    returnData->old_algebraics = 0;\n",
+                                   "    returnData->old_algebraics2 = 0;\n",
                                    "    returnData->stringVariables.algebraics = 0;\n",
                                    "  }\n",
                                    "\n",
@@ -2356,14 +2395,14 @@ algorithm
                                     "    data->states = 0;\n",
                                     "  }\n",
                                     "\n",
-                                    "  if(flags & STATES && data->oldStates) {\n",
-                                    "    free(data->oldStates);\n",
-                                    "    data->oldStates = 0;\n",
+                                    "  if(flags & STATES && data->old_states) {\n",
+                                    "    free(data->old_states);\n",
+                                    "    data->old_states = 0;\n",
                                     "  }\n",
                                     "\n",
-                                    "  if(flags & STATES && data->oldStates2) {\n",
-                                    "    free(data->oldStates2);\n",
-                                    "    data->oldStates2 = 0;\n",
+                                    "  if(flags & STATES && data->old_states2) {\n",
+                                    "    free(data->old_states2);\n",
+                                    "    data->old_states2 = 0;\n",
                                     "  }\n",
                                     "\n",
                                     "  if(flags & STATESDERIVATIVES && data->statesDerivatives) {\n",
@@ -2371,14 +2410,14 @@ algorithm
                                     "    data->statesDerivatives = 0;\n",
                                     "  }\n",
                                     "\n",
-                                    "  if(flags & STATESDERIVATIVES && data->oldStatesDerivatives) {\n",
-                                    "    free(data->oldStatesDerivatives);\n",
-                                    "    data->oldStatesDerivatives = 0;\n",
+                                    "  if(flags & STATESDERIVATIVES && data->old_statesDerivatives) {\n",
+                                    "    free(data->old_statesDerivatives);\n",
+                                    "    data->old_statesDerivatives = 0;\n",
                                     "  }\n",
                                     "\n",
-                                    "  if(flags & STATESDERIVATIVES && data->oldStatesDerivatives2) {\n",
-                                    "    free(data->oldStatesDerivatives2);\n",
-                                    "    data->oldStatesDerivatives2 = 0;\n",
+                                    "  if(flags & STATESDERIVATIVES && data->old_statesDerivatives2) {\n",
+                                    "    free(data->old_statesDerivatives2);\n",
+                                    "    data->old_statesDerivatives2 = 0;\n",
                                     "  }\n",
                                     "\n",
                                     "  if(flags & ALGEBRAICS && data->algebraics) {\n",
@@ -2386,14 +2425,14 @@ algorithm
                                     "    data->algebraics = 0;\n",
                                     "  }\n",
                                     "\n",
-                                    "  if(flags & ALGEBRAICS && data->oldAlgebraics) {\n",
-                                    "    free(data->oldAlgebraics);\n",
-                                    "    data->oldAlgebraics = 0;\n",
+                                    "  if(flags & ALGEBRAICS && data->old_algebraics) {\n",
+                                    "    free(data->old_algebraics);\n",
+                                    "    data->old_algebraics = 0;\n",
                                     "  }\n",
                                     "\n",
-                                    "  if(flags & ALGEBRAICS && data->oldAlgebraics2) {\n",
-                                    "    free(data->oldAlgebraics2);\n",
-                                    "    data->oldAlgebraics2 = 0;\n",
+                                    "  if(flags & ALGEBRAICS && data->old_algebraics2) {\n",
+                                    "    free(data->old_algebraics2);\n",
+                                    "    data->old_algebraics2 = 0;\n",
                                     "  }\n",
                                     "\n",
                                     "  if(flags & PARAMETERS && data->parameters) {\n",
@@ -6397,9 +6436,9 @@ algorithm
                                     "nls_xold["
                                 }, false));
         txt = Tpl.writeStr(txt, intString(i_i0));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = old(&"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("] = $P$old"));
         txt = cref(txt, i_name);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING(");"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(";"));
         txt = Tpl.nextIter(txt);
         txt = lm_154(txt, rest);
       then txt;
@@ -7187,7 +7226,7 @@ algorithm
            _,
            i_name )
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$P"));
         txt = Tpl.writeStr(txt, i_name);
       then txt;
   end matchcontinue;
@@ -7233,7 +7272,7 @@ algorithm
       local
         DAE.ComponentRef i_cr;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$P"));
         txt = crefToCStr(txt, i_cr);
       then txt;
   end matchcontinue;
@@ -7258,15 +7297,6 @@ algorithm
       equation
         txt = Tpl.writeStr(txt, i_ident);
         txt = subscriptsToCStr(txt, i_subscriptLst);
-      then txt;
-
-    case ( txt,
-           DAE.CREF_QUAL(ident = "$DER", componentRef = i_componentRef) )
-      local
-        DAE.ComponentRef i_componentRef;
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("DER$"));
-        txt = crefToCStr(txt, i_componentRef);
       then txt;
 
     case ( txt,
@@ -7521,7 +7551,7 @@ public function arrayCrefCStr
 
   output Tpl.Text out_txt;
 algorithm
-  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("$"));
+  out_txt := Tpl.writeTok(txt, Tpl.ST_STRING("$P"));
   out_txt := arrayCrefCStr2(out_txt, i_cr);
 end arrayCrefCStr;
 
@@ -7760,7 +7790,7 @@ algorithm
         DAE.ComponentRef i_arg_componentRef;
         DAE.Exp i_arg;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$DER"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$P$DER"));
         txt = cref(txt, i_arg_componentRef);
       then txt;
 
@@ -22114,7 +22144,7 @@ algorithm
         DAE.ComponentRef i_arg_componentRef;
         DAE.Exp i_arg;
       equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$DER"));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("$P$DER"));
         txt = cref(txt, i_arg_componentRef);
       then (txt, i_preExp, i_varDecls);
 

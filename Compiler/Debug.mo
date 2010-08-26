@@ -302,7 +302,7 @@ algorithm
         res = func(arg);
       then
         res;
-    case (_,_,_,def) then def;
+    case (false,_,_,def) then def;
   end matchcontinue;
 end bcallret1;
 

@@ -664,7 +664,7 @@ void FindRoot(){
 
 	//write states to work arrays
 	for(int i=0;i<globalData->nStates;i++){
-		states_left[i] = globalData->oldStates[i];
+		states_left[i] = globalData->old_states[i];
 		states_right[i] = globalData->states[i];
 	}
 
