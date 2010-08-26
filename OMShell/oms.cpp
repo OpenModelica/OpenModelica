@@ -267,9 +267,10 @@ OMS::OMS( QWidget* parent )
 	statusBar()->showMessage( tr("Ready") );
 
 	// sett start message
-	cursor_.insertText( QString("OpenModelica ") + omc_version_ + "\n", textFormat_ );
-	cursor_.insertText( "Copyright (c) OSMC 2002-2009\n\n", textFormat_ );
-	cursor_.insertText( "To get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
+  const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
+  copyright_info_ = QString("OMShell 1.1 Copyright Link")+QString(QChar(246, 0))+("ping University 2002-") + (dateStr+7) + "\nDistributed under OMSC-PL and GPL, see www.openmodelica.org\n\nConnected to OpenModelica " + omc_version_;
+  cursor_.insertText( copyright_info_, textFormat_ );
+	cursor_.insertText( "\nTo get help on using OMShell and OpenModelica, type \"help()\" and press enter.\n", textFormat_ );
 
 
 	// create command compleation instance
@@ -1094,9 +1095,7 @@ void OMS::viewStatusbar()
 
 void OMS::aboutOMS()
 {
-	QMessageBox::about(this, "About OMShell",
-		QString("OMShell v1.1 (for OpenModelica ") + omc_version_ +
-		QString(")\n") + QString("Copyright (c) OSMC 2002-2008") );
+	QMessageBox::about(this, "About OMShell", copyright_info_ );
 }
 
 void OMS::aboutQT()

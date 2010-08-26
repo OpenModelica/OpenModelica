@@ -104,6 +104,7 @@ int main(int argc, char* argv[])
 #endif
 
   char * omhome=check_omhome();
+  const char* dateStr = __DATE__; // "Mmm dd yyyy", so dateStr+7 = "yyyy"
 
   corba_comm = flagSet("corba",argc,argv);
   const string *scriptname = getFlagValue("f",argc,argv);
@@ -115,9 +116,10 @@ int main(int argc, char* argv[])
     cout << "Using corba communication" << endl;
   }
   if(!scriptname) {
-    cout << "Open Source Modelica Terminal Shell" << endl
-	 << "Copyright 1997-2008, PELAB, Linkoping University" << endl << endl
-	 << "To get help on using Mosh and OpenModelica, type \"help()\" and press enter" << endl;
+    cout << "OMShell "
+	       << "Copyright 1997-" << dateStr+7 << ", Linkoping University" << endl
+         << "Distributed under OMSC-PL and GPL, see www.openmodelica.org" << endl << endl
+         << "To get help on using OMShell and OpenModelica, type \"help()\" and press enter" << endl;
   }
   const char* errorfile = "/tmp/omshell.log";
   if (corba_comm) {
