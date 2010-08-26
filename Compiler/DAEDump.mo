@@ -54,7 +54,6 @@ protected import Values;
 protected import Types;
 protected import ClassInf;
 protected import Algorithm;
-protected import RTOpts;
 protected import System;
 
 public function printDAE "function: printDAE
@@ -514,19 +513,6 @@ algorithm
       list<DAE.Element> l;
     case DAE.COMP(ident = n,dAElist = l)
       equation
-        false = RTOpts.modelicaOutput();
-        Print.printBuf("fclass ");
-        Print.printBuf(n);
-        Print.printBuf("\n");
-        dumpElements(l);
-        Print.printBuf("end ");
-        Print.printBuf(n);
-        Print.printBuf(";\n");
-      then
-        ();
-    case DAE.COMP(ident = n,dAElist = l)
-      equation
-        true = RTOpts.modelicaOutput();
         Print.printBuf("class ");
         Print.printBuf(n);
         Print.printBuf("\n");
@@ -2635,7 +2621,7 @@ algorithm
 
     case (DAE.COMP(ident = n,dAElist = l), str)
       equation
-        str = IOStream.append(str, Util.if_(RTOpts.modelicaOutput(), "class ", "fclass "));
+        str = IOStream.append(str, "class ");
         str = IOStream.append(str, n);
         str = IOStream.append(str, "\n");
         str = dumpElementsStream(l, str);        
