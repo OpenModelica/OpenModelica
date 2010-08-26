@@ -7,7 +7,7 @@ QMAKE=@QMAKE@
 EXE=@EXE@
 NAME=OMNotebook
 
-.PHONY: always
+.PHONY: always $(NAME)$(EXE)
 
 all: build
 
