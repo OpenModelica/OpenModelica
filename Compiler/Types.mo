@@ -1435,6 +1435,7 @@ algorithm
         res;
     
     case ((DAE.T_ENUMERATION(names = {}),_),(DAE.T_ENUMERATION(names = _),_)) then true;
+    case ((DAE.T_ENUMERATION(names = _),_),(DAE.T_ENUMERATION(names = {}),_)) then true;
     
     case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t2),_))
       equation

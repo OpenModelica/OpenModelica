@@ -671,7 +671,7 @@ public uniontype TType "-TType contains the actual type"
     list<Var> varLstBool;
   end T_BOOL;
 
-  record T_ENUMERATION
+  record T_ENUMERATION "If the list of names is empty, this is the super-enumeration that is the super-class of all enumerations"
     Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
     Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
