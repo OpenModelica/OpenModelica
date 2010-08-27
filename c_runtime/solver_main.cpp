@@ -41,6 +41,7 @@
 #include <iomanip>
 #include <algorithm>
 #include <cstdarg>
+#include <alloca.h>
 using namespace std;
 
 // Internal definitions; do not expose
@@ -316,24 +317,30 @@ int rungekutta_step (double* step, int (*f)())
 {	
   globalData->timeValue += *step;
   const int s=4;
-  int i,j,l;
+  int i,j;
   const double b[s] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
   const double c[s] = {0,0.5,0.5,1};
-  double backupstats[globalData->nStates];
-
-  std::copy(globalData->states, globalData->states + globalData->nStates, backupstats);
-
-  double k[s][globalData->nStates];
+  double* backupstates;
+  double* k[s];
+  
+  /* alloca is almost as efficient as variable-length arrays but Visual Studio
+   * does not support that feature even 10 years after it was introduced... */
+  backupstates = (double*) alloca(globalData->nStates*sizeof(double));
+  for (int i=0; i<s; i++) {
+    k[i] = (double*) alloca(globalData->nStates*sizeof(double));
+  }
+  
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
   for(int i=0; i < globalData->nStates; i++) {
     k[0][i] = globalData->statesDerivatives[i];
+    backupstates[i] = globalData->states[i];
   }
 
   for(j=1;j<s;j++){
     globalData->timeValue = globalData->oldTime + c[j]  * (*step);
     for(int i=0; i < globalData->nStates; i++) {
-      globalData->states[i] = backupstats[i] + (*step) * c[j] * k[l][i];
+      globalData->states[i] = backupstates[i] + (*step) * c[j] * k[j-1][i];
     }
     f();
     for(int i=0; i < globalData->nStates; i++) {
@@ -343,10 +350,10 @@ int rungekutta_step (double* step, int (*f)())
 
   for(i=0 ; i < globalData->nStates; i++) {
     double sum = 0;
-    for(l=0; l < s; l++) {
-      sum = sum + b[l] * k[l][i];
+    for(j=0; j < s; j++) {
+      sum = sum + b[j] * k[j][i];
     }
-    globalData->states[i] = backupstats[i] + (*step) * sum;
+    globalData->states[i] = backupstates[i] + (*step) * sum;
   }
   f();
   return 0;
