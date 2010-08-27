@@ -30,7 +30,6 @@
 
 #include <stdio.h>
 
-#include "modelica.h"
 #include "assert.h"
 #include "string.h"
 #include "simulation_runtime.h"
