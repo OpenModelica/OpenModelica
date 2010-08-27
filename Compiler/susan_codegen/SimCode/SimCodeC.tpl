@@ -1759,6 +1759,7 @@ template functionsFile(list<Function> functions,
 ::=
   <<
   #include "modelica.h"
+  #include <algorithm>
   #include <stdio.h>
   #include <stdlib.h>
   #include <errno.h>
@@ -3976,12 +3977,12 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
             path=IDENT(name="max"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    'max(<%var1%>,<%var2%>)'
+    'std::max(<%var1%>,<%var2%>)'
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="min"), expLst={e1,e2}) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
     let var2 = daeExp(e2, context, &preExp, &varDecls)
-    'min(<%var1%>,<%var2%>)'
+    'std::min(<%var1%>,<%var2%>)'
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="abs"), expLst={e1}, ty = ET_INT()) then
     let var1 = daeExp(e1, context, &preExp, &varDecls)
@@ -4063,6 +4064,7 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += '<%tvar%> = MMC_FETCH(MMC_OFFSET(MMC_UNTAGPTR(<%expPart%>), <%i%>));<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true, path=IDENT(name = "mmc_unbox_record"),
+
             expLst={s1}, ty=ty) then
     let argStr = daeExp(s1, context, &preExp, &varDecls)
     unboxRecord(argStr, ty, &preExp, &varDecls)

@@ -174,6 +174,7 @@ struct Namelist {
 	};
 typedef struct Namelist Namelist;
 
+#ifndef __cplusplus
 #define abs(x) ((x) >= 0 ? (x) : -(x))
 #define dabs(x) (doublereal)abs(x)
 #define min(a,b) ((a) <= (b) ? (a) : (b))
@@ -183,6 +184,7 @@ typedef struct Namelist Namelist;
 #define bit_test(a,b)	((a) >> (b) & 1)
 #define bit_clear(a,b)	((a) & ~((uinteger)1 << (b)))
 #define bit_set(a,b)	((a) |  ((uinteger)1 << (b)))
+#endif
 
 /* procedure parameter types for -A and -C++ */
 

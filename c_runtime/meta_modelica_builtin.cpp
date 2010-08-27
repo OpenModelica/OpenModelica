@@ -86,12 +86,12 @@ intMod_rettype intMod(modelica_integer i1, modelica_integer i2)
 
 intMax_rettype intMax(modelica_integer i1, modelica_integer i2)
 {
-  return max(i1,i2);
+  return i1 > i2 ? i1 : i2;
 }
 
 intMin_rettype intMin(modelica_integer i1, modelica_integer i2)
 {
-  return min(i1,i2);
+  return i1 < i2 ? i1 : i2;
 }
 
 intLt_rettype intLt(modelica_integer i1, modelica_integer i2)
@@ -182,12 +182,12 @@ realPow_rettype realPow(modelica_real r1, modelica_real r2)
 
 realMax_rettype realMax(modelica_real r1, modelica_real r2)
 {
-  return max(r1,r2);
+  return r1 > r2 ? r1 : r2;
 }
 
 realMin_rettype realMin(modelica_real r1, modelica_real r2)
 {
-  return min(r1,r2);
+  return r1 < r2 ? r1 : r2;
 }
 
 realAbs_rettype realAbs(modelica_real r)

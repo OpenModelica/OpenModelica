@@ -6995,6 +6995,7 @@ public function functionsFile
 algorithm
   out_txt := Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                    "#include \"modelica.h\"\n",
+                                   "#include <algorithm>\n",
                                    "#include <stdio.h>\n",
                                    "#include <stdlib.h>\n",
                                    "#include <errno.h>\n",
@@ -22187,7 +22188,7 @@ algorithm
       equation
         (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
         (i_var2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e2, i_context, i_preExp, i_varDecls);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("max("));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("std::max("));
         txt = Tpl.writeText(txt, i_var1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
         txt = Tpl.writeText(txt, i_var2);
@@ -22207,7 +22208,7 @@ algorithm
       equation
         (i_var1, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e1, i_context, i_preExp, i_varDecls);
         (i_var2, i_preExp, i_varDecls) = daeExp(emptyTxt, i_e2, i_context, i_preExp, i_varDecls);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("min("));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("std::min("));
         txt = Tpl.writeText(txt, i_var1);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(","));
         txt = Tpl.writeText(txt, i_var2);

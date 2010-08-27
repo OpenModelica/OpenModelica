@@ -65,9 +65,9 @@ typedef void(* modelica_fnptr) (void); /*MetaModelica extension, function pointe
 
 #include <assert.h>
 #include "read_write.h"
-#include "matrix.h"
 #include "meta_modelica.h"
 #include "meta_modelica_builtin.h"
+#include "matrix.h"
 
 
 typedef real_array_t real_array;
