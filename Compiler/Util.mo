@@ -895,6 +895,104 @@ algorithm
   end matchcontinue;
 end listApplyAndFold;
 
+public function arrayMapNoCopy "Takes an array and a function over the elements of the array, which is applied for each element.
+Since it will update the array values the returned array must have the same type, and thus the applied function must also return 
+the same type. 
+
+See also listMap, arrayMap 
+  "
+  input Type_a[:] array;
+  input FuncType func;
+  output Type_a[:] outArray;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+    output Type_a y;
+  end FuncType;
+algorithm
+  outArray := arrayMapNoCopyHelp1(array,func,1,arrayLength(array));
+end arrayMapNoCopy;
+
+protected function arrayMapNoCopyHelp1 "help function to arrayMap"
+  input Type_a[:] array;
+  input FuncType func;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  output Type_a[:] outArray;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+    output Type_a y;
+  end FuncType;
+algorithm
+  outArray := matchcontinue(array,func,pos,len)
+    local 
+      Type_a newElt;
+    
+    case(array,func,pos,len) equation 
+      true = pos > len;
+    then array;
+    
+    case(array,func,pos,len) equation
+      newElt = func(array[pos]);
+      array = arrayUpdate(array,pos,newElt);
+      array = arrayMapNoCopyHelp1(array,func,pos+1,len);
+    then array;
+  end matchcontinue;
+end arrayMapNoCopyHelp1;
+
+public function arrayMap "Takes an array and a function over the elements of the array, which is applied for each element.
+Since it will update the array values the returned array must not have the same type, the array will first be initialized with the result of the first call. 
+
+See also listMap, arrayMapNoCopy 
+  "
+  input Type_a[:] array;
+  input FuncType func;
+  output Type_b[:] outArray;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+    output Type_b y;
+  end FuncType;
+protected Type_b initElt;
+algorithm
+  initElt := func(array[1]);
+  outArray := arrayMapHelp1(array,arrayCreate(arrayLength(array),initElt),func,1,arrayLength(array));
+end arrayMap;
+
+protected function arrayMapHelp1 "help function to arrayMap"
+  input Type_a[:] array;
+  input Type_b[:] newArray;
+  input FuncType func;
+  input Integer pos "iterated 1..len";
+  input Integer len "length of array";
+  output Type_b[:] outArray;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  partial function FuncType
+    input Type_a x;
+    output Type_b y;
+  end FuncType;
+algorithm
+  outArray := matchcontinue(array,newArray,func,pos,len)
+    local 
+      Type_a newElt;
+    
+    case(array,newArray,func,pos,len) equation 
+      true = pos > len;
+    then newArray;
+    
+    case(array,newArray,func,pos,len) equation
+      newElt = func(array[pos]);
+      newArray = arrayUpdate(newArray,pos,newElt);
+      newArray = arrayMapHelp1(array,newArray,func,pos+1,len);
+    then newArray;
+    case(_,_,_,_,_) equation
+      print("arrayMapHelp1 failed\n");
+    then fail();
+  end matchcontinue;
+end arrayMapHelp1;
 
 public function listMap "function: listMap
   Takes a list and a function over the elements of the lists, which is applied
