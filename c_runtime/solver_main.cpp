@@ -1,4 +1,4 @@
-/*
+﻿/*
  * This file is part of OpenModelica.
  *
  * Copyright (c) 1998-2010, Linköpings University,
@@ -314,60 +314,44 @@ int euler_ex_step (double* step, int (*f)())
 
 int rungekutta_step (double* step, int (*f)())
 {	
-	globalData->timeValue += *step;
-	const int s=4;
+  globalData->timeValue += *step;
+  const int s=4;
   int i,j,l;
-	const double b[4] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
-	const double c[4] = {0,0.5,0.5,1};
-	const double a[][4] = { {0,0,0,0}, {0.5,0,0,0}, {0,0.5,0,0}, {0,0,1,0}};
-	double sum=0;
-	double* backupstats = new double[globalData->nStates];
+  const double b[s] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
+  const double c[s] = {0,0.5,0.5,1};
+  double* backupstats = new double[globalData->nStates];
 
-	std::copy(globalData->states, globalData->states + globalData->nStates, backupstats);
-	
-	double** k;
+  std::copy(globalData->states, globalData->states + globalData->nStates, backupstats);
 
-	k = new double*[s];
-	for(i=0;i<s;i++){
-		k[i] = new double[globalData->nStates];
-		for(j=0;j<globalData->nStates;j++){
-			k[i][j] = 0;
-		}
-	}
-
-
+  double k[s][globalData->nStates];
   /* We calculate k[0] before returning from this function.
    * We only want to calculate f() 4 times per call */
   for(int i=0; i < globalData->nStates; i++) {
     k[0][i] = globalData->statesDerivatives[i];
   }
 
-	for(j=1;j<s;j++){
+  for(j=1;j<s;j++){
+    globalData->timeValue = globalData->oldTime + c[j]  * (*step);
+    for(int i=0; i < globalData->nStates; i++) {
+      globalData->states[i] = backupstats[i] + (*step) * c[j] * k[l][i];
+    }
+    f();
+    for(int i=0; i < globalData->nStates; i++) {
+      k[j][i] = globalData->statesDerivatives[i];
+    }
+  }
 
-		globalData->timeValue = globalData->oldTime + c[j]  * (*step);
-		for(int i=0; i < globalData->nStates; i++) {
-			sum=0;
-			for(l=0; l < s; l++) {
-				sum = sum + a[j][l] * k[l][i];
-			}
-			globalData->states[i] = backupstats[i] + (*step) * sum;
-		}
-		f();
-		for(int i=0; i < globalData->nStates; i++) {
-			k[j][i] = globalData->statesDerivatives[i];
-		}
-	}
-
-	for(i=0 ; i < globalData->nStates; i++) {
-		sum = 0;
-		for(l=0; l < s; l++) {
-			sum = sum + b[l] * k[l][i];
-		}
-		globalData->states[i] = backupstats[i] + (*step) * sum;
-	}
-	f();
-	return 0;
+  for(i=0 ; i < globalData->nStates; i++) {
+    double sum = 0;
+    for(l=0; l < s; l++) {
+      sum = sum + b[l] * k[l][i];
+    }
+    globalData->states[i] = backupstats[i] + (*step) * sum;
+  }
+  f();
+  return 0;
 }
+
 /*
  * DASSL with synchronous treating of when equation
  *   - without integrated ZeroCrossing method.
