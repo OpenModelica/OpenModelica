@@ -180,6 +180,7 @@ algorithm
         then
           env1;
     // handle imports
+    /*
     case (env, (ele1 as SCode.IMPORT(imp = imp as Absyn.NAMED_IMPORT(name =
               "SI"))) :: eles1, vals1, restExps, ht2)
       local
@@ -194,22 +195,22 @@ algorithm
         env1 = extendEnvWithInputArgs(env, eles1, vals1, restExps, ht2);
       then
         env1;
-
+		*/
     // TODO: Use this case instead of the two cases above to be more general.
     // The current solution will only add SI-import to the environment, because
     // for some unknown reason it's much slower to constant evaluate the
     // Modelica.Mechanics.MultiBody.Frames.axesRotations function by adding the
     // imports to the environment than failing and using the dynamic loading
     // instead.
-    /*case (env, (ele1 as SCode.IMPORT(imp = imp)) :: eles1, vals1, restExps, ht2)
+    case (env, (ele1 as SCode.IMPORT(imp = imp)) :: eles1, vals1, restExps, ht2)
       local
         Absyn.Import imp;
       equation
         env1 = Env.extendFrameI(env, imp);
         env1 = extendEnvWithInputArgs(env1, eles1, vals1, restExps, ht2);
       then
-        env1;*/
-
+        env1; 
+		
     // handle an input component definition where the variable is a record 
     case(env, ((ele1 as SCode.COMPONENT(
                   component = varName,
