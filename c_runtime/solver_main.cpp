@@ -319,7 +319,7 @@ int rungekutta_step (double* step, int (*f)())
   int i,j,l;
   const double b[s] = {1.0/6.0,1.0/3.0,1.0/3.0,1.0/6.0};
   const double c[s] = {0,0.5,0.5,1};
-  double* backupstats = new double[globalData->nStates];
+  double backupstats[globalData->nStates];
 
   std::copy(globalData->states, globalData->states + globalData->nStates, backupstats);
 
