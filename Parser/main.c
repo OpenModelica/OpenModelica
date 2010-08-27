@@ -12,9 +12,7 @@ long unsigned int szMemoryUsed = 0;
 #include <ModelicaLexer.h>
 #include <ModelicaParser.h>
 
-HANDLE semaphore;
-
-DWORD WINAPI parseFile(char* fileName)
+int parseFile(char* fileName)
 {
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
@@ -53,6 +51,7 @@ DWORD WINAPI parseFile(char* fileName)
   return 0;
 }
 
+#if defined(_MSC_VER)
 int hasMoFiles(char* directory)
 {
   WIN32_FIND_DATA FileData;
@@ -146,6 +145,7 @@ int recurseDirectories(char* directory)
   }
   return 0;
 }
+#endif
 
 int main(int argc,char* argv[])
 {
@@ -153,12 +153,14 @@ int main(int argc,char* argv[])
 
   if ( argc < 3 ) fprintf(stderr, "Usage: %s [-f Model.mo|-d directory]\n",argv[0]),exit(1);
 
+#if defined(_MSC_VER)
   if (strcmp(argv[1],"-d") == 0)
   {
     parseMoFilesInDirectory(argv[2]);
     recurseDirectories(argv[2]);
     fprintf(stderr, "No more .mo files!\n");
   }
+#endif
 
   if (strcmp(argv[1],"-f") == 0)
   {

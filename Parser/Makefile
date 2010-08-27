@@ -3,7 +3,7 @@ all: libantlr3.a ModelicaLexer.c ModelicaParser.c ModelicaParser
 
 libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
 	# build the library
-	gcc -O3 -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include
+	gcc -O3 -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
 	ar -ru libantlr3.a *.o
 	ranlib libantlr3.a
 	rm -f *.o
@@ -12,7 +12,7 @@ ModelicaLexer.c ModelicaParser.c: Modelica.g
 	./runantlr.sh
 
 ModelicaParser: libantlr3.a ModelicaLexer.c ModelicaParser.c
-	gcc -O3 -o ModelicaParser *.c -I. -Iantlr-3.2/runtime/C/include -L. -lantlr3
+	gcc -O3 -o ModelicaParser *.c -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -L. -lantlr3
 	mkdir -p Release
 	cp -f ModelicaParser Release/ModelicaParser
 	
