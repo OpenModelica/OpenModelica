@@ -15,8 +15,8 @@ libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/*
 ModelicaLexer.c ModelicaParser.c: Modelica.g
 	$(ANTLRCMD) $<
 
-ModelicaParser: libantlr3.a ModelicaLexer.c ModelicaParser.c
-	gcc -O3 -o ModelicaParser *.c -I$(COMPILERHOME) -L$(RMLHOME)/lib/plain/ $(LIBRML) -I$(RMLHOME)/include/plain -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -L. -lantlr3
+ModelicaParser: libantlr3.a ModelicaLexer.c ModelicaParser.c main.c
+	gcc -O3 -o ModelicaParser ModelicaLexer.c ModelicaParser.c main.c -I$(COMPILERHOME) -L$(RMLHOME)/lib/plain/ $(LIBRML) -I$(RMLHOME)/include/plain -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include -L. -lantlr3
 	mkdir -p Release
 	cp -f ModelicaParser Release/ModelicaParser
 	

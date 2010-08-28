@@ -19,7 +19,6 @@ int parseFile(char* fileName)
   pModelicaLexer              lxr;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
   pModelicaParser             psr;
-  unsigned long               i = 0;
   
   fprintf(stderr, "Parsing %s\n", fileName); fflush(stderr);
 
