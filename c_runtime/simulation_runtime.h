@@ -293,17 +293,17 @@ throw TerminateSimulationException(string(msg)); } } while(0)
  */
 
 class TerminateSimulationException {
- public:
- 	TerminateSimulationException(std::string msg) : currentTime(0.0), errorMessage(std::string(msg)) {} ;
-	TerminateSimulationException(double time) : currentTime(time), errorMessage(std::string("")) {} ;
-	TerminateSimulationException(double time, std::string msg) : currentTime(time), errorMessage(msg) {};
-	TerminateSimulationException() : currentTime(0.0) {};
-	~TerminateSimulationException() {};
-	std::string getMessage() { return errorMessage; };
-	double getTime() { return currentTime; };
-	private :
-	double currentTime;
-	std::string errorMessage;
+public:
+  TerminateSimulationException(const std::string& msg) : currentTime(0.0), errorMessage(msg) {}
+  TerminateSimulationException(double time) : currentTime(time), errorMessage("") {}
+  TerminateSimulationException(double time, const std::string& msg) : currentTime(time), errorMessage(msg) {}
+  TerminateSimulationException() : currentTime(0.0) {}
+  virtual ~TerminateSimulationException() {}
+  const std::string& getMessage() const { return errorMessage; }
+  double getTime() const { return currentTime; }
+protected:
+  double currentTime;
+  std::string errorMessage;
 };
 
 #endif
