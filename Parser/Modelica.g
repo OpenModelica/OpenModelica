@@ -196,8 +196,11 @@ OPERATOR;
   #include "Absyn.h"
   /* Eat anything so we can test code gen */
   void* mk_box_eat_all(int ix, ...);
+  #define or_nil(x) (x != 0 ? x : mk_nil())
+  #define mk_some_or_none(x) (x ? mk_some(x) : mk_none())
   #define mk_scon(x) x
   #define mk_rcon(x) mk_box_eat_all(0,x)
+  #define mk_tuple2(x1,x2) mk_box_eat_all(0,x1,x2)
   #define mk_box0(x1) mk_box_eat_all(x1)
   #define mk_box1(x1,x2) mk_box_eat_all(x1,x2)
   #define mk_box2(x1,x2,x3) mk_box_eat_all(x1,x2,x3)
@@ -321,18 +324,18 @@ stored_definition returns [void* ast] :
   (within=within_clause SEMICOLON)?
   cl=class_definition_list?
     {
-      ast = Absyn__PROGRAM(cl != 0 ? cl : mk_nil(), within || Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0), mk_rcon(getCurrentTime())));
+      ast = Absyn__PROGRAM(or_nil(cl), within || Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0), mk_rcon(getCurrentTime())));
     }
   ;
 
 within_clause returns [void* ast] :
-    WITHIN (name_path)?
+    WITHIN (name=name_path)? {ast = Absyn__WITHIN(name);}
   ;
 
 class_definition_list returns [void* ast] :
   ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON) cl=class_definition_list?
     {
-      ast = mk_cons(cd, cl != 0 ? cl : mk_nil());
+      ast = mk_cons(cd, or_nil(cl));
     }
   ;
 
@@ -384,10 +387,12 @@ class_specifier2 returns [void* ast] :
 ( 
   string_comment c=composition T_END i2=IDENT 
   /* { fprintf(stderr,"position composition for \%s -> \%d\n", $i2.text->chars, $c->getLine()); } */
-| EQUALS base_prefix type_specifier ( class_modification )? comment
-| EQUALS e=enumeration {ast=e;}
-| EQUALS pder
-| EQUALS e=overloading {ast=e;}
+| EQUALS base_prefix type_specifier ( cm=class_modification )? cmt=comment
+  {
+  }
+| EQUALS cs=enumeration {ast=cs;}
+| EQUALS cs=pder {ast=cs;}
+| EQUALS cs=overloading {ast=cs;}
 | SUBTYPEOF type_specifier
 )
 ;
@@ -395,14 +400,14 @@ class_specifier2 returns [void* ast] :
 pder returns [void* ast] :
   DER LPAR func=name_path COMMA var_lst=ident_list RPAR cmt=comment
   {
-    ast = Absyn__PDER(func, var_lst, cmt ? mk_some(cmt) : mk_none());
+    ast = Absyn__PDER(func, var_lst, mk_some_or_none(cmt));
   }
   ;
 
 ident_list returns [void* ast]:
   i=IDENT (COMMA il=ident_list)?
     {
-      ast = mk_cons(i, il ? il : mk_nil());
+      ast = mk_cons(i, or_nil(il));
     }
   ;
 
@@ -410,7 +415,7 @@ ident_list returns [void* ast]:
 overloading returns [void* ast] :
   OVERLOAD LPAR name_list RPAR cmt=comment
     {
-      ast = Absyn__OVERLOAD(name_list, cmt ? mk_some(cmt) : mk_none());
+      ast = Absyn__OVERLOAD(name_list, mk_some_or_none(cmt));
     }
   ;
 
@@ -421,7 +426,7 @@ base_prefix :
 name_list returns [void* ast] :
   n=name_path (COMMA nl=name_list)?
     {
-      ast = mk_cons(n, nl ? nl : mk_nil());
+      ast = mk_cons(n, or_nil(nl));
     }
   ;
 
@@ -429,9 +434,9 @@ enumeration returns [void* ast] :
   ENUMERATION LPAR (el=enum_list | c=COLON ) RPAR cmt=comment
     {
       if (c) {
-        ast = Absyn__ENUMERATION(Absyn__ENUM_5fCOLON, cmt ? mk_some(cmt) : mk_none());
+        ast = Absyn__ENUMERATION(Absyn__ENUM_5fCOLON, mk_some_or_none(cmt));
       } else {
-        ast = Absyn__ENUMERATION(Absyn__ENUMLITERALS(el), cmt ? mk_some(cmt) : mk_none());
+        ast = Absyn__ENUMERATION(Absyn__ENUMLITERALS(el), mk_some_or_none(cmt));
       }
     }
   ;
@@ -439,14 +444,14 @@ enumeration returns [void* ast] :
 enum_list returns [void* ast] :
   e=enumeration_literal ( COMMA el=enum_list )?
     {
-      ast = mk_cons(e, el != 0 ? el : mk_nil());
+      ast = mk_cons(e, or_nil(el));
     }
   ;
 
 enumeration_literal returns [void* ast] :
   i1=IDENT c1=comment
     {
-      ast = Absyn__ENUMLITERAL(token_to_scon(i1),c1 ? mk_some(c1) : mk_none());
+      ast = Absyn__ENUMLITERAL(token_to_scon(i1),mk_some_or_none(c1));
     }
   ;
 
@@ -462,16 +467,21 @@ composition :
   ( external_clause )?
   ;
 
-external_clause :
+external_clause returns [void* ast] :
         EXTERNAL
-        ( language_specification )?
-        ( external_function_call )?
-        ( annotation )? SEMICOLON
-        ( external_annotation )?
+        ( lang=language_specification )?
+        ( ( retexp=component_reference EQUALS )?
+          funcname=IDENT LPAR ( expl=expression_list )? RPAR )?
+        ( ann1 = annotation )? SEMICOLON
+        ( ann2 = external_annotation )?
+          {
+            ast = Absyn__EXTERNALDECL(mk_some_or_none(funcname), mk_some_or_none(lang), mk_some_or_none(retexp), or_nil(expl), mk_some_or_none(ann1));
+            ast = Absyn__EXTERNAL(ast, mk_some_or_none(ann2));
+          }
         ;
 
-external_annotation:
-  annotation SEMICOLON /* -> (EXTERNAL_ANNOTATION external_annotation) */
+external_annotation returns [void* ast] :
+  ann=annotation SEMICOLON {ast = ann;}
   ;
 
 public_element_list :
@@ -482,13 +492,8 @@ protected_element_list :
   PROTECTED element_list
   ;
 
-language_specification :
-  STRING
-  ;
-
-external_function_call :
-  ( component_reference EQUALS )?
-  IDENT LPAR ( expression_list )? RPAR /* -> (EXTERNAL_FUNCTION_CALL external_function_call) */
+language_specification returns [void* ast] :
+  id=STRING {ast = token_to_scon(id);}
   ;
 
 element_list :
@@ -508,7 +513,7 @@ element :
 import_clause returns [void* ast] :
   IMPORT (imp=explicit_import_name | imp=implicit_import_name) cmt=comment
     {
-      ast = Absyn__IMPORT(imp, cmt ? mk_some(cmt) : mk_none());
+      ast = Absyn__IMPORT(imp, mk_some_or_none(cmt));
     }
   ;
 defineunit_clause :
@@ -556,53 +561,67 @@ type_prefix :
   (FLOW|STREAM)? (DISCRETE|PARAMETER|CONSTANT)? (T_INPUT|T_OUTPUT)?
   ;
 
-type_specifier :
+type_specifier returns [void* ast] :
   np=name_path
-  (type_specifier_list)?
+  (LESS ts=type_specifier_list GREATER)?
   (as=array_subscripts)?
+    {
+      if (ts != NULL)
+        ast = Absyn__TCOMPLEX(np,ts,mk_some_or_none(as));
+      else
+        ast = Absyn__TPATH(np,mk_some_or_none(as));
+    }
   ;
 
-type_specifier_list:
-  (LESS np1=type_specifier (COMMA np2=type_specifier)* GREATER)
-  /* -> (TYPE_LIST type_specifier_list) */
+type_specifier_list returns [void* ast] :
+  np1=type_specifier (COMMA np2=type_specifier)? {ast = mk_cons(np1,or_nil(np2));}
   ;
 
-component_list :
-  component_declaration (COMMA component_declaration)*
+component_list returns [void* ast] :
+  c=component_declaration (COMMA cs=component_list)? {ast = mk_cons(c, or_nil(cs));}
   ;
 
-component_declaration :
-  declaration (conditional_attribute)? comment
+component_declaration returns [void* ast] :
+  decl=declaration (cond=conditional_attribute)? cmt=comment
+    {
+      ast = Absyn__COMPONENTITEM(decl, mk_some_or_none(cond), mk_some_or_none(cmt));
+    }
   ;
 
-conditional_attribute :
-        IF expression
+conditional_attribute returns [void* ast] :
+        IF e=expression {ast = e;}
         ;
 
-declaration :
-  ( IDENT | OPERATOR ) (array_subscripts)? (modification)?
+declaration returns [void* ast] :
+  ( id=IDENT | id=OPERATOR ) (as=array_subscripts)? (mod=modification)?
+    {
+      ast = Absyn__COMPONENT(token_to_scon(id), or_nil(as), mk_some_or_none(mod));
+    }
   ;
 
 /*
  * 2.2.5 Modification
  */
 
-modification :
-  ( class_modification ( EQUALS expression )?
-  | EQUALS expression
-  | ASSIGN expression
+modification returns [void* ast] :
+  ( cm=class_modification ( EQUALS e=expression )?
+  | EQUALS e=expression
+  | ASSIGN e=expression
   )
+    {
+      ast = Absyn__CLASSMOD(or_nil(cm), mk_some_or_none(e));
+    }
   ;
 
 class_modification returns [void* ast] :
-  LPAR ( argument_list )? RPAR /* -> (CLASS_MODIFICATION class_modification) */
+  LPAR ( as=argument_list )? RPAR {ast = or_nil(as);}
   ;
 
-argument_list :
-  argument ( COMMA argument )* /* -> (ARGUMENT_LIST argument_list) */
+argument_list returns [void* ast] :
+  a=argument ( COMMA as=argument_list )? {ast = mk_cons(a, or_nil(as));}
   ;
 
-argument  :
+argument returns [void* ast] :
   (
     em=element_modification_or_replaceable /* -> (ELEMENT_MODIFICATION em) */
   | er=element_redeclaration  /* -> (ELEMENT_REDECLARATION er) */
@@ -779,25 +798,31 @@ algorithm_list :
   ( algorithm SEMICOLON algorithm_list )
   ;
 
-connect_clause :
-  CONNECT LPAR connector_ref COMMA connector_ref RPAR
+connect_clause returns [void* ast] :
+  CONNECT LPAR cr1=connector_ref COMMA cr2=connector_ref RPAR {ast = Absyn__EQ_5fCONNECT(cr1,cr2);}
   ;
 
-connector_ref :
-  IDENT ( array_subscripts )? ( DOT connector_ref_2 )?
+connector_ref returns [void* ast] :
+  id=IDENT ( as=array_subscripts )? ( DOT cr2=connector_ref_2 )?
+    {
+      if (cr2)
+        ast = Absyn__CREF_5fQUAL(token_to_scon(id),or_nil(as),cr2);
+      else
+        ast = Absyn__CREF_5fIDENT(token_to_scon(id),or_nil(as));
+    }
   ;
 
-connector_ref_2 :
-  IDENT ( array_subscripts )?
+connector_ref_2 returns [void* ast] :
+  id=IDENT ( as=array_subscripts )? {ast = Absyn__CREF_5fIDENT(token_to_scon(id),or_nil(as));}
   ;
 
 /*
  * 2.2.7 Expressions
  */
 expression returns [void* ast] :
-  ( if_expression
-  | simple_expression
-  | code_expression
+  ( e=if_expression {ast = e;}
+  | e=simple_expression {ast = e;}
+  | e=code_expression {ast = e;}
   | (MATCHCONTINUE expression_or_empty
      local_clause
      cases
@@ -809,9 +834,9 @@ expression returns [void* ast] :
   )
   ;
 
-expression_or_empty :
-  e = expression /* { $expression_or_empty = $e; } */
-  | LPAR RPAR /* -> (EMPTY expression_or_empty) */
+expression_or_empty returns [void* ast] :
+  e = expression {ast = e;}
+  | LPAR RPAR {ast = Absyn__TUPLE(mk_nil());}
   ;
 
 local_clause:
@@ -819,8 +844,7 @@ local_clause:
   ;
 
 cases:
-  (onecase)+ (ELSE string_comment local_clause (EQUATION equation_list_then)?
-  THEN expression_or_empty SEMICOLON)?
+  (onecase)+ (ELSE (string_comment local_clause (EQUATION equation_list_then)? THEN)? expression_or_empty SEMICOLON)?
   ;
 
 onecase:
@@ -832,58 +856,43 @@ pattern:
   expression_or_empty
   ;
 
-if_expression :
-  IF expression THEN expression (elseif_expression)* ELSE expression
+if_expression returns [void* ast] :
+  IF cond=expression THEN e1=expression es=elseif_expression_list ELSE e2=expression {Absyn__IFEXP(cond,e1,e2,es);}
   ;
 
-elseif_expression :
-  ELSEIF expression THEN expression
+elseif_expression_list returns [void* ast] :
+  e=elseif_expression es=elseif_expression_list { ast = mk_cons(e,es); }
+  | { ast = mk_nil(); }
   ;
 
-for_indices :
-        for_index (COMMA for_index)*
+elseif_expression returns [void* ast] :
+  ELSEIF e1=expression THEN e2=expression { ast = mk_tuple2(e1,e2); }
   ;
 
-for_index:
-        (IDENT (T_IN expression)?)
+for_indices returns [void* ast] :
+     i=for_index (COMMA is=for_indices)? {ast = mk_cons(i, or_nil(is));}
   ;
 
-simple_expression :
-    simple_expr (COLONCOLON simple_expr)*
-  | IDENT AS simple_expression
+for_index returns [void* ast] :
+     (i=IDENT (T_IN e=expression)? {ast = mk_tuple2(token_to_scon(i),mk_some_or_none(e));})
   ;
 
-simple_expr :
-  l1=logical_expression ( COLON l2=logical_expression ( COLON l3=logical_expression )? )?
+simple_expression returns [void* ast] :
+    e=simple_expr {ast = e;} (COLONCOLON e=simple_expr {ast = Absyn__CONS(ast,e);})*
+  | i=IDENT AS e=simple_expression {ast = Absyn__AS(token_to_scon(i),e);}
   ;
 
-/* Code quotation mechanism */
-code_expression  :
-  CODE LPAR ((expression RPAR)=> e=expression | m=modification | el=element (SEMICOLON)?
-  | eq=code_equation_clause | ieq=code_initial_equation_clause
-  | alg=code_algorithm_clause | ialg=code_initial_algorithm_clause
-  )  RPAR
+simple_expr returns [void* ast] :
+  e1=logical_expression ( COLON e2=logical_expression ( COLON e3=logical_expression )? )?
+    {
+      if (e3)
+        ast = Absyn__RANGE(e1,mk_some(e2),e3);
+      else if (e2)
+        ast = Absyn__RANGE(e1,mk_none(),e2);
+      else
+        ast = e1;
+    }
   ;
-
-code_equation_clause :
-  ( EQUATION ( equation SEMICOLON | annotation SEMICOLON )*  )
-  ;
-
-code_initial_equation_clause :
-  { LA(2)==EQUATION }?
-  INITIAL ec=code_equation_clause 
-  ;
-
-code_algorithm_clause :
-  T_ALGORITHM (algorithm SEMICOLON | annotation SEMICOLON)*
-  ;
-
-code_initial_algorithm_clause :
-  { LA(2) == T_ALGORITHM }?
-  INITIAL T_ALGORITHM
-  ( algorithm SEMICOLON | annotation SEMICOLON )* 
-  ;
-/* End Code quotation mechanism */
 
 logical_expression returns [void* ast] :
   e1=logical_term {ast = e1;} ( T_OR e2=logical_term {ast = Absyn__BINARY(ast,Absyn__OR,e2);})*
@@ -945,7 +954,9 @@ factor returns [void* ast] :
     }
   ;
 
-primary returns [void* ast] :
+primary returns [void* ast] @declarations {
+  bool isFor = 0;
+} :
   ( v=UNSIGNED_INTEGER {ast = Absyn__INTEGER(mk_icon($v.int));}
   | v=UNSIGNED_REAL    {ast = Absyn__REAL(mk_rcon(atof($v.text->chars)));}
   | v=STRING           {ast = Absyn__STRING(mk_scon($v.text->chars));}
@@ -955,13 +966,19 @@ primary returns [void* ast] :
   | DER el=function_call {ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
   | LPAR expression_list RPAR {ast = Absyn__TUPLE(el);}
   | LBRACK el=matrix_expression_list RBRACK {ast = Absyn__MATRIX(el);}
-  | LBRACE el=for_or_expression_list RBRACE {ast = el;}
+  | LBRACE for_or_el=for_or_expression_list[&isFor] RBRACE
+    {
+      if (isFor)
+        ast = Absyn__ARRAY(for_or_el);
+      else
+        ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el);
+    }
   | T_END { ast = Absyn__END; }
   )
   ;
 
 matrix_expression_list returns [void* ast] :
-  e1=expression_list (SEMICOLON e2=matrix_expression_list)? {ast = mk_cons(e1, e2 ? e2 : mk_nil());}
+  e1=expression_list (SEMICOLON e2=matrix_expression_list)? {ast = mk_cons(e1, or_nil(e2));}
   ;
 
 component_reference__function_call returns [void* ast] :
@@ -993,9 +1010,9 @@ component_reference returns [void* ast] :
     ( id=IDENT | id=OPERATOR) ( arr=array_subscripts )? ( DOT cr=component_reference )?
     {
       if (cr)
-        ast = Absyn__CREF_5fQUAL(token_to_scon(id), arr ? arr : mk_nil(), cr);
+        ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr);
       else
-        ast = Absyn__CREF_5fIDENT(token_to_scon(id), arr ? arr : mk_nil());
+        ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
     }
   | WILD {ast = Absyn__WILD;}
   ;
@@ -1004,27 +1021,29 @@ function_call returns [void* ast] :
   LPAR (function_arguments) RPAR {ast = function_arguments;}
   ;
 
-function_arguments returns [void* ast] :
-  (elist=for_or_expression_list) (namel=named_arguments) ?
+function_arguments returns [void* ast] @declarations {
+  bool isFor = 0;
+} :
+  (for_or_el=for_or_expression_list[&isFor]) (namel=named_arguments) ?
     {
-      ast = Absyn__FUNCTIONARGS(elist,namel);
+      ast = isFor ? for_or_el : Absyn__FUNCTIONARGS(for_or_el,namel);
     }
   ;
 
-for_or_expression_list returns [void* ast]:
+for_or_expression_list [bool* isFor] returns [void* ast]:
   ({LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
-   /* empty */
-  |(e=expression ( COMMA explist=for_or_expression_list2 | FOR forind=for_indices)? )
+   {ast = mk_nil();} /* empty */
+  |(e=expression {ast = e;} ( COMMA el=for_or_expression_list2 {ast = mk_cons(e,el);} | FOR forind=for_indices {ast = Absyn__FOR_5fITER_5fFARG(e, forind); *isFor = 1;})? )
   )
     ;
 
-for_or_expression_list2 :
-    {LA(2) == EQUALS}?
-  | expression (COMMA for_or_expression_list2)?
+for_or_expression_list2 returns [void* ast] :
+    {LA(2) == EQUALS}? {ast = mk_nil();}
+  | e=expression (COMMA el=for_or_expression_list2)? {ast = mk_cons(e, or_nil(el));}
   ;
 
 named_arguments returns [void* ast] :
-  a=named_argument (COMMA as=named_arguments)? {ast = mk_cons(a, as ? as : mk_nil());}
+  a=named_argument (COMMA as=named_arguments)? {ast = mk_cons(a, or_nil(as));}
   ;
 
 named_argument returns [void* ast] :
@@ -1040,7 +1059,7 @@ array_subscripts returns [void* ast] :
   ;
 
 subscript_list returns [void* ast] :
-  s1=subscript ( COMMA s2=subscript_list )? {ast = mk_cons(s1,s2 ? s2 : mk_nil());}
+  s1=subscript ( COMMA s2=subscript_list )? {ast = mk_cons(s1, or_nil(s2));}
   ;
 
 subscript returns [void* ast] :
@@ -1052,7 +1071,7 @@ comment returns [void* ast] :
   (cmt=string_comment (ann=annotation)?)
     {
        if (cmt || ann) {
-         ast = Absyn__COMMENT(ann ? mk_some(ann) : mk_none(), cmt ? mk_some(cmt) : mk_none());
+         ast = Absyn__COMMENT(mk_some_or_none(ann), mk_some_or_none(cmt));
        }
     }
   ;
@@ -1068,3 +1087,31 @@ annotation returns [void* ast] :
   T_ANNOTATION cmod=class_modification {ast = Absyn__ANNOTATION(cmod);}
   ;
 
+
+/* Code quotation mechanism */
+code_expression returns [void* ast] :
+  CODE LPAR ((expression RPAR)=> e=expression | m=modification | el=element (SEMICOLON)?
+  | eq=code_equation_clause | ieq=code_initial_equation_clause
+  | alg=code_algorithm_clause | ialg=code_initial_algorithm_clause
+  )  RPAR
+  ;
+
+code_equation_clause :
+  ( EQUATION ( equation SEMICOLON | annotation SEMICOLON )*  )
+  ;
+
+code_initial_equation_clause :
+  { LA(2)==EQUATION }?
+  INITIAL ec=code_equation_clause 
+  ;
+
+code_algorithm_clause :
+  T_ALGORITHM (algorithm SEMICOLON | annotation SEMICOLON)*
+  ;
+
+code_initial_algorithm_clause :
+  { LA(2) == T_ALGORITHM }?
+  INITIAL T_ALGORITHM
+  ( algorithm SEMICOLON | annotation SEMICOLON )* 
+  ;
+/* End Code quotation mechanism */
