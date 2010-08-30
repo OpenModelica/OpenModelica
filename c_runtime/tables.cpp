@@ -40,6 +40,7 @@
 #include <cmath>
 #include <cassert>
 #include <cstdarg>
+#include <cctype>
 
 #include "simulation_runtime.h"
 
@@ -380,7 +381,7 @@ private:
     trim(hdr += 6, hLen -= 6);
 
     for(size_t len = 1; len < hLen; ++len)
-      if (isblank(hdr[len]) || hdr[len] == '(') {
+      if (isspace(hdr[len]) || hdr[len] == '(') {
 	name.assign(hdr,len);
 	hdr += len;
 	hLen -= len;
@@ -410,7 +411,7 @@ private:
   inline void trim(const char* &ptr, size_t& len) const
   {
     for(; len > 0; ++ptr, --len)
-      if (!isblank(*ptr)) return;
+      if (!isspace(*ptr)) return;
   }
   inline bool readChr(const char* &ptr, size_t& len, char chr) const
   {
