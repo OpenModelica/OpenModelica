@@ -12,6 +12,14 @@ long unsigned int szMemoryUsed = 0;
 #include <ModelicaLexer.h>
 #include <ModelicaParser.h>
 
+void Parser_5finit(void)
+{
+ static int done = 0;
+ if( done ) return;
+ done = 1;
+ RML_5finit(); // this is needed for initialization.
+}
+
 int parseFile(char* fileName)
 {
   pANTLR3_UINT8               fName;
@@ -148,6 +156,7 @@ int recurseDirectories(char* directory)
 
 int main(int argc,char* argv[])
 {
+  Parser_5finit();
   double memoryUsed=0.0,memoryUsedKB=0.0,memoryUsedMB=0.0,memoryUsedGB=0.0;
 
   if ( argc < 3 ) fprintf(stderr, "Usage: %s [-f Model.mo|-d directory]\n",argv[0]),exit(1);

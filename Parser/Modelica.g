@@ -198,9 +198,10 @@ OPERATOR;
   void* mk_box_eat_all(int ix, ...);
   #define or_nil(x) (x != 0 ? x : mk_nil())
   #define mk_some_or_none(x) (x ? mk_some(x) : mk_none())
+  #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
+#if 0
   #define mk_scon(x) x
   #define mk_rcon(x) mk_box_eat_all(0,x)
-  #define mk_tuple2(x1,x2) mk_box_eat_all(0,x1,x2)
   #define mk_box0(x1) mk_box_eat_all(x1)
   #define mk_box1(x1,x2) mk_box_eat_all(x1,x2)
   #define mk_box2(x1,x2,x3) mk_box_eat_all(x1,x2,x3)
@@ -215,16 +216,20 @@ OPERATOR;
   #define mk_some(x1) mk_box_eat_all(0,x1)
   #define mk_none(void) NULL
   #define mk_nil() NULL
+#endif
   #define getCurrentTime(void) 0
   #define token_to_scon(tok) mk_scon(tok->getText(tok)->chars)
-  #define INFO(start,stop) Absyn__INFO(file, isReadOnly, start->line, start->charPosition, stop->line, stop->charPosition, getCurrentTime())
+  #define metamodelica_enabled(void) 0
+  #define code_expressions_enabled(void) 0
+  #define NYI(void) 0
+  #define INFO(start,stop) Absyn__INFO(file, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(stop->line), mk_icon(stop->charPosition), getCurrentTime())
   typedef unsigned char bool;
 }
 
 @members
 {
-  const char* file = "ENTER FILENAME HERE";
-  const int isReadOnly = RML_FALSE;
+  void* file = "ENTER FILENAME HERE";
+  void* isReadOnly = RML_FALSE;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
 }
 
@@ -324,7 +329,7 @@ stored_definition returns [void* ast] :
   (within=within_clause SEMICOLON)?
   cl=class_definition_list?
     {
-      ast = Absyn__PROGRAM(or_nil(cl), within || Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0), mk_rcon(getCurrentTime())));
+      ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0), mk_rcon(getCurrentTime())));
     }
   ;
 
@@ -335,7 +340,7 @@ within_clause returns [void* ast] :
 class_definition_list returns [void* ast] :
   ((f=FINAL)? cd=class_definition[f != NULL] SEMICOLON) cl=class_definition_list?
     {
-      ast = mk_cons(cd, or_nil(cl));
+      ast = mk_cons(cd.ast, or_nil(cl));
     }
   ;
 
@@ -658,144 +663,189 @@ component_declaration1 :
  * 2.2.6 Equations
  */
 
-initial_equation_clause :
+initial_equation_clause returns [void* ast] :
   { LA(2)==EQUATION }?
-  INITIAL ec=equation_clause /* -> (INITIAL_EQUATION ec) */
+  INITIAL EQUATION es=equation_annotation_list {ast = Absyn__INITIALEQUATIONS(es);}
   ;
 
-equation_clause :
-  EQUATION equation_annotation_list
+equation_clause returns [void* ast] :
+  EQUATION es=equation_annotation_list {ast = Absyn__EQUATIONS(es);}
     ;
 
-equation_annotation_list :
-  { LA(1) == T_END || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+equation_annotation_list returns [void* ast] :
+  { LA(1) == T_END || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
-  ( equation SEMICOLON | annotation SEMICOLON) equation_annotation_list
+  ( eq=equation SEMICOLON {e = eq.ast;} | e=annotation SEMICOLON {e = Absyn__EQUATIONITEMANN(e);}) es=equation_annotation_list {ast = mk_cons(e,es);}
   ;
 
-algorithm_clause :
-  T_ALGORITHM algorithm_annotation_list
+algorithm_clause returns [void* ast] :
+  T_ALGORITHM as=algorithm_annotation_list {ast = Absyn__ALGORITHMS(as);}
   ;
 
-initial_algorithm_clause :
+initial_algorithm_clause returns [void* ast] :
   { LA(2)==T_ALGORITHM }?
-  INITIAL ac = algorithm_clause /* -> (INITIAL_ALGORITHM ac) */
+  INITIAL T_ALGORITHM as=algorithm_annotation_list {ast = Absyn__INITIALALGORITHMS(as);}
   ;
 
-algorithm_annotation_list :
-  { LA(1) == T_END || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }?
+algorithm_annotation_list returns [void* ast] :
+  { LA(1) == T_END || LA(1) == EQUATION || LA(1) == T_ALGORITHM || LA(1)==INITIAL || LA(1) == PROTECTED || LA(1) == PUBLIC }? {ast = mk_nil();}
   |
-  ( algorithm SEMICOLON | annotation SEMICOLON) algorithm_annotation_list
+  ( al=algorithm SEMICOLON {a = al.ast;} | a=annotation SEMICOLON {a = Absyn__ALGORITHMITEMANN(a);}) as=algorithm_annotation_list {ast = mk_cons(a,as);}
   ;
 
-equation :
-  ( equality_equation   
-  | conditional_equation_e
-  | for_clause_e
-  | connect_clause
-  | when_clause_e   
-  | FAILURE LPAR equation RPAR
-  | EQUALITY LPAR equation RPAR
+equation returns [void* ast] :
+  ( e=equality_or_noretcall_equation   
+  | e=conditional_equation_e
+  | e=for_clause_e
+  | e=connect_clause
+  | e=when_clause_e   
+  | FAILURE LPAR eq=equation RPAR { e = Absyn__EQ_5fFAILURE(eq.ast); }
+  | EQUALITY LPAR e1=expression EQUALS e2=expression RPAR
+    {
+      e = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+    }
   )
-  comment
-        
-        /* -> (EQUATION_STATEMENT equation); */
-
+  cmt=comment
+    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start,$stop));}
   ;
 
-algorithm :
-  ( assign_clause_a
-  | conditional_equation_a
-  | for_clause_a
-  | while_clause
-  | when_clause_a
-  | BREAK
-  | RETURN
-  | FAILURE LPAR algorithm RPAR
-  | EQUALITY LPAR algorithm RPAR
+algorithm returns [void* ast] :
+  ( a=assign_clause_a
+  | a=conditional_equation_a
+  | a=for_clause_a
+  | a=while_clause
+  | a=when_clause_a
+  | BREAK {a = Absyn__ALG_5fBREAK;}
+  | RETURN {a = Absyn__ALG_5fRETURN;}
+  | FAILURE LPAR al=algorithm RPAR {a = Absyn__ALG_5fFAILURE(al.ast);}
+  | EQUALITY LPAR e1=expression ASSIGN e2=expression RPAR
+    {
+      a = Absyn__ALG_5fNORETCALL(Absyn__CREF_5fIDENT(mk_scon("equality"),mk_nil()),Absyn__FUNCTIONARGS(mk_cons(e1,mk_cons(e2,mk_nil())),mk_nil()));
+    }
   )
-  comment
-  
-  /* -> (ALGORITHM_STATEMENT algorithm) */
+  cmt=comment
+    {$ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start,$stop));}
   ;
 
-assign_clause_a :                
-  simple_expression 
-  ( ASSIGN expression  | i1 = EQUALS expression
-  /* 
-          {      
-             throw ANTLR_USE_NAMESPACE(antlr)RecognitionException(
-            "Algorithms can not contain equations ('='), use assignments (':=') instead", 
-            modelicafilename, $i1->getLine(), $i1->getColumn());
-          }
-          */
-        )?  
+assign_clause_a returns [void* ast] :
+  ( {!metamodelica_enabled()}?
+    ( cr=component_reference
+      ( (ASSIGN|EQUALS {NYI();}) e=expression {ast = Absyn__ALG_5fASSIGN(Absyn__CREF(cr),e);}
+      | fc=function_call {ast = Absyn__ALG_5fNORETCALL(cr,fc);}
+      )
+    | LPAR es=expression_list RPAR ASSIGN
+      cr=component_reference fc=function_call {ast = Absyn__ALG_5fASSIGN(Absyn__TUPLE(es),Absyn__CALL(cr,fc));} 
+    )
+  | {metamodelica_enabled()}? /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
+    e1=simple_expression
+      ( (ASSIGN|EQUALS) e2=expression {ast = Absyn__ALG_5fASSIGN(e1,e2);}
+      | {RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
+        {
+          struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
+          ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
+        }
+      )
+  )
   ;
 
-equality_equation :      
-  simple_expression ( EQUALS expression )?     
+equality_or_noretcall_equation returns [void* ast] :
+  e1=simple_expression
+    (  EQUALS e2=expression {ast = Absyn__EQ_5fEQUALS(e1,e2);}
+    | {RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
+       {
+         struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
+         ast = Absyn__EQ_5fNORETCALL(p->data[0],p->data[1]);
+       }
+    )
   ;
 
-conditional_equation_e :
-  IF expression THEN equation_list ( equation_elseif )* ( ELSE equation_list )? T_END IF
+conditional_equation_e returns [void* ast] :
+  IF e=expression THEN then_b=equation_list else_if_b=equation_elseif_list? ( ELSE else_b=equation_list )? T_END IF
+    {
+      ast = Absyn__EQ_5fIF(e, then_b, or_nil(else_if_b), or_nil(else_b));
+    }
   ;
 
-conditional_equation_a :
-  IF expression THEN algorithm_list ( algorithm_elseif )* ( ELSE algorithm_list )? T_END IF
+conditional_equation_a returns [void* ast] :
+  IF e=expression THEN then_b=algorithm_list else_if_b=algorithm_elseif_list? ( ELSE else_b=algorithm_list )? T_END IF
+    {
+      ast = Absyn__ALG_5fIF(e, then_b, or_nil(else_if_b), or_nil(else_b));
+    }
   ;
 
-for_clause_e :
-  FOR for_indices LOOP equation_list T_END FOR
+for_clause_e returns [void* ast] :
+  FOR is=for_indices LOOP es=equation_list T_END FOR {ast = Absyn__EQ_5fFOR(is,es);}
   ;
 
-for_clause_a :
-  FOR for_indices LOOP algorithm_list T_END FOR
+for_clause_a returns [void* ast] :
+  FOR is=for_indices LOOP as=algorithm_list T_END FOR {ast = Absyn__ALG_5fFOR(is,as);}
   ;
 
-while_clause :
-  WHILE expression LOOP algorithm_list T_END WHILE
+while_clause returns [void* ast] :
+  WHILE e=expression LOOP as=algorithm_list T_END WHILE { ast = Absyn__ALG_5fWHILE(e,as); }
   ;
 
-when_clause_e :
-  WHEN expression THEN equation_list (else_when_e)* T_END WHEN
+when_clause_e returns [void* ast] :
+  WHEN e=expression THEN body=equation_list es=else_when_e_list? T_END WHEN
+    {
+      ast = Absyn__EQ_5fWHEN_5fE(e,body,or_nil(es));
+    }
   ;
 
-else_when_e :
-  ELSEWHEN expression THEN equation_list
+else_when_e_list returns [void* ast] :
+  e=else_when_e es=else_when_e_list? {ast = mk_cons(e,or_nil(es));}
   ;
 
-when_clause_a :
-  WHEN expression THEN algorithm_list (else_when_a)* T_END WHEN
+else_when_e returns [void* ast] :
+  ELSEWHEN e=expression THEN es=equation_list { ast = mk_tuple2(e,es); }
   ;
 
-else_when_a :
-  ELSEWHEN expression THEN algorithm_list
+when_clause_a returns [void* ast] :
+  WHEN e=expression THEN body=algorithm_list es=else_when_a_list? T_END WHEN
+    {
+      ast = Absyn__ALG_5fWHEN_5fA(e,body,or_nil(es));
+    }
   ;
 
-equation_elseif :
-  ELSEIF expression THEN equation_list
+else_when_a_list returns [void* ast] :
+  e=else_when_a es=else_when_a_list? {ast = mk_cons(e,or_nil(es));}
   ;
 
-algorithm_elseif :
-  ELSEIF expression THEN algorithm_list
+else_when_a returns [void* ast] :
+  ELSEWHEN e=expression THEN as=algorithm_list {ast = mk_tuple2(e,as);}
   ;
 
-equation_list_then :
-        { LA(1) == THEN }?
-  | (equation SEMICOLON equation_list_then)
+equation_elseif_list returns [void* ast] :
+  e=equation_elseif es=equation_elseif_list? {ast = mk_cons(e,or_nil(es));}
+  ;
+
+equation_elseif returns [void* ast] :
+  ELSEIF e=expression THEN es=equation_list {ast = mk_tuple2(e,es);}
+  ;
+
+algorithm_elseif_list returns [void* ast] :
+  a=algorithm_elseif as=algorithm_elseif_list? {ast = mk_cons(a,or_nil(as));}
+  ;
+
+algorithm_elseif returns [void* ast] :
+  ELSEIF e=expression THEN as=algorithm_list {ast = mk_tuple2(e,as);}
+  ;
+
+equation_list_then returns [void* ast] :
+    { LA(1) == THEN }? {ast = mk_nil();}
+  | (e=equation SEMICOLON es=equation_list_then) {ast = mk_cons(e.ast,es);}
   ;
 
 
-equation_list :
-  {LA(1) != T_END || (LA(1) == T_END && LA(2) != IDENT)}?
+equation_list returns [void* ast] :
+  {LA(1) != T_END || (LA(1) == T_END && LA(2) != IDENT)}? {ast = mk_nil();}
   |
-  ( equation SEMICOLON equation_list )
+  ( e=equation SEMICOLON es=equation_list ) {ast = mk_cons(e.ast,es);}
   ;
 
-algorithm_list :
-  {LA(1) != T_END || (LA(1) == T_END && LA(2) != IDENT)}?
-  |
-  ( algorithm SEMICOLON algorithm_list )
+algorithm_list returns [void* ast] :
+  {LA(1) != T_END || (LA(1) == T_END && LA(2) != IDENT)}? {ast = mk_nil();}
+  | a=algorithm SEMICOLON as=algorithm_list {ast = mk_cons(a.ast,as);}
   ;
 
 connect_clause returns [void* ast] :
@@ -839,20 +889,20 @@ expression_or_empty returns [void* ast] :
   | LPAR RPAR {ast = Absyn__TUPLE(mk_nil());}
   ;
 
-local_clause:
+local_clause returns [void* ast] :
   (LOCAL element_list)?
   ;
 
-cases:
+cases returns [void* ast] :
   (onecase)+ (ELSE (string_comment local_clause (EQUATION equation_list_then)? THEN)? expression_or_empty SEMICOLON)?
   ;
 
-onecase:
+onecase returns [void* ast] :
   (CASE pattern string_comment local_clause (EQUATION equation_list_then)?
   THEN expression_or_empty SEMICOLON)
   ;
 
-pattern:
+pattern returns [void* ast] :
   expression_or_empty
   ;
 
@@ -983,9 +1033,10 @@ matrix_expression_list returns [void* ast] :
 
 component_reference__function_call returns [void* ast] :
   cr=component_reference ( fc=function_call )? {
-      if (fc != NULL) {
+      if (fc != NULL)
         ast = Absyn__CALL(cr,fc);
-      }
+      else
+        ast = Absyn__CREF(cr);
     }
   | i=INITIAL LPAR RPAR {
       ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("initial"), mk_nil()),Absyn__FUNCTIONARGS(mk_nil(),mk_nil()));
