@@ -230,13 +230,14 @@ OPERATOR;
   #define metamodelica_enabled(void) 0
   #define code_expressions_enabled(void) 0
   #define NYI(void) 0
-  #define INFO(start,stop) Absyn__INFO(file, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(stop->line), mk_icon(stop->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define INFO(start,stop) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(stop->line), mk_icon(stop->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef unsigned char bool;
+  extern void *ModelicaParser_filename;
 }
 
 @members
 {
-  void* file = "ENTER FILENAME HERE";
+  void* ModelicaParser_filename = 0;
   void* isReadOnly = RML_FALSE;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
   double getCurrentTime(void)
@@ -358,16 +359,10 @@ class_definition_list returns [void* ast] :
     }
   ;
 
-class_definition [bool final] returns [void* ast]
-@declarations {
-  void* ast = 0;
-  void* name = 0;
-}
-  :
-  ((e=ENCAPSULATED)? (p=PARTIAL)? class_type class_specifier[&name])
+class_definition [bool final] returns [void* ast] :
+  ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
     {
-      ast = Absyn__CLASS(name, mk_bcon(p), mk_bcon(final), mk_bcon(e),
-                         class_type, class_specifier, INFO($start,$stop));
+      $ast = Absyn__CLASS($cs.name, mk_bcon(p), mk_bcon(final), mk_bcon(e), ct, $cs.ast, INFO($start,$stop));
     }
   ;
 
@@ -390,17 +385,20 @@ class_type returns [void* ast] :
   )
   ;
 
-class_specifier [void** name] returns [void* ast] :
-        i1=IDENT {*name = token_to_scon(i1);} spec=class_specifier2 {ast = spec;}
-    |   EXTENDS i1=IDENT {*name = token_to_scon(i1);} (class_modification)? string_comment composition T_END i2=IDENT
-        ;
+class_specifier returns [void* ast, void* name] :
+    ( i1=IDENT {$name = token_to_scon(i1);} spec=class_specifier2 {$ast = spec;}
+    | EXTENDS i1=IDENT {$name = token_to_scon(i1);} (class_modification)? string_comment composition T_END i2=IDENT
+      {
+      }
+    )  
+    ;
 
 class_specifier2 returns [void* ast] :
 ( 
   cmt=string_comment c=composition T_END i2=IDENT { ast = Absyn__PARTS(c, mk_some_or_none(cmt)); }
-  /* { fprintf(stderr,"position composition for \%s -> \%d\n", $i2.text->chars, $c->getLine()); } */
-| EQUALS base_prefix type_specifier ( cm=class_modification )? cmt=comment
+| EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
   {
+    ast = Absyn__DERIVED(path, attr, or_nil(cm), mk_some_or_none(cmt));
   }
 | EQUALS cs=enumeration {ast=cs;}
 | EQUALS cs=pder {ast=cs;}
@@ -431,8 +429,8 @@ overloading returns [void* ast] :
     }
   ;
 
-base_prefix :
-  type_prefix
+base_prefix returns [void* ast] :
+  tp=type_prefix {ast = Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, mk_nil());}
   ;
 
 name_list returns [void* ast] :
@@ -562,13 +560,10 @@ explicit_import_name returns [void* ast] :
   id=IDENT EQUALS p=name_path {ast = Absyn__NAMED_5fIMPORT(token_to_scon(id),p);}
   ;
 
-implicit_import_name returns [void* ast]
-@declarations {
-  bool unqual = 0;
-} :
-  np=name_path_star[&unqual]
+implicit_import_name returns [void* ast] :
+  np=name_path_star
   {
-    ast = unqual ? Absyn__UNQUAL_5fIMPORT(np) : Absyn__QUAL_5fIMPORT(np);
+    ast = np.unqual ? Absyn__UNQUAL_5fIMPORT(np.ast) : Absyn__QUAL_5fIMPORT(np.ast);
   }
 ;
 
@@ -595,12 +590,49 @@ constraining_clause returns [void* ast] :
  * 2.2.4 Component clause
  */
 
-component_clause returns [void* ast] :
-  tp = type_prefix np=type_specifier clst=component_list
+component_clause returns [void* ast] @declarations {
+  void *arr = 0, *ar_option = 0;
+} :
+  tp=type_prefix path=type_specifier clst=component_list
+    {
+      // Take the last (array subscripts) from type and move it to ATTR
+      if (RML_GETHDR(path) == RML_STRUCTHDR(2, Absyn__TPATH_3dBOX2)) // is TPATH(path, arr)
+			{
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
+				ar_option = p->data[1];         // get the array option
+				p->data[1] = mk_none();  // replace the array with nothing
+			}
+			else if (RML_GETHDR(path) == RML_STRUCTHDR(3, Absyn__TCOMPLEX_3dBOX3))
+			{
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(path);
+				ar_option = p->data[2];         // get the array option
+				p->data[2] = mk_none();  // replace the array with nothing
+			}
+      if (!arr)
+			{
+				// no arr was set, inspect ar_option and fix it
+				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
+				if (RML_GETHDR(ar_option) == RML_STRUCTHDR(0,0)) // is NONE
+				{
+					arr = mk_nil();
+				}
+				else // is SOME(arr)
+				{
+					arr = p->data[0];
+				}
+			}
+      ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), path, clst);
+    }
   ;
 
-type_prefix :
-  (FLOW|STREAM)? (DISCRETE|PARAMETER|CONSTANT)? (T_INPUT|T_OUTPUT)?
+type_prefix returns [void* flow, void* stream, void* variability, void* direction] :
+  (fl=FLOW|st=STREAM)? (di=DISCRETE|pa=PARAMETER|co=CONSTANT)? (in=T_INPUT|out=T_OUTPUT)?
+    {
+      $flow = mk_bcon(fl);
+      $stream = mk_bcon(st);
+      $variability = di ? Absyn__DISCRETE : pa ? Absyn__PARAM : co ? Absyn__CONST : Absyn__VAR;
+      $direction = in ? Absyn__INPUT : out ? Absyn__OUTPUT : Absyn__BIDIR;
+    }
   ;
 
 type_specifier returns [void* ast] :
@@ -1045,9 +1077,7 @@ factor returns [void* ast] :
     }
   ;
 
-primary returns [void* ast] @declarations {
-  bool isFor = 0;
-} :
+primary returns [void* ast] :
   ( v=UNSIGNED_INTEGER {ast = Absyn__INTEGER(mk_icon($v.int));}
   | v=UNSIGNED_REAL    {ast = Absyn__REAL(mk_rcon(atof($v.text->chars)));}
   | v=STRING           {ast = Absyn__STRING(mk_scon($v.text->chars));}
@@ -1057,12 +1087,12 @@ primary returns [void* ast] @declarations {
   | DER el=function_call {ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
   | LPAR expression_list RPAR {ast = Absyn__TUPLE(el);}
   | LBRACK el=matrix_expression_list RBRACK {ast = Absyn__MATRIX(el);}
-  | LBRACE for_or_el=for_or_expression_list[&isFor] RBRACE
+  | LBRACE for_or_el=for_or_expression_list RBRACE
     {
-      if (isFor)
-        ast = Absyn__ARRAY(for_or_el);
+      if (for_or_el.isFor)
+        ast = Absyn__ARRAY(for_or_el.ast);
       else
-        ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el);
+        ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el.ast);
     }
   | T_END { ast = Absyn__END; }
   )
@@ -1089,13 +1119,17 @@ name_path returns [void* ast] :
   | id=IDENT DOT p=name_path {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
   ;
 
-name_path_star [bool* unqual] returns [void* ast] :
+name_path_star returns [void* ast, bool unqual] :
     { LA(2) != DOT }? id=IDENT ( uq=STAR_EW )?
     {
-      ast = Absyn__IDENT(token_to_scon(id));
-      *unqual = uq != 0;
+      $ast = Absyn__IDENT(token_to_scon(id));
+      $unqual = uq != 0;
     }
-  | id=IDENT DOT p=name_path_star[unqual] {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
+  | id=IDENT DOT p=name_path_star
+    {
+      $ast = Absyn__QUALIFIED(token_to_scon(id),p.ast);
+      $unqual = p.unqual;
+    }
   ;
 
 component_reference returns [void* ast] :
@@ -1113,19 +1147,19 @@ function_call returns [void* ast] :
   LPAR (function_arguments) RPAR {ast = function_arguments;}
   ;
 
-function_arguments returns [void* ast] @declarations {
-  bool isFor = 0;
-} :
-  (for_or_el=for_or_expression_list[&isFor]) (namel=named_arguments) ?
+function_arguments returns [void* ast] :
+  for_or_el=for_or_expression_list (namel=named_arguments) ?
     {
-      ast = isFor ? for_or_el : Absyn__FUNCTIONARGS(for_or_el,namel);
+      ast = for_or_el.isFor ? for_or_el.ast : Absyn__FUNCTIONARGS(for_or_el.ast,namel);
     }
   ;
 
-for_or_expression_list [bool* isFor] returns [void* ast]:
+for_or_expression_list returns [void* ast, bool isFor]:
   ({LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
-   {ast = mk_nil();} /* empty */
-  |(e=expression {ast = e;} ( COMMA el=for_or_expression_list2 {ast = mk_cons(e,el);} | FOR forind=for_indices {ast = Absyn__FOR_5fITER_5fFARG(e, forind); *isFor = 1;})? )
+   {$ast = mk_nil();}
+  | (e=expression {$ast = e; $isFor = 0;}
+    ( COMMA el=for_or_expression_list2 {$ast = mk_cons(e,el);}
+    | FOR forind=for_indices {$ast = Absyn__FOR_5fITER_5fFARG(e, forind); $isFor = 1;})? )
   )
     ;
 
