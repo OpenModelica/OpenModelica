@@ -196,9 +196,14 @@ OPERATOR;
   #include "Absyn.h"
   /* Eat anything so we can test code gen */
   void* mk_box_eat_all(int ix, ...);
+  #define false 0
+  #define true 1
   #define or_nil(x) (x != 0 ? x : mk_nil())
   #define mk_some_or_none(x) (x ? mk_some(x) : mk_none())
   #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
+  #define make_redeclare_keywords(replaceable,redeclare) (replaceable && redeclare ? Absyn__REDECLARE_5fREPLACEABLE : replaceable ? Absyn__REPLACEABLE : redeclare ? Absyn__REDECLARE : NULL)
+  #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
+  #define mk_bcon(x) (x ? RML_TRUE : RML_FALSE)
 #if 0
   #define mk_scon(x) x
   #define mk_rcon(x) mk_box_eat_all(0,x)
@@ -216,13 +221,16 @@ OPERATOR;
   #define mk_some(x1) mk_box_eat_all(0,x1)
   #define mk_none(void) NULL
   #define mk_nil() NULL
+  #undef RML_GETHDR
+  #define RML_GETHDR(x) 0
+  #undef RML_STRUCTHDR
+  #define RML_STRUCTHDR(x,y) 0
 #endif
-  #define getCurrentTime(void) 0
   #define token_to_scon(tok) mk_scon(tok->getText(tok)->chars)
   #define metamodelica_enabled(void) 0
   #define code_expressions_enabled(void) 0
   #define NYI(void) 0
-  #define INFO(start,stop) Absyn__INFO(file, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(stop->line), mk_icon(stop->charPosition), getCurrentTime())
+  #define INFO(start,stop) Absyn__INFO(file, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(stop->line), mk_icon(stop->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef unsigned char bool;
 }
 
@@ -231,6 +239,12 @@ OPERATOR;
   void* file = "ENTER FILENAME HERE";
   void* isReadOnly = RML_FALSE;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
+  double getCurrentTime(void)
+    {             
+      time_t t;
+      time( &t );
+      return difftime(t, 0);
+    }
 }
 
 
@@ -352,15 +366,8 @@ class_definition [bool final] returns [void* ast]
   :
   ((e=ENCAPSULATED)? (p=PARTIAL)? class_type class_specifier[&name])
     {
-      ast = Absyn__CLASS(
-                name,
-                RML_PRIM_MKBOOL(p != 0),
-                RML_PRIM_MKBOOL(final),
-                RML_PRIM_MKBOOL(e != 0),
-                class_type,
-                class_specifier,
-                INFO($start,$stop)
-            );
+      ast = Absyn__CLASS(name, mk_bcon(p), mk_bcon(final), mk_bcon(e),
+                         class_type, class_specifier, INFO($start,$stop));
     }
   ;
 
@@ -390,7 +397,7 @@ class_specifier [void** name] returns [void* ast] :
 
 class_specifier2 returns [void* ast] :
 ( 
-  string_comment c=composition T_END i2=IDENT 
+  cmt=string_comment c=composition T_END i2=IDENT { ast = Absyn__PARTS(c, mk_some_or_none(cmt)); }
   /* { fprintf(stderr,"position composition for \%s -> \%d\n", $i2.text->chars, $c->getLine()); } */
 | EQUALS base_prefix type_specifier ( cm=class_modification )? cmt=comment
   {
@@ -447,29 +454,27 @@ enumeration returns [void* ast] :
   ;
 
 enum_list returns [void* ast] :
-  e=enumeration_literal ( COMMA el=enum_list )?
-    {
-      ast = mk_cons(e, or_nil(el));
-    }
+  e=enumeration_literal ( COMMA el=enum_list )? { ast = mk_cons(e, or_nil(el)); }
   ;
 
 enumeration_literal returns [void* ast] :
-  i1=IDENT c1=comment
-    {
-      ast = Absyn__ENUMLITERAL(token_to_scon(i1),mk_some_or_none(c1));
-    }
+  i1=IDENT c1=comment { ast = Absyn__ENUMLITERAL(token_to_scon(i1),mk_some_or_none(c1)); }
   ;
 
-composition :
-  element_list
-  ( public_element_list
-  | protected_element_list
-  | initial_equation_clause
-  | initial_algorithm_clause
-  | equation_clause
-  | algorithm_clause
-  )*
-  ( external_clause )?
+composition returns [void* ast] :
+  el=element_list els=composition2 { ast = mk_cons(Absyn__PUBLIC(el),els); }
+  ;
+
+composition2 returns [void* ast] :
+  ( ext=external_clause? {ast = or_nil(ext); }
+  | ( el=public_element_list
+    | el=protected_element_list
+    | el=initial_equation_clause
+    | el=initial_algorithm_clause
+    | el=equation_clause
+    | el=algorithm_clause
+    ) els=composition2 {ast = mk_cons(el,els);}
+  )
   ;
 
 external_clause returns [void* ast] :
@@ -489,30 +494,55 @@ external_annotation returns [void* ast] :
   ann=annotation SEMICOLON {ast = ann;}
   ;
 
-public_element_list :
-  PUBLIC element_list
+public_element_list returns [void* ast] :
+  PUBLIC es=element_list {Absyn__PUBLIC(es);}
   ;
 
-protected_element_list :
-  PROTECTED element_list
+protected_element_list returns [void* ast] :
+  PROTECTED es=element_list {Absyn__PROTECTED(es);}
   ;
 
 language_specification returns [void* ast] :
   id=STRING {ast = token_to_scon(id);}
   ;
 
-element_list :
-  ((e=element | a=annotation ) s=SEMICOLON)*
+element_list returns [void* ast] :
+  (((e=element {ast = Absyn__ELEMENTITEM(e.ast);} | a=annotation {ast = Absyn__ANNOTATIONITEM(a);} ) s=SEMICOLON) es=element_list)?
+    {
+      ast = ast ? mk_cons(ast, es) : mk_nil();
+    }
   ;
 
-element :
-    ic=import_clause
-  | ec=extends_clause
-  | defineunit_clause
-  | (REDECLARE)? (f=FINAL)? (INNER)? (T_OUTER)?
-  ( (class_definition[f != NULL] | cc=component_clause) 
-  | (REPLACEABLE ( class_definition[f != NULL] | cc2=component_clause ) (constraining_clause comment)? )
-  )
+element returns [void* ast] @declarations {
+  void *final;
+  void *innerouter;
+} :
+    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"), ic, INFO($start,$stop), mk_none());}
+  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"), ec, INFO($start,$stop),mk_none());}
+  | du=defineunit_clause { $ast = du;}
+  | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mk_bcon(f); innerouter = make_inner_outer(i,o); }
+    ( ( cdef=class_definition[f != NULL]
+        {
+           $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)),
+                                innerouter, mk_scon("??"),
+                                Absyn__CLASSDEF(RML_FALSE, cdef.ast),
+                                INFO($start,$stop), mk_none());
+        }
+      | cc=component_clause)
+        {
+           $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)), innerouter,
+                                 mk_scon("component"), cc, INFO($start, $stop), mk_none());
+        }
+    | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
+        {
+           if (cc)
+             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(true,r)), innerouter,
+                                  mk_scon("replaceable component"), cc, INFO($start, $stop), mk_some_or_none(constr));
+           else
+             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(true,r)), innerouter,
+                                  mk_scon("??"), Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start, $stop), mk_some_or_none(constr));
+        }
+    )
   ;
 
 import_clause returns [void* ast] :
@@ -521,8 +551,11 @@ import_clause returns [void* ast] :
       ast = Absyn__IMPORT(imp, mk_some_or_none(cmt));
     }
   ;
-defineunit_clause :
-  DEFINEUNIT IDENT (LPAR named_arguments RPAR)?    
+defineunit_clause returns [void* ast] :
+  DEFINEUNIT id=IDENT (LPAR na=named_arguments RPAR)?
+    {
+      ast = Absyn__DEFINEUNIT(token_to_scon(id),or_nil(na));
+    }
   ;
 
 explicit_import_name returns [void* ast] :
@@ -545,20 +578,24 @@ implicit_import_name returns [void* ast]
 
 // Note that this is a minor modification of the standard by
 // allowing the comment.
-extends_clause :
-  EXTENDS name_path (class_modification)? (annotation)?
+extends_clause returns [void* ast] :
+  EXTENDS path=name_path (mod=class_modification)? (ann=annotation)? {ast = Absyn__EXTENDS(path,or_nil(mod),mk_some_or_none(ann));}
     ;
 
-constraining_clause :
-    EXTENDS name_path  (class_modification)? 
-  | CONSTRAINEDBY name_path ( class_modification )?
+constraining_clause_comment returns [void* ast] :
+  constr=constraining_clause cmt=comment {ast = Absyn__CONSTRAINCLASS(constr, mk_some_or_none(cmt));}
+  ;
+
+constraining_clause returns [void* ast] :
+    EXTENDS np=name_path  (mod=class_modification)? { ast = Absyn__EXTENDS(np,or_nil(mod),mk_none()); }
+  | CONSTRAINEDBY np=name_path (mod=class_modification)? { ast = Absyn__EXTENDS(np,or_nil(mod),mk_none()); }
   ;
 
 /*
  * 2.2.4 Component clause
  */
 
-component_clause :
+component_clause returns [void* ast] :
   tp = type_prefix np=type_specifier clst=component_list
   ;
 
@@ -627,14 +664,13 @@ argument_list returns [void* ast] :
   ;
 
 argument returns [void* ast] :
-  (
-    em=element_modification_or_replaceable /* -> (ELEMENT_MODIFICATION em) */
-  | er=element_redeclaration  /* -> (ELEMENT_REDECLARATION er) */
+  ( em=element_modification_or_replaceable
+  | er=element_redeclaration
   )
   ;
 
 element_modification_or_replaceable:
-        (EACH)? (f=FINAL)? (element_modification | element_replaceable[f != NULL])
+        (e=EACH)? (f=FINAL)? (element_modification | element_replaceable[e != NULL,f != NULL,false])
     ;
 
 element_modification :
@@ -642,19 +678,24 @@ element_modification :
   ;
 
 element_redeclaration :
-  REDECLARE (EACH)? (f=FINAL)?
-  ( (class_definition[f != NULL] | component_clause1) | element_replaceable[f != NULL] )
+  REDECLARE (e=EACH)? (f=FINAL)?
+  ( (class_definition[f != NULL] | component_clause1) | element_replaceable[e != NULL,f != NULL,true] )
   ;
 
-element_replaceable [bool final] :
-        REPLACEABLE ( class_definition[final] | component_clause1 ) (constraining_clause comment)?
+element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] :
+  REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
+    {
+      ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
+                                 each ? Absyn__EACH : Absyn__NON_5fEACH, cd.ast ? Absyn__CLASSDEF(RML_TRUE, cd.ast) : e_spec,
+                                 mk_some_or_none(constr));
+    }
   ;
   
-component_clause1 :
+component_clause1 returns [void* ast] :
   type_prefix type_specifier component_declaration1
   ;
 
-component_declaration1 :
+component_declaration1 returns [void* ast] :
         declaration comment
   ;
 
