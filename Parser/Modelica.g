@@ -230,7 +230,7 @@ OPERATOR;
   #define metamodelica_enabled(void) 0
   #define code_expressions_enabled(void) 0
   #define NYI(void) 0
-  #define INFO(start,stop) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(stop->line), mk_icon(stop->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(start->line), mk_icon(start->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef unsigned char bool;
   extern void *ModelicaParser_filename;
 }
@@ -362,7 +362,7 @@ class_definition_list returns [void* ast] :
 class_definition [bool final] returns [void* ast] :
   ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
     {
-      $ast = Absyn__CLASS($cs.name, mk_bcon(p), mk_bcon(final), mk_bcon(e), ct, $cs.ast, INFO($start,$stop));
+      $ast = Absyn__CLASS($cs.name, mk_bcon(p), mk_bcon(final), mk_bcon(e), ct, $cs.ast, INFO($start));
     }
   ;
 
@@ -515,30 +515,29 @@ element returns [void* ast] @declarations {
   void *final;
   void *innerouter;
 } :
-    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"), ic, INFO($start,$stop), mk_none());}
-  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"), ec, INFO($start,$stop),mk_none());}
+    ic=import_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("import"), ic, INFO($start), mk_none());}
+  | ec=extends_clause { $ast = Absyn__ELEMENT(RML_FALSE,mk_none(),Absyn__UNSPECIFIED,mk_scon("extends"), ec, INFO($start),mk_none());}
   | du=defineunit_clause { $ast = du;}
   | (r=REDECLARE)? (f=FINAL)? (i=INNER)? (o=T_OUTER)? { final = mk_bcon(f); innerouter = make_inner_outer(i,o); }
-    ( ( cdef=class_definition[f != NULL]
+    ( ( cdef=class_definition[f != NULL] | cc=component_clause )
         {
-           $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)),
-                                innerouter, mk_scon("??"),
-                                Absyn__CLASSDEF(RML_FALSE, cdef.ast),
-                                INFO($start,$stop), mk_none());
-        }
-      | cc=component_clause)
-        {
-           $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)), innerouter,
-                                 mk_scon("component"), cc, INFO($start, $stop), mk_none());
+           if (!cc)
+             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)),
+                                  innerouter, mk_scon("??"),
+                                  Absyn__CLASSDEF(RML_FALSE, cdef.ast),
+                                  INFO($start), mk_none());
+           else
+             $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(false,r)), innerouter,
+                                   mk_scon("component"), cc, INFO($start), mk_none());
         }
     | (REPLACEABLE ( cdef=class_definition[f != NULL] | cc=component_clause ) constr=constraining_clause_comment? )
         {
            if (cc)
              $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(true,r)), innerouter,
-                                  mk_scon("replaceable component"), cc, INFO($start, $stop), mk_some_or_none(constr));
+                                  mk_scon("replaceable component"), cc, INFO($start), mk_some_or_none(constr));
            else
              $ast = Absyn__ELEMENT(final, mk_some_or_none(make_redeclare_keywords(true,r)), innerouter,
-                                  mk_scon("??"), Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start, $stop), mk_some_or_none(constr));
+                                  mk_scon("replaceable ??"), Absyn__CLASSDEF(RML_TRUE, cdef.ast), INFO($start), mk_some_or_none(constr));
         }
     )
   ;
@@ -578,7 +577,7 @@ extends_clause returns [void* ast] :
     ;
 
 constraining_clause_comment returns [void* ast] :
-  constr=constraining_clause cmt=comment {ast = Absyn__CONSTRAINCLASS(constr, mk_some_or_none(cmt));}
+  constr=constraining_clause cmt=comment {$ast = Absyn__CONSTRAINCLASS(constr, mk_some_or_none(cmt));}
   ;
 
 constraining_clause returns [void* ast] :
@@ -608,8 +607,11 @@ component_clause returns [void* ast] @declarations {
 				ar_option = p->data[2];         // get the array option
 				p->data[2] = mk_none();  // replace the array with nothing
 			}
-      if (!arr)
-			{
+      else
+      {
+        fprintf(stderr, "component_clause error\n");
+      }
+
 				// no arr was set, inspect ar_option and fix it
 				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
 				if (RML_GETHDR(ar_option) == RML_STRUCTHDR(0,0)) // is NONE
@@ -620,7 +622,7 @@ component_clause returns [void* ast] @declarations {
 				{
 					arr = p->data[0];
 				}
-			}
+
       ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), path, clst);
     }
   ;
@@ -719,7 +721,7 @@ element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] 
     {
       ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
                                  each ? Absyn__EACH : Absyn__NON_5fEACH, cd.ast ? Absyn__CLASSDEF(RML_TRUE, cd.ast) : e_spec,
-                                 mk_some_or_none(constr));
+                                 mk_some_or_none($constr.ast));
     }
   ;
   
@@ -779,7 +781,7 @@ equation returns [void* ast] :
     }
   )
   cmt=comment
-    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start,$stop));}
+    {$ast = Absyn__EQUATIONITEM(e, mk_some_or_none(cmt), INFO($start));}
   ;
 
 algorithm returns [void* ast] :
@@ -797,7 +799,7 @@ algorithm returns [void* ast] :
     }
   )
   cmt=comment
-    {$ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start,$stop));}
+    {$ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start));}
   ;
 
 assign_clause_a returns [void* ast] :

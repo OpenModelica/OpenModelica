@@ -986,6 +986,10 @@ algorithm
       Absyn.Info info;
       Option<Absyn.ConstrainClass> cc;
       Absyn.Path p;
+      Option<String> expOpt;
+      Option<Real> weightOpt;
+      list<Absyn.NamedArg> args;
+      String name;
 
     case (Absyn.ELEMENT(constrainClass = (cc as SOME(Absyn.CONSTRAINCLASS(elementSpec = Absyn.EXTENDS(path=p)))), finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation
@@ -993,18 +997,17 @@ algorithm
       then
         es;
 
-    case (Absyn.ELEMENT(constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
+    case (Absyn.ELEMENT(name = name, constrainClass = cc,finalPrefix = f,innerOuter = io, redeclareKeywords = repl,specification = s,info = info),prot)
       equation
         es = translateElementspec(cc, f, io, repl,  prot, s,SOME(info));
       then
         es;
 
-    case(Absyn.DEFINEUNIT(name,args),prot) local Option<String> expOpt; Option<Real> weightOpt;
-      list<Absyn.NamedArg> args; String name;
+    case(Absyn.DEFINEUNIT(name,args),prot)
       equation
         expOpt = translateDefineunitParam(args,"exp");
         weightOpt = translateDefineunitParam2(args,"weight");
-    then {SCode.DEFINEUNIT(name,expOpt,weightOpt)};
+      then {SCode.DEFINEUNIT(name,expOpt,weightOpt)};
   end matchcontinue;
 end translateElement;
 
