@@ -240,12 +240,11 @@ OPERATOR;
   void* ModelicaParser_filename = 0;
   void* isReadOnly = RML_FALSE;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
-  double getCurrentTime(void)
-    {             
-      time_t t;
-      time( &t );
-      return difftime(t, 0);
-    }
+  double getCurrentTime(void) {             
+    time_t t;
+    time( &t );
+    return difftime(t, 0);
+  }
 }
 
 
