@@ -464,7 +464,7 @@ composition returns [void* ast] :
   ;
 
 composition2 returns [void* ast] :
-  ( ext=external_clause? {ast = or_nil(ext); }
+  ( ext=external_clause? { ast = or_nil(ext); }
   | ( el=public_element_list
     | el=protected_element_list
     | el=initial_equation_clause
@@ -484,7 +484,7 @@ external_clause returns [void* ast] :
         ( ann2 = external_annotation )?
           {
             ast = Absyn__EXTERNALDECL(mk_some_or_none(funcname), mk_some_or_none(lang), mk_some_or_none(retexp), or_nil(expl), mk_some_or_none(ann1));
-            ast = Absyn__EXTERNAL(ast, mk_some_or_none(ann2));
+            ast = mk_cons(Absyn__EXTERNAL(ast, mk_some_or_none(ann2)), mk_nil());
           }
         ;
 
@@ -493,21 +493,28 @@ external_annotation returns [void* ast] :
   ;
 
 public_element_list returns [void* ast] :
-  PUBLIC es=element_list {Absyn__PUBLIC(es);}
+  PUBLIC es=element_list {ast = Absyn__PUBLIC(es);}
   ;
 
 protected_element_list returns [void* ast] :
-  PROTECTED es=element_list {Absyn__PROTECTED(es);}
+  PROTECTED es=element_list {ast = Absyn__PROTECTED(es);}
   ;
 
 language_specification returns [void* ast] :
   id=STRING {ast = token_to_scon(id);}
   ;
 
-element_list returns [void* ast] :
-  (((e=element {ast = Absyn__ELEMENTITEM(e.ast);} | a=annotation {ast = Absyn__ANNOTATIONITEM(a);} ) s=SEMICOLON) es=element_list)?
+element_list returns [void* ast] @init {
+  e.ast = 0;
+} :
+  (((e=element | a=annotation) s=SEMICOLON) es=element_list)?
     {
-      ast = ast ? mk_cons(ast, es) : mk_nil();
+      if (e.ast)
+        ast = mk_cons(Absyn__ELEMENTITEM(e.ast), es);
+      else if (a)
+        ast = mk_cons(Absyn__ANNOTATIONITEM(a), es);
+      else
+        ast = mk_nil();
     }
   ;
 
@@ -1087,7 +1094,7 @@ primary returns [void* ast] :
   | T_TRUE             {ast = Absyn__BOOL(RML_TRUE);}
   | ptr=component_reference__function_call {ast = ptr;}
   | DER el=function_call {ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
-  | LPAR expression_list RPAR {ast = Absyn__TUPLE(el);}
+  | LPAR e=expression (COMMA el=expression_list)? RPAR {ast = el ? Absyn__TUPLE(mk_cons(e, el)) : e;}
   | LBRACK el=matrix_expression_list RBRACK {ast = Absyn__MATRIX(el);}
   | LBRACE for_or_el=for_or_expression_list RBRACE
     {
