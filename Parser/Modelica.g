@@ -229,7 +229,7 @@ OPERATOR;
   #define token_to_scon(tok) mk_scon(tok->getText(tok)->chars)
   #define metamodelica_enabled(void) 0
   #define code_expressions_enabled(void) 0
-  #define NYI(void) 0
+  #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
   #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef unsigned char bool;
   extern void *ModelicaParser_filename;
@@ -705,22 +705,26 @@ argument_list returns [void* ast] :
   ;
 
 argument returns [void* ast] :
-  ( em=element_modification_or_replaceable
-  | er=element_redeclaration
+  ( em=element_modification_or_replaceable {ast = em;}
+  | er=element_redeclaration {ast = er;}
   )
   ;
 
-element_modification_or_replaceable:
-        (e=EACH)? (f=FINAL)? (element_modification | element_replaceable[e != NULL,f != NULL,false])
+element_modification_or_replaceable returns [void* ast] :
+    (e=EACH)? (f=FINAL)? (em=element_modification[mk_bcon(e), mk_bcon(f)] | er=element_replaceable[e != NULL,f != NULL,false])
+      {
+        ast = em ? em : er;
+      }
     ;
 
-element_modification :
-  component_reference ( modification )? string_comment
+element_modification [void *each, void *final] returns [void* ast] :
+  cr=component_reference ( mod=modification )? cmt=string_comment { ast = Absyn__MODIFICATION(final, each, cr, mk_some_or_none(mod), mk_some_or_none(cmt)); }
   ;
 
-element_redeclaration :
+element_redeclaration returns [void* ast] :
   REDECLARE (e=EACH)? (f=FINAL)?
   ( (class_definition[f != NULL] | component_clause1) | element_replaceable[e != NULL,f != NULL,true] )
+     { NYI(); }
   ;
 
 element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] :
@@ -733,11 +737,11 @@ element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] 
   ;
   
 component_clause1 returns [void* ast] :
-  type_prefix type_specifier component_declaration1
+  type_prefix type_specifier component_declaration1  { NYI(); }
   ;
 
 component_declaration1 returns [void* ast] :
-        declaration comment
+        declaration comment  { NYI(); }
   ;
 
 
