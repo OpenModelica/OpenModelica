@@ -230,7 +230,7 @@ OPERATOR;
   #define metamodelica_enabled(void) 0
   #define code_expressions_enabled(void) 0
   #define NYI(void) 0
-  #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(start->line), mk_icon(start->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef unsigned char bool;
   extern void *ModelicaParser_filename;
 }
@@ -769,7 +769,7 @@ algorithm_annotation_list returns [void* ast] :
   ;
 
 equation returns [void* ast] :
-  ( e=equality_or_noretcall_equation   
+  ( e=equality_or_noretcall_equation 
   | e=conditional_equation_e
   | e=for_clause_e
   | e=connect_clause
@@ -826,7 +826,7 @@ assign_clause_a returns [void* ast] :
 equality_or_noretcall_equation returns [void* ast] :
   e1=simple_expression
     (  EQUALS e2=expression {ast = Absyn__EQ_5fEQUALS(e1,e2);}
-    | {RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
+    | {LA(1) != EQUALS && RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
        {
          struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
          ast = Absyn__EQ_5fNORETCALL(p->data[0],p->data[1]);
@@ -1020,11 +1020,11 @@ simple_expr returns [void* ast] :
   ;
 
 logical_expression returns [void* ast] :
-  e1=logical_term {ast = e1;} ( T_OR e2=logical_term {ast = Absyn__BINARY(ast,Absyn__OR,e2);})*
+  e1=logical_term {ast = e1;} ( T_OR e2=logical_term {ast = Absyn__LBINARY(ast,Absyn__OR,e2);})*
   ;
 
 logical_term returns [void* ast] :
-  e1=logical_factor {ast = e1;} ( T_AND e2=logical_factor {ast = Absyn__BINARY(ast,Absyn__AND,e2);} )*
+  e1=logical_factor {ast = e1;} ( T_AND e2=logical_factor {ast = Absyn__LBINARY(ast,Absyn__AND,e2);} )*
   ;
 
 logical_factor returns [void* ast] :
@@ -1040,7 +1040,7 @@ relation returns [void* ast] @declarations {
     | EQEQ {op = Absyn__EQUAL;} | LESSGT {op = Absyn__NEQUAL;}
     ) e2=arithmetic_expression )?
     {
-      ast = e2 ? Absyn__BINARY(e1,op,e2) : e1;
+      ast = e2 ? Absyn__RELATION(e1,op,e2) : e1;
     }
   ;
 
@@ -1055,9 +1055,9 @@ arithmetic_expression returns [void* ast] @declarations {
 
 unary_arithmetic_expression returns [void* ast] :
   ( PLUS t=term     { ast = Absyn__UNARY(Absyn__UPLUS,t); }
-  | MINUS t=term    { ast = Absyn__UNARY(Absyn__SUB,t); }
+  | MINUS t=term    { ast = Absyn__UNARY(Absyn__UMINUS,t); }
   | PLUS_EW t=term  { ast = Absyn__UNARY(Absyn__UPLUS_5fEW,t); }
-  | MINUS_EW t=term { ast = Absyn__UNARY(Absyn__SUB_5fEW,t); }
+  | MINUS_EW t=term { ast = Absyn__UNARY(Absyn__UMINUS_5fEW,t); }
   | t=term          { ast = t; }
   )
   ;
@@ -1146,24 +1146,37 @@ component_reference returns [void* ast] :
   ;
 
 function_call returns [void* ast] :
-  LPAR (function_arguments) RPAR {ast = function_arguments;}
+  LPAR fa=function_arguments RPAR {ast = fa;}
   ;
 
 function_arguments returns [void* ast] :
   for_or_el=for_or_expression_list (namel=named_arguments) ?
     {
-      ast = for_or_el.isFor ? for_or_el.ast : Absyn__FUNCTIONARGS(for_or_el.ast,namel);
+      if (for_or_el.isFor)
+        ast = for_or_el.ast;
+      else
+        ast = Absyn__FUNCTIONARGS(for_or_el.ast, or_nil(namel));
     }
   ;
 
 for_or_expression_list returns [void* ast, bool isFor]:
-  ({LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}?
-   {$ast = mk_nil();}
-  | (e=expression {$ast = e; $isFor = 0;}
-    ( COMMA el=for_or_expression_list2 {$ast = mk_cons(e,el);}
-    | FOR forind=for_indices {$ast = Absyn__FOR_5fITER_5fFARG(e, forind); $isFor = 1;})? )
+  ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mk_nil(); $isFor = 0; }
+  | ( e=expression
+      ( COMMA el=for_or_expression_list2
+      | FOR forind=for_indices
+      )?
+    )
+    {
+      if (el)
+        $ast = mk_cons(e,el);
+      else if (forind)
+        $ast = Absyn__FOR_5fITER_5fFARG(e, forind);
+      else
+        $ast = mk_cons(e, mk_nil());
+      $isFor = forind != 0;
+    }
   )
-    ;
+  ;
 
 for_or_expression_list2 returns [void* ast] :
     {LA(2) == EQUALS}? {ast = mk_nil();}
