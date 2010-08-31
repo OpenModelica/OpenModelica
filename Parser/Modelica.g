@@ -1098,7 +1098,7 @@ primary returns [void* ast] :
   | LBRACK el=matrix_expression_list RBRACK {ast = Absyn__MATRIX(el);}
   | LBRACE for_or_el=for_or_expression_list RBRACE
     {
-      if (for_or_el.isFor)
+      if (!for_or_el.isFor)
         ast = Absyn__ARRAY(for_or_el.ast);
       else
         ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el.ast);
@@ -1169,17 +1169,18 @@ function_arguments returns [void* ast] :
 for_or_expression_list returns [void* ast, bool isFor]:
   ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mk_nil(); $isFor = 0; }
   | ( e=expression
-      ( COMMA el=for_or_expression_list2
-      | FOR forind=for_indices
+      ( (COMMA el=for_or_expression_list2)
+      | (FOR forind=for_indices)
       )?
     )
     {
-      if (el)
+      if (el != NULL) {
         $ast = mk_cons(e,el);
-      else if (forind)
+      } else if (forind != NULL) {
         $ast = Absyn__FOR_5fITER_5fFARG(e, forind);
-      else
+      } else {
         $ast = mk_cons(e, mk_nil());
+      }
       $isFor = forind != 0;
     }
   )
