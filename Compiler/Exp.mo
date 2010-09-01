@@ -12297,7 +12297,10 @@ algorithm
       tp = crefLastType(cr);
       dims = arrayDimension(tp);
       // Since all subscripts are constants, sufficient to compare length of dimensions
-      true = listLength(dims) ==listLength(subs);
+      // Dimensions may be removed when a component is instantiated if it has
+      // constant subscripts though, so it may have more subscripts than
+      // dimensions.
+      true = listLength(dims) <= listLength(subs);
     then true;
       
       /* All other cases are false */
