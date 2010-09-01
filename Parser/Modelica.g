@@ -1012,12 +1012,11 @@ pattern returns [void* ast] :
   ;
 
 if_expression returns [void* ast] :
-  IF cond=expression THEN e1=expression es=elseif_expression_list ELSE e2=expression {Absyn__IFEXP(cond,e1,e2,es);}
+  IF cond=expression THEN e1=expression es=elseif_expression_list? ELSE e2=expression {ast = Absyn__IFEXP(cond,e1,e2,or_nil(es));}
   ;
 
 elseif_expression_list returns [void* ast] :
-  e=elseif_expression es=elseif_expression_list { ast = mk_cons(e,es); }
-  | { ast = mk_nil(); }
+  e=elseif_expression es=elseif_expression_list? { ast = mk_cons(e,or_nil(es)); }
   ;
 
 elseif_expression returns [void* ast] :
