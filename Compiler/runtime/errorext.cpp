@@ -39,27 +39,7 @@
 
 using namespace std;
 
-void add_message(int errorID,
-     char* type,
-     char* severity,
-     char* message,
-     std::list<std::string> tokens);
 
-extern "C" {
-  void c_add_message(int errorID,
-         char* type,
-         char* severity,
-         char* message,
-         char** ctokens,
-         int nTokens)
-  {
-    std::list<std::string> tokens;
-    for (int i=nTokens-1; i>=0; i--) {
-      tokens.push_back(std::string(ctokens[i]));
-    }
-    add_message(errorID,type,severity,message,tokens);
-  }
-}
 struct absyn_info{
   std::string fn;
   bool wr;
@@ -80,9 +60,9 @@ bool error_on=true;
 
   /* Adds a message without file info. */
   void add_message(int errorID,
-       char* type,
-       char* severity,
-       char* message,
+       const char* type,
+       const char* severity,
+       const char* message,
        std::list<std::string> tokens)
   {
     std::string tmp("");
@@ -131,16 +111,16 @@ bool error_on=true;
   }
   /* Adds a message with file information */
   void add_source_message(int errorID,
-        char* type,
-        char* severity,
-        char* message,
+        const char* type,
+        const char* severity,
+        const char* message,
         std::list<std::string> tokens,
         int startLine,
         int startCol,
         int endLine,
         int endCol,
         bool isReadOnly,
-        char* filename)
+        const char* filename)
   {
     ErrorMessage* msg = new ErrorMessage((long)errorID,
          std::string(type),
@@ -405,4 +385,38 @@ extern "C"
      RML_TAILCALLK(rmlSC);
    }
    RML_END_LABEL
+
+  void c_add_message(int errorID,
+         const char* type,
+         const char* severity,
+         const char* message,
+         const char** ctokens,
+         int nTokens)
+  {
+    std::list<std::string> tokens;
+    for (int i=nTokens-1; i>=0; i--) {
+      tokens.push_back(std::string(ctokens[i]));
+    }
+    add_message(errorID,type,severity,message,tokens);
+  }
+  void c_add_source_message(int errorID,
+         const char* type,
+         const char* severity,
+         const char* message,
+         const char** ctokens,
+         int nTokens,
+         int startLine,
+         int startCol,
+         int endLine,
+         int endCol,
+         int isReadOnly,
+         const char* filename)
+  {
+    std::list<std::string> tokens;
+    for (int i=nTokens-1; i>=0; i--) {
+      tokens.push_back(std::string(ctokens[i]));
+    }
+    add_source_message(errorID,type,severity,message,tokens,startLine,startCol,endLine,endCol,isReadOnly,filename);
+  }
+
 } //extern "C"

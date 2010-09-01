@@ -196,6 +196,8 @@ OPERATOR;
   #include "Absyn.h"
   /* Eat anything so we can test code gen */
   void* mk_box_eat_all(int ix, ...);
+  #define modelicaParserAssert(cond,msg,func) if (cond) { CONSTRUCTEX(); EXCEPTION->type = ANTLR3_RECOGNITION_EXCEPTION; EXCEPTION->message = (void *) msg; EXCEPTION->decisionNum  = -1; EXCEPTION->state = -1; goto rule ## func ## Ex; }
+
   #define false 0
   #define true 1
   #define or_nil(x) (x != 0 ? x : mk_nil())
@@ -230,7 +232,7 @@ OPERATOR;
   #define metamodelica_enabled(void) 0
   #define code_expressions_enabled(void) 0
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
-  #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef unsigned char bool;
   extern void *ModelicaParser_filename;
 }
@@ -384,24 +386,42 @@ class_type returns [void* ast] :
   )
   ;
 
-class_specifier returns [void* ast, void* name] :
-    ( i1=IDENT {$name = token_to_scon(i1);} spec=class_specifier2 {$ast = spec;}
-    | EXTENDS i1=IDENT {$name = token_to_scon(i1);} (class_modification)? string_comment composition T_END i2=IDENT
+class_specifier returns [void* ast, void* name] @declarations {
+  char *s1 = 0;
+} :
+    ( i1=IDENT spec=class_specifier2
       {
+        s1 = $i1.text->chars;
+        modelicaParserAssert($spec.s2 != NULL && strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
+        $ast = $spec.ast;
+        $name = mk_scon(s1);
+      }
+    | EXTENDS i1=IDENT (mod=class_modification)? cmt=string_comment comp=composition T_END i2=IDENT
+      {
+        s1 = $i1.text->chars;
+        modelicaParserAssert($spec.s2 != NULL && strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
+        $name = mk_scon(s1);
+        $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
       }
     )  
     ;
 
-class_specifier2 returns [void* ast] :
+class_specifier2 returns [void* ast, const char *s2] @init {
+  $s2 = 0;
+} :
 ( 
-  cmt=string_comment c=composition T_END i2=IDENT { ast = Absyn__PARTS(c, mk_some_or_none(cmt)); }
+  cmt=string_comment c=composition T_END i2=IDENT
+    {
+      $s2 = $i2.text->chars;
+      $ast = Absyn__PARTS(c, mk_some_or_none(cmt));
+    }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
-  {
-    ast = Absyn__DERIVED(path, attr, or_nil(cm), mk_some_or_none(cmt));
-  }
-| EQUALS cs=enumeration {ast=cs;}
-| EQUALS cs=pder {ast=cs;}
-| EQUALS cs=overloading {ast=cs;}
+    {
+      $ast = Absyn__DERIVED(path, attr, or_nil(cm), mk_some_or_none(cmt));
+    }
+| EQUALS cs=enumeration {$ast=cs;}
+| EQUALS cs=pder {$ast=cs;}
+| EQUALS cs=overloading {$ast=cs;}
 | SUBTYPEOF type_specifier
 )
 ;
@@ -710,7 +730,7 @@ argument returns [void* ast] :
   ;
 
 element_modification_or_replaceable returns [void* ast] :
-    (e=EACH)? (f=FINAL)? (em=element_modification[mk_bcon(e), mk_bcon(f)] | er=element_replaceable[e != NULL,f != NULL,false])
+    (e=EACH)? (f=FINAL)? (em=element_modification[e ? Absyn__EACH : Absyn__NON_5fEACH, mk_bcon(f)] | er=element_replaceable[e != NULL,f != NULL,false])
       {
         ast = em ? em : er;
       }
@@ -1078,7 +1098,7 @@ term returns [void* ast] @declarations {
   e1=factor {ast = e1;}
     (
       ( STAR {op=Absyn__MUL;} | SLASH {op=Absyn__DIV;} | STAR_EW {op=Absyn__MUL_5fEW;} | SLASH_EW {op=Absyn__DIV_5fEW;} )
-      e2=factor {ast = Absyn__BINARY(e1,op,e2);}
+      e2=factor {ast = Absyn__BINARY(ast,op,e2);}
     )*
   ;
 

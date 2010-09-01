@@ -53,24 +53,99 @@ void lexNoRecover(pANTLR3_LEXER lex)
 {
   lex->rec->state->error = ANTLR3_TRUE;
   pANTLR3_INT_STREAM istream = lex->input->istream;
-  istream->seek(istream, istream->size-1);
+  istream->seek(istream, istream->size(istream)-1);
 }
 
 void noRecover(pANTLR3_BASE_RECOGNIZER recognizer)
 {
   recognizer->state->error = ANTLR3_TRUE;
+  recognizer->state->failed  = ANTLR3_TRUE;
 }
 
-void* noRecoverFromMismatchedSet(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_BITSET_LIST follow)
+static void* noRecoverFromMismatchedSet(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_BITSET_LIST follow)
 {
-  recognizer->state->error = ANTLR3_TRUE;
+  recognizer->state->error  = ANTLR3_TRUE;
+  recognizer->state->failed  = ANTLR3_TRUE;
   return NULL;
 }
 
-void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, ANTLR3_UINT32 ttype, pANTLR3_BITSET_LIST follow)
+static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, ANTLR3_UINT32 ttype, pANTLR3_BITSET_LIST follow)
 {
-  recognizer->state->error = ANTLR3_TRUE;
-  return NULL;
+	pANTLR3_PARSER			  parser;
+	pANTLR3_TREE_PARSER	      tparser;
+	pANTLR3_INT_STREAM	      is;
+	void					* matchedSymbol;
+
+	// Invoke the debugger event if there is a debugger listening to us
+	//
+	if	(recognizer->debugger != NULL)
+	{
+		recognizer->debugger->recognitionException(recognizer->debugger, recognizer->state->exception);
+	}
+
+	switch	(recognizer->type)
+	{
+	case	ANTLR3_TYPE_PARSER:
+
+		parser  = (pANTLR3_PARSER) (recognizer->super);
+		tparser	= NULL;
+		is	= parser->tstream->istream;
+
+		break;
+
+	case	ANTLR3_TYPE_TREE_PARSER:
+
+		tparser = (pANTLR3_TREE_PARSER) (recognizer->super);
+		parser	= NULL;
+		is	= tparser->ctnstream->tnstream->istream;
+
+		break;
+
+	default:
+
+		ANTLR3_FPRINTF(stderr, "Base recognizer function recoverFromMismatchedToken called by unknown parser type - provide override for this function\n");
+		return NULL;
+
+		break;
+	}
+
+	// Create an exception if we need one
+	//
+	if	(recognizer->state->exception == NULL)
+	{
+		antlr3RecognitionExceptionNew(recognizer);
+	}
+
+	// If the next token after the one we are looking at in the input stream
+	// is what we are looking for then we remove the one we have discovered
+	// from the stream by consuming it, then consume this next one along too as
+	// if nothing had happened.
+	//
+	if	( recognizer->mismatchIsUnwantedToken(recognizer, is, ttype) == ANTLR3_TRUE)
+	{
+		recognizer->state->exception->type		= ANTLR3_UNWANTED_TOKEN_EXCEPTION;
+		recognizer->state->exception->message	= ANTLR3_UNWANTED_TOKEN_EXCEPTION_NAME;
+	}
+
+	// Single token deletion (Unwanted above) did not work
+	// so we see if we can insert a token instead by calculating which
+	// token would be missing
+	//
+	if	(recognizer->mismatchIsMissingToken(recognizer, is, follow))
+	{
+		matchedSymbol = recognizer->getMissingSymbol(recognizer, is, recognizer->state->exception, ttype, follow);
+		recognizer->state->exception->type		= ANTLR3_MISSING_TOKEN_EXCEPTION;
+		recognizer->state->exception->message	= ANTLR3_MISSING_TOKEN_EXCEPTION_NAME;
+		recognizer->state->exception->token		= matchedSymbol;
+		recognizer->state->exception->expecting	= ttype;
+	}
+
+
+	// Neither deleting nor inserting tokens allows recovery
+	// must just report the exception.
+	//
+	recognizer->state->error	    = ANTLR3_TRUE;
+	return NULL;
 }
 
 /* Error handling based on antlr3baserecognizer.c */
@@ -86,7 +161,7 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   pANTLR3_COMMON_TREE    theCommonTree;
   const char *filename = 0;
   const char *error_type = "TRANSLATION";
-  const char *token_text = 0;
+  const char *token_text[2] = {0,0};
   int offset, error_id = 0, line;
   recognizer->state->error = ANTLR3_TRUE;
 
@@ -125,20 +200,21 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
     parser      = (pANTLR3_PARSER) (recognizer->super);
     tparser      = NULL;
     is      = parser->tstream->istream;
-    theToken    = (pANTLR3_COMMON_TOKEN)(recognizer->state->exception->token);
+    theToken    = (pANTLR3_COMMON_TOKEN)(ex->token);
     ttext      = theToken->getText(theToken);
 
-    offset = recognizer->state->exception->charPositionInLine;
+    offset = ex->charPositionInLine;
     error_id = 2;
     
 
     if  (theToken != NULL && theToken->type == ANTLR3_TOKEN_EOF) {
-      token_text = "<EOF>";
+      token_text[0] = "<EOF>";
     } else if (ttext != NULL) {
-      token_text = ttext->chars;
+      token_text[0] = ttext->chars;
     } else {
-      token_text = "<no text for the token>";
+      token_text[0] = "<no text for the token>";
     }
+    token_text[1] = (const char*) ex->message;
     break;
 
   default:
@@ -148,197 +224,7 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
     break;
   }
 
-  // Although this function should generally be provided by the implementation, this one
-  // should be as helpful as possible for grammar developers and serve as an example
-  // of what you can do with each exception type. In general, when you make up your
-  // 'real' handler, you should debug the routine with all possible errors you expect
-  // which will then let you be as specific as possible about all circumstances.
-  //
-  // Note that in the general case, errors thrown by tree parsers indicate a problem
-  // with the output of the parser or with the tree grammar itself. The job of the parser
-  // is to produce a perfect (in traversal terms) syntactically correct tree, so errors
-  // at that stage should really be semantic errors that your own code determines and handles
-  // in whatever way is appropriate.
-  //
-  switch  (ex->type)
-  {
-  case  ANTLR3_UNWANTED_TOKEN_EXCEPTION:
-
-    // Indicates that the recognizer was fed a token which seesm to be
-    // spurious input.
-    if  (tokenNames == NULL)
-    {
-      ANTLR3_FPRINTF(stderr, " : Extraneous input...");
-    }
-    else
-    {
-      if  (ex->expecting == ANTLR3_TOKEN_EOF)
-      {
-        ANTLR3_FPRINTF(stderr, " : Extraneous input - expected <EOF>\n");
-      }
-      else
-      {
-        ANTLR3_FPRINTF(stderr, " : Extraneous input - expected %s ...\n", tokenNames[ex->expecting]);
-        
-      }
-    }
-    break;
-
-  case  ANTLR3_MISSING_TOKEN_EXCEPTION:
-
-    // Indicates that the recognizer detected that the token we just
-    // hit would be valid syntactically if preceeded by a particular 
-    // token. Perhaps a missing ';' at line end or a missing ',' in an
-    // expression list, and such like.
-    //
-    if  (tokenNames == NULL)
-    {
-      ANTLR3_FPRINTF(stderr, " : Missing token (%d)...\n", ex->expecting);
-    }
-    else
-    {
-      if  (ex->expecting == ANTLR3_TOKEN_EOF)
-      {
-        ANTLR3_FPRINTF(stderr, " : Missing <EOF>\n");
-      }
-      else
-      {
-        ANTLR3_FPRINTF(stderr, " : Missing %s \n", tokenNames[ex->expecting]);
-      }
-    }
-    break;
-
-  case  ANTLR3_RECOGNITION_EXCEPTION:
-
-    // Indicates that the recognizer received a token
-    // in the input that was not predicted. This is the basic exception type 
-    // from which all others are derived. So we assume it was a syntax error.
-    // You may get this if there are not more tokens and more are needed
-    // to complete a parse for instance.
-    //
-    ANTLR3_FPRINTF(stderr, " : syntax error...\n");    
-    break;
-
-  case    ANTLR3_MISMATCHED_TOKEN_EXCEPTION:
-
-    // We were expecting to see one thing and got another. This is the
-    // most common error if we coudl not detect a missing or unwanted token.
-    // Here you can spend your efforts to
-    // derive more useful error messages based on the expected
-    // token set and the last token and so on. The error following
-    // bitmaps do a good job of reducing the set that we were looking
-    // for down to something small. Knowing what you are parsing may be
-    // able to allow you to be even more specific about an error.
-    //
-    if  (tokenNames == NULL)
-    {
-      ANTLR3_FPRINTF(stderr, " : syntax error...\n");
-    }
-    else
-    {
-      if  (ex->expecting == ANTLR3_TOKEN_EOF)
-      {
-        ANTLR3_FPRINTF(stderr, " : expected <EOF>\n");
-      }
-      else
-      {
-        ANTLR3_FPRINTF(stderr, " : expected %s ...\n", tokenNames[ex->expecting]);
-      }
-    }
-    break;
-
-  case  ANTLR3_NO_VIABLE_ALT_EXCEPTION:
-
-    // We could not pick any alt decision from the input given
-    // so god knows what happened - however when you examine your grammar,
-    // you should. It means that at the point where the current token occurred
-    // that the DFA indicates nowhere to go from here.
-    //
-    
-    c_add_source_message(2, "SYNTAX", "Error", "Syntax error near: %s", &token_text, 1, ex->line, offset, ex->line, offset, false, filename);
-
-    break;
-
-  case  ANTLR3_MISMATCHED_SET_EXCEPTION:
-
-    {
-      ANTLR3_UINT32    count;
-      ANTLR3_UINT32    bit;
-      ANTLR3_UINT32    size;
-      ANTLR3_UINT32    numbits;
-      pANTLR3_BITSET    errBits;
-
-      // This means we were able to deal with one of a set of
-      // possible tokens at this point, but we did not see any
-      // member of that set.
-      //
-      ANTLR3_FPRINTF(stderr, " : unexpected input...\n  expected one of : ");
-
-      // What tokens could we have accepted at this point in the
-      // parse?
-      //
-      count   = 0;
-      errBits = antlr3BitsetLoad    (ex->expectingSet);
-      numbits = errBits->numBits    (errBits);
-      size    = errBits->size      (errBits);
-
-      if  (size > 0)
-      {
-        // However many tokens we could have dealt with here, it is usually
-        // not useful to print ALL of the set here. I arbitrarily chose 8
-        // here, but you should do whatever makes sense for you of course.
-        // No token number 0, so look for bit 1 and on.
-        //
-        for  (bit = 1; bit < numbits && count < 8 && count < size; bit++)
-        {
-          // TODO: This doesn;t look right - should be asking if the bit is set!!
-          //
-          if  (tokenNames[bit])
-          {
-            ANTLR3_FPRINTF(stderr, "%s%s", count > 0 ? ", " : "", tokenNames[bit]); 
-            count++;
-          }
-        }
-        ANTLR3_FPRINTF(stderr, "\n");
-      }
-      else
-      {
-        ANTLR3_FPRINTF(stderr, "Actually dude, we didn't seem to be expecting anything here, or at least\n");
-        ANTLR3_FPRINTF(stderr, "I could not work out what I was expecting, like so many of us these days!\n");
-      }
-    }
-    break;
-
-  case  ANTLR3_EARLY_EXIT_EXCEPTION:
-
-    // We entered a loop requiring a number of token sequences
-    // but found a token that ended that sequence earlier than
-    // we should have done.
-    //
-    ANTLR3_FPRINTF(stderr, " : missing elements...\n");
-    break;
-
-  default:
-
-    // We don't handle any other exceptions here, but you can
-    // if you wish. If we get an exception that hits this point
-    // then we are just going to report what we know about the
-    // token.
-    //
-    ANTLR3_FPRINTF(stderr, " : syntax not recognized...\n");
-    break;
-  }
-
-  // Here you have the token that was in error which if this is
-  // the standard implementation will tell you the line and offset
-  // and also record the address of the start of the line in the
-  // input stream. You could therefore print the source line and so on.
-  // Generally though, I would expect that your lexer/parser will keep
-  // its own map of lines and source pointers or whatever as there
-  // are a lot of specific things you need to know about the input
-  // to do something like that.
-  // Here is where you do it though :-).
-  //
+  c_add_source_message(2, "SYNTAX", "Error", "%s near: '%s'. ", token_text, 2, ex->line, offset, ex->line, offset, false, filename);
 }
 
 
@@ -375,8 +261,8 @@ void* parseFile(char* fileName)
 
   psr->pParser->rec->displayRecognitionError = handleParseError;
   psr->pParser->rec->recover = noRecover;
-  //psr->pParser->rec->recoverFromMismatchedToken = noRecoverFromMismatchedToken;
-  //psr->pParser->rec->recoverFromMismatchedSet = noRecoverFromMismatchedSet;
+  psr->pParser->rec->recoverFromMismatchedToken = noRecoverFromMismatchedToken;
+  // psr->pParser->rec->recoverFromMismatchedSet = noRecoverFromMismatchedSet;
 
   void* res = psr->stored_definition(psr);
   if (lxr->pLexer->rec->state->error || psr->pParser->rec->state->error) // Some parts of the AST are NULL if errors are used...

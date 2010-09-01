@@ -31,35 +31,51 @@
 #ifndef __ERROREXT_H
 #define __ERROREXT_H
 
+#ifdef __cplusplus
 #include <string>
 #include <list>
 
 extern "C" {
-  void c_add_message(int errorID,
-		     char* type,
-		     char* severity,
-		     char* message,
-		     char** ctokens,
-		     int nTokens);
-       }
+#endif
 
+  void c_add_message(int errorID,
+         const char* type,
+         const char* severity,
+         const char* message,
+         const char** ctokens,
+         int nTokens);
+  void c_add_source_message(int errorID,
+         const char* type,
+         const char* severity,
+         const char* message,
+         const char** ctokens,
+         int nTokens,
+         int startLine,
+         int startCol,
+         int endLine,
+         int endCol,
+         int isReadOnly,
+         const char* filename);
+#ifdef __cplusplus
+}
 
   void add_message(int errorID,
-		   char* type,
-		   char* severity,
-		   char* message,
-		   std::list<std::string> tokens);
-		   
+       const char* type,
+       const char* severity,
+       const char* message,
+       std::list<std::string> tokens);
+       
   void add_source_message(int errorID,
-			  char* type,
-			  char* severity,
-			  char* message,
-			  std::list<std::string> tokens,
-			  int startLine,
-			  int startCol,
-			  int endLine,
-			  int endCol,
-			  bool isReadOnly,
-			  char* filename);
+        const char* type,
+        const char* severity,
+        const char* message,
+        std::list<std::string> tokens,
+        int startLine,
+        int startCol,
+        int endLine,
+        int endCol,
+        bool isReadOnly,
+        const char* filename);
+#endif
 
 #endif
