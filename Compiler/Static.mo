@@ -240,7 +240,7 @@ algorithm
       DAE.Const c1,c2,c,c_start,c_stop,const,c_step;
       list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> ops;
       DAE.Operator op_1;
-      Absyn.Exp e1,e2,e,e3,iterexp,start,stop,step;
+      Absyn.Exp e,e1,e2,e,e3,iterexp,start,stop,step;
       Absyn.Operator op;
       list<Absyn.Exp> args,rest,es;
       list<Absyn.NamedArg> nargs;
@@ -362,17 +362,16 @@ algorithm
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,exp_1,prop,st_2,dae);
-    case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,st,doVect,pre) /* Conditional expressions */
-      local DAE.Exp e;
+    case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,st,doVect,pre) /* Conditional expressions */
       equation
+        Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
         (cache,e1_1,prop1,st_1,dae1) = elabExp(cache,env, e1, impl, st,doVect,pre) "if expressions" ;
         (cache,e2_1,prop2,st_2,dae2) = elabExp(cache,env, e2, impl, st_1,doVect,pre);
         (cache,e3_1,prop3,st_3,dae3) = elabExp(cache,env, e3, impl, st_2,doVect,pre);
-        (cache,e,prop) = elabIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl, st,pre);
-        /* TODO elseif part */
+        (cache,e_1,prop) = elabIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl, st,pre);
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
-        (cache,e,prop,st_3,dae);
+        (cache,e_1,prop,st_3,dae);
 
        /*--------------------------------*/
        /* Part of MetaModelica extension. KS */
@@ -1618,7 +1617,7 @@ algorithm
       DAE.Const c1,c2,c,c_start,c_stop,const,c_step;
       list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> ops;
       DAE.Operator op_1;
-      Absyn.Exp e1,e2,e,e3,start,stop,step;
+      Absyn.Exp e,e1,e2,e,e3,start,stop,step;
       Absyn.Operator op;
       list<Absyn.Exp> args,rest,es;
       list<Absyn.NamedArg> nargs;
@@ -1697,16 +1696,15 @@ algorithm
         (op_1,{e1_2,e2_2},rtype) = deoverload(ops, {(e1_1,t1),(e2_1,t2)}, exp,pre);
       then
         (cache,DAE.RELATION(e1_2,op_1,e2_2),DAE.PROP(rtype,c));
-    case (cache,env,Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3),impl,pre) /* Conditional expressions */
-      local DAE.Exp e;
+    case (cache,env,e as Absyn.IFEXP(ifExp = _),impl,pre) /* Conditional expressions */
       equation
+        Absyn.IFEXP(ifExp = e1,trueBranch = e2,elseBranch = e3) = Absyn.canonIfExp(e);
         (cache,e1_1,prop1) = elabGraphicsExp(cache,env, e1, impl,pre);
         (cache,e2_1,prop2) = elabGraphicsExp(cache,env, e2, impl,pre);
         (cache,e3_1,prop3) = elabGraphicsExp(cache,env, e3, impl,pre);
-        (cache,e,prop) = elabIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl, NONE,pre);
-         /* TODO elseif part */
+        (cache,e_1,prop) = elabIfexp(cache,env, e1_1, prop1, e2_1, prop2, e3_1, prop3, impl, NONE,pre);
       then
-        (cache,e,prop);
+        (cache,e_1,prop);
     case (cache,env,Absyn.CALL(function_ = fn,functionArgs = Absyn.FUNCTIONARGS(args = args,argNames = nargs)),impl,pre) /* Function calls */
       local DAE.Exp e;
       equation

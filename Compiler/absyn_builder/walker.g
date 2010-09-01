@@ -1834,18 +1834,13 @@ if_expression returns [void* ast]
 	void* thenPart;
 	void* elsePart;
 	void* e;
-	void* elseifPart;
 	l_stack el_stack;
 }
 	:
 		#(IF cond = expression
 			thenPart = expression (e=elseif_expression {el_stack.push(e);} )* elsePart = expression
 			{
-				elseifPart = mk_nil();
-				if (el_stack.empty()) // if stack is empty no elseif is there
-					ast = Absyn__IFEXP(cond,thenPart,elsePart,elseifPart);
-				else // if stack is NON empty then transform to if cond then if cond ... else expr
-					ast = Absyn__IFEXP(cond,thenPart,fix_elseif(el_stack, elsePart), elseifPart);
+        ast = Absyn__IFEXP(cond,thenPart,elsePart,make_rml_list_from_stack(el_stack));
 			}
 		)
 	;

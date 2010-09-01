@@ -4290,4 +4290,20 @@ algorithm
   end matchcontinue;
 end importEqual;
 
+public function canonIfExp "Transforms an if-expression to canonical form (without else-if branches)"
+  input Exp e;
+  output Exp outExp;
+algorithm
+  outExp := matchcontinue e
+    local
+      Exp cond,tb,eb,ei_cond,ei_tb;
+      list<tuple<Exp,Exp>> eib;
+    case IFEXP(elseIfBranch={}) then e; 
+    case IFEXP(ifExp=cond,trueBranch=tb,elseBranch=eb,elseIfBranch=(ei_cond,ei_tb)::eib)
+      equation
+        e = canonIfExp(IFEXP(ei_cond,ei_tb,eb,eib));
+      then IFEXP(cond,tb,e,{});
+  end matchcontinue;
+end canonIfExp;
+
 end Absyn;
