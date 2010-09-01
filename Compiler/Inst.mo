@@ -122,18 +122,6 @@ public type InstDims = list<list<DAE.Subscript>>
  This so when instantiating classes extending from primitive types can collect the dimension of -one- surrounding scope to create type.
  E.g. RealInput p[3]; gives the list {3} for this scope and other lists for outer (in instance hierachy) scopes";
 
-public
-uniontype DimExp "a dimension expresion"
-  record DIMINT "the dimension is given by an integer"
-    Integer integer "the dimension";
-  end DIMINT;
-
-  record DIMEXP "the dimension is given by a subscript or an optional expresion"
-    DAE.Subscript subscript "the subscript";
-    Option<DAE.Exp> expExpOption "the optional expresion";
-  end DIMEXP;
-end DimExp;
-
 // protected imports
 protected import Algorithm;
 protected import Builtin;
@@ -166,28 +154,6 @@ protected import ValuesUtil;
 protected import System;
 // protected import DAEDump;
 
-protected function printDimsStr
-"function: printDims
-  Print DimExp list to a string"
-  input list<DimExp> inDimExpLst;
-  output String str;
-algorithm
-  str := matchcontinue (inDimExpLst)
-    local
-      DimExp x;
-      list<DimExp> xs;
-      String s1,s2;
-    case ((x :: xs))
-      equation
-        s1 = printDimStr({SOME(x)});
-        s2 = printDimsStr(xs);
-        str = Util.stringDelimitListNonEmptyElts({s1,s2},",");
-      then
-        str;
-    case ({}) then "";
-  end matchcontinue;
-end printDimsStr;
-
 public function newIdent
 "function: newIdent
   This function creates a new, unique identifer.
@@ -201,23 +167,6 @@ algorithm
   s := stringAppend("__TMP__", is);
   outComponentRef := DAE.CREF_IDENT(s,DAE.ET_OTHER(),{});
 end newIdent;
-
-protected function select
-"function: select
-  This utility function selects one of two
-  objects depending on a boolean variable."
-  input Boolean inBoolean1;
-  input Type_a inTypeA2;
-  input Type_a inTypeA3;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeA := matchcontinue (inBoolean1,inTypeA2,inTypeA3)
-    local Type_a x;
-    case (true,x,_) then x;
-    case (false,_,x) then x;
-  end matchcontinue;
-end select;
 
 protected function isNotFunction
 "function: isNotFunction
@@ -2345,7 +2294,7 @@ algorithm
   outTypesTypeOption := matchcontinue (inInstDims,inType)
     local
       tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
-      list<Option<Integer>> lst;
+      list<DAE.Dimension> lst;
       InstDims inst_dims;
     case ({},tp) then NONE;
     case (inst_dims,tp)
@@ -2361,11 +2310,11 @@ protected function instdimsIntOptList
 "function: instdimsIntOptList
   author: PA"
   input list<DAE.Subscript> inInstDims;
-  output list<Option<Integer>> outIntegerOptionLst;
+  output list<DAE.Dimension> outIntegerOptionLst;
 algorithm
   outIntegerOptionLst := matchcontinue (inInstDims)
     local
-      list<Option<Integer>> res;
+      list<DAE.Dimension> res;
       Integer i;
       list<DAE.Subscript> ss;
     case ({}) then {};
@@ -2373,27 +2322,27 @@ algorithm
       equation
         res = instdimsIntOptList(ss);
       then
-        (SOME(i) :: res);
+        (DAE.DIM_INTEGER(i) :: res);
   end matchcontinue;
 end instdimsIntOptList;
 
 protected function arrayBasictypeBaseclass2
 "function: arrayBasictypeBaseclass2
   author: PA"
-  input list<Option<Integer>> inIntegerOptionLst;
+  input list<DAE.Dimension> inDimensionLst;
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inIntegerOptionLst,inType)
+  outType := matchcontinue (inDimensionLst,inType)
     local
       tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1,res;
-      Option<Integer> i;
-      list<Option<Integer>> is;
+      DAE.Dimension d;
+      list<DAE.Dimension> ds;
     case ({},tp) then tp;
-    case ((i :: is),tp)
+    case ((d :: ds),tp)
       equation
-        tp_1 = Types.liftArray(tp, i);
-        res = arrayBasictypeBaseclass2(is, tp_1);
+        tp_1 = Types.liftArray(tp, d);
+        res = arrayBasictypeBaseclass2(ds, tp_1);
       then
         res;
   end matchcontinue;
@@ -2839,7 +2788,7 @@ algorithm
       String id,pre_str,cn2,cns,scope_str,s;
       SCode.Class c;
       Option<DAE.EqMod> eq;
-      list<DimExp> dims;
+      list<DAE.Dimension> dims;
       Absyn.Path cn;
       Option<list<Absyn.Subscript>> ad;
       SCode.Mod mod;
@@ -5254,7 +5203,7 @@ algorithm
       SCode.Mod m;
       Option<SCode.Comment> comment;
       Option<DAE.EqMod> eq;
-      list<DimExp> dims;
+      list<DAE.Dimension> dims;
       tuple<DAE.TType, Option<Absyn.Path>> ty;
       DAE.Binding binding;
       DAE.Var new_var;
@@ -6252,8 +6201,8 @@ protected function instVar
   input SCode.Class inClass;
   input SCode.Attributes inAttributes;
   input Boolean protection;
-  input list<DimExp> inDimExpLst;
-  input list<Integer> inIntegerLst;
+  input list<DAE.Dimension> inDimensionLst;
+  input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inSCodeCommentOption;
@@ -6270,9 +6219,9 @@ protected function instVar
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
-      list<DimExp> dims_1,dims;
+      list<DAE.Dimension> dims_1,dims;
       list<Env.Frame> compenv,env,innerCompEnv,outerCompEnv;
       DAE.DAElist dae, outerDAE, innerDAE;
       Connect.Sets csets_1,csets,csetsInner,csetsOuter;
@@ -6283,7 +6232,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       String n,id,s1,s2,s;
       SCode.Class cl;
       SCode.Attributes attr;
-      list<Integer> idxs;
+      list<DAE.Subscript> idxs;
       InstDims inst_dims;
       Boolean impl;
       Option<SCode.Comment> comment;
@@ -6517,8 +6466,8 @@ protected function instVar_dispatch "function: instVar_dispatch
   input SCode.Class inClass;
   input SCode.Attributes inAttributes;
   input Boolean protection;
-  input list<DimExp> inDimExpLst;
-  input list<Integer> inIntegerLst;
+  input list<DAE.Dimension> inDimensionLst;
+  input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inSCodeCommentOption;
@@ -6535,9 +6484,9 @@ protected function instVar_dispatch "function: instVar_dispatch
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
-      list<DimExp> dims_1,dims;
+      list<DAE.Dimension> dims_1,dims;
       list<Env.Frame> compenv,env;
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
@@ -6548,7 +6497,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       String n,id;
       SCode.Class cl;
       SCode.Attributes attr;
-      list<Integer> idxs;
+      list<DAE.Subscript> idxs;
       InstDims inst_dims;
       Boolean impl;
       Option<SCode.Comment> comment;
@@ -6624,8 +6573,8 @@ protected function instVar2
   input SCode.Class inClass;
   input SCode.Attributes inAttributes;
   input Boolean protection;
-  input list<DimExp> inDimExpLst;
-  input list<Integer> inIntegerLst;
+  input list<DAE.Dimension> inDimensionLst;
+  input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inSCodeCommentOption;
@@ -6643,7 +6592,7 @@ protected function instVar2
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,finalPrefix,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
     local
       InstDims inst_dims,inst_dims_1;
       list<DAE.Subscript> dims_1,subs;
@@ -6662,8 +6611,8 @@ algorithm
       String n,prefix_str;
       SCode.Class cl;
       SCode.Attributes attr,attr2;
-      list<DimExp> dims;
-      list<Integer> idxs,idxs_1;
+      list<DAE.Dimension> dims;
+      list<DAE.Subscript> idxs,idxs_1;
       Boolean impl,flowPrefix,streamPrefix;
       Option<SCode.Comment> comment;
       Option<DAE.VariableAttributes> dae_var_attr;
@@ -6674,8 +6623,7 @@ algorithm
       Option<DAE.Exp> start;
       DAE.Subscript dime;
       list<DAE.ComponentRef> crs;
-      Option<Integer> dimt;
-      DimExp dim;
+      DAE.Dimension dim;
       Env.Cache cache;
       Boolean prot;
       Option<DAE.Exp> eOpt "for external objects";
@@ -6765,9 +6713,8 @@ algorithm
         pre_1 = PrefixUtil.prefixAdd(n, idxs_1, pre,vt,ClassInf.start(r,Absyn.IDENT(ss1)));
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) = instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir, io, SCode.CONST());
-        subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,subs));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,idxs_1));
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
@@ -6790,10 +6737,9 @@ algorithm
         //print(" instantiateVarparam: " +& PrefixUtil.printPrefixStr(pre) +& " . " +& n +& " mod: " +&  Mod.printModStr(mod) +& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir,io,SCode.PARAM());
-        subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,subs));
-        start = instStartBindingExp(mod, ty, idxs_1);
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,idxs_1));
+        start = instStartBindingExp(mod, ty);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {});
 
         // set the source of this element
@@ -6826,23 +6772,14 @@ algorithm
         //print("\n Inst class: " +& ss1 +& " for var : " +& n +& ", mods: " +& Mod.printModStr(mod2)+& "\n");
         (cache,env_1,ih,store,dae1,csets_1,ty,st,oDA,graph) = instClass(cache,env,ih,store, mod2, pre_1, csets, cl, inst_dims, impl, INNER_CALL(), graph);
         dae1_1 = propagateAttributes(dae1, dir,io,vt);
-        subs = Exp.intSubscripts(idxs_1);
         identType = makeCrefBaseType(ty,inst_dims);
-        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,subs));
+        (cache,cr) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n,identType,idxs_1));
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
-        index_string = Util.listMap(idxs_1, int_string);
-        //Debug.fprint("insttrind", "\n ******************\n ");
-        //Debug.fprint("insttrind", "\n index_string ");
-        //Debug.fprintl("insttr", index_string);
-        //Debug.fprint("insttrind", "\n component ref ");
-        //Debug.fcall("insttr", Exp.printComponentRef, cr);
-        //Debug.fprint("insttrind", "\n ******************\n ");
-        //Debug.fprint("insttrind", "\n ");
-        start = instStartBindingExp(mod, ty, idxs_1);
+        start = instStartBindingExp(mod, ty);
         eOpt = makeVariableBinding(ty,mod,DAE.C_VAR,pre,n);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA);
@@ -6866,18 +6803,17 @@ algorithm
             
     // Array variables with unknown dimensions, e.g. Real x[:] = [some expression that can be used to determine dimension]. 
     case (cache,env,ih,store,ci_state,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_)))),pre,csets,n,cl,attr,prot,
-      ((dim as DIMEXP(subscript = DAE.WHOLEDIM)) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      ((dim as DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM)) :: dims),idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       local
         Integer deduced_dim;
       equation
         // Try to deduce the dimension from the modifier.
         (dime as DAE.INDEX(DAE.ICONST(integer = deduced_dim))) = instWholeDimFromMod(dim, mod);
-        dim = DIMINT(deduced_dim);
+        dim = DAE.DIM_INTEGER(deduced_dim);
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,Connect.SETS(_,crs,dc,oc),ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,info,graph);
-        dimt = instDimType(dim);
-        ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
+        ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,Connect.SETS({},crs,dc,oc),ty_1,graph);
 
@@ -6888,8 +6824,7 @@ algorithm
         inst_dims_1 = Util.listListAppendLast(inst_dims, {dime});
         (cache,compenv,ih,store,dae,Connect.SETS(_,crs,dc,oc),ty,graph) =
           instArray(cache,env,ih,store, ci_state, mod, pre, csets, n, (cl,attr),prot, 1, dim, dims, idxs, inst_dims_1, impl, comment,io,finalPrefix,info,graph);
-        dimt = instDimType(dim);
-        ty_1 = liftNonBasicTypes(ty,dimt); // Do not lift types extending basic type, they are already array types.
+        ty_1 = liftNonBasicTypes(ty,dim); // Do not lift types extending basic type, they are already array types.
       then
         (cache,compenv,ih,store,dae,Connect.SETS({},crs,dc,oc),ty_1,graph);
 
@@ -6934,7 +6869,7 @@ protected function liftNonBasicTypes
  have array types. This relation performs the lifting for alltypes
  except types extending basic types."
   input DAE.Type tp;
-  input  Option<Integer> dimt;
+  input DAE.Dimension dimt;
   output DAE.Type outTp;
 algorithm
   outTp:= matchcontinue(tp,dimt)
@@ -7019,28 +6954,33 @@ public function makeArrayType
 "function: makeArrayType
   Creates an array type from the element type
   given as argument and a list of dimensional sizes."
-  input list<DimExp> inDimExpLst;
+  input list<DAE.Dimension> inDimensionLst;
   input DAE.Type inType;
   output DAE.Type outType;
 algorithm
-  outType := matchcontinue (inDimExpLst,inType)
+  outType := matchcontinue (inDimensionLst,inType)
     local
       tuple<DAE.TType, Option<Absyn.Path>> ty,ty_1;
       Integer i;
-      list<DimExp> xs;
+      list<DAE.Dimension> xs;
       Option<Absyn.Path> p;
       DAE.TType tty;
     case ({},ty) then ty;
-    case ((DIMINT(integer = i) :: xs),(tty,p))
+    case ((DAE.DIM_INTEGER(integer = i) :: xs),(tty,p))
       equation
         ty_1 = makeArrayType(xs, (tty,p));
       then
-        ((DAE.T_ARRAY(DAE.DIM(SOME(i)),ty_1),p));
-    case ((DIMEXP(subscript = _) :: xs),(tty,p))
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty_1),p));
+    case ((DAE.DIM_ENUM(size = i) :: xs), (tty,p))
+      equation
+        ty_1 = makeArrayType(xs, (tty, p));
+      then
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(i),ty_1),p)); 
+    case ((DAE.DIM_SUBSCRIPT(subscript = _) :: xs),(tty,p))
       equation
         ty_1 = makeArrayType(xs, (tty,p));
       then
-        ((DAE.T_ARRAY(DAE.DIM(NONE),ty_1),p));
+        ((DAE.T_ARRAY(DAE.DIM_NONE,ty_1),p));
     case (_,_)
       equation
         Debug.fprintln("failtrace", "- Inst.makeArrayType failed");
@@ -7065,12 +7005,12 @@ public function getUsertypeDimensions
   input InstDims inInstDims;
   input Boolean inBoolean;
   output Env.Cache outCache;
-  output list<DimExp> outDimExpLst;
+  output list<DAE.Dimension> outDimensionLst;
   output SCode.Class classToInstantiate;
   output DAE.DAElist outDae "contain functions";
   output DAE.Mod outMods "modifications from base classes";
 algorithm
-  (outCache,outDimExpLst,classToInstantiate,outDae,outMods) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims,inBoolean)
+  (outCache,outDimensionLst,classToInstantiate,outDae,outMods) := matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inClass,inInstDims,inBoolean)
     local
       SCode.Class cl;
       list<Env.Frame> cenv,env;
@@ -7078,7 +7018,7 @@ algorithm
       list<Absyn.Subscript> ad_1;
       DAE.Mod mod_1,mods_2,mods_3,mods,type_mods;
       Option<DAE.EqMod> eq;
-      list<DimExp> dim1,dim2,res;
+      list<DAE.Dimension> dim1,dim2,res;
       Prefix.Prefix pre;
       String id;
       Absyn.Path cn;
@@ -7429,7 +7369,7 @@ algorithm
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Connect.Sets csets,csets_1;
       Option<DAE.EqMod> eq;
-      list<DimExp> dims;
+      list<DAE.Dimension> dims;
       DAE.DAElist dae1;
       DAE.Binding binding,binding_1;
       Absyn.ComponentRef cref,owncref;
@@ -7550,7 +7490,7 @@ algorithm
       list<Absyn.ComponentRef> crefs,crefs2,crefs3,crefs_1,crefs_2;
       Connect.Sets csets,csets_1;
       Option<DAE.EqMod> eq;
-      list<DimExp> dims;
+      list<DAE.Dimension> dims;
       DAE.DAElist dae1;
       DAE.Binding binding,binding_1;
       Absyn.ComponentRef cref,owncref;
@@ -7610,17 +7550,17 @@ end updateComponentInEnv2;
 
 protected function instDimExpLst
 "function: instDimExpLst
-  Instantiates dimension expressions, DimExp, which are transformed to DAE.Subscript\'s"
-  input list<DimExp> inDimExpLst;
+  Instantiates dimension expressions, DAE.Dimension, which are transformed to DAE.Subscript\'s"
+  input list<DAE.Dimension> inDimensionLst;
   input Boolean inBoolean;
   output list<DAE.Subscript> outExpSubscriptLst;
 algorithm
-  outExpSubscriptLst := matchcontinue (inDimExpLst,inBoolean)
+  outExpSubscriptLst := matchcontinue (inDimensionLst,inBoolean)
     local
       list<DAE.Subscript> res;
       DAE.Subscript r;
-      DimExp x;
-      list<DimExp> xs;
+      DAE.Dimension x;
+      list<DAE.Dimension> xs;
       Boolean b;
     case ({},_) then {};  /* impl */
     case ((x :: xs),b)
@@ -7633,13 +7573,13 @@ algorithm
 end instDimExpLst;
 
 protected function instDimExp
-"function: instDimExp
+"function: instDAE.Dimension
   instantiates one dimension expression, See also instDimExpLst."
-  input DimExp inDimExp;
+  input DAE.Dimension inDimension;
   input Boolean inBoolean;
   output DAE.Subscript outSubscript;
 algorithm
-  outSubscript := matchcontinue (inDimExp,inBoolean)
+  outSubscript := matchcontinue (inDimension,inBoolean)
     local
       Boolean impl;
       String s;
@@ -7653,58 +7593,45 @@ algorithm
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {":"});
       then
         fail();*/
-    case (DIMEXP(subscript = DAE.SLICE(exp = e)),(impl as false))
+    case (DAE.DIM_SUBSCRIPT(subscript = DAE.SLICE(exp = e)),(impl as false))
       equation
         s = Exp.printExpStr(e);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
       then
         fail();
-    //case (DIMEXP(subscript = (eSubscr as DAE.WHOLEDIM())),(impl as true)) then eSubscr;
-    case (DIMEXP(subscript = (eSubscr as DAE.WHOLEDIM())), _) then eSubscr;
-    case (DIMINT(integer = i),_) then DAE.INDEX(DAE.ICONST(i));
-    case (DIMEXP(subscript = (eSubscr as DAE.INDEX(exp = _))),_) then eSubscr;
+    case (DAE.DIM_SUBSCRIPT(subscript = (eSubscr as DAE.WHOLEDIM())), _) then eSubscr;
+    case (DAE.DIM_INTEGER(integer = i),_) then DAE.INDEX(DAE.ICONST(i));
+    case (DAE.DIM_ENUM(size = i), _) then DAE.INDEX(DAE.ICONST(i));
+    case (DAE.DIM_SUBSCRIPT(subscript = (eSubscr as DAE.INDEX(exp = _))),_) then eSubscr;
   end matchcontinue;
 end instDimExp;
 
 protected function instWholeDimFromMod
 	"Tries to determine the size of a WHOLEDIM dimension by looking at a variables
 	modifier."
-	input DimExp dimensionExp;
+	input DAE.Dimension dimensionExp;
 	input DAE.Mod modifier;
 	output DAE.Subscript subscript;
 algorithm
 	subscript := matchcontinue(dimensionExp, modifier)
-		local
-			DAE.Subscript sub;
-		case (DIMEXP(subscript = DAE.WHOLEDIM()), DAE.NOMOD())
-		  then fail(); // No modifier, which is ok if the variable has a binding.
-		case (DIMEXP(subscript = DAE.WHOLEDIM()),
+		case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()),
 					DAE.MOD(eqModOption =	
-					  SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = DAE.ET_ARRAY(arrayDimensions = dims))))))
-		  local	list<Option<Integer>> dims;
+            SOME(DAE.TYPED(modifierAsExp = DAE.ARRAY(ty = tp)))))
+      local	
+        DAE.ExpType tp; 
+        DAE.Dimension d;
+        DAE.Subscript sub;
 			equation
-				(sub :: _) = Exp.arrayDimensionsToSubscripts(dims);
+        (d :: _) = Exp.arrayDimension(tp);
+        sub = Exp.dimensionSubscript(d);
 			then sub;
-		case (_, _)
+    case (DAE.DIM_SUBSCRIPT(subscript = DAE.WHOLEDIM()), 
+          DAE.MOD(eqModOption = _))
 		  equation
 		    Debug.fprint("failtrace","- Inst.instWholeDimFromMod failed\n");
 		  then fail();
 	end matchcontinue;
 end instWholeDimFromMod;
-
-protected function instDimType
-"function instDimType
-  Retrieves the dimension expression as an integer option.
-  Non constant dimensions give NONE."
-  input DimExp inDimExp;
-  output Option<Integer> outIntegerOption;
-algorithm
-  outIntegerOption := matchcontinue (inDimExp)
-    local Integer i;
-    case DIMINT(integer = i) then SOME(i);
-    case DIMEXP(subscript = _) then NONE();
-  end matchcontinue;
-end instDimType;
 
 protected function propagateAttributes
 "function: propagateAttributes
@@ -8058,9 +7985,9 @@ protected function instArray
   input tuple<SCode.Class, SCode.Attributes> inTplSCodeClassSCodeAttributes;
   input Boolean protection;
   input Integer inInteger;
-  input DimExp inDimExp;
-  input list<DimExp> inDimExpLst;
-  input list<Integer> inIntegerLst;
+  input DAE.Dimension inDimension;
+  input list<DAE.Dimension> inDimensionLst;
+  input list<DAE.Subscript> inIntegerLst;
   input InstDims inInstDims;
   input Boolean inBoolean;
   input Option<SCode.Comment> inAbsynCommentOption;
@@ -8078,7 +8005,7 @@ protected function instArray
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimExp,inDimExpLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (cache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inTplSCodeClassSCodeAttributes,protection,inInteger,inDimension,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inAbsynCommentOption,io,finalPrefix,info,inGraph)
     local
       DAE.Exp e,e_1;
       DAE.Properties p,p2;
@@ -8094,8 +8021,8 @@ algorithm
       SCode.Class cl;
       SCode.Attributes attr;
       Integer i,stop,i_1;
-      list<DimExp> dims;
-      list<Integer> idxs;
+      list<DAE.Dimension> dims;
+      list<DAE.Subscript> idxs;
       InstDims inst_dims;
       Boolean impl,b;
       Option<SCode.Comment> comment;
@@ -8106,9 +8033,10 @@ algorithm
       InstanceHierarchy ih;
       DAE.ElementSource source "the origin of the element";
       DAE.DAElist fdae;
+      DAE.Subscript s;
 
     /* component environment If is a function var. */
-    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,_,info,graph)
+    case (cache,env,ih,store,(ci_state as ClassInf.FUNCTION(path = _)),mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_SUBSCRIPT(subscript = _),dims,idxs,inst_dims,impl,comment,io,_,info,graph)
       equation
         SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
         (cache,env_1,ih,store,dae1,csets,ty,st,_,graph) = instClass(cache,env,ih,store, mod, pre, csets, cl, inst_dims, true, INNER_CALL(),graph) "Which has an expression binding";
@@ -8124,32 +8052,34 @@ algorithm
       then
         (cache,env_1,ih,store,dae,csets,ty,graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMEXP(subscript = _),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_SUBSCRIPT(subscript = _),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
+        s = DAE.INDEX(DAE.ICONST(i));
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
-          instVar2(cache, env, ih, store, ci_state, mod, pre, csets, n, cl, attr, prot, dims, (i :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+          instVar2(cache, env, ih, store, ci_state, mod, pre, csets, n, cl, attr, prot, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
     /* Special case when instantiating Real[0]. We need to know the type */
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         ErrorExt.setCheckpoint("instArray Real[0]");
+        s = DAE.INDEX(DAE.ICONST(0));
         (cache,compenv,ih,store,daeLst,csets,ty,graph) =
-           instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (0 :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+           instVar2(cache,env,ih,store, ci_state, mod, pre, csets, n, cl, attr,prot, dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
         daeLst = DAEUtil.extractFunctions(daeLst); 
         ErrorExt.rollBack("instArray Real[0]");
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
     /* Keep the errors if we somehow fail */
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(0),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         ErrorExt.delCheckpoint("instArray Real[0]");
       then
         fail();
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         (i > stop) = true;
       then
@@ -8160,7 +8090,7 @@ algorithm
           (cl as SCode.CLASS(classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path,SOME(_)),
                                                     modifications=scodeMod,attributes=absynAttr)),
                                                     attr),
-          prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+          prot,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       local SCode.Class clBase; Absyn.Path path;
             Absyn.ElementAttributes absynAttr;
             SCode.Mod scodeMod;
@@ -8175,26 +8105,62 @@ algorithm
         (_,mod2,fdae) = Mod.elabMod(cache, env, ih, pre, scodeMod, impl);
         mod3 = Mod.merge(mod, mod2, env, pre);
         mod_1 = Mod.lookupIdxModification(mod3, i);
+        s = DAE.INDEX(DAE.ICONST(i));
         (cache,env_1,ih,store,dae1,csets_1,ty,graph) =
-           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, clBase, attr, prot,dims, (i :: idxs), {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
+           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, clBase, attr, prot,dims, (s :: idxs), {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets_2,_,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DIMINT(stop), dims, idxs, {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DAE.DIM_INTEGER(stop), dims, idxs, {} /* inst_dims */, impl, comment,io,finalPrefix,info,graph);
         daeLst = DAEUtil.joinDaeLst({dae1, dae2,fdae});
       then
         (cache,env_1,ih,store,daeLst,csets_2,ty,graph);
 
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DIMINT(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_INTEGER(integer = stop),dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         mod_1 = Mod.lookupIdxModification(mod, i);
+        s = DAE.INDEX(DAE.ICONST(i));
         (cache,env_1,ih,store,dae1,csets_1,ty,graph) =
-           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, cl, attr, prot,dims, (i :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
+           instVar2(cache,env,ih, store,ci_state, mod_1, pre, csets, n, cl, attr, prot,dims, (s :: idxs), inst_dims, impl, comment,io,finalPrefix,info,graph);
         i_1 = i + 1;
         (cache,_,ih,store,dae2,csets_2,_,graph) =
-          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DIMINT(stop), dims, idxs, inst_dims, impl, comment,io,finalPrefix,info,graph);
+          instArray(cache,env,ih,store, ci_state, mod, pre, csets_1, n, (cl,attr), prot, i_1, DAE.DIM_INTEGER(stop), dims, idxs, inst_dims, impl, comment,io,finalPrefix,info,graph);
         daeLst = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,env_1,ih,store,daeLst,csets_2,ty,graph);
+
+    // Instantiate an array that whose dimension is determined by an
+    // enumeration.
+    case (cache, env, ih, store, ci_state, mod, pre, csets, n, (cl, attr), prot,
+        i, DAE.DIM_ENUM(enumTypeName = enum_type, literals = lit :: l), dims, 
+        idxs, inst_dims, impl, comment, io, finalPrefix, info, graph)
+      local
+        String lit;
+        list<String> l;
+        Integer enum_size;
+        Absyn.Path enum_type, enum_lit;
+      equation
+        mod_1 = Mod.lookupIdxModification(mod, i);
+        enum_lit = Absyn.joinPaths(enum_type, Absyn.IDENT(lit));
+        s = DAE.INDEX(DAE.ENUM_LITERAL(enum_lit, i));
+        enum_size = listLength(l);
+        (cache, env_1, ih, store, dae1, csets_1, ty, graph) =
+          instVar2(cache, env, ih, store, ci_state, mod_1, pre, csets, n, cl,
+          attr, prot, dims, (s :: idxs), inst_dims, impl, comment, io,
+          finalPrefix, info, graph);
+        i_1 = i + 1;
+        (cache, _, ih, store, dae2, csets_2, _, graph) =
+          instArray(cache, env, ih, store, ci_state, mod, pre, csets_1, n, (cl,
+          attr), prot, i_1, DAE.DIM_ENUM(enum_type, l, enum_size), dims, idxs, 
+          inst_dims, impl, comment, io, finalPrefix, info, graph);
+        daeLst = DAEUtil.joinDaes(dae1, dae2);
+      then
+        (cache, env_1, ih, store, daeLst, csets_2, ty, graph);
+
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,
+      DAE.DIM_ENUM(literals = {}),dims,idxs,inst_dims,impl,comment,io,finalPrefix,
+      info,graph)
+      then
+        (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE),graph);
 
     case (_,_,ih,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -8221,17 +8187,17 @@ public function elabComponentArraydimFromEnv
 "function elabComponentArraydimFromEnv
   author: PA
   Lookup uninstantiated component in env, elaborate its modifiers to
-  find arraydimensions and return as DimExp list.
+  find arraydimensions and return as DAE.Dimension list.
   Used when components have submodifiers (on e.g. attributes) using
   size to find dimensions of component."
   input Env.Cache inCache;
   input Env inEnv;
   input DAE.ComponentRef inComponentRef;
   output Env.Cache outCache;
-  output list<DimExp> outDimExpLst;
+  output list<DAE.Dimension> outDimensionLst;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outDimExpLst,outDae) := matchcontinue (inCache,inEnv,inComponentRef)
+  (outCache,outDimensionLst,outDae) := matchcontinue (inCache,inEnv,inComponentRef)
     local
       DAE.Var ty;
       String n,id;
@@ -8246,7 +8212,7 @@ algorithm
       Option<SCode.Comment> comment;
       DAE.Mod cmod,cmod_1,m_2,mod_2;
       DAE.EqMod eq;
-      list<DimExp> dims;
+      list<DAE.Dimension> dims;
       list<Env.Frame> env;
       DAE.ComponentRef cref;
       Env.Cache cache;
@@ -8278,12 +8244,12 @@ protected function elabComponentArraydimFromEnv2
   input DAE.EqMod inEqMod;
   input Env inEnv;
   output Env.Cache outCache;
-  output list<DimExp> outDimExpLst;
+  output list<DAE.Dimension> outDimensionLst;
 algorithm
-  (outCache,outDimExpLst) := matchcontinue (inCache,inEqMod,inEnv)
+  (outCache,outDimensionLst) := matchcontinue (inCache,inEqMod,inEnv)
     local
       list<Integer> lst;
-      list<DimExp> lst_1;
+      list<DAE.Dimension> lst_1;
       DAE.Exp e;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Env.Frame> env;
@@ -8291,28 +8257,16 @@ algorithm
     case (cache,DAE.TYPED(modifierAsExp = e,properties = DAE.PROP(type_ = t)),env)
       equation
         lst = Types.getDimensionSizes(t);
-        lst_1 = Util.listMap(lst, makeDimexpFromInt);
+        lst_1 = Util.listMap(lst, Exp.intDimension);
       then
         (cache,lst_1);
   end matchcontinue;
 end elabComponentArraydimFromEnv2;
 
-protected function makeDimexpFromInt
-"function: makeDimexpFromInt
-  Helper function to elabComponentArraydfumFromEnv2"
-  input Integer inInteger;
-  output DimExp outDimExp;
-algorithm
-  outDimExp := matchcontinue (inInteger)
-    local Integer i;
-    case (i) then DIMINT(i);
-  end matchcontinue;
-end makeDimexpFromInt;
-
 protected function elabArraydimOpt
 "function: elabArraydimOpt
   Same functionality as elabArraydim, but takes an optional arraydim.
-  In case of NONE, empty DimExp list is returned."
+  In case of NONE, empty DAE.Dimension list is returned."
   input Env.Cache inCache;
   input Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -8324,13 +8278,13 @@ protected function elabArraydimOpt
   input Boolean performVectorization;
   input Prefix inPrefix;
   output Env.Cache outCache;
-  output list<DimExp> outDimExpLst;
+  output list<DAE.Dimension> outDimensionLst;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outDimExpLst,outDae) :=
+  (outCache,outDimensionLst,outDae) :=
   matchcontinue (inCache,inEnv,inComponentRef,path,inAbsynArrayDimOption,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix)
     local
-      list<DimExp> res;
+      list<DAE.Dimension> res;
       list<Env.Frame> env;
       Absyn.ComponentRef owncref;
       list<Absyn.Subscript> ad;
@@ -8375,15 +8329,15 @@ protected function elabArraydim
   input Boolean isFunctionInput;
   input Prefix inPrefix;
   output Env.Cache outCache;
-  output list<DimExp> outDimExpLst;
+  output list<DAE.Dimension> outDimensionLst;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outDimExpLst,outDae) :=
+  (outCache,outDimensionLst,outDae) :=
   matchcontinue
     (inCache,inEnv,inComponentRef,path,inArrayDim,inTypesEqModOption,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,isFunctionInput,inPrefix)
     local
-      list<Option<DimExp>> dim,dim1,dim2;
-      list<DimExp> dim_1,dim3;
+      list<DAE.Dimension> dim,dim1,dim2;
+      list<DAE.Dimension> dim_1,dim3;
       list<Env.Frame> env;
       Absyn.ComponentRef cref;
       list<Absyn.Subscript> ad;
@@ -8420,7 +8374,7 @@ algorithm
         (cache,dim1,dae) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
         dim2 = elabArraydimType(t, ad,e,path);
         //Debug.traceln("TYPED: " +& Exp.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
-        dim3 = compatibleArraydim(dim1, dim2);
+        dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
         (cache,dim3,dae);
     case (cache,env,cref,path,ad,SOME(DAE.UNTYPED(e)),impl,st,doVect, _,pre)
@@ -8432,7 +8386,7 @@ algorithm
         (cache,dim1,dae2) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
         dim2 = elabArraydimType(t, ad,e_1,path);
         //Debug.traceln("UNTYPED");
-        dim3 = compatibleArraydim(dim1, dim2);
+        dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,dim3,dae);
@@ -8440,7 +8394,7 @@ algorithm
       equation
         (cache,dim1,_) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
         dim2 = elabArraydimType(t, ad,e,path);
-        failure(dim3 = compatibleArraydim(dim1, dim2));
+        failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
         dim_str = printDimStr(dim1);
@@ -8465,49 +8419,13 @@ protected function printDimStr
 "function: printDimStr
   This function prints array dimensions.
   The code is not included in the report."
-  input list<Option<DimExp>> inDimExpOptionLst;
+  input list<DAE.Dimension> inDimensionLst;
   output String outString;
+
+  list<String> dim_strings;
 algorithm
-  outString := matchcontinue (inDimExpOptionLst)
-    local
-      String s,str,res,s2,s1;
-      Integer x;
-      list<Option<DimExp>> xs;
-    case {NONE} then ":";
-    case {SOME(DIMINT(x))}
-      equation
-        s = intString(x);
-      then
-        s;
-    case {SOME(DIMEXP(x,_))}
-      local DAE.Subscript x;
-      equation
-        s = Exp.printSubscriptStr(x);
-      then
-        s;
-    case (NONE :: xs)
-      equation
-        str = printDimStr(xs);
-        res = stringAppend(":,", str);
-      then
-        res;
-    case (SOME(DIMINT(x)) :: xs)
-      equation
-        s = intString(x);
-        s2 = printDimStr(xs);
-        res = Util.stringAppendList({s,",",s2});
-      then
-        res;
-    case (SOME(DIMEXP(x,_)) :: xs)
-      local DAE.Subscript x;
-      equation
-        s1 = Exp.printSubscriptStr(x);
-        s2 = printDimStr(xs);
-        res = Util.stringAppendList({s1,",",s2});
-      then
-        res;
-    case (_) then "";
-  end matchcontinue;
+  dim_strings := Util.listMap(inDimensionLst, Exp.dimensionString);
+  outString := Util.stringDelimitList(dim_strings, ",");
 end printDimStr;
 
 protected function elabArraydimDecl
@@ -8525,13 +8443,13 @@ protected function elabArraydimDecl
   input Boolean performVectorization;
   input Prefix inPrefix;
   output Env.Cache outCache;
-  output list<Option<DimExp>> outDimExpOptionLst;
+  output list<DAE.Dimension> outDimensionOptionLst;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outDimExpOptionLst,outDae) :=
+  (outCache,outDimensionOptionLst,outDae) :=
   matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix)
     local
-      list<Option<DimExp>> l;
+      list<DAE.Dimension> l;
       list<Env.Frame> env;
       Absyn.ComponentRef cref,cr;
       list<Absyn.Subscript> ds;
@@ -8556,7 +8474,7 @@ algorithm
       equation
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
-        (cache,NONE :: l,dae);
+        (cache,DAE.DIM_NONE :: l,dae);
     // For functions, this can occur: Real x{:,size(x,1)} ,i.e. refering to  the variable itself but a different dimension.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "size"),
           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),_}))) :: ds),impl,st,doVect,pre)
@@ -8564,31 +8482,34 @@ algorithm
         true = Absyn.crefEqual(cref, cr);
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
-        (cache,NONE :: l,dae);
+        (cache,DAE.DIM_NONE :: l,dae);
     // adrpo: See if our array dimension comes from an enumeration!
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre)
       local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Element> elementLst;
+        SCode.Class cls; list<String> enum_literals;
       equation
         typePath = Absyn.crefToPath(cr);
         // make sure is an enumeration!
-        (_, SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef=SCode.PARTS(elementLst=elementLst)), _) =
+        (_, cls as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst=elementLst)), _) =
              Lookup.lookupClass(cache, env, typePath, false);
-        i = listLength(elementLst);
+        enum_literals = SCode.componentNames(cls);
+        i = listLength(enum_literals);
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
-        (cache,SOME(DIMINT(i)) :: l,dae);
+        (cache,DAE.DIM_ENUM(typePath, enum_literals, i) :: l,dae);
     // Frenkel TUD try next enum
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre)
       local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Enum> enumLst;
+      SCode.ClassDef def; DAE.DAElist dae; list<DAE.Var> vars;
       equation
         typePath = Absyn.crefToPath(cr);
         // make sure is an enumeration!
-        (_, SCode.CLASS(restriction=SCode.R_TYPE(),classDef=SCode.ENUMERATION(enumLst=enumLst)), _) =
+        (_, SCode.CLASS(restriction=SCode.R_TYPE(),classDef= def as SCode.ENUMERATION(enumLst=enumLst)), _) =
              Lookup.lookupClass(cache, env, typePath, false);
         i = listLength(enumLst);
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
-        (cache,SOME(DIMINT(i)) :: l,dae);
+        (cache,DAE.DIM_INTEGER(i) :: l,dae);
     // Constant dimension creates DIMINT
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre)
       equation
@@ -8601,7 +8522,7 @@ algorithm
         dae = DAEUtil.joinDaes(dae1,dae2);
         //Debug.traceln("DIMINT:" +& Env.printEnvPathStr(env) +& "," +& Exp.printExpStr(e) +& ":" +& intString(i));
       then
-        (cache,SOME(DIMINT(i)) :: l,dae);
+        (cache,DAE.DIM_INTEGER(i) :: l,dae);
 
     // when not implicit instantiation, array dim. must be constant.
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),(impl as false),st,doVect,pre)
@@ -8621,7 +8542,7 @@ algorithm
         (cache,l,dae2) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,SOME(DIMEXP(DAE.INDEX(e),NONE))::l, dae);
+        (cache,DAE.DIM_SUBSCRIPT(DAE.INDEX(e)) :: l, dae);
     /* Size(x,1) in e.g. functions => Unknown dimension */
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre)
       equation
@@ -8630,7 +8551,7 @@ algorithm
         (cache,l,dae2) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,SOME(DIMEXP(DAE.INDEX(e),NONE)) :: l,dae);
+        (cache,DAE.DIM_SUBSCRIPT(DAE.INDEX(e)) :: l,dae);
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = d) :: ds),impl,st,doVect,pre)
       equation
         (cache,e,DAE.PROP(t,_),_,_) = Static.elabExp(cache,env, d, impl, st,doVect,pre);
@@ -8654,88 +8575,54 @@ protected function completeArraydim
   This function converts a list of optional integers to a list of integers.
   If one element of the list is NONE, this function will fail.
   This is used to check that an array specification contain fully specified array dimension sizes."
-  input list<Option<DimExp>> inDimExpOptionLst;
-  output list<DimExp> outDimExpLst;
+  input list<DAE.Dimension> inDimensionLst;
+  output list<DAE.Dimension> outDimensionLst;
 algorithm
-  outDimExpLst := matchcontinue (inDimExpOptionLst)
+  outDimensionLst := matchcontinue (inDimensionLst)
     local
-      list<DimExp> xs_1;
-      DimExp x;
-      list<Option<DimExp>> xs;
+      list<DAE.Dimension> xs_1;
+      DAE.Dimension x;
+      list<DAE.Dimension> xs;
     case {} then {};
-    case (SOME(x) :: xs)
+    case (DAE.DIM_NONE :: xs)
+      equation
+        xs_1 = completeArraydim(xs);
+      then
+        (DAE.DIM_SUBSCRIPT(DAE.WHOLEDIM()) :: xs_1);
+    case (x :: xs)
       equation
         xs_1 = completeArraydim(xs);
       then
         (x :: xs_1);
-    case (NONE :: xs)
-      equation
-        xs_1 = completeArraydim(xs);
-      then
-        (DIMEXP(DAE.WHOLEDIM(),NONE) :: xs_1);
   end matchcontinue;
 end completeArraydim;
 
 protected function compatibleArraydim
-"function: compatibleArraydim
-  Given two, possibly incomplete, array dimension size specifications
-  as list of optional integers, this function checks whether they are compatible.
-  Being compatible means that they have the same number of dimension,
-  and for every dimension at least one of the lists specifies its size.
-  If both lists specify a dimension size, they have to specify the same size."
-  input list<Option<DimExp>> inDimExpOptionLst1;
-  input list<Option<DimExp>> inDimExpOptionLst2;
-  output list<DimExp> outDimExpLst;
+  "Given two, possibly incomplete, array dimension size specifications, this
+  function checks whether they are compatible. Being compatible means that they
+  have the same number of dimensions, and for every dimension at least one of
+  the lists specifies it's size. If both lists specify a dimension size, they
+  have to specify the same size."
+  input DAE.Dimension inDimension1;
+  input DAE.Dimension inDimension2;
+  output DAE.Dimension outDimension;
 algorithm
-  outDimExpLst := matchcontinue (inDimExpOptionLst1,inDimExpOptionLst2)
+  outDimension := matchcontinue(inDimension1, inDimension2)
     local
-      list<DimExp> l;
-      DimExp x,y,de;
-      list<Option<DimExp>> xs,ys;
-      Option<DAE.Exp> e,e1,e2;
-      Integer xI,yI;
-      DAE.Subscript yS,xS;
-    case ({},{}) then {};
-    case ((SOME(x) :: xs),(NONE :: ys))
+      DAE.Dimension x, y;
+    case (DAE.DIM_NONE, DAE.DIM_NONE) then DAE.DIM_SUBSCRIPT(DAE.WHOLEDIM());
+    case (x, DAE.DIM_NONE) then x;
+    case (DAE.DIM_NONE, y) then y;
+    case (x, y)
       equation
-        l = compatibleArraydim(xs, ys);
+        // Convert dimensions given by enumerations to integers, to keep the
+        // complexity of compareArraydim down.
+        x = enumToIntDimExpTry(x);        
+        y = enumToIntDimExpTry(y);        
+        x = compareArraydim(x, y);
       then
-        (x :: l);
-    case ((NONE :: xs),(SOME(y) :: ys))
-      equation
-        l = compatibleArraydim(xs, ys);
-      then
-        (y :: l);
-    case ((SOME(DIMINT(xI)) :: xs),(SOME(DIMINT(yI)) :: ys))
-      equation
-        equality(xI = yI);
-        l = compatibleArraydim(xs, ys);
-      then
-        (DIMINT(xI) :: l);
-    case ((SOME(DIMINT(xI)) :: xs),(SOME(DIMEXP(yS,e)) :: ys))
-      equation
-        de = arraydimCondition(DIMEXP(DAE.INDEX(DAE.ICONST(xI)),NONE), DIMEXP(yS,e));
-        l = compatibleArraydim(xs, ys);
-      then
-        (de :: l);
-    case ((SOME(DIMEXP(xS,e)) :: xs),(SOME(DIMINT(yI)) :: ys))
-      equation
-        de = arraydimCondition(DIMEXP(DAE.INDEX(DAE.ICONST(yI)),NONE), DIMEXP(xS,e));
-        l = compatibleArraydim(xs, ys);
-      then
-        (de :: l);
-    case ((SOME(DIMEXP(xS,e1)) :: xs),(SOME(DIMEXP(yS,e2)) :: ys))
-      equation
-        de = arraydimCondition(DIMEXP(xS,e1), DIMEXP(yS,e2));
-        l = compatibleArraydim(xs, ys);
-      then
-        (de :: l);
-    case ((NONE :: xs),(NONE :: ys))
-      equation
-        l = compatibleArraydim(xs, ys);
-      then
-        (DIMEXP(DAE.WHOLEDIM(),NONE) :: l);
-    case (_,_)
+        x;
+    case (_, _)
       equation
         Debug.fprintln("failtrace", "- Inst.compatibleArraydim failed");
       then
@@ -8743,16 +8630,68 @@ algorithm
   end matchcontinue;
 end compatibleArraydim;
 
+protected function compareArraydim
+  "Helper function to compatibleArraydim. Checks that two array dimensions are
+  compatible."
+  input DAE.Dimension inDimension1;
+  input DAE.Dimension inDimension2;
+  output DAE.Dimension outDimension;
+algorithm
+  outDimension := matchcontinue(inDimension1, inDimension2)
+    local
+      Integer xI, yI;
+      DAE.Dimension de;
+    case (DAE.DIM_INTEGER(integer = xI), DAE.DIM_INTEGER(integer = yI)) 
+      equation 
+        equality(xI = yI); 
+      then 
+        inDimension1;
+    case (DAE.DIM_INTEGER(integer = xI), DAE.DIM_SUBSCRIPT(subscript = _))
+      equation
+        de = arraydimCondition(
+          DAE.DIM_SUBSCRIPT(DAE.INDEX(DAE.ICONST(xI))), 
+          inDimension2);
+      then
+        de;
+    case (DAE.DIM_SUBSCRIPT(subscript = _), DAE.DIM_INTEGER(integer = yI))
+      equation
+        de = arraydimCondition(
+          DAE.DIM_SUBSCRIPT(DAE.INDEX(DAE.ICONST(yI))), 
+          inDimension1);
+      then
+        de;
+    case (DAE.DIM_SUBSCRIPT(subscript = _), DAE.DIM_SUBSCRIPT(subscript = _))
+      equation
+        de = arraydimCondition(inDimension1, inDimension2);
+      then
+        de;
+  end matchcontinue;
+end compareArraydim;
+
+protected function enumToIntDimExpTry
+  "Tries to convert a dimension given by an enumeration to an integer, or
+  returns the unchanged dimension if it's not possible."
+  input DAE.Dimension enumDimension;
+  output DAE.Dimension intDimension;
+algorithm
+  intDimension := matchcontinue(enumDimension)
+    local
+      Integer n;
+    case (DAE.DIM_ENUM(size = n)) then DAE.DIM_INTEGER(n);
+    case _ then enumDimension;
+  end matchcontinue;
+end enumToIntDimExpTry;
+
 protected function arraydimCondition
 "function arraydimCondition
   This function checks that the two arraydim expressions have the same dimension.
-  FIXME: no check performed yet, just return first DimExp."
-  input DimExp inDimExp1;
-  input DimExp inDimExp2;
-  output DimExp outDimExp;
+  FIXME: no check performed yet, just return first DAE.Dimension."
+  input DAE.Dimension inDimension1;
+  input DAE.Dimension inDimension2;
+  output DAE.Dimension outDimension;
 algorithm
-  outDimExp := matchcontinue (inDimExp1,inDimExp2)
-    local DimExp de;
+  outDimension := matchcontinue (inDimension1,inDimension2)
+    local DAE.Dimension de;
     case (de,_) then de;
   end matchcontinue;
 end arraydimCondition;
@@ -8766,20 +8705,18 @@ protected function elabArraydimType
   input Absyn.ArrayDim inArrayDim;
   input DAE.Exp exp "Primarily used for error messages";
   input Absyn.Path path "class of declaration, primarily used for error messages";
-  output list<Option<DimExp>> outDimExpOptionLst;
+  output list<DAE.Dimension> outDimensionLst;
 algorithm
-  outDimExpOptionLst := matchcontinue(inType,inArrayDim,exp,path)
+  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path)
     local
-      list<Option<DimExp>> l;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
-      Integer i;
       String tpStr,adStr,expStr;
     case(t,ad,exp,path)
       equation
         true = (Types.ndims(t) >= listLength(ad));
-        outDimExpOptionLst = elabArraydimType2(t,ad);
-      then outDimExpOptionLst;
+        outDimensionLst = elabArraydimType2(t,ad);
+      then outDimensionLst;
 
     case(t,ad,exp,path)
       equation
@@ -8795,32 +8732,20 @@ protected function elabArraydimType2
 "Help function to elabArraydimType."
   input DAE.Type inType;
   input Absyn.ArrayDim inArrayDim;
-  output list<Option<DimExp>> outDimExpOptionLst;
+  output list<DAE.Dimension> outDimensionOptionLst;
 algorithm
-  outDimExpOptionLst := matchcontinue (inType,inArrayDim)
+  outDimensionOptionLst := matchcontinue (inType,inArrayDim)
     local
-      list<Option<DimExp>> l;
+      DAE.Dimension d;
+      list<DAE.Dimension> l;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
       Integer i;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(_ :: ad))
+    case ((DAE.T_ARRAY(arrayDim = d, arrayType = t), _), (_ :: ad))
       equation
         l = elabArraydimType2(t, ad);
       then
-        (NONE :: l);
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i)),arrayType = t),_),(_ :: ad))
-      equation
-        l = elabArraydimType2(t, ad);
-      then
-        (SOME(DIMINT(i)) :: l);
-    /*
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),{})
-      then
-        (NONE :: {});
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i)),arrayType = t),_),{})
-      then
-        (SOME(DIMINT(i)) :: {});
-    */
+        (d :: l);
     case (_,{}) then {};
     /* adrpo: handle also complex type!
     case ((DAE.T_COMPLEX(complexTypeOption=SOME(t)),_),ad)
@@ -10703,13 +10628,13 @@ algorithm
     then dae;
     
     /* Array that extends basic type */          
-    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = dim),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         dae = daeDeclare4(vn, tp, fl, st, kind, dir, prot,e, inst_dims, start, dae_var_attr,comment,io,finalPrefix,source,declareComplexVars);
       then dae;
 
     /* Report an error */
-    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
+    case (vn,(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = tp),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars)
       equation 
         s = Exp.printComponentRefStr(vn);
         Error.addMessage(Error.DIMENSION_NOT_KNOWN, {s});
@@ -11375,7 +11300,8 @@ algorithm
         failure(equality(lst={}));
         tpl=Util.listFirst(lst);
         e=rangeExpression(tpl);
-        (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_,fdae1) = 
+          Static.elabExp(cache,env, e, impl, NONE,true, pre);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
@@ -11389,7 +11315,7 @@ algorithm
     /* for i in <expr> loop .. end for; */
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph) 
       equation 
-        (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true, pre);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
         (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
         = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
@@ -11404,7 +11330,7 @@ algorithm
       where <expr> is not constant or parameter expression */  
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph)
       equation 
-        (cache,e_1,DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),(DAE.T_INTEGER(_),_)),_),DAE.C_VAR()),_,_) 
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(_),_)),_), constFlag = DAE.C_VAR()),_,_) 
           = Static.elabExp(cache,env, e, impl, NONE,true,pre);
         // adrpo: the iterator is not in the environment, this would fail!
         // (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_) 
@@ -11869,7 +11795,7 @@ algorithm
       list<Integer> ds;
       tuple<DAE.TType, Option<Absyn.Path>> bc;
       DAE.DAElist dae1,dae2,decl;
-      DAE.ArrayDim ad; ClassInf.State cs;
+      ClassInf.State cs;
       String n; list<DAE.Var> vs; 
       Option<Absyn.Path> p;
       DAE.Type tt;
@@ -12207,7 +12133,7 @@ algorithm
 				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
 				
 		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
-		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE)), _), _, _)
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE), _), _, _)
 			local
 				String lhs_str, rhs_str, eq_str;
 			equation
@@ -12218,15 +12144,22 @@ algorithm
 			then 
 				fail();
 
-		/* Array equation of size sz */
-		case (lhs, rhs, (DAE.T_ARRAY(DAE.DIM(integerOption = SOME(sz)), t), _), source, initial_)
-			local
-				Integer sz;
-				DAE.Type t;
-			equation
-				dae = instArrayElEq(lhs, rhs, t, 1, sz, source, initial_);
-			then
-				dae;
+    // Array dimension of known size.
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t), _), source, initial_)
+      local
+        DAE.Dimension lhs_dim, rhs_dim;
+        list<DAE.Exp> lhs_idxs, rhs_idxs;
+        DAE.Type t;
+      equation
+        // Expand along the first dimensions of the expressions, and generate an
+        // equation for each pair of elements.
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        lhs_idxs = expandArrayDimension(lhs_dim, lhs);
+        rhs_idxs = expandArrayDimension(rhs_dim, rhs);
+        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+      then
+        dae;
 
 		case (_, _, _, _, _)
 			equation
@@ -12236,55 +12169,110 @@ algorithm
 	end matchcontinue;
 end instArrayEquation;
 
-protected function instArrayElEq 
-"function: instArrayElEq 
-  This function loops recursively through all indexes in the two
-  arrays and generates an equation for each pair of elements."
-  input DAE.Exp inExp1;
-  input DAE.Exp inExp2;
-  input DAE.Type inType3;
-  input Integer inInteger4;
-  input Integer inInteger5;
-  input DAE.ElementSource source "the origin of the element";
-  input SCode.Initial inInitial6;
-  output DAE.DAElist outDae;
-algorithm 
-  outDae:= matchcontinue (inExp1,inExp2,inType3,inInteger4,inInteger5,source,inInitial6)
+protected function instArrayElEq
+  "This function loops recursively through all indices in the two arrays and
+  generates an equation for each pair of elements."
+  input DAE.Exp inLhsExp;
+  input DAE.Exp inRhsExp;
+  input DAE.Type inType;
+  input list<DAE.Exp> inLhsIndices;
+  input list<DAE.Exp> inRhsIndices;
+  input DAE.ElementSource inSource;
+  input SCode.Initial inInitial;
+  output DAE.DAElist outDAE;
+algorithm
+  outDAE := matchcontinue(inLhsExp, inRhsExp, inType, inLhsIndices,
+      inRhsIndices, inSource, inInitial)
     local
-      DAE.Exp e1_1,e2_1,e1,e2; DAE.DAElist dae1,dae2,dae;
-      Integer i_1,i,sz; tuple<DAE.TType, Option<Absyn.Path>> t;
-      SCode.Initial initial_;
-      
-      /* array equation for index start<=i<=end */
-    case (e1,e2,t,i,sz,source,initial_)  
-      local DAE.Exp ae1;
-      equation 
-        (i <= sz) = true;
-        ae1 = DAE.ICONST(i);
-        e1_1 = Exp.simplify(DAE.ASUB(e1,{ae1}));
-        e1_1 = Exp.unliftExp(e1_1);
-        e2_1 = Exp.simplify(DAE.ASUB(e2,{ae1}));
-        e2_1 = Exp.unliftExp(e2_1);
-        dae1 = instEqEquation2(e1_1, e2_1, t, source, initial_);
-        i_1 = i + 1;
-        dae2 = instArrayElEq(e1, e2, t, i_1, sz, source, initial_);
-        dae = DAEUtil.joinDaes(dae1, dae2);
+      DAE.Exp lhs, rhs, lhs_idx, rhs_idx;
+      DAE.Type t;
+      String l;
+      list<String> l_rest;
+      list<DAE.Exp> lhs_idxs, rhs_idxs;
+      DAE.DAElist dae1, dae2;
+    case (_, _, _, {}, {}, _, _) then DAEUtil.emptyDae;
+    case (lhs, rhs, t, lhs_idx :: lhs_idxs, rhs_idx :: rhs_idxs, _, _)
+      equation
+        dae1 = instEqEquation2(lhs_idx, rhs_idx, t, inSource, inInitial);
+        dae2 = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, inSource, inInitial);
+        dae1 = DAEUtil.joinDaes(dae1, dae2);
       then
-        dae;
-        
-    /* array equation for index i>end, stop iteration */
-    case (e1,e2,t,i,sz,source,initial_)
-      equation 
-        (i <= sz) = false;
-      then
-        DAEUtil.emptyDae;
-    case (_,_,_,_,_,_,_)
-      equation 
-        Debug.fprintln("failtrace", "- Inst.instArrayElEq failed");
-      then
-        fail();
+        dae1;
   end matchcontinue;
 end instArrayElEq;
+      
+protected function expandArrayDimension
+  "Expands an array into elements given a dimension, i.e.
+    (3, x) => {x[1], x[2], x[3]}"
+  input DAE.Dimension inDim;
+  input DAE.Exp inArray;
+  output list<DAE.Exp> outExpl;
+algorithm
+  outExpl := matchcontinue(inDim, inArray)
+    local
+      list<DAE.Exp> expl;
+    // Empty integer list. Util.listIntRange is not defined for size < 1, 
+    // so we need to handle empty lists here.
+    case (DAE.DIM_INTEGER(integer = 0), _) then {};
+    case (DAE.DIM_INTEGER(integer = sz), _)
+      local
+        Integer sz;
+        list<Integer> ints;
+      equation
+        ints = Util.listIntRange(sz);
+        expl = Util.listMap1(ints, makeAsubIndex, inArray);
+      then
+        expl;
+    case (DAE.DIM_ENUM(enumTypeName = name, literals = ls), _)
+      local
+        Absyn.Path name;
+        list<String> ls;
+      equation
+        expl = makeEnumLiteralIndices(name, ls, 1, inArray);
+      then
+        expl; 
+  end matchcontinue;
+end expandArrayDimension;
+
+protected function makeAsubIndex
+  "Creates an ASUB expression given an expression and an integer index."
+  input Integer index;
+  input DAE.Exp expr;
+  output DAE.Exp asub;
+algorithm
+  asub := Exp.simplify(DAE.ASUB(expr, {DAE.ICONST(index)}));
+  asub := Debug.bcallret1(Exp.isCrefScalar(asub), Exp.unliftExp, asub, asub);
+end makeAsubIndex;
+
+protected function makeEnumLiteralIndices
+  "Creates a list of enumeration literal expressions from an enumeration."
+  input Absyn.Path enumTypeName;
+  input list<String> enumLiterals;
+  input Integer enumIndex;
+  input DAE.Exp expr;
+  output list<DAE.Exp> enumIndices;
+algorithm
+  enumIndices := matchcontinue(enumTypeName, enumLiterals, enumIndex, expr)
+    case (_, {}, _, _) then {};
+    case (_, l :: ls, _, _)
+      local
+        String l;
+        list<String> ls;
+        DAE.Exp e;
+        list<DAE.Exp> expl;
+        Absyn.Path enum_type_name;
+        Integer index;
+      equation
+        enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
+        e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
+        e = Exp.simplify(DAE.ASUB(expr, {e}));
+        e = Debug.bcallret1(Exp.isCref(e), Exp.unliftExp, e, e);
+        index = enumIndex + 1;
+        expl = makeEnumLiteralIndices(enumTypeName, ls, index, expr);
+      then
+        e :: expl;
+  end matchcontinue;
+end makeEnumLiteralIndices;
 
 protected function unroll "function: unroll
   Unrolling a loop is a way of removing the non-linear structure of
@@ -13201,7 +13189,7 @@ algorithm
 	  // only one iterator  
     case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
-        (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(DAE.DIM(_),id_t),_),cnst),_,fdae) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
+        (cache,e_1,prop as DAE.PROP((DAE.T_ARRAY(arrayType = id_t),_),cnst),_,fdae) = Static.elabExp(cache, env, e, impl, NONE, true, pre);
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         // we can unroll ONLY if we have a constant/parameter range expression
         true = listMember(cnst, {DAE.C_CONST(), DAE.C_PARAM()});        
@@ -14203,7 +14191,7 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* flow - with arrays */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = t1),_),vt1,c2,f2,(DAE.T_ARRAY(arrayType = t2),_),vt2,true,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),vt1,c2,f2,(DAE.T_ARRAY(arrayType = t2),_),vt2,true,io1,io2,graph,info)
       equation
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
@@ -14308,7 +14296,11 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of arrays of complex types */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = t1),_),vt1,c2,f2,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = t2),_),vt2,flowPrefix,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),
+          vt1,c2,f2,
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim2),arrayType = t2),_),
+          vt2,flowPrefix,io1,io2,graph,info)
       equation
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);
@@ -14320,23 +14312,27 @@ algorithm
         (cache,env,ih,sets_1,dae,graph);
 
     /* Connection of arrays */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = t1),_),vt1,c2,f2,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = t2),_),vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),
+          vt1,c2,f2,
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim2),arrayType = t2),_),
+          vt2,false,io1,io2,graph,info)
       local
-        list<Option<Integer>> odims,odims2;
-        list<Integer> dims,dims2;
+        list<DAE.Dimension> dims,dims2;
+        list<Integer> idims,idims2;
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        DAE.ET_ARRAY(_,odims) = Types.elabType(inType6);
-        DAE.ET_ARRAY(_,odims2) = Types.elabType(inType9);
-        dims = Util.listFlatten(Util.listMap(odims,Util.genericOption));
-        dims2 = Util.listFlatten(Util.listMap(odims2,Util.genericOption));
-        equality(dims = dims2);
+        DAE.ET_ARRAY(_,dims) = Types.elabType(inType6);
+        DAE.ET_ARRAY(_,dims2) = Types.elabType(inType9);
+        idims = Util.listMap(dims, Exp.dimensionSize);
+        idims2 = Util.listMap(dims2, Exp.dimensionSize);
+        equality(idims = idims2);
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
 
-        sets_1 = ConnectUtil.addMultiArrayEqu(sets, c1_1, c2_1, dims, source);
+        sets_1 = ConnectUtil.addMultiArrayEqu(sets, c1_1, c2_1, idims, source);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
@@ -15018,7 +15014,6 @@ protected function instStartBindingExp
   Arg 3 is the index list for the element: for T0[1,2] it is {1,2}"
   input Mod mod;
   input DAE.Type etype;
-  input list<Integer> index_list;
   output DAE.StartValue result;
 protected DAE.Type eltType;
 algorithm
@@ -15358,16 +15353,11 @@ protected function getStateSelectFromExpOption
 algorithm
   outDAEStateSelectOption:=
   matchcontinue (inExpExpOption)
-    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("never",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.NEVER());
-    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("avoid",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.AVOID());
-    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("default",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.DEFAULT());
-    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("prefer",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.PREFER());
-    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("always",DAE.ET_ENUMERATION(SOME(_),_,_,_),{})),_))) then SOME(DAE.ALWAYS());
-//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("never",_,{})),Exp.ENUM()))) then SOME(DAE.NEVER());
-//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("avoid",_,{})),Exp.ENUM()))) then SOME(DAE.AVOID());
-//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("default",_,{})),Exp.ENUM()))) then SOME(DAE.DEFAULT());
-//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("prefer",_,{})),Exp.ENUM()))) then SOME(DAE.PREFER());
-//    case (SOME(DAE.CREF(DAE.CREF_QUAL("StateSelect",_,{},DAE.CREF_IDENT("always",_,{})),Exp.ENUM()))) then SOME(DAE.ALWAYS());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("never"))))) then SOME(DAE.NEVER());   
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("avoid"))))) then SOME(DAE.AVOID());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("default"))))) then SOME(DAE.DEFAULT());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("prefer"))))) then SOME(DAE.PREFER());
+    case (SOME(DAE.ENUM_LITERAL(name = Absyn.QUALIFIED("StateSelect", path = Absyn.IDENT("always"))))) then SOME(DAE.ALWAYS());  
     case (NONE()) then NONE();
     case (_) then NONE();
   end matchcontinue;
@@ -15405,7 +15395,7 @@ algorithm
       // will result in error messages (Real[0] is not Real), so we handle it here.      
     case (cr,ty1,(mod as DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,prop2,_)))),source,impl)
       equation
-        ((DAE.T_ARRAY(arrayDim = DAE.DIM(SOME(0))),_)) = Types.getPropType(prop2);
+        ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(0)),_)) = Types.getPropType(prop2);
       then
         DAEUtil.emptyDae;
 
@@ -15552,7 +15542,7 @@ algorithm
       list<Env.Frame> cenv,env;
       DAE.Mod mod_1;
       Absyn.ComponentRef owncref;
-      list<DimExp> dimexp;
+      list<DAE.Dimension> dimexp;
       tuple<DAE.TType, Option<Absyn.Path>> tp_1;
       DAE.Binding bind;
       String id,str;
@@ -15992,7 +15982,7 @@ algorithm
         DAE.DAElist dae,dae1,dae2;
 
       equation
-        (localCache,_,DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(i)),t),NONE()),_),_,dae1) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false,pre);
+        (localCache,_,DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(i),t),NONE()),_),_,dae1) = Static.elabExp(localCache,localEnv,e,localImpl,NONE(),false,pre);
         elem = {Absyn.SUBSCRIPT(Absyn.INTEGER(i))};
         localAccList = listAppend(localAccList,elem);
         t2 = convertType(t);
@@ -16769,7 +16759,7 @@ algorithm
       Boolean prot,flowPrefix,streamPrefix;
       Connect.Sets csets;
       SCode.Attributes attr;
-      list<DimExp> dims;
+      list<DAE.Dimension> dims;
       DAE.Var new_var;
       InstanceHierarchy ih;
 
@@ -17104,7 +17094,7 @@ algorithm ety := matchcontinue(baseType,dims)
   local
     DAE.ExpType ty;
     DAE.Type tp_1,btp;
-    list<Option<Integer>> lst;
+    list<DAE.Dimension> lst;
     
     // Types extending basic type has dimensions already added
     case(baseType as (DAE.T_COMPLEX(complexTypeOption=SOME(btp)),_),dims) equation
@@ -17139,17 +17129,17 @@ protected function liftNonBasicTypesNDimensions "Function: liftNonBasicTypesNDim
 This is to handle a Option<integer> list of dimensions.
 "
   input DAE.Type tp;
-  input  list<Option<Integer>> dimt;
+  input list<DAE.Dimension> dimt;
   output DAE.Type otype;
 algorithm otype := matchcontinue(tp,dimt)
-  local Option<Integer> x;
+  local DAE.Dimension x;
   case(tp,{}) then tp;
   case(tp, x::dimt)
     equation
       tp = liftNonBasicTypes(tp,x);
       tp = liftNonBasicTypesNDimensions(tp,dimt);
-      then
-        tp;
+    then
+      tp;
 end matchcontinue;
 end liftNonBasicTypesNDimensions;
 

@@ -115,9 +115,9 @@ public function expTypeArrayDimensions "returns the array dimensions of an ExpTy
   output list<Integer> dims;
 algorithm
   dims := matchcontinue(tp)
-    local list<Option<Integer>> optDims;
-    case(DAE.ET_ARRAY(arrayDimensions=optDims)) equation
-      dims = Util.listMap(optDims,Util.getOption);
+    local list<DAE.Dimension> array_dims;
+    case(DAE.ET_ARRAY(arrayDimensions=array_dims)) equation
+      dims = Util.listMap(array_dims, Exp.dimensionSize);
     then dims;
   end matchcontinue;
 end expTypeArrayDimensions;

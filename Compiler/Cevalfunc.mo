@@ -1320,7 +1320,7 @@ algorithm
   matchcontinue(inType,optVal)
       local
         DAE.Type ty,ty2,bt;
-        DAE.ArrayDim ad;
+        DAE.Dimension ad;
         Values.Value val;
         list<Integer> dims,dims2;
     case(ty,optVal) // array
@@ -1355,7 +1355,7 @@ algorithm
   matchcontinue(inDims,inType,optVal)
       local
         DAE.Type ty,ty2,bt;
-        DAE.ArrayDim ad;
+        DAE.Dimension ad;
         Values.Value value,val;
         list<Values.Value> values;
         Integer dim;
@@ -1393,9 +1393,12 @@ algorithm oval := matchcontinue(inType)
     local
       Integer idx;
       list<String> names;
-    then Values.ENUM(idx,path,names);
-//       then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0);
-//  case((DAE.T_ENUM,_)) then Values.ENUM(DAE.CREF_IDENT("",Exp.ENUM(),{}),0);
+      String lit;
+    equation
+      lit = listNth(names, idx + 1);
+      path = Absyn.joinPaths(path, Absyn.IDENT(lit)); 
+    then
+      Values.ENUM_LITERAL(path, idx);
   case((DAE.T_METATUPLE(types = _), _)) then Values.META_TUPLE({});
   case((DAE.T_COMPLEX(ClassInf.RECORD(path), typesVar,_,_),_))
     local
@@ -1438,7 +1441,7 @@ algorithm
       Absyn.Path rest,p;
       SCode.Class typeClass;
       Env.Env env1,env2;
-      list<Inst.DimExp> dims;
+      list<DAE.Dimension> dims;
 
     case (Absyn.IDENT(typeName),env)
       equation
@@ -1659,7 +1662,7 @@ algorithm outType := matchcontinue(ty,arrayDim,env,ht2)
   case(ty, (sub1 as Absyn.SUBSCRIPT(exp))::subs1,env,ht2)
     equation
       (val as Values.INTEGER(x)) = evaluateSingleExpression(exp,env,NONE,ht2);
-      ty = Types.liftArrayRight(ty,SOME(x));
+      ty = Types.liftArrayRight(ty,DAE.DIM_INTEGER(x));
       ty = addDims(ty,subs1,env,ht2);
     then
       ty;

@@ -48,6 +48,7 @@ package Prefix
 
 public import SCode;
 public import ClassInf;
+public import DAE;
 
 public
 uniontype Prefix "A Prefix has a component prefix and a class prefix.
@@ -69,7 +70,7 @@ uniontype ComponentPrefix
  NOTE: Component prefixes are stored in inverse order c.b[2].a!"
   record PRE
     String prefix "prefix name" ;
-    list<Integer> subscripts "subscripts" ;
+    list<DAE.Subscript> subscripts "subscripts" ;
     ComponentPrefix next "next prefix" ;
     ClassInf.State ci_state "to be able to at least partially fill in type information properly for DAE.VAR";
   end PRE;

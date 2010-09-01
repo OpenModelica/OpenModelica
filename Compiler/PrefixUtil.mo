@@ -73,14 +73,15 @@ algorithm
       String str,s,rest_1,s_1,s_2;
       Prefix.ComponentPrefix rest;
       Prefix.ClassPrefix cp;
-      list<Integer> ss;
+      list<DAE.Subscript> ss;
       
     case Prefix.NOPRE() then "<Prefix.NOPRE()>";
     case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "<Prefix.PREFIX(Prefix.NOCOMPPRE())>";      
     case Prefix.PREFIX(Prefix.PRE(str,{},Prefix.NOCOMPPRE(),_),_) then str;
     case Prefix.PREFIX(Prefix.PRE(str,ss,Prefix.NOCOMPPRE(),_),_)
       equation
-        s = stringAppend(str, "[" +& Util.stringDelimitList(Util.listMap(ss, intString), ", ") +& "]");
+        s = stringAppend(str, "[" +& Util.stringDelimitList(
+          Util.listMap(ss, Exp.subscriptString), ", ") +& "]");
       then
         s;
     case Prefix.PREFIX(Prefix.PRE(str,{},rest,_),cp)
@@ -95,7 +96,8 @@ algorithm
         rest_1 = printPrefixStr(Prefix.PREFIX(rest,cp));
         s = stringAppend(rest_1, ".");
         s_1 = stringAppend(s, str);
-        s_2 = stringAppend(s_1, "[" +& Util.stringDelimitList(Util.listMap(ss, intString), ", ") +& "]");
+        s_2 = stringAppend(s_1, "[" +& Util.stringDelimitList(
+          Util.listMap(ss, Exp.subscriptString), ", ") +& "]");
       then
         s_2;
   end matchcontinue;
@@ -145,7 +147,7 @@ public function prefixAdd "function: prefixAdd
   prefixes components are stored in the opposite order from the
   normal order used when displaying them."
   input String inIdent;
-  input list<Integer> inIntegerLst;
+  input list<DAE.Subscript> inIntegerLst;
   input Prefix inPrefix;
   input SCode.Variability vt;
   input ClassInf.State ci_state;
@@ -154,7 +156,7 @@ algorithm
   outPrefix := matchcontinue (inIdent,inIntegerLst,inPrefix,vt,ci_state)
     local
       String i;
-      list<Integer> s;
+      list<DAE.Subscript> s;
       Prefix.ComponentPrefix p;
       
     case (i,s,Prefix.PREFIX(p,_),vt,ci_state) 
@@ -172,7 +174,7 @@ algorithm
   outPrefix := matchcontinue (inPrefix)
     local
       String a;
-      list<Integer> b;
+      list<DAE.Subscript> b;
       Prefix.ClassPrefix cp;
       Prefix.ComponentPrefix c;
       ClassInf.State ci_state;
@@ -232,7 +234,7 @@ algorithm
   outCompPrefix := matchcontinue(inCompPrefix)
     local
       String p;
-      list<Integer> subs;
+      list<DAE.Subscript> subs;
       Prefix.ComponentPrefix next;
 
     // nothing to remove!
@@ -336,9 +338,8 @@ algorithm
   (outComponentRef,outCache) := matchcontinue (cache,env,inIH,inPrefix,inExpComponentRefOption)
     local
       DAE.ComponentRef cref,cref_1;
-      list<DAE.Subscript> s_1;
       String i;
-      list<Integer> s;
+      list<DAE.Subscript> s;
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
       ClassInf.State ci_state;
@@ -348,15 +349,13 @@ algorithm
     case (cache,env,inIH,Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then (cache,cref);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),NONE)
       equation
-        s_1 = Exp.intSubscripts(s);
-        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1)));
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s)));
       then
         (cache,cref_1);
     case (cache,env,inIH,Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs,ci_state=ci_state),cp),SOME(cref))
       equation
         (cache,cref) = prefixSubscriptsInCref(cache,env,inIH,inPrefix,cref);
-        s_1 = Exp.intSubscripts(s);
-        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s_1,cref)));
+        (cache,cref_1) = prefixToCref2(cache,env,inIH,Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ci_state),s,cref)));
       then
         (cache,cref_1);
   end matchcontinue;
@@ -382,9 +381,8 @@ algorithm
     local
       Option<DAE.ComponentRef> cref_1;
       DAE.ComponentRef cref;
-      list<DAE.Subscript> s_1;
       String i;
-      list<Integer> s;
+      list<DAE.Subscript> s;
       Prefix.ComponentPrefix xs;
       Prefix.ClassPrefix cp;
 
@@ -393,14 +391,12 @@ algorithm
     case (Prefix.PREFIX(Prefix.NOCOMPPRE(),_),SOME(cref)) then SOME(cref);
     case (Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),NONE())
       equation
-        s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1)));
+        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_IDENT(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s)));
       then
         cref_1;
     case (inPrefix as Prefix.PREFIX(Prefix.PRE(prefix = i,subscripts = s,next = xs),cp),SOME(cref))
       equation
-        s_1 = Exp.intSubscripts(s);
-        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s_1,cref)));
+        cref_1 = prefixToCrefOpt2(Prefix.PREFIX(xs,cp), SOME(DAE.CREF_QUAL(i,DAE.ET_COMPLEX(Absyn.IDENT(""),{},ClassInf.UNKNOWN(Absyn.IDENT(""))),s,cref)));
       then
         cref_1;
   end matchcontinue;
@@ -599,6 +595,7 @@ algorithm
     case (cache,_,_,(e as DAE.RCONST(real = _)),_) then (cache,e); 
     case (cache,_,_,(e as DAE.SCONST(string = _)),_) then (cache,e); 
     case (cache,_,_,(e as DAE.BCONST(bool = _)),_) then (cache,e);
+    case (cache,_,_,(e as DAE.ENUM_LITERAL(name = _)), _) then (cache, e);
 
     // adrpo: handle prefixing of inner/outer variables
     case (cache,env,ih,DAE.CREF(componentRef = p,ty = t),pre)

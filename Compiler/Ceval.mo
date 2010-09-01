@@ -145,7 +145,7 @@ algorithm
       Env.Cache cache;
       Exp.Exp expExp;
       list<Integer> dims;
-      list<Option<Integer>> optDims;
+      list<DAE.Dimension> arrayDims;
 
     case (cache,_,DAE.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st);
 
@@ -163,6 +163,10 @@ algorithm
       local Boolean x;
       then
         (cache,Values.BOOL(x),st);
+
+    case (cache,_,DAE.ENUM_LITERAL(name = name, index = x),_,st,_,_)
+      local Absyn.Path name;
+      then (cache, Values.ENUM_LITERAL(name, x), st);
 
     case (cache,_,DAE.END(),_,st,SOME(dim),_) then (cache,Values.INTEGER(dim),st);
 
@@ -194,16 +198,16 @@ algorithm
 
     case (cache,env,DAE.CODE(code = c),_,st,_,_) then (cache,Values.CODE(c),st);
 
-    case (cache,env,DAE.ARRAY(array = es, ty = DAE.ET_ARRAY(arrayDimensions = optDims)),impl,st,_,msg)
+    case (cache,env,DAE.ARRAY(array = es, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,st,_,msg)
       equation
-        dims = Util.listMap(optDims, Util.getOption);
+        dims = Util.listMap(arrayDims, Exp.dimensionSize);
         (cache,es_1) = cevalList(cache,env, es, impl, st, msg);
       then
         (cache,Values.ARRAY(es_1,dims),st);
 
-    case (cache,env,DAE.MATRIX(scalar = expll, ty = DAE.ET_ARRAY(arrayDimensions = optDims)),impl,st,_,msg)
+    case (cache,env,DAE.MATRIX(scalar = expll, ty = DAE.ET_ARRAY(arrayDimensions = arrayDims)),impl,st,_,msg)
       equation
-        dims = Util.listMap(optDims, Util.getOption);
+        dims = Util.listMap(arrayDims, Exp.dimensionSize);
         (cache,elts) = cevalMatrixElt(cache,env, expll, impl, msg);
       then
         (cache,Values.ARRAY(elts,dims),st);
@@ -760,8 +764,8 @@ algorithm
     case (cache,env,DAE.RANGE(ty = DAE.ET_ENUMERATION(_,_,_,_),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
-        (cache,Values.ENUM(start_1,_,_),st_1) = ceval(cache,env, start, impl, st, dim, msg);
-        (cache,Values.ENUM(stop_1,_,_),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
+        (cache,Values.ENUM_LITERAL(index = start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
+        (cache,Values.ENUM_LITERAL(index = stop_1),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
         arr = cevalRange(start_1, 1, stop_1);
       then
         (cache,ValuesUtil.makeArray(arr),st_1);
@@ -803,7 +807,7 @@ algorithm
         (cache,Values.REAL(r),st_1);
 
     // cast integer array to real array
-    case (cache,env,DAE.CAST(ty = DAE.ET_ARRAY(DAE.ET_REAL(),optDims),exp = e),impl,st,dim,msg)
+    case (cache,env,DAE.CAST(ty = DAE.ET_ARRAY(ty = DAE.ET_REAL()),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
       equation
         (cache,Values.ARRAY(ivals,dims),st_1) = ceval(cache,env, e, impl, st, dim, msg);
@@ -980,7 +984,7 @@ algorithm
          list<DAE.Exp> el;
          Boolean t, b;
          DAE.InlineType i;
-         list<Option<Integer>> dims;
+         list<DAE.Dimension> dims;
          Values.Value v;
          DAE.Type cevalType;
          DAE.ExpType cevalExpType;
@@ -1734,7 +1738,7 @@ algorithm
       DAE.ComponentRef cr;
       Boolean impl,bl;
       Msg msg;
-      list<Inst.DimExp> dims;
+      list<DAE.Dimension> dims;
       Values.Value v2;
       DAE.ExpType crtp;
       DAE.Exp exp,e;
@@ -1950,7 +1954,7 @@ protected function cevalBuiltinSize3 "function: cevalBuiltinSize3
   author: PA
   Helper function to cevalBuiltinSize.
   Used when recursive definition (attribute modifiers using size) is used."
-  input list<Inst.DimExp> inInstDimExpLst;
+  input list<DAE.Dimension> inInstDimExpLst;
   input Integer inInteger;
   output Values.Value outValue;
 algorithm
@@ -1958,19 +1962,17 @@ algorithm
   matchcontinue (inInstDimExpLst,inInteger)
     local
       Integer n_1,v,n;
-      list<Inst.DimExp> dims;
-      DAE.Subscript sub;
-      Option<DAE.Exp> eopt;
+      list<DAE.Dimension> dims;
     case (dims,n)
       equation
         n_1 = n - 1;
-        Inst.DIMINT(v) = listNth(dims, n_1);
+        DAE.DIM_INTEGER(v) = listNth(dims, n_1);
       then
         Values.INTEGER(v);
     case (dims,n)
       equation
         n_1 = n - 1;
-        Inst.DIMEXP(sub,eopt) = listNth(dims, n_1);
+        DAE.DIM_SUBSCRIPT(subscript = _) = listNth(dims, n_1);
         print("- Ceval.cevalBuiltinSize_3 failed DIMEXP in dimesion\n");
       then
         fail();
@@ -4054,7 +4056,7 @@ algorithm
       Env.Cache cache;
     case (cache,env,{exp},impl,st,msg)
       equation
-        (cache,Values.ENUM(ri,_,_),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        (cache,Values.ENUM_LITERAL(index = ri),_) = ceval(cache,env, exp, impl, st, NONE, msg);
       then
         (cache,Values.INTEGER(ri),st);
   end matchcontinue;
@@ -4353,9 +4355,9 @@ algorithm
     // For matrix expressions: [1,2;3,4]
 		case (cache, env, DAE.MATRIX(ty = DAE.ET_ARRAY(arrayDimensions = dims)), impl, st, msg)
 			local
-				list<Option<Integer>> dims;
+        list<DAE.Dimension> dims;
 			equation
-				sizelst = Util.listMap(dims, Util.getOption);
+        sizelst = Util.listMap(dims, Exp.dimensionSize);
 				v = ValuesUtil.intlistToValue(sizelst);
 			then
 				(cache, v, st);
@@ -4371,202 +4373,197 @@ algorithm
   end matchcontinue;
 end cevalBuiltinSizeMatrix;
 
-protected function cevalRelation "function: cevalRelation
-  Performs the arithmetic relation check and gives a boolean result."
+protected function cevalRelation
+  "Performs the arithmetic relation check and gives a boolean result."
   input Values.Value inValue1;
-  input DAE.Operator inOperator2;
-  input Values.Value inValue3;
+  input DAE.Operator inOperator;
+  input Values.Value inValue2;
   output Values.Value outValue;
+
+  Boolean result;
 algorithm
-  outValue := matchcontinue (inValue1,inOperator2,inValue3)
-    local
-      Values.Value v,v1,v2;
-      DAE.ExpType t;
-      Boolean b,nb1,nb2,ba,bb,b1,b2;
-      Integer i1,i2;
-      String s1,s2;
-      DAE.ComponentRef cr1, cr2;
-      DAE.Operator op;
+  result := cevalRelation_dispatch(inValue1, inOperator, inValue2);
+  outValue := Values.BOOL(result);
+end cevalRelation;
 
-    case (v1,DAE.GREATER(ty = t),v2)
+protected function cevalRelation_dispatch
+  "Dispatch function for cevalRelation. Call the right relation function
+  depending on the operator."
+  input Values.Value inValue1;
+  input DAE.Operator inOperator;
+  input Values.Value inValue2;
+  output Boolean result;
+algorithm
+  result := matchcontinue(inValue1, inOperator, inValue2)
+    local Values.Value v1, v2;
+    case (v1, DAE.GREATER(ty = _), v2) then cevalRelationLess(v2, v1);
+    case (v1, DAE.LESS(ty = _), v2) then cevalRelationLess(v1, v2);
+    case (v1, DAE.LESSEQ(ty = _), v2) then cevalRelationLessEq(v1, v2);
+    case (v1, DAE.GREATEREQ(ty = _), v2) then cevalRelationGreaterEq(v1, v2);
+    case (v1, DAE.EQUAL(ty = _), v2) then cevalRelationEqual(v1, v2);
+    case (v1, DAE.NEQUAL(ty = _), v2) then cevalRelationNotEqual(v1, v2);
+    case (v1, op, v2)
+      local DAE.Operator op;
       equation
-        v = cevalRelation(v2, DAE.LESS(t), v1);
-      then
-        v;
-
-    /* Strings */
-    case (Values.STRING(string = s1),DAE.LESS(ty = DAE.ET_STRING()),Values.STRING(string = s2))
-      equation
-        i1 = System.strcmp(s1,s2);
-        b = (i1 < 0);
-      then
-        Values.BOOL(b);
-    case (Values.STRING(string = s1),DAE.LESSEQ(ty = DAE.ET_STRING()),Values.STRING(string = s2))
-      equation
-        i1 = System.strcmp(s1,s2);
-        b = (i1 <= 0);
-      then
-        Values.BOOL(b);
-    case (Values.STRING(string = s1),DAE.GREATEREQ(ty = DAE.ET_STRING()),Values.STRING(string = s2))
-      equation
-        i1 = System.strcmp(s1,s2);
-        b = (i1 >= 0);
-      then
-        Values.BOOL(b);
-    case (Values.STRING(string = s1),DAE.EQUAL(ty = DAE.ET_STRING()),Values.STRING(string = s2))
-      equation
-        i1 = System.strcmp(s1,s2);
-        b = (i1 == 0);
-      then
-        Values.BOOL(b);
-    case (Values.STRING(string = s1),DAE.NEQUAL(ty = DAE.ET_STRING()),Values.STRING(string = s2))
-      equation
-        i1 = System.strcmp(s1,s2);
-        b = (i1 <> 0);
-      then
-        Values.BOOL(b);
-    case (Values.STRING(string = s1),DAE.EQUAL(ty = DAE.ET_STRING()),Values.STRING(string = s2))
-      local
-        String s1,s2;
-      equation
-        b = (s1 ==& s2);
-      then
-        Values.BOOL(b);
-
-    /* Integers */
-    case (Values.INTEGER(integer = i1),DAE.LESS(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))
-      equation
-        b = (i1 < i2);
-      then
-        Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),DAE.LESSEQ(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))
-      equation
-        b = (i1 <= i2);
-      then
-        Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),DAE.GREATEREQ(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))
-      equation
-        b = (i1 >= i2);
-      then
-        Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),DAE.EQUAL(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))
-      equation
-        b = (i1 == i2);
-      then
-        Values.BOOL(b);
-    case (Values.INTEGER(integer = i1),DAE.NEQUAL(ty = DAE.ET_INT()),Values.INTEGER(integer = i2))
-      equation
-        b = (i1 <> i2);
-      then
-        Values.BOOL(b);
-
-    /* Reals */
-    case (Values.REAL(real = i1),DAE.LESS(ty = DAE.ET_REAL()),Values.REAL(real = i2))
-      local Real i1,i2;
-      equation
-        b = (i1 <. i2);
-      then
-        Values.BOOL(b);
-    case (Values.REAL(real = i1),DAE.LESSEQ(ty = DAE.ET_REAL()),Values.REAL(real = i2))
-      local Real i1,i2;
-      equation
-        b = (i1 <=. i2);
-      then
-        Values.BOOL(b);
-    case (Values.REAL(real = i1),DAE.GREATEREQ(ty = DAE.ET_REAL()),Values.REAL(real = i2))
-      local Real i1,i2;
-      equation
-        b = (i1 >=. i2);
-      then
-        Values.BOOL(b);
-    case (Values.REAL(real = i1),DAE.EQUAL(ty = DAE.ET_REAL()),Values.REAL(real = i2))
-      local Real i1,i2;
-      equation
-        b = (i1 ==. i2);
-      then
-        Values.BOOL(b);
-    case (Values.REAL(real = i1),DAE.NEQUAL(ty = DAE.ET_REAL()),Values.REAL(real = i2))
-      local Real i1,i2;
-      equation
-        b = (i1 <>. i2);
-      then
-        Values.BOOL(b);
-
-    /* Booleans */
-    case (Values.BOOL(boolean = b1),DAE.NEQUAL(ty = DAE.ET_BOOL()),Values.BOOL(boolean = b2))
-      equation
-        nb1 = boolNot(b1) "b1 != b2  == (b1 and not b2) or (not b1 and b2)" ;
-        nb2 = boolNot(b2);
-        ba = boolAnd(b1, nb2);
-        bb = boolAnd(nb1, b2);
-        b = boolOr(ba, bb);
-      then
-        Values.BOOL(b);
-    case (Values.BOOL(boolean = b1),DAE.EQUAL(ty = DAE.ET_BOOL()),Values.BOOL(boolean = b2))
-      equation
-        nb1 = boolNot(b1) "b1 == b2  ==> b1 and b2 or (not b1 and not b2)" ;
-        nb2 = boolNot(b2);
-        ba = boolAnd(b1, b2);
-        bb = boolAnd(nb1, nb2);
-        b = boolOr(ba, bb);
-      then
-        Values.BOOL(b);
-    case (Values.BOOL(boolean = false),DAE.LESS(ty = DAE.ET_BOOL()),Values.BOOL(boolean = true)) then Values.BOOL(true);
-    case (Values.BOOL(boolean = _),DAE.LESS(ty = DAE.ET_BOOL()),Values.BOOL(boolean = _)) then Values.BOOL(false);
-
-    /* Enumerations */
-    case (Values.ENUM(index = i1),DAE.LESS(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
-//    case (Values.ENUM(cr1,i1),DAE.LESS(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
-      equation
-        b = (i1 < i2);
-      then
-        Values.BOOL(b);
-    case (Values.ENUM(index = i1),DAE.LESSEQ(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
-//    case (Values.ENUM(cr1,i1),DAE.LESSEQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
-      equation
-        b = (i1 <= i2);
-      then
-        Values.BOOL(b);
-    case (Values.ENUM(index = i1),DAE.GREATEREQ(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
-//    case (Values.ENUM(cr1,i1),DAE.GREATEREQ(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
-      equation
-        b = (i1 >= i2);
-      then
-        Values.BOOL(b);
-    case (Values.ENUM(index = i1),DAE.EQUAL(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.INTEGER(i2))
-      equation
-        bb = (i1 == i2);
-      then
-        Values.BOOL(bb);
-    case (Values.ENUM(index = i1),DAE.EQUAL(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
-//    case (Values.ENUM(cr1,i1),DAE.EQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
-      equation
-        // Why is this not performed for less or grater?
-        // ba = Exp.crefEqual(cr1, cr2);
-        bb = (i1 == i2);
-        // b = boolAnd(ba, bb);
-      then
-        Values.BOOL(bb);
-    case (Values.ENUM(index = i1),DAE.NEQUAL(ty = DAE.ET_ENUMERATION(index = SOME(_))),Values.ENUM(index = i2))
-//    case (Values.ENUM(cr1,i1),DAE.NEQUAL(ty = Exp.ENUM()),Values.ENUM(cr2,i2))
-      equation
-        // ba = boolNot(Exp.crefEqual(cr1, cr2));
-        bb = (i1 <> i2);
-        // b = boolAnd(ba, bb);
-      then
-        Values.BOOL(bb);
-
-    case (v1,op,v2)
-      equation
-				true = RTOpts.debugFlag("failtrace");
+        true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Ceval.cevalRelation failed on: " +&
-               ValuesUtil.printValStr(v1) +&
-               Exp.binopSymbol(op) +&
-               ValuesUtil.printValStr(v2));
+            ValuesUtil.printValStr(v1) +&
+            Exp.binopSymbol(op) +&
+            ValuesUtil.printValStr(v2));
       then
         fail();
   end matchcontinue;
-end cevalRelation;
+end cevalRelation_dispatch;
+
+protected function cevalRelationLess
+  "Returns whether the first value is less than the second value."
+  input Values.Value inValue1;
+  input Values.Value inValue2;
+  output Boolean result;
+algorithm
+  result := matchcontinue(inValue1, inValue2)
+    local
+      String s1, s2;
+      Integer i1, i2;
+      Real r1, r2;
+    case (Values.STRING(string = s1), Values.STRING(string = s2))
+      then (System.strcmp(s1, s2) < 0);
+    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
+      then (i1 < i2);
+    case (Values.REAL(real = r1), Values.REAL(real = r2)) 
+      then (r1 <. r2);
+    case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
+      then true;
+    case (Values.BOOL(boolean = _), Values.BOOL(boolean = false))
+      then false;
+    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 < i2);
+    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
+      then (i1 < i2);
+    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 < i2);
+  end matchcontinue;
+end cevalRelationLess;
+
+protected function cevalRelationLessEq
+  "Returns whether the first value is less than or equal to the second value."
+  input Values.Value inValue1;
+  input Values.Value inValue2;
+  output Boolean result;
+algorithm
+  result := matchcontinue(inValue1, inValue2)
+    local
+      String s1, s2;
+      Integer i1, i2;
+      Real r1, r2;
+    case (Values.STRING(string = s1), Values.STRING(string = s2))
+      then (System.strcmp(s1, s2) <= 0);
+    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
+      then (i1 <= i2);
+    case (Values.REAL(real = r1), Values.REAL(real = r2)) 
+      then (r1 <=. r2);
+    case (Values.BOOL(boolean = true), Values.BOOL(boolean = false))
+      then false;
+    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
+      then true;
+    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 <= i2);
+    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
+      then (i1 <= i2);
+    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 <= i2);
+  end matchcontinue;
+end cevalRelationLessEq;
+
+protected function cevalRelationGreaterEq
+  "Returns whether the first value is greater than or equal to the second value."
+  input Values.Value inValue1;
+  input Values.Value inValue2;
+  output Boolean result;
+algorithm
+  result := matchcontinue(inValue1, inValue2)
+    local
+      String s1, s2;
+      Integer i1, i2;
+      Real r1, r2;
+    case (Values.STRING(string = s1), Values.STRING(string = s2))
+      then (System.strcmp(s1, s2) >= 0);
+    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
+      then (i1 >= i2);
+    case (Values.REAL(real = r1), Values.REAL(real = r2)) 
+      then (r1 >=. r2);
+    case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
+      then false;
+    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
+      then true;
+    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 >= i2);
+    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
+      then (i1 >= i2);
+    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 >= i2);
+  end matchcontinue;
+end cevalRelationGreaterEq;
+
+protected function cevalRelationEqual
+  "Returns whether the first value is equal to the second value."
+  input Values.Value inValue1;
+  input Values.Value inValue2;
+  output Boolean result;
+algorithm
+  result := matchcontinue(inValue1, inValue2)
+    local
+      String s1, s2;
+      Integer i1, i2;
+      Real r1, r2;
+    case (Values.STRING(string = s1), Values.STRING(string = s2))
+      then (System.strcmp(s1, s2) == 0);
+    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
+      then (i1 == i2);
+    case (Values.REAL(real = r1), Values.REAL(real = r2)) 
+      then (r1 ==. r2);
+    case (Values.BOOL(boolean = false), Values.BOOL(boolean = false))
+      then true;
+    case (Values.BOOL(boolean = true), Values.BOOL(boolean = true))
+      then true;
+    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 == i2);
+    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
+      then (i1 == i2);
+    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 == i2);
+  end matchcontinue;
+end cevalRelationEqual;
+
+protected function cevalRelationNotEqual
+  "Returns whether the first value is not equal to the second value."
+  input Values.Value inValue1;
+  input Values.Value inValue2;
+  output Boolean result;
+algorithm
+  result := matchcontinue(inValue1, inValue2)
+    local
+      String s1, s2;
+      Integer i1, i2;
+      Real r1, r2;
+    case (Values.STRING(string = s1), Values.STRING(string = s2))
+      then (System.strcmp(s1, s2) <> 0);
+    case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
+      then (i1 <> i2);
+    case (Values.REAL(real = r1), Values.REAL(real = r2)) 
+      then (r1 <>. r2);
+    case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
+      then true;
+    case (Values.BOOL(boolean = true), Values.BOOL(boolean = false))
+      then true;
+    case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 <> i2);
+    case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
+      then (i1 <> i2);
+    case (Values.INTEGER(integer = i1), Values.ENUM_LITERAL(index = i2))
+      then (i1 <> i2);
+  end matchcontinue;
+end cevalRelationNotEqual;
 
 public function cevalRange "function: cevalRange
   This function evaluates a range expression.
@@ -4763,18 +4760,6 @@ algorithm
       Env.Cache cache;
       DAE.ExpType expTy;
 			Option<DAE.Const> const_for_range;
-
-		// Enumeration -> no lookup necessary
-		case (cache, env, c, impl, msg)
-			local
-				Absyn.Path path;
-				Integer idx;
-				list<String> names;
-			equation
-				DAE.ET_ENUMERATION(SOME(idx), _, names, {}) = Exp.getEnumTypefromCref(c);
-				path = Exp.crefToPath(c);
-			then
-				(cache, Values.ENUM(idx, path, names));
 
 		// Try to lookup the variables binding and constant evaluate it.
 		case (cache, env, c, impl, msg)
@@ -5041,6 +5026,14 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache, env, subs, subval, dims, impl, msg);
       then
         (cache,res);
+    case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
+      equation
+        (cache,Values.ENUM_LITERAL(index = n),_) = ceval(cache, env, exp, impl, NONE, SOME(dim), msg);
+        n_1 = n - 1;
+        subval = listNth(lst, n_1);
+        (cache,res) = cevalSubscriptValue(cache, env, subs, subval, dims, impl, msg);
+      then
+        (cache,res);
     case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
       equation
         (cache,subval as Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl, NONE, SOME(dim), msg);
@@ -5168,6 +5161,10 @@ algorithm
     // the entire dimension, nothing to do
     case (cache,env,DAE.WHOLEDIM(),_,_,_) then (cache,DAE.WHOLEDIM());
       
+    // An enumeration literal is already constant
+    case (cache, _, DAE.INDEX(exp = DAE.ENUM_LITERAL(name = _)), _, _, _)
+      then (cache, inSubscript);
+      
     // an expression index that can be constant evaluated
     case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
       equation
@@ -5180,7 +5177,7 @@ algorithm
     // indexing using enum! 
     case (cache,env,DAE.INDEX(exp = e1),dim,impl,msg)
       equation
-        (cache,v1 as Values.ENUM(index = indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
+        (cache,v1 as Values.ENUM_LITERAL(index = indx),_) = ceval(cache,env, e1, impl, NONE, SOME(dim), msg);
         e1_1 = ValuesUtil.valueExp(v1);
         true = indx <= dim;
       then
@@ -5194,6 +5191,7 @@ algorithm
         true = dimensionSliceInRange(v1,dim);
       then
         (cache,DAE.SLICE(e1_1));
+        
   end matchcontinue;
 end cevalSubscript;
 
@@ -5431,7 +5429,7 @@ algorithm
     case "sum" then Values.INTEGER(0);
   end matchcontinue;
 end reductionEmptyRangeValue;
-   
+      
 // ************************************************************************
 //    hash table implementation for storing function pointes for DLLs/SOs
 // ************************************************************************

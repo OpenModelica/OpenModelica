@@ -1427,9 +1427,8 @@ algorithm
       DAE.Type tp;
       DAE.ExpType arrType;
       list<DAE.ComponentRef> xs;
-      list<int> dimSizes;
-      list<Option<Integer>> dimSizesOpt;
-      list<DAE.Exp> dimExps;
+      list<int> dimSizesInt;
+      list<DAE.Dimension> dimSizes;
       Cache cache;
       DAE.ComponentRef cr2;
       DAE.FunctionTree funcs;
@@ -1439,14 +1438,13 @@ algorithm
       equation
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         true = Types.isArray(tp); // For variables that are arrays, generate cr = fill(0,dims);
-        dimSizes = Types.getDimensionSizes(tp);
-        (_,dimSizesOpt) = Types.flattenArrayTypeOpt(tp);
-        dimExps = Util.listMap(dimSizes,Exp.makeIntegerExp);
+        dimSizesInt = Types.getDimensionSizes(tp);
+        (_,dimSizes) = Types.flattenArrayTypeOpt(tp);
         (cache,res) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         (cache,cr2) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,prefix,cr);
-        arrType = DAE.ET_ARRAY(DAE.ET_REAL(),dimSizesOpt);
-        dimExps = {DAE.ICONST(0),DAE.ICONST(0),DAE.ICONST(0)};
-        res1 = generateZeroflowArrayEquations(cr2, dimSizes, DAE.RCONST(0.0));
+        dimSizes = {DAE.DIM_INTEGER(0), DAE.DIM_INTEGER(0), DAE.DIM_INTEGER(0)};
+        arrType = DAE.ET_ARRAY(DAE.ET_REAL(),dimSizes);
+        res1 = generateZeroflowArrayEquations(cr2, dimSizesInt, DAE.RCONST(0.0));
         res = DAEUtil.joinDaes(res1,res);
       then
         (cache,res);
@@ -2140,7 +2138,7 @@ algorithm
       list<DAE.Var> vars;
       tuple<DAE.TType, Option<Absyn.Path>> t;
       Absyn.InnerOuter io;
-      DAE.ArrayDim ad;
+      DAE.Dimension ad;
       DAE.Type at,tmpty,flatArrayType;
       DAE.Attributes tatr;
       Boolean b3;
@@ -2231,7 +2229,7 @@ algorithm
       Absyn.InnerOuter io;
       Boolean isExpandable;
       Absyn.Path path;
-      DAE.ArrayDim ad;
+      DAE.Dimension ad;
       list<Integer> adims;
       list<DAE.Var> tvars;
       DAE.Type tmpty,flatArrayType;

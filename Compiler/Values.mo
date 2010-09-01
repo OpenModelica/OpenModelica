@@ -64,11 +64,10 @@ uniontype Value
     Boolean boolean;
   end BOOL;
 
-  record ENUM
+  record ENUM_LITERAL
+    Absyn.Path name;
     Integer index;
-    Absyn.Path path "The path corresponding to the cref in the type";
-    list<String> names;
-  end ENUM;
+  end ENUM_LITERAL;
 
   record ARRAY
     list<Value> valueLst;

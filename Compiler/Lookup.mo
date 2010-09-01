@@ -2311,7 +2311,7 @@ algorithm
   matchcontinue (inType,inExpSubscriptLst)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
-      DAE.ArrayDim dim;
+      DAE.Dimension dim;
       Option<Absyn.Path> p;
       list<DAE.Subscript> ys,s;
       Integer sz,ind;
@@ -2322,62 +2322,74 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         ((DAE.T_ARRAY(dim,t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
-      local Integer dim;
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),
+          (DAE.SLICE(exp = DAE.ARRAY(array = se)) :: ys))
+      local Integer dim_int;
       equation
+        sz = Exp.dimensionSize(dim);
         t_1 = checkSubscripts(t, ys);
-        dim = listLength(se) "FIXME: Check range IMPLEMENTED 2007-05-18 BZ" ;
-        true = (dim <= sz);
+        dim_int = listLength(se) "FIXME: Check range IMPLEMENTED 2007-05-18 BZ" ;
+        true = (dim_int <= sz);
         true = checkSubscriptsRange(se,sz);
       then
-        ((DAE.T_ARRAY(DAE.DIM(SOME(dim)),t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int),t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
+          (DAE.INDEX(exp = DAE.ICONST(integer = ind)) :: ys))
       equation
+        sz = Exp.dimensionSize(dim);
         (ind > 0) = true;
         (ind <= sz) = true;
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.INDEX(exp = e) :: ys)) /* HJ: Subscrits needn\'t be constant. No range-checking can
-	       be done */
-	       local DAE.Exp e;
+    /* HJ: Subscripts needn't be constant. No range-checking can be done */
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
+          (DAE.INDEX(exp = e) :: ys)) 
+      local DAE.Exp e;
+      equation
+        true = Exp.dimensionKnown(dim);
+        t_1 = checkSubscripts(t, ys);
+      then
+        t_1;
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t),_),
+          (DAE.INDEX(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(DAE.INDEX(exp = _) :: ys))
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
+          (DAE.WHOLEDIM() :: ys))
       equation
+        true = Exp.dimensionKnown(dim);
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),_),(DAE.WHOLEDIM() :: ys))
-      equation
-        t_1 = checkSubscripts(t, ys);
-      then
-        t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),_),(DAE.WHOLEDIM() :: ys))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t),_),
+          (DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
 
-        // If slicing with integer array of VAR variability, i.e. index changing during runtime.
-        // => resulting ARRAY type has no specified dimension size.
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(sz)),arrayType = t),p),(DAE.SLICE(exp = e) :: ys))
+    // If slicing with integer array of VAR variability, i.e. index changing during runtime.
+    // => resulting ARRAY type has no specified dimension size.
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),p),
+          (DAE.SLICE(exp = e) :: ys))
       local DAE.Exp e;
       equation
-        sz = 5;
+        5 = Exp.dimensionSize(dim);
         false = Exp.isArray(e);
         // we check so that e is not an array, if so the range check is useless in the function above.
 
         t_1 = checkSubscripts(t, ys);
       then
-       ((DAE.T_ARRAY(DAE.DIM(NONE),t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t),p),(DAE.SLICE(exp = _) :: ys))
+       ((DAE.T_ARRAY(DAE.DIM_NONE,t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t),p),
+          (DAE.SLICE(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(DAE.DIM(NONE),t_1),p));
+        ((DAE.T_ARRAY(DAE.DIM_NONE,t_1),p));
 
     case ((DAE.T_COMPLEX(_,_,SOME(t),_),_),ys)
       then checkSubscripts(t,ys);
@@ -2489,7 +2501,6 @@ algorithm
       DAE.ExpType ty2_2;
       Absyn.InnerOuter io;
       Option<DAE.Exp> texp;
-      DAE.ArrayDim dim;
       DAE.Type t,ty1,ty2;
       Option<Absyn.Path> p;
       DAE.ComponentRef xCref,tCref;
@@ -2720,12 +2731,12 @@ algorithm
       local
         DAE.Type t,tOrg;
         list<Integer> dimensions;
-        list<Option <Integer>> dim2;
+        list<DAE.Dimension> dim2;
         DAE.TType tty;
         String str;
       equation
         dimensions = Types.getDimensionSizes(t);
-        dim2 = Util.listMap(dimensions, Util.makeOption);
+        dim2 = Util.listMap(dimensions, Exp.intDimension); 
         dim2 = listReverse(dim2);
         t = ((Util.listFoldR(dim2,Types.liftArray, tOrg)));
       then

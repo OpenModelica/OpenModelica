@@ -1180,9 +1180,9 @@ algorithm
       list<Value> eq,wc;
     case ZERO_CROSSING(relation_ = e,occurEquLst = eq,occurWhenLst = wc)
       equation
-        eq_s_list = Util.listMap(eq, int_string);
+        eq_s_list = Util.listMap(eq, intString);
         eq_s = Util.stringDelimitList(eq_s_list, ",");
-        wc_s_list = Util.listMap(wc, int_string);
+        wc_s_list = Util.listMap(wc, intString);
         wc_s = Util.stringDelimitList(wc_s_list, ",");
         str = Exp.printExpStr(e);
         str2 = Util.stringAppendList({str," in equations [",eq_s,"] and when conditions [",wc_s,"]\n"});
@@ -1502,6 +1502,8 @@ algorithm
     case (DAE.RCONST(real = _),vars,knvars) then true;
     case (DAE.SCONST(string = _),vars,knvars) then true;
     case (DAE.BCONST(bool = _),vars,knvars) then true;
+    case (DAE.ENUM_LITERAL(name = _),vars,knvars) then true;
+
     case (DAE.CREF(componentRef = cr),vars,knvars)
       equation
         ((VAR(varKind = kind) :: _),_) = getVar(cr, vars);
@@ -5359,7 +5361,7 @@ algorithm
       list<DAE.Exp> inputs,inputs1,inputs2,inputs3,outputs,outputs1,outputs2;
       list<DAE.ComponentRef> crefs;
       DAE.Exp exp1;
-      list<Option<Integer>> ad;
+      list<DAE.Dimension> ad;
       list<list<DAE.Subscript>> subslst,subslst1;
 			// a := expr;
     case (vars,DAE.STMT_ASSIGN(type_ = tp,exp1 = exp1,exp = e))
@@ -5394,7 +5396,7 @@ algorithm
     case (vars,DAE.STMT_ASSIGN_ARR(type_ = DAE.ET_ARRAY(ty=tp,arrayDimensions=ad), componentRef = cr, exp = e))
       equation
         inputs = statesAndVarsExp(e,vars);  
-        subslst = arrayDimensionsToRange(ad);
+        subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crefs = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
         expl = Util.listMap1(crefs,Exp.makeCrefExp,tp);             
@@ -5634,6 +5636,8 @@ algorithm
     case (DAE.RCONST(_),_) then {};
     case (DAE.BCONST(_),_) then {};
     case (DAE.SCONST(_),_) then {};
+    case (DAE.ENUM_LITERAL(name = _),_) then {};
+
     // deal with possible failure
     case (e,vars)
       equation
@@ -6039,7 +6043,8 @@ algorithm outExp := matchcontinue(inExp)
     DAE.ComponentRef cr;
     list<DAE.ComponentRef> crlst;
     DAE.ExpType t,ty;
-    list<Option<Integer>> ad;
+    DAE.Dimension id, jd;
+    list<DAE.Dimension> ad;
     Integer i,j;
     list<list<DAE.Subscript>> subslst,subslst1;
     list<DAE.Exp> expl;
@@ -6049,9 +6054,11 @@ algorithm outExp := matchcontinue(inExp)
     tuple<DAE.Exp, Option<DAE.FunctionTree> > restpl;  
     list<list<tuple<DAE.Exp, Boolean>>> scalar;
   // CASE for Matrix    
-  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {SOME(i),SOME(j)})), funcs) )
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
     equation
-        subslst = arrayDimensionsToRange(ad);
+        i = Exp.dimensionSize(id);
+        j = Exp.dimensionSize(jd);
+        subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
@@ -6062,7 +6069,7 @@ algorithm outExp := matchcontinue(inExp)
       (restpl);   
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
     equation
-        subslst = arrayDimensionsToRange(ad);
+        subslst = dimensionsToRange(ad);
         subslst1 = rangesToSubscripts(subslst);
         crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
         expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
@@ -6313,6 +6320,7 @@ algorithm
                   variableAttributesOption = dae_var_attr,
                   absynCommentOption = comment),states)
       equation
+        name = Exp.convertEnumCref(name);
         (kind_1,states) = lowerVarkind(kind, t, name, dir, flowPrefix, streamPrefix, states, dae_var_attr);
         tp = lowerType(t);
       then
@@ -6354,6 +6362,7 @@ algorithm
                   variableAttributesOption = dae_var_attr,
                   absynCommentOption = comment))
       equation
+        name = Exp.convertEnumCref(name);
         kind_1 = lowerKnownVarkind(kind, name, dir, flowPrefix);
         tp = lowerType(t);
       then
@@ -8713,7 +8722,7 @@ algorithm
         eqns = DAEEXT.getMarkedEqns();
         diff_eqns = DAEEXT.getDifferentiatedEqns();
         eqns_1 = Util.listSetDifferenceOnTrue(eqns, diff_eqns, intEq);
-        es = Util.listMap(eqns_1, int_string);
+        es = Util.listMap(eqns_1, intString);
         es_1 = Util.stringDelimitList(es, ", ");
         print("eqns =");print(es_1);print("\n");
         ({},_) = statesInEqns(eqns_1, dae, m, mt);
@@ -11389,7 +11398,7 @@ algorithm
       Assignments ass1_1,ass2_1,ass1,ass2;
     case (v,e,ass1,ass2)
       equation
-        v_1 = v - 1 "print \"assign \" & int_string v => vs & int_string e => es & print vs & print \" to eqn \" & print es & print \"\\n\" &" ;
+        v_1 = v - 1 "print \"assign \" & intString v => vs & intString e => es & print vs & print \" to eqn \" & print es & print \"\\n\" &" ;
         e_1 = e - 1;
         ass1_1 = assignmentsSetnth(ass1, v_1, e);
         ass2_1 = assignmentsSetnth(ass2, e_1, v);
@@ -11843,7 +11852,7 @@ protected function dumpList "function: dumpList
   list<String> s;
   String sl;
 algorithm
-  s := Util.listMap(l, int_string);
+  s := Util.listMap(l, intString);
   sl := Util.stringDelimitList(s, ", ");
   print(str);
   print(sl);
@@ -11962,7 +11971,7 @@ algorithm
       equation
         ni = DAEEXT.getLowLink(i);
         print("{");
-        ls = Util.listMap(l, int_string);
+        ls = Util.listMap(l, intString);
         s = Util.stringDelimitList(ls, ", ");
         print(s);
         print("}\n");
@@ -14685,6 +14694,8 @@ algorithm
     case (DAE.SCONST(string = s)) then true;
     case (DAE.BCONST(bool = false)) then true;
     case (DAE.BCONST(bool = true)) then true;
+    case (DAE.ENUM_LITERAL(name = _)) then true;
+
     case (DAE.CREF(componentRef = c)) then true;
     case (DAE.BINARY(exp1 = e1,operator = (op as DAE.SUB(ty = ty)),exp2 = (e2 as DAE.BINARY(exp1 = e21,operator = DAE.SUB(ty = ty2),exp2 = e22))))
       equation
@@ -16477,8 +16488,7 @@ algorithm
     list<tuple<DAE.Exp,DAE.Exp>> exptplst;
     list<list<DAE.Subscript>> subslst,subslst1;
     Exp.Type tp;
-    list<Option<Integer>> ad;
-    list<list<Integer>> dss;
+    list<DAE.Dimension> ad;
     list<Integer> ds;
   // array types to array equations  
   case ((e1 as DAE.CREF(componentRef=cr1,ty=DAE.ET_ARRAY(arrayDimensions=ad)),e2),source,inFuncs)
@@ -16486,8 +16496,7 @@ algorithm
     (e1_1,_) = extendArrExp(e1,SOME(inFuncs));
     (e2_1,_) = extendArrExp(e2,SOME(inFuncs));
     e2_2 = Exp.simplify(e2_1);
-    dss = Util.listMap(ad,Util.genericOption);
-    ds = Util.listFlatten(dss);
+    ds = Util.listMap(ad, Exp.dimensionSize);
   then
     (({},{MULTIDIM_EQUATION(ds,e1_1,e2_2,source)}));
   // other types  
@@ -16533,6 +16542,31 @@ algorithm
     then subs::rangelist;
   end matchcontinue;
 end arrayDimensionsToRange;
+
+public function dimensionsToRange
+  "Converts a list of dimensions to a list of integer ranges."
+  input list<DAE.Dimension> dims;
+  output list<list<DAE.Subscript>> outRangelist;
+algorithm
+  outRangelist := matchcontinue(dims)
+  local 
+    Integer i;
+    list<list<DAE.Subscript>> rangelist;
+    list<Integer> range;
+    list<DAE.Subscript> subs;
+    DAE.Dimension d;
+    case({}) then {};
+    case(DAE.DIM_NONE::dims) equation
+      rangelist = dimensionsToRange(dims);
+    then {}::rangelist;
+    case(d::dims) equation
+      i = Exp.dimensionSize(d);
+      range = Util.listIntRange(i);
+      subs = rangesToSubscript(range);
+      rangelist = dimensionsToRange(dims);
+    then subs::rangelist;
+  end matchcontinue;
+end dimensionsToRange;
 
 protected function rangesToSubscript "
 Author: Frenkel TUD 2010-05"

@@ -98,22 +98,29 @@ public function valueExpType "creates a DAE.ExpType from a Value"
   output DAE.ExpType tp;
 algorithm
   tp := matchcontinue(inValue)
-  local Absyn.Path path; Integer indx; list<String> nameLst; DAE.ExpType eltTp;
-    list<Option<Integer>> dimsOpt;
+  local 
+    Absyn.Path path; 
+    Integer indx; 
+    list<String> nameLst; 
+    DAE.ExpType eltTp;
     list<Values.Value> valLst;
     list<DAE.ExpType> eltTps;
     list<DAE.ExpVar> varLst;
-    list<Integer> dims;
+    list<Integer> int_dims;
+    list<DAE.Dimension> dims;
     
     case(Values.INTEGER(_)) then DAE.ET_INT();
     case(Values.REAL(_)) then DAE.ET_REAL();
     case(Values.BOOL(_)) then DAE.ET_BOOL();
     case(Values.STRING(_)) then DAE.ET_STRING();
-    case(Values.ENUM(indx,path,nameLst)) then DAE.ET_ENUMERATION(SOME(indx),path,nameLst,{});
-    case(Values.ARRAY(valLst,dims)) equation
+    case(Values.ENUM_LITERAL(name = path, index = indx)) 
+      equation
+        path = Absyn.pathPrefix(path);
+      then DAE.ET_ENUMERATION(SOME(indx),path,{},{});
+    case(Values.ARRAY(valLst,int_dims)) equation
       eltTp=valueExpType(Util.listFirst(valLst));
-      dimsOpt = Util.listMap(dims,Util.makeOption);
-    then DAE.ET_ARRAY(eltTp,dimsOpt);
+      dims = Util.listMap(int_dims, Exp.intDimension);
+    then DAE.ET_ARRAY(eltTp,dims);
     
     case(Values.RECORD(path,valLst,nameLst,indx)) equation
       eltTps = Util.listMap(valLst,valueExpType);
@@ -162,6 +169,7 @@ algorithm
     case (Values.REAL(real = _)) then false;
     case (Values.STRING(string = _)) then false;
     case (Values.BOOL(boolean = _)) then false;
+    case (Values.ENUM_LITERAL(name = _)) then false;
     case (Values.TUPLE(valueLst = _)) then false;
     case (Values.META_TUPLE(valueLst = _)) then false;
     case (Values.RECORD(orderd = _)) then false;
@@ -180,6 +188,7 @@ algorithm
     case (Values.REAL(real = _)) then false;
     case (Values.STRING(string = _)) then false;
     case (Values.BOOL(boolean = _)) then false;
+    case (Values.ENUM_LITERAL(name = _)) then false;
     case (Values.TUPLE(valueLst = _)) then false;
     case (Values.META_TUPLE(valueLst = _)) then false;
     case (Values.ARRAY(valueLst = _)) then false;
@@ -892,8 +901,8 @@ algorithm
       DAE.ComponentRef cr;
       list<list<tuple<DAE.Exp, Boolean>>> mexpl;
       list<tuple<DAE.Exp, Boolean>> mexpl2;
-      list<Integer> dims;
-      list<Option<Integer>> optDims;
+      list<Integer> int_dims;
+      list<DAE.Dimension> dims;
       Integer i;
       Real r;
       String s;
@@ -911,20 +920,22 @@ algorithm
     case (Values.REAL(real = r))       then DAE.RCONST(r);
     case (Values.STRING(string = s))   then DAE.SCONST(s);
     case (Values.BOOL(boolean = b))    then DAE.BCONST(b);
+    case (Values.ENUM_LITERAL(name = path, index = i)) then DAE.ENUM_LITERAL(path, i);
 
     case (Values.ARRAY(valueLst = {}, dimLst = {})) then DAE.ARRAY(DAE.ET_OTHER(),false,{});
-    case (Values.ARRAY(valueLst = {}, dimLst = dims))
+    case (Values.ARRAY(valueLst = {}, dimLst = int_dims))
       equation
-        optDims = Util.listMap(dims, Util.makeOption);
-      then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), optDims),false,{});
+        dims = Util.listMap(int_dims, Exp.intDimension); 
+      then DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER(), dims),false,{});
 
     /* Matrix */
-    case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = _::dims))
+    case(Values.ARRAY(valueLst = Values.ARRAY(valueLst=v::xs)::xs2, dimLst = dim::int_dims))
       equation
         failure(Values.ARRAY(valueLst = _) = v);
         explist = Util.listMap((v :: xs), valueExp);      
-        DAE.MATRIX(t,dim,mexpl) = valueExp(Values.ARRAY(xs2,dims));
-        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
+        DAE.MATRIX(t,i,mexpl) = valueExp(Values.ARRAY(xs2,int_dims));
+        mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,i));
+        t = Exp.arrayDimensionSetFirst(t, DAE.DIM_INTEGER(dim));
       then DAE.MATRIX(t,dim,mexpl2::mexpl);
 
     /* Matrix last row*/
@@ -936,8 +947,8 @@ algorithm
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
         dim = listLength(v::xs);
-        t = Exp.liftArrayR(t,SOME(dim));
-        t = Exp.liftArrayR(t,SOME(dim));
+        t = Exp.liftArrayR(t,DAE.DIM_INTEGER(dim));
+        t = Exp.liftArrayR(t,DAE.DIM_INTEGER(1));
         mexpl2 = Util.listThreadTuple(explist,Util.listFill(true,dim));
       then DAE.MATRIX(t,dim,{mexpl2});
 
@@ -948,7 +959,7 @@ algorithm
         vt = Types.typeOfValue(v);
         t = Types.elabType(vt);
         dim = listLength(v::xs);
-        t = Exp.liftArrayR(t,SOME(dim));
+        t = Exp.liftArrayR(t,DAE.DIM_INTEGER(dim));
         b = Types.isArray(vt);
         b = boolNot(b);
       then
@@ -967,12 +978,8 @@ algorithm
         varlst = Util.listThreadMap(namelst,tpl,Exp.makeVar);
       then DAE.CALL(path,expl,false,false,DAE.ET_COMPLEX(path,varlst,ClassInf.RECORD(path)),DAE.NO_INLINE);
 
-    case(Values.ENUM(ix,path,names))
-      equation
-        t = DAE.ET_ENUMERATION(SOME(ix),Absyn.IDENT(""),names,{});
-        cr = Exp.pathToCref(path);
-        cr = Exp.crefSetLastType(cr,t);
-      then DAE.CREF(cr,t);
+    case(Values.ENUM_LITERAL(name = path, index = ix))
+      then DAE.ENUM_LITERAL(path, ix);
 
     case (Values.TUPLE(vallist))
       equation
@@ -1986,6 +1993,12 @@ algorithm
         Print.printBuf("true");
       then
         ();
+    case Values.ENUM_LITERAL(name = p)
+      equation
+        s = Absyn.pathString(p);
+        Print.printBuf(s);
+      then
+        ();
     case Values.ARRAY(valueLst = vs)
       equation
         Print.printBuf("{");
@@ -2060,9 +2073,8 @@ algorithm
         ();
     /* Until is it no able to get from an string Enumeration the C-Enumeration use the index value */
     /* Example: This is yet not possible Enum.e1 \\ PEnum   ->  1 \\ PEnum  with enum Enum(e1,e2), Enum PEnum; */
-    case (Values.ENUM(index = n, path=p))
+    case (Values.ENUM_LITERAL(index = n, name=p))
       equation
-//      s = Exp.printComponentRefStr(cr);
         s = intString(n) +& " /* ENUM: " +& Absyn.pathString(p) +& " */";
         Print.printBuf(s);
       then

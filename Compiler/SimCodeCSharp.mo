@@ -7055,7 +7055,7 @@ end daeExpCrefRhs;
 
 protected function lm_160
   input Tpl.Text in_txt;
-  input list<Option<Integer>> in_items;
+  input list<DAE.Dimension> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -7069,12 +7069,12 @@ algorithm
       then txt;
 
     case ( txt,
-           SOME(i_i) :: rest )
+           i_dim :: rest )
       local
-        list<Option<Integer>> rest;
-        Integer i_i;
+        list<DAE.Dimension> rest;
+        DAE.Dimension i_dim;
       equation
-        txt = Tpl.writeStr(txt, intString(i_i));
+        txt = dimension(txt, i_dim);
         txt = Tpl.nextIter(txt);
         txt = lm_160(txt, rest);
       then txt;
@@ -7082,7 +7082,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        list<Option<Integer>> rest;
+        list<DAE.Dimension> rest;
       equation
         txt = lm_160(txt, rest);
       then txt;
@@ -7144,7 +7144,7 @@ protected function fun_162
   input SimCode.SimCode in_i_simCode;
   input DAE.ComponentRef in_i_ecr_componentRef;
   input Tpl.Text in_i_preExp;
-  input list<Option<Integer>> in_i_dims;
+  input list<DAE.Dimension> in_i_dims;
   input DAE.ExpType in_i_aty;
 
   output Tpl.Text out_txt;
@@ -7157,7 +7157,7 @@ algorithm
       SimCode.SimCode i_simCode;
       DAE.ComponentRef i_ecr_componentRef;
       Tpl.Text i_preExp;
-      list<Option<Integer>> i_dims;
+      list<DAE.Dimension> i_dims;
       DAE.ExpType i_aty;
 
     case ( txt,
@@ -7221,7 +7221,7 @@ algorithm
            i_simCode )
       local
         DAE.ComponentRef i_ecr_componentRef;
-        list<Option<Integer>> i_dims;
+        list<DAE.Dimension> i_dims;
         DAE.ExpType i_aty;
         DAE.Exp i_ecr;
       equation
@@ -7470,7 +7470,7 @@ protected function smf_169
   input Tpl.Text in_i_preExp;
   input SimCode.Context in_i_context;
   input list<DAE.Exp> in_i_subs;
-  input list<Option<Integer>> in_i_dims;
+  input list<DAE.Dimension> in_i_dims;
 
   output Tpl.Text out_txt;
   output Tpl.Text out_i_preExp;
@@ -7483,7 +7483,7 @@ algorithm
       Tpl.Text i_preExp;
       SimCode.Context i_context;
       list<DAE.Exp> i_subs;
-      list<Option<Integer>> i_dims;
+      list<DAE.Dimension> i_dims;
 
     case ( txt,
            SimCode.SIMVAR(index = i_index, varKind = i_varKind),
@@ -7548,7 +7548,7 @@ algorithm
            i_simCode,
            i_cr )
       local
-        list<Option<Integer>> i_dims;
+        list<DAE.Dimension> i_dims;
         SimCode.SimVar ret_0;
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/*"));
@@ -7743,7 +7743,7 @@ end daeExpAsub;
 
 protected function lm_173
   input Tpl.Text in_txt;
-  input list<Option<Integer>> in_items;
+  input list<DAE.Dimension> in_items;
 
   output Tpl.Text out_txt;
 algorithm
@@ -7757,12 +7757,12 @@ algorithm
       then txt;
 
     case ( txt,
-           SOME(i_i) :: rest )
+           i_dim :: rest )
       local
-        list<Option<Integer>> rest;
-        Integer i_i;
+        list<DAE.Dimension> rest;
+        DAE.Dimension i_dim;
       equation
-        txt = Tpl.writeStr(txt, intString(i_i));
+        txt = dimension(txt, i_dim);
         txt = Tpl.nextIter(txt);
         txt = lm_173(txt, rest);
       then txt;
@@ -7770,7 +7770,7 @@ algorithm
     case ( txt,
            _ :: rest )
       local
-        list<Option<Integer>> rest;
+        list<DAE.Dimension> rest;
       equation
         txt = lm_173(txt, rest);
       then txt;
@@ -7779,7 +7779,7 @@ end lm_173;
 
 protected function fun_174
   input Tpl.Text in_txt;
-  input list<Option<Integer>> in_i_dimsRest;
+  input list<DAE.Dimension> in_i_dimsRest;
   input SimCode.SimCode in_i_simCode;
   input Tpl.Text in_i_preExp;
   input SimCode.Context in_i_context;
@@ -7824,7 +7824,7 @@ algorithm
            i_subStr,
            i_constSum )
       local
-        list<Option<Integer>> i_dimsRest;
+        list<DAE.Dimension> i_dimsRest;
         Tpl.Text i_ds;
       equation
         i_ds = Tpl.pushIter(emptyTxt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_STRING("*")), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
@@ -7845,7 +7845,7 @@ end fun_174;
 
 protected function fun_175
   input Tpl.Text in_txt;
-  input list<Option<Integer>> in_i_dims;
+  input list<DAE.Dimension> in_i_dims;
   input list<DAE.Exp> in_i_subsRest;
   input Tpl.Text in_i_constSum;
   input SimCode.SimCode in_i_simCode;
@@ -7877,7 +7877,7 @@ algorithm
            i_context,
            i_s )
       local
-        list<Option<Integer>> i_dimsRest;
+        list<DAE.Dimension> i_dimsRest;
         Tpl.Text i_subStr;
       equation
         (i_subStr, i_preExp) = daeExp(emptyTxt, i_s, i_context, i_preExp, i_simCode);
@@ -7901,7 +7901,7 @@ end fun_175;
 protected function fun_176
   input Tpl.Text in_txt;
   input list<DAE.Exp> in_i_subs;
-  input list<Option<Integer>> in_i_dims;
+  input list<DAE.Dimension> in_i_dims;
   input Tpl.Text in_i_constSum;
   input SimCode.Context in_i_context;
   input Tpl.Text in_i_preExp;
@@ -7915,7 +7915,7 @@ algorithm
   matchcontinue(in_txt, in_i_subs, in_i_dims, in_i_constSum, in_i_context, in_i_preExp, in_i_simCode)
     local
       Tpl.Text txt;
-      list<Option<Integer>> i_dims;
+      list<DAE.Dimension> i_dims;
       Tpl.Text i_constSum;
       SimCode.Context i_context;
       Tpl.Text i_preExp;
@@ -7948,7 +7948,7 @@ end fun_176;
 
 public function asubSubsripts
   input Tpl.Text txt;
-  input list<Option<Integer>> i_dims;
+  input list<DAE.Dimension> i_dims;
   input list<DAE.Exp> i_subs;
   input Tpl.Text i_constSum;
   input SimCode.Context i_context;
@@ -10104,7 +10104,7 @@ algorithm
     case ( txt,
            DAE.ET_ARRAY(ty = i_ty, arrayDimensions = i_arrayDimensions) )
       local
-        list<Option<Integer>> i_arrayDimensions;
+        list<DAE.Dimension> i_arrayDimensions;
         DAE.ExpType i_ty;
         Integer ret_0;
       equation
@@ -10592,5 +10592,38 @@ algorithm
       then txt;
   end matchcontinue;
 end expTypeFromOp;
+
+public function dimension
+  input Tpl.Text in_txt;
+  input DAE.Dimension in_i_d;
+
+  output Tpl.Text out_txt;
+algorithm
+  out_txt :=
+  matchcontinue(in_txt, in_i_d)
+    local
+      Tpl.Text txt;
+
+    case ( txt,
+           DAE.DIM_INTEGER(integer = i_integer) )
+      local
+        Integer i_integer;
+      equation
+        txt = Tpl.writeStr(txt, intString(i_integer));
+      then txt;
+
+    case ( txt,
+           DAE.DIM_NONE() )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"));
+      then txt;
+
+    case ( txt,
+           _ )
+      equation
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("INVALID_DIMENSION"));
+      then txt;
+  end matchcontinue;
+end dimension;
 
 end SimCodeCSharp;

@@ -2073,6 +2073,25 @@ algorithm
   end matchcontinue;
 end pathFirstIdent;
 
+public function pathPrefix
+  "Returns the prefix of a path, i.e. this.is.a.path => this.is.a"
+  input Path path;
+  output Path prefix;
+algorithm
+  prefix := matchcontinue(path)
+    local
+      Path p;
+      Ident n;
+    case (FULLYQUALIFIED(path = p)) then pathPrefix(p);
+    case (QUALIFIED(name = n, path = IDENT(name = _))) then IDENT(n);
+    case (QUALIFIED(name = n, path = p))
+      equation
+        p = pathPrefix(p);
+      then
+        QUALIFIED(n, p);
+  end matchcontinue;
+end pathPrefix;
+
 public function pathSuffixOf "returns true if suffix_path is a suffix of path"
   input Path suffix_path;
   input Path path;

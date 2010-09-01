@@ -2117,7 +2117,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
   {
     <%outVars |> var as VARIABLE(__) =>
       let dimStr = match ty case ET_ARRAY(__) then
-          '[<%arrayDimensions |> dim => match dim case SOME(d) then d else ":" ;separator=", "%>]'
+          '[<%arrayDimensions |> dim => dimension(dim) ;separator=", "%>]'
       let typeStr = if boxed then varTypeBoxed(var) else varType(var) 
       '<%typeStr%> targ<%i1%>; /* <%crefStr(name)%><%dimStr%> */'
     ;separator="\n"%>
@@ -2747,7 +2747,7 @@ template recordMemberInit(ExpVar v, Text varName)
 match v
 case COMPLEX_VAR(tp = ET_ARRAY(__)) then 
 	let arrayType = expType(tp, true) 
-	let dims = (tp.arrayDimensions |> dim => match dim case SOME(d) then d else "WHOLEDIM" ;separator=", ")
+	let dims = (tp.arrayDimensions |> dim => dimension(dim) ;separator=", ")
 	'alloc_<%arrayType%>(&<%varName%>.<%name%>, <%listLength(tp.arrayDimensions)%>, <%dims%>);'
 end recordMemberInit;
 
@@ -3529,6 +3529,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/,
   case e as RCONST(__)         then real
   case e as SCONST(__)         then daeExpSconst(string, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as BCONST(__)         then if bool then "(1)" else "(0)"
+  case e as ENUM_LITERAL(__)   then index
   case e as CREF(__)           then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as BINARY(__)         then daeExpBinary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as UNARY(__)          then daeExpUnary(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -3703,7 +3704,7 @@ case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     // object since they are represented only in a double array.
     let tmpArr = tempDecl(expTypeArray(aty), &varDecls /*BUFC*/)
     let dimsLenStr = listLength(dims)
-    let dimsValuesStr = (dims |> dim as SOME(i) => i ;separator=", ")
+    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
     let &preExp += '<%expTypeShort(aty)%>_array_create(&<%tmpArr%>, &<%arrayCrefCStr(ecr.componentRef)%>, <%dimsLenStr%>, <%dimsValuesStr%>);<%\n%>'
     tmpArr
 end daeExpCrefRhsArrayBox;
@@ -4788,6 +4789,16 @@ template expTypeFromOpFlag(Operator op, Integer flag)
     match flag case 1 then "boolean" else "modelica_boolean"
   else "expTypeFromOpFlag:ERROR"
 end expTypeFromOpFlag;
+
+template dimension(Dimension d)
+::=
+  match d
+  case DAE.DIM_INTEGER(__) then integer
+  case DAE.DIM_ENUM(__) then size
+  case DAE.DIM_SUBSCRIPT(__) then "DIM_SUBSCRIPT"
+  case DAE.DIM_NONE(__) then ":"
+  else "INVALID_DIMENSION"
+end dimension;
 
 end SimCodeC;
 

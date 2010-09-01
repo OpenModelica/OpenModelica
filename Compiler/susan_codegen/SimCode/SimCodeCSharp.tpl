@@ -1277,7 +1277,7 @@ case ecr as CREF(ty=ET_ARRAY(ty=aty,arrayDimensions=dims)) then
     // object since they are represented only in a double array.
     let &tmpArr = buffer ""
     let arrType = expTypeArray(aty, listLength(dims))
-    let dimsValuesStr = (dims |> SOME(i) => i ;separator=", ")
+    let dimsValuesStr = (dims |> dim => dimension(dim) ;separator=", ")
     let &preExp += match cref2simvar(ecr.componentRef, simCode) case SIMVAR(__) then  
          '<%tempDecl("var", &tmpArr)%> = new <%arrType%>(<%dimsValuesStr%>, <%index%>-1, <%representationArrayName(varKind)%>);<%\n%>'
     tmpArr
@@ -1357,7 +1357,7 @@ template daeExpAsub(Exp aexp, Context context, Text &preExp, SimCode simCode)
     'OTHER_ASUB__ERROR'   
 end daeExpAsub;
 
-template asubSubsripts(list<Option<Integer>> dims, list<Exp> subs, Text &constSum,
+template asubSubsripts(list<Dimension> dims, list<Exp> subs, Text &constSum,
                        Context context, Text &preExp, SimCode simCode)
  "Helper to daeExpAsub."
 ::=
@@ -1365,7 +1365,7 @@ template asubSubsripts(list<Option<Integer>> dims, list<Exp> subs, Text &constSu
   	match dims  case _ :: dimsRest then
   		let subStr = daeExp(s, context, &preExp, simCode)
   		if dimsRest then //not last
-  		   let ds = dimsRest |> SOME(i) => i ;separator="*"
+  		   let ds = dimsRest |> dim => dimension(dim) ;separator="*"
   		   //if ds then //TODO: assuming every dimension is SOME, is it true ??
   		   let &constSum += '-(<%ds%>)' //-1 * ds
   		   '+<%subStr%>*(<%ds%>)<% asubSubsripts(dimsRest, subsRest, &constSum, context, &preExp, simCode) %>'
@@ -1804,7 +1804,13 @@ template expTypeFromOp(Operator it) ::=
   case _ then "expTypeFromOp:ERROR"
 end expTypeFromOp;
 
-
+template dimension(Dimension d)
+::=
+  match d
+  case DAE.DIM_INTEGER(__) then integer
+  case DAE.DIM_NONE(__) then ":"
+  else "INVALID_DIMENSION"
+end dimension;
 
 end SimCodeCSharp;
 // vim: filetype=susan sw=2 sts=2

@@ -84,7 +84,7 @@ uniontype Slot
     DAE.FuncArg an "An argument to a function" ;
     Boolean true_ "True if the slot has been filled, i.e. argument has been given a value" ;
     Option<DAE.Exp> expExpOption;
-    list<DAE.ArrayDim> typesArrayDimLst;
+    list<DAE.Dimension> typesArrayDimLst;
   end SLOT;
 end Slot;
 
@@ -228,7 +228,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix)
     local
       Integer x,l,nmax;
-      Option<Integer> dim1,dim2;
+      DAE.Dimension dim1,dim2;
       Boolean impl,a,havereal;
       Option<Interactive.InteractiveSymbolTable> st,st_1,st_2,st_3;
       Ident id,expstr,envstr;
@@ -511,7 +511,7 @@ algorithm
       equation
         (cache,es_1,DAE.PROP(t,const),dae) = elabArray(cache,env, es, impl, st,doVect,pre) "array expressions, e.g. {1,2,3}" ;
         l = listLength(es_1);
-        arrtp = (DAE.T_ARRAY(DAE.DIM(SOME(l)),t),NONE);
+        arrtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE);
         at = Types.elabType(arrtp);
         a = Types.isArray(t);
         a = boolNot(a); // scalar = !array
@@ -539,10 +539,7 @@ algorithm
         t_2 = Types.unliftArray(t_1) "All elts promoted to matrix, therefore unlifting" ;
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,mexp_1,DAE.PROP(
-          (
-              DAE.T_ARRAY(DAE.DIM(dim1),
-                (DAE.T_ARRAY(DAE.DIM(dim2),t_2),NONE)),NONE),c),st,dae);
+        (cache,mexp_1,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE)),NONE),c),st,dae);
     case (cache,env,Absyn.CODE(code = c),impl,st,doVect,_)
       local Absyn.CodeNode c;
       equation
@@ -1264,7 +1261,6 @@ algorithm
   matchcontinue (inCache,inEnv1,inComponentRef2,inExp3,iterators,inBoolean6,inInteractiveInteractiveSymbolTableOption7,performVectorization,inPrefix)
     local
       DAE.Exp iterexp_1,exp_1;
-      DAE.ArrayDim arraydim;
       tuple<DAE.TType, Option<Absyn.Path>> iterty,expty,ty;
       DAE.ExpType etp;
       DAE.Const iterconst,expconst,const;
@@ -1324,7 +1320,7 @@ algorithm
 		/* min, max, sum and product */
 		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect,pre)
 			equation
-				(cache,iterexp_1,DAE.PROP((DAE.T_ARRAY((arraydim as DAE.DIM(_)),iterty),_),iterconst),_,dae1)
+        (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY(arrayType = iterty),_),iterconst),_,dae1)
 				= elabExp(cache, env, iterexp, impl, st, doVect,pre);
 				env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName));
 				// Elaborate the expression with a variable iterator first, so that any
@@ -1413,7 +1409,7 @@ algorithm
 			Env.Env new_env;
 			list<DAE.Const> iters_const;
 			DAE.Const iter_const;
-			DAE.ArrayDim array_dim;
+      DAE.Dimension array_dim;
 			DAE.Type array_type, iter_type;
 			list<Values.Value> iter_values;
 			list<list<Values.Value>> iter_values_list;
@@ -1522,7 +1518,7 @@ algorithm
 	resType := matchcontinue(arrayType, expType)
 		local
 			DAE.Type ty;
-			DAE.ArrayDim dim;
+      DAE.Dimension dim;
 			Option<Absyn.Path> path;
 		case ((DAE.T_NOTYPE(), _), _) then expType;
 		case ((DAE.T_ARRAY(dim, ty), path), _)
@@ -1606,7 +1602,7 @@ algorithm
   matchcontinue (inCache,inEnv,inExp,inBoolean,inPrefix)
     local
       Integer x,l,nmax;
-      Option<Integer> dim1,dim2;
+      DAE.Dimension dim1,dim2;
       Boolean impl,a,havereal;
       Ident fnstr;
       DAE.Exp exp,e1_1,e2_1,e1_2,e2_2,e_1,e_2,e3_1,start_1,stop_1,start_2,stop_2,step_1,step_2,mexp,mexp_1;
@@ -1752,7 +1748,7 @@ algorithm
         at = Types.elabType(t);
         a = Types.isArray(t);
       then
-        (cache,DAE.ARRAY(at,a,es_1),DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(l)),t),NONE),const));
+        (cache,DAE.ARRAY(at,a,es_1),DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(l),t),NONE),const));
     case (cache,env,Absyn.MATRIX(matrix = es),impl,pre)
       local list<list<Absyn.Exp>> es;
       equation
@@ -1767,10 +1763,7 @@ algorithm
         t_1 = Types.unliftArray(t);
         t_2 = Types.unliftArray(t_1);
       then
-        (cache,mexp,DAE.PROP(
-          (
-          DAE.T_ARRAY(DAE.DIM(dim1),
-          (DAE.T_ARRAY(DAE.DIM(dim2),t_2),NONE)),NONE),c));
+        (cache,mexp,DAE.PROP((DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim2,t_2),NONE)),NONE),c));
     case (cache,_,e,impl,pre)
       local Ident es,ps;
       equation
@@ -1868,7 +1861,7 @@ algorithm
         n_1 = n + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),DAE.T_INTEGER_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_INTEGER_DEFAULT),NONE));
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
       equation
         (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
@@ -1879,18 +1872,19 @@ algorithm
         n_2 = n_1 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_2)),DAE.T_INTEGER_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_INTEGER_DEFAULT),NONE));
     /* enumeration has no step value */
     case (cache,env,start,NONE,stop,const,_,impl,_) /* impl as false */
       local list<String> names; Absyn.Path p;
       equation
-        (cache,Values.ENUM(startv,p,names),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.ENUM(stopv,_,_),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.ENUM_LITERAL(name = p, index = startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.ENUM_LITERAL(index = stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
         n = stopv - startv;
         n_1 = n + 1;
+        p = Absyn.pathPrefix(p);
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),(DAE.T_ENUMERATION(NONE(),p,names,{}),NONE)),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE(),p,{},{}),NONE)),NONE));
     case (cache,env,start,NONE,stop,const,_,impl,_) /* as false */
       local Real startv,stopv,n,n_2;
       equation
@@ -1902,7 +1896,7 @@ algorithm
         n_1 = n_3 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_1)),DAE.T_REAL_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_REAL_DEFAULT),NONE));
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
       local Real startv,stepv,stopv,n,n_1,n_3;
       equation
@@ -1916,13 +1910,13 @@ algorithm
         n_2 = n_4 + 1;
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM(SOME(n_2)),DAE.T_REAL_DEFAULT),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_2),DAE.T_REAL_DEFAULT),NONE));
 
 		case (cache,_,_,_,_,const,DAE.ET_INT(),_,_)
-  	  then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT), NONE));
+  	  then (cache,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT), NONE));
 
 		case (cache,_,_,_,_,const,DAE.ET_REAL(),_,_)
-   	 then (cache,(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE));
+   	 then (cache,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE));
 
     case (cache,env,start,step,stop,const,expty,impl,pre)
       local Option<DAE.Exp> step;
@@ -2530,8 +2524,8 @@ protected function elabMatrixComma "function elabMatrixComma
   output Env.Cache outCache;
   output DAE.Exp outExp1;
   output DAE.Properties outProperties2;
-  output Option<Integer> outInteger3;
-  output Option<Integer> outInteger4;
+  output DAE.Dimension outInteger3;
+  output DAE.Dimension outInteger4;
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4,outDae):=
@@ -2541,7 +2535,7 @@ algorithm
       DAE.Properties prop,prop1,prop1_1,prop2,props;
       tuple<DAE.TType, Option<Absyn.Path>> t1,t1_1;
       Integer t1_dim1,nmax_2,nmax,t1_ndims,dim;
-      Option<Integer> t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
+      DAE.Dimension t1_dim1_1,t1_dim2_1,dim1,dim2,dim2_1;
       Boolean array,impl,havereal,a,scalar,doVect;
       DAE.ExpType at;
       list<Env.Frame> env;
@@ -2562,6 +2556,7 @@ algorithm
         array = Types.isArray(Types.unliftArray(Types.unliftArray(t1_1)));
         scalar = boolNot(array);
         at = Types.elabType(t1_1);
+        at = Exp.liftArrayLeft(at, DAE.DIM_INTEGER(1));
       then
         (cache,DAE.ARRAY(at,scalar,{el_2}),prop,t1_dim1_1,t1_dim2_1,dae);
     case (cache,env,(el :: els),impl,st,havereal,nmax,doVect,pre)
@@ -2571,13 +2566,16 @@ algorithm
         nmax_2 = nmax - t1_ndims;
         (el_2,(prop1_1 as DAE.PROP(t1_1,_))) = promoteExp(el_1, prop1, nmax_2);
          (_,t1_dim1_1 :: (t1_dim2_1 :: _)) = Types.flattenArrayTypeOpt(t1_1);
-        (cache,DAE.ARRAY(at,a,els_1),prop2,dim1,dim2,dae2) = elabMatrixComma(cache,env, els, impl, st, havereal, nmax,doVect,pre);
-        dim2_1 = Types.dimensionsAdd(t1_dim2_1,dim2)"comma between matrices => concatenation along second dimension" ;
+        (cache,el_1 as DAE.ARRAY(at,a,els_1),prop2,dim1,dim2,dae2) = elabMatrixComma(cache,env, els, impl, st, havereal, nmax,doVect,pre);
+        dim2_1 = Exp.dimensionsAdd(t1_dim2_1,dim2)"comma between matrices => concatenation along second dimension" ;
         props = Types.matchWithPromote(prop1_1, prop2, havereal);
-        dim = listLength((el :: els));
+        el_1 = Exp.arrayAppend(el_2, el_1);
+        //dim = listLength((el :: els));
+        //at = Exp.liftArrayLeft(at, DAE.DIM_INTEGER(dim));
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,DAE.ARRAY(at,a,(el_2 :: els_1)),props,dim1,dim2_1,dae);
+        (cache, el_1, props, dim1, dim2_1, dae);
+        //(cache,DAE.ARRAY(at,a,(el_2 :: els_1)),props,dim1,dim2_1,dae);
     case (_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- elabMatrixComma failed\n");
@@ -2663,13 +2661,16 @@ algorithm
   matchcontinue (inExp1,inExp2)
     local
       list<DAE.Exp> expl,expl1,expl2;
-      DAE.ExpType a1,a2;
+      DAE.Exp e;
+      DAE.ExpType a1,a2, ty;
       Boolean at1,at2;
     case (DAE.ARRAY(ty = a1,scalar = at1,array = expl1),DAE.ARRAY(ty = a2,scalar = at2,array = expl2))
       equation
-        expl = elabMatrixCatTwo3(expl1, expl2);
+        e :: expl = elabMatrixCatTwo3(expl1, expl2);
+        ty = Exp.typeof(e);
+        ty = Exp.liftArrayLeft(ty, DAE.DIM_INTEGER(1));
       then
-        DAE.ARRAY(a1,at1,expl);
+        DAE.ARRAY(ty,at1,e :: expl);
   end matchcontinue;
 end elabMatrixCatTwo2;
 
@@ -2685,15 +2686,19 @@ algorithm
   matchcontinue (inExpExpLst1,inExpExpLst2)
     local
       list<DAE.Exp> expl,es_1,expl1,es1,expl2,es2;
-      DAE.ExpType a1,a2;
+      DAE.ExpType a1,a2, ty;
       Boolean at1,at2;
+      DAE.Dimension dim1, dim2;
+      list<DAE.Dimension> dims1, dims2;
     case ({},{}) then {};
-    case ((DAE.ARRAY(ty = a1,scalar = at1,array = expl1) :: es1),(DAE.ARRAY(ty = a2,scalar = at2,array = expl2) :: es2))
-      equation
+    case ((DAE.ARRAY(ty = a1,scalar = at1,array = expl1) :: es1),
+          (DAE.ARRAY(ty = a2,scalar = at2,array = expl2) :: es2))
+      equation 
         expl = listAppend(expl1, expl2);
         es_1 = elabMatrixCatTwo3(es1, es2);
+        ty = Exp.concatArrayType(a1, a2);
       then
-        (DAE.ARRAY(a1,at1,expl) :: es_1);
+        (DAE.ARRAY(ty,at1,expl) :: es_1);
   end matchcontinue;
 end elabMatrixCatTwo3;
 
@@ -2765,10 +2770,10 @@ algorithm
     case (e,DAE.PROP(type_ = tp,constFlag = c),n)
       equation
         n_1 = n - 1;
-        e_tp = Types.elabType(tp);
-        tp_1 = Types.liftArrayRight(tp, SOME(1));
-        e_tp_1 = Types.elabType(tp_1);
-        array = Exp.typeBuiltin(e_tp);
+        //e_tp = Types.elabType(tp);
+        tp_1 = Types.liftArrayRight(tp, DAE.DIM_INTEGER(1));
+        //e_tp_1 = Types.elabType(tp_1);
+        //array = Exp.typeBuiltin(e_tp);
         e_1 = promoteExp2(e, (n,tp));
         (e_2,prop_1) = promoteExp(e_1, DAE.PROP(tp_1,c), n_1);
       then
@@ -2800,6 +2805,7 @@ algorithm
       equation
         n_1 = n - 1;
         tp_1 = Types.unliftArray(tp);
+        a = Exp.liftArrayLeft(a, DAE.DIM_INTEGER(1));
         expl_1 = Util.listMap1(expl, promoteExp2, (n_1,tp_1));
       then
         DAE.ARRAY(a,at,expl_1);
@@ -2809,14 +2815,14 @@ algorithm
         false = Types.isArray(tp);
         at = Exp.typeof(e);
       then
-        DAE.ARRAY(DAE.ET_ARRAY(at,{SOME(1)}),true,{e});
-    case (e,(_,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = tp2),_))) /* arrays of one dimension can be promoted from a to {a} */
+        DAE.ARRAY(DAE.ET_ARRAY(at,{DAE.DIM_INTEGER(1)}),true,{e});
+    case (e,(_,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = 1),arrayType = tp2),_))) /* arrays of one dimension can be promoted from a to {a} */
       local DAE.ExpType at;
       equation
         at = Exp.typeof(e);
         false = Types.isArray(tp2);
       then
-        DAE.ARRAY(DAE.ET_ARRAY(at,{SOME(1)}),true,{e});
+        DAE.ARRAY(DAE.ET_ARRAY(at,{DAE.DIM_INTEGER(1)}),true,{e});
     case (e,(n,tp)) /* fallback, use \"builtin\" operator promote */
       local DAE.ExpType etp,tp1;
       equation
@@ -2839,7 +2845,7 @@ algorithm
     case(inType,n)
       local DAE.ExpType tp1,tp2;
       equation
-      tp1=Exp.liftArrayRight(inType,SOME(1));
+      tp1=Exp.liftArrayRight(inType, DAE.DIM_INTEGER(1));
       tp2 = promoteExpType(tp1,n-1);
     then tp2;
   end matchcontinue;
@@ -2861,8 +2867,8 @@ protected function elabMatrixSemi
   output Env.Cache outCache;
   output DAE.Exp outExp1;
   output DAE.Properties outProperties2;
-  output Option<Integer> outInteger3;
-  output Option<Integer> outInteger4;
+  output DAE.Dimension outInteger3;
+  output DAE.Dimension outInteger4;
   output DAE.DAElist outDae "contain functions";
 algorithm
   (outCache,outExp1,outProperties2,outInteger3,outInteger4,outDae) :=
@@ -2872,7 +2878,7 @@ algorithm
       DAE.Properties props,props1,props2;
       tuple<DAE.TType, Option<Absyn.Path>> t,t1,t2;
       Integer maxn,dim;
-      Option<Integer> dim1,dim2,dim1_1,dim2_1,dim1_2;
+      DAE.Dimension dim1,dim2,dim1_1,dim2_1,dim1_2;
       DAE.ExpType at;
       Boolean a,impl,havereal;
       list<Env.Frame> env;
@@ -2900,8 +2906,8 @@ algorithm
         el_2 = elabMatrixCatTwoExp(el_1);
         (cache,els_1,props2,dim1_1,dim2_1,dae2) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre);
         els_2 = elabMatrixCatOne({el_2,els_1});
-        true = Types.dimensionsEqual(dim2,dim2_1) "semicoloned values a;b must have same no of columns" ;
-        dim1_2 = Types.dimensionsAdd(dim1, dim1_1) "number of rows added." ;
+        true = Exp.dimensionsEqual(dim2,dim2_1) "semicoloned values a;b must have same no of columns" ;
+        dim1_2 = Exp.dimensionsAdd(dim1, dim1_1) "number of rows added." ;
         (props) = Types.matchWithPromote(props1, props2, havereal);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
@@ -2928,10 +2934,10 @@ algorithm
       equation
         (cache,el_1,DAE.PROP(t1,_),dim1,_,_) = elabMatrixComma(cache,env, el, impl, st, havereal, maxn,doVect,pre);
         (cache,els_1,props2,_,dim2,_) = elabMatrixSemi(cache,env, els, impl, st, havereal, maxn,doVect,pre);
-        false = Types.dimensionsEqual(dim1,dim2);
+        false = Exp.dimensionsEqual(dim1,dim2);
+        dim1_str = Exp.dimensionString(dim1);
+        dim2_str = Exp.dimensionString(dim2);
         pre_str = PrefixUtil.printPrefixStr3(inPrefix);
-        dim1_str = Types.dimensionStr(dim1);
-        dim2_str = Types.dimensionStr(dim2);
         el_str = Exp.printListStr(el, Dump.printExpStr, ", ");
         el_str1 = Util.stringAppendList({"[",el_str,"]"});
         Error.addMessage(Error.MATRIX_EXP_ROW_SIZE, {pre_str,el_str1,dim1_str,dim2_str});
@@ -3172,7 +3178,7 @@ algorithm
         c_1 = Types.boolConstSize(c);
         exp = DAE.SIZE(arraycrefe,NONE);
       then
-        (cache,exp,DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),DAE.T_INTEGER_DEFAULT),NONE),c_1),dae1);
+        (cache,exp,DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(1),DAE.T_INTEGER_DEFAULT),NONE),c_1),dae1);
     // failure!
     case (cache,env,expl,_,impl,pre)
       equation
@@ -3355,7 +3361,7 @@ algorithm
       equation
         arraylist = buildExpList(s, v);
         dimension = intString(v);
-        sty2 = (DAE.T_ARRAY(DAE.DIM(SOME(v)),sty),NONE);
+        sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),sty),NONE);
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3365,7 +3371,7 @@ algorithm
         (cache,exp,DAE.PROP(ty,con)) = elabBuiltinFill2(cache,env, s, sty, rest,c1,pre);
         arraylist = buildExpList(exp, v);
         dimension = intString(v);
-        sty2 = (DAE.T_ARRAY(DAE.DIM(SOME(v)),ty),NONE);
+        sty2 = (DAE.T_ARRAY(DAE.DIM_INTEGER(v),ty),NONE);
         at = Types.elabType(sty2);
         a = Types.isArray(sty2);
       then
@@ -3396,7 +3402,7 @@ algorithm
 		case (_, prop :: rest_props)
 			equation
 				t = makeFillArgListType(fillType, rest_props);
-				t = (DAE.T_ARRAY(DAE.DIM(NONE), t), NONE);
+				t = (DAE.T_ARRAY(DAE.DIM_NONE, t), NONE);
 			then
 				t;
 	end matchcontinue;
@@ -3424,7 +3430,7 @@ algorithm
       DAE.ExpType tp;
       Boolean sc,impl;
       list<DAE.Exp> expl,exp_2;
-      DAE.ArrayDim d1,d2;
+      DAE.Dimension d1,d2;
       tuple<DAE.TType, Option<Absyn.Path>> eltp,newtp;
       Integer dim1,dim2,dimMax;
       DAE.Properties prop;
@@ -3440,10 +3446,11 @@ algorithm
       equation
         (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_,dae1)
         	= elabExp(cache,env, matexp, impl, NONE,true,pre);
-        dim1 = Types.arraydimInt(d1);
+        dim1 = Exp.dimensionSize(d1);
         exp_2 = elabBuiltinTranspose2(expl, 1, dim1);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
         prop = DAE.PROP(newtp,c);
+        tp = transposeExpType(tp);
       then
         (cache,DAE.ARRAY(tp,sc,exp_2),prop,dae1);
     case (cache,env,{matexp},_,impl,pre) /* try symbolically transpose the MATRIX expression */
@@ -3453,12 +3460,13 @@ algorithm
       equation
         (cache,DAE.MATRIX(tp,sc,expl),DAE.PROP((DAE.T_ARRAY(d1,(DAE.T_ARRAY(d2,eltp),_)),_),c),_,dae1)
         	= elabExp(cache,env, matexp, impl, NONE,true,pre);
-        dim1 = Types.arraydimInt(d1);
-        dim2 = Types.arraydimInt(d2);
+        dim1 = Exp.dimensionSize(d1);
+        dim2 = Exp.dimensionSize(d2);
         dimMax = intMax(dim1, dim2);
         exp_2 = elabBuiltinTranspose3(expl, 1, dimMax);
         newtp = (DAE.T_ARRAY(d2,(DAE.T_ARRAY(d1,eltp),NONE)),NONE);
         prop = DAE.PROP(newtp,c);
+        tp = transposeExpType(tp);
       then
         (cache,DAE.MATRIX(tp,sc,exp_2),prop,dae1);
     case (cache,env,{matexp},_,impl,pre) /* .. otherwise create transpose call */
@@ -3475,6 +3483,23 @@ algorithm
   end matchcontinue;
 end elabBuiltinTranspose;
 
+protected function transposeExpType
+  "Helper function to elabBuiltinTranspose. Transposes an array type, i.e. swaps
+  the first two dimensions." 
+  input DAE.ExpType inType;
+  output DAE.ExpType outType;
+algorithm
+  outType := matchcontinue(inType)
+    case (DAE.ET_ARRAY(ty = ty, arrayDimensions = dim1 :: dim2 :: dim_rest))
+      local
+        DAE.ExpType ty;
+        DAE.Dimension dim1, dim2;
+        list<DAE.Dimension> dim_rest;
+      then
+        DAE.ET_ARRAY(ty, dim2 :: dim1 :: dim_rest);
+  end matchcontinue;
+end transposeExpType;
+   
 protected function elabBuiltinTranspose2 "function: elabBuiltinTranspose2
   author: PA
 
@@ -3589,7 +3614,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
     local
       DAE.Exp exp_1,exp_2;
-      DAE.ArrayDim dim;
+      DAE.Dimension dim;
       tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.Const c;
       list<Env.Frame> env;
@@ -3682,7 +3707,7 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
     local
       DAE.Exp exp_1,exp_2;
-      DAE.ArrayDim dim;
+      DAE.Dimension dim;
       tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.Const c;
       list<Env.Frame> env;
@@ -3776,7 +3801,7 @@ algorithm
       DAE.Const c;
       list<Env.Frame> env;
       Absyn.Exp exp;
-      DAE.ArrayDim dim;
+      DAE.Dimension dim;
       Boolean impl;
       Ident s,el_str,pre_str;
       list<Absyn.Exp> expl;
@@ -4331,7 +4356,7 @@ algorithm
         (cache,exp_1,typel,_,dae1) = elabExpList(cache,env, expl, impl, NONE,true,pre);
         (exp_2,DAE.PROP(tp,c)) = elabBuiltinArray2(exp_1, typel,pre);
         len = listLength(expl);
-        newtp = (DAE.T_ARRAY(DAE.DIM(SOME(len)),tp),NONE);
+        newtp = (DAE.T_ARRAY(DAE.DIM_INTEGER(len),tp),NONE);
         newtp_1 = Types.elabType(newtp);
         scalar = Types.isArray(tp);
         exp = DAE.ARRAY(newtp_1,scalar,exp_1);
@@ -5159,9 +5184,9 @@ algorithm
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
     local
       DAE.ExpType tp;
-      Boolean sc,impl;
+      Boolean impl;
       list<DAE.Exp> expl;
-      DAE.ArrayDim dim;
+      DAE.Dimension dim;
       Integer dimension;
       tuple<DAE.TType, Option<Absyn.Path>> arrType,ty;
       DAE.Const c;
@@ -5173,7 +5198,10 @@ algorithm
       Prefix pre;
     case (cache,env,{v1},_,impl,pre)
       equation
-        (cache,DAE.ARRAY(tp,sc,expl),DAE.PROP((DAE.T_ARRAY((dim as DAE.DIM(SOME(dimension))),arrType),NONE),c),_,dae) = elabExp(cache,env, v1, impl, NONE,true,pre);
+        (cache, DAE.ARRAY(ty = tp, array = expl),
+         DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE),c),
+         _,dae) = elabExp(cache,env, v1, impl, NONE,true,pre);
+        true = Exp.dimensionKnown(dim);
         ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE)),NONE);
         tp = Types.elabType(ty);
         res = elabBuiltinDiagonal2(expl,tp);
@@ -5184,7 +5212,10 @@ algorithm
       local
         DAE.ExpType tp;
       equation
-        (cache,s1_1,DAE.PROP((DAE.T_ARRAY((dim as DAE.DIM(SOME(dimension))),arrType),NONE),c),_,dae) = elabExp(cache,env, s1, impl, NONE,true,pre);
+        (cache,s1_1,
+          DAE.PROP((DAE.T_ARRAY(arrayDim = dim, arrayType = arrType),NONE),c),
+         _,dae) = elabExp(cache,env, s1, impl, NONE,true, pre);
+        true = Exp.dimensionKnown(dim);
         ty = (DAE.T_ARRAY(dim,(DAE.T_ARRAY(dim,arrType),NONE)),NONE);
         tp = Types.elabType(ty);
       then
@@ -5564,7 +5595,7 @@ algorithm
     case (cache,env,{exp},_,impl,pre)
       local
         DAE.Type ety,ty;
-        list<Option<Integer>> dims;
+        list<DAE.Dimension> dims;
       equation
         (_,_,DAE.PROP(ety,c),_,_) = elabExp(cache, env, exp, impl, NONE,false,pre);
         failure(equality(c=DAE.C_VAR));
@@ -5844,12 +5875,12 @@ algorithm
       Integer new_d,old_d,n_args,n_1,n;
       tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
       Option<Absyn.Path> p;
-      DAE.ArrayDim dim;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(old_d)),arrayType = tp),p),1,n_args) /* dim num_args */
+      DAE.Dimension dim;
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = old_d),arrayType = tp),p),1,n_args) /* dim num_args */
       equation
         new_d = old_d*n_args;
       then
-        ((DAE.T_ARRAY(DAE.DIM(SOME(new_d)),tp),p));
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(new_d),tp),p));
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = tp),p),n,n_args)
       equation
         n_1 = n - 1;
@@ -5893,7 +5924,7 @@ algorithm
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_CONST()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true,pre);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
-        ty = (DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_ARRAY(DAE.DIM(SOME(size)),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
+        ty = (DAE.T_ARRAY(DAE.DIM_INTEGER(size),(DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_CONST()),dae1);
@@ -5902,7 +5933,7 @@ algorithm
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true,pre);
         (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
-        ty = (DAE.T_ARRAY(DAE.DIM(SOME(size)),(DAE.T_ARRAY(DAE.DIM(SOME(size)),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
+        ty = (DAE.T_ARRAY(DAE.DIM_INTEGER(size),(DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_PARAM()),dae1);
@@ -5910,7 +5941,7 @@ algorithm
     case (cache,env,{dim},_,impl,pre)
       equation
         (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_VAR()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true,pre);
-        ty = (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
+        ty = (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_VAR()),dae1);
@@ -6081,7 +6112,7 @@ algorithm
       {3} = Types.getDimensionSizes(tp1);
       mexpl = elabBuiltinSkew2(expl1,scalar1);
       etp3 = Types.elabType(tp1);
-      tp1 = Types.liftArray(tp1,SOME(3));
+      tp1 = Types.liftArray(tp1,DAE.DIM_INTEGER(3));
       then
         (cache,DAE.MATRIX(etp3,3,mexpl),DAE.PROP(tp1,c1),dae1);
 
@@ -6091,8 +6122,8 @@ algorithm
        {3} = Types.getDimensionSizes(tp1);
        etp = Exp.typeof(e1);
        eltTp = Types.arrayElementType(tp1);
-       tp1 = Types.liftArray(Types.liftArray(eltTp,SOME(3)),SOME(3));
-       then (cache,DAE.CALL(Absyn.IDENT("skew"),{e1},false,true,DAE.ET_ARRAY(etp,{SOME(3),SOME(3)}),DAE.NO_INLINE),
+       tp1 = Types.liftArray(Types.liftArray(eltTp,DAE.DIM_INTEGER(3)),DAE.DIM_INTEGER(3));
+       then (cache,DAE.CALL(Absyn.IDENT("skew"),{e1},false,true,DAE.ET_ARRAY(etp,{DAE.DIM_INTEGER(3),DAE.DIM_INTEGER(3)}),DAE.NO_INLINE),
          		 DAE.PROP(tp1,DAE.C_VAR()),dae1);
   end matchcontinue;
 end elabBuiltinSkew;
@@ -6183,7 +6214,7 @@ algorithm
        eltTp = Types.arrayElementType(tp1);
        dae = DAEUtil.joinDaes(dae1,dae2);
        then (cache,DAE.CALL(Absyn.IDENT("cross"),{e1,e2},false,true,etp,DAE.NO_INLINE),
-         		 DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(3)),eltTp),NONE),DAE.C_VAR()),dae);
+         		 DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(3),eltTp),NONE),DAE.C_VAR()),dae);
   end matchcontinue;
 end elabBuiltinCross;
 
@@ -6297,8 +6328,8 @@ algorithm
       (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, n1, false, NONE, NONE, Ceval.MSG());
       c = Types.constAnd(c1,c2);
       dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
-    then (cache, DAE.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{SOME(size)}),DAE.NO_INLINE),
-      DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(size)),tp11),NONE),c),dae);
+    then (cache, DAE.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{DAE.DIM_INTEGER(size)}),DAE.NO_INLINE), 
+      DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(size),tp11),NONE),c),dae);
 
     /* linspace(x,y,n) where n is variable time expression */
     case (cache,env,{x,y,n},_,impl,pre) equation
@@ -6310,8 +6341,8 @@ algorithm
       false = Types.isParameterOrConstant(c3);
       c = Types.constAnd(c1,Types.constAnd(c2,c3));
       dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
-    then (cache, DAE.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{NONE}),DAE.NO_INLINE),
-      DAE.PROP((DAE.T_ARRAY(DAE.DIM(NONE),tp11),NONE),c),dae);
+    then (cache, DAE.CALL(Absyn.IDENT("linspace"),{x2,y2,n1},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{DAE.DIM_NONE}),DAE.NO_INLINE),
+      DAE.PROP((DAE.T_ARRAY(DAE.DIM_NONE,tp11),NONE),c),dae);
   end matchcontinue;
 end elabBuiltinLinspace;
 
@@ -6353,7 +6384,7 @@ algorithm
       equation
         (cache,exp,DAE.PROP(tp,c),_,dae) = elabExp(cache,env, e, impl, NONE,true,pre);
         Types.simpleType(tp);
-        arr_tp = Types.liftArray(tp, SOME(1));
+        arr_tp = Types.liftArray(tp, DAE.DIM_INTEGER(1));
         tp_1 = Types.elabType(arr_tp);
       then
         (cache,DAE.ARRAY(tp_1,true,{exp}),DAE.PROP(arr_tp,c),dae);
@@ -6376,7 +6407,7 @@ algorithm
 				checkBuiltinVectorDims(e, env, dims,pre);
 				expl_1 = flattenArray(expl);
 				dim = listLength(expl_1);
-				tp = (DAE.T_ARRAY(DAE.DIM(SOME(dim)), tp_1), NONE);
+				tp = (DAE.T_ARRAY(DAE.DIM_INTEGER(dim), tp_1), NONE);
         etp = Types.elabType(tp);
       then
         (cache,DAE.ARRAY(etp,true,expl_1),DAE.PROP(tp,c),dae);
@@ -6392,7 +6423,7 @@ algorithm
         expl_2 = Util.listMap(Util.listFlatten(explm),Util.tuple21);
         expl_1 = elabBuiltinVector2(expl_2, dims);
         dimtmp = listLength(expl_1);
-        tp_1 = Types.liftArray(tp_1, SOME(dimtmp));
+        tp_1 = Types.liftArray(tp_1, DAE.DIM_INTEGER(dimtmp));
         etp = Types.elabType(tp_1);
       then
         (cache,DAE.ARRAY(etp,true,expl_1),DAE.PROP(tp_1,c),dae);
@@ -7051,7 +7082,7 @@ protected function elabCallInteractive "function: elabCallInteractive
 				{DAE.CODE(Absyn.C_TYPENAME(className), DAE.ET_OTHER()), startTime, stopTime,
 				numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},
 				false,true,DAE.ET_OTHER(),DAE.NO_INLINE),
-				DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+				DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "buildModel"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre)
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
@@ -7073,7 +7104,7 @@ protected function elabCallInteractive "function: elabCallInteractive
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance,method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
     case (cache,env,Absyn.CREF_IDENT(name = "buildModelBeast"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre)
       local Absyn.Path className; DAE.Exp storeInTemp; DAE.Exp noClean,tolerance;
       equation 
@@ -7093,7 +7124,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("buildModelBeast"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,
           numberOfIntervals,tolerance, method,filenameprefix,storeInTemp,noClean,options,outputFormat},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+          (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "simulate"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre) /* Fill in rest of defaults here */
       local Absyn.Path className;
@@ -7139,9 +7170,9 @@ protected function elabCallInteractive "function: elabCallInteractive
       then
         (cache,DAE.CALL(Absyn.IDENT("readSimulationResult"),
           {DAE.SCONST(filename),DAE.ARRAY(DAE.ET_OTHER(),false,vars_1),
-          size_exp},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{SOME(var_len),SOME(size)}),DAE.NO_INLINE),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM(SOME(var_len)),
-          (DAE.T_ARRAY(DAE.DIM(SOME(size)),DAE.T_REAL_DEFAULT),NONE)),NONE),DAE.C_VAR()),SOME(st));
+          size_exp},false,true,DAE.ET_ARRAY(DAE.ET_REAL(),{DAE.DIM_INTEGER(var_len),DAE.DIM_INTEGER(size)}),DAE.NO_INLINE),DAE.PROP(
+          (DAE.T_ARRAY(DAE.DIM_INTEGER(var_len),
+          (DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_REAL_DEFAULT),NONE)),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "readSimulationResultSize"),{Absyn.STRING(value = filename)},args,impl,SOME(st),_) 
       /* elab_variablenames(vars) => vars\' & list_length(vars) => var_len */  
@@ -7202,9 +7233,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7239,9 +7270,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7277,9 +7308,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7316,9 +7347,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7353,9 +7384,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7387,9 +7418,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
 
@@ -7450,9 +7481,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7493,9 +7524,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7531,9 +7562,9 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,points) = getOptionalNamedArg(cache,env, SOME(st), impl, "points", DAE.T_BOOL_DEFAULT,
           args, DAE.BCONST(false),pre);
 
-        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,xRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "xRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
-        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_REAL_DEFAULT),NONE),
+        (cache,yRange) = getOptionalNamedArg(cache,env, SOME(st), impl, "yRange",  (DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_REAL_DEFAULT),NONE),
           args, DAE.ARRAY(DAE.ET_REAL(), false, {DAE.RCONST(0.0), DAE.RCONST(0.0)}),pre);// DAE.ARRAY(DAE.ET_REAL(), false, {0, 0}));
 
       then
@@ -7633,7 +7664,7 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "readFileNoNumeric"),{Absyn.STRING(value = str)},{},impl,SOME(st),_) then (cache, DAE.CALL(Absyn.IDENT("readFileNoNumeric"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "listVariables"),{},{},impl,SOME(st),_) then (cache, DAE.CALL(Absyn.IDENT("listVariables"),{},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
-          (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_NOTYPE(),NONE)),NONE),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
+          (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_NOTYPE(),NONE)),NONE),DAE.C_VAR()),SOME(st));  /* Returns an array of \"component references\" */
 
     case (cache,env,Absyn.CREF_IDENT(name = "getErrorString"),{},{},impl,SOME(st),_) then (cache, DAE.CALL(Absyn.IDENT("getErrorString"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_STRING_DEFAULT,DAE.C_VAR()),SOME(st));
 
@@ -7811,7 +7842,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("dumpXMLDAE"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),translationLevel,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,filenameprefix,storeInTemp},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ARRAY(DAE.DIM(SOME(2)),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(2),DAE.T_STRING_DEFAULT),NONE),DAE.C_VAR()),SOME(st));
   end matchcontinue;
 end elabCallInteractive;
 
@@ -8305,7 +8336,7 @@ algorithm
       DAE.InlineType inline;
       Option<Interactive.InteractiveSymbolTable> st;
       list<DAE.Type> typelist,ktypelist,tys;
-      list<DAE.ArrayDim> vect_dims;
+      list<DAE.Dimension> vect_dims;
       DAE.Exp call_exp;
       list<Ident> t_lst;
       Ident fn_str,types_str,scope,pre_str;
@@ -8796,7 +8827,7 @@ protected function vectorizeCall "function: vectorizeCall
   {foo(1,{1,2}),foo(2,{3,4})}
 "
   input DAE.Exp inExp;
-  input list<DAE.ArrayDim> inTypesArrayDimLst;
+  input list<DAE.Dimension> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
   input DAE.Properties inProperties;
   output DAE.Exp outExp;
@@ -8813,29 +8844,32 @@ algorithm
       list<DAE.Exp> args,expl;
       Boolean tuple_,builtin,scalar;
       DAE.InlineType inl;
-      Integer dim;
-      list<DAE.ArrayDim> ad;
+      Integer int_dim;
+      DAE.Dimension dim;
+      list<DAE.Dimension> ad;
       list<Slot> slots;
       DAE.ExpType etp;
     case (e,{},_,prop) then (e,prop);
     
     /* Scalar expression, i.e function call */
-    case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) 
+    case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation 
-        exp_type = Types.elabType(Types.liftArray(tp, SOME(dim))) "pass type of vectorized result expr";
-        vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, dim, slots);
+        exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
+        int_dim = Exp.dimensionSize(dim);
+        vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, int_dim, slots);
+        tp = Types.liftArray(tp, dim);
         (vect_exp_1,DAE.PROP(tp,c)) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
-        tp = Types.liftArray(tp, SOME(dim));
       then
         (vect_exp_1,DAE.PROP(tp,c));
     
     /* array expression of function calls */
-    case (DAE.ARRAY(scalar = scalar,array = expl),(DAE.DIM(integerOption = SOME(dim)) :: ad),slots,DAE.PROP(tp,c)) 
+    case (DAE.ARRAY(scalar = scalar,array = expl),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation
-        exp_type = Types.elabType(Types.liftArray(tp, SOME(dim)));
-        vect_exp = vectorizeCallArray(DAE.ARRAY(exp_type,scalar,expl), dim, slots);
+        exp_type = Types.elabType(Types.liftArray(tp, dim));
+        int_dim = Exp.dimensionSize(dim);
+        vect_exp = vectorizeCallArray(inExp, int_dim, slots);
+        tp = Types.liftArrayRight(tp, dim);
         (vect_exp_1,DAE.PROP(tp,c)) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
-        tp = Types.liftArray(tp, SOME(dim));
       then
         (vect_exp_1,DAE.PROP(tp,c));
     case (_,_,_,_)
@@ -8870,6 +8904,7 @@ algorithm
       equation
         arr_expl = vectorizeCallArray2(expl, tp, cur_dim, slots);
         scalar_1 = Exp.typeBuiltin(tp);
+        tp = Exp.liftArrayRight(tp, DAE.DIM_INTEGER(cur_dim));
         res_exp = DAE.ARRAY(tp,scalar_1,arr_expl);
       then
         res_exp;
@@ -8954,14 +8989,16 @@ algorithm
       Boolean scalar,tuple_,builtin;
       DAE.Exp new_exp,callexp;
       Absyn.Path fn;
-      DAE.ExpType e_type;
+      DAE.ExpType e_type, arr_type;
       Integer dim;
       list<Slot> slots;
     case ((callexp as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin)),e_type,dim,slots) /* cur_dim */
       equation
         expl = vectorizeCallScalar2(args, slots, 1, dim, callexp);
-        scalar = Exp.typeBuiltin(Exp.unliftArray(e_type)) " unlift vectorized dimension to find element type";
-        new_exp = DAE.ARRAY(e_type,scalar,expl);
+        e_type = Exp.unliftArray(e_type);
+        scalar = Exp.typeBuiltin(e_type) " unlift vectorized dimension to find element type";
+        arr_type = DAE.ET_ARRAY(e_type, {DAE.DIM_INTEGER(dim)});
+        new_exp = DAE.ARRAY(arr_type,scalar,expl);
       then
         new_exp;
     case (_,_,_,_)
@@ -9089,7 +9126,7 @@ function: elabTypes
   output list<DAE.Const> outTypesConstLst2;
   output DAE.Type outType3;
   output DAE.Type outType4;
-  output list<DAE.ArrayDim> outTypesArrayDimLst5;
+  output list<DAE.Dimension> outTypesArrayDimLst5;
   output list<Slot> outSlotLst6;
   output DAE.DAElist outDae "contain function";
 algorithm
@@ -9099,7 +9136,7 @@ algorithm
       list<Slot> slots,newslots;
       list<DAE.Exp> args_1;
       list<DAE.Const> clist;
-      list<DAE.ArrayDim> dims;
+      list<DAE.Dimension> dims;
       list<Env.Frame> env;
       list<Absyn.Exp> args;
       list<Absyn.NamedArg> nargs;
@@ -9171,12 +9208,12 @@ protected function slotsVectorizable
   confirms that they all are of same dimension,or no dimension, i.e. not
   vectorized. The uniform vectorized array dimension is returned."
   input list<Slot> inSlotLst;
-  output list<DAE.ArrayDim> outTypesArrayDimLst;
+  output list<DAE.Dimension> outTypesArrayDimLst;
 algorithm
   outTypesArrayDimLst:=
   matchcontinue (inSlotLst)
     local
-      list<DAE.ArrayDim> ad;
+      list<DAE.Dimension> ad;
       list<Slot> rest;
     case ({}) then {};
     case ((SLOT(typesArrayDimLst = (ad as (_ :: _))) :: rest))
@@ -9206,12 +9243,12 @@ protected function sameSlotsVectorizable
   The array dimension must match both in dimension size and number of
   dimensions."
   input list<Slot> inSlotLst;
-  input list<DAE.ArrayDim> inTypesArrayDimLst;
+  input list<DAE.Dimension> inTypesArrayDimLst;
 algorithm
   _:=
   matchcontinue (inSlotLst,inTypesArrayDimLst)
     local
-      list<DAE.ArrayDim> slot_ad,ad;
+      list<DAE.Dimension> slot_ad,ad;
       list<Slot> rest;
     case ({},_) then ();
     case ((SLOT(typesArrayDimLst = (slot_ad as (_ :: _))) :: rest),ad) /* arraydim must match */
@@ -9233,22 +9270,22 @@ protected function sameArraydimLst
   author: PA
 
   Helper function to sameSlotsVectorizable. "
-  input list<DAE.ArrayDim> inTypesArrayDimLst1;
-  input list<DAE.ArrayDim> inTypesArrayDimLst2;
+  input list<DAE.Dimension> inTypesArrayDimLst1;
+  input list<DAE.Dimension> inTypesArrayDimLst2;
 algorithm
   _:=
   matchcontinue (inTypesArrayDimLst1,inTypesArrayDimLst2)
     local
       Integer i1,i2;
-      list<DAE.ArrayDim> ads1,ads2;
+      list<DAE.Dimension> ads1,ads2;
     case ({},{}) then ();
-    case ((DAE.DIM(integerOption = SOME(i1)) :: ads1),(DAE.DIM(integerOption = SOME(i2)) :: ads2))
+    case ((DAE.DIM_INTEGER(integer = i1) :: ads1),(DAE.DIM_INTEGER(integer = i2) :: ads2))
       equation
         true = intEq(i1, i2);
         sameArraydimLst(ads1, ads2);
       then
         ();
-    case ((DAE.DIM(integerOption = NONE) :: ads1),(DAE.DIM(integerOption = NONE) :: ads2))
+    case (DAE.DIM_NONE :: ads1,DAE.DIM_NONE :: ads2)
       equation
         sameArraydimLst(ads1, ads2);
       then
@@ -9709,7 +9746,7 @@ algorithm
       list<Slot> res,xs;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> fa;
       Option<DAE.Exp> e;
-      list<DAE.ArrayDim> ds;
+      list<DAE.Dimension> ds;
       SCode.Class class_;
       list<Env.Frame> env;
       Boolean impl;
@@ -9755,14 +9792,14 @@ algorithm
       list<Ident> str_lst;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
       Option<DAE.Exp> exp;
-      list<DAE.ArrayDim> ds;
+      list<DAE.Dimension> ds;
       list<Slot> xs;
     case ((SLOT(an = farg,true_ = filled,expExpOption = exp,typesArrayDimLst = ds) :: xs))
       equation
         farg_str = Types.printFargStr(farg);
         filled = Util.if_(filled, "filled", "not filled");
         str = Dump.getOptionStr(exp, Exp.printExpStr);
-        str_lst = Util.listMap(ds, Types.printArraydimStr);
+        str_lst = Util.listMap(ds, Exp.dimensionString);
         s = Util.stringDelimitList(str_lst, ", ");
         s1 = Util.stringAppendList({"SLOT(",farg_str,", ",filled,", ",str,", [",s,"])\n"});
         s2 = printSlotsStr(xs);
@@ -9807,7 +9844,7 @@ algorithm
       list<Absyn.Exp> es;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> vs;
-      list<DAE.ArrayDim> ds;
+      list<DAE.Dimension> ds;
       Env.Cache cache;
       Ident id;
       DAE.Properties props;
@@ -9925,7 +9962,7 @@ algorithm
       list<tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>>> farg;
       Boolean impl;
       Env.Cache cache;
-      list<DAE.ArrayDim> ds;
+      list<DAE.Dimension> ds;
       DAE.DAElist dae,dae1,dae2;
       Prefix pre;
 
@@ -10019,7 +10056,7 @@ protected function fillSlot
   and setting the expression. The function fails if the slot is allready set."
   input DAE.FuncArg inFuncArg;
   input DAE.Exp inExp;
-  input list<DAE.ArrayDim> inTypesArrayDimLst;
+  input list<DAE.Dimension> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
   input Boolean checkTypes "type checking only if true";
   input Prefix inPrefix;
@@ -10029,7 +10066,7 @@ algorithm
     local
       Ident fa1,fa2,fa;
       DAE.Exp exp;
-      list<DAE.ArrayDim> ds;
+      list<DAE.Dimension> ds;
       tuple<DAE.TType, Option<Absyn.Path>> b;
       list<Slot> xs,newslots;
       tuple<Ident, tuple<DAE.TType, Option<Absyn.Path>>> farg;
@@ -10530,6 +10567,16 @@ algorithm
       then
         (cache,e,DAE.C_VAR(),acc);
 
+    // an enumeration literal -> simplify to a literal expression
+    case (cache,env,cr,_,SCode.CONST(),_,_,(DAE.T_ENUMERATION(index = SOME(i)), _),_,_,_,_)
+      local
+        Integer i;
+        Absyn.Path p;
+      equation
+        p = Exp.crefToPath(cr);
+      then
+        (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), SCode.RO());
+         
     // a constant -> evaluate binding
     case (cache,env,cr,acc,SCode.CONST(),_,io,tt,binding,doVect,_,_)
       equation
@@ -10753,8 +10800,8 @@ algorithm
 
     // component reference and an array type with dimensions less than vectorization limit
     case (_,DAE.CREF(componentRef = cr_2,ty = t2),
-           (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType =
-                                 (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_)),
+           (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType =
+                                 (t as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds2)),_))),_)),
            SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
       equation
         b1 = (ds < RTOpts.vectorizationLimit());
@@ -10765,7 +10812,9 @@ algorithm
       then
         e;
 
-    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_)), SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
+    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), 
+         (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType = t),_)), 
+         SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
       equation
         false = Types.isArray(t);
         true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
@@ -10774,7 +10823,7 @@ algorithm
         e;
 
     /* matrix sizes > vectorization limit is not vectorized */
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds2))),_))),_),_,crefIdType,applyLimits) 
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds2)),_))),_),_,crefIdType,applyLimits) 
       equation 
         b1 = (ds < RTOpts.vectorizationLimit());
         b2 = (ds2 < RTOpts.vectorizationLimit());
@@ -10784,7 +10833,7 @@ algorithm
         e;
         
     /* vectorsizes > vectorization limit is not vectorized */ 
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(ds)),arrayType = t),_),_,crefIdType,applyLimits) 
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType = t),_),_,crefIdType,applyLimits) 
       equation 
         false = Types.isArray(t);
         true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
@@ -10818,7 +10867,7 @@ protected function extractDimensionOfChild
   A function for extracting the type-dimension of the child to *me* to dimension *my* array-size.
   Also returns wheter the array is a scalar or not."
   input DAE.Exp inExp;
-  output list<Option<Integer>> outExp;
+  output list<DAE.Dimension> outExp;
   output Boolean isScalar;
 algorithm
   (outExp,isScalar) := matchcontinue(inExp)
@@ -10826,7 +10875,7 @@ algorithm
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1,expl2;
       DAE.ExpType ety,ety2;
-      list<Option<Integer>> tl;
+      list<DAE.Dimension> tl;
       Integer x;
       Boolean sc;
 
@@ -10838,12 +10887,12 @@ algorithm
         (tl,_) = extractDimensionOfChild(exp2);
         x = listLength(expl1);
       then
-        (SOME(x)::tl, false );
+        (DAE.DIM_INTEGER(x)::tl, false );
 
     case(exp1 as DAE.ARRAY(ty = _,scalar=_,array=expl1))
       equation
         x = listLength(expl1);
-      then ({SOME(x)},true);
+      then ({DAE.DIM_INTEGER(x)},true);
 
     case(exp1 as DAE.CREF(_ , _))
     then
@@ -10915,13 +10964,13 @@ algorithm
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1),exp2,ety)
       local
-        list<Option<Integer>> iLst;
+        list<DAE.Dimension> iLst;
         Boolean scalar;
       equation
         expl1 = Util.listMap2(expl1,mergeQualWithRest,exp2,ety);
 
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
-       (iLst, scalar) = extractDimensionOfChild(exp2);
+        (iLst, scalar) = extractDimensionOfChild(exp2);
         ety = Exp.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
     then exp2;      
@@ -10952,7 +11001,7 @@ algorithm
     // an array
     case(exp1 as DAE.ARRAY(_, _, expl1), exp2 as DAE.CREF(DAE.CREF_IDENT(id,_, ssl),ety))
       local
-        list<Option<Integer>> iLst;
+        list<DAE.Dimension> iLst;
         Boolean scalar;
       equation
         expl1 = Util.listMap1(expl1,mergeQualWithRest2,exp2);
@@ -11037,7 +11086,7 @@ algorithm
     // special case for zero dimension...
     case( ((sub1 as DAE.SLICE( exp2 as DAE.ARRAY(_,_,(expl1 as DAE.ICONST(0)::{})) )):: subs1),id,ety) // {1,2,3}
       local
-        list<Option<Integer>> iLst;
+        list<DAE.Dimension> iLst;
         Boolean scalar;
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
@@ -11049,7 +11098,7 @@ algorithm
     // normal case;
     case( ((sub1 as DAE.SLICE( exp2 as DAE.ARRAY(_,_,expl1) )):: subs1),id,ety) // {1,2,3}
       local
-        list<Option<Integer>> iLst;
+        list<DAE.Dimension> iLst;
         Boolean scalar;
       equation
         exp2 = flattenSubscript2(subs1,id,ety);
@@ -11113,7 +11162,7 @@ algorithm
       DAE.Exp exp1,exp2;
       list<DAE.Exp> expl1,expl2;
       DAE.ExpType ety,tmpy,crty;
-      list<Option<Integer>> arrDim;
+      list<DAE.Dimension> arrDim;
 
     case(exp2,exp1 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,{}),id ,ety)
       equation
@@ -11123,12 +11172,12 @@ algorithm
         /* add dimensions */       
     case(exp1 as DAE.ICONST(integer=0),exp2 as DAE.ARRAY(DAE.ET_ARRAY(ty =_, arrayDimensions = arrDim) ,_,_),id ,ety) 
       equation
-        exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,SOME(0)::arrDim),true,{});
+        exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,DAE.DIM_INTEGER(0)::arrDim),true,{});
       then exp1;
 
     case(exp1 as DAE.ICONST(integer=0),_,_ ,ety)
       equation
-        exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,{SOME(0)}),true,{});
+        exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,{DAE.DIM_INTEGER(0)}),true,{});
       then exp1;
 
     case(exp1 as DAE.ICONST(integer=_),DAE.ARRAY(_,_,{}),id ,ety)
@@ -11160,7 +11209,7 @@ algorithm
       list<DAE.Exp> expl1,expl2;
       list<DAE.Subscript> subs;
       DAE.ExpType ety,ty2,crty;
-      list<Option<Integer>> iLst;
+      list<DAE.Dimension> iLst;
       Boolean scalar;
 
     case(exp1 as DAE.ICONST(integer=_),exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_ ),ety )
@@ -11173,7 +11222,7 @@ algorithm
       equation
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
-       (iLst, scalar) = extractDimensionOfChild(exp2);
+        (iLst, scalar) = extractDimensionOfChild(exp2);
         ety = Exp.arrayEltType(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
@@ -11196,7 +11245,7 @@ algorithm
       list<DAE.Exp> expl1,expl2;
       list<DAE.Subscript> subs;
       DAE.ExpType ety,ty2,crty;
-      list<Option<Integer>> iLst;
+      list<DAE.Dimension> iLst;
       Boolean scalar;
 
     case(exp2 as DAE.CREF(DAE.CREF_IDENT(id,ty2,subs),_), exp1 as DAE.ICONST(integer=_),ety )
@@ -11209,8 +11258,8 @@ algorithm
       equation
         expl1 = Util.listMap2(expl1,applySubscript3,exp1,ety);
         exp2 = DAE.ARRAY(DAE.ET_INT(),false,expl1);
-       (iLst, scalar) = extractDimensionOfChild(exp2);
-       ety = Exp.unliftArray(ety);
+        (iLst, scalar) = extractDimensionOfChild(exp2);
+        ety = Exp.unliftArray(ety);
         exp2 = DAE.ARRAY(DAE.ET_ARRAY( ety, iLst), scalar, expl1);
       then exp2;
   end matchcontinue;
@@ -11395,7 +11444,7 @@ algorithm
   (outCache,outComponentRef,outConst,outDae) := matchcontinue (inCache,inEnv,inComponentRef,crefPrefix,inBoolean)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t;
-      list<Option<Integer>> sl;
+      list<DAE.Dimension> sl;
       DAE.Const const,const1,const2;
       list<Env.Frame> env;
       Ident id;
@@ -11526,7 +11575,7 @@ protected function elabSubscriptsDims
   input Env.Cache cache;
   input Env.Env env;
   input list<Absyn.Subscript> subs;
-  input list<Option<Integer>> dims;
+  input list<DAE.Dimension> dims;
   input Boolean impl;
   input Prefix inPrefix;
   output Env.Cache outCache;
@@ -11564,7 +11613,7 @@ protected function elabSubscriptsDims2
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Subscript> inAbsynSubscriptLst;
-  input list<Option<Integer>> inIntegerLst;
+  input list<DAE.Dimension> inIntegerLst;
   input Boolean inBoolean;
   input Prefix inPrefix;
   output Env.Cache outCache;
@@ -11580,8 +11629,9 @@ algorithm
       list<Env.Frame> env;
       Absyn.Subscript sub;
       list<Absyn.Subscript> subs;
-      Integer dim;
-      list<Option<Integer>> restdims,dims;
+      DAE.Dimension dim;
+      Integer int_dim;
+      list<DAE.Dimension> restdims,dims;
       Boolean impl;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2;
@@ -11593,9 +11643,10 @@ algorithm
     // if in for iterator loop scope the subscript should never be evaluated to a value 
     //(since the parameter/const value of iterator variables are not available until expansion, which happens later on)
     // Note that for loops are expanded 'on the fly' and should therefore not be treated in this way.
-    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl,pre) /* If param, call ceval. */
+    case (cache,env,(sub :: subs),(dim :: restdims),impl, pre) /* If param, call ceval. */
       equation
         true = Env.inForIterLoopScope(env);
+        true = Exp.dimensionKnown(dim);
         (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl,pre);
         (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl,pre);
         const = Types.constAnd(const1, const2);        
@@ -11604,24 +11655,26 @@ algorithm
         (cache,sub_1::subs_1,const,dae);
 
     // If the subscript contains a param or const then it should be evaluated to the value
-    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl,pre) /* If param or const, call ceval. */
+    case (cache,env,(sub :: subs),(dim :: restdims),impl, pre) /* If param or const, call ceval. */
       equation
-        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl,pre);
-        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl,pre);
+        int_dim = Exp.dimensionSize(dim);
+        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl, pre);
+        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl, pre);
         const = Types.constAnd(const1, const2);
         true = Types.isParameterOrConstant(const);
-        (cache,sub_1) = Ceval.cevalSubscript(cache,env,sub_1,dim,impl,Ceval.MSG());
+        (cache,sub_1) = Ceval.cevalSubscript(cache,env,sub_1,int_dim,impl,Ceval.MSG());
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,sub_1::subs_1,const,dae);
 
     // If the previous case failed and we're just checking the model, try again
     // but skip the constant evaluation.
-    case (cache,env,(sub :: subs),(SOME(dim) :: restdims),impl,pre) 
+    case (cache,env,(sub :: subs),(dim :: restdims),impl, pre) 
       equation
         true = OptManager.getOption("checkModel");
-        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl,pre);
-        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl,pre);
+        true = Exp.dimensionKnown(dim);
+        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl, pre);
+        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl, pre);
         const = Types.constAnd(const1, const2);
         true = Types.isParameterOrConstant(const);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -11629,10 +11682,11 @@ algorithm
         (cache,sub_1::subs_1,const,dae);
         
     // if not constant, keep as is.
-    case (cache,env,(sub :: subs),(SOME(_) :: restdims),impl,pre)
+    case (cache,env,(sub :: subs),(dim :: restdims),impl, pre)
       equation
-        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl,pre);
-        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl,pre);       
+        true = Exp.dimensionKnown(dim);
+        (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl, pre);
+        (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl, pre);       
         const = Types.constAnd(const1, const2);
         false = Types.isParameterOrConstant(const);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -11640,7 +11694,7 @@ algorithm
         (cache,(sub_1 :: subs_1),const,dae);
 
     // for unknown dimension, ':', keep as is.
-    case (cache,env,(sub :: subs),(NONE :: restdims),impl,pre)
+    case (cache,env,(sub :: subs),(DAE.DIM_NONE :: restdims),impl, pre)
       equation
         (cache,sub_1,const1,dae1) = elabSubscript(cache,env, sub, impl,pre);
         (cache,subs_1,const2,dae2) = elabSubscriptsDims2(cache,env, subs, restdims, impl,pre);       
@@ -11804,11 +11858,11 @@ algorithm
     local
       tuple<DAE.TType, Option<Absyn.Path>> t,t_1;
       list<DAE.Subscript> subs;
-      DAE.ArrayDim dim;
+      DAE.Dimension dim;
       Option<Absyn.Path> p;
 
     case (t,{}) then t; 
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = t),_),(DAE.INDEX(exp = _) :: subs))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = _),arrayType = t),_),(DAE.INDEX(exp = _) :: subs))
       equation
         t_1 = subscriptType(t, subs);
       then
@@ -12268,13 +12322,16 @@ algorithm
       Ident s,estr,tpsstr,pre_str;
       list<Ident> exps_str,tps_str;
       Prefix pre;
-    
+      DAE.ExpType ty;
+
     case (((op,params,rtype) :: _),args,_,pre)
       equation
         //Debug.fprint("dovl", Util.stringDelimitList(Util.listMap(params, Types.printTypeStr),"\n"));
         //Debug.fprint("dovl", "\n===\n");
         (args_1,types_1) = elabArglist(params, args);
         rtype_1 = computeReturnType(op, types_1, rtype,pre);
+        ty = Types.elabType(rtype_1);
+        op = Exp.setOpType(op, ty);
       then
         (op,args_1,rtype_1);
     
@@ -12469,7 +12526,7 @@ algorithm
         m = dimSize(typ2, 2);
         true = intEq(n1, n2);
         etype = elementType(typ1);
-        rtype = (DAE.T_ARRAY(DAE.DIM(SOME(m)),etype),NONE);
+        rtype = (DAE.T_ARRAY(DAE.DIM_INTEGER(m),etype),NONE);
       then
         rtype;
     
@@ -12483,7 +12540,7 @@ algorithm
         m2 = dimSize(typ2, 1);
         true = intEq(m1, m2);
         etype = elementType(typ2);
-        rtype = (DAE.T_ARRAY(DAE.DIM(SOME(n)),etype),NONE);
+        rtype = (DAE.T_ARRAY(DAE.DIM_INTEGER(n),etype),NONE);
       then
         rtype;
     
@@ -12497,7 +12554,7 @@ algorithm
         p = dimSize(typ2, 2);
         true = intEq(m1, m2);
         etype = elementType(typ1);
-        rtype = (DAE.T_ARRAY(DAE.DIM(SOME(n)), (DAE.T_ARRAY(DAE.DIM(SOME(p)),etype),NONE)),NONE);
+        rtype = (DAE.T_ARRAY(DAE.DIM_INTEGER(n), (DAE.T_ARRAY(DAE.DIM_INTEGER(p),etype),NONE)),NONE);
       then
         rtype;
     
@@ -12606,7 +12663,7 @@ algorithm
     local
       Integer n,d_1,d;
       tuple<DAE.TType, Option<Absyn.Path>> t;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(n))),_),1) then n;  /* n:th dimension size of n:nth dimension */
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = n)),_),1) then n;  /* n:th dimension size of n:nth dimension */
     case ((DAE.T_ARRAY(arrayType = t),_),d)
       equation
         (d > 1) = true;
@@ -12651,37 +12708,37 @@ end elementType;
  * The types are a bit hard to read, but they are simply 1 through 9-dimensional
  * arrays of the basic types. */
 protected constant list<DAE.Type> intarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
 };
 protected constant list<DAE.Type> realarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_REAL_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
 };
 protected constant list<DAE.Type> stringarrtypes = {
-  (DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE), // 1-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE), // 2-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE), // 3-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
-  (DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),(DAE.T_ARRAY(DAE.DIM(NONE),DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE), // 1-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE), // 2-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE), // 3-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE), // 4-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE), // 5-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 6-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 7-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE), // 8-dim
+  (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_STRING_DEFAULT),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE)),NONE) // 9-dim
 };
 /* Simply a list of 9 of that basic type; used to match with the array types */
 protected constant list<DAE.Type> inttypes = {
@@ -12725,11 +12782,11 @@ algorithm
       DAE.ExpType defaultExpType;
     case (cache,Absyn.ADD(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                      realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})),
+        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_NONE})),
                        stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
@@ -12744,11 +12801,11 @@ algorithm
         (cache,types);
     case (cache,Absyn.ADD_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                      realarrtypes, realarrtypes, realarrtypes);
-        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})),
+        stringarrs = operatorReturn(DAE.ADD_ARR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_NONE})),
                        stringarrtypes, stringarrtypes, stringarrtypes);
         scalars = {
           (DAE.ADD(DAE.ET_INT()),
@@ -12757,17 +12814,17 @@ algorithm
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT),
           (DAE.ADD(DAE.ET_STRING()),
           {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_STRING_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                            realarrtypes, realtypes, realarrtypes);
-        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})),
+        stringscalararrs = operatorReturn(DAE.ADD_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_NONE})),
                              stringtypes, stringarrtypes, stringarrtypes);
-        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_STRING(), {NONE})),
+        stringarrsscalar = operatorReturn(DAE.ADD_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_STRING(), {DAE.DIM_NONE})),
                              stringarrtypes, stringtypes, stringarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,stringscalararrs,intarrsscalar,
           realarrsscalar,stringarrsscalar,intarrs,realarrs,stringarrs});
@@ -12776,9 +12833,9 @@ algorithm
 
     case (cache,Absyn.SUB(),env,t1,t2)
       equation
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                      realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
@@ -12790,22 +12847,22 @@ algorithm
         (cache,types);
     case (cache,Absyn.SUB_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                     intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.SUB_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                      realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.SUB(DAE.ET_INT()),
           {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.SUB(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realscalararrs = operatorReturn(DAE.SUB_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrsscalar = operatorReturn(DAE.SUB_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                            realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
@@ -12821,11 +12878,11 @@ algorithm
         int_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_INT());
         real_mul_mp = DAE.MUL_MATRIX_PRODUCT(DAE.ET_REAL());
         int_scalar = DAE.T_INTEGER_DEFAULT;
-        int_vector = (DAE.T_ARRAY(DAE.DIM(NONE),int_scalar),NONE);
-        int_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),int_vector),NONE);
+        int_vector = (DAE.T_ARRAY(DAE.DIM_NONE,int_scalar),NONE);
+        int_matrix = (DAE.T_ARRAY(DAE.DIM_NONE,int_vector),NONE);
         real_scalar = DAE.T_REAL_DEFAULT;
-        real_vector = (DAE.T_ARRAY(DAE.DIM(NONE),real_scalar),NONE);
-        real_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),real_vector),NONE);
+        real_vector = (DAE.T_ARRAY(DAE.DIM_NONE,real_scalar),NONE);
+        real_matrix = (DAE.T_ARRAY(DAE.DIM_NONE,real_vector),NONE);
         scalars = {(int_mul,{int_scalar,int_scalar},int_scalar),
           (real_mul,{real_scalar,real_scalar},real_scalar)};
         scalarprod = {(int_mul_sp,{int_vector,int_vector},int_scalar),
@@ -12834,13 +12891,13 @@ algorithm
           (int_mul_mp,{int_matrix,int_vector},int_vector),(int_mul_mp,{int_matrix,int_matrix},int_matrix),
           (real_mul_mp,{real_vector,real_matrix},real_vector),(real_mul_mp,{real_matrix,real_vector},real_vector),
           (real_mul_mp,{real_matrix,real_matrix},real_matrix)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                           inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                            realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
                           intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
                            realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten(
           {scalars,intscalararrs,realscalararrs,intarrsscalar,
@@ -12849,22 +12906,22 @@ algorithm
         (cache,types);
     case (cache,Absyn.MUL_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					intarrtypes, intarrtypes, intarrtypes);
-        realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.MUL_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.MUL(DAE.ET_INT()),
           {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_INTEGER_DEFAULT),
           (DAE.MUL(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					inttypes, intarrtypes, intarrtypes);
-        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realscalararrs = operatorReturn(DAE.MUL_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realtypes, realarrtypes, realarrtypes);
-        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					intarrtypes, inttypes, intarrtypes);
-        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrsscalar = operatorReturn(DAE.MUL_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,intscalararrs,realscalararrs,intarrsscalar,
           realarrsscalar,intarrs,realarrs});
@@ -12876,21 +12933,21 @@ algorithm
         real_div = DAE.DIV(DAE.ET_REAL());
         real_scalar = DAE.T_REAL_DEFAULT;
         scalars = {(real_div,{real_scalar,real_scalar},real_scalar)};
-        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realarrscalar});
       then
         (cache,types);
     case (cache,Absyn.DIV_EW(),env,t1,t2) /* Arithmetical operators */
       equation
-        realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.DIV_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.DIV(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realscalararrs = operatorReturn(DAE.DIV_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrsscalar = operatorReturn(DAE.DIV_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -12902,8 +12959,8 @@ algorithm
         real_scalar = DAE.T_REAL_DEFAULT "The POW operator. a^b is only defined for integer exponents, i.e. b must
 	  be of type Integer" ;
         int_scalar = DAE.T_INTEGER_DEFAULT;
-        real_vector = (DAE.T_ARRAY(DAE.DIM(NONE),real_scalar),NONE);
-        real_matrix = (DAE.T_ARRAY(DAE.DIM(NONE),real_vector),NONE);
+        real_vector = (DAE.T_ARRAY(DAE.DIM_NONE,real_scalar),NONE);
+        real_matrix = (DAE.T_ARRAY(DAE.DIM_NONE,real_vector),NONE);
         real_pow = DAE.POW(DAE.ET_REAL());
         int_pow = DAE.POW(DAE.ET_INT());
         scalars = {(int_pow,{int_scalar,int_scalar},int_scalar),
@@ -12916,14 +12973,14 @@ algorithm
         (cache,types);
     case (cache,Absyn.POW_EW(),env,t1,t2)
       equation
-        realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturn(DAE.POW_ARR2(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes, realarrtypes);
         scalars = {
           (DAE.POW(DAE.ET_REAL()),
           {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_REAL_DEFAULT)};
-        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realscalararrs = operatorReturn(DAE.POW_SCALAR_ARRAY(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realtypes, realarrtypes, realarrtypes);
-        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrsscalar = operatorReturn(DAE.POW_ARRAY_SCALAR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realtypes, realarrtypes);
         types = Util.listFlatten({scalars,realscalararrs,
           realarrsscalar,realarrs});
@@ -12937,9 +12994,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -12951,9 +13008,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -12965,9 +13022,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UMINUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UMINUS operator, unary minus" ;
-        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturnUnary(DAE.UMINUS_ARR(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -12979,9 +13036,9 @@ algorithm
           DAE.T_INTEGER_DEFAULT),
           (DAE.UPLUS(DAE.ET_REAL()),{DAE.T_REAL_DEFAULT},
           DAE.T_REAL_DEFAULT)} "The UPLUS operator, unary plus." ;
-        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {NONE})),
+        intarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_INT(), {DAE.DIM_NONE})),
 					intarrtypes, intarrtypes);
-        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {NONE})),
+        realarrs = operatorReturnUnary(DAE.UPLUS(DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE})),
 					realarrtypes, realarrtypes);
         types = Util.listFlatten({scalars,intarrs,realarrs});
       then
@@ -13138,7 +13195,7 @@ algorithm
         n_1 = n - 1;
         t_1 = nDimArray(n_1, t);
       then
-        ((DAE.T_ARRAY(DAE.DIM(NONE),t_1),NONE));
+        ((DAE.T_ARRAY(DAE.DIM_NONE,t_1),NONE));
   end matchcontinue;
 end nDimArray;
 

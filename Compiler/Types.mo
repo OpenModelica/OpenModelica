@@ -52,7 +52,6 @@ public import DAE;
 public import Values;
 public import SCode;
 
-public type ArrayDim = DAE.ArrayDim;
 public type Attributes = DAE.Attributes;
 public type Binding = DAE.Binding;
 public type Const = DAE.Const;
@@ -372,38 +371,33 @@ algorithm
         ty = (DAE.T_ENUMERATION(index,path,names,tvars),NONE());
 //        ty = (DAE.T_ENUM,NONE);
         then ty;
-    case(DAE.ET_ARRAY(at,SOME(dim)::ad))
+    case(DAE.ET_ARRAY(at,dim::ad))
       local DAE.ExpType at;
-        list<Option<Integer>> ad;
-        Integer dim;
+        list<DAE.Dimension> ad;
+        DAE.Dimension dim;
         Integer ll;
         Integer currDim;
-        ArrayDim ard;
         TType tty;
         equation
           ll = listLength(ad);
           true = (ll == 0);
           ty = expTypetoTypesType(at);
-          ard = DAE.DIM(SOME(dim));
-          tty = DAE.T_ARRAY(ard,ty);
+          tty = DAE.T_ARRAY(dim,ty);
           ty2 = (tty,NONE);
           then
             ty2;
-    case(DAE.ET_ARRAY(at,SOME(dim)::ad))
+    case(DAE.ET_ARRAY(at,dim::ad))
       local DAE.ExpType at;
-        list<Option<Integer>> ad;
-        Integer dim;
+        list<DAE.Dimension> ad;
+        DAE.Dimension dim;
         Integer ll;
         Integer currDim;
-        ArrayDim ard;
         TType tty;
         equation
           ll = listLength(ad);
           true = (ll > 0);
           ty = expTypetoTypesType(DAE.ET_ARRAY(at,ad));
-          ard = DAE.DIM(SOME(dim));
-
-          tty = DAE.T_ARRAY(ard,ty);
+          tty = DAE.T_ARRAY(dim,ty);
           ty2 = (tty,NONE);
           then
             ty2;
@@ -941,10 +935,12 @@ algorithm
   matchcontinue (inType)
     local
       list<Integer> res;
+      DAE.Dimension d;
       Integer i;
       Type tp;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i)),arrayType = tp),_))
+    case ((DAE.T_ARRAY(arrayDim = d,arrayType = tp),_))
       equation
+        i = Exp.dimensionSize(d);
         res = getDimensionSizes(tp);
       then
         (i :: res);
@@ -959,19 +955,19 @@ public function getDimensions
  This is a list of Option<Integer> with the dimension size for
  each dimension, NONE corresponds to ':' dimension, i.e. not known."
   input Type inType;
-  output list<Option<Integer>> outIntegerLst;
+  output list<DAE.Dimension> outIntegerLst;
 algorithm
   outIntegerLst:=
   matchcontinue (inType)
     local
-      list<Option<Integer>> res;
-      Option<Integer> dimopt;
+      list<DAE.Dimension> res;
+      DAE.Dimension d;
       Type tp;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = dimopt),arrayType = tp),_))
+    case ((DAE.T_ARRAY(arrayDim = d,arrayType = tp),_))
       equation
         res = getDimensions(tp);
       then
-        (dimopt :: res);
+        (d :: res);
     case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensions(tp);
     case ((_,_)) then {};
@@ -979,29 +975,11 @@ algorithm
 end getDimensions;
 
 public function printDimensionsStr "Prints dimensions to a string"
-  input list<Option<Integer>> dims;
+  input list<DAE.Dimension> dims;
   output String res;
 algorithm
-    res:=Util.stringDelimitList(Util.listMap(dims,printDimensionStr),",");
+  res:=Util.stringDelimitList(Util.listMap(dims,Exp.dimensionString),", ");
 end printDimensionsStr;
-
-protected function printDimensionStr "help function to printDimensionsStr"
-input Option<Integer> dim;
-output String str;
-algorithm
-  str := matchcontinue(dim)
-    local Integer i;
-    case(SOME(i)) then intString(i);
-    case(NONE) then ":";
-  end matchcontinue;
-end printDimensionStr;
-
-protected function makeDim
-  input Option<Integer> iOpt;
-  output DAE.ArrayDim dim;
-algorithm
-  dim := DAE.DIM(iOpt);
-end makeDim;
 
 public function valuesToMods
 "function: valuesToMods
@@ -1094,7 +1072,7 @@ algorithm
           DAE.MOD(false,Absyn.NON_EACH(),{},
           SOME(DAE.TYPED(exp,SOME(v),DAE.PROP(ty,DAE.C_VAR()),NONE())))) :: res),NONE);
 
-    case ((v as Values.ENUM(index = _)) :: rest,(id :: ids))
+    case ((v as Values.ENUM_LITERAL(index = _)) :: rest,(id :: ids))
       equation
         ty = typeOfValue(v);
         exp = ValuesUtil.valueExp(v);
@@ -1188,23 +1166,24 @@ algorithm
     case (Values.REAL(real = _)) then (DAE.T_REAL_DEFAULT); 
     case (Values.STRING(string = _)) then (DAE.T_STRING_DEFAULT); 
     case (Values.BOOL(boolean = _)) then (DAE.T_BOOL_DEFAULT); 
-    case (Values.ENUM(index,path,names))
+    case (Values.ENUM_LITERAL(name = path, index = index))
       local
         Integer index;
         Absyn.Path path;
-        list<String> names;
-      then ((DAE.T_ENUMERATION(SOME(index),path,names,{}),NONE));
-//    case (Values.ENUM(value = _)) then ((DAE.T_ENUM(),NONE));
+      equation
+        path = Absyn.pathPrefix(path); 
+      then
+        ((DAE.T_ENUMERATION(SOME(index), path, {}, {}), NONE));
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation
         tp = typeOfValue(v);
         dim1 = listLength((v :: vs));
       then
-        ((DAE.T_ARRAY(DAE.DIM(SOME(dim1)),tp),NONE));
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(dim1),tp),NONE));
     case ((w as Values.ARRAY(valueLst = ({}))))
       equation
       then
-        ((DAE.T_ARRAY(DAE.DIM(SOME(0)),(DAE.T_NOTYPE(),NONE)),NONE));
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(0),(DAE.T_NOTYPE(),NONE)),NONE));
     case ((w as Values.TUPLE(valueLst = vs)))
       equation
         ts = Util.listMap(vs, typeOfValue);
@@ -1437,26 +1416,27 @@ algorithm
     case ((DAE.T_ENUMERATION(names = {}),_),(DAE.T_ENUMERATION(names = _),_)) then true;
     case ((DAE.T_ENUMERATION(names = _),_),(DAE.T_ENUMERATION(names = {}),_)) then true;
     
-    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
         true;
     
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
         true;
     
     // Array
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i1)),arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(i2)),arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),(DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),_))
+      local DAE.Dimension dim1, dim2;
       equation
-        true = intEq(i1, i2);
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
         true = subtype(t1, t2);
       then
         true;
-
+        
     // Complex type
     case ((DAE.T_COMPLEX(complexClassType = st1,complexVarLst = els1,complexTypeOption = bc1),_),(DAE.T_COMPLEX(complexClassType = st2,complexVarLst = els2,complexTypeOption = bc2),_))
       equation
@@ -1640,7 +1620,7 @@ algorithm
       Attributes attr;
       Boolean prot;
       Binding bnd;
-      ArrayDim dim;
+      DAE.Dimension dim;
       Option<DAE.Const> cnstForRange;      
     
     case (t,n)
@@ -1805,7 +1785,7 @@ algorithm
       equation
         len = listLength(l);
       then
-        ((DAE.T_ARRAY(DAE.DIM(SOME(len)),t),NONE));
+        ((DAE.T_ARRAY(DAE.DIM_INTEGER(len),t),NONE));
   end matchcontinue;
 end makeArray;
 
@@ -1825,73 +1805,27 @@ algorithm
     case (t,{}) then t;
     case (t,DAE.WHOLEDIM::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(NONE),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_NONE,t),NONE),lst);
       then
         t;
     case (t,DAE.SLICE(e)::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(NONE),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_NONE,t),NONE),lst);
       then
         t;
 
     case (t,DAE.INDEX(DAE.ICONST(i))::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(SOME(i)),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_INTEGER(i),t),NONE),lst);
       then
         t;
      case (t,DAE.INDEX(_)::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM(NONE),t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_NONE,t),NONE),lst);
       then
         t;
   end matchcontinue;
 end makeArraySubscripts;
-
-public function dimensionsEqual "Returns true if two dimensions are 'equal', i.e. if both
-are specified, return comparison of dimension size,
-if both are unspecified return true,
-if either one is unspecified, return true."
-  input Option<Integer> dim1;
-  input Option<Integer> dim2;
-  output Boolean res;
-algorithm
-  res := matchcontinue(dim1,dim2)
-  local Integer d1,d2;
-    case(NONE,NONE) then true;
-    case(NONE,_) then true;
-    case(_,NONE) then true;
-    case(SOME(d1),SOME(d2))
-    then intEq(d1,d2);
-  end matchcontinue;
-end dimensionsEqual;
-
-public function dimensionsAdd "Adds two dimensions,
-If both are specified return SOME(d1+d2), otherwise return NONE ([:] + 2 is still  [:])"
-  input Option<Integer> dim1;
-  input Option<Integer> dim2;
-  output Option<Integer> res;
-algorithm
-  res := matchcontinue(dim1,dim2)
-  local Integer d1,d2,d;
-    case(NONE,NONE) then NONE;
-    case(NONE,_) then NONE;
-    case(_,NONE) then NONE;
-    case(SOME(d1),SOME(d2)) equation
-      d = d1+d2;
-    then SOME(d);
-  end matchcontinue;
-end dimensionsAdd;
-
-public function dimensionStr "Returns the dimension as a string, i,e, a number or ':'"
-  input Option<Integer> dim;
-  output String res;
-algorithm
-  res := matchcontinue(dim)
-  local Integer i;
-    case(NONE) then ":";
-    case(SOME(i)) then intString(i);
-  end matchcontinue;
-end dimensionStr;
 
 public function liftArray "function: liftArray
 
@@ -1899,35 +1833,27 @@ public function liftArray "function: liftArray
   type already is an array, another dimension is simply added.
 "
   input Type inType;
-  input Option<Integer> inIntegerOption;
+  input DAE.Dimension inDimension;
   output Type outType;
 algorithm
-  outType:=
-  matchcontinue (inType,inIntegerOption)
-    local
-      Type ty;
-      Option<Integer> i;
-    case (ty,i) /* print(\"\\nDebug: lifts the array.\") */  
-    
-    then ((DAE.T_ARRAY(DAE.DIM(i),ty),NONE));  /* PR  axiom  lift_array (ty,i) => DAE.T_ARRAY(DAE.DIM(i),ty) */ 
-  end matchcontinue;
+  outType := (DAE.T_ARRAY(inDimension, inType), NONE);
 end liftArray;
 
 public function liftArrayListDims "
   This function turns a type into an array of that type.
 "
   input Type inType;
-  input list<Option<Integer>> inIntegerOptionLst;
+  input list<DAE.Dimension> inDimensionLst;
   output Type outType;
 algorithm
   outType:=
-  matchcontinue (inType,inIntegerOptionLst)
+  matchcontinue (inType,inDimensionLst)
     local
       Type ty;
-      Option<Integer> i;
-      list<Option<Integer>> rest;
+      DAE.Dimension d;
+      list<DAE.Dimension> rest;
     case (ty,{}) then ty;
-    case (ty,i::rest) then liftArray(liftArrayListDims(ty,rest),i);
+    case (ty,d::rest) then liftArray(liftArrayListDims(ty,rest),d);
   end matchcontinue;
 end liftArrayListDims;
 
@@ -1936,32 +1862,32 @@ public function liftArrayRight "function: liftArrayRight
   This function adds an array dimension to \"the right\" of the passed type.
 "
   input Type inType;
-  input Option<Integer> inIntegerOption;
+  input DAE.Dimension inIntegerOption;
   output Type outType;
 algorithm
   outType:=
   matchcontinue (inType,inIntegerOption)
     local
       Type ty_1,ty;
-      ArrayDim dim;
+      DAE.Dimension dim;
       Option<Absyn.Path> path;
-      Option<Integer> i;
+      DAE.Dimension d;
       ClassInf.State ci;
       list<Var> varlst;
       EqualityConstraint ec;
-    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),path),i)
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),path),d)
       equation
-        ty_1 = liftArrayRight(ty, i);
+        ty_1 = liftArrayRight(ty, d);
       then
         ((DAE.T_ARRAY(dim,ty_1),path));
-    case((DAE.T_COMPLEX(ci,varlst,SOME(ty),ec),path),i)
+    case((DAE.T_COMPLEX(ci,varlst,SOME(ty),ec),path),d)
       equation
-        ty_1 = liftArrayRight(ty,i);
+        ty_1 = liftArrayRight(ty,d);
         then ((DAE.T_COMPLEX(ci,varlst,SOME(ty_1),ec),path));
-    case ((ty,path),i)
+    case ((ty,path),d)
       local TType ty;
       then
-        ((DAE.T_ARRAY(DAE.DIM(i),(ty,NONE)),path));
+        ((DAE.T_ARRAY(d,(ty,NONE)),path));
   end matchcontinue;
 end liftArrayRight;
 
@@ -1975,7 +1901,7 @@ algorithm
   outType:=
   matchcontinue (inType)
     local Type ty;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = ty),_)) then ty;
+    case ((DAE.T_ARRAY(arrayType = ty),_)) then ty;
     case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) then unliftArray(ty);
     /* adrpo: handle also functions returning arrays! */
     case ((DAE.T_FUNCTION(_,ty,_),_)) then unliftArray(ty);
@@ -1987,11 +1913,11 @@ protected function typeArraydim "function: typeArraydim
   If type is an array, return it array dimension
 "
   input Type inType;
-  output ArrayDim outArrayDim;
+  output DAE.Dimension outArrayDim;
 algorithm
   outArrayDim:=
   matchcontinue (inType)
-    local ArrayDim dim;
+    local DAE.Dimension dim;
     case ((DAE.T_ARRAY(arrayDim = dim),_)) then dim;
   end matchcontinue;
 end typeArraydim;
@@ -2007,7 +1933,7 @@ algorithm
   outType:=
   matchcontinue (inType)
     local Type ty_1,ty,t;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = _),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayType = ty),_))
       equation
         ty_1 = arrayElementType(ty);
       then
@@ -2054,9 +1980,9 @@ algorithm
   matchcontinue (inType)
     local
       Ident s1,s2,str,tys,dims,res,vstr,name,st_str,bc_tp_str,paramstr,restypestr,tystr;
-      list<Ident> l,dimlststr,dimlststr_1,vars,paramstrs,tystrs;
+      list<Ident> l,vars,paramstrs,tystrs;
       Type ty,t,bc_tp,restype;
-      list<Option<Integer>> dimlst;
+      list<DAE.Dimension> dimlst;
       list<Var> vs;
       Option<Type> bc;
       ClassInf.State ci_state;
@@ -2109,9 +2035,8 @@ algorithm
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         (ty,dimlst) = flattenArrayTypeOpt(t);
-        dimlststr = Util.listMap2(dimlst, Dump.getOptionStrDefault, int_string, ":");
         tys = unparseType(ty);
-        dims = Util.stringDelimitList(dimlststr, ", ");
+        dims = printDimensionsStr(dimlst);
         res = Util.stringAppendList({tys,"[",dims,"]"});
       then
         res;
@@ -2290,7 +2215,7 @@ algorithm
       list<Ident> l;
       ClassInf.State st;
       Option<Type> bc;
-      ArrayDim dim;
+      DAE.Dimension dim;
       Type t,restype;
       list<FuncArg> params;
       list<Type> tys;
@@ -2340,7 +2265,7 @@ algorithm
         str;
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_))
       equation
-        s1 = printArraydimStr(dim);
+        s1 = Exp.dimensionString(dim);
         s2 = printTypeStr(t);
         str = Util.stringAppendList({"array[", s1,", of type ",s2,"]"});
       then
@@ -2456,39 +2381,6 @@ algorithm (s,s2) := matchcontinue(t)
   case(_) then ("","");
   end matchcontinue;
 end printConnectorTypeStr;
-
-public function printArraydimStr " Prints ArrayDim to a string"
-  input ArrayDim inArrayDim;
-  output String outString;
-algorithm
-  outString:=
-  matchcontinue (inArrayDim)
-    local
-      Ident s;
-      Integer i;
-    case DAE.DIM(integerOption = NONE) then ":";
-    case DAE.DIM(integerOption = SOME(i))
-      equation
-        s = intString(i);
-      then
-        s;
-    case _ then "#STRANGE#";
-  end matchcontinue;
-end printArraydimStr;
-
-public function arraydimInt "function: arraydimInt
-
-  Return the dimension of an ArrayDim
-"
-  input ArrayDim inArrayDim;
-  output Integer outInteger;
-algorithm
-  outInteger:=
-  matchcontinue (inArrayDim)
-    local Integer i;
-    case DAE.DIM(integerOption = SOME(i)) then i;
-  end matchcontinue;
-end arraydimInt;
 
 public function printParamsStr "function: printParams
 
@@ -3162,10 +3054,9 @@ algorithm
   matchcontinue (inTypeLst)
     local
       Boolean r1,r2,res;
-      ArrayDim d;
       Type tp;
       list<Type> xs;
-    case (((DAE.T_ARRAY(arrayDim = d,arrayType = tp),_) :: xs))
+    case (((DAE.T_ARRAY(arrayType = tp),_) :: xs))
       equation
         r1 = containReal({tp});
         r2 = containReal(xs);
@@ -3205,13 +3096,15 @@ algorithm
       Type ty_1,ty;
       list<Integer> dimlist_1,dimlist;
       Integer dim;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty),_))
+      DAE.Dimension d;
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty),_))
       equation
         (ty_1,dimlist_1) = flattenArrayType(ty);
       then
         (ty_1,dimlist_1);
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = d,arrayType = ty),_))
       equation
+        dim = Exp.dimensionSize(d); 
         (ty_1,dimlist) = flattenArrayType(ty);
         dimlist_1 = listAppend(dimlist, {dim});
       then
@@ -3227,36 +3120,33 @@ end flattenArrayType;
 public function flattenArrayTypeOpt "function: flattenArrayTypeOpt
 
   Returns the element type of a Type and the list of dimensions of the type.
-  If dimension is \':\' NONE is returned.
 "
   input Type inType;
   output Type outType;
-  output list<Option<Integer>> outIntegerOptionLst;
+  output list<DAE.Dimension> outDimensionLst;
 algorithm
-  (outType,outIntegerOptionLst):=
+  (outType,outDimensionLst):=
   matchcontinue (inType)
     local
       Type ty_1,ty;
-      list<Option<Integer>> dimlist_1,dimlist;
-      Integer dim;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty),_))
-      equation
-        (ty_1,dimlist_1) = flattenArrayTypeOpt(ty);
-      then
-        (ty_1,(NONE :: dimlist_1));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim)),arrayType = ty),_))
+      list<DAE.Dimension> dimlist;
+      DAE.Dimension dim;
+
+    // Array type
+    case ((DAE.T_ARRAY(arrayDim = dim,arrayType = ty),_))
       equation
         (ty_1,dimlist) = flattenArrayTypeOpt(ty);
-        dimlist_1 = SOME(dim)::dimlist;
       then
-        (ty_1,dimlist_1);
+        (ty_1, dim :: dimlist);
 
-        // Complex type extending basetype.
-    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) equation
-      (ty_1,dimlist) = flattenArrayTypeOpt(ty);
-      then (ty_1,dimlist);
+    // Complex type extending basetype.
+    case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_)) 
+      equation
+        (ty_1,dimlist) = flattenArrayTypeOpt(ty);
+      then 
+        (ty_1,dimlist);
 
-        // element type
+    // Element type
     case ty then (ty,{});
   end matchcontinue;
 end flattenArrayTypeOpt;
@@ -3288,7 +3178,7 @@ algorithm
     case ((arrayty as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         (ty,dims) = flattenArrayType(arrayty);
-        dimstrs = Util.listMap(dims, int_string);
+        dimstrs = Util.listMap(dims, intString);
         dimstr = Util.stringDelimitList(dimstrs, ", ");
         tystr = getTypeName(ty);
         str = Util.stringAppendList({tystr,"[",dimstr,"]"});
@@ -3581,7 +3471,7 @@ algorithm
     local
       Type et,t;
       DAE.ExpType t_1;
-      list<Option<Integer>> dims;
+      list<DAE.Dimension> dims;
     case ((DAE.T_INTEGER(varLstInt = _),_)) then DAE.ET_INT();
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
     case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL();
@@ -3871,7 +3761,7 @@ public function vectorizableType "function: vectorizableType
   input Type inExpectedType;
   output DAE.Exp outExp;
   output Type outType;
-  output list<ArrayDim> outArrayDimLst;
+  output list<DAE.Dimension> outArrayDimLst;
   output PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outArrayDimLst,outBindings) := vectorizableType2(inExp,inExpType,inExpType,{},inExpectedType);
@@ -3881,35 +3771,35 @@ protected function vectorizableType2
   input DAE.Exp inExp;
   input Type inExpType;
   input Type inCurrentType;
-  input list<Option<Integer>> inArrayDimLst;
+  input list<DAE.Dimension> inArrayDimLst;
   input Type inExpectedType;
   output DAE.Exp outExp;
   output Type outType;
-  output list<ArrayDim> outArrayDimLst;
+  output list<DAE.Dimension> outArrayDimLst;
   output PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outArrayDimLst,outBindings) := matchcontinue (inExp,inExpType,inCurrentType,inArrayDimLst,inExpectedType)
     local
       DAE.Exp e_1,e;
       Type e_type_1,e_type,expected_type,expected_type_vectorized,e_type_elt,current_type;
-      list<ArrayDim> ds;
-      ArrayDim ad;
+      list<DAE.Dimension> ds;
       PolymorphicBindings polymorphicBindings;
+      DAE.Dimension dim;
+      list<DAE.Dimension> dims;
       Option<Integer> iOpt;
       list<Option<Integer>> iOptLst;
-    case (e,e_type,current_type,iOptLst,expected_type)
+    case (e,e_type,current_type,dims,expected_type)
       equation
-        expected_type_vectorized = liftArrayListDims(expected_type, iOptLst);
+        expected_type_vectorized = liftArrayListDims(expected_type, dims);
         (e_1,e_type_1,polymorphicBindings) = matchTypePolymorphic(e, e_type, expected_type_vectorized, {}, true);
-        ds = Util.listMap(iOptLst, makeDim);
       then
-        (e_1,e_type_1,ds,polymorphicBindings);
-    case (e,e_type,(DAE.T_ARRAY(arrayType = current_type, arrayDim = DAE.DIM(iOpt)),_),iOptLst,expected_type)
+        (e_1,e_type_1,dims,polymorphicBindings);
+    case (e,e_type,(DAE.T_ARRAY(arrayType = current_type, arrayDim = dim),_),dims,expected_type)
       equation
-        iOptLst = listAppend(iOptLst, {iOpt});
-        (e_1,e_type_1,ds,polymorphicBindings) = vectorizableType2(e, e_type, current_type, iOptLst, expected_type);
+        dims = listAppend(dims, {dim});
+        (e_1,e_type_1,dims,polymorphicBindings) = vectorizableType2(e, e_type, current_type, dims, expected_type);
       then
-        (e_1,e_type_1,ds,polymorphicBindings);
+        (e_1,e_type_1,dims,polymorphicBindings);
   end matchcontinue;
 end vectorizableType2;
 
@@ -3948,7 +3838,9 @@ algorithm
       list<DAE.Exp> elist_1,elist;
       DAE.ExpType at,t;
       Boolean a,sc;
-      Integer dim1,dim2,nmax,dim11,dim22;
+      Integer nmax;
+      DAE.Dimension dim1, dim2, dim11, dim22;
+      //Integer dim1,dim2,nmax,dim11,dim22;
       Type ty1,ty2,t1,t2,t_1,t_2,ty0;
       Option<Absyn.Path> p,p1,p2;
       DAE.Exp begin_1,step_1,stop_1,begin,step,stop,e_1,e,exp;
@@ -3959,127 +3851,133 @@ algorithm
       String str;
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
-    case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-          ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.ARRAY(array = elist),
+          (DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+          ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),
+          polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (dim1 == dim2) = true  ;
-        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim1),polymorphicBindings,matchFunc,printFailtrace);
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,dim1,polymorphicBindings,matchFunc,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p),polymorphicBindings);
+        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p),polymorphicBindings);
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
-    case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.ARRAY(array = elist),
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty1),_),
+          ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
+          polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim2),polymorphicBindings,matchFunc,printFailtrace);
+        true = Exp.dimensionKnown(dim2);
+        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,dim2,polymorphicBindings,matchFunc,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(NONE),ty2),p2),polymorphicBindings);
+        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_NONE,ty2),p2),polymorphicBindings);
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
-    case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
         local
           DAE.ExpType ety1;
       equation
-        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,SOME(dim1),polymorphicBindings,matchFunc,printFailtrace);
+        true = Exp.dimensionKnown(dim1);
+        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2, dim1,polymorphicBindings,matchFunc,printFailtrace);
         ety1 = elabType(ty2);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
         //TODO: Verify correctness of return value.
       then
-        (DAE.ARRAY(DAE.ET_ARRAY(ety1,{SOME(dim1)}),sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2),polymorphicBindings);
+        (DAE.ARRAY(DAE.ET_ARRAY(ety1,{dim1}),sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p2),polymorphicBindings);
         //(DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2));
 
         /* Range expressions, e.g. 1:2:10 */
-    case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (dim1 == dim2) = true;
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         (step_1,_,polymorphicBindings) = typeConvert(step, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p),polymorphicBindings);
+        (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(dim1,ty2),p),polymorphicBindings);
 
         /* Range expressions, e.g. 1:10 */
-    case (DAE.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (dim1 == dim2) = true  ;
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
         (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.RANGE(at,begin_1,NONE,stop_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p),polymorphicBindings);
+        (DAE.RANGE(at,begin_1,NONE,stop_1),(DAE.T_ARRAY(dim1,ty2),p),polymorphicBindings);
 
         /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
-    case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (dim1 == dim2) = true  ;
-        (dim11 == dim22) = true;
-        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim2),polymorphicBindings,matchFunc,printFailtrace);
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+        true = Exp.dimensionsKnownAndEqual(dim11, dim22);
+        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),(DAE.T_ARRAY(DAE.DIM(SOME(dim11)),t2),p1)),
+        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),
           p2),polymorphicBindings);
 
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
-    case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim11)),arrayType = t1),_)),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim22)),arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (dim11 == dim22) = true;
-        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,SOME(dim1),SOME(dim11),polymorphicBindings,matchFunc,printFailtrace);
+        true = Exp.dimensionsKnownAndEqual(dim11, dim22);
+        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,dim1,dim11,polymorphicBindings,matchFunc,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),(DAE.T_ARRAY(DAE.DIM(SOME(dim11)),t2),p1)),
+        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),
           p2),polymorphicBindings);
 
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+        ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
-        (dim1 == dim2) = true;
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        e_1 = liftExpType(e_1,SOME(dim1));
-        t_2 = (DAE.T_ARRAY(DAE.DIM(SOME(dim2)),t_1),p2);
+        e_1 = liftExpType(e_1,dim1);
+        t_2 = (DAE.T_ARRAY(dim2,t_1),p2);
       then
         (e_1,t_2,polymorphicBindings);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
-        (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim2)),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty1),_),
+        (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        e_1 = liftExpType(e_1,NONE);
+        e_1 = liftExpType(e_1,DAE.DIM_NONE);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM(NONE),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM_NONE,t_1),p2),polymorphicBindings);
 
         /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty1),_),
-      (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty1),_),
+      (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        e_1 = liftExpType(e_1,NONE);
+        e_1 = liftExpType(e_1,DAE.DIM_NONE);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM(NONE),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM_NONE,t_1),p2),polymorphicBindings);
 
         /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(dim1)),arrayType = ty1),_),
-        (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = NONE),arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
+        (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        e_1 = liftExpType(e_1,SOME(dim1));
+        e_1 = liftExpType(e_1,dim1);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(dim1,t_1),p2),polymorphicBindings);
 
         /* Tuple */
     case (DAE.TUPLE(PR = elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_TUPLE(tupleType = tys2),p2),polymorphicBindings,matchFunc,printFailtrace)
@@ -4346,7 +4244,7 @@ protected function liftExpType "help funciton to typeConvert. Changes the DAE.Ex
 in expression (which is typically a CAST) by adding a dimension to it, making it into an array
 type."
  input DAE.Exp e;
- input Option<Integer> dim;
+ input DAE.Dimension dim;
  output DAE.Exp res;
 algorithm
   res := matchcontinue(e,dim)
@@ -4368,7 +4266,7 @@ public function typeConvertArray "function: typeConvertArray
   input list<DAE.Exp> inExpExpLst1;
   input Type inType2;
   input Type inType3;
-  input Option<Integer> dim;
+  input DAE.Dimension dim;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
@@ -4410,8 +4308,8 @@ protected function typeConvertMatrix "function: typeConvertMatrix
   input list<list<tuple<DAE.Exp, Boolean>>> inTplExpExpBooleanLstLst1;
   input Type inType2;
   input Type inType3;
-  input Option<Integer> dim1;
-  input Option<Integer> dim2;
+  input DAE.Dimension dim1;
+  input DAE.Dimension dim2;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
@@ -4452,8 +4350,8 @@ protected function typeConvertMatrixRow "function: typeConvertMatrixRow
   input list<tuple<DAE.Exp, Boolean>> inTplExpExpBooleanLst1;
   input Type inType2;
   input Type inType3;
-  input Option<Integer> dim1;
-  input Option<Integer> dim2;
+  input DAE.Dimension dim1;
+  input DAE.Dimension dim2;
   input PolymorphicBindings polymorphicBindings;
   input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
@@ -4630,7 +4528,7 @@ algorithm
     local
       Type t,t1,t2;
       Const c,c1,c2;
-      ArrayDim dim,dim1,dim2;
+      DAE.Dimension dim,dim1,dim2;
       Option<Absyn.Path> p2,p;
       Boolean havereal;
       list<Var> v;
@@ -4648,18 +4546,18 @@ algorithm
         dim = dim1;
       then
         DAE.PROP((DAE.T_ARRAY(dim,t),p2),c);
-    case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = t2),p2),constFlag = c2),havereal)
+    case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t2),p2),constFlag = c2),havereal)
       equation
         false = isArray(t1);
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
-        DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),t),p2),c);
-    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM(integerOption = SOME(1)),arrayType = t1),p),constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),havereal)
+        DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(1),t),p2),c);
+    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t1),p),constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),havereal)
       equation
         false = isArray(t2);
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
-        DAE.PROP((DAE.T_ARRAY(DAE.DIM(SOME(1)),t),p),c);
+        DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(1),t),p),c);
     case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),false)
       equation
         false = isArray(t1);
@@ -4928,7 +4826,7 @@ algorithm
       list<DAE.Exp> exps,tyexps;
       list<Var> vars;
       list<Ident> strs;
-      ArrayDim dim;
+      DAE.Dimension dim;
       Type ty;
       ClassInf.State cinf;
       Option<Type> bc;
@@ -5646,13 +5544,13 @@ public function getRealOrIntegerDimensions
 "If the type is a Real, Integer or an array of Real or Integer, the function returns 
 list of dimensions; otherwise, it fails."
  input Type inType;
- output list<Option<Integer>> outDims;
+ output list<DAE.Dimension> outDims;
 algorithm
   outType := matchcontinue (inType)
     local
       Type ty;
-      Option<Integer> d;
-      list<Option<Integer>> dims;
+      DAE.Dimension d;
+      list<DAE.Dimension> dims;
  
     case ((DAE.T_REAL(varLstReal=_),_))
       then
@@ -5662,7 +5560,7 @@ algorithm
         {};
     case ((DAE.T_COMPLEX(_,_,SOME(ty),_),_))
       then getRealOrIntegerDimensions(ty);
-    case ((DAE.T_ARRAY(arrayDim=DAE.DIM(d),arrayType=ty),_))
+    case ((DAE.T_ARRAY(arrayDim = d as DAE.DIM_INTEGER(integer = _),arrayType=ty),_))
       equation
         dims = getRealOrIntegerDimensions(ty);
       then

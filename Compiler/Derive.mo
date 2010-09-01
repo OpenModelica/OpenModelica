@@ -459,13 +459,10 @@ algorithm
       then
         exp;
 
-    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=aDim))),(timevars,functions)) /* list_member(cr,timevars) => false */ 
-      local 
-        list<Option<Integer>> aDim;
+    case ((e as DAE.CREF(componentRef = cr,ty = tp as DAE.ET_ARRAY(arrayDimensions=_))),(timevars,functions)) /* list_member(cr,timevars) => false */ 
       equation
-         // generade zeros
-         i = Util.mulListIntegerOpt(aDim, 1);
-         expl_1 = Util.listFill(DAE.RCONST(0.0),i);  
+         // generate zeros
+         expl_1 = Util.listFill(DAE.RCONST(0.0), Exp.sizeOf(tp));  
       then DAE.ARRAY(tp,true,expl_1);
     case ((e as DAE.CREF(componentRef = cr,ty = tp)),(timevars,functions)) /* list_member(cr,timevars) => false */ then DAE.RCONST(0.0);
     case (DAE.BINARY(exp1 = e1,operator = DAE.ADD(ty = tp),exp2 = e2),(timevars,functions))

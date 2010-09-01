@@ -457,7 +457,7 @@ package DAE
     record ET_OTHER end ET_OTHER;
     record ET_ARRAY
       ExpType ty;
-      list<Option<Integer>> arrayDimensions;
+      list<DAE.Dimension> arrayDimensions;
     end ET_ARRAY;
     record ET_LIST
       ExpType ty;
@@ -503,6 +503,10 @@ package DAE
     record BCONST
       Boolean bool;
     end BCONST;
+    record ENUM_LITERAL
+      Absyn.Path name;
+      Integer index;
+    end ENUM_LITERAL;
     record CREF
       ComponentRef componentRef;
       ExpType ty;
@@ -849,7 +853,7 @@ package DAE
       list<Var> varLstBool;
     end T_BOOL;
     record T_ARRAY
-      ArrayDim arrayDim;
+      Dimension arrayDim;
       Type arrayType;
     end T_ARRAY;
     record T_NORETCALL end T_NORETCALL;
@@ -865,11 +869,24 @@ package DAE
     end T_COMPLEX;
   end TType;
 
-  uniontype ArrayDim
-    record DIM
-      Option<Integer> integerOption;
-    end DIM;
-  end ArrayDim;
+  uniontype Dimension
+    record DIM_INTEGER
+      Integer integer;
+    end DIM_INTEGER;
+
+    record DIM_ENUM
+      Absyn.Path enumTypeName;
+      list<String> literals;
+      Integer size;
+    end DIM_ENUM;
+
+    record DIM_SUBSCRIPT
+      Subscript subscript;
+    end DIM_SUBSCRIPT;
+
+    record DIM_NONE
+    end DIM_NONE;
+  end Dimension;
 
   uniontype Subscript
     record WHOLEDIM end WHOLEDIM;

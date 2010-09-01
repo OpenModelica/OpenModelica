@@ -679,7 +679,7 @@ public uniontype TType "-TType contains the actual type"
   end T_ENUMERATION;
 
   record T_ARRAY
-    ArrayDim arrayDim "arrayDim" ;
+    Dimension arrayDim "arrayDim" ;
     Type arrayType "arrayType" ;
   end T_ARRAY;
 
@@ -745,12 +745,24 @@ public uniontype TType "-TType contains the actual type"
 end TType;
 
 public
-uniontype ArrayDim "- Array Dimensions"
-  record DIM
-    Option<Integer> integerOption;
-  end DIM;
+uniontype Dimension
+  record DIM_INTEGER "Dimension given by an integer."
+    Integer integer;
+  end DIM_INTEGER;
 
-end ArrayDim;
+  record DIM_ENUM "Dimension given by an enumeration."
+    Absyn.Path enumTypeName "The enumeration type name.";
+    list<String> literals "A list of the literals in the enumeration.";
+    Integer size "The size of the enumeration.";
+  end DIM_ENUM;
+
+  record DIM_SUBSCRIPT "Dimension given by a subscript."
+    Subscript subscript;
+  end DIM_SUBSCRIPT;
+
+  record DIM_NONE "Dimension with unknown size."
+  end DIM_NONE;
+end Dimension;
 
 public
 type FuncArg = tuple<Ident, Type> "- Function Argument" ;
@@ -897,7 +909,7 @@ uniontype ExpType "- Basic types
 
   record ET_ARRAY
     ExpType ty;
-    list<Option<Integer>> arrayDimensions "arrayDimensions" ;
+    list<Dimension> arrayDimensions "arrayDimensions" ;
   end ET_ARRAY;
 
   // MetaModelica extension. KS
@@ -967,12 +979,17 @@ uniontype Exp "Expressions
     Boolean bool "Bool constants" ;
   end BCONST;
 
+  record ENUM_LITERAL "Enumeration literal"
+    Absyn.Path name;
+    Integer index;
+  end ENUM_LITERAL;
+
   record CREF "component references, e.g. a.b{2}.c{1}"
     ComponentRef componentRef;
     ExpType ty;
   end CREF;
 
-  record BINARY "Binary operations, e.g. a+4"
+   record BINARY "Binary operations, e.g. a+4"
     Exp exp1;
     Operator operator;
     Exp exp2;

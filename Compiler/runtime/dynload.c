@@ -433,7 +433,7 @@ void *value_to_mmc(void* value)
     }
     return mmc_mk_box_arr(len, 0, data_mmc);
   };
-  case Values__ENUM_3dBOX3:
+  case Values__ENUM_5fLITERAL_3dBOX2:
   case Values__CODE_3dBOX1:
     /* unsupported */
     fprintf(stderr, "%s:%d: enum,code unsupported in MetaModelica data\n", __FILE__, __LINE__);
@@ -531,7 +531,7 @@ static int value_to_type_desc(void *value, type_description *desc)
     desc->data.mmc = value_to_mmc(value);
     break;
     /* unsupported */
-  case Values__ENUM_3dBOX3:
+  case Values__ENUM_5fLITERAL_3dBOX2:
     c_add_message(-1, "RUNTIME", "ERROR", "systemimpl.c:value_to_type_desc failed: Values.ENUM\n", NULL, 0);
     return -1;
   case Values__CODE_3dBOX1:
@@ -656,7 +656,7 @@ static int get_array_type_and_dims(type_description *desc, void *arrdata)
     return 1;
   case Values__ARRAY_3dBOX2:
     return (1 + get_array_type_and_dims(desc, RML_STRUCTDATA(item)[0]));
-  case Values__ENUM_3dBOX3:
+  case Values__ENUM_5fLITERAL_3dBOX2:
   case Values__LIST_3dBOX1:
   case Values__TUPLE_3dBOX1:
   case Values__RECORD_3dBOX4:
