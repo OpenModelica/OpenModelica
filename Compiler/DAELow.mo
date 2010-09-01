@@ -6077,13 +6077,13 @@ algorithm outExp := matchcontinue(inExp)
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
     then
       (restpl);          
-  case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst)), funcs) )
+  /*case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst)), funcs) )
     equation
         expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
         e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
     then
-      (restpl);
+      (restpl);*/
   case(inExp) then inExp;
 end matchcontinue;
 end traversingextendArrExp;
