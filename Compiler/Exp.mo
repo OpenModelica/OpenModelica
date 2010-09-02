@@ -7033,7 +7033,7 @@ algorithm
       Subscript s;
       list<Subscript> ss_1,ss;
     case ({},_) then {DAE.INDEX(inSubscript)};
-    case ({DAE.WHOLEDIM()},_) then {DAE.INDEX(inSubscript)};
+    case (DAE.WHOLEDIM() :: ss,_) then DAE.INDEX(inSubscript) :: ss;
     case ({DAE.SLICE(exp = e)},_)
       equation
         e_1 = simplify1(DAE.ASUB(e,{inSubscript}));
