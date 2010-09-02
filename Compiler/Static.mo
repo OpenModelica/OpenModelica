@@ -1243,26 +1243,26 @@ protected function elabCallReduction
   This function elaborates reduction expressions, that look like function
   calls. For example an array constructor."
 	input Env.Cache inCache;
-  input Env.Env inEnv1;
-  input Absyn.ComponentRef inComponentRef2;
-  input Absyn.Exp inExp3;
-  input Absyn.ForIterators iterators;
-  input Boolean inBoolean6;
-  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption7;
+  input Env.Env inEnv;
+  input Absyn.ComponentRef reductionFn;
+  input Absyn.Exp reductionExp;
+  input Absyn.ForIterators reductionIters;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
   input Boolean performVectorization;
   input Prefix inPrefix;
 	output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
-  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+  output Option<Interactive.InteractiveSymbolTable> outST;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outExp,outProperties,outInteractiveInteractiveSymbolTableOption,outDae):=
-  matchcontinue (inCache,inEnv1,inComponentRef2,inExp3,iterators,inBoolean6,inInteractiveInteractiveSymbolTableOption7,performVectorization,inPrefix)
+  (outCache,outExp,outProperties,outST,outDae):=
+  matchcontinue (inCache,inEnv,reductionFn,reductionExp,reductionIters,impl,
+      inST,performVectorization,inPrefix)
     local
       DAE.Exp iterexp_1,exp_1;
-      tuple<DAE.TType, Option<Absyn.Path>> iterty,expty,ty;
-      DAE.ExpType etp;
+      DAE.Type iterty,expty;
       DAE.Const iterconst,expconst,const;
       list<Env.Frame> env_1,env;
       Option<Interactive.InteractiveSymbolTable> st;
@@ -1273,70 +1273,106 @@ algorithm
       Ident iter;
       Boolean impl,doVect;
       Env.Cache cache;
-      Boolean b;
-      list<DAE.Exp> expl;
-      list<Values.Value> vallst;
-      DAE.DAElist dae,dae1,dae2,dae3;
-      DAE.Const cnst;
+      DAE.DAElist dae,dae1,dae2;
       Prefix pre;
+      Absyn.ForIterators iterators;
 
-		case (cache, env, Absyn.CREF_IDENT("array", {}), exp, iterators, impl, st, doVect,pre)
-			local
-				list<list<Values.Value>> vals;
-				list<Ident> iter_names;
-				DAE.Type array_type; 
-				Env.Env env2;
-				list<DAE.Const> iterconsts;
-			equation			  
-				(cache, env, iterconsts,vals, iter_names, array_type,dae1) = elabArrayIterators(cache, env, iterators, impl, st, doVect,pre);
-				iterconst = Util.listReduce(iterconsts,Types.constAnd);
-				
-				// update constness of iterators from VAR to their elabed constness (currently at most PARAM due to cevalIfConst)
-				env2 = updateIteratorConst(env,iter_names,iterconsts);
+    case (cache, env, fn as Absyn.CREF_IDENT("array", {}), exp, iterators, 
+        impl, st, doVect,pre)
+      equation
+        (cache, exp_1, prop, st, dae) = 
+          elabCallReduction3(cache, env, exp, iterators, impl, st, doVect, pre);
+      then
+        (cache, exp_1, prop, st, dae);
 
-			  (cache, exp_1, DAE.PROP(expty, expconst), st,dae2) = elabExp(cache, env2, exp, impl, st, doVect,pre);
-
-				b = not Types.isArray(expty);
-				ty = constructArrayType(array_type, expty);
-			  etp = Types.elabType(ty);
-				exp_1 = expandArray(exp_1, vals, iter_names, b, etp);
-
-				const = Types.constAnd(expconst, iterconst);
-				prop = DAE.PROP(ty, const);
-				dae = DAEUtil.joinDaes(dae1,dae2);
-			then
-				(cache, exp_1, prop, st,dae);
-
-		/* reduction with an empty vector as range expression */
-		case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {(_, SOME(iterexp))}, impl, st, doVect,pre)
+		// reduction with an empty vector as range expression.
+		case (cache, env, Absyn.CREF_IDENT(reduction_op, {}), _, {(_, SOME(iterexp))}, 
+        impl, st, doVect,pre)
 			local
 				String reduction_op;
 			equation
-				(cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _, dae) = elabExp(cache, env, iterexp, impl, st, doVect,pre);
+				(cache, DAE.MATRIX(DAE.ET_ARRAY(_,_), 0, {}), _, _, dae) = 
+          elabExp(cache, env, iterexp, impl, st, doVect,pre);
 				exp_1 = reductionDefaultValue(reduction_op);
 			then
 				(cache, exp_1, DAE.PROP(DAE.T_REAL_DEFAULT, DAE.C_CONST), st, dae);
 
-		/* min, max, sum and product */
+    // min, max, sum and product - try and expand the reduction,
+    case (cache, env, fn, exp, iterators, impl, st, doVect, pre)
+      local
+        DAE.ExpType ty;
+        list<DAE.Exp> expl;
+      equation
+        (cache, DAE.ARRAY(array = expl), DAE.PROP(expty, const), st, dae) = 
+          elabCallReduction3(cache, env, exp, iterators, impl, st, doVect, pre);
+        exp_1 = Util.listReduce(expl, chooseReductionFn(fn)); 
+        expty = Types.unliftArray(expty);
+      then
+        (cache, exp_1, DAE.PROP(expty, const), st, dae);
+		
+    // min, max, sum and product - expansion failed in previous case, generate
+    // reduction call.
 		case (cache,env,fn,exp,{(iter,SOME(iterexp))},impl,st,doVect,pre)
 			equation
         (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY(arrayType = iterty),_),iterconst),_,dae1)
-				= elabExp(cache, env, iterexp, impl, st, doVect,pre);
+          = elabExp(cache, env, iterexp, impl, st, doVect,pre);
 				env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName));
-				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
-        (cache,exp_1,DAE.PROP(expty, expconst),st,dae2) = elabExp(cache, env_1, exp, impl, st, doVect,pre);
+				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), 
+          SCode.CONST(), SOME(iterconst));
+        (cache,exp_1,DAE.PROP(expty, expconst),st,dae2) = 
+          elabExp(cache, env_1, exp, impl, st, doVect,pre);
 				const = Types.constAnd(expconst, iterconst);
 				prop = DAE.PROP(expty, const);
 				fn_1 = Absyn.crefToPath(fn);
-			  dae = DAEUtil.joinDaeLst({dae1,dae2});
+			  dae = DAEUtil.joinDaes(dae1,dae2);
 			then
-			(cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st,dae);
+        (cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st,dae);
+
 		case (cache,env,fn,exp,iterators,impl,st,doVect,pre)
 			equation
 				Debug.fprint("failtrace", "Static.elabCallReduction - failed!\n");
 			then fail();
 	end matchcontinue;
 end elabCallReduction;
+
+protected function chooseReductionFn
+  input Absyn.ComponentRef fn;
+  output ReductionFn reductionFn;
+  partial function ReductionFn
+    input DAE.Exp lhs;
+    input DAE.Exp rhs;
+    output DAE.Exp result;
+  end ReductionFn;
+algorithm
+  reductionFn := matchcontinue(fn)
+    //case Absyn.CREF_IDENT("max", {}) then reductionFnMax;
+    //case Absyn.CREF_IDENT("min", {}) then reductionFnMin;
+    case Absyn.CREF_IDENT("sum", {}) then reductionFnSum;
+    case Absyn.CREF_IDENT("product", {}) then reductionFnProduct;
+  end matchcontinue;
+end chooseReductionFn;
+
+protected function reductionFnSum
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  output DAE.Exp result;
+
+  DAE.ExpType ty;
+algorithm
+  ty := Exp.typeof(lhs);
+  result := DAE.BINARY(lhs, DAE.ADD(ty), rhs);
+end reductionFnSum;
+
+protected function reductionFnProduct
+  input DAE.Exp lhs;
+  input DAE.Exp rhs;
+  output DAE.Exp result;
+
+  DAE.ExpType ty;
+algorithm
+  ty := Exp.typeof(lhs);
+  result := DAE.BINARY(lhs, DAE.MUL(ty), rhs);
+end reductionFnProduct;
 
 protected function updateIteratorConst "updates the const of for iterators from VAR to its elaborated constness, currently at most PARAM, since 
 cevalIfConstant will mess up things for constant expressions.
@@ -1495,6 +1531,52 @@ algorithm
 			then e1 :: expl;
   end matchcontinue;
 end elabCallReduction2;
+
+protected function elabCallReduction3
+  "Helper function to elabCallReduction. Expands reduction calls."
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input Absyn.Exp reductionExp;
+  input Absyn.ForIterators reductionIters;
+  input Boolean impl;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Boolean doVect;
+  input Prefix prefix;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output Option<Interactive.InteractiveSymbolTable> outST;
+  output DAE.DAElist outDae;
+
+  Env.Cache cache;
+  Env.Env env;
+  DAE.Const iterconst, exp_const, const;
+  list<DAE.Const> iterconsts;
+  list<list<Values.Value>> vals;
+  list<Ident> iter_names;
+  DAE.Type array_type, exp_type, ty;
+  DAE.ExpType etp;
+  DAE.DAElist dae1, dae2;
+  DAE.Exp exp;
+  Boolean b;
+  Option<Interactive.InteractiveSymbolTable> st;
+algorithm
+  (cache, env, iterconsts, vals, iter_names, array_type, dae1) :=
+    elabArrayIterators(inCache, inEnv, reductionIters, impl, inST, doVect, prefix);
+  iterconst := Util.listReduce(iterconsts, Types.constAnd);
+  env := updateIteratorConst(env, iter_names, iterconsts);
+  (cache, exp, DAE.PROP(exp_type, exp_const), st, dae2) :=
+    elabExp(cache, env, reductionExp, impl, inST, doVect, prefix);
+  b := not Types.isArray(exp_type);
+  ty := constructArrayType(array_type, exp_type);
+  etp := Types.elabType(ty);
+  const := Types.constAnd(exp_const, iterconst);
+  outCache := cache;
+  outExp := expandArray(exp, vals, iter_names, b, etp);
+  outProperties := DAE.PROP(ty, const);
+  outST := st;
+  outDae := DAEUtil.joinDaes(dae1, dae2);
+end elabCallReduction3;
 
 protected function constructArrayType
 	"Helper function for elabCallReduction. Combines the type of the expression in
