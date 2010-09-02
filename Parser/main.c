@@ -9,7 +9,7 @@ long unsigned int szMemoryUsed = 0;
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ModelicaLexer.h>
+#include <Modelica_3_Lexer.h>
 #include <ModelicaParser.h>
 
 void Main_5finit(void)
@@ -24,7 +24,7 @@ int parseFile(char* fileName)
 {
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
-  pModelicaLexer              lxr;
+  pModelica_3_Lexer           lxr;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
   pModelicaParser             psr;
   
@@ -34,7 +34,7 @@ int parseFile(char* fileName)
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) { fprintf(stderr, "Unable to open file %s\n", (char *)fName); exit(ANTLR3_ERR_NOMEM); }
 
-  lxr      = ModelicaLexerNew(input);
+  lxr      = Modelica_3_LexerNew(input);
   if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
 
   tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lxr));

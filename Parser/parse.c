@@ -31,7 +31,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <ModelicaLexer.h>
+#include <MetaModelica_Lexer.h>
+#include <Modelica_3_Lexer.h>
+#include <Modelica_2_Lexer.h>
+#include <BaseModelica_Lexer.h>
 #include <ModelicaParser.h>
 #include "runtime/errorext.h"
 
@@ -178,8 +181,10 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   switch  (recognizer->type)
   {
   case  ANTLR3_TYPE_PARSER:
-    theToken    = (pANTLR3_COMMON_TOKEN)(ex->token);
-    ttext      = theToken->getText(theToken);
+    theToken = (pANTLR3_COMMON_TOKEN)(ex->token);
+    
+    if (theToken != NULL)
+      ttext = theToken->getText(theToken);
 
     offset = ex->charPositionInLine+1;    
 
@@ -228,6 +233,7 @@ void* parseFile(void* fileNameRML, int flags)
   bool debug         = check_debug_flag("parsedebug");
   bool parsedump     = check_debug_flag("parsedump");
   bool parseonly     = check_debug_flag("parseonly");
+  void* lxr = 0;
   // TODO: Add flags to the actual Parser.parse() call instead of here?
   if (accept_meta_modelica_grammar()) flags |= PARSE_META_MODELICA;
   
@@ -235,7 +241,7 @@ void* parseFile(void* fileNameRML, int flags)
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
-  pModelicaLexer              lxr;
+  pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
   pModelicaParser             psr;
   
@@ -247,12 +253,22 @@ void* parseFile(void* fileNameRML, int flags)
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) { fprintf(stderr, "Unable to open file %s\n", fileNameC); exit(ANTLR3_ERR_NOMEM); }
 
-  lxr      = ModelicaLexerNew(input);
-  if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
-  lxr->pLexer->rec->displayRecognitionError = handleLexerError;
-  lxr->pLexer->recover = lexNoRecover;
-
-  tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(lxr));
+  if (flags & PARSE_META_MODELICA) {
+    lxr = MetaModelica_LexerNew(input);
+    if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
+    pLexer = ((pMetaModelica_Lexer)lxr)->pLexer;
+    pLexer->rec->displayRecognitionError = handleLexerError;
+    pLexer->recover = lexNoRecover;
+    tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pMetaModelica_Lexer)lxr)));
+  } else {
+    lxr = Modelica_3_LexerNew(input);
+    if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
+    pLexer = ((pModelica_3_Lexer)lxr)->pLexer;
+    pLexer->rec->displayRecognitionError = handleLexerError;
+    pLexer->recover = lexNoRecover;
+    tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pModelica_3_Lexer)lxr)));
+  }
+  
   if (tstream == NULL) { fprintf(stderr, "Out of memory trying to allocate token stream\n"); exit(ANTLR3_ERR_NOMEM); }
   tstream->channel = ANTLR3_TOKEN_DEFAULT_CHANNEL;
   tstream->discardOffChannel = ANTLR3_TRUE;
@@ -274,12 +290,20 @@ void* parseFile(void* fileNameRML, int flags)
   else
     res = psr->stored_definition(psr);
 
-  if (lxr->pLexer->rec->state->error || psr->pParser->rec->state->error) // Some parts of the AST are NULL if errors are used...
+  if (pLexer->rec->state->error || psr->pParser->rec->state->error) // Some parts of the AST are NULL if errors are used...
     res = 0;
-  psr->free(psr);         psr = NULL;
-  tstream->free(tstream); tstream = NULL;
-  lxr->free(lxr);         lxr = NULL;
-  input->close(input);    input = NULL;
+  psr->free(psr);
+  psr = NULL;
+  tstream->free(tstream);
+  tstream = NULL;
+  if (flags & PARSE_META_MODELICA) {
+    ((pMetaModelica_Lexer)lxr)->free((pMetaModelica_Lexer)lxr);
+  } else {
+    ((pModelica_3_Lexer)lxr)->free((pModelica_3_Lexer)lxr);
+  }
+  lxr = NULL;
+  input->close(input);
+  input = NULL;
 
   return res;
 }
