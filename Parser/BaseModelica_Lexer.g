@@ -337,3 +337,6 @@ SCHAR :  NL | '\t' | ~('\n' | '\t' | '\r' | '\\' | '"');
 
 fragment
 SESCAPE : '\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');
+
+/* OpenModelica extensions */
+CODE : '$Code';

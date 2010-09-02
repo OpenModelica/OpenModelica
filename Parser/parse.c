@@ -44,29 +44,27 @@ bool modelicafileReadOnly; // True if file is read only.
 #include <errno.h>
 
 long unsigned int szMemoryUsed = 0;
+long lexerFailed;
 
 void Parser_5finit(void)
 {
 }
 
-void lexNoRecover(pANTLR3_LEXER lex)
+void lexNoRecover(pANTLR3_LEXER lexer)
 {
-  lex->rec->state->error = ANTLR3_TRUE;
-  pANTLR3_INT_STREAM istream = lex->input->istream;
-  while (*(char*)lex->input->nextChar)
-    istream->consume(istream);
+  lexer->rec->state->error = ANTLR3_TRUE;
+  pANTLR3_INT_STREAM istream = lexer->input->istream;
+  istream->consume(istream);
 }
 
 void noRecover(pANTLR3_BASE_RECOGNIZER recognizer)
 {
   recognizer->state->error = ANTLR3_TRUE;
-  recognizer->state->failed  = ANTLR3_TRUE;
 }
 
 static void* noRecoverFromMismatchedSet(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_BITSET_LIST follow)
 {
   recognizer->state->error  = ANTLR3_TRUE;
-  recognizer->state->failed  = ANTLR3_TRUE;
   return NULL;
 }
 
@@ -155,6 +153,7 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   int line = lexer->getLine(lexer);
   int offset = lexer->getCharPositionInLine(lexer)+1;
   c_add_source_message(2, "SYNTAX", "Error", "Lexer failed to recognize: %s", &chars, 1, line, offset, line, offset, false, ModelicaParser_filename_C);
+  lexerFailed = ANTLR3_TRUE;
 }
 
 /* Error handling based on antlr3baserecognizer.c */
@@ -174,6 +173,10 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   int offset, error_id = 0, line;
   recognizer->state->error = ANTLR3_TRUE;
 
+  if (lexerFailed)
+    return;
+  recognizer->state->failed = ANTLR3_TRUE;
+
   // Retrieve some info for easy reading.
   ex      =    recognizer->state->exception;
   ttext   =    NULL;
@@ -182,11 +185,11 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   {
   case  ANTLR3_TYPE_PARSER:
     theToken = (pANTLR3_COMMON_TOKEN)(ex->token);
-    
+
     if (theToken != NULL)
       ttext = theToken->getText(theToken);
 
-    offset = ex->charPositionInLine+1;    
+    offset = ex->charPositionInLine+1;
 
     if  (theToken != NULL && theToken->type == ANTLR3_TOKEN_EOF) {
       token_text[0] = "<EOF>";
@@ -229,29 +232,29 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
 
 void* parseFile(void* fileNameRML, int flags)
 {
-  const char* fileNameC = RML_STRINGDATA(fileNameRML);
   bool debug         = check_debug_flag("parsedebug");
   bool parsedump     = check_debug_flag("parsedump");
   bool parseonly     = check_debug_flag("parseonly");
   void* lxr = 0;
   // TODO: Add flags to the actual Parser.parse() call instead of here?
   if (accept_meta_modelica_grammar()) flags |= PARSE_META_MODELICA;
-  
-  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", fileNameC); }
+
+  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
   pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
   pModelicaParser             psr;
-  
-  ModelicaParser_filename_C = fileNameC;
-  ModelicaParser_filename_RML = fileNameRML;
+
+  ModelicaParser_filename_C = RML_STRINGDATA(fileNameRML);
+  /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
+  ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
 
-  fName  = (pANTLR3_UINT8)fileNameC;
+  fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   input  = antlr3AsciiFileStreamNew(fName);
-  if ( input == NULL ) { fprintf(stderr, "Unable to open file %s\n", fileNameC); exit(ANTLR3_ERR_NOMEM); }
+  if ( input == NULL ) { fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C); exit(ANTLR3_ERR_NOMEM); }
 
   if (flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
@@ -268,7 +271,8 @@ void* parseFile(void* fileNameRML, int flags)
     pLexer->recover = lexNoRecover;
     tstream = antlr3CommonTokenStreamSourceNew(ANTLR3_SIZE_HINT, TOKENSOURCE(((pModelica_3_Lexer)lxr)));
   }
-  
+  lexerFailed = ANTLR3_FALSE;
+
   if (tstream == NULL) { fprintf(stderr, "Out of memory trying to allocate token stream\n"); exit(ANTLR3_ERR_NOMEM); }
   tstream->channel = ANTLR3_TOKEN_DEFAULT_CHANNEL;
   tstream->discardOffChannel = ANTLR3_TRUE;
@@ -290,7 +294,7 @@ void* parseFile(void* fileNameRML, int flags)
   else
     res = psr->stored_definition(psr);
 
-  if (pLexer->rec->state->error || psr->pParser->rec->state->error) // Some parts of the AST are NULL if errors are used...
+  if (pLexer->rec->state->failed || psr->pParser->rec->state->failed) // Some parts of the AST are NULL if errors are used...
     res = 0;
   psr->free(psr);
   psr = NULL;

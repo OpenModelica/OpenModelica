@@ -45,7 +45,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined */
   #include "ModelicaParserCommon.h"
   #define ModelicaParserException -1
   #define ModelicaLexerException -2
-  #define modelicaParserAssert(cond,msg,func) if (cond) { CONSTRUCTEX(); EXCEPTION->type = ModelicaParserException; EXCEPTION->message = (void *) msg; goto rule ## func ## Ex; }
+  #define modelicaParserAssert(cond,msg,func) {if (!(cond)) { CONSTRUCTEX(); EXCEPTION->type = ModelicaParserException; EXCEPTION->message = (void *) msg; goto rule ## func ## Ex; }}
 
   #define false 0
   #define true 1
@@ -154,14 +154,14 @@ class_specifier returns [void* ast, void* name] @declarations {
     ( i1=IDENT spec=class_specifier2
       {
         s1 = $i1.text->chars;
-        modelicaParserAssert($spec.s2 != NULL && strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
+        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
         $ast = $spec.ast;
         $name = mk_scon(s1);
       }
     | EXTENDS i1=IDENT (mod=class_modification)? cmt=string_comment comp=composition T_END i2=IDENT
       {
         s1 = $i1.text->chars;
-        modelicaParserAssert($spec.s2 != NULL && strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
+        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
       }
@@ -427,8 +427,7 @@ type_prefix returns [void* flow, void* stream, void* variability, void* directio
 
 type_specifier returns [void* ast] :
   np=name_path
-  (LESS ts=type_specifier_list GREATER)?
-  (as=array_subscripts)?
+  ((LESS ts=type_specifier_list GREATER)|(as=array_subscripts))?
     {
       if (ts != NULL)
         ast = Absyn__TCOMPLEX(np,ts,mk_some_or_none(as));
@@ -438,7 +437,7 @@ type_specifier returns [void* ast] :
   ;
 
 type_specifier_list returns [void* ast] :
-  np1=type_specifier (COMMA np2=type_specifier)? {ast = mk_cons(np1,or_nil(np2));}
+  np1=type_specifier (COMMA np2=type_specifier_list)? {ast = mk_cons(np1,or_nil(np2));}
   ;
 
 component_list returns [void* ast] :
@@ -588,7 +587,7 @@ equation returns [void* ast] :
   ;
 
 algorithm returns [void* ast] :
-  ( ({metamodelica_enabled()}? a=mm_assign_clause_a | {!metamodelica_enabled()}? a=assign_clause_a)
+  ( a=assign_clause_a
   | a=conditional_equation_a
   | a=for_clause_a
   | a=while_clause
@@ -606,22 +605,20 @@ algorithm returns [void* ast] :
   ;
 
 assign_clause_a returns [void* ast] :
-  ( cr=component_reference
-    ( (ASSIGN|EQUALS {NYI();}) e=expression {ast = Absyn__ALG_5fASSIGN(Absyn__CREF(cr),e);}
-    | fc=function_call {$ast = Absyn__ALG_5fNORETCALL(cr,fc);}
-    )
-  | LPAR es=expression_list RPAR
-    ( ASSIGN cr=component_reference fc=function_call {$ast = Absyn__ALG_5fASSIGN(Absyn__TUPLE(es),Absyn__CALL(cr,fc));} 
-    )
-  )
-  ;
-
-mm_assign_clause_a returns [void* ast] :
   /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
   e1=simple_expression
-    ( (ASSIGN|EQUALS) e2=expression {$ast = Absyn__ALG_5fASSIGN(e1,e2);}
-    | {RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL... or match/continue? deal with those later */
+    ( (ASSIGN|eq=EQUALS) e2=expression
       {
+        modelicaParserAssert(eq==0,"Assignments use the := operator, not =", assign_clause_a);
+        modelicaParserAssert(eq!=0 || metamodelica_enabled() || (RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__CREF_3dBOX1))
+            || ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2))),
+            "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
+            assign_clause_a);
+        $ast = Absyn__ALG_5fASSIGN(e1,e2);
+      }
+    | 
+      {
+        modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2), "Only function call expressions may stand alone in an algorithm section", assign_clause_a);
         struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
         $ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
       }
@@ -1096,13 +1093,21 @@ top_assign_clause_a returns [void* ast, bool isExp] :
     }
   ;
 
-interactive_stmt returns [void* ast] :
+interactive_stmt returns [void* ast]
+@declarations {
+bool last_sc = 0;
+} :
   // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
-  ss=interactive_stmt_list EOF {ast = Interactive__ISTMTS(or_nil(ss), RML_TRUE);}
+  ss=interactive_stmt_list[&last_sc] EOF
+    {
+      ast = Interactive__ISTMTS(or_nil(ss), mk_bcon(last_sc));
+    }
   ;
 
-interactive_stmt_list returns [void* ast] :
-  a=top_algorithm SEMICOLON ss=interactive_stmt_list?
+interactive_stmt_list [bool *last_sc] returns [void* ast] @init {
+  $ast = 0;
+} :
+  a=top_algorithm ((SEMICOLON ss=interactive_stmt_list[last_sc])|(SEMICOLON {*last_sc = 1;})|)
     {
       if (!a.isExp)
         ast = mk_cons(Interactive__IALG(a.ast), or_nil(ss));

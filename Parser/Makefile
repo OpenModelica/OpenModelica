@@ -13,6 +13,7 @@ all: libantlr3.a ModelicaParser libomparse.a
 libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
 	# build the library
 	gcc -O3 -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
+	rm -f $@
 	ar -ru libantlr3.a antlr3*.o
 	ranlib libantlr3.a
 	rm -f antlr3*.o
@@ -20,22 +21,20 @@ libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/*
 ModelicaParser.o: ModelicaParserCommon.h
 OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
-Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o
+Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o \
+ModelicaParser.o
 # Modelica_2_BaseModelica_Lexer.o Modelica_2_Lexer.o \
 # ModelicaParser.o BaseModelica_Lexer.o
 
 parse.o: Modelica_3_Lexer.h MetaModelica_Lexer.h ModelicaParser.h ModelicaParserCommon.h
 
 libomparse.a: parse.o $(OBJS)
+	rm -f $@
 	ar -ru $@ parse.o $(OBJS)
 	ranlib $@
 
 ModelicaParser.h ModelicaParser.c: Modelica.g
 	$(ANTLRCMD) $<
-
-BaseModelica_Lexer.o: BaseModelica_Lexer.g
-	$(ANTLRCMD) $<
-	$(CC) -o $@ -c $(CFLAGS) BaseModelica_Lexer*.c
 
 Modelica_2_Lexer.c Modelica_2_Lexer.h: Modelica_2_Lexer.g
 	$(ANTLRCMD) $<
@@ -64,7 +63,8 @@ test: ModelicaParser
 	sh -c "time ./Release/ModelicaParser -f FullModelica3.1.mo" 
 
 clean:
-	rm -f *.o *.a ModelicaParser.c ModelicaParser.h ModelicaLexer.c ModelicaLexer.h ModelicaParser \
-	ModelicaParser.exe ./Release/ModelicaParser.exe ./Release/ModelicaParser
-	
-	 
+	rm -f *.o *.a \
+ModelicaParser.c ModelicaParser.h \
+*Modelica*_Lexer.c *Modelica*_Lexer.h ModelicaParser \
+ModelicaParser.exe ./Release/ModelicaParser.exe \
+./Release/ModelicaParser
