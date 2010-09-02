@@ -1323,19 +1323,12 @@ algorithm
         (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY(arrayType = iterty),_),iterconst),_,dae1)
 				= elabExp(cache, env, iterexp, impl, st, doVect,pre);
 				env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName));
-				// Elaborate the expression with a variable iterator first, so that any
-				// subscripts using the iterator aren't substituted.
-				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.VAR(), SOME(iterconst));
-				
-				(cache,exp_1,_,st,dae2) = elabExp(cache, env_1, exp, impl, st, doVect,pre);
-				// Then elaborate the expression with a constant iterator, to get the
-				// correct type of the expression.
-				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.VALBOUND(Values.INTEGER(1)), SCode.CONST(), SOME(iterconst));
-			  (cache,_,DAE.PROP(expty,expconst),st,dae3) = elabExp(cache, env_1, exp, impl, st, doVect,pre) "const so that expr is elaborated to const" ;
+				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), SCode.CONST(), SOME(iterconst));
+        (cache,exp_1,DAE.PROP(expty, expconst),st,dae2) = elabExp(cache, env_1, exp, impl, st, doVect,pre);
 				const = Types.constAnd(expconst, iterconst);
 				prop = DAE.PROP(expty, const);
 				fn_1 = Absyn.crefToPath(fn);
-			  dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
+			  dae = DAEUtil.joinDaeLst({dae1,dae2});
 			then
 			(cache,DAE.REDUCTION(fn_1,exp_1,iter,iterexp_1),prop,st,dae);
 		case (cache,env,fn,exp,iterators,impl,st,doVect,pre)
