@@ -2,7 +2,7 @@ RMLHOME=/usr
 COMPILERHOME=../Compiler/
 LIBRML=-lrml -lm
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
-CFLAGS=-g -O3
+CFLAGS=-O3 -g
 LDFLAGS=-L$(RMLHOME)/lib/plain/ $(LIBRML) -L. -lantlr3
 CPPFLAGS=-I$(COMPILERHOME) -I$(RMLHOME)/include/plain -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
 CC=gcc
@@ -15,6 +15,10 @@ libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/*
 	ar -ru libantlr3.a antlr3*.o
 	ranlib libantlr3.a
 	rm -f antlr3*.o
+
+ModelicaLexer.o: ModelicaParserCommon.h
+ModelicaParser.o: ModelicaParserCommon.h
+parse.o: ModelicaLexer.h ModelicaParser.h ModelicaParserCommon.h
 
 libomparse.a: parse.o ModelicaLexer.o ModelicaParser.o 
 	ar -ru $@ parse.o ModelicaLexer.o ModelicaParser.o

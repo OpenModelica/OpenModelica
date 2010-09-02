@@ -630,13 +630,18 @@ RML_BEGIN_LABEL(RTOpts__versionRequest)
 }
 RML_END_LABEL
 
+int accept_meta_modelica_grammar()
+{
+  return acceptedGrammar == GRAMMAR_METAMODELICA;
+}
+
 /*
  * adrpo 2007-06-11
  * flag for accepting only Modelica grammar or also MetaModelica grammar
  */
 RML_BEGIN_LABEL(RTOpts__acceptMetaModelicaGrammar)
 {
-    if (acceptedGrammar == GRAMMAR_METAMODELICA)
+    if (accept_meta_modelica_grammar())
         rmlA0 = RML_PRIM_MKBOOL(RML_TRUE);
     else
         rmlA0 = RML_PRIM_MKBOOL(RML_FALSE);

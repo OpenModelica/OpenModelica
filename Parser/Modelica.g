@@ -115,7 +115,7 @@ tokens {
   // Operators
   // ---------
   
-  DOT    = '.'           ;  
+  DOT    = '.'     ;  
   LPAR    = '('    ;
   RPAR    = ')'    ;
   LBRACK  = '['    ;
@@ -189,14 +189,22 @@ EMPTY;
 OPERATOR;
 }
 
+@lexer::includes {
+  #include "ModelicaParserCommon.h"
+
+  #define METAMODELICA_REAL_OP() {if (metamodelica_enabled() && (LA(1)=='.' && (LA(2) == ' ' || LA(2)=='\t' || LA(2)=='\n'))) LEXER->matchc(LEXER,'.');}
+  #define METAMODELICA_REAL_STRING_OP() {if (metamodelica_enabled() && (LA(1)=='&' || (LA(1)=='.' && (LA(2) == ' ' || LA(2)=='\t' || LA(2)=='\n')))) LEXER->matchAny(LEXER);}
+}
 
 @includes {
   #include <stdio.h>
   #include "rml.h"
   #include "Absyn.h"
-  /* Eat anything so we can test code gen */
-  void* mk_box_eat_all(int ix, ...);
-  #define modelicaParserAssert(cond,msg,func) if (cond) { CONSTRUCTEX(); EXCEPTION->type = ANTLR3_RECOGNITION_EXCEPTION; EXCEPTION->message = (void *) msg; EXCEPTION->decisionNum  = -1; EXCEPTION->state = -1; goto rule ## func ## Ex; }
+  #include "Interactive.h"
+  #include "ModelicaParserCommon.h"
+  #define ModelicaParserException -1
+  #define ModelicaLexerException -2
+  #define modelicaParserAssert(cond,msg,func) if (cond) { CONSTRUCTEX(); EXCEPTION->type = ModelicaParserException; EXCEPTION->message = (void *) msg; goto rule ## func ## Ex; }
 
   #define false 0
   #define true 1
@@ -207,6 +215,8 @@ OPERATOR;
   #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
   #define mk_bcon(x) (x ? RML_TRUE : RML_FALSE)
 #if 0
+  /* Enable if you want to test this as a walker instead of a parser */
+  void* mk_box_eat_all(int ix, ...);
   #define mk_scon(x) x
   #define mk_rcon(x) mk_box_eat_all(0,x)
   #define mk_box0(x1) mk_box_eat_all(x1)
@@ -229,17 +239,15 @@ OPERATOR;
   #define RML_STRUCTHDR(x,y) 0
 #endif
   #define token_to_scon(tok) mk_scon(tok->getText(tok)->chars)
-  #define metamodelica_enabled(void) 0
-  #define code_expressions_enabled(void) 0
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
-  #define INFO(start) Absyn__INFO(ModelicaParser_filename, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
-  typedef unsigned char bool;
-  extern void *ModelicaParser_filename;
+  #define INFO(start) Absyn__INFO(ModelicaParser_filename_RML, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
 }
 
 @members
 {
-  void* ModelicaParser_filename = 0;
+  void* ModelicaParser_filename_RML = 0;
+  const char* ModelicaParser_filename_C = 0;
+  int ModelicaParser_flags = 0;
   void* isReadOnly = RML_FALSE;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
   double getCurrentTime(void) {             
@@ -256,17 +264,17 @@ OPERATOR;
  * LEXER RULES
  *------------------------------------------------------------------*/
 
-STAR    : '*'('.')?         ;
-MINUS    : '-'('.')?          ;
-PLUS    : '+'('.'|'&')?        ; 
-LESS    : '<'('.')?          ;
-LESSEQ    : '<='('.')?        ;
-LESSGT    : '!='('.')?|'<>'('.')?    ;
-GREATER    : '>'('.')?          ;
-GREATEREQ  : '>='('.')?        ;
-EQEQ    : '=='('.'|'&')?      ;
-POWER    : '^'('.')?          ;
-SLASH    : '/'('.')?          ;
+STAR    : '*' {METAMODELICA_REAL_OP()};
+MINUS    : '-' {METAMODELICA_REAL_OP()};
+PLUS    : '+' {METAMODELICA_REAL_STRING_OP()};
+LESS    : '<' {METAMODELICA_REAL_OP()};
+LESSEQ    : '<=' {METAMODELICA_REAL_OP()};
+LESSGT    : '<>' {METAMODELICA_REAL_OP()}; /* '!=' */
+GREATER    : '>' {METAMODELICA_REAL_OP()};
+GREATEREQ  : '>=' {METAMODELICA_REAL_OP()};
+EQEQ    : '==' {METAMODELICA_REAL_STRING_OP()};
+POWER    : '^' {METAMODELICA_REAL_OP()};
+SLASH    : '/' {METAMODELICA_REAL_OP()};
 
 WS : ( ' ' | '\t' | NL )+ { $channel=HIDDEN; }
   ;
@@ -344,6 +352,7 @@ SESCAPE : '\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v
 stored_definition returns [void* ast] :
   (within=within_clause SEMICOLON)?
   cl=class_definition_list?
+  EOF
     {
       ast = Absyn__PROGRAM(or_nil(cl), within ? within : Absyn__TOP, Absyn__TIMESTAMP(mk_rcon(0.0), mk_rcon(getCurrentTime())));
     }
@@ -502,7 +511,7 @@ external_clause returns [void* ast] :
         ( ann1 = annotation )? SEMICOLON
         ( ann2 = external_annotation )?
           {
-            ast = Absyn__EXTERNALDECL(mk_some_or_none(funcname), mk_some_or_none(lang), mk_some_or_none(retexp), or_nil(expl), mk_some_or_none(ann1));
+            ast = Absyn__EXTERNALDECL(funcname ? mk_some(token_to_scon(funcname)) : mk_none(), mk_some_or_none(lang), mk_some_or_none(retexp), or_nil(expl), mk_some_or_none(ann1));
             ast = mk_cons(Absyn__EXTERNAL(ast, mk_some_or_none(ann2)), mk_nil());
           }
         ;
@@ -742,8 +751,16 @@ element_modification [void *each, void *final] returns [void* ast] :
 
 element_redeclaration returns [void* ast] :
   REDECLARE (e=EACH)? (f=FINAL)?
-  ( (class_definition[f != NULL] | component_clause1) | element_replaceable[e != NULL,f != NULL,true] )
-     { NYI(); }
+  ( (cdef=class_definition[f != NULL] | cc=component_clause1) | er=element_replaceable[e != NULL,f != NULL,true] )
+     {
+       if (er) {
+         ast = er;
+       } else {
+         if (!cc)
+          cc = Absyn__CLASSDEF(RML_FALSE,cdef.ast);
+         ast = Absyn__REDECLARATION(mk_bcon(f), make_redeclare_keywords(false,true), e ? Absyn__EACH : Absyn__NON_5fEACH, cc, mk_none());
+       }
+     }
   ;
 
 element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] :
@@ -756,11 +773,14 @@ element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] 
   ;
   
 component_clause1 returns [void* ast] :
-  type_prefix type_specifier component_declaration1  { NYI(); }
+  attr=base_prefix ts=type_specifier comp_decl=component_declaration1
+    {
+      ast = Absyn__COMPONENTS(attr, ts, mk_cons(comp_decl, mk_nil()));
+    }
   ;
 
 component_declaration1 returns [void* ast] :
-        declaration comment  { NYI(); }
+  decl=declaration cmt=comment  { ast = Absyn__COMPONENTITEM(decl, mk_none(), mk_some_or_none(cmt)); }
   ;
 
 
@@ -815,7 +835,7 @@ equation returns [void* ast] :
   ;
 
 algorithm returns [void* ast] :
-  ( a=assign_clause_a
+  ( ({metamodelica_enabled()}? a=mm_assign_clause_a | {!metamodelica_enabled()}? a=assign_clause_a)
   | a=conditional_equation_a
   | a=for_clause_a
   | a=while_clause
@@ -833,24 +853,26 @@ algorithm returns [void* ast] :
   ;
 
 assign_clause_a returns [void* ast] :
-  ( {!metamodelica_enabled()}?
-    ( cr=component_reference
-      ( (ASSIGN|EQUALS {NYI();}) e=expression {ast = Absyn__ALG_5fASSIGN(Absyn__CREF(cr),e);}
-      | fc=function_call {ast = Absyn__ALG_5fNORETCALL(cr,fc);}
-      )
-    | LPAR es=expression_list RPAR ASSIGN
-      cr=component_reference fc=function_call {ast = Absyn__ALG_5fASSIGN(Absyn__TUPLE(es),Absyn__CALL(cr,fc));} 
+  ( cr=component_reference
+    ( (ASSIGN|EQUALS {NYI();}) e=expression {ast = Absyn__ALG_5fASSIGN(Absyn__CREF(cr),e);}
+    | fc=function_call {$ast = Absyn__ALG_5fNORETCALL(cr,fc);}
     )
-  | {metamodelica_enabled()}? /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
-    e1=simple_expression
-      ( (ASSIGN|EQUALS) e2=expression {ast = Absyn__ALG_5fASSIGN(e1,e2);}
-      | {RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL */
-        {
-          struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
-          ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
-        }
-      )
+  | LPAR es=expression_list RPAR
+    ( ASSIGN cr=component_reference fc=function_call {$ast = Absyn__ALG_5fASSIGN(Absyn__TUPLE(es),Absyn__CALL(cr,fc));} 
+    )
   )
+  ;
+
+mm_assign_clause_a returns [void* ast] :
+  /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
+  e1=simple_expression
+    ( (ASSIGN|EQUALS) e2=expression {$ast = Absyn__ALG_5fASSIGN(e1,e2);}
+    | {RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2)}? /* It has to be a CALL... or match/continue? deal with those later */
+      {
+        struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
+        $ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
+      }
+    )
   ;
 
 equality_or_noretcall_equation returns [void* ast] :
@@ -1260,6 +1282,7 @@ annotation returns [void* ast] :
 
 
 /* Code quotation mechanism */
+
 code_expression returns [void* ast] :
   CODE LPAR ((expression RPAR)=> e=expression | m=modification | el=element (SEMICOLON)?
   | eq=code_equation_clause | ieq=code_initial_equation_clause
@@ -1285,4 +1308,53 @@ code_initial_algorithm_clause :
   INITIAL T_ALGORITHM
   ( algorithm SEMICOLON | annotation SEMICOLON )* 
   ;
+
 /* End Code quotation mechanism */
+
+
+top_algorithm returns [void* ast, bool isExp] :
+  ( aa=top_assign_clause_a
+  | a=conditional_equation_a
+  | a=for_clause_a
+  | a=while_clause
+  )
+  cmt=comment
+    {
+      if (a || !aa.isExp) {
+        $ast = Absyn__ALGORITHMITEM(a ? a : aa.ast, mk_some_or_none(cmt), INFO($start));
+        $isExp = 0;
+      } else {
+        $ast = aa.ast;
+        $isExp = 1;
+      }
+    }
+  ;
+
+top_assign_clause_a returns [void* ast, bool isExp] :
+  (e1=simple_expression|e1=code_expression) (ASSIGN e2=expression)?
+    {
+      if (e2) {
+        $ast = Absyn__ALG_5fASSIGN(e1,e2);
+        $isExp = 0;
+      } else {
+        $ast = e1;
+        $isExp = 1;
+      }
+    }
+  ;
+
+interactive_stmt returns [void* ast] :
+  // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
+  ss=interactive_stmt_list EOF {ast = Interactive__ISTMTS(or_nil(ss), RML_TRUE);}
+  ;
+
+interactive_stmt_list returns [void* ast] :
+  a=top_algorithm SEMICOLON ss=interactive_stmt_list?
+    {
+      if (!a.isExp)
+        ast = mk_cons(Interactive__IALG(a.ast), or_nil(ss));
+      else
+        ast = mk_cons(Interactive__IEXP(a.ast), or_nil(ss));
+    }
+  ;
+
