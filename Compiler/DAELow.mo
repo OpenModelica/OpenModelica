@@ -6034,7 +6034,10 @@ algorithm
 end extendArrExp;
 
 protected function traversingextendArrExp "
-Author: Frenkel TUD 2010-07."
+Author: Frenkel TUD 2010-07.
+	This function extend all array and record componentrefs to there
+	elements. This is necessary for BLT and substitution of simple 
+	equations."
   input tuple<DAE.Exp, Option<DAE.FunctionTree> > inExp;
   output tuple<DAE.Exp, Option<DAE.FunctionTree> > outExp;
 algorithm outExp := matchcontinue(inExp)
@@ -6077,13 +6080,13 @@ algorithm outExp := matchcontinue(inExp)
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
     then
       (restpl);          
-  /*case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst)), funcs) )
+  case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
     equation
         expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
         e_new = DAE.CALL(name,expl,false,false,t,DAE.NO_INLINE());
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
-    then
-      (restpl);*/
+    then 
+      (restpl);
   case(inExp) then inExp;
 end matchcontinue;
 end traversingextendArrExp;
