@@ -11426,27 +11426,25 @@ public function subscriptDimensions "Function: subscriptDimensions
 Returns the dimensionality of the subscript expression
 "
   input list<Subscript> insubs;
-  output list<Option<Integer>> oint;
+  output list<DAE.Dimension> oint;
 algorithm oint := matchcontinue(insubs)
   local
     Subscript ss;
     list<Subscript> subs;
     list<Exp> expl;
     Integer x;
-    list<Option<Integer>> recursive;
+    list<DAE.Dimension> recursive;
   case({}) then {};
-  case((ss as DAE.SLICE(DAE.ARRAY(array=expl)))::subs)
-    equation
-      x = listLength(expl);
-      recursive = subscriptDimensions(subs);
-    then
-      SOME(x):: recursive;
-  case((ss as DAE.INDEX(DAE.ICONST(_)))::subs)
-    equation
-      recursive = subscriptDimensions(subs);
-    then
-      SOME(1):: recursive;
-  case(_) then {SOME(-1)};
+    
+  case((ss as DAE.INDEX(DAE.ICONST(_)))::subs) equation
+    recursive = subscriptDimensions(subs);
+  then DAE.DIM_INTEGER(1):: recursive;      
+    
+  case(ss::subs) equation
+    recursive = subscriptDimensions(subs);
+  then DAE.DIM_SUBSCRIPT(ss):: recursive;
+    
+  case(_) then {DAE.DIM_INTEGER(-1)};
 end matchcontinue;
 end subscriptDimensions;
 
