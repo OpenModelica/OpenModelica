@@ -184,7 +184,11 @@ class_specifier2 returns [void* ast, const char *s2] @init {
 | EQUALS cs=enumeration {$ast=cs;}
 | EQUALS cs=pder {$ast=cs;}
 | EQUALS cs=overloading {$ast=cs;}
-| SUBTYPEOF type_specifier
+| SUBTYPEOF ts=type_specifier
+   {
+     $ast = Absyn__DERIVED(Absyn__TCOMPLEX(Absyn__IDENT(mk_scon("polymorphic")),mk_cons(ts,mk_nil()),mk_nil()),
+                           Absyn__ATTR(RML_FALSE,RML_FALSE,Absyn__VAR,Absyn__BIDIR,mk_nil()),mk_nil(),mk_none());
+   }
 )
 ;
 
@@ -750,37 +754,13 @@ expression returns [void* ast] :
   ( e=if_expression {ast = e;}
   | e=simple_expression {ast = e;}
   | e=code_expression {ast = e;}
-  | (MATCHCONTINUE expression_or_empty
-     local_clause
-     cases
-     T_END MATCHCONTINUE)
-  | (MATCH expression_or_empty
-     local_clause
-     cases
-     T_END MATCH)
+  | e=part_eval_function_expression {ast = e;}
+  | e=match_expression {ast = e;}
   )
   ;
 
-expression_or_empty returns [void* ast] :
-  e = expression {ast = e;}
-  | LPAR RPAR {ast = Absyn__TUPLE(mk_nil());}
-  ;
-
-local_clause returns [void* ast] :
-  (LOCAL element_list)?
-  ;
-
-cases returns [void* ast] :
-  (onecase)+ (ELSE (string_comment local_clause (EQUATION equation_list_then)? THEN)? expression_or_empty SEMICOLON)?
-  ;
-
-onecase returns [void* ast] :
-  (CASE pattern string_comment local_clause (EQUATION equation_list_then)?
-  THEN expression_or_empty SEMICOLON)
-  ;
-
-pattern returns [void* ast] :
-  expression_or_empty
+part_eval_function_expression returns [void* ast] :
+  FUNCTION cr=component_reference fc=function_call { ast = Absyn__PARTEVALFUNCTION(cr, fc); }
   ;
 
 if_expression returns [void* ast] :
@@ -804,7 +784,13 @@ for_index returns [void* ast] :
   ;
 
 simple_expression returns [void* ast] :
-    e=simple_expr {ast = e;} (COLONCOLON e=simple_expr {ast = Absyn__CONS(ast,e);})*
+    e1=simple_expr {ast = e;} (COLONCOLON e2=simple_expression)?
+    {
+      if (e2)
+        ast = Absyn__CONS(e1,e2);
+      else
+        ast = e1;
+    }
   | i=IDENT AS e=simple_expression {ast = Absyn__AS(token_to_scon(i),e);}
   ;
 
@@ -1034,29 +1020,36 @@ annotation returns [void* ast] :
 /* Code quotation mechanism */
 
 code_expression returns [void* ast] :
-  CODE LPAR ((expression RPAR)=> e=expression | m=modification | el=element (SEMICOLON)?
+  CODE LPAR ( (expression RPAR)=> e=expression | m=modification | el=element (SEMICOLON)?
   | eq=code_equation_clause | ieq=code_initial_equation_clause
   | alg=code_algorithm_clause | ialg=code_initial_algorithm_clause
   )  RPAR
+    {
+      NYI();
+    }
   ;
 
 code_equation_clause :
   ( EQUATION ( equation SEMICOLON | annotation SEMICOLON )*  )
+    { NYI(); }
   ;
 
 code_initial_equation_clause :
   { LA(2)==EQUATION }?
   INITIAL ec=code_equation_clause 
+    { NYI(); }
   ;
 
 code_algorithm_clause :
   T_ALGORITHM (algorithm SEMICOLON | annotation SEMICOLON)*
+    { NYI(); }
   ;
 
 code_initial_algorithm_clause :
   { LA(2) == T_ALGORITHM }?
   INITIAL T_ALGORITHM
   ( algorithm SEMICOLON | annotation SEMICOLON )* 
+    { NYI(); }
   ;
 
 /* End Code quotation mechanism */
@@ -1116,3 +1109,63 @@ interactive_stmt_list [bool *last_sc] returns [void* ast] @init {
     }
   ;
 
+/* MetaModelica */
+match_expression returns [void* ast] : 
+  ( (ty=MATCHCONTINUE exp=expression_or_empty cmt=string_comment
+     es=local_clause
+     cs=cases
+     T_END MATCHCONTINUE)
+  | (ty=MATCH exp=expression_or_empty cmt=string_comment
+     es=local_clause
+     cs=cases
+     T_END MATCH)
+  )
+     {
+       ast = Absyn__MATCHEXP(ty->type==MATCHCONTINUE ? Absyn__MATCHCONTINUE : Absyn__MATCH, exp, es, cs, mk_some_or_none(cmt));
+     }
+  ;
+
+local_clause returns [void* ast] :
+  (LOCAL el=element_list)?
+    {
+      ast = or_nil(el);
+    }
+  ;
+
+cases returns [void* ast] :
+  c=onecase cs=cases2
+    {
+      ast = mk_cons(c,cs);
+    }
+  ;
+
+cases2 returns [void* ast] :
+  ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression_or_empty SEMICOLON)?
+    {
+      if (exp)
+       ast = mk_cons(Absyn__ELSE(es,or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
+      else
+       ast = mk_nil();
+    }
+  | c=onecase cs=cases2
+    {
+      ast = mk_cons(c, cs);
+    }
+  )
+  ;
+
+onecase returns [void* ast] :
+  (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression_or_empty SEMICOLON)
+    {
+        ast = Absyn__CASE(pat,es,or_nil(eqs),exp,mk_some_or_none(cmt));
+    }
+  ;
+
+pattern returns [void* ast] :
+  e=expression_or_empty {ast = e;}
+  ;
+
+expression_or_empty returns [void* ast] :
+  e = expression {ast = e;}
+  | LPAR RPAR {ast = Absyn__TUPLE(mk_nil());}
+  ;

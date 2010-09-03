@@ -33,8 +33,6 @@
 #include <string.h>
 #include <MetaModelica_Lexer.h>
 #include <Modelica_3_Lexer.h>
-#include <Modelica_2_Lexer.h>
-#include <BaseModelica_Lexer.h>
 #include <ModelicaParser.h>
 #include "runtime/errorext.h"
 
