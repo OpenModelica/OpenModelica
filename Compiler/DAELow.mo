@@ -3093,7 +3093,7 @@ algorithm
       VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1, aliasVarsRepl;
       list<Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
       list<MultiDimEquation> arreqns,arreqns1,arreqns2;
-      BinTree movedvars_1,states;
+      BinTree movedvars_1,states,outputs;
       Variables vars_1,knvars_1,vars,knvars;
       list<DAE.Exp> crlst,elst;
       list<DAE.Algorithm> algs,algs_1;
@@ -3102,7 +3102,9 @@ algorithm
         repl = VarTransform.emptyReplacements();
         replc = VarTransform.emptyReplacements();
         aliasVarsRepl = VarTransform.emptyReplacements();
-        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl,_,replc_1) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, repl, aliasVarsRepl,{},replc);
+        outputs = emptyBintree;
+        outputs = getOutputsFromAlgorithms(eqns,outputs);
+        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl,_,replc_1) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, outputs, repl, aliasVarsRepl,{},replc);
         vartransf1 = VarTransform.addMultiDimReplacements(vartransf);
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf1);
         Debug.fcall("dumpreplc", VarTransform.dumpReplacements, replc_1);
@@ -3137,6 +3139,7 @@ protected function removeSimpleEquations2
   input Variables knvars;
   input BinTree mvars;
   input BinTree states;
+  input BinTree outputs;
   input VarTransform.VariableReplacements repl;
   input VarTransform.VariableReplacements inAliasVarRepl "replacement of alias variables (a=b or a=-b)";
   input list<DAE.ComponentRef> inExtendLst;
@@ -3149,7 +3152,7 @@ protected function removeSimpleEquations2
   output list<DAE.ComponentRef> outExtendLst;
   output VarTransform.VariableReplacements outReplc;
 algorithm
-  (outEqns,outSimpleEqns,outMvars,outRepl,outAliasVarRepl,outExtendLst,outReplc) := matchcontinue (eqns,vars,knvars,mvars,states,repl,aliasRepl,inExtendLst,replc)
+  (outEqns,outSimpleEqns,outMvars,outRepl,outAliasVarRepl,outExtendLst,outReplc) := matchcontinue (eqns,vars,knvars,mvars,states,outputs,repl,aliasRepl,inExtendLst,replc)
     local
       Variables vars,knvars;
       BinTree mvars,states,mvars_1,mvars_2;
@@ -3163,48 +3166,50 @@ algorithm
       DAE.ElementSource source "the element source";
       list<DAE.ComponentRef> extlst,extlst1;
       
-    case ({},vars,knvars,mvars,states,repl,aliasRepl,extlst,replc) then ({},{},mvars,repl,aliasRepl,extlst,replc);
+    case ({},vars,knvars,mvars,states,outputs,repl,aliasRepl,extlst,replc) then ({},{},mvars,repl,aliasRepl,extlst,replc);
 
-    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl,inExtendLst,replc) equation
+    case (e::eqns,vars,knvars,mvars,states,outputs,repl,aliasRepl,inExtendLst,replc) equation
       {e} = BackendVarTransform.replaceEquations({e},repl);
       {e} = BackendVarTransform.replaceEquations({e},replc);
       (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
+      failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1,extlst,replc_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, outputs, repl_1, aliasRepl_1,extlst,replc_1);
     then
       (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,extlst1,replc_2);
 
       // Swapped args
-    case (e::eqns,vars,knvars,mvars,states,repl,aliasRepl,inExtendLst,replc) equation
+    case (e::eqns,vars,knvars,mvars,states,outputs,repl,aliasRepl,inExtendLst,replc) equation
       {e} = BackendVarTransform.replaceEquations({e},replc);
       {EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(EQUATION(e2,e1,source),true);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
+      failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
       aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, repl_1, aliasRepl_1,extlst,replc_1);
+      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, outputs, repl_1, aliasRepl_1,extlst,replc_1);
     then
       (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,extlst1,replc_2);
 
       // try next equation.
-    case ((e :: eqns),vars,knvars,mvars,states,repl,aliasRepl,extlst,replc)
+    case ((e :: eqns),vars,knvars,mvars,states,outputs,repl,aliasRepl,extlst,replc)
       local Equation eq1,eq2;
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},repl);
         {eq2} = BackendVarTransform.replaceEquations({eq1},replc);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
-        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, repl, aliasRepl,extlst,replc) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, outputs, repl, aliasRepl,extlst,replc) "Not a simple variable, check rest" ;
       then
         ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1,extlst1,replc_1);
   end matchcontinue;
@@ -3250,6 +3255,36 @@ algorithm
     case (crlst,repl,_,_,_) then (crlst,repl);
   end matchcontinue;
 end removeSimpleEquations3;
+
+protected function getOutputsFromAlgorithms"
+Author: Frenkel TUD 2010-09 function getOutputsFromAlgorithms
+  helper for removeSimpleEquations
+  collect all outpus from algorithms to avoid replacement
+  of a algorithm output"
+  input list<Equation> inEqns;
+  input BinTree inBinTree;
+  output BinTree outBinTree;
+algorithm
+  outBinTree := matchcontinue (inEqns,inBinTree)
+    local
+      list<Equation> es;
+      Equation e;
+      BinTree bt,bt_1,bt_2;
+      list<DAE.Exp> explst;
+      list<DAE.ComponentRef> crefs;
+    case ({},bt) then bt;
+     case (ALGORITHM(out=explst)::es,bt)
+      equation
+        crefs = Util.listFlatten(Util.listMap(explst,Exp.getCrefFromExp));
+        bt_1 = treeAddList(bt,crefs);
+        bt_2 = getOutputsFromAlgorithms(es,bt_1);  
+      then bt_2;
+    case (e::es,bt)
+      equation
+        bt_1 = getOutputsFromAlgorithms(es,bt);  
+      then bt_1;
+  end matchcontinue;
+end getOutputsFromAlgorithms;
 
 public function countSimpleEquations
 "Counts the number of trivial/simple equations
@@ -14301,6 +14336,29 @@ algorithm
         res;
   end matchcontinue;
 end treeGet2;
+
+protected function treeAddList "function: treeAddList
+  author: Frenkel TUD
+"
+  input BinTree inBinTree;
+  input list<Key> inKeyLst;
+  output BinTree outBinTree;
+algorithm
+  outBinTree :=
+  matchcontinue (inBinTree,inKeyLst)
+    local
+      Key key;
+      list<Key> res;
+      BinTree bt,bt_1,bt_2;
+    case (bt,{}) then bt;
+    case (bt,key::res)
+      local DAE.ComponentRef nkey;
+    equation
+      bt_1 = treeAdd(bt,key,0);
+      bt_2 = treeAddList(bt_1,res);
+    then bt_2;  
+  end matchcontinue;
+end treeAddList;
 
 protected function treeAdd "function: treeAdd
   author: PA
