@@ -371,4 +371,240 @@ algorithm
   end matchcontinue;
 end replaceMultiDimEquations;
 
+public function replaceAlgorithms "function: replaceAlgorithms
+
+  This function takes a list of algorithms ana a set of variable replacements
+  and applies the replacements on all array equations.
+  The function returns the updated list of array equations
+"
+  input list<DAE.Algorithm> inAlgorithmLst;
+  input VarTransform.VariableReplacements inVariableReplacements;
+  output list<DAE.Algorithm> outAlgorithmLst;
+algorithm
+  outAlgorithmLst:=
+  matchcontinue (inAlgorithmLst,inVariableReplacements)
+    local
+      VarTransform.VariableReplacements repl;
+      list<DAE.Statement> statementLst,statementLst_1;
+      list<DAE.Algorithm> es,es_1;
+    case ({},_) then {};
+    case ((DAE.ALGORITHM_STMTS(statementLst=statementLst) :: es),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst,repl);
+        es_1 = replaceAlgorithms(es,repl);
+      then
+        (DAE.ALGORITHM_STMTS(statementLst_1)  :: es_1);
+  end matchcontinue;
+end replaceAlgorithms;
+
+protected function replaceStatementLst "function: replaceStatementLst
+
+  Helper for replaceMultiDimEquations.
+"
+  input list<DAE.Statement> inStatementLst;
+  input VarTransform.VariableReplacements inVariableReplacements;
+  output list<DAE.Statement> outStatementLst;
+algorithm
+  outStatementLst:=
+  matchcontinue (inStatementLst,inVariableReplacements)
+    local
+      VarTransform.VariableReplacements repl;
+      list<DAE.Statement> es,es_1,statementLst,statementLst_1;
+      DAE.Statement statement,statement_1;
+      DAE.ExpType type_;
+      DAE.Exp e1_1,e2_1,e1,e2,e_1,e,e1_2,e2_2;
+      list<DAE.Exp> expExpLst,expExpLst_1;
+      DAE.Else else_,else_1;
+      DAE.ElementSource source;
+      String str;
+    case ({},_) then {};
+    case ((DAE.STMT_ASSIGN(type_=type_,exp1=e1,exp=e2,source=source)::es),repl)
+      equation
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_ASSIGN(type_,e1_2,e2_2,source):: es_1);
+    case ((DAE.STMT_TUPLE_ASSIGN(type_=type_,expExpLst=expExpLst,exp=e2,source=source)::es),repl)
+      equation
+        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl, NONE);
+        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e2_2 = Exp.simplify(e2_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_TUPLE_ASSIGN(type_,expExpLst_1,e2_2,source):: es_1);
+    case ((DAE.STMT_ASSIGN_ARR(type_=type_,componentRef=cr,exp=e1,source=source)::es),repl)
+      local DAE.ComponentRef cr;
+      equation
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_ASSIGN_ARR(type_,cr,e1_2,source):: es_1);        
+    case ((DAE.STMT_IF(exp=e1,statementLst=statementLst,else_=else_,source=source)::es),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        else_1 = replaceElse(else_,repl);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_IF(e1_2,statementLst_1,else_1,source):: es_1);
+    case ((DAE.STMT_FOR(type_=type_,iterIsArray=iterIsArray,ident=ident,exp=e1,statementLst=statementLst,source=source)::es),repl)
+      local 
+        Boolean iterIsArray;
+        DAE.Ident ident;
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_FOR(type_,iterIsArray,ident,e1_2,statementLst_1,source):: es_1);        
+    case ((DAE.STMT_WHILE(exp=e1,statementLst=statementLst,source=source)::es),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_WHILE(e1_2,statementLst_1,source):: es_1);
+    case ((DAE.STMT_WHEN(exp=e1,statementLst=statementLst,elseWhen=NONE(),helpVarIndices=helpVarIndices,source=source)::es),repl)
+      local list<Integer> helpVarIndices;
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_WHEN(e1_2,statementLst_1,NONE(),helpVarIndices,source):: es_1);
+    case ((DAE.STMT_WHEN(exp=e1,statementLst=statementLst,elseWhen=SOME(statement),helpVarIndices=helpVarIndices,source=source)::es),repl)
+      local list<Integer> helpVarIndices;
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        statement_1::{} = replaceStatementLst({statement}, repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_WHEN(e1_2,statementLst_1,SOME(statement_1),helpVarIndices,source):: es_1);
+    case ((DAE.STMT_ASSERT(cond=e1,msg=e2,source=source)::es),repl)
+      equation
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_ASSERT(e1_2,e2_2,source):: es_1);
+    case ((DAE.STMT_TERMINATE(msg=e1,source=source)::es),repl)
+      equation
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_TERMINATE(e1_2,source):: es_1);
+    case ((DAE.STMT_REINIT(var=e1,value=e2,source=source)::es),repl)
+      equation
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e2_1 = VarTransform.replaceExp(e2, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        e2_2 = Exp.simplify(e2_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_REINIT(e1_2,e2_2,source):: es_1);
+    case ((DAE.STMT_NORETCALL(exp=e1,source=source)::es),repl)
+      equation
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_NORETCALL(e1_2,source):: es_1);
+    case ((DAE.STMT_RETURN(source=source)::es),repl) 
+      equation
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_RETURN(source):: es_1);      
+    case ((DAE.STMT_BREAK(source=source)::es),repl) 
+      equation
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_BREAK(source):: es_1);      
+  // MetaModelica extension. KS
+    case ((DAE.STMT_TRY(tryBody=statementLst,source=source)::es),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_TRY(statementLst_1,source):: es_1);
+    case ((DAE.STMT_CATCH(catchBody=statementLst,source=source)::es),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_CATCH(statementLst_1,source):: es_1);
+    case ((DAE.STMT_THROW(source=source)::es),repl) 
+      equation
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_THROW(source):: es_1); 
+    case ((DAE.STMT_GOTO(labelName=str,source=source)::es),repl) 
+      equation
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_GOTO(str,source):: es_1); 
+    case ((DAE.STMT_LABEL(labelName=str,source=source)::es),repl) 
+      equation
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_LABEL(str,source):: es_1); 
+    case ((DAE.STMT_MATCHCASES(caseStmt=expExpLst,source=source)::es),repl)
+      equation
+        expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl, NONE);
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (DAE.STMT_MATCHCASES(expExpLst_1,source):: es_1);
+    case ((statement::es),repl) 
+      equation
+        es_1 = replaceStatementLst(es, repl);
+      then
+        (statement:: es_1);        
+  end matchcontinue;
+end replaceStatementLst;
+
+protected function replaceElse "function: replaceElse
+
+  Helper for replaceStatementLst.
+"
+  input DAE.Else inElse;
+  input VarTransform.VariableReplacements inVariableReplacements;
+  output DAE.Else outElse;
+algorithm
+  outElse:=
+  matchcontinue (inElse,inVariableReplacements)
+    local
+      VarTransform.VariableReplacements repl;
+      list<DAE.Statement> statementLst,statementLst_1;
+      DAE.Exp e1,e1_1,e1_2;
+      list<DAE.Exp> expExpLst,expExpLst_1;
+      DAE.Else else_,else_1;
+    case (DAE.NOELSE(),_) then DAE.NOELSE();
+    case (DAE.ELSEIF(exp=e1,statementLst=statementLst,else_=else_),repl)
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+        e1_1 = VarTransform.replaceExp(e1, repl, NONE);
+        e1_2 = Exp.simplify(e1_1);
+        else_1 = replaceElse(else_,repl);
+      then
+        DAE.ELSEIF(e1_2,statementLst_1,else_1);
+    case (DAE.ELSE(statementLst=statementLst),repl) 
+      equation
+        statementLst_1 = replaceStatementLst(statementLst, repl);
+      then
+        DAE.ELSE(statementLst_1);      
+  end matchcontinue;
+end replaceElse;
+
 end BackendVarTransform;

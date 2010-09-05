@@ -587,7 +587,7 @@ algorithm
       VarTransform.VariableReplacements aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
       list<Equation> eqns,reqns,ieqns,algeqns,multidimeqns,imultidimeqns,eqns_1;
       list<MultiDimEquation> aeqns,aeqns1,iaeqns;
-      list<DAE.Algorithm> algs;
+      list<DAE.Algorithm> algs,algs_1;
       list<WhenClause> whenclauses,whenclauses_1;
       list<ZeroCrossing> zero_crossings;
       EquationArray eqnarr,reqnarr,ieqnarr;
@@ -620,10 +620,10 @@ algorithm
         eqns = listAppend(multidimeqns, eqns);
         ieqns = listAppend(imultidimeqns, ieqns);
         aeqns = listAppend(aeqns,iaeqns);
-        (vars,knvars,eqns,reqns,ieqns,aeqns1,aliasVars) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
+        (vars,knvars,eqns,reqns,ieqns,aeqns1,algs_1,aliasVars) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, algs, s);
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
-        (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs,DAEUtil.daeFunctionTree(lst));
+        (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs_1,DAEUtil.daeFunctionTree(lst));
         (zero_crossings) = findZeroCrossings(vars_1,knvars,eqns_1,aeqns1,whenclauses_1,algs);
         eqnarr = listEquation(eqns_1);
         reqnarr = listEquation(reqns);
@@ -3076,6 +3076,7 @@ protected function removeSimpleEquations
   input list<Equation> inEquationLst4;
   input list<Equation> inEquationLst5;
   input list<MultiDimEquation> inArrayEquationLst;
+  input list<DAE.Algorithm> inAlgs;
   input BinTree inBinTree6;
   output Variables outVariables1;
   output Variables outVariables2;
@@ -3083,10 +3084,11 @@ protected function removeSimpleEquations
   output list<Equation> outEquationLst4;
   output list<Equation> outEquationLst5;
   output list<MultiDimEquation> outArrayEquationLst;
+  output list<DAE.Algorithm> outAlgs;
   output VarTransform.VariableReplacements aliasVars; // hash tables of alias-variables' replacement (a = b or a = -b)
 algorithm
-  (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst):=
-  matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inBinTree6)
+  (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst,outAlgs,aliasVars):=
+  matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inAlgs,inBinTree6)
     local
       VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1, aliasVarsRepl;
       list<Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
@@ -3094,7 +3096,8 @@ algorithm
       BinTree movedvars_1,states;
       Variables vars_1,knvars_1,vars,knvars;
       list<DAE.Exp> crlst,elst;
-    case (vars,knvars,eqns,reqns,ieqns,arreqns,states)
+      list<DAE.Algorithm> algs,algs_1;
+    case (vars,knvars,eqns,reqns,ieqns,arreqns,algs,states)
       equation
         repl = VarTransform.emptyReplacements();
         replc = VarTransform.emptyReplacements();
@@ -3111,11 +3114,12 @@ algorithm
         seqns_2 = BackendVarTransform.replaceEquations(seqns_1, vartransf1);
         ieqns_2 = BackendVarTransform.replaceEquations(ieqns_1, vartransf1);
         arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
+        algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
       then
-        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, aliasVarsRepl);
-    case (_,_,_,_,_,_,_)
+        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, algs_1, aliasVarsRepl);
+    case (_,_,_,_,_,_,_,_)
       equation
         print("-remove_simple_equations failed\n");
       then
@@ -6740,9 +6744,14 @@ algorithm
         res_1 = Util.listFlatten(res);
       then
         res_1;
-    case (vars,_,_)
+    case (vars,inEquation,_)
+      local 
+        String eqnstr;
       equation
-        print("-incidence_row failed\n");
+        eqnstr = equationStr(inEquation);
+        print("-DAELow.incidence_row failed for eqn: ");
+        print(eqnstr);
+        print("\n");
       then
         fail();
   end matchcontinue;
@@ -8224,7 +8233,7 @@ algorithm
         ie_lst = equationList(ie);
         ae_lst = arrayList(ae);
         algs = arrayList(al);
-        (v,kv,e_lst,re_lst,ie_lst,ae_lst,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, s); 
+        (v,kv,e_lst,re_lst,ie_lst,ae_lst,algs,av) = removeSimpleEquations(v,kv, e_lst, re_lst, ie_lst, ae_lst, algs, s); 
          EVENT_INFO(whenClauseLst=whenclauses) = ev;
         (zero_crossings) = findZeroCrossings(v,kv,e_lst,ae_lst,whenclauses,algs);
         e = listEquation(e_lst);
@@ -10570,9 +10579,13 @@ algorithm
         res2_1 = listAppend(res22, res2);
       then
         (res1_1,res2_1);
-    case (_,_,_,_)
+    case ((e :: rest),_,_,_)
+      local String se;
       equation
-        print("-DAELow.statesInEqns failed\n");
+        se = intString(e);
+        print("-DAELow.statesInEqns failed for eqn: ");
+        print(se);
+        print("\n");
       then
         fail();
   end matchcontinue;
