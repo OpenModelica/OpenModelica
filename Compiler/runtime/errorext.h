@@ -38,24 +38,28 @@
 extern "C" {
 #endif
 
-  void c_add_message(int errorID,
-         const char* type,
-         const char* severity,
-         const char* message,
-         const char** ctokens,
-         int nTokens);
-  void c_add_source_message(int errorID,
-         const char* type,
-         const char* severity,
-         const char* message,
-         const char** ctokens,
-         int nTokens,
-         int startLine,
-         int startCol,
-         int endLine,
-         int endCol,
-         int isReadOnly,
-         const char* filename);
+void c_add_message(int errorID,
+       const char* type,
+       const char* severity,
+       const char* message,
+       const char** ctokens,
+       int nTokens);
+void c_add_source_message(int errorID,
+       const char* type,
+       const char* severity,
+       const char* message,
+       const char** ctokens,
+       int nTokens,
+       int startLine,
+       int startCol,
+       int endLine,
+       int endCol,
+       int isReadOnly,
+       const char* filename);
+void setCheckpoint(const char* id);
+void delCheckpoint(const char* id);
+void rollBack(const char* id);
+void* rollBackAndPrint(const char* id); // Returns the error string that we rolled back
 #ifdef __cplusplus
 }
 

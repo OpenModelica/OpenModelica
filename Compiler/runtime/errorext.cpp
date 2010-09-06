@@ -147,30 +147,15 @@ extern "C"
 #include <assert.h>
 #include "rml.h"
 
-
-  void ErrorExt_5finit(void)
+  void setCheckpoint(const char* id)
   {
-    // empty the queue.
-    while(!errorMessageQueue.empty()) {
-        delete errorMessageQueue.top();
-      errorMessageQueue.pop();
-    }
-  }
-
-  RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
-  {
-    char* id = RML_STRINGDATA(rmlA0);
-
     checkPoints.push_back(make_pair(errorMessageQueue.size(),string(id)));
     //printf("checkPoint(%s)\n",id);
     //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",(int)errorMessageQueue.size(),id);
-    RML_TAILCALLK(rmlSC);
   }
-  RML_END_LABEL
-
-  RML_BEGIN_LABEL(ErrorExt__delCheckpoint)
+  
+  void delCheckpoint(const char* id)
   {
-    char* id = RML_STRINGDATA(rmlA0);
     //printf("delCheckpoint(%s)\n",id);
     if(checkPoints.size() > 0){
       //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
@@ -190,13 +175,10 @@ extern "C"
       printf(" ERROREXT: nothing to delete when calling delCheckPoint(%s)\n",id);
       exit(-1);
     }
-    RML_TAILCALLK(rmlSC);
   }
-  RML_END_LABEL
 
-  RML_BEGIN_LABEL(ErrorExt__rollBack)
+  void rollBack(const char* id)
   {
-    char* id = RML_STRINGDATA(rmlA0);
     //printf("rollBack(%s)\n",id);
     if(checkPoints.size() > 0){
       //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
@@ -228,6 +210,60 @@ extern "C"
       printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
         exit(-1);
       }
+  }
+
+  void* rollBackAndPrint(const char* id)
+  {
+    std::string res("");
+    if(checkPoints.size() > 0){
+      while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
+        res = errorMessageQueue.top()->getMessage()+string("\n")+res;
+        delete errorMessageQueue.top();
+        errorMessageQueue.pop();
+      }
+      pair<int,string> cp;
+      cp = checkPoints[checkPoints.size()-1];
+      if (0 != strcmp(cp.second.c_str(),id)) {
+        printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
+            id,
+            cp.second.c_str());
+        exit(-1);
+      }
+      checkPoints.pop_back();
+    } else {
+      printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
+        exit(-1);
+    }
+    fprintf(stderr, "Returning %s\n", res.c_str());
+    return mk_scon((char*)res.c_str());
+  }
+
+  void ErrorExt_5finit(void)
+  {
+    // empty the queue.
+    while(!errorMessageQueue.empty()) {
+        delete errorMessageQueue.top();
+      errorMessageQueue.pop();
+    }
+  }
+
+  RML_BEGIN_LABEL(ErrorExt__setCheckpoint)
+  {
+    setCheckpoint(RML_STRINGDATA(rmlA0));
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(ErrorExt__delCheckpoint)
+  {
+    delCheckpoint(RML_STRINGDATA(rmlA0));
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(ErrorExt__rollBack)
+  {
+    rollBack(RML_STRINGDATA(rmlA0));
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL
