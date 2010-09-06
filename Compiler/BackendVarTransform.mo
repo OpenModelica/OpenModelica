@@ -67,6 +67,7 @@ algorithm
       list<DAE.Exp> expl,expl1,expl2,expl3,expl4;
       DAELow.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source "the origin of the element";
+      list<list<DAE.Exp>> explstlst;
 
     case ({},_) then {};
     case ((DAELow.ARRAY_EQUATION(indx,expl,source)::es),repl)
@@ -94,6 +95,11 @@ algorithm
         expl3 = Util.listMap(expl2,Exp.simplify);  
         // remove constant expressions from inputs
         (_,expl4) = Util.listSplitOnTrue(expl3,Exp.isConst);
+        // remove negation from symbols
+        expl4 = Util.listMap(expl4,Exp.abs);
+        // remove equal simbols
+        explstlst = Util.listMap(expl4,Util.listCreate);
+        expl4 = Util.listListUnionOnTrue(explstlst, Exp.expEqual);  
         es_1 = replaceEquations(es, repl);
       then
         (DAELow.ALGORITHM(indx,expl4,expl1,source) :: es_1);
