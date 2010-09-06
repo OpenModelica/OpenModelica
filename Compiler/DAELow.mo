@@ -16242,14 +16242,20 @@ output DAE.Exp outExp;
 output list<DAE.Exp> outDivLst;
 algorithm 
   (outExps,outDivLst) := matchcontinue(inExp,inDlowMode)
-  case(inExp,inDlowMode as (dlow,dzer))
+  case(inExp,inDlowMode as (dlow as DAELOW(orderedVars=orderedVars,knownVars=knownVars),dzer))
     local 
       DAE.Exp exp; 
       DAELow dlow;
       DivZeroExpReplace dzer;
       list<DAE.Exp> divlst;
+      Variables orderedVars,knownVars,vars;
+      list<Var> varlst,varlst1,varlst2;
     equation
-      ((exp,(_,_,divlst))) = Exp.traverseExp(inExp, traversingDivExpFinder, (dlow,dzer,{}));
+      varlst = varList(orderedVars);
+      varlst1 = varList(knownVars);
+      varlst2 = listAppend(varlst,varlst1);  
+      vars = listVar(varlst2);       
+      ((exp,(_,_,_,divlst))) = Exp.traverseExp(inExp, traversingDivExpFinder, (vars,varlst2,dzer,{}));
       then
         (exp,divlst);
   end matchcontinue;
@@ -16257,46 +16263,47 @@ end addDivExpErrorMsgtoExp;
 
 protected function traversingDivExpFinder "
 Author: Frenkel TUD 2010-02"
-  input tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace,list<DAE.Exp>> > inExp;
-  output tuple<DAE.Exp, tuple<DAELow,DivZeroExpReplace,list<DAE.Exp>> > outExp;
+  input tuple<DAE.Exp, tuple<Variables,list<Var>,DivZeroExpReplace,list<DAE.Exp>> > inExp;
+  output tuple<DAE.Exp, tuple<Variables,list<Var>,DivZeroExpReplace,list<DAE.Exp>> > outExp;
 algorithm
 outExp := matchcontinue(inExp)
   local
-    DAELow dlow;
+    Variables vars;
+    list<Var> varlst;
     DivZeroExpReplace dzer;
     list<DAE.Exp> divLst;
-    tuple<DAELow,DivZeroExpReplace,list<DAE.Exp>> dlowmode;
+    tuple<Variables,DivZeroExpReplace,list<DAE.Exp>> dlowmode;
     DAE.Exp e,e1,e2;
     Exp.Type ty;
     String se;
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2),(vars,varlst,dzer,divLst)))
     equation
-      (se,true) = traversingDivExpFinder1(e,e2,(dlow,dzer));
-    then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,divLst) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
+      (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
-      (se,false) = traversingDivExpFinder1(e,e2,(dlow,dzer));
-    then ((e, (dlow,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+      (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
 /*
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARR(ty),exp2 = e2), dlowmode as (dlow,_)))
     then ((e, dlowmode ));
 */    
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
-      (se,true) = traversingDivExpFinder1(e,e2,(dlow,dzer));
-    then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,divLst) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
+      (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
-      (se,false) = traversingDivExpFinder1(e,e2,(dlow,dzer));
-    then ((e, (dlow,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
+      (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
-      (se,true) = traversingDivExpFinder1(e,e2,(dlow,dzer));
-    then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (dlow,dzer,divLst) ));
-  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), dlowmode as (dlow,dzer,divLst)))
+      (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {e1,e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE()), (vars,varlst,dzer,divLst) ));
+  case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
-      (se,false) = traversingDivExpFinder1(e,e2,(dlow,dzer));
-    then ((e, (dlow,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+      (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
   case(inExp) then (inExp);
 end matchcontinue;
 end traversingDivExpFinder;
@@ -16306,47 +16313,38 @@ Author: Frenkel TUD 2010-02
   helper for traversingDivExpFinder"
   input DAE.Exp inExp1;
   input DAE.Exp inExp2;
-  input tuple<DAELow,DivZeroExpReplace> inMode;
+  input tuple<Variables,list<Var>,DivZeroExpReplace> inMode;
   output String outString;
   output Boolean outBool;
 algorithm
   (outString,outBool) := matchcontinue(inExp1,inExp2,inMode)
   local
-    DAELow dlow;
-    tuple<DAELow,DivZeroExpReplace> dlowmode;
-    DAE.Exp e,e2;
+    Variables vars;
+    DAE.Exp e,e_1,e2,e2_1;
     String se;
     list<DAE.ComponentRef> crlst;
-    Variables orderedVars,knownVars,vars;
-    list<Var> varlst,varlst1,varlst2;
+    Variables vars;
+    list<Var> varlst;
     list<Boolean> boollst;
     Boolean bres;
-  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars,knownVars=knownVars),ALL()) )
+  case( e , e2, (vars,varlst,ALL()) )
     equation
       crlst = Exp.extractCrefsFromExp(e2);
-      varlst = varList(orderedVars);
-      varlst1 = varList(knownVars);
-      varlst2 = listAppend(varlst,varlst1);  
-      vars = listVar(varlst2);          
       /* generade modelica strings */
-      e = removeDivExpErrorMsgfromExp(e,dlow);
-      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
+      e_1 = removeDivExpErrorMsgfromExp(e);
+      e2_1 = removeDivExpErrorMsgfromExp(e2);
+      se = generadeDivExpErrorMsg(e_1,e2_1,vars,crlst);
     then (se,false);    
-  case( e , e2, dlowmode as (dlow as DAELOW(orderedVars=orderedVars,knownVars=knownVars),ONLY_VARIABLES()) )
+  case( e , e2, (vars,varlst,ONLY_VARIABLES()) )
     equation
       /* check if expression contains variables */
       crlst = Exp.extractCrefsFromExp(e2);
-      varlst = varList(orderedVars);
-      varlst1 = varList(knownVars);
-      varlst2 = listAppend(varlst,varlst1);
-      vars = listVar(varlst2);
       boollst = Util.listMap1r(crlst,isVarKnown,varlst);
       bres = Util.boolOrList(boollst);
       /* generade modelica strings */
-      e = removeDivExpErrorMsgfromExp(e,dlow);
-      e2 = removeDivExpErrorMsgfromExp(e2,dlow);
-      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
+      e_1 = removeDivExpErrorMsgfromExp(e);
+      e2_1 = removeDivExpErrorMsgfromExp(e2);
+      se = generadeDivExpErrorMsg(e_1,e2_1,vars,crlst);
     then (se,bres);
 end matchcontinue;
 end traversingDivExpFinder1;
@@ -16414,13 +16412,12 @@ protected  function removeDivExpErrorMsgfromExp "
 Author: Frenkel TUD 2010-02, Removes the error msg from Exp.Div.
 "
 input DAE.Exp inExp;
-input DAELow inDlow;
 output DAE.Exp outExp;
-algorithm outExps := matchcontinue(inExp,inDlow)
-  case(inExp,inDlow)
+algorithm outExps := matchcontinue(inExp)
+  case(inExp)
     local DAE.Exp exp;
     equation
-      ((exp,_)) = Exp.traverseExp(inExp, traversingDivExpFinder2, inDlow);
+      ((exp,_)) = Exp.traverseExp(inExp, traversingDivExpFinder2, NONE());
       then
         exp;
   end matchcontinue;
@@ -16428,11 +16425,11 @@ end removeDivExpErrorMsgfromExp;
 
 protected function traversingDivExpFinder2 "
 Author: Frenkel TUD 2010-02"
-  input tuple<DAE.Exp, DAELow > inExp;
-  output tuple<DAE.Exp, DAELow > outExp;
+  input tuple<DAE.Exp, Option<Integer> > inExp;
+  output tuple<DAE.Exp, Option<Integer> > outExp;
 algorithm outExp := matchcontinue(inExp)
   local
-    DAELow dlow;
+    Option<Integer> dummy;
     DAE.Exp e,e1,e2;
     Exp.Type ty;
     Absyn.Path path;
@@ -16441,12 +16438,12 @@ algorithm outExp := matchcontinue(inExp)
     Boolean builtin;
     DAE.ExpType ty;
     DAE.InlineType inlineType;    
-  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), dlow ))
-    then ((DAE.BINARY(e1, DAE.DIV(ty),e2), dlow ));
-  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), dlow ))
-    then ((DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2), dlow ));
-  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), dlow ))
-    then ((DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2), dlow ));
+  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), dummy ))
+    then ((DAE.BINARY(e1, DAE.DIV(ty),e2), dummy ));
+  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), dummy ))
+    then ((DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2), dummy ));
+  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), dummy ))
+    then ((DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2), dummy ));
   case(inExp) then inExp;
 end matchcontinue;
 end traversingDivExpFinder2;
