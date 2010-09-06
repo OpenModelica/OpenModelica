@@ -272,6 +272,8 @@ ESC :
 	)
 	;
 
+CODE2 : "$Code" { $setType(CODE); };
+
 
 
 
