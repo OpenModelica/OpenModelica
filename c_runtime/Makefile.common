@@ -63,7 +63,8 @@ solver_main.h \
 string_array.h \
 utility.h
 
-LIBS = libc_runtime.a libsim.a interactive/libinteractive.a
+LIBS = libc_runtime.a libsim.a interactive/libinteractive.a \
+  ModelicaExternalC/libModelicaExternalC.a
 
 .PHONY : libsendData.a libsendDataHumbug.a
 
@@ -81,6 +82,9 @@ libsim.a : $(SIMOBJS) $(HFILES)
 	$(AR) $@ $(SIMOBJS)
 	ranlib $@
 
+ModelicaExternalC/libModelicaExternalC.a: ModelicaExternalC/ModelicaExternalC.cpp
+	$(MAKE) -C ModelicaExternalC
+
 interactive/libinteractive.a : interactive/omi_Calculation.cpp interactive/omi_Control.cpp interactive/omi_ResultManager.cpp interactive/omi_ServiceInterface.cpp interactive/omi_Transfer.cpp interactive/socket.cpp interactive/thread.cpp
 	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE)
 
@@ -91,7 +95,7 @@ libf2c/libf2c.a :
 libsendDataHumbug.a :
 	$(MAKE) -C sendData -f Makefile.humbug
 
-install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall
+install: libc_runtime.a libsim.a libf2c/libf2c.a interactive/libinteractive.a $(LIBSENDDATA) omdevinstall ModelicaExternalC/libModelicaExternalC.a
 	cp $(HFILES) $(builddir_inc)/
 	cp $(LIBS) $(builddir_lib)/
 	cp libf2c/libf2c.* $(builddir_lib)/
