@@ -1883,17 +1883,14 @@ algorithm
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {DAE.SCONST(string = str)}),
          (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
-      local String msg;
       equation
-        scriptstr = System.readFile(str);
-        (istmts,msg) = Parser.parsestringexp(scriptstr);
-        true = stringEqual(msg, "Ok");
+        istmts = Parser.parseexp(str);
         (res,newst) = Interactive.evaluate(istmts, st, true);
-        res_1 = Util.stringAppendList({res,"\ntrue"});
       then
-        (cache,Values.STRING(res_1),newst);
+        (cache,Values.STRING(res),newst);
 
-    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {DAE.SCONST(string = str)}),st,msg) then (cache,Values.BOOL(false),st);
+    case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "runScript"),expLst = {DAE.SCONST(string = str)}),st,msg)
+      then (cache,Values.STRING("Failed"),st);
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "generateCode"),expLst = {DAE.CODE(Absyn.C_TYPENAME(path),_)}),
          (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
