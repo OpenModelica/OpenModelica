@@ -38,11 +38,14 @@ options {
 import MetaModelica_Lexer; /* Makes all tokens defined */
 
 @includes {
+  #include <stdlib.h>
   #include <stdio.h>
+  #include <errno.h>
   #include "rml.h"
   #include "Absyn.h"
   #include "Interactive.h"
   #include "ModelicaParserCommon.h"
+  #include "runtime/errorext.h"
   #define ModelicaParserException -1
   #define ModelicaLexerException -2
   #define modelicaParserAssert(cond,msg,func) {if (!(cond)) { CONSTRUCTEX(); EXCEPTION->type = ModelicaParserException; EXCEPTION->message = (void *) msg; goto rule ## func ## Ex; }}
@@ -88,6 +91,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined */
 {
   void* ModelicaParser_filename_RML = 0;
   const char* ModelicaParser_filename_C = 0;
+  int ModelicaParser_readonly = 0;
   int ModelicaParser_flags = 0;
   void* isReadOnly = RML_FALSE;
   void* mk_box_eat_all(int ix, ...) {return NULL;}
@@ -860,30 +864,58 @@ term returns [void* ast] @declarations {
   ;
 
 factor returns [void* ast] :
-  e1=primary ( ( pw=POWER | pw_ew=POWER_EW ) e2=primary )?
+  e1=primary ( ( pw=POWER | pw=POWER_EW ) e2=primary )?
     {
-      ast = e2 ? Absyn__BINARY(e1, pw ? Absyn__POW : Absyn__POW_5fEW, e2) : e1;
+      ast = pw ? Absyn__BINARY(e1.ast, $pw.type ==POWER ? Absyn__POW : Absyn__POW_5fEW, e2.ast) : e1.ast;
     }
   ;
 
 primary returns [void* ast] :
-  ( v=UNSIGNED_INTEGER {ast = Absyn__INTEGER(mk_icon($v.int));}
-  | v=UNSIGNED_REAL    {ast = Absyn__REAL(mk_rcon(atof($v.text->chars)));}
-  | v=STRING           {ast = Absyn__STRING(mk_scon($v.text->chars));}
-  | T_FALSE            {ast = Absyn__BOOL(RML_FALSE);}
-  | T_TRUE             {ast = Absyn__BOOL(RML_TRUE);}
-  | ptr=component_reference__function_call {ast = ptr;}
-  | DER el=function_call {ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
-  | LPAR e=expression (COMMA el=expression_list)? RPAR {ast = el ? Absyn__TUPLE(mk_cons(e, el)) : e;}
-  | LBRACK el=matrix_expression_list RBRACK {ast = Absyn__MATRIX(el);}
+  ( v=UNSIGNED_INTEGER
+    {
+      char* chars = $v.text->chars;
+      char* endptr;
+      errno = 0;
+      long l = strtol(chars,&endptr,10);
+      const char* args[2] = {chars, RML_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63" : l > ((long)1<<31)-1 ? "Modelica only supports 32" : "OpenModelica only supports 31"};
+      
+      if (errno || *endptr != 0) {
+        errno = 0;
+        double d = strtod(chars,&endptr);
+        modelicaParserAssert(*endptr != 0 && !errno, "Number is too large to represent as a long or double on this machine", primary);
+        c_add_source_message(2, "SYNTAX", "Warning", "\%s-bit signed integers! Transforming: \%s into a real",
+          args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+          ModelicaParser_readonly, ModelicaParser_filename_C);
+        $ast = Absyn__REAL(mk_rcon(d));
+      } else {
+        if (((long)1<<(RML_SIZE_INT*8-2))-1 > l) {
+          $ast = Absyn__INTEGER(RML_IMMEDIATE(RML_TAGFIXNUM(l))); /* We can't use mk_icon here - it takes "int"; not "long" */
+        } else {
+          if (l > ((long)1<<30)-1) {
+            c_add_source_message(2, "SYNTAX", "Warning", "\%s-bit signed integers! Transforming: \%s into a real",
+                                 args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
+                                 ModelicaParser_readonly, ModelicaParser_filename_C);
+          }
+          $ast = Absyn__REAL(mk_rcon((double)l));
+        }
+      }
+    }
+  | v=UNSIGNED_REAL    {$ast = Absyn__REAL(mk_rcon(atof($v.text->chars)));}
+  | v=STRING           {$ast = Absyn__STRING(mk_scon($v.text->chars));}
+  | T_FALSE            {$ast = Absyn__BOOL(RML_FALSE);}
+  | T_TRUE             {$ast = Absyn__BOOL(RML_TRUE);}
+  | ptr=component_reference__function_call {$ast = ptr;}
+  | DER el=function_call {$ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
+  | LPAR e=expression (COMMA el=expression_list)? RPAR {$ast = el ? Absyn__TUPLE(mk_cons(e, el)) : e;}
+  | LBRACK el=matrix_expression_list RBRACK {$ast = Absyn__MATRIX(el);}
   | LBRACE for_or_el=for_or_expression_list RBRACE
     {
       if (!for_or_el.isFor)
-        ast = Absyn__ARRAY(for_or_el.ast);
+        $ast = Absyn__ARRAY(for_or_el.ast);
       else
-        ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el.ast);
+        $ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("array"), mk_nil()),for_or_el.ast);
     }
-  | T_END { ast = Absyn__END; }
+  | T_END { $ast = Absyn__END; }
   )
   ;
 
@@ -1020,22 +1052,16 @@ annotation returns [void* ast] :
 /* Code quotation mechanism */
 
 code_expression returns [void* ast] :
-  ( CODE_EXP LPAR e=expression RPAR
-    {
-      ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e));
-    }
-  | CODE_VAR LPAR cr=component_reference RPAR
-    {
-      ast = Absyn__CODE(Absyn__C_5fVARIABLENAME(cr));
-    }
-  | CODE LPAR
-    ( m=modification
+  ( CODE LPAR
+    ( (initial=INITIAL)? ((EQUATION eq=code_equation_clause)|(T_ALGORITHM alg=code_algorithm_clause))
+    | m=modification
+    | (expression RPAR)=> e=expression
     | el=element (SEMICOLON)?
-    | (initial=INITIAL)? EQUATION eq=code_equation_clause
-    | (initial=INITIAL)? T_ALGORITHM alg=code_algorithm_clause
     )  RPAR
       {
-        if (m) {
+        if (e) {
+          ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e));
+        } else if (m) {
           ast = Absyn__CODE(Absyn__C_5fMODIFICATION(m));
         } else if (eq) {
           ast = Absyn__CODE(Absyn__C_5fEQUATIONSECTION(mk_bcon(initial), eq));

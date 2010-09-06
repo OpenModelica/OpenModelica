@@ -238,7 +238,7 @@ fragment
 NL: (('\r')? '\n');
 
 /* OpenModelica extensions */
-CODE : 'Code' | '$Code';
+CODE : 'Code';
 CODE_EXP : '$Exp';
 CODE_VAR : '$Var';
 

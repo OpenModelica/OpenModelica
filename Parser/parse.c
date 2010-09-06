@@ -36,9 +36,6 @@
 #include <ModelicaParser.h>
 #include "runtime/errorext.h"
 
-const char* modelicafilename; // The filename for the parsed file.
-bool modelicafileReadOnly; // True if file is read only.
-
 #include <errno.h>
 
 long unsigned int szMemoryUsed = 0;

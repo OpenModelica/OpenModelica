@@ -34,6 +34,7 @@
 
 typedef unsigned char bool;
 extern int ModelicaParser_flags;
+extern int ModelicaParser_readonly;
 extern void *ModelicaParser_filename_RML;
 extern const char *ModelicaParser_filename_C;
 
