@@ -1191,10 +1191,48 @@ algorithm
       equation
         (cache,exp) = fixExp(cache,env,exp,ht);
       then (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,SOME((exp,b))));
+    case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()),ht)
+      equation
+        (cache, subModLst) = fixSubModList(cache, env, subModLst, ht);
+      then (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()));
     case (cache,env,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()),ht) then (cache,SCode.MOD(finalPrefix,eachPrefix,subModLst,NONE()));
   end matchcontinue;
 end fixModifications;
 
+protected function fixSubModList
+" All of the fix functions do the following:
+  Analyzes the SCode datastructure and replace paths with a new path (from
+  local lookup or fully qualified in the environment.
+"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<SCode.SubMod> inSubMods;
+  input HashTableStringToPath.HashTable ht;
+  output Env.Cache outCache;
+  output list<SCode.SubMod> outSubMods;
+algorithm
+  (outCache, outSubMods) := matchcontinue (cache, env, inSubMods, ht)
+    local
+      SCode.Mod mod;
+      list<SCode.SubMod> rest_mods;
+    case (_, _, {}, _) then (cache, {});
+    case (_, _, SCode.NAMEMOD(ident = ident, A = mod) :: rest_mods, _)
+      local Absyn.Ident ident;
+      equation
+        (cache, mod) = fixModifications(cache, env, mod, ht);
+        (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
+      then
+        (cache, SCode.NAMEMOD(ident, mod) :: rest_mods);
+    case (_, _, SCode.IDXMOD(subscriptLst = subs, an = mod) :: rest_mods, _)
+      local list<SCode.Subscript> subs;
+      equation
+        (cache, mod) = fixModifications(cache, env, mod, ht);
+        (cache, rest_mods) = fixSubModList(cache, env, rest_mods, ht);
+      then
+        (cache, SCode.IDXMOD(subs, mod) :: rest_mods);
+  end matchcontinue;
+end fixSubModList;
+           
 protected function fixExp
 " All of the fix functions do the following:
   Analyzes the SCode datastructure and replace paths with a new path (from
