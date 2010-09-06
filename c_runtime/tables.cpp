@@ -647,13 +647,13 @@ double InterpolationTable::interpolate(double time, size_t col) const
 bool InterpolationTable::compare(const char* fname, const char* tname,
 				 const double* table) const
 {
-  if (fname == NULL) return false;
-  if (strncmp("NoName",fname,6) == 0)
+  if (fname == NULL || tname == NULL) return false;
+  if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
     // table passed as memory location
     return (data == table);
   else
     // table loaded from file
-    return (filename == fname && tname && tablename == tname);
+    return (filename == fname && tablename == tname);
   return false;
 }
 double InterpolationTable::extrapolate(double time, size_t col, 
@@ -695,8 +695,8 @@ void InterpolationTable::checkValidityOfData() const
 {
   size_t maxSize = colWise ? cols : rows;
   for(size_t i = 1; i < maxSize; ++i)
-    if (getElt(i-1,0) >= getElt(i,0))
-      throw CustomError("TimeTable: Column with time variable not monotonous: %g >= %g.", getElt(i-1,0),getElt(i,0));
+    if (getElt(i-1,0) > getElt(i,0))
+      throw CustomError("TimeTable: Column with time variable not monotonous: %g > %g.", getElt(i-1,0),getElt(i,0));
 }
 
 
@@ -756,13 +756,13 @@ double InterpolationTable2D::interpolate(double x1, double x2)
 bool InterpolationTable2D::compare(const char* fname, const char* tname,
 				 const double* table) const
 {
-  if (fname == NULL) return false;
-  if (strncmp("NoName",fname,6) == 0)
+  if (fname == NULL || tname == NULL) return false;
+  if (strncmp("NoName",fname,6) == 0 && strncmp("NoName",tname,6) == 0)
     // table passed as memory location
     return (data == table);
   else
     // table loaded from file
-    return (filename == fname && tname && tablename == tname);
+    return (filename == fname && tablename == tname);
   return false;
 }
 
