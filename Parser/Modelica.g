@@ -958,8 +958,9 @@ component_reference returns [void* ast] :
     {
       if (cr)
         ast = Absyn__CREF_5fQUAL(token_to_scon(id), or_nil(arr), cr);
-      else
+      else {
         ast = Absyn__CREF_5fIDENT(token_to_scon(id), or_nil(arr));
+      }
     }
   | WILD {ast = Absyn__WILD;}
   ;

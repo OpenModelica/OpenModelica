@@ -22,6 +22,7 @@ ModelicaParser.o: ModelicaParserCommon.h
 OBJS = \
 MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
 Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o \
+FlatModelica_Lexer_BaseModelica_Lexer.o FlatModelica_Lexer.o \
 ModelicaParser.o
 # Modelica_2_BaseModelica_Lexer.o Modelica_2_Lexer.o \
 # ModelicaParser.o BaseModelica_Lexer.o
@@ -43,6 +44,9 @@ Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Mode
 	$(ANTLRCMD) $<
 
 MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h: MetaModelica_Lexer.g BaseModelica_Lexer.g
+	$(ANTLRCMD) $<
+
+FlatModelica_Lexer_BaseModelica_Lexer.c FlatModelica_Lexer_BaseModelica_Lexer.h FlatModelica_Lexer.c FlatModelica_Lexer.h: FlatModelica_Lexer.g BaseModelica_Lexer.g
 	$(ANTLRCMD) $<
 
 ModelicaParser: libantlr3.a libomparse.a main.o

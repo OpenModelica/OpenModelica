@@ -28,7 +28,7 @@
  * See the full OSMC Public License conditions for more details.
  *
  */
-lexer grammar MetaModelica_Lexer;
+lexer grammar FlatModelica_Lexer;
 
 options {
   language = C;
@@ -36,39 +36,17 @@ options {
 
 import BaseModelica_Lexer;
 
-@includes {
-  #include "ModelicaParserCommon.h"
-
-  #define METAMODELICA_REAL_OP() {if (LA(1)=='.' && (LA(2) == ' ' || LA(2)=='\t' || LA(2)=='\n')) LEXER->matchc(LEXER,'.');}
-  #define METAMODELICA_REAL_STRING_OP() {if (LA(1)=='&' || (LA(1)=='.' && (LA(2) == ' ' || LA(2)=='\t' || LA(2)=='\n'))) LEXER->matchAny(LEXER);}
-}
-
-
-/* MetaModelica extensions */
-AS : 'as';
-CASE : 'case';
-EQUALITY : 'equality';
-FAILURE : 'failure';
-LOCAL : 'local';
-MATCH : 'match';
-MATCHCONTINUE : 'matchcontinue';
-UNIONTYPE : 'uniontype';
-WILD : '_';
-SUBTYPEOF : 'subtypeof';
-COLONCOLON : '::';
-MOD : '%';
-
-STAR    : '*' {METAMODELICA_REAL_OP()};
-MINUS    : '-' {METAMODELICA_REAL_OP()};
-PLUS    : '+' {METAMODELICA_REAL_STRING_OP()};
-LESS    : '<' {METAMODELICA_REAL_OP()};
-LESSEQ    : '<=' {METAMODELICA_REAL_OP()};
-LESSGT    : '<>' {METAMODELICA_REAL_OP()}; /* '!=' */
-GREATER    : '>' {METAMODELICA_REAL_OP()};
-GREATEREQ  : '>=' {METAMODELICA_REAL_OP()};
-EQEQ    : '==' {METAMODELICA_REAL_STRING_OP()};
-POWER    : '^' {METAMODELICA_REAL_OP()};
-SLASH    : '/' {METAMODELICA_REAL_OP()};
+STAR       : '*';
+MINUS      : '-';
+PLUS       : '+';
+LESS       : '<';
+LESSEQ     : '<=';
+LESSGT     : '<>';
+GREATER    : '>';
+GREATEREQ  : '>=';
+EQEQ       : '==';
+POWER      : '^';
+SLASH      : '/';
 
 /* Modelica 3.0 elementwise operators */ 
 PLUS_EW : '.+'; /* Modelica 3.0 */
@@ -79,3 +57,4 @@ POWER_EW : '.^'; /* Modelica 3.0 */
 
 /* Modelica 3.1 */
 STREAM : 'stream'; /* for Modelica 3.1 stream connectors */
+

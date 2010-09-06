@@ -139,6 +139,8 @@ POWER_EW;
 COLONCOLON;
 MOD;
 
+IDENT;
+
 }
 
 T_ALGORITHM : 'algorithm';
@@ -242,11 +244,21 @@ CODE : 'Code' | '$Code';
 CODE_EXP : '$Exp';
 CODE_VAR : '$Var';
 
-IDENT :
-       ('_' {  $type = WILD; } | NONDIGIT { $type = IDENT; })
-       (('_' | NONDIGIT | DIGIT) { $type = IDENT; })*
-    | (QIDENT { $type = IDENT; })
-    ;
+
+STRING : '"' STRING_GUTS '"'
+       {SETTEXT($STRING_GUTS.text);};
+
+fragment
+STRING_GUTS: (SCHAR | SESCAPE)*
+       ;
+
+fragment
+SCHAR :  NL | '\t' | ~('\n' | '\t' | '\r' | '\\' | '"');
+
+fragment
+SESCAPE : '\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');
+
+IDENT : NONDIGIT (NONDIGIT | DIGIT)* | QIDENT;
 
 fragment
 QIDENT :
@@ -256,7 +268,7 @@ fragment
 QCHAR :  NL  | '\t' | ~('\n' | '\t' | '\r' | '\\' | '\'');
 
 fragment
-NONDIGIT :   ('a'..'z' | 'A'..'Z');
+NONDIGIT :   ('_' | 'a'..'z' | 'A'..'Z');
 
 fragment
 DIGIT :
@@ -282,16 +294,3 @@ UNSIGNED_INTEGER :
           )?
       )
   ;
-
-STRING : '"' STRING_GUTS '"'
-       {SETTEXT($STRING_GUTS.text);};
-
-fragment
-STRING_GUTS: (SCHAR | SESCAPE)*
-       ;
-
-fragment
-SCHAR :  NL | '\t' | ~('\n' | '\t' | '\r' | '\\' | '"');
-
-fragment
-SESCAPE : '\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');

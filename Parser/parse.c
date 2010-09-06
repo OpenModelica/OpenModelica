@@ -171,23 +171,23 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
 void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
   pANTLR3_PARSER      parser;
-  pANTLR3_TREE_PARSER  tparser;
   pANTLR3_INT_STREAM  is;
   pANTLR3_STRING      ttext;
   pANTLR3_EXCEPTION      ex;
-  pANTLR3_COMMON_TOKEN   theToken;
+  pANTLR3_COMMON_TOKEN   preToken,nextToken;
   pANTLR3_BASE_TREE      theBaseTree;
   pANTLR3_COMMON_TREE    theCommonTree;
+  pANTLR3_TOKEN_STREAM tokenStream;
   ANTLR3_UINT32 ttype;
   int type;
   const char *error_type = "TRANSLATION";
   const char *token_text[2] = {0,0};
-  int offset, error_id = 0, line;
+  int p_offset, n_offset, error_id = 0, p_line, n_line;
   recognizer->state->error = ANTLR3_TRUE;
+  recognizer->state->failed = ANTLR3_TRUE;
 
   if (lexerFailed)
     return;
-  recognizer->state->failed = ANTLR3_TRUE;
 
   // Retrieve some info for easy reading.
   ex      =    recognizer->state->exception;
@@ -196,9 +196,17 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   switch  (recognizer->type)
   {
   case  ANTLR3_TYPE_PARSER:
-    offset = ex->charPositionInLine+1;
+    parser = (pANTLR3_PARSER) (recognizer->super);
     token_text[1] = (const char*) ex->message;
     type = ex->type;
+    tokenStream = parser->getTokenStream(parser);
+    preToken = tokenStream->_LT(tokenStream,1);
+    nextToken = tokenStream->_LT(tokenStream,2);
+    if (preToken == NULL) preToken = nextToken;
+    p_line = preToken->line;
+    n_line = nextToken->line;
+    p_offset = preToken->charPosition+1;
+    n_offset = nextToken->charPosition+1;
     break;
 
   default:
@@ -211,26 +219,26 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   switch (type) {
   case ANTLR3_UNWANTED_TOKEN_EXCEPTION:
     token_text[0] = ex->expecting == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[ex->expecting];
-    c_add_source_message(2, "SYNTAX", "Error", "Unwanted token '%s'.", token_text, 1, ex->line, offset, ex->line, offset, false, ModelicaParser_filename_C);
+    c_add_source_message(2, "SYNTAX", "Error", "Unwanted token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_MISSING_TOKEN_EXCEPTION:
     token_text[0] = ex->expecting == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[ex->expecting];
-    c_add_source_message(2, "SYNTAX", "Error", "Missing token '%s'.", token_text, 1, ex->line, offset, ex->line, offset, false, ModelicaParser_filename_C);
+    c_add_source_message(2, "SYNTAX", "Error", "Missing token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_NO_VIABLE_ALT_EXCEPTION:
-    ttype = ((pANTLR3_COMMON_TOKEN)ex->token)->type;
-    token_text[0] = ttype == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[ttype];
-    c_add_source_message(2, "SYNTAX", "Error", "No viable alternative near token %s. ", token_text, 1, ex->line, offset, ex->line, offset, false, ModelicaParser_filename_C);
+    token_text[0] = nextToken->getText(nextToken)->chars;
+    c_add_source_message(2, "SYNTAX", "Error", "No viable alternative near token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ModelicaParserException:
-    c_add_source_message(2, "SYNTAX", "Error", "%s.", token_text+1, 1, ex->line, offset, ex->line, offset, false, ModelicaParser_filename_C);
+    c_add_source_message(2, "SYNTAX", "Error", "%s.", token_text+1, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_MISMATCHED_SET_EXCEPTION:
   case ANTLR3_EARLY_EXIT_EXCEPTION:
   case ANTLR3_RECOGNITION_EXCEPTION:
   default:
-    token_text[0] = ex->message;
-    c_add_source_message(2, "SYNTAX", "Error", "Parser error: %s", token_text, 1, ex->line, offset, ex->line, offset, false, ModelicaParser_filename_C);
+    token_text[1] = ex->message;
+    token_text[0] = preToken->getText(preToken)->chars;
+    c_add_source_message(2, "SYNTAX", "Error", "Parser error: %s near: %s", token_text, 2, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   }
 
@@ -312,8 +320,11 @@ void* parseFile(void* fileNameRML, int flags)
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
-
   ModelicaParser_filename_C = RML_STRINGDATA(fileNameRML);
+
+  int len = strlen(ModelicaParser_filename_C);
+  if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
+    fprintf(stderr, "Flat Modelica\n");
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
@@ -321,7 +332,6 @@ void* parseFile(void* fileNameRML, int flags)
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   input  = antlr3AsciiFileStreamNew(fName);
   if ( input == NULL ) {
-    fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C);
     return NULL;
   }
   return parseStream(input);
