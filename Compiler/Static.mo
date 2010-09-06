@@ -3221,7 +3221,8 @@ algorithm
     local
       DAE.Exp dimp,arraycrefe,exp;
       DAE.Const c1,c2_1,c,c_1;
-      tuple<DAE.TType, Option<Absyn.Path>> arrtp;
+      DAE.Type arrtp;
+      DAE.Properties prop;
       Boolean c2,impl;
       list<Env.Frame> env;
       Absyn.Exp arraycr,dim;
@@ -3230,30 +3231,67 @@ algorithm
       DAE.DAElist dae,dae1,dae2;
       Prefix pre;
       String sp;
-
-    // size(A,x) that returns size of x:th dimension
+      Integer dim_int;
+      DAE.ExpType ety;
+      list<DAE.Dimension> dims;
+      DAE.Dimension d;
+        
+    // size(A,x) for an array A with known dimensions and constant x. 
+    // Returns the size of the x:th dimension.
+    case (cache, env, {arraycr, dim}, _, impl, pre) 
+      equation
+        (cache,dimp,_,_,dae1) = elabExp(cache, env, dim, impl, NONE, true, pre);
+        dim_int = Exp.expInt(dimp);
+        (cache, arraycrefe, _, _, dae2) = elabExp(cache, env, arraycr, impl, NONE, false, pre);
+        ety = Exp.typeof(arraycrefe);
+        dims = Exp.arrayTypeDimensions(ety);
+        d = listNth(dims, dim_int - 1);
+        exp = Exp.dimensionSizeExp(d);
+        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_CONST);
+        dae = DAEUtil.joinDaes(dae1, dae2);
+      then
+        (cache, exp, prop, dae); 
+            
+    // The previous case failed, return a call to the size function instead.
     case (cache,env,{arraycr,dim},_,impl,pre)
       equation
-        (cache,dimp,DAE.PROP(_,c1),_,dae1) = elabExp(cache, env, dim, impl, NONE, true,pre)  ;
+        (cache,dimp,DAE.PROP(_,c1),_,dae1) = elabExp(cache, env, dim, impl, NONE, true,pre);
         (cache,arraycrefe,DAE.PROP(arrtp,_),_,dae2) = elabExp(cache, env, arraycr, impl, NONE, true,pre);
         c2 = Types.dimensionsKnown(arrtp);
         c2_1 = Types.boolConstSize(c2);
         c = Types.constAnd(c1, c2_1);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
+        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, c);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        (cache,exp,DAE.PROP(DAE.T_INTEGER_DEFAULT,c),dae);
+        (cache,exp,prop,dae);
 
-    // size(A)
+    // size(A) for an array A with known dimensions. Returns an array of all dimensions of A.
+    case (cache,env,{arraycr},_,impl,pre)
+      local list<Exp.Exp> dim_expl;
+      equation
+        (cache, arraycrefe, _, _, dae1) = elabExp(cache, env, arraycr, impl, NONE, false, pre);
+        ety = Exp.typeof(arraycrefe);
+        dims = Exp.arrayTypeDimensions(ety);
+        dim_expl = Util.listMap(dims, Exp.dimensionSizeExp);
+        dim_int = listLength(dim_expl);
+        exp = DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_INT, {DAE.DIM_INTEGER(dim_int)}), true, dim_expl);
+        prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(dim_int), DAE.T_INTEGER_DEFAULT), NONE), DAE.C_CONST);
+      then
+        (cache, exp, prop, dae1);
+        
+    // The previous case failed, return a call to the size function instead.
     case (cache,env,{arraycr},_,impl,pre)
       local Boolean c;
       equation
-        (cache,arraycrefe,DAE.PROP(arrtp,_),_,dae1) = elabExp(cache,env, arraycr, impl, NONE,true,pre)  ;
+        (cache,arraycrefe,DAE.PROP(arrtp,_),_,dae1) = elabExp(cache,env, arraycr, impl, NONE,true,pre);
         c = Types.dimensionsKnown(arrtp);
         c_1 = Types.boolConstSize(c);
         exp = DAE.SIZE(arraycrefe,NONE);
+        prop = DAE.PROP((DAE.T_ARRAY(DAE.DIM_NONE, DAE.T_INTEGER_DEFAULT), NONE), c_1);
       then
-        (cache,exp,DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(1),DAE.T_INTEGER_DEFAULT),NONE),c_1),dae1);
+        (cache,exp,prop,dae1);
+        
     // failure!
     case (cache,env,expl,_,impl,pre)
       equation

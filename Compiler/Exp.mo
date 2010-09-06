@@ -13251,6 +13251,19 @@ algorithm
   end matchcontinue;
 end dimensionSize;
 
+public function dimensionSizeExp
+  "Converts a dimension to an integer expression."
+  input DAE.Dimension dim;
+  output DAE.Exp exp;
+algorithm
+  exp := matchcontinue(dim)
+    local
+      Integer i;
+    case DAE.DIM_INTEGER(integer = i) then DAE.ICONST(i);
+    case DAE.DIM_ENUM(size = i) then DAE.ICONST(i);
+  end matchcontinue;
+end dimensionSizeExp;
+
 public function intDimension
   "Converts an integer to an array dimension."
   input Integer value;
