@@ -64,7 +64,7 @@ algorithm
       DAELow.Equation a;
       DAE.ComponentRef cr;
       Integer indx;
-      list<DAE.Exp> expl,expl1,expl2;
+      list<DAE.Exp> expl,expl1,expl2,expl3,expl4;
       DAELow.WhenEquation whenEqn,whenEqn1;
       DAE.ElementSource source "the origin of the element";
 
@@ -87,11 +87,16 @@ algorithm
       then
         (DAELow.EQUATION(e1_2,e2_2,source) :: es_1);
 
-    case (((a as DAELow.ALGORITHM(index = _)) :: es),repl)
+    case (((DAELow.ALGORITHM(index=indx,in_=expl,out=expl1,source = source)) :: es),repl)
       equation
+        // original algorithm is done by replaceAlgorithms
+        expl2 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
+        expl3 = Util.listMap(expl2,Exp.simplify);  
+        // remove constant expressions from inputs
+        (_,expl4) = Util.listSplitOnTrue(expl3,Exp.isConst);
         es_1 = replaceEquations(es, repl);
       then
-        (a :: es_1);
+        (DAELow.ALGORITHM(indx,expl4,expl1,source) :: es_1);
 
     case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
       equation
