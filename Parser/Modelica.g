@@ -1020,36 +1020,56 @@ annotation returns [void* ast] :
 /* Code quotation mechanism */
 
 code_expression returns [void* ast] :
-  CODE LPAR ( (expression RPAR)=> e=expression | m=modification | el=element (SEMICOLON)?
-  | eq=code_equation_clause | ieq=code_initial_equation_clause
-  | alg=code_algorithm_clause | ialg=code_initial_algorithm_clause
-  )  RPAR
+  ( CODE_EXP LPAR e=expression RPAR
     {
-      NYI();
+      ast = Absyn__CODE(Absyn__C_5fEXPRESSION(e));
     }
+  | CODE_VAR LPAR cr=component_reference RPAR
+    {
+      ast = Absyn__CODE(Absyn__C_5fVARIABLENAME(cr));
+    }
+  | CODE LPAR
+    ( m=modification
+    | el=element (SEMICOLON)?
+    | (initial=INITIAL)? EQUATION eq=code_equation_clause
+    | (initial=INITIAL)? T_ALGORITHM alg=code_algorithm_clause
+    )  RPAR
+      {
+        if (m) {
+          ast = Absyn__CODE(Absyn__C_5fMODIFICATION(m));
+        } else if (eq) {
+          ast = Absyn__CODE(Absyn__C_5fEQUATIONSECTION(mk_bcon(initial), eq));
+        } else if (alg) {
+          ast = Absyn__CODE(Absyn__C_5fALGORITHMSECTION(mk_bcon(initial), alg));
+        } else {
+          ast = Absyn__CODE(Absyn__C_5fELEMENT(el.ast));
+        }
+      }
+  )
   ;
 
-code_equation_clause :
-  ( EQUATION ( equation SEMICOLON | annotation SEMICOLON )*  )
-    { NYI(); }
+code_equation_clause returns [void* ast] :
+  ( e=equation SEMICOLON as=code_equation_clause?
+    {
+      ast = mk_cons(e.ast,or_nil(as));
+    }
+  | a=annotation SEMICOLON as=code_equation_clause?
+    {
+      ast = mk_cons(Absyn__EQUATIONITEMANN(a),or_nil(as));
+    }
+  )
   ;
 
-code_initial_equation_clause :
-  { LA(2)==EQUATION }?
-  INITIAL ec=code_equation_clause 
-    { NYI(); }
-  ;
-
-code_algorithm_clause :
-  T_ALGORITHM (algorithm SEMICOLON | annotation SEMICOLON)*
-    { NYI(); }
-  ;
-
-code_initial_algorithm_clause :
-  { LA(2) == T_ALGORITHM }?
-  INITIAL T_ALGORITHM
-  ( algorithm SEMICOLON | annotation SEMICOLON )* 
-    { NYI(); }
+code_algorithm_clause returns [void* ast] :
+  ( al=algorithm SEMICOLON as=code_algorithm_clause?
+    {
+      ast = mk_cons(al.ast,or_nil(as));
+    }
+  | a=annotation SEMICOLON as=code_algorithm_clause?
+    {
+      ast = mk_cons(Absyn__ALGORITHMITEMANN(a),or_nil(as));
+    }
+  )
   ;
 
 /* End Code quotation mechanism */
