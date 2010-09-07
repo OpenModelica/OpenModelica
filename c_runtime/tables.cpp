@@ -662,14 +662,14 @@ double InterpolationTable::extrapolate(double time, size_t col,
   size_t lastIdx;
 
   switch(expoType) {
-  case 0:
+  case 1:
     // hold last/first value
     return getElt((beforeData ? 0 :rows-1),col);
-  case 1:
+  case 2:
     // extrapolate through first/last two values
     lastIdx = (colWise ? cols : rows) - 2;
     return interpolateLin(time,(beforeData?0:lastIdx),col);
-  case 2:
+  case 3:
     // periodically repeat signal
     time = startTime + (time - maxTime()*floor(time/maxTime()));
     return interpolate(time,col);
