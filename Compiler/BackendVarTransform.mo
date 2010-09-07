@@ -91,18 +91,10 @@ algorithm
     case (((DAELow.ALGORITHM(index=indx,in_=expl,out=expl1,source = source)) :: es),repl)
       equation
         // original algorithm is done by replaceAlgorithms
-        expl2 = Util.listMap2(expl,VarTransform.replaceExp,repl,NONE);
-        expl3 = Util.listMap(expl2,Exp.simplify);  
-        // remove constant expressions from inputs
-        (_,expl4) = Util.listSplitOnTrue(expl3,Exp.isConst);
-        // remove negation from symbols
-        expl4 = Util.listMap(expl4,Exp.abs);
-        // remove equal simbols
-        explstlst = Util.listMap(expl4,Util.listCreate);
-        expl4 = Util.listListUnionOnTrue(explstlst, Exp.expEqual);  
+        // inputs and ouputs are updated from DEALow.updateAlgorithmInputsOutputs       
         es_1 = replaceEquations(es, repl);
       then
-        (DAELow.ALGORITHM(indx,expl4,expl1,source) :: es_1);
+        (DAELow.ALGORITHM(indx,expl,expl1,source) :: es_1);
 
     case ((DAELow.SOLVED_EQUATION(componentRef = cr,exp = e,source = source) :: es),repl)
       equation

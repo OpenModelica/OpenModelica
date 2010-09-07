@@ -3118,6 +3118,7 @@ algorithm
         arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
         algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
+        eqns_3 = Util.listMap2(eqns_3,updateAlgorithmInputsOutputs,vars_1,algs_1);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
       then
         (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, algs_1, aliasVarsRepl);
@@ -3285,6 +3286,34 @@ algorithm
       then bt_1;
   end matchcontinue;
 end getOutputsFromAlgorithms;
+
+protected function updateAlgorithmInputsOutputs"
+Author: Frenkel TUD 2010-09 function updateAlgorithmInputsOutputs
+  helper for removeSimpleEquations
+  update inputs and outputs of algorithms after remove simple equations"
+  input Equation inEqn;
+  input Variables invars;
+  input list<DAE.Algorithm> inAlgs;
+  output Equation outEqn;
+algorithm
+  outEqn := matchcontinue (inEqn,invars,inAlgs)
+    local
+      Equation e;
+      Variables vars;
+      list<DAE.Algorithm> algs;
+      DAE.Algorithm a;
+      Integer index;
+      list<DAE.Exp> in_,out,inputs,outputs;
+      DAE.ElementSource source;
+     case (ALGORITHM(index=index,in_=in_,out=out,source=source),vars,algs)
+      equation
+        true = listLength(algs) > index;
+        a = listNth(algs,index);
+        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars, a);  
+      then ALGORITHM(index,inputs,outputs,source);
+    case (e,_,_) then e;
+  end matchcontinue;
+end updateAlgorithmInputsOutputs;
 
 public function countSimpleEquations
 "Counts the number of trivial/simple equations
@@ -4392,8 +4421,12 @@ algorithm
         (res1,vars,i_1,whenClauseList4);
 
     case (DAE.WHEN_EQUATION(condition = cond),_,_)
+      local String scond;
       equation
-        print("- DAELow.lowerWhenEqn: Error in lowerWhenEqn.\n");
+        scond = Exp.printExpStr(cond);
+        print("- DAELow.lowerWhenEqn: Error in lowerWhenEqn. \n when ");
+        print(scond);
+        print(" ... \n");
       then fail();
   end matchcontinue;
 end lowerWhenEqn;
@@ -4440,6 +4473,10 @@ algorithm
 
     case ({},{},trueCls,elseCls,nextInd) then ({},nextInd,listAppend(trueCls,elseCls));
 
+    case (_,_,_,_,_)
+      equation
+        print("- DAELow.mergeClauses: Error in mergeClauses.\n");
+      then fail();
   end matchcontinue;
 end mergeClauses;
 
@@ -4550,6 +4587,10 @@ algorithm
         e_2 = Exp.stringifyCrefs(Exp.simplify(e));
       then
         ((WHEN_EQUATION(WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE),source) :: eqnl),reinit);
+    case (_,_)
+      equation
+        print("- DAELow.lowerWhenEqn2: Error in lowerWhenEqn2.\n");
+      then fail();        
   end matchcontinue;
 end lowerWhenEqn2;
         
