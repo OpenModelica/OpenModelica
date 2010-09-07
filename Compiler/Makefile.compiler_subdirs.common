@@ -35,14 +35,14 @@ $(SRCSIGX): %.sigx : %.mo
 
 vctarget: $(SRCC) absyn_subdir
 
-absyn_subdir:
+absyn_subdir: $(SRCHSRCDIR)
 	(cd $(top_builddir)/Parser && $(MAKE) -f $(MAKETARGET) vctarget)
 
-runtime:
+runtime: $(SRCHSRCDIR)
 	$(MAKE) -C ../runtime/ -f $(MAKETARGET)
-parser:
+parser: $(SRCHSRCDIR)
 	$(MAKE) -C ../../Parser/ -f $(MAKETARGET)
-modpar:
+modpar: $(SRCHSRCDIR)
 	$(MAKE) -C ../modpar/ -f $(MAKETARGET)
 
 clean:
