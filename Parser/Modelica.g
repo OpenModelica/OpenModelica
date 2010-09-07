@@ -170,6 +170,7 @@ class_type returns [void* ast] :
 
 class_specifier returns [void* ast, void* name] @declarations {
   char *s1 = 0;
+  char *s2 = 0;
 } :
     ( i1=IDENT spec=class_specifier2
       {
@@ -181,7 +182,8 @@ class_specifier returns [void* ast, void* name] @declarations {
     | EXTENDS i1=IDENT (mod=class_modification)? cmt=string_comment comp=composition T_END i2=IDENT
       {
         s1 = $i1.text->chars;
-        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        s2 = $i2.text->chars;
+        modelicaParserAssert(!strcmp(s1,s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
       }
