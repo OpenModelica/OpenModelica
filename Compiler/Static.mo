@@ -10889,55 +10889,52 @@ public function crefVectorize
 algorithm
   outExp := matchcontinue (performVectorization,inExp,inType,splicedExp,crefIdType,applyLimits)
     local
-      Boolean b1,b2,doVect;
-      DAE.ExpType elt_tp,exptp,t2;
-      DAE.Exp e,exp1,exp2;
-      DAE.ComponentRef cr,cr_2;
-      Integer ds,ds2;
-      list<DAE.Subscript> ssl;
-      tuple<DAE.TType, Option<Absyn.Path>> t;//,tOrg;
-      DAE.Type tOrg;
-      DAE.ExpType ety;
-      DAE.Type tttt;
-      list<DAE.ComponentRef> crefl1;
-      DAE.ComponentRef testCREF;
+      Boolean b1,b2;
+      DAE.ExpType exptp;
+      DAE.Exp e;
+      DAE.ComponentRef cr;
+      DAE.Type t;
+      DAE.Dimension d1, d2;
 
     // no vectorization
     case(false, e, _, _,_,_) then e;
 
     // types extending basictype
-    case (doVect,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_,crefIdType,applyLimits)
+    case (_,e,(DAE.T_COMPLEX(_,_,SOME(t),_),_),_,crefIdType,applyLimits)
       equation
-        e = crefVectorize(doVect,e,t,NONE,crefIdType,applyLimits);
+        e = crefVectorize(true,e,t,NONE,crefIdType,applyLimits);
       then e;
 
     // component reference and an array type with dimensions less than vectorization limit
-    case (_,DAE.CREF(componentRef = cr_2,ty = t2),
-           (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType =
-                                 (t as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds2)),_))),_)),
-           SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
+    case (_, _, (DAE.T_ARRAY(arrayDim = d1, arrayType = (DAE.T_ARRAY(arrayDim = d2), _)), _),
+        SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
       equation
-        b1 = (ds < RTOpts.vectorizationLimit());
-        b2 = (ds2 < RTOpts.vectorizationLimit());
+        b1 = (Exp.dimensionSize(d1) < RTOpts.vectorizationLimit());
+        b2 = (Exp.dimensionSize(d2) < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
         e = tryToConvertArrayToMatrix(e);
       then
         e;
 
-    case(_, exp2 as (DAE.CREF(componentRef = cr_2,ty = t2)), 
-         (tOrg as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType = t),_)), 
-         SOME(exp1 as DAE.CREF(componentRef = cr,ty = exptp)),crefIdType,applyLimits)
+    case (_, _, (DAE.T_ARRAY(arrayDim = d1, arrayType = t), _), 
+        SOME(DAE.CREF(componentRef = cr)), crefIdType, applyLimits)
       equation
         false = Types.isArray(t);
-        true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
+        true = (Exp.dimensionSize(d1) < RTOpts.vectorizationLimit()) or not applyLimits;
         e = elabCrefSlice(cr,crefIdType);
       then
         e;
 
     /* matrix sizes > vectorization limit is not vectorized */
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType = (t as (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds2)),_))),_),_,crefIdType,applyLimits) 
+    case (_, DAE.CREF(componentRef = cr, ty = exptp), 
+        (DAE.T_ARRAY(arrayDim = d1, arrayType = t as (DAE.T_ARRAY(arrayDim = d2), _)), _),
+        _, crefIdType, applyLimits)
+      local
+        Integer ds, ds2;
       equation 
+        ds = Exp.dimensionSize(d1);
+        ds2 = Exp.dimensionSize(d2);
         b1 = (ds < RTOpts.vectorizationLimit());
         b2 = (ds2 < RTOpts.vectorizationLimit());
         true = boolAnd(b1, b2) or not applyLimits;
@@ -10946,9 +10943,13 @@ algorithm
         e;
         
     /* vectorsizes > vectorization limit is not vectorized */ 
-    case (_,DAE.CREF(componentRef = cr,ty = exptp),(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = ds),arrayType = t),_),_,crefIdType,applyLimits) 
+    case (_,DAE.CREF(componentRef = cr,ty = exptp),
+        (DAE.T_ARRAY(arrayDim = d1,arrayType = t),_),_,crefIdType,applyLimits) 
+      local
+        Integer ds;
       equation 
         false = Types.isArray(t);
+        ds = Exp.dimensionSize(d1);
         true = (ds < RTOpts.vectorizationLimit()) or not applyLimits;
         e = createCrefArray(cr, 1, ds, exptp, t,crefIdType);
       then
@@ -11293,14 +11294,16 @@ algorithm
         exp1 = DAE.ARRAY(DAE.ET_ARRAY( ety,{DAE.DIM_INTEGER(0)}),true,{});
       then exp1;
 
-    case(exp1 as DAE.ICONST(integer=_),DAE.ARRAY(_,_,{}),id ,ety)
+    case(exp1,DAE.ARRAY(_,_,{}),id ,ety)
       equation
+        true = Exp.isValidSubscript(exp1);
         crty = Exp.unliftArray(ety) "only subscripting one dimension, unlifting once ";
         exp1 = DAE.CREF(DAE.CREF_IDENT(id,ety,{DAE.INDEX(exp1)}),crty);
       then exp1;
 
-    case(exp1 as DAE.ICONST(integer=_), (exp2), id ,ety)
+    case(exp1, exp2, id ,ety)
       equation
+        true = Exp.isValidSubscript(exp1);
         exp1 = applySubscript2(exp1, exp2,ety);
       then exp1;
   end matchcontinue;

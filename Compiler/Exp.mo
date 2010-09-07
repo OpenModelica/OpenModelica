@@ -13445,5 +13445,18 @@ algorithm
   end matchcontinue;
 end arrayDimensionSetFirst;
 
+public function isValidSubscript
+  "Checks if an expression is a valid subscript, i.e. an integer or enumeration
+  literal."
+  input DAE.Exp inSub;
+  output Boolean isValid;
+algorithm
+  isValid := matchcontinue(inSub)
+    case DAE.ICONST(integer = _) then true;
+    case DAE.ENUM_LITERAL(index = _) then true;
+    case _ then false;
+  end matchcontinue;
+end isValidSubscript;
+
 end Exp;
 

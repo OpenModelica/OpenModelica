@@ -2517,7 +2517,7 @@ algorithm
       equation 
         (cache,DAE.TYPES_VAR(name,DAE.ATTR(f,streamPrefix,acc,vt,di,io),_,ty,bind,cnstForRange),_,_,componentEnv) = lookupVar2(cache,ht, id);
         ty_1 = checkSubscripts(ty, ss);
-        ss = addArrayDimensions(ty,ty_1,ss);
+        ss = addArrayDimensions(ty,ss);
         tty = Types.elabType(ty);     
         ty2_2 = Types.elabType(ty);        
         splicedExp = DAE.CREF(DAE.CREF_IDENT(id,ty2_2, ss),tty);
@@ -2538,7 +2538,7 @@ algorithm
         (tCref::ltCref) = elabComponentRecursive((texp));
         ty1 = checkSubscripts(ty2, ss);
         ty = sliceDimensionType(ty1,ty);
-        ss = addArrayDimensions(ty2,ty2,ss);
+        ss = addArrayDimensions(ty2,ss);
         ty2_2 = Types.elabType(ty2);
         xCref = DAE.CREF_QUAL(id,ty2_2,ss,tCref);
         eType = Types.elabType(ty);
@@ -2582,31 +2582,81 @@ protected function addArrayDimensions " function addArrayDimensions
 This is the function where we add arrays representing the dimension of the type.
 In type {array 2[array 3 ]] Will generate 2 arrays. {1,2} and {1,2,3}"
   input DAE.Type tySub;
-  input DAE.Type tyExpr;
   input list<DAE.Subscript> ss;
   output list<DAE.Subscript> outType;
-
 algorithm
   outType :=
-  matchcontinue (tySub, tyExpr,ss)
+  matchcontinue (tySub, ss)
     local
-      DAE.Type ty1,ty2,ty3;
-      list<DAE.Subscript> subs1,subs2,subs3;
-      list<Integer> dim1,dim2;
-      Integer sslLength,expandLength;
-    case( ty2, ty3, subs1) // add ss
+      list<DAE.Subscript> subs;
+      list<DAE.Dimension> dims;
+    case(_, _)
       equation
-        true = Types.isArray(ty2);
-        dim2 = Types.getDimensionSizes(ty2);
-        sslLength = listLength(ss);
-        subs2 = makeExpIntegerArray(dim2);
-        subs2 = expandWholeDimSubScript(subs1,subs2);
-      then subs2;
-    case(_,_,subs1) // non array, return
-      equation
-      then (subs1);
+        true = Types.isArray(tySub);
+        dims = Types.getDimensions(tySub);
+        subs = Util.listMap(dims, makeDimensionSubscript);
+        subs = expandWholeDimSubScript(ss,subs);
+      then subs;
+    case(_,_) // non array, return
+      equation then ss;
   end matchcontinue;
 end addArrayDimensions;
+
+protected function makeDimensionSubscript
+  "Creates a slice with all indices of the dimension."
+  input DAE.Dimension inDim;
+  output DAE.Subscript outSub;
+algorithm
+  outSubs := matchcontinue(inDim)
+    local
+      Integer sz;
+      list<DAE.Exp> expl;  
+    // Special case when addressing array[0].
+    case DAE.DIM_INTEGER(integer = 0)
+      then
+        DAE.SLICE(DAE.ARRAY(DAE.ET_INT, true, {DAE.ICONST(0)}));
+    // Array with integer dimension.
+    case DAE.DIM_INTEGER(integer = sz)
+      equation
+        expl = Util.listMap(Util.listIntRange(sz), Exp.makeIntegerExp);
+      then
+        DAE.SLICE(DAE.ARRAY(DAE.ET_INT, true, expl));
+    // Array with enumeration dimension.
+    case DAE.DIM_ENUM(enumTypeName = enum_name, literals = l, size = sz)
+      local
+        Absyn.Path enum_name;
+        list<String> l;
+      equation
+        expl = makeEnumLiteralIndices(enum_name, l, 1);
+      then
+        DAE.SLICE(DAE.ARRAY(DAE.ET_ENUMERATION(NONE, enum_name, l, {}), true, expl));
+  end matchcontinue;
+end makeDimensionSubscript;
+          
+protected function makeEnumLiteralIndices
+  "Creates a list of enumeration literal expressions from an enumeration."
+  input Absyn.Path enumTypeName;
+  input list<String> enumLiterals;
+  input Integer enumIndex;
+  output list<DAE.Exp> enumIndices;
+algorithm
+  enumIndices := matchcontinue(enumTypeName, enumLiterals, enumIndex)
+    case (_, {}, _) then {};
+    case (_, l :: ls, _)
+      local
+        String l;
+        list<String> ls;
+        DAE.Exp e;
+        list<DAE.Exp> expl;
+        Absyn.Path enum_type_name;
+      equation
+        enum_type_name = Absyn.joinPaths(enumTypeName, Absyn.IDENT(l));
+        e = DAE.ENUM_LITERAL(enum_type_name, enumIndex);
+        expl = makeEnumLiteralIndices(enumTypeName, ls, enumIndex + 1);
+      then
+        e :: expl;
+  end matchcontinue;
+end makeEnumLiteralIndices;
 
 protected function expandWholeDimSubScript " Function expandWholeDimSubScript
 This function replaces Wholedim(if possible) with the expanded dimension.
