@@ -683,10 +683,10 @@ double InterpolationTable::interpolateLin(double time, size_t i, size_t j) const
   double t_2 = getElt(i+1,0);
   double y_1 = getElt(i,j);
   double y_2 = getElt(i+1,j);
-  if (std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
-    return y_1;
-  else
-    return (y_1 + ((time-t_1)/(t_2-t_1)) * (y_2-y_1));
+  //if (std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
+  //  return y_1;
+  //else
+  return (y_1 + ((time-t_1)/(t_2-t_1)) * (y_2-y_1));
 }
 
 const double& InterpolationTable::getElt(size_t row, size_t col) const
@@ -698,8 +698,8 @@ void InterpolationTable::checkValidityOfData() const
 {
   size_t maxSize = colWise ? cols : rows;
   for(size_t i = 1; i < maxSize; ++i)
-    if (getElt(i-1,0) > getElt(i,0))
-      throw CustomError("TimeTable: Column with time variable not monotonous: %g > %g.", getElt(i-1,0),getElt(i,0));
+    if (getElt(i-1,0) >= getElt(i,0))
+      throw CustomError("TimeTable: Column with time variable not monotonous: %g >= %g.", getElt(i-1,0),getElt(i,0));
 }
 
 
