@@ -1250,24 +1250,6 @@ public function listMap1 "function listMap1
   replaceable type Type_c subtypeof Any;
 algorithm
   outTypeCLst:= listMap1_tail(inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,{});
-  /*
-  matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB)
-    local
-      Type_c f_1;
-      list<Type_c> r_1;
-      Type_a f;
-      list<Type_a> r;
-      FuncTypeType_aType_bToType_c fn;
-      Type_b extraarg;
-    case ({},_,_) then {};
-    case ((f :: r),fn,extraarg)
-      equation
-        f_1 = fn(f, extraarg);
-        r_1 = listMap1(r, fn, extraarg);
-      then
-        (f_1 :: r_1);
-  end matchcontinue;
-  */
 end listMap1;
 
 public function listMap1_tail
@@ -1298,13 +1280,11 @@ algorithm
       list<Type_a> r;
       FuncTypeType_aType_bToType_c fn;
       Type_b extraarg;
-    /* case ({},_,_,accTypeCLst) then listReverse(accTypeCLst); */
-    case ({},_,_,accTypeCLst) then accTypeCLst;
+    case ({},_,_,accTypeCLst) then listReverse(accTypeCLst);
     case ((f :: r),fn,extraarg,accTypeCLst)
       equation
         f_1 = fn(f, extraarg);
-/*        accTypeCLst = f_1::accTypeCLst; */
-        accTypeCLst = listAppend(accTypeCLst, {f_1});
+        accTypeCLst = f_1::accTypeCLst;
         r_1 = listMap1_tail(r, fn, extraarg, accTypeCLst);
       then
         r_1;
@@ -1329,24 +1309,6 @@ public function listMap1r "function listMap1r
   replaceable type Type_c subtypeof Any;
 algorithm
   outTypeCLst:= listMap1r_tail(inTypeALst,inFuncTypeTypeBTypeAToTypeC,inTypeB,{});
-  /*
-  matchcontinue (inTypeALst,inFuncTypeTypeBTypeAToTypeC,inTypeB)
-    local
-      Type_c f_1;
-      list<Type_c> r_1;
-      Type_a f;
-      list<Type_a> r;
-      FuncTypeType_bType_aToType_c fn;
-      Type_b extraarg;
-    case ({},_,_) then {};
-    case ((f :: r),fn,extraarg)
-      equation
-        f_1 = fn(extraarg, f);
-        r_1 = listMap1r(r, fn, extraarg);
-      then
-        (f_1 :: r_1);
-  end matchcontinue;
-  */
 end listMap1r;
 
 public function listMap1r_tail
@@ -1377,19 +1339,75 @@ algorithm
       list<Type_a> r;
       FuncTypeType_bType_aToType_c fn;
       Type_b extraarg;
-/*    case ({},_,_,accTypeCLst) then listReverse(accTypeCLst);*/
-    case ({},_,_,accTypeCLst) then accTypeCLst;
+    case ({},_,_,accTypeCLst) then listReverse(accTypeCLst);
     case ((f :: r),fn,extraarg,accTypeCLst)
       equation
         f_1 = fn(extraarg, f);
-/*        accTypeCLst = f_1::accTypeCLst;*/
-        accTypeCLst = listAppend(accTypeCLst, {f_1});
+        accTypeCLst = f_1::accTypeCLst;
         r_1 = listMap1r_tail(r, fn, extraarg, accTypeCLst);
       then
         (r_1);
   end matchcontinue;
 end listMap1r_tail;
 
+public function listMapAndFold
+  "Takes a list, an extra argument and a function. The function will be applied
+  to each element in the list, and the extra argument will be passed to the
+  function an updated."
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg;
+  output list<Type_c> outList;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElem;
+    input Type_b inArg;
+    output Type_c outResult;
+    output Type_b outArg;
+  end FuncType;
+algorithm
+  outList := listMapAndFold_tail(inList, inFunc, inArg, {});
+end listMapAndFold;
+
+public function listMapAndFold_tail
+  "Tail recursive implementation of listMapAndFold."
+  input list<Type_a> inList;
+  input FuncType inFunc;
+  input Type_b inArg;
+  input list<Type_c> inAccumList;
+  output list<Type_c> outList;
+
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+
+  partial function FuncType
+    input Type_a inElem;
+    input Type_b inArg;
+    output Type_c outResult;
+    output Type_b outArg;
+  end FuncType;
+algorithm
+  outList := matchcontinue(inList, inFunc, inArg, inAccumList)
+    local
+      Type_a e1;
+      list<Type_a> rest_e1;
+      Type_c res;
+      list<Type_c> rest_res;
+    case ({}, _, _, _) then listReverse(inAccumList);
+    case (e1 :: rest_e1, _, _, _)
+      equation
+        (res, inArg) = inFunc(e1, inArg);
+        inAccumList = res :: inAccumList;
+        rest_res = listMapAndFold_tail(rest_e1, inFunc, inArg, inAccumList);
+      then
+        rest_res;
+  end matchcontinue;
+end listMapAndFold_tail;
 
 public function listMap2 "function listMap2
   Takes a list and a function and two extra arguments passed to the function.

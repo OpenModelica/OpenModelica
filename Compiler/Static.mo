@@ -1518,6 +1518,7 @@ algorithm
 			Integer i;
 			Real r;
 			DAE.Exp e1;
+			Values.Value v;
     case(e, {}, id) then {};
     case(e, Values.INTEGER(i)::valLst, id)
 			equation
@@ -1529,6 +1530,12 @@ algorithm
 				(e1,_) = Exp.replaceExp(e, DAE.CREF(DAE.CREF_IDENT(id, DAE.ET_OTHER(), {}), DAE.ET_OTHER()), DAE.RCONST(r));
 				expl = elabCallReduction2(e, valLst, id);
 			then e1 :: expl;
+		case(e, (v as Values.ENUM_LITERAL(index = _)) :: valLst, id)
+		  equation
+		    e1 = ValuesUtil.valueExp(v);
+		    (e1,_) = Exp.replaceExp(e,DAE.CREF(DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}),DAE.ET_OTHER()),e1);
+		    expl = elabCallReduction2(e, valLst, id);
+		  then e1 :: expl; 
   end matchcontinue;
 end elabCallReduction2;
 
@@ -10296,6 +10303,20 @@ algorithm
       then
         (cache,exp,DAE.PROP(t,const),acc_1,dae);
         
+    // An enumeration type => array of enumeration literals.
+    case (cache, env, c, impl, doVect, pre)
+      local
+        list<String> enum_lit_strs;
+        SCode.Class c;
+      equation
+        path = Absyn.crefToPath(c);
+        (cache, c as SCode.CLASS(restriction = SCode.R_ENUMERATION), env) = 
+          Lookup.lookupClass(cache, env, path, false);
+        enum_lit_strs = SCode.componentNames(c);
+        (exp, t) = makeEnumerationArray(path, enum_lit_strs);
+      then
+        (cache,exp,DAE.PROP(t, DAE.C_CONST),SCode.RO(),DAEUtil.emptyDae);
+        
     // MetaModelica Partial Function
     case (cache,env,c,impl,doVect,pre)
       equation
@@ -10358,6 +10379,41 @@ algorithm
         fail();
   end matchcontinue;
 end elabCref;
+
+protected function makeEnumerationArray
+  "Expands an enumeration type to an array of it's enumeration literals."
+  input Absyn.Path enumTypeName;
+  input list<String> enumLiterals;
+  output DAE.Exp enumArray;
+  output DAE.Type enumArrayType;
+
+  list<Absyn.Path> enum_lit_names;
+  list<DAE.Exp> enum_lit_expl;
+  Integer sz;
+  DAE.ExpType ety;
+algorithm
+  enum_lit_names := Util.listMap(enumLiterals, Absyn.makeIdentPathFromString);
+  enum_lit_names := Util.listMap1r(enum_lit_names, Absyn.joinPaths, enumTypeName);
+  enum_lit_expl := Util.listMapAndFold(enum_lit_names, makeEnumLiteral, 1);
+  sz := listLength(enumLiterals);
+  ety := DAE.ET_ARRAY(DAE.ET_ENUMERATION(NONE, enumTypeName, enumLiterals, {}),
+    {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)});
+  enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
+  enumArrayType := (DAE.T_ENUMERATION(NONE, enumTypeName, enumLiterals, {}), NONE);
+  enumArrayType := (DAE.T_ARRAY(DAE.DIM_ENUM(enumTypeName, enumLiterals, sz), 
+    enumArrayType), NONE);
+end makeEnumerationArray;
+
+protected function makeEnumLiteral
+  "Creates a new enumeration literal. For use with listMapAndFold."
+  input Absyn.Path name;
+  input Integer index;
+  output DAE.Exp enumExp;
+  output Integer newIndex;
+algorithm
+  enumExp := DAE.ENUM_LITERAL(name, index);
+  newIndex := index + 1;
+end makeEnumLiteral;
 
 protected function makeASUBArrayAdressing
 "function makeASUBArrayAdressing
