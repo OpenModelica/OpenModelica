@@ -374,11 +374,11 @@ double ModelicaTables_CombiTimeTable_interpolate(int tableID, int icol, double t
 }
 double ModelicaTables_CombiTimeTable_minimumTime(int tableID)
 {
-  return omcTableTimeTmax(tableID);
+  return omcTableTimeTmin(tableID);
 }
 double ModelicaTables_CombiTimeTable_maximumTime(int tableID)
 {
-  return omcTableTimeTmin(tableID);
+  return omcTableTimeTmax(tableID);
 }
 
 int ModelicaTables_CombiTable1D_init(const char* tableName, const char* fileName, double* table, size_t table_size1, size_t table_size2, int smoothness)

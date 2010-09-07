@@ -10,3 +10,6 @@ libModelicaExternalC.a : $(OBJS)
 
 ModelicaExternalC.o : ModelicaExternalC.cpp
 	g++ -O3 -c ModelicaExternalC.cpp -o ModelicaExternalC.o
+
+clean:
+	rm -f libModelicaExternalC.a $(OBJS)

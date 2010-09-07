@@ -671,7 +671,7 @@ double InterpolationTable::extrapolate(double time, size_t col,
     return interpolateLin(time,(beforeData?0:lastIdx),col);
   case 2:
     // periodically repeat signal
-    time = startTime + (time - floor(time/maxTime()));
+    time = startTime + (time - maxTime()*floor(time/maxTime()));
     return interpolate(time,col);
   default:
     return 0.0;
@@ -683,7 +683,10 @@ double InterpolationTable::interpolateLin(double time, size_t i, size_t j) const
   double t_2 = getElt(i+1,0);
   double y_1 = getElt(i,j);
   double y_2 = getElt(i+1,j);
-  return (y_1 + ((time-t_1)/(t_2-t_1)) * (y_2-y_1));
+  if (std::abs(t_2-t_1) < 100.0*std::numeric_limits<double>::epsilon())
+    return y_1;
+  else
+    return (y_1 + ((time-t_1)/(t_2-t_1)) * (y_2-y_1));
 }
 
 const double& InterpolationTable::getElt(size_t row, size_t col) const
