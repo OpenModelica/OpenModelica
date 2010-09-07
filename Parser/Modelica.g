@@ -48,7 +48,17 @@ import MetaModelica_Lexer; /* Makes all tokens defined */
   #include "runtime/errorext.h"
   #define ModelicaParserException -1
   #define ModelicaLexerException -2
-  #define modelicaParserAssert(cond,msg,func) {if (!(cond)) { CONSTRUCTEX(); EXCEPTION->type = ModelicaParserException; EXCEPTION->message = (void *) msg; goto rule ## func ## Ex; }}
+  #define modelicaParserAssert(cond,msg,func,_line1,_offset1,_line2,_offset2) {if (!(cond)) { \
+fileinfo* __info = malloc(sizeof(fileinfo)); \
+CONSTRUCTEX(); \
+EXCEPTION->type = ModelicaParserException; \
+EXCEPTION->message = (void *) msg; \
+__info->line1 = _line1; \
+__info->line2 = _line2; \
+__info->offset1 = _offset1; \
+__info->offset2 = _offset2; \
+EXCEPTION->custom = __info; \
+goto rule ## func ## Ex; }}
 
   #define false 0
   #define true 1
@@ -85,6 +95,12 @@ import MetaModelica_Lexer; /* Makes all tokens defined */
   #define token_to_scon(tok) mk_scon(tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
   #define INFO(start) Absyn__INFO(ModelicaParser_filename_RML, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
+  typedef struct fileinfo_struct {
+    int line1;
+    int line2;
+    int offset1;
+    int offset2;
+  } fileinfo;
 }
 
 @members
@@ -140,7 +156,7 @@ class_type returns [void* ast] :
   | BLOCK { ast = Absyn__R_5fBLOCK; }
   | ( e=EXPANDABLE )? CONNECTOR { ast = e ? Absyn__R_5fEXP_5fCONNECTOR : Absyn__R_5fCONNECTOR; }
   | TYPE { ast = Absyn__R_5fTYPE; }
-  | PACKAGE { ast = Absyn__R_5fPACKAGE; }
+  | T_PACKAGE { ast = Absyn__R_5fPACKAGE; }
   | FUNCTION { ast = Absyn__R_5fFUNCTION; } 
   | UNIONTYPE { ast = Absyn__R_5fUNIONTYPE; }
   | OPERATOR (f=FUNCTION | r=RECORD)? 
@@ -158,14 +174,14 @@ class_specifier returns [void* ast, void* name] @declarations {
     ( i1=IDENT spec=class_specifier2
       {
         s1 = $i1.text->chars;
-        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
+        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = $spec.ast;
         $name = mk_scon(s1);
       }
     | EXTENDS i1=IDENT (mod=class_modification)? cmt=string_comment comp=composition T_END i2=IDENT
       {
         s1 = $i1.text->chars;
-        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier);
+        modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
       }
@@ -595,7 +611,7 @@ equation returns [void* ast] :
   ;
 
 algorithm returns [void* ast] :
-  ( a=assign_clause_a
+  ( aa=assign_clause_a {a = aa.ast;}
   | a=conditional_equation_a
   | a=for_clause_a
   | a=while_clause
@@ -612,21 +628,24 @@ algorithm returns [void* ast] :
     {$ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start));}
   ;
 
-assign_clause_a returns [void* ast] :
+assign_clause_a returns [void* ast] @declarations {
+  char *s1 = 0;
+} :
   /* MetaModelica allows pattern matching on arbitrary expressions in algorithm sections... */
   e1=simple_expression
     ( (ASSIGN|eq=EQUALS) e2=expression
       {
-        modelicaParserAssert(eq==0,"Assignments use the := operator, not =", assign_clause_a);
+        modelicaParserAssert(eq==0,"Assignments use the := operator, not =", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
         modelicaParserAssert(eq!=0 || metamodelica_enabled() || (RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__CREF_3dBOX1))
             || ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2))),
             "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
-            assign_clause_a);
+            assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = Absyn__ALG_5fASSIGN(e1,e2);
       }
     | 
       {
-        modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2), "Only function call expressions may stand alone in an algorithm section", assign_clause_a);
+        modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2), "Only function call expressions may stand alone in an algorithm section",
+                             assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
         $ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
       }
@@ -882,7 +901,7 @@ primary returns [void* ast] :
       if (errno || *endptr != 0) {
         errno = 0;
         double d = strtod(chars,&endptr);
-        modelicaParserAssert(*endptr != 0 && !errno, "Number is too large to represent as a long or double on this machine", primary);
+        modelicaParserAssert(*endptr != 0 && !errno, "Number is too large to represent as a long or double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
         c_add_source_message(2, "SYNTAX", "Warning", "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
           ModelicaParser_readonly, ModelicaParser_filename_C);

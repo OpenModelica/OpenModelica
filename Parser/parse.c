@@ -181,7 +181,7 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   ANTLR3_UINT32 ttype;
   int type;
   const char *error_type = "TRANSLATION";
-  const char *token_text[2] = {0,0};
+  const char *token_text[3] = {0,0,0};
   int p_offset, n_offset, error_id = 0, p_line, n_line;
   recognizer->state->error = ANTLR3_TRUE;
   recognizer->state->failed = ANTLR3_TRUE;
@@ -206,7 +206,7 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
     p_line = preToken->line;
     n_line = nextToken->line;
     p_offset = preToken->charPosition+1;
-    n_offset = nextToken->charPosition+1;
+    n_offset = nextToken->charPosition;
     break;
 
   default:
@@ -223,22 +223,28 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
     break;
   case ANTLR3_MISSING_TOKEN_EXCEPTION:
     token_text[0] = ex->expecting == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[ex->expecting];
-    c_add_source_message(2, "SYNTAX", "Error", "Missing token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
+    c_add_source_message(2, "SYNTAX", "Error", "Missing token: %s", token_text, 1, p_line, p_offset, p_line, p_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_NO_VIABLE_ALT_EXCEPTION:
-    token_text[0] = nextToken->getText(nextToken)->chars;
+    token_text[0] = preToken->getText(preToken)->chars;
     c_add_source_message(2, "SYNTAX", "Error", "No viable alternative near token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ModelicaParserException:
-    c_add_source_message(2, "SYNTAX", "Error", "%s.", token_text+1, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
-    break;
+    {
+      fileinfo* info = (fileinfo*) ex->custom;
+      c_add_source_message(2, "SYNTAX", "Error", "Parse error: %s", token_text+1, 1, info->line1, info->offset1, info->line2, info->offset2, false, ModelicaParser_filename_C);
+      free(info);
+      ex->custom = 0;
+      break;
+    }
   case ANTLR3_MISMATCHED_SET_EXCEPTION:
   case ANTLR3_EARLY_EXIT_EXCEPTION:
   case ANTLR3_RECOGNITION_EXCEPTION:
   default:
-    token_text[1] = ex->message;
-    token_text[0] = preToken->getText(preToken)->chars;
-    c_add_source_message(2, "SYNTAX", "Error", "Parser error: %s near: %s", token_text, 2, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
+    token_text[2] = ex->message;
+    token_text[1] = preToken->getText(preToken)->chars;
+    token_text[0] = preToken->type == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[preToken->type];
+    c_add_source_message(2, "SYNTAX", "Error", "Parser error: %s near: %s (%s)", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   }
 
@@ -287,7 +293,9 @@ void* parseStream(pANTLR3_INPUT_STREAM input)
   // psr->pParser->rec->recoverFromMismatchedSet = noRecoverFromMismatchedSet;
 
   void* res;
-  if (ModelicaParser_flags & PARSE_EXPRESSION)
+  /* if (ModelicaParser_flags & PARSE_FLAT)
+    res = psr->flat_class(psr);
+  else */ if (ModelicaParser_flags & PARSE_EXPRESSION)
     res = psr->interactive_stmt(psr);
   else
     res = psr->stored_definition(psr);
@@ -321,13 +329,13 @@ void* parseFile(void* fileNameRML, int flags)
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
   ModelicaParser_filename_C = RML_STRINGDATA(fileNameRML);
-
-  int len = strlen(ModelicaParser_filename_C);
-  if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
-    fprintf(stderr, "Flat Modelica\n");
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
+
+  int len = strlen(ModelicaParser_filename_C);
+  if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
+    ModelicaParser_flags |= PARSE_FLAT;
 
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   input  = antlr3AsciiFileStreamNew(fName);

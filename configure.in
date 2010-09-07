@@ -396,7 +396,7 @@ AC_MSG_RESULT([Not compiling with BOOST]); USE_MODPAR=""; BOOSTHOME=""
 ])
 date=`date "+%Y-%m-%d %H:%M:%S"`
 
-GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix"
+GENERATED_AUTOCONF_FILES="Makefile c_runtime/Makefile Compiler/rml2sig/Makefile modelica_parser/test/parser/Makefile mosh/src/Makefile Compiler/Makefile Compiler/omc_release/Makefile Compiler/omc_debug/Makefile Compiler/omc_profiler/Makefile Compiler/absyn_builder/Makefile modelica_parser/test/lexer/Makefile Compiler/test_codegen/Makefile Compiler/runtime/Makefile modelica_parser/src/Makefile Compiler/modpar/Makefile flat_modelica_parser/src/Makefile c_runtime/interactive/Makefile OMNotebook/ext/OMPlotWindow.config OMNotebook/OMNotebookQT4/OMNotebook.config OMShell/OMShell.config Compiler/runtime/config.unix.h OMNotebook/OMNotebookQT4/Makefile.unix OMShell/Makefile.unix OMNotebook/ext/Makefile.unix Parser/Makefile"
 
 AC_CONFIG_COMMANDS([config.unix.h.fix],[./configure-post.sh $ac_cs_config])
 

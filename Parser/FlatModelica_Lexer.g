@@ -58,3 +58,6 @@ POWER_EW : '.^'; /* Modelica 3.0 */
 /* Modelica 3.1 */
 STREAM : 'stream'; /* for Modelica 3.1 stream connectors */
 
+fragment
+IDENT2 : NONDIGIT ('.' | '[' | ']' | NONDIGIT | DIGIT)*;
+

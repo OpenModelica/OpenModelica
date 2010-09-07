@@ -1,0 +1,60 @@
+COMPILERHOME=../Compiler/
+RMLINC	= -I$(RMLHOME)/include/plain
+
+ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool
+CFLAGS=-O3
+CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
+CC=gcc
+
+.PHONY: all
+all: libantlr3.a libomparse.a
+
+libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
+	# build the library
+	gcc -O3 -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
+	rm -f $@
+	ar -ru libantlr3.a antlr3*.o
+	ranlib libantlr3.a
+	rm -f antlr3*.o
+
+HFILES = \
+  ModelicaParser.h \
+  ModelicaParserCommon.h \
+  MetaModelica_Lexer.h \
+  MetaModelica_Lexer_BaseModelica_Lexer.h \
+  Modelica_3_Lexer.h \
+  Modelica_3_Lexer_BaseModelica_Lexer.h
+
+OBJS = \
+MetaModelica_Lexer_BaseModelica_Lexer.o MetaModelica_Lexer.o \
+Modelica_3_Lexer_BaseModelica_Lexer.o Modelica_3_Lexer.o \
+ModelicaParser.o
+
+MetaModelica_Lexer.o: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h
+Modelica_3_Lexer.o: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
+MetaModelica_Lexer_BaseModelica_Lexer.o: MetaModelica_Lexer_BaseModelica_Lexer.h
+Modelica_3_Lexer_BaseModelica_Lexer.o: Modelica_3_Lexer_BaseModelica_Lexer.h
+parse.o: $(HFILES)
+
+libomparse.a: parse.o $(OBJS)
+	rm -f $@
+	ar -ru $@ parse.o $(OBJS)
+	ranlib $@
+
+ModelicaParser.h ModelicaParser.c: Modelica.g
+	$(ANTLRCMD) $<
+
+Modelica_2_Lexer.c Modelica_2_Lexer.h: Modelica_2_Lexer.g
+	$(ANTLRCMD) $<
+
+Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h: Modelica_3_Lexer.g BaseModelica_Lexer.g
+	$(ANTLRCMD) $<
+
+MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h: MetaModelica_Lexer.g BaseModelica_Lexer.g
+	$(ANTLRCMD) $<
+
+clean:
+	rm -f *.o *.a \
+ModelicaParser.c ModelicaParser.h \
+*Modelica*_Lexer.c *Modelica*_Lexer.h \
+*.tokens

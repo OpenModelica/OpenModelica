@@ -1,0 +1,3 @@
+RMLHOME=@rmlhome@
+
+include Makefile.common

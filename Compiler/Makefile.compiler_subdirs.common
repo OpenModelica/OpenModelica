@@ -9,7 +9,7 @@ all : .testvariables $(ALLMO) $(SRCSIGX)
 	# Updated dependencies; reload make and compile the target
 	$(MAKE) -f $(MAKETARGET) $(PROG)
 
-SUBDIRS	= $(srcdir)/runtime $(srcdir)/absyn_builder $(srcdir)/modpar
+SUBDIRS	= runtime parser modpar
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
 .SUFFIXES: .o .mo .h .c
@@ -36,17 +36,17 @@ $(SRCSIGX): %.sigx : %.mo
 vctarget: $(SRCC) absyn_subdir
 
 absyn_subdir:
-	(cd $(srcdir)/absyn_builder && $(MAKE) -f $(MAKETARGET) vctarget)
+	(cd $(top_builddir)/Parser && $(MAKE) -f $(MAKETARGET) vctarget)
 
-$(srcdir)/runtime: $(SRCHSRCDIR)
-	$(MAKE) -C $@ -f $(MAKETARGET)
-$(srcdir)/absyn_builder: $(SRCHSRCDIR)
-	$(MAKE) -C $@ -f $(MAKETARGET)
-$(srcdir)/modpar: $(SRCHSRCDIR)
-	$(MAKE) -C $@ -f $(MAKETARGET)
+runtime:
+	$(MAKE) -C ../runtime/ -f $(MAKETARGET)
+parser:
+	$(MAKE) -C ../../Parser/ -f $(MAKETARGET)
+modpar:
+	$(MAKE) -C ../modpar/ -f $(MAKETARGET)
 
 clean:
-	for d in $(SUBDIRS); do \
+	for d in ../runtime/ ../../Parser/ ../modpar/; do \
 		(cd $$d && $(MAKE) -f $(MAKETARGET) clean) \
 	done
 	(cd $(srcdir) && $(RM) $(SRCH))

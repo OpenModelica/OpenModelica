@@ -4,8 +4,6 @@
 # $Id$
 #
 
-ANTLR_INCP = -I@antlrinc@
-ANTLR_LIBP = -L@antlrlib@
 LIBSOCKET = @LIBSOCKET@
 LIBLPSOLVE55 = @LIBLPSOLVE55@
 
@@ -29,7 +27,8 @@ else
  CORBALIBS=
 endif
 
-LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_p $(ANTLR_LIBP) -lantlr $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
+LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_p \
+  $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
   -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@
 
 PROG = omcp

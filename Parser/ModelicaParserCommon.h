@@ -45,5 +45,6 @@ extern const char *ModelicaParser_filename_C;
 #define PARSE_CODE_EXPRESSION 1<<3
 #define metamodelica_enabled(void) (ModelicaParser_flags&PARSE_META_MODELICA)
 #define code_expressions_enabled(void) (ModelicaParser_flags&PARSE_CODE_EXPRESSION)
+#define flat_modelica_enabled(void) (ModelicaParser_flags&PARSE_FLAT)
 
 #endif

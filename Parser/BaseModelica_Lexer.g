@@ -66,6 +66,7 @@ FINAL;
 FLOW;
 FOR;
 FUNCTION;
+GARBAGE;
 IF;
 IMPORT;
 T_IN;
@@ -80,7 +81,7 @@ OPERATOR;
 OVERLOAD;
 T_OR;
 T_OUTPUT;
-PACKAGE;
+T_PACKAGE;
 PARAMETER;
 PARTIAL;
 PROTECTED;
@@ -185,7 +186,7 @@ OPERATOR : 'operator';
 OVERLOAD : 'overload';
 T_OR : 'or';
 T_OUTPUT : 'output';
-PACKAGE : 'package';
+T_PACKAGE : 'package';
 PARAMETER : 'parameter';
 PARTIAL : 'partial';
 PROTECTED : 'protected';
@@ -258,7 +259,10 @@ SCHAR :  NL | '\t' | ~('\n' | '\t' | '\r' | '\\' | '"');
 fragment
 SESCAPE : '\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');
 
-IDENT : NONDIGIT (NONDIGIT | DIGIT)* | QIDENT;
+IDENT : QIDENT | IDENT2;
+
+fragment
+IDENT2 : NONDIGIT (NONDIGIT | DIGIT)*;
 
 fragment
 QIDENT :
