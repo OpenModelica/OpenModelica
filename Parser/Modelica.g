@@ -898,7 +898,10 @@ primary returns [void* ast] :
       char* endptr;
       errno = 0;
       long l = strtol(chars,&endptr,10);
-      const char* args[2] = {chars, RML_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63" : l > ((long)1<<31)-1 ? "Modelica only supports 32" : "OpenModelica only supports 31"};
+      const char* args[2] = {chars,
+         RML_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63"
+         : errno || *endptr != 0 ? "Modelica only supports 32"
+         : "OpenModelica only supports 31"};
       
       if (errno || *endptr != 0) {
         errno = 0;
