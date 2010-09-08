@@ -74,8 +74,6 @@ public import SCode;
 public import SCodeUtil;
 public import Values;
 
-protected import DAEDump;
-
 public type Ident = String;
 
 public

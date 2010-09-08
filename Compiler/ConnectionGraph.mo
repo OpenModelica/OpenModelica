@@ -401,8 +401,6 @@ end addConnection;
 
 protected import Exp;
 protected import Debug;
-protected import Print;
-protected import System;
 protected import DAEDump;
 
 protected function canonical

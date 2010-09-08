@@ -357,6 +357,7 @@ algorithm
     case (pack,mp,Absyn.WITHIN(path = within_),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
+        mofiles = Util.sort(mofiles, Util.strcmpBool);
         within_1 = Absyn.joinPaths(within_, Absyn.IDENT(pack));
         p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(within_1), oldp);
       then
@@ -365,6 +366,7 @@ algorithm
     case (pack,mp,Absyn.TOP(),oldp)
       equation
         mofiles = System.moFiles(mp) "Here .mo files in same directory as package.mo should be loaded as sub-packages" ;
+        mofiles = Util.sort(mofiles, Util.strcmpBool);
         p = loadSubpackageFiles(mofiles, mp, Absyn.WITHIN(Absyn.IDENT(pack)), oldp);
       then
         p;

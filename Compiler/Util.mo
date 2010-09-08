@@ -74,7 +74,6 @@ protected import System;
 protected import Print;
 protected import Debug;
 protected import OptManager;
-protected import DAELow;
 
 public constant String derivativeNamePrefix="$DER";
 public constant String pointStr = "$P";
