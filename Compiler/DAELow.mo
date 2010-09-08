@@ -3097,6 +3097,7 @@ algorithm
       Variables vars_1,knvars_1,vars,knvars;
       list<DAE.Exp> crlst,elst;
       list<DAE.Algorithm> algs,algs_1;
+      list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
     case (vars,knvars,eqns,reqns,ieqns,arreqns,algs,states)
       equation
         repl = VarTransform.emptyReplacements();
@@ -3118,7 +3119,8 @@ algorithm
         arreqns2 = BackendVarTransform.replaceMultiDimEquations(arreqns1, vartransf1);
         algs_1 = BackendVarTransform.replaceAlgorithms(algs,vartransf1);
         (vars_1,knvars_1) = moveVariables(vars, knvars, movedvars_1);
-        eqns_3 = Util.listMap2(eqns_3,updateAlgorithmInputsOutputs,vars_1,algs_1);
+        inputsoutputs = Util.listMap1r(algs_1,lowerAlgorithmInputsOutputs,vars_1);
+        eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
       then
         (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, algs_1, aliasVarsRepl);
@@ -3292,26 +3294,22 @@ Author: Frenkel TUD 2010-09 function updateAlgorithmInputsOutputs
   helper for removeSimpleEquations
   update inputs and outputs of algorithms after remove simple equations"
   input Equation inEqn;
-  input Variables invars;
-  input list<DAE.Algorithm> inAlgs;
+  input list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inAlgsInputsOutputs;
   output Equation outEqn;
 algorithm
-  outEqn := matchcontinue (inEqn,invars,inAlgs)
+  outEqn := matchcontinue (inEqn,inAlgsInputsOutputs)
     local
       Equation e;
-      Variables vars;
-      list<DAE.Algorithm> algs;
-      DAE.Algorithm a;
+      list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
       Integer index;
-      list<DAE.Exp> in_,out,inputs,outputs;
+      list<DAE.Exp> inputs,outputs;
       DAE.ElementSource source;
-     case (ALGORITHM(index=index,in_=in_,out=out,source=source),vars,algs)
+     case (ALGORITHM(index=index,source=source),inputsoutputs)
       equation
-        true = listLength(algs) > index;
-        a = listNth(algs,index);
-        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars, a);  
+        true = listLength(inputsoutputs) > index;
+        ((inputs,outputs)) = listNth(inputsoutputs,index);
       then ALGORITHM(index,inputs,outputs,source);
-    case (e,_,_) then e;
+    case (e,_) then e;
   end matchcontinue;
 end updateAlgorithmInputsOutputs;
 
@@ -5343,7 +5341,7 @@ protected function lowerAlgorithm
   list<DAE.Exp> inputs,outputs;
   Value numnodes;
 algorithm
-  (inputs,outputs) := lowerAlgorithmInputsOutputs(vars, a);
+  ((inputs,outputs)) := lowerAlgorithmInputsOutputs(vars, a);
   numnodes := listLength(outputs);
   lst := lowerAlgorithm2(inputs, outputs, numnodes, aindx);
 end lowerAlgorithm;
@@ -5385,24 +5383,23 @@ public function lowerAlgorithmInputsOutputs
   variables that are assigned a value in the algorithm."
   input Variables inVariables;
   input DAE.Algorithm inAlgorithm;
-  output list<DAE.Exp> outExpExpLst1;
-  output list<DAE.Exp> outExpExpLst2;
+  output tuple<list<DAE.Exp>,list<DAE.Exp>> outTplExpExpLst;
 algorithm
-  (outExpExpLst1,outExpExpLst2) := matchcontinue (inVariables,inAlgorithm)
+  outTplExpExpLst := matchcontinue (inVariables,inAlgorithm)
     local
       list<DAE.Exp> inputs1,outputs1,inputs2,outputs2,inputs,outputs;
       Variables vars;
       Algorithm.Statement s;
       list<Algorithm.Statement> ss;
-    case (_,DAE.ALGORITHM_STMTS(statementLst = {})) then ({},{});
+    case (_,DAE.ALGORITHM_STMTS(statementLst = {})) then (({},{}));
     case (vars,DAE.ALGORITHM_STMTS(statementLst = (s :: ss)))
       equation
         (inputs1,outputs1) = lowerStatementInputsOutputs(vars, s);
-        (inputs2,outputs2) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
+        ((inputs2,outputs2)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(ss));
         inputs = Util.listUnionOnTrue(inputs1, inputs2, Exp.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
       then
-        (inputs,outputs);
+        ((inputs,outputs));
   end matchcontinue;
 end lowerAlgorithmInputsOutputs;
 
@@ -5451,14 +5448,14 @@ algorithm
         (inputs,{exp1});
     case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = NONE))
       equation
-        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
       then
         (inputs2,outputs);
     case (vars,DAE.STMT_WHEN(exp = e,statementLst = statements,elseWhen = SOME(stmt)))
       equation
 				(inputs1, outputs1) = lowerStatementInputsOutputs(vars,stmt);
-        (inputs,outputs) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
+        ((inputs,outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(statements));
         inputs2 = list_append(statesAndVarsExp(e, vars),inputs);
         outputs2 = list_append(outputs, outputs1);
       then
@@ -5484,7 +5481,7 @@ algorithm
 
     case(vars,DAE.STMT_IF(exp = e, statementLst = stmts, else_ = elsebranch))
       equation
-        (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
+        ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         (inputs2,outputs2) = lowerElseAlgorithmInputsOutputs(vars,elsebranch);
         inputs3 = statesAndVarsExp(e,vars);
         inputs = Util.listListUnionOnTrue({inputs1, inputs2,inputs3}, Exp.expEqual);
@@ -5507,7 +5504,7 @@ algorithm
         list<list<DAE.Exp>> arrayElements;
         list<DAE.Exp> flattenedElements;
       equation
-        (inputs1,outputs1) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+        ((inputs1,outputs1)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
         inputs2 = statesAndVarsExp(e, vars);
         // Split the output variables into variables that depend on the loop
         // variable and variables that don't.
@@ -5524,7 +5521,7 @@ algorithm
 			  
 		case(vars, DAE.STMT_WHILE(exp = e, statementLst = stmts))
 			equation
-				(inputs1,outputs) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
+				((inputs1,outputs)) = lowerAlgorithmInputsOutputs(vars, DAE.ALGORITHM_STMTS(stmts));
 				inputs2 = statesAndVarsExp(e, vars);
 				inputs = Util.listUnion(inputs1, inputs2);
 			then (inputs, outputs);
@@ -5560,7 +5557,7 @@ algorithm
     case(vars,DAE.ELSEIF(e,stmts,elseBranch))
       equation
         (inputs1, outputs1) = lowerElseAlgorithmInputsOutputs(vars,elseBranch);
-        (inputs2, outputs2) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
+        ((inputs2, outputs2)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
         inputs3 = statesAndVarsExp(e,vars);
         inputs = Util.listListUnionOnTrue({inputs1, inputs2, inputs3}, Exp.expEqual);
         outputs = Util.listUnionOnTrue(outputs1, outputs2, Exp.expEqual);
@@ -5568,7 +5565,7 @@ algorithm
 
     case(vars,DAE.ELSE(stmts))
       equation
-        (inputs, outputs) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
+        ((inputs, outputs)) = lowerAlgorithmInputsOutputs(vars,DAE.ALGORITHM_STMTS(stmts));
       then (inputs,outputs);
   end matchcontinue;
 end lowerElseAlgorithmInputsOutputs;
