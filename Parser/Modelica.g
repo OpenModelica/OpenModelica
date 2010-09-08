@@ -891,7 +891,9 @@ factor returns [void* ast] :
     }
   ;
 
-primary returns [void* ast] :
+primary returns [void* ast] @declarations {
+  bool tupleExpressionIsTuple = 0;
+} :
   ( v=UNSIGNED_INTEGER
     {
       char* chars = $v.text->chars;
@@ -930,7 +932,10 @@ primary returns [void* ast] :
   | T_TRUE             {$ast = Absyn__BOOL(RML_TRUE);}
   | ptr=component_reference__function_call {$ast = ptr;}
   | DER el=function_call {$ast = Absyn__CALL(Absyn__CREF_5fIDENT(mk_scon("der"), mk_nil()),el);}
-  | LPAR e=expression (COMMA el=expression_list)? RPAR {$ast = el ? Absyn__TUPLE(mk_cons(e, el)) : e;}
+  | LPAR el=output_expression_list[&tupleExpressionIsTuple]
+    {
+      $ast = tupleExpressionIsTuple ? Absyn__TUPLE(el) : el;
+    }
   | LBRACK el=matrix_expression_list RBRACK {$ast = Absyn__MATRIX(el);}
   | LBRACE for_or_el=for_or_expression_list RBRACE
     {
@@ -1034,6 +1039,29 @@ named_arguments returns [void* ast] :
 
 named_argument returns [void* ast] :
   ( id=IDENT | id=OPERATOR) EQUALS e=expression {ast = Absyn__NAMEDARG(token_to_scon(id),e);}
+  ;
+
+output_expression_list [bool* isTuple] returns [void* ast] :
+  ( RPAR
+    {
+      ast = mk_nil();
+      *isTuple = true;
+    }
+  | COMMA {*isTuple = true;} el=output_expression_list[isTuple]
+      {
+        $ast = mk_cons(Absyn__CREF(Absyn__WILD), el);
+      }
+  | e1=expression
+    ( COMMA {*isTuple = true;} el=output_expression_list[isTuple]
+      {
+        ast = mk_cons(e1, el);
+      }
+    | RPAR
+      {
+        ast = *isTuple ? mk_cons(e1, mk_nil()) : e1;
+      }
+    )
+  )
   ;
 
 expression_list returns [void* ast] :
@@ -1182,11 +1210,11 @@ interactive_stmt_list [bool *last_sc] returns [void* ast] @init {
 
 /* MetaModelica */
 match_expression returns [void* ast] : 
-  ( (ty=MATCHCONTINUE exp=expression_or_empty cmt=string_comment
+  ( (ty=MATCHCONTINUE exp=expression cmt=string_comment
      es=local_clause
      cs=cases
      T_END MATCHCONTINUE)
-  | (ty=MATCH exp=expression_or_empty cmt=string_comment
+  | (ty=MATCH exp=expression cmt=string_comment
      es=local_clause
      cs=cases
      T_END MATCH)
@@ -1211,7 +1239,7 @@ cases returns [void* ast] :
   ;
 
 cases2 returns [void* ast] :
-  ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression_or_empty SEMICOLON)?
+  ( (ELSE (cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN)? exp=expression SEMICOLON)?
     {
       if (exp)
        ast = mk_cons(Absyn__ELSE(es,or_nil(eqs),exp,mk_some_or_none(cmt)),mk_nil());
@@ -1226,17 +1254,12 @@ cases2 returns [void* ast] :
   ;
 
 onecase returns [void* ast] :
-  (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression_or_empty SEMICOLON)
+  (CASE pat=pattern cmt=string_comment es=local_clause (EQUATION eqs=equation_list_then)? THEN exp=expression SEMICOLON)
     {
         ast = Absyn__CASE(pat,es,or_nil(eqs),exp,mk_some_or_none(cmt));
     }
   ;
 
 pattern returns [void* ast] :
-  e=expression_or_empty {ast = e;}
-  ;
-
-expression_or_empty returns [void* ast] :
-  e = expression {ast = e;}
-  | LPAR RPAR {ast = Absyn__TUPLE(mk_nil());}
+  e=expression {ast = e;}
   ;

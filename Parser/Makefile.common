@@ -92,4 +92,4 @@ clean:
 	rm -f *.o *.a \
 ModelicaParser.c ModelicaParser.h \
 *Modelica*_Lexer.c *Modelica*_Lexer.h \
-*.tokens
+*.tokens *.stamp *.stamp.tmp
