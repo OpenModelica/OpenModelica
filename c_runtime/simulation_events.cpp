@@ -579,11 +579,11 @@ bool change(double& var) {
 // process will start
 //
 int CheckForNewEvent(int flag) {
-
+	int needToIterate=1;
 	if (flag != INTERVAL){
-		while(checkForDiscreteChanges()) {
+		while(checkForDiscreteChanges() || needToIterate) {
 			saveall();
-			function_updateDepend();
+			function_updateDepend(needToIterate);
 			if (sim_verbose) {
 				cout << "Discrete Variable changed -> event iteration." << endl;
 				sim_result->emit();
@@ -622,6 +622,7 @@ void EventHandle(){
 
 	while(!EventQueue.empty()){
 		long event_id;
+		int needToIterate=1;
 
 		event_id = EventQueue.front();
 
@@ -631,9 +632,14 @@ void EventHandle(){
 		else if (zeroCrossingEnabled[event_id] == -1){
 			zeroCrossingEnabled[event_id] = 1;}
 
-		saveall();
-		function_updateDepend();
-	    if (sim_verbose) { sim_result->emit();}
+		//determined complete system
+		while (needToIterate){
+			if (sim_verbose) cout << "reinit Iteration needed!" << endl;
+			saveall();
+			function_updateDepend(needToIterate);
+			if (sim_verbose) { sim_result->emit();}
+		}
+
 	    
 		EventQueue.pop_front();
 	}
@@ -695,9 +701,6 @@ void FindRoot(){
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_right[i];
 	}
-	//determined complete system
-	function_updateDepend();
-    if (sim_verbose) {sim_result->emit();}
     
 	delete[] states_left;
 	delete[] states_right;

@@ -118,7 +118,7 @@ case SIMCODE(__) then
 
   <%functionUpdateDependents(allEquations, helpVarInfo)%>
   
-  <%functionUpdateDepend(allEquationsPlusWhen)%>
+  <%functionUpdateDepend(allEquationsPlusWhen, whenClauses, helpVarInfo)%>
   
   <%functionOnlyZeroCrossing(zeroCrossings)%>
   
@@ -1037,23 +1037,30 @@ template functionUpdateDependents(list<SimEqSystem> allEquations,
 end functionUpdateDependents;
 
 
-template functionUpdateDepend(list<SimEqSystem> allEquationsPlusWhen)
+template functionUpdateDepend(	list<SimEqSystem> allEquationsPlusWhen, 
+								list<SimWhenClause> whenClauses,
+								list<HelpVarInfo> helpVarInfo)
   "Generates function in simulation file."
 ::=
   let &varDecls = buffer "" /*BUFD*/
   let eqs = (allEquationsPlusWhen |> eq =>
       equation_(eq, contextSimulationDiscrete, &varDecls /*BUFC*/)
     ;separator="\n")
+    
+  let reinit = (whenClauses |> when indexedby i0 =>
+  		genreinits(when, &varDecls,i0)
+  	;separator="\n")
   <<
-  int function_updateDepend()
+  int function_updateDepend(int &needToIterate)
   {
     state mem_state;
     <%varDecls%>
-  
+    needToIterate = 0;
     inUpdate=initial()?0:1;
   
     mem_state = get_memory_state();
     <%eqs%>
+    <%reinit%>
     restore_memory_state(mem_state);
   
     inUpdate=0;
@@ -1201,6 +1208,95 @@ case REINIT(__) then
   <%cref(stateVar)%> = <%val%>;
   >>
 end functionWhenReinitStatement;
+
+
+template genreinits(SimWhenClause whenClauses, Text &varDecls, Integer int)
+" Generates reinit statemeant"
+::=
+
+match whenClauses
+case SIM_WHEN_CLAUSE(__) then
+  let &preExp = buffer "" /*BUFD*/
+  let &helpInits = buffer "" /*BUFD*/
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, contextSimulationDiscrete, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
+      'edge(localData->helpVars[<%hidx%>])'
+    ;separator=" || ")	
+  let ifthen = functionWhenReinitStatementThen(reinits, &preExp /*BUFP*/,
+                            &varDecls /*BUFP*/)                     
+  let ifelse = functionWhenReinitStatementElse(reinits, &preExp /*BUFP*/,
+  							&varDecls /*BUFP*/) 
+/*  let hvars = (conditions |> (exp, hindex) =>
+  let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
+                        &varDecls /*BUFC*/)
+  '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
+	)
+*/
+
+if reinits then	
+<<
+
+  //For whenclause index: <%int%>
+  <%preExp%>
+  <%helpInits%>
+  if (<%helpIf%>) { 
+    <%ifthen%>
+     needToIterate = 1;
+  } else {
+    <%ifelse%>
+  }
+>>
+end genreinits;
+
+      /*
+      let &preExp2 = buffer "" /*BUFD*/
+  let reint = ( reinits |> reinit =>  
+  let expL = functionWhenReinitStatementCond(reinit, helpif, &preExp2, &varDecls)
+  '<%preExp2%>\n<%expL%>;')
+      	//if reinits then
+	  //let &varDecls = buffer "" /*BUFD*/
+      let helpif = 'edge(localData->helpVars[<%hindex%>]'
+      let &preExp2 = buffer "" /*BUFD*/
+      let reint = ( reinits |> reinit =>  
+      let expL = functionWhenReinitStatementCond(reinit, helpif, &preExp2, &varDecls)
+
+      '<%preExp%>\n<%expL%>'
+      ;separator="\n")
+    >>*/
+
+template functionWhenReinitStatementThen(list<ReinitStatement> reinits, Text &preExp /*BUFP*/,
+                            Text &varDecls /*BUFP*/)
+ "Generates re-init statement for when equation."
+::=
+  let body = (reinits |> reinit =>
+  	match reinit
+  	case REINIT(__) then 
+  		let val = daeExp(value, contextSimulationDiscrete,
+        	         &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  		'<%cref(stateVar)%> = <%val%>;';separator="\n"
+  	)
+  <<
+   <%body%>	
+  >>
+end functionWhenReinitStatementThen;
+
+
+template functionWhenReinitStatementElse(list<ReinitStatement> reinits, Text &preExp /*BUFP*/,
+                            Text &varDecls /*BUFP*/)
+ "Generates re-init statement for when equation."
+::=
+  let body = (reinits |> reinit =>
+  	match reinit
+  	case REINIT(__) then 
+  		let val = daeExp(value, contextSimulationDiscrete,
+        	         &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  		'<%cref(stateVar)%> = pre(<%cref(stateVar)%>);';separator="\n"
+  	)
+  <<
+   <%body%>	
+  >>
+end functionWhenReinitStatementElse;
 
 
 template functionOde(list<SimEqSystem> stateContEquations)
@@ -1560,7 +1656,13 @@ match eq
 
 case eqn as SES_ARRAY_CALL_ASSIGN(__) then
   let &preExp = buffer "" /*BUFD*/
-  let expPart = daeExp(exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  let expPart = daeExp(exp, context, &preExp /*BUF  let &preExp = buffer "" /*BUFD*/
+  let &helpInits = buffer "" /*BUFD*/
+  let helpIf = (conditions |> (e, hidx) =>
+      let helpInit = daeExp(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+      let &helpInits += 'localData->helpVars[<%hidx%>] = <%helpInit%>;'
+      'edge(localData->helpVars[<%hidx%>])'
+    ;separator=" || ")C*/, &varDecls /*BUFC*/)
   match expTypeFromExpShort(eqn.exp)
   case "integer" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFC*/)
@@ -1604,7 +1706,7 @@ case SES_LINEAR(__) then
   declare_vector(<%bname%>, <%size%>);
   <%simJac |> (row, col, eq as SES_RESIDUAL(__)) =>
      let &preExp = buffer "" /*BUFD*/
-     let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+     let expPart = daeExp(eq.exp, context, &preExp /*BUFC*/,  &varDecls /*BUFC*/)
      '<%preExp%>set_matrix_elt(<%aname%>, <%row%>, <%col%>, <%size%>, <%expPart%>);'
   ;separator="\n"%>
   <%beqs |> exp indexedby i0 =>

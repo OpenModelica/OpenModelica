@@ -197,12 +197,16 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     storeExtrapolationData();
 	// Calculate stable discrete state
 	// and initial ZeroCrossings
-	function_updateDepend();
+	int needToIterate=1;
 	if(sim_verbose) { sim_result->emit(); }
-	while(checkForDiscreteChanges()) {
-		if (sim_verbose) cout << "Discrete Var Changed!" << endl;
+
+	while(checkForDiscreteChanges() || needToIterate) {
 		saveall();
-		function_updateDepend();
+		function_updateDepend(needToIterate);
+		if (sim_verbose) {
+			cout << "Discrete Variable changed -> event iteration." << endl;
+			sim_result->emit();
+		}
 	}
 	saveall();
 	if(sim_verbose) { sim_result->emit(); }
@@ -224,12 +228,16 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 	delete [] backupstats_new;
 	reset = true;
 
-	function_updateDepend();
+	needToIterate=1;
 	if(sim_verbose) { sim_result->emit(); }
-	while(checkForDiscreteChanges()) {
-		if (sim_verbose) cout << "Discrete Var Changed!" << endl;
+
+	while(checkForDiscreteChanges() || needToIterate) {
 		saveall();
-		function_updateDepend();
+		function_updateDepend(needToIterate);
+		if (sim_verbose) {
+			cout << "Discrete Variable changed -> event iteration." << endl;
+			sim_result->emit();
+		}
 	}
 	saveall();
 	sim_result->emit();

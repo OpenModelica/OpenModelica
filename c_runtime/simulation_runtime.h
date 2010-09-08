@@ -246,7 +246,7 @@ function_updateDependents();
 /* 	function for calculating all equation sorting order 
 	uses in EventHandle	*/
 int
-function_updateDepend();
+function_updateDepend(int& needToIterate);
 
 // function for storing value histories of delayed expressions
 // called from functionDAE_output()

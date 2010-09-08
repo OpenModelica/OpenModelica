@@ -343,6 +343,7 @@ uniontype SimWhenClause
     list<DAE.ComponentRef> conditionVars;
     list<DAELow.ReinitStatement> reinits;
     Option<DAELow.WhenEquation> whenEq;
+    list<tuple<DAE.Exp, Integer>> conditions; // condition, help var index
   end SIM_WHEN_CLAUSE;
 end SimWhenClause;
 
@@ -1260,7 +1261,7 @@ algorithm
         algorithmAndEquationAsserts = createAlgorithmAndEquationAsserts(dlow2);
         zeroCrossings = createZeroCrossings(dlow2);
         zeroCrossingsNeedSave = createZeroCrossingsNeedSave(zeroCrossings, dae, dlow2, ass1, ass2, comps);
-        whenClauses = createSimWhenClauses(dlow2);
+        whenClauses = createSimWhenClauses(dlow2, helpVarInfo);
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         makefileParams = createMakefileParams(libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
@@ -1957,15 +1958,16 @@ end varNotSolvedInWhen;
 
 protected function createSimWhenClauses
   input DAELow.DAELow dlow;
+  input list<HelpVarInfo> helpVarInfo;
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
-  matchcontinue (dlow)
+  matchcontinue (dlow,helpVarInfo)
     local
       list<DAELow.WhenClause> wc;
-    case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(whenClauseLst=wc)))
+    case (DAELow.DAELOW(eventInfo=DAELow.EVENT_INFO(whenClauseLst=wc)),helpVarInfo)
       equation
-        simWhenClauses = createSimWhenClausesWithEqs(wc, dlow, 0);
+        simWhenClauses = createSimWhenClausesWithEqs(wc, wc, helpVarInfo, dlow, 0);
       then
         simWhenClauses;
   end matchcontinue;
@@ -1973,30 +1975,32 @@ end createSimWhenClauses;
 
 protected function createSimWhenClausesWithEqs
   input list<DAELow.WhenClause> whenClauses;
+  input list<DAELow.WhenClause> allwhenClauses;
+  input list<HelpVarInfo> helpVarInfo;
   input DAELow.DAELow dlow;
   input Integer currentWhenClauseIndex;
   output list<SimWhenClause> simWhenClauses;
 algorithm
   simWhenClauses :=
-  matchcontinue (whenClauses, dlow, currentWhenClauseIndex)
+  matchcontinue (whenClauses, allwhenClauses, helpVarInfo, dlow, currentWhenClauseIndex)
     local
       DAELow.WhenClause whenClause;
-      list<DAELow.WhenClause> wc;
+      list<DAELow.WhenClause> wc,wc1;
       DAELow.EquationArray eqs;
       list<DAELow.Equation> eqsLst;
       Option<DAELow.WhenEquation> whenEq;
       SimWhenClause simWhenClause;
       Integer nextIndex;
       list<SimWhenClause> simWhenClauses;
-    case ({}, _, _)
+    case ({}, _, _, _, _)
       then {};
-    case (whenClause :: wc, DAELow.DAELOW(orderedEqs=eqs), currentWhenClauseIndex)
+    case (whenClause :: wc, wc1, helpVarInfo, DAELow.DAELOW(orderedEqs=eqs), currentWhenClauseIndex)
       equation
         eqsLst = DAELow.equationList(eqs);
         whenEq = findWhenEquation(eqsLst, currentWhenClauseIndex);
-        simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq);
+        simWhenClause = whenClauseToSimWhenClause(whenClause, whenEq, wc1, helpVarInfo, currentWhenClauseIndex);
         nextIndex = currentWhenClauseIndex + 1;
-        simWhenClauses = createSimWhenClausesWithEqs(wc, dlow, nextIndex);
+        simWhenClauses = createSimWhenClausesWithEqs(wc, wc1, helpVarInfo, dlow, nextIndex);
       then simWhenClause :: simWhenClauses;
   end matchcontinue;
 end createSimWhenClausesWithEqs;
@@ -2058,19 +2062,28 @@ end findWhenEquation1;
 protected function whenClauseToSimWhenClause
   input DAELow.WhenClause whenClause;
   input Option<DAELow.WhenEquation> whenEq;
+  input list<DAELow.WhenClause> whenClauses;
+  input list<HelpVarInfo> helpVarInfo;
+  input Integer CurrentIndex;
   output SimWhenClause simWhenClause;
 algorithm
   simWhenClause :=
-  matchcontinue (whenClause, whenEq)
+  matchcontinue (whenClause, whenEq, whenClauses,helpVarInfo,CurrentIndex)
     local
       DAE.Exp cond;
+      input list<DAELow.WhenClause> wc;
       list<DAELow.ReinitStatement> reinits;
       list<DAE.ComponentRef> conditionVars;
-    case (DAELow.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq)
+      Integer index_;
+      list<Exp.Exp> conditions;
+      list<tuple<DAE.Exp, Integer>> conditionsWithHindex;
+    case (DAELow.WHEN_CLAUSE(condition=cond, reinitStmtLst=reinits), whenEq, wc, helpVarInfo,CurrentIndex)
       equation
+        conditions = getConditionList(wc, CurrentIndex);
+        conditionsWithHindex = Util.listMap1(conditions, addHindexForCondition, helpVarInfo);
         conditionVars = Exp.getCrefFromExp(cond);
       then
-        SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq);
+        SIM_WHEN_CLAUSE(conditionVars, reinits, whenEq, conditionsWithHindex);    
   end matchcontinue;
 end whenClauseToSimWhenClause;
 
@@ -2145,11 +2158,21 @@ algorithm
         equations1 = listAppend(equations_,equations); 
       then
         equations1;
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,{index} :: restComps,_)
       equation
+        Debug.fprintln("failtrace"," Failed to create Equation with:" +& intString(index));
         Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
       then
         fail();
+    case (_,_,_,_,_,_,_,(comp as (_ :: (_ :: _))) :: restComps,_)
+      local
+        list<String> str;
+      equation
+        str = Util.listMap(comp,intString);
+        Debug.fprintln("failtrace"," Failed to create Equation with:" +& Util.stringAppendList(str));
+        Error.addMessage(Error.INTERNAL_ERROR, {"createEquations failed"});
+      then
+        fail();        
   end matchcontinue;
 end createEquations;
 

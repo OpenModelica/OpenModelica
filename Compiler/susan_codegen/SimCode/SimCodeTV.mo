@@ -161,6 +161,7 @@ package SimCode
       list<DAE.ComponentRef> conditionVars;
       list<DAELow.ReinitStatement> reinits;
       Option<DAELow.WhenEquation> whenEq;
+      list<tuple<DAE.Exp, Integer>> conditions;
     end SIM_WHEN_CLAUSE;
   end SimWhenClause;
 
