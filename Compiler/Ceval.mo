@@ -747,7 +747,7 @@ algorithm
         (cache,Values.INTEGER(stop_1),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
         arr = cevalRange(start_1, 1, stop_1);
       then
-        (cache,ValuesUtil.makeArray(arr),st_1);
+        (cache,ValuesUtil.makeArray(arr),st_2);
 
     // range first:step:last for integers
     case (cache,env,DAE.RANGE(ty = DAE.ET_INT(),exp = start,expOption = SOME(step),range = stop),impl,st,dim,msg)
@@ -760,15 +760,17 @@ algorithm
       then
         (cache,ValuesUtil.makeArray(arr),st_3);
 
-    // range first:step:last for enumearations
-    case (cache,env,DAE.RANGE(ty = DAE.ET_ENUMERATION(_,_,_,_),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
-      local Option<Integer> dim;
+    // range first:last for enumerations.
+    case (cache,env,DAE.RANGE(ty = ety as DAE.ET_ENUMERATION(path = _),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
+      local 
+        Option<Integer> dim;
+        DAE.ExpType ety;
       equation
         (cache,Values.ENUM_LITERAL(index = start_1),st_1) = ceval(cache,env, start, impl, st, dim, msg);
         (cache,Values.ENUM_LITERAL(index = stop_1),st_2) = ceval(cache,env, stop, impl, st_1, dim, msg);
-        arr = cevalRange(start_1, 1, stop_1);
+        arr = cevalRangeEnum(start_1, stop_1, ety);
       then
-        (cache,ValuesUtil.makeArray(arr),st_1);
+        (cache,ValuesUtil.makeArray(arr),st_2);
 
     // range first:last for reals
     case (cache,env,DAE.RANGE(ty = DAE.ET_REAL(),exp = start,expOption = NONE,range = stop),impl,st,dim,msg)
@@ -4694,6 +4696,41 @@ algorithm
         (Values.REAL(start) :: l);
   end matchcontinue;
 end cevalRangeReal2;
+
+public function cevalRangeEnum
+  "Evaluates a range expression on the form enum.lit1 : enum.lit2"
+  input Integer startIndex;
+  input Integer stopIndex;
+  input DAE.ExpType enumType;
+  output list<Values.Value> enumValList;
+algorithm
+  enumValList := matchcontinue(startIndex, stopIndex, enumType)
+    local
+      Absyn.Path enum_type;
+      list<String> enum_names;
+      list<Absyn.Path> enum_paths;
+      list<Values.Value> enum_values;
+    case (_, _, DAE.ET_ENUMERATION(path = enum_type, names = enum_names))
+      equation
+        (startIndex <= stopIndex) = true;
+        enum_names = Util.listSub(enum_names, startIndex, (stopIndex - startIndex) + 1);
+        enum_paths = Util.listMap(enum_names, Absyn.makeIdentPathFromString);
+        enum_paths = Util.listMap1r(enum_paths, Absyn.joinPaths, enum_type);
+        enum_values = Util.listMapAndFold(enum_paths, makeEnumValue, startIndex);
+      then
+        enum_values;
+  end matchcontinue;
+end cevalRangeEnum;
+  
+protected function makeEnumValue
+  input Absyn.Path name;
+  input Integer index;
+  output Values.Value enumValue;
+  output Integer newIndex;
+algorithm
+  enumValue := Values.ENUM_LITERAL(name, index);
+  newIndex := index + 1;
+end makeEnumValue;
 
 public function cevalList "function: cevalList
   This function does constant

@@ -6013,5 +6013,47 @@ algorithm
   s2 := stringReplaceChar(s2,">","&gt;");
 end xmlEscape;
 
+public function listSub
+  "Returns a sub list determined by an offset and length.
+     Example: listSub({1,2,3,4,5}, 2, 3) => {2,3,4}"
+  input list<Type_a> inList;
+  input Integer inOffset;
+  input Integer inLength;
+  output list<Type_a> outList;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outList := listSub_tail(inList, inOffset, inLength, {});
+end listSub;
+
+public function listSub_tail
+  "Tail recursive implementation of listSub."
+  input list<Type_a> inList;
+  input Integer inOffset;
+  input Integer inLength;
+  input list<Type_a> accumList;
+  output list<Type_a> outList;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outList := matchcontinue(inList, inOffset, inLength, accumList)
+    local
+      Type_a e;
+      list<Type_a> rest_e;
+    case ({}, _, _, _) then listReverse(accumList);
+    case (_, _, 0, _) then listReverse(accumList);
+    case (e :: rest_e, _, _, _)
+      equation
+        (inOffset > 1) = true;
+        rest_e = listSub_tail(rest_e, inOffset - 1, inLength, accumList);
+      then
+        rest_e;
+    case (e :: rest_e, _, _, _)
+      equation
+        (inLength > 0) = true;
+        rest_e = listSub_tail(rest_e, 1, inLength - 1, accumList);
+      then
+        e :: rest_e;
+  end matchcontinue;
+end listSub_tail;
+
 end Util;
 

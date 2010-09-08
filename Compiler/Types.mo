@@ -2604,14 +2604,14 @@ algorithm
       list<Ident> names;
       Absyn.Path p;
       list<Var> vars,vars_1;
-    case (p,{}) then ((DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),SOME(p)));
+    case (p,{}) then ((DAE.T_ENUMERATION(NONE(),p,{},{}),SOME(p)));
     case (p,vars)
       equation
         // Var names
         names = Util.listMap(vars,getVarName);
         vars_1 = makeEnumerationType1(p,vars,names,1);
       then
-        ((DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,vars_1),SOME(p)));
+        ((DAE.T_ENUMERATION(NONE(),p,names,vars_1),SOME(p)));
   end matchcontinue;
 end makeEnumerationType;
 
@@ -2643,7 +2643,7 @@ algorithm
     case (p,DAE.TYPES_VAR(name,attributes,protected_,_,binding,cnstForRange) :: xs,names,idx)
       equation
         vars = makeEnumerationType1(p, xs, names, idx+1);
-        t = (DAE.T_ENUMERATION(SOME(idx),Absyn.IDENT(""),names,{}),SOME(p));
+        t = (DAE.T_ENUMERATION(SOME(idx),p,names,{}),SOME(p));
         var = DAE.TYPES_VAR(name,attributes,protected_,t,binding,cnstForRange);
       then
         (var :: vars);

@@ -1880,7 +1880,7 @@ algorithm
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),names,tys1),NONE()));
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(n),names,tys1),NONE()));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -14620,14 +14620,10 @@ algorithm
       then
         ((DAE.T_BOOL(v),somep));
     case (p,ClassInf.TYPE_ENUM(path = _),_,_,_,_)
-//        local SCode.Class sclass; list<SCode.Element> eLst; list<String> names;
       equation
-
-//       (_,sclass as SCode.CLASS(_,_,_,SCode.R_ENUMERATION(),SCode.PARTS(eLst,_,_,_,_,_,_)),_) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),true);
         somep = getOptPath(p);
       then
-        ((DAE.T_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}),somep));
-//        ((DAE.T_ENUM(),somep));
+        ((DAE.T_ENUMERATION(SOME(0),p,{},{}),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,_,cl)
       equation
