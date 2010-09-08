@@ -41,17 +41,52 @@ libomparse.a: parse.o $(OBJS)
 	ar -ru $@ parse.o $(OBJS)
 	ranlib $@
 
-ModelicaParser.h ModelicaParser.c: Modelica.g
-	$(ANTLRCMD) $<
+parsergen = ModelicaParser.c ModelicaParser.h
+modelica3gen = Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h
+metamodelicagen = MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h
 
-Modelica_2_Lexer.c Modelica_2_Lexer.h: Modelica_2_Lexer.g
+ModelicaParser.stamp: Modelica.g
+	@rm -f $@.tmp
+	@touch $@.tmp
+	@touch $<
 	$(ANTLRCMD) $<
+	@touch -c $(parsergen)
+	@mv -f $@.tmp $@
+Modelica_3_Lexer.stamp: Modelica_3_Lexer.g BaseModelica_Lexer.g
+	@rm -f $@.tmp
+	@touch $@.tmp
+	@touch $<
+	$(ANTLRCMD) $<
+	@touch -c $(modelica3gen)
+	@mv -f $@.tmp $@
+MetaModelica_Lexer.stamp: MetaModelica_Lexer.g BaseModelica_Lexer.g
+	@rm -f $@.tmp
+	@touch $@.tmp
+	@touch $<
+	$(ANTLRCMD) $<
+	@touch -c $(metamodelicagen)
+	@mv -f $@.tmp $@
 
-Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h: Modelica_3_Lexer.g BaseModelica_Lexer.g
-	$(ANTLRCMD) $<
+$(parsergen) : ModelicaParser.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f $<; \
+	$(MAKE) $<; \
+	fi
 
-MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h: MetaModelica_Lexer.g BaseModelica_Lexer.g
-	$(ANTLRCMD) $<
+$(modelica3gen) : Modelica_3_Lexer.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f $<; \
+	$(MAKE) $<; \
+	fi
+
+$(metamodelicagen) : MetaModelica_Lexer.stamp
+	## Recover from the removal of $@
+	@if test -f $@; then :; else \
+	rm -f $<; \
+	$(MAKE) $<; \
+	fi
 
 clean:
 	rm -f *.o *.a \
