@@ -132,7 +132,7 @@ stored_definition returns [void* ast] :
   ;
 
 within_clause returns [void* ast] :
-    WITHIN (name=name_path)? {ast = Absyn__WITHIN(name);}
+    WITHIN (name=name_path)? {ast = name ? Absyn__TOP : Absyn__WITHIN(name);}
   ;
 
 class_definition_list returns [void* ast] :
