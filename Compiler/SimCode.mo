@@ -82,6 +82,7 @@ protected import Settings;
 protected import RTOpts;
 protected import System;
 protected import VarTransform;
+protected import BackendVarTransform;
 protected import CevalScript;
 protected import ModUtil;
 protected import DAEDump;
@@ -2913,7 +2914,7 @@ algorithm
         comps_flat = Util.listFlatten(comps_1);
         rf = Util.listFlatten(r);
         tf = Util.listFlatten(t);        
-        equations_ = generateRelaxationSystem(m_3,mT_3,v1_1,v2_1,comps_flat,rf,tf,subsystem_dae_2,helpVarInfo);
+        equations_ = generateRelaxationSystem(mixedEvent,m_3,mT_3,v1_1,v2_1,comps_flat,rf,tf,subsystem_dae_2,helpVarInfo);
       then
         equations_;
           
@@ -3079,6 +3080,7 @@ protected function generateRelaxationSystem "function: generateRelaxationSystem
 
   Generates the actual simulation code for the relaxed system of equation
 "
+  input Boolean mixedEvent "true if generating the mixed system event code";
   input DAELow.IncidenceMatrix inM;
   input DAELow.IncidenceMatrixT inMT;
   input Integer[:] inIntegerArray2;
@@ -3091,20 +3093,18 @@ protected function generateRelaxationSystem "function: generateRelaxationSystem
   output list<SimEqSystem> outEqns;
 algorithm
   outEqns:=
-  matchcontinue (inM,inMT,inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,inDAELow,helpVarInfo)
+  matchcontinue (mixedEvent,inM,inMT,inIntegerArray2,inIntegerArray3,inIntegerLst4,inIntegerLst5,inIntegerLst6,inDAELow,helpVarInfo)
     local
-      Integer[:] ass1,ass2;
+      Integer[:] ass1,ass2,ass1_1,ass2_1;
       list<Integer> block_,block_1,block_2,r,t;
       Integer size;
       DAELow.DAELow daelow,daelow1;
-      list<tuple<Integer, Integer, DAELow.Equation>> jac,jacA;
-      DAELow.JacobianType jac_tp;
-      DAELow.Variables v,kv,exv;
+      DAELow.Variables v,v1,kv,exv;
       VarTransform.VariableReplacements av "alias-variables' hashtable";
       DAELow.EquationArray eqn,eqn1,reeqn,ineq;
-      list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns,solved;
-      list<DAELow.Var> var_lst;
-      list<DAE.ComponentRef> crefs,X;
+      list<DAELow.Equation> eqn_lst,reqn_lst;
+      list<DAELow.Var> var_lst,tvar_lst;
+      list<DAE.ComponentRef> crefs;
       DAELow.MultiDimEquation[:] ae;
       VarTransform.VariableReplacements repl;
       DAE.Algorithm[:] algorithms;
@@ -3112,48 +3112,36 @@ algorithm
       DAELow.ExternalObjectClasses extObjClasses;
       DAELow.IncidenceMatrix m;
       DAELow.IncidenceMatrixT mT;
-      list<DAE.Exp> exp_lst,B,A_lst,Af;
-      list<list<DAE.Exp>> A,An;
-      list<SimEqSystem> eqns;
-    case (m,mT,ass1,ass2,block_,r,t,
+      list<SimEqSystem> eqns,reqns,alleqns;
+      VarTransform.VariableReplacements repl,repl_1;
+    case (mixedEvent,m,mT,ass1,ass2,block_,r,t,
           daelow as DAELow.DAELOW(orderedVars=v,knownVars=kv,externalObjects=exv,aliasVars=av,orderedEqs=eqn,removedEqs=reeqn,initialEqs=ineq,arrayEqs=ae,algorithms=algorithms,eventInfo=eventInfo,extObjClasses=extObjClasses),helpVarInfo) 
       equation
         // get equations and variables
         eqn_lst = DAELow.equationList(eqn);
         var_lst = DAELow.varList(v);
-        size = listLength(eqn_lst);
-        // generate A
-        A_lst = Util.listFill(DAE.RCONST(0.0),size);
-        An = Util.listFill(A_lst,size);
-        SOME(jac) = DAELow.calculateJacobian(v, eqn, ae, m, mT,false);
-        // sort A
-        jacA = Util.listMap2(jac,sortRelaxationSystemA,block_,ass1);
-        A = generateRelaxationSystemA(jacA,An);
-        // generate B
-        exp_lst = generateRelaxationSystemB(eqn_lst,v);
-        // sort b
-        B = sortRelaxationSystemB(exp_lst,block_);
+        // get non relaxation equations
+        block_1 = Util.listSelect1(block_,r,Util.listNotContains);
         // get names from variables
-        //crefs = Util.listMap(var_lst, DAELow.varCrefPrefixStates); // get varnames and prefix $der for states.
         crefs = Util.listMap(var_lst, DAELow.varCref);
-        // sort X
-        X = sortRelaxationSystemX(crefs,block_,ass2);
-        // gauss ellemination        
-        solved = solveRelaxationSystem(A,X,B);
-        // select equations
-        block_1 = Util.listSelect1(block_,r,Util.listNotContains); 
-        block_2 = listAppend(r,block_1);
-        eqn_lst1 = sortSolvedRelaxationSystem(solved,solved,block_);
-        // replace r in org eqn list
-        reqns = Util.listMap1r(r,listNth1,eqn_lst1);
-        eqn_lst2 = sortSolvedRelaxationSystem(reqns,eqn_lst,r);
-        eqn1 = DAELow.listEquation(eqn_lst2);
-        daelow1=DAELow.DAELOW(v,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
-        // generade code for equations
-        eqns = Util.listMap4(block_2,createEquation,daelow1, ass1, ass2, helpVarInfo);     
+        // generade replacement from non residual eqns           
+        repl = VarTransform.emptyReplacements();
+        (repl_1,eqns) = getRelaxationReplacements(block_1,ass2,crefs,eqn_lst,repl);
+        // replace non tearing vars in residual eqns
+        (reqn_lst,tvar_lst) = getRelaxedResidualEqns(r,ass2,crefs,var_lst,eqn_lst,repl_1);
+        eqn1 = DAELow.listEquation(reqn_lst);
+        v1 = DAELow.listVar(tvar_lst);
+        size = listLength(reqn_lst);
+        block_2 = Util.listIntRange(size);
+        ass1_1 = listArray(block_2);
+        ass2_1 = listArray(block_2);        
+        daelow1=DAELow.DAELOW(v1,kv,exv,av,eqn1,reeqn,ineq,ae,algorithms,eventInfo,extObjClasses);
+        // generate code for relaxation equations
+        reqns = generateRelaxedResidualEqns(block_2,mixedEvent,daelow1, ass1_1, ass2_1, helpVarInfo);
+        alleqns = listAppend(reqns,eqns);
       then
-        eqns;
-    case (_,_,_,_,_,_,_,_,_)
+        alleqns;
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "-generateRelaxationSystem failed \n");
       then
@@ -3161,394 +3149,155 @@ algorithm
   end matchcontinue;
 end generateRelaxationSystem;
 
-protected function generateRelaxationSystemB "function: generateRelaxationSystemB
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input list<DAELow.Equation> inDAELowEquationLst;
-  input DAELow.Variables inVariables2;
-  output list<DAE.Exp> outDAELowEquationLst;
+protected function getRelaxationReplacements"
+Author: Frenkel TUD 2010-09 function getRelaxationReplacements
+  solves all equations and add the solution to the replacement"
+  input list<Integer> inBlock;
+  input Integer[:] inAss2;
+  input list<DAE.ComponentRef> inCrefs;
+  input list<DAELow.Equation> inEqnLst;
+  input VarTransform.VariableReplacements inRepl;
+  output VarTransform.VariableReplacements outRepl;
+  output list<SimEqSystem> outEqns;
 algorithm
-  outDAELowEquationLst:=
-  matchcontinue (inDAELowEquationLst,inVariables2)
+  (outRepl,outEqns) := matchcontinue (inBlock,inAss2,inCrefs,inEqnLst,inRepl)
     local
-      DAE.ExpType tp;
-      DAE.Exp new_exp,rhs_exp,rhs_exp_1,rhs_exp_2,e1,e2,res_exp;
-      list<DAELow.Equation> rest;
-      list<DAE.Exp> rest1;
-      DAELow.Variables v;
-    case ({},_) then {};  
-    case ((DAELow.EQUATION(exp = e1,scalar = e2) :: rest),v)
-      equation
-        tp = Exp.typeof(e1);
-        new_exp = DAE.BINARY(e1,DAE.SUB(tp),e2);
-        rhs_exp = DAELow.getEqnsysRhsExp(new_exp, v);
-        rhs_exp_1 = DAE.UNARY(DAE.UMINUS(tp),rhs_exp);
-        rhs_exp_2 = Exp.simplify(rhs_exp_1);
-        rest1 = generateRelaxationSystemB(rest,v);
-      then
-        rhs_exp_2::rest1;
-    case ((DAELow.RESIDUAL_EQUATION(exp = res_exp) :: rest),v)
-      equation
-        rhs_exp = DAELow.getEqnsysRhsExp(res_exp, v);
-        rhs_exp_1 = Exp.simplify(rhs_exp);
-        rest1 = generateRelaxationSystemB(rest,v);
-      then
-        rhs_exp_1::rest1;
-    case (_,_)
-      equation
-        Debug.fprint("failtrace", "generateRelaxationSystemB failed\n");
-      then
-        fail();
-  end matchcontinue;
-end generateRelaxationSystemB;
-
-protected function listNth1 "function: listNth1
-  author: Frenkel TUD
-  Same as listNth but starts at 1
-"
-  input list<Type_a>  inALst;
-  input Integer  inInteger;
-  replaceable type Type_a subtypeof Any;
-  output Type_a outA;
-algorithm
-  outA:= listNth(inALst,inInteger-1);
-end listNth1;
-
-protected function sortRelaxationSystemB "function: sortRelaxationSystemB
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input list<DAE.Exp>  inExpLst;
-  input list<Integer> inIntegerLst;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst:=
-  matchcontinue (inExpLst,inIntegerLst)
-    local
-      DAE.Exp e;
-      list<DAE.Exp> elst,elst1;
-      list<Integer> rest;
-      Integer i;
-    case (elst,{}) then {};  
-    case (elst,i::rest)
-      equation
-        e = listNth(elst,i-1);
-        elst1 = sortRelaxationSystemB(elst,rest);
-      then
-        e::elst1;
-  end matchcontinue;
-end sortRelaxationSystemB;
-
-protected function sortSolvedRelaxationSystem "function: sortSolvedRelaxationSystem
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input list<DAELow.Equation>  inExpLst;
-  input list<DAELow.Equation>  inExpLst1;
-  input list<Integer> inIntegerLst;
-  output list<DAELow.Equation> outExpLst;
-algorithm
-  outExpLst:=
-  matchcontinue (inExpLst,inExpLst1,inIntegerLst)
-    local
-      DAELow.Equation e;
-      list<DAELow.Equation> elst,elst1,res,res1;
-      list<Integer> rest;
-      Integer i;
-    case (elst,elst1,{}) then elst1;  
-    case (e::elst,elst1,i::rest)
-      equation
-        res = Util.listReplaceAt(e,i-1,elst1); 
-        res1 = sortSolvedRelaxationSystem(elst,res,rest);
-      then
-        res1;
-  end matchcontinue;
-end sortSolvedRelaxationSystem;
-
-protected function sortRelaxationSystemA "function: sortRelaxationSystemA
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input tuple<Integer, Integer, DAELow.Equation>  inJacElem;
-  input list<Integer> inIntegerLst;
-  input Integer[:] inIntegerArr;
-  output tuple<Integer, Integer, DAELow.Equation> outJacElem;
-algorithm
-  outJacElem:=
-  matchcontinue (inJacElem,inIntegerLst,inIntegerArr)
-    local
-      Integer z,z1,s,s1,e;
-      DAELow.Equation eqn;
-      list<Integer> comp;
-      Integer[:] v1;
-    case ( ((z,s,eqn)) ,comp,v1)
-      equation
-        z1 = Util.listPosition(z,comp);
-        e = v1[s];
-        s1 = Util.listPosition(e,comp);
-      then
-        ((z1,s1,eqn));
-  end matchcontinue;
-end sortRelaxationSystemA;
-
-protected function generateRelaxationSystemA "function: generateRelaxationSystemA
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input list<tuple<Integer, Integer, DAELow.Equation>>  inJac;
-  input list<list<DAE.Exp>> inA;
-  output list<list<DAE.Exp>> outA;
-algorithm
-  outA:=
-  matchcontinue (inJac,inA)
-    local
-      list<tuple<Integer, Integer, DAELow.Equation>> rest;
-      list<list<DAE.Exp>> a,a1,a2;
-      list<DAE.Exp> row,row1;
-      DAE.Exp e,e1,e2;
-      Integer z,s;
-      DAELow.Equation eqn;
-      DAE.ExpType tp;
-    case ( {} ,a) then a;
-    case ( ((z,s,DAELow.EQUATION(exp = e1,scalar = e2))::rest) ,a)
-      equation
-         tp = Exp.typeof(e1);
-         e = DAE.BINARY(e1,DAE.SUB(tp),e2);
-         row = listNth(a,z);
-         row1 = Util.listReplaceAt(e,s,row); 
-         a1 = Util.listReplaceAt(row1,z,a); 
-         a2 = generateRelaxationSystemA(rest,a1);       
-      then
-        a2;      
-    case ( ((z,s,DAELow.RESIDUAL_EQUATION(exp = e))::rest) ,a)
-      equation
-         row = listNth(a,z);
-         row1 = Util.listReplaceAt(e,s,row); 
-         a1 = Util.listReplaceAt(row1,z,a);        
-         a2 = generateRelaxationSystemA(rest,a1);       
-      then
-        a2;
-    case (((z,s,eqn)::rest),_)
-      equation
-        Debug.fprint("failtrace", "generateRelaxationSystemA failed\n");
-        true = RTOpts.debugFlag("failtrace");
-        DAELow.dumpEqns({eqn});
-      then
-        fail();        
-    case (_,_)
-      equation
-        Debug.fprint("failtrace", "generateRelaxationSystemA failed\n");
-      then
-        fail();        
-  end matchcontinue;
-end generateRelaxationSystemA;
-
-protected function sortRelaxationSystemX "function: sortRelaxationSystemX
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input list<DAE.ComponentRef>  inExpLst;
-  input list<Integer> inIntegerLst;
-  input Integer[:] inIntegerArr;
-  output list<DAE.ComponentRef> outExpLst;
-algorithm
-  outExpLst:=
-  matchcontinue (inExpLst,inIntegerLst,inIntegerArr)
-    local
+      Integer e,s;
+      list<Integer> block_;
+      Integer[:] ass2;
+      list<DAE.ComponentRef> crefs;
       DAE.ComponentRef c;
-      list<DAE.ComponentRef> elst,elst1;
-      list<Integer> rest;
-      Integer i,e;
-      Integer[:] v2;
-    case (elst,{},_) then {};  
-    case (elst,i::rest,v2)
-      equation
-        e = v2[i];
-        c = listNth(elst,e-1);    
-        elst1 = sortRelaxationSystemX(elst,rest,v2);
-      then
-        c::elst1;
-  end matchcontinue;
-end sortRelaxationSystemX;
-
-protected function solveRelaxationSystem "function: solveRelaxationSystem
-  author: Frenkel TUD
-  Helper function to generateRelaxationSystem
-"
-  input list<list<DAE.Exp>> inA;
-  input list<DAE.ComponentRef>  inX;
-  input list<DAE.Exp> inB;
-  output list<DAELow.Equation> outEqnLst;
-algorithm
-  outEqnLst:=
-  matchcontinue (inA,inX,inB)
-    local
-      list<DAE.Exp> row,b,b1;
-      list<DAE.ComponentRef> x;
-      list<DAELow.Equation> s;
-      DAE.ComponentRef c;
-      list<list<DAE.Exp>> resta,a1,a2;
-      DAE.Exp a_0,b_0,e,e1;
-      DAE.ExpType tp;
+      list<DAELow.Equation> eqnLst;
       DAELow.Equation eqn;
-    case ((a_0::{})::{},c::{},b_0::{})
+      VarTransform.VariableReplacements repl,repl1,repl2;
+      DAE.Exp exp,e1,e2,varexp,exps;
+      list<SimEqSystem> seqns;
+    case ({},ass2,crefs,eqnLst,repl) then (repl,{});
+    case (e::block_,ass2,crefs,eqnLst,repl)
       equation
-        // solution
-        tp = Exp.typeof(a_0);
-        e = DAE.BINARY(b_0,DAE.DIV(tp),a_0);
-        e1 = Exp.simplify(e);
-      then
-        {DAELow.EQUATION(DAE.CREF(c,tp),e1,DAE.emptyElementSource)};      
-    case ((a_0::row)::resta,c::x,b_0::b)
-      equation
-        (a1,b1) = solveRelaxationSystem1(a_0,row,resta,b_0,b);
-        eqn = solveRelaxationSystem3((a_0::row)::resta,b_0::b,c::x);
-        // next
-        s = solveRelaxationSystem(a1,x,b1);
-      then
-        eqn::s;
+        s = ass2[e];
+        c = listNth(crefs,s-1);
+        eqn = listNth(eqnLst,e-1);
+        varexp = DAE.CREF(c,DAE.ET_REAL());
+        exp = solveEquation(eqn, varexp);
+        exps = VarTransform.replaceExp(exp,repl,NONE());
+        repl1 = VarTransform.addReplacement(repl, c, exps);
+        (repl2,seqns) = getRelaxationReplacements(block_,ass2,crefs,eqnLst,repl1);  
+      then 
+        (repl2,SES_SIMPLE_ASSIGN(c, exp)::seqns);
   end matchcontinue;
-end solveRelaxationSystem;
+end getRelaxationReplacements;
 
-protected function solveRelaxationSystem1 "function: solveRelaxationSystem1
-  author: Frenkel TUD
-  Helper function to solveRelaxationSystem
-"
-  input DAE.Exp  inA_0;
-  input list<DAE.Exp>  inRow;
-  input list<list<DAE.Exp>> inA;
-  input DAE.Exp  inB_0;
-  input list<DAE.Exp> inB;
-  output list<list<DAE.Exp>> outA;
-  output list<DAE.Exp> outB;
-algorithm
-  (outA,outB):=
-  matchcontinue (inA_0,inRow,inA,inB_0,inB)
-    local
-      list<list<DAE.Exp>> resta,a;
-      list<DAE.Exp> row_0,row,row1,line,b,bn;
-      DAE.Exp a_0,a_i,b_0,b_i,b1,b2;
-      DAE.ExpType tp;
-    case (a_0,row_0,(a_i::row)::{},b_0,b_i::{})
-      equation
-        // arow
-        row1 = solveRelaxationSystem2(a_0,a_i,row_0,row);
-        // b
-        tp = Exp.typeof(b_i);
-        b1 = DAE.BINARY(b_i,DAE.SUB(tp),DAE.BINARY(a_i,DAE.MUL(tp),DAE.BINARY(b_0,DAE.DIV(tp),a_0))); 
-        b2 = Exp.simplify(b1);
-      then
-        ({row1},{b2});      
-    case (a_0,row_0,(a_i::row)::resta,b_0,b_i::b)
-      equation
-        // arow
-        row1 = solveRelaxationSystem2(a_0,a_i,row_0,row);
-        // b
-        tp = Exp.typeof(b_i);
-        b1 = DAE.BINARY(b_i,DAE.SUB(tp),DAE.BINARY(a_i,DAE.MUL(tp),DAE.BINARY(b_0,DAE.DIV(tp),a_0))); 
-        b2 = Exp.simplify(b1);
-        // next 
-        (a,bn) = solveRelaxationSystem1(a_0,row_0,resta,b_0,b);
-      then
-        (row1::a,b2::bn);
-  end matchcontinue;
-end solveRelaxationSystem1;
-
-protected function solveRelaxationSystem2 "function: solveRelaxationSystem2
-  author: Frenkel TUD
-  Helper function to solveRelaxationSystem1
-"
-  input DAE.Exp  inA_0;
-  input DAE.Exp  inA_i;
-  input list<DAE.Exp> inARow_0;
-  input list<DAE.Exp> inARow;
-  output list<DAE.Exp> outExpLst;
-algorithm
-  outExpLst:=
-  matchcontinue (inA_0,inA_i,inARow_0,inARow)
-    local
-      list<DAE.Exp> rest,row_0,a;
-      DAE.Exp a_0,a_j,a_i,e,e1,e2;
-      DAE.ExpType tp;
-    case (a_0,a_i,a_j::{},e::{})
-      equation
-        tp = Exp.typeof(e);
-        e1 = DAE.BINARY(e,DAE.SUB(tp),DAE.BINARY(a_i,DAE.MUL(tp),DAE.BINARY(a_j,DAE.DIV(tp),a_0)));   
-        e2 = Exp.simplify(e1);     
-      then
-        {e2};      
-    case (a_0,a_i,a_j::row_0,e::rest)
-      equation
-        tp = Exp.typeof(e);
-        e1 = DAE.BINARY(e,DAE.SUB(tp),DAE.BINARY(a_i,DAE.MUL(tp),DAE.BINARY(a_j,DAE.DIV(tp),a_0))); 
-        e2 = Exp.simplify(e1);       
-        // next
-        a = solveRelaxationSystem2(a_0,a_i,row_0,rest);
-      then
-        e2::a;
-  end matchcontinue;
-end solveRelaxationSystem2;
-
-protected function solveRelaxationSystem3 "function: solveRelaxationSystem3
-  author: Frenkel TUD
-  Helper function to solveRelaxationSystem
-"
-  input list<list<DAE.Exp>> inA;
-  input list<DAE.Exp> inB;
-  input list<DAE.ComponentRef> inX;
-  output DAELow.Equation outEqn;
-algorithm
-  outEqn:=
-  matchcontinue (inA,inB,inX)
-    local
-      list<list<DAE.Exp>> resta;
-      list<DAE.Exp> restb,row;
-      DAE.Exp a_0,b_0,e,e1;
-      list<DAE.ComponentRef> x;
-      DAE.ComponentRef c;
-      DAE.ExpType tp;
-    case ((a_0::row)::resta,b_0::restb,c::x)
-      equation
-        e = solveRelaxationSystem4(row,x);
-        tp = Exp.typeof(e);
-        e = DAE.BINARY(DAE.BINARY(b_0,DAE.SUB(tp),e),DAE.DIV(tp),a_0);
-        e1 = Exp.simplify(e);
-      then
-        DAELow.EQUATION(DAE.CREF(c,tp),e1,DAE.emptyElementSource);        
-  end matchcontinue;
-end solveRelaxationSystem3;
-
-protected function solveRelaxationSystem4 "function: solveRelaxationSystem4
-  author: Frenkel TUD
-  Helper function to solveRelaxationSystem3
-"
-  input list<DAE.Exp> inRow;
-  input list<DAE.ComponentRef> inX;
+protected function solveEquation"
+Author: Frenkel TUD 2010-09 function solveEquation
+  solves a equation"
+  input DAELow.Equation inEqn;
+  input DAE.Exp inExp;
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inRow,inX)
+  outExp := matchcontinue (inEqn,inExp)
     local
-      list<DAE.Exp> rest;
-      DAE.Exp b,e,e1,e2;
-      list<DAE.ComponentRef> x;
-      DAE.ComponentRef c;
-      DAE.ExpType tp;
-     case (e::{},c::{})
+      DAE.Exp exp,e1,e2,sol;
+    case (DAELow.EQUATION(exp = e1,scalar = e2),exp)
       equation
-        tp = Exp.typeof(e);
-      then
-        DAE.BINARY(e,DAE.MUL(tp),DAE.CREF(c,DAE.ET_OTHER));     
-    case (e::rest,c::x)
+        sol = solve(e1, e2, exp);
+      then 
+        sol;
+    case (DAELow.RESIDUAL_EQUATION(exp = e1),exp)
       equation
-        tp = Exp.typeof(e);
-        e1 = DAE.BINARY(e,DAE.MUL(tp),DAE.CREF(c,DAE.ET_OTHER));
-        e2 = solveRelaxationSystem4(rest,x);
-      then
-        DAE.BINARY(e1,DAE.ADD(tp),e2);        
+        // TODO: use type correct Zero
+        sol = solve(e1, DAE.RCONST(0.0), exp);
+      then 
+        sol;        
   end matchcontinue;
-end solveRelaxationSystem4;
+end solveEquation;
+
+protected function getRelaxedResidualEqns"
+Author: Frenkel TUD 2010-09 function getRelaxedResidualEqns
+  replace all non tearing vars with its solutions in the 
+  residual eqns"
+  input list<Integer> inBlock;
+  input Integer[:] inAss2;
+  input list<DAE.ComponentRef> inCrefs;
+  input list<DAELow.Var> inVarLst;
+  input list<DAELow.Equation> inEqnLst;
+  input VarTransform.VariableReplacements inRepl;
+  output list<DAELow.Equation> outEqnLst;
+  output list<DAELow.Var> outVarLst;
+algorithm
+  (outEqnLst,outVarLst) := matchcontinue (inBlock,inAss2,inCrefs,inVarLst,inEqnLst,inRepl)
+    local
+      Integer e,s;
+      list<Integer> block_;
+      Integer[:] ass2;
+      list<DAE.ComponentRef> crefs;
+      DAE.ComponentRef c;
+      list<DAELow.Equation> eqnLst,eqnLst1;
+      DAELow.Equation eqn,eqn1;
+      VarTransform.VariableReplacements repl,repl1,repl2;
+      DAE.Exp exp,e1,e2,varexp;
+      list<DAELow.Var> varlst,varlst1;
+      DAELow.Var var;
+    case ({},_,_,_,_,_) then ({},{});
+    case (e::block_,ass2,crefs,varlst,eqnLst,repl)
+      equation
+        s = ass2[e];
+        c = listNth(crefs,s-1);
+        var = listNth(varlst,s-1);
+        eqn = listNth(eqnLst,e-1);
+        {eqn1} = BackendVarTransform.replaceEquations({eqn},repl);
+        (eqnLst1,varlst1) = getRelaxedResidualEqns(block_,ass2,crefs,varlst,eqnLst,repl);  
+      then 
+        ((eqn1::eqnLst1),(var::varlst1));
+  end matchcontinue;
+end getRelaxedResidualEqns;
+
+protected function generateRelaxedResidualEqns"
+Author: Frenkel TUD 2010-09 function generateRelaxedResidualEqns
+  generates the equations for the residual eqns"
+  input list<Integer> inBlock;
+  input Boolean mixedEvent "true if generating the mixed system event code"; 
+  input DAELow.DAELow daelow;
+  input Integer[:] Ass1;
+  input Integer[:] Ass2;
+  input list<HelpVarInfo> helpVarInfo;  
+  output list<SimEqSystem> outEqnLst;
+algorithm
+  outEqnLst := matchcontinue (inBlock,mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
+    local
+      Integer r;
+      list<Integer> block_;
+      DAELow.IncidenceMatrix m;
+      DAELow.IncidenceMatrixT mT;
+      list<tuple<Integer, Integer, DAELow.Equation>> jac;
+      list<SimVar> simVars;
+      list<DAE.Exp> beqs;
+      list<tuple<Integer, Integer, SimEqSystem>> simJac;
+      SimEqSystem reqn;
+      DAELow.Variables v;
+      list<DAELow.Var> dlowVars;
+      DAELow.EquationArray eqn;
+      list<DAELow.Equation> dlowEqs;
+      DAELow.MultiDimEquation[:] ae;      
+    case ({r},mixedEvent,daelow, Ass1, Ass2, helpVarInfo)
+      equation
+       reqn = createEquation(r,daelow, Ass1, Ass2, helpVarInfo);        
+      then 
+        {reqn};
+    case (block_ as _::_::_,mixedEvent,daelow as DAELow.DAELOW(orderedVars=v,orderedEqs=eqn,arrayEqs=ae), Ass1, Ass2, helpVarInfo)
+      equation
+        dlowVars = DAELow.varList(v);
+        dlowEqs = DAELow.equationList(eqn);
+				m = DAELow.incidenceMatrix(daelow);
+        mT = DAELow.transposeMatrix(m);      
+        SOME(jac) = DAELow.calculateJacobian(v, eqn, ae, m, mT,false);
+        simVars = Util.listMap(dlowVars, dlowvarToSimvar);
+        (beqs,_) = listMap3passthrough(dlowEqs, dlowEqToExp, v, ae, {});
+        simJac = Util.listMap1(jac, jacToSimjac, v);
+      then
+        {SES_LINEAR(mixedEvent, simVars, beqs, simJac)};
+  end matchcontinue;
+end generateRelaxedResidualEqns;
 
 protected function jacToSimjac
   input tuple<Integer, Integer, DAELow.Equation> jac;
