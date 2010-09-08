@@ -197,16 +197,20 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     storeExtrapolationData();
 	// Calculate stable discrete state
 	// and initial ZeroCrossings
-	int needToIterate=1;
-	if(sim_verbose) { sim_result->emit(); }
-
-	while(checkForDiscreteChanges() || needToIterate) {
+	int needToIterate=0;
+	int IntarationNum=0;
+	function_updateDepend(needToIterate);
+	if (sim_verbose) { sim_result->emit();}
+	while (checkForDiscreteChanges() || needToIterate){
 		saveall();
 		function_updateDepend(needToIterate);
-		if (sim_verbose) {
-			cout << "Discrete Variable changed -> event iteration." << endl;
-			sim_result->emit();
+		if (sim_verbose) { sim_result->emit();}
+		IntarationNum++;
+		if (IntarationNum>InterationMax) {
+			throw TerminateSimulationException(globalData->timeValue,
+					string("ERROR: Too many Iteration. System is not consistent!\n"));
 		}
+
 	}
 	saveall();
 	if(sim_verbose) { sim_result->emit(); }
@@ -215,29 +219,33 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
     // And then go back and start at t_0
 	globalData->current_stepsize = calcTiny(globalData->timeValue);
 	double* backupstats_new = new double[globalData->nStates];
-  std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
+    std::copy(globalData->states, globalData->states + globalData->nStates, backupstats_new);
   
-  solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
+    solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
 	functionDAE_output();
 	if(sim_verbose) { sim_result->emit(); }
 	InitialZeroCrossings();
 
 	globalData->timeValue = start;
-  globalData->current_stepsize = step;
-  std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
+    globalData->current_stepsize = step;
+    std::copy(backupstats_new, backupstats_new + globalData->nStates, globalData->states);
 	delete [] backupstats_new;
 	reset = true;
 
-	needToIterate=1;
-	if(sim_verbose) { sim_result->emit(); }
-
-	while(checkForDiscreteChanges() || needToIterate) {
+	needToIterate=0;
+	IntarationNum=0;
+	function_updateDepend(needToIterate);
+	if (sim_verbose) { sim_result->emit();}
+	while (checkForDiscreteChanges() || needToIterate){
 		saveall();
 		function_updateDepend(needToIterate);
-		if (sim_verbose) {
-			cout << "Discrete Variable changed -> event iteration." << endl;
-			sim_result->emit();
+		if (sim_verbose) { sim_result->emit();}
+		IntarationNum++;
+		if (IntarationNum>InterationMax) {
+			throw TerminateSimulationException(globalData->timeValue,
+					string("ERROR: Too many Iteration. System is not consistent!\n"));
 		}
+
 	}
 	saveall();
 	sim_result->emit();
@@ -278,7 +286,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		 *
 		 */
 
-    retValIntration = solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
+        retValIntration = solver_main_step(flag,&globalData->current_stepsize,start,stop,reset,functionODE);
 
 		functionDAE_output();
 
@@ -302,7 +310,7 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 		
 		// Emit this time step
 		sim_result->emit();
-
+		saveall();
 		if (retValIntration){
 			throw TerminateSimulationException(globalData->timeValue,
 					string("Error in Simulation. Solver exit with error.\n"));

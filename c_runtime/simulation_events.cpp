@@ -464,7 +464,7 @@ void initSample(double start) {
 
 void saveall() {
   int i;
-    for (i = 0; i < globalData->nStates; i++) {
+  for (i = 0; i < globalData->nStates; i++) {
     x_saved[i] = globalData->states[i];
     xd_saved[i] = globalData->statesDerivatives[i];
   }
@@ -565,7 +565,7 @@ bool edge(double& var) {
 }
 
 bool change(double& var) {
-  return (var && !pre(var)) || (!var && pre(var));
+  return (var != pre(var));
 }
 
 /*
@@ -574,19 +574,25 @@ bool change(double& var) {
 */
 
 //
-// This function checks for Events in Intervall=[oldTime,timeValue]
-// If a zerocrossing Function cause a sign chage, root finding
+// This function checks for Events in Interval=[oldTime,timeValue]
+// If a ZeroCrossing Function cause a sign change, root finding
 // process will start
 //
 int CheckForNewEvent(int flag) {
-	int needToIterate=1;
+	int needToIterate=0;
+	int IntarationNum=0;
 	if (flag != INTERVAL){
 		while(checkForDiscreteChanges() || needToIterate) {
-			saveall();
-			function_updateDepend(needToIterate);
 			if (sim_verbose) {
 				cout << "Discrete Variable changed -> event iteration." << endl;
 				sim_result->emit();
+			}
+			saveall();
+			function_updateDepend(needToIterate);
+			IntarationNum++;
+			if (IntarationNum>InterationMax) {
+				throw TerminateSimulationException(globalData->timeValue,
+						string("ERROR: Too many Iteration. System is not consistent!\n"));
 			}
 	  }
 	}
@@ -622,7 +628,6 @@ void EventHandle(){
 
 	while(!EventQueue.empty()){
 		long event_id;
-		int needToIterate=1;
 
 		event_id = EventQueue.front();
 
@@ -633,14 +638,23 @@ void EventHandle(){
 			zeroCrossingEnabled[event_id] = 1;}
 
 		//determined complete system
+		int needToIterate=0;
+		int IntarationNum=0;
+		function_updateDepend(needToIterate);
+		if (sim_verbose) { sim_result->emit();}
 		while (needToIterate){
 			if (sim_verbose) cout << "reinit Iteration needed!" << endl;
 			saveall();
 			function_updateDepend(needToIterate);
 			if (sim_verbose) { sim_result->emit();}
-		}
+			IntarationNum++;
+			if (IntarationNum>InterationMax) {
+				//break;
+				throw TerminateSimulationException(globalData->timeValue,
+					string("ERROR: Too many Iteration. System is not consistent!\n"));
+			}
 
-	    
+		}
 		EventQueue.pop_front();
 	}
 	CheckForNewEvent(NOINTERVAL);
@@ -695,6 +709,7 @@ void FindRoot(){
 	functionDAE_output();
 	sim_result->emit();
 	saveall();
+
 
 	//determined system at t_e + epsilon
 	globalData->timeValue = time_right;
@@ -798,5 +813,3 @@ void InitialZeroCrossings() {
     cout << "checkForIntialZeroCrossings done." << endl;
   }
 }
-
-

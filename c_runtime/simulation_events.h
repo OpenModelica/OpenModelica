@@ -73,6 +73,7 @@ double GreaterEq(double a,double b);
 
 extern long inUpdate;
 extern int euler_in_use;
+const int InterationMax = 100;
 
 #define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
 
