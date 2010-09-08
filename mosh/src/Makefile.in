@@ -9,14 +9,6 @@ builddir_doc=$(top_builddir)/build/doc
 CC=gcc
 CXX=g++
 
-ANTLR_HOME = @antlrhome@
-
-ANTLR_INCP = -I@antlrinc@
-ANTLR_LIBP = -L@antlrlib@
-
-PARSE_INCP = -I$(top_builddir)/modelica_parser/src
-PARSE_LIBP = -L$(top_builddir)/modelica_parser/src
-
 EXEEXT=@EXEEXT@
 
 USE_CORBA = @USE_CORBA@
@@ -32,14 +24,13 @@ else
   CORBALIB =
 endif
 
-INCP = $(ANTLR_INCP) $(PARSE_INCP) $(CORBAIMPL) $(CORBAINC)
-LIBP = $(ANTLR_LIBP) $(PARSE_LIBP)
+INCP = $(CORBAIMPL) $(CORBAINC)
 
 CFLAGS = @CFLAGS@ $(INCP) -g -Wall -DDEBUG $(USE_CORBA)
 CXXFLAGS = $(CFLAGS)
-LINKFLAGS = @LDFLAGS@ $(LIBP)
+LINKFLAGS = @LDFLAGS@
 
-LIBS = -lantlr -lmodelica_parser -lreadline  $(CORBALIB) -lm -lpthread
+LIBS = -lreadline  $(CORBALIB) -lm -lpthread
 
 
 OBJS += mosh.o options.o
@@ -70,5 +61,4 @@ options.o: options.cpp
 .PRECIOUS: Makefile
 
 Makefile: Makefile.in
-	$(top_builddir)/config.status Makefile
-
+	cd $(top_builddir) && ./config.status
