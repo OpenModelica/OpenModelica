@@ -1,7 +1,7 @@
 COMPILERHOME=../Compiler/
 RMLINC	= -I$(RMLHOME)/include/plain
 
-ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool
+ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
 CFLAGS=-O3
 CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
 CC=gcc

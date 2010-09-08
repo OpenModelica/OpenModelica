@@ -6055,5 +6055,13 @@ algorithm
   end matchcontinue;
 end listSub_tail;
 
+public function strcmpBool "As strcmp, but has Boolean output as is expected by the sort function"
+  input String s1;
+  input String s2;
+  output Boolean b;
+algorithm
+  b := if_(System.strcmp(s1,s2) > 0, true, false);
+end strcmpBool;
+
 end Util;
 

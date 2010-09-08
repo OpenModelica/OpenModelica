@@ -250,6 +250,7 @@ algorithm
         Print.printBuf("\n");
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,w1,ts), Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
+        subdirs = Util.sort(subdirs, Util.strcmpBool);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
         p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
         p = loadCompleteSubfiles(pack, mp_1, within_, p2);
@@ -268,6 +269,7 @@ algorithm
         Print.printBuf("\n");
         p1_1 = Interactive.updateProgram(Absyn.PROGRAM(p1,Absyn.WITHIN(wpath),ts),Absyn.PROGRAM(oldc,Absyn.TOP(),ts));
         subdirs = System.subDirectories(mp_1);
+        subdirs = Util.sort(subdirs, Util.strcmpBool);
         subdirstr = Util.stringDelimitList(subdirs, ", ");
         p2 = loadCompleteSubdirs(subdirs, pack, mp_1, within_, p1_1);
         wpath_1 = Absyn.joinPaths(wpath, Absyn.IDENT(pack));
