@@ -831,7 +831,7 @@ algorithm
   outSetLst := matchcontinue(cache,env,ih,pre,setLst,added,cr1,io1,f1,cr2,io2,f2,info)
      local SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       Boolean flowPrefix;
+       Boolean flowPrefix,streamPrefix;
        DAE.DAElist dae;
        list<Connect.Set> setLst2;
        Connect.Sets csets;
@@ -844,12 +844,12 @@ algorithm
     // if it was not added, add it (search for both components)
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix,_,_,vt1,_,_),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(flowPrefix,streamPrefix,_,vt1,_,_),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         (cache,DAE.ATTR(         _,_,_,vt2,_,_),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then
@@ -895,7 +895,7 @@ algorithm
      local
        SCode.Variability vt1,vt2;
        DAE.Type t1,t2;
-       Boolean flow_;
+       Boolean flowPrefix,streamPrefix;
        DAE.DAElist dae;
        list<Connect.Set> setLst2;
        Connect.Sets csets;
@@ -907,14 +907,14 @@ algorithm
     // if it was not added, add it (first component found: cr1)
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
-        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
+        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,parameter_=vt1),t1,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr1);
         pre = Prefix.NOPRE();
         t2 = t1;
         vt2 = vt1;
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2,ConnectionGraph.EMPTY,info);
+        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
     then
@@ -924,13 +924,13 @@ algorithm
     case(cache,env,ih,pre,setLst,false,cr1,io1,f1,cr2,io2,f2,info)
       equation
         pre = Prefix.NOPRE();
-        (cache,DAE.ATTR(flowPrefix=flow_,parameter_=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
+        (cache,DAE.ATTR(flowPrefix=flowPrefix,streamPrefix=streamPrefix,parameter_=vt2),t2,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr2);
         t1 = t2;
         vt1 = vt2;
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flow_,io1,io2,ConnectionGraph.EMPTY,info);
+        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then setLst;

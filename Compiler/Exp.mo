@@ -6397,12 +6397,20 @@ algorithm
     
     // der is not a vector function
     case (DAE.CALL(path = Absyn.IDENT(name = "der"))) then false;
+    
     // pre is not a vector function, adrpo: 2009-03-03 -> pre is also needed here!
     case (DAE.CALL(path = Absyn.IDENT(name = "pre"))) then false;
+    
+    // inStream and actualStream are not a vector function, adrpo: 2010-08-31 -> they are also needed here!
+    case (DAE.CALL(path = Absyn.IDENT(name = "inStream"))) then false;
+    case (DAE.CALL(path = Absyn.IDENT(name = "actualStream"))) then false;      
+    
     // a call that has an return array type returns true 
     case (DAE.CALL(path = _, ty = DAE.ET_ARRAY(_,_))) then true;
+    
     // any other call returns false
     case (DAE.CALL(path = _)) then false;
+    
     // partial evaluation
     case (DAE.PARTEVALFUNCTION(path = _, expList = elst)) // stefan
       equation
@@ -6410,6 +6418,7 @@ algorithm
         res = Util.boolOrList(blst);
       then
         res;
+    
     // binary operators, e1 has a vector function call
     case (DAE.BINARY(exp1 = e1,exp2 = e2)) 
       equation

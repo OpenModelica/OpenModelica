@@ -2862,6 +2862,8 @@ algorithm
       env = Env.extendFrameT(env, "mod", intInt2int);
       env = Env.extendFrameT(env, "constrain", realrealreal2real);
       env = Env.extendFrameT(env, "constrain", array1dimrealarray1dimrealarray1dimreal2array1dimreal);
+      env = Env.extendFrameT(env, "actualStream", real2real);
+      env = Env.extendFrameT(env, "inStream", real2real);
       /*
       env = Env.extendFrameT(env, "semiLinear", realRealReal2real);
       env = Env.extendFrameT(env, "delay", realReal2real);

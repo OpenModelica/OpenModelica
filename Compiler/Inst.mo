@@ -1180,7 +1180,10 @@ algorithm
         //print("in class ");print(n);print(" generate equations for sets:");print(ConnectUtil.printSetsStr(csets_1));print("\n");
         //InnerOuter.checkMissingInnerDecl(dae1_1,callscope_1);
         (csets_1,_) = InnerOuter.retrieveOuterConnections(cache,env_3,ih,pre,csets_1,callscope_1);
-         //print("updated sets: ");print(ConnectUtil.printSetsStr(csets_1));print("\n");
+        //print("updated sets: ");print(ConnectUtil.printSetsStr(csets_1));print("\n");
+                
+        // adrpo 2010-08-30: handle here the actualStream and inStream operators
+        // dae1_1 = handleStreamConnectors(pre, csets_1, dae1_1);
         
         (dae2,graph) = ConnectUtil.equations(csets_1,pre,callscope_1,graph);
         (cache,dae3) = ConnectUtil.unconnectedFlowEquations(cache, csets_1, dae1, env_3, pre, callscope_1, {});
@@ -13745,7 +13748,7 @@ algorithm
       DAE.Properties prop1,prop2;
       SCode.Accessibility acc;
       DAE.Attributes attr1,attr2;
-      Boolean flow1,impl;
+      Boolean flowPrefix1,flowPrefix2,streamPrefix1,streamPrefix2,impl;
       tuple<DAE.TType, Option<Absyn.Path>> ty1,ty2;
       Connect.Face f1,f2;
       Connect.Sets sets_1,sets,sets_2,sets_3;
@@ -13776,11 +13779,11 @@ algorithm
 
         (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
-        (cache,attr1 as DAE.ATTR(flow1,_,_,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
-        (cache,attr2 as DAE.ATTR(    _,_,_,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        (cache,attr1 as DAE.ATTR(flowPrefix1,streamPrefix1,_,vt1,_,io1),ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,attr2 as DAE.ATTR(flowPrefix2,streamPrefix2,_,vt2,_,io2),ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
         validConnector(ty1) "Check that the type of the connectors are good." ;
         validConnector(ty2);
-        checkConnectTypes(env,ih,c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2, info);
+        checkConnectTypes(env, ih, c1_2, ty1, attr1, c2_2, ty2, attr2, io1, io2, info);
         f1 = ConnectUtil.componentFace(env,ih,c1_2);
         f2 = ConnectUtil.componentFace(env,ih,c2_2);
         sets_1 = ConnectUtil.updateConnectionSetTypes(sets,c1_1);
@@ -13789,7 +13792,7 @@ algorithm
         // print(") with ");print(Dump.unparseInnerouterStr(io1));print(", ");print(Dump.unparseInnerouterStr(io2));
         // print("\n");
         (cache,_,ih,sets_3,dae,graph) =
-        connectComponents(cache, env, ih, sets_2, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, flow1, io1, io2, graph, info);
+        connectComponents(cache, env, ih, sets_2, pre, c1_2, f1, ty1, vt1, c2_2, f2, ty2, vt2, flowPrefix1, streamPrefix1, io1, io2, graph, info);
       then
         (cache,env,ih,sets_3,dae,graph);    
 
@@ -14107,7 +14110,8 @@ public function connectComponents "
   input Connect.Face inFace8;
   input DAE.Type inType9;
   input SCode.Variability vt2;
-  input Boolean inBoolean10;
+  input Boolean inFlowPrefix;
+  input Boolean inStreamPrefix;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input ConnectionGraph.ConnectionGraph inGraph;
@@ -14120,7 +14124,7 @@ public function connectComponents "
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph) :=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inBoolean10,io1,io2,inGraph,info)
+  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inFlowPrefix,inStreamPrefix,io1,io2,inGraph,info)
     local
       DAE.ComponentRef c1_1,c2_1,c1,c2;
       list<DAE.ComponentRef> dc;
@@ -14133,7 +14137,7 @@ algorithm
       Integer dim1,dim2;
       DAE.DAElist dae, dae2;
       list<DAE.Var> l1,l2;
-      Boolean flowPrefix;
+      Boolean flowPrefix, streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
@@ -14145,7 +14149,7 @@ algorithm
       DAE.InlineType inlineType1, inlineType2;
 
     /* connections to outer components */
-    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph,info)
+    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,false,io1,io2,graph,info)
       equation
         // print("Connecting components: " +& PrefixUtil.printPrefixStr(pre) +& "/" +&
         //    Exp.printComponentRefStr(c1) +& "[" +& Dump.unparseInnerouterStr(io1) +& "]" +& " = " +& 
@@ -14178,7 +14182,7 @@ algorithm
         (cache,env,ih,sets,DAEUtil.emptyDae,graph);
         
     /* flow - with a subtype of Real */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_REAL(varLstReal = _),_),vt1,c2,f2,(DAE.T_REAL(varLstReal = _),_),vt2,true,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_REAL(varLstReal = _),_),vt1,c2,f2,(DAE.T_REAL(varLstReal = _),_),vt2,true,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14191,7 +14195,8 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* flow - with arrays */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),vt1,c2,f2,(DAE.T_ARRAY(arrayType = t2),_),vt2,true,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),vt1,c2,f2,
+                                      (DAE.T_ARRAY(arrayType = t2),_),vt2,true,false,io1,io2,graph,info)
       equation
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
         ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
@@ -14205,8 +14210,8 @@ algorithm
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
-    /* Non-flow type Parameters and constants generate assert statements */
-    case (cache,env,ih,sets as(Connect.SETS(deletedComponents=dc)),pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph,info)
+    /* Non-flow and Non-stream type Parameters and constants generate assert statements */
+    case (cache,env,ih,sets as(Connect.SETS(deletedComponents=dc)),pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
       local list<Boolean> bolist,bolist2;
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
@@ -14232,7 +14237,7 @@ algorithm
           },funcs),graph);
 
     /* Same as above, but returns empty (removed conditional var) */
-    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14244,7 +14249,7 @@ algorithm
         (cache,env,ih,sets,DAEUtil.emptyDae,graph);
 
     /* connection of two Reals */        
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_REAL(varLstReal = _),_),vt1,c2,_,(DAE.T_REAL(varLstReal = _),_),vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_REAL(varLstReal = _),_),vt1,c2,_,(DAE.T_REAL(varLstReal = _),_),vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14257,7 +14262,7 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* connection of two Integers */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_INTEGER(varLstInt = _),_),vt1,c2,_,(DAE.T_INTEGER(varLstInt = _),_),vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_INTEGER(varLstInt = _),_),vt1,c2,_,(DAE.T_INTEGER(varLstInt = _),_),vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14270,7 +14275,7 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* connection of two Booleans */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_BOOL(_),_),vt1,c2,_,(DAE.T_BOOL(_),_),vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_BOOL(_),_),vt1,c2,_,(DAE.T_BOOL(_),_),vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14283,7 +14288,7 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of two Strings */
-    case (cache,env,ih,sets,pre,c1,_,(DAE.T_STRING(_),_),vt1,c2,_,(DAE.T_STRING(_),_),vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_STRING(_),_),vt1,c2,_,(DAE.T_STRING(_),_),vt2,false,false,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14296,27 +14301,23 @@ algorithm
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
 
     /* Connection of arrays of complex types */
-    case (cache,env,ih,sets,pre,c1,f1,
-          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),
-          vt1,c2,f2,
-          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim2),arrayType = t2),_),
-          vt2,flowPrefix,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),vt1,
+                                c2,f2,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim2),arrayType = t2),_),vt2,
+                                flowPrefix as false, streamPrefix as false,io1,io2,graph,info)
       equation
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t1);
         ((DAE.T_COMPLEX(complexClassType=_),_)) = Types.arrayElementType(t2);
 
         equality(dim1 = dim2);
 
-        (cache,_,ih,sets_1,dae,graph) = connectArrayComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,1,graph,info);
+        (cache,_,ih,sets_1,dae,graph) = connectArrayComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,1,graph,info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
     /* Connection of arrays */
-    case (cache,env,ih,sets,pre,c1,f1,
-          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),
-          vt1,c2,f2,
-          (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim2),arrayType = t2),_),
-          vt2,false,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),vt1,
+                                c2,f2,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim2),arrayType = t2),_),vt2,
+                                flowPrefix as false,streamPrefix as false,io1,io2,graph,info)
       local
         list<DAE.Dimension> dims,dims2;
         list<Integer> idims,idims2;
@@ -14339,7 +14340,7 @@ algorithm
     /* Connection of connectors with an equality constraint.*/
     case (cache,env,ih,sets,pre,c1,f1,t1 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath1,dim1,inlineType1))),_),vt1,
                                 c2,f2,t2 as (DAE.T_COMPLEX(equalityConstraint=SOME((fpath2,dim2,inlineType2))),_),vt2,
-                                flowPrefix,io1,io2,
+                                flowPrefix as false, streamPrefix as false,io1,io2,
         (graph as ConnectionGraph.GRAPH(updateGraph = true)),info)
       local
         Absyn.Path fpath1, fpath2;
@@ -14358,7 +14359,8 @@ algorithm
           cache, env, ih, sets, pre,
           c1, f1, t1, vt1,
           c2, f2, t2, vt2,
-          flowPrefix, io1, io2, ConnectionGraph.NOUPDATE_EMPTY,info);
+          flowPrefix, streamPrefix, 
+          io1, io2, ConnectionGraph.NOUPDATE_EMPTY, info);
 
         /* We can form the daes from connection set already at this point
            because there must not be flow components in types having equalityConstraint.
@@ -14394,30 +14396,60 @@ algorithm
         (cache,env,ih,sets_1,dae,graph);
 
     /* Complex types t1 extending basetype */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp1)),_),vt1,c2,f2,t2,vt2,
+           flowPrefix,streamPrefix,io1,io2,graph,info)
       equation
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets, pre, c1, f1, bc_tp1,vt1, c2, f2, t2,vt2, flowPrefix,io1,io2, graph,info);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache, env, ih, sets, pre, c1, f1, bc_tp1,vt1, c2, f2, t2,vt2, flowPrefix,streamPrefix,io1,io2, graph,info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
     /* Complex types t2 extending basetype */
-    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,(DAE.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp2)),_),vt2,flowPrefix,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,(DAE.T_COMPLEX(complexVarLst = l1,complexTypeOption = SOME(bc_tp2)),_),vt2,flowPrefix,streamPrefix,io1,io2,graph,info)
       equation
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih, sets, pre, c1, f1, t1, vt1,c2, f2, bc_tp2,vt2, flowPrefix,io1,io2,graph,info);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih, sets, pre, c1, f1, t1, vt1,c2, f2, bc_tp2,vt2, flowPrefix,streamPrefix,io1,io2,graph,info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
     /* Connection of complex connector, e.g. Pin */
-    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1),_),vt1,c2,f2,(DAE.T_COMPLEX(complexVarLst = l2),_),vt2,_,io1,io2,graph,info)
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_COMPLEX(complexVarLst = l1),_),vt1,c2,f2,(DAE.T_COMPLEX(complexVarLst = l2),_),vt2,_,_,io1,io2,graph,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
-        (cache,_,ih,sets_1,dae,graph) = connectVars(cache,env,ih, sets, c1_1, f1, l1,vt1, c2_1, f2, l2,vt2,io1,io2,graph,info);
+        (cache,_,ih,sets_1,dae,graph) = connectVars(cache,env,ih, sets, c1_1, f1, l1, vt1, c2_1, f2, l2, vt2, io1, io2, graph, info);
       then
         (cache,env,ih,sets_1,dae,graph);
 
+    // stream connector variables with subtype real    
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_REAL(varLstReal = _),_),vt1,c2,f2,(DAE.T_REAL(varLstReal = _),_),vt2,false,true,io1,io2,graph,info)
+      equation
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+
+        sets_1 = ConnectUtil.addStream(sets, c1_1, f1, c2_1, f2, source);
+      then
+        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
+        
+    /* stream - with arrays */
+    case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(dim1),arrayType = t1),_),vt1,c2,
+                                   f2,(DAE.T_ARRAY(arrayType = t2),_),vt2,false,true,io1,io2,graph,info)
+      equation
+        ((DAE.T_REAL(_),_)) = Types.arrayElementType(t1);
+        ((DAE.T_REAL(_),_)) = Types.arrayElementType(t2);
+        (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+
+        sets_1 = ConnectUtil.addArrayStream(sets, c1_1, f1, c2_1, f2, dim1, source);
+      then
+        (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);        
+
     /* Error */
-    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,io1,io2,_,info)
+    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,io1,io2,_,info)
       equation
         (cache,c1_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c1);
         (cache,c2_1) = PrefixUtil.prefixCref(cache,env,ih,pre, c2);
@@ -14431,7 +14463,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,_,_,_)
+    case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,_,_,_,_)
       equation
         print("-Inst.connectComponents failed\n");
       then
@@ -14456,7 +14488,8 @@ Traverses arrays of complex connectors and calls connectComponents for each inde
   input Connect.Face inFace8;
   input DAE.Type inType9;
   input SCode.Variability vt2;
-  input Boolean inBoolean10;
+  input Boolean inFlowPrefix;
+  input Boolean inStreamPrefix;
   input Absyn.InnerOuter io1;
   input Absyn.InnerOuter io2;
   input Integer dim1;
@@ -14471,7 +14504,7 @@ Traverses arrays of complex connectors and calls connectComponents for each inde
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm
   (outCache,outEnv,outIH,outSets,outDae,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inBoolean10,io1,io2,dim1,i,inGraph,info)
+  matchcontinue (inCache,inEnv,inIH,inSets,inPrefix3,cr1,inFace5,inType6,vt1,cr2,inFace8,inType9,vt2,inFlowPrefix,inStreamPrefix,io1,io2,dim1,i,inGraph,info)
     local
       DAE.ComponentRef c1_1,c2_1,c1,c2,c21,c11;
       Connect.Sets sets_1,sets;
@@ -14483,27 +14516,27 @@ algorithm
       Integer dim1,dim2;
       DAE.DAElist dae,dae1,dae2;
       list<DAE.Var> l1,l2;
-      Boolean flowPrefix;
+      Boolean flowPrefix,streamPrefix;
       String c1_str,t1_str,t2_str,c2_str;
       Env.Cache cache;
       Absyn.InnerOuter io1,io2;
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
 
-    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i,graph,info)
+    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
       equation
         true = (dim1 == i);
         c1 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
         c2 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
-        (cache,_,ih,sets_1,dae,graph)= connectComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,graph,info);
+        (cache,_,ih,sets_1,dae,graph)= connectComponents(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
       then (cache,env,ih,sets_1,dae,graph);
 
-    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i,graph,info)
+    case(cache,env,ih,sets,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i,graph,info)
       equation
         c11 = Exp.replaceCrefSliceSub(c1,{DAE.INDEX(DAE.ICONST(i))});
         c21 = Exp.replaceCrefSliceSub(c2,{DAE.INDEX(DAE.ICONST(i))});
-        (cache,_,ih,sets_1,dae1,graph)= connectComponents(cache,env,ih,sets,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,io1,io2,graph,info);
-        (cache,_,ih,sets_1,dae2,graph) = connectArrayComponents(cache,env,ih,sets_1,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,io1,io2,dim1,i+1,graph,info);
+        (cache,_,ih,sets_1,dae1,graph)= connectComponents(cache,env,ih,sets,pre,c11,f1,t1,vt1,c21,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,graph,info);
+        (cache,_,ih,sets_1,dae2,graph) = connectArrayComponents(cache,env,ih,sets_1,pre,c1,f1,t1,vt1,c2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,dim1,i+1,graph,info);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then (cache,env,ih,sets_1,dae,graph);
   end matchcontinue;
@@ -14559,15 +14592,15 @@ algorithm
 
     case (cache,env,ih,sets,_,_,{},vt1,_,_,{},vt2,io1,io2,graph,info)
       then (cache,env,ih,sets,DAEUtil.emptyDae,graph);
-    case (cache,env,ih,sets,c1,f1,(DAE.TYPES_VAR(name = n,attributes = (attr1 as DAE.ATTR(flowPrefix = flow1,parameter_ = vta)),type_ = ty1) :: xs1),vt1,
-                         c2,f2,(DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(flowPrefix = flow2,parameter_ = vtb)),type_ = ty2) :: xs2),vt2,io1,io2,graph,info)
+    case (cache,env,ih,sets,c1,f1,(DAE.TYPES_VAR(name = n,attributes = (attr1 as DAE.ATTR(flowPrefix = flow1,streamPrefix = stream1,parameter_ = vta)),type_ = ty1) :: xs1),vt1,
+                         c2,f2,(DAE.TYPES_VAR(attributes = (attr2 as DAE.ATTR(flowPrefix = flow2,streamPrefix=stream2,parameter_ = vtb)),type_ = ty2) :: xs2),vt2,io1,io2,graph,info)
       equation
         ty_2 = Types.elabType(ty1);
         c1_1 = Exp.extendCref(c1, ty_2, n, {});
         c2_1 = Exp.extendCref(c2, ty_2, n, {});
-        checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2,io1,io2,info);
-        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, Prefix.NOPRE(), c1_1, f1, ty1,vta, c2_1, f2, ty2,vtb,flow1,io1,io2,graph,info);
-        (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, c1, f1, xs1,vt1, c2, f2, xs2,vt2,io1,io2,graph,info);
+        checkConnectTypes(env,ih, c1_1, ty1, attr1, c2_1, ty2, attr2, io1, io2, info);
+        (cache,_,ih,sets_1,dae,graph) = connectComponents(cache,env,ih,sets, Prefix.NOPRE(), c1_1, f1, ty1, vta, c2_1, f2, ty2, vtb, flow1, stream1, io1, io2, graph, info);
+        (cache,_,ih,sets_2,dae2,graph) = connectVars(cache,env,ih,sets_1, c1, f1, xs1,vt1, c2, f2, xs2, vt2, io1, io2, graph, info);
         dae_1 = DAEUtil.joinDaes(dae, dae2);
       then
         (cache,env,ih,sets_2,dae_1,graph);
@@ -18584,5 +18617,99 @@ algorithm
     case (Absyn.BIDIR()) then Absyn.BIDIR();
   end matchcontinue;
 end flipDirection;
+
+function handleStreamConnectors
+"@author: adrpo
+ this function evaluates the inStream and actualStream builtin operators"
+  input Prefix.Prefix pre "prefix required for checking deleted components";  
+  input Connect.Sets sets;
+  input DAE.DAElist inDAE;
+  output DAE.DAElist outDAE;
+algorithm
+  outDAE := matchcontinue(pre, sets, inDAE)
+    local
+      DAE.DAElist dae;
+      list<DAE.Element> elems;
+      DAE.FunctionTree functions "set of functions";     
+
+    case (pre, sets, dae)
+      equation
+        (dae,_) = DAEUtil.traverseDAE(dae, evalActualStream, sets);
+        (dae,_) = DAEUtil.traverseDAE(dae, evalInStream, sets);        
+      then
+        dae;
+  end matchcontinue;
+end handleStreamConnectors;
+
+protected function evalActualStream
+"@author: adrpo
+ this function evaluates the builtin operator actualStream.
+ See Modelica Specification 3.2, page 177"
+  input DAE.Exp inExp;
+  input Connect.Sets inSets;
+  output DAE.Exp outExp;
+  output Connect.Sets outSets;
+algorithm
+  (outExp,outSets) := matchcontinue(inExp,inSets)
+    local
+      DAE.Exp exp;
+      Connect.Sets sets;
+      DAE.ComponentRef cref;
+      Boolean result;
+
+    // deal with actualStream
+    case (DAE.CALL(path=Absyn.IDENT("actualStream"),
+          expLst={DAE.CREF(componentRef = cref)}), sets)
+      equation
+        // Modelica Specification 3.2, page 177, Section: 15.3 Stream Operator actualStream
+        // actualStream(port.h_outflow) = if port.m_flow > 0 then inStream(port.h_outflow)
+        //                                                   else port.h_outflow;
+        // we need to retrieve the flow variable associated with the stream variable here
+        // so that we can build the expression
+        exp = inExp;
+      then (exp, sets);
+    // no replacement needed
+    case (exp, sets)
+      then (exp, sets);
+  end matchcontinue;
+end evalActualStream;
+
+protected function evalInStream
+"@author: adrpo
+ this function evaluates the builtin operator inStream.
+ See Modelica Specification 3.2, page 176"
+  input DAE.Exp inExp;
+  input Connect.Sets inSets;
+  output DAE.Exp outExp;
+  output Connect.Sets outSets;
+algorithm
+  (outExp,outSets) := matchcontinue(inExp,inSets)
+    local
+      DAE.Exp exp;
+      Connect.Sets sets;
+      DAE.ComponentRef cref;
+      Boolean result;
+
+    // deal with inStream
+    case (DAE.CALL(path=Absyn.IDENT("inStream"),
+          expLst={DAE.CREF(componentRef = cref)}), sets)
+      equation
+        // Modelica Specification 3.2, page 176, Section: 15.2 Stream Operator inStream and Connection Equations
+        // N = 1, M = 0: unconnected stream
+        // inStream(m1.c.h_outflow) = m1.c.h_outflow;
+        // N = 2, M = 0: two connected inside streams
+        // inStream(m1.c.h_outflow) = m2.c.h_outflow;
+        // inStream(m2.c.h_outflow) = m1.c.h_outflow;
+        // N = 1, M = 1: one inside stream connected to one outside stream
+        // inStream(m1.c.h_outflow) = inStream(c1.h_outflow);
+        // // Additional equation to be generated
+        // c1.h_outflow = m1.c.h_outflow;        
+        exp = inExp;
+      then (exp, sets);
+    // no replacement needed
+    case (exp, sets)
+      then (exp, sets);
+  end matchcontinue;
+end evalInStream;
 
 end Inst;

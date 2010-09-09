@@ -72,6 +72,10 @@ uniontype Set "A connection set is represented using the Set type."
     list<tuple<DAE.ComponentRef, Face, DAE.ElementSource>> tplExpComponentRefFaceLst;
   end FLOW;
 
+  record STREAM "a list of component reference for stream, a component reference for corresponding flow and a face"
+    list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>, Face, DAE.ElementSource>> tplExpComponentRefFaceLst;
+  end STREAM;
+
 end Set;
 
 public

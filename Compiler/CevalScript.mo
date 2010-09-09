@@ -3888,6 +3888,8 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
+        // allClassPaths = listReverse(allClassPaths);
+        print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
         checkAll(cache, env, allClassPaths, st, msg);
       then
@@ -3960,7 +3962,7 @@ algorithm
         print("Checking: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... ");
         t1 = clock();
         _ = OptManager.setOption("checkModel", true);
-        (cache,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);
+        (_,Values.STRING(str),_) = checkModel(cache, env, className, st, msg);
         _ = OptManager.setOption("checkModel", false);
         t2 = clock(); elapsedTime = t2 -. t1; s = realString(elapsedTime);
         print (s +& " seconds -> " +& failOrSuccess(str) +& "\n\t");

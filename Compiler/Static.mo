@@ -3896,10 +3896,8 @@ algorithm
 end elabBuiltinProduct2;
 
 protected function elabBuiltinPre "function: elabBuiltinPre
-
   This function elaborates the builtin operator pre.
-  Input is the arguments to the pre operator and the environment, Env.Env.
-"
+  Input is the arguments to the pre operator and the environment, Env.Env."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -4034,6 +4032,130 @@ algorithm
 
   end matchcontinue;
 end elabBuiltinPre2;
+
+protected function elabBuiltinInStream "function: elabBuiltinInStream
+  This function elaborates the builtin operator inStream.
+  Input is the arguments to the inStream operator and the environment, Env.Env."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix inPrefix;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output DAE.DAElist outDae "contain functions";
+algorithm
+  (outCache,outExp,outProperties,outDae) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
+    local
+      DAE.Exp exp_1,exp_2;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp exp;
+      DAE.Dimension dim;
+      Boolean impl;
+      Ident s,el_str,pre_str;
+      list<Absyn.Exp> expl;
+      Env.Cache cache;
+      DAE.DAElist dae,dae1,dae2;
+      Prefix pre;
+            
+    /* a scalar? */
+    case (cache,env,{exp},_,impl,pre) /* impl */
+      local DAE.ExpType t; String str;
+      equation
+        (cache,exp_1,DAE.PROP(tp,c),_,dae1) = elabExp(cache,env, exp, impl, NONE,true,pre);
+        (tp,_) = Types.flattenArrayType(tp);
+        true = Types.basicType(tp);
+        t = Types.elabType(tp);
+        exp_2 = DAE.CALL(Absyn.IDENT("inStream"),{exp_1},false,true,t,DAE.NO_INLINE);
+      then
+        (cache,exp_2,DAE.PROP(tp,c),dae1);
+    case (cache,env,{exp},_,impl,pre)
+      local DAE.Exp exp;
+      equation
+        (cache,exp,DAE.PROP(tp,c),_,_) = elabExp(cache,env, exp, impl, NONE,true,pre);
+        (tp,_) = Types.flattenArrayType(tp);
+        false = Types.basicType(tp);
+        s = Exp.printExpStr(exp);
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        Error.addMessage(Error.OPERAND_BUILTIN_TYPE, {"inStream",pre_str,s});
+      then
+        fail();
+    case (cache,env,expl,_,_,pre)
+      equation
+        el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        s = Util.stringAppendList({"inStream(",el_str,")"});
+        Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str});
+      then
+        fail();
+  end matchcontinue;
+end elabBuiltinInStream;
+
+protected function elabBuiltinActualStream "function: elabBuiltinActualStream
+  This function elaborates the builtin operator inStream.
+  Input is the arguments to the inStream operator and the environment, Env.Env."
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<Absyn.Exp> inAbsynExpLst;
+  input list<Absyn.NamedArg> inNamedArg;
+  input Boolean inBoolean;
+  input Prefix inPrefix;
+  output Env.Cache outCache;
+  output DAE.Exp outExp;
+  output DAE.Properties outProperties;
+  output DAE.DAElist outDae "contain functions";
+algorithm
+  (outCache,outExp,outProperties,outDae) := matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
+    local
+      DAE.Exp exp_1,exp_2;
+      tuple<DAE.TType, Option<Absyn.Path>> tp;
+      DAE.Const c;
+      list<Env.Frame> env;
+      Absyn.Exp exp;
+      DAE.Dimension dim;
+      Boolean impl;
+      Ident s,el_str,pre_str;
+      list<Absyn.Exp> expl;
+      Env.Cache cache;
+      DAE.DAElist dae,dae1,dae2;
+      Prefix pre;
+            
+    /* a scalar? */
+    case (cache,env,{exp},_,impl,pre) /* impl */
+      local DAE.ExpType t; String str;
+      equation
+        (cache,exp_1,DAE.PROP(tp,c),_,dae1) = elabExp(cache,env, exp, impl, NONE,true,pre);
+        (tp,_) = Types.flattenArrayType(tp);
+        true = Types.basicType(tp);
+        t = Types.elabType(tp);
+        exp_2 = DAE.CALL(Absyn.IDENT("actualStream"),{exp_1},false,true,t,DAE.NO_INLINE);
+      then
+        (cache,exp_2,DAE.PROP(tp,c),dae1);
+    case (cache,env,{exp},_,impl,pre)
+      local DAE.Exp exp;
+      equation
+        (cache,exp,DAE.PROP(tp,c),_,_) = elabExp(cache,env, exp, impl, NONE,true,pre);
+        (tp,_) = Types.flattenArrayType(tp);
+        false = Types.basicType(tp);
+        s = Exp.printExpStr(exp);
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        Error.addMessage(Error.OPERAND_BUILTIN_TYPE, {"actualStream",pre_str,s});
+      then
+        fail();
+    case (cache,env,expl,_,_,pre)
+      equation
+        el_str = Exp.printListStr(expl, Dump.printExpStr, ", ");
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        s = Util.stringAppendList({"actualStream(",el_str,")"});
+        Error.addMessage(Error.WRONG_TYPE_OR_NO_OF_ARGS, {s,pre_str});
+      then
+        fail();
+  end matchcontinue;
+end elabBuiltinActualStream;
 
 protected function elabBuiltinMMCGetField "Fetches fields from a boxed datatype:
 Tuple: (a,b,c),2 => b
@@ -6782,6 +6904,9 @@ algorithm
     case "rooted" then elabBuiltinRooted;
     case "linspace" then elabBuiltinLinspace;
     case "Integer" then elabBuiltinIntegerEnum;
+    case "inStream" then elabBuiltinInStream;
+    case "actualStream" then elabBuiltinActualStream;
+      
     case "mmc_get_field" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMCGetField;
     case "mmc_uniontype_metarecord_typedef_equal" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinMMC_Uniontype_MetaRecord_Typedefs_Equal;
     case "if_exp" equation true = RTOpts.acceptMetaModelicaGrammar(); then elabBuiltinIfExp;
