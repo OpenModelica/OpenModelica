@@ -109,7 +109,7 @@ protected import Util;
 protected import ValuesUtil;
 protected import DAEUtil;
 protected import PrefixUtil;
-// protected import CevalScript;
+protected import CevalScript;
 // protected import AbsynDep;
 
 protected constant DAE.Exp defaultOutputFormat = DAE.SCONST("plt");
@@ -7386,12 +7386,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,options) = getOptionalNamedArg(cache,env, SOME(st), impl, "options", DAE.T_STRING_DEFAULT, args, DAE.SCONST(""),pre);
         (cache,noClean) = getOptionalNamedArg(cache,env, SOME(st), impl, "noClean", DAE.T_BOOL_DEFAULT, args, DAE.BCONST(false),pre);
         (cache,outputFormat) = getOptionalNamedArg(cache,env, SOME(st), impl, "outputFormat", DAE.T_STRING_DEFAULT, args, defaultOutputFormat,pre);
-        recordtype = (
-          DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),
-          {
-          DAE.TYPES_VAR("resultFile",
-          DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
-          },NONE,NONE),NONE);
+        recordtype = CevalScript.getSimulationResultType();
       then
         (cache,DAE.CALL(Absyn.IDENT("simulate"),
           {DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),startTime,stopTime,

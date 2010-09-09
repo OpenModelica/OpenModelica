@@ -94,6 +94,36 @@ protected import Util;
 protected import ValuesUtil;
 protected import XMLDump;
 
+protected constant DAE.Type simulationResultType_rtest = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
+  DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE())
+  },NONE,NONE),NONE);
+
+public function getSimulationResultType
+  output DAE.Type t;
+algorithm
+  t := simulationResultType_rtest;
+end getSimulationResultType;
+
+public function createSimulationResult
+  input String resultFile;
+  input String message;
+  output Values.Value res;
+algorithm
+  res := Values.RECORD(Absyn.IDENT("SimulationResult"),
+    {Values.STRING(resultFile),Values.STRING(message)},
+    {"resultFile","messages"},-1);
+end createSimulationResult;
+
+public function createSimulationResultFailure
+  input String errorMessage;
+  output Values.Value res;
+algorithm
+  res := Values.RECORD(Absyn.IDENT("SimulationResult"),
+    {Values.STRING(""),Values.STRING(errorMessage)},
+    {"resultFile","messages"},-1);  
+end createSimulationResultFailure;
+
 public function cevalInteractiveFunctions
 "function cevalInteractiveFunctions
   This function evaluates the functions
@@ -518,9 +548,7 @@ algorithm
         crefCName = Absyn.pathToCref(className);
         false = Interactive.existClass(crefCName, p);
         errMsg = "Simulation Failed. Model: " +& Absyn.pathString(className) +& " does not exists! Please load it first before simulation.";
-        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-                                 {Values.STRING(errMsg)},
-                                 {"resultFile"},-1);
+        simValue = createSimulationResultFailure(errMsg);
       then
         (cache,simValue,st_1);
 
@@ -551,16 +579,8 @@ algorithm
         */
         0 = System.systemCall(sim_call);
         result_file = Util.stringAppendList({executable,"_res.",outputFormat_str});
-        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-                                 {Values.STRING(result_file)},
-                                 {"resultFile"},-1);
-        simType = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),
-                                   {DAE.TYPES_VAR("resultFile",
-                                    DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-                                    false,DAE.T_STRING_DEFAULT,
-                                    DAE.UNBOUND(),NONE())},
-                                    NONE,NONE),NONE);
-        newst = Interactive.addVarToSymboltable("currentSimulationResult", simValue, simType, st);
+        simValue = createSimulationResult(result_file, System.readFile("output.log"));
+        newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, st);
       then
         (cache,simValue,newst);
 
@@ -579,9 +599,7 @@ algorithm
         omhome = Settings.getInstallationDirectoryPath() "simulation fail for some other reason than OPENMODELICAHOME not being set." ;
         errorStr = Error.printMessagesStr();
         res = Util.stringAppendList({"Simulation failed.\n",errorStr});
-        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-                                 {Values.STRING(res)},
-                                 {"resultFile"},-1);
+        simValue = createSimulationResultFailure(res);
       then
         (cache,simValue,st);
 
@@ -589,9 +607,7 @@ algorithm
       expLst = DAE.CODE(Absyn.C_TYPENAME(className),_)::_),
       (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
-        simValue = Values.RECORD(Absyn.IDENT("SimulationResult"),
-                   {Values.STRING("Simulation Failed. Environment variable OPENMODELICAHOME not set.")},
-                   {"resultFile"},-1);
+        simValue = createSimulationResultFailure("Simulation Failed. Environment variable OPENMODELICAHOME not set.");
       then
         (cache,simValue,st);
 
@@ -736,8 +752,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot2" ;
         vars_2 = Util.listUnionElt("time", vars_1);
 
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         pwd = System.pwd();
         cit = winCitation();
@@ -768,8 +783,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
-          DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
         (cache,Values.STRING("Error reading the simulation result."),st);
@@ -909,7 +923,7 @@ algorithm
         String interpolation, title, xLabel, yLabel, str;//, filename2;
         Boolean legend, grid, logX, logY, points;
       equation
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
         DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = System.getVariableNames(filename));
 //      vars_2 = Util.stringSplitAtChar(str, " ");
@@ -937,7 +951,7 @@ algorithm
         String interpolation, title, xLabel, yLabel, str;//, filename2;
         Boolean legend, grid, logX, logY, points;
       equation
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
         DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         str = System.getVariableNames(filename);
         vars_2 = Util.stringSplitAtChar(str, " ");
@@ -1031,7 +1045,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "plot" ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
         res = ValuesUtil.sendPtolemyplotDataset(value, vars_2, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
@@ -1059,7 +1073,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
@@ -1206,7 +1220,7 @@ algorithm
         vars_2 = Util.listUnionElt("time", vars_1);
 //        listMap(vars_2, print);
         print(Util.stringAppendList(vars_2));
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         print("tjo\n");
         value = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0);
@@ -1235,7 +1249,7 @@ algorithm
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
         vars_2 = Util.listUnionElt("time", vars_1);
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_2, 0));
       then
@@ -1462,7 +1476,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
         value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
         pwd = System.pwd();
@@ -1505,7 +1519,7 @@ algorithm
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0));
       then
@@ -1597,7 +1611,7 @@ algorithm
         vars_1 = Util.listMap(vars, Exp.printExpStr);
         length = listLength(vars_1);
         (length > 1) = true;
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg);
          value = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0);
          res = ValuesUtil.sendPtolemyplotDataset(value, vars_1, "Plot by OpenModelica", interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, Exp.printExpStr(xRange), Exp.printExpStr(yRange));
@@ -1646,7 +1660,7 @@ algorithm
       equation
         vars = Util.listMap(vars,Exp.CodeVarToCref);
         vars_1 = Util.listMap(vars, Exp.printExpStr) "Catch error reading simulation file." ;
-        (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+        (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
           DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, msg) "Util.list_union_elt(\"time\",vars\') => vars\'\' &" ;
         failure(_ = SimulationResults.readPtolemyplotDataset(filename, vars_1, 0));
       then
@@ -2206,7 +2220,7 @@ algorithm
     Interactive.InteractiveSymbolTable st;
     String filename;
     case(cache,env,SOME(st),timeStamp,varName) equation
-      (cache,Values.RECORD(orderd={Values.STRING(filename)}),_) = Ceval.ceval(cache,env,
+      (cache,Values.STRING(filename),_) = Ceval.ceval(cache,env,
         DAE.CREF(DAE.CREF_IDENT("currentSimulationResult",DAE.ET_OTHER(),{}),DAE.ET_OTHER()), true, SOME(st), NONE, Ceval.NO_MSG());
 
       Values.ARRAY(valueLst = {Values.ARRAY(valueLst = varValues)}) = SimulationResults.readPtolemyplotDataset(filename, {varName}, 0);
