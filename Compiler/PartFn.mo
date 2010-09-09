@@ -70,7 +70,7 @@ algorithm
       DAELow.Variables orderedVars;
       DAELow.Variables knownVars;
       DAELow.Variables externalObjects;
-      VarTransform.VariableReplacements aliasVars "alias-variables' hashtable";
+      DAELow.AliasVariables aliasVars "alias-variables' hashtable";
       DAELow.EquationArray orderedEqs;
       DAELow.EquationArray removedEqs;
       DAELow.EquationArray initialEqs;

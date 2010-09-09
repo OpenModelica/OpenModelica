@@ -52,7 +52,7 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import Values;
-public import VarTransform;
+public import HashTable2;
 
 public uniontype Type "
 Once we are in DAELow, the Type can be only basic types or enumeration.
@@ -218,7 +218,7 @@ uniontype DAELow "THE LOWERED DAE consist of variables and equations. The variab
     Variables orderedVars "orderedVars ; ordered Variables, only states and alg. vars" ;
     Variables knownVars "knownVars ; Known variables, i.e. constants and parameters" ;
     Variables externalObjects "External object variables";
-    VarTransform.VariableReplacements aliasVars "Hash table with alias variables and their replacements"; // added asodja 2010-03-03
+    AliasVariables aliasVars "mappings of alias-variables to real-variables"; // added asodja 2010-03-03
     EquationArray orderedEqs "orderedEqs ; ordered Equations" ;
     EquationArray removedEqs "removedEqs ; Removed equations a=b" ;
     EquationArray initialEqs "initialEqs ; Initial equations" ;
@@ -252,6 +252,22 @@ uniontype Variables "- Variables"
   end VARIABLES;
 
 end Variables;
+
+public
+uniontype AliasVariables "
+Data originating from removed simple equations needed to build 
+variables' lookup table (in C output).
+
+In that way, double buffering of variables in pre()-buffer, extrapolation 
+buffer and results caching, etc., is avoided, but in C-code output all the 
+data about variables' names, comments, units, etc. is preserved as well as 
+pinter to their values (trajectories).
+"
+  record ALIASVARS
+    HashTable2.HashTable varMappings "replacements from trivial equations of kind a=b or a=-b";
+    Variables aliasVars              "hash table with (removed) variables metadata";
+  end ALIASVARS;
+end AliasVariables;
 
 public
 uniontype MultiDimEquation "- Multi Dimensional Equation"
@@ -425,6 +441,7 @@ protected import DAEDump;
 protected import IOStream;
 protected import Inline;
 protected import ValuesUtil;
+protected import VarTransform;
 
 protected constant BinTree emptyBintree=TREENODE(NONE,NONE,NONE) " Empty binary tree " ;
 
@@ -584,7 +601,7 @@ algorithm
     local
       BinTree s;
       Variables vars,knvars,vars_1,extVars;
-      VarTransform.VariableReplacements aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
+      AliasVariables aliasVars "hash table with alias vars' replacements (a=b or a=-b)";
       list<Equation> eqns,reqns,ieqns,algeqns,multidimeqns,imultidimeqns,eqns_1;
       list<MultiDimEquation> aeqns,aeqns1,iaeqns;
       list<DAE.Algorithm> algs,algs_1;
@@ -656,7 +673,7 @@ algorithm
         eqns = listAppend(multidimeqns, eqns);
         ieqns = listAppend(imultidimeqns, ieqns);
         // no simplify (vars,knvars,eqns,reqns,ieqns,aeqns1) = removeSimpleEquations(vars, knvars, eqns, reqns, ieqns, aeqns, s);
-        aliasVars = VarTransform.emptyReplacements();
+        aliasVars = emptyAliasVariables();
         vars_1 = detectImplicitDiscrete(vars, eqns);
         eqns_1 = sortEqn(eqns);
         // no simplify (eqns_1,ieqns,aeqns1,algs,vars_1) = expandDerOperator(vars_1,eqns_1,ieqns,aeqns1,algs);
@@ -2305,7 +2322,7 @@ algorithm
       list<String> ss;
       list<MultiDimEquation> ae_lst;
       Variables vars1,vars2,vars3;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray eqns,reqns,ieqns;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] algs;
@@ -3085,12 +3102,12 @@ protected function removeSimpleEquations
   output list<Equation> outEquationLst5;
   output list<MultiDimEquation> outArrayEquationLst;
   output list<DAE.Algorithm> outAlgs;
-  output VarTransform.VariableReplacements aliasVars; // hash tables of alias-variables' replacement (a = b or a = -b)
+  output AliasVariables aliasVars; // hash tables of alias-variables' replacement (a = b or a = -b)
 algorithm
   (outVariables1,outVariables2,outEquationLst3,outEquationLst4,outEquationLst5,outArrayEquationLst,outAlgs,aliasVars):=
   matchcontinue (inVariables1,inVariables2,inEquationLst3,inEquationLst4,inEquationLst5,inArrayEquationLst,inAlgs,inBinTree6)
     local
-      VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1, aliasVarsRepl;
+      VarTransform.VariableReplacements repl,replc,replc_1,vartransf,vartransf1;
       list<Equation> eqns_1,seqns,eqns_2,seqns_1,ieqns_1,eqns_3,seqns_2,ieqns_2,seqns_3,eqns,reqns,ieqns;
       list<MultiDimEquation> arreqns,arreqns1,arreqns2;
       BinTree movedvars_1,states,outputs;
@@ -3098,14 +3115,17 @@ algorithm
       list<DAE.Exp> crlst,elst;
       list<DAE.Algorithm> algs,algs_1;
       list<tuple<list<DAE.Exp>,list<DAE.Exp>>> inputsoutputs;
+      AliasVariables varsAliases;      
+      //HashTable2.HashTable aliasMappings "mappings alias-variable => true-variable";
+      //Variables aliasVars "alias-variables metadata";
     case (vars,knvars,eqns,reqns,ieqns,arreqns,algs,states)
       equation
         repl = VarTransform.emptyReplacements();
         replc = VarTransform.emptyReplacements();
-        aliasVarsRepl = VarTransform.emptyReplacements();
+
         outputs = emptyBintree;
         outputs = getOutputsFromAlgorithms(eqns,outputs);
-        (eqns_1,seqns,movedvars_1,vartransf,aliasVarsRepl,_,replc_1) = removeSimpleEquations2(eqns, vars, knvars, emptyBintree, states, outputs, repl, aliasVarsRepl,{},replc);
+        (eqns_1,seqns,movedvars_1,vartransf,_,replc_1) = removeSimpleEquations2(eqns, simpleEquation, vars, knvars, emptyBintree, states, outputs, repl, {},replc);
         vartransf1 = VarTransform.addMultiDimReplacements(vartransf);
         Debug.fcall("dumprepl", VarTransform.dumpReplacements, vartransf1);
         Debug.fcall("dumpreplc", VarTransform.dumpReplacements, replc_1);
@@ -3122,8 +3142,10 @@ algorithm
         inputsoutputs = Util.listMap1r(algs_1,lowerAlgorithmInputsOutputs,vars_1);
         eqns_3 = Util.listMap1(eqns_3,updateAlgorithmInputsOutputs,inputsoutputs);
         seqns_3 = listAppend(seqns_2, reqns) "& print_vars_statistics(vars\',knvars\')" ;
+        // return aliasVars empty for now
+        varsAliases = emptyAliasVariables();
       then
-        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, algs_1, aliasVarsRepl);
+        (vars_1,knvars_1,eqns_3,seqns_3,ieqns_2,arreqns2, algs_1, varsAliases);
     case (_,_,_,_,_,_,_,_)
       equation
         print("-remove_simple_equations failed\n");
@@ -3138,29 +3160,34 @@ protected function removeSimpleEquations2
  are later used to replace these variable substitutions in the
  equations that are left."
   input list<Equation> eqns;
+  input FuncTypeSimpleEquation funcSimpleEquation "function as argument so it can be distinguish between a=b/a=-b and a=const.";
   input Variables vars;
   input Variables knvars;
   input BinTree mvars;
   input BinTree states;
   input BinTree outputs;
   input VarTransform.VariableReplacements repl;
-  input VarTransform.VariableReplacements inAliasVarRepl "replacement of alias variables (a=b or a=-b)";
   input list<DAE.ComponentRef> inExtendLst;
   input VarTransform.VariableReplacements replc;
   output list<Equation> outEqns;
   output list<Equation> outSimpleEqns;
   output BinTree outMvars;
   output VarTransform.VariableReplacements outRepl;
-  output VarTransform.VariableReplacements outAliasVarRepl "replacement of alias variables (a=b or a=-b)";
   output list<DAE.ComponentRef> outExtendLst;
   output VarTransform.VariableReplacements outReplc;
+  partial function FuncTypeSimpleEquation
+    input Equation eqn;
+    input Boolean swap;
+    output DAE.Exp e1;
+    output DAE.Exp e2;
+    output DAE.ElementSource source;
+  end FuncTypeSimpleEquation;  
 algorithm
-  (outEqns,outSimpleEqns,outMvars,outRepl,outAliasVarRepl,outExtendLst,outReplc) := matchcontinue (eqns,vars,knvars,mvars,states,outputs,repl,aliasRepl,inExtendLst,replc)
+  (outEqns,outSimpleEqns,outMvars,outRepl,outExtendLst,outReplc) := matchcontinue (eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc)
     local
       Variables vars,knvars;
       BinTree mvars,states,mvars_1,mvars_2;
       VarTransform.VariableReplacements repl,repl_1,repl_2,replc_1,replc_2;
-      VarTransform.VariableReplacements aliasRepl, aliasRepl_1, aliasRepl_2;
       DAE.ComponentRef cr1,cr2;
       list<Equation> eqns_1,seqns_1,eqns;
       Equation e;
@@ -3169,26 +3196,25 @@ algorithm
       DAE.ElementSource source "the element source";
       list<DAE.ComponentRef> extlst,extlst1;
       
-    case ({},vars,knvars,mvars,states,outputs,repl,aliasRepl,extlst,replc) then ({},{},mvars,repl,aliasRepl,extlst,replc);
+    case ({},funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc) then ({},{},mvars,repl,extlst,replc);
 
-    case (e::eqns,vars,knvars,mvars,states,outputs,repl,aliasRepl,inExtendLst,replc) equation
+    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc) equation
       {e} = BackendVarTransform.replaceEquations({e},repl);
       {e} = BackendVarTransform.replaceEquations({e},replc);
-      (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(e,false);
+      (e1 as DAE.CREF(cr1,t),e2,source) = funcSimpleEquation(e,false);
       failure(_ = treeGet(states, cr1)) "cr1 not state";
       isVariable(cr1, vars, knvars) "cr1 not constant";
       false = isTopLevelInputOrOutput(cr1,vars,knvars);
       failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
-      repl_1 = VarTransform.addReplacement(repl, cr1, e2);
-      aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
+      repl_1 = VarTransform.addReplacement(repl, cr1, e2);      
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2,aliasRepl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, outputs, repl_1, aliasRepl_1,extlst,replc_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,extlst1,replc_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,extlst1,replc_2);
 
       // Swapped args
-    case (e::eqns,vars,knvars,mvars,states,outputs,repl,aliasRepl,inExtendLst,replc) equation
+    case (e::eqns,funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,inExtendLst,replc) equation
       {e} = BackendVarTransform.replaceEquations({e},replc);
       {EQUATION(e1,e2,source)} = BackendVarTransform.replaceEquations({e},repl);
       (e1 as DAE.CREF(cr1,t),e2,source) = simpleEquation(EQUATION(e2,e1,source),true);
@@ -3198,23 +3224,22 @@ algorithm
       failure(_ = treeGet(outputs, cr1)) "cr1 not output of algorithm";
       (extlst,replc_1) = removeSimpleEquations3(inExtendLst,replc,cr1,e2,t); 
       repl_1 = VarTransform.addReplacement(repl, cr1, e2);
-      aliasRepl_1 = VarTransform.addReplacementIfNot(Exp.isConst(e2), aliasRepl, cr1, e2);
       mvars_1 = treeAdd(mvars, cr1, 0);
-      (eqns_1,seqns_1,mvars_2,repl_2, aliasRepl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, vars, knvars, mvars_1, states, outputs, repl_1, aliasRepl_1,extlst,replc_1);
+      (eqns_1,seqns_1,mvars_2,repl_2,extlst1,replc_2) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars_1, states, outputs, repl_1, extlst,replc_1);
     then
-      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,aliasRepl_2,extlst1,replc_2);
+      (eqns_1,(SOLVED_EQUATION(cr1,e2,source) :: seqns_1),mvars_2,repl_2,extlst1,replc_2);
 
       // try next equation.
-    case ((e :: eqns),vars,knvars,mvars,states,outputs,repl,aliasRepl,extlst,replc)
+    case ((e :: eqns),funcSimpleEquation,vars,knvars,mvars,states,outputs,repl,extlst,replc)
       local Equation eq1,eq2;
       equation
         {eq1} = BackendVarTransform.replaceEquations({e},repl);
         {eq2} = BackendVarTransform.replaceEquations({eq1},replc);
         //print("not removed simple ");print(equationStr(e));print("\n     -> ");print(equationStr(eq1));
         //print("\n\n");
-        (eqns_1,seqns_1,mvars_1,repl_1,aliasRepl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, vars, knvars, mvars, states, outputs, repl, aliasRepl,extlst,replc) "Not a simple variable, check rest" ;
+        (eqns_1,seqns_1,mvars_1,repl_1,extlst1,replc_1) = removeSimpleEquations2(eqns, funcSimpleEquation, vars, knvars, mvars, states, outputs, repl, extlst,replc) "Not a simple variable, check rest" ;
       then
-        ((e :: eqns_1),seqns_1,mvars_1,repl_1,aliasRepl_1,extlst1,replc_1);
+        ((e :: eqns_1),seqns_1,mvars_1,repl_1,extlst1,replc_1);
   end matchcontinue;
 end removeSimpleEquations2;
 
@@ -8266,7 +8291,7 @@ algorithm
       Assignments assign1,assign2,ass1,ass2;
       DAELow dae,dae_1,dae_2;
       Variables v,kv,v_1,kv_1,vars,exv;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray e,re,ie,e_1,re_1,ie_1,eqns;
       MultiDimEquation[:] ae,ae1;
       DAE.Algorithm[:] al;
@@ -8861,7 +8886,7 @@ algorithm
       Value indx,indx_1,dummy_no;
       Boolean dummy_fixed;
       Variables vars_1,vars,kv,ev;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";      
+      AliasVariables av;      
       DAELow dae;
       EquationArray e,se,ie;
       MultiDimEquation[:] ae;
@@ -9167,7 +9192,7 @@ algorithm
     local
       list<Var> var_lst,var_lst_1;
       Variables vars_1,vars,knvar,evar;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray eqns,reqns,ieqns;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
@@ -9265,7 +9290,7 @@ algorithm
       DAE.Stream streamPrefix;
       list<Value> indx;
       Variables vars_1,vars,kv,ev;
-      VarTransform.VariableReplacements av "alias variables' hashtale";
+      AliasVariables av;
       EquationArray e,se,ie;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
@@ -9322,7 +9347,7 @@ algorithm
       Value e_1,e;
       Equation eqn,eqn_1;
       Variables v_1,v,kv,ev;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray eqns_1,eqns,seqns,ie,ie1;
       MultiDimEquation[:] ae,ae1,ae2,ae3;
       DAE.Algorithm[:] al,al1,al2,al3;
@@ -10183,7 +10208,7 @@ algorithm
       DAE.Flow flowPrefix;
       DAE.Stream streamPrefix;
       Variables vars_1,vars,kv,ev;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";      
+      AliasVariables av;      
       EquationArray eqns,seqns,ie;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
@@ -10754,7 +10779,7 @@ algorithm
       EquationArray eqns_1,eqns,seqns,ie;
       list<Value> reqns,es;
       Variables v,kv,ev;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       MultiDimEquation[:] ae,ae1;
       DAE.Algorithm[:] al,al1;
       EventInfo wc;
@@ -12095,7 +12120,7 @@ algorithm
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
       Variables vars, knvars, extVars;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray eqns,seqns,ieqns;
       DAELow trans_dae;
       ExternalObjectClasses extObjCls;
@@ -12847,7 +12872,7 @@ algorithm
       list<Equation> eqn_lst,eqn_lst2;
       EquationArray eqns2,eqns,seqns,ieqns;
       Variables vars,knvars,extVars;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] ialg;
       EventInfo wc;
@@ -13161,7 +13186,7 @@ algorithm
     local
       list<Var> knvarlst;
       Variables knvars,vars,extVars;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray eqns,seqns,ie;
       MultiDimEquation[:] ae;
       DAE.Algorithm[:] al;
@@ -15519,7 +15544,7 @@ algorithm
   matchcontinue (inDlow)
     local
       Variables ordvars,knvars,exobj,ordvars1;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       EquationArray eqns,remeqns,inieqns,eqns1;
       MultiDimEquation[:] arreqns;
       DAE.Algorithm[:] algorithms;
@@ -15812,7 +15837,7 @@ algorithm
       VariableArray varr;
       Value nvars,neqns,memsize;
       Variables ordvars,vars_1,knvars,exobj,ordvars1;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      AliasVariables av;
       Assignments assign1,assign2,assign1_1,assign2_1,ass1,ass2;
       EquationArray eqns, eqns_1, eqns_2,removedEqs,remeqns,inieqns,eqns1,eqns1_1,eqns1_2;
       MultiDimEquation[:] arreqns;
@@ -16786,5 +16811,15 @@ public function equationInfo "Retrieve the line number information from a DAELow
 algorithm
   info := DAEUtil.getElementSourceFileInfo(equationSource(eq));
 end equationInfo;
+
+protected function emptyAliasVariables
+  output AliasVariables outAliasVariables;
+  HashTable2.HashTable aliasMappings;
+  Variables aliasVariables;
+algorithm
+  aliasMappings := HashTable2.emptyHashTable();
+  aliasVariables := emptyVars();
+  outAliasVariables := ALIASVARS(aliasMappings,aliasVariables);
+end emptyAliasVariables;
 
 end DAELow;

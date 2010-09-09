@@ -2506,7 +2506,7 @@ algorithm
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<DAELow.Var> var_lst,cont_var,disc_var,var_lst_1,cont_var1;
       DAELow.Variables vars_1,vars,knvars,exvars;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      DAELow.AliasVariables av;
       DAELow.EquationArray eqns_1,eqns,se,ie;
       DAELow.DAELow cont_subsystem_dae,daelow,subsystem_dae,dlow;
       list<Integer>[:] m,m_1,mt_1;
@@ -2685,7 +2685,7 @@ algorithm
       Option<list<tuple<Integer, Integer, DAELow.Equation>>> jac;
       DAELow.JacobianType jac_tp;
       DAELow.Variables v,kv,exv;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      DAELow.AliasVariables av;
       DAELow.EquationArray eqn,eqn1,reeqn,ineq;
       list<DAELow.Equation> eqn_lst,eqn_lst1,eqn_lst2,reqns;
       list<DAELow.Var> var_lst;
@@ -3100,7 +3100,7 @@ algorithm
       Integer size;
       DAELow.DAELow daelow,daelow1;
       DAELow.Variables v,v1,kv,exv;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      DAELow.AliasVariables av;
       DAELow.EquationArray eqn,eqn1,reeqn,ineq;
       list<DAELow.Equation> eqn_lst,reqn_lst;
       list<DAELow.Var> var_lst,tvar_lst;
@@ -3452,7 +3452,7 @@ algorithm
       DAELow.JacobianType jac_tp;
       list<Integer>[:] m,m_1,mt_1;
       DAE.ElementSource source "the origin of the element";
-      VarTransform.VariableReplacements av;
+      DAELow.AliasVariables av;
       DAELow.ExternalObjectClasses eoc;
       DAELow.DAELow subsystem_dae;
       SimEqSystem equation_;
@@ -3934,7 +3934,7 @@ algorithm
       list<DAELow.Equation> eqn_lst,cont_eqn,disc_eqn;
       list<DAELow.Var> var_lst,cont_var,disc_var,cont_var1;
       DAELow.Variables vars, vars_1,knvars,exvars;
-      VarTransform.VariableReplacements av "alias-variables' hashtable";
+      DAELow.AliasVariables av;
       DAELow.EquationArray eqns_1,eqns,se,ie;
       DAELow.DAELow cont_subsystem_dae,dlow;
       list<Integer>[:] m,m_1,mt_1;
@@ -4450,7 +4450,7 @@ algorithm
       DAELow.Variables orderedVars;
       DAELow.Variables knownVars;
       DAELow.Variables externalObjects;
-      VarTransform.VariableReplacements aliasVars "alias-variables' hashtable";
+      DAELow.AliasVariables aliasVars;
       DAELow.EquationArray orderedEqs;
       DAELow.EquationArray removedEqs;
       DAELow.EquationArray initialEqs;
