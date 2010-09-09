@@ -324,14 +324,14 @@ void* parseFile(void* fileNameRML, int flags)
   bool parsedump     = check_debug_flag("parsedump");
   bool parseonly     = check_debug_flag("parseonly");
 
-  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
-
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
   ModelicaParser_filename_C = RML_STRINGDATA(fileNameRML);
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
+
+  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
   int len = strlen(ModelicaParser_filename_C);
   if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
@@ -351,8 +351,6 @@ void* parseString(void* stringRML, int flags)
   bool parsedump     = check_debug_flag("parsedump");
   bool parseonly     = check_debug_flag("parseonly");
 
-  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
-
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
 
@@ -360,6 +358,8 @@ void* parseString(void* stringRML, int flags)
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
   ModelicaParser_flags = flags;
+
+  if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   char* data = RML_STRINGDATA(stringRML);
