@@ -32,7 +32,14 @@
 #ifndef MODELICA_PARSER_COMMON_H
 #define MODELICA_PARSER_COMMON_H
 
+#ifndef __cplusplus
 typedef unsigned char bool;
+#endif
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 extern int ModelicaParser_flags;
 extern int ModelicaParser_readonly;
 extern void *ModelicaParser_filename_RML;
@@ -46,5 +53,9 @@ extern const char *ModelicaParser_filename_C;
 #define metamodelica_enabled(void) (ModelicaParser_flags&PARSE_META_MODELICA)
 #define code_expressions_enabled(void) (ModelicaParser_flags&PARSE_CODE_EXPRESSION)
 #define flat_modelica_enabled(void) (ModelicaParser_flags&PARSE_FLAT)
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

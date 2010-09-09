@@ -34,9 +34,14 @@
 #include <MetaModelica_Lexer.h>
 #include <Modelica_3_Lexer.h>
 #include <ModelicaParser.h>
-#include "runtime/errorext.h"
-
 #include <errno.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#include "runtime/errorext.h"
+#include "runtime/rtopts.h" /* for accept_meta_modelica_grammar() function */
 
 long unsigned int szMemoryUsed = 0;
 long lexerFailed;
@@ -117,7 +122,7 @@ static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, AN
   if  ( recognizer->mismatchIsUnwantedToken(recognizer, is, ttype) == ANTLR3_TRUE)
   {
     recognizer->state->exception->type    = ANTLR3_UNWANTED_TOKEN_EXCEPTION;
-    recognizer->state->exception->message  = ANTLR3_UNWANTED_TOKEN_EXCEPTION_NAME;
+    recognizer->state->exception->message  = (void*)ANTLR3_UNWANTED_TOKEN_EXCEPTION_NAME;
     recognizer->state->exception->expecting  = ttype;
     return NULL;
   }
@@ -126,7 +131,7 @@ static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, AN
   {
     matchedSymbol = recognizer->getMissingSymbol(recognizer, is, recognizer->state->exception, ttype, follow);
     recognizer->state->exception->type    = ANTLR3_MISSING_TOKEN_EXCEPTION;
-    recognizer->state->exception->message  = ANTLR3_MISSING_TOKEN_EXCEPTION_NAME;
+    recognizer->state->exception->message  = (void*)ANTLR3_MISSING_TOKEN_EXCEPTION_NAME;
     recognizer->state->exception->token    = matchedSymbol;
     recognizer->state->exception->expecting  = ttype;
     return NULL;
@@ -151,8 +156,8 @@ static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 *
   int isEOF = lexer->input->istream->_LA(lexer->input->istream, 1) == -1;
 
   char* chars[] = {
-    isEOF ? strdup("<EOF>") : strdup(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars),
-    strdup(lexer->getText(lexer)->chars)
+    isEOF ? strdup("<EOF>") : strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
+    strdup((const char*)lexer->getText(lexer)->chars)
   };
   if (strlen(chars[1]) > 20)
     chars[1][20] = '\0';
@@ -226,7 +231,7 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
     c_add_source_message(2, "SYNTAX", "Error", "Missing token: %s", token_text, 1, p_line, p_offset, p_line, p_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_NO_VIABLE_ALT_EXCEPTION:
-    token_text[0] = preToken->getText(preToken)->chars;
+    token_text[0] = (const char*)preToken->getText(preToken)->chars;
     c_add_source_message(2, "SYNTAX", "Error", "No viable alternative near token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ModelicaParserException:
@@ -241,8 +246,8 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   case ANTLR3_EARLY_EXIT_EXCEPTION:
   case ANTLR3_RECOGNITION_EXCEPTION:
   default:
-    token_text[2] = ex->message;
-    token_text[1] = preToken->getText(preToken)->chars;
+    token_text[2] = (const char*)ex->message;
+    token_text[1] = (const char*)preToken->getText(preToken)->chars;
     token_text[0] = preToken->type == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[preToken->type];
     c_add_source_message(2, "SYNTAX", "Error", "Parser error: %s near: %s (%s)", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
@@ -363,7 +368,7 @@ void* parseString(void* stringRML, int flags)
 
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
   char* data = RML_STRINGDATA(stringRML);
-  input  = antlr3NewAsciiStringInPlaceStream(data,strlen(data),fName);
+  input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
   if ( input == NULL ) {
     fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C);
     return NULL;
@@ -422,3 +427,8 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
   }
 }
 RML_END_LABEL
+
+
+#ifdef __cplusplus
+}
+#endif

@@ -41,15 +41,23 @@ import MetaModelica_Lexer; /* Makes all tokens defined */
   #include <stdlib.h>
   #include <stdio.h>
   #include <errno.h>
+#ifdef __cplusplus
+extern "C" {
+#endif  
   #include "rml.h"
   #include "Absyn.h"
   #include "Interactive.h"
+#ifdef __cplusplus
+}
+#endif
+  
   #include "ModelicaParserCommon.h"
   #include "runtime/errorext.h"
-  #define ModelicaParserException -1
-  #define ModelicaLexerException -2
+  
+  #define ModelicaParserException 100
+  #define ModelicaLexerException  200
   #define modelicaParserAssert(cond,msg,func,_line1,_offset1,_line2,_offset2) {if (!(cond)) { \
-fileinfo* __info = malloc(sizeof(fileinfo)); \
+fileinfo* __info = (fileinfo*)malloc(sizeof(fileinfo)); \
 CONSTRUCTEX(); \
 EXCEPTION->type = ModelicaParserException; \
 EXCEPTION->message = (void *) msg; \
@@ -92,7 +100,7 @@ goto rule ## func ## Ex; }}
   #undef RML_STRUCTHDR
   #define RML_STRUCTHDR(x,y) 0
 #endif
-  #define token_to_scon(tok) mk_scon(tok->getText(tok)->chars)
+  #define token_to_scon(tok) mk_scon((char*)tok->getText(tok)->chars)
   #define NYI(void) fprintf(stderr, "NYI \%s \%s:\%d\n", __FUNCTION__, __FILE__, __LINE__); exit(1);
   #define INFO(start) Absyn__INFO(ModelicaParser_filename_RML, isReadOnly, mk_icon(start->line), mk_icon(start->charPosition+1), mk_icon(LT(1)->line), mk_icon(LT(1)->charPosition+1), Absyn__TIMESTAMP(mk_rcon(0),mk_rcon(0)))
   typedef struct fileinfo_struct {
@@ -174,15 +182,15 @@ class_specifier returns [void* ast, void* name] @declarations {
 } :
     ( i1=IDENT spec=class_specifier2
       {
-        s1 = $i1.text->chars;
+        s1 = (char*)$i1.text->chars;
         modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = $spec.ast;
         $name = mk_scon(s1);
       }
     | EXTENDS i1=IDENT (mod=class_modification)? cmt=string_comment comp=composition T_END i2=IDENT
       {
-        s1 = $i1.text->chars;
-        s2 = $i2.text->chars;
+        s1 = (char*)$i1.text->chars;
+        s2 = (char*)$i2.text->chars;
         modelicaParserAssert(!strcmp(s1,s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
@@ -196,7 +204,7 @@ class_specifier2 returns [void* ast, const char *s2] @init {
 ( 
   cmt=string_comment c=composition T_END i2=IDENT
     {
-      $s2 = $i2.text->chars;
+      $s2 = (const char*)$i2.text->chars;
       $ast = Absyn__PARTS(c, mk_some_or_none(cmt));
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
@@ -230,9 +238,9 @@ ident_list returns [void* ast]:
 
 
 overloading returns [void* ast] :
-  OVERLOAD LPAR name_list RPAR cmt=comment
+  OVERLOAD LPAR nl=name_list RPAR cmt=comment
     {
-      ast = Absyn__OVERLOAD(name_list, mk_some_or_none(cmt));
+      ast = Absyn__OVERLOAD(nl, mk_some_or_none(cmt));
     }
   ;
 
@@ -898,7 +906,7 @@ primary returns [void* ast] @declarations {
 } :
   ( v=UNSIGNED_INTEGER
     {
-      char* chars = $v.text->chars;
+      char* chars = (char*)$v.text->chars;
       char* endptr;
       errno = 0;
       long l = strtol(chars,&endptr,10);
@@ -928,8 +936,8 @@ primary returns [void* ast] @declarations {
         }
       }
     }
-  | v=UNSIGNED_REAL    {$ast = Absyn__REAL(mk_rcon(atof($v.text->chars)));}
-  | v=STRING           {$ast = Absyn__STRING(mk_scon($v.text->chars));}
+  | v=UNSIGNED_REAL    {$ast = Absyn__REAL(mk_rcon(atof((char*)$v.text->chars)));}
+  | v=STRING           {$ast = Absyn__STRING(mk_scon((char*)$v.text->chars));}
   | T_FALSE            {$ast = Absyn__BOOL(RML_FALSE);}
   | T_TRUE             {$ast = Absyn__BOOL(RML_TRUE);}
   | ptr=component_reference__function_call {$ast = ptr;}
@@ -1121,7 +1129,7 @@ string_comment returns [void* ast]
 @declarations {
   pANTLR3_STRING t1;
 } :
-  ( s1=STRING {t1 = s1->getText(s1);} (PLUS s2=STRING {t1->appendS(t1,s2->getText(s2));})* {ast = mk_scon(t1->chars);})?
+  ( s1=STRING {t1 = s1->getText(s1);} (PLUS s2=STRING {t1->appendS(t1,s2->getText(s2));})* {ast = mk_scon((char*)t1->chars);})?
   ;
 
 annotation returns [void* ast] :
