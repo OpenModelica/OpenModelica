@@ -615,8 +615,15 @@ InterpolationTable::InterpolationTable(double time, double startTime,
       
       file->readTable(data,rows,cols);
       file->close();
+    } else {
+      throw CustomError("No table named `%s' in file `%s'.",tableName,fileName);
     }
+  } else {
+    data = new double[rows*cols];
+    if (!data) throw AllocFailed("InterpolationTime2D","double",rows*cols);
+    own_data = true;
 
+    std::copy(table,table+(rows*cols),data);
   }
   // check that time column is strictly monotonous
   checkValidityOfData();
@@ -709,7 +716,7 @@ void InterpolationTable::checkValidityOfData() const
 InterpolationTable2D::InterpolationTable2D(int ipoType, const char* tableName,
 		       const char* fileName, double *table,
 		       int tableDim1, int tableDim2, int colWise)
-  :tablename(tableName?tableName:""),own_data(false),data(table),
+  :tablename(tableName?tableName:""),own_data(false),data(NULL),
    rows(tableDim1),cols(tableDim2), colWise(colWise)
 {
   if (fileName && strncmp("NoName",fileName,6) != 0) {
@@ -724,8 +731,15 @@ InterpolationTable2D::InterpolationTable2D(int ipoType, const char* tableName,
 
       file->readTable(data,rows,cols);
       file->close();
+    } else {
+      throw CustomError("No table named `%s' in file `%s'.",tableName,fileName);
     }
+  } else {
+    data = new double[rows*cols];
+    if (!data) throw AllocFailed("InterpolationTime2D","double",rows*cols);
+    own_data = true;
 
+    std::copy(table,table+(rows*cols),data);
   }
   // check if table is valid
   checkValidityOfData();
