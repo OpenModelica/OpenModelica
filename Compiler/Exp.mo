@@ -265,6 +265,20 @@ algorithm
   end matchcontinue;
 end crefToPath;
 
+public function crefLastPath
+  "Returns the last identifier of a cref as an Absyn.IDENT."
+  input ComponentRef inComponentRef;
+  output Absyn.Path outPath;
+algorithm
+  outPath := matchcontinue(inComponentRef)
+    local
+      Ident i;
+      ComponentRef c;
+    case DAE.CREF_IDENT(ident = i, subscriptLst = {}) then Absyn.IDENT(i);
+    case DAE.CREF_QUAL(componentRef = c, subscriptLst = {}) then crefLastPath(c);
+  end matchcontinue;
+end crefLastPath;
+
 public function pathToCref
 "function: pathToCref
   This function converts a Absyn.Path to a ComponentRef."

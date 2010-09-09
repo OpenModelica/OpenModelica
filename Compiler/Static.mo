@@ -10435,6 +10435,7 @@ algorithm
         path = Absyn.crefToPath(c);
         (cache, c as SCode.CLASS(restriction = SCode.R_ENUMERATION), env) = 
           Lookup.lookupClass(cache, env, path, false);
+        SOME(path) = Env.getEnvPath(env);
         enum_lit_strs = SCode.componentNames(c);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
       then
@@ -10860,12 +10861,12 @@ algorithm
         (cache,e,DAE.C_VAR(),acc);
 
     // an enumeration literal -> simplify to a literal expression
-    case (cache,env,cr,_,SCode.CONST(),_,_,(DAE.T_ENUMERATION(index = SOME(i)), _),_,_,_,_)
+    case (cache,env,cr,_,SCode.CONST(),_,_,(DAE.T_ENUMERATION(index = SOME(i), path = p), _),_,_,_,_)
       local
         Integer i;
         Absyn.Path p;
       equation
-        p = Exp.crefToPath(cr);
+        p = Absyn.joinPaths(p, Exp.crefLastPath(cr));
       then
         (cache, DAE.ENUM_LITERAL(p, i), DAE.C_CONST(), SCode.RO());
          

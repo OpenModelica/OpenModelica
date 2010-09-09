@@ -1883,7 +1883,7 @@ algorithm
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(n),names,tys1),NONE()));
+        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),fq_class,names,tys1),NONE()));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -8131,8 +8131,7 @@ algorithm
       then
         (cache,env_1,ih,store,daeLst,csets_2,ty,graph);
 
-    // Instantiate an array that whose dimension is determined by an
-    // enumeration.
+    // Instantiate an array whose dimension is determined by an enumeration.
     case (cache, env, ih, store, ci_state, mod, pre, csets, n, (cl, attr), prot,
         i, DAE.DIM_ENUM(enumTypeName = enum_type, literals = lit :: l), dims, 
         idxs, inst_dims, impl, comment, io, finalPrefix, info, graph)
@@ -8488,18 +8487,26 @@ algorithm
         (cache,DAE.DIM_NONE :: l,dae);
     // adrpo: See if our array dimension comes from an enumeration!
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre)
-      local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Element> elementLst;
-        SCode.Class cls; list<String> enum_literals;
+      local 
+        Absyn.Path typePath, enumTypeName; 
+        list<SCode.Element> elementLst;
+        SCode.Class cls; 
+        list<String> enum_literals;
+        Env.Env cenv;
+        String n;
       equation
         typePath = Absyn.crefToPath(cr);
         // make sure is an enumeration!
-        (_, cls as SCode.CLASS(restriction=SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst=elementLst)), _) =
-             Lookup.lookupClass(cache, env, typePath, false);
+        (_, cls as SCode.CLASS(name = n, 
+                               restriction=SCode.R_ENUMERATION(),
+                               classDef = SCode.PARTS(elementLst=elementLst)), 
+            cenv) = Lookup.lookupClass(cache, env, typePath, false);
+        enumTypeName = Env.joinEnvPath(cenv, Absyn.IDENT(n));
         enum_literals = SCode.componentNames(cls);
         i = listLength(enum_literals);
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
-        (cache,DAE.DIM_ENUM(typePath, enum_literals, i) :: l,dae);
+        (cache,DAE.DIM_ENUM(enumTypeName, enum_literals, i) :: l,dae);
     // Frenkel TUD try next enum
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre)
       local Absyn.ComponentRef cr; Absyn.Path typePath; list<SCode.Enum> enumLst;
@@ -14663,7 +14670,7 @@ algorithm
         functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
-    case (p,ClassInf.ENUMERATION(path = _),v1,_,_,_)
+    case (_,ClassInf.ENUMERATION(path = p),v1,_,_,_)
       equation
         enumtype = Types.makeEnumerationType(p, v1);
       then
