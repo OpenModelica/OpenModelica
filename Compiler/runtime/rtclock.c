@@ -32,6 +32,8 @@
 
 #if defined(__MINGW32__) || defined(_MSC_VER)
 
+#include <windows.h>
+
 LARGE_INTEGER performance_frequency;
 LARGE_INTEGER tick_tp[NUM_RT_CLOCKS];
 
@@ -47,7 +49,9 @@ void rt_tick(int ix) {
 double rt_tock(int ix) {
   LARGE_INTEGER tock_tp;
   QueryPerformanceCounter(&tock_tp);
-  return ((double)(tock_tp.QuadPart - tick_tp[ix].QuadPart)) / (performance_frequency);
+  double d1 = (double)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
+  double d2 = (double) performance_frequency.QuadPart;
+  return d1 / d2;
 }
 
 #elif defined(__APPLE_CC__)
