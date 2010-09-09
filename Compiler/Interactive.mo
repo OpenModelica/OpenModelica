@@ -1314,6 +1314,46 @@ algorithm
   end matchcontinue;
 end addVarsToEnv;
 
+protected function matchApiFunction
+  "Checks if the interactive statement list contains a function with the given name."
+  input InteractiveStmts inStmts;
+  input String inFunctionName;
+algorithm
+  _ := matchcontinue(inStmts, inFunctionName)
+    local String fn;
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ =
+        Absyn.CREF_IDENT(name = fn)))}), _)
+      equation
+        true = stringEqual(inFunctionName, fn);
+      then
+        ();
+  end matchcontinue;
+end matchApiFunction;
+
+protected function getApiFunctionArgs
+  "Returns a list of arguments to the function in the interactive statement list."
+  input InteractiveStmts inStmts;
+  output list<Absyn.Exp> outArgs;
+algorithm
+  outArgs := matchcontinue(inStmts)
+    local list<Absyn.Exp> args;
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(functionArgs =
+      Absyn.FUNCTIONARGS(args = args)))})) then args;
+  end matchcontinue;
+end getApiFunctionArgs;
+
+protected function getApiFunctionNamedArgs
+  "Returns a list of named arguments to the function in the interactive statement list."
+  input InteractiveStmts inStmts;
+  output list<Absyn.NamedArg> outArgs;
+algorithm
+  outArgs := matchcontinue(inStmts)
+    local list<Absyn.NamedArg> args;
+    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(functionArgs =
+      Absyn.FUNCTIONARGS(argNames = args)))})) then args;
+  end matchcontinue;
+end getApiFunctionNamedArgs;
+
 protected function evaluateGraphicalApi2
 "function: evaluateGraphicalApi2
   Second function for evaluating graphical api.
@@ -1333,259 +1373,242 @@ algorithm
       Absyn.ComponentRef class_,subident,comp_ref,cr,crident;
       Absyn.Modification mod;
       InteractiveSymbolTable st, newst;
-      list<SCode.Class> s;
-      list<InstantiatedClass> ic;
-      list<InteractiveVariable> iv;
-      list<CompiledCFunction> cf;
       Absyn.Path p_class;
       Boolean finalPrefix,flowPrefix,streamPrefix,protected_,repl,dref1,dref2;
       Integer rest;
-      list<LoadedFile> lf;
-      AbsynDep.Depends aDep;
+      InteractiveStmts istmts;
 
-    case
-      (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ =
-      Absyn.CREF_IDENT(name = "setExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args =
-        {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = crident),
-        Absyn.CREF(componentRef = subident),
-        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,
-        depends = aDep,
-        explodedAst = s,
-        instClsLst = ic,
-        lstVarVal = iv,
-        compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setExtendsModifierValue");
+        {Absyn.CREF(componentRef = class_), 
+         Absyn.CREF(componentRef = crident),
+         Absyn.CREF(componentRef = subident), 
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} = 
+           getApiFunctionArgs(istmts);
         (newp,resstr) = setExtendsModifierValue(class_, crident, subident, mod, p);
-      then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getExtendsModifierNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
-      local Absyn.ComponentRef ident;
-      equation
-        resstr = getExtendsModifierNames(class_, ident, p);
+        st = setSymbolTableAST(st, newp);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getExtendsModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = crident),Absyn.CREF(componentRef = subident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getExtendsModifierNames");
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} = 
+          getApiFunctionArgs(istmts);
+        resstr = getExtendsModifierNames(class_, cr, p);
+      then
+        (resstr, st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getExtendsModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = crident),
+         Absyn.CREF(componentRef = subident)} = getApiFunctionArgs(istmts);
         resstr = getExtendsModifierValue(class_, crident, subident, p);
       then
-        (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentModifierNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = ident)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
-      local Absyn.ComponentRef ident;
-      equation
-        resstr = getComponentModifierNames(class_, ident, p);
-      then
-        (resstr,st);
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDefaultComponentName"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getComponentModifierNames");
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = cr)} =
+          getApiFunctionArgs(istmts);
+        resstr = getComponentModifierNames(class_, cr, p);
+      then
+        (resstr, st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "getDefaultComponentName");
+        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
         resstr = getDefaultComponentName(Absyn.crefToPath(class_), p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDefaultComponentPrefixes"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getDefaultComponentPrefixes");
+        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
         resstr = getDefaultComponentPrefixes(Absyn.crefToPath(class_), p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = ident,componentRef = subident))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getComponentModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = ident, componentRef = subident))} = 
+          getApiFunctionArgs(istmts);
         resstr = getComponentModifierValue(class_, Absyn.CREF_IDENT(ident,{}), subident, p);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = ident))},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getComponentModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = ident))} =
+          getApiFunctionArgs(istmts);
         resstr = getComponentBinding(class_, Absyn.CREF_IDENT(ident,{}), p);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getSourceFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_)},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getSourceFile");
+        {Absyn.CREF(componentRef = class_)} = getApiFunctionArgs(istmts);
         resstr = getSourceFile(class_, p);
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setSourceFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.STRING(value = filename)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
-      equation
-        (resstr,newp) = setSourceFile(class_, filename, p);
-      then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = comp_ref),Absyn.STRING(value = cmt)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
-      equation
-        (resstr,newp) = setComponentComment(class_, comp_ref, cmt, p);
-      then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),
-       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = comp_ref),Absyn.ARRAY(arrayExp =
-        {Absyn.BOOL(value = finalPrefix),
-         Absyn.BOOL(value = flowPrefix),
-         Absyn.BOOL(value = streamPrefix),
-         Absyn.BOOL(value = protected_),
-         Absyn.BOOL(value = repl)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
-         Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},
-         argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setSourceFile");
+        {Absyn.CREF(componentRef = class_), Absyn.STRING(value = filename)} =
+          getApiFunctionArgs(istmts);
+        (resstr,newp) = setSourceFile(class_, filename, p);
+        st = setSymbolTableAST(st, newp);
+      then
+        (resstr, st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setComponentComment");
+        {Absyn.CREF(componentRef = class_), 
+         Absyn.CREF(componentRef = comp_ref), 
+         Absyn.STRING(value = cmt)} =
+          getApiFunctionArgs(istmts);
+        (resstr,newp) = setComponentComment(class_, comp_ref, cmt, p);
+        st = setSymbolTableAST(st, newp);
+      then
+        (resstr,st);
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setComponentProperties");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = comp_ref),Absyn.ARRAY(arrayExp =
+         {Absyn.BOOL(value = finalPrefix),
+          Absyn.BOOL(value = flowPrefix),
+          Absyn.BOOL(value = streamPrefix),
+          Absyn.BOOL(value = protected_),
+          Absyn.BOOL(value = repl)}),
+          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
+          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
+          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
+          getApiFunctionArgs(istmts);
         p_class = Absyn.crefToPath(class_);
         (resstr,p_1) = setComponentProperties(p_class, comp_ref, finalPrefix, flowPrefix, streamPrefix, protected_, repl, variability, {dref1,dref2}, causality, p);
+        st = setSymbolTableAST(st, p_1);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr,st);
 
     /* old version of setComponentProperties, without stream */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentProperties"),
-       functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = comp_ref),Absyn.ARRAY(arrayExp =
-        {Absyn.BOOL(value = finalPrefix),
-         Absyn.BOOL(value = flowPrefix),
-         Absyn.BOOL(value = protected_),
-         Absyn.BOOL(value = repl)}),
+    case (istmts, st as SYMBOLTABLE(ast = p))
+      equation
+        matchApiFunction(istmts, "setComponentProperties");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = comp_ref),
+         Absyn.ARRAY(arrayExp = {
+           Absyn.BOOL(value = finalPrefix),
+           Absyn.BOOL(value = flowPrefix),
+           Absyn.BOOL(value = protected_),
+           Absyn.BOOL(value = repl)}),
          Absyn.ARRAY(arrayExp = {Absyn.STRING(value = variability)}),
          Absyn.ARRAY(arrayExp = {Absyn.BOOL(value = dref1),Absyn.BOOL(value = dref2)}),
-         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})},
-         argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
-      equation
+         Absyn.ARRAY(arrayExp = {Absyn.STRING(value = causality)})} =
+          getApiFunctionArgs(istmts);
         p_class = Absyn.crefToPath(class_);
         (resstr,p_1) = setComponentProperties(p_class, comp_ref, finalPrefix, flowPrefix, false, protected_, repl, variability, {dref1,dref2}, causality, p);
+        st = setSymbolTableAST(st, p_1);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsInfo"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* adrpo added 2005-11-03 */
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getElementsInfo");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getElementsInfo(cr, p);
       then
         (resstr,st);
 
-   case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getElementsOfVisType"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* he-mag */
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getElementsOfVisType");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getElementsOfVisType(Absyn.crefToPath(cr), p);
-        //print(resstr +& "\n");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* adrpo added 2005-11-24 */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "getEnvironmentVar");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         resstr = System.readEnv(name);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* adrpo added 2005-11-24 */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "getEnvironmentVar");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         failure(resstr = System.readEnv(name));
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),Absyn.STRING(value = value)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* adrpo added 2005-11-24 */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "setEnvironmentVar");
+        {Absyn.STRING(value = name), Absyn.STRING(value = value)} =
+          getApiFunctionArgs(istmts);
         0 = System.setEnv(name, value, true);
       then
         ("Ok",st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
-        Absyn.STRING(value = value)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* adrpo added 2005-11-24 */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "setEnvironmentVar");
+        {Absyn.STRING(value = name), Absyn.STRING(value = value)} =
+          getApiFunctionArgs(istmts);
         rest = System.setEnv(name, value, true);
         (rest == 0) = false;
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "appendEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
-        Absyn.STRING(value = value)},argNames = {})))}),
-        (st as SYMBOLTABLE(
-          ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf))) /* adrpo added 2005-11-24 */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "appendEnvironmentVar");
+        {Absyn.STRING(value = name), Absyn.STRING(value = value)} =
+          getApiFunctionArgs(istmts);
         resstr = Util.makeValueOrDefault(System.readEnv, name, "");
         rest = System.setEnv(name, resstr +& value, true);
         resstr = System.readEnv(name);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "appendEnvironmentVar"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name),
-        Absyn.STRING(value = value)},argNames = {})))}),
-        (st as SYMBOLTABLE(
-          ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-          lstVarVal = iv,compiledFunctions = cf,
-          loadedFiles = lf)))
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "appendEnvironmentVar");
+        {Absyn.STRING(value = name), Absyn.STRING(value = value)} =
+          getApiFunctionArgs(istmts);
       then
         ("error",st);
         
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractiveQualified"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      st) /* adrpo added 2005-12-16 */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "loadFileInteractiveQualified");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         (top_names_str, newst) = loadFileInteractiveQualified(name, st);
       then
         (top_names_str,newst);
 
-
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDefinitions"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.BOOL(addFunctions)},argNames = {})))}),
-      st as SYMBOLTABLE(ast = p, explodedAst = s)) /* sjoelund.se added 2009-03-10 */
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Boolean addFunctions;
       equation
+        matchApiFunction(istmts, "getDefinitions");
+        {Absyn.BOOL(addFunctions)} = getApiFunctionArgs(istmts);
         (top_names_str) = getDefinitions(p, addFunctions);
       then
         (top_names_str, st);
@@ -1596,11 +1619,10 @@ algorithm
        *   within_ = ...,
        *   globalBuildTimes = ...
        * end Absyn.PROGRAM; */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAstAsCorbaString"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),
-      st as SYMBOLTABLE(ast = p, explodedAst = s))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getAstAsCorbaString");
+        {} = getApiFunctionArgs(istmts);
         Print.clearBuf();
         Dump.getAstAsCorbaString(p);
         top_names_str = Print.getString();
@@ -1609,11 +1631,10 @@ algorithm
         (top_names_str, st);
 
       /* Print the whole AST to file */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAstAsCorbaString"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(filename)},argNames = {})))}),
-      st as SYMBOLTABLE(ast = p, explodedAst = s))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getAstAsCorbaString");
+        {Absyn.STRING(filename)} = getApiFunctionArgs(istmts);
         Print.clearBuf();
         Dump.getAstAsCorbaString(p);
         Print.writeBuf(filename);
@@ -1622,123 +1643,131 @@ algorithm
         ("true", st);
 
       /* Failed to print the whole AST to file */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAstAsCorbaString"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(filename)},argNames = {})))}),
-      st as SYMBOLTABLE(ast = p, explodedAst = s))
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "getAstAsCorbaString");
+        {Absyn.STRING(filename)} = getApiFunctionArgs(istmts);
       then
         ("false", st);
 
     /* adrpo added 2008-11-28 deal with the annotation versions */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getAnnotationVersion"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}), st)
-      local String str;
+    case (istmts, st)
       equation
-        str = RTOpts.getAnnotationVersion();
-        str = "\"" +& str +& "\"";
+        matchApiFunction(istmts, "getAnnotationVersion");
+        {} = getApiFunctionArgs(istmts);
+        resstr = RTOpts.getAnnotationVersion();
+        resstr = "\"" +& resstr +& "\"";
       then
-        (str,st);
+        (resstr,st);
 
     /* adrpo added 2008-11-28 deal with the annotation versions */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setAnnotationVersion"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = annotationVersion)},
-        argNames = {})))}), st)
-      local
-        String annotationVersion;
-        String str;
+    case (istmts, st)
+      local String annotationVersion;
       equation
+        matchApiFunction(istmts, "setAnnotationVersion");
+        {Absyn.STRING(value = annotationVersion)} = getApiFunctionArgs(istmts);
          RTOpts.setAnnotationVersion(annotationVersion);
       then
         ("true",st);
 
     /* adrpo added 2008-11-28 deal with the annotation versions */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setAnnotationVersion"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = annotationVersion)},
-        argNames = {})))}), st)
-      local
-        String annotationVersion;
-        String str;
+    case (istmts, st)
+      local String annotationVersion;
       equation
-         failure(RTOpts.setAnnotationVersion(annotationVersion));
+        matchApiFunction(istmts, "setAnnotationVersion");
+        {Absyn.STRING(value = annotationVersion)} = getApiFunctionArgs(istmts);
+        failure(RTOpts.setAnnotationVersion(annotationVersion));
       then
         ("false",st);
 
     /* adrpo added 2008-12-14 set the noSimplify flag */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setNoSimplify"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.BOOL(value = noSimplify)},
-        argNames = {})))}), st)
-      local
-        Boolean noSimplify;
-        String str;
+    case (istmts, st)
+      local Boolean noSimplify;
       equation
-         RTOpts.setNoSimplify(noSimplify);
-         str = "NoSimplify = " +& Util.if_(noSimplify,"true","false");
+        matchApiFunction(istmts, "setNoSimplify");
+        {Absyn.BOOL(value = noSimplify)} = getApiFunctionArgs(istmts);
+        RTOpts.setNoSimplify(noSimplify);
+        resstr = "NoSimplify = " +& Util.if_(noSimplify,"true","false");
       then
-        (str,st);
+        (resstr,st);
 
     /* adrpo added 2008-12-14 get the noSimplify flag */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNoSimplify"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {},
-        argNames = {})))}), st)
-      local
-        Boolean noSimplify;
-        String str;
+    case (istmts, st)
+      local Boolean noSimplify;
       equation
-         noSimplify = RTOpts.getNoSimplify();
-         str = "NoSimplify = " +& Util.if_(noSimplify,"true","false");
+        matchApiFunction(istmts, "getNoSimplify");
+        {} = getApiFunctionArgs(istmts);
+        noSimplify = RTOpts.getNoSimplify();
+        resstr = "NoSimplify = " +& Util.if_(noSimplify,"true","false");
       then
-        (str,st);
+        (resstr,st);
 
     /* adrpo added 2006-10-16
      * - i think this function is needed here!
      */
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getErrorString"),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "getErrorString");
+        {} = getApiFunctionArgs(istmts);
         resstr = Error.printMessagesStr();
         resstr = stringAppend("\"", resstr);
         resstr = stringAppend(resstr, "\"");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "parseFile"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      st)
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "parseFile");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         (top_names_str, newst) = parseFile(name, st);
       then
         (top_names_str,newst);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setVectorizationLimit"),
-      functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.INTEGER(value = limit)},
-        argNames = {})))}), st)
-      local
-        Integer limit;
-        Boolean res;
+    case (istmts, st)
+      local Integer limit;
       equation
+        matchApiFunction(istmts, "setVectorizationLimit");
+        {Absyn.INTEGER(value = limit)} = getApiFunctionArgs(istmts);
         RTOpts.setVectorizationLimit(limit);
       then
         ("true", st); 
     
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setVectorizationLimit")))}),st)
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "setVectorizationLimit");
+        {Absyn.INTEGER(value = _)} = getApiFunctionArgs(istmts);
       then
         ("false", st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getVectorizationLimit")))}),st)
-      local
-        Integer limit;
+    case (istmts, st)
+      local Integer limit;
       equation
+        matchApiFunction(istmts, "getVectorizationLimit");
+        {} = getApiFunctionArgs(istmts);
         limit = RTOpts.vectorizationLimit();
         resstr = intString(limit);
       then
         (resstr, st);
+
+    case (istmts, st)
+      local Boolean show;
+      equation
+        matchApiFunction(istmts, "setShowAnnotations");
+        {Absyn.BOOL(value = show)} = getApiFunctionArgs(istmts);
+        RTOpts.setShowAnnotations(show);
+      then
+        ("true", st);
+
+    case (istmts, st)
+      local Boolean show;
+      equation
+        matchApiFunction(istmts, "getShowAnnotations");
+        {} = getApiFunctionArgs(istmts);
+        show = RTOpts.showAnnotations();
+        resstr = Util.boolString(show);
+      then
+        (resstr, st); 
+
   end matchcontinue;
 end evaluateGraphicalApi2;
 
@@ -1762,9 +1791,6 @@ algorithm
       Absyn.Exp exp;
       InteractiveSymbolTable st,newst;
       list<SCode.Class> s,s_1;
-      list<InstantiatedClass> ic;
-      list<InteractiveVariable> iv;
-      list<CompiledCFunction> cf;
       Absyn.Modification mod;
       Absyn.Path path_1,wpath;
       Integer rest,count,n;
@@ -1772,110 +1798,92 @@ algorithm
       Boolean b1,b2;
       list<LoadedFile> lf;
       AbsynDep.Depends aDep;
+      InteractiveStmts istmts;
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args =
-        {Absyn.CREF(componentRef = class_),Absyn.CREF(componentRef =
-        (ident as Absyn.CREF_IDENT(name = _))),
-        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(expOption = SOME(exp))))},
-        argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setComponentModifierValue");
+        {Absyn.CREF(componentRef = class_), 
+         Absyn.CREF(componentRef = (ident as Absyn.CREF_IDENT(name = _))),
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = Absyn.CLASSMOD(expOption = SOME(exp))))} =
+          getApiFunctionArgs(istmts);
         (p_1,resstr) = setParameterValue(class_, ident, exp, p) "expressions" ;
+        st = setSymbolTableAST(st, p_1);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-			//special case for clearing modifier simple name.
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = (ident as Absyn.CREF_IDENT(name = _))),
-        Absyn.CODE(code = Absyn.C_MODIFICATION(modification =
-        (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    //special case for clearing modifier simple name.
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setComponentModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = (ident as Absyn.CREF_IDENT(name = _))),
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification =
+           (mod as Absyn.CLASSMOD(elementArgLst = {},expOption = NONE))))} =
+          getApiFunctionArgs(istmts);
         (p_1,resstr) = setComponentModifier(class_, ident, Absyn.CREF_IDENT("",{}),mod, p)  ;
+        st = setSymbolTableAST(st, p_1);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setComponentModifierValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = ident,componentRef = subident)),
-        Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local String ident;
       equation
+        matchApiFunction(istmts, "setComponentModifierValue");
+        {Absyn.CREF(componentRef = class_),
+         Absyn.CREF(componentRef = Absyn.CREF_QUAL(name = ident,componentRef = subident)),
+         Absyn.CODE(code = Absyn.C_MODIFICATION(modification = mod))} =
+          getApiFunctionArgs(istmts);
         (p_1,resstr) = setComponentModifier(class_, Absyn.CREF_IDENT(ident,{}), subident, mod, p);
+        st = setSymbolTableAST(st, p_1);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = ident)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getParameterValue");
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident)} =
+          getApiFunctionArgs(istmts);
         resstr = getComponentBinding(class_, ident, p);
       then
-        (resstr,st);
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setParameterValue"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),
-        Absyn.CREF(componentRef = ident),exp},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setParameterValue");
+        {Absyn.CREF(componentRef = class_), Absyn.CREF(componentRef = ident),exp} =
+          getApiFunctionArgs(istmts);
         (p_1,resstr) = setParameterValue(class_, ident, exp, p);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getParameterNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getParameterNames");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getParameterNames(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),functionArgs = Absyn.FUNCTIONARGS(args =
-      {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name))},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "createModel");
+        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name))} =
+          getApiFunctionArgs(istmts);
         newp = updateProgram(
           Absyn.PROGRAM({Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                          Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
                          Absyn.TOP(),Absyn.dummyTimeStamp), p);
-        newst = SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf);
+        newst = setSymbolTableAST(st, newp);
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "createModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef =
-      (path as Absyn.CREF_QUAL(name = _)))},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "createModel");
+        {Absyn.CREF(componentRef = (path as Absyn.CREF_QUAL(name = _)))} =
+          getApiFunctionArgs(istmts);
         path_1 = Absyn.crefToPath(path);
         name = Absyn.pathLastIdent(path_1);
         wpath = Absyn.stripLast(path_1);
@@ -1884,74 +1892,64 @@ algorithm
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                       Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
                       Absyn.WITHIN(wpath),Absyn.dummyTimeStamp), p);
-        newst = SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf);
+        newst = setSymbolTableAST(st, newp);
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "newModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-      Absyn.CREF(componentRef = cr)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path;
       equation
+        matchApiFunction(istmts, "newModel");
+        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
+         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
         newp = updateProgram(
           Absyn.PROGRAM({
           Absyn.CLASS(name,false,false,false,Absyn.R_MODEL(),
                       Absyn.PARTS({Absyn.PUBLIC({})},NONE),Absyn.INFO("",false,0,0,0,0,Absyn.dummyTimeStamp))},
                       Absyn.WITHIN(path),Absyn.dummyTimeStamp), p);
-        newst = SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf);
+        newst = setSymbolTableAST(st, newp);
         resstr = stringAppend(name, "\n");
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "loadFileInteractive");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & 	 Parser.parse(name) => p1 &" ;
         newp = updateProgram(p1, p);
         top_names_str = getTopClassnames(p1);
+        st = setSymbolTableAST(st, newp);
       then
-        (top_names_str,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        (top_names_str,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* it the rule above have failed then check if file exists without this omc crashes */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "loadFileInteractive");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         false = System.regularFileExists(name);
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "loadFileInteractive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = name)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf))) /* check if the parse went wrong */
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "loadFileInteractive");
+        {Absyn.STRING(value = name)} = getApiFunctionArgs(istmts);
         failure(p1 = Parser.parse(name));
       then
         ("error",st);
 
-        /* Checks the installation of OpenModelica and tries to find common errors */
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "checkSettings"),functionArgs = Absyn.FUNCTIONARGS(args = {},argNames = {})))}),st)
+    /* Checks the installation of OpenModelica and tries to find common errors */
+    case (istmts, st)
       local
         list<Values.Value> vals;
         list<String> vars;
         String omhome,omlib,omcpath,os,platform,usercflags,senddata,res,workdir,gcc,confcmd,touch_file,uname;
         Boolean omcfound,gcc_res,touch_res,rm_res,uname_res;
       equation
+        matchApiFunction(istmts, "checkSettings");
+        {} = getApiFunctionArgs(istmts);
         vars = {"OPENMODELICAHOME","OPENMODELICALIBRARY","OMC_PATH","OMC_FOUND","MODELICAUSERCFLAGS","WORKING_DIRECTORY","CREATE_FILE_WORKS","REMOVE_FILE_WORKS","OS","SYSTEM_INFO","SENDDATALIBS","C_COMPILER","C_COMPILER_RESPONDING","CONFIGURE_CMDLINE"};
         omhome = Util.makeValueOrDefault(System.readEnv,"OPENMODELICAHOME","");
         omlib = Util.makeValueOrDefault(System.readEnv,"OPENMODELICALIBRARY","");
@@ -1985,277 +1983,247 @@ algorithm
         res = ValuesUtil.valString(Values.RECORD(Absyn.IDENT("OpenModelica.Diagnostics.ImportantValues"),vals,vars,-1));
       then (res,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)},argNames = {})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "deleteClass");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         (resstr,newp) = deleteClass(cr, p);
+        st = setSymbolTableAST(st, newp);
       then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-      Absyn.CREF(componentRef = tp),Absyn.CREF(componentRef = model_)},argNames = nargs)))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "addComponent");
+        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
+         Absyn.CREF(componentRef = tp),
+         Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
         (newp,resstr) = addComponent(name, tp, model_, nargs, p);
         str = Print.getString();
         resstr_1 = stringAppend(resstr, str);
+        st = setSymbolTableAST(st, newp);
       then
-        ("true",SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        ("true", st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-      Absyn.CREF(componentRef = tp),Absyn.CREF(componentRef = model_)},argNames = nargs)))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        (newp,res) = updateComponent(name, tp, model_, nargs, p)
-         "delete_component(name,model,p) => (newp,resstr) &
-	        add_component(name,tp,model,nargs,newp) => (newp2,resstr)" ;
+        matchApiFunction(istmts, "updateComponent");
+        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
+         Absyn.CREF(componentRef = tp),
+         Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
+        (newp,res) = updateComponent(name, tp, model_, nargs, p);
+        st = setSymbolTableAST(st, newp);
       then
-        (res,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        (res, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
-      Absyn.CREF(componentRef = model_)},argNames = nargs)))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "deleteComponent");
+        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(name = name)),
+         Absyn.CREF(componentRef = model_)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
         (newp,resstr) = deleteComponent(name, model_, p);
         str = Print.getString();
         resstr_1 = stringAppend(resstr, str);
+        st = setSymbolTableAST(st, newp);
       then
-        ("true",SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        ("true", st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addClassAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)},argNames = nargs)))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "addClassAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
         newp = addClassAnnotation(cr, nargs, p);
-        newst = SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf);
+        newst = setSymbolTableAST(st, newp);
       then
         ("true",newst);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getComponentCount");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         count = getComponentCount(cr, p);
         resstr = intString(count);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthComponent");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
+          getApiFunctionArgs(istmts);
         resstr = getNthComponent(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponents"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getComponents");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getComponents(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getComponentAnnotations"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getComponentAnnotations");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getComponentAnnotations");
         resstr = getComponentAnnotations(cr, p);
         ErrorExt.rollBack("getComponentAnnotations");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthComponentAnnotation");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
+          getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthComponentAnnotation");
         resstr = getNthComponentAnnotation(cr, p, n);
         ErrorExt.rollBack("getNthComponentAnnotation");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthComponentModification"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthComponentModification");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
+          getApiFunctionArgs(istmts);
         resstr = getNthComponentModification(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getInheritanceCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getInheritanceCount");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         count = getInheritanceCount(cr, p);
         resstr = intString(count);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthInheritedClass");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
+          getApiFunctionArgs(istmts);
         resstr = getNthInheritedClass(cr, n, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectionCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getConnectionCount");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getConnectionCount(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthConnection");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
+          getApiFunctionArgs(istmts);
         resstr = getNthConnection(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setConnectionComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),
-      Absyn.CREF(componentRef = cr1),Absyn.CREF(componentRef = cr2),Absyn.STRING(value = cmt)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setConnectionComment");
+        {Absyn.CREF(componentRef = cr),
+         Absyn.CREF(componentRef = cr1),
+         Absyn.CREF(componentRef = cr2),
+         Absyn.STRING(value = cmt)} = getApiFunctionArgs(istmts);
         (newp,resstr) = setConnectionComment(cr, cr1, cr2, cmt, p);
+        st = setSymbolTableAST(st, newp);
       then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "addConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = c1),
-      Absyn.CREF(componentRef = c2),Absyn.CREF(componentRef = cr)},argNames = nargs)))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "addConnection");
+        {Absyn.CREF(componentRef = c1),
+         Absyn.CREF(componentRef = c2),
+         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
         (resstr,newp) = addConnection(cr, c1, c2, nargs, p);
+        st = setSymbolTableAST(st, newp);
       then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "deleteConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = c1),
-      Absyn.CREF(componentRef = c2),Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "deleteConnection");
+        {Absyn.CREF(componentRef = c1),
+         Absyn.CREF(componentRef = c2),
+         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         (resstr,newp) = deleteConnection(cr, c1, c2, p);
+        st = setSymbolTableAST(st, newp);
       then
-        (resstr,SYMBOLTABLE(newp,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "updateConnection"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = c1),
-      Absyn.CREF(componentRef = c2),Absyn.CREF(componentRef = cr)},argNames = nargs)))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "updateConnection");
+        {Absyn.CREF(componentRef = c1),
+         Absyn.CREF(componentRef = c2),
+         Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        nargs = getApiFunctionNamedArgs(istmts);
         (s1,newp) = deleteConnection(cr, c1, c2, p);
         (resstr,newp_1) = addConnection(cr, c1, c2, nargs, newp);
+        st = setSymbolTableAST(st, newp);
       then
-        (resstr,SYMBOLTABLE(newp_1,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectionAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthConnectionAnnotation");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
+          getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthConnectionAnnotation");
         resstr = getNthConnectionAnnotation(cr, p, n);
         ErrorExt.rollBack("getNthConnectionAnnotation");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getConnectorCount"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getConnectorCount");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getConnectorCount(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnector"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthConnector");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} = 
+          getApiFunctionArgs(istmts);
         resstr = getNthConnector(cr, p, n);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthConnectorIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthConnectorIconAnnotation");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
+          getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthConnectorIconAnnotation");
         resstr = getNthConnectorIconAnnotation(cr, p, n);
         ErrorExt.rollBack("getNthConnectorIconAnnotation");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path;
       equation
+        matchApiFunction(istmts, "getIconAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getIconAnnotation");
         resstr = getIconAnnotation(path, p);
@@ -2263,14 +2231,11 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDiagramAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path;
       equation
+        matchApiFunction(istmts, "getDiagramAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getDiagramAnnotation");
         resstr = getDiagramAnnotation(path, p);
@@ -2278,31 +2243,33 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClassIconMapAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthInheritedClassIconMapAnnotation");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
+          getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthInheritedClassIconMapAnnotation");
         resstr = getNthInheritedClassIconMapAnnotation(cr, n, p);
         ErrorExt.rollBack("getNthInheritedClassIconMapAnnotation");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getNthInheritedClassDiagramMapAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getNthInheritedClassDiagramMapAnnotation");
+        {Absyn.CREF(componentRef = cr),Absyn.INTEGER(value = n)} =
+          getApiFunctionArgs(istmts);
         ErrorExt.setCheckpoint("getNthInheritedClassDiagramMapAnnotation");
         resstr = getNthInheritedClassDiagramMapAnnotation(cr, n, p);
         ErrorExt.rollBack("getNthInheritedClassDiagramMapAnnotation");
       then
         (resstr,st);
 
-     case (ISTMTS(interactiveStmtLst =
-       {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getDocumentationAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-       (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path;
       equation
+        matchApiFunction(istmts, "getDocumentationAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
         ErrorExt.setCheckpoint("getDocumentationAnnotation");
         resstr = getNamedAnnotation(path, p,"Documentation",getDocumentationAnnotationString);
@@ -2310,243 +2277,291 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path;
       equation
+        matchApiFunction(istmts, "getPackages");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
         resstr = getPackagesInPath(path, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getPackages"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getPackages");
+        {} = getApiFunctionArgs(istmts);
         s1 = getTopPackages(p);
         resstr = stringAppend(s1, "\n");
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path;
       equation
+        matchApiFunction(istmts, "getClassNames");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         path = Absyn.crefToPath(cr);
         resstr = getClassnamesInPath(path, p);
       then
         (resstr,st);
-/***********************zxzc****************************************************/
-    case (ISTMTS(interactiveStmtLst =
-     {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNamesRecursive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local
         String fulString;
         Absyn.Path path;
-        equation
-            path = Absyn.crefToPath(cr);
-        		resstr = getClassNamesRecursive(path, p, "  ");
-        		Print.clearErrorBuf();
-    then
-         (resstr,st);
+      equation
+        matchApiFunction(istmts, "getClassNamesRecursive");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
+        path = Absyn.crefToPath(cr);
+        resstr = getClassNamesRecursive(path, p, "  ");
+        Print.clearErrorBuf();
+      then
+        (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path; Absyn.Class cls, refactoredClass;
       equation
+        matchApiFunction(istmts, "refactorClass");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
   			path = Absyn.crefToPath(cr);
 	  		cls = getPathedClassInProgram(path, p);
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
         p = updateProgram(Absyn.PROGRAM({refactoredClass}, Absyn.TOP(), Absyn.dummyTimeStamp), p);
 	 			resstr = Dump.unparseStr(Absyn.PROGRAM({refactoredClass},Absyn.TOP(),Absyn.dummyTimeStamp),false);
+        st = setSymbolTableAST(st, p);
       then
-        (resstr,SYMBOLTABLE(p,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-		case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path; Absyn.Class cls, refactoredClass;
       equation
+        matchApiFunction(istmts, "refactorClass");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         s1 = Dump.printComponentRefStr(cr);
         resstr = Util.stringAppendList({"Failed in translating", s1, " to Modelica v2.0 graphicall annotations"});
+        st = setSymbolTableAST(st, p);
       then
-        (resstr,SYMBOLTABLE(p,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorIconAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path; Absyn.Class cls, refactoredClass;
       equation
+        matchApiFunction(istmts, "refactorIconAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
   			path = Absyn.crefToPath(cr);
 	  		cls = getPathedClassInProgram(path, p);
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
         resstr = getAnnotationInClass(refactoredClass, ICON_ANNOTATION);
+        st = setSymbolTableAST(st, p);
       then
-        (resstr,SYMBOLTABLE(p,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "refactorDiagramAnnotation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-      (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf,loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       local Absyn.Path path; Absyn.Class cls, refactoredClass;
       equation
+        matchApiFunction(istmts, "refactorDiagramAnnotation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
   			path = Absyn.crefToPath(cr);
 	  		cls = getPathedClassInProgram(path, p);
 
         refactoredClass = Refactor.refactorGraphicalAnnotation(p, cls);
 
         resstr = getAnnotationInClass(refactoredClass, DIAGRAM_ANNOTATION);
+        st = setSymbolTableAST(st, p);
       then
-        (resstr,SYMBOLTABLE(p,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getClassNames");
+        {} = getApiFunctionArgs(istmts);
         resstr = getTopClassnames(p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNames"),functionArgs = Absyn.FUNCTIONARGS(args = _)))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) then ("{}",st);
-
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassNamesForSimulation"),functionArgs = Absyn.FUNCTIONARGS(args = {})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "getClassNames");
+      then ("{}",st);
+
+    case (istmts, st)
+      equation
+        matchApiFunction(istmts, "getClassNamesForSimulation");
+        {} = getApiFunctionArgs(istmts);
         resstr = System.getClassnamesForSimulation();
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassNamesForSimulation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.STRING(value = str)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st)
       equation
+        matchApiFunction(istmts, "setClassNamesForSimulation");
+        {Absyn.STRING(value = str)} = getApiFunctionArgs(istmts);
         System.setClassnamesForSimulation(str);
       then
         ("true",st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassInformation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getClassInformation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getClassInformation(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassInformation"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getClassInformation");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         failure(resstr = getClassInformation(cr, p));
       then
         ("error",st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "setClassComment"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = class_),Absyn.STRING(value = str)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "setClassComment");
+        {Absyn.CREF(componentRef = class_),Absyn.STRING(value = str)} =
+          getApiFunctionArgs(istmts);
         (p_1,resstr) = setClassComment(class_, str, p);
+        st = setSymbolTableAST(st, p_1);
       then
-        (resstr,SYMBOLTABLE(p_1,aDep,s,ic,iv,cf,lf));
+        (resstr, st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassRestriction"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "getClassRestriction");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getClassRestriction(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isPrimitive"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isPrimitive");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isPrimitive(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isType"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isType");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isType(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isConnector"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isConnector");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isConnector(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isModel");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isModel(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isRecord"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isRecord");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isRecord(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isBlock"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isBlock");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isBlock(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isFunction"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isFunction");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isFunction(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isPackage"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isPackage");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isPackage(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isClass");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = isClass(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isParameter"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = class_)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isParameter");
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} = 
+          getApiFunctionArgs(istmts);
         b1 = isParameter(cr, class_, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isProtected"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = class_)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isProtected");
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} = 
+          getApiFunctionArgs(istmts);
         b1 = isProtected(cr, class_, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "isConstant"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),Absyn.CREF(componentRef = class_)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "isConstant");
+        {Absyn.CREF(componentRef = cr), Absyn.CREF(componentRef = class_)} = 
+          getApiFunctionArgs(istmts);
         b1 = isConstant(cr, class_, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "existClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "existClass");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = existClass(cr, p);
         resstr = Util.boolString(b1);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "existModel"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       local Boolean res;
       equation
+        matchApiFunction(istmts, "existModel");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = existClass(cr, p);
         b2 = isModel(cr, p);
         res = boolAnd(b1, b2);
@@ -2554,9 +2569,11 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "existPackage"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+   case (istmts, st as SYMBOLTABLE(ast = p))
       local Boolean res;
       equation
+        matchApiFunction(istmts, "existPackage");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         b1 = existClass(cr, p);
         b2 = isPackage(cr, p);
         res = boolAnd(b1, b2);
@@ -2564,66 +2581,67 @@ algorithm
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameClass"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = old_cname),
-        Absyn.CREF(componentRef = new_cname)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, loadedFiles = lf))
       equation
+        matchApiFunction(istmts, "renameClass");
+        {Absyn.CREF(componentRef = old_cname), Absyn.CREF(componentRef = new_cname)} =
+          getApiFunctionArgs(istmts);
         (res,p_1) = renameClass(p, old_cname, new_cname) "For now, renaming a class clears all caches... Substantial analysis required to find out what to keep in cache
 	   and what must be thrown out" ;
         s_1 = SCodeUtil.translateAbsyn2SCode(p_1);
       then
         (res,SYMBOLTABLE(p_1,aDep,s_1,{},{},{},lf));
 
-    case (ISTMTS(interactiveStmtLst =
-      {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "renameComponent"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cname),
-        Absyn.CREF(componentRef = from_ident),Absyn.CREF(componentRef = to_ident)})))}),
-      (st as SYMBOLTABLE(
-        ast = p,depends = aDep,explodedAst = s,instClsLst = ic,
-        lstVarVal = iv,compiledFunctions = cf,
-        loadedFiles = lf)))
+    case (istmts, st as SYMBOLTABLE(ast = p, depends = aDep, explodedAst = s, loadedFiles = lf))
       equation
+        matchApiFunction(istmts, "renameComponent");
+        {Absyn.CREF(componentRef = cname),
+         Absyn.CREF(componentRef = from_ident),
+         Absyn.CREF(componentRef = to_ident)} = getApiFunctionArgs(istmts);
         (res_str,p_1) = renameComponent(p, cname, from_ident, to_ident);
       then
         (res_str,SYMBOLTABLE(p_1,aDep,s,{},{},{},lf));
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getCrefInfo"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* adrpo added 2005-11-03 */
+    case (istmts, st as SYMBOLTABLE(ast = p)) /* adrpo added 2005-11-03 */
       equation
+        matchApiFunction(istmts, "getCrefInfo");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getCrefInfo(cr, p);
       then
         (resstr,st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "getClassAttributes"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),(st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf))) /* added by adrpo, 2006-02-24 */
+    case (istmts, st as SYMBOLTABLE(ast = p)) /* added by adrpo, 2006-02-24 */
       equation
+        matchApiFunction(istmts, "getClassAttributes");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = getClassAttributes(cr, p);
       then
         (resstr,st);
 
         // list(cr) added here to speed up model editor. Also exists in Ceval
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-          (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "list");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         resstr = listClass(cr, p);
         resstr = Util.stringAppendList({"\"",resstr,"\""});
       then
         (resstr,st);
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "list"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr)})))}),
-          (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
+
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
+        matchApiFunction(istmts, "list");
+        {Absyn.CREF(componentRef = cr)} = getApiFunctionArgs(istmts);
         failure(resstr = listClass(cr, p));
       then
         ("",st);
 
-    case (ISTMTS(interactiveStmtLst = {IEXP(exp = Absyn.CALL(function_ =
-          Absyn.CREF_IDENT(name = "setOption"),functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, _)),Absyn.BOOL(value = b)})))}),
-          (st as SYMBOLTABLE(ast = p,depends = aDep,explodedAst = s,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)))
-      local
-        Boolean b;
+    case (istmts, st as SYMBOLTABLE(ast = p))
       equation
-        _ = OptManager.setOption(str, b);
+        matchApiFunction(istmts, "setOption");
+        {Absyn.CREF(componentRef = Absyn.CREF_IDENT(str, _)), Absyn.BOOL(value = b1)} =
+          getApiFunctionArgs(istmts);
+        _ = OptManager.setOption(str, b1);
       then
         ("true",st);
 
@@ -18713,5 +18731,24 @@ algorithm
    then comp;
  end matchcontinue;
 end getComponentInClass;
+
+protected function setSymbolTableAST
+  input InteractiveSymbolTable inSymTab;
+  input Absyn.Program inAST;
+  output InteractiveSymbolTable outSymTab;
+algorithm
+  outSymTab := matchcontinue(inSymTab, inAST)
+    local
+      AbsynDep.Depends d;
+      SCode.Program e;
+      list<InstantiatedClass> i;
+      list<InteractiveVariable> v;
+      list<CompiledCFunction> c;
+      list<LoadedFile> l;
+    case (SYMBOLTABLE(depends = d, explodedAst = e, instClsLst = i, 
+                      lstVarVal = v, compiledFunctions = c, loadedFiles = l), _)
+      then SYMBOLTABLE(inAST, d, e, i, v, c, l);
+  end matchcontinue;
+end setSymbolTableAST;
 
 end Interactive;

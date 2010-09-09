@@ -55,6 +55,7 @@ protected import Types;
 protected import ClassInf;
 protected import Algorithm;
 protected import System;
+protected import RTOpts;
 
 public function printDAE "function: printDAE
   This function prints out a list of elements (i.e. a DAE)
@@ -843,12 +844,36 @@ algorithm
     case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation
         str = Util.stringAppendList({" \"",cmt,"\""});
+        str = str +& dumpAnnotationOptionStr(annopt);
       then
         str;
-    case (SOME(SCode.COMMENT(annopt,NONE))) then "";
+    case (SOME(SCode.COMMENT(annopt,NONE)))
+      equation
+        str = dumpAnnotationOptionStr(annopt);
+      then
+        str;
   end matchcontinue;
 end dumpCommentOptionStr;
 
+protected function dumpAnnotationOptionStr
+  input Option<SCode.Annotation> inAnnotationOpt;
+  output String outString;
+algorithm
+  outString := matchcontinue(inAnnotationOpt)
+    local
+      SCode.Mod ann_mod;
+      String s;
+    case SOME(SCode.ANNOTATION(modification = ann_mod))
+      equation
+        true = RTOpts.showAnnotations();
+        s = SCode.printModStr(ann_mod);
+        s = " annotation(" +& s +& ")";
+      then
+        s;
+    case _ then "";
+  end matchcontinue;
+end dumpAnnotationOptionStr;
+  
 protected function dumpCommentOption "function: dumpCommentOption_str
   Dump Comment option."
   input Option<SCode.Comment> comment;

@@ -97,6 +97,10 @@ char* annotation_version = "2.x";
  */
 int showErrorMessages = 0;
 
+/* flag +showAnnotation for printing annotations when dumping the DAE as flat
+ * modelica */
+int showAnnotations = 0;
+
 void RTOpts_5finit(void)
 {
   type_info = 0;
@@ -275,6 +279,7 @@ void set_vectorization_limit(long limit)
 #define TARGET              "+target"
 #define METAMODELICA        "+g"
 #define SHOW_ERROR_MESSAGES "+showErrorMessages"
+#define SHOW_ANNOTATIONS    "+showAnnotations"
 #define NO_SIMPLIFY         "+noSimplify"
 
 RML_BEGIN_LABEL(RTOpts__args)
@@ -285,6 +290,7 @@ RML_BEGIN_LABEL(RTOpts__args)
   int strLen_METAMODELICA = strlen(METAMODELICA);
   int strLen_ANNNOTATION_VERSION = strlen(ANNOTATION_VERSION);
   int strLen_SHOW_ERROR_MESSAGES = strlen(SHOW_ERROR_MESSAGES);
+  int strLen_SHOW_ANNOTATIONS = strlen(SHOW_ANNOTATIONS);
 
   int strLen_NO_SIMPLIFY = strlen(NO_SIMPLIFY);
   debug_none = 1;
@@ -343,6 +349,16 @@ RML_BEGIN_LABEL(RTOpts__args)
         else
         {
           fprintf(stderr, "# Wrong option: usage: omc [+showErrorMessages], default to not show them.\n");
+          RML_TAILCALLK(rmlFC);
+        }
+    }
+    else if(strncmp(arg,SHOW_ANNOTATIONS,strLen_SHOW_ANNOTATIONS) == 0)
+    {
+        if (strlen(arg) == strLen_SHOW_ANNOTATIONS)
+            showAnnotations = 1;
+        else
+        {
+          fprintf(stderr, "# Wrong option: usage omc [+showAnnotations], default to not show them.\n");
           RML_TAILCALLK(rmlFC);
         }
     }
@@ -711,5 +727,19 @@ RML_BEGIN_LABEL(RTOpts__setVectorizationLimit)
   long limit = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
   set_vectorization_limit(limit);
 	RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__showAnnotations)
+{
+  rmlA0 = showAnnotations ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(RTOpts__setShowAnnotations)
+{
+  showAnnotations = RML_UNTAGFIXNUM(rmlA0);
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

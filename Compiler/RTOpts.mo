@@ -210,5 +210,15 @@ public function setVectorizationLimit
   external "C";
 end setVectorizationLimit;
 
+public function showAnnotations
+  output Boolean show;
+  external "C";
+end showAnnotations;
+
+public function setShowAnnotations
+  input Boolean show;
+  external "C";
+end setShowAnnotations;
+
 end RTOpts;
 
