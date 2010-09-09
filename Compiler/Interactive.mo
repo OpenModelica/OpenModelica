@@ -519,10 +519,12 @@ algorithm
       tuple<Absyn.Exp, list<Absyn.AlgorithmItem>> cond1;
       list<tuple<Absyn.Exp, list<Absyn.AlgorithmItem>>> cond2,cond3,elseifexpitemlist;
       list<Absyn.AlgorithmItem> algitemlist,elseitemlist;
+      list<InteractiveVariable> vars;
       String iter;
 			list<Absyn.AlgorithmItem> algItemList;
       Values.Value startv, stepv, stopv;
       Absyn.Exp starte, stepe, stope;
+      Absyn.ComponentRef cr;
       Env.Cache cache;
 
     case (Absyn.ALGORITHMITEM(
@@ -545,6 +547,19 @@ algorithm
         (_,Values.STRING(str),SOME(st_2)) = Ceval.ceval(cache,env, msg_1, true, SOME(st_1), NONE, Ceval.MSG());
       then
         (str,st_2);
+
+    case /* Special case to lookup fields of records.
+          * SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
+      (Absyn.ALGORITHMITEM(algorithm_ =
+        Absyn.ALG_ASSIGN(assignComponent =
+        Absyn.CREF(Absyn.CREF_IDENT(name = ident,subscripts = {})),value = Absyn.CREF(cr))),
+        (st as SYMBOLTABLE(lstVarVal = vars)))
+      equation
+        value = getVariableValueLst(listReverse(Absyn.pathToStringList(Absyn.crefToPath(cr))), vars);
+        str = ValuesUtil.valString(value);
+        t = Types.typeOfValue(value);
+        newst = addVarToSymboltable(ident, value, t, st);
+      then (str,newst);
 
     case
       (Absyn.ALGORITHMITEM(algorithm_ =
@@ -874,6 +889,15 @@ algorithm
       Absyn.Exp exp;
       Absyn.Program p;
       Env.Cache cache;
+      list<InteractiveVariable> vars;
+      Absyn.ComponentRef cr;
+
+      /* Special case to lookup fields of records.
+       * SimulationResult, etc are not in the environment, but it's nice to be able to script them anyway */
+    case (Absyn.CREF(cr),(st as SYMBOLTABLE(lstVarVal = vars)))
+      equation
+        value = getVariableValueLst(listReverse(Absyn.pathToStringList(Absyn.crefToPath(cr))), vars);
+      then (value,st);
 
     case (exp,(st as SYMBOLTABLE(ast = p)))
       equation
@@ -9516,6 +9540,49 @@ algorithm
         v;
   end matchcontinue;
 end getVariableValue;
+
+protected function getVariableValueLst
+"function: getVariableValue
+  Return the value of an interactive variable
+  from a list of InteractiveVariable."
+  input list<String> ids;
+  input list<InteractiveVariable> vars;
+  output Values.Value val;
+algorithm
+  val := matchcontinue (ids,vars)
+    local
+      Integer ix;
+      String id1,id2,id3;
+      Values.Value v;
+      list<InteractiveVariable> rest;
+      list<String> comp;
+      list<Values.Value> vals;
+      DAE.Type t;
+    
+    case (id1::id2::ids, (IVAR(varIdent = id3,value = Values.RECORD(orderd = vals, comp = comp),type_ = t) :: _))
+      equation
+        true = stringEqual(id1, id3);
+        ix = Util.listFindWithCompareFunc(comp, id2, stringEqual, false);
+        v = listNth(vals, ix);
+        v = getVariableValueLst(id2::ids, {IVAR(id2,v,(DAE.T_NOTYPE(),NONE()))});
+      then
+        v;
+    
+    case ({id1}, (IVAR(varIdent = id2,value = v,type_ = t) :: _))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        v;
+    
+    case (id1::_, (IVAR(varIdent = id2) :: rest))
+      equation
+        false = stringEqual(id1, id2);
+        v = getVariableValueLst(ids, rest);
+      then
+        v;
+    
+  end matchcontinue;
+end getVariableValueLst;
 
 protected function lookupClassdef
 "function: lookupClassdef

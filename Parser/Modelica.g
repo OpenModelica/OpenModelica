@@ -69,7 +69,7 @@ goto rule ## func ## Ex; }}
   #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
   #define mk_bcon(x) (x ? RML_TRUE : RML_FALSE)
 #if 0
-  /* Enable if you want to test this as a walker instead of a parser */
+  /* Enable if you don't want to generate the tree */
   void* mk_box_eat_all(int ix, ...);
   #define mk_scon(x) x
   #define mk_rcon(x) mk_box_eat_all(0,x)
