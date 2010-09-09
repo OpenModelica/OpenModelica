@@ -49,6 +49,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <time.h>
+#include "rtclock.h"
 #include "systemimpl.h"
 #include "rml.h"
 #include "config.h"
@@ -2978,4 +2979,22 @@ RML_BEGIN_LABEL(System__getCurrentTimeStr)
 RML_END_LABEL
 
 #endif /* MINGW32 and Linux */
+
+RML_BEGIN_LABEL(System__realtimeTick)
+{
+  int ix = RML_UNTAGFIXNUM(rmlA0);
+  if (ix < 0 || ix > 15) RML_TAILCALLK(rmlFC);
+  rt_tick(ix);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__realtimeTock)
+{
+  int ix = RML_UNTAGFIXNUM(rmlA0);
+  if (ix < 0 || ix > 15) RML_TAILCALLK(rmlFC);
+  rmlA0 = mk_rcon(rt_tock(ix));
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 

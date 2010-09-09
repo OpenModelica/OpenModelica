@@ -598,8 +598,10 @@ public function translateModel
   output DAELow.DAELow outDAELow;
   output list<String> outStringLst;
   output String outString;
+  output Real timeFrontend;
+  output Real timeBackend;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString):=
+  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString,timeFrontend,timeBackend):=
   matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp,addDummy)
     local
       String filenameprefix,file_dir;
@@ -621,10 +623,13 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p)),msg,fileprefix,addDummy)
       equation
         /* calculate stuff that we need to create SimCode data structure */
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         (cache,Values.STRING(filenameprefix),SOME(_)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st), NONE, msg);
         ptot = Dependency.getTotalProgram(className,p);
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
         (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         dae = DAEUtil.transformationsBeforeBackend(dae);
         dlow = DAELow.lower(dae, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
@@ -645,12 +650,14 @@ algorithm
         Debug.fcall("bltdump", DAELow.dumpMatching, ass1);
         Debug.fcall("bltdump", DAELow.dumpComponents, comps);
         Debug.fprintln("dynload", "translateModel: Generating simulation code and functions.");
+        timeBackend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
+        System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         a_cref = Absyn.pathToCref(className);
         file_dir = CevalScript.getFileDir(a_cref, p);
         (indexed_dlow_1, libs) = generateModelCode(p_1, dae, indexed_dlow_1, className, filenameprefix,
           file_dir, ass1, ass2, m, mT, comps);
       then
-        (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir);
+        (cache,Values.STRING("SimCode: The model has been translated"),st,indexed_dlow_1,libs,file_dir,timeFrontend,timeBackend);
   end matchcontinue;
 end translateModel;
 

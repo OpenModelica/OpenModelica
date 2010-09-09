@@ -220,5 +220,9 @@ public function setShowAnnotations
   external "C";
 end setShowAnnotations;
 
+public function getRunningTestsuite
+  output Boolean runningTestsuite;
+end getRunningTestsuite;
+
 end RTOpts;
 

@@ -31,7 +31,8 @@ $(CORBAOBJ) \
 $(srcdir)/modpar/libmodpar.a \
 $(srcdir)/runtime/settingsimpl.o \
 $(srcdir)/runtime/SimulationResults.o \
-$(srcdir)/runtime/IOStreamExt.o
+$(srcdir)/runtime/IOStreamExt.o \
+$(srcdir)/runtime/rtclock.o
 
 # The Susan-generated MO sources
 SUSANMO= \

@@ -76,6 +76,9 @@ int acceptedGrammar = GRAMMAR_MODELICA;
  * flag for turning of expression simplification!
  */
 int noSimplify = 0;
+/* Flag to to disable output that is computer-dependent,
+ * such as total runtime of a simulation. */
+int running_testsuite = 0;
 
 /*
  * @author adrpo
@@ -121,6 +124,7 @@ void RTOpts_5finit(void)
   showErrorMessages = 0;
   noSimplify = 0;
   vectorization_limit = 20;
+  running_testsuite = 0;
 }
 
 /*
@@ -281,6 +285,9 @@ void set_vectorization_limit(long limit)
 #define SHOW_ERROR_MESSAGES "+showErrorMessages"
 #define SHOW_ANNOTATIONS    "+showAnnotations"
 #define NO_SIMPLIFY         "+noSimplify"
+/* Note: RML runtime eats arguments starting with -:
+ * You need to use: omc -- --running-testsuite for it to work */
+#define TESTSCRIPT          "--running-testsuite"
 
 RML_BEGIN_LABEL(RTOpts__args)
 {
@@ -299,8 +306,10 @@ RML_BEGIN_LABEL(RTOpts__args)
   while (RML_GETHDR(args) != RML_NILHDR)
   {
     char *arg = RML_STRINGDATA(RML_CAR(args));
-    if(strcmp(arg,VERSION_OPT1) == 0 ||
-       strcmp(arg,VERSION_OPT2) == 0)
+    if (strcmp(arg,TESTSCRIPT) == 0) {
+      running_testsuite = 1;
+    } else if (strcmp(arg,VERSION_OPT1) == 0 ||
+        strcmp(arg,VERSION_OPT2) == 0)
     {
     	version_request = 1;
     }
@@ -714,6 +723,12 @@ RML_BEGIN_LABEL(RTOpts__getNoSimplify)
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(RTOpts__getRunningTestsuite)
+{
+  rmlA0 = running_testsuite?RML_TRUE:RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 RML_BEGIN_LABEL(RTOpts__vectorizationLimit)
 {

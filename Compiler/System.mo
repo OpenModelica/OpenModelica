@@ -688,5 +688,20 @@ is more generic and does not contain a date."
   external "C";
 end configureCommandLine;
 
+public function realtimeTick
+"Tock returns the time since the last tock; undefined if tick was never called.
+The clock index is 0-15. The function fails if the number is out of range."
+  input Integer clockIndex;
+  external "C";
+end realtimeTick;
+
+public function realtimeTock
+"Tock returns the time since the last tock, undefined if tick was never called.
+The clock index is 0-15. The function fails if the number is out of range."
+  input Integer clockIndex;
+  output Real outTime;
+  external "C";
+end realtimeTock;
+
 end System;
 
