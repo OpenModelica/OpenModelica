@@ -11246,54 +11246,7 @@ algorithm
     
     // seems unnecessary to handle when equations that are initial `for\' loops
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.   
-    // TODO! FIXME!: Why lookup after addForLoopScope? 
-    //               adrpo: I think is to see if the type of the iterator is INTEGER as we set the type of the range!  
 
-    // adrpo: handle the case where range is a enumeration!
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.CREF(cr),eEquationLst = el),initial_,impl,graph)
-      local 
-        Absyn.ComponentRef cr;
-        Absyn.Path typePath;
-        Integer len;
-        list<SCode.Element> elementLst;
-        list<Values.Value> vals;
-      equation 
-        typePath = Absyn.crefToPath(cr);
-        // make sure is an enumeration!
-        (_, SCode.CLASS(restriction = SCode.R_ENUMERATION(), classDef = SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) = 
-             Lookup.lookupClass(cache, env, typePath, false);
-        len = listLength(elementLst);        
-        env_1 = addForLoopScope(env, i, DAE.T_INTEGER_DEFAULT, SCode.VAR(), SOME(DAE.C_CONST()));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
-        vals = Ceval.cevalRange(1,1,len);
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals,{len}), el, initial_, impl,graph);
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-      then
-        (cache,env,ih,dae,csets_1,ci_state_1,graph);
-
-    // Frenkel TUD: enumeration again 
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.CREF(cr),eEquationLst = el),initial_,impl,graph)
-      local 
-        Absyn.ComponentRef cr;
-        Absyn.Path typePath;
-        Integer len;
-        list<SCode.Enum> enumLst;
-        list<Values.Value> vals;
-      equation 
-        typePath = Absyn.crefToPath(cr);
-        // make sure is an enumeration! 
-        (_, SCode.CLASS(restriction = SCode.R_TYPE(), classDef = SCode.ENUMERATION(enumLst = enumLst)), _) = 
-             Lookup.lookupClass(cache, env, typePath, false);
-        len = listLength(enumLst);        
-        env_1 = addForLoopScope(env, i, DAE.T_INTEGER_DEFAULT, SCode.VAR(), SOME(DAE.C_CONST()));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
-        vals = Ceval.cevalRange(1,1,len);
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, Values.ARRAY(vals,{len}), el, initial_, impl,graph);
-        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
-      then
-        (cache,env,ih,dae,csets_1,ci_state_1,graph);
     // Implicit range
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph)  
       equation 
@@ -11313,10 +11266,8 @@ algorithm
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_,fdae1) = 
           Static.elabExp(cache,env, e, impl, NONE,true, pre);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
-        = Lookup.lookupVar(cache,env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
-        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph);
+        (cache,dae,csets_1,graph) = unroll(cache,env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAEUtil.joinDaes(dae,fdae1);
       then
@@ -11327,10 +11278,8 @@ algorithm
       equation 
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true, pre);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_,_,_) 
-        = Lookup.lookupVar(cache, env_1, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{}));
         (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
-        (cache,dae,csets_1,graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, v, el, initial_, impl,graph);
+        (cache,dae,csets_1,graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAEUtil.joinDaes(dae,fdae1);
       then
@@ -11340,8 +11289,8 @@ algorithm
       where <expr> is not constant or parameter expression */  
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph)
       equation 
-        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(_),_)),_), constFlag = DAE.C_VAR()),_,_) 
-          = Static.elabExp(cache,env, e, impl, NONE,true,pre);
+        (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = _),_), constFlag = DAE.C_VAR()),_,_) 
+          = Static.elabExp(cache,env, e, impl, NONE,true,pre);  
         // adrpo: the iterator is not in the environment, this would fail!
         // (cache,DAE.ATTR(false,false,SCode.RW(),_,_,_),(DAE.T_INTEGER(_),_),DAE.UNBOUND(),_,_,_) 
         //  = Lookup.lookupVar(cache,env, DAE.CREF_IDENT(i,DAE.ET_OTHER(),{})) "for loops with non-constant iteration bounds" ;
@@ -12295,6 +12244,7 @@ protected function unroll "function: unroll
   input Connect.Sets inSets;
   input ClassInf.State inState;
   input Ident inIdent;
+  input DAE.Type inIteratorType;
   input Values.Value inValue;
   input list<SCode.EEquation> inSCodeEEquationLst;
   input SCode.Initial inInitial;
@@ -12306,7 +12256,7 @@ protected function unroll "function: unroll
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm 
   (outCache,outDae,outSets,outGraph):=
-  matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inState,inIdent,inValue,inSCodeEEquationLst,inInitial,inBoolean,inGraph)
+  matchcontinue (inCache,inEnv,inMod,inPrefix,inSets,inState,inIdent,inIteratorType,inValue,inSCodeEEquationLst,inInitial,inBoolean,inGraph)
     local
       Connect.Sets csets,csets_1,csets_2;
       list<Env.Frame> env_1,env_2,env_3,env;
@@ -12324,41 +12274,42 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       list<Integer> dims;
       Integer dim;
-    case (cache,_,_,_,csets,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph) 
+      DAE.Type ty;
+    case (cache,_,_,_,csets,_,_,_,Values.ARRAY(valueLst = {}),_,_,_,graph) 
     then (cache,DAEUtil.emptyDae,csets,graph);  /* impl */ 
     
     /* array equation, use instEEquation */
-    case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
+    case (cache,env,mods,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.NON_INITIAL()),impl,graph)
       equation
         dim = dim-1;
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = 
           instList(cache, env_2, InnerOuter.emptyInstHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
-        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
+        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,dae,csets_2,graph);
         
      /* initial array equation, use instEInitialEquation */
-    case (cache,env,mods,pre,csets,ci_state,i,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.INITIAL()),impl,graph)
+    case (cache,env,mods,pre,csets,ci_state,i,ty,Values.ARRAY(valueLst = (fst :: rest), dimLst = dim :: dims),eqs,(initial_ as SCode.INITIAL()),impl,graph)
       equation 
         dim = dim-1;
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
         /* Use instEInitialEquation*/
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = 
           instList(cache, env_2, InnerOuter.emptyInstHierarchy, mods, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
-        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
+        (cache,dae2,csets_2,graph) = unroll(cache,env, mods, pre, csets_1, ci_state_1, i, ty, Values.ARRAY(rest,dims), eqs, initial_, impl,graph);
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache,dae,csets_2,graph);
-    case (_,_,_,_,_,_,_,v,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,v,_,_,_,_)
       equation 
         true = RTOpts.debugFlag("failtrace");
         Debug.fprintln("failtrace", "- Inst.unroll failed: " +& ValuesUtil.valString(v));

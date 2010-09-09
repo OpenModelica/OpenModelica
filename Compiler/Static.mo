@@ -10430,13 +10430,14 @@ algorithm
     case (cache, env, c, impl, doVect, pre)
       local
         list<String> enum_lit_strs;
-        SCode.Class c;
+        SCode.Class cl;
       equation
         path = Absyn.crefToPath(c);
-        (cache, c as SCode.CLASS(restriction = SCode.R_ENUMERATION), env) = 
+        (cache, cl as SCode.CLASS(restriction = SCode.R_ENUMERATION), env) = 
           Lookup.lookupClass(cache, env, path, false);
-        SOME(path) = Env.getEnvPath(env);
-        enum_lit_strs = SCode.componentNames(c);
+        typeStr = Absyn.pathLastIdent(path);
+        path = Env.joinEnvPath(env, Absyn.IDENT(typeStr));
+        enum_lit_strs = SCode.componentNames(cl);
         (exp, t) = makeEnumerationArray(path, enum_lit_strs);
       then
         (cache,exp,DAE.PROP(t, DAE.C_CONST),SCode.RO(),DAEUtil.emptyDae);
