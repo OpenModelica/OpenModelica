@@ -9916,7 +9916,7 @@ algorithm
         gen_str = genStringNTime("   |", level);
         s = /*printComponentRefStr*/debugPrintComponentRefTypeStr(c);
         tpStr= typeString(ty);
-        res_str = Util.stringAppendList({gen_str,"CREF ",s,"\nCREFTYPE:",tpStr,"\n"});
+        res_str = Util.stringAppendList({gen_str,"CREF ",s," CREFTYPE:",tpStr,"\n"});
       then
         res_str;
     case (exp as DAE.BINARY(exp1 = e1,operator = op,exp2 = e2),level) /* Graphviz.LNODE(\"BINARY\",{sym},{},{lt,rt}) */
@@ -12842,7 +12842,7 @@ algorithm
         // this printing way will be useful when adressin the  'crefEqual' bug.
         //str = printComponentRef2Str(s, subs);
         str2 = typeString(ty);
-        str = Util.stringAppendList({str," [",str2,"]\n"});
+        str = Util.stringAppendList({str," [",str2,"]"});
       then
         str;
     case DAE.CREF_QUAL(ident = s,identType=ty,subscriptLst = subs,componentRef = cr) /* Does not handle names with underscores */
@@ -12867,7 +12867,7 @@ algorithm
         str_2 = stringAppend(str_1, strrest);
       then
         str_2;
-    case DAE.WILD() then "_\n";
+    case DAE.WILD() then "_";
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
 
