@@ -8240,7 +8240,7 @@ public function printExpStr
   input Exp e;
   output String s;
 algorithm
-  s := printExp2Str(e, "\"");
+  s := printExp2Str(e, "\"",printComponentRefStr,printCallFunction2Str);
 end printExpStr;
 
 public function printExp2Str
@@ -8248,10 +8248,21 @@ public function printExp2Str
   Helper function to printExpStr."
   input Exp inExp;
   input String stringDelimiter;
+  input printComponentRefStrFunc pcreffunc;
+  input printCallFunc pcallfunc;
+  partial function printComponentRefStrFunc
+    input ComponentRef inComponentRef;
+    output String outString;
+  end printComponentRefStrFunc;  
+  partial function printCallFunc
+    input Exp inExp;
+    input String stringDelimiter;
+    output String outString;
+  end printCallFunc;  
   output String outString;
 algorithm
   outString:=
-  matchcontinue (inExp, stringDelimiter)
+  matchcontinue (inExp, stringDelimiter, pcreffunc, pcallfunc)
     local
       Ident s,s_1,s_2,sym,s1,s2,s3,s4,s_3,ifstr,thenstr,elsestr,res,fs,argstr,s5,s_4,s_5,res2,str,crstr,dimstr,expstr,iterstr,id;
       Ident s1_1,s2_1,s1_2,s2_2,cs,ts,fs,cs_1,ts_1,fs_1,s3_1;
@@ -8263,44 +8274,45 @@ algorithm
       Operator op;
       Absyn.Path fcn;
       list<Exp> args,es;
-    case (DAE.END(), _) then "end";
-    case (DAE.ICONST(integer = x), _)
+    case (DAE.END(), _, _, _) then "end";
+    case (DAE.ICONST(integer = x), _, _, _)
       equation
         s = intString(x);
       then
         s;
-    case (DAE.RCONST(real = x), _)
+    case (DAE.RCONST(real = x), _, _, _)
       local Real x;
       equation
         s = realString(x);
       then
         s;
-    case (DAE.SCONST(string = s), _)
+    case (DAE.SCONST(string = s), _, _, _)
       equation
         s_1 = stringAppend(stringDelimiter, s);
         s_2 = stringAppend(s_1, stringDelimiter);
       then
         s_2;
-    case (DAE.BCONST(bool = false), _) then "false";
-    case (DAE.BCONST(bool = true), _) then "true";
-    case (DAE.CREF(componentRef = c,ty = t), _)
+    case (DAE.BCONST(bool = false), _, _, _) then "false";
+    case (DAE.BCONST(bool = true), _, _, _) then "true";
+    case (DAE.CREF(componentRef = c,ty = t), _, pcreffunc, _)
       equation
-        s = printComponentRefStr(c);
+        //s = printComponentRefStr(c);
+        s = pcreffunc(c);
       then
         s;
 
-    case (DAE.ENUM_LITERAL(name = lit), _)
+    case (DAE.ENUM_LITERAL(name = lit), _, _, _)
       local Absyn.Path lit;
       equation
         s = Absyn.pathString(lit);
       then
         s;
 
-    case (e as DAE.BINARY(e1,op,e2), _)
+    case (e as DAE.BINARY(e1,op,e2), _, _, _)
       equation
         sym = binopSymbol(op);
-        s1 = printExp2Str(e1, stringDelimiter);
-        s2 = printExp2Str(e2, stringDelimiter);
+        s1 = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
+        s2 = printExp2Str(e2, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         p1 = expPriority(e1);
         p2 = expPriority(e2);
@@ -8310,21 +8322,21 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-     case ((e as DAE.UNARY(op,e1)), _)
+     case ((e as DAE.UNARY(op,e1)), _, _, _)
       equation
         sym = unaryopSymbol(op);
-        s = printExp2Str(e1, stringDelimiter);
+        s = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         p1 = expPriority(e1);
         s_1 = parenthesize(s, p1, p,true);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-   case ((e as DAE.LBINARY(e1,op,e2)), _)
+   case ((e as DAE.LBINARY(e1,op,e2)), _, _, _)
       equation
         sym = lbinopSymbol(op);
-        s1 = printExp2Str(e1, stringDelimiter);
-        s2 = printExp2Str(e2, stringDelimiter);
+        s1 = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
+        s2 = printExp2Str(e2, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         p1 = expPriority(e1);
         p2 = expPriority(e2);
@@ -8334,21 +8346,21 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-   case ((e as DAE.LUNARY(op,e1)), _)
+   case ((e as DAE.LUNARY(op,e1)), _, _, _)
       equation
         sym = lunaryopSymbol(op);
-        s = printExp2Str(e1, stringDelimiter);
+        s = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         p1 = expPriority(e1);
         s_1 = parenthesize(s, p1, p,false);
         s_2 = stringAppend(sym, s_1);
       then
         s_2;
-    case ((e as DAE.RELATION(e1,op,e2)), _)
+    case ((e as DAE.RELATION(e1,op,e2)), _, _, _)
       equation
         sym = relopSymbol(op);
-        s1 = printExp2Str(e1, stringDelimiter);
-        s2 = printExp2Str(e2, stringDelimiter);
+        s1 = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
+        s2 = printExp2Str(e2, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         p1 = expPriority(e1);
         p2 = expPriority(e2);
@@ -8358,11 +8370,11 @@ algorithm
         s_1 = stringAppend(s, s2_1);
       then
         s_1;
-    case ((e as DAE.IFEXP(cond,tb,fb)), _)
+    case ((e as DAE.IFEXP(cond,tb,fb)), _, _, _)
       equation
-        cs = printExp2Str(cond, stringDelimiter);
-        ts = printExp2Str(tb, stringDelimiter);
-        fs = printExp2Str(fb, stringDelimiter);
+        cs = printExp2Str(cond, stringDelimiter, pcreffunc, pcallfunc);
+        ts = printExp2Str(tb, stringDelimiter, pcreffunc, pcallfunc);
+        fs = printExp2Str(fb, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         pc = expPriority(cond);
         pt = expPriority(tb);
@@ -8373,46 +8385,47 @@ algorithm
         str = Util.stringAppendList({"if ",cs_1," then ",ts_1," else ",fs_1});
       then
         str;
-    case (DAE.CALL(path = fcn,expLst = args), _)
+    case (e as DAE.CALL(path = fcn,expLst = args), _, _, _)
       equation
-        fs = Absyn.pathString(fcn);
-        argstr = Util.stringDelimitList(
-          Util.listMap1(args, printExp2Str, stringDelimiter), ",");
-        s = stringAppend(fs, "(");
-        s_1 = stringAppend(s, argstr);
-        s_2 = stringAppend(s_1, ")");
+        //fs = Absyn.pathString(fcn);
+        //argstr = Util.stringDelimitList(
+        //  Util.listMap3(args, printExp2Str, stringDelimiter, pcreffunc, pcallfunc), ",");
+        //s = stringAppend(fs, "(");
+        //s_1 = stringAppend(s, argstr);
+        //s_2 = stringAppend(s_1, ")");
+        s_2 = pcallfunc(e,stringDelimiter);
       then
         s_2;
 
-    case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _)
+    case (DAE.PARTEVALFUNCTION(path = fcn, expList = args), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
-          Util.listMap1(args, printExp2Str, stringDelimiter), ",");
+          Util.listMap3(args, printExp2Str, stringDelimiter, pcreffunc, pcallfunc), ",");
         s = stringAppend("function ", fs);
         s1 = stringAppend(s, "(");
         s2 = stringAppend(s1, argstr);
         s3 = stringAppend(s2, ")");
       then
         s3;
-    case (DAE.ARRAY(array = es,ty=tp), _)
+    case (DAE.ARRAY(array = es,ty=tp), _, _, _)
       local Type tp; String s3;
       equation
         // s3 = typeString(tp); // adrpo: not used!
         s = Util.stringDelimitList(
-          Util.listMap1(es, printExp2Str, stringDelimiter), ",");
+          Util.listMap3(es, printExp2Str, stringDelimiter, pcreffunc, pcallfunc), ",");
         s_2 = Util.stringAppendList({"{",s,"}"});
       then
         s_2;
-    case (DAE.TUPLE(PR = es), _)
+    case (DAE.TUPLE(PR = es), _, _, _)
       equation
         s = Util.stringDelimitList(
-          Util.listMap1(es, printExp2Str, stringDelimiter), ",");
+          Util.listMap3(es, printExp2Str, stringDelimiter, pcreffunc, pcallfunc), ",");
         s_1 = stringAppend("(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
-    case (DAE.MATRIX(scalar = es,ty=tp), _)
+    case (DAE.MATRIX(scalar = es,ty=tp), _, _, _)
       local list<list<tuple<Exp, Boolean>>> es;
         Type tp; String s3;
       equation
@@ -8422,10 +8435,10 @@ algorithm
         s_2 = Util.stringAppendList({"{{",s,"}}"});
       then
         s_2;
-    case (e as DAE.RANGE(_,start,NONE,stop), _)
+    case (e as DAE.RANGE(_,start,NONE,stop), _, _, _)
       equation
-        s1 = printExp2Str(start, stringDelimiter);
-        s3 = printExp2Str(stop, stringDelimiter);
+        s1 = printExp2Str(start, stringDelimiter, pcreffunc, pcallfunc);
+        s3 = printExp2Str(stop, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         pstart = expPriority(start);
         pstop = expPriority(stop);
@@ -8434,11 +8447,11 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s3_1});
       then
         s;
-    case ((e as DAE.RANGE(_,start,SOME(step),stop)), _)
+    case ((e as DAE.RANGE(_,start,SOME(step),stop)), _, _, _)
       equation
-        s1 = printExp2Str(start, stringDelimiter);
-        s2 = printExp2Str(step, stringDelimiter);
-        s3 = printExp2Str(stop, stringDelimiter);
+        s1 = printExp2Str(start, stringDelimiter, pcreffunc, pcallfunc);
+        s2 = printExp2Str(step, stringDelimiter, pcreffunc, pcallfunc);
+        s3 = printExp2Str(stop, stringDelimiter, pcreffunc, pcallfunc);
         p = expPriority(e);
         pstart = expPriority(start);
         pstop = expPriority(stop);
@@ -8449,14 +8462,14 @@ algorithm
         s = Util.stringAppendList({s1_1,":",s2_1,":",s3_1});
       then
         s;
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)), _)
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.ICONST(integer = ival)), _, _, _)
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
         res = realString(rval);
       then
         res;
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))), _)
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = DAE.UNARY(operator = DAE.UMINUS(ty = _),exp = DAE.ICONST(integer = ival))), _, _, _)
       equation
         false = RTOpts.modelicaOutput();
         rval = intReal(ival);
@@ -8464,111 +8477,136 @@ algorithm
         res2 = stringAppend("-", res);
       then
         res2;
-    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e), _)
+    case (DAE.CAST(ty = DAE.ET_REAL(),exp = e), _, _, _)
       equation
-        s = printExp2Str(e, stringDelimiter);
+        s = printExp2Str(e, stringDelimiter, pcreffunc, pcallfunc);
         s_2 = Util.stringAppendList({"Real(",s,")"});
       then
         s_2;
-    case (DAE.CAST(ty = tp,exp = e), _)
+    case (DAE.CAST(ty = tp,exp = e), _, _, _)
       equation
         str = typeString(tp);
-        s = printExp2Str(e, stringDelimiter);
+        s = printExp2Str(e, stringDelimiter, pcreffunc, pcallfunc);
         res = Util.stringAppendList({"DAE.CAST(",str,", ",s,")"});
       then
         res;
-    case (e as DAE.ASUB(exp = e1,sub = aexpl), _)
+    case (e as DAE.ASUB(exp = e1,sub = aexpl), _, _, _)
       local list<Exp> aexpl;
       equation
         p = expPriority(e);
         pe1 = expPriority(e1);
-        s1 = printExp2Str(e1, stringDelimiter);
+        s1 = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
         s1_1 = parenthesize(s1, pe1, p,false);
         s4 = Util.stringDelimitList(
-          Util.listMap1(aexpl,printExp2Str, stringDelimiter),", ");
+          Util.listMap3(aexpl,printExp2Str, stringDelimiter, pcreffunc, pcallfunc),", ");
         s_4 = s1_1+& "["+& s4 +& "]";
       then
         s_4;
-    case (DAE.SIZE(exp = cr,sz = SOME(dim)), _)
+    case (DAE.SIZE(exp = cr,sz = SOME(dim)), _, _, _)
       equation
-        crstr = printExp2Str(cr, stringDelimiter);
-        dimstr = printExp2Str(dim, stringDelimiter);
+        crstr = printExp2Str(cr, stringDelimiter, pcreffunc, pcallfunc);
+        dimstr = printExp2Str(dim, stringDelimiter, pcreffunc, pcallfunc);
         str = Util.stringAppendList({"size(",crstr,",",dimstr,")"});
       then
         str;
-    case (DAE.SIZE(exp = cr,sz = NONE), _)
+    case (DAE.SIZE(exp = cr,sz = NONE), _, _, _)
       equation
-        crstr = printExp2Str(cr, stringDelimiter);
+        crstr = printExp2Str(cr, stringDelimiter, pcreffunc, pcallfunc);
         str = Util.stringAppendList({"size(",crstr,")"});
       then
         str;
-    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp), _)
+    case (DAE.REDUCTION(path = fcn,expr = exp,ident = id,range = iterexp), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
-        expstr = printExp2Str(exp, stringDelimiter);
-        iterstr = printExp2Str(iterexp, stringDelimiter);
+        expstr = printExp2Str(exp, stringDelimiter, pcreffunc, pcallfunc);
+        iterstr = printExp2Str(iterexp, stringDelimiter, pcreffunc, pcallfunc);
         str = Util.stringAppendList({"<reduction>",fs,"(",expstr," for ",id," in ",iterstr,")"});
       then
         str;
 
 
       // MetaModelica tuple
-    case (DAE.META_TUPLE(es), _)
+    case (DAE.META_TUPLE(es), _, _, _)
       equation
-        s = printExp2Str(DAE.TUPLE(es), stringDelimiter);
+        s = printExp2Str(DAE.TUPLE(es), stringDelimiter, pcreffunc, pcallfunc);
       then
         s;
 
       // MetaModelica list
-    case (DAE.LIST(_,es), _)
+    case (DAE.LIST(_,es), _, _, _)
       local list<Exp> es;
       equation
         s = Util.stringDelimitList(
-          Util.listMap1(es,printExp2Str, stringDelimiter),",");
+          Util.listMap3(es,printExp2Str, stringDelimiter, pcreffunc, pcallfunc),",");
         s_1 = stringAppend("list(", s);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
 
         // MetaModelica list cons
-    case (DAE.CONS(_,e1,e2), _)
+    case (DAE.CONS(_,e1,e2), _, _, _)
       equation
-        s1 = printExp2Str(e1, stringDelimiter);
-        s2 = printExp2Str(e2, stringDelimiter);
+        s1 = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
+        s2 = printExp2Str(e2, stringDelimiter, pcreffunc, pcallfunc);
         s_2 = Util.stringAppendList({"cons(",s1,",",s2,")"});
       then
         s_2;
 
         // MetaModelica Option
-    case (DAE.META_OPTION(NONE), _) then "NONE";
-    case (DAE.META_OPTION(SOME(e1)), _)
+    case (DAE.META_OPTION(NONE), _, _, _) then "NONE";
+    case (DAE.META_OPTION(SOME(e1)), _, _, _)
       equation
-        s1 = printExp2Str(e1, stringDelimiter);
+        s1 = printExp2Str(e1, stringDelimiter, pcreffunc, pcallfunc);
         s_1 = Util.stringAppendList({"SOME(",s1,")"});
       then
         s_1;
 
      // MetaModelica Uniontype Constructor
-    case (DAE.METARECORDCALL(path = fcn, args=args), _)
+    case (DAE.METARECORDCALL(path = fcn, args=args), _, _, _)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
-          Util.listMap1(args,printExp2Str, stringDelimiter),",");
+          Util.listMap3(args,printExp2Str, stringDelimiter, pcreffunc, pcallfunc),",");
         s = stringAppend(fs, "(");
         s_1 = stringAppend(s, argstr);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
 
-    case (DAE.VALUEBLOCK(_,_,_,_), _) then "#valueblock#";
+    case (DAE.VALUEBLOCK(_,_,_,_), _, _, _) then "#valueblock#";
 
-    case (e, _)
+    case (e, _, _, _)
       equation
         // debug_print("unknown expression - printExp2Str: ", e);
       then
         "#UNKNOWN EXPRESSION# ----eee ";
   end matchcontinue;
 end printExp2Str;
+
+public function printCallFunction2Str
+"function: printCallFunction2Str
+  Print the exp of typ DAE.CALL."
+    input Exp inExp;
+    input String stringDelimiter;
+    output String outString;
+algorithm
+  outString := matchcontinue (inExp,stringDelimiter)
+    local
+      Ident s,s_1,s_2,fs,argstr;
+      Absyn.Path fcn;
+      list<Exp> args;
+    case (DAE.CALL(path = fcn,expLst = args), _)
+      equation
+        fs = Absyn.pathString(fcn);
+        argstr = Util.stringDelimitList(
+          Util.listMap3(args, printExp2Str, stringDelimiter, printComponentRefStr, printCallFunction2Str), ",");
+        s = stringAppend(fs, "(");
+        s_1 = stringAppend(s, argstr);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+  end matchcontinue;        
+end printCallFunction2Str;
 
 public function parenthesize
 "function: parenthesize
@@ -8680,7 +8718,7 @@ public function printRowStr
 algorithm
   es_1 := Util.listMap(es, Util.tuple21);
   s := Util.stringDelimitList(
-    Util.listMap1(es_1, printExp2Str, stringDelimiter), ",");
+    Util.listMap3(es_1, printExp2Str, stringDelimiter, printComponentRefStr, printCallFunction2Str), ",");
 end printRowStr;
 
 public function printLeftparStr

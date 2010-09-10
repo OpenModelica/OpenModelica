@@ -16358,7 +16358,7 @@ outExp := matchcontinue(inExp)
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_ARRAY_SCALAR(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_ARRAY_SCALAR"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,true) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
@@ -16366,7 +16366,7 @@ outExp := matchcontinue(inExp)
   case( (e as DAE.BINARY(exp1 = e1, operator = DAE.DIV_SCALAR_ARRAY(ty),exp2 = e2), (vars,varlst,dzer,divLst)))
     equation
       (se,false) = traversingDivExpFinder1(e,e2,(vars,varlst,dzer));
-    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
+    then ((e, (vars,varlst,dzer,DAE.CALL(Absyn.IDENT("DIVISION_SCALAR_ARRAY"), {DAE.RCONST(1.0),e2,DAE.SCONST(se)}, false, true, ty, DAE.NO_INLINE())::divLst) ));
   case(inExp) then (inExp);
 end matchcontinue;
 end traversingDivExpFinder;
@@ -16383,7 +16383,7 @@ algorithm
   (outString,outBool) := matchcontinue(inExp1,inExp2,inMode)
   local
     Variables vars;
-    DAE.Exp e,e_1,e2,e2_1;
+    DAE.Exp e,e2;
     String se;
     list<DAE.ComponentRef> crlst;
     Variables vars;
@@ -16394,9 +16394,7 @@ algorithm
     equation
       crlst = Exp.extractCrefsFromExp(e2);
       /* generade modelica strings */
-      e_1 = removeDivExpErrorMsgfromExp(e);
-      e2_1 = removeDivExpErrorMsgfromExp(e2);
-      se = generadeDivExpErrorMsg(e_1,e2_1,vars,crlst);
+      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
     then (se,false);    
   case( e , e2, (vars,varlst,ONLY_VARIABLES()) )
     equation
@@ -16405,9 +16403,7 @@ algorithm
       boollst = Util.listMap1r(crlst,isVarKnown,varlst);
       bres = Util.boolOrList(boollst);
       /* generade modelica strings */
-      e_1 = removeDivExpErrorMsgfromExp(e);
-      e2_1 = removeDivExpErrorMsgfromExp(e2);
-      se = generadeDivExpErrorMsg(e_1,e2_1,vars,crlst);
+      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
     then (se,bres);
 end matchcontinue;
 end traversingDivExpFinder1;
@@ -16464,52 +16460,54 @@ algorithm
   (crs,cors) := generadeDivExpErrorCrefRepl(inCrs,inVars);
   (e1,i) := Exp.replaceExpList(inExp,crs,cors);
   (e2,i) := Exp.replaceExpList(inDivisor,crs,cors);
-  se := Exp.printExpStr(e1);
-  se2 := Exp.printExpStr(e2);
+  se := Exp.printExp2Str(e1,"\"",Exp.printComponentRefStr, printCallFunction2Str);
+  se2 := Exp.printExp2Str(e2,"\"",Exp.printComponentRefStr, printCallFunction2Str);
   s := stringAppend(se," because ");
   s1 := stringAppend(s,se2);
   outString := stringAppend(s1," == 0");
 end generadeDivExpErrorMsg;
 
-protected  function removeDivExpErrorMsgfromExp "
-Author: Frenkel TUD 2010-02, Removes the error msg from Exp.Div.
-"
-input DAE.Exp inExp;
-output DAE.Exp outExp;
-algorithm outExps := matchcontinue(inExp)
-  case(inExp)
-    local DAE.Exp exp;
-    equation
-      ((exp,_)) = Exp.traverseExp(inExp, traversingDivExpFinder2, NONE());
+public function printCallFunction2Str
+"function: printCallFunction2Str
+  Print the exp of typ DAE.CALL."
+    input DAE.Exp inExp;
+    input String stringDelimiter;
+    output String outString;
+algorithm
+  outString := matchcontinue (inExp,stringDelimiter)
+    local
+      Exp.Ident s,s_1,s_2,fs,argstr;
+      Absyn.Path fcn;
+      list<DAE.Exp> args;
+      DAE.Exp e,e1,e2;
+      Exp.Type ty;
+    case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), _)
+      equation
+        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),"\"",Exp.printComponentRefStr,printCallFunction2Str);
       then
-        exp;
-  end matchcontinue;
-end removeDivExpErrorMsgfromExp;
-
-protected function traversingDivExpFinder2 "
-Author: Frenkel TUD 2010-02"
-  input tuple<DAE.Exp, Option<Integer> > inExp;
-  output tuple<DAE.Exp, Option<Integer> > outExp;
-algorithm outExp := matchcontinue(inExp)
-  local
-    Option<Integer> dummy;
-    DAE.Exp e,e1,e2;
-    Exp.Type ty;
-    Absyn.Path path;
-    list<DAE.Exp> expLst;
-    Boolean tuple_;
-    Boolean builtin;
-    DAE.ExpType ty;
-    DAE.InlineType inlineType;    
-  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), dummy ))
-    then ((DAE.BINARY(e1, DAE.DIV(ty),e2), dummy ));
-  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), dummy ))
-    then ((DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2), dummy ));
-  case( (e as DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), dummy ))
-    then ((DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2), dummy ));
-  case(inExp) then inExp;
-end matchcontinue;
-end traversingDivExpFinder2;
+        s;
+    case( DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _)
+      equation
+        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),"\"",Exp.printComponentRefStr,printCallFunction2Str);
+      then
+        s;
+    case( DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _)
+      equation
+        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),"\"",Exp.printComponentRefStr,printCallFunction2Str);
+      then
+        s;
+    case (DAE.CALL(path = fcn,expLst = args), _)
+      equation
+        fs = Absyn.pathString(fcn);
+        argstr = Util.stringDelimitList(
+          Util.listMap3(args, Exp.printExp2Str, stringDelimiter, Exp.printComponentRefStr, printCallFunction2Str), ",");
+        s = stringAppend(fs, "(");
+        s_1 = stringAppend(s, argstr);
+        s_2 = stringAppend(s_1, ")");
+      then
+        s_2;
+  end matchcontinue;        
+end printCallFunction2Str;
 
 protected function extendRecordEqns "
 Author: Frenkel TUD 2010-05"
