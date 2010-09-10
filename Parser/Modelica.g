@@ -150,7 +150,7 @@ class_definition_list returns [void* ast] :
     }
   ;
 
-class_definition [bool final] returns [void* ast] :
+class_definition [int final] returns [void* ast] :
   ((e=ENCAPSULATED)? (p=PARTIAL)? ct=class_type cs=class_specifier)
     {
       $ast = Absyn__CLASS($cs.name, mk_bcon(p), mk_bcon(final), mk_bcon(e), ct, $cs.ast, INFO($start));
@@ -551,7 +551,7 @@ element_redeclaration returns [void* ast] :
      }
   ;
 
-element_replaceable [bool each, bool final, bool redeclare] returns [void* ast] :
+element_replaceable [int each, int final, int redeclare] returns [void* ast] :
   REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
     {
       ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
@@ -902,7 +902,7 @@ factor returns [void* ast] :
   ;
 
 primary returns [void* ast] @declarations {
-  bool tupleExpressionIsTuple = 0;
+  int tupleExpressionIsTuple = 0;
 } :
   ( v=UNSIGNED_INTEGER
     {
@@ -984,7 +984,7 @@ name_path2 returns [void* ast] :
   | id=IDENT DOT p=name_path {ast = Absyn__QUALIFIED(token_to_scon(id),p);}
   ;
 
-name_path_star returns [void* ast, bool unqual] :
+name_path_star returns [void* ast, int unqual] :
   (dot=DOT)? np=name_path_star2
     {
       $ast = dot ? Absyn__FULLYQUALIFIED(np.ast) : np.ast;
@@ -992,7 +992,7 @@ name_path_star returns [void* ast, bool unqual] :
     }
   ;
 
-name_path_star2 returns [void* ast, bool unqual] :
+name_path_star2 returns [void* ast, int unqual] :
     { LA(2) != DOT }? id=IDENT ( uq=STAR_EW )?
     {
       $ast = Absyn__IDENT(token_to_scon(id));
@@ -1043,7 +1043,7 @@ function_arguments returns [void* ast] :
     }
   ;
 
-for_or_expression_list returns [void* ast, bool isFor]:
+for_or_expression_list returns [void* ast, int isFor]:
   ( {LA(1)==IDENT || LA(1)==OPERATOR && LA(2) == EQUALS || LA(1) == RPAR || LA(1) == RBRACE}? { $ast = mk_nil(); $isFor = 0; }
   | ( e=expression
       ( (COMMA el=for_or_expression_list2)
@@ -1076,7 +1076,7 @@ named_argument returns [void* ast] :
   ( id=IDENT | id=OPERATOR) EQUALS e=expression {ast = Absyn__NAMEDARG(token_to_scon(id),e);}
   ;
 
-output_expression_list [bool* isTuple] returns [void* ast] :
+output_expression_list [int* isTuple] returns [void* ast] :
   ( RPAR
     {
       ast = mk_nil();
@@ -1189,7 +1189,7 @@ code_algorithm_clause returns [void* ast] :
 /* End Code quotation mechanism */
 
 
-top_algorithm returns [void* ast, bool isExp] :
+top_algorithm returns [void* ast, int isExp] :
   ( aa=top_assign_clause_a
   | a=conditional_equation_a
   | a=for_clause_a
@@ -1207,7 +1207,7 @@ top_algorithm returns [void* ast, bool isExp] :
     }
   ;
 
-top_assign_clause_a returns [void* ast, bool isExp] :
+top_assign_clause_a returns [void* ast, int isExp] :
   (e1=simple_expression|e1=code_expression) (ASSIGN e2=expression)?
     {
       if (e2) {
@@ -1222,7 +1222,7 @@ top_assign_clause_a returns [void* ast, bool isExp] :
 
 interactive_stmt returns [void* ast]
 @declarations {
-bool last_sc = 0;
+int last_sc = 0;
 } :
   // A list of expressions or algorithms separated by semicolons and optionally ending with a semicolon
   ss=interactive_stmt_list[&last_sc] EOF
@@ -1231,7 +1231,7 @@ bool last_sc = 0;
     }
   ;
 
-interactive_stmt_list [bool *last_sc] returns [void* ast] @init {
+interactive_stmt_list [int *last_sc] returns [void* ast] @init {
   $ast = 0;
 } :
   a=top_algorithm ((SEMICOLON ss=interactive_stmt_list[last_sc])|(SEMICOLON {*last_sc = 1;})|)

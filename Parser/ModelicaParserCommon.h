@@ -32,10 +32,6 @@
 #ifndef MODELICA_PARSER_COMMON_H
 #define MODELICA_PARSER_COMMON_H
 
-#ifndef __cplusplus
-typedef unsigned char bool;
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif

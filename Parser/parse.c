@@ -28,17 +28,21 @@
  *
  */
 
+#ifdef __cplusplus
+/* Make sure we don't use any C++ features anywhere */
+#define __cplusplusend
+#undef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+
 #include <MetaModelica_Lexer.h>
 #include <Modelica_3_Lexer.h>
 #include <ModelicaParser.h>
-#include <errno.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 #include "runtime/errorext.h"
 #include "runtime/rtopts.h" /* for accept_meta_modelica_grammar() function */
@@ -429,6 +433,6 @@ RML_BEGIN_LABEL(Parser__parsestringexp)
 RML_END_LABEL
 
 
-#ifdef __cplusplus
+#ifdef __cplusplusend
 }
 #endif
