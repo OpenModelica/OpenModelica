@@ -463,7 +463,7 @@ type_prefix returns [void* flow, void* stream, void* variability, void* directio
 
 type_specifier returns [void* ast] :
   np=name_path
-  ((LESS ts=type_specifier_list GREATER)|(as=array_subscripts))?
+  (LESS ts=type_specifier_list GREATER)? (as=array_subscripts)?
     {
       if (ts != NULL)
         ast = Absyn__TCOMPLEX(np,ts,mk_some_or_none(as));

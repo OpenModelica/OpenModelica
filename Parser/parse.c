@@ -251,8 +251,9 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
   case ANTLR3_RECOGNITION_EXCEPTION:
   default:
     token_text[2] = (const char*)ex->message;
-    token_text[1] = (const char*)preToken->getText(preToken)->chars;
+    token_text[1] = preToken->type == ANTLR3_TOKEN_EOF ? "" : (const char*)preToken->getText(preToken)->chars;
     token_text[0] = preToken->type == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*) tokenNames[preToken->type];
+    if (preToken->type == ANTLR3_TOKEN_EOF) n_offset = p_offset;
     c_add_source_message(2, "SYNTAX", "Error", "Parser error: %s near: %s (%s)", token_text, 3, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   }
