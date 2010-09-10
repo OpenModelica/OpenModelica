@@ -48,9 +48,10 @@ void rt_tick(int ix) {
 
 double rt_tock(int ix) {
   LARGE_INTEGER tock_tp;
+  double d1,d2;
   QueryPerformanceCounter(&tock_tp);
-  double d1 = (double)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
-  double d2 = (double) performance_frequency.QuadPart;
+  d1 = (double)(tock_tp.QuadPart - tick_tp[ix].QuadPart);
+  d2 = (double) performance_frequency.QuadPart;
   return d1 / d2;
 }
 
@@ -68,7 +69,7 @@ void rt_tick(int ix) {
 double rt_tock(int ix) {
   uint64_t tock_tp = mach_absolute_time();
   uint64_t nsec;
-  static mach_timebase_info_data_t info = {0,0};  
+  static mach_timebase_info_data_t info = {0,0};
   if (info.denom == 0)
     mach_timebase_info(&info);
   uint64_t elapsednano = (tock_tp-tick_tp[ix]) * (info.numer / info.denom);
