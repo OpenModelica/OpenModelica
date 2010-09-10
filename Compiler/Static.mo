@@ -9089,27 +9089,38 @@ algorithm
       DAE.ExpType etp;
     case (e,{},_,prop) then (e,prop);
     
+    // If the dimension is not defined we can't vectorize the call. If we are running
+    // checkModel this should succeed anyway, since we might be checking a function
+    // that takes a vector of unknown size. So pretend that the dimension is 1.
+    case (e, (DAE.DIM_NONE :: ad), slots, prop)
+      equation
+        true = OptManager.getOption("checkModel");
+        (vect_exp_1, prop) = vectorizeCall(e, DAE.DIM_INTEGER(1) :: ad, slots, prop);
+      then 
+        (vect_exp_1, prop);
+        
     /* Scalar expression, i.e function call */
     case (e as DAE.CALL(path = fn,expLst = args,tuple_ = tuple_,builtin = builtin,ty = etp,inlineType=inl),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation 
-        exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
         int_dim = Exp.dimensionSize(dim);
+        exp_type = Types.elabType(Types.liftArray(tp, dim)) "pass type of vectorized result expr";
         vect_exp = vectorizeCallScalar(DAE.CALL(fn,args,tuple_,builtin,etp,inl), exp_type, int_dim, slots);
         tp = Types.liftArray(tp, dim);
-        (vect_exp_1,DAE.PROP(tp,c)) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
+        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
       then
-        (vect_exp_1,DAE.PROP(tp,c));
+        (vect_exp_1,prop);
     
     /* array expression of function calls */
     case (DAE.ARRAY(scalar = scalar,array = expl),(dim :: ad),slots,DAE.PROP(tp,c)) 
       equation
-        exp_type = Types.elabType(Types.liftArray(tp, dim));
         int_dim = Exp.dimensionSize(dim);
+        exp_type = Types.elabType(Types.liftArray(tp, dim));
         vect_exp = vectorizeCallArray(inExp, int_dim, slots);
         tp = Types.liftArrayRight(tp, dim);
-        (vect_exp_1,DAE.PROP(tp,c)) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
+        (vect_exp_1,prop) = vectorizeCall(vect_exp, ad, slots, DAE.PROP(tp,c));
       then
-        (vect_exp_1,DAE.PROP(tp,c));
+        (vect_exp_1,prop);
+        
     case (_,_,_,_)
       equation
         Debug.fprintln("failtrace", "- Static.vectorizeCall failed");
