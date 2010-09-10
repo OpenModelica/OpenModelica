@@ -321,20 +321,27 @@ algorithm
     case TYPE(path = p) then p;
     case PACKAGE(path = p) then p;
     case FUNCTION(path = p) then p;
+    case ENUMERATION(path = p) then p;
+      
+    case HAS_EQUATIONS(path = p) then p;
+    case IS_NEW(path = p) then p;
+            
     case TYPE_INTEGER(path = p) then p;
     case TYPE_REAL(path = p) then p;
     case TYPE_STRING(path = p) then p;
     case TYPE_BOOL(path = p) then p;
-    case IS_NEW(path = p) then p;
-    case HAS_EQUATIONS(path = p) then p;
+    case TYPE_ENUM(path = p) then p;
+      
     case EXTERNAL_OBJ(p) then p;
+    
     case META_TUPLE(p) then p;
     case META_LIST(p) then p;
     case META_OPTION(p) then p;
     case META_RECORD(p) then p;
-    case META_POLYMORPHIC(p) then p;
-    case META_ARRAY(p) then p;
     case UNIONTYPE(p) then p;
+    case META_ARRAY(p) then p;      
+    case META_POLYMORPHIC(p) then p;
+      
     case _ then Absyn.IDENT("#getStateName failed#");
   end matchcontinue;
 end getStateName;

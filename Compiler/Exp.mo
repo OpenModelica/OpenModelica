@@ -882,7 +882,7 @@ algorithm
         true;
     case (DAE.CAST(ty = t,exp = e))
       equation
-        res = isOne(e) "Casting to zero is still zero" ;
+        res = isOne(e) "Casting to one is still one" ;
       then
         res;
     case (_) then false;
@@ -5570,7 +5570,7 @@ algorithm
     // constant real 1.0
     case DAE.RCONST(rval)
       equation
-        true = realEq(rval, 1.0);        
+        true = realEq(rval, 1.0);
       then
         true;
     

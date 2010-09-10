@@ -3917,6 +3917,16 @@ algorithm
   end matchcontinue;
 end getAllClassPathsRecursive;
 
+protected function filterLib
+  input Absyn.Path path;
+  output Boolean b;
+  Boolean b1, b2;
+algorithm
+  b1 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Media")), path);
+  b2 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Fluid")), path);
+  b  := b1 and b2; 
+end filterLib;
+
 public function checkAllModelsRecursive
 "@author adrpo
  checks all models and returns number of variables and equations"
@@ -3947,6 +3957,7 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
+        // allClassPaths = Util.listSelect(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
@@ -4034,7 +4045,7 @@ algorithm
     case (cache,env,className::rest,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         c = Interactive.getPathedClassInProgram(className, p);
-        print("Skipping: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");
+        print("Checking skipped: " +& Dump.unparseClassAttributesStr(c) +& " " +& Absyn.pathString(className) +& "... \n");
         checkAll(cache, env, rest, st, msg);
       then
         ();
