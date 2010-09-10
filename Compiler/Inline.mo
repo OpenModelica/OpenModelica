@@ -57,7 +57,6 @@ public type Functiontuple = tuple<Option<list<DAE.Element>>,Option<DAE.FunctionT
 protected import Debug;
 protected import DAEUtil;
 protected import Exp;
-protected import VarTransform;
 
 public function inlineCalls
 "function: inlineCalls

@@ -961,7 +961,7 @@ protected function printExpStr
   input DAE.Exp e;
   output String s;
 algorithm
-  s := Exp.printExp2Str(e, "'", Exp.printComponentRefStr, Exp.printCallFunction2Str);
+  s := Exp.printExp2Str(e, "'", NONE(),NONE());
 end printExpStr;
 
 end DAEQuery;

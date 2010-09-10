@@ -16300,25 +16300,21 @@ public function addDivExpErrorMsgtoExp "
 Author: Frenkel TUD 2010-02, Adds the error msg to Exp.Div.
 "
 input DAE.Exp inExp;
-input tuple<DAELow,DivZeroExpReplace> inDlowMode;
+input tuple<Variables,list<Var>,DivZeroExpReplace> inDlowMode;
 output DAE.Exp outExp;
 output list<DAE.Exp> outDivLst;
 algorithm 
   (outExps,outDivLst) := matchcontinue(inExp,inDlowMode)
-  case(inExp,inDlowMode as (dlow as DAELOW(orderedVars=orderedVars,knownVars=knownVars),dzer))
+  case(inExp,inDlowMode as (vars,varlst,dzer))
     local 
       DAE.Exp exp; 
       DAELow dlow;
       DivZeroExpReplace dzer;
       list<DAE.Exp> divlst;
-      Variables orderedVars,knownVars,vars;
-      list<Var> varlst,varlst1,varlst2;
+      Variables vars;
+      list<Var> varlst;
     equation
-      varlst = varList(orderedVars);
-      varlst1 = varList(knownVars);
-      varlst2 = listAppend(varlst,varlst1);  
-      vars = listVar(varlst2);       
-      ((exp,(_,_,_,divlst))) = Exp.traverseExp(inExp, traversingDivExpFinder, (vars,varlst2,dzer,{}));
+      ((exp,(_,_,_,divlst))) = Exp.traverseExp(inExp, traversingDivExpFinder, (vars,varlst,dzer,{}));
       then
         (exp,divlst);
   end matchcontinue;
@@ -16392,57 +16388,20 @@ algorithm
     Boolean bres;
   case( e , e2, (vars,varlst,ALL()) )
     equation
-      crlst = Exp.extractCrefsFromExp(e2);
       /* generade modelica strings */
-      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
+      se = generadeDivExpErrorMsg(e,e2,vars);
     then (se,false);    
   case( e , e2, (vars,varlst,ONLY_VARIABLES()) )
     equation
+      /* generade modelica strings */
+      se = generadeDivExpErrorMsg(e,e2,vars);
       /* check if expression contains variables */
       crlst = Exp.extractCrefsFromExp(e2);
       boollst = Util.listMap1r(crlst,isVarKnown,varlst);
       bres = Util.boolOrList(boollst);
-      /* generade modelica strings */
-      se = generadeDivExpErrorMsg(e,e2,vars,crlst);
     then (se,bres);
 end matchcontinue;
 end traversingDivExpFinder1;
-
-protected  function generadeDivExpErrorCrefRepl "
-Author: Frenkel TUD 2010-02. generadeDivExpErrorCrefRepl
-"
-input list<DAE.ComponentRef> inCrs;
-input Variables inVars;
-output list<DAE.Exp> outCrs;
-output list<DAE.Exp> outOrigCrs;
-algorithm 
-  (outCrs,outOrigCrs) := matchcontinue(inCrs,inVars)
-    local 
-      list<DAE.ComponentRef> crefs;
-      list<DAE.Exp> crefs1,corefs;
-      DAE.ComponentRef c,co;
-      Variables variables;
-    case(c::{},variables)
-      equation
-        ((VAR(varName=co):: _),_) = getVar(c,variables);
-      then
-        ({DAE.CREF(c,DAE.ET_OTHER())},{DAE.CREF(co,DAE.ET_OTHER())});
-    case(c::{},variables)
-      then
-        ({DAE.CREF(c,DAE.ET_OTHER())},{DAE.CREF(c,DAE.ET_OTHER())});
-    case(c::crefs,variables)
-      equation
-        ((VAR(varName=co):: _),_) = getVar(c,variables);
-        (crefs1,corefs) = generadeDivExpErrorCrefRepl(crefs,variables);
-      then
-        (DAE.CREF(c,DAE.ET_OTHER())::crefs1,DAE.CREF(co,DAE.ET_OTHER())::corefs);
-    case(c::crefs,variables)
-      equation
-        (crefs1,corefs) = generadeDivExpErrorCrefRepl(crefs,variables);
-      then
-        (crefs1,corefs);
-  end matchcontinue;
-end generadeDivExpErrorCrefRepl;
 
 protected  function generadeDivExpErrorMsg "
 Author: Frenkel TUD 2010-02. varOrigCref
@@ -16450,64 +16409,90 @@ Author: Frenkel TUD 2010-02. varOrigCref
 input DAE.Exp inExp;
 input DAE.Exp inDivisor;
 input Variables inVars;
-input list<DAE.ComponentRef> inCrs;
 output String outString;
 protected String se,se2,s,s1;
-protected list<DAE.Exp> crs,cors;
-protected DAE.Exp e1,e2;
-protected Integer i;
 algorithm
-  (crs,cors) := generadeDivExpErrorCrefRepl(inCrs,inVars);
-  (e1,i) := Exp.replaceExpList(inExp,crs,cors);
-  (e2,i) := Exp.replaceExpList(inDivisor,crs,cors);
-  se := Exp.printExp2Str(e1,"\"",Exp.printComponentRefStr, printCallFunction2Str);
-  se2 := Exp.printExp2Str(e2,"\"",Exp.printComponentRefStr, printCallFunction2Str);
+  se := Exp.printExp2Str(inExp,"\"",SOME((printComponentRefStrDIVISION,inVars)), SOME(printCallFunction2StrDIVISION));
+  se2 := Exp.printExp2Str(inDivisor,"\"",SOME((printComponentRefStrDIVISION,inVars)), SOME(printCallFunction2StrDIVISION));
   s := stringAppend(se," because ");
   s1 := stringAppend(s,se2);
   outString := stringAppend(s1," == 0");
 end generadeDivExpErrorMsg;
 
-public function printCallFunction2Str
+protected  function printComponentRefStrDIVISION "
+Author: Frenkel TUD 2010-02. printComponentRefStr
+"
+input DAE.ComponentRef inCref;
+input Variables inVars;
+output String outString;
+algorithm 
+  outString := matchcontinue(inCref,inVars)
+    local 
+      DAE.ComponentRef c,co;
+      Variables variables;
+      String sc;
+    case(c,variables)
+      equation
+        ((VAR(varName=co):: _),_) = getVar(c,variables);
+        sc = Exp.printComponentRefStr(co);
+      then
+        sc;
+    case(c,variables)
+      equation
+        sc = Exp.printComponentRefStr(c);
+      then
+        sc;
+  end matchcontinue;
+end printComponentRefStrDIVISION;
+
+public function printCallFunction2StrDIVISION
 "function: printCallFunction2Str
   Print the exp of typ DAE.CALL."
-    input DAE.Exp inExp;
-    input String stringDelimiter;
+  input DAE.Exp inExp;
+  input String stringDelimiter;
+  input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that print component references and a extra parameter passet throug the function";
+  output String outString;
+  replaceable type Type_a subtypeof Any;
+  partial function printComponentRefStrFunc
+    input DAE.ComponentRef inComponentRef;
+    input Type_a Param;
     output String outString;
+  end printComponentRefStrFunc;     
 algorithm
-  outString := matchcontinue (inExp,stringDelimiter)
+  outString := matchcontinue (inExp,stringDelimiter,opcreffunc)
     local
       Exp.Ident s,s_1,s_2,fs,argstr;
       Absyn.Path fcn;
       list<DAE.Exp> args;
       DAE.Exp e,e1,e2;
       Exp.Type ty;
-    case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), _)
+    case( DAE.CALL(path = Absyn.IDENT("DIVISION"), expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty = ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
-        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),"\"",Exp.printComponentRefStr,printCallFunction2Str);
+        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
-    case( DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _)
+    case( DAE.CALL(path = Absyn.IDENT("DIVISION_ARRAY_SCALAR"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
-        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),"\"",Exp.printComponentRefStr,printCallFunction2Str);
+        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_ARRAY_SCALAR(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
-    case( DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _)
+    case( DAE.CALL(path = Absyn.IDENT("DIVISION_SCALAR_ARRAY"),expLst = {e1,e2,DAE.SCONST(_)}, tuple_ = false,builtin = true,ty =ty,inlineType = DAE.NO_INLINE()), _, _)
       equation
-        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),"\"",Exp.printComponentRefStr,printCallFunction2Str);
+        s = Exp.printExp2Str(DAE.BINARY(e1,DAE.DIV_SCALAR_ARRAY(ty),e2),stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION));
       then
         s;
-    case (DAE.CALL(path = fcn,expLst = args), _)
+    case (DAE.CALL(path = fcn,expLst = args), _,_)
       equation
         fs = Absyn.pathString(fcn);
         argstr = Util.stringDelimitList(
-          Util.listMap3(args, Exp.printExp2Str, stringDelimiter, Exp.printComponentRefStr, printCallFunction2Str), ",");
+          Util.listMap3(args, Exp.printExp2Str, stringDelimiter,opcreffunc, SOME(printCallFunction2StrDIVISION)), ",");
         s = stringAppend(fs, "(");
         s_1 = stringAppend(s, argstr);
         s_2 = stringAppend(s_1, ")");
       then
         s_2;
   end matchcontinue;        
-end printCallFunction2Str;
+end printCallFunction2StrDIVISION;
 
 protected function extendRecordEqns "
 Author: Frenkel TUD 2010-05"

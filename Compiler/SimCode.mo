@@ -1239,7 +1239,9 @@ algorithm
       list<tuple<Integer, DAE.Exp>> delayedExps;
       list<DAE.Exp> divLst;
       list<DAE.Statement> allDivStmts;
-            
+      DAELow.Variables orderedVars,knownVars,vars;
+      list<DAELow.Var> varlst,varlst1,varlst2;
+                  
     case (dae,dlow,ass1,ass2,m,mt,comps,class_,fileDir,functions,libs)
       equation
         cname = Absyn.pathString(class_);
@@ -1273,17 +1275,23 @@ algorithm
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         makefileParams = createMakefileParams(libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
-        
+       
         // replace div operator with div operator with check of Division by zero
-        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        (allEquationsPlusWhen,_) = listMap1_2(allEquationsPlusWhen,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        (stateContEquations,_) = listMap1_2(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        (nonStateContEquations,_) = listMap1_2(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        (nonStateDiscEquations,_) = listMap1_2(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
-        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
-        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
-        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ALL()));        
-        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(dlow,DAELow.ONLY_VARIABLES()));        
+        orderedVars = DAELow.daeVars(dlow);
+        knownVars = DAELow.daeKnVars(dlow);
+      	varlst = DAELow.varList(orderedVars);
+      	varlst1 = DAELow.varList(knownVars);
+      	varlst2 = listAppend(varlst,varlst1);  
+      	vars = DAELow.listVar(varlst2);         
+        (allEquations,divLst) = listMap1_2(allEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
+        (allEquationsPlusWhen,_) = listMap1_2(allEquationsPlusWhen,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
+        (stateContEquations,_) = listMap1_2(stateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
+        (nonStateContEquations,_) = listMap1_2(nonStateContEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
+        (nonStateDiscEquations,_) = listMap1_2(nonStateDiscEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
+        (residualEquations,_) = listMap1_2(residualEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ALL()));        
+        (initialEquations,_) = listMap1_2(initialEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ALL()));        
+        (parameterEquations,_) = listMap1_2(parameterEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ALL()));        
+        (removedEquations,_) = listMap1_2(removedEquations,addDivExpErrorMsgtoSimEqSystem,(vars,varlst2,DAELow.ONLY_VARIABLES()));        
         // add equations with only parameters as division expression
         allDivStmts = Util.listMap(divLst,generateParameterDivisionbyZeroTestEqn);
         parameterEquations = listAppend(parameterEquations,{SES_ALGORITHM(allDivStmts)});
@@ -6938,7 +6946,7 @@ protected function addDivExpErrorMsgtosimJac
 "function addDivExpErrorMsgtosimJac
   helper for addDivExpErrorMsgtoSimEqSystem."
   input tuple<Integer, Integer, SimEqSystem> inJac;
-  input tuple<DAELow.DAELow,DAELow.DivZeroExpReplace> inDlowMode;
+  input tuple<DAELow.Variables,list<DAELow.Var>,DAELow.DivZeroExpReplace> inDlowMode;
   output tuple<Integer, Integer, SimEqSystem> outJac;
   output list<DAE.Exp> outDivLst;
 algorithm
@@ -6960,7 +6968,7 @@ protected function addDivExpErrorMsgtoSimEqSystem
 "function addDivExpErrorMsgtoSimEqSystem
   Traverses all subexpressions of an expression of an equation."
   input SimEqSystem inSES;
-  input tuple<DAELow.DAELow,DAELow.DivZeroExpReplace> inDlowMode;
+  input tuple<DAELow.Variables,list<DAELow.Var>,DAELow.DivZeroExpReplace> inDlowMode;
   output SimEqSystem outSES;
   output list<DAE.Exp> outDivLst;
 algorithm
