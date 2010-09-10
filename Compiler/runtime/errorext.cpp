@@ -234,7 +234,7 @@ extern "C"
       printf("ERROREXT: caling rollback with id: %s on empty checkpoint stack\n",id);
         exit(-1);
     }
-    fprintf(stderr, "Returning %s\n", res.c_str());
+    // fprintf(stderr, "Returning %s\n", res.c_str());
     return mk_scon((char*)res.c_str());
   }
 

@@ -302,7 +302,7 @@ void* parseStream(pANTLR3_INPUT_STREAM input)
   psr->pParser->rec->recoverFromMismatchedToken = noRecoverFromMismatchedToken;
   // psr->pParser->rec->recoverFromMismatchedSet = noRecoverFromMismatchedSet;
 
-  void* res;
+  void* res = NULL;
   /* if (ModelicaParser_flags & PARSE_FLAT)
     res = psr->flat_class(psr);
   else */ if (ModelicaParser_flags & PARSE_EXPRESSION)
@@ -311,7 +311,7 @@ void* parseStream(pANTLR3_INPUT_STREAM input)
     res = psr->stored_definition(psr);
 
   if (lexerFailed || pLexer->rec->state->failed || psr->pParser->rec->state->failed) // Some parts of the AST are NULL if errors are used...
-    res = 0;
+    res = NULL;
   psr->free(psr);
   psr = NULL;
   tstream->free(tstream);
