@@ -4436,7 +4436,7 @@ algorithm
       then (r1 <. r2);
     case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
       then true;
-    case (Values.BOOL(boolean = _), Values.BOOL(boolean = false))
+    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
       then false;
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 < i2);
@@ -4518,18 +4518,15 @@ algorithm
       String s1, s2;
       Integer i1, i2;
       Real r1, r2;
+      Boolean b1, b2;
     case (Values.STRING(string = s1), Values.STRING(string = s2))
       then (System.strcmp(s1, s2) == 0);
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 == i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2)) 
       then (r1 ==. r2);
-    case (Values.BOOL(boolean = false), Values.BOOL(boolean = false))
-      then true;
-    case (Values.BOOL(boolean = true), Values.BOOL(boolean = true))
-      then true;
-    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
-      then false;
+    case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2)) 
+      then Util.boolEqual(b1, b2);
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 == i2);
     case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
@@ -4550,16 +4547,15 @@ algorithm
       String s1, s2;
       Integer i1, i2;
       Real r1, r2;
+      Boolean b1, b2;
     case (Values.STRING(string = s1), Values.STRING(string = s2))
       then (System.strcmp(s1, s2) <> 0);
     case (Values.INTEGER(integer = i1), Values.INTEGER(integer = i2))
       then (i1 <> i2);
     case (Values.REAL(real = r1), Values.REAL(real = r2)) 
       then (r1 <>. r2);
-    case (Values.BOOL(boolean = false), Values.BOOL(boolean = true))
-      then true;
-    case (Values.BOOL(boolean = true), Values.BOOL(boolean = false))
-      then true;
+    case (Values.BOOL(boolean = b1), Values.BOOL(boolean = b2)) 
+      then not Util.boolEqual(b1, b2);
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 <> i2);
     case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
