@@ -556,7 +556,7 @@ element_replaceable [int each, int final, int redeclare] returns [void* ast] :
   REPLACEABLE ( cd=class_definition[final] | e_spec=component_clause1 ) constr=constraining_clause_comment?
     {
       ast = Absyn__REDECLARATION(mk_bcon(final), make_redeclare_keywords(true,redeclare),
-                                 each ? Absyn__EACH : Absyn__NON_5fEACH, cd.ast ? Absyn__CLASSDEF(RML_TRUE, cd.ast) : e_spec,
+                                 each ? Absyn__EACH : Absyn__NON_5fEACH, e_spec ? e_spec : Absyn__CLASSDEF(RML_TRUE, cd.ast),
                                  mk_some_or_none($constr.ast));
     }
   ;
