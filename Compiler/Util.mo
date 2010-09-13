@@ -1352,7 +1352,7 @@ end listMap1r_tail;
 public function listMapAndFold
   "Takes a list, an extra argument and a function. The function will be applied
   to each element in the list, and the extra argument will be passed to the
-  function an updated."
+  function and updated."
   input list<Type_a> inList;
   input FuncType inFunc;
   input Type_b inArg;
@@ -3449,35 +3449,25 @@ algorithm
   end matchcontinue;
 end listUnionOnTrue;
 
-// stefan
 public function listRemoveNth
-"function: listRemoveNth
-	removes the Nth element of a list, starting with index 0
-	listRemove({1,2,3,4,5},2) ==> {1,2,4,5}"
-	input list<TypeA> inList;
-	input Integer inPos;
-	output list<TypeA> outList;
-	replaceable type TypeA subtypeof Any;
+  "Removes the nth element of a list, starting with index 1.
+   Example: listRemove({1,2,3,4,5},2) => {1,3,4,5}"
+  input list<TypeA> inList;
+  input Integer inPos;
+  output list<TypeA> outList;
+  replaceable type TypeA subtypeof Any;
 algorithm
-  outList := matchcontinue(inList,inPos)
+  outList := matchcontinue(inList, inPos)
     local
-      list<TypeA> lst,res,tmp1,tmp2;
-      Integer pos;
-    case(lst,pos)
+      TypeA e;
+      list<TypeA> el;
+    case (e :: el, 1) then el;
+    case (e :: el, _)
       equation
-        true = pos == listLength(lst) - 1;
-        res = listStripLast(lst);
+        true = inPos > 0;
+        el = listRemoveNth(el, inPos - 1);
       then
-        res;
-    case(lst,pos)
-      equation
-        true = pos < listLength(lst) - 1;
-        (tmp1,_) = listSplit(lst,pos);
-        (_,tmp2) = listSplit(lst,pos + 1);
-        res = listAppend(tmp1,tmp2);
-      then
-        res;
-    case(_,_) then fail();
+        e :: el;
   end matchcontinue;
 end listRemoveNth;
 

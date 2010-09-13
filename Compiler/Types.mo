@@ -725,24 +725,25 @@ algorithm
 end ndims;
 
 public function dimensionsKnown
-"function: dimensionsKnown
-  Returns true of the dimensions of the type is known."
+  "Returns true if the dimensions of the type is known."
   input Type inType;
-  output Boolean outBoolean;
+  output Boolean outRes;
 algorithm
-  outBoolean:=
-  matchcontinue (inType)
-    local Type tp;
-    case (tp)
+  outRes := matchcontinue(inType)
+    local
+      DAE.Dimension d;
+      Type tp;
+    case ((DAE.T_ARRAY(arrayDim = d, arrayType = tp), _))
       equation
-        {} = getDimensionSizes(tp);
-      then
-        false;
-    case (tp)
-      equation
-        _ = getDimensionSizes(tp);
+        true = Exp.dimensionKnown(d);
+        true = dimensionsKnown(tp);
       then
         true;
+    case ((DAE.T_ARRAY(arrayDim = _), _)) 
+      then false;
+    case ((DAE.T_COMPLEX(complexTypeOption = SOME(tp)), _))
+      then dimensionsKnown(tp);
+    case _ then true;
   end matchcontinue;
 end dimensionsKnown;
 

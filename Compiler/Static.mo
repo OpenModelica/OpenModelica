@@ -2131,7 +2131,7 @@ algorithm
     case(0,tty) then tty;
     case(n,(DAE.T_FUNCTION(args,resType,isInline),po))
       equation
-        args_1 = Util.listRemoveNth(args,listLength(args) - 1);
+        args_1 = Util.listRemoveNth(args,listLength(args));
         tty = (DAE.T_FUNCTION(args_1,resType,isInline),po);
         tty_1 = stripExtraArgsFromType(n-1,tty);
       then
@@ -3260,13 +3260,10 @@ algorithm
     // The previous case failed, return a call to the size function instead.
     case (cache,env,{arraycr,dim},_,impl,pre)
       equation
-        (cache,dimp,DAE.PROP(_,c1),_,dae1) = elabExp(cache, env, dim, impl, NONE, true,pre);
-        (cache,arraycrefe,DAE.PROP(arrtp,_),_,dae2) = elabExp(cache, env, arraycr, impl, NONE, true,pre);
-        c2 = Types.dimensionsKnown(arrtp);
-        c2_1 = Types.boolConstSize(c2);
-        c = Types.constAnd(c1, c2_1);
+        (cache,dimp,_,_,dae1) = elabExp(cache, env, dim, impl, NONE, true,pre);
+        (cache,arraycrefe,_,_,dae2) = elabExp(cache, env, arraycr, impl, NONE, true,pre);
         exp = DAE.SIZE(arraycrefe,SOME(dimp));
-        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, c);
+        prop = DAE.PROP(DAE.T_INTEGER_DEFAULT, DAE.C_PARAM);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,exp,prop,dae);
@@ -4711,82 +4708,69 @@ algorithm
   end matchcontinue;
 end elabBuiltinZeros;
 
-protected function sameDimensions "function: sameDimensions
-
-  This function returns true of all the properties, containing types,
-  have the same dimensions, otherwise false.
-"
-  input list<DAE.Properties> tpl;
+protected function sameDimensions
+  "This function returns true if all properties, containing types, have the same
+  dimensions, otherwise false."
+  input list<DAE.Properties> inProps;
   output Boolean res;
-  list<tuple<DAE.TType, Option<Absyn.Path>>> tpl_1;
-  list<list<Integer>> dimsizes;
+
+  list<DAE.Type> types;
+  list<list<Integer>> dims;
 algorithm
-  tpl_1 := Util.listMap(tpl, Types.getPropType);
-  dimsizes := Util.listMap(tpl_1, Types.getDimensionSizes);
-  res := sameDimensions2(dimsizes,1,-1);
+  types := Util.listMap(inProps, Types.getPropType);
+  dims := Util.listMap(types, Types.getDimensionSizes);
+  res := sameDimensions2(dims);
 end sameDimensions;
 
-protected function sameDimensionsExceptionDimX "function: sameDimensionsExceptionDimX
-
-  This function returns true of all the properties, containing types,
-  have the same dimensions, otherwise false.
-"
-  input list<DAE.Properties> tpl;
+protected function sameDimensionsExceptionDimX
+  "This function returns true if all properties, containing types, have the same
+  dimensions (except for dimension X), otherwise false."
+  input list<DAE.Properties> inProps;
   input Integer dimException;
   output Boolean res;
-  list<tuple<DAE.TType, Option<Absyn.Path>>> tpl_1;
-  list<list<Integer>> dimsizes;
+
+  list<DAE.Type> types;
+  list<list<Integer>> dims;
 algorithm
-  tpl_1 := Util.listMap(tpl, Types.getPropType);
-  dimsizes := Util.listMap(tpl_1, Types.getDimensionSizes);
-  res := sameDimensions2(dimsizes,1,dimException);
+  types := Util.listMap(inProps, Types.getPropType);
+  dims := Util.listMap(types, Types.getDimensionSizes);
+  dims := Util.listRemoveNth(dims, dimException);
+  res := sameDimensions2(dims);
 end sameDimensionsExceptionDimX;
 
 protected function sameDimensions2
   input list<list<Integer>> inIntegerLstLst;
-  input Integer dim;
-  input Integer dimException;
   output Boolean outBoolean;
 algorithm
   outBoolean:=
-  matchcontinue (inIntegerLstLst,dim,dimException)
+  matchcontinue (inIntegerLstLst)
     local
       list<list<Integer>> l,restelts;
       list<Integer> elts;
       Integer dim1,dim2;
-    case (l,_,_)
+    case (l)
       equation
         {} = Util.listFlatten(l);
       then
         true;
-    case (l,dim,dimException)
+    case (l)
       equation
-        true = dim == dimException;
-        restelts = Util.listMap(l, Util.listRest);
-        true = sameDimensions2(restelts,dim+1,dimException);
-      then true;
-    case (l,dim,dimException)
-      equation
-        false = dim == dimException;
         elts = Util.listMap(l, Util.listFirst);
         restelts = Util.listMap(l, Util.listRest);
         true = sameDimensions3(elts);
-        true = sameDimensions2(restelts,dim+1,dimException);
+        true = sameDimensions2(restelts);
       then
         true;
-    case (_,_,_) then false;
+    case (_) then false;
   end matchcontinue;
 end sameDimensions2;
 
-protected function sameDimensions3 "function: sameDimensions3
-
-  Helper function to same_dimensions2
-"
-  input list<Integer> inIntegerLst;
-  output Boolean outBoolean;
+protected function sameDimensions3
+  "Helper function to sameDimensions2. Check that all dimensions in a list are equal."
+  input list<Integer> inDims;
+  output Boolean outRes;
 algorithm
-  outBoolean:=
-  matchcontinue (inIntegerLst)
+  outRes := matchcontinue (inDims)
     local
       Integer i1,i2;
       Boolean res,res2,res_1;
@@ -6121,6 +6105,11 @@ algorithm
         new_d = old_d*n_args;
       then
         ((DAE.T_ARRAY(DAE.DIM_INTEGER(new_d),tp),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE), _), 1, _)
+      equation
+        true = OptManager.getOption("checkModel");
+      then
+        inType1;       
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = tp),p),n,n_args)
       equation
         n_1 = n - 1;
