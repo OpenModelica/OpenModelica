@@ -2983,7 +2983,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__realtimeTick)
 {
   int ix = RML_UNTAGFIXNUM(rmlA0);
-  if (ix < 0 || ix > 15) RML_TAILCALLK(rmlFC);
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) RML_TAILCALLK(rmlFC);
   rt_tick(ix);
   RML_TAILCALLK(rmlSC);
 }
@@ -2992,7 +2992,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__realtimeTock)
 {
   int ix = RML_UNTAGFIXNUM(rmlA0);
-  if (ix < 0 || ix > 15) RML_TAILCALLK(rmlFC);
+  if (ix < 0 || ix >= NUM_USER_RT_CLOCKS) RML_TAILCALLK(rmlFC);
   rmlA0 = mk_rcon(rt_tock(ix));
   RML_TAILCALLK(rmlSC);
 }
@@ -3011,7 +3011,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__startTimer)
 {
   /* start the timer */
-  rt_tick(13);
+  rt_tick(RT_CLOCK_SPECIAL_STOPWATCH);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -3019,7 +3019,7 @@ RML_END_LABEL
 RML_BEGIN_LABEL(System__stopTimer)
 {
   /* cummulate the timer time */
-  timerTime += rt_tock(13);
+  timerTime += rt_tock(RT_CLOCK_SPECIAL_STOPWATCH);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

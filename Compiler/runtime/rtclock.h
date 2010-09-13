@@ -31,6 +31,10 @@
 #ifndef __RTCLOCK__H
 #define __RTCLOCK__H
 
+#define NUM_RT_CLOCKS 17
+#define NUM_USER_RT_CLOCKS 16
+#define RT_CLOCK_SPECIAL_STOPWATCH 16 /* The 17th clock */
+
 void rt_tick(int ix);
 double rt_tock(int ix);
 
