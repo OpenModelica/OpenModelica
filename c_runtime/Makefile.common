@@ -82,7 +82,7 @@ libsim.a : $(SIMOBJS) $(HFILES)
 	$(AR) $@ $(SIMOBJS)
 	ranlib $@
 
-ModelicaExternalC/libModelicaExternalC.a: ModelicaExternalC/ModelicaExternalC.cpp $(SIMOBJS) $(HFILES)
+ModelicaExternalC/libModelicaExternalC.a: $(addprefix ModelicaExternalC/,ModelicaInternal.c ModelicaStrings.c ModelicaTablesImpl.c) $(HFILES)
 	$(MAKE) -C ModelicaExternalC
 
 interactive/libinteractive.a : interactive/omi_Calculation.cpp interactive/omi_Control.cpp interactive/omi_ResultManager.cpp interactive/omi_ServiceInterface.cpp interactive/omi_Transfer.cpp interactive/socket.cpp interactive/thread.cpp

@@ -599,7 +599,7 @@ InterpolationTable::InterpolationTable(double time, double startTime,
 				       const char* tableName, const char* fileName, 
 				       const double* table, int tableDim1,
 				       int tableDim2, int colWise)
-  :tablename(tableName?tableName:""),own_data(false),data(table),
+  :tablename(tableName?tableName:""),own_data(false),data(NULL),
    rows(tableDim1),cols(tableDim2),colWise(colWise),
    ipoType(ipoType),expoType(expoType),startTime(startTime)
 {
@@ -714,7 +714,7 @@ void InterpolationTable::checkValidityOfData() const
 // interpolation 2D
 //
 InterpolationTable2D::InterpolationTable2D(int ipoType, const char* tableName,
-		       const char* fileName, double *table,
+		       const char* fileName, const double *table,
 		       int tableDim1, int tableDim2, int colWise)
   :tablename(tableName?tableName:""),own_data(false),data(NULL),
    rows(tableDim1),cols(tableDim2), colWise(colWise)
