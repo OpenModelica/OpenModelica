@@ -113,7 +113,7 @@ class InterpolationTable {
 public:
   InterpolationTable(double time,double startTime, int ipoType, int expoType,
 		     const char* tableName, const char* fileName, 
-		     double *table, 
+		     const double *table, 
 		     int tableDim1, int tableDim2,int colWise);
   InterpolationTable(InterpolationTable& orig);
   ~InterpolationTable();
@@ -142,7 +142,7 @@ private:
 class InterpolationTable2D {
 public:
   InterpolationTable2D(int ipoType, const char* tableName,
-		       const char* fileName, double *table,
+		       const char* fileName, const double *table,
 		       int tableDim1, int tableDim2, int colWise);
   ~InterpolationTable2D();
   double interpolate(double x1, double x2);
@@ -188,7 +188,7 @@ private:
 extern "C"
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
 		    const char *tableName, const char* fileName, 
-		    double *table,int tableDim1, int tableDim2,int colWise)
+		    const double *table,int tableDim1, int tableDim2,int colWise)
 {
   // if table is already initialized, find it
   for(size_t i = 0; i < interpolationTables.size(); ++i)
@@ -232,7 +232,7 @@ double omcTableTimeTmin(int tableID)
 
 extern "C"
 int omcTable2DIni(int ipoType, const char *tableName, const char* fileName, 
-		  double *table,int tableDim1,int tableDim2,int colWise)
+		  const double *table,int tableDim1,int tableDim2,int colWise)
 {
   // if table is already initialized, find it
   for(size_t i = 0; i < interpolationTables2D.size(); ++i)
@@ -597,7 +597,7 @@ FileWrapper *FileWrapper::openFile(const std::string& filename)
 InterpolationTable::InterpolationTable(double time, double startTime,
 				       int ipoType, int expoType,
 				       const char* tableName, const char* fileName, 
-				       double* table, int tableDim1,
+				       const double* table, int tableDim1,
 				       int tableDim2, int colWise)
   :tablename(tableName?tableName:""),own_data(false),data(table),
    rows(tableDim1),cols(tableDim2),colWise(colWise),

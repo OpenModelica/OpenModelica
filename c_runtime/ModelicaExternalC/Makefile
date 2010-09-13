@@ -1,5 +1,6 @@
-
-OBJS = ModelicaExternalC.o ../*.o
+CC = gcc
+CFLAGS := $(CFLAGS) -O3 -I..
+OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o 
 AR = ar -ru
 
 all: libModelicaExternalC.a
@@ -8,8 +9,8 @@ libModelicaExternalC.a : $(OBJS)
 	$(AR) $@ $(OBJS)
 	ranlib $@
 
-ModelicaExternalC.o : ModelicaExternalC.cpp
-	g++ -O3 -c ModelicaExternalC.cpp -o ModelicaExternalC.o
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^
 
 clean:
 	rm -f libModelicaExternalC.a $(OBJS)

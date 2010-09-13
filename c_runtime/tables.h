@@ -48,7 +48,7 @@ extern "C"
 #endif
 
 int omcTableTimeIni(double timeIn, double startTime,int ipoType,int expoType,
-		    const char *tableName, const char* fileName, double *table,
+		    const char *tableName, const char* fileName, const double *table,
 		    int tableDim1,int tableDim2,int colWise);
 
 double omcTableTimeIpo(int tableID, int icol, double timeIn);
@@ -60,7 +60,7 @@ double omcTableTimeTmin(int tableID);
 
 
 int omcTable2DIni(int ipoType,const char *tableName,const char* fileName, 
-		  double *table, int tableDim1,int tableDim2,int colWise);
+		  const double *table, int tableDim1,int tableDim2,int colWise);
 
 double omcTable2DIpo(int tableID,double u1_, double u2_);
 
