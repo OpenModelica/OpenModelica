@@ -36,11 +36,13 @@
   #include <string.h>
   #include <stdlib.h>
   #include <stdio.h>
+  #include <errno.h>
 #else
   #include <cstdio>
   #include <cctype>
   #include <cstring>
   #include <cstdlib>
+  #include <cerrno>
 #endif
 
 #if defined(_WIN32)
