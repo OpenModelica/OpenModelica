@@ -365,11 +365,9 @@ algorithm
         list<String> names;
         list<DAE.ExpVar> evars;
         list<Var> tvars;
-//    case(Exp.ENUM)
       equation
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
         ty = (DAE.T_ENUMERATION(index,path,names,tvars),NONE());
-//        ty = (DAE.T_ENUM,NONE);
         then ty;
     case(DAE.ET_ARRAY(at,dim::ad))
       local DAE.ExpType at;
@@ -3593,6 +3591,7 @@ algorithm
         c = constTupleAnd(c1, c2);
       then
         (e_1,DAE.PROP_TUPLE(t_1,c));
+        
         /* The problem with MetaModelica tuple is that it is a datatype (should use PROP instead of PROP_TUPLE)
          * this case converts a TUPLE to META_TUPLE */
     case (e,DAE.PROP_TUPLE(type_ = (gt as (DAE.T_TUPLE(_),_)),tupleConst = c1), DAE.PROP(type_ = (et as (DAE.T_METATUPLE(_),_)),constFlag = c2),printFailtrace)

@@ -12640,7 +12640,7 @@ algorithm
         (cache, e_1, eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = Algorithm.makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
+        stmt = makeAssignment(DAE.CREF(ce_1,t), cprop, e_2, eprop, acc, initial_, source);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,{stmt},dae);
@@ -12967,6 +12967,42 @@ algorithm
         fail();
   end matchcontinue;
 end instStatement;
+
+protected function makeAssignment
+  "Wrapper for Algorithm that calls either makeAssignment or makeTupleAssignment
+  depending on whether the right side is a tuple or not. This makes it possible
+  to do cref := function_that_returns_tuple(...)."
+  input DAE.Exp inLhs;
+  input DAE.Properties inLhsProps;
+  input DAE.Exp inRhs;
+  input DAE.Properties inRhsProps;
+  input SCode.Accessibility inAccessibility;
+  input SCode.Initial inInitial;
+  input DAE.ElementSource inSource;
+  output Algorithm.Statement outStatement;
+algorithm
+  outStatement := matchcontinue(inLhs, inLhsProps, inRhs, inRhsProps,
+      inAccessibility, inInitial, inSource)
+    local
+      list<DAE.Properties> wild_props;
+      Integer wild_count;
+      list<DAE.Exp> wilds;
+    // If the RHS is a function that returns a tuple while the LHS is a single
+    // value, make a tuple of the LHS and fill in the missing elements with
+    // wildcards.
+    case (_, DAE.PROP(type_ = _), DAE.CALL(path = _), DAE.PROP_TUPLE(type_ = _), _, _, _)
+      equation
+        _ :: wild_props = Types.propTuplePropList(inRhsProps);
+        wild_count = listLength(wild_props);
+        wilds = Util.listFill(DAE.CREF(DAE.WILD, DAE.ET_OTHER), wild_count);
+        wild_props = Util.listFill(DAE.PROP((DAE.T_ANYTYPE(NONE), NONE), DAE.C_VAR), wild_count);
+     then Algorithm.makeTupleAssignment(inLhs :: wilds, inLhsProps :: wild_props, inRhs, inRhsProps, inInitial, inSource);
+    // Otherwise, call Algorithm.makeAssignment as usual.
+    case (_, _, _, _, _, _, _)
+      then Algorithm.makeAssignment(inLhs, inLhsProps, inRhs, inRhsProps,
+        inAccessibility, inInitial, inSource);
+  end matchcontinue;
+end makeAssignment;
 
 protected function containsWhenStatements
 "@author: adrpo
