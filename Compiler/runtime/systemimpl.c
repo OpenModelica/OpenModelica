@@ -2998,3 +2998,36 @@ RML_BEGIN_LABEL(System__realtimeTock)
 }
 RML_END_LABEL
 
+double timerTime = 0;
+
+RML_BEGIN_LABEL(System__resetTimer)
+{
+  /* reset the timer */
+  timerTime = 0;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__startTimer)
+{
+  /* start the timer */
+  rt_tick(13);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__stopTimer)
+{
+  /* cummulate the timer time */
+  timerTime += rt_tock(13);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getTimerTime)
+{
+  /* get the cummulated timer time */
+  rmlA0 = mk_rcon(timerTime);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL

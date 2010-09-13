@@ -703,5 +703,33 @@ The clock index is 0-15. The function fails if the number is out of range."
   external "C";
 end realtimeTock;
 
+function resetTimer
+"@autor: adrpo
+  this function will reset the timer to 0."
+  external "C";
+end resetTimer;
+
+function startTimer
+"@autor: adrpo
+  this function will start counting the time
+  that should be aggregated."
+  external "C";
+end startTimer;
+
+function stopTimer
+"@autor: adrpo
+  this function will stop counting the time
+  that should be aggregated."
+  external "C";
+end stopTimer;
+
+function getTimerTime
+"@autor: adrpo
+  this function will return the cummulated time 
+  between all calls to startTimer and stopTimer."
+  output Real timerTime;
+  external "C";
+end getTimerTime;
+
 end System;
 
