@@ -37,10 +37,12 @@
   #include <stdlib.h>
   #include <stdio.h>
 #else
+  #include <cstdio>
+  #include <cctype>
   #include <cstring>
   #include <cstdlib>
-  #include <cstdio>
 #endif
+
 #if defined(_WIN32)
   #include <direct.h>
 #elif defined(_BSD_SOURCE)
@@ -48,11 +50,14 @@
   #include <sys/types.h>
   #include <unistd.h>
 #endif
+
 #include "../tables.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif /* __cplusplus */
+
+#include "../ModelicaUtilities.h"
 
 // package Utilities.System
 const char* ModelicaInternal_getcwd(int zero)
@@ -122,27 +127,70 @@ int ModelicaStrings_length(const char* string)
 {
   return strlen(string);
 }
-const char* ModelicaStrings_substring(const char* string, int startIndex, int endIndex)
-{
-  fprintf(stderr,"ModelicaStrings_substring not in implemented in OpenModelica.");
-  return NULL;
-/*
-  if (endIndex <= strlen(string)) {
-    size_t sublen = endIndex-startIndex+1;
-    char *s = malloc(sublen+1);
-    strncpy(s,string+(startIndex-1),sublen);
-    s[sublen] = '\0';
-  }
-  return s;
-*/
+
+const char* ModelicaStrings_substring(const char* string, int startIndex, int endIndex) {
+
+  /* Return string1(startIndex:endIndex) if endIndex >= startIndex,
+     or return string1(startIndex:startIndex), if endIndex = 0.
+     An assert is triggered, if startIndex/endIndex are not valid.
+  */
+     char* substring;
+     int len1 = strlen(string);
+     int len2;
+
+  /* Check arguments */
+     if ( startIndex < 1 ) {
+        ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
+                            "  startIndex = %d (has to be > 0).\n"
+                            "  string     = \"%s\"\n", startIndex, string);
+     } else if ( endIndex == -999 ) {
+        endIndex = startIndex;
+     } else if ( endIndex < startIndex ) {
+        ModelicaFormatError("Wrong call of  Utilities.Strings.substring:\n"
+                            "  startIndex = %d\n"
+                            "  endIndex   = %d (>= startIndex required)\n"
+                            "  string     = \"%s\"\n", startIndex, endIndex, string);
+     } else if ( endIndex > len1 ) {
+        ModelicaFormatError("Wrong call of Utilities.Strings.substring:\n"
+                            "  endIndex = %d (<= %d required (=length(string)).\n"
+                            "  string   = \"%s\"\n", endIndex, len1, string);
+     };
+
+  /* Allocate memory and copy string */
+     len2 = endIndex - startIndex + 1;
+     substring = ModelicaAllocateString(len2);
+     strncpy(substring, &string[startIndex-1], len2);
+     substring[len2] = '\0';
+     return substring;
 }
+
+
 int ModelicaStrings_compare(const char* string1, const char* string2, int caseSensitive)
+/* compares two strings, optionally ignoring case */
 {
-  fprintf(stderr,"ModelicaStrings_compare not in implemented in OpenModelica.");
-/*
-  return (caseSensitive?strcmp(string1,string2):strcasecmp(string1,string2));
-*/
+    int result;
+    if (string1 == 0 || string2 == 0) return 2;
+
+    if (caseSensitive) {
+        result = strcmp(string1, string2);
+    } else {
+        while (tolower(*string1) == tolower(*string2) && *string1 != '\0') {
+            string1++;
+            string2++;
+        }
+        result = (int)(tolower(*string1)) - (int)(tolower(*string2));
+    }
+
+    if ( result < 0 ) {
+        result = 1;
+    } else if ( result == 0 ) {
+        result = 2;
+    } else {
+        result = 3;
+    };
+    return result;
 }
+
 void ModelicaStrings_scanReal(const char* string, int startIndex, int _unsigned, int* nextIndex, double* number)
 {
   fprintf(stderr,"ModelicaStrings_scanReal() not in implemented in OpenModelica.");
@@ -283,13 +331,7 @@ int ModelicaStrings_skipWhiteSpace(const char* string, int startIndex)
 }
 
 // package Utilities.Streams
-void ModelicaInternal_print(const char* string, const char* fileName);
-const char* ModelicaInternal_readLine(const char* fileName, int lineNumber, int* endOfFile); // ???
-int ModelicaInternal_countLines(const char* fileName)
-{
-  fprintf(stderr,"ModelicaInternal_countLines() not in implemented in OpenModelica.");
-  return 0;
-}
+
 //void ModelicaError(const char* string); // already in ModelicaUtilities.{h,c}
 void ModelicaStreams_closeFile(const char* fileName)
 {
@@ -399,6 +441,194 @@ double ModelicaTables_CombiTable2D_interpolate(int tableID, double u1, double u2
 {
   return omcTable2DIpo(tableID,u1,u2);
 }
+
+/* adrpo: 2010-09-10 copied from ModelicaLibrary/Modelica/Resources/C-Sources */
+
+/* --------------------- Abstract data type for stream handles --------------------- */
+/* Needs to be improved for cashing of the open files */
+
+FILE* ModelicaStreams_openFileForReading(const char* fileName) {
+   /* Open text file for reading */
+      FILE* fp;
+
+   /* Open file */
+      fp = fopen(fileName, "r");
+      if ( fp == NULL ) {
+         ModelicaFormatError("Not possible to open file \"%s\" for reading:\n"
+                             "%s\n", fileName, strerror(errno));
+      }
+      return fp;
+}
+
+FILE* ModelicaStreams_openFileForWriting(const char* fileName) {
+   /* Open text file for writing (with append) */
+      FILE* fp;
+
+   /* Check fileName */
+      if ( strlen(fileName) == 0 ) {
+         ModelicaError("fileName is an empty string.\n"
+                       "Opening of file is aborted\n");
+      }
+
+   /* Open file */
+      fp = fopen(fileName, "a");
+      if ( fp == NULL ) {
+         ModelicaFormatError("Not possible to open file \"%s\" for writing:\n"
+                             "%s\n", fileName, strerror(errno));
+      }
+      return fp;
+}
+
+/* adrpo: 2010-09-10 copied from ModelicaLibrary/Modelica/Resources/C-Sources */
+/* --------------------- Modelica_Utilities.Streams ----------------------------------- */
+
+void ModelicaInternal_print(const char* string, const char* fileName) {
+  /* Write string to terminal or to file */
+
+     if ( fileName[0] == '\0' ) {
+        /* Write string to terminal */
+           ModelicaMessage(string);
+     } else {
+        /* Write string to file */
+           FILE* fp = ModelicaStreams_openFileForWriting(fileName);
+           if ( fputs(string,fp) < 0 ) goto ERROR;
+           if ( fputs("\n",fp)   < 0 ) goto ERROR;
+           fclose(fp);
+           return;
+
+           ERROR: fclose(fp);
+                  ModelicaFormatError("Error when writing string to file \"%s\":\n"
+                                      "%s\n", fileName, strerror(errno));
+     }
+}
+
+
+int ModelicaInternal_countLines(const char* fileName)
+/* Get number of lines of a file */
+{
+    int c;
+    int nLines = 0;
+    int start_of_line = 1;
+    /* If true, next character starts a new line. */
+
+    FILE* fp = ModelicaStreams_openFileForReading(fileName);
+
+    /* Count number of lines */
+    while ((c = fgetc(fp)) != EOF) {
+        if (start_of_line) {
+            nLines++;
+            start_of_line = 0;
+        }
+        if (c == '\n') start_of_line = 1;
+    }
+    fclose(fp);
+    return nLines;
+}
+
+void ModelicaInternal_readFile(const char* fileName, const char* string[], size_t nLines) {
+  /* Read file into string vector string[nLines] */
+     FILE* fp = ModelicaStreams_openFileForReading(fileName);
+     char*  line;
+     int    c;
+     size_t lineLen;
+     size_t iLines;
+     long   offset;
+     size_t nc;
+
+  /* Read data from file */
+     iLines = 1;
+     while ( iLines <= nLines ) {
+        /* Determine length of next line */
+           offset  = ftell(fp);
+           lineLen = 0;
+           c = fgetc(fp);
+           while ( c != '\n' && c != EOF ) {
+              lineLen++;
+              c = fgetc(fp);
+           }
+
+        /* Allocate storage for next line */
+           line = ModelicaAllocateStringWithErrorReturn(lineLen);
+           if ( line == NULL ) {
+              fclose(fp);
+              ModelicaFormatError("Not enough memory to allocate string for reading line %i from file\n"
+                                  "\"%s\".\n"
+                                  "(this file contains %i lines)\n", iLines, fileName, nLines);
+           }
+
+        /* Read next line */
+           if ( fseek(fp, offset, SEEK_SET != 0) ) {
+              fclose(fp);
+              ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n"
+                                  "%s\n", iLines, fileName, strerror(errno));
+           };
+           nc = ( iLines < nLines ? lineLen+1 : lineLen);
+           if ( fread(line, sizeof(char), nc, fp) != nc ) {
+              fclose(fp);
+              ModelicaFormatError("Error when reading line %i from file\n\"%s\"\n",
+                                  iLines, fileName);
+           };
+           line[lineLen] = '\0';
+           string[iLines-1] = line;
+           iLines++;
+     }
+     fclose(fp);
+}
+
+
+const char* ModelicaInternal_readLine(const char* fileName, int lineNumber, int* endOfFile) {
+  /* Read line lineNumber from file fileName */
+     FILE* fp = ModelicaStreams_openFileForReading(fileName);
+     char*  line;
+     int    c;
+     size_t lineLen;
+     size_t iLines;
+     long   offset;
+
+  /* Read upto line lineNumber-1 */
+     iLines = 0;
+     c = 1;
+     while ( iLines != (size_t) lineNumber-1 && c != EOF ) {
+        c = fgetc(fp);
+        while ( c != '\n' && c != EOF ) {
+           c = fgetc(fp);
+        }
+        iLines++;
+     }
+     if ( iLines != (size_t) lineNumber-1 ) goto END_OF_FILE;
+
+  /* Determine length of line lineNumber */
+     offset  = ftell(fp);
+     lineLen = 0;
+     c = fgetc(fp);
+     while ( c != '\n' && c != EOF ) {
+        lineLen++;
+        c = fgetc(fp);
+     }
+     if ( lineLen == 0 && c == EOF ) goto END_OF_FILE;
+
+  /* Read line lineNumber */
+     line = ModelicaAllocateStringWithErrorReturn(lineLen);
+     if ( line == NULL ) goto ERROR;
+     if ( fseek(fp, offset, SEEK_SET != 0) ) goto ERROR;
+     if ( fread(line, sizeof(char), lineLen, fp) != lineLen ) goto ERROR;
+     fclose(fp);
+     line[lineLen] = '\0';
+     *endOfFile = 0;
+     return line;
+
+  /* End-of-File or error */
+     END_OF_FILE: fclose(fp);
+                  *endOfFile = 1;
+                  line = ModelicaAllocateString(0);
+                  return line;
+
+     ERROR      : fclose(fp);
+                  ModelicaFormatError("Error when reading line %i from file\n\"%s\":\n%s",
+                                      lineNumber, fileName, strerror(errno));
+                  return "";
+}
+
 
 #ifdef __cplusplus
 } /* end extern "C" */

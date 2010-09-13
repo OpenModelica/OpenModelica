@@ -1,5 +1,5 @@
 
-OBJS = ModelicaExternalC.o
+OBJS = ModelicaExternalC.o ../*.o
 AR = ar -ru
 
 all: libModelicaExternalC.a
