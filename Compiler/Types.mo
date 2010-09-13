@@ -3735,7 +3735,7 @@ algorithm
       DAE.Exp e,e_1,e_2;
       Type tp,t1,t2;
       list<Type> res,ts1,ts2;
-    case (_,{},{}) then ();
+    case (_,_,{}) then ();
     case (e,(t1 :: ts1),(t2 :: ts2))
       equation
         (_,_) = matchType(e, t1, t2, true);
