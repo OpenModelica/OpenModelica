@@ -347,6 +347,9 @@ AC_ARG_WITH(sendData-Qt, [  --with-sendData-Qt     Compile with support for plot
 [
   LIBSENDDATA="sendDataHumbug"
   LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
+  if test "Darwin" != `uname`; then
+    LDFLAGS+=" -lrt"
+  fi
   AC_MSG_RESULT([disabled])
 ])
 

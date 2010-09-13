@@ -4686,6 +4686,9 @@ else
 
   LIBSENDDATA="sendDataHumbug"
   LIBSENDDATA_LDFLAGS="$LDFLAGS -lsendDataHumbug"
+  if test "Darwin" != `uname`; then
+    LDFLAGS+=" -lrt"
+  fi
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: disabled" >&5
 $as_echo "disabled" >&6; }
 
