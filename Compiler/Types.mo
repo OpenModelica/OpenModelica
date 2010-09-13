@@ -1401,7 +1401,8 @@ algorithm
     case ((DAE.T_STRING(varLstString = _),_),(DAE.T_STRING(varLstString = _),_)) then true;
     case ((DAE.T_BOOL(varLstBool = _),_),(DAE.T_BOOL(varLstBool = _),_)) then true;
     
-    case ((DAE.T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),(DAE.T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
+    case ((DAE.T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),
+          (DAE.T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
       local
         Option<Integer> oi,oi_1;
         Absyn.Path tp,tp_1;
@@ -3803,13 +3804,11 @@ algorithm
 end vectorizableType2;
 
 protected function typeConvert "function: typeConvert
-
   This functions converts the expression in the first argument to
   the type specified in the third argument.  The current type of the
   expression is given in the second argument.
 
-  If no type conversion is possible, this function fails.
-"
+  If no type conversion is possible, this function fails."
   input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
@@ -3987,11 +3986,28 @@ algorithm
 
         /* Enumeration */
     case (exp,(DAE.T_ENUMERATION(index=SOME(_)),_),(DAE.T_ENUMERATION(index=oi,path=tp,names = l,varLst = v),p2),polymorphicBindings,matchFunc,printFailtrace)
-//    case (exp,(DAE.T_ENUM(),_),(DAE.T_ENUMERATION(names = l,varLst = v),p2),polymorphicBindings,matchFunc,printFailtrace)
       local
         Option<Integer> oi;
         Absyn.Path tp;
       then (exp,(DAE.T_ENUMERATION(oi,tp,l,v),p2),polymorphicBindings);
+        
+    // Convert an integer literal to an enumeration
+    // This is widely used in Modelica.Electrical.Digital
+    case (exp as DAE.ICONST(oi),
+              (DAE.T_INTEGER(_),_),
+              (DAE.T_ENUMERATION(index=_,path=tp,names = l,varLst = v),p2),
+              polymorphicBindings,matchFunc,printFailtrace)
+      local        
+        Absyn.Path tp;
+        String name;
+        Integer oi;
+      equation
+        // TODO! FIXME! check boundaries if the integer literal is not outside the enum range
+        // select from enum list:
+        name = listNth(l, oi+1);
+        tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
+      then 
+        (DAE.ENUM_LITERAL(tp, oi),(DAE.T_ENUMERATION(SOME(oi),tp,l,v),p2),polymorphicBindings);        
 
         /* Implicit conversion from Integer to Real */
     case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),p),polymorphicBindings,matchFunc,printFailtrace)
