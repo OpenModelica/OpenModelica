@@ -498,31 +498,42 @@ public function valid "function: valid
   input State inState;
   input SCode.Restriction inRestriction;
 algorithm
-  _:=
-  matchcontinue (inState,inRestriction)
+  _ := matchcontinue (inState,inRestriction)
     local Absyn.Path p;
+    
     case (UNKNOWN(path = p),_) then ();
+    
     case (IS_NEW(path = p),SCode.R_CLASS()) then ();
     case (HAS_EQUATIONS(path = p),SCode.R_CLASS()) then ();
+    
     case (MODEL(path = p),SCode.R_MODEL()) then ();
     case (IS_NEW(path = p),SCode.R_MODEL()) then ();
     case (HAS_EQUATIONS(path = p),SCode.R_MODEL()) then ();
+    
     case (RECORD(path = p),SCode.R_RECORD()) then ();
     case (IS_NEW(path = p),SCode.R_RECORD()) then ();
+    
     case (BLOCK(path = p),SCode.R_BLOCK()) then ();
     case (HAS_EQUATIONS(path = p),SCode.R_BLOCK()) then ();
+    
     case (CONNECTOR(path = _,isExpandable=false),SCode.R_CONNECTOR(false)) then ();
-    case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();
+    case (CONNECTOR(path = _,isExpandable=true),SCode.R_CONNECTOR(true)) then ();    
     case (IS_NEW(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_INTEGER(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_REAL(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_STRING(path = _),SCode.R_CONNECTOR(_)) then ();
     case (TYPE_BOOL(path = _),SCode.R_CONNECTOR(_)) then ();
+    case (TYPE_ENUM(path = _),SCode.R_CONNECTOR(_)) then (); // used in Modelica.Electrical.Digital where we have an enum as a connector
+    case (ENUMERATION(p),SCode.R_CONNECTOR(_)) then ();      // used in Modelica.Electrical.Digital where we have an enum as a connector
+    
     case (TYPE(path = p),SCode.R_TYPE()) then ();
     case (TYPE_INTEGER(path = p),SCode.R_TYPE()) then ();
     case (TYPE_REAL(path = p),SCode.R_TYPE()) then ();
     case (TYPE_STRING(path = p),SCode.R_TYPE()) then ();
     case (TYPE_BOOL(path = p),SCode.R_TYPE()) then ();
+    case (TYPE_ENUM(path = p),SCode.R_TYPE()) then ();
+    case (ENUMERATION(p),SCode.R_TYPE()) then ();
+    
     case (IS_NEW(path = p),SCode.R_PACKAGE()) then ();
     case (PACKAGE(path = p),SCode.R_PACKAGE()) then ();
     case (IS_NEW(path = p),SCode.R_FUNCTION()) then ();
@@ -531,22 +542,18 @@ algorithm
     case (META_LIST(p),SCode.R_TYPE()) then ();
     case (META_OPTION(p),SCode.R_TYPE()) then ();
     case (META_RECORD(p),SCode.R_TYPE()) then ();
-    case (UNIONTYPE(p),SCode.R_TYPE()) then ();
-    case (ENUMERATION(p),SCode.R_TYPE()) then ();
+    case (UNIONTYPE(p),SCode.R_TYPE()) then ();    
 
   end matchcontinue;
 end valid;
 
 public function assertValid "function: assertValid
-
   This function has the same semantical meaning as the function
-  `valid\'.  However, it prints an error message when it fails.
-"
+  `valid\'.  However, it prints an error message when it fails."
   input State inState;
   input SCode.Restriction inRestriction;
 algorithm
-  _:=
-  matchcontinue (inState,inRestriction)
+  _ := matchcontinue (inState,inRestriction)
     local
       State st;
       SCode.Restriction re;
