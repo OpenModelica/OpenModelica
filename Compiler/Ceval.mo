@@ -4528,6 +4528,8 @@ algorithm
       then true;
     case (Values.BOOL(boolean = true), Values.BOOL(boolean = true))
       then true;
+    case (Values.BOOL(boolean = _), Values.BOOL(boolean = _))
+      then false;
     case (Values.ENUM_LITERAL(index = i1), Values.ENUM_LITERAL(index = i2))
       then (i1 == i2);
     case (Values.ENUM_LITERAL(index = i1), Values.INTEGER(integer = i2))
