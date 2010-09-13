@@ -32,10 +32,7 @@
 #define __ERROREXT_H
 
 #ifdef __cplusplus
-#include <string>
-#include <list>
-
-extern "C" {
+  extern "C" {
 #endif
 
 void c_add_message(int errorID,
@@ -60,8 +57,15 @@ void setCheckpoint(const char* id);
 void delCheckpoint(const char* id);
 void rollBack(const char* id);
 void* rollBackAndPrint(const char* id); // Returns the error string that we rolled back
+
 #ifdef __cplusplus
-}
+  }
+#endif
+
+#ifdef ERROREXT_CPLUSPLUS /* Not needed and messes up ANTLR3 parser */
+
+#include <string>
+#include <list>
 
   void add_message(int errorID,
        const char* type,

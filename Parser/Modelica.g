@@ -41,6 +41,7 @@ import MetaModelica_Lexer; /* Makes all tokens defined */
   #include <stdlib.h>
   #include <stdio.h>
   #include <errno.h>
+  #include <time.h>
 #ifdef __cplusplus
 extern "C" {
 #endif  

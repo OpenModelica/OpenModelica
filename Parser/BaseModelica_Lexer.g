@@ -144,6 +144,11 @@ IDENT;
 
 }
 
+@includes {
+  #include "ModelicaParserCommon.h"
+  #include "runtime/errorext.h"
+}
+
 T_ALGORITHM : 'algorithm';
 T_AND : 'and';
 T_ANNOTATION : 'annotation';
@@ -257,7 +262,15 @@ fragment
 SCHAR :  NL | '\t' | ~('\n' | '\t' | '\r' | '\\' | '"');
 
 fragment
-SESCAPE : '\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v');
+SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' |
+  {
+    char chars[2] = {LA(1),'\0'};
+    const char *str = chars;
+    int len = strlen((char*)$text->chars);
+    c_add_source_message(2, "SYNTAX", "Warning", "Lexer treating \\ as \\\\, since \\\%s is not a valid Modelica escape sequence.",
+          &str, 1, $line, len, $line, len+1,
+          ModelicaParser_readonly, ModelicaParser_filename_C);
+  });
 
 IDENT : QIDENT | IDENT2;
 
