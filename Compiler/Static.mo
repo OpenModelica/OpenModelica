@@ -6148,24 +6148,19 @@ algorithm
       DAE.Type ty;
       DAE.ExpType ety;
       Prefix pre;
+      DAE.Const c;
+      Ceval.Msg msg;
 
     case (cache,env,{dim},_,impl,pre)
       equation
-        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_CONST()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true,pre);
-        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
+        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),c),_,dae1) = elabExp(cache,env, dim, impl, NONE,true,pre);
+        true = Types.isParameterOrConstant(c);
+        msg = Util.if_(OptManager.getOption("checkModel"), Ceval.NO_MSG, Ceval.MSG);
+        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, msg);
         ty = (DAE.T_ARRAY(DAE.DIM_INTEGER(size),(DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
         ety = Types.elabType(ty);
       then
-        (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_CONST()),dae1);
-
-    case (cache,env,{dim},_,impl,pre)
-      equation
-        (cache,dim_exp,DAE.PROP((DAE.T_INTEGER(_),_),DAE.C_PARAM()),_,dae1) = elabExp(cache,env, dim, impl, NONE,true,pre);
-        (cache,Values.INTEGER(size),_) = Ceval.ceval(cache,env, dim_exp, false, NONE, NONE, Ceval.MSG());
-        ty = (DAE.T_ARRAY(DAE.DIM_INTEGER(size),(DAE.T_ARRAY(DAE.DIM_INTEGER(size),DAE.T_INTEGER_DEFAULT),NONE)),NONE);
-        ety = Types.elabType(ty);
-      then
-        (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_PARAM()),dae1);
+        (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,c),dae1);
 
     case (cache,env,{dim},_,impl,pre)
       equation
@@ -6174,6 +6169,16 @@ algorithm
         ety = Types.elabType(ty);
       then
         (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_VAR()),dae1);
+        
+    case (cache,env,{dim},_,impl,pre)
+      equation
+        true = OptManager.getOption("checkModel");
+        (cache,dim_exp,DAE.PROP(type_ = (DAE.T_INTEGER(_), _)),_,dae1) = elabExp(cache,env,dim,impl,NONE,true,pre);
+        ty = (DAE.T_ARRAY(DAE.DIM_NONE,(DAE.T_ARRAY(DAE.DIM_NONE,DAE.T_INTEGER_DEFAULT),NONE)),NONE);
+        ety = Types.elabType(ty);
+      then
+        (cache,DAE.CALL(Absyn.IDENT("identity"),{dim_exp},false,true,ety,DAE.NO_INLINE),DAE.PROP(ty,DAE.C_VAR),dae1);
+        
     case (cache,env,{dim},_,impl,pre)
       equation
         print("-elab_builtin_identity failed\n");
