@@ -10533,7 +10533,7 @@ algorithm
   end matchcontinue;
 end elabCref;
 
-protected function makeEnumerationArray
+public function makeEnumerationArray
   "Expands an enumeration type to an array of it's enumeration literals."
   input Absyn.Path enumTypeName;
   input list<String> enumLiterals;

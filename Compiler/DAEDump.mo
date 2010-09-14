@@ -867,7 +867,7 @@ algorithm
       equation
         true = RTOpts.showAnnotations();
         s = SCode.printModStr(ann_mod);
-        s = " annotation(" +& s +& ")";
+        s = " annotation" +& s;
       then
         s;
     case _ then "";

@@ -503,23 +503,20 @@ public function addMultiArrayEqu "function: addMultiArrayEqu
   input Connect.Sets inSets1;
   input DAE.ComponentRef inComponentRef2;
   input DAE.ComponentRef inComponentRef3;
-  input list<Integer> dimensions;
+  input list<DAE.Dimension> dimensions;
   input DAE.ElementSource source "the origins of the element";
   output Connect.Sets outSets;
 algorithm
   outSets := matchcontinue (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
     local
-      Integer i_1,i;
-      list<Integer> rest;
-      list<list<Integer>> intSubs;
+      list<list<DAE.Exp>> expSubs;
       list<list<DAE.Subscript>> subSubs;
       Integer dimension;
     case (inSets1,_,_,{},source) then inSets1;
     case (inSets1,inComponentRef2,inComponentRef3,dimensions,source)
       equation
-        intSubs = generateSubscriptList(dimensions);
-        intSubs = listReverse(intSubs);
-        subSubs = Util.listMap(intSubs,Exp.intSubscripts);
+        expSubs = generateSubscriptList(dimensions);
+        subSubs = Util.listListMap(expSubs,Exp.makeIndexSubscript);
         outSets = addMultiArrayEqu2(inSets1,inComponentRef2,inComponentRef3,subSubs,source);
       then
        outSets;
@@ -561,13 +558,13 @@ end addMultiArrayEqu2;
 protected function generateSubscriptList "
 Author BZ 2008-07
 Generates all subscripts for the dimension/(s)"
-  input list<Integer> dims;
-  output list<list<Integer>> subs;
+  input list<DAE.Dimension> dims;
+  output list<list<DAE.Exp>> subs;
 algorithm subs := matchcontinue(dims)
   local
-    Integer dim;
-    list<Integer> rest;
-    list<list<Integer>> nextLevel,result,currLevel;
+    DAE.Dimension dim;
+    list<DAE.Dimension> rest;
+    list<list<DAE.Exp>> nextLevel,result,currLevel;
   case(dim::{})
     equation
       currLevel = generateSubscriptList2(dim);
@@ -583,30 +580,45 @@ algorithm subs := matchcontinue(dims)
 end matchcontinue;
 end generateSubscriptList;
 
-protected function generateSubscriptList2 "
-helper function for generateSubscriptList"
-  input Integer i;
-  output list<list<Integer>>  oil;
-algorithm oil := matchcontinue(i)
-  local
-  case(0) then {};
-  case(i)
-    equation
-      oil = generateSubscriptList2(i-1);
-    then
-      {i}::oil;
-end matchcontinue;
+protected function generateSubscriptList2
+  input DAE.Dimension inDim;
+  output list<list<DAE.Exp>> outIndices;
+algorithm
+  outIndices := matchcontinue(inDim)
+    local
+      list<DAE.Exp> exp_indices;
+      list<list<DAE.Exp>> res;
+    case DAE.DIM_INTEGER(integer = i)
+      local 
+        Integer i;
+        list<Integer> indices;
+      equation
+        indices = Util.listIntRange(i);
+        res = Util.listMap(Util.listMap(indices, Exp.makeIntegerExp), Util.listCreate);
+      then
+        res;
+    case DAE.DIM_ENUM(enumTypeName = name, literals = l)
+      local
+        Absyn.Path name;
+        list<String> l;
+        list<DAE.Exp> el;
+      equation
+        (DAE.ARRAY(array = el), _) = Static.makeEnumerationArray(name, l);
+        res = Util.listMap(el, Util.listCreate);
+      then
+        res;
+  end matchcontinue;
 end generateSubscriptList2;
 
 protected function mergeCurrentWithRestIndexies "
 Helper function for generateSubscriptList, merges recursive dimensions with current."
-  input list<list<Integer>> curr;
-  input list<list<Integer>> Indexies;
-  output list<list<Integer>> oIndexies;
+  input list<list<DAE.Exp>> curr;
+  input list<list<DAE.Exp>> Indexies;
+  output list<list<DAE.Exp>> oIndexies;
 algorithm oIndexies := matchcontinue(curr,Indexies)
   local
-    list<Integer> il;
-    list<list<Integer>> ill,merged;
+    list<DAE.Exp> il;
+    list<list<DAE.Exp>> ill,merged;
   case(_,{}) then {};
   case(curr,(il as (_ :: (_ :: _)))::ill)
     equation
