@@ -350,13 +350,13 @@ algorithm
 
     case (str,dae,DAE.ALGORITHM(algorithm_ = alg,source = source)) then DAE.ALGORITHM(alg,source);
 
-    case (str,dae1,DAE.COMP(ident = n,dAElist = daeLst,source = source))
+    case (str,dae1,DAE.COMP(ident = n,dAElist = daeLst,source = source,comment = comment))
       /* What happens if a variable is not found among dae, should we check dae1,
     i.e. where the COMP and FUNCTION was found? */
       equation
         daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
-        DAE.COMP(n,daeLst,source);
+        DAE.COMP(n,daeLst,source,comment);
 
     case (str,dae1,
       DAE.FUNCTION(path = n,

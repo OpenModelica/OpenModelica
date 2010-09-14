@@ -313,11 +313,11 @@ algorithm
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.INITIALALGORITHM(DAE.ALGORITHM_STMTS(stmts2),source)::dae2;
 
-    case(DAE.COMP(id,elist,source)::dae,repl,condExpFunc)
+    case(DAE.COMP(id,elist,source,cmt)::dae,repl,condExpFunc)
       equation
         elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-      then DAE.COMP(id,elist,source)::dae2;
+      then DAE.COMP(id,elist,source,cmt)::dae2;
 
      case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,inlineType,source)::dae,repl,condExpFunc)
        local list<DAE.FunctionDefinition> derFuncs;

@@ -315,7 +315,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae2); funcs = DAEUtil.daeFunctionTree(dae2);
-        dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source)},funcs);
+        dae2 = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE)},funcs);
       then
         (cache,env_2,ih,dae2);
 
@@ -336,7 +336,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae); funcs = DAEUtil.daeFunctionTree(dae);
-        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source)},funcs);
+        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE)},funcs);
       then
         (cache, env_2, ih, dae);
 
@@ -510,7 +510,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae); funcs = DAEUtil.daeFunctionTree(dae);
-        dae = DAE.DAE({DAE.COMP(name2,daeElts,source)},funcs);
+        dae = DAE.DAE({DAE.COMP(name2,daeElts,source,NONE)},funcs);
       then
         (cache,env_2,ih,dae);
 
@@ -528,7 +528,7 @@ algorithm
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae); funcs = DAEUtil.daeFunctionTree(dae);
-        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source)},funcs);
+        dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE)},funcs);
       then
         (cache,env_2,ih,dae);
 
@@ -982,6 +982,8 @@ algorithm
       DAE.ElementSource source "the origin of the element";
       list<DAE.Element> daeElts;
       DAE.FunctionTree funcs;
+      SCode.ClassDef cdef;
+      Option<SCode.Comment> comment;
 
     case (cache,env,ih,{})
       equation
@@ -989,7 +991,7 @@ algorithm
       then
         fail();
 
-    case (cache,env,ih,{(c as SCode.CLASS(name = n))})
+    case (cache,env,ih,{(c as SCode.CLASS(name = n, classDef = cdef))})
       equation
         Debug.fcall("execstat",print, "*** Inst -> enter at time: " +& realString(clock()) +& "\n" );
         // Debug.fprint("insttr", "inst_program1: ");
@@ -1014,7 +1016,8 @@ algorithm
 
         daeElts = DAEUtil.daeElements(dae); 
         funcs = DAEUtil.daeFunctionTree(dae);
-        dae = DAE.DAE({DAE.COMP(n,daeElts,source)},funcs);
+        comment = extractClassDefComment(cdef);
+        dae = DAE.DAE({DAE.COMP(n,daeElts,source,comment)},funcs);
       then
         (cache,ih,dae);
 
@@ -7799,12 +7802,12 @@ algorithm
       then
         fail();
 
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source) :: r),dir)
+    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),dir)
       equation
         lst_1 = propagateDirection(lst, dir);
         r_1 = propagateDirection(r, dir);
       then
-        (DAE.COMP(idName,lst_1,source) :: r_1);
+        (DAE.COMP(idName,lst_1,source,comment) :: r_1);
     case ((x :: r),dir)
       equation
         r_1 = propagateDirection(r, dir);
@@ -7868,13 +7871,13 @@ protected function propagateVariability " help function to propagateAttributes, 
 
 
       /* Traverse components */
-    case ((DAE.COMP(ident = id,dAElist = lst,source = source) :: r),vt)
+    case ((DAE.COMP(ident = id,dAElist = lst,source = source,comment = comment) :: r),vt)
       local String id;
       equation
         lst_1 = propagateVariability(lst, vt);
         r_1 = propagateVariability(r, vt);
       then
-        (DAE.COMP(id,lst_1,source) :: r_1);
+        (DAE.COMP(id,lst_1,source,comment) :: r_1);
 
     case ((x :: r),vt)
       equation
@@ -7947,12 +7950,12 @@ protected function propagateInnerOuter
         v :: r_1;
 
       /* Traverse components */
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source) :: r),io)
+    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),io)
       equation
         lst_1 = propagateInnerOuter(lst, io);
         r_1 = propagateInnerOuter(r, io);
       then
-        (DAE.COMP(idName,lst_1,source) :: r_1);
+        (DAE.COMP(idName,lst_1,source,comment) :: r_1);
 
     case ((x :: r),io)
       equation
@@ -18737,5 +18740,24 @@ algorithm
       then (exp, sets);
   end matchcontinue;
 end evalInStream;
+
+protected function extractClassDefComment
+  input SCode.ClassDef classDef;
+  output Option<SCode.Comment> comment;
+algorithm
+  comment := matchcontinue(classDef)
+    local 
+      Option<SCode.Comment> c;
+      list<SCode.Annotation> al;
+    case SCode.PARTS(annotationLst = al, comment = c) 
+      then SOME(SCode.CLASS_COMMENT(al, c));
+    case SCode.CLASS_EXTENDS(annotationLst = al, comment = c) 
+      then SOME(SCode.CLASS_COMMENT(al, c));
+    case SCode.DERIVED(comment = c) then c;
+    case SCode.ENUMERATION(comment = c) then c;
+    case SCode.OVERLOAD(comment = c) then c;
+    case SCode.PDER(comment = c) then c;
+  end matchcontinue;
+end extractClassDefComment;
 
 end Inst;

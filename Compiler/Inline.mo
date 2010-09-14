@@ -668,10 +668,10 @@ algorithm
       then
         res :: cdr_1;
 
-    case(DAE.COMP(i,elist,source) :: cdr,fns)
+    case(DAE.COMP(i,elist,source,absynCommentOption) :: cdr,fns)
       equation
         elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.COMP(i,elist_1,source);
+        res = DAE.COMP(i,elist_1,source,absynCommentOption);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;

@@ -682,12 +682,12 @@ algorithm
       then
         (DAE.INITIALALGORITHM(alg_1,source) :: cdr_1,dae);
 
-    case(DAE.COMP(i,elts,source) :: cdr,dae)
+    case(DAE.COMP(i,elts,source,absynCommentOption) :: cdr,dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
         (cdr_1,dae) = elabElements(cdr,dae);
       then
-        (DAE.COMP(i,elts_1,source) :: cdr_1,dae);
+        (DAE.COMP(i,elts_1,source,absynCommentOption) :: cdr_1,dae);
 
     case(DAE.FUNCTION(p,{DAE.FUNCTION_DEF(elts)},fullType,pp,inlineType,source) :: cdr,dae)
       equation

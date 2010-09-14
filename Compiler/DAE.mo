@@ -222,6 +222,7 @@ public uniontype Element
     Ident ident;
     list<Element> dAElist "a component with subelements, normally only used at top level.";
     ElementSource source "the origin of the component/equation/algorithm"; // we might not this here.
+    Option<SCode.Comment> comment;
   end COMP;
 
   record FUNCTION " A Modelica function"

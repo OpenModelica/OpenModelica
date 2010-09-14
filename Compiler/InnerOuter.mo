@@ -1366,12 +1366,12 @@ public function switchInnerToOuterAndPrefix
         v :: r_1;
 
 			/* Traverse components */
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source) :: r),io,pre)
+    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),io,pre)
       equation
         lst_1 = switchInnerToOuterAndPrefix(lst, io, pre);
         r_1 = switchInnerToOuterAndPrefix(r, io, pre);
       then
-        (DAE.COMP(idName,lst_1,source) :: r_1);
+        (DAE.COMP(idName,lst_1,source,comment) :: r_1);
 
     case ((x :: r),io, pre)
       equation
@@ -1433,12 +1433,12 @@ public function prefixOuterDaeVars
         (DAE.VAR(cr,vk,dir,prot,t,e,id,flowPrefix,streamPrefix,source,dae_var_attr,comment,io) :: r_1);
 
 		// Traverse components
-    case ((DAE.COMP(ident = idName,dAElist = lst,source = source) :: r),crefPrefix)
+    case ((DAE.COMP(ident = idName,dAElist = lst,source = source,comment = comment) :: r),crefPrefix)
       equation
         lst_1 = prefixOuterDaeVars(lst, crefPrefix);
         r_1 = prefixOuterDaeVars(r, crefPrefix);
       then
-        (DAE.COMP(idName,lst_1,source) :: r_1);
+        (DAE.COMP(idName,lst_1,source,comment) :: r_1);
 
     case ((x :: r),crefPrefix)
       equation

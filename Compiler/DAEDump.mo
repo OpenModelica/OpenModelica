@@ -512,9 +512,11 @@ algorithm
     local
       String n;
       list<DAE.Element> l;
-    case DAE.COMP(ident = n,dAElist = l)
+      Option<SCode.Comment> c;
+    case DAE.COMP(ident = n,dAElist = l, comment = c)
       equation
         Print.printBuf("class ");
+        dumpCommentOption(c);
         Print.printBuf(n);
         Print.printBuf("\n");
         dumpElements(l);
@@ -840,19 +842,44 @@ algorithm
     local
       String str,cmt;
       Option<SCode.Annotation> annopt;
+      list<SCode.Annotation> annl;
+      Option<SCode.Comment> cmtopt;
+      list<String> ann_strl;
+    // No comment.
     case (NONE) then "";
+    // String comment with possible annotation.
     case (SOME(SCode.COMMENT(annopt,SOME(cmt))))
       equation
         str = Util.stringAppendList({" \"",cmt,"\""});
         str = str +& dumpAnnotationOptionStr(annopt);
       then
         str;
+    // No string comment, but possible annotation.
     case (SOME(SCode.COMMENT(annopt,NONE)))
       equation
         str = dumpAnnotationOptionStr(annopt);
       then
         str;
-  end matchcontinue;
+    // Class comment, show annotations enabled.
+    case (SOME(SCode.CLASS_COMMENT(annotations = annl, comment = cmtopt)))
+      equation
+        true = RTOpts.showAnnotations();
+        str = dumpCommentOptionStr(cmtopt);
+        ann_strl = Util.listMap1(Util.listMap(annl, dumpAnnotationStr), 
+          stringAppend, ";");
+        // If there is only one annotations, print it immediately after the
+        // class name, otherwise print them in a list below the class name.
+        str = str +& Util.if_((listLength(ann_strl) > 1), "\n ", "");
+        str = str +& Util.stringDelimitList(ann_strl, "\n ");
+      then
+        str;
+    // Class comment, show annotations disabled.
+    case (SOME(SCode.CLASS_COMMENT(comment = cmtopt)))
+      equation
+        str = dumpCommentOptionStr(cmtopt);
+      then
+        str;
+      end matchcontinue;
 end dumpCommentOptionStr;
 
 protected function dumpAnnotationOptionStr
@@ -861,19 +888,34 @@ protected function dumpAnnotationOptionStr
 algorithm
   outString := matchcontinue(inAnnotationOpt)
     local
-      SCode.Mod ann_mod;
+      SCode.Annotation ann;
       String s;
-    case SOME(SCode.ANNOTATION(modification = ann_mod))
+    case SOME(ann)
       equation
         true = RTOpts.showAnnotations();
-        s = SCode.printModStr(ann_mod);
-        s = " annotation" +& s;
+        s = dumpAnnotationStr(ann);
       then
         s;
     case _ then "";
   end matchcontinue;
 end dumpAnnotationOptionStr;
   
+protected function dumpAnnotationStr
+  input SCode.Annotation inAnnotation;
+  output String outString;
+algorithm
+  outString := matchcontinue(inAnnotation)
+    local
+      SCode.Mod ann_mod;
+      String s;
+    case SCode.ANNOTATION(modification = ann_mod)
+      equation
+        s = " annotation" +& SCode.printModStr(ann_mod);
+      then
+        s;
+  end matchcontinue;
+end dumpAnnotationStr;
+    
 protected function dumpCommentOption "function: dumpCommentOption_str
   Dump Comment option."
   input Option<SCode.Comment> comment;
@@ -2642,12 +2684,14 @@ algorithm
     local
       String n;
       list<DAE.Element> l;
+      Option<SCode.Comment> c;
       IOStream.IOStream str;
 
-    case (DAE.COMP(ident = n,dAElist = l), str)
+    case (DAE.COMP(ident = n,dAElist = l,comment = c), str)
       equation
         str = IOStream.append(str, "class ");
         str = IOStream.append(str, n);
+        str = IOStream.append(str, dumpCommentOptionStr(c));
         str = IOStream.append(str, "\n");
         str = dumpElementsStream(l, str);        
         str = IOStream.append(str, "end ");

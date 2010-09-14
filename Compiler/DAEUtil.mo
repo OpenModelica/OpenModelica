@@ -241,6 +241,7 @@ algorithm
 	    String  id;
 	    DAE.ElementSource source "the origin of the element";
 	    DAE.FunctionTree funcs,funcs1,funcs2;
+      Option<SCode.Comment> cmt;
 
 	  case(DAE.DAE({},funcs)) then  (DAE.DAE({},funcs),DAE.DAE({},funcs));
 
@@ -250,12 +251,12 @@ algorithm
 	    then (DAE.DAE(v::elts2,funcs),DAE.DAE(elts3,funcs));
 
 	  // adrpo: TODO! FIXME! a DAE.COMP SHOULD NOT EVER BE HERE!
-	  case(DAE.DAE(DAE.COMP(id,elts1,source)::elts2,funcs))
+	  case(DAE.DAE(DAE.COMP(id,elts1,source,cmt)::elts2,funcs))
 	    equation
 	      (DAE.DAE(elts11,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts1,funcs));
 	      (DAE.DAE(elts22,_),DAE.DAE(elts33,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts2,funcs));
 	      elts3 = listAppend(elts3,elts33);
-	    then (DAE.DAE(DAE.COMP(id,elts11,source)::elts22,funcs),DAE.DAE(elts3,funcs));
+	    then (DAE.DAE(DAE.COMP(id,elts11,source,cmt)::elts22,funcs),DAE.DAE(elts3,funcs));
 
 	  case(DAE.DAE((e as DAE.EQUATION(exp=_))::elts2,funcs))
 	    equation
@@ -409,6 +410,7 @@ algorithm
       list<DAE.Element> rest, els, elist;
       DAE.Element e,v; String id;
       DAE.ElementSource source "the origin of the element";
+      Option<SCode.Comment> cmt;
 
     // empty case
     case({},_) then {};
@@ -432,12 +434,12 @@ algorithm
         v::els;
 
     // handle components
-    case(DAE.COMP(id,elist,source)::rest, variableNames)
+    case(DAE.COMP(id,elist,source,cmt)::rest, variableNames)
       equation
         elist = removeVariablesFromElements(elist, variableNames);
         els = removeVariablesFromElements(rest, variableNames);
       then 
-        DAE.COMP(id,elist,source)::els;
+        DAE.COMP(id,elist,source,cmt)::els;
 
     // anything else, just keep it
     case(v::rest, variableNames)
@@ -460,6 +462,7 @@ algorithm
       DAE.Element e,v; String id;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
+      Option<SCode.Comment> cmt;
 
     case(var,DAE.DAE({},funcs)) then DAE.DAE({},funcs);
 
@@ -468,11 +471,11 @@ algorithm
         true = Exp.crefEqual(var,cr);
       then DAE.DAE(elist,funcs);
 
-    case(var,DAE.DAE(DAE.COMP(id,elist,source)::elist2,funcs))
+    case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2,funcs))
       equation
         DAE.DAE(elist,_) = removeVariable(var,DAE.DAE(elist,funcs));
         DAE.DAE(elist2,_) = removeVariable(var,DAE.DAE(elist2,funcs));
-      then DAE.DAE(DAE.COMP(id,elist,source)::elist2,funcs);
+      then DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2,funcs);
 
     case(var,DAE.DAE(e::elist,funcs))
       equation
@@ -532,11 +535,11 @@ algorithm
       then
         DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io2)::elist,funcs);
 
-    case(var,DAE.DAE(DAE.COMP(id,elist,source)::elist2,funcs))
+    case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2,funcs))
       equation
         DAE.DAE(elist,_) = removeInnerAttr(var,DAE.DAE(elist,funcs));
         DAE.DAE(elist2,_) = removeInnerAttr(var,DAE.DAE(elist2,funcs));
-      then DAE.DAE(DAE.COMP(id,elist,source)::elist2,funcs);
+      then DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2,funcs);
 
     case(var,DAE.DAE(e::elist,funcs))
       equation
@@ -1931,12 +1934,12 @@ algorithm
       then
         (DAE.INITIALALGORITHM(a,source) :: elts_1);
 
-    case ((DAE.COMP(ident = id,dAElist = elts2,source = source) :: elts))
+    case ((DAE.COMP(ident = id,dAElist = elts2,source = source, comment = comment) :: elts))
       equation
         elts2 = toModelicaFormElts(elts2);
         elts_1 = toModelicaFormElts(elts);
       then
-        (DAE.COMP(id,elts2,source) :: elts_1);
+        (DAE.COMP(id,elts2,source,comment) :: elts_1);
 
     case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_DEF(elts2)::derFuncs),
            type_ = t,partialPrefix=partialPrefix,inlineType = inlineType,source = source) :: elts))
@@ -2659,7 +2662,7 @@ algorithm
       equation
         DAE.DAE(sublist_result,_) = transformIfEqToExpr(DAE.DAE(sublist,funcs),onlyConstantEval);
         DAE.DAE(rest_result,funcs) = transformIfEqToExpr(DAE.DAE(rest,funcs),onlyConstantEval);
-        subresult = DAE.COMP(name,sublist_result,source);
+        subresult = DAE.COMP(name,sublist_result,source,NONE);
         result = DAE.DAE((subresult :: rest_result),funcs);
       then
         result;
@@ -3543,11 +3546,11 @@ algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
     then (DAE.INITIAL_COMPLEX_EQUATION(e11,e22,source)::dae2,extraArg);
 
-  case(DAE.COMP(id,elist,source)::dae,func,extraArg)
+  case(DAE.COMP(id,elist,source,cmt)::dae,func,extraArg)
     equation
       (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.COMP(id,elist2,source)::dae2,extraArg);
+    then (DAE.COMP(id,elist2,source,cmt)::dae2,extraArg);
 
   case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source)::dae,func,extraArg)
     equation
