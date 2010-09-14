@@ -1340,6 +1340,7 @@ template functionOde(list<SimEqSystem> stateContEquations)
   #else
   int functionODE_inline()
   {
+    return 0;
   }
   #endif
   >>
@@ -4026,7 +4027,7 @@ case IFEXP(__) then
   let eElse = daeExp(expElse, context, &preExpElse /*BUFC*/, &varDecls /*BUFC*/)
   let &preExp +=  
   <<
-  <%condVar%> = <%condExp%>;
+  <%condVar%> = (modelica_boolean)<%condExp%>;
   if (<%condVar%>) {
     <%preExpThen%>
     <%resVar%> = <%eThen%>;

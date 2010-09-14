@@ -4500,6 +4500,7 @@ algorithm
                                        "#else\n",
                                        "int functionODE_inline()\n",
                                        "{\n",
+                                       "  return 0;\n",
                                        "}\n",
                                        "#endif"
                                    }, false));
@@ -22178,7 +22179,7 @@ algorithm
         i_preExpElse = emptyTxt;
         (i_eElse, i_preExpElse, i_varDecls) = daeExp(emptyTxt, i_expElse, i_context, i_preExpElse, i_varDecls);
         i_preExp = Tpl.writeText(i_preExp, i_condVar);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = "));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(" = (modelica_boolean)"));
         i_preExp = Tpl.writeText(i_preExp, i_condExp);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING_LIST({
                                               ";\n",
