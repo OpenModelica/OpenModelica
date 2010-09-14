@@ -6373,8 +6373,8 @@ algorithm
       (cache,DAE.ARRAY(etp1,scalar1,expl1),DAE.PROP(tp1,c1),_,dae1) = elabExp(cache,env, v1, impl, NONE,true,pre);
       {3} = Types.getDimensionSizes(tp1);
       mexpl = elabBuiltinSkew2(expl1,scalar1);
-      etp3 = Types.elabType(tp1);
       tp1 = Types.liftArray(tp1,DAE.DIM_INTEGER(3));
+      etp3 = Types.elabType(tp1);
       then
         (cache,DAE.MATRIX(etp3,3,mexpl),DAE.PROP(tp1,c1),dae1);
 
