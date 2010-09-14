@@ -1146,6 +1146,8 @@ algorithm
       ConnectionGraph.ConnectionGraph graph;
       InstanceHierarchy ih;
       DAE.EqualityConstraint equalityConstraint;
+      Real t1, t2, t;
+      String s;
 
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
@@ -1186,8 +1188,10 @@ algorithm
         // dae1_1 = handleStreamConnectors(pre, csets_1, dae1_1);
         
         (dae2,graph) = ConnectUtil.equations(csets_1,pre,callscope_1,graph);
+        
         (cache,dae3) = ConnectUtil.unconnectedFlowEquations(cache, csets_1, dae1, env_3, pre, callscope_1, {});
         dae1_1 = updateTypesInUnconnectedConnectors(dae3,dae1_1);
+        
         dae = DAEUtil.joinDaeLst({dae1_1,dae2,dae3});
         ty = mktype(fq_class, ci_state_1, tys, bc_ty, equalityConstraint, c);
         // update Enumerationtypes in environment
@@ -1592,6 +1596,7 @@ algorithm
         callscope_1 = isTopCall(callscope);
         (dae2 ,_) = ConnectUtil.equations(csets_1,pre,callscope_1,ConnectionGraph.EMPTY);
         (cache,dae3) = ConnectUtil.unconnectedFlowEquations(cache,csets_1, dae1, env_3, pre,callscope_1,{});
+        
         dae = DAEUtil.joinDaes(dae1_1,DAEUtil.joinDaes(dae2,dae3));
         /*
         (cache,typename) = makeFullyQualified(cache,env_3, Absyn.IDENT(n));
@@ -2236,7 +2241,7 @@ algorithm
         failure(equality(c=DAE.C_VAR));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-        false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()),NONE());
+        false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -2244,14 +2249,14 @@ algorithm
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
         (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-      false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM()),NONE());
+      false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         failure(equality(c=DAE.C_VAR));
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-      false,t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM()),NONE());
+      false,t_1,DAE.EQBOUND(bind1,NONE(),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       local String s;
@@ -4276,7 +4281,6 @@ algorithm
 
         //print("("+&intString(listLength(ltmod))+&")UpdateCompeltsMods_(" +& Util.stringDelimitList(Util.listMap(crefs2,Absyn.printComponentRefStr),",") +& ") subs: " +& Util.stringDelimitList(Util.listMap(crefs,Absyn.printComponentRefStr),",")+& "\n");
         //print("REDECL     acquired mods: " +& Mod.printModStr(cmod2) +& "\n");
-
         (cache,env2,ih,csets,dae) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
         ErrorExt.setCheckpoint("updateCompeltsMods");
         (cache,env2,ih,csets,dae1) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
@@ -4311,6 +4315,7 @@ algorithm
 
         (cache,env2,ih,csets,fdae1) = updateComponentsInEnv(cache, env, ih, pre, cmod2, crefs, ci_state, csets, impl);
         (cache,env2,ih,csets,fdae2) = updateComponentsInEnv(cache, env2, ih, pre, DAE.MOD(false,Absyn.NON_EACH,{DAE.NAMEMOD(name, cmod)},NONE()), {cref}, ci_state, csets, impl);
+
         (cache,cmod_1,dae1) = Mod.updateMod(cache, env2, ih, pre, cmod, impl);
         (cache,env3,ih,res,csets,dae2) = updateCompeltsMods(cache, env2, ih, pre, xs, ci_state, csets, impl);
         dae = DAEUtil.joinDaeLst({dae1,dae2,fdae1,fdae2});
@@ -5395,7 +5400,7 @@ algorithm
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
         
         //The environment is extended (updated) with the new variable binding. 
-        (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty);
+        (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty, pre, n);
         //true in update_frame means the variable is now instantiated.
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE());
 
@@ -5509,7 +5514,7 @@ algorithm
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
         // The environment is extended (updated) with the new variable binding.
-        (cache,binding) = makeBinding(cache,env, attr, m_1, ty) ;
+        (cache,binding) = makeBinding(cache,env, attr, m_1, ty, pre, n) ;
 
         // true in update_frame means the variable is now instantiated.
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE()) ;
@@ -7437,6 +7442,7 @@ algorithm
         Debug.traceln("- Inst.updateComponentInEnv failed, ident = " +& Dump.printComponentRefStr(cref));
         Debug.traceln(" mods: " +& Mod.printModStr(mod));
         Debug.traceln(" scope: " +& Env.printEnvPathStr(env));
+        Debug.traceln(" prefix: " +& PrefixUtil.printPrefixStr(pre));
       then fail();
     case (cache,env,ih,pre,mod,cref,ci_state,csets,impl,updatedComps) then (cache,env,ih,csets,updatedComps,DAEUtil.emptyDae);
   end matchcontinue;
@@ -7535,7 +7541,7 @@ algorithm
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
         
         /* The environment is extended with the new variable binding. */
-        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty);
+        (cache,binding) = makeBinding(cache, env, attr, mod_3, ty, pre, name);
         /* type info present */
         //Debug.fprintln("debug","VAR " +& name +& " has new type " +& Types.unparseType(ty) +& ", " +& Types.printBindingStr(binding) +& "m:" +& SCode.printModStr(m));
         env = Env.updateFrameV(env, DAE.TYPES_VAR(name,dattr,prot,ty,binding,NONE()), Env.VAR_TYPED(), compenv);
@@ -8374,7 +8380,7 @@ algorithm
       equation
         t = Types.getPropType(prop);
         (cache,dim1,dae) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
-        dim2 = elabArraydimType(t, ad,e,path);
+        dim2 = elabArraydimType(t, ad, e, path, pre, cref);
         //Debug.traceln("TYPED: " +& Exp.printExpStr(e) +& " s: " +& Env.printEnvPathStr(env));
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
       then
@@ -8386,7 +8392,7 @@ algorithm
         (cache, e_1, prop) = Ceval.cevalIfConstant(cache, env, e_1, prop, impl);
         t = Types.getPropType(prop);
         (cache,dim1,dae2) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
-        dim2 = elabArraydimType(t, ad,e_1,path);
+        dim2 = elabArraydimType(t, ad, e_1, path, pre, cref);
         //Debug.traceln("UNTYPED");
         dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -8395,7 +8401,7 @@ algorithm
     case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre)
       equation
         (cache,dim1,_) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
-        dim2 = elabArraydimType(t, ad,e,path);
+        dim2 = elabArraydimType(t, ad, e, path, pre, cref);
         failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));
         e_str = Exp.printExpStr(e);
         t_str = Types.unparseType(t);
@@ -8715,25 +8721,28 @@ protected function elabArraydimType
   input Absyn.ArrayDim inArrayDim;
   input DAE.Exp exp "Primarily used for error messages";
   input Absyn.Path path "class of declaration, primarily used for error messages";
+  input Prefix.Prefix inPrefix;
+  input Absyn.ComponentRef componentRef;
   output list<DAE.Dimension> outDimensionLst;
 algorithm
-  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path)
+  outDimensionLst := matchcontinue(inType,inArrayDim,exp,path,inPrefix,componentRef)
     local
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<Absyn.Subscript> ad;
-      String tpStr,adStr,expStr;
-    case(t,ad,exp,path)
+      String tpStr,adStr,expStr,str;
+    case(t,ad,exp,path,_,_)
       equation
         true = (Types.ndims(t) >= listLength(ad));
         outDimensionLst = elabArraydimType2(t,ad);
       then outDimensionLst;
 
-    case(t,ad,exp,path)
+    case(t,ad,exp,path,inPrefix,componentRef)
       equation
         adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
         tpStr = Types.unparseType(t);
         expStr = Exp.printExpStr(exp);
-        Error.addMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{adStr,expStr,tpStr});
+        str = PrefixUtil.printPrefixStr(inPrefix) +& Absyn.printComponentRefStr(componentRef);
+        Error.addMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr});
       then fail();
     end matchcontinue;
 end  elabArraydimType;
@@ -12285,7 +12294,7 @@ algorithm
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = 
           instList(cache, env_2, InnerOuter.emptyInstHierarchy, mods, pre, csets, ci_state, instEEquation, eqs, impl, alwaysUnroll, graph);
@@ -12301,7 +12310,7 @@ algorithm
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* Use instEInitialEquation*/
         (cache,env_3,_,dae1,csets_1,ci_state_1,graph) = 
           instList(cache, env_2, InnerOuter.emptyInstHierarchy, mods, pre, csets, ci_state, instEInitialEquation, eqs, impl, alwaysUnroll, graph);
@@ -13117,7 +13126,7 @@ algorithm
         dims = dim::dims;
         env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
         // the iterator is not constant but the range is constant
-        env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst), SCode.CONST(), SOME(DAE.C_CONST()));
+        env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
         (cache,stmts1,dae1) = instStatements(cache, env_2, ih, pre, algs, source, initial_, impl, unrollForLoops);
         (cache,stmts2,dae2) = loopOverRange(cache, env, ih, pre, i, Values.ARRAY(rest,dims), algs, source, initial_, impl, unrollForLoops);
@@ -14972,7 +14981,7 @@ algorithm
   local DAE.Exp e; Values.Value v;
     case(DAE.UNBOUND()) then NONE;
     case(DAE.EQBOUND(exp=e)) then SOME(e);
-    case(DAE.VALBOUND(v)) equation
+    case(DAE.VALBOUND(valBound=v)) equation
       e = ValuesUtil.valueExp(v);
     then SOME(e);
   end matchcontinue;
@@ -15480,11 +15489,12 @@ public function makeBinding
   input SCode.Attributes inAttributes;
   input Mod inMod;
   input DAE.Type inType;
+  input Prefix.Prefix inPrefix;
+  input String componentName;
   output Env.Cache outCache;
   output DAE.Binding outBinding;
 algorithm
-  (outCache,outBinding) :=
-  matchcontinue (inCache,inEnv,inAttributes,inMod,inType)
+  (outCache,outBinding) := matchcontinue (inCache,inEnv,inAttributes,inMod,inType,inPrefix,componentName)
     local
       tuple<DAE.TType, Option<Absyn.Path>> tp,e_tp;
       DAE.Exp e_1,e;
@@ -15492,36 +15502,56 @@ algorithm
       list<Env.Frame> env;
       Option<Values.Value> e_val;
       DAE.Const c;
-      String e_tp_str,tp_str,e_str,e_str_1;
+      String e_tp_str,tp_str,e_str,e_str_1,str;
       Env.Cache cache;
       DAE.Properties prop;
-    case (cache,_,_,DAE.NOMOD(),tp) then (cache,DAE.UNBOUND());
-    case (cache,_,_,DAE.REDECL(finalPrefix = _),tp) then (cache,DAE.UNBOUND());
-    case (cache,_,_,DAE.MOD(eqModOption = NONE),tp) then (cache,DAE.UNBOUND());
+      DAE.Binding binding;
+      DAE.Mod startValueModification;
+
+    case (cache,_,_,DAE.NOMOD(),tp,_,_) then (cache,DAE.UNBOUND());
+    case (cache,_,_,DAE.REDECL(finalPrefix = _),tp,_,_) then (cache,DAE.UNBOUND());
+
+    // adrpo: if the binding is missing for a parameter and 
+    //        the parameter has a start value modification, 
+    //        use that to create the binding as if we have 
+    //        a modification from outside it will be re-written.
+    //        this fixes: 
+    //             Modelica.Electrical.Machines.Examples.SMEE_Generator 
+    //             (BUG: #1156 at https://openmodelica.org:8443/cb/issue/1156)
+    //             and maybe a lot others.
+    case (cache,_,SCode.ATTR(variability = SCode.PARAM()),inMod as DAE.MOD(eqModOption = NONE()),tp,inPrefix,componentName)
+      equation
+        startValueModification = Mod.lookupCompModification(inMod, "start");
+        (cache,binding) = makeBinding(cache,inEnv,inAttributes,startValueModification,inType,inPrefix,componentName);
+        binding = DAEUtil.setBindingSource(binding, DAE.BINDING_FROM_START_VALUE()); 
+      then 
+        (cache,binding);
+
+    case (cache,_,_,DAE.MOD(eqModOption = NONE),tp,_,_) then (cache,DAE.UNBOUND());
     /* adrpo: CHECK! do we need this here? numerical values
-    case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp)
+    case (cache,env,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,DAE.PROP(e_tp,_)))),tp,_,_)
       equation
         (e_1,_) = Types.matchType(e, e_tp, tp);
         (cache,v,_) = Ceval.ceval(cache,env, e_1, false, NONE, NONE, Ceval.NO_MSG());
       then
-        (cache,DAE.VALBOUND(v));
+        (cache,DAE.VALBOUND(v, DAE.BINDING_FROM_DEFAULT_VALUE()));
     */
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp) /* default */
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_) /* default */
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
         (e_1,_) = Types.matchType(e, e_tp, tp, true);
         e_1 = Exp.simplify(e_1);
       then
-        (cache,DAE.EQBOUND(e_1,e_val,c));
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp)
+        (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,_,_)
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
         (e_1,_) = Types.matchType(e, e_tp, tp, false);
       then
-        (cache,DAE.EQBOUND(e_1,e_val,c));
-    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp)
+        (cache,DAE.EQBOUND(e_1,e_val,c,DAE.BINDING_FROM_DEFAULT_VALUE()));
+    case (cache,_,_,DAE.MOD(eqModOption = SOME(DAE.TYPED(e,e_val,prop,_))),tp,inPrefix,componentName)
       equation
         e_tp = Types.getPropType(prop);
         c = Types.propAllConst(prop);
@@ -15530,13 +15560,13 @@ algorithm
         tp_str = Types.unparseType(tp);
         e_str = Exp.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
-        Error.addMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR,
-          {tp_str,e_str_1,e_tp_str});
+        str = PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName;
+        Error.addMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str});
       then
         fail();
-    case (_,_,_,_,_)
+    case (_,_,_,_,_,inPrefix,componentName)
       equation
-        Debug.fprint("failtrace", "- Inst.makeBinding failed\n");
+        Debug.fprint("failtrace", "- Inst.makeBinding failed on component:" +& PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName +& "\n");
       then
         fail();
   end matchcontinue;
@@ -15613,7 +15643,7 @@ algorithm
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
         Debug.fcall("recconst", Mod.printMod, mod_1);
-        (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1);
+        (cache,bind) = makeBinding(cache,env, attr, mod_1, tp_1, Prefix.NOPRE(), id);
       then
         (cache,ih,DAE.TYPES_VAR(id,DAE.ATTR(f,s,acc,var,dir,Absyn.UNSPECIFIED()),prot,tp_1,bind,NONE()));
 
@@ -17296,7 +17326,7 @@ algorithm
     case (cache,env,ih,pre,mods,(cr :: rest),ci_state,csets,impl,updatedComps)
       equation
         n = Absyn.printComponentRefStr(cr);
-        (_,DAE.TYPES_VAR(binding = DAE.VALBOUND(_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache,env, n);
+        (_,DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache,env, n);
         (cache,env_2,ih,csets,updatedComps,dae) = updateComponentsInEnv2(cache, env, ih, pre, mods, rest, ci_state, csets, impl, updatedComps);
       then
         (cache,env_2,ih,csets,updatedComps,dae);

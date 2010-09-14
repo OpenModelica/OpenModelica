@@ -622,18 +622,25 @@ uniontype Attributes "- Attributes"
 
 end Attributes;
 
+public uniontype BindingSource "where this binding came from: either default binding or start value"
+  record BINDING_FROM_DEFAULT_VALUE "the binding came from the default value" end BINDING_FROM_DEFAULT_VALUE;
+  record BINDING_FROM_START_VALUE "the binding came from the start value" end BINDING_FROM_START_VALUE;
+end BindingSource;
+
 public
 uniontype Binding "- Binding"
   record UNBOUND end UNBOUND;
 
   record EQBOUND
-    Exp exp "exp" ;
-    Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp" ;
-    Const constant_ "constant" ;
+    Exp exp "exp";
+    Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp";
+    Const constant_ "constant";
+    BindingSource source "Used for error reporting: this boolean tells us that the parameter did not had a binding but had a start value that was used instead.";
   end EQBOUND;
 
   record VALBOUND
-    Values.Value valBound "valBound" ;
+    Values.Value valBound "valBound";
+    BindingSource source "Used for error reporting: this boolean tells us that the parameter did not had a binding but had a start value that was used instead";
   end VALBOUND;
 
 end Binding;

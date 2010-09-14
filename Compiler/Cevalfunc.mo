@@ -226,7 +226,7 @@ algorithm
           DAE.TYPES_VAR(
             varName,
             DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,DAE.VALBOUND(val1),NONE()), NONE, Env.VAR_TYPED(), complexEnv);
+            false,tty,DAE.VALBOUND(val1,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), NONE, Env.VAR_TYPED(), complexEnv);
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
@@ -238,7 +238,7 @@ algorithm
         tty = Types.typeOfValue(val1);
         env1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,tty,DAE.VALBOUND(val1),NONE()), NONE, Env.VAR_TYPED(), {});
+            false,tty,DAE.VALBOUND(val1,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), NONE, Env.VAR_TYPED(), {});
         env2 = extendEnvWithInputArgs(env1,eles1,vals1,restExps, ht2);
       then
         env2;
@@ -273,7 +273,7 @@ algorithm
         //since we do not have a value we use the class name to get type of variable.
         tty = getTypeFromName(apath,env);
         tty = addDims(tty,adim,env, ht2);
-        (binding as DAE.VALBOUND(vv)) = makeBinding(mod1,env,tty, ht2);
+        (binding as DAE.VALBOUND(vv,_)) = makeBinding(mod1,env,tty, ht2);
         // print("extendEnvWithInputArgs -> NONE component: " +& varName +& " ty: " +& Types.printTypeStr(tty) +& " opt dim: " +& Dump.printArraydimStr(adim) +& "\n");        
         env1 = Env.extendFrameV(env, 
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -385,12 +385,12 @@ algorithm
     case(DAE.TYPES_VAR(varName2,a,p,t,DAE.UNBOUND(),constOfForIteratorRange),{},{})
       equation
         val = typeOfValue(t);
-        tv = DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val),constOfForIteratorRange);
+        tv = DAE.TYPES_VAR(varName2,a,p,t,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
       then
         tv;
     
     // value bound      
-    case(tv as DAE.TYPES_VAR(binding = DAE.VALBOUND(val)),{},{})
+    case(tv as DAE.TYPES_VAR(binding = DAE.VALBOUND(val,_)),{},{})
       then
         tv;
   
@@ -401,13 +401,13 @@ algorithm
         true = stringEqual(varName3, varName2);
         lv2 = setValuesInRecord(typeslst,names,vals);
         ty2 = (DAE.T_COMPLEX(ClassInf.RECORD(fpath) ,lv2 , NONE, NONE),NONE);
-        tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val),constOfForIteratorRange);
+        tv = DAE.TYPES_VAR(varName3,a,p,ty2,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
       then tv;
     
     case(DAE.TYPES_VAR(varName3,a,p,t,b,constOfForIteratorRange) ,varName2::varNames, val::values)
       equation
         true = stringEqual(varName3, varName2);
-        tv = DAE.TYPES_VAR(varName3,a,p,t,DAE.VALBOUND(val),constOfForIteratorRange);
+        tv = DAE.TYPES_VAR(varName3,a,p,t,DAE.VALBOUND(val,DAE.BINDING_FROM_DEFAULT_VALUE()),constOfForIteratorRange);
       then tv;
     
     case(tv1,varName3::varNames, val::values)
@@ -1075,13 +1075,13 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
       // print("setValue -> component: " +& str +& " ty: " +& Types.printTypeStr(t) +& "\n");
       env1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(str,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-            false,t,DAE.VALBOUND(value),NONE()), Env.VAR_TYPED(), complexEnv);
+            false,t,DAE.VALBOUND(value,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), complexEnv);
     then
       env1;
   // any other values with ident cref
   case(value,env,Absyn.CREF(Absyn.CREF_IDENT(str,subs)))
     equation
-      (_,_,t,DAE.VALBOUND(value2),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t,DAE.VALBOUND(value2,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       value = mergeValues(value2,value,subs,env,t); 
       env1 = updateVarinEnv(env,str,value,t);
     then
@@ -1089,7 +1089,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
   // any other values with qualified cref
   case(value,env,me as Absyn.CREF(Absyn.CREF_QUAL(str,subs,child))) 
     equation 
-      (_,_,t,DAE.VALBOUND(value2),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
+      (_,_,t,DAE.VALBOUND(value2,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       env1 = setQualValue(env,value,Absyn.CREF_QUAL(str,subs,child));
     then
       env1;
@@ -1122,7 +1122,7 @@ algorithm
   baseType := Types.typeOfValue(startValue);
   baseValue := typeOfValue(baseType);
   newEnv := Env.openScope(env, false, SOME(Env.forScopeName));
-  newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue), iterVariability, constOfForIteratorRange); 
+  newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE()), iterVariability, constOfForIteratorRange); 
 end addForLoopScope;
 
 protected function setQualValue "Function: setQualValue
@@ -1250,7 +1250,7 @@ algorithm
         // print("updateVarinEnv -> component: " +& varName +& " ACTUAL ty: " +& Types.printTypeStr(t) +& "\n");
         env1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(varName,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,ty,DAE.VALBOUND(newVal),NONE()), Env.VAR_TYPED(), {}); 
+          false,ty,DAE.VALBOUND(newVal,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {}); 
       then
         env1;
     case(_,_,_,_) equation
@@ -1281,24 +1281,24 @@ algorithm
         ae1 = Util.tuple21(absynExp);
         value = evaluateSingleExpression(ae1,env,SOME(ty), ht2);
       then
-        DAE.VALBOUND(value);
+        DAE.VALBOUND(value,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.MOD(absynExpOption = SOME(absynExp), eachPrefix = Absyn.EACH) ,env,ty , ht2)
       equation
         ae1 = Util.tuple21(absynExp);
         value = evaluateSingleExpression(ae1,env,SOME(ty), ht2);
         value2 = instFunctionArray(ty,SOME(value));
       then
-        DAE.VALBOUND(value2);
+        DAE.VALBOUND(value2,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.MOD(absynExpOption = NONE),_,ty, ht2)
       equation
         baseValue = instFunctionArray(ty,NONE);
       then
-        DAE.VALBOUND(baseValue);
+        DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.NOMOD,_,ty, ht2)
       equation
         baseValue = instFunctionArray(ty,NONE);
       then
-        DAE.VALBOUND(baseValue);
+        DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE());
     case(SCode.MOD(absynExpOption = SOME(absynExp)),_,_, ht2)
       equation
         Debug.fprint("failtrace", "- Cevalfunc.makeBinding failed not fully implemented\n");
@@ -1506,7 +1506,7 @@ algorithm
     case({},_) then {};
     case(((ele1 as SCode.COMPONENT(component = varName, attributes = SCode.ATTR(direction = Absyn.OUTPUT() ) ))::eles1),env)
       equation
-        (_,_,_,DAE.VALBOUND(value),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
+        (_,_,_,DAE.VALBOUND(value,_),_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(varName,DAE.ET_OTHER(),{}));
         lval = getOutputVarValues(eles1,env);
       then
        value::lval;

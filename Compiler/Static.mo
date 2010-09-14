@@ -5199,17 +5199,25 @@ algorithm
       then
         (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),dae);
 
+    // adrpo: allow delay(x, var) to be used but issue a warning. 
+    //        used in Modelica.Electrical.Analog.Lines.TLine*
     case (cache,env,{s1,s2},_,impl,pre)
       equation
-        (cache,s1_1,DAE.PROP(_,c1),_,_) = elabExp(cache,env, s1, impl, NONE,true,pre);
-        (cache,s2_1,DAE.PROP(_,c2),_,_) = elabExp(cache,env, s2, impl, NONE,true,pre);
-        sp = PrefixUtil.printPrefixStr3(pre);
+        (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache,env, s1, impl, NONE,true,pre);
+        (cache,s2_1,DAE.PROP(ty2,c2),_,dae2) = elabExp(cache,env, s2, impl, NONE,true,pre);
+        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
+        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
+        // the value is not a parameter or constant but a variable 
+        // that has an equation involving ONLY params/consts. 
         false = Types.isParameterOrConstant(c2);
+        sp = PrefixUtil.printPrefixStr3(pre);        
         errorString = "delay(" +& Exp.printExpStr(s1_1) +& ", " +& Exp.printExpStr(s2_1) +& 
-           ") where argument #2 has to be paramter or constant expression";
-        Error.addMessage(Error.ERROR_BUILTIN_DELAY, {sp,errorString });
+           ") where argument #2 has to be parameter or constant expression but is a variable";
+        Error.addMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString});
+        dae = DAEUtil.joinDaes(dae1,dae2);
       then
-        fail();
+        (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s2_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),dae);
+
     case (cache,env,{s1,s2,s3},_,impl,pre)
       equation
         (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache,env, s1, impl, NONE,true,pre);
@@ -5222,11 +5230,31 @@ algorithm
         dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
       then
         (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),dae);
+    
+    // adrpo: allow delay(x, var, var) to be used but issue a warning. 
+    //        used in Modelica.Electrical.Analog.Lines.TLine*
+    case (cache,env,{s1,s2,s3},_,impl,pre)
+      equation
+        (cache,s1_1,DAE.PROP(ty1,c1),_,dae1) = elabExp(cache,env, s1, impl, NONE,true,pre);
+        (cache,s2_1,DAE.PROP(ty2,c2),_,dae2) = elabExp(cache,env, s2, impl, NONE,true,pre);
+        (cache,s3_1,DAE.PROP(ty3,c3),_,dae3) = elabExp(cache,env, s3, impl, NONE,true,pre);
+        (s1_1,_) = Types.matchType(s1_1,ty1,DAE.T_REAL_DEFAULT,true);
+        (s2_1,_) = Types.matchType(s2_1,ty2,DAE.T_REAL_DEFAULT,true);
+        (s3_1,_) = Types.matchType(s3_1,ty3,DAE.T_REAL_DEFAULT,true);
+        false = Types.isParameterOrConstant(c3);
+        sp = PrefixUtil.printPrefixStr3(pre);
+        errorString = "delay(" +& Exp.printExpStr(s1_1) +& ", " +& Exp.printExpStr(s2_1) +& 
+        ", " +& Exp.printExpStr(s3_1) +& ") where argument #3 has to be parameter or constant expression but is a variable";
+        Error.addMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString});        
+        dae = DAEUtil.joinDaeLst({dae1,dae2,dae3});
+      then
+        (cache,DAE.CALL(Absyn.IDENT("delay"),{s1_1,s2_1,s3_1},false,true,DAE.ET_REAL(),DAE.NO_INLINE),DAE.PROP(DAE.T_REAL_DEFAULT,DAE.C_VAR()),dae);
+    
     case(_,_,_,_,_,pre)
       equation
         errorString = " use of delay: \n delay(real, real, real as parameter/constant)\n or delay(real, real as parameter/constant).";
         sp = PrefixUtil.printPrefixStr3(pre);
-        Error.addMessage(Error.ERROR_BUILTIN_DELAY, {sp,errorString});
+        Error.addMessage(Error.WARNING_BUILTIN_DELAY, {sp,errorString});
       then fail();
   end matchcontinue;
 end elabBuiltinDelay;
@@ -10824,7 +10852,7 @@ algorithm
       DAE.Const const;
       SCode.Variability variability_1,variability,var;
       DAE.Binding binding_1,bind;
-      Ident s,str,scope,pre_str;
+      String s,str,scope,pre_str;
       DAE.Binding binding;
       Env.Cache cache;
       Boolean doVect;
@@ -10839,6 +10867,19 @@ algorithm
         expTy = Types.elabType(t);
       then
         (cache,DAE.CREF(cr,expTy),DAE.C_VAR(),acc);
+
+    // adrpo: report a warning if the binding came from a start value!
+    case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix)
+      equation
+        s = Exp.printComponentRefStr(cr);
+        pre_str = PrefixUtil.printPrefixStr2(inPrefix);
+        s = pre_str +& s;
+        str = DAEUtil.printBindingExpStr(inBinding);
+        Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING(), {str, s});
+        bind = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
+        (cache, e_1, const, acc) = elabCref2(cache,env,cr,acc,inVariability,forIteratorConstOpt,io,tt,bind,doVect,splicedExpData,inPrefix);
+      then
+        (cache,e_1,const,acc);
 
     // a variable
     case (cache,_,cr,acc,SCode.VAR(),_,io,tt,_,doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_)
@@ -11024,7 +11065,6 @@ algorithm
     // parameters without value with fixed=true or no fixed attribute set produce warning (as long as not for iterator)                 
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,DAE.UNBOUND(),doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),pre)
       local Boolean genWarning;
-       
       equation
         s = Exp.printComponentRefStr(cr);
         genWarning = not Util.isSome(forIteratorConstOpt);

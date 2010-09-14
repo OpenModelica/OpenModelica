@@ -3365,7 +3365,8 @@ algorithm
         (cache, env, _, dae) =
         Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
         dae  = DAEUtil.transformationsBeforeBackend(dae);
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        // adrpo: do not store instantiated class as we don't use it later!
+        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
@@ -3401,7 +3402,8 @@ algorithm
         (cache, env, _, dae) =
         Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
 
-        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        // adrpo: do not store instantiated class as we don't use it later!
+        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         classNameStr = Absyn.pathString(className);
         warnings = Error.printMessagesStr();
         // TODO: add a check if warnings is empty, if so then remove \n... --> warnings,"\nClass  <--- line below.
@@ -3487,7 +3489,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname) "Check cached instantiated class" ;
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1); 
         str = Exp.printExpStr(exp);
       then
         (cache,Values.STRING(str),st);
@@ -3512,7 +3514,7 @@ algorithm
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT("stateSelect",DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.EQBOUND(exp,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
+        (cache,attr,ty,DAE.EQBOUND(exp,_,_,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
         str = Exp.printExpStr(exp);
       then
@@ -3529,7 +3531,7 @@ algorithm
         classname_1 = Static.componentRefToPath(classname);
         Interactive.INSTCLASS(_,dae,env) = Interactive.getInstantiatedClass(ic, classname_1);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.VALBOUND(v),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env, cref_1);
       then
         (cache,v,st);
 
@@ -3553,7 +3555,7 @@ algorithm
         (cache,env4,_,_,dae1,csets_1,ci_state_1,tys,_,_,_,_) = Inst.instClassIn(cache,env3, InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {}, false, ConnectionGraph.EMPTY,NONE);
         cref_1 = Exp.joinCrefs(cref, DAE.CREF_IDENT(attribute,DAE.ET_OTHER(),{}));
-        (cache,attr,ty,DAE.VALBOUND(v),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
+        (cache,attr,ty,DAE.VALBOUND(v,_),_,_,_,_,_) = Lookup.lookupVar(cache, env4, cref_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname_1,dae1,env4));
       then
         (cache,v,Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,vars,cf,lf));
@@ -3957,7 +3959,7 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
-        // allClassPaths = Util.listSelect(allClassPaths, filterLib);
+        allClassPaths = Util.listSelect(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");

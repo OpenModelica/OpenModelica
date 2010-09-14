@@ -769,6 +769,22 @@ algorithm
   end matchcontinue;
 end crefIsIdent;
 
+/*
+public function crefPrefixOf
+"function: crefPrefixOf
+  author: PA
+  Returns true if prefixCref is a prefix of fullCref
+  For example, a.b is a prefix of a.b.c"
+  input ComponentRef prefixCref;
+  input ComponentRef fullCref;
+  output Boolean outBoolean;
+algorithm
+  //System.startTimer();
+  outBoolean := crefPrefixOf_dispatch(prefixCref, fullCref);
+  //System.stopTimer();
+end crefPrefixOf;
+*/
+
 public function crefPrefixOf
 "function: crefPrefixOf
   author: PA

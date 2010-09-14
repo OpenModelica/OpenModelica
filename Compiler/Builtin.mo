@@ -277,7 +277,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> derType=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }
@@ -289,7 +289,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> derType=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("'p/s"),SOME(Values.STRING("'p/s")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }),NONE),DAE.NO_INLINE),NONE);
@@ -302,7 +302,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> dimesionlessReal2Dimensionle
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }
@@ -314,7 +314,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> dimesionlessReal2Dimensionle
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("1"),SOME(Values.STRING("1")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }),NONE),DAE.NO_INLINE),NONE);
@@ -327,7 +327,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtint2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }
@@ -339,7 +339,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtint2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2)")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }),NONE),DAE.NO_INLINE),NONE);
@@ -352,7 +352,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtreal2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("'p"),SOME(Values.STRING("'p")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }
@@ -364,7 +364,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> sqrtreal2real=(
               DAE.ATTR(false,false,SCode.RW,SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
               false,
               DAE.T_STRING_DEFAULT,
-              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST),
+              DAE.EQBOUND(DAE.SCONST("'p(1/2)"),SOME(Values.STRING("'p(1/2))")),DAE.C_CONST(),DAE.BINDING_FROM_DEFAULT_VALUE()),
               NONE()
               )
           }),NONE),DAE.NO_INLINE),NONE);

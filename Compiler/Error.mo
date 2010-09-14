@@ -219,6 +219,7 @@ public constant ErrorID IF_EQUATION_WARNING=131;
 public constant ErrorID IF_EQUATION_UNBALANCED_2=132;
 public constant ErrorID EQUATION_GENERIC_FAILURE=133;
 
+public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
 public constant ErrorID UNBOUND_PARAMETER_WARNING=500;
 public constant ErrorID BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER=501;
 public constant ErrorID BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER=502;
@@ -229,7 +230,7 @@ public constant ErrorID FAILED_TO_EVALUATE_FUNCTION = 506;
 public constant ErrorID OVERDET_INITIAL_EQN_SYSTEM = 507;
 public constant ErrorID FINAL_OVERRIDE = 508;
 public constant ErrorID WARNING_RELATION_ON_REAL=509;
-public constant ErrorID ERROR_BUILTIN_DELAY=510;
+public constant ErrorID WARNING_BUILTIN_DELAY=510;
 public constant ErrorID When_With_IF=511;
 public constant ErrorID OUTER_MODIFICATION=512;
 public constant ErrorID REDUNDANT_GUESS=513 "Used by MathCore in Backend";
@@ -454,9 +455,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (INHERIT_BASIC_WITH_COMPS,TRANSLATION(),ERROR(),
           "Class %s inherits primary type but has components"),
           (MODIFIER_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
-          "Type mismatch in modifier, expected type %s, got modifier %s of type %s"),
+          "Type mismatch in modifier of component %s, expected type %s, got modifier %s of type %s"),
           (MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,TRANSLATION(),ERROR(),
-          "Type mismatch in modifier, declared type %s, got modifier %s of type %s"),
+          "Type mismatch in modifier of component %s, declared type %s, got modifier %s of type %s"),
           (ERROR_FLATTENING,TRANSLATION(),ERROR(),
           "Error occured while flattening model %s"),
 		      (NOT_ARRAY_TYPE_IN_FOR_STATEMENT, TRANSLATION(), ERROR(),
@@ -470,7 +471,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
           (RECURSIVE_DEFINITION,TRANSLATION(),ERROR(),"Class %s has a recursive definition, i.e. contains an instance of itself"),
           (UNBOUND_PARAMETER_WARNING,TRANSLATION(),WARNING(),
-          "Parameter %s has no value, and is fixed during initialization (fixed=true)"),
+          "Parameter %s has no value or start attribute, and is fixed during initialization (fixed=true)"),
+          (UNBOUND_PARAMETER_WITH_START_VALUE_WARNING,TRANSLATION(),WARNING(),
+          "Using available start value (start=%s) as default value for parameter %s that has no value"),          
           (BUILTIN_FUNCTION_SUM_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
           "Function \"sum\" has scalar as argument in %s in component %s"),
           (BUILTIN_FUNCTION_PRODUCT_HAS_SCALAR_PARAMETER,TRANSLATION(),WARNING(),
@@ -521,8 +524,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "%s is not a package, imports is only allowed for packages."),
           (WARNING_RELATION_ON_REAL,TRANSLATION(),WARNING(),
           "In component %s, in relation %s, %s on Reals is only allowed inside functions."),
-          (ERROR_BUILTIN_DELAY,TRANSLATION(),ERROR(),
-          "Builtin function delay(expr,delayTime,delayMax*) failed in component %s: %s"),
+          (WARNING_BUILTIN_DELAY,TRANSLATION(),WARNING(),
+          "Improper use of builtin function delay(expr,delayTime,delayMax*) in component %s: %s"),
           (When_With_IF,TRANSLATION(),ERROR(),
           "When equations using if-statements on form 'if a then b=c else b=d' not implemented yet, use 'b=if a then c else d' as workaround\n%s"),
           (OUTER_MODIFICATION,TRANSLATION(),WARNING(),

@@ -1346,10 +1346,10 @@ algorithm
   str := matchcontinue(binding)
     local DAE.Exp e; Values.Value v;
     case(DAE.UNBOUND()) then "";
-    case(DAE.EQBOUND(exp=e)) equation
+    case(DAE.EQBOUND(exp=e, source=DAE.BINDING_FROM_DEFAULT_VALUE())) equation
       str = " = "+&Exp.printExpStr(e);
     then str;
-    case(DAE.VALBOUND(v)) equation
+    case(DAE.VALBOUND(valBound=v, source=DAE.BINDING_FROM_DEFAULT_VALUE())) equation
       str = " = " +& ValuesUtil.valString(v);
     then str;
   end matchcontinue;

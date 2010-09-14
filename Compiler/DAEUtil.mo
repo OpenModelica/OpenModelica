@@ -44,6 +44,7 @@ public import DAE;
 public import Env;
 public import SCode;
 public import Values;
+public import ValuesUtil;
 public import HashTable;
 
 public constant DAE.AvlTree emptyFuncTree = DAE.AVLTREENODE(NONE(),0,NONE(),NONE());
@@ -5206,5 +5207,57 @@ algorithm
   // Don't even run the function to try and do this; it doesn't work very well
   // d := transformDerInline(d);
 end transformationsBeforeBackend;
+
+public function setBindingSource
+"@author: adrpo
+  This function will set the source of the binding"
+ input DAE.Binding inBinding;
+ input DAE.BindingSource bindingSource;
+ output DAE.Binding outBinding;
+algorithm
+  outBinding := matchcontinue(inBinding, bindingSource)
+    local
+      DAE.Exp exp "exp";
+      Option<Values.Value> evaluatedExp "evaluatedExp; evaluated exp";
+      DAE.Const cnst "constant";
+      Values.Value valBound;
+        
+    case (inBinding as DAE.UNBOUND(), _) then inBinding;
+    case (DAE.EQBOUND(exp, evaluatedExp, cnst, _), bindingSource) then DAE.EQBOUND(exp, evaluatedExp, cnst, bindingSource);
+    case (DAE.VALBOUND(valBound, _), bindingSource) then DAE.VALBOUND(valBound, bindingSource);
+ end matchcontinue;
+end setBindingSource;
+
+public function printBindingExpStr "prints a binding"
+  input DAE.Binding binding;
+  output String str;
+algorithm
+  str := matchcontinue(binding)
+    local 
+      DAE.Exp e; Values.Value v;
+    case(DAE.UNBOUND()) then "";
+    case(DAE.EQBOUND(exp=e)) 
+      equation
+        str = Exp.printExpStr(e);
+      then 
+        str;
+    case(DAE.VALBOUND(valBound=v)) 
+      equation
+        str = " = " +& ValuesUtil.valString(v);
+      then 
+        str;
+  end matchcontinue;
+end printBindingExpStr;
+
+public function printBindingSourceStr "prints a binding source as a string"
+  input DAE.BindingSource bindingSource;
+  output String str;
+algorithm
+  str := matchcontinue(bindingSource)
+    local 
+    case(DAE.BINDING_FROM_DEFAULT_VALUE()) then "[DEFAULT VALUE]";
+    case(DAE.BINDING_FROM_START_VALUE()) then  "[START VALUE]";
+  end matchcontinue;
+end printBindingSourceStr;
 
 end DAEUtil;

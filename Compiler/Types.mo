@@ -75,6 +75,7 @@ protected import Print;
 protected import Util;
 protected import RTOpts;
 protected import ValuesUtil;
+protected import DAEUtil;
 
 public function discreteType
 "function: discreteType
@@ -1697,7 +1698,7 @@ algorithm
    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"quantity") 
      then DAE.TYPES_VAR("quantity",
           DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING("")),NONE());  
+          false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());  
 
     // Should be bound to the first element of DAE.T_ENUMERATION list higher up in the call chain
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"min")       
@@ -1720,7 +1721,7 @@ algorithm
           false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());  
     case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"enable") then DAE.TYPES_VAR("enable",
           DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true)),NONE()); 
+          false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()); 
         
 //    case ((DAE.T_ENUM(),_),"quantity") then DAE.TYPES_VAR("quantity",
 //          DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING("")));
@@ -2435,7 +2436,7 @@ algorithm
         res = Util.stringAppendList({n,"=",bindStr});
       then
         res;
-    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.VALBOUND(value))
+    case DAE.TYPES_VAR(name = n,attributes = attr,protected_ = prot,type_ = typ,binding = DAE.VALBOUND(valBound=value))
       equation
         valStr = ValuesUtil.valString(value);
         res = Util.stringAppendList({n,"=",valStr});
@@ -2532,30 +2533,35 @@ algorithm
   outString:=
   matchcontinue (inBinding)
     local
-      Ident str,str2,res,v_str,s;
+      String str,str2,res,v_str,s,str3;
       DAE.Exp exp;
       Const f;
       Values.Value v;
+      DAE.BindingSource source;
+      
     case DAE.UNBOUND() then "UNBOUND";
-    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE,constant_ = f)
+    case DAE.EQBOUND(exp = exp,evaluatedExp = NONE,constant_ = f,source = source)
       equation
         str = Exp.printExpStr(exp);
         str2 = unparseConst(f);
-        res = Util.stringAppendList({"DAE.EQBOUND(",str,",NONE ",str2,")"});
+        str3 = DAEUtil.printBindingSourceStr(source);
+        res = Util.stringAppendList({"DAE.EQBOUND(",str,", NONE(), ",str2,", ",str3,")"});
       then
         res;
-    case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f)
+    case DAE.EQBOUND(exp = exp,evaluatedExp = SOME(v),constant_ = f,source = source)
       equation
         str = Exp.printExpStr(exp);
         str2 = unparseConst(f);
         v_str = ValuesUtil.valString(v);
-        res = Util.stringAppendList({"DAE.EQBOUND(",str,",SOME(",v_str,"), ",str2,")"});
+        str3 = DAEUtil.printBindingSourceStr(source);
+        res = Util.stringAppendList({"DAE.EQBOUND(",str,", SOME(",v_str,"), ",str2,", ",str3,")"});
       then
         res;
-    case DAE.VALBOUND(valBound = v)
+    case DAE.VALBOUND(valBound = v, source = source)
       equation
         s = ValuesUtil.unparseValues({v});
-        res = Util.stringAppendList({"DAE.VALBOUND(",s,")"});
+        str3 = DAEUtil.printBindingSourceStr(source);
+        res = Util.stringAppendList({"DAE.VALBOUND(",s,", ",str3,")"});
       then
         res;
     case(_) then "";
@@ -2723,21 +2729,21 @@ public function getFixedVarAttribute "Returns the value of the fixed attribute o
 algorithm
   fixed :=  matchcontinue(tp)
   local list<Var> vars;
-    case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
+    case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_),_)) then fixed;
     case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
     case((DAE.T_REAL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_),_)) then fixed;
     case((DAE.T_REAL(_::vars),_)) equation
       fixed = getFixedVarAttribute((DAE.T_REAL(vars),NONE));
     then fixed;
 
-    case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
+    case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_),_)) then fixed;
     case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
     case((DAE.T_INTEGER(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_),_)) then fixed;
     case((DAE.T_INTEGER(_::vars),_)) equation
       fixed = getFixedVarAttribute((DAE.T_INTEGER(vars),NONE));
     then fixed;
 
-    case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(Values.BOOL(fixed)))::_),_)) then fixed;
+    case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.VALBOUND(valBound = Values.BOOL(fixed)))::_),_)) then fixed;
     case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(evaluatedExp = SOME(Values.BOOL(fixed))))::_),_)) then fixed;
     case((DAE.T_BOOL(DAE.TYPES_VAR("fixed",binding = DAE.EQBOUND(exp = DAE.BCONST(fixed)))::_),_)) then fixed;
     case((DAE.T_BOOL(_::vars),_)) equation

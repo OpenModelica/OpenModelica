@@ -1215,11 +1215,16 @@ algorithm
         _ = System.readEnv("OPENMODELICAHOME");
         
         args_1 = RTOpts.args(args);
-
+        
         // we need this as we get the arguments in reverse from RTOpts.args
         args_1 = listReverse(args_1);
 
         // debug_show_depth(2);
+        
+        // reset the timer used to calculate 
+        // cummulative time of some functions
+        // search for System.startTimer/System.stopTimer/System.getTimerTimer
+        // System.resetTimer();
 
         //Env.globalCache = fill(Env.emptyCache,1);
         symbolTable = readSettings(args);
@@ -1237,6 +1242,7 @@ algorithm
         errstr = Print.getErrorString();
         Debug.fcall("errorbuf", print, errstr);
         */
+        // print("Total time for timer: " +& realString(System.getTimerTime()) +& "\n");
       then
         ();
     case _

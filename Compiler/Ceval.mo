@@ -5280,7 +5280,7 @@ protected function crefEqualValue ""
   input DAE.Binding v;
   output Boolean outBoolean;
 algorithm outBoolean := matchcontinue(c,v)
-  case(c,(v as DAE.EQBOUND(DAE.CREF(c2,_),NONE,_)))
+  case(c,(v as DAE.EQBOUND(DAE.CREF(c2,_),NONE,_,_)))
     local DAE.ComponentRef c2;
     equation
       true = Exp.crefEqual(c,c2);
@@ -5356,7 +5356,7 @@ algorithm
         // range is constant!
         exp_type = Exp.typeof(exp);
         iter_type = Types.expTypetoTypesType(exp_type);
-        new_env = Env.extendFrameForIterator(env, iteratorName, iter_type, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
+        new_env = Env.extendFrameForIterator(env, iteratorName, iter_type, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
           implicitInstantiation, new_st, dim, msg);
         then (new_cache, value, new_st);
@@ -5367,7 +5367,7 @@ algorithm
           iteratorName, rest_values, implicitInstantiation, new_st, dim, msg);
         exp_type = Exp.typeof(exp);
         iter_type = Types.expTypetoTypesType(exp_type);
-        new_env = Env.extendFrameForIterator(new_env, iteratorName, iter_type, DAE.VALBOUND(value), SCode.VAR(), SOME(DAE.C_CONST()));
+        new_env = Env.extendFrameForIterator(new_env, iteratorName, iter_type, DAE.VALBOUND(value, DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.VAR(), SOME(DAE.C_CONST()));
         (new_cache, value, new_st) = ceval(new_cache, new_env, exp,
           implicitInstantiation, new_st, dim, msg);
         reduced_value = op(value, value2);

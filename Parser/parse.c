@@ -33,6 +33,8 @@
 #define __cplusplusend
 #undef __cplusplus
 extern "C" {
+#else
+#define bool int
 #endif
 
 #include <stdio.h>

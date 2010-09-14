@@ -1297,7 +1297,7 @@ algorithm
         (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         env_1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v),NONE()), Env.VAR_TYPED(), {});
+          false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), Env.VAR_TYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
@@ -1306,7 +1306,7 @@ algorithm
         failure((_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(id,DAE.ET_OTHER(),{})));
         env_1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,tp,DAE.VALBOUND(v),NONE()), NONE, Env.VAR_UNTYPED(), {});
+          false,tp,DAE.VALBOUND(v,DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()), NONE, Env.VAR_UNTYPED(), {});
         env_2 = addVarsToEnv(rest, env_1);
       then
         env_2;
