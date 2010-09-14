@@ -1,0 +1,59 @@
+RMLHOME = $(OMDEV)/tools/rml
+COMPILERHOME=../Compiler/
+RMLINC	= -I$(RMLHOME)/include/plain
+
+ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
+CFLAGS=
+CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
+CC=cl /O2 $(CPPFLAGS)
+
+.PHONY: all
+all: libantlr3.lib libomparse.lib
+
+libantlr3.lib: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
+	REM build the ANTLR3 C library
+	$(CC) -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C	
+	LINK /LIB /LTCG /OUT:$@ antlr3*.obj wsock32.lib	
+	@del /F /S antlr3*.obj
+
+HFILES = \
+  ModelicaParser.h \
+  ModelicaParserCommon.h \
+  MetaModelica_Lexer.h \
+  MetaModelica_Lexer_BaseModelica_Lexer.h \
+  Modelica_3_Lexer.h \
+  Modelica_3_Lexer_BaseModelica_Lexer.h
+
+OBJS = \
+MetaModelica_Lexer_BaseModelica_Lexer.obj MetaModelica_Lexer.obj \
+Modelica_3_Lexer_BaseModelica_Lexer.obj Modelica_3_Lexer.obj \
+ModelicaParser.obj
+
+MetaModelica_Lexer.obj: MetaModelica_Lexer.h MetaModelica_Lexer_BaseModelica_Lexer.h
+Modelica_3_Lexer.obj: Modelica_3_Lexer.h Modelica_3_Lexer_BaseModelica_Lexer.h
+MetaModelica_Lexer_BaseModelica_Lexer.obj: MetaModelica_Lexer_BaseModelica_Lexer.h
+Modelica_3_Lexer_BaseModelica_Lexer.obj: Modelica_3_Lexer_BaseModelica_Lexer.h
+parse.obj: $(HFILES)
+
+libomparse.lib: parse.obj $(OBJS) libantlr3.lib
+	@del /F /S $@
+	LINK /LIB /LTCG /OUT:$@ parse.obj $(OBJS) libantlr3.lib 
+
+parsergen = ModelicaParser.c ModelicaParser.h
+modelica3gen = Modelica_3_Lexer_BaseModelica_Lexer.c Modelica_3_Lexer_BaseModelica_Lexer.h Modelica_3_Lexer.c Modelica_3_Lexer.h
+metamodelicagen = MetaModelica_Lexer_BaseModelica_Lexer.c MetaModelica_Lexer_BaseModelica_Lexer.h MetaModelica_Lexer.c MetaModelica_Lexer.h
+
+$(parsergen) : Modelica.g
+	$(ANTLRCMD) Modelica.g
+
+$(modelica3gen) : Modelica_3_Lexer.g BaseModelica_Lexer.g
+	$(ANTLRCMD) Modelica_3_Lexer.g BaseModelica_Lexer.g
+
+$(metamodelicagen) : MetaModelica_Lexer.g BaseModelica_Lexer.g
+	$(ANTLRCMD) MetaModelica_Lexer.g BaseModelica_Lexer.g
+
+clean:
+	del /F *.obj *.lib libomparse.* libantlr3.* \
+ModelicaParser.c ModelicaParser.h \
+*Modelica*_Lexer.c *Modelica*_Lexer.h \
+*.tokens 
