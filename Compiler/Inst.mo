@@ -1152,6 +1152,22 @@ algorithm
       Real t1, t2, t;
       String s;
 
+    // adrpo: ONLY when running checkModel we should be able to instantiate partial classes
+    case (cache,env,ih,store,mod,pre,csets,
+          (c as SCode.CLASS(name=n, partialPrefix = partialPrefix as true)),
+          inst_dims,impl,callscope,graph)
+      equation
+        true = OptManager.getOption("checkModel");
+        c = SCode.setClassPartialPrefix(false, c);
+        // add a warning
+        Error.addMessage(Error.INST_PARTIAL_CLASS_CHECK_MODEL_WARNING, {n});
+        // call normal instantiation        
+        (cache,env,ih,store,dae,csets,ty,ci_state_1,oDA,graph) =
+           instClass(inCache, inEnv, inIH, store, inMod, inPrefix, inSets, c, inInstDims, inBoolean, inCallingScope, inGraph);
+      then
+        (cache,env,ih,store,dae,csets,ty,ci_state_1,oDA,graph);
+       
+
     /* Instantiation of a class. Create new scope and call instClassIn.
      *  Then generate equations from connects.
      */

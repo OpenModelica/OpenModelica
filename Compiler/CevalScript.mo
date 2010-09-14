@@ -3345,15 +3345,94 @@ algorithm
       DAE.Exp fileprefix;
       Env.Cache cache;
       Integer eqnSize,varSize,simpleEqnSize;
-      String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr;
+      String warnings,eqnSizeStr,varSizeStr,retStr,classNameStr,simpleEqnSizeStr, classNameStr_dummy;
       DAELow.EquationArray eqns;
       Integer elimLevel;
+      Boolean partialPrefix;
+      Boolean finalPrefix;
+      Boolean encapsulatedPrefix;
+      Absyn.Restriction restriction;
+      list<Absyn.Class> classes "List of classes";
+      Absyn.Within within_ "Within clause";
+      Absyn.TimeStamp globalBuildTimes "";
+      Absyn.Info info;
+      Absyn.Class dummyClass;
+      Absyn.ClassPart dummyClassPart;
 
+    // handle partial models
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
-        // this case should not handle functions
-        failure(Absyn.CLASS(_,_,_,_,Absyn.R_FUNCTION(),_,_) = Interactive.getPathedClassInProgram(className, p));
+        // see if class is partial
+        Absyn.CLASS(partialPrefix = partialPrefix as true, finalPrefix = finalPrefix, encapsulatedPrefix = encapsulatedPrefix, restriction =  restriction, info = info) = 
+          Interactive.getPathedClassInProgram(className, p);
+        // this case should not handle functions so here we check anything but functions!
+        false = listMember(restriction, {Absyn.R_FUNCTION()});
+        _ = Error.getMessagesStr() "Clear messages";        
+        Print.clearErrorBuf() "Clear error buffer";
+        classNameStr = Absyn.pathString(className);
+        /* this part is not needed anymore as when checkModel is active you can normally instantiate partial classes
+           I leave it here as we might use it in some other part 
+        // add a non-partial class to ptot with the same flags (final, encapsulated) and same restriction but instead of partial make it non-partial.
+        Absyn.PROGRAM(classes, within_, globalBuildTimes) = ptot;
+        classNameStr_dummy = classNameStr +& "_$_non_partial";
+        // make a dummy class part containing an element definition as extends given-for-check-partial-class;
+        dummyClassPart = 
+                     Absyn.PUBLIC({
+                       Absyn.ELEMENTITEM(
+                          Absyn.ELEMENT(false, NONE(), Absyn.UNSPECIFIED(), "extends", 
+                            Absyn.EXTENDS(className, {}, NONE()), // extend the given-for-check partial class 
+                            info, NONE())
+                                   )}); 
+        dummyClass = Absyn.CLASS(classNameStr_dummy, 
+                                 false, 
+                                 finalPrefix, 
+                                 encapsulatedPrefix, 
+                                 restriction, 
+                                 Absyn.PARTS({dummyClassPart}, NONE()),   
+                                 info);
+        // add the dummy class to the program
+        ptot = Absyn.PROGRAM(dummyClass::classes, within_, globalBuildTimes);
+        */
+        // translate the program
+        p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
+
+        //UnitParserExt.clear();
+        //UnitAbsynBuilder.registerUnits(ptot);
+        //UnitParserExt.commit();
+
+        // instantiate the partial class nomally as it works during checkModel.
+        (cache, env, _, dae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
+        dae  = DAEUtil.transformationsBeforeBackend(dae);
+        // adrpo: do not store instantiated class as we don't use it later!
+        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        elimLevel = RTOpts.eliminationLevel();
+        RTOpts.setEliminationLevel(0); // No variable elimination
+        (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
+        = DAELow.lower(dae, false/* no dummy variable*/, true);
+        Debug.fcall("dumpdaelow", DAELow.dump, dlow);
+        RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
+        eqnSize = DAELow.equationSize(eqns);
+        (eqnSize,varSize) = subtractDummy(DAELow.daeVars(dlow),eqnSize,varSize);
+        simpleEqnSize = DAELow.countSimpleEquations(eqns);
+        eqnSizeStr = intString(eqnSize);
+        varSizeStr = intString(varSize);
+        simpleEqnSizeStr = intString(simpleEqnSize);
+        
+        warnings = Error.printMessagesStr();
+        retStr=Util.stringAppendList({"Check of ",classNameStr," completed successfully.\n\n",warnings,"\nClass ",classNameStr," has ",eqnSizeStr," equation(s) and ",
+          varSizeStr," variable(s).\n",simpleEqnSizeStr," of these are trivial equation(s).\n"});
+      then
+        (cache,Values.STRING(retStr),st);
+
+    // handle normal models
+    case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
+      equation
+        ptot = Dependency.getTotalProgram(className,p);
+        // non-partial non-functions
+        Absyn.CLASS(partialPrefix = false, restriction = restriction) = Interactive.getPathedClassInProgram(className, p);
+        // this case should not handle functions so here we check anything but functions!
+        false = listMember(restriction, {Absyn.R_FUNCTION()});
         _ = Error.getMessagesStr() "Clear messages";
         Print.clearErrorBuf() "Clear error buffer";
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
@@ -3387,6 +3466,7 @@ algorithm
       then
         (cache,Values.STRING(retStr),st);
 
+    // handle functions
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         ptot = Dependency.getTotalProgram(className,p);
@@ -3411,6 +3491,7 @@ algorithm
       then
         (cache,Values.STRING(retStr),st);
 
+    // errors
     case (cache,env,className,st,_) local
       String errorMsg; Boolean strEmpty; String errorBuffer;
       equation

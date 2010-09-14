@@ -2133,16 +2133,32 @@ algorithm
   end matchcontinue;
 end elseIfEquationStr;
 
-public function setClassRestriction "Sets the restriction of a class"
-input Restriction r;
-input Class cl;
-output Class outCl;
+public function setClassRestriction "Sets the restriction of a SCode Class"
+  input Restriction r;
+  input Class cl;
+  output Class outCl;
 algorithm
   outCl := matchcontinue(r,cl)
   local ClassDef parts; Boolean p,e; Ident id; Absyn.Info info;
     case(r,CLASS(id,p,e,_,parts,info)) then CLASS(id,p,e,r,parts,info);
   end matchcontinue;
 end setClassRestriction;
+
+public function setClassPartialPrefix "Sets the partial prefix of a SCode Class"
+  input Boolean partialPrefix;
+  input Class cl;
+  output Class outCl;
+algorithm
+  outCl := matchcontinue(partialPrefix,cl)
+    local 
+      ClassDef parts; 
+      Boolean e; 
+      Ident id; 
+      Absyn.Info info; 
+      Restriction restriction;    
+    case(partialPrefix,CLASS(id,_,e,restriction,parts,info)) then CLASS(id,partialPrefix,e,restriction,parts,info);
+  end matchcontinue;
+end setClassPartialPrefix;
 
 protected function findIteratorInEEquation
   input String inString;
