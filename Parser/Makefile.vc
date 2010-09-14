@@ -37,6 +37,7 @@ parse.obj: $(HFILES)
 
 libomparse.lib: parse.obj $(OBJS) libantlr3.lib
 	@del /F /S $@
+	REM build the OMC Parser library that includes libantlr3.lib (the ANTLR3 C library) 
 	LINK /LIB /LTCG /OUT:$@ parse.obj $(OBJS) libantlr3.lib 
 
 parsergen = ModelicaParser.c ModelicaParser.h

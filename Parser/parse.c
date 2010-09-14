@@ -1,9 +1,9 @@
 /*
  * This file is part of OpenModelica.
  *
- * Copyright (c) 1998-2010, LinkÃ¶pings University,
+ * Copyright (c) 1998-2010, Linköpings University,
  * Department of Computer and Information Science,
- * SE-58183 LinkÃ¶ping, Sweden.
+ * SE-58183 Linköping, Sweden.
  *
  * All rights reserved.
  *
@@ -14,7 +14,7 @@
  *
  * The OpenModelica software and the Open Source Modelica
  * Consortium (OSMC) Public License (OSMC-PL) are obtained
- * from LinkÃ¶pings University, either from the above address,
+ * from Linköpings University, either from the above address,
  * from the URL: http://www.ida.liu.se/projects/OpenModelica
  * and in the OpenModelica distribution.
  *
@@ -45,6 +45,7 @@ extern "C" {
 #include <MetaModelica_Lexer.h>
 #include <Modelica_3_Lexer.h>
 #include <ModelicaParser.h>
+#include <antlr3intstream.h>
 
 #include "runtime/errorext.h"
 #include "runtime/rtopts.h" /* for accept_meta_modelica_grammar() function */
@@ -58,10 +59,11 @@ void Parser_5finit(void)
 
 void lexNoRecover(pANTLR3_LEXER lexer)
 {
+  pANTLR3_INT_STREAM inputStream = NULL;
   lexer->rec->state->error = ANTLR3_TRUE;
   lexer->rec->state->failed = ANTLR3_TRUE;
-  pANTLR3_INT_STREAM istream = lexer->input->istream;
-  istream->consume(istream);
+  inputStream = lexer->input->istream;
+  inputStream->consume(inputStream);
 }
 
 void noRecover(pANTLR3_BASE_RECOGNIZER recognizer)
@@ -152,23 +154,21 @@ static void* noRecoverFromMismatchedToken(pANTLR3_BASE_RECOGNIZER recognizer, AN
 
 static void handleLexerError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenNames)
 {
-  pANTLR3_LEXER lexer;
-  pANTLR3_EXCEPTION ex;
+  pANTLR3_LEXER lexer = (pANTLR3_LEXER)(recognizer->super);
+  pANTLR3_EXCEPTION ex = lexer->rec->state->exception;
   pANTLR3_STRING ftext;
-
-  lexer   = (pANTLR3_LEXER)(recognizer->super);
-  
-  ex    = lexer->rec->state->exception;
   int isEOF = lexer->input->istream->_LA(lexer->input->istream, 1) == -1;
-
   char* chars[] = {
     isEOF ? strdup("<EOF>") : strdup((const char*)(lexer->input->substr(lexer->input, lexer->getCharIndex(lexer), lexer->getCharIndex(lexer)+10)->chars)),
     strdup((const char*)lexer->getText(lexer)->chars)
   };
+  int line = 0;
+  int offset = 0;
+
   if (strlen(chars[1]) > 20)
     chars[1][20] = '\0';
-  int line = lexer->getLine(lexer);
-  int offset = lexer->getCharPositionInLine(lexer)+1;
+  line = lexer->getLine(lexer);
+  offset = lexer->getCharPositionInLine(lexer)+1;
   if (*chars[1])
     c_add_source_message(2, "SYNTAX", "Error", "Lexer got '%s' but failed to recognize the rest: '%s'", (const char**) chars, 2, line, offset, line, offset, false, ModelicaParser_filename_C);
   else
@@ -267,11 +267,12 @@ void* parseStream(pANTLR3_INPUT_STREAM input)
   pANTLR3_LEXER               pLexer;
   pANTLR3_COMMON_TOKEN_STREAM tstream;
   pModelicaParser             psr;
+  void* lxr = 0;
+  void* res = NULL;
 
   // TODO: Add flags to the actual Parser.parse() call instead of here?
   if (accept_meta_modelica_grammar()) ModelicaParser_flags |= PARSE_META_MODELICA;
 
-  void* lxr = 0;
   if (ModelicaParser_flags & PARSE_META_MODELICA) {
     lxr = MetaModelica_LexerNew(input);
     if (lxr == NULL ) { fprintf(stderr, "Unable to create the lexer due to malloc() failure1\n"); exit(ANTLR3_ERR_NOMEM); }
@@ -304,7 +305,6 @@ void* parseStream(pANTLR3_INPUT_STREAM input)
   psr->pParser->rec->recoverFromMismatchedToken = noRecoverFromMismatchedToken;
   // psr->pParser->rec->recoverFromMismatchedSet = noRecoverFromMismatchedSet;
 
-  void* res = NULL;
   /* if (ModelicaParser_flags & PARSE_FLAT)
     res = psr->flat_class(psr);
   else */ if (ModelicaParser_flags & PARSE_EXPRESSION)
@@ -338,6 +338,8 @@ void* parseFile(void* fileNameRML, int flags)
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
+  int len = 0;
+
   ModelicaParser_filename_C = RML_STRINGDATA(fileNameRML);
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
   ModelicaParser_filename_RML = mk_scon((char*)ModelicaParser_filename_C);
@@ -345,7 +347,7 @@ void* parseFile(void* fileNameRML, int flags)
 
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
-  int len = strlen(ModelicaParser_filename_C);
+  len = strlen(ModelicaParser_filename_C);
   if (len > 3 && 0==strcmp(ModelicaParser_filename_C+len-4,".mof"))
     ModelicaParser_flags |= PARSE_FLAT;
 
@@ -365,6 +367,7 @@ void* parseString(void* stringRML, int flags)
 
   pANTLR3_UINT8               fName;
   pANTLR3_INPUT_STREAM        input;
+  char* data = NULL;
 
   ModelicaParser_filename_C = "<interactive>";
   /* For some reason we get undefined values if we use the old pointer; but only in rare cases */
@@ -374,7 +377,7 @@ void* parseString(void* stringRML, int flags)
   if (debug) { fprintf(stderr, "Starting parsing of file: %s\n", ModelicaParser_filename_C); }
 
   fName  = (pANTLR3_UINT8)ModelicaParser_filename_C;
-  char* data = RML_STRINGDATA(stringRML);
+  data = RML_STRINGDATA(stringRML);
   input  = antlr3NewAsciiStringInPlaceStream((pANTLR3_UINT8)data,strlen(data),fName);
   if ( input == NULL ) {
     fprintf(stderr, "Unable to open file %s\n", ModelicaParser_filename_C);

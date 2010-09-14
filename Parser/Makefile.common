@@ -2,7 +2,7 @@ COMPILERHOME=../Compiler/
 RMLINC	= -I$(RMLHOME)/include/plain
 
 ANTLRCMD=java -cp ./antlr-3.2/lib/antlr-3.2.jar org.antlr.Tool -report
-CFLAGS=-O3
+CFLAGS=-O3 
 CPPFLAGS=-I$(COMPILERHOME) $(RMLINC) -I. -Iantlr-3.2/runtime/C -Iantlr-3.2/runtime/C/include
 CC=g++
 
@@ -11,7 +11,7 @@ all: libantlr3.a libomparse.a
 
 libantlr3.a: antlr-3.2/runtime/C/src/* antlr-3.2/runtime/C/include/* 
 	# build the library
-	gcc -O3 -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
+	gcc ${CFLAGS} -c antlr-3.2/runtime/C/src/*.c -Iantlr-3.2/runtime/C/include -Iantlr-3.2/runtime/C
 	rm -f $@
 	ar -ru libantlr3.a antlr3*.o
 	ranlib libantlr3.a

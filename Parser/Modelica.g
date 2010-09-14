@@ -76,7 +76,9 @@ goto rule ## func ## Ex; }}
   #define mk_tuple2(x1,x2) mk_box2(0,x1,x2)
   #define make_redeclare_keywords(replaceable,redeclare) (replaceable && redeclare ? Absyn__REDECLARE_5fREPLACEABLE : replaceable ? Absyn__REPLACEABLE : redeclare ? Absyn__REDECLARE : NULL)
   #define make_inner_outer(i,o) (i && o ? Absyn__INNEROUTER : i ? Absyn__INNER : o ? Absyn__OUTER : Absyn__UNSPECIFIED)
+#if 1 /* mk_bcon will be defined in RML later */
   #define mk_bcon(x) (x ? RML_TRUE : RML_FALSE)
+#endif
 #if 0
   /* Enable if you don't want to generate the tree */
   void* mk_box_eat_all(int ix, ...);
@@ -437,6 +439,7 @@ component_clause returns [void* ast] @declarations {
         fprintf(stderr, "component_clause error\n");
       }
 
+              { /* adrpo - use the ANSI C standard */
 				// no arr was set, inspect ar_option and fix it
 				struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(ar_option);
 				if (RML_GETHDR(ar_option) == RML_STRUCTHDR(0,0)) // is NONE
@@ -447,6 +450,7 @@ component_clause returns [void* ast] @declarations {
 				{
 					arr = p->data[0];
 				}
+		      }
 
       ast = Absyn__COMPONENTS(Absyn__ATTR(tp.flow, tp.stream, tp.variability, tp.direction, arr), path, clst);
     }
@@ -659,8 +663,10 @@ assign_clause_a returns [void* ast] @declarations {
       {
         modelicaParserAssert(RML_GETHDR(e1) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2), "Only function call expressions may stand alone in an algorithm section",
                              assign_clause_a, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
+        { /* uselsess block for ANSI C crap */
         struct rml_struct *p = (struct rml_struct*)RML_UNTAGPTR(e1);
         $ast = Absyn__ALG_5fNORETCALL(p->data[0],p->data[1]);
+        }
       }
     )
   ;
@@ -909,16 +915,19 @@ primary returns [void* ast] @declarations {
     {
       char* chars = (char*)$v.text->chars;
       char* endptr;
+      const char* args[2] = {NULL};
+      long l = 0;
       errno = 0;
-      long l = strtol(chars,&endptr,10);
-      const char* args[2] = {chars,
-         RML_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63"
-         : errno || *endptr != 0 ? "Modelica only supports 32"
-         : "OpenModelica only supports 31"};
+      l = strtol(chars,&endptr,10);
+      args[0] = chars;
+      args[1] = RML_SIZE_INT == 8 ? "OpenModelica (64-bit) only supports 63"
+                                  : errno || *endptr != 0 ? "Modelica only supports 32"
+                                                          : "OpenModelica only supports 31";
       
       if (errno || *endptr != 0) {
+        double d = 0;
         errno = 0;
-        double d = strtod(chars,&endptr);
+        d = strtod(chars,&endptr);
         modelicaParserAssert(*endptr == 0 && errno==0, "Number is too large to represent as a long or double on this machine", primary, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1);
         c_add_source_message(2, "SYNTAX", "Warning", "\%s-bit signed integers! Transforming: \%s into a real",
           args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
