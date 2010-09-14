@@ -951,9 +951,7 @@ algorithm
 end getDimensionSizes;
 
 public function getDimensions
-"Returns the dimensions of a Type.
- This is a list of Option<Integer> with the dimension size for
- each dimension, NONE corresponds to ':' dimension, i.e. not known."
+"Returns the dimensions of a Type."
   input Type inType;
   output list<DAE.Dimension> outIntegerLst;
 algorithm
@@ -973,6 +971,27 @@ algorithm
     case ((_,_)) then {};
   end matchcontinue;
 end getDimensions;
+
+public function getDimensionNth
+  input Type inType;
+  input Integer inDim;
+  output DAE.Dimension outDimension;
+algorithm
+  outDimension := matchcontinue(inType, inDim)
+    local
+      DAE.Dimension dim;
+      DAE.Type t;
+      Integer d;
+    case ((DAE.T_ARRAY(arrayDim = dim), _), 1) then dim;
+    case ((DAE.T_ARRAY(arrayType = t), _), d)
+      equation
+        true = (d > 1);
+      then
+        getDimensionNth(t, d - 1);
+    case ((DAE.T_COMPLEX(complexTypeOption = SOME(t)), _), d)
+      then getDimensionNth(t, d);
+  end matchcontinue;
+end getDimensionNth;
 
 public function printDimensionsStr "Prints dimensions to a string"
   input list<DAE.Dimension> dims;

@@ -12709,9 +12709,9 @@ protected function computeReturnType "function: computeReturnType
 algorithm
   outType := matchcontinue (inOperator,inTypesTypeLst,inType,inPrefix)
     local
-      tuple<DAE.TType, Option<Absyn.Path>> typ1,typ2,rtype,etype,typ;
+      DAE.Type typ1,typ2,rtype,etype,typ;
       Ident t1_str,t2_str,pre_str;
-      Integer n1,n2,m,n,m1,m2,p;
+      DAE.Dimension n1,n2,m,n,m1,m2,p;
       Prefix pre;
     
     case (DAE.ADD_ARR(ty = _),{typ1,typ2},rtype,_)
@@ -12806,9 +12806,9 @@ algorithm
     case (DAE.POW_ARR(ty = _),{typ1,typ2},_,_)
       equation
         2 = nDims(typ1);
-        n = dimSize(typ1, 1);
-        m1 = dimSize(typ1, 2);
-        true = intEq(n, m1);
+        n = Types.getDimensionNth(typ1, 1);
+        m = Types.getDimensionNth(typ1, 2);
+        true = Exp.dimensionsKnownAndEqual(n, m);
       then
         typ1;
     
@@ -12856,45 +12856,55 @@ algorithm
       then
         fail();
     
-    // Vector[n]*Matrix[n,m]
+    // Vector[n]*Matrix[n,m] = Vector[m]
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_)
       equation
         1 = nDims(typ1);
         2 = nDims(typ2);
-        n1 = dimSize(typ1, 1);
-        n2 = dimSize(typ2, 1);
-        m = dimSize(typ2, 2);
-        true = intEq(n1, n2);
+  
+        n1 = Types.getDimensionNth(typ1, 1);
+        n2 = Types.getDimensionNth(typ2, 1);
+        m = Types.getDimensionNth(typ2, 2);
+
+        true = isValidMatrixProductDims(n1, n2);
+        //true = Exp.dimensionsKnownAndEqual(n1, n2);
         etype = elementType(typ1);
-        rtype = (DAE.T_ARRAY(DAE.DIM_INTEGER(m),etype),NONE);
+        rtype = Types.liftArray(etype, m);
       then
         rtype;
     
-    // Matrix[n,m]*Vector[m]
+    // Matrix[n,m]*Vector[m] = Vector[n]
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_)
       equation
         2 = nDims(typ1);
         1 = nDims(typ2);
-        n = dimSize(typ1, 1);
-        m1 = dimSize(typ1, 2);
-        m2 = dimSize(typ2, 1);
-        true = intEq(m1, m2);
+
+        n = Types.getDimensionNth(typ1, 1);
+        m1 = Types.getDimensionNth(typ1, 2);
+        m2 = Types.getDimensionNth(typ2, 1);
+
+        true = isValidMatrixProductDims(m1, m2);
+        //true = Exp.dimensionsKnownAndEqual(m1, m2);
         etype = elementType(typ2);
-        rtype = (DAE.T_ARRAY(DAE.DIM_INTEGER(n),etype),NONE);
+        rtype = Types.liftArray(etype, n);
       then
         rtype;
     
+    // Matrix[n,m] * Matrix[m,p] = Matrix[n, p]
     case (DAE.MUL_MATRIX_PRODUCT(ty = _),{typ1,typ2},_,_)
       equation
         2 = nDims(typ1);
         2 = nDims(typ2);
-        n = dimSize(typ1, 1);
-        m1 = dimSize(typ1, 2);
-        m2 = dimSize(typ2, 1);
-        p = dimSize(typ2, 2);
-        true = intEq(m1, m2);
+        
+        n = Types.getDimensionNth(typ1, 1);
+        m1 = Types.getDimensionNth(typ1, 2);
+        m2 = Types.getDimensionNth(typ2, 1);
+        p = Types.getDimensionNth(typ2, 2);
+
+        //true = Exp.dimensionsKnownAndEqual(m1, m2);
+        true = isValidMatrixProductDims(m1, m2);
         etype = elementType(typ1);
-        rtype = (DAE.T_ARRAY(DAE.DIM_INTEGER(n), (DAE.T_ARRAY(DAE.DIM_INTEGER(p),etype),NONE)),NONE);
+        rtype = Types.liftArrayListDims(etype, {n, p});
       then
         rtype;
     
@@ -12968,6 +12978,32 @@ algorithm
   end matchcontinue;
 end computeReturnType;
 
+protected function isValidMatrixProductDims
+  "Checks if two dimensions are equal, which is a prerequisite for matrix
+  multiplication."
+  input DAE.Dimension dim1;
+  input DAE.Dimension dim2;
+  output Boolean res;
+algorithm
+  res := matchcontinue(dim1, dim2)
+    // The dimensions are both known and equal.
+    case (_, _)
+      equation
+        true = Exp.dimensionsKnownAndEqual(dim1, dim2);
+      then
+        true;
+    // If checkModel is used we might get unknown dimensions. So use
+    // dimensionsEqual instead, which matches anything against DIM_NONE.
+    case (_, _)
+      equation
+        true = OptManager.getOption("checkModel");
+        true = Exp.dimensionsEqual(dim1, dim2);
+      then
+        true;
+    case (_, _) then false;
+  end matchcontinue;
+end isValidMatrixProductDims;
+
 public function nDims "function nDims
   Returns the number of dimensions of a Type."
   input DAE.Type inType;
@@ -12992,32 +13028,6 @@ algorithm
       then ns;
   end matchcontinue;
 end nDims;
-
-protected function dimSize "function: dimSize
-  Returns the dimension size of the given dimesion."
-  input DAE.Type inType;
-  input Integer inInteger;
-  output Integer outInteger;
-algorithm
-  outInteger := matchcontinue (inType,inInteger)
-    local
-      Integer n,d_1,d;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = n)),_),1) then n;  /* n:th dimension size of n:nth dimension */
-    case ((DAE.T_ARRAY(arrayType = t),_),d)
-      equation
-        (d > 1) = true;
-        d_1 = d - 1;
-        n = dimSize(t, d_1);
-      then
-        n;
-    case ((DAE.T_COMPLEX(_,_,SOME(t),_),_),d)
-      equation
-       n = dimSize(t, d);
-      then
-        n;
-  end matchcontinue;
-end dimSize;
 
 protected function elementType "function: elementType
   Returns the element type of a type, i.e. for arrays, return the 
