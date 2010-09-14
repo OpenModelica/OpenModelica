@@ -11045,13 +11045,16 @@ algorithm
         (cache,DAE.CREF(cr_1,expTy),DAE.C_CONST(),acc);
 
     // parameters without value but with fixed=false is ok, these are given value during initialization. (as long as not for iterator)
-    case (cache,env,cr,acc,SCode.PARAM(),NONE/* not foriter*/,io,tt,DAE.UNBOUND(),doVect,_,_)
+    case (cache,env,cr,acc,SCode.PARAM(),NONE/* not foriter*/,io,tt,DAE.UNBOUND(),
+        doVect,Lookup.SPLICEDEXPDATA(sexp,idTp),_)
       equation
         false = Types.getFixedVarAttribute(tt);
         expTy = Types.elabType(tt);
+        expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
+        e = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, sexp,expIdTy,true);
       then
-        (cache,DAE.CREF(cr_1,expTy),DAE.C_PARAM(),acc);
+        (cache,e,DAE.C_PARAM(),acc);
 
     // outer parameters without value is ok.
     case (cache,env,cr,acc,SCode.PARAM(),_,io,tt,DAE.UNBOUND(),doVect,_,_)
