@@ -10911,11 +10911,12 @@ algorithm
     // adrpo: report a warning if the binding came from a start value!
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix)
       equation
+        true = Types.getFixedVarAttribute(tt);
         s = Exp.printComponentRefStr(cr);
         pre_str = PrefixUtil.printPrefixStr2(inPrefix);
         s = pre_str +& s;
         str = DAEUtil.printBindingExpStr(inBinding);
-        Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING(), {str, s});
+        Error.addMessage(Error.UNBOUND_PARAMETER_WITH_START_VALUE_WARNING(), {s,str});
         bind = DAEUtil.setBindingSource(bind, DAE.BINDING_FROM_DEFAULT_VALUE());
         (cache, e_1, const, acc) = elabCref2(cache,env,cr,acc,inVariability,forIteratorConstOpt,io,tt,bind,doVect,splicedExpData,inPrefix);
       then
