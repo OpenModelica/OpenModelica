@@ -1200,33 +1200,29 @@ code_algorithm_clause returns [void* ast] :
 
 
 top_algorithm returns [void* ast, int isExp] :
-  ( aa=top_assign_clause_a
-  | a=conditional_equation_a
-  | a=for_clause_a
-  | a=while_clause
+  ( (expression (SEMICOLON|EOF))=> e=expression
+  | ( a=top_assign_clause_a
+    | a=conditional_equation_a
+    | a=for_clause_a
+    | a=while_clause
+    )
+    cmt=comment
   )
-  cmt=comment
     {
-      if (a || !aa.isExp) {
-        $ast = Absyn__ALGORITHMITEM(a ? a : aa.ast, mk_some_or_none(cmt), INFO($start));
+      if (!e) {
+        $ast = Absyn__ALGORITHMITEM(a, mk_some_or_none(cmt), INFO($start));
         $isExp = 0;
       } else {
-        $ast = aa.ast;
+        $ast = e;
         $isExp = 1;
       }
     }
   ;
 
-top_assign_clause_a returns [void* ast, int isExp] :
-  (e1=simple_expression|e1=code_expression) (ASSIGN e2=expression)?
+top_assign_clause_a returns [void* ast] :
+  e1=simple_expression ASSIGN e2=expression
     {
-      if (e2) {
-        $ast = Absyn__ALG_5fASSIGN(e1,e2);
-        $isExp = 0;
-      } else {
-        $ast = e1;
-        $isExp = 1;
-      }
+      ast = Absyn__ALG_5fASSIGN(e1,e2);
     }
   ;
 
