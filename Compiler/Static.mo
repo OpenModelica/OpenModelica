@@ -12122,7 +12122,7 @@ algorithm
       equation
         (cache,sub_1,prop as DAE.PROP(ty,const),_,dae) = elabExp(cache,env, sub, impl, NONE,true,pre); 
         (cache, sub_1, prop as DAE.PROP(ty, _)) = Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
-        sub_2 = elabSubscriptType(ty, sub, sub_1,pre);
+        sub_2 = elabSubscriptType(ty, sub, sub_1,pre,env);
       then
         (cache,sub_2,const,dae);
     // some subscript, try to elaborate it
@@ -12147,20 +12147,31 @@ protected function elabSubscriptType "function: elabSubscriptType
   input Absyn.Exp inExp2;
   input DAE.Exp inExp3;
   input Prefix inPrefix;
+  input Env.Env inEnv;
   output DAE.Subscript outSubscript;
 algorithm
-  outSubscript := matchcontinue (inType1,inExp2,inExp3,inPrefix)
+  outSubscript := matchcontinue (inType1,inExp2,inExp3,inPrefix,inEnv)
     local
       DAE.Exp sub;
       Ident e_str,t_str,p_str;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
+      DAE.Type t;
       Absyn.Exp e;
       Prefix pre;
 
-    case ((DAE.T_INTEGER(varLstInt = _),_),_,sub,_) then DAE.INDEX(sub); 
-    case ((DAE.T_ENUMERATION(_,_,_,_),_),_,sub,_) then DAE.INDEX(sub);
-    case ((DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(varLstInt = _),_)),_),_,sub,_) then DAE.SLICE(sub);
-    case (t,e,_,pre)
+    case ((DAE.T_INTEGER(varLstInt = _),_),_,sub,_,_) then DAE.INDEX(sub); 
+    case ((DAE.T_ENUMERATION(_,_,_,_),_),_,sub,_,_) then DAE.INDEX(sub);
+    case ((DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(varLstInt = _),_)),_),_,sub,_,_) then DAE.SLICE(sub);
+
+    // Modelica.Electrical.Analog.Lines.M_OLine.segment in MSL 3.1 uses a real
+    // expression to index an array, which is not legal Modelica. But since we
+    // want to support the MSL we allow it for that particular model only.
+    case ((DAE.T_REAL(varLstReal = _), _), _, sub, _,_) 
+      equation
+        true = Absyn.pathPrefixOf(
+          Absyn.stringListPath({"Modelica", "Electrical", "Analog", "Lines", "M_OLine", "segment"}), 
+          Env.getEnvName(inEnv));
+      then DAE.INDEX(DAE.CAST(DAE.ET_INT, sub));
+    case (t,e,_,pre,_)
       equation
         e_str = Dump.printExpStr(e);
         t_str = Types.unparseType(t);

@@ -1999,11 +1999,11 @@ public function stringPath
   list<String> paths;
 algorithm
   paths := Util.stringSplitAtChar(str, ".");
-  qualifiedPath := stringPath2(paths);
+  qualifiedPath := stringListPath(paths);
 end stringPath;
 
-protected function stringPath2
-  "Helper function to stringPath."
+public function stringListPath
+  "Converts a list of strings into a qualified path."
   input list<String> paths;
   output Path qualifiedPath;
 algorithm
@@ -2016,11 +2016,11 @@ algorithm
     case (str :: {}) then IDENT(str);
     case (str :: rest_str)
       equation
-        p = stringPath2(rest_str);
+        p = stringListPath(rest_str);
       then
         QUALIFIED(str, p);
   end matchcontinue;
-end stringPath2;
+end stringListPath;
 
 public function pathTwoLastIdents "Returns the two last idens of a path"
   input Path p;
@@ -2204,24 +2204,26 @@ algorithm
 end crefReplaceFirstIdent;
 
 public function pathPrefixOf
-"
-  funcion: pathPrefixOf
-  Alternative names: isPrefixOf, pathIsPrefixOf, prefixOf 
-  
-  Returns true if prefixPath is a prefix of path, false otherwise.
-"
+  "Returns true if prefixPath is a prefix of path, false otherwise."
   input Path prefixPath;
   input Path path;
-  output Boolean out;
+  output Boolean isPrefix;
 algorithm
-  out := matchcontinue(prefixPath, path)
-    case(prefixPath, path) 
+  isPrefix := matchcontinue(prefixPath, path)
+    local
+      Path p, p2;
+      String id, id2;
+    case (FULLYQUALIFIED(p), p2) then pathPrefixOf(p, p2);
+    case (p, FULLYQUALIFIED(p2)) then pathPrefixOf(p, p2);
+    case (IDENT(id), IDENT(id2)) then stringEqual(id, id2);
+    case (IDENT(id), QUALIFIED(name = id2)) then stringEqual(id, id2);
+    case (QUALIFIED(id, p), QUALIFIED(id2, p2))
       equation
-        true = ModUtil.pathEqual(prefixPath, path);
-      then true;
-    case(prefixPath, path) 
-      then pathPrefixOf(prefixPath, stripLast(path));
-    case(_, _) then false;
+        true = stringEqual(id, id2);
+        true = pathPrefixOf(p, p2);
+      then
+        true;
+    case (_, _) then false;
   end matchcontinue;
 end pathPrefixOf;
 

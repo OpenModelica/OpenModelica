@@ -808,6 +808,14 @@ algorithm
       then
         (cache,Values.REAL(r),st_1);
 
+    // cast real to integer
+    case (cache,env,DAE.CAST(ty = DAE.ET_INT, exp = e),impl,st,dimOpt,msg)
+      equation
+        (cache,Values.REAL(r),st_1) = ceval(cache, env, e, impl, st, dimOpt, msg);
+        i = realInt(r);
+      then
+        (cache,Values.INTEGER(i),st_1);
+        
     // cast integer array to real array
     case (cache,env,DAE.CAST(ty = DAE.ET_ARRAY(ty = DAE.ET_REAL()),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;
