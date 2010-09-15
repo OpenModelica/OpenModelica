@@ -1774,7 +1774,7 @@ algorithm
       equation
         s1 = indentStr(i);
         s2 = Exp.printExpStr(e);
-        str = Util.stringAppendList({s1,s2,"\n"});
+        str = Util.stringAppendList({s1,s2,";\n"});
       then
         str;
 
