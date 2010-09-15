@@ -4003,11 +4003,19 @@ end getAllClassPathsRecursive;
 protected function filterLib
   input Absyn.Path path;
   output Boolean b;
-  Boolean b1, b2;
+  Boolean b1, b2, b3;
 algorithm
   b1 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Media")), path);
-  b2 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Fluid")), path);
-  b  := b1 and b2; 
+  b2 := not Absyn.pathPrefixOf(Absyn.QUALIFIED("Modelica", Absyn.IDENT("Fluid")), path);  
+  b3 := not Absyn.pathPrefixOf(
+              Absyn.QUALIFIED("Modelica", 
+                Absyn.QUALIFIED("Mechanics",
+                  Absyn.QUALIFIED("MultiBody",
+                    Absyn.QUALIFIED("Examples",
+                      Absyn.QUALIFIED("Loops",
+                        Absyn.QUALIFIED("Utilities",
+                          Absyn.IDENT("EngineV6_analytic"))))))), path);
+  b  := b1 and b2; // and b3; 
 end filterLib;
 
 public function checkAllModelsRecursive
@@ -4040,7 +4048,7 @@ algorithm
     case (cache,env,className,(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       equation
         allClassPaths = getAllClassPathsRecursive(className, p);
-        allClassPaths = Util.listSelect(allClassPaths, filterLib);
+        // allClassPaths = Util.listSelect(allClassPaths, filterLib);
         // allClassPaths = listReverse(allClassPaths);
         print("Number of classes to check: " +& intString(listLength(allClassPaths)) +& "\n");
         // print ("All paths: \n" +& Util.stringDelimitList(Util.listMap(allClassPaths, Absyn.pathString), "\n") +& "\n");
@@ -4104,7 +4112,7 @@ algorithm
       equation
         c = Interactive.getPathedClassInProgram(className, p);
         // filter out partial classes
-        Absyn.CLASS(partialPrefix = false) = c;
+        // Absyn.CLASS(partialPrefix = false) = c; // do not filter partial classes
         cr = Absyn.pathToCref(className);
         // filter out packages
         false = Interactive.isPackage(cr, p);

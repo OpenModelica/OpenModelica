@@ -92,5 +92,20 @@ public function writeBuf
 
   external "C" ;
 end writeBuf;
+
+public function getBufLength
+  output Integer outBufFilledLength;
+
+  external "C" ;
+end getBufLength;
+
+public function printBufSpace
+"prints the given number of spaces to the print buffer"
+  input Integer inNumOfSpaces;
+
+  external "C" ;
+end printBufSpace;
+
 end Print;
+
 

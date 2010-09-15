@@ -661,7 +661,9 @@ RML_BEGIN_LABEL(System__writeFile)
 {
   char* data = RML_STRINGDATA(rmlA1);
   char* filename = RML_STRINGDATA(rmlA0);
-  FILE * file=NULL;
+  FILE * file = NULL;
+  int len = strlen(data); /* RML_HDRSTRLEN(RML_GETHDR(rmlA1)); */
+  int x = 0;
   file = fopen(filename,"w");
   if (file == NULL) {
     char *c_tokens[1]={filename};
@@ -673,10 +675,25 @@ RML_BEGIN_LABEL(System__writeFile)
       1);
     RML_TAILCALLK(rmlFC);
   }
-  /* adrpo changed 2006-10-06
-   * fprintf(file,"%s",data);
-   */
-  fwrite(RML_STRINGDATA(rmlA1), RML_HDRSTRLEN(RML_GETHDR(rmlA1)), 1, file);
+  /* nothing to write to file! just close it and return */
+  if (len == 0)
+  {
+    fclose(file);
+    RML_TAILCALLK(rmlSC);
+  }
+  /*  write 1 element of size len to file and check for errors */
+  if (1 != fwrite(RML_STRINGDATA(rmlA1), len, 1, file))
+  {
+    char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      "SCRIPTING",
+      "ERROR",
+      "Error writing to file %s.",
+      c_tokens,
+      1);
+    fclose(file);
+    RML_TAILCALLK(rmlFC);
+  }
   fflush(file);
   fclose(file);
   RML_TAILCALLK(rmlSC);
@@ -3028,6 +3045,56 @@ RML_BEGIN_LABEL(System__getTimerTime)
 {
   /* get the cummulated timer time */
   rmlA0 = mk_rcon(timerTime);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+/*
+ * adrpo: an implementation of stringAppendList in low level C
+ *        this will be part of the new MetaModelica/RML relase
+ *        in the near future.
+ *  NOTE: do not inspire yourself from this function to implement
+ *        new external C function as if you don't understand the
+ *        MetaModelica GC and runtime there'll be trouble :)
+ */
+
+RML_BEGIN_LABEL(System__stringAppendList)
+{
+  /* count the length of elements in the list */
+  rml_uint_t len_car = 0;
+  rml_uint_t len_cur = 0;
+  rml_uint_t len = 0;
+  struct rml_string *str = 0;
+  void *lst = rmlA0;
+  while( RML_GETHDR(lst) == RML_CONSHDR ) {
+    len += RML_HDRSTRLEN(RML_GETHDR(RML_CAR(lst)));
+    lst = RML_CDR(lst);
+  }
+
+  /* allocate the string */
+  str = rml_prim_mkstring(len, 1);
+  if (len == 0) /* if the list is empty, return empty string! */
+  {
+    str->data[0] = '\0';     /* set the end to 0 */
+    rmlA0 = RML_TAGPTR(str); /* set the result to the tagged pointer */
+    RML_TAILCALLK(rmlSC);    /* return from the function */
+  }
+
+  /* re-read the rmlA0 as it might have been moved by the GC */
+  lst = rmlA0;
+  while( RML_GETHDR(lst) == RML_CONSHDR ) {
+    void* car = RML_CAR(lst);
+    len_car = RML_HDRSTRLEN(RML_GETHDR(car));
+    (void)memcpy(
+      &str->data[len_cur],
+      RML_STRINGDATA(car),
+      len_car);
+    len_cur += len_car;
+  lst = RML_CDR(lst);
+  }
+  str->data[len_cur] = '\0';
+  rmlA0 = RML_TAGPTR(str);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

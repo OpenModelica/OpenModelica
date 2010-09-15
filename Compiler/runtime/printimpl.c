@@ -33,6 +33,11 @@
 #include <stdlib.h>
 #include "rml.h"
 
+/* errorext.h is a C++ header... */
+void c_add_message(int errorID, char* type, char* severity, char* message, char** ctokens, int nTokens);
+
+/* adrpo: this is defined in rtopts. (enabled with omc +showErrorMessages) */
+extern int showErrorMessages;
 
 #define GROWTH_FACTOR 1.4  /* According to some roumours of buffer growth */
 #define INITIAL_BUFSIZE 4000 /* Seems reasonable */
@@ -44,12 +49,78 @@ int cursize=0;
 
 int errorNfilled=0;
 int errorCursize=0;
-int increase_buffer(void);
-int increase_buffer_fixed(int);
-int error_increase_buffer(void);
-void Print_5finit(void)
+
+int increase_buffer(void)
 {
 
+  char * new_buf;
+  int new_size;
+  if (cursize == 0) {
+    new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
+    if (new_buf == NULL) { return -1; }
+    new_buf[0]='\0';
+    cursize = INITIAL_BUFSIZE;
+  } else {
+    //fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
+    new_buf = (char*)malloc((new_size =(int) (cursize * GROWTH_FACTOR))*sizeof(char));
+    if (new_buf == NULL) { return -1; }
+    memcpy(new_buf,buf,cursize);
+    cursize = new_size;
+  }
+  if (buf) {
+    free(buf);
+  }
+  buf = new_buf;
+  return 0;
+}
+
+int increase_buffer_fixed(int increase)
+{
+  char * new_buf;
+  int new_size;
+
+  if (cursize == 0) {
+    new_buf = (char*)malloc(increase*sizeof(char));
+    if (new_buf == NULL) { return -1; }
+    new_buf[0]='\0';
+    cursize = increase;
+  } else {
+  new_size = (int)(cursize+increase);
+    //fprintf(stderr,"increasing buffer_FIXED_ from %d to %d \n",cursize,new_size);
+    new_buf = (char*)malloc(new_size*sizeof(char));
+    if (new_buf == NULL) { return -1; }
+    //memcpy(new_buf,buf,cursize);
+    cursize = new_size;
+  }
+  //printf("new buff size set to: %d\n",cursize);
+  if (buf) {
+    free(buf);
+  }
+  buf = new_buf;
+  return 0;
+}
+
+int error_increase_buffer(void)
+{
+  char * new_buf;
+  int new_size;
+
+  if (errorCursize == 0) {
+    new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
+    if (new_buf == NULL) { return -1; }
+    new_buf[0]='\0';
+    errorCursize = INITIAL_BUFSIZE;
+  } else {
+    new_buf = (char*)malloc((new_size =(int) (errorCursize * GROWTH_FACTOR))*sizeof(char));
+    if (new_buf == NULL) { return -1; }
+    memcpy(new_buf,errorBuf,errorCursize);
+    errorCursize = new_size;
+  }
+  if (errorBuf) {
+    free(errorBuf);
+  }
+  errorBuf = new_buf;
+  return 0;
 }
 
 int print_error_buf_impl(const char *str)
@@ -71,9 +142,22 @@ int print_error_buf_impl(const char *str)
   return 0;
 }
 
+void Print_5finit(void)
+{
+  // set things to 0
+  char *buf = NULL;
+  char *errorBuf = NULL;
+
+  int nfilled=0;
+  int cursize=0;
+
+  int errorNfilled=0;
+  int errorCursize=0;
+}
+
 RML_BEGIN_LABEL(Print__setBufSize)
 {
-  long newSize = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
   if (newSize > 0) {
     printf(" setting init_size to: %ld\n",newSize);
     increase_buffer_fixed(newSize);
@@ -84,13 +168,11 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__unSetBufSize)
 {
-  long newSize = (long)RML_IMMEDIATE(RML_UNTAGFIXNUM(rmlA0));
+  long newSize = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
   increase_buffer_fixed(INITIAL_BUFSIZE);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
-
-extern int showErrorMessages;
 
 RML_BEGIN_LABEL(Print__printErrorBuf)
 {
@@ -119,7 +201,6 @@ RML_BEGIN_LABEL(Print__clearErrorBuf)
     errorBuf = NULL;
     errorCursize=0;
   }
-
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
@@ -141,16 +222,25 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__printBuf)
 {
   char* str = RML_STRINGDATA(rmlA0);
-  /*  printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str));*/
+  long len = strlen(str);
+  /* printf("cursize: %d, nfilled %d, strlen: %d\n",cursize,nfilled,strlen(str)); */
 
-  while (nfilled + strlen(str)+1 > cursize) {
+  while (nfilled + len + 1 > cursize) {
     if(increase_buffer()!= 0) {
         RML_TAILCALLK(rmlFC);
     }
-    /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled);*/
+    /* printf("increased -- cursize: %d, nfilled %d\n",cursize,nfilled); */
   }
-  nfilled += sprintf((char*)(buf+nfilled),"%s",str);
-  /*printf("%s",str);*/
+
+  /*
+   * nfilled += sprintf((char*)(buf+nfilled),"%s",str);
+   * replaced by (below), courtesy of Pavol Privitzer
+   */
+  memcpy(buf+nfilled, str, len);
+  nfilled += len;
+  buf[nfilled] = '\0';
+
+  /* printf("%s",str); */
 
   RML_TAILCALLK(rmlSC);
 }
@@ -189,97 +279,68 @@ RML_END_LABEL
 RML_BEGIN_LABEL(Print__writeBuf)
 {
   char * filename = RML_STRINGDATA(rmlA0);
-  FILE * file;
-
+  FILE * file = NULL;
+  /* check if we have something to write */
+  /* open the file */
   file = fopen(filename,"w");
-
-  if (file == NULL || buf == NULL || buf[0]=='\0') {
-    /* HOWTO: RML fail */
-    /* RML_TAILCALLK(rmlFC); */
+  if (file == NULL) {
+    char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      "PRINT",
+      "ERROR",
+      "Error writing to file %s.",
+      c_tokens,
+      1);
+    RML_TAILCALLK(rmlFC);
   }
 
-  fprintf(file,"%s",buf);
-  fflush(file);
+  if (buf == NULL || buf[0]=='\0') {
+    /* nothing to write to file, just close it and return ! */
+    fclose(file);
+    RML_TAILCALLK(rmlFC);
+  }
 
-  if (fclose(file) != 0) {
-    /* RMLFAIL */
-    /* RML_TAILCALLK(rmlFC); */
+  /*  write 1 element of size nfilled to file and check for errors */
+  if (1 != fwrite(buf, nfilled, 1,  file))
+  {
+    char *c_tokens[1]={filename};
+    c_add_message(21, /* WRITING_FILE_ERROR */
+      "PRINT",
+      "ERROR",
+      "Error writing to file %s.",
+      c_tokens,
+      1);
+    fclose(file);
+    RML_TAILCALLK(rmlFC);
+  }
+  fflush(file);
+  fclose(file);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(Print__getBufLength)
+{
+  rmlA0 = mk_icon(nfilled);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(Print__printBufSpace)
+{
+  long nSpaces = (long)RML_UNTAGFIXNUM(rmlA0); // adrpo: do not use RML_IMMEDIATE as is just a cast to void! IS NOT NEEDED!
+  if (nSpaces > 0) {
+   while (nfilled + nSpaces + 1 > cursize) {
+    if(increase_buffer()!= 0) {
+       RML_TAILCALLK(rmlFC);
+    }
+   }
+   memset(buf+nfilled,' ',(size_t)nSpaces);
+   nfilled += nSpaces;
+   buf[nfilled] = '\0';
   }
 
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-
-int increase_buffer(void)
-{
-	
-  char * new_buf;
-  int new_size;
-  if (cursize == 0) {
-    new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
-    if (new_buf == NULL) { return -1; }
-    new_buf[0]='\0';
-    cursize = INITIAL_BUFSIZE;
-  } else {
-  	//fprintf(stderr,"increasing buffer from %d to %d \n",cursize,((int)(cursize * GROWTH_FACTOR)));
-    new_buf = (char*)malloc((new_size =(int) (cursize * GROWTH_FACTOR))*sizeof(char));
-    if (new_buf == NULL) { return -1; }
-    memcpy(new_buf,buf,cursize);
-    cursize = new_size;    
-  }
-  if (buf) {
-    free(buf);
-  }
-  buf = new_buf;
-  return 0;
-}
-
-int increase_buffer_fixed(int increase)
-{
-  char * new_buf;
-  int new_size;
-
-  if (cursize == 0) {
-    new_buf = (char*)malloc(increase*sizeof(char));
-    if (new_buf == NULL) { return -1; }
-    new_buf[0]='\0';
-    cursize = increase;
-  } else {
-	new_size = (int)(cursize+increase);
-  	//fprintf(stderr,"increasing buffer_FIXED_ from %d to %d \n",cursize,new_size);
-    new_buf = (char*)malloc(new_size*sizeof(char));
-    if (new_buf == NULL) { return -1; }
-    //memcpy(new_buf,buf,cursize);
-    cursize = new_size;
-  }
-  //printf("new buff size set to: %d\n",cursize);
-  if (buf) {
-    free(buf);
-  }
-  buf = new_buf;
-  return 0;
-}
-
-int error_increase_buffer(void)
-{
-  char * new_buf;
-  int new_size;
-
-  if (errorCursize == 0) {
-    new_buf = (char*)malloc(INITIAL_BUFSIZE*sizeof(char));
-    if (new_buf == NULL) { return -1; }
-    new_buf[0]='\0';
-    errorCursize = INITIAL_BUFSIZE;
-  } else {
-    new_buf = (char*)malloc((new_size =(int) (errorCursize * GROWTH_FACTOR))*sizeof(char));
-    if (new_buf == NULL) { return -1; }
-    memcpy(new_buf,errorBuf,errorCursize);
-    errorCursize = new_size;
-  }
-  if (errorBuf) {
-    free(errorBuf);
-  }
-  errorBuf = new_buf;
-  return 0;
-}

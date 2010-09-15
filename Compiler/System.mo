@@ -731,5 +731,18 @@ function getTimerTime
   external "C";
 end getTimerTime;
 
+function stringAppendList
+"@autor: adrpo
+  This function will append all the strings in the given-as-input
+  list<String> into a new string. It does so by creating the new
+  string directly and thus avoiding a lot of stringAppend which
+  can generate a lot of garbage. This functio will pe part of the
+  new MetaModelica/RML release, later on."
+  input list<String> listWithStrings;
+  output String appendedString;
+  
+  external "C";
+end stringAppendList;
+
 end System;
 
