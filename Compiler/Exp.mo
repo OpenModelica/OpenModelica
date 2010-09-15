@@ -8236,7 +8236,7 @@ public function printExpListStrNoSpace
 	input list<Exp> expl;
 	output String res;
 algorithm
-  res := Util.stringDelimitList(Util.listMap(expl,printExpStr),"");
+  res := Util.stringAppendList(Util.listMap(expl,printExpStr));
 end printExpListStrNoSpace;
 
 public function printOptExpStr "

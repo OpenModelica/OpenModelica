@@ -237,7 +237,8 @@ void handleParseError(pANTLR3_BASE_RECOGNIZER recognizer, pANTLR3_UINT8 * tokenN
     c_add_source_message(2, "SYNTAX", "Error", "Missing token: %s", token_text, 1, p_line, p_offset, p_line, p_offset, false, ModelicaParser_filename_C);
     break;
   case ANTLR3_NO_VIABLE_ALT_EXCEPTION:
-    token_text[0] = (const char*)preToken->getText(preToken)->chars;
+    token_text[0] = preToken->type == ANTLR3_TOKEN_EOF ? "<EOF>" : (const char*)preToken->getText(preToken)->chars;
+    if (preToken->type == ANTLR3_TOKEN_EOF) n_offset = p_offset;
     c_add_source_message(2, "SYNTAX", "Error", "No viable alternative near token: %s", token_text, 1, p_line, p_offset, n_line, n_offset, false, ModelicaParser_filename_C);
     break;
   case ModelicaParserException:
