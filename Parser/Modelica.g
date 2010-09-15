@@ -652,7 +652,7 @@ assign_clause_a returns [void* ast] @declarations {
   e1=simple_expression
     ( (ASSIGN|eq=EQUALS) e2=expression
       {
-        modelicaParserAssert(eq==0,"Assignments use the := operator, not =", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
+        modelicaParserAssert(eq==0,"Algorithms can not contain equations ('='), use assignments (':=') instead", assign_clause_a, $eq->line, $eq->charPosition+1, $eq->line, $eq->charPosition+2);
         modelicaParserAssert(eq!=0 || metamodelica_enabled() || (RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__CREF_3dBOX1))
             || ((RML_GETHDR(e1) == RML_STRUCTHDR(1, Absyn__TUPLE_3dBOX1)) && (RML_GETHDR(e2) == RML_STRUCTHDR(2, Absyn__CALL_3dBOX2))),
             "Modelica assignment statements are either on the form 'component_reference := expression' or '( output_expression_list ) := function_call'",
