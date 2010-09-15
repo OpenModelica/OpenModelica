@@ -2254,6 +2254,7 @@ algorithm
     local
       Values.Value v; DAE.Type t_1,bindTp; DAE.Exp bind1;
       DAE.Const c;
+      DAE.Dimension d;
 
     case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp,c))
       equation
@@ -2261,7 +2262,16 @@ algorithm
         (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
         false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
-
+        
+    case(cache,env,id,SOME(v),bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
+      equation
+        failure(equality(c=DAE.C_VAR));
+        true = OptManager.getOption("checkModel");
+        expectedTp = Types.liftArray(expectedTp, d);
+        (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
+      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+        false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+        
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         failure(equality(c=DAE.C_VAR));
@@ -2270,6 +2280,16 @@ algorithm
       then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
       false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
 
+    case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp as (DAE.T_ARRAY(arrayDim = d),_),c))
+      equation
+        failure(equality(c=DAE.C_VAR));
+        true = OptManager.getOption("checkModel");
+        expectedTp = Types.liftArray(expectedTp, d);
+        (bind1,t_1) = Types.matchType(bind,bindTp,expectedTp,true);
+        (cache,v,_) = Ceval.ceval(cache,env, bind1, false, NONE, NONE, Ceval.NO_MSG());
+      then DAE.TYPES_VAR(id,DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
+      false,t_1,DAE.EQBOUND(bind1,SOME(v),DAE.C_PARAM(),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());
+      
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,c))
       equation
         failure(equality(c=DAE.C_VAR));
