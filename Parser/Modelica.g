@@ -938,11 +938,13 @@ primary returns [void* ast] @declarations {
           $ast = Absyn__INTEGER(RML_IMMEDIATE(RML_TAGFIXNUM(l))); /* We can't use mk_icon here - it takes "int"; not "long" */
         } else {
           if (l > ((long)1<<30)-1) {
-            c_add_source_message(2, "SYNTAX", "Warning", "\%s-bit signed integers! Transforming: \%s into a real",
+            c_add_source_message(2, "SYNTAX", "Warning", "\%s-bit signed integers! Truncating integer: \%s to 1073741823",
                                  args, 2, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition+1,
                                  ModelicaParser_readonly, ModelicaParser_filename_C);
+            $ast = Absyn__INTEGER(mk_icon(1073741823));
+          } else {
+            $ast = Absyn__REAL(mk_rcon((double)l));
           }
-          $ast = Absyn__REAL(mk_rcon((double)l));
         }
       }
     }
