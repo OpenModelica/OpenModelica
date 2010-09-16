@@ -8478,9 +8478,9 @@ end printDimStr;
 protected function elabArraydimDecl
 "function: elabArraydimDecl
   Given an Absyn.ArrayDim, this function evaluates all dimension
-  size specifications, creating a list of (optional) integers.
+  size specifications, creating a list of dimensions.
   When the array dimension size is specified as :, the result
-  will contain NONE."
+  will contain DAE.DIM_NONE."
   input Env.Cache inCache;
   input Env inEnv;
   input Absyn.ComponentRef inComponentRef;
@@ -8490,10 +8490,10 @@ protected function elabArraydimDecl
   input Boolean performVectorization;
   input Prefix inPrefix;
   output Env.Cache outCache;
-  output list<DAE.Dimension> outDimensionOptionLst;
+  output list<DAE.Dimension> outDimensionLst;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outDimensionOptionLst,outDae) :=
+  (outCache,outDimensionLst,outDae) :=
   matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix)
     local
       list<DAE.Dimension> l;

@@ -3402,6 +3402,8 @@ algorithm
         //UnitParserExt.commit();
 
         // instantiate the partial class nomally as it works during checkModel.
+        p_1 = insertDummyDimensions(p_1, className);
+
         (cache, env, _, dae) = Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
         dae  = DAEUtil.transformationsBeforeBackend(dae);
         // adrpo: do not store instantiated class as we don't use it later!
@@ -3441,6 +3443,8 @@ algorithm
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
 
+        p_1 = insertDummyDimensions(p_1, className);
+
         (cache, env, _, dae) =
         Inst.instantiateClass(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
         dae  = DAEUtil.transformationsBeforeBackend(dae);
@@ -3479,6 +3483,8 @@ algorithm
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
 
+        p_1 = insertDummyDimensions(p_1, className);
+
         (cache, env, _, dae) =
         Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
 
@@ -3504,6 +3510,246 @@ algorithm
 
   end matchcontinue;
 end checkModel;
+
+protected function insertDummyDimensions
+  "When checkModel is used to check a model there might be arrays whose
+  dimensions would normally be determined by modifications. To be able to check
+  a model we therefore insert dummy dimensions into the model, so that we can
+  instantiate it. This function goes through the list of classes and tries to
+  find the class that we want to check, and inserts dummy dimensions into it."
+  input list<SCode.Class> inClasses;
+  input Absyn.Path className;
+  output list<SCode.Class> outClasses;
+algorithm
+  outClasses := matchcontinue(inClasses, className)
+    local
+      SCode.Class c;
+      list<SCode.Class> cl;
+      String cl_name;
+      Absyn.Path p;
+    // Class found, insert dummy dimensions.
+    case (c :: cl, Absyn.IDENT(cl_name))
+      equation
+        true = stringEqual(SCode.className(c), cl_name);
+        c = insertDummyDimensionsInClassDef(c);
+      then
+        c :: cl;
+    // Package found, continue searching in the package.
+    case (c :: cl, Absyn.QUALIFIED(name = cl_name, path = p))
+      equation
+        true = stringEqual(SCode.className(c), cl_name);
+        c = insertDummyDimensionsInPackage(c, p);
+      then
+        c :: cl;
+    // No match, check the rest of the classes.
+    case (c :: cl, _)
+      equation
+        cl = insertDummyDimensions(cl, className);
+      then
+        c :: cl;
+  end matchcontinue;
+end insertDummyDimensions;
+
+protected function insertDummyDimensionsInPackage
+  "Helper function to insertDummyDimensions. Extracts the parts of a package and
+  searches them with insertDummyDimensionsInPackage2."
+  input SCode.Class inPackage;
+  input Absyn.Path packageName;
+  output SCode.Class outPackage;
+algorithm
+  outPackage := matchcontinue(inPackage, packageName)
+    local
+      SCode.Ident n;
+      Boolean pp;
+      Boolean ep;
+      SCode.Restriction r;
+      Absyn.Info i;
+      list<SCode.Element> el;
+      list<SCode.Equation> nel, iel;
+      list<SCode.AlgorithmSection> nal, ial;
+      Option<Absyn.ExternalDecl> ed;
+      list<SCode.Annotation> al;
+      Option<SCode.Comment> c;
+    case (SCode.CLASS(
+        name = n, 
+        partialPrefix = pp, 
+        encapsulatedPrefix = ep,
+        restriction = r, 
+        classDef = SCode.PARTS(
+          elementLst = el, 
+          normalEquationLst = nel,
+          initialEquationLst = iel, 
+          normalAlgorithmLst = nal, 
+          initialAlgorithmLst = ial, 
+          externalDecl = ed, 
+          annotationLst = al, 
+          comment = c), 
+        info = i), _)
+      equation
+        el = insertDummyDimensionsInPackage2(el, packageName);
+      then
+        SCode.CLASS(n, pp, ep, r, SCode.PARTS(el, nel, iel, nal, ial, ed, al, c), i);
+    case (_, _) then inPackage;
+  end matchcontinue;
+end insertDummyDimensionsInPackage;
+     
+protected function insertDummyDimensionsInPackage2
+  "Helper function to insertDummyDimensionsInPackage. Searches class definitions
+  in a package for the class we want to check." 
+  input list<SCode.Element> inClasses;
+  input Absyn.Path className;
+  output list<SCode.Element> outClasses;
+algorithm
+  outClasses := matchcontinue(inClasses, className)
+    local
+      SCode.Element c;
+      list<SCode.Element> cl;
+      SCode.Ident n;
+      String cl_name;
+      Absyn.Path p;
+      Boolean fp, rp;
+      SCode.Class cd;
+      Option<Absyn.ConstrainClass> cc;
+    // Package found, continue searching in package.
+    case (SCode.CLASSDEF(name = n, finalPrefix = fp, replaceablePrefix = rp, 
+        classDef = cd, cc = cc) :: cl, Absyn.QUALIFIED(name = cl_name, path = p))
+      equation
+        true = stringEqual(n, cl_name);
+        cd = insertDummyDimensionsInPackage(cd, p);
+      then
+        SCode.CLASSDEF(n, fp, rp, cd, cc) :: cl;
+    // Class found, insert dummy dimensions.
+    case (SCode.CLASSDEF(name = n, finalPrefix = fp, replaceablePrefix = rp, 
+        classDef = cd, cc = cc) :: cl, Absyn.IDENT(name = cl_name))
+      equation
+        true = stringEqual(n, cl_name);
+        cd = insertDummyDimensionsInClassDef(cd);
+      then
+        SCode.CLASSDEF(n, fp, rp, cd, cc) :: cl;
+    // No match, continue searching the rest of the class definitions.
+    case (c :: cl, _)
+      equation
+        cl = insertDummyDimensionsInPackage2(cl, className);
+      then
+        c :: cl;
+  end matchcontinue;
+end insertDummyDimensionsInPackage2;
+             
+protected function insertDummyDimensionsInClassDef
+  "Helper function to insertDummyDimensions. Inserts dummy dimensions into a
+  class definition."
+  input SCode.Class inClass;
+  output SCode.Class outClass;
+algorithm
+  outClass := matchcontinue(inClass)
+    local
+      SCode.Ident n;
+      Boolean pp;
+      Boolean ep;
+      SCode.Restriction r;
+      SCode.ClassDef cd;
+      Absyn.Info i;
+    case SCode.CLASS(name = n, partialPrefix = pp, encapsulatedPrefix = ep,
+        restriction = r, classDef = cd, info = i)
+      equation
+        cd = insertDummyDimensionsInElements(cd);
+      then
+        SCode.CLASS(n, pp, ep, r, cd, i);
+  end matchcontinue;
+end insertDummyDimensionsInClassDef;
+
+protected function insertDummyDimensionsInElements
+  "Helper function to insertDummyDimensionsInClassDef. Inserts dummy dimensions
+  into a class' components."
+  input SCode.ClassDef inClassDef;
+  output SCode.ClassDef outClassDef;
+algorithm
+  outClassDef := matchcontinue(inClassDef)
+    case SCode.PARTS(
+        elementLst = el, 
+        normalEquationLst = nel,
+        initialEquationLst = iel, 
+        normalAlgorithmLst = nal, 
+        initialAlgorithmLst = ial, 
+        externalDecl = ed, 
+        annotationLst = al, 
+        comment = c)
+      local
+        list<SCode.Element> el;
+        list<SCode.Equation> nel, iel;
+        list<SCode.AlgorithmSection> nal, ial;
+        Option<Absyn.ExternalDecl> ed;
+        list<SCode.Annotation> al;
+        Option<SCode.Comment> c;
+      equation
+        el = Util.listMap(el, insertDummyDimensionsInComponent);
+      then
+        SCode.PARTS(el, nel, iel, nal, ial, ed, al, c);
+    case _ then inClassDef;
+  end matchcontinue;
+end insertDummyDimensionsInElements;
+
+protected function insertDummyDimensionsInComponent
+  "Helper function to insertDummyDimensionsInElements. Checks if an element is a
+  component that is public and without modifications."
+  input SCode.Element inElement;
+  output SCode.Element outElement;
+algorithm
+  outElement := matchcontinue(inElement)
+    case SCode.COMPONENT(
+        component = n,
+        innerOuter = io,
+        finalPrefix = fp,
+        replaceablePrefix = rp,
+        protectedPrefix = pp as false,
+        attributes = a as SCode.ATTR(
+          arrayDims = ad, 
+          flowPrefix = flp,
+          streamPrefix = sp,
+          accesibility = ac,
+          variability = v,
+          direction = d),
+        modifications = m as SCode.NOMOD,
+        typeSpec = ts,
+        comment = cmt,
+        condition = c,
+        info = i,
+        cc = cc)
+      local
+        SCode.Ident n;
+        Absyn.InnerOuter io;
+        Boolean fp, rp, pp, flp, sp;
+        SCode.Attributes a;
+        Absyn.ArrayDim ad;
+        SCode.Accessibility ac;
+        SCode.Variability v;
+        Absyn.Direction d;
+        Absyn.TypeSpec ts;
+        SCode.Mod m;
+        Option<SCode.Comment> cmt;
+        Option<Absyn.Exp> c;
+        Option<Absyn.Info> i;
+        Option<Absyn.ConstrainClass> cc;
+      equation
+        ad = Util.listMap(ad, replaceWholedimWithDummy);
+      then
+        SCode.COMPONENT(n, io, fp, rp, pp, 
+          SCode.ATTR(ad, flp, sp, ac, v, d), ts, m, cmt, c, i, cc);
+    case _ then inElement;
+  end matchcontinue;
+end insertDummyDimensionsInComponent;
+
+protected function replaceWholedimWithDummy
+  "Helper function to insertDummyDimensionsInComponent. Checks if a subscript
+  contains an Absyn.NOSUB, and replaces it with a dummy dimension."
+  input Absyn.Subscript inSub;
+  output Absyn.Subscript outSub;
+algorithm
+  outSub := matchcontinue(inSub)
+    case Absyn.NOSUB then Absyn.SUBSCRIPT(Absyn.INTEGER(3)); // chosen by fair dice roll
+    case _ then inSub;
+  end matchcontinue;
+end replaceWholedimWithDummy;
 
 protected function selectIfNotEmpty
   input String inString;

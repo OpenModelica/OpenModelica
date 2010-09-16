@@ -3261,7 +3261,7 @@ algorithm
         dae = DAEUtil.joinDaes(dae1, dae2);
       then
         (cache, exp, prop, dae); 
-            
+
     // The previous case failed, return a call to the size function instead.
     case (cache,env,{arraycr,dim},_,impl,pre)
       equation
@@ -3401,7 +3401,7 @@ algorithm
         (cache,s_1,prop,_,dae1) = elabExp(cache, env, s, impl, NONE,true,pre);
         (cache,dims_1,dimprops,_,dae2) = elabExpList(cache,env, dims, impl, NONE,true,pre);
         sty = Types.getPropType(prop);
-        (cache,dimvals) = Ceval.cevalList(cache,env, dims_1, impl, NONE, Ceval.MSG());
+        (cache,dimvals) = Ceval.cevalList(cache,env, dims_1, impl, NONE, Ceval.NO_MSG());
         c1 = Types.elabTypePropToConst(prop::dimprops);
         (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals,c1,pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -6162,7 +6162,7 @@ algorithm
       equation
         true = OptManager.getOption("checkModel");
       then
-        inType1;       
+        inType1;
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = tp),p),n,n_args)
       equation
         n_1 = n - 1;
@@ -6714,7 +6714,7 @@ algorithm
       then
         (cache,DAE.ARRAY(etp,true,expl_1),DAE.PROP(tp,c),dae);
 
-      case (cache,env,{e},_,impl,pre) /* vector of multi dimensional matrix, at most one dim > 1 */
+    case (cache,env,{e},_,impl,pre) /* vector of multi dimensional matrix, at most one dim > 1 */
       local
         tuple<DAE.TType, Option<Absyn.Path>> tp_1;
         Integer dimtmp;
