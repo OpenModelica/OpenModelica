@@ -1979,13 +1979,6 @@ algorithm
         DAE.DIM_INTEGER(v) = listNth(dims, n_1);
       then
         Values.INTEGER(v);
-    case (dims,n)
-      equation
-        n_1 = n - 1;
-        DAE.DIM_SUBSCRIPT(subscript = _) = listNth(dims, n_1);
-        print("- Ceval.cevalBuiltinSize_3 failed DIMEXP in dimesion\n");
-      then
-        fail();
   end matchcontinue;
 end cevalBuiltinSize3;
 

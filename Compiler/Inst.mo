@@ -8246,17 +8246,9 @@ public function elabComponentArraydimFromEnv
 algorithm
   (outCache,outDimensionLst,outDae) := matchcontinue (inCache,inEnv,inComponentRef)
     local
-      DAE.Var ty;
-      String n,id;
-      Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix;
-      Absyn.InnerOuter io;
-      SCode.Attributes attr;
+      String id;
       list<Absyn.Subscript> ad;
-      SCode.Accessibility acc;
-      SCode.Variability param;
-      Absyn.Direction dir;
       SCode.Mod m,m_1;
-      Option<SCode.Comment> comment;
       DAE.Mod cmod,cmod_1,m_2,mod_2;
       DAE.EqMod eq;
       list<DAE.Dimension> dims;
@@ -8264,11 +8256,11 @@ algorithm
       DAE.ComponentRef cref;
       Env.Cache cache;
       DAE.DAElist fdae;
-      InstanceHierarchy ih;
+      list<DAE.Subscript> subs;
 
     case (cache,env,cref as DAE.CREF_IDENT(ident = id))
       equation
-        (cache,ty,SOME((SCode.COMPONENT(n,io,finalPrefix,repl,prot,(attr as SCode.ATTR(ad,flowPrefix,streamPrefix,acc,param,dir)),_,m,comment,_,_,_),cmod)),_)
+        (cache,_,SOME((SCode.COMPONENT(modifications = m),cmod)),_)
           = Lookup.lookupIdent(cache,env, id);
         cmod_1 = Types.stripSubmod(cmod);
         m_1 = SCode.stripSubmod(m);
@@ -8278,6 +8270,20 @@ algorithm
         (cache,dims) = elabComponentArraydimFromEnv2(cache,eq, env);
       then
         (cache,dims,fdae);
+    case (cache,env,cref as DAE.CREF_IDENT(ident = id))
+      equation
+        (cache,_,SOME((SCode.COMPONENT(attributes = SCode.ATTR(arrayDims = ad)),DAE.NOMOD)),_)
+          = Lookup.lookupIdent(cache,env, id);
+        (cache, subs, _, fdae) = Static.elabSubscripts(cache, env, ad, true, Prefix.NOPRE);
+        dims = Exp.subscriptDimensions(subs);
+      then
+        (cache,dims,fdae);
+    case (_, _, cref)
+      equation
+        Debug.fprintln("failtrace", "- Inst.elabComponentArraydimFromEnv failed: " 
+          +& Exp.printComponentRefStr(cref));
+      then
+        fail();
   end matchcontinue;
 end elabComponentArraydimFromEnv;
 
@@ -8497,6 +8503,7 @@ algorithm
   matchcontinue (inCache,inEnv,inComponentRef,inArrayDim,inBoolean,inInteractiveInteractiveSymbolTableOption,performVectorization,inPrefix)
     local
       list<DAE.Dimension> l;
+      DAE.Dimension dim;
       list<Env.Frame> env;
       Absyn.ComponentRef cref,cr;
       list<Absyn.Subscript> ds;
@@ -8527,9 +8534,10 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),_}))) :: ds),impl,st,doVect,pre)
       equation
         true = Absyn.crefEqual(cref, cr);
+        dim = Util.if_(OptManager.getOption("checkModel"), DAE.DIM_INTEGER(3), DAE.DIM_NONE);
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
-        (cache,DAE.DIM_NONE :: l,dae);
+        (cache, dim :: l, dae);
     // adrpo: See if our array dimension comes from an enumeration!
     case (cache,env,cref,(Absyn.SUBSCRIPT(subScript = Absyn.CREF(cr)) :: ds),impl,st,doVect,pre)
       local 
