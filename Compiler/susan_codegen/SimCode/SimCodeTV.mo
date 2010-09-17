@@ -40,6 +40,8 @@ package SimCode
       ExtObjInfo extObjInfo;
       MakefileParams makefileParams;
       DelayedExpression delayedExps;
+      Option<SimulationSettings> simulationSettingsOpt;
+      String fileNamePrefix;
     end SIMCODE;
   end SimCode;
 
@@ -73,6 +75,19 @@ package SimCode
       list<String> libs;
     end MAKEFILE_PARAMS;
   end MakefileParams;
+  
+  uniontype SimulationSettings
+    record SIMULATION_SETTINGS
+      Real startTime;
+      Real stopTime;
+      Integer numberOfIntervals;
+      Real stepSize;
+      Real tolerance;
+      String method;
+      String options;
+      String outputFormat;      
+    end SIMULATION_SETTINGS;
+  end SimulationSettings;
   
   uniontype Context
     record SIMULATION
@@ -167,7 +182,7 @@ package SimCode
 
   uniontype ModelInfo
     record MODELINFO
-      String name;
+      Absyn.Path name;
       String directory;
       VarInfo varInfo;
       SimVars vars;
@@ -343,6 +358,11 @@ package SimCode
     output SimVar outSimVar;
   end cref2simvar;
   
+  function derComponentRef
+    input DAE.ComponentRef inCref;
+    output DAE.ComponentRef derCref;
+  end derComponentRef;
+
 end SimCode;
 
 

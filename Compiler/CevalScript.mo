@@ -106,13 +106,26 @@ protected constant DAE.Type simulationResultType_rtest = (DAE.T_COMPLEX(ClassInf
 protected constant DAE.Type simulationResultType_full = (DAE.T_COMPLEX(ClassInf.RECORD(Absyn.IDENT("SimulationResult")),{
   DAE.TYPES_VAR("resultFile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("messages",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_STRING_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("totalTime",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeFrontend",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeBackend",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeCodegen",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeSimCode",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeTemplates",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
   DAE.TYPES_VAR("timeCompile",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
-  DAE.TYPES_VAR("timeSimulation",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
+  DAE.TYPES_VAR("timeSimulation",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE()),
+  DAE.TYPES_VAR("timeTotal",DAE.ATTR(false,false,SCode.RO(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,DAE.T_REAL_DEFAULT,DAE.UNBOUND(),NONE())
   },NONE,NONE),NONE);
+
+//these are in reversed order than above
+protected constant list<tuple<String,Values.Value>> zeroAdditionalSimulationResultValues =
+  { ("timeTotal",      Values.REAL(0.0)),
+    ("timeSimulation", Values.REAL(0.0)),
+    ("timeCompile",    Values.REAL(0.0)),
+    ("timeTemplates",  Values.REAL(0.0)),
+    ("timeSimCode",    Values.REAL(0.0)),
+    ("timeBackend",    Values.REAL(0.0)),
+    ("timeFrontend",   Values.REAL(0.0))    
+  };
+    
 
 public function getSimulationResultType
   output DAE.Type t;
@@ -123,19 +136,20 @@ end getSimulationResultType;
 public function createSimulationResult
   input String resultFile;
   input String message;
-  input Real totalTime;
-  input Real timeFrontend;
-  input Real timeBackend;
-  input Real timeCodegen;
-  input Real timeCompile;
-  input Real timeSimulation;
+  input list<tuple<String,Values.Value>> inAddResultValues "additional values in reversed order; expected values see in CevalScript.simulationResultType_full";
   output Values.Value res;
 protected
+  list<tuple<String,Values.Value>> resultValues;
   list<Values.Value> vals;
   list<String> fields;
+  Boolean isTestType;
 algorithm
-  vals := Util.if_(RTOpts.getRunningTestsuite(), {}, {Values.REAL(totalTime),Values.REAL(timeFrontend),Values.REAL(timeBackend),Values.REAL(timeCodegen),Values.REAL(timeCompile),Values.REAL(timeSimulation)});
-  fields := Util.if_(RTOpts.getRunningTestsuite(), {}, {"totalTime","timeFrontend","timeBackend","timeCodegen","timeCompile","timeSimulation"});
+  resultValues := listReverse(inAddResultValues);
+  //TODO: maybe we should test if the fields are the ones in simulationResultType_full
+  fields := Util.if_(RTOpts.getRunningTestsuite(), {},
+                     Util.listMap(resultValues, Util.tuple21));
+  vals := Util.if_(RTOpts.getRunningTestsuite(), {}, 
+                   Util.listMap(resultValues, Util.tuple22)); 
   res := Values.RECORD(Absyn.IDENT("SimulationResult"),
     Values.STRING(resultFile)::Values.STRING(message)::vals,
     "resultFile"::"messages"::fields,-1);
@@ -148,11 +162,7 @@ protected
   list<Values.Value> vals;
   list<String> fields;
 algorithm
-  vals := Util.if_(RTOpts.getRunningTestsuite(), {}, {Values.REAL(0.0)});
-  fields := Util.if_(RTOpts.getRunningTestsuite(), {}, {"totalTime"});
-  res := Values.RECORD(Absyn.IDENT("SimulationResult"),
-    Values.STRING("")::Values.STRING(message)::vals,
-    "resultFile"::"messages"::fields,-1);
+  res := createSimulationResult("", message, zeroAdditionalSimulationResultValues);
 end createSimulationResultFailure;
 
 public function cevalInteractiveFunctions
@@ -176,7 +186,7 @@ algorithm
       list<Env.Frame> env;
       SCode.Class c;
       String s1,str,varid,res,cmd,executable,method_str,outputFormat_str,initfilename,cit,pd,executableSuffixedExe,sim_call,result_file,
-      omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,name,cname;
+      omhome,pwd,filename_1,filename,omhome_1,plotCmd,tmpPlotFile,call,str_1,scriptstr,res_1,mp,pathstr,name,cname, fileNamePrefix_s;
       DAE.ComponentRef cr,fcr,cref,classname;
       Interactive.InteractiveSymbolTable st,newst,st_1,st_2;
       Absyn.Program p,pnew,newp,ptot;
@@ -201,7 +211,8 @@ algorithm
       Absyn.ComponentRef cr_1;
       Integer size,length,rest;
       list<String> vars_1,vars_2,args;
-      Real t1,t2,time,timeFrontend,timeBackend,timeCodegen,timeCompile;
+      Real t1,t2,time,timeTotal, timeSimulation;
+      list<tuple<String,Values.Value>> resultValues;
       Interactive.InteractiveStmts istmts;
       Boolean bval;
       Env.Cache cache;
@@ -338,7 +349,8 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
       equation
-        (cache,ret_val,st_1,_,_,_,_,_) = translateModel(cache,env, className, st, msg, filenameprefix,true);
+        (cache,fileNamePrefix_s) = extractFilePrefix(cache,env, filenameprefix, st, msg);
+        (cache,ret_val,st_1,_,_,_,_) = translateModel(cache,env, className, st, fileNamePrefix_s,true, NONE);
       then
         (cache,ret_val,st_1);
 
@@ -542,7 +554,7 @@ algorithm
            lstVarVal = iv,
            compiledFunctions = cf)),msg)
       equation
-        (cache,executable,method_str,outputFormat_str,st,initfilename,_,_,_,_) = buildModel(cache,env, exp, st_1, msg);
+        (cache,executable,method_str,outputFormat_str,st,initfilename,_) = buildModel(cache,env, exp, st_1, msg);
       then
         (cache,ValuesUtil.makeArray({Values.STRING(executable),Values.STRING(initfilename)}),st);
 
@@ -594,10 +606,11 @@ algorithm
         lstVarVal = iv,
         compiledFunctions = cf)),msg)
         local String s1; Absyn.ComponentRef cr_name;
+              list<tuple<String,Values.Value>> resultValues;
       equation
         System.realtimeTick(RT_CLOCK_SIMULATE_TOTAL);
         
-        (cache,executable,method_str,outputFormat_str,st,_,timeFrontend,timeBackend,timeCodegen,timeCompile) = buildModel(cache,env, exp, st_1, msg);
+        (cache,executable,method_str,outputFormat_str,st,_,resultValues) = buildModel(cache,env, exp, st_1, msg);
         
         cit = winCitation();
         pwd = System.pwd();
@@ -608,13 +621,12 @@ algorithm
         0 = System.systemCall(sim_call);        
         
         result_file = Util.stringAppendList({executable,"_res.",outputFormat_str});
+        timeSimulation = System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION);
+        timeTotal = System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL);
         simValue = createSimulationResult(result_file, System.readFile("output.log"),
-          System.realtimeTock(RT_CLOCK_SIMULATE_TOTAL),
-          timeFrontend,
-          timeBackend,
-          timeCodegen,
-          timeCompile,
-          System.realtimeTock(RT_CLOCK_SIMULATE_SIMULATION));
+          ("timeTotal", Values.REAL(timeTotal)) :: 
+          ("timeSimulation", Values.REAL(timeSimulation)) ::
+          resultValues);
         newst = Interactive.addVarToSymboltable("currentSimulationResult", Values.STRING(result_file), DAE.T_STRING_DEFAULT, st);
       then
         (cache,simValue,newst);
@@ -2336,27 +2348,26 @@ algorithm
 end getIncidenceMatrix;
 
 
-public function translateModel "function translateModel
+protected function translateModel "function translateModel
  author: x02lucpo
  translates a model into cpp code and writes also a makefile"
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Path className "path for the model";
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
-  input Ceval.Msg inMsg;
-  input DAE.Exp inExp;
+  input String inFileNamePrefix;
   input Boolean addDummy "if true, add a dummy state";
+  input Option<SimCode.SimulationSettings> inSimSettingsOpt;
   output Env.Cache outCache;
   output Values.Value outValue;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable;
   output DAELow.DAELow outDAELow;
   output list<String> outStringLst;
-  output String outString;
-  output Real timeFrontend;
-  output Real timeBackend;
+  output String outFileDir;
+  output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outString):=
-  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inMsg,inExp,addDummy)
+  (outCache,outValue,outInteractiveSymbolTable,outDAELow,outStringLst,outFileDir,resultValues):=
+  matchcontinue (inCache,inEnv,className,inInteractiveSymbolTable,inFileNamePrefix,addDummy,inSimSettingsOpt)
     local
       Env.Cache cache;
       list<Env.Frame> env;
@@ -2366,13 +2377,13 @@ algorithm
       Ceval.Msg msg;
       Values.Value outValMsg;
       DAE.Exp fileprefix;
-      String file_dir;
-    case (cache,env,className,st,msg,fileprefix,addDummy) /* mo file directory */
+      String file_dir, fileNamePrefix;
+    case (cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt) /* mo file directory */
       equation
-        (cache, outValMsg, st, indexed_dlow, libs, file_dir, timeFrontend, timeBackend) =
-          SimCode.translateModel(cache,env,className,st,msg,fileprefix,addDummy);
+        (cache, outValMsg, st, indexed_dlow, libs, file_dir, resultValues) =
+          SimCode.translateModel(cache,env,className,st,fileNamePrefix,addDummy,inSimSettingsOpt);
       then
-        (cache,outValMsg,st,indexed_dlow,libs,file_dir,timeFrontend,timeBackend);
+        (cache,outValMsg,st,indexed_dlow,libs,file_dir,resultValues);
   end matchcontinue;
 end translateModel;
 
@@ -2445,6 +2456,7 @@ algorithm
   end matchcontinue;
 end translateGraphics;
 
+
 protected function calculateSimulationSettings "function calculateSimulationSettings
  author: x02lucpo
  calculates the start,end,interval,stepsize, method and initFileName"
@@ -2453,25 +2465,17 @@ protected function calculateSimulationSettings "function calculateSimulationSett
   input DAE.Exp inExp;
   input Interactive.InteractiveSymbolTable inInteractiveSymbolTable;
   input Ceval.Msg inMsg;
-  input String inString;
   output Env.Cache outCache;
-  output String outString1 "filename";
-  output Real outReal2 "start time";
-  output Real outReal3 "stop time";
-  output Real outReal4 "step size";
-  output Real tolerance "tolerance";
-  output String outString5 "method";
-  output String optionsStr;
-  output String outputFormat_str;
+  output SimCode.SimulationSettings outSimSettings;  
 algorithm
-  (outCache,outString1,outReal2,outReal3,outReal4,tolerance,outString5,optionsStr):=
-  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg,inString)
+  (outCache,outSimSettings):=
+  matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
-      String prefix_str,method_str,init_filename,cname_str,options_str;
+      String prefix_str,method_str,init_filename,cname_str,options_str,outputFormat_str;
       Interactive.InteractiveSymbolTable st;
       Values.Value starttime_v,stoptime_v,tolerance_v;
       Integer interval_i;
-      Real starttime_r,stoptime_r,interval_r,tolerance_r;
+      Real starttime_r,stoptime_r,interval_r,tolerance_r,stepsize_r;
       list<Env.Frame> env;
       DAE.ComponentRef cr;
       DAE.Exp starttime,stoptime,interval,toleranceExp,method,options,filenameprefix,outputFormat;
@@ -2483,10 +2487,10 @@ algorithm
       Ceval.Msg msg;
       Env.Cache cache;
       Absyn.Path className;
-    case (cache,env,DAE.CALL(expLst = {DAE.CODE(Absyn.C_TYPENAME(className),_),starttime,stoptime,interval,toleranceExp,method,filenameprefix,_,_,options,outputFormat}),
-         (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg,cname_str)
+    case (cache,env,DAE.CALL(expLst = {DAE.CODE(Absyn.C_TYPENAME(_),_),starttime,stoptime,interval,toleranceExp,method,_,_,_,options,outputFormat}),
+         (st as Interactive.SYMBOLTABLE(ast = _)),msg)
       equation
-        (cache,Values.STRING(prefix_str),SOME(st)) = Ceval.ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
+        //(cache,Values.STRING(prefix_str),SOME(st)) = Ceval.ceval(cache,env, filenameprefix, true, SOME(st), NONE, msg);
         (cache,starttime_v,SOME(st)) = Ceval.ceval(cache,env, starttime, true, SOME(st), NONE, msg);
         (cache,stoptime_v,SOME(st)) = Ceval.ceval(cache,env, stoptime, true, SOME(st), NONE, msg);
         (cache,Values.INTEGER(interval_i),SOME(st)) = Ceval.ceval(cache,env, interval, true, SOME(st), NONE, msg);
@@ -2494,14 +2498,14 @@ algorithm
         (cache,Values.STRING(method_str),SOME(st)) = Ceval.ceval(cache,env, method, true, SOME(st), NONE, msg);
         (cache,Values.STRING(options_str),SOME(st)) = Ceval.ceval(cache,env, options, true, SOME(st), NONE, msg);
         (cache,Values.STRING(outputFormat_str),SOME(st)) = Ceval.ceval(cache,env, outputFormat, true, SOME(st), NONE, msg);
+        
         starttime_r = ValuesUtil.valueReal(starttime_v);
         stoptime_r = ValuesUtil.valueReal(stoptime_v);
-        interval_r = intReal(interval_i);
         tolerance_r = ValuesUtil.valueReal(tolerance_v);
-        init_filename = Util.stringAppendList({prefix_str,"_init.txt"});
+        outSimSettings = SimCode.createSimulationSettings(starttime_r,stoptime_r,interval_i,tolerance_r,method_str,options_str,outputFormat_str);
       then
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str);
-    case (_,_,_,_,_,_)
+        (cache, outSimSettings);
+    case (_,_,_,_,_)
       equation
         Print.printErrorBuf("#- Ceval.calculateSimulationSettings failed\n");
       then
@@ -2523,12 +2527,9 @@ public function buildModel "function buildModel
   output String outputFormat_str;
   output Interactive.InteractiveSymbolTable outInteractiveSymbolTable3;
   output String outString4 "initFileName";
-  output Real timeFrontend;
-  output Real timeBackend;
-  output Real timeCodegen;
-  output Real timeCompile;
+  output list<tuple<String,Values.Value>> resultValues;
 algorithm
-  (outCache,outString1,outString2,outputFormat_str,outInteractiveSymbolTable3,outString4,timeFrontend,timeBackend,timeCodegen,timeCompile):=
+  (outCache,outString1,outString2,outputFormat_str,outInteractiveSymbolTable3,outString4,resultValues):=
   matchcontinue (inCache,inEnv,inExp,inInteractiveSymbolTable,inMsg)
     local
       Values.Value ret_val;
@@ -2542,6 +2543,7 @@ algorithm
       list<Interactive.CompiledCFunction> cf;
       Real starttime_r,stoptime_r,interval_r,tolerance_r;
       list<Env.Frame> env;
+      SimCode.SimulationSettings simSettings;
       DAE.Exp exp,starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat;
       DAE.ComponentRef cr;
       list<SCode.Class> sp;
@@ -2570,20 +2572,19 @@ algorithm
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st_1, msg);
-        (cache,Values.STRING(prefix_str),SOME(st2)) = Ceval.ceval(cache,env, fileprefix, true, SOME(st_1), NONE, msg);
-        init_filename = Util.stringAppendList({prefix_str,"_init.txt"});
-        (cache,Values.STRING(method_str),SOME(st2)) = Ceval.ceval(cache,env, method, true, SOME(st2), NONE, msg);
+        init_filename = Util.stringAppendList({filenameprefix,"_init.txt"});
+        (cache,Values.STRING(method_str),SOME(st2)) = Ceval.ceval(cache,env, method, true, SOME(st_1), NONE, msg);
         (cache,Values.STRING(outputFormat_str),SOME(st2)) = Ceval.ceval(cache, env, outputFormat, true, SOME(st2), NONE, msg);
-        exeFile = Util.stringAppendList({filenameprefix, ".exe"});
+        exeFile = filenameprefix +& System.getExeExt();
         existFile = System.regularFileExists(exeFile);
         _ = System.cd(oldDir);
         true = existFile;
     then
-      (cache,filenameprefix,method_str,outputFormat_str,st2,init_filename,0.0,0.0,0.0,0.0);
+      (cache,filenameprefix,method_str,outputFormat_str,st2,init_filename,zeroAdditionalSimulationResultValues);
     // compile the model
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),expLst = ({DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance,method,fileprefix,storeInTemp,noClean,options,outputFormat}))),(st_1 as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Absyn.TimeStamp ts,ts2;
-        Real r1,r2,globalEdit,globalBuild;
+        Real r1,r2,globalEdit,globalBuild, timeCompile;
         String s1,s2,s3;
       equation
         (cdef as Absyn.CLASS(info = Absyn.INFO(buildTimes=ts as Absyn.TIMESTAMP(_,globalEdit)))) = Interactive.getPathedClassInProgram(classname,p);
@@ -2593,18 +2594,22 @@ algorithm
         (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir,timeFrontend,timeBackend) = translateModel(cache,env, classname, st_1, msg, fileprefix,true);
-        cname_str = Absyn.pathString(classname);
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
-          starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
-        win1 = getWithinStatement(classname);
-        s3 = extractNoCleanCommand(noClean);
-        makefilename = generateMakefilename(filenameprefix);
+        (cache,simSettings) = calculateSimulationSettings(cache,env, exp, st, msg);
+        SimCode.SIMULATION_SETTINGS(method = method_str, outputFormat = outputFormat_str) 
+           = simSettings;
         
-        timeCodegen = System.realtimeTock(RT_CLOCK_BUILD_MODEL);
+        (cache,ret_val,st,indexed_dlow_1,libs,file_dir,resultValues) = translateModel(cache,env, classname, st_1, filenameprefix,true, SOME(simSettings));
+        //cname_str = Absyn.pathString(classname);
+        //SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename,
+        //  starttime_r, stoptime_r, interval_r, tolerance_r, method_str,options_str,outputFormat_str);
+        
         System.realtimeTick(RT_CLOCK_BUILD_MODEL);
+        init_filename = filenameprefix +& "_init.txt"; //a hack ? should be at one place somewhere
+        //win1 = getWithinStatement(classname);
+        s3 = extractNoCleanCommand(noClean);
+        //makefilename = generateMakefilename(filenameprefix);
+        
         Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, s3, method_str);
         Debug.fprintln("dynload", "buildModel: Compiling done.");
@@ -2612,8 +2617,9 @@ algorithm
         p = setBuildTime(p,classname);
         st2 = st;// Interactive.replaceSymbolTableProgram(st,p);
         timeCompile = System.realtimeTock(RT_CLOCK_BUILD_MODEL);
+        resultValues = ("timeCompile",Values.REAL(timeCompile)) :: resultValues;
       then
-        (cache,filenameprefix,method_str,outputFormat_str,st2,init_filename,timeFrontend,timeBackend,timeCodegen,timeCompile);
+        (cache,filenameprefix,method_str,outputFormat_str,st2,init_filename,resultValues);
     case (_,_,_,_,_)
       then
         fail();
@@ -4427,6 +4433,7 @@ algorithm
       Absyn.Within win1;
       Env.Cache cache;
       Boolean cdToTemp;
+      SimCode.SimulationSettings simSettings;
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),expLst = ({DAE.CODE(Absyn.C_TYPENAME(classname),_),starttime,stoptime,interval,tolerance, method,fileprefix,storeInTemp,noClean,options}))),(st_1 as Interactive.SYMBOLTABLE(ast = p  as Absyn.PROGRAM(globalBuildTimes=ts),explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local Absyn.TimeStamp ts;
         Real r1,r2;
@@ -4437,12 +4444,16 @@ algorithm
         (cache,Values.BOOL(cdToTemp),SOME(st)) = Ceval.ceval(cache,env, storeInTemp, true, SOME(st_1), NONE, msg);
         oldDir = System.pwd();
         changeToTempDirectory(cdToTemp);
-        (cache,ret_val,st,indexed_dlow_1,libs,file_dir,_,_) = translateModel(cache,env, classname, st_1, msg, fileprefix,true);
-        cname_str = Absyn.pathString(classname);
-        (cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str) = calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
         (cache,filenameprefix) = extractFilePrefix(cache,env, fileprefix, st, msg);
-        SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
-        makefilename = generateMakefilename(filenameprefix);
+        (cache,simSettings) = calculateSimulationSettings(cache,env, exp, st, msg);
+        (cache,ret_val,st,indexed_dlow_1,libs,file_dir,_) 
+          = translateModel(cache,env, classname, st_1, filenameprefix,true,SOME(simSettings));
+        SimCode.SIMULATION_SETTINGS(method = method_str) = simSettings;
+        //cname_str = Absyn.pathString(classname);
+        //(cache,init_filename,starttime_r,stoptime_r,interval_r,tolerance_r,method_str,options_str,outputFormat_str) 
+        //= calculateSimulationSettings(cache,env, exp, st, msg, cname_str);
+        //SimCode.generateInitData(indexed_dlow_1, classname, filenameprefix, init_filename, starttime_r, stoptime_r, interval_r,tolerance_r,method_str,options_str,outputFormat_str);
+        //makefilename = generateMakefilename(filenameprefix);
         Debug.fprintln("dynload", "buildModel: about to compile model " +& filenameprefix +& ", " +& file_dir);
         compileModel(filenameprefix, libs, file_dir, "", method_str);
         Debug.fprintln("dynload", "buildModel: Compiling done.");

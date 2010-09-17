@@ -905,6 +905,7 @@ algorithm
       list<list<Integer>> comps;
       Env.Cache cache;
       Env.Env env;
+      SimCode.SimulationSettings simSettings;
 
     case (cache,env,classname,p,ap,dae,dlow,ass1,ass2,m,mt,comps) /* classname ass1 ass2 blocks */
       equation
@@ -917,15 +918,15 @@ algorithm
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         Debug.fcall("dumpindxdae", DAELow.dump, indexed_dlow_1);
         cname_str = Absyn.pathString(classname);
-        filename = Util.stringAppendList({cname_str,".cpp"});
-        funcfilename = Util.stringAppendList({cname_str,"_functions.cpp"});
-        init_filename = Util.stringAppendList({cname_str,"_init.txt"});
-        makefilename = Util.stringAppendList({cname_str,".makefile"});
+        //filename = Util.stringAppendList({cname_str,".cpp"});
+        //funcfilename = Util.stringAppendList({cname_str,"_functions.cpp"});
+        //init_filename = Util.stringAppendList({cname_str,"_init.txt"});
+        //makefilename = Util.stringAppendList({cname_str,".makefile"});
         a_cref = Absyn.pathToCref(classname);
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
-        (_, _) = SimCode.generateModelCode(p, dae, indexed_dlow_1, classname, cname_str, file_dir, ass1, ass2, m, mt, comps);
-        SimCode.generateInitData(indexed_dlow_1, classname, cname_str, init_filename, 0.0, 1.0, 500.0,1e-6,"dassl","","plt");
+        simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","plt");        
+        (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
       then
         ();
     case (_,_,_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */

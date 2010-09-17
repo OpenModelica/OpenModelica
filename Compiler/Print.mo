@@ -94,17 +94,33 @@ public function writeBuf
 end writeBuf;
 
 public function getBufLength
+"Gets the actual length of the filled space in the print buffer."
   output Integer outBufFilledLength;
 
   external "C" ;
 end getBufLength;
 
 public function printBufSpace
-"prints the given number of spaces to the print buffer"
+"Prints the given number of spaces to the print buffer."
   input Integer inNumOfSpaces;
 
   external "C" ;
 end printBufSpace;
+
+public function printBufNewLine 
+"Prints one new line character to the print buffer."
+
+  external "C" ;
+end printBufNewLine;
+
+public function hasBufNewLineAtEnd 
+"Tests if the last outputted character in the print buffer is a new line.
+ It is a (temporary) workaround to stringLength()'s O(n) cost." 
+  output Boolean outHasNewLineAtEnd ;
+
+  external "C" ;
+end hasBufNewLineAtEnd;
+
 
 end Print;
 

@@ -246,6 +246,7 @@ RML_BEGIN_LABEL(Print__printBuf)
 }
 RML_END_LABEL
 
+
 RML_BEGIN_LABEL(Print__clearBuf)
 {
   nfilled=0;
@@ -266,13 +267,13 @@ RML_BEGIN_LABEL(Print__getString)
 	  rmlA0=(void*)mk_scon("");
 	  RML_TAILCALLK(rmlSC);
   }
-  if (buf == 0) {	
+  if (buf == 0) {
     if (increase_buffer() != 0) {
       RML_TAILCALLK(rmlFC);
     }
   }
   rmlA0=(void*)mk_scon(buf);
-  RML_TAILCALLK(rmlSC);  
+  RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
@@ -344,3 +345,25 @@ RML_BEGIN_LABEL(Print__printBufSpace)
 }
 RML_END_LABEL
 
+
+RML_BEGIN_LABEL(Print__printBufNewLine)
+{
+  while (nfilled + 1+1 > cursize) {
+	if(increase_buffer()!= 0) {
+		RML_TAILCALLK(rmlFC);
+    }
+  }
+  buf[nfilled++] = '\n';
+  buf[nfilled] = '\0';
+
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+
+RML_BEGIN_LABEL(Print__hasBufNewLineAtEnd)
+{
+  rmlA0 = (nfilled > 0 && buf[nfilled-1] == '\n') ? RML_TRUE : RML_FALSE;
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
