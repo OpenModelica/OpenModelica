@@ -8534,7 +8534,8 @@ algorithm
           functionArgs = Absyn.FUNCTIONARGS(args = {Absyn.CREF(componentRef = cr),_}))) :: ds),impl,st,doVect,pre)
       equation
         true = Absyn.crefEqual(cref, cr);
-        dim = Util.if_(OptManager.getOption("checkModel"), DAE.DIM_INTEGER(3), DAE.DIM_NONE);
+        //dim = Util.if_(OptManager.getOption("checkModel"), DAE.DIM_INTEGER(3), DAE.DIM_NONE);
+        dim = DAE.DIM_NONE;
         (cache,l,dae) = elabArraydimDecl(cache,env, cref, ds, impl, st,doVect,pre);
       then
         (cache, dim :: l, dae);
