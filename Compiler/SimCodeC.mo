@@ -1212,7 +1212,10 @@ algorithm
         txt = Tpl.softNewLine(txt);
         txt = globalDataVarCommentsArray(txt, "string_param_comments", i_vars_stringParamVars);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
+                                    "\n",
+                                    "\n"
+                                }, true));
         txt = Tpl.pushIter(txt, Tpl.ITER_OPTIONS(0, NONE, SOME(Tpl.ST_NEW_LINE()), 0, 0, Tpl.ST_NEW_LINE(), 0, Tpl.ST_NEW_LINE()));
         txt = lm_17(txt, i_vars_stateVars);
         txt = Tpl.popIter(txt);
@@ -7398,7 +7401,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("DLLEXT="));
         txt = Tpl.writeStr(txt, i_makefileParams_dllext);
         txt = Tpl.softNewLine(txt);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("CFLAGS=-I\""));
+        txt = Tpl.writeTok(txt, Tpl.ST_STRING("CFLAGS=-O3 -I\""));
         txt = Tpl.writeStr(txt, i_makefileParams_omhome);
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("/include/omc\" "));
         txt = Tpl.writeStr(txt, i_makefileParams_cflags);

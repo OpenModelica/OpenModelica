@@ -226,6 +226,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarCommentsArray("param_comments", vars.paramVars)%>
   <%globalDataVarCommentsArray("string_alg_comments", vars.stringAlgVars)%>
   <%globalDataVarCommentsArray("string_param_comments", vars.stringParamVars)%>
+
   
   <%vars.stateVars |> var =>
     globalDataVarDefine(var, "states")
@@ -1849,7 +1850,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  CFLAGS=-I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
+  CFLAGS=-O3 -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   
