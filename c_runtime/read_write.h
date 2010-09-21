@@ -136,4 +136,6 @@ char *my_strdup(const char *s);
 
 int getMyBool(const type_description *desc);
 
+void puttype(const type_description *desc);
+
 #endif
