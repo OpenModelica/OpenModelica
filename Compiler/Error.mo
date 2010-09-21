@@ -219,6 +219,7 @@ public constant ErrorID IF_EQUATION_WARNING=131;
 public constant ErrorID IF_EQUATION_UNBALANCED_2=132;
 public constant ErrorID EQUATION_GENERIC_FAILURE=133;
 public constant ErrorID INST_PARTIAL_CLASS_CHECK_MODEL_WARNING=134; // adrpo: legal to instantiate a partial class when we run checkModel
+public constant ErrorID VARIABLE_BINDING_TYPE_MISMATCH=135;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -337,6 +338,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Illegal to instantiate partial class %s"),
           (INST_PARTIAL_CLASS_CHECK_MODEL_WARNING,TRANSLATION(),WARNING(),
           "Forcing full instantiation of partial class %s during checkModel."),
+          (VARIABLE_BINDING_TYPE_MISMATCH,TRANSLATION(),ERROR(),
+          "Type mismatch in binding %s = %s, expected subtype of %s, got type %s."),
           (REDECLARE_CLASS_AS_VAR,TRANSLATION(),ERROR(),
           "Trying to redeclare the class %s as a variable"),
           (REDECLARE_NON_REPLACEABLE,TRANSLATION(),ERROR(),

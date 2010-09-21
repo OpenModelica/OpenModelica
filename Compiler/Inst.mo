@@ -6781,7 +6781,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        eOpt = makeVariableBinding(ty,mod,DAE.C_CONST,pre,n);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_CONST,pre,n,source);
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, NONE, dae_var_attr, comment,io,finalPrefix,source,false);
         dae = DAEUtil.joinDaes(dae1_1, dae3);
         store = UnitAbsynBuilder.instAddStore(store,ty,cr);
@@ -6806,7 +6806,7 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        eOpt = makeVariableBinding(ty,mod,DAE.C_PARAM,pre,n);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_PARAM,pre,n,source);
         dae3 = daeDeclare(cr, ci_state, ty, SCode.ATTR({},flowPrefix,streamPrefix,acc,vt,dir),prot, eOpt, inst_dims, start, dae_var_attr, comment,io,finalPrefix, source, false);
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
@@ -6842,7 +6842,7 @@ algorithm
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
         start = instStartBindingExp(mod, ty);
-        eOpt = makeVariableBinding(ty,mod,DAE.C_VAR,pre,n);
+        eOpt = makeVariableBinding(ty,mod,DAE.C_VAR,pre,n,source);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA);
         // adrpo: we cannot check this here as:
@@ -6955,24 +6955,49 @@ Unless it is a complex var that not inherites a basic type. In that case DAE.Equ
   input DAE.Const const;
   input Prefix.Prefix pre;
   input Ident name;
+  input DAE.ElementSource source;
   output Option<DAE.Exp> eOpt;
-algorithm eOpt := matchcontinue(tp,mod,const,pre,name)
+algorithm eOpt := matchcontinue(tp,mod,const,pre,name,source)
   local 
     DAE.Exp e,e1;DAE.Properties p;
     DAE.Const c,c1;
     Ident n;
     Prefix.Prefix pr;
+    DAE.Type bt;
   case ((DAE.T_COMPLEX(complexClassType=ClassInf.EXTERNAL_OBJ(_)),_),
-    DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_))),_,_,_)
+    DAE.MOD(eqModOption = SOME(DAE.TYPED(e,_,_,_))),_,_,_,_)
     then SOME(e);
-  case(tp,mod,c,pr,n)
+  case(tp,mod,c,pr,n,_)
     equation
       SOME(DAE.TYPED(e,_,p,_)) = Mod.modEquation(mod);
       (e1,DAE.PROP(_,c1)) = Types.matchProp(e,p,DAE.PROP(tp,c),true);
       checkHigherVariability(c,c1,pr,n,e);
     then
       SOME(e1);
-  case (_,mod,_,_,_)
+  // An empty array such as x[:] = {} will cause Types.matchProp to fail, but we
+  // shouldn't print an error.
+  case (tp, mod, c, pr, n, _)
+    equation
+      SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
+      true = Types.isEmptyArray(bt);
+    then
+      NONE;
+  // If Types.matchProp fails, print an error.
+  case (tp, mod, c, pr, n, _)
+    local
+      String v_str, b_str, et_str, bt_str;
+    equation
+      SOME(DAE.TYPED(e,_,p as DAE.PROP(type_ = bt),_)) = Mod.modEquation(mod);
+      failure((e1,DAE.PROP(_,c1)) = Types.matchProp(e, p, DAE.PROP(tp, c), true));
+      v_str = n;
+      b_str = Exp.printExpStr(e);
+      et_str = Types.unparseType(tp);
+      bt_str = Types.unparseType(bt);
+      Error.addSourceMessage(Error.VARIABLE_BINDING_TYPE_MISMATCH, 
+        {v_str, b_str, et_str, bt_str}, DAEUtil.getElementSourceFileInfo(source));
+    then
+      fail();
+  case (_,mod,_,_,_,_)
     equation
       failure(SOME(DAE.TYPED(_,_,_,_)) = Mod.modEquation(mod));
     then NONE;

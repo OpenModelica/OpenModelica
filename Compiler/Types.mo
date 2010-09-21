@@ -650,6 +650,16 @@ algorithm
   end matchcontinue;
 end isArray;
 
+public function isEmptyArray
+  input Type inType;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := matchcontinue(inType)
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(0)), _)) then true;
+    case _ then false;
+  end matchcontinue;
+end isEmptyArray;
+
 public function isString "function: isString
 
   Return true if Type is the builtin String type.

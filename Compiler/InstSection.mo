@@ -3082,7 +3082,7 @@ algorithm
 
     case (_,_,_,_,_,_)
       equation
-        Debug.fprintln("matchcase", "- Inst.createMatchStatement failed");
+        Debug.fprintln("matchcase", "- InstSection.createMatchStatement failed");
       then fail();
   end matchcontinue;
 end createMatchStatement;
@@ -3158,7 +3158,7 @@ algorithm
     case (cache,env,ih,mod,pre,csets,ci_state,(e :: es),_,impl,graph)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprintln("failtrace", "Inst.instIfTrueBranches failed on equations: " +&
+        Debug.fprintln("failtrace", "InstSection.instIfTrueBranches failed on equations: " +&
                        Util.stringDelimitList(Util.listMap(e, SCode.equationStr), "\n"));
       then
         fail();
@@ -4440,7 +4440,7 @@ algorithm
 
     case (cache,env,ih,_,pre,c1,_,t1,vt1,c2,_,t2,vt2,_,_,_,_,_,_)
       equation
-        print("-Inst.connectComponents failed\n");
+        Debug.fprintln("failtrace", "- InstSection.connectComponents failed\n");
       then
         fail();
   end matchcontinue;

@@ -104,7 +104,7 @@ end VarProtection;
 
 uniontype ElementSource "gives information about the origin of the element"
   record SOURCE
-    Absyn.Info info "the line and column numbers of the equations and algorithms this element came from; info does not yet exist in Absyn, but here is where it will end up";
+    Absyn.Info info "the line and column numbers of the equations and algorithms this element came from";
     list<Absyn.Within> partOfLst "the model(s) this element came from";
     list<Option<ComponentRef>> instanceOptLst "the instance(s) this element is part of";
     list<Option<tuple<ComponentRef, ComponentRef>>> connectEquationOptLst "this element came from this connect(s)";
