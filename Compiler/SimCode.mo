@@ -5621,7 +5621,7 @@ algorithm
     case (repl,(cr :: crs),pos)
       equation
         repl_1 = VarTransform.addReplacement(repl, cr, 
-          DAE.CREF(DAE.CREF_IDENT("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_NONE}), {DAE.INDEX(DAE.ICONST(pos))}), 
+          DAE.CREF(DAE.CREF_IDENT("xloc", DAE.ET_ARRAY(DAE.ET_REAL(), {DAE.DIM_UNKNOWN}), {DAE.INDEX(DAE.ICONST(pos))}), 
                    DAE.ET_REAL()));
         pos_1 = pos + 1;
         repl_2 = makeResidualReplacements2(repl_1, crs, pos_1);

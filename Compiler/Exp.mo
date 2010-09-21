@@ -5373,7 +5373,7 @@ algorithm
     case (DAE.REDUCTION(expr = e)) then typeof(e);
     case (DAE.END()) then DAE.ET_OTHER();  /* Can be any type. */
     case (DAE.SIZE(_,NONE)) then DAE.ET_INT();
-    case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_NONE});
+    case (DAE.SIZE(_,SOME(_))) then DAE.ET_ARRAY(DAE.ET_INT(),{DAE.DIM_UNKNOWN});
 
     //MetaModelica extension
     case (DAE.LIST(ty = tp)) then DAE.ET_LIST(tp); // was tp, but the type of a LIST is a LIST
@@ -8264,8 +8264,8 @@ public function printExp2Str
   Helper function to printExpStr."
   input Exp inExp;
   input String stringDelimiter;
-  input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that print component references and a extra parameter passet throug the function";
-  input Option<printCallFunc> opcallfunc "function that print function calls";
+  input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that prints component references and an extra parameter passed through to the function";
+  input Option<printCallFunc> opcallfunc "function that prints function calls";
   output String outString;
   replaceable type Type_a subtypeof Any;
   partial function printComponentRefStrFunc
@@ -8276,7 +8276,7 @@ public function printExp2Str
   partial function printCallFunc
     input Exp inExp;
     input String stringDelimiter;
-    input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that print component references and a extra parameter passet throug the function";
+    input Option<tuple<printComponentRefStrFunc,Type_a>> opcreffunc "tuple of function that prints component references and an extra parameter passed through to the function";
     output String outString;
     partial function printComponentRefStrFunc
       input ComponentRef inComponentRef;
@@ -11505,17 +11505,36 @@ algorithm oint := matchcontinue(insubs)
     list<Exp> expl;
     Integer x;
     list<DAE.Dimension> recursive;
-  case({}) then {};
+    DAE.Exp e;
+
+  case ({}) then {};
     
-  case((ss as DAE.INDEX(DAE.ICONST(_)))::subs) equation
-    recursive = subscriptDimensions(subs);
-  then DAE.DIM_INTEGER(1):: recursive;      
+  case ((ss as DAE.INDEX(DAE.ICONST(x)))::subs) 
+    equation
+      recursive = subscriptDimensions(subs);
+    then 
+      DAE.DIM_INTEGER(x):: recursive;      
     
-  case(ss::subs) equation
-    recursive = subscriptDimensions(subs);
-  then DAE.DIM_SUBSCRIPT(ss):: recursive;
-    
-  case(_) then {DAE.DIM_INTEGER(-1)};
+  case ((ss as DAE.WHOLEDIM) :: subs)
+    equation
+      recursive = subscriptDimensions(subs);
+    then
+      DAE.DIM_UNKNOWN :: recursive;
+
+  case ((ss as DAE.INDEX(exp = e)) :: subs)
+    equation
+      recursive = subscriptDimensions(subs);
+    then
+      DAE.DIM_EXP(e) :: recursive;
+       
+  case (ss :: subs)
+    local String sub_str;
+    equation
+      true = RTOpts.debugFlag("failtrace");
+      sub_str = subscriptString(ss);
+      Debug.fprintln("failtrace", "- Exp.subscriptDimensions failed on " +& sub_str);
+    then
+      fail();
 end matchcontinue;
 end subscriptDimensions;
 
@@ -12309,7 +12328,7 @@ algorithm
       Boolean retVal;
     case({}) then true;
 
-    case (DAE.DIM_NONE :: iLst)
+    case (DAE.DIM_UNKNOWN :: iLst)
       equation
         retVal = arrayContainZeroDimension(iLst);
       then
@@ -12335,7 +12354,7 @@ algorithm
     local
       input list<DAE.Dimension> rest_dims;
     case ({}) then false;
-    case (DAE.DIM_NONE :: rest_dims) then true;
+    case (DAE.DIM_UNKNOWN :: rest_dims) then true;
     case (_ :: rest_dims) then arrayContainZeroDimension(rest_dims);
   end matchcontinue;
 end arrayContainWholeDimension;
@@ -13352,7 +13371,7 @@ algorithm
     local
       String s;
       Integer x;
-    case DAE.DIM_NONE then ":";
+    case DAE.DIM_UNKNOWN then ":";
     case DAE.DIM_ENUM(enumTypeName = p) 
       local Absyn.Path p;
       equation
@@ -13364,10 +13383,10 @@ algorithm
         s = intString(x);
       then
         s;
-    case DAE.DIM_SUBSCRIPT(subscript = sub)
-      local DAE.Subscript sub;
+    case DAE.DIM_EXP(exp = e)
+      local Exp e;
       equation
-        s = printSubscriptStr(sub);
+        s = printExpStr(e);
       then
         s;
   end matchcontinue;
@@ -13383,7 +13402,7 @@ algorithm
       Integer i;
     case DAE.DIM_INTEGER(integer = i) then DAE.INDEX(DAE.ICONST(i));
     case DAE.DIM_ENUM(size = i) then DAE.INDEX(DAE.ICONST(i));
-    case DAE.DIM_NONE then DAE.WHOLEDIM();
+    case DAE.DIM_UNKNOWN then DAE.WHOLEDIM();
   end matchcontinue;
 end dimensionSubscript;
 
@@ -13394,8 +13413,10 @@ public function dimensionsEqual
   output Boolean res;
 algorithm
   res := matchcontinue(dim1, dim2)
-    case (DAE.DIM_NONE, _) then true;
-    case (_, DAE.DIM_NONE) then true;
+    case (DAE.DIM_UNKNOWN, _) then true;
+    case (_, DAE.DIM_UNKNOWN) then true;
+    case (DAE.DIM_EXP(exp = _), _) then true;
+    case (_, DAE.DIM_EXP(exp = _)) then true;
     case (_, _)
       local Boolean b;
       equation
@@ -13430,8 +13451,8 @@ public function dimensionsAdd
   output DAE.Dimension res;
 algorithm
   res := matchcontinue(dim1, dim2)
-    case (DAE.DIM_NONE, _) then DAE.DIM_NONE;
-    case (_, DAE.DIM_NONE) then DAE.DIM_NONE;
+    case (DAE.DIM_UNKNOWN, _) then DAE.DIM_UNKNOWN;
+    case (_, DAE.DIM_UNKNOWN) then DAE.DIM_UNKNOWN;
     case (_, _)
       equation
         res = intDimension(dimensionSize(dim1) + dimensionSize(dim2));
@@ -13446,7 +13467,9 @@ public function dimensionKnown
   output Boolean known;
 algorithm
   known := matchcontinue(dim)
-    case DAE.DIM_NONE then false;
+    case DAE.DIM_UNKNOWN then false;
+    case DAE.DIM_EXP(exp = DAE.ICONST(integer = _)) then true;
+    case DAE.DIM_EXP(exp = _) then false;
     case _ then true;
   end matchcontinue;
 end dimensionKnown;

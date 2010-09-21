@@ -10779,7 +10779,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.DIM_NONE() )
+           DAE.DIM_UNKNOWN() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"));
       then txt;

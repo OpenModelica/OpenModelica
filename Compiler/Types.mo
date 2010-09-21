@@ -76,6 +76,7 @@ protected import Util;
 protected import RTOpts;
 protected import ValuesUtil;
 protected import DAEUtil;
+protected import OptManager;
 
 public function discreteType
 "function: discreteType
@@ -944,12 +945,22 @@ algorithm
         res = getDimensionSizes(tp);
       then
         (i :: res);
+    case ((DAE.T_ARRAY(arrayDim = d, arrayType = tp), _))
+      equation
+        res = getDimensionSizes(tp);
+      then
+        (-1 :: res);
     case ((DAE.T_COMPLEX(_,_,SOME(tp),_),_))
       then getDimensionSizes(tp);
-    case ((_,_)) then {};
+    case ((_,_))
+      equation
+        false = arrayType(inType);
+      then
+        {};
   end matchcontinue;
 end getDimensionSizes;
 
+public 
 public function getDimensions
 "Returns the dimensions of a Type."
   input Type inType;
@@ -1436,14 +1447,28 @@ algorithm
     case ((DAE.T_ENUMERATION(names = {}),_),(DAE.T_ENUMERATION(names = _),_)) then true;
     case ((DAE.T_ENUMERATION(names = _),_),(DAE.T_ENUMERATION(names = {}),_)) then true;
     
-    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t2),_))
       equation
         true = subtype(t1, t2);
       then
         true;
     
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t1),_),(DAE.T_ARRAY(arrayType = t2),_))
       equation
+        true = subtype(t1, t2);
+      then
+        true;
+        
+    case ((DAE.T_ARRAY(arrayType = t1), _), (DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t2), _))
+      equation
+        true = OptManager.getOption("checkModel");
+        true = subtype(t1, t2);
+      then
+        true;
+        
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t1), _), (DAE.T_ARRAY(arrayType = t2), _))
+      equation
+        true = OptManager.getOption("checkModel");
         true = subtype(t1, t2);
       then
         true;
@@ -1825,12 +1850,12 @@ algorithm
     case (t,{}) then t;
     case (t,DAE.WHOLEDIM::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_NONE,t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t),NONE),lst);
       then
         t;
     case (t,DAE.SLICE(e)::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_NONE,t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t),NONE),lst);
       then
         t;
 
@@ -1841,7 +1866,7 @@ algorithm
         t;
      case (t,DAE.INDEX(_)::lst)
       equation
-        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_NONE,t),NONE),lst);
+        t = makeArraySubscripts((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t),NONE),lst);
       then
         t;
   end matchcontinue;
@@ -2171,7 +2196,7 @@ algorithm
     case ((DAE.T_NOTYPE(),_)) then "#NOTYPE#";
     case ((DAE.T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#";
 //    case ((DAE.T_ENUM(),_)) then "#DAE.T_ENUM#";
-    case (ty) then "Internal error unparse_type: not implemented yet\n";
+    case (ty) then "Internal error Types.unparseType: not implemented yet\n";
   end matchcontinue;
 end unparseType;
 
@@ -3122,7 +3147,7 @@ algorithm
       list<Integer> dimlist_1,dimlist;
       Integer dim;
       DAE.Dimension d;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty),_))
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty),_))
       equation
         (ty_1,dimlist_1) = flattenArrayType(ty);
       then
@@ -3890,7 +3915,7 @@ algorithm
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
     case (DAE.ARRAY(array = elist),
-          (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty1),_),
+          (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
           polymorphicBindings,matchFunc,printFailtrace)
       equation
@@ -3900,11 +3925,11 @@ algorithm
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_NONE,ty2),p2),polymorphicBindings);
+        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN,ty2),p2),polymorphicBindings);
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
         local
           DAE.ExpType ety1;
       equation
@@ -3956,7 +3981,7 @@ algorithm
 
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
     case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim11, dim22);
         (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,dim1,dim11,polymorphicBindings,matchFunc,printFailtrace);
@@ -3977,26 +4002,26 @@ algorithm
         (e_1,t_2,polymorphicBindings);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty1),_),
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
         (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        e_1 = liftExpType(e_1,DAE.DIM_NONE);
+        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM_NONE,t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2),polymorphicBindings);
 
         /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
-    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty1),_),
-      (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
+      (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        e_1 = liftExpType(e_1,DAE.DIM_NONE);
+        e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM_NONE,t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2),polymorphicBindings);
 
         /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        (DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
       equation
         (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
         e_1 = liftExpType(e_1,dim1);

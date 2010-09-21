@@ -27106,13 +27106,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.DIM_SUBSCRIPT(subscript = _) )
-      equation
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("DIM_SUBSCRIPT"));
-      then txt;
-
-    case ( txt,
-           DAE.DIM_NONE() )
+           DAE.DIM_UNKNOWN() )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING(":"));
       then txt;

@@ -2351,12 +2351,18 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t),_),
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t),_),
           (DAE.INDEX(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_EXP(exp = _), arrayType = t), _),
+          (DAE.INDEX(exp = _) :: ys))
+      equation
+        t_1 = checkSubscripts(t, ys);
+      then
+        t_1;  
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = t),_),
           (DAE.WHOLEDIM() :: ys))
       equation
@@ -2364,7 +2370,7 @@ algorithm
         t_1 = checkSubscripts(t, ys);
       then
         t_1;
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t),_),
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t),_),
           (DAE.WHOLEDIM() :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
@@ -2383,21 +2389,27 @@ algorithm
 
         t_1 = checkSubscripts(t, ys);
       then
-       ((DAE.T_ARRAY(DAE.DIM_NONE,t_1),p));
-    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_NONE,arrayType = t),p),
+       ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p));
+    case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t),p),
           (DAE.SLICE(exp = _) :: ys))
       equation
         t_1 = checkSubscripts(t, ys);
       then
-        ((DAE.T_ARRAY(DAE.DIM_NONE,t_1),p));
+        ((DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p));
 
+    case ((DAE.T_ARRAY(arrayDim = dim as DAE.DIM_EXP(exp = _), arrayType = t), p),
+          (DAE.SLICE(exp = _) :: ys))
+      equation
+        t_1 = checkSubscripts(t, ys);
+      then
+        ((DAE.T_ARRAY(dim, t_1), p));
     case ((DAE.T_COMPLEX(_,_,SOME(t),_),_),ys)
       then checkSubscripts(t,ys);
     case(t as (DAE.T_NOTYPE(),_),_) then t;
     case (t,s)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- check_subscripts failed (tp: ");
+        Debug.fprint("failtrace", "- Lookup.checkSubscripts failed (tp: ");
         Debug.fprint("failtrace", Types.printTypeStr(t));
         Debug.fprint("failtrace", " subs:");
         Debug.fprint("failtrace", Util.stringDelimitList(Util.listMap(s,Exp.printSubscriptStr),","));

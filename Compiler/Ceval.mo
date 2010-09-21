@@ -1779,7 +1779,7 @@ algorithm
       equation
         (cache,attr,tp,bind,_,_,_,_,_) = Lookup.lookupVar(cache,env, cr) "If dimensions known, always ceval" ;
         true = Types.dimensionsKnown(tp);
-        sizelst = Types.getDimensionSizes(tp);
+        (sizelst as (_ :: _)) = Types.getDimensionSizes(tp);
         (cache,Values.INTEGER(dim),st_1) = ceval(cache, env, dim, impl, st, NONE, msg);
         dim_1 = dim - 1;
         v = listNth(sizelst, dim_1);
@@ -4756,12 +4756,7 @@ algorithm
       list<DAE.Exp> exps;
       Env.Cache cache;
     case (cache,env,{},_,_,msg) then (cache,{});
-    case (cache,env,{exp},impl,st,msg)
-      equation
-        (cache,v,_) = ceval(cache,env, exp, impl, st, NONE, msg);
-      then
-        (cache,{v});
-    case (cache,env,(exp :: exps),impl,st,msg)
+    case (cache,env,(exp :: exps ),impl,st,msg)
       equation
         (cache,v,_) = ceval(cache,env, exp, impl, st, NONE, msg);
         (cache,vs) = cevalList(cache,env, exps, impl, st, msg);

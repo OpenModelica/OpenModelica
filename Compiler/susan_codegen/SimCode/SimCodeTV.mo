@@ -901,12 +901,8 @@ package DAE
       Integer size;
     end DIM_ENUM;
 
-    record DIM_SUBSCRIPT
-      Subscript subscript;
-    end DIM_SUBSCRIPT;
-
-    record DIM_NONE
-    end DIM_NONE;
+    record DIM_UNKNOWN
+    end DIM_UNKNOWN;
   end Dimension;
 
   uniontype Subscript

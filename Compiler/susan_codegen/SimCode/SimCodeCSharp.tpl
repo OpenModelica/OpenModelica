@@ -1824,7 +1824,7 @@ template dimension(Dimension d)
 ::=
   match d
   case DAE.DIM_INTEGER(__) then integer
-  case DAE.DIM_NONE(__) then ":"
+  case DAE.DIM_UNKNOWN(__) then ":"
   else "INVALID_DIMENSION"
 end dimension;
 

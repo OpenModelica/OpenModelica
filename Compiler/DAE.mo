@@ -764,12 +764,12 @@ uniontype Dimension
     Integer size "The size of the enumeration.";
   end DIM_ENUM;
 
-  record DIM_SUBSCRIPT "Dimension given by a subscript."
-    Subscript subscript;
-  end DIM_SUBSCRIPT;
+  record DIM_EXP "Dimension given by an expression."
+    Exp exp;
+  end DIM_EXP;
 
-  record DIM_NONE "Dimension with unknown size."
-  end DIM_NONE;
+  record DIM_UNKNOWN "Dimension with unknown size."
+  end DIM_UNKNOWN;
 end Dimension;
 
 public

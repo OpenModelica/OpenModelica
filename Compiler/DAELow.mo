@@ -16673,9 +16673,10 @@ algorithm
     list<DAE.Subscript> subs;
     DAE.Dimension d;
     case({}) then {};
-    case(DAE.DIM_NONE::dims) equation
-      rangelist = dimensionsToRange(dims);
-    then {}::rangelist;
+    case(DAE.DIM_UNKNOWN::dims) 
+      equation
+        rangelist = dimensionsToRange(dims);
+      then {}::rangelist;
     case(d::dims) equation
       i = Exp.dimensionSize(d);
       range = Util.listIntRange(i);
