@@ -1372,7 +1372,7 @@ algorithm
         discreteModelVars = extractDiscreteModelVars(dlow2, mt);
         makefileParams = createMakefileParams(libs);
         (delayedExps,maxDelayedExpIndex) = extractDelayedExpressions(dlow2);
-       
+
         // replace div operator with div operator with check of Division by zero
         orderedVars = DAELow.daeVars(dlow);
         knownVars = DAELow.daeKnVars(dlow);
@@ -1396,7 +1396,6 @@ algorithm
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
         allEquations = applyResidualReplacements(allEquations);
-
         simCode = SIMCODE(modelInfo, functions, allEquations, allEquationsPlusWhen, stateContEquations,
                           nonStateContEquations, nonStateDiscEquations,
                           residualEquations, initialEquations,
@@ -1426,16 +1425,18 @@ algorithm
   (delayedExps,maxDelayedExpIndex) := matchcontinue(dlow)
     local
       list<DAE.Exp> exps;
-      list<list<DAE.Exp>> subexps;
     case (dlow)
       equation
-        exps = DAELow.getAllExps(dlow);
-        subexps = Util.listMap(exps, DAELow.findDelaySubExpressions);
-        exps = Util.listFlatten(subexps);
+        exps = DAELow.traverseDEALowExps(dlow,DAELow.findDelaySubExpressions);
         delayedExps = Util.listMap(exps, extractIdAndExpFromDelayExp);
         maxDelayedExpIndex = Util.listFold(Util.listMap(delayedExps, Util.tuple21), intMax, -1);
       then
         (delayedExps,maxDelayedExpIndex+1);
+    case (_)
+      equation
+        Debug.fprintln("failtrace", "- SimCode.extractDelayedExpressions failed");
+      then
+        fail();        
   end matchcontinue;
 end extractDelayedExpressions;
 

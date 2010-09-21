@@ -2122,6 +2122,117 @@ algorithm
   end matchcontinue;
 end listMap01;
 
+public function listMapFlat "function: listMapFlat
+  Takes a list and a function over the elements of the lists, which is applied
+  for each element, producing a new list."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToType_b inFuncTypeTypeAToTypeB;
+  output list<Type_b> outTypeBLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output list<Type_b> outTypeBLst;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  /* Fastest impl. on large lists, 10M elts takes about 3 seconds */
+  outTypeBLst := listMapFlat_impl_2(inTypeALst,{},inFuncTypeTypeAToTypeB);
+end listMapFlat;
+
+function listMapFlat_impl_2
+"@author Frenkel TUD
+ this will work in O(2n) due to listReverse"
+  replaceable type TypeA subtypeof Any;
+  replaceable type TypeB subtypeof Any;
+  input  list<TypeA> inLst;
+  input  list<TypeB> accumulator;
+  input  FuncTypeTypeVarToTypeVar fn;
+  output list<TypeB> outLst;
+  partial function FuncTypeTypeVarToTypeVar
+    input TypeA inTypeA;
+    output list<TypeB> outTypeBLst;
+    replaceable type TypeA subtypeof Any;
+    replaceable type TypeB subtypeof Any;
+  end FuncTypeTypeVarToTypeVar;
+algorithm
+  outLst := matchcontinue(inLst, accumulator, fn)
+    local
+      TypeA hd;
+      list<TypeB> hdChanged;
+      list<TypeA> rest;
+      list<TypeB> l, result;
+    case ({}, l, _) then listReverse(l);
+    case (hd::rest, l, fn)
+      equation
+        hdChanged = fn(hd);
+        l = listAppend(hdChanged,l);
+        result = listMapFlat_impl_2(rest, l, fn);
+    then
+        result;
+  end matchcontinue;
+end listMapFlat_impl_2;
+
+public function listMapFlat1 "function listMapFlat1
+  Takes a list and a function over the list plus an extra argument sent to the function.
+  The function produces a new list of values which is used for creating a new list."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_b inTypeB;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output list<Type_c> outTypeCLst;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeCLst:= listMapFlat1_tail(inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,{});
+end listMapFlat1;
+
+public function listMapFlat1_tail
+"function listMapFlat1_tail
+ tail recurstive implmentation of listMapFlat1"
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aType_bToType_c inFuncTypeTypeATypeBToTypeC;
+  input Type_b inTypeB;
+  input list<Type_c> accTypeCLst;
+  output list<Type_c> outTypeCLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aType_bToType_c
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output list<Type_c> outTypeCLst;
+    replaceable type Type_b subtypeof Any;
+    replaceable type Type_c subtypeof Any;
+  end FuncTypeType_aType_bToType_c;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeCLst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeATypeBToTypeC,inTypeB,accTypeCLst)
+    local
+      list<Type_c> f_1;
+      list<Type_c> r_1;
+      Type_a f;
+      list<Type_a> r;
+      FuncTypeType_aType_bToType_c fn;
+      Type_b extraarg;
+    case ({},_,_,accTypeCLst) then listReverse(accTypeCLst);
+    case ((f :: r),fn,extraarg,accTypeCLst)
+      equation
+        f_1 = fn(f, extraarg);
+        accTypeCLst = listAppend(f_1,accTypeCLst);
+        r_1 = listMapFlat1_tail(r, fn, extraarg, accTypeCLst);
+      then
+        r_1;
+  end matchcontinue;
+end listMapFlat1_tail;
+
 public function listListAppendLast "appends to the last element of a list of list of elements"
   input list<list<Type_a>> llst;
   input list<Type_a> lst;

@@ -15153,6 +15153,317 @@ algorithm
   end matchcontinue;
 end getAllExpsEqn;
 
+public function traverseDEALowExps "function: traverseDEALowExps
+  author: Frenkel TUD
+
+  This function goes through the DAELow structure and finds all the
+  expressions and performs the function on them in a list
+"
+  input DAELow inDAELow;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;  
+algorithm
+  outTypeALst:=
+  matchcontinue (inDAELow,func)
+    local
+      list<Type_a> exps1,exps2,exps3,exps4,exps5,exps6,exps7,exps;
+      list<DAE.Algorithm> alglst;
+      Variables vars1,vars2;
+      EquationArray eqns,reqns,ieqns;
+      MultiDimEquation[:] ae;
+      DAE.Algorithm[:] algs;
+    case (DAELOW(orderedVars = vars1,knownVars = vars2,orderedEqs = eqns,removedEqs = reqns,
+          initialEqs = ieqns,arrayEqs = ae,algorithms = algs),func)
+      equation
+        exps1 = traverseDEALowExpsVars(vars1,func);
+        exps2 = traverseDEALowExpsVars(vars2,func);
+        exps3 = traverseDEALowExpsEqns(eqns,func);
+        exps4 = traverseDEALowExpsEqns(reqns,func);
+        exps5 = traverseDEALowExpsEqns(ieqns,func);
+        exps6 = traverseDEALowExpsArrayEqns(ae,func);
+        alglst = arrayList(algs);
+        exps7 = Util.listMapFlat1(alglst, Algorithm.traverseExps,func);
+        exps = Util.listFlatten({exps1,exps2,exps3,exps4,exps5,exps6,exps7});
+      then
+        exps;
+    case (_,_)
+      equation
+        Debug.fprintln("failtrace", "- DAELow.traverseDEALowExps failed");
+      then
+        fail();         
+  end matchcontinue;
+end traverseDEALowExps;
+
+protected function traverseDEALowExpsVars "function: traverseDEALowExpsVars
+  author: Frenkel TUD
+
+  Helper for traverseDEALowExps
+"
+  input Variables inVariables;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any; 
+algorithm
+  outTypeALst:=
+  matchcontinue (inVariables,func)
+    local
+      list<Var> vars;
+      list<Type_a> talst;
+      list<CrefIndex>[:] crefindex;
+      list<StringIndex>[:] oldcrefindex;
+      VariableArray vararray;
+      Value bsize,nvars;
+    case (VARIABLES(crefIdxLstArr = crefindex,strIdxLstArr = oldcrefindex,varArr = vararray,bucketSize = bsize,numberOfVars = nvars),func)
+      equation
+        vars = vararrayList(vararray) "We can ignore crefs, they don\'t contain real expressions" ;
+        talst = Util.listMapFlat1(vars, traverseDEALowExpsVar,func);
+      then
+        talst;
+    case (_,_)
+      equation
+        Debug.fprintln("failtrace", "- DAELow.traverseDEALowExpsVars failed");
+      then
+        fail();        
+  end matchcontinue;
+end traverseDEALowExpsVars;
+
+protected function traverseDEALowExpsVar "function: traverseDEALowExpsVar
+  author: Frenkel TUD
+  Helper traverseDEALowExpsVar. Get all exps from a  Var.
+  DAE.ET_OTHER is used as type for componentref. Not important here.
+  We only use the exp list for finding function calls"
+  input Var inVar;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst:=
+  matchcontinue (inVar,func)
+    local
+      list<DAE.Exp> e1;
+      Type_a ta;
+      list<Type_a> talst,talst1,talst2,talst3,talst4;
+      DAE.ComponentRef cref;
+      Option<DAE.Exp> bndexp;
+      list<DAE.Subscript> instdims;
+    case (VAR(varName = cref,
+             bindExp = bndexp,
+             arryDim = instdims
+             ),func)
+      equation
+        e1 = Util.optionToList(bndexp);
+        talst = Util.listMapFlat(e1,func);
+        talst1 = Util.listMapFlat1(instdims, traverseDEALowExpsSubscript,func);
+        talst2 = listAppend(talst,talst1);
+        talst3 = func(DAE.CREF(cref,DAE.ET_OTHER()));
+        talst4 = listAppend(talst2,talst3);
+      then
+        talst4;
+    case (_,_)
+      equation
+        Debug.fprintln("failtrace", "- DAELow.traverseDEALowExpsVar failed");
+      then
+        fail();          
+  end matchcontinue;
+end traverseDEALowExpsVar;
+
+protected function traverseDEALowExpsSubscript "function: traverseDEALowExpsSubscript
+  author: Frenkel TUD
+  helper for traverseDEALowExpsSubscript"
+  input DAE.Subscript inSubscript;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst:=
+  matchcontinue (inSubscript,func)
+    local
+      DAE.Exp e;
+      list<Type_a> talst;      
+    case (DAE.WHOLEDIM(),_) then {};
+    case (DAE.SLICE(exp = e),func)
+      equation
+        talst = func(e);  
+      then talst;
+    case (DAE.INDEX(exp = e),func)
+      equation
+        talst = func(e);  
+      then talst;
+  end matchcontinue;
+end traverseDEALowExpsSubscript;
+
+protected function traverseDEALowExpsEqns "function: traverseDEALowExpsEqns
+  author: Frenkel TUD
+
+  Helper for traverseDEALowExpsEqns
+"
+  input EquationArray inEquationArray;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst:=
+  matchcontinue (inEquationArray,func)
+    local
+      list<Equation> eqns;
+      list<Type_a> talst;
+      EquationArray eqnarray;
+    case ((eqnarray as EQUATION_ARRAY(numberOfElement = _)),func)
+      equation
+        eqns = equationList(eqnarray);
+        talst = Util.listMapFlat1(eqns, traverseDEALowExpsEqn, func);
+      then
+        talst;
+  end matchcontinue;
+end traverseDEALowExpsEqns;
+
+protected function traverseDEALowExpsEqn "function: traverseDEALowExpsEqn
+  author: PA
+  Helper for traverseDEALowExpsEqn."
+  input Equation inEquation;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst:=  matchcontinue (inEquation,func)
+    local
+      DAE.Exp e1,e2,e;
+      list<DAE.Exp> expl,exps;
+      DAE.ExpType tp;
+      DAE.ComponentRef cr;
+      Value ind;
+      WhenEquation elsePart;
+      DAE.ElementSource source;
+      list<Type_a> talst,talst1,talst2,talst3,talst4;
+    case (EQUATION(exp = e1,scalar = e2),func)
+      equation
+        talst = func(e1);
+        talst1 = func(e2); 
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;
+    case (ARRAY_EQUATION(crefOrDerCref = expl),func)
+      equation
+        talst = Util.listMapFlat(expl,func);
+      then
+        talst;
+    case (SOLVED_EQUATION(componentRef = cr,exp = e),func)
+      equation
+        tp = Exp.typeof(e);
+        talst = func(DAE.CREF(cr,tp));
+        talst1 = func(e); 
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;
+    case (WHEN_EQUATION(whenEquation = WHEN_EQ(left = cr,right = e,elsewhenPart=NONE)),func)
+      equation
+        tp = Exp.typeof(e);
+        talst = func(DAE.CREF(cr,tp));
+        talst1 = func(e); 
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;
+    case (WHEN_EQUATION(whenEquation = WHEN_EQ(_,cr,e,SOME(elsePart)),source = source),func)
+      equation
+        tp = Exp.typeof(e);
+        talst = func(DAE.CREF(cr,tp));
+        talst1 = func(e); 
+        talst2 = listAppend(talst,talst1);  
+        talst3 = traverseDEALowExpsEqn(WHEN_EQUATION(elsePart,source),func);
+        talst4 = listAppend(talst2,talst3);  
+      then
+        talst4;
+    case (ALGORITHM(index = ind,in_ = e1,out = e2),func)
+      local list<DAE.Exp> e1,e2;
+      equation
+        expl = listAppend(e1, e2);
+        talst = Util.listMapFlat(expl,func);
+      then
+        talst;
+  end matchcontinue;
+end traverseDEALowExpsEqn;
+
+protected function traverseDEALowExpsArrayEqns "function: traverseDEALowExpsArrayEqns
+  author: Frenkel TUD
+
+  helper for traverseDEALowExps
+"
+  input MultiDimEquation[:] arr;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+  list<MultiDimEquation> lst;
+algorithm
+  lst := arrayList(arr);
+  outTypeALst := Util.listMapFlat1(lst, traverseDEALowExpsArrayEqn,func);
+end traverseDEALowExpsArrayEqns;
+
+protected function traverseDEALowExpsArrayEqn "function: traverseDEALowExpsArrayEqn
+  author: Frenkel TUD
+
+  Helper function to traverseDEALowExpsArrayEqns
+"
+  input MultiDimEquation inMultiDimEquation;
+  input FuncExpType func;  
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeALst:=
+  matchcontinue (inMultiDimEquation,func)
+    local 
+      DAE.Exp e1,e2;
+      list<Type_a> talst,talst1,talst2;
+    case (MULTIDIM_EQUATION(left = e1,right = e2),func)
+      equation
+        talst = func(e1);
+        talst1 = func(e2); 
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;
+  end matchcontinue;
+end traverseDEALowExpsArrayEqn;
+
 public function isParam
 "function: isParam
   Return true if variable is a parameter."

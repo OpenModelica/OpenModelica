@@ -811,5 +811,222 @@ algorithm
   end matchcontinue;
 end crefToExp;
 
+
+public function traverseExps "function: traverseExps
+
+  This function goes through the Algorithm structure and finds all the
+  expressions and performs the function on them
+"
+  input Algorithm inAlgorithm;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;  
+algorithm
+  outTypeALst:=
+  matchcontinue (inAlgorithm,func)
+    local
+      list<Type_a> talst;
+      list<Statement> stmts;
+    case (DAE.ALGORITHM_STMTS(statementLst = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+      then
+        talst;
+  end matchcontinue;
+end traverseExps;
+
+protected function traverseExpsStmts "function: traverseExps
+
+  helper for traverseExps.
+"
+  input list<Statement> stmts;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;  
+algorithm
+  outTypeALst := Util.listMapFlat1(stmts, traverseExpsStmt, func);
+end traverseExpsStmts;
+
+protected function traverseExpsStmt "function: traverseExpsStmt
+  Helper for traverseExpsStmt."
+  input Statement inStatement;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;  
+algorithm
+  outTypeALst:=
+  matchcontinue (inStatement,func)
+    local
+      DAE.Exp crexp,exp,e1,e2;
+      DAE.ExpType expty;
+      DAE.ComponentRef cr;
+      list<DAE.Exp> exps,explist,exps1,elseexps,fargs;
+      list<Statement> stmts;
+      Else else_;
+      Boolean flag;
+      Ident id;
+      Statement elsew;
+      Absyn.Path fname;
+      list<Type_a> talst,talst1,talst2,talst3,talst4;
+    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.CREF(cr,_)),exp = exp),func)
+      equation
+        crexp = crefToExp(cr);
+        talst = func(crexp);
+        talst1 = func(exp);
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2; 
+    case (DAE.STMT_ASSIGN(type_ = expty,exp1 = (e2 as DAE.ASUB(e1,ea2)),exp = exp),func)
+      local list<DAE.Exp> ea2;
+      equation
+        talst = func(e2);
+        talst1 = func(exp);
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;  
+    case (DAE.STMT_TUPLE_ASSIGN(type_ = expty,expExpLst = explist,exp = exp),func)
+      equation
+        exps = listAppend(explist, {exp});
+        talst = Util.listMapFlat(exps,func);
+      then
+        talst;
+    case (DAE.STMT_ASSIGN_ARR(type_ = expty,componentRef = cr,exp = exp),func)
+      equation
+        crexp = crefToExp(cr);
+        talst = func(crexp);
+        talst1 = func(exp); 
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;  
+    case (DAE.STMT_IF(exp = exp,statementLst = stmts,else_ = else_),func)
+      equation
+        talst = func(exp);
+        talst1 = traverseExpsStmts(stmts,func);
+        talst2 = listAppend(talst,talst1);  
+        talst3 = traverseExpsElse(else_,func);
+        talst4 = listAppend(talst2,talst3);  
+      then talst4;
+    case (DAE.STMT_FOR(type_ = expty,iterIsArray = flag,ident = id,exp = exp,statementLst = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+        talst1 = func(exp);
+        talst2 = listAppend(talst,talst1);  
+      then talst2;
+    case (DAE.STMT_WHILE(exp = exp,statementLst = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+        talst1 = func(exp);
+        talst2 = listAppend(talst,talst1);  
+      then talst2;
+    case (DAE.STMT_WHEN(exp = exp,statementLst = stmts, elseWhen=SOME(elsew)),func)
+      equation
+        talst = func(exp);
+        talst1 = traverseExpsStmts(stmts,func);
+        talst2 = listAppend(talst,talst1);  
+        talst3 = traverseExpsStmt(elsew,func);
+        talst4 = listAppend(talst2,talst3);  
+      then talst4;
+    case (DAE.STMT_WHEN(exp = exp,statementLst = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+        talst1 = func(exp);
+        talst2 = listAppend(talst,talst1);  
+      then talst2;
+    case (DAE.STMT_ASSERT(cond = e1,msg= e2),func)
+      equation
+        talst = func(e1);
+        talst1 = func(e2); 
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;    
+    case (DAE.STMT_BREAK(source = _),func) then {};
+    case (DAE.STMT_RETURN(source = _),func) then {};
+    case (DAE.STMT_THROW(source = _),func) then {};
+    case (DAE.STMT_TRY(tryBody = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+      then
+        talst;
+    case (DAE.STMT_CATCH(catchBody = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+      then
+        talst;
+    case (DAE.STMT_NORETCALL(exp = e1),func) 
+      equation
+        talst = func(e1);
+      then talst; 
+    case(DAE.STMT_REINIT(var = e1, value = e2),func) 
+      equation
+        talst = func(e1);
+        talst1 = func(e2);
+        talst2 = listAppend(talst,talst1);
+      then
+        talst2;
+    case(DAE.STMT_MATCHCASES(caseStmt = exps),func)
+      equation
+        talst = Util.listMapFlat(exps,func);
+      then
+        talst;
+    case (_,_)
+      equation
+        Debug.fprintln("failtrace", "- Algorithm.traverseExpsStmt failed");
+      then
+        fail();
+  end matchcontinue;
+end traverseExpsStmt;
+
+protected function traverseExpsElse "function: traverseExpsElse
+  Helper function to traverseExpsStmt."
+  input Else inElse;
+  input FuncExpType func;
+  output list<Type_a> outTypeALst;
+  partial function FuncExpType
+    input DAE.Exp inExp;
+    output list<Type_a> outTypeA;
+    replaceable type Type_a subtypeof Any;
+  end FuncExpType;
+  replaceable type Type_a subtypeof Any;  
+algorithm
+  outTypeALst:=
+  matchcontinue (inElse,func)
+    local
+      DAE.Exp exp;
+      list<Statement> stmts;
+      Else else_;
+      list<Type_a> talst,talst1,talst2,talst3,talst4;
+    case (DAE.NOELSE(),_) then {};
+    case (DAE.ELSEIF(exp = exp,statementLst = stmts,else_ = else_),func)
+      equation
+        talst = func(exp);
+        talst1 = traverseExpsStmts(stmts,func);
+        talst2 = listAppend(talst,talst1);  
+        talst3 = traverseExpsElse(else_,func);
+        talst4 = listAppend(talst2,talst3);  
+      then talst4;
+    case (DAE.ELSE(statementLst = stmts),func)
+      equation
+        talst = traverseExpsStmts(stmts,func);
+      then
+        talst;
+  end matchcontinue;
+end traverseExpsElse;
+
+
 end Algorithm;
 
