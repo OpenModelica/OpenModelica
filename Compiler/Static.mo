@@ -939,7 +939,7 @@ algorithm
         (elemList,varList) = extractOutputVarsType({ty},1,{},{});
 
         matchExp =
-        Absyn.MATCHEXP(Absyn.MATCHCONTINUE(),Absyn.TUPLE(varList),{},
+        Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},
           Absyn.CASE(e,{},{},Absyn.TUPLE({}),NONE()) :: {},NONE());
 
         lhsExp = createLhsExp(varList);

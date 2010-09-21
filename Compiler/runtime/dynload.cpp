@@ -33,13 +33,17 @@
  #include <Windows.h>
 #endif
 
+#undef __cplusplus
+
 #include "errorext.h"
 #include "systemimpl.h"
 #include "meta_modelica.h"
+#include "rtopts.h"
 #include "rml.h"
 #include "Absyn.h"
-#include "Values.h"
-#include "dynload_try.h"
+#include "Values.h" 
+
+extern "C" {
 
 void *type_desc_to_value(type_description *desc);
 static int execute_function(void *in_arg, void **out_arg,
@@ -90,7 +94,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
 
     switch (type) {
     case TYPE_DESC_REAL: {
-      modelica_real *ptr = *data;
+      modelica_real *ptr = (modelica_real*) *data;
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.real = *ptr;
         lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
@@ -98,7 +102,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
       *data = ptr;
     }; break;
     case TYPE_DESC_INT: {
-      modelica_integer *ptr = *data;
+      modelica_integer *ptr = (modelica_integer*) *data;
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.integer = *ptr;
         lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
@@ -106,7 +110,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
       *data = ptr;
     }; break;
     case TYPE_DESC_BOOL: {
-      modelica_boolean *ptr = *data;
+      modelica_boolean *ptr = (modelica_boolean*) *data;
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.boolean = *ptr;
         lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
@@ -114,7 +118,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
       *data = ptr;
     }; break;
     case TYPE_DESC_STRING: {
-      modelica_string_t *ptr = *data;
+      modelica_string_t *ptr = (modelica_string_t*) *data;
       for (i = 0; i < cur_dim_size; ++i, --ptr) {
         tmp.data.string = *ptr;
         lst = (void *) mk_cons(type_desc_to_value(&tmp), lst);
@@ -139,7 +143,7 @@ void *generate_array(enum type_desc_e type, int curdim, int ndims,
 }
 
 
-char* path_to_name(void* path, char del)
+const char* path_to_name(void* path, char del)
 {
   char* buf = 0;
   char* bufstart = 0;
@@ -165,13 +169,13 @@ char* path_to_name(void* path, char del)
     };
     default:
       /* free(buf); */
-      return "path_to_name: failed to parse";
+      return strdup("path_to_name: failed to parse");
     }
   }
 
-  buf = bufstart = malloc((length+1)*sizeof(char));
+  buf = bufstart = (char*) malloc((length+1)*sizeof(char));
   if (buf == NULL) {
-    return "path_to_name: malloc failed";
+    return strdup("path_to_name: malloc failed");
   }
 
   tmpPath = path;
@@ -182,7 +186,7 @@ char* path_to_name(void* path, char del)
       sprintres = sprintf(buf, "%s", RML_STRINGDATA(RML_STRUCTDATA(tmpPath)[0]));
       if (sprintres < 0) {
         free(buf);
-        return "path_to_name: sprintf failed";
+        return strdup("path_to_name: sprintf failed");
       }
       buf += sprintres;
       tmpPath = NULL;
@@ -192,7 +196,7 @@ char* path_to_name(void* path, char del)
       sprintres = sprintf(buf, "%s%c", RML_STRINGDATA(RML_STRUCTDATA(tmpPath)[0]), del);
       if (sprintres < 0) {
         free(buf);
-        return "path_to_name: sprintf failed";
+        return strdup("path_to_name: sprintf failed");
       }
       buf += sprintres;
       tmpPath = RML_STRUCTDATA(tmpPath)[1];
@@ -204,7 +208,7 @@ char* path_to_name(void* path, char del)
     };
     default:
       free(buf);
-      return "path_to_name: failed to parse";
+      return strdup("path_to_name: failed to parse");
     }
   }
   return bufstart;
@@ -237,7 +241,7 @@ static void *name_to_path(const char *name)
     return Absyn__IDENT(ident);
   } else {
     size_t len = pos - name;
-    tmp = malloc(len + 1);
+    tmp = (char*) malloc(len + 1);
     memcpy(tmp, name, len);
     tmp[len] = '\0';
     if (need_replace) {
@@ -303,13 +307,12 @@ int mmc_to_value(void* mmc, void** res)
   if (numslots>0 && ctor > 1) { /* RECORD */
     void *namelst = (void *) mk_nil();
     void *varlst = (void *) mk_nil();
-    struct record_description* desc = RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),1));
+    struct record_description* desc = (struct record_description*) RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),1));
     assert(desc != NULL);
     for (i=numslots; i>1; i--) {
       assert(0 == mmc_to_value(RML_FETCH(RML_OFFSET(RML_UNTAGPTR(mmc),i)),&t));
       varlst = mk_cons(t, varlst);
-      t = (void*) desc->fieldNames[i-2];
-      namelst = mk_cons(mk_scon(t != NULL ? t : "(null)"), namelst);
+      namelst = mk_cons(mk_scon(t != NULL ? /* TODO: Remove these casts when rml.h supports it */ (char*) desc->fieldNames[i-2] : (char*) "(null)"), namelst);
     }
     *res = (void *) Values__RECORD(name_to_path(desc->path),
                                    varlst, namelst, mk_icon(ctor-3));
@@ -377,7 +380,7 @@ void *value_to_mmc(void* value)
     int i=0;
     void *tmp = names;
     void **data_mmc;
-    struct record_description* desc = malloc(sizeof(struct record_description));
+    struct record_description* desc = (struct record_description*) malloc(sizeof(struct record_description));
     if (desc == NULL) {
       fprintf(stderr, "value_to_mmc: malloc failed\n");
       return 0;
@@ -388,8 +391,8 @@ void *value_to_mmc(void* value)
     /* duplicate string? will this give problems with GC? */
     desc->path = path_to_name(path, '_');
     desc->name = path_to_name(path, '.');
-    desc->fieldNames = malloc(i*sizeof(char*));
-    data_mmc = malloc((i+1)*sizeof(void*));
+    desc->fieldNames = (const char**) malloc(i*sizeof(char*));
+    data_mmc = (void**) malloc((i+1)*sizeof(void*));
     i=0;
     data_mmc[0] = desc;
     while (!MMC_NILTEST(names)) {
@@ -426,7 +429,7 @@ void *value_to_mmc(void* value)
     while (!MMC_NILTEST(tmp)) {
       len++; tmp = RML_CDR(tmp);
     }
-    data_mmc = malloc(len*sizeof(void*));
+    data_mmc = (void**) malloc(len*sizeof(void*));
     len = 0;
     tmp = data;
     while (!MMC_NILTEST(tmp)) {
@@ -694,28 +697,28 @@ static int get_array_data(int curdim, int dims, const int *dim_size,
 
       switch (type) {
       case TYPE_DESC_REAL: {
-        modelica_real *ptr = *data;
+        modelica_real *ptr = (modelica_real*) *data;
         if (RML_HDRCTOR(RML_GETHDR(item)) != Values__REAL_3dBOX1)
           return -1;
         *ptr = rml_prim_get_real(RML_STRUCTDATA(item)[0]);
         *data = ++ptr;
       }; break;
       case TYPE_DESC_INT: {
-        modelica_integer *ptr = *data;
+        modelica_integer *ptr = (modelica_integer*) *data;
         if (RML_HDRCTOR(RML_GETHDR(item)) != Values__INTEGER_3dBOX1)
           return -1;
         *ptr = RML_UNTAGFIXNUM(RML_STRUCTDATA(item)[0]);
         *data = ++ptr;
       }; break;
       case TYPE_DESC_BOOL: {
-        modelica_boolean *ptr = *data;
+        modelica_boolean *ptr = (modelica_boolean*) *data;
         if (RML_HDRCTOR(RML_GETHDR(item)) != Values__BOOL_3dBOX1)
           return -1;
         *ptr = (RML_STRUCTDATA(item)[0] == RML_TRUE);
         *data = ++ptr;
       }; break;
       case TYPE_DESC_STRING: {
-        modelica_string_t *ptr = *data;
+        modelica_string_t *ptr = (modelica_string_t*) *data;
         int len;
         void *str;
         if (RML_HDRCTOR(RML_GETHDR(item)) != Values__STRING_3dBOX1)
@@ -760,7 +763,7 @@ int parse_array(type_description *desc, void *arrdata, void *dimLst)
     printf("dims: %d\n", dims);
     return -1;
   }
-  dim_size = malloc(sizeof(int) * dims);
+  dim_size = (int*) malloc(sizeof(int) * dims);
   switch (desc->type) {
   case TYPE_DESC_REAL_ARRAY:
     desc->data.real_array.ndims = dims;
@@ -852,8 +855,14 @@ static int execute_function(void *in_arg, void **out_arg,
 
   if (debugFlag) { fprintf(stderr, "calling the function\n"); fflush(stderr); }
   
-  /* call our function pointer! */
-  retval = execute_function_try_catch(func, arglst, &retarg);
+  try {
+    /* call our function pointer! */
+    retval = func(arglst, &retarg);
+  } catch (...) {
+    fflush(NULL);
+    *out_arg = Values__META_5fFAIL;
+    return 0;
+  }
   /* Flush all buffers for deterministic behaviour; in particular for the testsuite */
   fflush(NULL);
 
@@ -867,8 +876,7 @@ static int execute_function(void *in_arg, void **out_arg,
   restore_memory_state(mem_state);
 
   if (retval) {
-    *out_arg = Values__META_5fFAIL;
-    return 0;
+    return 1;
   } else {
     if (debugFlag) { fprintf(stderr, "output results:\n"); fflush(stderr); puttype(&retarg); }
 
@@ -887,3 +895,5 @@ static int execute_function(void *in_arg, void **out_arg,
     return 0;
   }
 }
+
+} /* extern "C" */

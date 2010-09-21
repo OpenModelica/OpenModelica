@@ -34,7 +34,7 @@ CXXFLAGS = $(CFLAGS)
 CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
 SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c rtclock.c
 
-CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp optmanager.cpp systemimplmisc.cpp $(CORBASRC)
+CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp optmanager.cpp systemimplmisc.cpp dynload_try.o $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 
 all: runtime.a 
@@ -49,7 +49,7 @@ omc_communication.h: omc_communication_impl.cpp corbaimpl.cpp
 
 omc_communication_impl.o: omc_communication.h
 corbaimpl.o: omc_communication.h
-dynload.o: systemimpl.h ../Absyn.h ../Values.h
+dynload.o: systemimpl.h ../Absyn.h ../Values.h dynload_try.h
 systemimpl.o : config.unix.h
 
 clean:

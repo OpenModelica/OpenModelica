@@ -2080,6 +2080,10 @@ algorithm
       then
         ();
     case(Values.NORETCALL) then ();
+    case (Values.META_FAIL())
+      equation
+        Print.printBuf("fail()");
+      then ();
     case _
       equation
         Debug.fprintln("failtrace", "- ValuesUtil.valString2 failed");

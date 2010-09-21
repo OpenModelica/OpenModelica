@@ -19,6 +19,7 @@ RTOBJ   = \
 $(srcdir)/runtime/systemimpl.o \
 $(srcdir)/runtime/systemimplmisc.o \
 $(srcdir)/runtime/dynload.o \
+$(srcdir)/runtime/dynload_try.o \
 $(srcdir)/runtime/optmanager.o \
 $(srcdir)/../c_runtime/libc_runtime.a \
 $(srcdir)/runtime/rtopts.o $(srcdir)/runtime/socketimpl.o \
