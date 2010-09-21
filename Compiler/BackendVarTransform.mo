@@ -43,6 +43,7 @@ public import DAE;
 public import DAELow;
 public import VarTransform;
 
+protected import Absyn;
 protected import Exp;
 protected import Util;
 
@@ -420,6 +421,7 @@ algorithm
       DAE.Else else_,else_1;
       DAE.ElementSource source;
       String str;
+      Absyn.MatchType matchType;
     case ({},_) then {};
     case ((DAE.STMT_ASSIGN(type_=type_,exp1=e1,exp=e2,source=source)::es),repl)
       equation
@@ -563,12 +565,12 @@ algorithm
         es_1 = replaceStatementLst(es, repl);
       then
         (DAE.STMT_LABEL(str,source):: es_1); 
-    case ((DAE.STMT_MATCHCASES(caseStmt=expExpLst,source=source)::es),repl)
+    case ((DAE.STMT_MATCHCASES(matchType=matchType,caseStmt=expExpLst,source=source)::es),repl)
       equation
         expExpLst_1 = Util.listMap2(expExpLst,VarTransform.replaceExp,repl, NONE);
         es_1 = replaceStatementLst(es, repl);
       then
-        (DAE.STMT_MATCHCASES(expExpLst_1,source):: es_1);
+        (DAE.STMT_MATCHCASES(matchType,expExpLst_1,source):: es_1);
     case ((statement::es),repl) 
       equation
         es_1 = replaceStatementLst(es, repl);

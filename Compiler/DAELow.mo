@@ -9510,6 +9510,7 @@ algorithm
       DAE.ComponentRef cr,cr1;
       DAE.Else else_,else_1;
       DAE.ElementSource source;
+      Absyn.MatchType matchType;
   case ({},_,_) then {};
   case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inExp2,inExp3)
     equation
@@ -9639,12 +9640,12 @@ algorithm
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
       (DAE.STMT_LABEL(labelName,source)::st);
-  case (DAE.STMT_MATCHCASES(caseStmt=elst,source=source)::rest,inExp2,inExp3)
+  case (DAE.STMT_MATCHCASES(matchType=matchType,caseStmt=elst,source=source)::rest,inExp2,inExp3)
     equation
         (elst1,_) = Exp.replaceListExp(elst,inExp2,inExp3);
         st = replaceDummyDerAlgs1(rest,inExp2,inExp3);
     then
-      (DAE.STMT_MATCHCASES(elst1,source)::st);
+      (DAE.STMT_MATCHCASES(matchType,elst1,source)::st);
   case (_,_,_)
     equation
       print("-DAELow.replaceDummyDerAlgs1 failed\n");
@@ -9852,6 +9853,7 @@ algorithm
       DAE.Else else_,else_1;
       Variables vars,vars1,vars2,vars3;
       DAE.ElementSource source;
+      Absyn.MatchType matchType;
   case ({},inVariables) then ({},inVariables);
   case (DAE.STMT_ASSIGN(type_=t,exp1=e1,exp=e,source=source)::rest,inVariables)
     equation
@@ -9981,12 +9983,12 @@ algorithm
         (st,vars) = replaceDummyDerOthersAlgs1(rest,inVariables);
     then
       (DAE.STMT_LABEL(labelName,source)::st,vars);
-  case (DAE.STMT_MATCHCASES(caseStmt=elst,source=source)::rest,inVariables)
+  case (DAE.STMT_MATCHCASES(matchType=matchType,caseStmt=elst,source=source)::rest,inVariables)
     equation
         (elst1,vars) = replaceDummyDerOthersExpLst(elst,inVariables);
         (st,vars1) = replaceDummyDerOthersAlgs1(rest,vars);
     then
-      (DAE.STMT_MATCHCASES(elst1,source)::st,vars1);
+      (DAE.STMT_MATCHCASES(matchType,elst1,source)::st,vars1);
   case (_,_)
     equation
       print("-DAELow.replaceDummyDerOthersAlgs1 failed\n");

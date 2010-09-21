@@ -450,6 +450,11 @@ package Absyn
       Path path;
     end FULLYQUALIFIED;
   end Path;
+  
+  uniontype MatchType
+    record MATCH end MATCH;
+    record MATCHCONTINUE end MATCHCONTINUE;
+  end MatchType;
 
 end Absyn;
 
@@ -815,6 +820,7 @@ package DAE
       ElementSource source;
     end STMT_RETURN;
     record STMT_MATCHCASES
+      Absyn.MatchType matchType;
       list<Exp> caseStmt;
       ElementSource source;
     end STMT_MATCHCASES;

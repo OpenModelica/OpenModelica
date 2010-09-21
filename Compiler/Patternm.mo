@@ -798,10 +798,11 @@ algorithm
         Env.Env localEnv;
         Integer nCases;
         Boolean lightVs;
+        Absyn.MatchType matchType;
       equation
         // Get the pattern matrix, etc.
         (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
-        Absyn.MATCHEXP(cases=cases) = localMatchCont;
+        Absyn.MATCHEXP(matchTy=matchType,cases=cases) = localMatchCont;
         caseLocalDeclList = Util.listMap(cases, getCaseDecls);
         patMat2 = arrayList(patMat);
 
@@ -827,7 +828,7 @@ algorithm
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
         patMat2 = Util.listlistTranspose(patMat2);
-        (localCache, expr) = DFA.matchContinueToSwitch(patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,localCache,localEnv);
+        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,localCache,localEnv);
       then (localCache, expr);
     /*
 

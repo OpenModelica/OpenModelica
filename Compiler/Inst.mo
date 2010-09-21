@@ -13044,15 +13044,16 @@ algorithm
         (cache,{stmt},DAEUtil.emptyDae);
     
       // Helper statement for matchcontinue
-    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(switchCases = absynExpList, comment = comment, info = info),source,_,impl,unrollForLoops)
+    case (cache,env,ih,pre,SCode.ALG_MATCHCASES(matchType = matchType, switchCases = absynExpList, comment = comment, info = info),source,_,impl,unrollForLoops)
       local
+        Absyn.MatchType matchType;
         list<Absyn.Exp> absynExpList;
         list<DAE.Exp> expExpList;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         (cache,expExpList,_,_,dae) = Static.elabExpList(cache,env, absynExpList, impl, NONE,true,pre);
         source = DAEUtil.addElementSourceFileInfo(source, info);
-        stmt = DAE.STMT_MATCHCASES(expExpList,source);
+        stmt = DAE.STMT_MATCHCASES(matchType,expExpList,source);
       then (cache,{stmt},dae);
 
     //------------------------------------------

@@ -3427,7 +3427,7 @@ case STMT_MATCHCASES(__) then
   <<
   <%doneVar%> = 0;
   for (<%loopVar%>=0; 0==<%doneVar%> && <%loopVar%><<%numCases%>; <%loopVar%>++) {
-    try {
+    <% match matchType case MATCHCONTINUE(__) then 'try { /* matchcontinue */' else '{' %>
       switch (<%loopVar%>) {
         <%caseStmt |> e indexedby i0 =>
           let &preExp = buffer "" /*BUFD*/
@@ -3442,10 +3442,13 @@ case STMT_MATCHCASES(__) then
           };
           >>
         ;separator="\n"%>
-      } /* end matchcontinue switch */
-    } catch (int i) {
+      } /* end match switch */
+    <% match matchType case MATCHCONTINUE(__) then
+    <<
+    } catch (int i) { /* matchcontinue */
     }
-  } /* end matchcontinue for */
+    >>else '}' %>
+  } /* end match for */
   if (0 == <%doneVar%>) throw 1; /* Didn't end in a valid state */
   >>
 end algStmtMatchcases;

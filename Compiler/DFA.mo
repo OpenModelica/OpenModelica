@@ -38,7 +38,7 @@ package DFA
   RCS: $Id$
 
   DFA (Deterministic Finite Automaton) provides the datatypes and functions for working with states.
-  It is used in the pattern matching algorithm from Paternm.mo"
+  It is used in the pattern matching algorithm from Patternm.mo"
 
 public import Absyn;
 public import Env;
@@ -745,7 +745,7 @@ algorithm
     case(_,Absyn.CALL(Absyn.CREF_IDENT("fail",_),_) :: {},_)
       local
       equation
-        localAccList = {Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(), NONE(), Absyn.dummyInfo)};
+        localAccList = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(), NONE(), Absyn.dummyInfo)};
       then localAccList;
     /*------------------------*/
 
@@ -2124,6 +2124,7 @@ algorithm
 end printSimpleArcs;
 
 public function matchContinueToSwitch
+  input Absyn.MatchType matchType;
   input RenamedPatMatrix2 patMat;
   input list<list<Absyn.ElementItem>> caseLocalDecls;
   input list<Absyn.Exp> inputVarList; // matchcontinue (var1,var2,...)
@@ -2144,7 +2145,7 @@ algorithm
   (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv);
   checkShadowing(declList,invalidDecls);
   (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, cache, localEnv, invalidDecls, dfaEnv);
-  alg := Absyn.ALG_MATCHCASES(cases);
+  alg := Absyn.ALG_MATCHCASES(matchType,cases);
   algItem := Absyn.ALGORITHMITEM(alg, NONE(), Absyn.dummyInfo);
   expr := Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS({algItem}),Absyn.BOOL(true));
 end matchContinueToSwitch;

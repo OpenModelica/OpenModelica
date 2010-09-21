@@ -786,6 +786,7 @@ algorithm
       Ident i;
       list<Integer> ilst;
       DAE.ElementSource source;
+      Absyn.MatchType matchType;
     case(DAE.STMT_ASSIGN(t,e1,e2,source),fns)
       equation
         e1_1 = inlineExp(e1,fns);
@@ -867,11 +868,11 @@ algorithm
         stmts_1 = Util.listMap1(stmts,inlineStatement,fns);
       then
         DAE.STMT_CATCH(stmts_1,source);
-    case(DAE.STMT_MATCHCASES(explst,source),fns)
+    case(DAE.STMT_MATCHCASES(matchType,explst,source),fns)
       equation
         explst_1 = Util.listMap1(explst,inlineExp,fns);
       then
-        DAE.STMT_MATCHCASES(explst_1,source);
+        DAE.STMT_MATCHCASES(matchType,explst_1,source);
     case(stmt,_) then stmt;
   end matchcontinue;
 end inlineStatement;

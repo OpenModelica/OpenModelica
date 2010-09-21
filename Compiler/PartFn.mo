@@ -802,6 +802,7 @@ algorithm
       list<Integer> ilst;
       DAE.Statement stmt,stmt_1;
       DAE.ElementSource source;
+      Absyn.MatchType matchType;
     case({},dae) then ({},dae);
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae)
       equation
@@ -892,12 +893,12 @@ algorithm
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
         (DAE.STMT_CATCH(stmts_1,source) :: cdr_1,dae);
-    case(DAE.STMT_MATCHCASES(elst,source) :: cdr,dae)
+    case(DAE.STMT_MATCHCASES(matchType,elst,source) :: cdr,dae)
       equation
         (elst_1,dae) = elabExpList(elst,dae);
         (cdr_1,dae) = elabStmts(cdr,dae);
       then
-        (DAE.STMT_MATCHCASES(elst_1,source) :: cdr_1,dae);
+        (DAE.STMT_MATCHCASES(matchType,elst_1,source) :: cdr_1,dae);
     case(stmt :: cdr,dae)
       equation
         (cdr_1,dae) = elabStmts(cdr,dae);
@@ -1512,6 +1513,7 @@ algorithm
       DAE.Exp e,e_1,e1,e1_1,e2,e2_1;
       list<DAE.Exp> elst,elst_1;
       DAE.ElementSource source;
+      Absyn.MatchType matchType;
     case({},_,_,_,_) then {};
     case(DAE.STMT_ASSIGN(ty,e1,e2,source) :: cdr,dae,p,inputs,current)
       equation
@@ -1608,12 +1610,12 @@ algorithm
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
         DAE.STMT_CATCH(stmts_1,source) :: cdr_1;
-    case(DAE.STMT_MATCHCASES(elst,source) :: cdr,dae,p,inputs,current)
+    case(DAE.STMT_MATCHCASES(matchType,elst,source) :: cdr,dae,p,inputs,current)
       equation
         elst_1 = Util.listMap1(elst,handleExpList2,(p,inputs,dae,current));
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);
       then
-        DAE.STMT_MATCHCASES(elst_1,source) :: cdr_1;
+        DAE.STMT_MATCHCASES(matchType,elst_1,source) :: cdr_1;
     case(stmt :: cdr,dae,p,inputs,current)
       equation
         cdr_1 = fixCallsAlg(cdr,dae,p,inputs,current);

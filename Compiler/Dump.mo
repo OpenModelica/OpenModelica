@@ -3079,8 +3079,9 @@ algorithm
         str = is +& "failure(" +& s1 +& ")" +& s3 +& ";";
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(explist), comment = optcmt))
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_MATCHCASES(matchType=matchType,switchCases=explist), comment = optcmt))
       local
+        Absyn.MatchType matchType;
         list<Absyn.Exp> explist;
         list<String> strlist;
       equation
@@ -3088,7 +3089,7 @@ algorithm
         strlist = Util.listMap(explist, printExpStr);
         strlist = Util.listMap1r(strlist, stringAppend, "\ncase:\n    ");
         s2 = Util.stringAppendList(strlist);
-        str_1 = "matchcases { " +& s2 +& " } "+& s3 +&";";
+        str_1 = printMatchType(matchType) +& " cases { " +& s2 +& " } "+& s3 +&";";
       then
         str_1;
     case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_TRY(al),comment = optcmt)) /* ALG_TRY */
@@ -5945,6 +5946,7 @@ algorithm
       list<Absyn.Exp> switchCases;
       String label;
       Absyn.AlgorithmItem equ;
+      Absyn.MatchType matchType;
     case Absyn.ALG_ASSIGN(assignComponent,value)
       equation
         Print.printBuf("record Absyn.ALG_ASSIGN assignComponent = ");
@@ -6023,9 +6025,11 @@ algorithm
       equation
         Print.printBuf("record Absyn.ALG_THROW end Absyn.ALG_THROW;");
       then ();
-    case Absyn.ALG_MATCHCASES(switchCases)
+    case Absyn.ALG_MATCHCASES(matchType,switchCases)
       equation
-        Print.printBuf("record Absyn.ALG_MATCHCASES switchCases = ");
+        Print.printBuf("record Absyn.ALG_MATCHCASES matchType = ");
+        printMatchTypeAsCorbaString(matchType);
+        Print.printBuf(", switchCases = ");
         printListAsCorbaString(switchCases, printExpAsCorbaString, ",");
         Print.printBuf(" end Absyn.ALG_MATCHCASES;");
       then ();

@@ -699,6 +699,7 @@ algorithm
       list<list<Absyn.AlgorithmItem>> algItemsList;
       Absyn.AlgorithmItem algi;
       String labelName;
+      Absyn.MatchType matchType;
       
     case (Absyn.ALG_ASSIGN(assignComponent,value),comment,info)
     then SCode.ALG_ASSIGN(assignComponent,value,comment,info);
@@ -748,8 +749,8 @@ algorithm
     case (Absyn.ALG_THROW(),comment,info)
     then SCode.ALG_THROW(comment,info);
     
-    case (Absyn.ALG_MATCHCASES(switchCases),comment,info)
-    then SCode.ALG_MATCHCASES(switchCases,comment,info);
+    case (Absyn.ALG_MATCHCASES(matchType,switchCases),comment,info)
+    then SCode.ALG_MATCHCASES(matchType,switchCases,comment,info);
       
     case (Absyn.ALG_GOTO(labelName),comment,info)
     then SCode.ALG_GOTO(labelName,comment,info);

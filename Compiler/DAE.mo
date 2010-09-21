@@ -569,7 +569,8 @@ uniontype Statement "There are four kinds of statements.  Assignments (`a := b;\
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_LABEL;
 
-  record STMT_MATCHCASES "matchcontinue helper"
+  record STMT_MATCHCASES "match[continue] helper"
+    Absyn.MatchType matchType;
     list<Exp> caseStmt;
     ElementSource source "the origin of the component/equation/algorithm";
   end STMT_MATCHCASES;

@@ -574,6 +574,7 @@ uniontype Algorithm "The Algorithm type describes one algorithm statement in an
   end ALG_THROW;
 
   record ALG_MATCHCASES
+    MatchType matchType;
     list<Exp> switchCases;
   end ALG_MATCHCASES;
 
