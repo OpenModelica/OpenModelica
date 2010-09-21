@@ -1,0 +1,17 @@
+CC = gcc
+CFLAGS   := @CFLAGS@
+CPPFLAGS := @CPPFLAGS@ -I..
+OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o 
+AR = ar -ru
+
+all: libModelicaExternalC.a
+
+libModelicaExternalC.a : $(OBJS)
+	$(AR) $@ $(OBJS)
+	ranlib $@
+
+clean:
+	rm -f libModelicaExternalC.a $(OBJS)
+
+Makefile: Makefile.in
+	cd ../../; ./config.status
