@@ -82,6 +82,7 @@ HashTableStringToPath.mo \
 Inline.mo \
 Inst.mo \
 InstExtends.mo \
+InstSection.mo \
 Interactive.mo \
 Lookup.mo \
 Main.mo \

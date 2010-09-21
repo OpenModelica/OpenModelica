@@ -56,6 +56,7 @@ protected import Dump;
 protected import Error;
 protected import Lookup;
 protected import Inst;
+protected import InstSection;
 protected import ConnectUtil;
 protected import RTOpts;
 protected import Mod;
@@ -849,7 +850,7 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then
@@ -914,7 +915,7 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
     then
@@ -930,7 +931,7 @@ algorithm
         io1 = removeOuter(io1);
         io2 = removeOuter(io2);
         (cache,env,ih,csets as Connect.SETS(setLst=setLst2),dae,_) =
-        Inst.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
+        InstSection.connectComponents(cache,env,ih,Connect.SETS(setLst,{},{},{}),pre,cr1,f1,t1,vt1,cr2,f2,t2,vt2,flowPrefix,streamPrefix,io1,io2,ConnectionGraph.EMPTY,info);
         /* TODO: take care of dae, can contain asserts from connections */
         setLst = setLst2; // listAppend(setLst,setLst2);
       then setLst;

@@ -95,6 +95,7 @@ protected import Error;
 protected import ErrorExt;
 protected import Exp;
 protected import Inst;
+protected import InstSection;
 protected import InnerOuter;
 protected import Lookup;
 protected import Mod;
@@ -590,7 +591,7 @@ algorithm
         (b2,DAE.DAE(dae1_2Elts,_)) = Convert.fromDAEEqsToAbsynAlg(dae1);
         b = listAppend(b2,b);
         //----------------------------------------------------------------------
-        (cache,b_alg,_) = Inst.instStatements(cache, env2, 
+        (cache,b_alg,_) = InstSection.instStatements(cache, env2, 
             InnerOuter.emptyInstHierarchy, 
             Prefix.NOPRE(), SCodeUtil.translateClassdefAlgorithmitems(b), DAE.emptyElementSource, SCode.NON_INITIAL(), true, Inst.neverUnroll);
         // debug_print("before -> res",res);
