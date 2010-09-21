@@ -11104,7 +11104,7 @@ algorithm
       list<SCode.EEquation> b,tb1,fb,el,eel;
       list<list<SCode.EEquation>> tb; 
       list<tuple<Absyn.Exp, list<SCode.EEquation>>> eex;
-      tuple<DAE.TType, Option<Absyn.Path>> id_t;
+      DAE.Type id_t;
       Values.Value v;
       DAE.ComponentRef cr_1;
       SCode.EEquation eqn,eq;
@@ -11376,13 +11376,28 @@ algorithm
       equation 
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst),_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true, pre);
         env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
-        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.MSG()) "FIXME: Check bounds" ;
+        (cache,v,_) = Ceval.ceval(cache,env, e_1, impl, NONE, NONE, Ceval.NO_MSG()) "FIXME: Check bounds" ;
         (cache,dae,csets_1,graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl,graph);
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
         dae = DAEUtil.joinDaes(dae,fdae1);
       then
         (cache,env,ih,dae,csets_1,ci_state_1,graph);
       
+    // A for-equation with a parameter range without binding, which is ok when
+    // doing checkModel. Use a range {1} to check that the loop can be
+    // instantiated.
+    case (cache, env, ih, mod, pre, csets, ci_state, SCode.EQ_FOR(index = i, range = e, eEquationLst = el), initial_, impl, graph)
+      equation
+        true = OptManager.getOption("checkModel");
+        (cache, e_1, DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t), _), constFlag = cnst as DAE.C_PARAM), _, fdae1) =
+          Static.elabExp(cache, env, e, impl, NONE, true, pre);
+        env_1 = addForLoopScope(env, i, id_t, SCode.VAR(), SOME(cnst));
+        v = Values.ARRAY({Values.INTEGER(1)}, {1});
+        (cache, dae, csets_1, graph) = unroll(cache, env_1, mod, pre, csets, ci_state, i, id_t, v, el, initial_, impl, graph);
+        ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
+      then
+        (cache, env, ih, dae, csets_1, ci_state_1, graph);
+        
       /* for i in <expr> loop .. end for; 
       where <expr> is not constant or parameter expression */  
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = e,eEquationLst = el),initial_,impl,graph)

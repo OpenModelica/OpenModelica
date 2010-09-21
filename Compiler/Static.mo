@@ -1935,8 +1935,8 @@ algorithm
       Prefix pre;
     case (cache,env,start,NONE,stop,const,_,impl,pre) /* impl as false */
       equation
-        (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.NO_MSG());
         n = stopv - startv;
         n_1 = n + 1;
       then
@@ -1944,9 +1944,9 @@ algorithm
           DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),DAE.T_INTEGER_DEFAULT),NONE));
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
       equation
-        (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.INTEGER(stepv),_) = Ceval.ceval(cache,env, step, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.INTEGER(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.INTEGER(stepv),_) = Ceval.ceval(cache,env, step, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.INTEGER(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.NO_MSG());
         n = stopv - startv;
         n_1 = n/stepv;
         n_2 = n_1 + 1;
@@ -1957,8 +1957,8 @@ algorithm
     case (cache,env,start,NONE,stop,const,_,impl,_) /* impl as false */
       local list<String> names; Absyn.Path p;
       equation
-        (cache,Values.ENUM_LITERAL(name = p, index = startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.ENUM_LITERAL(index = stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.ENUM_LITERAL(name = p, index = startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.ENUM_LITERAL(index = stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.NO_MSG());
         n = stopv - startv;
         n_1 = n + 1;
         p = Absyn.pathPrefix(p);
@@ -1968,8 +1968,8 @@ algorithm
     case (cache,env,start,NONE,stop,const,_,impl,_) /* as false */
       local Real startv,stopv,n,n_2;
       equation
-        (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.NO_MSG());
         n = stopv -. startv;
         n_2 = realFloor(n);
         n_3 = realInt(n_2);
@@ -1980,9 +1980,9 @@ algorithm
     case (cache,env,start,SOME(step),stop,const,_,impl,_) /* as false */
       local Real startv,stepv,stopv,n,n_1,n_3;
       equation
-        (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.REAL(stepv),_) = Ceval.ceval(cache,env, step, impl, NONE, NONE, Ceval.MSG());
-        (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.MSG());
+        (cache,Values.REAL(startv),_) = Ceval.ceval(cache,env, start, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.REAL(stepv),_) = Ceval.ceval(cache,env, step, impl, NONE, NONE, Ceval.NO_MSG());
+        (cache,Values.REAL(stopv),_) = Ceval.ceval(cache,env, stop, impl, NONE, NONE, Ceval.NO_MSG());
         n = stopv -. startv;
         n_1 = n /. stepv;
         n_3 = realFloor(n_1);
@@ -2002,7 +2002,7 @@ algorithm
       local Option<DAE.Exp> step;
       equation
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "- elab_range_type failed: ");
+        Debug.fprint("failtrace", "- Static.elabRangeType failed: ");
         sp = PrefixUtil.printPrefixStr(pre);
         s1 = Exp.printExpStr(start);
         s2opt = Util.applyOption(step, Exp.printExpStr);
