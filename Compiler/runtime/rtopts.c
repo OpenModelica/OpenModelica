@@ -144,7 +144,8 @@ static int setCorbaSessionName(char *name)
   int i;
   int len=strlen(name);
   if (len==0) return -1;
-
+  if (0 == strcmp("mdt",name)) /* There is no MDT release that enables MetaModelica grammar */
+    acceptedGrammar = GRAMMAR_METAMODELICA;
   corbaSessionName = strdup(name);
   return 0;
 }
