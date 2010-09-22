@@ -32,6 +32,14 @@
  *
  */
 
+#if defined(_MSC_VER) || defined(__MINGW32__)
+#define _CRT_SECURE_NO_WARNINGS
+#include <windows.h>
+#define sleep Sleep
+#else
+#include <unistd.h>
+#endif
+
 //Qt headeers
 //#include <QCoreApplication>
 #include <QtNetwork/QTcpSocket>
@@ -62,14 +70,6 @@
 #include "sendData.h"
 #include <sstream>
 #include <stdexcept>
-
-#if defined(_MSC_VER) || defined(__MINGW32__)
-#define _CRT_SECURE_NO_WARNINGS
-#include <windows.h>
-#define sleep Sleep
-#else
-#include <unistd.h>
-#endif
 
 
 Connection::Connection()
