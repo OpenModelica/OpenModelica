@@ -5445,16 +5445,10 @@ protected function lowerStatementInputsOutputs
 algorithm
   (outExpExpLst1,outExpExpLst2) := matchcontinue (inVariables,inStatement)
     local
-      list<DAE.Exp> inputs;
-      list<DAE.Exp> inputs1;
-      list<DAE.Exp> inputs2;
-      list<DAE.Exp> outputs;
-      list<DAE.Exp> outputs1;
-      list<DAE.Exp> outputs2;
       Variables vars;
       DAE.ExpType tp;
       DAE.ComponentRef cr;
-      DAE.Exp e;
+      DAE.Exp e, e2;
       list<Algorithm.Statement> statements;
       Algorithm.Statement stmt;
       list<DAE.Exp> expl;
@@ -5556,6 +5550,13 @@ algorithm
 		    inputs = statesAndVarsExp(e, vars);
 		  then
 		    (inputs, {});
+		
+		case(vars, DAE.STMT_REINIT(var = e as DAE.CREF(componentRef = _), value = e2))
+		  equation
+		    inputs = statesAndVarsExp(e2, vars);
+		  then
+		    (e :: inputs, {});
+		    
 		case(_, _)
 		  equation
 		    Debug.fprintln("failtrace", "- DAELow.lowerStatementInputsOutputs failed\n");
