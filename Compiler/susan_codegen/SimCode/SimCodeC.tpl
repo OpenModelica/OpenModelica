@@ -290,10 +290,7 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
       ;separator=",\n"),
       (vars.boolAlgVars |> SIMVAR(__) =>
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.stringAlgVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),         
+      ;separator=",\n"),        
       (vars.paramVars |> SIMVAR(__) =>
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
@@ -301,9 +298,6 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
      (vars.boolParamVars |> SIMVAR(__) =>
-        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
-      ;separator=",\n"),
-      (vars.stringParamVars |> SIMVAR(__) =>
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n")}
     ;separator=",\n"%>

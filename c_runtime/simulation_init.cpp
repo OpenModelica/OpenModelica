@@ -199,8 +199,8 @@ int initialize(const std::string*method)
       nz++;
   }
 
-  int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic+globalData->stringVariables.nAlgebraic;
-  int endIndPar = startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters+globalData->stringVariables.nParameters;
+  int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
+  int endIndPar = startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters;
   for (ind=startIndPar;ind<endIndPar; ind++){
     if (globalData->initFixed[ind]==0)
       nz++;
@@ -248,13 +248,6 @@ int initialize(const std::string*method)
     if (globalData->initFixed[indAct++]==0)
       z[indz++] =  globalData->boolVariables.parameters[ind];
   }
-
-  // for string parameters
-  for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters; ind<globalData->stringVariables.nParameters; ind++) {
-    if (globalData->initFixed[indAct++]==0)
-      z[indz++] =  globalData->stringVariables.parameters[ind];
-  }
-
 
   int retVal=0;
   if (init_method == std::string("simplex")) {
