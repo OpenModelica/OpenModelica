@@ -1389,7 +1389,7 @@ algorithm
       equation
         s1 = unparseClassModificationStr(Absyn.CLASSMOD(mod,NONE));
         s2 = stringAppend(" annotation", s1);
-        str = stringAppend(s2, "");
+        str = s2; // stringAppend(s2, "");
       then
         str;
     case (i,SOME(Absyn.ANNOTATION(mod)))
