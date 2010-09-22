@@ -57,7 +57,7 @@ void Parser_5finit(void)
 {
 }
 
-void fixString(pANTLR3_STRING text)
+void fixStringWin32(pANTLR3_STRING text)
 {
   char* c = (char*)text->chars;
   int i,j,len;
