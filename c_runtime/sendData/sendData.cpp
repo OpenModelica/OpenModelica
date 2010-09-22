@@ -687,7 +687,7 @@ void enableSendData(int enable)
   Static::enabled_ = enable;
 }
 
-void initSendData(int variableCount1, int variableCount2, const char** statesNames, const char** stateDerivativesNames, const char** algebraicsNames)
+void initSendData(int variableCount1, int variableCount2, int variableCount3, int variableCount4, const char** statesNames, const char** stateDerivativesNames, const char** algebraicsNames, const char** intAlgebraicsNames, const char** boolAlgebraicsNames)
 {
   char* port = getenv("sendDataPort");
   if(port != NULL && strlen(port))
@@ -790,6 +790,24 @@ void initSendData(int variableCount1, int variableCount2, const char** statesNam
     if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(algebraicsNames[i])))
       continue;
     *Static::out << QString(algebraicsNames[i]);
+    //		*Static::out << QColor(Qt::color0);
+    ++N;
+  }
+
+  for(int i = 0; i < variableCount3; ++i)
+  {
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(intAlgebraicsNames[i])))
+      continue;
+    *Static::out << QString(intAlgebraicsNames[i]);
+    //		*Static::out << QColor(Qt::color0);
+    ++N;
+  }
+
+  for(int i = 0; i < variableCount4; ++i)
+  {
+    if(!Static::filterVariables->empty() && !Static::filterVariables->contains(QString(boolAlgebraicsNames[i])))
+      continue;
+    *Static::out << QString(boolAlgebraicsNames[i]);
     //		*Static::out << QColor(Qt::color0);
     ++N;
   }

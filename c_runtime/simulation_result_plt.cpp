@@ -97,6 +97,16 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   	ss << globalData->algebraicsNames[i] << "\n";
     ss << (data[currentPos] = globalData->algebraics[i]) << "\n";
   }
+  // .. and int alg. vars.
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++, currentPos++) {
+  	ss << globalData->int_alg_names[i] << "\n";
+    ss << (data[currentPos] = (double) globalData->intVariables.algebraics[i]) << "\n";
+  }
+  // .. and bool alg. vars.
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++, currentPos++) {
+  	ss << globalData->bool_alg_names[i] << "\n";
+    ss << (data[currentPos] = (double) globalData->boolVariables.algebraics[i]) << "\n";
+  }
 
   sendPacket(ss.str().c_str());
   }
@@ -116,6 +126,15 @@ void simulation_result_plt::add_result(double *data, long *actualPoints)
   for (int i = 0; i < globalData->nAlgebraic; i++, currentPos++) {
     (data[currentPos] = globalData->algebraics[i]);
   }
+  // .. and int alg. vars.
+  for (int i = 0; i < globalData->intVariables.nAlgebraic; i++, currentPos++) {
+	(data[currentPos] = (double) globalData->intVariables.algebraics[i]);
+  }
+  // .. and bool alg. vars.
+  for (int i = 0; i < globalData->boolVariables.nAlgebraic; i++, currentPos++) {
+	(data[currentPos] = (double) globalData->boolVariables.algebraics[i]);
+  }
+
 
   }
 
@@ -140,7 +159,7 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
     numpoints = abs(numpoints);
     maxPoints = abs(numpoints);
   }
-  dataSize = (globalData->nStates*2+globalData->nAlgebraic+1);
+  dataSize = (globalData->nStates*2+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic+1);
   simulationResultData = (double*)malloc(numpoints * dataSize * sizeof(double));
   if (!simulationResultData) {
     cerr << "Error allocating simulation result data of size " << numpoints * dataSize << endl;
@@ -153,7 +172,15 @@ simulation_result_plt::simulation_result_plt(const char* filename, long numpoint
   	Static::enabled_ = !strcmp(enabled, "1");
   }
   if(Static::enabled())
-  	initSendData(globalData->nStates, globalData->nAlgebraic, globalData->statesNames, globalData->stateDerivativesNames, globalData->algebraicsNames);
+  	initSendData(	globalData->nStates,
+					globalData->nAlgebraic,
+					globalData->intVariables.nAlgebraic,
+					globalData->boolVariables.nAlgebraic,
+					globalData->statesNames,
+					globalData->stateDerivativesNames,
+					globalData->algebraicsNames,
+					globalData->int_alg_names,
+					globalData->bool_alg_names);
 }
 
 /**
@@ -204,7 +231,7 @@ simulation_result_plt::~simulation_result_plt()
   fprintf(f, "TitleText: OpenModelica simulation plot\n");
   fprintf(f, "XLabel: t\n\n");
 
-  int num_vars = 1+globalData->nStates*2+globalData->nAlgebraic;
+  int num_vars = 1+globalData->nStates*2+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic;
 
   // time variable.
   fprintf(f, "DataSet: time\n");
@@ -233,6 +260,22 @@ simulation_result_plt::~simulation_result_plt()
     fprintf(f, "DataSet: %s\n", globalData->algebraicsNames[var]);
     for(int i = 0; i < actualPoints; ++i)
       printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+var]);
+    fprintf(f, "\n");
+  }
+
+  for(int var = 0; var < globalData->intVariables.nAlgebraic; ++var)
+  {
+    fprintf(f, "DataSet: %s\n", globalData->int_alg_names[var]);
+    for(int i = 0; i < actualPoints; ++i)
+      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+var]);
+    fprintf(f, "\n");
+  }
+
+  for(int var = 0; var < globalData->boolVariables.nAlgebraic; ++var)
+  {
+    fprintf(f, "DataSet: %s\n", globalData->bool_alg_names[var]);
+    for(int i = 0; i < actualPoints; ++i)
+      printPltLine(f, simulationResultData[i*num_vars], simulationResultData[i*num_vars + 1+2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+var]);
     fprintf(f, "\n");
   }
 

@@ -198,8 +198,11 @@ int initialize(const std::string*method)
     if (globalData->initFixed[ind]==0)
       nz++;
   }
-  for (ind=2*globalData->nStates+globalData->nAlgebraic;
-       ind<2*globalData->nStates+globalData->nAlgebraic+globalData->nParameters; ind++){
+
+  int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic+globalData->stringVariables.nAlgebraic;
+  int endIndPar = startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters+globalData->stringVariables.nParameters;
+  for (ind=startIndPar;
+       ind<endIndPar; ind++){
     if (globalData->initFixed[ind]==0)
       nz++;
   }

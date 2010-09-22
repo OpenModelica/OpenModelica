@@ -115,6 +115,28 @@ typedef struct sim_DATA_STRING {
   long nInputVars,nOutputVars;
 } DATA_STRING;
 
+typedef struct sim_DATA_INT {
+  int* algebraics; //y ALGVARS
+  int* parameters; //p; PARAMETERS
+  int* inputVars; //in_y INPUTVARS
+  int* outputVars; //out_y OUTPUTVARS
+  int*	old_algebraics, *old_algebraics2;
+
+  long nAlgebraic,nParameters;
+  long nInputVars,nOutputVars;
+} DATA_INT;
+
+typedef struct sim_DATA_BOOL {
+  signed char* algebraics; //y ALGVARS
+  signed char* parameters; //p; PARAMETERS
+  signed char* inputVars; //in_y INPUTVARS
+  signed char* outputVars; //out_y OUTPUTVARS
+  signed char*	old_algebraics, *old_algebraics2;
+
+  long nAlgebraic,nParameters;
+  long nInputVars,nOutputVars;
+} DATA_BOOL;
+
 typedef struct sample_raw_time_st {
   double start;
   double interval;
@@ -153,12 +175,18 @@ typedef struct sim_DATA {
   long nHelpVars/* NHELP */;
   //extern char init_fixed[];
   DATA_STRING stringVariables;
+  DATA_INT intVariables;
+  DATA_BOOL boolVariables;
 
   const char*  modelName;
   const char** statesNames;
   const char** stateDerivativesNames;
   const char** algebraicsNames;
   const char** parametersNames;
+  const char** int_alg_names;
+  const char** int_param_names;
+  const char** bool_alg_names;
+  const char** bool_param_names;
   const char** inputNames;
   const char** outputNames;
   const char** statesComments;
@@ -167,6 +195,10 @@ typedef struct sim_DATA {
   const char** parametersComments;
   const char** inputComments;
   const char** outputComments;
+  const char** int_alg_comments;
+  const char** int_param_comments;
+  const char** bool_alg_comments;
+  const char** bool_param_comments;
 
   double startTime; //the start time of the simulation
   double timeValue; //the time for the simulation
@@ -218,6 +250,8 @@ void setLocalData(DATA* data);
 
 // defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors.
 const char* getName(double* ptr);
+const char* getName(int* ptr);
+const char* getName(signed char* ptr);
 
 void storeExtrapolationData();
 
@@ -307,3 +341,4 @@ protected:
 };
 
 #endif
+

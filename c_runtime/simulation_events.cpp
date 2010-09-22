@@ -42,9 +42,12 @@ double* h_saved = 0;
 double* x_saved = 0;
 double* xd_saved = 0;
 double* y_saved = 0;
+int*   int_saved = 0;
+signed char*  bool_saved = 0;
 char** str_saved = 0;
 
 double* gout = 0;
+double* gout_old = 0;
 long* zeroCrossingEnabled = 0;
 long inUpdate = 0;
 long inSample = 0;
@@ -63,32 +66,41 @@ int initializeEventData() {
 	x_saved = 0;
 	xd_saved = 0;
 	y_saved = 0;
+	int_saved = 0;
+	bool_saved = 0;
 
 	gout = 0;
+	gout_old = 0;
 	zeroCrossingEnabled = 0;
 	inUpdate = 0;
 	inSample = 0;
 
   // load default initial values.
   gout = new double[globalData->nZeroCrossing];
+  gout_old = new double[globalData->nZeroCrossing];
   h_saved = new double[globalData->nHelpVars];
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
   y_saved = new double[globalData->nAlgebraic];
+  int_saved = new int[globalData->intVariables.nAlgebraic];
+  bool_saved = new signed char[globalData->boolVariables.nAlgebraic];
   str_saved = new char*[globalData->stringVariables.nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
   if (!y_saved || !gout || !h_saved || !x_saved || !xd_saved
-       || !str_saved || !zeroCrossingEnabled) {
+		  || !int_saved || !bool_saved || !str_saved || !zeroCrossingEnabled) {
     cerr << "Could not allocate memory for global event data structures"
         << endl;
     return -1;
   }
   // adrpo 2006-11-30 -> init the damn structures!
   memset(gout, 0, sizeof(double) * globalData->nZeroCrossing);
+  memset(gout_old, 0, sizeof(double) * globalData->nZeroCrossing);
   memset(h_saved, 0, sizeof(double) * globalData->nHelpVars);
   memset(x_saved, 0, sizeof(double) * globalData->nStates);
   memset(xd_saved, 0, sizeof(double) * globalData->nStates);
   memset(y_saved, 0, sizeof(double) * globalData->nAlgebraic);
+  memset(int_saved, 0, sizeof(int) * globalData->intVariables.nAlgebraic);
+  memset(bool_saved, 0, sizeof(signed char) * globalData->boolVariables.nAlgebraic);
   memset(str_saved, 0, sizeof(char*) * globalData->stringVariables.nAlgebraic);
   memset(zeroCrossingEnabled, 0, sizeof(long) * globalData->nZeroCrossing);
   return 0;
@@ -102,7 +114,10 @@ void deinitializeEventData() {
   delete[] x_saved;
   delete[] xd_saved;
   delete[] y_saved;
+  delete[] int_saved;
+  delete[] bool_saved;
   delete[] gout;
+  delete[] gout_old;
   delete[] zeroCrossingEnabled;
   delete[] str_saved;
 }
@@ -471,6 +486,12 @@ void saveall() {
   for (i = 0; i < globalData->nAlgebraic; i++) {
     y_saved[i] = globalData->algebraics[i];
   }
+  for (i = 0; i < globalData->intVariables.nAlgebraic; i++) {
+    int_saved[i] = globalData->intVariables.algebraics[i];
+  }
+  for (i = 0; i < globalData->boolVariables.nAlgebraic; i++) {
+    bool_saved[i] = globalData->boolVariables.algebraics[i];
+  }
   for (i = 0; i < globalData->nHelpVars; i++) {
     h_saved[i] = globalData->helpVars[i];
   }
@@ -512,6 +533,35 @@ void save(double & var) {
   return;
 }
 
+void save(int & var) {
+  int* pvar = &var;
+  long ind;
+  if (sim_verbose) {
+    printf("save %s = %d\n", getName(&var), var);
+  }
+  ind = long(pvar - globalData->intVariables.algebraics);
+  if (ind >= 0 && ind < globalData->intVariables.nAlgebraic) {
+    int_saved[ind] = var;
+    return;
+  }
+  return;
+}
+
+void save(signed char & var) {
+  signed char* pvar = &var;
+  long ind;
+  if (sim_verbose) {
+    printf("save %s = %o\n", getName(&var), var);
+  }
+  ind = long(pvar - globalData->boolVariables.algebraics);
+  if (ind >= 0 && ind < globalData->boolVariables.nAlgebraic) {
+    bool_saved[ind] = var;
+    return;
+  }
+  return;
+}
+
+
 void save(char* & var) {
   char** pvar = &var;
   long ind;
@@ -519,7 +569,7 @@ void save(char* & var) {
     printf("save %s = %s\n", getName((double*)pvar), var);
   }
   ind = long(pvar - globalData->stringVariables.nAlgebraic);
-  if (ind >= 0 && ind < globalData->nHelpVars) {
+  if (ind >= 0 && ind < globalData->stringVariables.nAlgebraic) {
     str_saved[ind] = var;
     return;
   }
@@ -549,22 +599,72 @@ double pre(double & var) {
   return var;
 }
 
+int pre(int & var) {
+  int* pvar = &var;
+  long ind;
+
+  ind = long(pvar - globalData->intVariables.algebraics);
+  if (ind >= 0 && ind < globalData->intVariables.nAlgebraic) {
+    return int_saved[ind];
+  }
+  return var;
+}
+
+signed char  pre(signed char & var) {
+  signed char * pvar = &var;
+  long ind;
+
+  ind = long(pvar - globalData->boolVariables.algebraics);
+  if (ind >= 0 && ind < globalData->boolVariables.nAlgebraic) {
+    return bool_saved[ind];
+  }
+  return var;
+}
+
 char* pre(char* & var) {
   char** pvar = &var;
   long ind;
 
   ind = long(pvar - globalData->stringVariables.nAlgebraic);
-  if (ind >= 0 && ind < globalData->nHelpVars) {
+  if (ind >= 0 && ind < globalData->stringVariables.nAlgebraic) {
     return str_saved[ind];
   }
   return var;
 }
 
+
+
 bool edge(double& var) {
   return var && !pre(var);
 }
 
+bool edge(int& var) {
+  return var && !pre(var);
+}
+
+bool edge(signed char& var) {
+  return var && !pre(var);
+}
+
+
 bool change(double& var) {
+  return (var != pre(var));
+}
+
+bool change(int& var) {
+  return (var != pre(var));
+}
+
+bool change(char*& var) {
+  return (var != pre(var));
+}
+
+bool change(signed char& var) {
+  /*
+   signed char * pvar = &var;
+   cout << "varname : " <<  getName(pvar) << endl;
+   cout << "value : " << (bool)var << " pre(value) : " << (bool)pre(var) << endl;
+  */
   return (var != pre(var));
 }
 
@@ -579,9 +679,9 @@ bool change(double& var) {
 // process will start
 //
 int CheckForNewEvent(int flag) {
-	int needToIterate=0;
-	int IntarationNum=0;
 	if (flag != INTERVAL){
+		int needToIterate=0;
+		int IntarationNum=0;
 		while(checkForDiscreteChanges() || needToIterate) {
 			if (sim_verbose) {
 				cout << "Discrete Variable changed -> event iteration." << endl;
@@ -596,26 +696,29 @@ int CheckForNewEvent(int flag) {
 			}
 	  }
 	}
+	else{
 
-	function_onlyZeroCrossings(gout,&globalData->timeValue);
+		std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
+		function_onlyZeroCrossings(gout,&globalData->timeValue);
 
-	for (long i = 0; i < globalData->nZeroCrossing; i++) {
-		if (gout[i] < 0) {
-			if (sim_verbose) {
-				cout << "adding event " << i << " at time: "
-				<< globalData->timeValue << endl;
+		for (long i = 0; i < globalData->nZeroCrossing; i++) {
+			//if (sim_verbose){ cout << "check gout_old[" << i << "] = " << gout_old[i] << "\t" <<
+			//				"check gout[" << i << "] = " << gout[i] << endl;
+			//}
+			if ( (gout[i] < 0 and gout_old[i] > 0) ||
+				 (gout[i] > 0 and gout_old[i] < 0)	) {
+				if (sim_verbose) {
+					cout << "adding event " << i << " at time: "
+					<< globalData->timeValue << endl;
+				}
+				AddEvent(i);
 			}
-			AddEvent(i);
 		}
-		// TODO: check also zero crossings that are on zero.
-	}
-	if (!EventQueue.empty() && flag == INTERVAL){
-		FindRoot();
-		EventHandle();
-		return 2;
-	}else if(!EventQueue.empty()){
-		EventHandle();
-		return 1;
+		if (!EventQueue.empty() && flag == INTERVAL){
+			FindRoot();
+			EventHandle();
+			return 1;
+		}
 	}
 	return 0;
 }
@@ -627,20 +730,17 @@ int CheckForNewEvent(int flag) {
 void EventHandle(){
 
 	while(!EventQueue.empty()){
-		long event_id;
 
+		long event_id;
 		event_id = EventQueue.front();
 
 		if (sim_verbose) cout << "Handle Event ID: " << event_id << endl;
-		if (zeroCrossingEnabled[event_id] == 1){
-			zeroCrossingEnabled[event_id] = -1;}
-		else if (zeroCrossingEnabled[event_id] == -1){
-			zeroCrossingEnabled[event_id] = 1;}
 
 		//determined complete system
 		int needToIterate=0;
 		int IntarationNum=0;
 		function_updateDepend(needToIterate);
+		//saveall();
 		if (sim_verbose) { sim_result->emit();}
 		while (needToIterate){
 			if (sim_verbose) cout << "reinit Iteration needed!" << endl;
@@ -658,6 +758,10 @@ void EventHandle(){
 		EventQueue.pop_front();
 	}
 	CheckForNewEvent(NOINTERVAL);
+
+	// save the ZeroCrossings
+	function_onlyZeroCrossings(gout,&globalData->timeValue);
+	std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
 }
 
 //
@@ -670,7 +774,11 @@ void FindRoot(){
 	//Empty EventQueue, because we search only for one event
 	while (!EventQueue.empty())
 	{
-	    if (sim_verbose) cout << "Search for current event. Events in queue: : " << EventQueue.front() << endl;
+	    if (sim_verbose){
+	    	//cout << "--------------------------------------------" << endl;
+	    	cout << "Search for current event. Events in queue:  " << EventQueue.front() << endl;
+
+	    }
 	    EventQueue.pop_front();
 	}
 
@@ -693,6 +801,7 @@ void FindRoot(){
 
 
 	if (sim_verbose) {
+		cout.precision(10);
 		cout << "Found event " << event_id << " at time: "<< EventTime << endl;
 		cout << "Time at Point left: " << time_left << endl;
 		cout << "Time at Point right: " << time_right << endl;
@@ -703,10 +812,12 @@ void FindRoot(){
 	globalData->timeValue = time_left;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_left[i];
+		//cout << "states at left side : " << states_left[i]  << endl;
 	}
 	//determined continuous system
 	functionODE();
 	functionDAE_output();
+	function_updatehelpvars();
 	sim_result->emit();
 	saveall();
 
@@ -715,6 +826,7 @@ void FindRoot(){
 	globalData->timeValue = time_right;
 	for(int i=0;i<globalData->nStates;i++){
 		globalData->states[i] = states_right[i];
+		//cout << "states at right side : " << states_right[i]  << endl;
 	}
     
 	delete[] states_left;
@@ -734,7 +846,7 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 	double c;
 
 	if (sim_verbose){
-			cout << "Check Intervall [" << *a << "," << *b << "]" << endl;
+			cout << "Check interval [" << *a << "," << *b << "]" << endl;
 			cout << "TTOL is set to: " << TTOL << endl;
 	}
 
@@ -742,6 +854,10 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 
 		c = (*a+*b)/2.0;
 		globalData->timeValue = c;
+
+		//if (sim_verbose){
+		//		cout << "Split interval at point : " << c << endl;
+		//}
 
 		//calculates states at time c
 		for(int i=0;i<globalData->nStates;i++){
@@ -758,12 +874,25 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 				states_b[i] = globalData->states[i];
 			}
 			*b = c;
+			/*if (sim_verbose){
+				cout << "Found ZeroCrossing in the left section. " << endl;
+				for(int i=0;i<globalData->nStates;i++){
+					cout << "states at b : " << states_b[i]  << endl;
+				}
+			}*/
+
 		}else{   //else Zerocrossing in right Section
 
 			for(int i=0;i<globalData->nStates;i++){
 				states_a[i] = globalData->states[i];
 			}
 			*a = c;
+			/*if (sim_verbose){
+				cout << "ZeroCrossing is in the right section. " << endl;
+				for(int i=0;i<globalData->nStates;i++){
+					cout << "states at a : " << states_a[i]  << endl;
+				}
+			}*/
 		}
 	}
 
@@ -777,14 +906,30 @@ double BiSection(double* a, double* b, double* states_a, double* states_b,long i
 // is used in BiSection
 //
 int CheckZeroCrossings(long int *eventid) {
+
+  double *backup_gout = new double[globalData->nZeroCrossing];
+  for(int i=0;i<globalData->nZeroCrossing;i++){
+	backup_gout[i] = gout[i];
+  }
+
   function_onlyZeroCrossings(gout,&globalData->timeValue);
   for (long i = 0; i < globalData->nZeroCrossing; i++) {
-	  //if (sim_verbose) cout << "check gout[" << i << "] = " << gout[i] << endl;
-	  if (gout[i] < 0) {
+	  //if (sim_verbose){ cout << "check gout_old[" << i << "] = " << gout_old[i] << "\t" <<
+	  //	  	  	  	    "check gout[" << i << "] = " << gout[i] << endl;
+	  //}
+	  //Found event in left section
+	  if ((gout[i] < 0 and gout_old[i] > 0) ||
+		  (gout[i] > 0 and gout_old[i] < 0)) {
 		  *eventid = i;
 		  return 1;
 	  }
   }
+  // Else event in right section
+  for(int i=0;i<globalData->nZeroCrossing;i++){
+	gout_old[i] = gout[i];
+	gout[i] = backup_gout[i];
+  }
+  delete[] backup_gout;
   return 0;
 }
 
@@ -793,9 +938,12 @@ void InitialZeroCrossings() {
   if (sim_verbose) {
     cout << "checkForIntialZeroCrossings" << endl;
   }
-
+  std::copy(gout, gout + globalData->nZeroCrossing, gout_old);
   function_onlyZeroCrossings(gout,&globalData->timeValue);
-  for (int i = 0; i < globalData->nZeroCrossing; i++) {
+
+
+  /*
+    for (int i = 0; i < globalData->nZeroCrossing; i++) {
     if (gout[i] < 0) {
       zeroCrossingEnabled[i] = -1;
       if (sim_verbose) { cout << "Zero-Crossing [" << i << "] = " << gout[i] << " so it's set to 1" << endl;}
@@ -807,7 +955,7 @@ void InitialZeroCrossings() {
     }
     //if gout[i] == 0 then ZC[i] will step in next step
     // TODO: check where ZC will move to handle correct
-  }
+  }*/
 
   if (sim_verbose) {
     cout << "checkForIntialZeroCrossings done." << endl;

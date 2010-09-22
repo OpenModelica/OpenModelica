@@ -166,7 +166,11 @@ uniontype VarInfo
     Integer numTimeEvents;
     Integer numStateVars;
     Integer numAlgVars;
+    Integer numIntAlgVars;
+    Integer numBoolAlgVars;
     Integer numParams;
+    Integer numIntParams;
+    Integer numBoolParams;
     Integer numOutVars;
     Integer numInVars;
     Integer numResiduals;
@@ -182,9 +186,13 @@ uniontype SimVars
     list<SimVar> stateVars;
     list<SimVar> derivativeVars;
     list<SimVar> algVars;
+    list<SimVar> intAlgVars;
+    list<SimVar> boolAlgVars;
     list<SimVar> inputVars;
     list<SimVar> outputVars;
     list<SimVar> paramVars;
+    list<SimVar> intParamVars;
+    list<SimVar> boolParamVars;
     list<SimVar> stringAlgVars;
     list<SimVar> stringParamVars;
     list<SimVar> extObjVars;
@@ -2043,7 +2051,7 @@ algorithm
         // select all discrete vars.
         vLst = Util.listSelect(vLst, DAELow.isVarDiscrete);
         // remove those vars that are solved in when equations
-        vLst = Util.listSelect2(vLst, dlow, mT, varNotSolvedInWhen);
+        //vLst = Util.listSelect2(vLst, dlow, mT, varNotSolvedInWhen);
         // replace var with cref
         vLst2 = Util.listMap(vLst, DAELow.varCref);
       then vLst2;
@@ -4149,14 +4157,15 @@ algorithm
   matchcontinue (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
     local
       Integer nx, ny, np, ng, ng_sam, ng_sam_1, next, ny_string, np_string, ng_1;
+      Integer ny_int, np_int, ny_bool, np_bool;
     case (dlow, numOutVars, numInVars, numHelpVars, numResiduals)
       equation
-        (nx, ny, np, ng, ng_sam, next, ny_string, np_string) =
+        (nx, ny, np, ng, ng_sam, next, ny_string, np_string, ny_int, np_int, ny_bool, np_bool) =
           DAELow.calculateSizes(dlow);
         ng_1 = filterNg(ng);
         ng_sam_1 = filterNg(ng_sam);
       then
-        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, np, numOutVars, numInVars,
+        VARINFO(numHelpVars, ng_1, ng_sam_1, nx, ny, ny_int, ny_bool, np, np_int, np_bool, numOutVars, numInVars,
                 numResiduals, next, ny_string, np_string);
     case (_,_,_,_,_)
       equation
@@ -4200,6 +4209,9 @@ algorithm
         varsOut = mergeVars(varsOut, varsTmp);
         /* sort variables on index */
         varsOut = sortSimvarsOnIndex(varsOut);
+        /* Index of algebraic and parameters need 
+        	 to fix due to separation of int Vars*/
+        varsOut = fixIndex(varsOut);
         /* fix the initial thing */
         ie_lst = DAELow.equationList(ie);
         varsOut = fixInitialThing(varsOut, ie_lst);
@@ -4229,7 +4241,7 @@ algorithm
       SimVars varsTmp2;
       SimVars vars;
     case ({})
-      then (SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {}));
+      then (SIMVARS({}, {}, {}, {}, {}, {}, {}, {}, {},{},{},{},{}));
     case ((var :: vs))
       equation
         varsTmp1 = extractVarFromVar(var);
@@ -4257,9 +4269,13 @@ algorithm
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
       list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
       list<SimVar> inputVars;
       list<SimVar> outputVars;
       list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
@@ -4271,9 +4287,13 @@ algorithm
         stateVars = {};
         derivativeVars = {};
         algVars = {};
+        intAlgVars = {};
+        boolAlgVars = {};
         inputVars = {};
         outputVars = {};
         paramVars = {};
+        intParamVars = {};
+        boolParamVars = {};
         stringAlgVars = {};
         stringParamVars = {};
         extObjVars = {};
@@ -4287,12 +4307,20 @@ algorithm
           DAELow.isStateVar(dlowVar), derivSimvar, derivativeVars);
         algVars = addSimvarIfTrue(
           isVarAlg(dlowVar), simvar, algVars);
+        intAlgVars = addSimvarIfTrue(
+          isVarIntAlg(dlowVar), simvar, intAlgVars);
+        boolAlgVars = addSimvarIfTrue(
+          isVarBoolAlg(dlowVar), simvar, boolAlgVars);            
         inputVars = addSimvarIfTrue(
           DAELow.isVarOnTopLevelAndInput(dlowVar), simvar, inputVars);
         outputVars = addSimvarIfTrue(
           DAELow.isVarOnTopLevelAndOutput(dlowVar), simvar, outputVars);
         paramVars = addSimvarIfTrue(
           isVarParam(dlowVar), simvar, paramVars);
+        intParamVars = addSimvarIfTrue(
+          isVarIntParam(dlowVar), simvar, intParamVars);
+        boolParamVars = addSimvarIfTrue(
+          isVarBoolParam(dlowVar), simvar, boolParamVars);            
         stringAlgVars = addSimvarIfTrue(
           isVarStringAlg(dlowVar), simvar, stringAlgVars);
         stringParamVars = addSimvarIfTrue(
@@ -4300,8 +4328,8 @@ algorithm
         extObjVars = addSimvarIfTrue(
           DAELow.isExtObj(dlowVar), simvar, extObjVars);
       then
-        SIMVARS(stateVars, derivativeVars, algVars, inputVars, outputVars,
-                paramVars, stringAlgVars, stringParamVars, extObjVars);
+        SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+                paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars, extObjVars);
   end matchcontinue;
 end extractVarFromVar;
 
@@ -4363,31 +4391,39 @@ algorithm
       list<SimVar> stateVars, stateVars1, stateVars2;
       list<SimVar> derivativeVars, derivativeVars1, derivativeVars2;
       list<SimVar> algVars, algVars1, algVars2;
+      list<SimVar> intAlgVars, intAlgVars1, intAlgVars2;
+      list<SimVar> boolAlgVars, boolAlgVars1, boolAlgVars2;
       list<SimVar> inputVars, inputVars1, inputVars2;
       list<SimVar> outputVars, outputVars1, outputVars2;
       list<SimVar> paramVars, paramVars1, paramVars2;
+      list<SimVar> intParamVars, intParamVars1, intParamVars2;
+      list<SimVar> boolParamVars, boolParamVars1, boolParamVars2;
       list<SimVar> stringAlgVars, stringAlgVars1, stringAlgVars2;
       list<SimVar> stringParamVars, stringParamVars1, stringParamVars2;
       list<SimVar> extObjVars, extObjVars1, extObjVars2;
-    case (SIMVARS(stateVars1, derivativeVars1, algVars1, inputVars1,
-                  outputVars1, paramVars1, stringAlgVars1, stringParamVars1,
+    case (SIMVARS(stateVars1, derivativeVars1, algVars1, intAlgVars1, boolAlgVars1, inputVars1,
+                  outputVars1, paramVars1, intParamVars1, boolParamVars1, stringAlgVars1, stringParamVars1,
                   extObjVars1),
-          SIMVARS(stateVars2, derivativeVars2, algVars2, inputVars2,
-                  outputVars2, paramVars2, stringAlgVars2, stringParamVars2,
+          SIMVARS(stateVars2, derivativeVars2, algVars2, intAlgVars2, boolAlgVars2, inputVars2,
+                  outputVars2, paramVars2, intParamVars2, boolParamVars2, stringAlgVars2, stringParamVars2,
                   extObjVars2))
       equation
         stateVars = listAppend(stateVars1, stateVars2);
         derivativeVars = listAppend(derivativeVars1, derivativeVars2);
         algVars = listAppend(algVars1, algVars2);
+        intAlgVars = listAppend(intAlgVars1, intAlgVars2);
+        boolAlgVars = listAppend(boolAlgVars1, boolAlgVars2);
         inputVars = listAppend(inputVars1, inputVars2);
         outputVars = listAppend(outputVars1, outputVars2);
         paramVars = listAppend(paramVars1, paramVars2);
+        intParamVars = listAppend(intParamVars1, intParamVars2);
+        boolParamVars = listAppend(boolParamVars1, boolParamVars2);
         stringAlgVars = listAppend(stringAlgVars1, stringAlgVars2);
         stringParamVars = listAppend(stringParamVars1, stringParamVars2);
         extObjVars = listAppend(extObjVars1, extObjVars2);
       then
-        SIMVARS(stateVars, derivativeVars, algVars, inputVars, outputVars,
-                paramVars, stringAlgVars, stringParamVars, extObjVars);
+        SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars, outputVars,
+                paramVars,intParamVars,boolParamVars, stringAlgVars, stringParamVars, extObjVars);
     case (_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"mergeVars failed"});
@@ -4406,30 +4442,103 @@ algorithm
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
       list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
       list<SimVar> inputVars;
       list<SimVar> outputVars;
       list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
-    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                  outputVars, paramVars, stringAlgVars, stringParamVars,
+    case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+                  outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
                   extObjVars))
       equation
         stateVars = Util.sort(stateVars, varIndexComparer);
         derivativeVars = Util.sort(derivativeVars, varIndexComparer);
         algVars = Util.sort(algVars, varIndexComparer);
+        intAlgVars = Util.sort(intAlgVars, varIndexComparer);
+        boolAlgVars = Util.sort(boolAlgVars, varIndexComparer);
         inputVars = Util.sort(inputVars, varIndexComparer);
         outputVars = Util.sort(outputVars, varIndexComparer);
         paramVars = Util.sort(paramVars, varIndexComparer);
+        intParamVars = Util.sort(intParamVars, varIndexComparer);
+        boolParamVars = Util.sort(boolParamVars, varIndexComparer);
         stringAlgVars = Util.sort(stringAlgVars, varIndexComparer);
         stringParamVars = Util.sort(stringParamVars, varIndexComparer);
         extObjVars = Util.sort(extObjVars, varIndexComparer);
-      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                   outputVars, paramVars, stringAlgVars, stringParamVars,
+      then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+                   outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
                    extObjVars);
   end matchcontinue;
 end sortSimvarsOnIndex;
+
+protected function fixIndex
+  input SimVars unfixedSimvars;
+  output SimVars fixedSimvars;
+algorithm
+  unfixedSimvars :=
+  matchcontinue (fixedSimvars)
+    local
+      list<SimVar> stateVars;
+      list<SimVar> derivativeVars;
+      list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
+      list<SimVar> inputVars;
+      list<SimVar> outputVars;
+      list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
+      list<SimVar> stringAlgVars;
+      list<SimVar> stringParamVars;
+      list<SimVar> extObjVars;
+    case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+                  outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
+                  extObjVars))
+      equation
+        algVars = rewriteIndex(algVars, 0);
+        intAlgVars = rewriteIndex(intAlgVars,0);
+        boolAlgVars = rewriteIndex(boolAlgVars,0);
+        paramVars = rewriteIndex(paramVars, 0);
+        intParamVars = rewriteIndex(intParamVars, 0);
+        boolParamVars = rewriteIndex(boolParamVars, 0);
+        stringAlgVars = rewriteIndex(stringAlgVars, 0);
+        stringParamVars = rewriteIndex(stringParamVars, 0);
+      then SIMVARS(stateVars, derivativeVars, algVars,intAlgVars, boolAlgVars, inputVars,
+                   outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
+                   extObjVars);
+  end matchcontinue;
+end fixIndex;
+
+protected function rewriteIndex
+  input list<SimVar> inVars;
+  input Integer index;
+  output list<SimVar> outVars;
+algorithm 
+   outVars :=
+   matchcontinue(inVars,index)
+       local
+      DAE.ComponentRef name;
+      DAELow.VarKind kind;
+      String comment, unit, displayUnit;
+      Integer index;
+      Option<DAE.Exp> initVal;
+      Boolean isFixed;
+      Exp.Type type_;
+      Boolean isDiscrete;
+      Option<DAE.ComponentRef> arrayCref;
+      Integer index_;
+      list<SimVar> rest,rest2;
+    case ({},_) then {};  
+    case (SIMVAR(name, kind, comment, unit, displayUnit, index, initVal, isFixed, type_, isDiscrete, arrayCref)::rest,index_)
+      equation
+       rest2 = rewriteIndex(rest, index_ + 1);
+      then (SIMVAR(name, kind, comment, unit, displayUnit, index_, initVal, isFixed, type_, isDiscrete, arrayCref)::rest2);
+   end matchcontinue; 
+end rewriteIndex;
 
 protected function varIndexComparer
   input SimVar lhs;
@@ -4457,23 +4566,27 @@ algorithm
       list<SimVar> stateVars;
       list<SimVar> derivativeVars;
       list<SimVar> algVars;
+      list<SimVar> intAlgVars;
+      list<SimVar> boolAlgVars;
       list<SimVar> inputVars;
       list<SimVar> outputVars;
       list<SimVar> paramVars;
+      list<SimVar> intParamVars;
+      list<SimVar> boolParamVars;
       list<SimVar> stringAlgVars;
       list<SimVar> stringParamVars;
       list<SimVar> extObjVars;
     /* no initial equations so nothing to do */
     case (_, {})
       then simvarsIn;
-    case (SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                  outputVars, paramVars, stringAlgVars, stringParamVars,
+    case (SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+                  outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
                   extObjVars), initialEqs)
       equation
         true = Util.boolAndList(Util.listMap(stateVars, simvarFixed));
         stateVars = Util.listMap1(stateVars, nonFixifyIfHasInit, initialEqs);
-      then SIMVARS(stateVars, derivativeVars, algVars, inputVars,
-                   outputVars, paramVars, stringAlgVars, stringParamVars,
+      then SIMVARS(stateVars, derivativeVars, algVars, intAlgVars, boolAlgVars, inputVars,
+                   outputVars, paramVars, intParamVars, boolParamVars, stringAlgVars, stringParamVars,
                    extObjVars);
     /* not all were fixed so nothing to do */
     case (_, _)
@@ -6303,6 +6416,14 @@ algorithm
       DAELow.VarKind kind;
       DAELow.Type typeVar;
       list<DAELow.VarKind> kind_lst;
+    /* bool variable */
+    case (DAELow.VAR(varKind = kind,
+                     varType = typeVar as DAELow.BOOL()))
+      then false;      
+    /* int variable */
+    case (DAELow.VAR(varKind = kind,
+                     varType = typeVar as DAELow.INT()))
+      then false;
     /* string variable */
     case (DAELow.VAR(varKind = kind,
                      varType = typeVar as DAELow.STRING()))
@@ -6343,6 +6464,54 @@ algorithm
   end matchcontinue;
 end isVarStringAlg;
 
+protected function isVarIntAlg
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.VarKind kind;
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* int variable */
+    case (DAELow.VAR(varKind = kind,
+                     varType = typeVar as DAELow.INT()))
+      equation
+        
+        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
+                    DAELow.DUMMY_STATE()};
+        _ = Util.listGetMember(kind, kind_lst);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarIntAlg;
+
+protected function isVarBoolAlg
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.VarKind kind;
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* int variable */
+    case (DAELow.VAR(varKind = kind,
+                     varType = typeVar as DAELow.BOOL()))
+      equation
+        
+        kind_lst = {DAELow.VARIABLE(), DAELow.DISCRETE(), DAELow.DUMMY_DER(),
+                    DAELow.DUMMY_STATE()};
+        _ = Util.listGetMember(kind, kind_lst);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarBoolAlg;
+
 /* TODO: Is this correct? */
 protected function isVarParam
   input DAELow.Var var;
@@ -6353,6 +6522,12 @@ algorithm
     local
       DAELow.Type typeVar;
       list<DAELow.VarKind> kind_lst;
+    /* bool variable */
+    case (DAELow.VAR(varType = typeVar as DAELow.BOOL()))
+      then false;      
+    /* int variable */
+    case (DAELow.VAR(varType = typeVar as DAELow.INT()))
+      then false;
     /* string variable */
     case (DAELow.VAR(varType = typeVar as DAELow.STRING()))
       then false;
@@ -6385,6 +6560,44 @@ algorithm
       then false;
   end matchcontinue;
 end isVarStringParam;
+
+protected function isVarIntParam
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* string variable */
+    case (DAELow.VAR(varType = typeVar as DAELow.INT()))
+      equation
+        true = DAELow.isParam(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarIntParam;
+
+protected function isVarBoolParam
+  input DAELow.Var var;
+  output Boolean result;
+algorithm
+  result :=
+  matchcontinue (var)
+    local
+      DAELow.Type typeVar;
+      list<DAELow.VarKind> kind_lst;
+    /* string variable */
+    case (DAELow.VAR(varType = typeVar as DAELow.BOOL()))
+      equation
+        true = DAELow.isParam(var);
+      then true;
+    case (_)
+      then false;
+  end matchcontinue;
+end isVarBoolParam;
 
 protected function indexSubscriptToExp
   input DAE.Subscript subscript;
@@ -7232,8 +7445,6 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end crefIsDerivative;
-
-
 
 protected function extractVarUnit
 "Extract variable's unit and displayUnit as strings from 

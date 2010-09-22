@@ -190,35 +190,43 @@ package SimCode
   end ModelInfo;
   
   uniontype VarInfo
-    record VARINFO
-      Integer numHelpVars;
-      Integer numZeroCrossings;
-      Integer numTimeEvents;
-      Integer numStateVars;
-      Integer numAlgVars;
-      Integer numParams;
-      Integer numOutVars;
-      Integer numInVars;
-      Integer numResiduals;
-      Integer numExternalObjects;
-      Integer numStringAlgVars;
-      Integer numStringParamVars;
-    end VARINFO;
-  end VarInfo;
-  
-  uniontype SimVars
-    record SIMVARS
-      list<SimVar> stateVars;
-      list<SimVar> derivativeVars;
-      list<SimVar> algVars;
-      list<SimVar> inputVars;
-      list<SimVar> outputVars;
-      list<SimVar> paramVars;
-      list<SimVar> stringAlgVars;
-      list<SimVar> stringParamVars;
-      list<SimVar> extObjVars;
-    end SIMVARS;
-  end SimVars;
+	  record VARINFO
+	    Integer numHelpVars;
+	    Integer numZeroCrossings;
+	    Integer numTimeEvents;
+	    Integer numStateVars;
+	    Integer numAlgVars;
+	    Integer numIntAlgVars;
+	    Integer numBoolAlgVars;
+	    Integer numParams;
+	    Integer numIntParams;
+	    Integer numBoolParams;
+	    Integer numOutVars;
+	    Integer numInVars;
+	    Integer numResiduals;
+	    Integer numExternalObjects;
+	    Integer numStringAlgVars;
+	    Integer numStringParamVars;
+	  end VARINFO;
+	end VarInfo;
+	
+	uniontype SimVars
+	  record SIMVARS
+	    list<SimVar> stateVars;
+	    list<SimVar> derivativeVars;
+	    list<SimVar> algVars;
+	    list<SimVar> intAlgVars;
+	    list<SimVar> boolAlgVars;
+	    list<SimVar> inputVars;
+	    list<SimVar> outputVars;
+	    list<SimVar> paramVars;
+	    list<SimVar> intParamVars;
+	    list<SimVar> boolParamVars;
+	    list<SimVar> stringAlgVars;
+	    list<SimVar> stringParamVars;
+	    list<SimVar> extObjVars;
+	  end SIMVARS;
+	end SimVars;
   
   uniontype SimVar
     record SIMVAR

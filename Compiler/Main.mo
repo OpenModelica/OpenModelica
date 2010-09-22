@@ -856,7 +856,7 @@ algorithm
         TaskGraphExt.dumpMergedGraph("merged_model.viz");
         n = RTOpts.noProc();
         TaskGraphExt.schedule(n);
-        (nx,ny,np,_,_,_,_,_) = DAELow.calculateSizes(indexed_dae_1);
+        (nx,ny,np,_,_,_,_,_,_,_,_,_) = DAELow.calculateSizes(indexed_dae_1);
         nps = intString(np);
         print("=======\nnp =");
         print(nps);

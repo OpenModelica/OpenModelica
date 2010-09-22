@@ -123,6 +123,8 @@ case SIMCODE(__) then
   
   <%functionUpdateDepend(allEquationsPlusWhen, whenClauses, helpVarInfo)%>
   
+  <%functionUpdateHelpVars(helpVarInfo)%>
+  
   <%functionOnlyZeroCrossing(zeroCrossings)%>
   
   <%functionCheckForDiscreteChanges(discreteModelVars)%>
@@ -193,6 +195,10 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   #define MAXORD 5
   #define NYSTR <%varInfo.numStringAlgVars%> // number of alg. string variables
   #define NPSTR <%varInfo.numStringParamVars%> // number of alg. string variables
+  #define NYINT <%varInfo.numIntAlgVars%> // number of alg. int variables
+  #define NPINT <%varInfo.numIntParams%> // number of alg. int variables
+  #define NYBOOL <%varInfo.numBoolAlgVars%> // number of alg. bool variables
+  #define NPBOOL <%varInfo.numBoolParams%> // number of alg. bool variables
   
   static DATA* localData = 0;
   #define time localData->timeValue
@@ -215,6 +221,10 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarNamesArray("input_names", vars.inputVars)%>
   <%globalDataVarNamesArray("output_names", vars.outputVars)%>
   <%globalDataVarNamesArray("param_names", vars.paramVars)%>
+  <%globalDataVarNamesArray("int_alg_names", vars.intAlgVars)%>
+  <%globalDataVarNamesArray("int_param_names", vars.intParamVars)%>
+  <%globalDataVarNamesArray("bool_alg_names", vars.boolAlgVars)%>
+  <%globalDataVarNamesArray("bool_param_names", vars.boolParamVars)%>
   <%globalDataVarNamesArray("string_alg_names", vars.stringAlgVars)%>
   <%globalDataVarNamesArray("string_param_names", vars.stringParamVars)%>
   
@@ -224,9 +234,12 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%globalDataVarCommentsArray("input_comments", vars.inputVars)%>
   <%globalDataVarCommentsArray("output_comments", vars.outputVars)%>
   <%globalDataVarCommentsArray("param_comments", vars.paramVars)%>
+  <%globalDataVarCommentsArray("int_alg_comments", vars.intAlgVars)%>
+  <%globalDataVarCommentsArray("int_param_comments", vars.intParamVars)%>
+  <%globalDataVarCommentsArray("bool_alg_comments", vars.boolAlgVars)%>
+  <%globalDataVarCommentsArray("bool_param_comments", vars.boolParamVars)%>
   <%globalDataVarCommentsArray("string_alg_comments", vars.stringAlgVars)%>
   <%globalDataVarCommentsArray("string_param_comments", vars.stringParamVars)%>
-
   
   <%vars.stateVars |> var =>
     globalDataVarDefine(var, "states")
@@ -243,6 +256,18 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
   <%vars.extObjVars |> var =>
     globalDataVarDefine(var, "extObjs")
   ;separator="\n"%>
+  <%vars.intAlgVars |> var =>
+    globalDataVarDefine(var, "intVariables.algebraics")
+  ;separator="\n"%>
+  <%vars.intParamVars |> var =>
+    globalDataVarDefine(var, "intVariables.parameters")
+  ;separator="\n"%>
+  <%vars.boolAlgVars |> var =>
+    globalDataVarDefine(var, "boolVariables.algebraics")
+  ;separator="\n"%>
+  <%vars.boolParamVars |> var =>
+    globalDataVarDefine(var, "boolVariables.parameters")
+  ;separator="\n"%>  
   <%vars.stringAlgVars |> var =>
     globalDataVarDefine(var, "stringVariables.algebraics")
   ;separator="\n"%>
@@ -250,9 +275,8 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
     globalDataVarDefine(var, "stringVariables.parameters")
   ;separator="\n"%>
   
-  static char init_fixed[NX+NX+NY+NP] = {
+  static char init_fixed[NX+NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
-
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
       (vars.derivativeVars |> SIMVAR(__) =>
@@ -261,22 +285,58 @@ case MODELINFO(varInfo=VARINFO(__), vars=SIMVARS(__)) then
       (vars.algVars |> SIMVAR(__) =>
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
+      (vars.intAlgVars |> SIMVAR(__) =>
+        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.boolAlgVars |> SIMVAR(__) =>
+        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.stringAlgVars |> SIMVAR(__) =>
+        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),         
       (vars.paramVars |> SIMVAR(__) =>
+        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+     (vars.intParamVars |> SIMVAR(__) =>
+        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+     (vars.boolParamVars |> SIMVAR(__) =>
+        '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.stringParamVars |> SIMVAR(__) =>
         '<%globalDataFixedInt(isFixed)%> /* <%crefStr(name)%> */'
       ;separator=",\n")}
     ;separator=",\n"%>
   };
   
-  char var_attr[NX+NY+NP] = {
+  char var_attr[NX+NY+NYINT+NYBOOL+NYSTR+NP+NPINT+NPBOOL+NPSTR] = {
     <%{(vars.stateVars |> SIMVAR(__) =>
         '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
       (vars.algVars |> SIMVAR(__) =>
         '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
       ;separator=",\n"),
+      (vars.intAlgVars |> SIMVAR(__) =>
+        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.boolAlgVars |> SIMVAR(__) =>
+        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),
+      (vars.stringAlgVars |> SIMVAR(__) =>
+        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
+      ;separator=",\n"),      
       (vars.paramVars |> SIMVAR(__) =>
         '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
-       ;separator=",\n")}
+       ;separator=",\n"),
+      (vars.intParamVars |> SIMVAR(__) =>
+        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
+       ;separator=",\n"),
+      (vars.boolParamVars |> SIMVAR(__) =>
+        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
+       ;separator=",\n"),
+      (vars.stringParamVars |> SIMVAR(__) =>
+        '<%globalDataAttrInt(type_)%>+<%globalDataDiscAttrInt(isDiscrete)%> /* <%crefStr(name)%> */'
+       ;separator=",\n") }
     ;separator=",\n"%>
   };
   >>
@@ -386,6 +446,29 @@ case MODELINFO(vars=SIMVARS(__)) then
     ;separator="\n"%>
     return "";
   }
+  
+  const char* getName(int* ptr)
+  {
+    <%vars.intAlgVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return int_alg_names[<%index%>];'
+    ;separator="\n"%>
+    <%vars.intParamVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return int_param_names[<%index%>];'
+    ;separator="\n"%>
+    return "";
+  }
+  
+  const char* getName(signed char* ptr)
+  {
+    <%vars.boolAlgVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return bool_alg_names[<%index%>];'
+    ;separator="\n"%>
+    <%vars.boolParamVars |> SIMVAR(__) =>
+      'if (&<%cref(name)%> == ptr) return bool_param_names[<%index%>];'
+    ;separator="\n"%>
+    return "";
+  }
+  
   >>
 end functionGetName;
 
@@ -449,6 +532,10 @@ template functionInitializeDataStruc()
     returnData->nHelpVars = NHELP;
     returnData->stringVariables.nParameters = NPSTR;
     returnData->stringVariables.nAlgebraic = NYSTR;
+    returnData->intVariables.nParameters = NPINT;
+    returnData->intVariables.nAlgebraic = NYINT;
+    returnData->boolVariables.nParameters = NPBOOL;
+    returnData->boolVariables.nAlgebraic = NYBOOL;
   
     if(flags & STATES && returnData->nStates) {
       returnData->states = (double*) malloc(sizeof(double)*returnData->nStates);
@@ -498,7 +585,6 @@ template functionInitializeDataStruc()
       returnData->algebraics = 0;
       returnData->old_algebraics = 0;
       returnData->old_algebraics2 = 0;
-      returnData->stringVariables.algebraics = 0;
     }
   
     if (flags & ALGEBRAICS && returnData->stringVariables.nAlgebraic) {
@@ -508,7 +594,35 @@ template functionInitializeDataStruc()
     } else {
       returnData->stringVariables.algebraics=0;
     }
-  
+    
+    if (flags & ALGEBRAICS && returnData->intVariables.nAlgebraic) {
+      returnData->intVariables.algebraics = (int*)malloc(sizeof(int)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.old_algebraics = (int*)malloc(sizeof(int)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.old_algebraics2 = (int*)malloc(sizeof(int)*returnData->intVariables.nAlgebraic);
+      assert(returnData->intVariables.algebraics&&returnData->intVariables.old_algebraics&&returnData->intVariables.old_algebraics2);
+      memset(returnData->intVariables.algebraics,0,sizeof(int)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.old_algebraics,0,sizeof(int)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.old_algebraics2,0,sizeof(int)*returnData->intVariables.nAlgebraic);
+    } else {
+      returnData->intVariables.algebraics=0;
+      returnData->intVariables.old_algebraics = 0;
+      returnData->intVariables.old_algebraics2 = 0;
+    }
+
+    if (flags & ALGEBRAICS && returnData->boolVariables.nAlgebraic) {
+      returnData->boolVariables.algebraics = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.old_algebraics = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.old_algebraics2 = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      assert(returnData->boolVariables.algebraics&&returnData->boolVariables.old_algebraics&&returnData->boolVariables.old_algebraics2);
+      memset(returnData->boolVariables.algebraics,0,sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.old_algebraics,0,sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.old_algebraics2,0,sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+    } else {
+      returnData->boolVariables.algebraics=0;
+      returnData->boolVariables.old_algebraics = 0;
+      returnData->boolVariables.old_algebraics2 = 0;
+    }
+    
     if(flags & PARAMETERS && returnData->nParameters) {
       returnData->parameters = (double*) malloc(sizeof(double)*returnData->nParameters);
       assert(returnData->parameters);
@@ -518,13 +632,29 @@ template functionInitializeDataStruc()
     }
   
     if (flags & PARAMETERS && returnData->stringVariables.nParameters) {
-    	  returnData->stringVariables.parameters = (char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
+    	returnData->stringVariables.parameters = (char**)malloc(sizeof(char*)*returnData->stringVariables.nParameters);
         assert(returnData->stringVariables.parameters);
         memset(returnData->stringVariables.parameters,0,sizeof(char*)*returnData->stringVariables.nParameters);
     } else {
         returnData->stringVariables.parameters=0;
     }
-  
+    
+    if (flags & PARAMETERS && returnData->intVariables.nParameters) {
+    	returnData->intVariables.parameters = (int*)malloc(sizeof(int)*returnData->intVariables.nParameters);
+        assert(returnData->intVariables.parameters);
+        memset(returnData->intVariables.parameters,0,sizeof(int)*returnData->intVariables.nParameters);
+    } else {
+        returnData->intVariables.parameters=0;
+    }
+    
+    if (flags & PARAMETERS && returnData->boolVariables.nParameters) {
+    	returnData->boolVariables.parameters = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nParameters);
+        assert(returnData->boolVariables.parameters);
+        memset(returnData->boolVariables.parameters,0,sizeof(signed char)*returnData->boolVariables.nParameters);
+    } else {
+        returnData->boolVariables.parameters=0;
+    }
+    
     if(flags & OUTPUTVARS && returnData->nOutputVars) {
       returnData->outputVars = (double*) malloc(sizeof(double)*returnData->nOutputVars);
       assert(returnData->outputVars);
@@ -579,13 +709,37 @@ template functionInitializeDataStruc()
     } else {
       returnData->algebraicsNames = 0;
     }
+    
+    if(flags & ALGEBRAICSNAMES) {
+      returnData->int_alg_names = int_alg_names;
+    } else {
+      returnData->int_alg_names = 0;
+    }
+
+    if(flags & ALGEBRAICSNAMES) {
+      returnData->bool_alg_names = bool_alg_names;
+    } else {
+      returnData->bool_alg_names = 0;
+    }
   
     if(flags & PARAMETERSNAMES) {
       returnData->parametersNames = param_names;
     } else {
       returnData->parametersNames = 0;
     }
-  
+    
+    if(flags & PARAMETERSNAMES) {
+      returnData->int_param_names = int_param_names;
+    } else {
+      returnData->int_param_names = 0;
+    }
+
+    if(flags & PARAMETERSNAMES) {
+      returnData->bool_param_names = bool_param_names;
+    } else {
+      returnData->bool_param_names = 0;
+    }
+      
     if(flags & INPUTNAMES) {
       returnData->inputNames = input_names;
     } else {
@@ -616,11 +770,35 @@ template functionInitializeDataStruc()
     } else {
       returnData->algebraicsComments = 0;
     }
+
+    if(flags & ALGEBRAICSCOMMENTS) {
+      returnData->int_alg_comments = int_alg_comments;
+    } else {
+      returnData->int_alg_comments = 0;
+    }
+
+    if(flags & ALGEBRAICSCOMMENTS) {
+      returnData->bool_alg_comments = bool_alg_comments;
+    } else {
+      returnData->bool_alg_comments = 0;
+    }
   
     if(flags & PARAMETERSCOMMENTS) {
       returnData->parametersComments = param_comments;
     } else {
       returnData->parametersComments = 0;
+    }
+    
+    if(flags & PARAMETERSCOMMENTS) {
+      returnData->int_param_comments = int_param_comments;
+    } else {
+      returnData->int_param_comments = 0;
+    }
+
+    if(flags & PARAMETERSCOMMENTS) {
+      returnData->bool_param_comments = bool_param_comments;
+    } else {
+      returnData->bool_param_comments = 0;
     }
   
     if(flags & INPUTCOMMENTS) {
@@ -1095,6 +1273,31 @@ template functionOnlyZeroCrossing(list<ZeroCrossing> zeroCrossings)
   >>
 end functionOnlyZeroCrossing;
 
+template functionUpdateHelpVars(list<HelpVarInfo> helpVarInfo)
+ "Generates function in simulation file."
+::=
+  let &varDecls = buffer "" /*BUFD*/
+  let hvars = (helpVarInfo |> (hindex, exp, _) =>
+      let &preExp = buffer "" /*BUFD*/
+      let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
+                         &varDecls /*BUFC*/)
+      '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
+    ;separator="\n")
+  <<
+  int function_updatehelpvars()
+  {
+    state mem_state;
+    <%varDecls%>
+  
+    mem_state = get_memory_state();
+    <%hvars%>
+    restore_memory_state(mem_state);
+  
+    return 0;
+  }
+  >>
+end functionUpdateHelpVars;
+
 
 template functionCheckForDiscreteChanges(list<ComponentRef> discreteModelVars)
   "Generates function in simulation file."
@@ -1229,9 +1432,9 @@ case SIM_WHEN_CLAUSE(__) then
     ;separator=" || ")	
   let ifthen = functionWhenReinitStatementThen(reinits, &preExp /*BUFP*/,
                             &varDecls /*BUFP*/)                     
-  let ifelse = functionWhenReinitStatementElse(reinits, &preExp /*BUFP*/,
+/*let ifelse = functionWhenReinitStatementElse(reinits, &preExp /*BUFP*/,
   							&varDecls /*BUFP*/) 
-/*  let hvars = (conditions |> (exp, hindex) =>
+  let hvars = (conditions |> (exp, hindex) =>
   let expPart = daeExp(exp, contextSimulationDiscrete, &preExp /*BUFC*/,
                         &varDecls /*BUFC*/)
   '<%preExp%>localData->helpVars[<%hindex%>] = <%expPart%>;'
@@ -1247,8 +1450,6 @@ if reinits then
   if (<%helpIf%>) { 
     <%ifthen%>
      needToIterate = 1;
-  } else {
-    <%ifelse%>
   }
 >>
 end genreinits;
@@ -1669,12 +1870,19 @@ case eqn as SES_ARRAY_CALL_ASSIGN(__) then
       'edge(localData->helpVars[<%hidx%>])'
     ;separator=" || ")C*/, &varDecls /*BUFC*/)
   match expTypeFromExpShort(eqn.exp)
+  case "boolean" then
+    let tvar = tempDecl("boolean_array", &varDecls /*BUFC*/)
+    //let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
+    <<
+    <%preExp%>
+    copy_boolean_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    >>
   case "integer" then
     let tvar = tempDecl("integer_array", &varDecls /*BUFC*/)
     let &preExp += 'cast_integer_array_to_real(&<%expPart%>, &<%tvar%>);<%\n%>'
     <<
     <%preExp%>
-    copy_real_array_data_mem(&<%tvar%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
+    copy_integer_array_data_mem(&<%expPart%>, &<%cref(eqn.componentRef)%>);<%inlineArray(context,tvar,eqn.componentRef)%>
     >>
   case "real" then
     <<
@@ -1752,7 +1960,7 @@ case SES_MIXED(__) then
   <%preDisc%>
   <%discLoc2%>
   {
-    double *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '&<%cref(name)%>' ;separator=", "%>};
+    double *loc_ptrs[<%numDiscVarsStr%>] = {<%discVars |> SIMVAR(__) => '(double*)&<%cref(name)%>' ;separator=", "%>};
     check_discrete_values(<%numDiscVarsStr%>, <%valuesLenStr%>);
   }
   mixed_equation_system_end(<%numDiscVarsStr%>);
@@ -1850,7 +2058,7 @@ case SIMCODE(modelInfo=MODELINFO(__), makefileParams=MAKEFILE_PARAMS(__)) then
   LINK=<%makefileParams.linker%>
   EXEEXT=<%makefileParams.exeext%>
   DLLEXT=<%makefileParams.dllext%>
-  CFLAGS=-O3 -I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
+  CFLAGS=-I"<%makefileParams.omhome%>/include/omc" <%makefileParams.cflags%>
   LDFLAGS=-L"<%makefileParams.omhome%>/lib/omc" <%makefileParams.ldflags%>
   SENDDATALIBS=<%makefileParams.senddatalibs%>
   
@@ -1878,12 +2086,20 @@ case SIMCODE(modelInfo = MODELINFO(varInfo = vi as VARINFO(__), vars = vars as S
   <%vi.numStateVars%> // n states
   <%vi.numAlgVars%> // n alg vars
   <%vi.numParams%> //n parameters
+  <%vi.numIntParams%> // n int parameters
+  <%vi.numIntAlgVars%> // n int variables
+  <%vi.numBoolParams%> // n bool parameters
+  <%vi.numBoolAlgVars%> // n bool variables
   <%vi.numStringParamVars%> // n string-parameters
   <%vi.numStringAlgVars%> // n string variables
   <%initVals(vars.stateVars)%>
   <%initVals(vars.derivativeVars)%>
   <%initVals(vars.algVars)%>
   <%initVals(vars.paramVars)%>
+  <%initVals(vars.intParamVars)%>
+  <%initVals(vars.intAlgVars)%>
+  <%initVals(vars.boolParamVars)%>
+  <%initVals(vars.boolAlgVars)%>    
   <%initVals(vars.stringParamVars)%>
   <%initVals(vars.stringAlgVars)%>  
   >>
@@ -4504,7 +4720,6 @@ template arrayScalarRhs(ExpType ty, list<Exp> subs, String arrName, Context cont
   (*<%arrayType%>_element_addr(&<%arrName%>, <%dimsLenStr%>, <%dimsValuesStr%>))
   >>
 end arrayScalarRhs;
-
 
 template daeExpList(Exp exp, Context context, Text &preExp /*BUFP*/,
                     Text &varDecls /*BUFP*/)

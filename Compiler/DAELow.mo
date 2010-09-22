@@ -12970,16 +12970,21 @@ public function calculateSizes "function: calculateSizes
   output Integer outng " number of zerocrossings";
   output Integer outng_sample " number of zerocrossings that are samples";
   output Integer outnext " number of external objects";
-
 //nx cannot be strings
   output Integer outny_string "number of alg.vars which are strings";
   output Integer outnp_string  "number of parameters which are strings";
+//nx cannot be int
+  output Integer outny_int "number of alg.vars which are ints";
+  output Integer outnp_int  "number of parameters which are ints";
+//nx cannot be int
+  output Integer outny_bool "number of alg.vars which are bools";
+  output Integer outnp_bool  "number of parameters which are bools";    
 algorithm
-  (outnx,outny,outnp,outng,outnext):=
+  (outnx,outny,outnp,outng,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
   matchcontinue (inDAELow)
     local
       list<Var> varlst,knvarlst,extvarlst;
-      Value np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string;
+      Value np,ng,nsam,nx,ny,nx_1,ny_1,next,ny_string,np_string,ny_1_string,np_int,np_bool,ny_int,ny_1_int,ny_bool,ny_1_bool;
       String np_str;
       Variables vars,knvars,extvars;
       list<WhenClause> wc;
@@ -12993,13 +12998,13 @@ algorithm
 	  	  extvarlst = varList(extvars);
 	  	  next = listLength(extvarlst);
         knvarlst = varList(knvars);
-        (np,np_string) = calculateParamSizes(knvarlst);
+        (np,np_string,np_int, np_bool) = calculateParamSizes(knvarlst);
         np_str = intString(np);
         (ng,nsam) = calculateNumberZeroCrossings(zc,0,0);
-        (nx,ny,ny_string) = calculateVarSizes(varlst, 0, 0,0);
-        (nx_1,ny_1,ny_1_string) = calculateVarSizes(knvarlst, nx, ny,ny_string);
+        (nx,ny,ny_string,ny_int, ny_bool) = calculateVarSizes(varlst, 0, 0, 0, 0, 0);
+        (nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool) = calculateVarSizes(knvarlst, nx, ny, ny_string, ny_int, ny_bool);
       then
-        (nx_1,ny_1,np,ng,nsam,next,ny_1_string,np_string);
+        (nx_1,ny_1,np,ng,nsam,next,ny_1_string, np_string, ny_1_int, np_int, ny_1_bool, np_bool);
   end matchcontinue;
 end calculateSizes;
 
@@ -13045,31 +13050,45 @@ protected function calculateParamSizes "function: calculateParamSizes
   input list<Var> inVarLst;
   output Integer outInteger;
   output Integer outInteger2;
+  output Integer outInteger3;
+  output Integer outInteger4;
 algorithm
-  (outInteger,outInteger2):=
+  (outInteger,outInteger2,outInteger3, outInteger4):=
   matchcontinue (inVarLst)
     local
-      Value s1,s2;
+      Value s1,s2,s3, s4;
       Var var;
       list<Var> vs;
-    case ({}) then (0,0);
+    case ({}) then (0,0,0,0);
     case ((var :: vs))
       equation
-        (s1,s2) = calculateParamSizes(vs);
+        (s1,s2,s3,s4) = calculateParamSizes(vs);
+        true = isBoolParam(var);
+      then
+        (s1,s2,s3,s4 + 1);  
+    case ((var :: vs))
+      equation
+        (s1,s2,s3,s4) = calculateParamSizes(vs);
+        true = isIntParam(var);
+      then
+        (s1,s2,s3 + 1,s4);
+    case ((var :: vs))
+      equation
+        (s1,s2,s3,s4) = calculateParamSizes(vs);
         true = isStringParam(var);
       then
-        (s1,s2 + 1);
+        (s1,s2 + 1,s3,s4);
     case ((var :: vs))
       equation
-        (s1,s2) = calculateParamSizes(vs);
+        (s1,s2,s3,s4) = calculateParamSizes(vs);
         true = isParam(var);
       then
-        (s1 + 1,s2);
+        (s1 + 1,s2,s3,s4);
     case ((_ :: vs))
       equation
-        (s1,s2) = calculateParamSizes(vs);
+        (s1,s2,s3,s4) = calculateParamSizes(vs);
       then
-        (s1,s2);
+        (s1,s2,s3,s4);
     case (_)
       equation
         print("- DAELow.calculateParamSizes failed\n");
@@ -13087,87 +13106,153 @@ protected function calculateVarSizes "function: calculateVarSizes
   input Integer inInteger2;
   input Integer inInteger3;
   input Integer inInteger4;
+  input Integer inInteger5;
+  input Integer inInteger6;
 
   output Integer outInteger1;
   output Integer outInteger2;
   output Integer outInteger3;
+  output Integer outInteger4;
+  output Integer outInteger5;
 
 algorithm
-  (outInteger1,outInteger2,outInteger3):=
-  matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4)
+  (outInteger1,outInteger2,outInteger3, outInteger4,outInteger5):=
+  matchcontinue (inVarLst1,inInteger2,inInteger3,inInteger4,inInteger5,inInteger6)
     local
       Value nx,ny,ny_1,nx_2,ny_2,nx_1,nx_string,ny_string,ny_1_string,ny_2_string;
+      Value ny_int, ny_1_int, ny_2_int, ny_bool, ny_1_bool, ny_2_bool;
       DAE.Flow flowPrefix;
       list<Var> vs;
-    case ({},nx,ny,ny_string) then (nx,ny,ny_string);
-    case ((VAR(varKind = VARIABLE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+    case ({},nx,ny,ny_string, ny_int, ny_bool) then (nx,ny,ny_string,ny_int, ny_bool);
+
+    case ((VAR(varKind = VARIABLE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
         ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny, ny_1_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_1_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
-    case ((VAR(varKind = VARIABLE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+
+    case ((VAR(varKind = VARIABLE(),varType=INT(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
+      equation
+        ny_1_int = ny_int + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
+
+    case ((VAR(varKind = VARIABLE(),varType=BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
+      equation
+        ny_1_bool = ny_bool + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
+
+    case ((VAR(varKind = VARIABLE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
       equation
         ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1, ny_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
-
-
-     case ((VAR(varKind = DISCRETE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool); 
+    
+     case ((VAR(varKind = DISCRETE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
         ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_1_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
-     case ((VAR(varKind = DISCRETE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        
+     case ((VAR(varKind = DISCRETE(),varType=INT(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
+      equation
+        ny_1_int = ny_int + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+     
+     case ((VAR(varKind = DISCRETE(),varType=BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
+      equation
+        ny_1_bool = ny_bool + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
+     
+                 
+     case ((VAR(varKind = DISCRETE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
         ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1, ny_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
 
-    case ((VAR(varKind = STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+    case ((VAR(varKind = STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
         nx_1 = nx + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx_1, ny,ny_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx_1, ny, ny_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
 
-    case ((VAR(varKind = DUMMY_STATE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string) /* A dummy state is an algebraic variable */
+    case ((VAR(varKind = DUMMY_STATE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
       equation
         ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_1_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
-    case ((VAR(varKind = DUMMY_STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string) /* A dummy state is an algebraic variable */
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        
+    case ((VAR(varKind = DUMMY_STATE(),varType=INT(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
+      equation
+        ny_1_int = ny_int + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+    
+    case ((VAR(varKind = DUMMY_STATE(),varType=BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
+      equation
+        ny_1_bool = ny_bool + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
+     
+        
+    case ((VAR(varKind = DUMMY_STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
       equation
         ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1,ny_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
 
-    case ((VAR(varKind = DUMMY_DER(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+    case ((VAR(varKind = DUMMY_DER(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
         ny_1_string = ny_string + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny,ny_1_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny,ny_1_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
-    case ((VAR(varKind = DUMMY_DER(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string)
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+        
+    case ((VAR(varKind = DUMMY_DER(),varType=INT(),flowPrefix = flowPrefix) :: vs),nx, ny, ny_string, ny_int, ny_bool)
+      equation
+         ny_1_int = ny_int + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_1_int, ny_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);
+    
+    case ((VAR(varKind = DUMMY_DER(),varType=BOOL(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int,ny_bool)
+      equation
+        ny_1_bool = ny_bool + 1;
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
+      then
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);  
+        
+    case ((VAR(varKind = DUMMY_DER(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
         ny_1 = ny + 1;
-        (nx_2,ny_2,ny_2_string) = calculateVarSizes(vs, nx, ny_1,ny_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny_1,ny_string, ny_int, ny_bool);
       then
-        (nx_2,ny_2,ny_2_string);
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool); 
 
-    case ((_ :: vs),nx,ny,ny_string)
+    case ((_ :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
-        (nx_1,ny_1,ny_1_string) = calculateVarSizes(vs, nx, ny,ny_string);
+        (nx_1,ny_1,ny_1_string, ny_1_int, ny_1_bool) = calculateVarSizes(vs, nx, ny,ny_string,ny_int, ny_bool);
       then
-        (nx_1,ny_1,ny_1_string);
-
-
-    case (_,_,_,_)
+        (nx_1,ny_1,ny_1_string, ny_1_int, ny_1_bool);
+        
+    case (_,_,_,_,_,_)
       equation
         print("- DAELow.calculateVarSizes failed\n");
       then
@@ -15476,6 +15561,32 @@ algorithm
     case (_) then false;
   end matchcontinue;
 end isParam;
+
+public function isIntParam
+"function: isIntParam
+  Return true if variable is a parameter and integer."
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar)
+    case (VAR(varKind = PARAM(),varType = INT())) then true;
+    case (_) then false;
+  end matchcontinue;
+end isIntParam;
+
+public function isBoolParam
+"function: isBoolParam
+  Return true if variable is a parameter and boolean."
+  input Var inVar;
+  output Boolean outBoolean;
+algorithm
+  outBoolean:=
+  matchcontinue (inVar)
+    case (VAR(varKind = PARAM(),varType = BOOL())) then true;
+    case (_) then false;
+  end matchcontinue;
+end isBoolParam;
 
 public function isStringParam
 "function: isStringParam

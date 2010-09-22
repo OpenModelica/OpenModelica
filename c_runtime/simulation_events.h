@@ -55,12 +55,23 @@ void AddEvent(long);
 void saveall();
 
 void save(double & var);
+void save(int & var);
+void save(signed char & var);
 void save(char* & var);
+
 double pre(double & var);
+int pre(int & var);
+signed char pre(signed char & var);
 char* pre(char* & var);
 
 bool edge(double& var);
+bool edge(int& var);
+bool edge(signed char& var);
+
 bool change(double& var);
+bool change(int& var);
+bool change(signed char& var);
+bool change(char*& var);
 
 double Sample(double t, double start ,double interval);
 double sample(double start ,double interval);
@@ -75,8 +86,14 @@ extern long inUpdate;
 extern int euler_in_use;
 const int InterationMax = 100;
 
-#define ZEROCROSSING(ind,exp) gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0
-
+#define ZEROCROSSING(ind,exp) { \
+	if (euler_in_use){ \
+		gout[ind] = exp; \
+	} \
+	else {\
+		gout[ind] = (zeroCrossingEnabled[ind])?double(zeroCrossingEnabled[ind])*exp:1.0; \
+	} \
+}
 
 #define RELATION(res,x,y,op1,op2)  { \
 	if (euler_in_use){ \
@@ -135,6 +152,8 @@ extern long* zeroCrossingEnabled;
 
 int
 function_onlyZeroCrossings(double* gout ,double* t);
+
+int function_updatehelpvars();
 
 int CheckForNewEvent(int flag);
 

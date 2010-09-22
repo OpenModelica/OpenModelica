@@ -161,6 +161,14 @@ void storeExtrapolationData()
     globalData->old_algebraics2[i]=globalData->old_algebraics[i];
     globalData->old_algebraics[i]=globalData->algebraics[i];
   }
+  for(i=0;i<globalData->intVariables.nAlgebraic;i++) {
+    globalData->intVariables.old_algebraics2[i]=globalData->intVariables.old_algebraics[i];
+    globalData->intVariables.old_algebraics[i]=globalData->intVariables.algebraics[i];
+  }
+  for(i=0;i<globalData->boolVariables.nAlgebraic;i++) {
+    globalData->boolVariables.old_algebraics2[i]=globalData->boolVariables.old_algebraics[i];
+    globalData->boolVariables.old_algebraics[i]=globalData->boolVariables.algebraics[i];
+  }
   globalData->oldTime2 = globalData->oldTime;
   globalData->oldTime = globalData->timeValue;
 }

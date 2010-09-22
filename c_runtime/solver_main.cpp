@@ -191,9 +191,9 @@ int solver_main(int argc, char** argv, double &start,  double &stop, double &ste
 				string("Error in initialization. Storing results and exiting.\n"));
 	}
 	saveall();
-	if(sim_verbose) {
+	if(sim_verbose)
     sim_result->emit();
-  } else
+    else
     storeExtrapolationData();
 	// Calculate stable discrete state
 	// and initial ZeroCrossings

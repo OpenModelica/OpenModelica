@@ -41,6 +41,7 @@ void read_commented_value( ifstream &f, double *res);
 void read_commented_value( ifstream &f, int *res);
 void read_commented_value(ifstream &f, string *str);
 void read_commented_value(ifstream &f, char **str);
+void read_commented_value(ifstream &f, signed char *str);
 
 
 /* \brief
@@ -87,19 +88,31 @@ void read_commented_value(ifstream &f, char **str);
   read_commented_value(file,outputFormat);
   if (sim_verbose) { cout << "read outputFormat = " << *outputFormat << " from init file." << endl; }
   int nxchk,nychk,npchk;
+  int nyintchk,npintchk;
+  int nyboolchk,npboolchk;
   int nystrchk,npstrchk;
   read_commented_value(file,&nxchk);
   read_commented_value(file,&nychk);
   read_commented_value(file,&npchk);
+  read_commented_value(file,&npintchk);
+  read_commented_value(file,&nyintchk);
+  read_commented_value(file,&npboolchk);
+  read_commented_value(file,&nyboolchk);
   read_commented_value(file,&npstrchk);
   read_commented_value(file,&nystrchk);
 
   if (nxchk != simData->nStates || nychk != simData->nAlgebraic || npchk != simData->nParameters
-  		|| npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic ) {
+  		|| npintchk != simData->intVariables.nParameters || nyintchk != simData->intVariables.nAlgebraic
+  		|| npboolchk != simData->boolVariables.nParameters || nyboolchk != simData->boolVariables.nAlgebraic
+  		|| npstrchk != simData->stringVariables.nParameters || nystrchk != simData->stringVariables.nAlgebraic) {
     cerr << "Error, input data file does not match model." << endl;
     cerr << "nx in initfile: " << nxchk << " from model code :" << simData->nStates << endl;
     cerr << "ny in initfile: " << nychk << " from model code :" << simData->nAlgebraic << endl;
     cerr << "np in initfile: " << npchk << " from model code :" << simData->nParameters << endl;
+    cerr << "npint in initfile: " << npintchk << " from model code: " << simData->intVariables.nParameters << endl;
+    cerr << "nyint in initfile: " << nyintchk << " from model code: " << simData->intVariables.nAlgebraic <<  endl;
+    cerr << "npbool in initfile: " << npboolchk << " from model code: " << simData->boolVariables.nParameters << endl;
+    cerr << "nybool in initfile: " << nyboolchk << " from model code: " << simData->boolVariables.nAlgebraic <<  endl;
     cerr << "npstr in initfile: " << npstrchk << " from model code: " << simData->stringVariables.nParameters << endl;
     cerr << "nystr in initfile: " << nystrchk << " from model code: " << simData->stringVariables.nAlgebraic <<  endl;
     EXIT(-1);
@@ -132,16 +145,49 @@ void read_commented_value(ifstream &f, char **str);
     << simData->parameters[i] << " from init file." << endl;
     }
   }
+
+  for(int i = 0; i < simData->intVariables.nParameters; i++) { // Read parameter values
+    read_commented_value(file,&simData->intVariables.parameters[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&simData->intVariables.parameters[i]) << " = "
+    << simData->intVariables.parameters[i] << " from init file." << endl;
+    }
+  }
+
+  for(int i = 0; i < simData->intVariables.nAlgebraic; i++) { // Read parameter values
+    read_commented_value(file,&simData->intVariables.algebraics[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&simData->intVariables.algebraics[i]) << " = "
+    << simData->intVariables.algebraics[i] << " from init file." << endl;
+    }
+  }
+
+  for(int i = 0; i < simData->boolVariables.nParameters; i++) { // Read parameter values
+    read_commented_value(file,&simData->boolVariables.parameters[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&simData->boolVariables.parameters[i]) << " = "
+    << (bool)simData->boolVariables.parameters[i] << " from init file." << endl;
+    }
+  }
+
+  for(int i = 0; i < simData->boolVariables.nAlgebraic; i++) { // Read parameter values
+    read_commented_value(file,&simData->boolVariables.algebraics[i]);
+    if (sim_verbose) {
+    cout << "read " << getName(&simData->boolVariables.algebraics[i]) << " = "
+    << (bool)simData->boolVariables.algebraics[i] << " from init file." << endl;
+    }
+  }
+
   for(int i=0; i < simData->stringVariables.nParameters; i++) { // Read string parameter values
-    read_commented_value(file,&simData->stringVariables.parameters[i]);
+    read_commented_value(file,&(simData->stringVariables.parameters[i]));
     if (sim_verbose) {
     cout << "read " << getName((double*)&simData->stringVariables.parameters[i]) << " = \"" << simData->stringVariables.parameters[i] << "\" from init file." << endl;
     }
   }
-  for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string parameter values
+  for(int i=0; i < simData->stringVariables.nAlgebraic; i++) { // Read string algebraic values
     read_commented_value(file,&simData->stringVariables.algebraics[i]);
     if (sim_verbose) {
-    cout << "read " <<simData->stringVariables.algebraics[i] << " from init file." << endl;
+    cout << "read " << simData->stringVariables.algebraics[i] << " from init file." << endl;
     }
   }
   file.close();
@@ -150,6 +196,7 @@ void read_commented_value(ifstream &f, char **str);
   }
   delete filename;
 }
+
 inline void read_commented_value(ifstream &f, string *str)
 {
 
@@ -200,6 +247,26 @@ inline void read_commented_value( ifstream &f, double *res)
   }
   else {
     *res = atof(c);
+  }
+}
+
+inline void read_commented_value( ifstream &f, signed char *res)
+{
+  string line;
+//  f >> *res;
+  char c[160];
+  f.getline(c,160);
+  line = c;
+
+  if (line.find("true") != line.npos) {
+	  *res = 1;
+  }
+  else if (line.find("false") != line.npos) {
+	  *res = 0;
+  }
+  else {
+	*res = 0;
+    //*res = atof(c);
   }
 }
 
