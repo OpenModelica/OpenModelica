@@ -664,7 +664,8 @@ RML_BEGIN_LABEL(System__writeFile)
   FILE * file = NULL;
   int len = strlen(data); /* RML_HDRSTRLEN(RML_GETHDR(rmlA1)); */
   int x = 0;
-  file = fopen(filename,"w");
+  /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
+  file = fopen(filename,"wb");
   if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
@@ -3058,7 +3059,6 @@ RML_END_LABEL
  *        new external C function as if you don't understand the
  *        MetaModelica GC and runtime there'll be trouble :)
  */
-
 RML_BEGIN_LABEL(System__stringAppendList)
 {
   /* count the length of elements in the list */
@@ -3095,6 +3095,16 @@ RML_BEGIN_LABEL(System__stringAppendList)
   }
   str->data[len_cur] = '\0';
   rmlA0 = RML_TAGPTR(str);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+/*
+ * adrpo: check if two pointers are equal
+ */
+RML_BEGIN_LABEL(System__refEqual)
+{
+  rmlA0 = (rmlA0 == rmlA1) ? RML_TRUE : RML_FALSE;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

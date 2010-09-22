@@ -283,7 +283,8 @@ RML_BEGIN_LABEL(Print__writeBuf)
   FILE * file = NULL;
   /* check if we have something to write */
   /* open the file */
-  file = fopen(filename,"w");
+  /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
+  file = fopen(filename,"wb");
   if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */

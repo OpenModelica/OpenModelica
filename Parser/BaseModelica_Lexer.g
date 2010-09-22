@@ -254,7 +254,11 @@ CODE_VAR : '$Var';
 STRING : '"' STRING_GUTS '"'
        {
          pANTLR3_STRING text = $STRING_GUTS.text;
-         fixString(text); /* Replace \r\n with \n, but only in Windows */
+         /*
+          * adpro: this is not needed anymore as we
+          *        open the files in binary mode "wb" 
+          *        in System.writeFile and Print.writeBuf
+          * fixString(text); */ /* Replace \r\n with \n, but only in Windows */
          SETTEXT(text);
        };
 
