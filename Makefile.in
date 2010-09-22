@@ -57,8 +57,8 @@ qtclean: qtclean-common
 endif
 
 fix-svn-eol-style:
-	svn propset svn:eol-style LF `find testsuite/ Compiler/ | grep "\.mos\?\$$"`
-	svn propset svn:eol-style LF `find c_runtime/ Compiler/runtime/ | grep "\.[ch]\$$"`
+	svn propset svn:eol-style LF `find testsuite/ Compiler/ libraries/ | grep "\.mos\?\$$"`
+	svn propset svn:eol-style LF `find c_runtime/ Compiler/runtime/ libraries/ | grep "\.[ch]\$$"`
 	svn propset svn:eol-style LF `find -name Makefile`
 	svn propset svn:eol-style LF `find -name Makefile.in`
 
