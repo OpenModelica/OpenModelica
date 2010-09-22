@@ -1,6 +1,6 @@
 CC = gcc
 CFLAGS   := @CFLAGS@
-CPPFLAGS := @CPPFLAGS@ -I..
+CPPFLAGS := @CPPFLAGS@ -I.. -D_POSIX_ -Dstatic=
 OBJS = ModelicaInternal.o ModelicaStrings.o ModelicaTablesImpl.o 
 AR = ar -ru
 
