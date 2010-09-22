@@ -179,21 +179,19 @@ class_type returns [void* ast] :
   )
   ;
 
-class_specifier returns [void* ast, void* name] @declarations {
-  char *s1 = 0;
-  char *s2 = 0;
-} :
-    ( i1=IDENT spec=class_specifier2
+identifier returns [char* str] :
+  (id=IDENT|id=CODE) {str = (char*)$id.text->chars;}
+  ;
+
+class_specifier returns [void* ast, void* name] :
+    ( s1=identifier spec=class_specifier2
       {
-        s1 = (char*)$i1.text->chars;
         modelicaParserAssert($spec.s2 == NULL || !strcmp(s1,$spec.s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $ast = $spec.ast;
         $name = mk_scon(s1);
       }
-    | EXTENDS i1=IDENT (mod=class_modification)? cmt=string_comment comp=composition T_END i2=IDENT
+    | EXTENDS s1=identifier (mod=class_modification)? cmt=string_comment comp=composition T_END s2=identifier
       {
-        s1 = (char*)$i1.text->chars;
-        s2 = (char*)$i2.text->chars;
         modelicaParserAssert(!strcmp(s1,s2), "The identifier at start and end are different", class_specifier, $start->line, $start->charPosition+1, LT(1)->line, LT(1)->charPosition);
         $name = mk_scon(s1);
         $ast = Absyn__CLASS_5fEXTENDS($name, or_nil(mod), mk_some_or_none(cmt), comp);
@@ -205,9 +203,9 @@ class_specifier2 returns [void* ast, const char *s2] @init {
   $s2 = 0;
 } :
 ( 
-  cmt=string_comment c=composition T_END i2=IDENT
+  cmt=string_comment c=composition T_END id=identifier
     {
-      $s2 = (const char*)$i2.text->chars;
+      $s2 = id;
       $ast = Absyn__PARTS(c, mk_some_or_none(cmt));
     }
 | EQUALS attr=base_prefix path=type_specifier ( cm=class_modification )? cmt=comment
