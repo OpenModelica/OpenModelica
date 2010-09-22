@@ -201,8 +201,7 @@ int initialize(const std::string*method)
 
   int startIndPar = 2*globalData->nStates+globalData->nAlgebraic+globalData->intVariables.nAlgebraic+globalData->boolVariables.nAlgebraic+globalData->stringVariables.nAlgebraic;
   int endIndPar = startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters+globalData->stringVariables.nParameters;
-  for (ind=startIndPar;
-       ind<endIndPar; ind++){
+  for (ind=startIndPar;ind<endIndPar; ind++){
     if (globalData->initFixed[ind]==0)
       nz++;
   }
@@ -228,17 +227,34 @@ int initialize(const std::string*method)
   double *z= new double[nz];
   if(z == NULL) {return -1;}
   /* Fill z with the non-fixed variables from x and p*/
-  for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++)
-    {
-      if (globalData->initFixed[indAct++]==0)
-	{
-	  z[indz++] = globalData->states[ind];
-	}
+  for (ind=0, indAct=0, indz=0; ind<globalData->nStates; ind++){
+    if (globalData->initFixed[indAct++]==0)
+      z[indz++] = globalData->states[ind];
   }
-  for (ind=0,indAct=2*globalData->nStates+globalData->nAlgebraic; ind<globalData->nParameters; ind++) {
+  // for real parameters
+  for (ind=0,indAct=startIndPar; ind<globalData->nParameters; ind++) {
     if (globalData->initFixed[indAct++]==0)
       z[indz++] =  globalData->parameters[ind];
   }
+
+  // for int parameters
+  for (ind=0,indAct=startIndPar+globalData->nParameters; ind<globalData->intVariables.nParameters; ind++) {
+    if (globalData->initFixed[indAct++]==0)
+      z[indz++] =  globalData->intVariables.parameters[ind];
+  }
+
+  // for bool parameters
+  for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters; ind<globalData->boolVariables.nParameters; ind++) {
+    if (globalData->initFixed[indAct++]==0)
+      z[indz++] =  globalData->boolVariables.parameters[ind];
+  }
+
+  // for string parameters
+  for (ind=0,indAct=startIndPar+globalData->nParameters+globalData->intVariables.nParameters+globalData->boolVariables.nParameters; ind<globalData->stringVariables.nParameters; ind++) {
+    if (globalData->initFixed[indAct++]==0)
+      z[indz++] =  globalData->stringVariables.parameters[ind];
+  }
+
 
   int retVal=0;
   if (init_method == std::string("simplex")) {
