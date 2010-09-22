@@ -2580,13 +2580,7 @@ algorithm
         
     /* For loop */
     case (cache,env,ih,pre,SCode.ALG_FOR(iterators = forIterators,forBody = sl,info = info),source,initial_,impl,unrollForLoops)
-//      local tuple<DAE.TType, Option<Absyn.Path>> t;
       equation 
-//        (cache,e_1,(prop as DAE.PROP((DAE.T_ARRAY(_,t),_),_)),_) = Static.elabExp(cache, env, e, impl, NONE, true,pre);
-//        (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
-//        env_1 = addForLoopScope(env, i, t, SCode.VAR(),NONE());
-//        (cache,sl_1) = instAlgorithmItems(cache,env_1,ih,pre, sl,initial_,impl);
-//        stmt = Algorithm.makeFor(i, e_2, prop, sl_1);
         (cache,stmts,dae) = instForStatement(cache,env,ih,pre,forIterators,sl,info,source,initial_,impl,unrollForLoops);
       then
         (cache,stmts,dae);

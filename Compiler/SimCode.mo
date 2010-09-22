@@ -2422,7 +2422,7 @@ algorithm
         // section.
         true = Exp.crefEqual(DAELow.varCref(v),varOutput);
         alg = alg[indx + 1];
-        DAE.ALGORITHM_STMTS(algStatements) = alg;
+        DAE.ALGORITHM_STMTS(algStatements) = DAELow.collateAlgorithm(alg, NONE());
       then
         SES_ALGORITHM(algStatements);
 
