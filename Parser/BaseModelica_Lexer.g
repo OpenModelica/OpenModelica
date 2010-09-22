@@ -243,7 +243,7 @@ ML_COMMENT
     ;
 
 fragment 
-NL: (('\r')? '\n');
+NL: '\r\n' | '\n';
 
 /* OpenModelica extensions */
 CODE : 'Code' | '$Code';
@@ -252,14 +252,18 @@ CODE_VAR : '$Var';
 
 
 STRING : '"' STRING_GUTS '"'
-       {SETTEXT($STRING_GUTS.text);};
+       {
+         pANTLR3_STRING text = $STRING_GUTS.text;
+         fixString(text); /* Replace \r\n with \n, but only in Windows */
+         SETTEXT(text);
+       };
 
 fragment
 STRING_GUTS: (SCHAR | SESCAPE)*
        ;
 
 fragment
-SCHAR :  NL | '\t' | ~('\n' | '\t' | '\r' | '\\' | '"');
+SCHAR : NL | ~('\r' | '\n' | '\\' | '"');
 
 fragment
 SESCAPE : esc='\\' ('\\' | '"' | '\'' | '?' | 'a' | 'b' | 'f' | 'n' | 'r' | 't' | 'v' |

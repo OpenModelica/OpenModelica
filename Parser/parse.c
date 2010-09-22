@@ -57,6 +57,18 @@ void Parser_5finit(void)
 {
 }
 
+void fixString(pANTLR3_STRING text)
+{
+  char* c = (char*)text->chars;
+  int i,j,len;
+  for (i=0,j=0, len=text->size; i<len; i++, j++) {
+    if (c[i] == '\r' && c[i+1] == '\n') {
+      i++;
+    }
+    c[j] = c[i];
+  }
+}
+
 void lexNoRecover(pANTLR3_LEXER lexer)
 {
   pANTLR3_INT_STREAM inputStream = NULL;
