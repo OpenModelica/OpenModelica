@@ -42,8 +42,8 @@ double* h_saved = 0;
 double* x_saved = 0;
 double* xd_saved = 0;
 double* y_saved = 0;
-int*   int_saved = 0;
-signed char*  bool_saved = 0;
+modelica_integer*  int_saved = 0;
+modelica_boolean*  bool_saved = 0;
 char** str_saved = 0;
 
 double* gout = 0;
@@ -82,8 +82,8 @@ int initializeEventData() {
   x_saved = new double[globalData->nStates];
   xd_saved = new double[globalData->nStates];
   y_saved = new double[globalData->nAlgebraic];
-  int_saved = new int[globalData->intVariables.nAlgebraic];
-  bool_saved = new signed char[globalData->boolVariables.nAlgebraic];
+  int_saved = new modelica_integer[globalData->intVariables.nAlgebraic];
+  bool_saved = new modelica_boolean[globalData->boolVariables.nAlgebraic];
   str_saved = new char*[globalData->stringVariables.nAlgebraic];
   zeroCrossingEnabled = new long[globalData->nZeroCrossing];
   if (!y_saved || !gout || !h_saved || !x_saved || !xd_saved
@@ -99,8 +99,8 @@ int initializeEventData() {
   memset(x_saved, 0, sizeof(double) * globalData->nStates);
   memset(xd_saved, 0, sizeof(double) * globalData->nStates);
   memset(y_saved, 0, sizeof(double) * globalData->nAlgebraic);
-  memset(int_saved, 0, sizeof(int) * globalData->intVariables.nAlgebraic);
-  memset(bool_saved, 0, sizeof(signed char) * globalData->boolVariables.nAlgebraic);
+  memset(int_saved, 0, sizeof(modelica_integer) * globalData->intVariables.nAlgebraic);
+  memset(bool_saved, 0, sizeof(modelica_boolean) * globalData->boolVariables.nAlgebraic);
   memset(str_saved, 0, sizeof(char*) * globalData->stringVariables.nAlgebraic);
   memset(zeroCrossingEnabled, 0, sizeof(long) * globalData->nZeroCrossing);
   return 0;
@@ -533,8 +533,8 @@ void save(double & var) {
   return;
 }
 
-void save(int & var) {
-  int* pvar = &var;
+void save(modelica_integer & var) {
+  modelica_integer* pvar = &var;
   long ind;
   if (sim_verbose) {
     printf("save %s = %d\n", getName(&var), var);
@@ -547,8 +547,8 @@ void save(int & var) {
   return;
 }
 
-void save(signed char & var) {
-  signed char* pvar = &var;
+void save(modelica_boolean & var) {
+  modelica_boolean* pvar = &var;
   long ind;
   if (sim_verbose) {
     printf("save %s = %o\n", getName(&var), var);
@@ -599,8 +599,8 @@ double pre(double & var) {
   return var;
 }
 
-int pre(int & var) {
-  int* pvar = &var;
+int pre(modelica_integer & var) {
+  modelica_integer* pvar = &var;
   long ind;
 
   ind = long(pvar - globalData->intVariables.algebraics);
@@ -610,8 +610,8 @@ int pre(int & var) {
   return var;
 }
 
-signed char  pre(signed char & var) {
-  signed char * pvar = &var;
+modelica_boolean pre(signed char & var) {
+  modelica_boolean* pvar = &var;
   long ind;
 
   ind = long(pvar - globalData->boolVariables.algebraics);
@@ -638,11 +638,11 @@ bool edge(double& var) {
   return var && !pre(var);
 }
 
-bool edge(int& var) {
+bool edge(modelica_integer& var) {
   return var && !pre(var);
 }
 
-bool edge(signed char& var) {
+bool edge(modelica_boolean& var) {
   return var && !pre(var);
 }
 
@@ -651,7 +651,7 @@ bool change(double& var) {
   return (var != pre(var));
 }
 
-bool change(int& var) {
+bool change(modelica_integer& var) {
   return (var != pre(var));
 }
 
@@ -659,7 +659,7 @@ bool change(char*& var) {
   return (var != pre(var));
 }
 
-bool change(signed char& var) {
+bool change(modelica_boolean& var) {
   /*
    signed char * pvar = &var;
    cout << "varname : " <<  getName(pvar) << endl;

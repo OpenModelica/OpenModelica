@@ -441,7 +441,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     return "";
   }
   
-  const char* getName(int* ptr)
+  const char* getName(modelica_integer* ptr)
   {
     <%vars.intAlgVars |> SIMVAR(__) =>
       'if (&<%cref(name)%> == ptr) return int_alg_names[<%index%>];'
@@ -452,7 +452,7 @@ case MODELINFO(vars=SIMVARS(__)) then
     return "";
   }
   
-  const char* getName(signed char* ptr)
+  const char* getName(modelica_boolean* ptr)
   {
     <%vars.boolAlgVars |> SIMVAR(__) =>
       'if (&<%cref(name)%> == ptr) return bool_alg_names[<%index%>];'

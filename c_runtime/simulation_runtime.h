@@ -252,8 +252,8 @@ void setLocalData(DATA* data);
 
 // defined in model code. Used to get name of variable by investigating its pointer in the state or alg vectors.
 const char* getName(double* ptr);
-const char* getName(int* ptr);
-const char* getName(signed char* ptr);
+const char* getName(modelica_integer* ptr);
+const char* getName(modelica_boolean* ptr);
 
 void storeExtrapolationData();
 

@@ -38,6 +38,8 @@
 #ifndef _SIMULATION_EVENTS_H
 #define _SIMULATION_EVENTS_H
 
+#include "integer_array.h"
+#include "boolean_array.h"
 #include "fortran_types.h"
 
 int initializeEventData();
@@ -55,8 +57,8 @@ void AddEvent(long);
 void saveall();
 
 void save(double & var);
-void save(int & var);
-void save(signed char & var);
+void save(modelica_integer & var);
+void save(modelica_boolean & var);
 void save(char* & var);
 
 double pre(double & var);
@@ -65,12 +67,12 @@ signed char pre(signed char & var);
 char* pre(char* & var);
 
 bool edge(double& var);
-bool edge(int& var);
-bool edge(signed char& var);
+bool edge(modelica_integer& var);
+bool edge(modelica_boolean& var);
 
 bool change(double& var);
-bool change(int& var);
-bool change(signed char& var);
+bool change(modelica_integer& var);
+bool change(modelica_boolean& var);
 bool change(char*& var);
 
 double Sample(double t, double start ,double interval);

@@ -2952,7 +2952,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "}\n",
                                     "\n",
-                                    "const char* getName(int* ptr)\n",
+                                    "const char* getName(modelica_integer* ptr)\n",
                                     "{\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
@@ -2969,7 +2969,7 @@ algorithm
         txt = Tpl.writeTok(txt, Tpl.ST_STRING_LIST({
                                     "}\n",
                                     "\n",
-                                    "const char* getName(signed char* ptr)\n",
+                                    "const char* getName(modelica_boolean* ptr)\n",
                                     "{\n"
                                 }, true));
         txt = Tpl.pushBlock(txt, Tpl.BT_INDENT(2));
