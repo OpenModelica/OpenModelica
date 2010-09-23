@@ -736,13 +736,24 @@ function stringAppendList
   This function will append all the strings in the given-as-input
   list<String> into a new string. It does so by creating the new
   string directly and thus avoiding a lot of stringAppend which
-  can generate a lot of garbage. This functio will pe part of the
+  can generate a lot of garbage. This function will pe part of the
   new MetaModelica/RML release, later on."
   input list<String> listWithStrings;
   output String appendedString;
   
   external "C";
 end stringAppendList;
+
+function refEqual
+"@autor: adrpo
+  This function checks if two MetaModelica references point to the same structure"
+  replaceable type Type_a subtypeof Any;
+  input  Type_a ref1;
+  input  Type_a ref2;
+  output Boolean result;
+  
+  external "C";
+end refEqual;
 
 end System;
 

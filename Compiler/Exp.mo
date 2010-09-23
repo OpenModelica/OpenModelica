@@ -1186,10 +1186,21 @@ algorithm
   end matchcontinue;
 end joinCrefs;
 
-
 public function crefEqual
 "function: crefEqual
-  Returns true if two component references are equal"
+  Returns true if two component references are equal.
+  No string comparison of unparsed crefs is performed!"
+  input ComponentRef inComponentRef1;
+  input ComponentRef inComponentRef2;
+  output Boolean outBoolean;
+algorithm
+  outBoolean := crefEqualStringCompare(inComponentRef1,inComponentRef2);
+end crefEqual;
+
+public function crefEqualStringCompare
+"function: crefEqualStringCompare
+  Returns true if two component references are equal, 
+  comparing strings in no other solution is found"
   input ComponentRef inComponentRef1;
   input ComponentRef inComponentRef2;
   output Boolean outBoolean;
@@ -1199,6 +1210,14 @@ algorithm
       Ident n1,n2,s1,s2;
       list<Subscript> idx1,idx2;
       ComponentRef cr1,cr2;
+      
+    // check for pointer equality first, if they point to the same thing, they are equal
+    case (inComponentRef1,inComponentRef2)
+      equation
+        true = System.refEqual(inComponentRef1,inComponentRef2);
+      then
+        true;
+      
     // simple identifiers
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = {}),DAE.CREF_IDENT(ident = n2,subscriptLst = {}))
       equation
@@ -1245,7 +1264,7 @@ algorithm
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
         true = stringEqual(n1, n2);
-        true = crefEqual(cr1, cr2);
+        true = crefEqualStringCompare(cr1, cr2);
         true = subscriptEqual(idx1, idx2);
       then
         true;
@@ -1291,7 +1310,7 @@ algorithm
     // the crefs are not equal!
      case (_,_) then false;
   end matchcontinue;
-end crefEqual;
+end crefEqualStringCompare;
 
 public function crefEqualNoStringCompare
 "function: crefEqualNoStringCompare
@@ -1308,6 +1327,14 @@ algorithm
       Ident n1,n2,s1,s2;
       list<Subscript> idx1,idx2;
       ComponentRef cr1,cr2;
+
+    // check for pointer equality first, if they point to the same thing, they are equal
+    case (inComponentRef1,inComponentRef2)
+      equation
+        true = System.refEqual(inComponentRef1,inComponentRef2);
+      then
+        true;
+
     // simple identifiers
     case (DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
       equation
@@ -8789,6 +8816,13 @@ algorithm
       Absyn.Path path1,path2;
       list<Exp> expl1,expl2;
       Type tp1,tp2;
+    
+    // check for pointer equality first, if they point to the same thing, they are equal
+    case (inExp1,inExp2)
+      equation
+        true = System.refEqual(inExp1,inExp2);
+      then
+        true;    
     
     // integers
     case (DAE.ICONST(integer = c1),DAE.ICONST(integer = c2)) then (c1 == c2);

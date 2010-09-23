@@ -1151,6 +1151,11 @@ algorithm
       Option<Absyn.ExternalDecl> ext;
       Absyn.TypeSpec typeSpec;
       Mod mod;
+      list<Enum> enumLst;
+      list<Absyn.Path> plst;
+      Absyn.Path path;
+      list<String> slst;
+      
     case (PARTS(elementLst = elts,
                 normalEquationLst = eqns,
                 initialEquationLst = ieqns,
@@ -1185,8 +1190,43 @@ algorithm
         res = Util.stringAppendList({"DERIVED(",s2,",",s3,")"});
       then
         res;
+    case (ENUMERATION(enumLst, _))
+      equation
+        s1 = Util.stringDelimitList(Util.listMap(enumLst, printEnumStr), ", ");
+        res = Util.stringAppendList({"ENUMERATION(", s1, ")"});
+      then
+        res;
+    case (OVERLOAD(plst, _))
+      equation
+        s1 = Util.stringDelimitList(Util.listMap(plst, Absyn.pathString), ", ");
+        res = Util.stringAppendList({"OVERLOAD(", s1, ")"});
+      then
+        res;
+    case (PDER(path, slst, _))
+      equation
+        s1 = Absyn.pathString(path);
+        s2 = Util.stringDelimitList(slst, ", ");
+        res = Util.stringAppendList({"PDER(", s1, ", ", s2, ")"});
+      then
+        res;
+    case (_)
+      equation
+        res = "SCode.printClassdefStr -> UNKNOWN_CLASS(CheckME)";
+      then
+        res;        
   end matchcontinue;
 end printClassdefStr;
+
+public function printEnumStr
+  input Enum en;
+  output String str;
+algorithm
+  str := matchcontinue(en)
+    local
+      String s;
+    case ENUM(s, _) then s;
+  end matchcontinue;
+end printEnumStr;
 
 public function attrVariability
 "function attrVariability

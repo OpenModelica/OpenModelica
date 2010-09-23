@@ -62,14 +62,12 @@ public import HashTableCG;
 public import Util;
 public import Connect;
 
-/* A list of edges
- */
-public type Edges = list<tuple<DAE.ComponentRef,DAE.ComponentRef>>;
-/* A list of edges, each edge associated with two lists of DAE elements
- * (these elements represent equations to be added if the edge
- * is preserved or broken)
- */
-public type DaeEdges = list<tuple<DAE.ComponentRef,DAE.ComponentRef,list<DAE.Element>>>;
+public type Edges = list<tuple<DAE.ComponentRef,DAE.ComponentRef>> "A list of edges";
+
+public type DaeEdges = list<tuple<DAE.ComponentRef,DAE.ComponentRef,list<DAE.Element>>> 
+"A list of edges, each edge associated with two lists of DAE elements
+ (these elements represent equations to be added if the edge
+ is preserved or broken)";
 
 public 
 uniontype ConnectionGraph "Input structure for connection breaking algorithm. It is collected during instantiation phase."
@@ -82,14 +80,9 @@ uniontype ConnectionGraph "Input structure for connection breaking algorithm. It
     end GRAPH;
 end ConnectionGraph;
 
-/*
- * Initial connection graph with no edges in it.
- */
-public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} );
-/*
- * Initial connection graph with updateGraph set to false.
- */
-public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} );
+public constant ConnectionGraph EMPTY = GRAPH( true, {}, {}, {}, {} ) "Initial connection graph with no edges in it.";
+
+public constant ConnectionGraph NOUPDATE_EMPTY = GRAPH( false, {}, {}, {}, {} ) "Initial connection graph with updateGraph set to false.";
 
 public function handleOverconstrainedConnections
 "author: adrpo
@@ -829,10 +822,13 @@ algorithm
       HashTableCG.HashTable partition;
       DAE.ComponentRef ref1, ref2;
 
+    // they are the same
     case(partition,ref1,ref2)
       equation
-        true = Exp.crefEqual(ref1, ref2);
+        true = Exp.crefEqualNoStringCompare(ref1, ref2);
       then (partition, false);
+    
+    // not the same, add it 
     case(partition,ref1,ref2)
       equation
         partition = HashTableCG.add((ref1,ref2), partition);

@@ -57,6 +57,7 @@ bool error_on=true;
   bool haveInfo(false);
   stack<ErrorMessage*> errorMessageQueue; // Global variable of all error messages.
   vector<pair<int,string> > checkPoints; // a checkpoint has a message index no, and a unique identifier
+  string lastDeletedCheckpoint = "";
 
   /* Adds a message without file info. */
   void add_message(int errorID,
@@ -147,6 +148,24 @@ extern "C"
 #include <assert.h>
 #include "rml.h"
 
+  void printCheckpointStack(void)
+  {
+    pair<int,string> cp;
+    std::string res("");
+    printf("Current Stack:\n");
+    for (int i=checkPoints.size()-1; i>=0; i--)
+    {
+      cp = checkPoints[i];
+      printf("%5d %s   message:", i, cp.second.c_str());
+      while(errorMessageQueue.size() > cp.first && errorMessageQueue.size() > 0){
+        res = errorMessageQueue.top()->getMessage()+string(" ")+res;
+        delete errorMessageQueue.top();
+        errorMessageQueue.pop();
+      }
+      printf("%s\n", res.c_str());
+    }
+  }
+
   void setCheckpoint(const char* id)
   {
     checkPoints.push_back(make_pair(errorMessageQueue.size(),string(id)));
@@ -156,19 +175,22 @@ extern "C"
   
   void delCheckpoint(const char* id)
   {
+    pair<int,string> cp;
     //printf("delCheckpoint(%s)\n",id);
     if(checkPoints.size() > 0){
       //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
 
       // extract last checkpoint
-      pair<int,string> cp;
       cp = checkPoints[checkPoints.size()-1];
       if (0 != strcmp(cp.second.c_str(),id)) {
         printf("ERROREXT: deleting checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
             id,
             cp.second.c_str());
+        printCheckpointStack();
         exit(-1);
       }
+      // remember the last deleted checkpoint
+      lastDeletedCheckpoint = cp.second;
       checkPoints.pop_back();
     }
     else{
@@ -203,6 +225,7 @@ extern "C"
         printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
             id,
             cp.second.c_str());
+        printCheckpointStack();
         exit(-1);
       }
       checkPoints.pop_back();
@@ -227,6 +250,7 @@ extern "C"
         printf("ERROREXT: rolling back checkpoint called with id:'%s' but top of checkpoint stack has id:'%s'\n",
             id,
             cp.second.c_str());
+        printCheckpointStack();
         exit(-1);
       }
       checkPoints.pop_back();
@@ -236,6 +260,38 @@ extern "C"
     }
     // fprintf(stderr, "Returning %s\n", res.c_str());
     return mk_scon((char*)res.c_str());
+  }
+
+  /*
+   * @author: adrpo
+   * checks to see if a checkpoint exists or not AS THE TOP of the stack!
+   */
+  void* isTopCheckpoint(const char* id)
+  {
+    pair<int,string> cp;
+    //printf("existsCheckpoint(%s)\n",id);
+    if(checkPoints.size() > 0){
+      //printf(" ERROREXT: searching checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
+
+      // search
+      cp = checkPoints[checkPoints.size()-1];
+      if (0 == strcmp(cp.second.c_str(),id))
+      {
+        // found our checkpoint, return true;
+        return RML_TRUE;
+      }
+    }
+    // not found
+    return RML_FALSE;
+  }
+
+  /*
+   * @author: adrpo
+   * retrieves the last deleted checkpoint
+   */
+  void* getLastDeletedCheckpoint()
+  {
+    return mk_scon(lastDeletedCheckpoint.c_str());
   }
 
   void ErrorExt_5finit(void)
@@ -264,6 +320,20 @@ extern "C"
   RML_BEGIN_LABEL(ErrorExt__rollBack)
   {
     rollBack(RML_STRINGDATA(rmlA0));
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(ErrorExt__isTopCheckpoint)
+  {
+    rmlA0 = isTopCheckpoint(RML_STRINGDATA(rmlA0));
+    RML_TAILCALLK(rmlSC);
+  }
+  RML_END_LABEL
+
+  RML_BEGIN_LABEL(ErrorExt__getLastDeletedCheckpoint)
+  {
+    rmlA0 = getLastDeletedCheckpoint();
     RML_TAILCALLK(rmlSC);
   }
   RML_END_LABEL

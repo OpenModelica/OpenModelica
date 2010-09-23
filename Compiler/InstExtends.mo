@@ -49,6 +49,7 @@ public import Env;
 public import HashTableStringToPath;
 public import InnerOuter;
 public import SCode;
+public import Prefix;
 
 // protected imports
 protected import Builtin;
@@ -58,7 +59,6 @@ protected import Error;
 protected import Inst;
 protected import Lookup;
 protected import Mod;
-protected import Prefix;
 protected import RTOpts;
 protected import Types;
 protected import Util;
@@ -75,6 +75,7 @@ protected function instExtendsList "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input list<SCode.Element> inSCodeElementLst;
   input ClassInf.State inState;
   input String inClassName; // the class name whose elements are getting instantiated.
@@ -91,14 +92,14 @@ protected function instExtendsList "
   output list<SCode.AlgorithmSection> outSCodeAlgorithmLst7;
 algorithm
   (outCache,outEnv1,outIH,outMod2,outTplSCodeElementModLst3,outSCodeEquationLst4,outSCodeEquationLst5,outSCodeAlgorithmLst6,outSCodeAlgorithmLst7):=
-  matchcontinue (inCache,inEnv,inIH,inMod,inSCodeElementLst,inState,inClassName,inBoolean,isPartialInst)
+  matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSCodeElementLst,inState,inClassName,inBoolean,isPartialInst)
     local
       SCode.Class c;
       String cn,s,scope_str,className;
       Boolean encf,impl,notConst;
       SCode.Restriction r;
       list<Env.Frame> cenv,cenv1,cenv3,env2,env,env_1;
-      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod;
+      DAE.Mod outermod,mod_1,mod_2,mods,mods_1,emod_1,emod_2,mod, outerMod, innerMod, mergedMod;
       list<SCode.Element> importelts,els,els_1,rest,cdefelts,extendselts,classextendselts;
       list<SCode.Equation> eq1,ieq1,eq1_1,ieq1_1,eq2,ieq2,eq3,ieq3,eq,ieq,initeq2;
       list<SCode.AlgorithmSection> alg1,ialg1,alg1_1,ialg1_1,alg2,ialg2,alg3,ialg3,alg,ialg;
@@ -113,8 +114,12 @@ algorithm
       HashTableStringToPath.HashTable ht;
       Integer tmp;
       SCode.Variability var;
+      Prefix.Prefix pre;
+      SCode.Mod scodeMod;
+      Boolean finalPrefix;
+      
     /* instantiate a base class */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
       equation
         // adrpo - here we need to check if we don't have recursive extends of the form:
         // package Icons
@@ -141,10 +146,10 @@ algorithm
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (importelts,cdefelts,classextendselts,els_1) = Inst.splitEltsNoComponents(els);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,importelts,impl,NONE);
-        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,cdefelts,impl,NONE);
+        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,importelts,impl,NONE);
+        (cenv3,ih) = Inst.addClassdefsToEnv(cenv3,ih,pre,cdefelts,impl,NONE);
 
-        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,els_1,classextendselts,ci_state,className,impl,isPartialInst)
+        (cache,_,ih,mods,compelts1,eq2,ieq2,alg2,ialg2) = instExtendsAndClassExtendsList2(cache,cenv3,ih,outermod,pre,els_1,classextendselts,ci_state,className,impl,isPartialInst)
         "recurse to fully flatten extends elements env";
 
         ht = getLocalIdentList(compelts1,HashTableStringToPath.emptyHashTable(),getLocalIdentElementTpl);
@@ -159,7 +164,7 @@ algorithm
         (cache,ialg1_1) = fixList(cache,cenv1,ialg1_1,ht,fixAlgorithm);
         //Debug.traceln("fixed local idents " +& intString(tmp));
 
-        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,rest,ci_state,className,impl,isPartialInst)
+        (cache,env2,ih,mods_1,compelts2,eq3,ieq3,alg3,ialg3) = instExtendsList(cache,env,ih,mod,pre,rest,ci_state,className,impl,isPartialInst)
         "continue with next element in list" ;
         /*
         corresponding elements. But emod is Absyn.Mod and can not Must merge(mod,emod)
@@ -186,7 +191,7 @@ algorithm
         (cache,env2,ih,mods_1,compelts3,eq,ieq,alg,ialg);
 
     /* base class was not found */
-    case (cache,env,ih,mod,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,_)
+    case (cache,env,ih,mod,pre,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,_)
       equation
         failure((_,c,cenv) = Lookup.lookupClass(cache,env, tp, false));
         s = Absyn.pathString(tp);
@@ -195,38 +200,52 @@ algorithm
       then
         fail();
 
-    /* Extending a component means copying it. */
-    case (cache,env,ih,mod,(elt as SCode.COMPONENT(component = s, attributes = SCode.ATTR(variability = var))) :: rest,ci_state,className,impl,isPartialInst)
+    /* Extending a component means copying it. 
+    case (cache,env,ih,mod,pre,(elt as SCode.COMPONENT(component = s, attributes = SCode.ATTR(variability = var), modifications = scodeMod, finalPrefix=finalPrefix)) :: rest,ci_state,className,impl,isPartialInst)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
+        instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
+        // make sure you add final to the modifier!
+        scodeMod = Inst.traverseModAddFinal(scodeMod, finalPrefix); 
+        innerMod = Mod.elabUntypedMod(scodeMod, env_1, Prefix.NOPRE());
+        // Filter out non-constants if partial inst
+        notConst = not SCode.isConstant(var);
+        compelts2 = Util.if_(notConst and isPartialInst,compelts2,(elt,innerMod,false)::compelts2);
+      then
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);*/
+
+    /* Extending a component means copying it. It might fail above, try again*/
+    case (cache,env,ih,mod,pre,(elt as SCode.COMPONENT(component = s, attributes = SCode.ATTR(variability = var), modifications = scodeMod, finalPrefix=finalPrefix)) :: rest,ci_state,className,impl,isPartialInst)
+      equation
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
+        instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
         /* Filter out non-constants if partial inst */
         notConst = not SCode.isConstant(var);
         compelts2 = Util.if_(notConst and isPartialInst,compelts2,(elt,DAE.NOMOD(),false)::compelts2);
       then
-        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);
+        (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2);        
 
     /* Classdefs */
-    case (cache,env,ih,mod,(elt as SCode.CLASSDEF(name = cn)) :: rest,ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(elt as SCode.CLASSDEF(name = cn)) :: rest,ci_state,className,impl,isPartialInst)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
+        instExtendsList(cache, env, ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
       then
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
     /* instantiate elements that are not extends */
-    case (cache,env,ih,mod,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,isPartialInst)
+    case (cache,env,ih,mod,pre,(elt as SCode.IMPORT(imp = _)) :: rest,ci_state,className,impl,isPartialInst)
       equation
         (cache,env_1,ih,mods,compelts2,eq2,initeq2,alg2,ialg2) =
-        instExtendsList(cache,env,ih, mod, rest, ci_state, className, impl, isPartialInst);
+        instExtendsList(cache,env,ih, mod, pre, rest, ci_state, className, impl, isPartialInst);
       then
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
     /* no further elements to instantiate */
-    case (cache,env,ih,mod,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
+    case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
 
     /* instantiation failed */
-    case (_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprint("failtrace", "- Inst.instExtendsList failed\n");
       then
@@ -243,6 +262,7 @@ public function instExtendsAndClassExtendsList "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
   input ClassInf.State inState;
@@ -264,14 +284,14 @@ protected
 algorithm
   //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName);
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLstTpl3,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
+  instExtendsAndClassExtendsList2(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inClassExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   // Filter out the last boolean in the tuple
   outTplSCodeElementModLst := Util.listMap(outTplSCodeElementModLstTpl3, Util.tuple312);
   // Create a list of the class definitions, since these can't be properly added in the recursive call 
   tmpelts := Util.listMap(outTplSCodeElementModLst,Util.tuple21);
   (_,cdefelts,_,_) := Inst.splitEltsNoComponents(tmpelts);
   // Add the class definitions to the environment
-  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,cdefelts,inImpl,NONE);
+  (outEnv,outIH) := Inst.addClassdefsToEnv(outEnv,outIH,inPrefix,cdefelts,inImpl,NONE);
   //Debug.fprintln("debug","instExtendsAndClassExtendsList: " +& inClassName +& " done");
 end instExtendsAndClassExtendsList;
 
@@ -284,6 +304,7 @@ protected function instExtendsAndClassExtendsList2 "
   input Env.Env inEnv;
   input InstanceHierarchy inIH;
   input DAE.Mod inMod;
+  input Prefix.Prefix inPrefix;
   input list<SCode.Element> inExtendsElementLst;
   input list<SCode.Element> inClassExtendsElementLst;
   input ClassInf.State inState;
@@ -301,7 +322,7 @@ protected function instExtendsAndClassExtendsList2 "
   output list<SCode.AlgorithmSection> outSCodeInitialAlgorithmLst;
 algorithm
   (outCache,outEnv,outIH,outMod,outTplSCodeElementModLst,outSCodeNormalEquationLst,outSCodeInitialEquationLst,outSCodeNormalAlgorithmLst,outSCodeInitialAlgorithmLst):=
-  instExtendsList(inCache,inEnv,inIH,inMod,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
+  instExtendsList(inCache,inEnv,inIH,inMod,inPrefix,inExtendsElementLst,inState,inClassName,inImpl,isPartialInst);
   (outMod,outTplSCodeElementModLst):=instClassExtendsList(outMod,inClassExtendsElementLst,outTplSCodeElementModLst);
 end instExtendsAndClassExtendsList2;
 
@@ -538,7 +559,8 @@ algorithm (outTplSCodeElementModLst,restMod) := matchcontinue (inTplSCodeElement
       list<Env.Frame> env;
       Boolean b;
   case ({},mod,_) then ({},mod);
-    case ((((comp as SCode.COMPONENT(component = id)),cmod,b) :: xs),mod,env)
+  
+  case ((((comp as SCode.COMPONENT(component = id)),cmod,b) :: xs),mod,env)
       equation
         // Debug.traceln(" comp: " +& id +& " " +& Mod.printModStr(mod));
         cmod2 = Mod.lookupCompModification(mod, id);

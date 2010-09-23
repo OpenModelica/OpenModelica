@@ -140,11 +140,29 @@ end printErrorsNoWarning;
 
 public function rollBack "rolls back error messages until the latest checkpoint, 
 deleting all error messages added since that point in time. A unique identifier for the checkpoint must be provided
-The application will exit with return code -1 if this identifier does not match.
-"
+The application will exit with return code -1 if this identifier does not match."
   input String id "unique identifier";
   external "C" ;
 end rollBack;
+
+public function isTopCheckpoint 
+"@author: adrpo
+  This function checks if the specified checkpoint exists AT THE TOP OF THE STACK!.
+  You can use it to rollBack/delete a checkpoint, but you're
+  not sure that it exists (due to MetaModelica backtracking)."
+  input String id "unique identifier";
+  output Boolean isThere "tells us if the checkpoint exists (true) or doesn't (false)";
+  external "C" ;
+end isTopCheckpoint;
+
+public function getLastDeletedCheckpoint 
+"@author: adrpo
+  This function returns the last deleted checkpoint id.
+  Is needed to see if the previous phase generated some
+  error messages or not"
+  output String lastCheckpoint ;
+  external "C" ;
+end getLastDeletedCheckpoint;
 
 end ErrorExt;
 
