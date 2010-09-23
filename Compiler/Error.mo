@@ -220,6 +220,7 @@ public constant ErrorID IF_EQUATION_UNBALANCED_2=132;
 public constant ErrorID EQUATION_GENERIC_FAILURE=133;
 public constant ErrorID INST_PARTIAL_CLASS_CHECK_MODEL_WARNING=134; // adrpo: legal to instantiate a partial class when we run checkModel
 public constant ErrorID VARIABLE_BINDING_TYPE_MISMATCH=135;
+public constant ErrorID COMPONENT_NAME_SAME_AS_TYPE_NAME=136;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -572,7 +573,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_POLYMORPHIC, TRANSLATION(),ERROR(), " %s uses invalid subtypeof syntax. Only subtypeof Any is supported."),
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring%s"),
-          (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s")
+          (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s"),
+          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s . This is forbidden by Modelica specifications and may lead to lookup error")
           
           };
 

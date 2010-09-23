@@ -5606,6 +5606,17 @@ algorithm
       then
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
 
+    // Check if component's name is the same as its type's name
+    case (cache,env,ih,store,mods,pre,csets,ci_state,
+          ((comp as SCode.COMPONENT(component = n,typeSpec = ( ts as Absyn.TPATH(t, _)))),cmod),  inst_dims,impl,graph)
+      equation
+        true = stringEqual(n, Absyn.pathLastIdent(t));
+        ns = Absyn.pathString(t);
+        Error.addMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns});
+      then
+        fail();
+
+
     // A component
     // This is the rule for instantiating a model component.  A component can be 
     // a structured subcomponent or a variable, parameter or constant.  All of these 
@@ -5627,6 +5638,7 @@ algorithm
       equation
         //print("  instElement: A component: " +& n +& "\n");
         //Debug.fprintln("debug"," instElement " +& n +& " in s:" +& Env.printEnvPathStr(env) +& " m: " +& SCode.printModStr(m) +& " cm : " +& Mod.printModStr(cmod));
+        //false = stringEqual(n, Absyn.pathLastIdent(t));
         m = traverseModAddFinal(m, finalPrefix);
         comp = SCode.COMPONENT(n,io,finalPrefix,repl,prot,attr,ts,m,comment,cond,aInfo,cc);
         // Fails if multiple decls not identical
@@ -5870,6 +5882,7 @@ algorithm
                            attributes=SCode.ATTR(variability=vt),typeSpec = Absyn.TPATH(t,_),cc=cc),_),_,_,_)
       local Absyn.ComponentRef tref; SCode.Variability vt;
       equation
+        //false = stringEqual(n, Absyn.pathLastIdent(t));
         failure((_,cl,cenv) = Lookup.lookupClass(cache,env, t, false));
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
