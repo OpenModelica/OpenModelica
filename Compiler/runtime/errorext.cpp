@@ -291,7 +291,7 @@ extern "C"
    */
   void* getLastDeletedCheckpoint()
   {
-    return mk_scon(lastDeletedCheckpoint.c_str());
+    return mk_scon((char*) lastDeletedCheckpoint.c_str());
   }
 
   void ErrorExt_5finit(void)
