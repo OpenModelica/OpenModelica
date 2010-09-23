@@ -45,6 +45,8 @@
 #include "simulation_delay.h"
 #include "simulation_result.h"
 #include "simulation_inline_solver.h"
+#include "integer_array.h"
+#include "boolean_array.h"
 
 #include <stdlib.h>
 #include <fstream>
@@ -116,22 +118,22 @@ typedef struct sim_DATA_STRING {
 } DATA_STRING;
 
 typedef struct sim_DATA_INT {
-  int* algebraics; //y ALGVARS
-  int* parameters; //p; PARAMETERS
-  int* inputVars; //in_y INPUTVARS
-  int* outputVars; //out_y OUTPUTVARS
-  int*	old_algebraics, *old_algebraics2;
+  modelica_integer* algebraics; //y ALGVARS
+  modelica_integer* parameters; //p; PARAMETERS
+  modelica_integer* inputVars; //in_y INPUTVARS
+  modelica_integer* outputVars; //out_y OUTPUTVARS
+  modelica_integer*	old_algebraics, *old_algebraics2;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;
 } DATA_INT;
 
 typedef struct sim_DATA_BOOL {
-  signed char* algebraics; //y ALGVARS
-  signed char* parameters; //p; PARAMETERS
-  signed char* inputVars; //in_y INPUTVARS
-  signed char* outputVars; //out_y OUTPUTVARS
-  signed char*	old_algebraics, *old_algebraics2;
+  modelica_boolean* algebraics; //y ALGVARS
+  modelica_boolean* parameters; //p; PARAMETERS
+  modelica_boolean* inputVars; //in_y INPUTVARS
+  modelica_boolean* outputVars; //out_y OUTPUTVARS
+  modelica_boolean*	old_algebraics, *old_algebraics2;
 
   long nAlgebraic,nParameters;
   long nInputVars,nOutputVars;

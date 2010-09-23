@@ -590,13 +590,13 @@ template functionInitializeDataStruc()
     }
     
     if (flags & ALGEBRAICS && returnData->intVariables.nAlgebraic) {
-      returnData->intVariables.algebraics = (int*)malloc(sizeof(int)*returnData->intVariables.nAlgebraic);
-      returnData->intVariables.old_algebraics = (int*)malloc(sizeof(int)*returnData->intVariables.nAlgebraic);
-      returnData->intVariables.old_algebraics2 = (int*)malloc(sizeof(int)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.old_algebraics = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      returnData->intVariables.old_algebraics2 = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
       assert(returnData->intVariables.algebraics&&returnData->intVariables.old_algebraics&&returnData->intVariables.old_algebraics2);
-      memset(returnData->intVariables.algebraics,0,sizeof(int)*returnData->intVariables.nAlgebraic);
-      memset(returnData->intVariables.old_algebraics,0,sizeof(int)*returnData->intVariables.nAlgebraic);
-      memset(returnData->intVariables.old_algebraics2,0,sizeof(int)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.old_algebraics,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
+      memset(returnData->intVariables.old_algebraics2,0,sizeof(modelica_integer)*returnData->intVariables.nAlgebraic);
     } else {
       returnData->intVariables.algebraics=0;
       returnData->intVariables.old_algebraics = 0;
@@ -604,13 +604,13 @@ template functionInitializeDataStruc()
     }
 
     if (flags & ALGEBRAICS && returnData->boolVariables.nAlgebraic) {
-      returnData->boolVariables.algebraics = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nAlgebraic);
-      returnData->boolVariables.old_algebraics = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nAlgebraic);
-      returnData->boolVariables.old_algebraics2 = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.algebraics = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.old_algebraics = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      returnData->boolVariables.old_algebraics2 = (signed char*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
       assert(returnData->boolVariables.algebraics&&returnData->boolVariables.old_algebraics&&returnData->boolVariables.old_algebraics2);
-      memset(returnData->boolVariables.algebraics,0,sizeof(signed char)*returnData->boolVariables.nAlgebraic);
-      memset(returnData->boolVariables.old_algebraics,0,sizeof(signed char)*returnData->boolVariables.nAlgebraic);
-      memset(returnData->boolVariables.old_algebraics2,0,sizeof(signed char)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.old_algebraics,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
+      memset(returnData->boolVariables.old_algebraics2,0,sizeof(modelica_boolean)*returnData->boolVariables.nAlgebraic);
     } else {
       returnData->boolVariables.algebraics=0;
       returnData->boolVariables.old_algebraics = 0;
@@ -634,17 +634,17 @@ template functionInitializeDataStruc()
     }
     
     if (flags & PARAMETERS && returnData->intVariables.nParameters) {
-    	returnData->intVariables.parameters = (int*)malloc(sizeof(int)*returnData->intVariables.nParameters);
+    	returnData->intVariables.parameters = (modelica_integer*)malloc(sizeof(modelica_integer)*returnData->intVariables.nParameters);
         assert(returnData->intVariables.parameters);
-        memset(returnData->intVariables.parameters,0,sizeof(int)*returnData->intVariables.nParameters);
+        memset(returnData->intVariables.parameters,0,sizeof(modelica_integer)*returnData->intVariables.nParameters);
     } else {
         returnData->intVariables.parameters=0;
     }
     
     if (flags & PARAMETERS && returnData->boolVariables.nParameters) {
-    	returnData->boolVariables.parameters = (signed char*)malloc(sizeof(signed char)*returnData->boolVariables.nParameters);
+    	returnData->boolVariables.parameters = (modelica_boolean*)malloc(sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
         assert(returnData->boolVariables.parameters);
-        memset(returnData->boolVariables.parameters,0,sizeof(signed char)*returnData->boolVariables.nParameters);
+        memset(returnData->boolVariables.parameters,0,sizeof(modelica_boolean)*returnData->boolVariables.nParameters);
     } else {
         returnData->boolVariables.parameters=0;
     }
