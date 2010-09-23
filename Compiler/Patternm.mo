@@ -262,7 +262,8 @@ algorithm
       RightHandList localRhListIn,localRhLightList,var2,var3;
       Option<RightHandSide> var5;
       Integer localCaseNum;
-    case ({},localRhListIn,localRhLightList,localPatListIn,_,localCache,_) equation then (localCache,localRhListIn,localRhLightList,localPatListIn,NONE());
+    case ({},localRhListIn,localRhLightList,localPatListIn,_,localCache,_)
+      equation then (localCache,localRhListIn,localRhLightList,localPatListIn,NONE());
     case (Absyn.CASE(localPat,localDecl,localEq,localRes,_) :: rest,
       localRhListIn,localRhLightList,localPatListIn,localCaseNum,localCache,localEnv)
       equation
@@ -828,7 +829,7 @@ algorithm
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
         patMat2 = Util.listlistTranspose(patMat2);
-        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,localCache,localEnv);
+        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,elseRhSide,localCache,localEnv);
       then (localCache, expr);
     /*
 
