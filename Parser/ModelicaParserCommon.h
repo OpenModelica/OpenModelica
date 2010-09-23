@@ -49,12 +49,6 @@ extern const char *ModelicaParser_filename_C;
 #define metamodelica_enabled() (ModelicaParser_flags&PARSE_META_MODELICA)
 #define code_expressions_enabled() (ModelicaParser_flags&PARSE_CODE_EXPRESSION)
 #define flat_modelica_enabled() (ModelicaParser_flags&PARSE_FLAT)
-#if defined(__MINGW32__) || defined(_MSC_VER)
-  void fixStringWin32(pANTLR3_STRING text);
-  #define fixString(text) fixStringWin32(text)
-#else
-  #define fixString(text)
-#endif
 
 #ifdef __cplusplus
 }
