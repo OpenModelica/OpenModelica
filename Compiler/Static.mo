@@ -796,21 +796,49 @@ algorithm
       Env.Cache localCache;
       Env.Env localEnv;
       Prefix pre;
-    case ({},localAccList,localCache,localEnv,_) equation then (localCache,localAccList);
+      Option<Absyn.Comment> comment;
+      Absyn.Info info;
+      Absyn.Equation first;
+      list<Absyn.EquationItem> rest;
+      Absyn.AlgorithmItem alg;
+    case ({},localAccList,localCache,localEnv,_) then (localCache,listReverse(localAccList));
     case (Absyn.EQUATIONITEM(equation_ = first, comment = comment, info = info) :: rest,localAccList,localCache,localEnv,pre)
-      local
-        Option<Absyn.Comment> comment;
-        Absyn.Info info;
-        Absyn.Equation first;
-        list<Absyn.EquationItem> rest;
-        list<Absyn.AlgorithmItem> firstAlg,restAlgs;
       equation
-        (localCache,firstAlg) = fromEquationToAlgAssignment(first,comment,info,localCache,localEnv,pre);
-        localAccList = listAppend(localAccList,firstAlg);
-        (localCache,restAlgs) = fromEquationsToAlgAssignments(rest,localAccList,localCache,localEnv,pre);
-      then (localCache,restAlgs);
+        (localCache,alg) = fromEquationToAlgAssignment(first,comment,info,localCache,localEnv,pre);
+        (localCache,localAccList) = fromEquationsToAlgAssignments(rest,alg::localAccList,localCache,localEnv,pre);
+      then (localCache,localAccList);
   end matchcontinue;
 end fromEquationsToAlgAssignments;
+
+protected function fromEquationBranchesToAlgBranches
+"Converts equations to algorithm assignments."
+  input list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> eqsIn;
+  input list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> accList;
+  input Env.Cache cache;
+  input Env.Env env;
+  input Prefix inPrefix;
+  output Env.Cache outCache;
+  output list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algsOut;
+algorithm
+  (outCache,algOut) :=
+  matchcontinue (eqsIn,accList,cache,env,inPrefix)
+    local
+      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> localAccList;
+      list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> rest;
+      Env.Cache localCache;
+      Env.Env localEnv;
+      Prefix pre;
+      Absyn.Exp e;
+      list<Absyn.AlgorithmItem> algs;
+      list<Absyn.EquationItem> eqs;
+    case ({},localAccList,localCache,localEnv,_) then (localCache,listReverse(localAccList));
+    case ((e,eqs)::rest,localAccList,localCache,localEnv,pre)
+      equation
+        (localCache,algs) = fromEquationsToAlgAssignments(eqs,{},localCache,localEnv,pre);
+        (localCache,localAccList) = fromEquationBranchesToAlgBranches(rest,(e,algs)::localAccList,localCache,localEnv,pre);
+      then (localCache,localAccList);
+  end matchcontinue;
+end fromEquationBranchesToAlgBranches;
 
 protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssignment"
   input Absyn.Equation eq;
@@ -820,18 +848,35 @@ protected function fromEquationToAlgAssignment "function: fromEquationToAlgAssig
   input Env.Env env;
   input Prefix inPrefix;
   output Env.Cache outCache;
-  output list<Absyn.AlgorithmItem> algStatement;
+  output Absyn.AlgorithmItem algStatement;
 algorithm
   (outCache,algStatement) := matchcontinue (eq,comment,info,cache,env,inPrefix)
     local
       Env.Cache localCache;
       Env.Env localEnv;
       Prefix pre;
+      String str;
+      Absyn.Exp left,right,lhsExp,rhsExp,matchExp,e;
+      Absyn.AlgorithmItem algItem,algItem1,algItem2;
+      Absyn.Equation eq2;
+      Option<Absyn.Comment> comment2;
+      Absyn.Info info2;
+      Absyn.AlgorithmItem brk,try,catchBreak,res,throw;
+      Absyn.ComponentRef cref,cRef;
+      Absyn.FunctionArgs fargs;
+      list<Absyn.Exp> expL,varList;
+      Absyn.Path p;
+      SCode.Element cl;
+      SCode.Class class_, cl1;
+      list<Absyn.ElementItem> elemList;
+      DAE.Type ty, resType;
+      DAE.Properties prop;
+      list<Absyn.AlgorithmItem> algTrueItems, algElseItems;
+      list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algBranches;
+      list<Absyn.EquationItem> eqTrueItems, eqElseItems;
+      list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> eqBranches;
 
     case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),comment,info,localCache,_,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem1,algItem2;
       equation
         /*
         An equation such as ...
@@ -843,54 +888,39 @@ algorithm
         if (exp != true)
         	throw();
         	*/
-        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info)};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),algItem1,{},{}),comment,info)};
+        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),{algItem1},{},{}),comment,info);
       then (localCache,algItem2);
 
     case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),comment,info,localCache,_,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem1,algItem2;
       equation
-        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info)};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,algItem1,{},{}),comment,info)};
+        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,{algItem1},{},{}),comment,info);
       then (localCache,algItem2);
 
       // The syntax n>=0 = true; is also used
     case (Absyn.EQ_EQUALS(left,Absyn.BOOL(true)),comment,info,localCache,_,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem1,algItem2;
       equation
         failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
-        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info)};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),left),algItem1,{},{}),comment,info)};
+        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),left),{algItem1},{},{}),comment,info);
       then (localCache,algItem2);
 
     case (Absyn.EQ_EQUALS(left,Absyn.BOOL(false)),comment,info,localCache,_,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem1,algItem2;
       equation
         failure(Absyn.CREF(_) = left); // If lhs is a CREF, it should be an assignment
-        algItem1 = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info)};
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_IF(left,algItem1,{},{}),comment,info)};
+        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
+        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(left,{algItem1},{},{}),comment,info);
       then (localCache,algItem2);
 
     case (Absyn.EQ_NORETCALL(Absyn.CREF_IDENT("fail",_),_),comment,info,localCache,_,_)
-      local
-        list<Absyn.AlgorithmItem> algItem;
       equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info)};
+        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
       then (localCache,algItem);
 
     case (Absyn.EQ_NORETCALL(cref,fargs),comment,info,localCache,_,_)
-      local
-        list<Absyn.AlgorithmItem> algItem;
-        Absyn.ComponentRef cref;
-        Absyn.FunctionArgs fargs;
       equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cref,fargs),comment,info)};
+        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cref,fargs),comment,info);
       then (localCache,algItem);
 
       /*
@@ -899,20 +929,6 @@ algorithm
       since the expressions should be "matched" against the return
       values of the function */
     case (Absyn.EQ_EQUALS(e,rhsExp),comment,info,localCache,localEnv,pre)
-      local
-        list<Absyn.Exp> expL,varList;
-        Absyn.Exp rhsExp,matchExp,e;
-        Absyn.ComponentRef cRef;
-        Absyn.Path p;
-        list<Absyn.AlgorithmItem> algItem,algItem2;
-        SCode.Element cl;
-        SCode.Class class_;
-        list<Absyn.ElementItem> elemList;
-        SCode.Class cl1;
-        Absyn.Exp lhsExp;
-        DAE.Type ty, resType;
-        DAE.Properties prop;
-        Prefix pre;
       equation
         // If we have a statement such as: ((a,b)) = func(...); this
         // is not the same as (a,b) = func(...);
@@ -945,41 +961,41 @@ algorithm
 
         lhsExp = createLhsExp(varList);
 
-        algItem2 = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,rhsExp),comment,info),
-          Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),comment,info)};
-
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),
-          Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(algItem2),Absyn.BOOL(true))),comment,info)};
+        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),
+          Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(
+            {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,rhsExp),comment,info),
+            Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),comment,info)}
+          ),Absyn.BOOL(true))),comment,info);
 
       then (localCache,algItem);
-      /*---------------------------------------*/
 
     case (Absyn.EQ_EQUALS(left,right),comment,info,localCache,_,_)
-      local
-        Absyn.Exp left,right;
-        list<Absyn.AlgorithmItem> algItem;
       equation
-        algItem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),comment,info)};
+        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),comment,info);
       then (localCache,algItem);
 
     case (Absyn.EQ_FAILURE(Absyn.EQUATIONITEM(eq2,comment2,info2)),comment,info,cache,env,pre)
-      local
-        Absyn.Equation eq2;
-        Option<Absyn.Comment> comment2;
-        Absyn.Info info2;
-        Absyn.AlgorithmItem brk,try,catchBreak,res,throw;
-        list<Absyn.AlgorithmItem> algItem;
       equation
         (cache,algItem) = fromEquationToAlgAssignment(eq2,comment2,info2,cache,env,pre);
-        try = Absyn.ALGORITHMITEM(Absyn.ALG_TRY(algItem),comment,info);
+        try = Absyn.ALGORITHMITEM(Absyn.ALG_TRY({algItem}),comment,info);
         brk = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK(),comment,info);
         throw = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
         catchBreak = Absyn.ALGORITHMITEM(Absyn.ALG_CATCH({brk}),comment,info);
         res = Absyn.ALGORITHMITEM(Absyn.ALG_WHILE(Absyn.BOOL(true), {try,catchBreak,throw}),comment,info);
-      then (cache,{res});
-    case (_,_,_,_,_,_)
+      then (cache,res);
+    
+    case (Absyn.EQ_IF(ifExp = e, equationTrueItems = eqTrueItems, elseIfBranches = eqBranches, equationElseItems = eqElseItems),comment,info,cache,env,pre)
       equation
-        Debug.fprintln("failtrace", "- Static.fromEquationToAlgAssignment failed");
+        (cache,algTrueItems) = fromEquationsToAlgAssignments(eqTrueItems,{},cache,env,pre);
+        (cache,algElseItems) = fromEquationsToAlgAssignments(eqElseItems,{},cache,env,pre);
+        (cache,algBranches) = fromEquationBranchesToAlgBranches(eqBranches,{},cache,env,pre);
+        res = Absyn.ALGORITHMITEM(Absyn.ALG_IF(e, algTrueItems, algBranches, algElseItems),comment,info);
+      then (cache,res);
+    
+    case (eq,_,info,_,_,_)
+      equation
+        str = Dump.equationName(eq);
+        Error.addSourceMessage(Error.META_MATCH_EQUATION_FORBIDDEN, {str}, info);
       then fail();
   end matchcontinue;
 end fromEquationToAlgAssignment;

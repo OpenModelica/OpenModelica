@@ -2428,6 +2428,20 @@ algorithm
   end matchcontinue;
 end unparseMod2Str;
 
+public function equationName
+  input Absyn.Equation eq;
+  output String name;
+algorithm
+  name := matchcontinue eq
+    case Absyn.EQ_IF(ifExp = _) then "if";
+    case Absyn.EQ_EQUALS(leftSide = _) then "equals";
+    case Absyn.EQ_CONNECT(connector1 = _) then "connect";
+    case Absyn.EQ_WHEN_E(whenExp = _) then "when";
+    case Absyn.EQ_NORETCALL(functionName = _) then "function call";
+    case Absyn.EQ_FAILURE(equ = _) then "failure";
+  end matchcontinue;
+end equationName;
+
 public function printEquation "Equations
   function: printEquation
 

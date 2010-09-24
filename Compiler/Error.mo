@@ -255,6 +255,7 @@ public constant ErrorID INTERACTIVE_ASSIGN=5000;
 public constant ErrorID MATCH_SHADOWING=5001;
 public constant ErrorID META_POLYMORPHIC=5002;
 public constant ErrorID META_FUNCTION_TYPE_NO_PARTIAL_PREFIX=5003;
+public constant ErrorID META_MATCH_EQUATION_FORBIDDEN=5004;
 
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -574,7 +575,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring%s"),
           (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s"),
-          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s . This is forbidden by Modelica specifications and may lead to lookup error")
+          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s . This is forbidden by Modelica specifications and may lead to lookup error"),
+          (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations.")
           
           };
 
