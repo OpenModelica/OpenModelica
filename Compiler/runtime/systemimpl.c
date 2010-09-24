@@ -659,13 +659,18 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(System__writeFile)
 {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
+#else
+  char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
+#endif
   char* data = RML_STRINGDATA(rmlA1);
   char* filename = RML_STRINGDATA(rmlA0);
   FILE * file = NULL;
   int len = strlen(data); /* RML_HDRSTRLEN(RML_GETHDR(rmlA1)); */
   int x = 0;
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
-  file = fopen(filename,"wb");
+  file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */

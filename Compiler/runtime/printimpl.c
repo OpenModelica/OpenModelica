@@ -279,12 +279,17 @@ RML_END_LABEL
 
 RML_BEGIN_LABEL(Print__writeBuf)
 {
+#if defined(__MINGW32__) || defined(_MSC_VER)
+  char *fileOpenMode = "wt"; /* on Windows do translation so that \n becomes \r\n */
+#else
+  char *fileOpenMode = "wb";  /* on Unixes don't bother, do it binary mode */
+#endif
   char * filename = RML_STRINGDATA(rmlA0);
   FILE * file = NULL;
   /* check if we have something to write */
   /* open the file */
   /* adrpo: 2010-09-22 open the file in BINARY mode as otherwise \r\n becomes \r\r\n! */
-  file = fopen(filename,"wb");
+  file = fopen(filename,fileOpenMode);
   if (file == NULL) {
     char *c_tokens[1]={filename};
     c_add_message(21, /* WRITING_FILE_ERROR */
