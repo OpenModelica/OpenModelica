@@ -4418,7 +4418,7 @@ algorithm
     case(lst,{},_) then lst;
     case(head::tail,x::xs,pos)
       equation
-        equality(x=pos);
+        true = intEq(x, pos); // equality(x=pos);
         res = filterList(tail,xs,pos+1);
       then
         res;
