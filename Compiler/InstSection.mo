@@ -671,8 +671,7 @@ algorithm
     // Implicit range
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph)  
       equation 
-        lst=SCode.findIteratorInEEquationLst(i,el);
-        equality(lst={});
+        (lst as {}) = SCode.findIteratorInEEquationLst(i,el);
         Error.addMessage(Error.IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,{i});        
       then
         fail();
@@ -680,8 +679,7 @@ algorithm
      // for i loop ... end for; NOTE: This construct is encoded as range being Absyn.END()
     case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_FOR(index = i,range = Absyn.END(),eEquationLst = el),initial_,impl,graph) 
       equation 
-        lst=SCode.findIteratorInEEquationLst(i,el);
-        failure(equality(lst={}));
+        (lst as _::_)=SCode.findIteratorInEEquationLst(i,el);
         tpl=Util.listFirst(lst);
         e=rangeExpression(tpl);
         (cache,e_1,DAE.PROP(type_ = (DAE.T_ARRAY(arrayType = id_t),_), constFlag = cnst),_,fdae1) = 
