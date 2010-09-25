@@ -9051,7 +9051,7 @@ algorithm
       DAE.Dimension de;
     case (DAE.DIM_INTEGER(integer = xI), DAE.DIM_INTEGER(integer = yI)) 
       equation 
-        equality(xI = yI); 
+        true = intEq(xI, yI); // equality(xI = yI); 
       then 
         inDimension1;
     case (DAE.DIM_UNKNOWN, de) then de;
