@@ -94,6 +94,42 @@ intMin_rettype intMin(modelica_integer i1, modelica_integer i2)
   return i1 < i2 ? i1 : i2;
 }
 
+modelica_metatype boxptr_intAdd(modelica_metatype i1, modelica_metatype i2)
+{
+  return (void*) ((long)i1+(long)i2);
+}
+
+modelica_metatype boxptr_intSub(modelica_metatype i1, modelica_metatype i2)
+{
+  return (void*) ((long)i1-(long)i2);
+}
+
+modelica_metatype boxptr_intMul(modelica_metatype i1, modelica_metatype i2)
+{
+  // Unbox first to avoid overflow
+  return mmc_mk_icon(mmc__unbox__integer(i1)*mmc__unbox__integer(i2));
+}
+
+modelica_metatype boxptr_intDiv(modelica_metatype i1, modelica_metatype i2)
+{
+  return mmc_mk_icon((long)i1/(long)i2);
+}
+
+modelica_metatype boxptr_intMod(modelica_metatype i1, modelica_metatype i2)
+{
+  return (void*) ((long)i1%(long)i2);
+}
+
+modelica_metatype boxptr_intMax(modelica_metatype i1, modelica_metatype i2)
+{
+  return i1 > i2 ? i1 : i2;
+}
+
+modelica_metatype boxptr_intMin(modelica_metatype i1, modelica_metatype i2)
+{
+  return i1 < i2 ? i1 : i2;
+}
+
 intLt_rettype intLt(modelica_integer i1, modelica_integer i2)
 {
   return i1 < i2;
@@ -147,6 +183,26 @@ intString_rettype intString(modelica_integer i)
   sprintf(buffer, "%d", i);
   init_modelica_string(&res, buffer);
   return res;
+}
+
+modelica_metatype boxptr_intAbs(modelica_metatype i)
+{
+  return mmc_mk_icon(abs(mmc__unbox__integer(i)));
+}
+
+modelica_metatype boxptr_intNeg(modelica_metatype i)
+{
+  return mmc_mk_icon(-(mmc__unbox__integer(i)));
+}
+
+modelica_metatype boxptr_intReal(modelica_metatype i)
+{
+  return mmc_mk_rcon(-(mmc__unbox__integer(i)));
+}
+
+modelica_metatype boxptr_intString(modelica_metatype i)
+{
+  return mmc_mk_scon(intString(mmc__unbox__integer(i)));
 }
 
 /* Real Operations */

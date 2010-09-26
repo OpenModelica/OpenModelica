@@ -69,6 +69,14 @@ intMod_rettype intMod(modelica_integer, modelica_integer);
 intMax_rettype intMax(modelica_integer, modelica_integer);
 intMin_rettype intMin(modelica_integer, modelica_integer);
 
+modelica_metatype boxptr_intAdd(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_intSub(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_intMul(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_intDiv(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_intMod(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_intMax(modelica_metatype, modelica_metatype);
+modelica_metatype boxptr_intMin(modelica_metatype, modelica_metatype);
+
 typedef modelica_boolean intLt_rettype;
 typedef modelica_boolean intLe_rettype;
 typedef modelica_boolean intEq_rettype;
@@ -92,6 +100,11 @@ intAbs_rettype intAbs(modelica_integer);
 intNeg_rettype intNeg(modelica_integer);
 intReal_rettype intReal(modelica_integer);
 intString_rettype intString(modelica_integer);
+
+modelica_metatype boxptr_intAbs(modelica_metatype);
+modelica_metatype boxptr_intNeg(modelica_metatype);
+modelica_metatype boxptr_intReal(modelica_metatype);
+modelica_metatype boxptr_intString(modelica_metatype);
 
 /* Real Operations */
 typedef modelica_real realAdd_rettype;
