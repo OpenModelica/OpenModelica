@@ -2138,9 +2138,9 @@ algorithm
       DAE.FunctionTree functions;
     case (path,DAE.DAE(functions = functions)) then avlTreeGet(functions, path);
     case (path,DAE.DAE(elementLst = elements)) then getNamedFunctionFromElementList(path,elements);
-    case (_,_)
+    case (path,_)
       equation
-        Debug.fprintln("failtrace", "- DAEUtil.getNamedFunction failed");
+        Debug.fprintln("failtrace", "- DAEUtil.getNamedFunction failed " +& Absyn.pathString(path));
       then
         fail();
   end matchcontinue;
@@ -5264,5 +5264,36 @@ algorithm
     case(DAE.BINDING_FROM_START_VALUE()) then  "[START VALUE]";
   end matchcontinue;
 end printBindingSourceStr;
+
+public function collectValueblockFunctionRefVars
+"Collect the function names of variables in valueblock local sections"
+  input DAE.Exp exp;
+  input list<Absyn.Path> acc;
+  output list<Absyn.Path> outAcc;
+algorithm
+  outAcc := matchcontinue (exp,acc)
+    local
+      list<DAE.Element> decls;
+    case (DAE.VALUEBLOCK(localDecls = decls),acc)
+      equation
+        acc = Util.listFold(decls, collectFunctionRefVarPaths, acc);
+      then acc;
+    case (_,acc) then acc;
+  end matchcontinue;
+end collectValueblockFunctionRefVars;
+
+public function collectFunctionRefVarPaths
+"Collect the function names of declared variables"
+  input DAE.Element inElem;
+  input list<Absyn.Path> acc;
+  output list<Absyn.Path> outAcc;
+algorithm
+  outAcc := matchcontinue (inElem,acc)
+    local
+      Absyn.Path path;
+    case (DAE.VAR(ty = ((DAE.T_FUNCTION(funcArg=_)),SOME(path))),acc) then path::acc;
+    case (_,acc) then acc;
+  end matchcontinue;
+end collectFunctionRefVarPaths;
 
 end DAEUtil;

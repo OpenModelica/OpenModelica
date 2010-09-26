@@ -1132,6 +1132,12 @@ algorithm
       list<Exp.Subscript> inst_dims;
       list<DAE.Exp> inst_dims_exp;
       Option<DAE.Exp> binding;
+      Variable var;
+    case (DAE.VAR(componentRef = DAE.CREF_IDENT(ident=name),ty = daeType as (DAE.T_FUNCTION(funcArg=_),_)))
+      equation
+        var = typesSimFunctionArg((name,daeType));
+      then var;
+        
     case (DAE.VAR(componentRef = id,
                   ty = daeType,
                   binding = binding,
@@ -6065,9 +6071,9 @@ algorithm
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
 
-        /*-- MetaModelica Partial Function. sjoelund --*/
+        /*-- MetaModelica Partial Function --*/
 
-        // stefan - get all arguments of constant T_FUNCTION type and add to list
+        // get all arguments of constant T_FUNCTION type and add to list
         fnrefs = getMatchingExpsList(explist, matchFnRefs);
         crefs = Util.listMap(fnrefs, getCrefFromExp);
         reffuncs = Util.listMap(crefs, Absyn.crefToPath);
@@ -6078,12 +6084,13 @@ algorithm
 
         varlistlist = Util.listMap(funcelems, getFunctionElementsList);
         varlist = Util.listFlatten(varlistlist);
-        varlist = Util.listSelect(varlist, DAEUtil.isFunctionRefVar);
-        varfuncs = Util.listMap(varlist, getFunctionRefVarPath);
+        varfuncs = Util.listFold(varlist, DAEUtil.collectFunctionRefVarPaths, {});
+        varfuncs = Util.listFold(Util.if_(RTOpts.acceptMetaModelicaGrammar(), explist, {}), DAEUtil.collectValueblockFunctionRefVars, varfuncs);
         calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
         /*--                                           --*/
         res = getCalledFunctionsInFunctions(calledfuncs, path::acc, dae);
 
+        Debug.fprintln("info", "getCalledFunctionsInFunction: " +& Absyn.pathString(path)) "debug" ;
         Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
         debugpathstrs = Util.listMap(varfuncs, Absyn.pathString) "debug" ;
         debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
@@ -6136,19 +6143,6 @@ algorithm
         path;
   end matchcontinue;
 end getCallPath;
-
-protected function getFunctionRefVarPath
-"function: getFunctionRefVarFunctionPath
-  Retrive the function name from a function variable."
-  input DAE.Element inElem;
-  output Absyn.Path outPath;
-algorithm
-  outPath:=
-  matchcontinue (inElem)
-    local Absyn.Path path;
-    case DAE.VAR(ty = ((DAE.T_FUNCTION(_,_,_)),SOME(path))) then path;
-  end matchcontinue;
-end getFunctionRefVarPath;
 
 protected function getFunctionElementsList
 "function: getFunctionElementsList
