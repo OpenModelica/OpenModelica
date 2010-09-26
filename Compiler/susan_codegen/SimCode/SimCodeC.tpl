@@ -2671,7 +2671,7 @@ case FUNCTION(__) then
   let _ = (variableDeclarations |> var =>
       varInit(var, "", i1, &varDecls /*BUFC*/, &varInits /*BUFC*/)
     )
-  let funArgs = (functionArguments |> var => functionArg(var, &varDecls) ;separator="\n")
+  let funArgs = (functionArguments |> var => functionArg(var, &varInits) ;separator="\n")
   let bodyPart = (body |> stmt  => funStatement(stmt, &varDecls /*BUFC*/) ;separator="\n")
   let &outVarInits = buffer "" /*BUFD*/
   let outVarsStr = (outVars |> var =>
@@ -3058,22 +3058,29 @@ case var as VARIABLE(__) then
     'copy_<%expTypeShort(var.ty)%>_array_data(&<%crefStr(cr)%>, &<%outStruct%>.targ<%i%>);<%\n%>'
 end varDefaultValue;
 
-template functionArg(Variable var, Text &varDecls)
+template functionArg(Variable var, Text &varInit)
+"Shared code for function arguments that are part of the function variables and valueblocks.
+Valueblocks need to declare a reference to the function while input variables
+need to initialize."
 ::=
 match var
 case var as FUNCTION_PTR(__) then
   let typelist = (args |> arg => mmcVarType(arg) ;separator=", ")
   let rettype = '<%name%>_rettype'
   match ty
-    case ET_NORETCALL() then 'void(*_<%name%>)(<%typelist%>) = (void(*)(<%typelist%>))<%name%>;'
-    else <<
+    case ET_NORETCALL() then
+      let &varInit += '_<%name%> = (void(*)(<%typelist%>)) <%name%>;'
+      'void(*_<%name%>)(<%typelist%>);<%\n%>'
+    else
+      let &varInit += '_<%name%> = (<%rettype%>(*)(<%typelist%>)) <%name%>;<%\n%>'
+    <<
     #define <%rettype%>_1 targ1
     typedef struct <%rettype%>_s
     {
       <%args |> arg indexedby i1 => 
         <<<%mmcVarType(arg)%> targ<%i1%>;>> ;separator="\n"%>
     } <%rettype%>;
-    <%rettype%>(*_<%name%>)(<%typelist%>) = (<%rettype%>(*)(<%typelist%>))<%name%>;
+    <%rettype%>(*_<%name%>)(<%typelist%>);
     >>
   end match
 end functionArg;
@@ -3857,6 +3864,8 @@ template scalarLhsCref(Exp ecr, Context context, Text &preExp, Text &varDecls)
   reference."
 ::=
   match ecr
+  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
+    '*((modelica_fnptr*)&_<%functionName(cr)%>)'
   case ecr as CREF(componentRef=CREF_IDENT(__)) then
     if crefNoSub(ecr.componentRef) then
       contextCref(ecr.componentRef, context)
@@ -3946,6 +3955,8 @@ template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
       daeExpRecordCrefRhs(t, cr, context, preExp, varDecls)
   case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_FUNC(__)) then
     '(modelica_fnptr)boxptr_<%functionName(cr)%>'
+  case CREF(componentRef = cr, ty = ET_FUNCTION_REFERENCE_VAR(__)) then
+    '(modelica_fnptr) _<%functionName(cr)%>'
   else daeExpCrefRhs2(exp, context, &preExp, &varDecls)
 end daeExpCrefRhs;
 
@@ -4675,9 +4686,11 @@ case exp as VALUEBLOCK(__) then
   let &preExpInner = buffer "" /*BUFD*/
   let &preExpRes = buffer "" /*BUFD*/
   let &varDeclsInner = buffer "" /*BUFD*/
+  let &ignore = buffer ""
   let _ = (valueblockVars(exp) |> var =>
       varInit(var, "", 0, &varDeclsInner /*BUFC*/, &preExpInner /*BUFC*/)
     )
+  let funArgs = (valueblockVars(exp) |> var => functionArg(var, &ignore) ;separator="\n")
   let resType = expTypeModelica(ty)
   let res = tempDecl(expTypeModelica(ty), &preExp /*BUFC*/)
   let stmts = (body |> stmt =>
@@ -4689,6 +4702,7 @@ case exp as VALUEBLOCK(__) then
       <<
       {
         <%varDeclsInner%>
+        <%funArgs%>
         <%preExpInner%>
         <%stmts%>
         <%preExpRes%>
