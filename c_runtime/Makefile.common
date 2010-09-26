@@ -109,6 +109,7 @@ clean :
 	$(MAKE) -C libf2c -f $(LIBF2CMAKEFILE) clean
 	$(MAKE) -C java_interface -f $(JAVAMAKEFILE) clean
 	$(MAKE) -C interactive -f $(INTERACTIVEMAKEFILE) clean
+	$(MAKE) -C ModelicaExternalC -f $(EXTERNALCMAKEFILE) clean
 	rm -f libc_runtime.a
 	rm -f libsim.a
 	rm -f $(OBJS)
