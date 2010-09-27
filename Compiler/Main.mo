@@ -1202,7 +1202,6 @@ algorithm
       // Setup mingw path only once.
     case _
       equation
-        false = System.userIsRoot();
         omhome = System.readEnv("OPENMODELICAHOME");
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
@@ -1212,10 +1211,10 @@ algorithm
     
     case args as _::_
       equation
+        args_1 = RTOpts.args(args);
+        
         false = System.userIsRoot();
         _ = System.readEnv("OPENMODELICAHOME");
-        
-        args_1 = RTOpts.args(args);
         
         // we need this as we get the arguments in reverse from RTOpts.args
         args_1 = listReverse(args_1);
