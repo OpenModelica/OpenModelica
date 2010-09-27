@@ -708,7 +708,13 @@ void print(char* str)
 
 mmc__clock_rettype mmc__clock()
 {
-  static double start_t = clock();
+  static double start_t;
+  static int init = 1;
+  if (init) {
+    start_t = ((double)clock())/CLOCKS_PER_SEC;
+    init = 0;
+    return 0.0;
+  }
   return (clock()-start_t)/CLOCKS_PER_SEC;
 }
 
