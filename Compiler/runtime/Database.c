@@ -6,6 +6,7 @@
 
 void Database_5finit(void)
 {
+   sqlite3_libversion(); // Make sure we link against sqlite3 :)
    // do nothing for now
 }
 

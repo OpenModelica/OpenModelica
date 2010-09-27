@@ -12,6 +12,8 @@ all : .testvariables $(ALLMO) $(SRCSIGX)
 SUBDIRS	= runtime parser modpar
 SRCHSRCDIR = $(SRCH:%.h=$(srcdir)/%.h)
 
+SQLITE3=-lsqlite3
+
 .SUFFIXES: .o .mo .h .c
 .PHONY: all vctarget absyn_subdir clean reallyclean $(SUBDIRS)
 

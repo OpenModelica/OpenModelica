@@ -32,7 +32,7 @@ endif
 
 LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml_g -lpthread \
   $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
-  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@ 
+  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@  $(SQLITE3)
 
 PROG = omcd
 RMLC	= @rmlc_bin@ -g -Wc,-O1 #-Wr,-East,-Ecps,-Efol

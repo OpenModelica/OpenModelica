@@ -31,8 +31,8 @@ CC	= gcc
 IDL	= @IDLCMD@
 CFLAGS	+=  @CFLAGS@
 CXXFLAGS = $(CFLAGS)
-CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve -Isqlite
-SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c rtclock.c Database.c sqlite/sqlite3.c
+CPPFLAGS = -I$(RMLINCLUDE) -I$(top_builddir)/c_runtime -I$(srcdir) -I. $(CORBAINCL) -Ilpsolve
+SRC	= rtopts.c socketimpl.c printimpl.c systemimpl.c settingsimpl.c dynload.c SimulationResults.c IOStreamExt.c rtclock.c Database.c
 
 CPPSRC  = unitparser.cpp unitparserext.cpp ptolemyio.cpp daeext.cpp ErrorMessage.cpp errorext.cpp optmanager.cpp systemimplmisc.cpp dynload_try.o $(CORBASRC)
 OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
@@ -40,6 +40,7 @@ OBJ     = $(SRC:.c=.o) $(CPPSRC:.cpp=.o) $(CPPSRC:.cc=.o)
 all: runtime.a 
 
 runtime.a : $(OBJ)
+	rm -f $@
 	$(AR) -s -r $@ $(OBJ)
 
 omc_communication.cc omc_communication.h : omc_communication.idl
@@ -51,10 +52,9 @@ omc_communication_impl.o: omc_communication.h
 corbaimpl.o: omc_communication.h
 dynload.o: systemimpl.h ../Absyn.h ../Values.h dynload_try.h
 systemimpl.o : config.unix.h
-database.o : sqlite/sqlite3.h
 
 clean:
-	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-* sqlite/*.o
+	$(RM) -rf *.a *.o omc_communication.cc omc_communication.h omc_communication-*
 
 Makefile: Makefile.in
 	cd $(top_builddir) && ./config.status

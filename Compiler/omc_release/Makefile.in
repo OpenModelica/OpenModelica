@@ -28,7 +28,7 @@ endif
 
 LDFLAGS = @LDFLAGS@ -lm -L$(RMLHOME)/lib/plain -lrml \
   $(LIBSOCKET) $(CORBALIBS) $(LIBLPSOLVE55) \
-  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@
+  -L../../build/lib/omc @LIBSENDDATA_LDFLAGS@ $(SQLITE3)
 
 PROG = omc
 RMLC	= @rmlc_bin@

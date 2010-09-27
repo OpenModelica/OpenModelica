@@ -16,26 +16,9 @@ endif
 AST = $(top_builddir)/Parser/libomparse.a $(top_builddir)/Parser/libantlr3.a
 
 RTOBJ   = \
-$(srcdir)/runtime/systemimpl.o \
-$(srcdir)/runtime/systemimplmisc.o \
-$(srcdir)/runtime/dynload.o \
-$(srcdir)/runtime/dynload_try.o \
-$(srcdir)/runtime/optmanager.o \
+$(srcdir)/runtime/runtime.a \
 $(srcdir)/../c_runtime/libc_runtime.a \
-$(srcdir)/runtime/rtopts.o $(srcdir)/runtime/socketimpl.o \
-$(srcdir)/runtime/printimpl.o $(srcdir)/runtime/ptolemyio.o \
-$(srcdir)/runtime/errorext.o $(srcdir)/runtime/ErrorMessage.o \
-$(srcdir)/runtime/daeext.o \
-$(srcdir)/runtime/unitparser.o \
-$(srcdir)/runtime/unitparserext.o \
-$(srcdir)/runtime/Database.o \
-$(srcdir)/runtime/sqlite/sqlite3.o \
-$(CORBAOBJ) \
-$(srcdir)/modpar/libmodpar.a \
-$(srcdir)/runtime/settingsimpl.o \
-$(srcdir)/runtime/SimulationResults.o \
-$(srcdir)/runtime/IOStreamExt.o \
-$(srcdir)/runtime/rtclock.o
+$(srcdir)/modpar/libmodpar.a
 
 # The Susan-generated MO sources
 SUSANMO= \
