@@ -53,6 +53,7 @@
 #include "systemimpl.h"
 #include "rml.h"
 #include "config.h"
+#include "rtopts.h"
 
 /*
  * Platform specific includes and defines
@@ -2497,7 +2498,7 @@ char* normalizePath(const char* src)
 
 RML_BEGIN_LABEL(System__userIsRoot)
 {
-  rmlA0 = mk_icon(geteuid() == 0 ? 1 : 0);
+  rmlA0 = mk_icon(geteuid() == 0 && running_testsuite == 0 ? 1 : 0);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL

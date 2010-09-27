@@ -33,5 +33,6 @@
 
 int check_debug_flag(char const* strdata);
 int accept_meta_modelica_grammar(void);
+extern int running_testsuite;
 
 #endif
