@@ -3175,7 +3175,7 @@ Returns the base-name of the Absyn.componentReference"
 algorithm
   bol := matchcontinue(inComponentRef)
     case(CREF_IDENT(_,_)) then true;
-    else false;
+    case(_) then false;
   end matchcontinue;
 end crefIsIdent;
 
