@@ -147,6 +147,16 @@ algorithm
       list<Integer> dims;
       list<DAE.Dimension> arrayDims;
 
+    /* uncomment for debugging 
+    case (cache,env,inExp,_,st,_,_)
+      equation
+        print("Ceval.ceval: " +& 
+           Exp.printExpStr(inExp) +& 
+           " in env: " +& Env.printEnvPathStr(env) +& "\n");
+      then
+        fail();
+    */
+
     case (cache,_,DAE.ICONST(integer = x),_,st,_,_) then (cache,Values.INTEGER(x),st);
 
     case (cache,_,DAE.RCONST(real = x),_,st,_,_)
@@ -5034,8 +5044,7 @@ protected function cevalSubscriptValue "function: cevalSubscriptValue
   output Env.Cache outCache;
   output Values.Value outValue;
 algorithm
-  (outCache,outValue) :=
-  matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inIntegerLst,inBoolean,inMsg)
+  (outCache,outValue) := matchcontinue (inCache,inEnv,inExpSubscriptLst,inValue,inIntegerLst,inBoolean,inMsg)
     local
       Integer n,n_1,dim;
       Values.Value subval,res,v;
@@ -5057,14 +5066,18 @@ algorithm
         (cache,res) = cevalSubscriptValue(cache, env, subs, subval, dims, impl, msg);
       then
         (cache,res);
+    
+    // ceval gives us a enumeration literal scalar
     case (cache,env,(DAE.INDEX(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
       equation
         (cache,Values.ENUM_LITERAL(index = n),_) = ceval(cache, env, exp, impl, NONE, SOME(dim), msg);
         n_1 = n - 1;
-        subval = listNth(lst, n_1);
+        subval = listNth(lst, n_1); // listNth indexes from 0!
         (cache,res) = cevalSubscriptValue(cache, env, subs, subval, dims, impl, msg);
       then
         (cache,res);
+    
+    // slices
     case (cache,env,(DAE.SLICE(exp = exp) :: subs),Values.ARRAY(valueLst = lst),(dim :: dims),impl,msg)
       equation
         (cache,subval as Values.ARRAY(valueLst = sliceLst),_) = ceval(cache, env, exp, impl, NONE, SOME(dim), msg);
@@ -5074,6 +5087,7 @@ algorithm
         res = ValuesUtil.makeArray(lst);
       then
         (cache,res);
+    
     // we have a wholedim, so just pass the whole array on.
     case (cache, env, (DAE.WHOLEDIM() :: subs), subval as Values.ARRAY(valueLst = _), (dim :: dims), impl, msg)
       equation
@@ -5085,9 +5099,16 @@ algorithm
     case (cache,env,{},v,_,_,_) then (cache,v); 
 
     // failtrace
-    case (_,_,_,_,_,_,_)
+    case (cache, env, subs, inValue, dims, _, _)
       equation
-        Debug.fprint("failtrace", "- Ceval.cevalSubscriptValue failed\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- Ceval.cevalSubscriptValue failed on:" +&
+          "\n env: " +& Env.printEnvPathStr(env) +&
+          "\n subs: " +& Util.stringDelimitList(Util.listMap(subs, Exp.printSubscriptStr), ", ") +&
+          "\n value: " +& ValuesUtil.printValStr(inValue) +&
+          "\n dim sizes: " +& Util.stringDelimitList(Util.listMap(dims, intString), ", ") +&
+          "\n env: " +& Env.printEnvStr(env)  
+        );
       then
         fail();
   end matchcontinue;

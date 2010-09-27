@@ -231,6 +231,8 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> tp;
       DAE.ExternalDecl extdecl;
       DAE.FunctionTree funcs;
+      list<Integer> dl;
+      
     case DAE.DAE((DAE.VAR(componentRef = cr,
                                binding = SOME(e),
                                dims = dims,
@@ -308,6 +310,32 @@ algorithm
     case DAE.DAE((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs),funcs)
       equation
         Print.printBuf("INITIALEQUATION(");
+        Exp.printExp(e1);
+        Print.printBuf(" = ");
+        Exp.printExp(e2);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs,funcs));
+      then
+        ();
+    case DAE.DAE((DAE.ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs),funcs)
+      equation
+        Print.printBuf("ARRAY_EQUATION(");
+        Print.printBuf("dims = [");
+        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, intString), ", "));
+        Print.printBuf("]; ");
+        Exp.printExp(e1);
+        Print.printBuf(" = ");
+        Exp.printExp(e2);
+        Print.printBuf(")\n");
+        dump2(DAE.DAE(xs,funcs));
+      then
+        ();
+    case DAE.DAE((DAE.INITIAL_ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs),funcs)
+      equation
+        Print.printBuf("INITIAL_ARRAY_EQUATION(");
+        Print.printBuf("dims = [");
+        Print.printBuf(Util.stringDelimitList(Util.listMap(dl, intString), ", "));
+        Print.printBuf("]; ");
         Exp.printExp(e1);
         Print.printBuf(" = ");
         Exp.printExp(e2);

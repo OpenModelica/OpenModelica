@@ -74,6 +74,7 @@ protected import UnitAbsyn;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
+protected import DAEDump;
 
 public
 type Prefix = Prefix.Prefix "a prefix";
@@ -516,6 +517,7 @@ algorithm
         (cache,e2_1,prop2,c2,fdae2) = Static.elabExp(cache,env, e2, impl, NONE,true/* do vectorization*/,pre);
         (cache, e1_1, prop1) = Ceval.cevalIfConstant(cache, env, e1_1, prop1, impl);
         (cache, e2_1, prop2) = Ceval.cevalIfConstant(cache, env, e2_1, prop2, impl);
+         
         (cache,e1_1,e2_1,prop1,fdae3) = condenseArrayEquation(cache,env,e1,e2,e1_1,e2_1,prop1,prop2,impl,pre);
         (cache,e1_2) = PrefixUtil.prefixExp(cache,env, ih, e1_1, pre);
         (cache,e2_2) = PrefixUtil.prefixExp(cache,env, ih, e2_1, pre);
@@ -525,8 +527,9 @@ algorithm
         
         //Check that the lefthandside and the righthandside get along.
         dae = instEqEquation(e1_2, prop1, e2_2, prop2, source, initial_, impl);
-        
+                          
         dae = DAEUtil.joinDaeLst({dae,fdae1,fdae2,fdae3});
+                
         ci_state_1 = instEquationCommonCiTrans(ci_state, initial_);
       then
         (cache,env,ih,dae,csets,ci_state_1,graph);
@@ -1584,6 +1587,8 @@ algorithm
 			Boolean b1, b2;
 			list<Integer> ds;
 			DAE.FunctionTree funcs;
+			DAE.Dimension dim;
+			
 		/* Initial array equations with function calls => initial array equations */
 		case (lhs, rhs, tp, source, SCode.INITIAL())
 			equation
@@ -1610,6 +1615,68 @@ algorithm
 			then
 				DAE.DAE({DAE.ARRAY_EQUATION(ds, lhs, rhs, source)}, funcs);
 				
+    // Array dimension of known size.
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+      local
+        DAE.Dimension lhs_dim, rhs_dim;
+        list<DAE.Exp> lhs_idxs, rhs_idxs;
+        DAE.Type t;
+      equation
+        failure(equality(dim = DAE.DIM_UNKNOWN())); // adrpo: make sure the dimensions are known!
+        // Expand along the first dimensions of the expressions, and generate an
+        // equation for each pair of elements.
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        lhs_idxs = expandArrayDimension(lhs_dim, lhs);
+        rhs_idxs = expandArrayDimension(rhs_dim, rhs);
+        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+      then
+        dae;
+				
+    // Array dimension of known size.
+    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t, arrayDim = dim), _), source, initial_)
+      local
+        DAE.Dimension lhs_dim, rhs_dim;
+        list<DAE.Exp> lhs_idxs, rhs_idxs;
+        DAE.Type t;
+      equation
+        equality(dim = DAE.DIM_UNKNOWN()); // adrpo: make sure the dimensions are known!
+        // It's ok with array equation of unknown size if checkModel is used.
+			  true = OptManager.getOption("checkModel");
+        // Expand along the first dimensions of the expressions, and generate an
+        // equation for each pair of elements.
+        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
+        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
+        lhs_idxs = expandArrayDimension(lhs_dim, lhs);
+        rhs_idxs = expandArrayDimension(rhs_dim, rhs);
+        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
+      then
+        dae;
+				
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.INITIAL())
+			local
+				String lhs_str, rhs_str, eq_str;
+			equation
+        // It's ok with array equation of unknown size if checkModel is used.
+			  true = OptManager.getOption("checkModel");
+			  // generate an initial array equation of dim 1
+			  funcs = DAEUtil.avlTreeNew();
+			then 
+				DAE.DAE({DAE.INITIAL_ARRAY_EQUATION({1}, lhs, rhs, source)}, funcs);
+
+		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
+		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), source, SCode.NON_INITIAL())
+			local
+				String lhs_str, rhs_str, eq_str;
+			equation
+        // It's ok with array equation of unknown size if checkModel is used.
+			  true = OptManager.getOption("checkModel");
+			  // generate an array equation of dim 1
+			  funcs = DAEUtil.avlTreeNew();
+			then 
+				DAE.DAE({DAE.ARRAY_EQUATION({1}, lhs, rhs, source)}, funcs);
+				
 		/* Array equation of unknown size, e.g. Real x[:], y[:]; equation x = y; */
 		case (lhs, rhs, (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), _, _)
 			local
@@ -1623,23 +1690,6 @@ algorithm
 				Error.addMessage(Error.INST_ARRAY_EQ_UNKNOWN_SIZE, {eq_str});
 			then 
 				fail();
-
-    // Array dimension of known size.
-    case (lhs, rhs, (DAE.T_ARRAY(arrayType = t), _), source, initial_)
-      local
-        DAE.Dimension lhs_dim, rhs_dim;
-        list<DAE.Exp> lhs_idxs, rhs_idxs;
-        DAE.Type t;
-      equation
-        // Expand along the first dimensions of the expressions, and generate an
-        // equation for each pair of elements.
-        DAE.ET_ARRAY(arrayDimensions = lhs_dim :: _) = Exp.typeof(lhs);
-        DAE.ET_ARRAY(arrayDimensions = rhs_dim :: _) = Exp.typeof(rhs);
-        lhs_idxs = expandArrayDimension(lhs_dim, lhs);
-        rhs_idxs = expandArrayDimension(rhs_dim, rhs);
-        dae = instArrayElEq(lhs, rhs, t, lhs_idxs, rhs_idxs, source, initial_);
-      then
-        dae;
 
 		case (_, _, _, _, _)
 			equation
@@ -4961,28 +5011,37 @@ algorithm
   outExpl := matchcontinue(inDim, inArray)
     local
       list<DAE.Exp> expl;
+      Integer sz;
+      list<Integer> ints;
+      Absyn.Path name;
+      list<String> ls;
+      
     // Empty integer list. Util.listIntRange is not defined for size < 1, 
     // so we need to handle empty lists here.
     case (DAE.DIM_INTEGER(integer = 0), _) then {};
     case (DAE.DIM_INTEGER(integer = sz), _)
-      local
-        Integer sz;
-        list<Integer> ints;
       equation
         ints = Util.listIntRange(sz);
         expl = Util.listMap1(ints, makeAsubIndex, inArray);
       then
         expl;
     case (DAE.DIM_ENUM(enumTypeName = name, literals = ls), _)
-      local
-        Absyn.Path name;
-        list<String> ls;
       equation
         expl = makeEnumLiteralIndices(name, ls, 1, inArray);
       then
         expl; 
+    /* adrpo: these are completly wrong! 
+              will result in equations 1 = 1!
     case (DAE.DIM_EXP(exp = _), _) then {DAE.ICONST(1)};
     case (DAE.DIM_UNKNOWN, _) then {DAE.ICONST(1)};
+    */
+    case (DAE.DIM_UNKNOWN, _)
+      equation
+        true = OptManager.getOption("checkModel");
+        ints = Util.listIntRange(1); // try to make an array index of 1 when we don't know the dimension
+        expl = Util.listMap1(ints, makeAsubIndex, inArray);
+      then
+        expl;         
   end matchcontinue;
 end expandArrayDimension;
 

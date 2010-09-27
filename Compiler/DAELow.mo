@@ -3273,7 +3273,7 @@ algorithm
         sc = Exp.crefStripLastSubs(cr);
         ty = Exp.crefLastType(cr);
         // check List
-        failure(_ = Util.listFindWithCompareFunc(crlst,sc,Exp.crefEqual,false));
+        failure(_ = Util.listFindWithCompareFunc(crlst,sc,Exp.crefEqualNoStringCompare,false));
         // extend cr
         (e1,_) = extendArrExp(DAE.CREF(sc,ty),NONE());
         // add
@@ -4520,12 +4520,12 @@ algorithm
 
     case (cr1,WHEN_EQUATION(eq as WHEN_EQ(left=cr2),_)::rest)
       equation
-        true = Exp.crefEqual(cr1,cr2);
+        true = Exp.crefEqualNoStringCompare(cr1,cr2);
       then (eq, rest);
 
     case (cr1,(eq2 as WHEN_EQUATION(WHEN_EQ(left=cr2),_))::rest)
       equation
-        false = Exp.crefEqual(cr1,cr2);
+        false = Exp.crefEqualNoStringCompare(cr1,cr2);
         (eq,rest2) = getWhenEquationFromVariable(cr1,rest);
       then (eq, eq2::rest2);
 
@@ -4583,6 +4583,7 @@ algorithm
       DAE.Exp e_2,cre,e;
       DAE.ComponentRef cr_1,cr;
       list<DAE.Element> xs;
+      DAE.Element el;
       DAE.ElementSource source "the element source";
 
     case ({},_) then ({},{});
@@ -4607,13 +4608,33 @@ algorithm
     case ((DAE.TERMINATE(message = e,source = source) :: xs),i)
       equation
         (eqnl,reinit) = lowerWhenEqn2(xs, i);
-        e_2 = Exp.stringifyCrefs(Exp.simplify(e));
+        e_2 = Exp.simplify(e); // Exp.stringifyCrefs(Exp.simplify(e));
       then
         ((WHEN_EQUATION(WHEN_EQ(i,DAE.CREF_IDENT("_", DAE.ET_OTHER(), {}),e_2,NONE),source) :: eqnl),reinit);
-    case (_,_)
+    
+    case ((DAE.ARRAY_EQUATION(exp = (cre as DAE.CREF(componentRef = cr)),array = e,source = source) :: xs),i)
       equation
-        print("- DAELow.lowerWhenEqn2: Error in lowerWhenEqn2.\n");
-      then fail();        
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
+      then
+        ((WHEN_EQUATION(WHEN_EQ(i,cr,e,NONE),source) :: eqnl),reinit);    
+    
+    // failure  
+    case ((el::xs), i)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- DAELow.lowerWhenEqn2 failed on:" +& DAEDump.dumpElementsStr({el}));
+      then 
+        fail();
+    
+    // adrpo: 2010-09-26
+    // allow to continue when checking the model
+    // just ignore this equation.
+    case ((el::xs), i)
+      equation
+        true = OptManager.getOption("checkModel");
+        (eqnl,reinit) = lowerWhenEqn2(xs, i + 1);
+      then
+        (eqnl, reinit);
   end matchcontinue;
 end lowerWhenEqn2;
         
@@ -6159,6 +6180,7 @@ algorithm outExp := matchcontinue(inExp)
     Absyn.Path name;
     tuple<DAE.Exp, Option<DAE.FunctionTree> > restpl;  
     list<list<tuple<DAE.Exp, Boolean>>> scalar;
+    
   // CASE for Matrix    
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
     equation
@@ -6172,7 +6194,26 @@ algorithm outExp := matchcontinue(inExp)
         e_new = DAE.MATRIX(t,i,scalar);
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
     then
-      (restpl);   
+      (restpl);
+  
+  // CASE for Matrix and checkModel is on    
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad as {id, jd})), funcs) )
+    equation
+        true = OptManager.getOption("checkModel");
+        // consider size 1
+        i = Exp.dimensionSize(DAE.DIM_INTEGER(1));
+        j = Exp.dimensionSize(DAE.DIM_INTEGER(1));
+        subslst = dimensionsToRange(ad);
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        scalar = makeMatrix(expl,j,j,{});
+        e_new = DAE.MATRIX(t,i,scalar);
+        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
+  
+  // CASE for Array
   case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
     equation
         subslst = dimensionsToRange(ad);
@@ -6182,7 +6223,22 @@ algorithm outExp := matchcontinue(inExp)
         e_new = DAE.ARRAY(t,true,expl);
         restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
     then
-      (restpl);          
+      (restpl);
+
+  // CASE for Array and checkModel is on
+  case( (DAE.CREF(componentRef=cr,ty= t as DAE.ET_ARRAY(ty=ty,arrayDimensions=ad)), funcs) )
+    equation
+        true = OptManager.getOption("checkModel");
+        // consider size 1      
+        subslst = dimensionsToRange({DAE.DIM_INTEGER(1)});
+        subslst1 = rangesToSubscripts(subslst);
+        crlst = Util.listMap1r(subslst1,Exp.subscriptCref,cr);
+        expl = Util.listMap1(crlst,Exp.makeCrefExp,ty);
+        e_new = DAE.ARRAY(t,true,expl);
+        restpl = Exp.traverseExp(e_new, traversingextendArrExp, funcs);
+    then
+      (restpl);
+  // CASE for Records
   case( (e as DAE.CREF(componentRef=cr,ty= t as DAE.ET_COMPLEX(name=name,varLst=varLst,complexClassType=ClassInf.RECORD(_))), funcs) )
     equation
         expl = Util.listMap1(varLst,generateCrefsExpFromType,e);
@@ -7383,7 +7439,7 @@ algorithm
     case ({},_) then {};
     case ((VAR(varName = cr1,flowPrefix = flow1) :: vs),(v as VAR(varName = cr2,flowPrefix = flow2)))
       equation
-        true = Exp.crefEqual(cr1, cr2);
+        true = Exp.crefEqualNoStringCompare(cr1, cr2);
       then
         (v :: vs);
     case ((v :: vs),(repl as VAR(varName = cr2,flowPrefix = flowPrefix)))
@@ -7538,7 +7594,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr3, indexes);
         ((v as VAR(varName = cr2, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = Exp.crefEqual(cr3, cr2);
+        true = Exp.crefEqualNoStringCompare(cr3, cr2);
         indx_1 = indx + 1;
       then
         (v,indx_1);
@@ -7578,7 +7634,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes);
         ((v as VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = Exp.crefEqual(cr_1, cr2);
+        true = Exp.crefEqualNoStringCompare(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
         (vs,indxs);
@@ -7590,7 +7646,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr_1, indexes);
         ((v as VAR(varName = cr2, arryDim = instdims, flowPrefix = flowPrefix))) = vararrayNth(varr, indx);
-        true = Exp.crefEqual(cr_1, cr2);
+        true = Exp.crefEqualNoStringCompare(cr_1, cr2);
         (vs,indxs) = getArrayVar2(instdims, cr, vars);
       then
         (vs,indxs);
@@ -7741,7 +7797,7 @@ algorithm
         indexes = hashvec[hashindx + 1];
         indx = getVar3(cr, indexes);
         ((v as VAR(varName = cr2))) = vararrayNth(varr, indx);
-        true = Exp.crefEqual(cr, cr2);
+        true = Exp.crefEqualNoStringCompare(cr, cr2);
       then
         true;
     case (cr,VARIABLES(crefIdxLstArr = hashvec,strIdxLstArr = oldhashvec,varArr = varr,bucketSize = bsize,numberOfVars = n))
@@ -7858,7 +7914,7 @@ algorithm
         fail();
     case (cr,(CREFINDEX(cref = cr2,index = v) :: _))
       equation
-        true = Exp.crefEqual(cr, cr2);
+        true = Exp.crefEqualNoStringCompare(cr, cr2);
       then
         v;
     case (cr,(v :: vs))
@@ -7944,7 +8000,7 @@ algorithm
     case (_,{}) then {};
     case (cr1,(VAR(varName = cr2) :: vs))
       equation
-        true = Exp.crefEqual(cr1, cr2);
+        true = Exp.crefEqualNoStringCompare(cr1, cr2);
       then
         vs;
     case (cr1,(v :: vs))
@@ -8901,7 +8957,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
         crefs = equationsCrefs(eqns_lst);
-        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqual);
+        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
         (dummy_fixed as false) = varFixed(v);
@@ -8917,7 +8973,7 @@ algorithm
         eqns_1 = Util.listMap1(eqns, int_sub, 1);
         eqns_lst = Util.listMap1r(eqns_1, equationNth, e);
         crefs = equationsCrefs(eqns_lst);
-        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqual);
+        crefs = Util.listDeleteMemberOnTrue(crefs, dummy, Exp.crefEqualNoStringCompare);
         state = findState(vars, crefs);
         ({v},{indx}) = getVar(dummy, vars);
        true = varFixed(v);
@@ -10127,7 +10183,7 @@ algorithm
       DAE.ComponentRef cr1,cr2;
     case (VAR(varName = cr1),VAR(varName = cr2))
       equation
-        res = Exp.crefEqual(cr1, cr2) "A Var is identified by its component reference" ;
+        res = Exp.crefEqualNoStringCompare(cr1, cr2) "A Var is identified by its component reference" ;
       then
         res;
   end matchcontinue;
@@ -10158,7 +10214,7 @@ algorithm
     case(SOLVED_EQUATION(componentRef = cr1,exp = exp1),
          SOLVED_EQUATION(componentRef = cr2,exp = exp2))
       equation
-        res = boolAnd(Exp.crefEqual(cr1,cr2),Exp.expEqual(exp1,exp2));
+        res = boolAnd(Exp.crefEqualNoStringCompare(cr1,cr2),Exp.expEqual(exp1,exp2));
       then res;
 
     case(RESIDUAL_EQUATION(exp = exp1),
@@ -10483,7 +10539,7 @@ algorithm
     local DAE.ComponentRef cr2; DAE.Ident id1,id2;
     case(VAR(varName=cr2 ),cr )
       equation
-        true = Exp.crefEqual(Exp.crefStripLastIdent(cr2),Exp.crefStripLastIdent(cr));
+        true = Exp.crefEqualNoStringCompare(Exp.crefStripLastIdent(cr2),Exp.crefStripLastIdent(cr));
       then true;
     case(_,_) then false;
   end matchcontinue;
@@ -10532,7 +10588,7 @@ algorithm
     // s = expr(s1,..,sn)  where s1 .. sn are states
     case(cr,EQUATION(exp = DAE.CREF(cr2,_), scalar = e2),vars)
       equation
-        true = Exp.crefEqual(cr,cr2);
+        true = Exp.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
         crs = Exp.getCrefFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
@@ -10542,7 +10598,7 @@ algorithm
 
     case(cr,EQUATION(exp = e2, scalar = DAE.CREF(cr2,_)),vars)
       equation
-        true = Exp.crefEqual(cr,cr2);
+        true = Exp.crefEqualNoStringCompare(cr,cr2);
         _::_::_ = Exp.terms(e2);
         crs = Exp.getCrefFromExp(e2);
         (crVars,_) = Util.listMap12(crs,getVar,vars);
@@ -12646,9 +12702,7 @@ end calculateJacobianRows;
 
 protected function calculateJacobianRows2 "function: calculateJacobianRows2
   author: PA
-
-  Helper function to calculate_jacobian_rows
-"
+  Helper function to calculateJacobianRows"
   input list<Equation> inEquationLst;
   input Variables inVariables;
   input MultiDimEquation[:] inMultiDimEquationArray;
@@ -12685,17 +12739,14 @@ end calculateJacobianRows2;
 
 protected function calculateJacobianRow "function: calculateJacobianRow
   author: PA
-
-  Calculates the jacobian for one equation. See calculate_jacobian_rows.
-
+  Calculates the jacobian for one equation. See calculateJacobianRows.
   inputs:  (Equation,
               Variables,
               MultiDimEquation array,
               IncidenceMatrix,
               IncidenceMatrixT,
               int /* eqn index */)
-  outputs: ((int  int  Equation) list option)
-"
+  outputs: ((int  int  Equation) list option)"
   input Equation inEquation;
   input Variables inVariables;
   input MultiDimEquation[:] inMultiDimEquationArray;
@@ -12742,7 +12793,7 @@ algorithm
         (subs,entrylst1) = getArrayEquationSub(indx,ad,inEntrylst);
         new_exp = Exp.applyExpSubscripts(new_exp,subs); 
         var_indxs = varsInEqn(m, eqn_indx);
-        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index" ;
+        var_indxs_1 = Util.listUnionOnTrue(var_indxs, {}, int_eq) "Remove duplicates and get in correct order: acsending index";
         SOME(eqns) = calculateJacobianRow2(new_exp, vars, eqn_indx, var_indxs_1,differentiateIfExp);
       then
         (SOME(eqns),entrylst1);
@@ -12952,34 +13003,31 @@ end equationToResidualForm;
 
 public function calculateSizes "function: calculateSizes
   author: PA
-
   Calculates the number of state variables, nx,
   the number of algebraic variables, ny
   and the number of parameters/constants, np.
-
   inputs:  DAELow
   outputs: (int, /* nx */
-              int, /* ny */
-              int, /* np */
-              int  /* ng */
-               int) next
-"
+            int, /* ny */
+            int, /* np */
+            int  /* ng */
+            int) next"
   input DAELow inDAELow;
-  output Integer outnx "number of states";
-  output Integer outny "number of alg. vars";
-  output Integer outnp "number of parameters";
-  output Integer outng " number of zerocrossings";
-  output Integer outng_sample " number of zerocrossings that are samples";
-  output Integer outnext " number of external objects";
-//nx cannot be strings
+  output Integer outnx        "number of states";
+  output Integer outny        "number of alg. vars";
+  output Integer outnp        "number of parameters";
+  output Integer outng        "number of zerocrossings";
+  output Integer outng_sample "number of zerocrossings that are samples";
+  output Integer outnext      "number of external objects";
+  // nx cannot be strings
   output Integer outny_string "number of alg.vars which are strings";
-  output Integer outnp_string  "number of parameters which are strings";
-//nx cannot be int
-  output Integer outny_int "number of alg.vars which are ints";
-  output Integer outnp_int  "number of parameters which are ints";
-//nx cannot be int
-  output Integer outny_bool "number of alg.vars which are bools";
-  output Integer outnp_bool  "number of parameters which are bools";    
+  output Integer outnp_string "number of parameters which are strings";
+  // nx cannot be int
+  output Integer outny_int    "number of alg.vars which are ints";
+  output Integer outnp_int    "number of parameters which are ints";
+  // nx cannot be int
+  output Integer outny_bool   "number of alg.vars which are bools";
+  output Integer outnp_bool   "number of parameters which are bools";    
 algorithm
   (outnx,outny,outnp,outng,outnext, outny_string, outnp_string, outny_int, outnp_int, outny_bool, outnp_bool):=
   matchcontinue (inDAELow)
@@ -12990,18 +13038,18 @@ algorithm
       Variables vars,knvars,extvars;
       list<WhenClause> wc;
       list<ZeroCrossing> zc;
+    
     case (DAELOW(orderedVars = vars,knownVars = knvars, externalObjects = extvars,
                  eventInfo = EVENT_INFO(whenClauseLst = wc,
                                         zeroCrossingLst = zc)))
       equation
-        varlst = varList(vars) "input variables are put in the known var list,
-	  but they should be counted by the ny counter." ;
+        varlst = varList(vars) "input variables are put in the known var list, but they should be counted by the ny counter.";
 	  	  extvarlst = varList(extvars);
 	  	  next = listLength(extvarlst);
         knvarlst = varList(knvars);
         (np,np_string,np_int, np_bool) = calculateParamSizes(knvarlst);
         np_str = intString(np);
-        (ng,nsam) = calculateNumberZeroCrossings(zc,0,0);
+        (ng,nsam) = calculateNumberZeroCrossings(zc, 0, 0);
         (nx,ny,ny_string,ny_int, ny_bool) = calculateVarSizes(varlst, 0, 0, 0, 0, 0);
         (nx_1,ny_1,ny_1_string,ny_1_int, ny_1_bool) = calculateVarSizes(knvarlst, nx, ny, ny_string, ny_int, ny_bool);
       then
@@ -13019,6 +13067,7 @@ algorithm
   (outCFn) := matchcontinue (zcLst,zc_index,sample_index)
     local
       list<ZeroCrossing> xs;
+    
     case ({},zc_index,sample_index) then (zc_index,sample_index);
 
     case (ZERO_CROSSING(relation_ = DAE.CALL(path = Absyn.IDENT(name = "sample"))) :: xs,zc_index,sample_index)
@@ -13045,9 +13094,7 @@ end calculateNumberZeroCrossings;
 
 protected function calculateParamSizes "function: calculateParamSizes
   author: PA
-
-  Helper function to calculate_sizes
-"
+  Helper function to calculateSizes"
   input list<Var> inVarLst;
   output Integer outInteger;
   output Integer outInteger2;
@@ -13100,9 +13147,7 @@ end calculateParamSizes;
 
 protected function calculateVarSizes "function: calculateVarSizes
   author: PA
-
-  Helper function to calculate_sizes
-"
+  Helper function to calculateSizes"
   input list<Var> inVarLst1;
   input Integer inInteger2;
   input Integer inInteger3;
@@ -13124,6 +13169,7 @@ algorithm
       Value ny_int, ny_1_int, ny_2_int, ny_bool, ny_1_bool, ny_2_bool;
       DAE.Flow flowPrefix;
       list<Var> vs;
+    
     case ({},nx,ny,ny_string, ny_int, ny_bool) then (nx,ny,ny_string,ny_int, ny_bool);
 
     case ((VAR(varKind = VARIABLE(),varType=STRING(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
@@ -13173,8 +13219,7 @@ algorithm
         ny_1_bool = ny_bool + 1;
         (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
-     
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);     
                  
      case ((VAR(varKind = DISCRETE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool)
       equation
@@ -13209,8 +13254,7 @@ algorithm
         ny_1_bool = ny_bool + 1;
         (nx_2,ny_2,ny_2_string, ny_2_int, ny_2_bool) = calculateVarSizes(vs, nx, ny, ny_string, ny_int, ny_1_bool);
       then
-        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);    
-     
+        (nx_2,ny_2,ny_2_string, ny_2_int,ny_2_bool);   
         
     case ((VAR(varKind = DUMMY_STATE(),flowPrefix = flowPrefix) :: vs),nx,ny,ny_string, ny_int, ny_bool) /* A dummy state is an algebraic variable */
       equation
@@ -13263,14 +13307,11 @@ end calculateVarSizes;
 
 public function calculateValues "function: calculateValues
   author: PA
-
-  This function calculates the values from the parameter binding expressions.
-"
+  This function calculates the values from the parameter binding expressions."
   input DAELow inDAELow;
   output DAELow outDAELow;
 algorithm
-  outDAELow:=
-  matchcontinue (inDAELow)
+  outDAELow := matchcontinue (inDAELow)
     local
       list<Var> knvarlst;
       Variables knvars,vars,extVars;
@@ -13280,8 +13321,8 @@ algorithm
       DAE.Algorithm[:] al;
       EventInfo wc;
       ExternalObjectClasses extObjCls;
-    case (DAELOW(orderedVars = vars,knownVars = knvars,externalObjects=extVars,aliasVars = av, orderedEqs = eqns,
-      removedEqs = seqns,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls))
+    case (DAELOW(orderedVars = vars,knownVars = knvars,externalObjects=extVars,aliasVars = av,orderedEqs = eqns,
+                 removedEqs = seqns,initialEqs = ie,arrayEqs = ae,algorithms = al,eventInfo = wc,extObjClasses=extObjCls))
       equation
         knvarlst = varList(knvars);
         knvarlst = Util.listMap1(knvarlst, calculateValue, knvars);
@@ -13316,8 +13357,7 @@ algorithm
 					values = va, comment = c, flowPrefix = fp, streamPrefix = sp), _)
 			equation
 				((e2, _)) = Exp.traverseExp(e, replaceCrefsWithValues, vars);
-				(_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false, NONE,
-						NONE, Ceval.MSG());
+				(_, v, _) = Ceval.ceval(Env.emptyCache(), Env.emptyEnv, e2, false, NONE, NONE, Ceval.MSG());
 			then
 				VAR(cr, vk, vd, ty, SOME(e), SOME(v), dims, idx, src, va, c, fp, sp);
 		case (_, _) then inVar;
@@ -13345,16 +13385,14 @@ end replaceCrefsWithValues;
 	
 protected function statesEqns "function: statesEqns
   author: PA
-
   Takes a list of equations and an (empty) BinTree and
-  fills the tree with the state variables present in the equations
-"
+  fills the tree with the state variables present in the 
+  equations"
   input list<Equation> inEquationLst;
   input BinTree inBinTree;
   output BinTree outBinTree;
 algorithm
-  outBinTree:=
-  matchcontinue (inEquationLst,inBinTree)
+  outBinTree := matchcontinue (inEquationLst,inBinTree)
     local
       BinTree bt;
       DAE.Exp e1,e2;
@@ -13397,15 +13435,12 @@ end statesEqns;
 
 protected function getIndex "function: getIndex
   author: PA
-
-  Helper function to derivative_replacements
-"
+  Helper function to derivativeReplacements"
   input DAE.ComponentRef inComponentRef;
   input list<Var> inVarLst;
   output Integer outInteger;
 algorithm
-  outInteger:=
-  matchcontinue (inComponentRef,inVarLst)
+  outInteger := matchcontinue (inComponentRef,inVarLst)
     local
       DAE.ComponentRef cr1,cr2;
       Value indx;
@@ -13415,7 +13450,7 @@ algorithm
       list<Var> vs;
     case (cr1,(VAR(varName = cr2,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix) :: _))
       equation
-        true = Exp.crefEqual(cr1, cr2);
+        true = Exp.crefEqualNoStringCompare(cr1, cr2);
       then
         indx;
     case (cr1,(_ :: vs))
@@ -13435,8 +13470,7 @@ protected function calculateIndexes "function: calculateIndexes
   the indexes from vars, knvars and extvars has to be calculate at the same time.
   To seperate them after that they are stored in a list with
   the information about the type(vars=0,knvars=1,extvars=2) and the place at the
-  original list.
-"
+  original list."
   input list<Var> inVarLst1;
   input list<Var> inVarLst2;
   input list<Var> inVarLst3;
@@ -13445,8 +13479,7 @@ protected function calculateIndexes "function: calculateIndexes
   output list<Var> outVarLst2;
   output list<Var> outVarLst3;
 algorithm
-  (outVarLst1,outVarLst2,outVarLst3):=
-  matchcontinue (inVarLst1,inVarLst2,inVarLst3)
+  (outVarLst1,outVarLst2,outVarLst3) := matchcontinue (inVarLst1,inVarLst2,inVarLst3)
     local
       list<Var> vars_2,knvars_2,extvars_2,extvars,vars,knvars;
       list< tuple<Var,Integer> > vars_1,knvars_1,extvars_1;
@@ -13533,8 +13566,7 @@ author: Frenkel TUD
   output list< tuple<Type_a,Integer,Integer> > outTypeALst;
   replaceable type Type_a subtypeof Any;
 algorithm
-  outlist :=
-  matchcontinue (inTypeALst,inType,inPlace)
+  outlist := matchcontinue (inTypeALst,inType,inPlace)
     local
       list<Type_a> rest;
       Type_a item;
@@ -13663,8 +13695,7 @@ protected function getNoScalarVars
   output list< tuple<Var,Integer,Integer> > outnoScalarlist;
   output list< tuple<Var,Integer,Integer> > outScalarlist;
 algorithm
-  (outnoScalarlist,outScalarlist) :=
-  matchcontinue (inlist)
+  (outnoScalarlist,outScalarlist) := matchcontinue (inlist)
     local
       list< tuple<Var,Integer,Integer> > noScalarlst,scalarlst,rest,noScalarlst1,scalarlst1,noScalarlst2,scalarlst2;
       Var var,var1;
@@ -13715,7 +13746,7 @@ protected function getAllElements
 "function: getAllElements
   author: Frenkel TUD
   Takes a list of unsortet noScalarVars
-  and returns a sorte list"
+  and returns a sorted list"
   input list<tuple<Var,Integer,Integer> > inlist;
   output list<tuple<Var,Integer,Integer> > outlist;
 algorithm
@@ -13746,8 +13777,7 @@ protected function getAllElements1
   output list<tuple<Var,Integer,Integer> > outlist;
   output list<tuple<Var,Integer,Integer> > outlist1;
 algorithm
-  (outlist,outlist1):=
-  matchcontinue (var1,inlist)
+  (outlist,outlist1) := matchcontinue (var1,inlist)
     local
       list<tuple<Var,Integer,Integer>> rest,var_lst,var_lst1,var_lst2,var_lst3,out_lst;
 			DAE.ComponentRef varName1, varName2,c2,c1;
@@ -13815,7 +13845,7 @@ algorithm
       local
        list<Type_a > out_lst;
       equation
-        out_lst = listAppend({var},var_lst);
+        out_lst = var::var_lst;
       then
         out_lst;
   end matchcontinue;
@@ -15023,7 +15053,7 @@ algorithm
     case ({},var_name) then false;
     case (((variable as VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
       equation
-        true = Exp.crefEqual(cr, var_name);
+        true = Exp.crefEqualNoStringCompare(cr, var_name);
       then
         true;
     case (((variable as VAR(varName = cr,index = indx,values = dae_var_attr,comment = comment,flowPrefix = flowPrefix,streamPrefix = streamPrefix)) :: rest),var_name)
@@ -16611,7 +16641,7 @@ algorithm
         // changed during solving process inside
         crlstlst = Util.listMap(nonconstexplst,Exp.extractCrefsFromExp);
         // add explst with variables which will not be changed during solving prozess
-        blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,Exp.crefEqual);
+        blstlst = Util.listListMap2(crlstlst,Util.listContainsWithCompareFunc,crlst,Exp.crefEqualNoStringCompare);
         blst_1 = Util.listMap(blstlst,Util.boolOrList);
         (tnofixedexplst,tfixedexplst) = listSplitOnTrue(nonconstexplst,blst_1);
         true = listLength(tnofixedexplst) < 1;

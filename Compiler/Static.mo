@@ -256,6 +256,14 @@ algorithm
       DAE.DAElist dae1,dae2,dae3,dae;
       Prefix pre;
 
+    /* uncomment for debuging
+    case (cache,_,inExp,impl,st,doVect,_)
+      equation
+        print("Static.elabExp: " +& Dump.dumpExpStr(inExp) +& "\n");
+      then
+        fail();
+    */
+
     // The types below should contain the default values of the attributes of the builtin
     // types. But since they are default, we can leave them out for now, unit=\"\" is not 
     // that interesting to find out. 
@@ -523,15 +531,14 @@ algorithm
       local list<list<Absyn.Exp>> es;
         Integer d1,d2;
       equation
-        (cache,_,tps,_,dae1) = elabExpListList(cache,env, es, impl, st,doVect,pre) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
+        (cache,_,tps,_,dae1) = elabExpListList(cache, env, es, impl, st,doVect,pre) "matrix expressions, e.g. {1,0;0,1} with elements of simple type." ;
         tps_1 = Util.listListMap(tps, Types.getPropType);
         tps_2 = Util.listFlatten(tps_1);
         nmax = matrixConstrMaxDim(tps_2);
         havereal = Types.containReal(tps_2);
         (cache,mexp,DAE.PROP(t,c),dim1,dim2,dae2)
         = elabMatrixSemi(cache,env, es, impl, st, havereal, nmax,doVect,pre);
-        mexp = Util.if_(havereal,DAE.CAST(DAE.ET_ARRAY(DAE.ET_REAL(),{dim1,dim2}),mexp)
-          , mexp);
+        mexp = Util.if_(havereal,DAE.CAST(DAE.ET_ARRAY(DAE.ET_REAL(),{dim1,dim2}),mexp),mexp);
         mexp=Exp.simplify(mexp); // to propagate cast down to scalar elts
         mexp_1 = elabMatrixToMatrixExp(mexp);
         t_1 = Types.unliftArray(t);
@@ -2605,10 +2612,8 @@ algorithm
 end elabGraphicsArray;
 
 protected function elabMatrixComma "function elabMatrixComma
-
-  This function is a helper function for elab_matrix_semi.
-  It elaborates one matrix row of a matrix.
-"
+  This function is a helper function for elabMatrixSemi.
+  It elaborates one matrix row of a matrix."
 	input Env.Cache inCache;
   input Env.Env inEnv1;
   input list<Absyn.Exp> inAbsynExpLst2;
@@ -6167,33 +6172,33 @@ algorithm
 end elabBuiltinCat;
 
 protected function elabBuiltinCat2 "function: elabBuiltinCat2
-
   Helper function to elab_builtin_cat. Updates the result type given
   the input type, number of matrices given to cat and dimension to concatenate
-  along.
-"
+  along."
   input DAE.Type inType1;
   input Integer inInteger2;
   input Integer inInteger3;
   output DAE.Type outType;
 algorithm
-  outType:=
-  matchcontinue (inType1,inInteger2,inInteger3)
+  outType := matchcontinue (inType1,inInteger2,inInteger3)
     local
       Integer new_d,old_d,n_args,n_1,n;
       tuple<DAE.TType, Option<Absyn.Path>> tp,tp_1;
       Option<Absyn.Path> p;
       DAE.Dimension dim;
+
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(integer = old_d),arrayType = tp),p),1,n_args) /* dim num_args */
       equation
         new_d = old_d*n_args;
       then
         ((DAE.T_ARRAY(DAE.DIM_INTEGER(new_d),tp),p));
+
     case ((DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN), _), 1, _)
       equation
         true = OptManager.getOption("checkModel");
       then
         inType1;
+
     case ((DAE.T_ARRAY(arrayDim = dim,arrayType = tp),p),n,n_args)
       equation
         n_1 = n - 1;
@@ -6205,9 +6210,7 @@ end elabBuiltinCat2;
 
 protected function elabBuiltinIdentity "function: elabBuiltinIdentity
   author: PA
-
-  This function handles the built in identity operator.
-"
+  This function handles the built in identity operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -9164,8 +9167,7 @@ protected function vectorizeCall "function: vectorizeCall
   for the slots which have that dimension.
   For example foo:(Real,Real[:])=> Real
   foo(1:2,{1,2;3,4}) vectorizes with arraydim [2] to 
-  {foo(1,{1,2}),foo(2,{3,4})}
-"
+  {foo(1,{1,2}),foo(2,{3,4})}"
   input DAE.Exp inExp;
   input list<DAE.Dimension> inTypesArrayDimLst;
   input list<Slot> inSlotLst;
@@ -11159,7 +11161,7 @@ algorithm
         expTy = Types.elabType(tt);
         expIdTy = Types.elabType(idTp);
         cr_1 = fillCrefSubscripts(cr, tt);
-        e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt,NONE,expIdTy,true);
+        e_1 = crefVectorize(doVect, DAE.CREF(cr_1,expTy), tt, NONE, expIdTy, true);
       then
         (cache,e_1,DAE.C_PARAM(),acc);
       

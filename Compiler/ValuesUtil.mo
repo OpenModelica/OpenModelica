@@ -1055,6 +1055,7 @@ algorithm
     local
       Integer i;
     case (Values.INTEGER(integer = i)) then i-1;
+    case (Values.ENUM_LITERAL(index = i)) then i-1;
   end matchcontinue;
 end valueIntegerMinusOne;
 

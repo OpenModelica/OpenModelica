@@ -155,7 +155,7 @@ protected import Util;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
-// protected import DAEDump;
+protected import DAEDump;
 
 public function newIdent
 "function: newIdent
@@ -1903,7 +1903,17 @@ algorithm
         bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_BOOL(tys),NONE));
       then (cache,env,ih,store,DAEUtil.emptyDae,Connect.SETS({},crs,dc,oc),ci_state,tys,bc /* NONE */,NONE,NONE,graph);
 
-    /* Enumeration class */
+    // adrpo: 2010-09-27: here we do two things at once, but not correctly!
+    // Instantiate enumeration class at top level Prefix.NOPRE 
+    //   when we are instantiating with no prefix, it means we are instantiating the enumeration class!
+    //   and we don't care about modifications!
+    // Instantiate enumeration VARIABLE with a prefix!  
+    //   when we are instantiating with a prefix, it means we are instantiating a variable of an enumeration type!
+    //   and we care about modifications!
+    //   this does not work! 
+    //   T = enumeration(x, y, z);
+    //   T c(start = T.x) should generate an enumeration variable with and the type should contain the
+    //                    start value, but we have no place to put it as the var list in the T_ENUMERATION is for names!
     case (cache,env,ih,store,mods,pre,csets as Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
           ci_state,(c as SCode.CLASS(name = n,restriction = SCode.R_ENUMERATION(),classDef = SCode.PARTS(elementLst = els),info = info)),prot,inst_dims,impl,graph,_)
           local
@@ -1917,11 +1927,22 @@ algorithm
             list<DAE.Var> tys1,tys2;
             DAE.DAElist fdae;
       equation
-        tys =  instEnumerationClass(cache,env,mods,pre);
+        tys = instEnumerationClass(cache, env, mods, pre);
+        /* uncomment this and see how checkAllModelsRecursive(Modelica.Electrical.Digital) looks like
+           especially MUX.Or1.auxiliary doesn't get its start/fixed bindings
+        print("Inst enumeration class (empty prefix) / variable (some pre): " +& n +&
+          "\npre: " +& PrefixUtil.printPrefixStr(pre) +&
+          "\nenv: " +& Env.printEnvPathStr(env) +&
+          "\nmods: " +& Mod.printModStr(mods) +&
+          "\ninst_dims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& "\n");  
+        */
         ci_state_1 = ClassInf.trans(ci_state, ClassInf.NEWDEF());
         comp = addNomod(els);
         (cache,env_1,ih,fdae) = addComponentsToEnv(cache,env,ih, mods, pre, csets, ci_state_1, comp, comp, {}, inst_dims, impl);
-        (cache,env_2,ih,store,dae1,csets,ci_state_1,tys1,graph) = instElementList(cache,env_1,ih,store, mods, pre, csets, ci_state_1, comp, inst_dims, impl,graph);
+        // we should instantiate with no modifications, they don't belong to the class, they belong to the component!
+        (cache,env_2,ih,store,dae1,csets,ci_state_1,tys1,graph) = 
+            instElementList(cache,env_1,ih,store, /* DAE.NOMOD() */ mods, pre, csets, ci_state_1, comp, inst_dims, impl,graph);
+        
         (cache,fq_class) = makeFullyQualified(cache,env_2, Absyn.IDENT(n));
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
@@ -1930,10 +1951,10 @@ algorithm
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
-        tys2 = listAppend(tys,tys1);
-        fdae = DAEUtil.joinDaes(fdae,DAEUtil.extractFunctions(dae1));
-      then (cache,env_3,ih,store,fdae,Connect.SETS({},crs,dc,oc),ci_state_1,tys2,bc /* NONE */,NONE,NONE,graph);
-
+        tys2 = listAppend(tys, tys1); // <--- this is wrong as the tys belong to the component variable not the Enumeration Class!        
+        fdae = DAEUtil.joinDaes(fdae,DAEUtil.extractFunctions(dae1));  
+      then 
+        (cache,env_3,ih,store,fdae,Connect.SETS({},crs,dc,oc),ci_state_1,tys2,bc /* NONE */,NONE,NONE,graph);
 
    	/* Ignore functions if not implicit instantiation */
     case (cache,env,ih,store,mods,pre,Connect.SETS(connection = crs,deletedComponents=dc,outerConnects=oc),
@@ -5739,6 +5760,15 @@ algorithm
         
         //The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty, pre, n);
+        
+        /* uncomment this and see how checkAllModelsRecursive(Modelica.Electrical.Digital) looks like
+           especially MUX.Or1.auxiliary doesn't get its start/fixed bindings
+        print("Created binding for var: " +& 
+           PrefixUtil.printPrefixStr(pre) +& "." +& n +&
+           " binding: " +& DAEUtil.printBindingExpStr(binding) +& 
+           " mods: " +& Mod.printModStr(mod_1) +&
+           "\n");   
+        */
         //true in update_frame means the variable is now instantiated.
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE());
 

@@ -2202,23 +2202,23 @@ end crefToExp;
 public function verifyWhenEquation "
 Author BZ, 2008-09
 This function verifies when-equations.
-Returns the crefs written to, and also checks for illegal statements in when-body eqn's.
-"
+Returns the crefs written to, and also checks for illegal statements in when-body eqn's."
   input list<DAE.Element> inElems;
   output list<DAE.ComponentRef> leftSideCrefs;
 algorithm  leftSideCrefs := matchcontinue(inElems)
   local
     list<DAE.Element> elems1,oelems,moreWhen;
     list<DAE.ComponentRef> crefs1,crefs2;
+
   case({}) then {};
     // no need to check elseWhen, they are beein handled in a reverse order, from inst.mo.
   case(DAE.WHEN_EQUATION(equations=elems1)::moreWhen) then verifyWhenEquationStatements(elems1);
   case(inElems) then verifyWhenEquationStatements(inElems);
   case(inElems)
-    equation
-      print("-verify_When_Equation FAILED\n");
-      //print(DAEDump.dumpElementsStr(elems1) +& "\n\n");
-    then fail();
+    equation      
+      print("- DAEUtil.verifyWhenEquation FAILED on:" +& DAEDump.dumpElementsStr(inElems) +& "\n\n");
+    then 
+      fail();
 end matchcontinue;
 end verifyWhenEquation;
 
@@ -2246,13 +2246,11 @@ end verifyWhenEquationStatements2;
 protected function verifyWhenEquationStatements "
 Author BZ, 2008-09
 Helper function for verifyWhenEquation
-TODO: add some error reporting for this.
-"
-input list<DAE.Element> inElems;
-output list<DAE.ComponentRef> leftSideCrefs;
+TODO: add some error reporting for this."
+  input list<DAE.Element> inElems;
+  output list<DAE.ComponentRef> leftSideCrefs;
 algorithm
-  leftSideCrefs:=
-  matchcontinue (inElems)
+  leftSideCrefs:= matchcontinue (inElems)
     local
       String s1,s2;
       Integer i;
@@ -2282,21 +2280,25 @@ algorithm
       DAE.ElementSource source "the element origin";
 
     case({}) then {};
+    
     case(DAE.VAR(componentRef = _)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
         lhsCrefs;
+    
     case(DAE.DEFINE(componentRef = cref,exp = exp)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
         cref::lhsCrefs;
+    
     case(DAE.EQUATION(exp = DAE.CREF(cref,_))::rest)
       equation
-      lhsCrefs = verifyWhenEquationStatements(rest);
+        lhsCrefs = verifyWhenEquationStatements(rest);
       then
         cref::lhsCrefs;
+    
     case(DAE.EQUATION(exp = DAE.TUPLE(exps1),source=source)::rest)
       equation
         crefs1 = verifyWhenEquationStatements2(exps1,source);
@@ -2304,11 +2306,13 @@ algorithm
         lhsCrefs = listAppend(crefs1,lhsCrefs);
       then
         lhsCrefs;
+    
     case(DAE.ARRAY_EQUATION(exp = DAE.CREF(cref, _)) :: rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
         cref :: lhsCrefs;
+    
     case(DAE.EQUEQUATION(cr1=cref,cr2=_)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
@@ -2326,6 +2330,7 @@ algorithm
         lhsCrefs = listAppend(crefs1,lhsCrefs);
       then
         lhsCrefs;
+    
     case(DAE.IF_EQUATION(condition1 = exps,equations2 = eqstrueb,equations3 = eqsfalseb,source=source)::rest)
       local
         list<list<DAE.ComponentRef>> crefslist;
@@ -2339,19 +2344,22 @@ algorithm
         print(s1);
       then
         fail();
+    
     case(DAE.ALGORITHM(algorithm_ = alg)::rest)
       equation
         print("ALGORITHM not implemented for use inside when equation\n");
       then
         fail();
+    
     case(DAE.INITIALALGORITHM(algorithm_ = alg)::rest)
       equation
         print("INITIALALGORITHM not allowed inside when equation\n");
       then
         fail();
+    
     case(DAE.COMP(ident = _)::rest)
       equation
-      print("COMP not implemented for use inside when equation\n");
+        print("COMP not implemented for use inside when equation\n");
       then
         fail();
 
@@ -2360,11 +2368,13 @@ algorithm
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
         lhsCrefs;
+    
     case(DAE.TERMINATE(message = _)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
       then
         lhsCrefs;
+    
     case(DAE.REINIT(componentRef=cref)::rest)
       equation
         lhsCrefs = verifyWhenEquationStatements(rest);
@@ -2376,37 +2386,48 @@ algorithm
         print("FUNCTION not allowed inside when equation\n");
       then
         fail();
+    
     case(DAE.RECORD_CONSTRUCTOR(path = path)::rest)
       equation
         print("RECORD_CONSTRUCTOR not allowed inside when equation\n");
       then
         fail();
+    
     case(DAE.INITIAL_IF_EQUATION(condition1 = _)::rest)
       equation print("INITIAL_IF_EQUATION not allowed inside when equation\n");
       then
         fail();
+    
     case(DAE.INITIALEQUATION(exp1 = _)::rest)
       equation print("INITIALEQUATION not allowed inside when equation\n");
       then
         fail();
-    // adrpo: TODO! FIXME! WHY??!! we might read from outside file x = readFile();
+    
+    // adrpo: TODO! FIXME! WHY??!! we might push values to a file writeFile(time);
     case(DAE.NORETCALL(functionName=_)::rest)
-      equation print("NORETCALL not allowed inside when equation\n");
+      equation 
+        lhsCrefs = verifyWhenEquationStatements(rest);
       then
-        fail();
+        lhsCrefs;
+    
     case(DAE.WHEN_EQUATION(condition = _)::rest)
       equation
         print(" When-equation inside when equation..?\n");
       then
         fail();
+    
     case(DAE.INITIALDEFINE(componentRef = cref,exp = exp)::_)
       equation
         print("INITIALDEFINE inside when equation, error");
       then
         fail();
-    case(_)
+    
+    // failure printing
+    case(el::_)
       equation
-        Debug.fprintln("failtrace", "- DAEUtil.verifyWhenEquationStatements failed");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- DAEUtil.verifyWhenEquationStatements failed on: " +& 
+          DAEDump.dumpElementsStr({el}));
       then
         fail();
   end matchcontinue;

@@ -528,6 +528,34 @@ protected import ModUtil;
 protected import Print;
 protected import Error;
 
+protected function elseWhenEquationStr
+"@author: adrpo
+  Return the elsewhen parts as a string."
+  input  list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst;
+  output String str;
+algorithm
+  str := matchcontinue(tplAbsynExpEEquationLstLst)
+    local
+      Absyn.Exp exp;
+      list<EEquation> eqn_lst;
+      list<tuple<Absyn.Exp, list<EEquation>>> rest;
+      String s1, s2, s3, res;
+      list<String> str_lst; 
+    
+    case ({}) then "";
+    
+    case ((exp,eqn_lst)::rest)
+      equation
+        s1 = Dump.printExpStr(exp);
+        str_lst = Util.listMap(eqn_lst, equationStr);
+        s2 = Util.stringDelimitList(str_lst, "\n");
+        s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
+        res = Util.stringAppendList({"\nelsewhen ",s1," then\n",s2,"\n", s3});        
+      then 
+        res;
+  end matchcontinue;
+end elseWhenEquationStr;
+
 public function equationStr
 "function: equationStr
   author: PA
@@ -545,6 +573,8 @@ algorithm
       list<list<EEquation>> tb;
       Absyn.ComponentRef cr1,cr2,cr;
       Absyn.FunctionArgs fargs;
+      list<tuple<Absyn.Exp, list<EEquation>>> tplAbsynExpEEquationLstLst;
+      
     case (EQ_IF(condition = e1::ifexp,thenBranch = ttb::tb,elseBranch = fb))
       equation
         s1 = Dump.printExpStr(e1);
@@ -578,7 +608,15 @@ algorithm
         res = Util.stringAppendList({"for ",id," in ",s1," loop\n",s2,"\nend for;"});
       then
         res;
-    case (EQ_WHEN(condition = _)) then "EQ_WHEN(... not impl ...)";
+    case (EQ_WHEN(condition=exp, eEquationLst=eqn_lst, tplAbsynExpEEquationLstLst=tplAbsynExpEEquationLstLst))
+      equation
+        s1 = Dump.printExpStr(exp);
+        str_lst = Util.listMap(eqn_lst, equationStr);
+        s2 = Util.stringDelimitList(str_lst, "\n");
+        s3 = elseWhenEquationStr(tplAbsynExpEEquationLstLst);
+        res = Util.stringAppendList({"when ",s1," then\n",s2,s3,"\nend when;"});
+      then 
+        res;
     case (EQ_ASSERT(condition = e1,message = e2))
       equation
         s1 = Dump.printExpStr(e1);

@@ -5376,10 +5376,14 @@ algorithm
       Exp e1,e2,e3,e;
       list<Exp> explist;
       list<Type> tylist;
+      Integer index;
+      Absyn.Path name;
+      
     case (DAE.ICONST(integer = _)) then DAE.ET_INT();
     case (DAE.RCONST(real = _)) then DAE.ET_REAL();
     case (DAE.SCONST(string = _)) then DAE.ET_STRING();
     case (DAE.BCONST(bool = _)) then DAE.ET_BOOL();
+    case (DAE.ENUM_LITERAL(name, index)) then DAE.ET_ENUMERATION(SOME(index), name, {}, {});
     case (DAE.CREF(ty = tp)) then tp;
     case (DAE.BINARY(operator = op)) then typeofOp(op);
     case (DAE.UNARY(operator = op)) then typeofOp(op);

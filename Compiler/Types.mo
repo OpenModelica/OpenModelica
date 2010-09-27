@@ -689,14 +689,11 @@ algorithm
 end isEnumeration;
 
 public function isArrayOrString "function: isArrayOrString
-
-  Return true if Type is array or the builtin String type.
-"
+  Return true if Type is array or the builtin String type."
   input Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inType)
+  outBoolean := matchcontinue (inType)
     local Type ty;
     case ty
       equation
@@ -1289,17 +1286,15 @@ public function basicType "function: basicType
   input Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inType)
+  outBoolean := matchcontinue (inType)
     case ((DAE.T_INTEGER(varLstInt = _),_)) then true;
     case ((DAE.T_REAL(varLstReal = _),_)) then true;
     case ((DAE.T_STRING(varLstString = _),_)) then true;
     case ((DAE.T_BOOL(varLstBool = _),_)) then true;
     case ((DAE.T_ENUMERATION(index = SOME(_)),_)) then true;
-//    case ((DAE.T_ENUM(),_)) then true;
     case ((DAE.T_ARRAY(arrayDim = _),_)) then false;
     case ((DAE.T_COMPLEX(complexClassType = _),_)) then false;
-    case ((DAE.T_ENUMERATION(names = _),_)) then false;
+    case ((DAE.T_ENUMERATION(names = _),_)) then false; // adrpo: TODO! Why is an enum type not a basic type???!!
     case ((DAE.T_LIST(_),_)) then false;  // MetaModelica list type
     case ((DAE.T_METAOPTION(_),_)) then false;  // MetaModelica option type
     case ((DAE.T_METATUPLE(_),_)) then false;  // MetaModelica tuple type
@@ -1307,28 +1302,22 @@ algorithm
 end basicType;
 
 public function extendsBasicType "function: basicType
-
-  Test whether a type extends one of the builtin types.
-"
+  Test whether a type extends one of the builtin types."
   input Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inType)
+  outBoolean := matchcontinue (inType)
     case ((DAE.T_COMPLEX(complexTypeOption=SOME(_)),_)) then true;
     case (_) then false;
   end matchcontinue;
 end extendsBasicType;
 
 public function arrayType "function: arrayType
-
-  Test whether a type is an array type.
-"
+  Test whether a type is an array type."
   input Type inType;
   output Boolean outBoolean;
 algorithm
-  outBoolean:=
-  matchcontinue (inType)
+  outBoolean := matchcontinue (inType)
     case ((DAE.T_ARRAY(arrayDim = _),_)) then true;
     case (_) then false;
   end matchcontinue;
@@ -2064,7 +2053,7 @@ algorithm
       s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
       s2 = "Boolean(" +& s1 +& ")";
     then s2;
-        /* Enumeration Element */
+    /* Enumeration Element */
     case ((DAE.T_ENUMERATION(index = SOME(idx),path=p,names = l,varLst=vs),_))
       local String s2;
         Integer idx;
@@ -2073,11 +2062,11 @@ algorithm
         /* path */
         s1 = Absyn.pathString(p);
         /* element */
-        s2 = "element";
+        s2 = listNth(l, idx-1); // listNth indexes from 0
         str = Util.stringAppendList({s1,".",s2});
       then
-        "#DAE.T_ENUM#";
-      /* Enumeration Type */
+        str;
+    /* Enumeration Type */
     case ((DAE.T_ENUMERATION(names = l,varLst=vs),_))
       local String s2;
       equation
@@ -2274,7 +2263,10 @@ algorithm
       Type t,restype;
       list<FuncArg> params;
       list<Type> tys;
-      String s1,s2;
+      String s1,s2,s3;
+      Integer i;
+      Absyn.Path p;
+      
     case ((DAE.T_INTEGER(varLstInt = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
@@ -2299,14 +2291,18 @@ algorithm
         str = Util.stringAppendList({"Boolean(",s1,")"});
       then
        str;
-//    case ((DAE.T_ENUM(),_))
-    case ((DAE.T_ENUMERATION(index = SOME(_)),_))
-      then
-        "EnumType";
-    case ((DAE.T_ENUMERATION(names = l,varLst = vars),_))
+    case ((DAE.T_ENUMERATION(index = SOME(i), path = p, names = l),_))
       equation
-       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-       str = Util.stringAppendList({"Enumeration(",s1,")"});
+        str = listNth(l, i-1);
+        str = Absyn.pathString(p) +& "." +& str;
+      then
+        str;
+    case ((DAE.T_ENUMERATION(names = l,path=p,varLst = vars),_))
+      equation
+       s1 = Absyn.pathString(p);
+       s2 = Util.stringDelimitList(l, ", ");       
+       s3 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+       str = Util.stringAppendList({"Enumeration(", s1, ", names(", s3, ") vars: (", s2,")"});
       then
         str;
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
@@ -2651,15 +2647,12 @@ algorithm
 end makeFunctionType;
 
 public function makeEnumerationType "function: makeEnumerationType
-
-  Creates an enumeration type from a name and a list of variables.
-"
+  Creates an enumeration type from a name and a list of variables."
   input Absyn.Path inPath;
   input list<Var> inVarLst;
   output Type outType;
 algorithm
-  outType:=
-  matchcontinue (inPath,inVarLst)
+  outType := matchcontinue (inPath,inVarLst)
     local
       list<Ident> names;
       Absyn.Path p;
@@ -2676,9 +2669,7 @@ algorithm
 end makeEnumerationType;
 
 public function makeEnumerationType1 "function: makeEnumerationType1
-
-  Creates an enumeration type from a name and a list of variables.
-"
+  Creates an enumeration type from a name and a list of variables."
   input Absyn.Path inPath;
   input list<Var> inVarLst;
   input list<Ident> inNames;
@@ -2712,9 +2703,7 @@ algorithm
 end makeEnumerationType1;
 
 public function printFarg "function: printFarg
-
-  Prints a function argument to the Print buffer.
-"
+  Prints a function argument to the Print buffer."
   input FuncArg inFuncArg;
 algorithm
   _:=
@@ -3547,7 +3536,6 @@ algorithm
         ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
       then
         DAE.ET_ENUMERATION(index,path,names,ecvl);
-//    case ((DAE.T_ENUM(),_)) then Exp.ENUM();
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         et = arrayElementType(t);
@@ -3678,12 +3666,10 @@ algorithm
 end matchProp;
 
 public function matchType "function: matchType
-
   This function matches an expression with an expected type, and
   converts the expression to the expected type if necessary.
   inputs : (exp: DAE.Exp, exp_type: Type, expected: Type)
-  outputs: (DAE.Exp, Type)
-"
+  outputs: (DAE.Exp, Type)"
   input DAE.Exp exp;
   input Type expType;
   input Type expectedType;
@@ -4045,7 +4031,7 @@ algorithm
       then
         (DAE.TUPLE(elist_1),(DAE.T_TUPLE(tys_1),p2),polymorphicBindings);
 
-        /* Enumeration */
+    // Enumeration value vs. enumeration type
     case (exp,(DAE.T_ENUMERATION(index=SOME(_)),_),(DAE.T_ENUMERATION(index=oi,path=tp,names = l,varLst = v),p2),polymorphicBindings,matchFunc,printFailtrace)
       local
         Option<Integer> oi;
@@ -4065,7 +4051,7 @@ algorithm
       equation
         // TODO! FIXME! check boundaries if the integer literal is not outside the enum range
         // select from enum list:
-        name = listNth(l, oi+1);
+        name = listNth(l, oi-1); // listNth indexes from 0
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then 
         (DAE.ENUM_LITERAL(tp, oi),(DAE.T_ENUMERATION(SOME(oi),tp,l,v),p2),polymorphicBindings);        
@@ -4585,22 +4571,19 @@ algorithm
 end typeConvertMatrixRowToList;
 
 public function matchWithPromote "function: matchWithPromote
-
   This function is used for matching expressions in matrix construction,
   where automatic promotion is allowed. This means that array dimensions of
   size one (1) is added from the right to arrays of matrix construction until
   all elements have the same dimension size (with a maximum of 2).
   For instance, {1,{2}} becomes {1,2}.
   The function also has a flag indicating that Integer to Real
-  conversion can be used.
-"
+  conversion can be used."
   input Properties inProperties1;
   input Properties inProperties2;
   input Boolean inBoolean3;
   output Properties outProperties;
 algorithm
-  outProperties:=
-  matchcontinue (inProperties1,inProperties2,inBoolean3)
+  outProperties := matchcontinue (inProperties1,inProperties2,inBoolean3)
     local
       Type t,t1,t2;
       Const c,c1,c2;
@@ -4608,33 +4591,59 @@ algorithm
       Option<Absyn.Path> p2,p;
       Boolean havereal;
       list<Var> v;
-
+      TType tt;
+    
     case (DAE.PROP((DAE.T_COMPLEX(_,_,SOME(t1),_),_),c1),DAE.PROP(t2,c2),havereal)
     then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
-
+    
     case (DAE.PROP(t1,c1),DAE.PROP((DAE.T_COMPLEX(_,_,SOME(t2),_),_),c2),havereal)
     then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
-
-
-    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),p2),constFlag = c2),havereal) /* Allow Integer => Real */
+    
+    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),p2),constFlag = c2),
+          havereal) // Allow Integer => Real 
       equation
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
         dim = dim1;
       then
         DAE.PROP((DAE.T_ARRAY(dim,t),p2),c);
-    case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t2),p2),constFlag = c2),havereal)
+    // match integer, second
+    case (DAE.PROP(type_ = t1,constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t2),p2),constFlag = c2),
+          havereal)
       equation
         false = isArray(t1);
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
         DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(1),t),p2),c);
-    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t1),p),constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),havereal)
+    // match enum, second
+    case (DAE.PROP(type_ = t1,constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim as DAE.DIM_ENUM(size=1),arrayType = t2),p2),constFlag = c2),
+          havereal)
+      equation
+        false = isArray(t1);
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
+      then
+        DAE.PROP((DAE.T_ARRAY(dim,t),p2),c);    
+    // match integer, first
+    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t1),p),constFlag = c1),
+          DAE.PROP(type_ = t2,constFlag = c2),havereal)
       equation
         false = isArray(t2);
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
         DAE.PROP((DAE.T_ARRAY(DAE.DIM_INTEGER(1),t),p),c);
-    case (DAE.PROP(type_ = t1,constFlag = c1),DAE.PROP(type_ = t2,constFlag = c2),false)
+    // match enum, first
+    case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim as DAE.DIM_ENUM(size=1),arrayType = t1),p),constFlag = c1),
+          DAE.PROP(type_ = t2,constFlag = c2),havereal)
+      equation
+        false = isArray(t2);
+        DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
+      then
+        DAE.PROP((DAE.T_ARRAY(dim,t),p),c);
+    // equal types
+    case (DAE.PROP(type_ = t1,constFlag = c1),
+          DAE.PROP(type_ = t2,constFlag = c2),false)
       equation
         false = isArray(t1);
         false = isArray(t2);
@@ -4643,28 +4652,48 @@ algorithm
         c = constAnd(c1, c2);
       then
         DAE.PROP(t,c);
-    case (DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_REAL(varLstReal = _),p2),constFlag = c2),true)
+    // enums
+    case (DAE.PROP(type_ = (tt as DAE.T_ENUMERATION(_, _, _, v),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_ENUMERATION(_, _, _, _),p2),constFlag = c2),false)
+      equation
+        c = constAnd(c1, c2) "Have enum and both Enum" ;
+      then
+        DAE.PROP((tt,p2),c);
+    // reals
+    case (DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_REAL(varLstReal = _),p2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and both Real" ;
       then
         DAE.PROP((DAE.T_REAL(v),p2),c);
-    case (DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),p2),constFlag = c2),true)
+    // integer vs. real
+    case (DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),p2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and first Integer" ;
       then
         DAE.PROP((DAE.T_REAL(v),p2),c);
-    case (DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
+    // real vs. integer
+    case (DAE.PROP(type_ = (DAE.T_REAL(varLstReal = v),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and second Integer" ;
       then
         DAE.PROP((DAE.T_REAL(v),p2),c);
-    case (DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),_),constFlag = c1),DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
+    // both integers
+    case (DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_INTEGER(varLstInt = _),p2),constFlag = c2),true)
       equation
         c = constAnd(c1, c2) "Have real and both Integer" ;
       then
         DAE.PROP(DAE.T_REAL_DEFAULT,c);
-    case(_,_,_) equation
-      Debug.fprint("failtrace","-matchWithPromote failed\n");
+    
+    case(inProperties1,inProperties2,inBoolean3) equation
+      true = RTOpts.debugFlag("failtrace");
+      Debug.fprintln("failtrace","- Types.matchWithPromote failed on: " +& 
+         "\nprop1: " +& printPropStr(inProperties1) +&
+         "\nprop2: " +& printPropStr(inProperties2) +&
+         "\nhaveReal: " +& Util.if_(inBoolean3, "true", "false"));
     then fail();
   end matchcontinue;
 end matchWithPromote;

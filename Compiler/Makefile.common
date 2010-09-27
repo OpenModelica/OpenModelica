@@ -28,6 +28,8 @@ $(srcdir)/runtime/errorext.o $(srcdir)/runtime/ErrorMessage.o \
 $(srcdir)/runtime/daeext.o \
 $(srcdir)/runtime/unitparser.o \
 $(srcdir)/runtime/unitparserext.o \
+$(srcdir)/runtime/database.o \
+$(srcdir)/runtime/sqlite/sqlite3.o \
 $(CORBAOBJ) \
 $(srcdir)/modpar/libmodpar.a \
 $(srcdir)/runtime/settingsimpl.o \
@@ -123,7 +125,7 @@ IOStream.mo
 # These are externally defined MO modules
 ALLMO = $(SRCMO) DAEEXT.mo DynLoad.mo Print.mo RTOpts.mo System.mo Parser.mo \
 		TaskGraphExt.mo Corba.mo Socket.mo ErrorExt.mo Settings.mo \
-		OptManager.mo UnitParserExt.mo SimulationResults.mo IOStreamExt.mo 
+		OptManager.mo UnitParserExt.mo SimulationResults.mo IOStreamExt.mo Database.mo  
 
 SRCC=	$(SRCMO:.mo=.c)
 SRCH=	$(SRCMO:.mo=.h)

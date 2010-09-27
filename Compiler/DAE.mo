@@ -770,8 +770,22 @@ uniontype Dimension
   end DIM_EXP;
 
   record DIM_UNKNOWN "Dimension with unknown size."
+    //DimensionBinding dimensionBinding "unknown dimension can be bound or unbound"; 
   end DIM_UNKNOWN;
 end Dimension;
+
+// adrpo: this is used to bind unknown dimensions to an expression
+//        and when we do subtyping we add constrains to this expression.
+//        this should be used for typechecking with unknown dimensions
+//        when running checkModel. the binding acts like a type variable.
+public uniontype DimensionBinding
+   record DIM_UNBOUND "dimension is not bound"
+   end DIM_UNBOUND;
+   record DIM_BOUND "dimension is bound to an expression with constrains"
+      Exp binding "the dimension is bound to this expression";
+      list<Dimension> constrains "the bound has these constrains (collected when doing subtyping)";
+   end DIM_BOUND;
+end DimensionBinding;
 
 public
 type FuncArg = tuple<Ident, Type> "- Function Argument" ;
@@ -898,8 +912,6 @@ uniontype ExpType "- Basic types
   record ET_BOOL end ET_BOOL;
 
   record ET_STRING end ET_STRING;
-
- // record ENUM end ENUM;
 
   record ET_ENUMERATION
     Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
