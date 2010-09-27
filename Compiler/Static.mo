@@ -678,7 +678,7 @@ algorithm
 
     case (cache,env,e,_,_,_,pre)
       equation
-        ///* FAILTRACE REMOVE
+        /* FAILTRACE REMOVE
         true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace", "- Static.elabExp failed: ");
 
@@ -689,7 +689,7 @@ algorithm
         //Debug.traceln("\n env : ");
         //Debug.traceln(Env.printEnvStr(env));
         //Debug.traceln("\n----------------------- FINISHED ENV ------------------------\n");
-        //*/
+        */
       then
         fail();
   end matchcontinue;
@@ -7040,11 +7040,17 @@ algorithm
         _ = elabBuiltinHandler(id);
       then
         (cache,true);
+    case (cache,Absyn.FULLYQUALIFIED(path),pre)
+      equation
+        (cache,true) = isBuiltinFunc(cache,path,pre);
+      then
+        (cache,true);
     case (cache, Absyn.QUALIFIED("Connections", Absyn.IDENT("isRoot")),_)
       then
         (cache,true);
     case (cache,path,pre)
       equation
+        failure(Absyn.FULLYQUALIFIED(_) = path);
         (cache,true) = Lookup.isInBuiltinEnv(cache,path);
         checkSemiSupportedFunctions(path,pre);
       then
@@ -7125,6 +7131,7 @@ algorithm
       Env.Cache cache;
       DAE.DAElist dae;
       Prefix pre;
+      Absyn.ComponentRef cr;
 
     /* impl for normal builtin operators and functions */
     case (cache,env,Absyn.CREF_IDENT(name = name,subscripts = {}),args,nargs,impl,pre)
@@ -7150,6 +7157,11 @@ algorithm
       equation
         handler = elabBuiltinHandlerGeneric(name);
         (cache,exp,prop,dae) = handler(cache,env, args, nargs, impl,pre);
+      then
+        (cache,exp,prop,dae);
+    case (cache,env,Absyn.CREF_FULLYQUALIFIED(cr),args,nargs,impl,pre)
+      equation
+        (cache,exp,prop,dae) = elabCallBuiltin(cache,env,cr,args,nargs,impl,pre);
       then
         (cache,exp,prop,dae);
   end matchcontinue;
@@ -9524,9 +9536,9 @@ algorithm
         (cache,args_1,clist,restype,t,dims,slots,dae);
 
     // failtrace
-    case (cache,env,_,_,_,_,_,_)
+    case (cache,env,_,_,t::_,_,_,_)
       equation
-        Debug.fprintln("failtrace", "- Static.elabTypes failed.");
+        Debug.fprintln("failtrace", "- Static.elabTypes failed: " +& Types.unparseType(t));
       then
         fail();
   end matchcontinue;
@@ -10254,8 +10266,8 @@ algorithm
     case (cache, env, (e :: es), ((farg as (_,vt)) :: vs), slots, checkTypes as true, impl, polymorphicBindings,pre)
       equation
         /* FAILTRACE REMOVE
-        (cache,e_1,DAE.PROP(t,c1),_) = elabExp(cache,env, e, impl, NONE,true);
-        failure((e_2,_) = Types.matchType(e_1, t, vt));
+        (cache,e_1,DAE.PROP(t,c1),_,_) = elabExp(cache,env,e,impl,NONE,true,pre);
+        failure((_,_,_) = Types.matchTypePolymorphic(e_1,t,vt,polymorphicBindings,false));
         Debug.fprint("failtrace", "elabPositionalInputArgs failed, expected type:");
         Debug.fprint("failtrace", Types.unparseType(vt));
         Debug.fprint("failtrace", " found type");
@@ -10558,7 +10570,7 @@ algorithm
         //true = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
         path = Absyn.crefToPath(c);
         (cache,typelist,dae1) = Lookup.lookupFunctionsInEnv(cache,env,path);
-        (cache, isBuiltinFunc) = isBuiltinFunc(cache, path,pre);
+        (cache, isBuiltinFunc) = isBuiltinFunc(cache,path,pre);
         {t} = typelist;
         (tt,optPath) = t;
         t = (tt, Util.if_(isBuiltinFunc, SOME(path), optPath)) "builtin functions store NONE there";

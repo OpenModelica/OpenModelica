@@ -3438,6 +3438,12 @@ algorithm
         s_3 = stringAppend(s_2, crs);
       then
         s_3;
+    case Absyn.CREF_FULLYQUALIFIED(componentRef = cr)
+      equation
+        crs = printComponentRefStr(cr);
+        s_3 = stringAppend(".", crs);
+      then
+        s_3;
     case Absyn.WILD() then "_";
   end matchcontinue;
 end printComponentRefStr;

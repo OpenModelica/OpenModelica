@@ -68,24 +68,24 @@ algorithm
       list<Absyn.AlgorithmItem> localAccList1;
       list<DAE.Element> restLd,localAccList2;
       DAE.FunctionTree funcs;
-    case ({},localAccList1,localAccList2) then (localAccList1,localAccList2);
+    case ({},localAccList1,localAccList2) then (listReverse(localAccList1),listReverse(localAccList2));
     case (DAE.EQUATION(exp1,exp2,_) :: restLd,localAccList1,localAccList2)
       local
-        list<Absyn.AlgorithmItem> stmt;
+        Absyn.AlgorithmItem stmt;
         DAE.Exp exp1,exp2;
         Absyn.Exp left,right;
       equation
         left = fromExpExpToAbsynExp(exp1);
         right = fromExpExpToAbsynExp(exp2);
-        stmt = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE(),Absyn.dummyInfo /* TODO: Use the elementsource from the DAE.EQUATION? */)};
-        localAccList1 = listAppend(localAccList1,stmt);
+        stmt = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(left,right),NONE(),Absyn.dummyInfo /* TODO: Use the elementsource from the DAE.EQUATION? */);
+        localAccList1 = stmt::localAccList1;
         (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
     case (firstLd :: restLd,localAccList1,localAccList2)
       local
         DAE.Element firstLd;
       equation
-        localAccList2 = listAppend(localAccList2,{firstLd});
+        localAccList2 = firstLd::localAccList2;
         (localAccList1,localAccList2) = fromDAEEqsToAbsynAlgElts(restLd,localAccList1,localAccList2);
       then (localAccList1,localAccList2);
   end matchcontinue;

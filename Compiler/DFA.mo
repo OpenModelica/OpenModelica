@@ -840,9 +840,9 @@ algorithm
         elem1 = listAppend(elem1,elem2);
 
         assign1 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("listGet",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(1)},{}))), NONE(), Absyn.dummyInfo);
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listGet",{})),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(1)},{}))), NONE(), Absyn.dummyInfo);
         assign2 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.CREF_IDENT(secondPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("listRest",{}),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{}))},{}))), NONE(), Absyn.dummyInfo);
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listRest",{})),Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{}))},{}))), NONE(), Absyn.dummyInfo);
 
         assignList = listAppend({assign1},{assign2});
       then (localCache,localDfaEnv,elem1,assignList);
@@ -1293,9 +1293,9 @@ algorithm
       then exp;
     case (Absyn.REAL(r),localStateVar)
       equation
-        exp = Absyn.RELATION(Absyn.CALL(Absyn.CREF_IDENT("String",{}),
+        exp = Absyn.RELATION(Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("String",{})),
           Absyn.FUNCTIONARGS({Absyn.REAL(r),Absyn.INTEGER(5)},{})),
-            Absyn.EQUAL(),Absyn.CALL(Absyn.CREF_IDENT("String",{}),
+            Absyn.EQUAL(),Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("String",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{})),Absyn.INTEGER(5)},{})));
       then exp;
     case (Absyn.STRING(s),localStateVar)
@@ -1309,12 +1309,12 @@ algorithm
       then exp;
     case (Absyn.LIST({}),localStateVar)
       equation
-        exp = Absyn.CALL(Absyn.CREF_IDENT("listEmpty",{}),
+        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listEmpty",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
       then exp;
     case (Absyn.CREF(Absyn.CREF_IDENT("NONE",{})),localStateVar)
       equation
-        exp = Absyn.CALL(Absyn.CREF_IDENT("optionNone",{}),
+        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("optionNone",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localStateVar,{}))},{}));
       then exp;
  end matchcontinue;
@@ -2404,14 +2404,14 @@ algorithm
     case (RP_EMPTYLIST(_), var, nequal) // Optimizes comparison with emptylist by not creating an empty list to compare with
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), Absyn.dummyInfo);
-        exp = Absyn.CALL(Absyn.CREF_IDENT("listEmpty",{}), Absyn.FUNCTIONARGS({var}, {}));
+        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listEmpty",{})), Absyn.FUNCTIONARGS({var}, {}));
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), Absyn.dummyInfo);
       then {alg};
     case (RP_NONE(_), var, nequal) // Optimizes comparison with NONE by not creating an empty option to compare with
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), Absyn.dummyInfo);
-        exp = Absyn.CALL(Absyn.CREF_IDENT("optionNone",{}), Absyn.FUNCTIONARGS({var}, {}));
+        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("optionNone",{})), Absyn.FUNCTIONARGS({var}, {}));
         exp = Util.if_(nequal, Absyn.LUNARY(Absyn.NOT(), exp), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), Absyn.dummyInfo);
       then {alg};
@@ -2444,7 +2444,7 @@ algorithm
       equation
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_BREAK, NONE(), Absyn.dummyInfo);
         fargs = Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(pathVar,{})),Absyn.INTEGER(i),Absyn.INTEGER(numFields),Absyn.STRING(classPathStr)}, {});
-        exp = Absyn.CALL(Absyn.CREF_IDENT("mmc_uniontype_metarecord_typedef_equal",{}), fargs);
+        exp = Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_uniontype_metarecord_typedef_equal",{})), fargs);
         exp = Absyn.LUNARY(Absyn.NOT(), exp);
         alg = Absyn.ALGORITHMITEM(Absyn.ALG_IF(exp, {alg}, {}, {}), NONE(), Absyn.dummyInfo);
       then {alg};
@@ -2527,9 +2527,9 @@ algorithm
 
         cref = identToCrefExp(pathVar);
         assign1 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(firstCref,
-          Absyn.CALL(Absyn.CREF_IDENT("listGet",{}),Absyn.FUNCTIONARGS({cref,Absyn.INTEGER(1)},{}))), NONE(), Absyn.dummyInfo);
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listGet",{})),Absyn.FUNCTIONARGS({cref,Absyn.INTEGER(1)},{}))), NONE(), Absyn.dummyInfo);
         assign2 = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(secondCref,
-          Absyn.CALL(Absyn.CREF_IDENT("listRest",{}),Absyn.FUNCTIONARGS({cref},{}))), NONE(), Absyn.dummyInfo);
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("listRest",{})),Absyn.FUNCTIONARGS({cref},{}))), NONE(), Absyn.dummyInfo);
 
         (localCache, localDfaEnv, elem1, algs1) = generatePathVarDeclarationsList({first}, {firstCref}, localCache, localEnv, localDfaEnv);
         (localCache, localDfaEnv, elem2, algs2) = generatePathVarDeclarationsList({second}, {secondCref}, localCache, localEnv, localDfaEnv);
@@ -2697,7 +2697,7 @@ algorithm
       equation
         elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("mmc_get_field",{}),
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_get_field",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.INTEGER(n)},{}))),NONE(),Absyn.dummyInfo)};
         localAccList = listAppend(localAccList,elem);
         localAccList = createPathVarAssignments(localRecVarName,restVar,{},localAccList,n+1);
@@ -2746,7 +2746,7 @@ algorithm
       equation
         elem = {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(
           Absyn.CREF(Absyn.CREF_IDENT(firstPathVar,{})),
-          Absyn.CALL(Absyn.CREF_IDENT("mmc_get_field",{}),
+          Absyn.CALL(Absyn.CREF_FULLYQUALIFIED(Absyn.CREF_IDENT("mmc_get_field",{})),
           Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(localRecVarName,{})),Absyn.CREF(cref),Absyn.STRING(firstFieldName)},{}))),NONE(),Absyn.dummyInfo)};
         localAccList = listAppend(localAccList,elem);
         localAccList = createPathVarAssignmentsCall(localRecVarName,restVar,restFieldNames,localAccList,restriction,cref);

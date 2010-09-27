@@ -7012,6 +7012,13 @@ algorithm
         subs_1 = toExpCrefSubs(subs);
       then
         DAE.CREF_QUAL(id,DAE.ET_OTHER(),subs_1,cr_1);
+    
+    // qualified
+    case (Absyn.CREF_FULLYQUALIFIED(componentRef = cr))
+      equation
+        cr_1 = toExpCref(cr);
+      then
+        cr_1; /* There is no DAE.CREF_FULLYQUALIFIED */
   end matchcontinue;
 end toExpCref;
 

@@ -43,8 +43,8 @@ package Absyn
   for printing the AST:
 
   * Abstract Syntax Tree (Close to Modelica)
-     � Complete Modelica 2.2
-     � Including annotations and comments
+     - Complete Modelica 2.2, 3.1, 3.2, MetaModelica
+     - Including annotations and comments
   * Primary AST for e.g. the Interactive module
      - Model editor related representations (must use annotations)
   * Functions
@@ -54,9 +54,7 @@ package Absyn
        - etc.
 
 
-  Absyn.mo\'s constructors are primarily used by the walker
-  (Compiler/absyn_builder/walker.g) which takes an ANTLR internal syntax tree and
-  converts it into an MetaModelica Compiler (MMC) abstract syntax tree.
+  Absyn.mo\'s constructors are primarily used by (Parser/Modelica.g).
 
   When the AST has been built, it is normally used by SCode.mo in order to
   build the SCode (See SCode.mo). It is also possile to send the AST do
@@ -972,6 +970,9 @@ uniontype ComponentRef "A component reference is the fully or partially qualifie
   a component.  It is represented as a list of
   identifier--subscript pairs.
   - Component references and paths"
+  record CREF_FULLYQUALIFIED
+    ComponentRef componentRef;
+  end CREF_FULLYQUALIFIED;
   record CREF_QUAL
     Ident name "name" ;
     list<Subscript> subScripts "subScripts" ;
@@ -1859,6 +1860,11 @@ algorithm
         s2 = printComponentRefStr(child);
         s1 = s1 +& "." +& s2;
       then s1;
+    case(CREF_FULLYQUALIFIED(child))
+      equation
+        s2 = printComponentRefStr(child);
+        s1 = "." +& s2;
+      then s1;
   end matchcontinue;
 end printComponentRefStr;
 
@@ -2172,6 +2178,11 @@ algorithm
         cr = addSubscriptsLast(cr,i);
       then
         CREF_QUAL(id,subs,cr);
+    case (CREF_FULLYQUALIFIED(cr),i)
+      equation
+        cr = addSubscriptsLast(cr,i);
+      then
+        CREF_FULLYQUALIFIED(cr);
   end matchcontinue;
 end addSubscriptsLast;
 
@@ -2191,6 +2202,10 @@ algorithm
       list<String> strings;
       list<Subscript> subs;
       ComponentRef cr;
+    case (CREF_FULLYQUALIFIED(componentRef = cr),replPath)
+      equation
+        cr = crefReplaceFirstIdent(cr,replPath);
+      then CREF_FULLYQUALIFIED(cr);
     case (CREF_QUAL(componentRef = cr, subScripts = subs),replPath)
       equation
         cref = pathToCref(replPath);
@@ -2290,6 +2305,10 @@ algorithm
     local
       Ident prefixIdent, ident;
       ComponentRef prefixRestCr, restCr;
+    // fqual
+    case(CREF_FULLYQUALIFIED(componentRef = prefixRestCr), CREF_FULLYQUALIFIED(componentRef = restCr)) 
+      then 
+        crefRemovePrefix(prefixRestCr, restCr);
     // qual
     case(CREF_QUAL(name = prefixIdent, componentRef = prefixRestCr), CREF_QUAL(name = ident, componentRef = restCr)) 
       equation
@@ -3031,6 +3050,11 @@ algorithm
         p_1 = crefStripLast(p);
       then
         CREF_QUAL(str,subs,p_1);
+    case (CREF_FULLYQUALIFIED(componentRef = p))
+      equation
+        p_1 = crefStripLast(p);
+      then
+        CREF_FULLYQUALIFIED(p_1);
   end matchcontinue;
 end crefStripLast;
 
@@ -3098,6 +3122,11 @@ algorithm
         p = crefToPath(c);
       then
         QUALIFIED(i,p);
+    case CREF_FULLYQUALIFIED(componentRef = c)
+      equation
+        p = crefToPath(c);
+      then
+        FULLYQUALIFIED(p);
   end matchcontinue;
 end crefToPath;
 
@@ -3119,7 +3148,9 @@ algorithm
       then
         CREF_QUAL(i,{},c);
     case(FULLYQUALIFIED(p))
-      then pathToCref(p);
+      equation
+        c = pathToCref(p);
+      then CREF_FULLYQUALIFIED(c);
   end matchcontinue;
 end pathToCref;
 
@@ -3128,9 +3159,12 @@ Returns the base-name of the Absyn.componentReference"
   input ComponentRef inComponentRef;
   output String str;
 algorithm str := matchcontinue(inComponentRef)
-  local String ret;
+  local
+    String ret;
+    ComponentRef cr;
   case(CREF_IDENT(ret,_)) then ret;
   case(CREF_QUAL(ret,_,_)) then ret;
+  case(CREF_FULLYQUALIFIED(cr)) then crefFirstIdent(cr);
 end matchcontinue;
 end crefFirstIdent;
 
@@ -3138,10 +3172,11 @@ public function crefIsIdent "
 Returns the base-name of the Absyn.componentReference"
   input ComponentRef inComponentRef;
   output Boolean bol;
-algorithm bol := matchcontinue(inComponentRef)
-  case(CREF_IDENT(_,_)) then true;
-  case(CREF_QUAL(_,_,_)) then false;
-end matchcontinue;
+algorithm
+  bol := matchcontinue(inComponentRef)
+    case(CREF_IDENT(_,_)) then true;
+    else false;
+  end matchcontinue;
 end crefIsIdent;
 
 public function crefLastSubs "function: crefLastSubs
@@ -3157,6 +3192,11 @@ algorithm
       ComponentRef cr;
     case (CREF_IDENT(name = id,subscripts= subs)) then subs;
     case (CREF_QUAL(componentRef = cr))
+      equation
+        res = crefLastSubs(cr);
+      then
+        res;
+    case (CREF_FULLYQUALIFIED(componentRef = cr))
       equation
         res = crefLastSubs(cr);
       then
@@ -3180,6 +3220,11 @@ algorithm subscripts := matchcontinue(cr)
     equation
       subscripts = getSubsFromCref(child);
       subscripts = Util.listUnionOnTrue(subscripts,subs2, subscriptEqual);
+    then
+      subscripts;
+  case(CREF_FULLYQUALIFIED(child))
+    equation
+      subscripts = getSubsFromCref(child);
     then
       subscripts;
 end matchcontinue;
@@ -3261,6 +3306,11 @@ algorithm
         cref_1 = crefGetLastIdent(cref);
       then
         cref_1;
+    case(CREF_FULLYQUALIFIED(cref))
+      equation
+        cref_1 = crefGetLastIdent(cref);
+      then
+        cref_1;
   end matchcontinue;
 end crefGetLastIdent;
 
@@ -3284,6 +3334,12 @@ algorithm
         cref_1 = CREF_QUAL(id,subs,cref);
       then
         cref_1;
+    case(CREF_FULLYQUALIFIED(cref1),cref2)
+      equation
+        cref = crefSetLastIdent(cref1,cref2);
+        cref_1 = CREF_FULLYQUALIFIED(cref);
+      then
+        cref_1;
   end matchcontinue;
 end crefSetLastIdent;
 
@@ -3304,6 +3360,11 @@ algorithm
         cr_1 = crefStripLastSubs(cr);
       then
         CREF_QUAL(id,s,cr_1);
+    case (CREF_FULLYQUALIFIED(componentRef = cr))
+      equation
+        cr_1 = crefStripLastSubs(cr);
+      then
+        CREF_FULLYQUALIFIED(cr_1);
   end matchcontinue;
 end crefStripLastSubs;
 
@@ -3319,12 +3380,20 @@ algorithm
       Ident id;
       list<Subscript> sub;
       ComponentRef cr2,cr_1,cr;
-    case (CREF_IDENT(name = id,subscripts = sub),cr2) then CREF_QUAL(id,sub,cr2);
+    case (CREF_IDENT(name = id,subscripts = sub),cr2)
+      equation
+        failure(CREF_FULLYQUALIFIED(_) = cr2);
+      then CREF_QUAL(id,sub,cr2);
     case (CREF_QUAL(name = id,subScripts = sub,componentRef = cr),cr2)
       equation
         cr_1 = joinCrefs(cr, cr2);
       then
         CREF_QUAL(id,sub,cr_1);
+    case (CREF_FULLYQUALIFIED(componentRef = cr),cr2)
+      equation
+        cr_1 = joinCrefs(cr, cr2);
+      then
+        CREF_FULLYQUALIFIED(cr_1);
   end matchcontinue;
 end joinCrefs;
 
@@ -3335,9 +3404,12 @@ public function crefGetFirst "function: crefGetFirst
 algorithm
   outComponentRef:=
   matchcontinue (inComponentRef)
-    local Ident i;
+    local
+      Ident i;
+      ComponentRef cr;
     case (CREF_IDENT(name = i)) then CREF_IDENT(i,{});
     case (CREF_QUAL(name = i)) then CREF_IDENT(i,{});
+    case (CREF_FULLYQUALIFIED(cr)) then crefGetFirst(cr);
   end matchcontinue;
 end crefGetFirst;
 
@@ -3350,6 +3422,7 @@ algorithm
   matchcontinue (inComponentRef)
     local ComponentRef cr;
     case (CREF_QUAL(componentRef =cr )) then cr;
+    case (CREF_FULLYQUALIFIED(componentRef =cr )) then crefStripFirst(cr);
   end matchcontinue;
 end crefStripFirst;
 
@@ -3493,6 +3566,9 @@ algorithm
         true = crefEqual(cr1, cr2);
       then
         true;
+    case (CREF_FULLYQUALIFIED(componentRef = cr1),CREF_FULLYQUALIFIED(componentRef = cr2))
+      then
+        crefEqual(cr1, cr2);
     case (_,_) then false;
   end matchcontinue;
 end crefEqual;
@@ -3537,6 +3613,8 @@ algorithm
         true = crefEqualNoSubs(cr1, cr2);
       then
         true;
+    case (CREF_FULLYQUALIFIED(componentRef = cr1),CREF_FULLYQUALIFIED(componentRef = cr2))
+      then crefEqualNoSubs(cr1, cr2);
     case (_,_) then false;
   end matchcontinue;
 end crefEqualNoSubs;
@@ -4126,6 +4204,7 @@ algorithm
         lst_3=qualifyCRefIntLst(name,subLst,lst_2);
         lst=listAppend(lst_1,lst_3);
         then lst;
+      case(id, CREF_FULLYQUALIFIED(cref)) then findIteratorInCRef(id,cref);
       case (_,WILD()) then {};
   end matchcontinue;
 end findIteratorInCRef;
