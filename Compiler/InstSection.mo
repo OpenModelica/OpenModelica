@@ -3913,6 +3913,7 @@ algorithm
     case ((DAE.T_INTEGER(_),_)) then ();
     case ((DAE.T_STRING(_),_)) then ();
     case ((DAE.T_BOOL(_),_)) then ();
+    case ((DAE.T_ENUMERATION(index = _), _)) then ();
     case ((DAE.T_COMPLEX(complexClassType = state),_))
       equation
         ClassInf.valid(state, SCode.R_CONNECTOR(false));
@@ -4087,20 +4088,20 @@ algorithm
         s0 = Util.if_(b0,"types equivalent;","types NOT equivalent");
         s1 = Util.if_(flow1,"flow "," ");
         s2 = Util.if_(flow2,"flow "," ");
-        Debug.fprint("failtrace", "- InstSection.checkConnectTypes(");
-        Debug.fprint("failtrace", s0);
-        Debug.fprint("failtrace", Exp.printComponentRefStr(c1));
-        Debug.fprint("failtrace", " : ");
-        Debug.fprint("failtrace", s1);
-        Debug.fprint("failtrace", Types.unparseType(t1));
+        Debug.trace("- InstSection.checkConnectTypes(");
+        Debug.trace(s0);
+        Debug.trace(Exp.printComponentRefStr(c1));
+        Debug.trace(" : ");
+        Debug.trace(s1);
+        Debug.trace(Types.unparseType(t1));
 
-        Debug.fprint("failtrace", Exp.printComponentRefStr(c1));
-        Debug.fprint("failtrace", " <-> ");
-        Debug.fprint("failtrace", Exp.printComponentRefStr(c2));
-        Debug.fprint("failtrace", " : ");
-        Debug.fprint("failtrace", s2);
-        Debug.fprint("failtrace", Types.unparseType(t2));
-        Debug.fprint("failtrace", ") failed\n");
+        Debug.trace(Exp.printComponentRefStr(c1));
+        Debug.trace(" <-> ");
+        Debug.trace(Exp.printComponentRefStr(c2));
+        Debug.trace(" : ");
+        Debug.trace(s2);
+        Debug.trace(Types.unparseType(t2));
+        Debug.traceln(") failed");
       then
         fail();
   end matchcontinue;
@@ -4316,6 +4317,19 @@ algorithm
         sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
       then
         (cache,env,ih,sets_1,DAEUtil.emptyDae,graph);
+
+    /* Connection of two enumeration variables */
+    case (cache,env,ih,sets,pre,c1,_,(DAE.T_ENUMERATION(index = NONE),_),vt1,c2,_,(DAE.T_ENUMERATION(index = NONE),_),vt2,false,false,io1,io2,graph,info)
+      equation
+        (cache,c1_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c1);
+        (cache,c2_1) = PrefixUtil.prefixCref(cache, env, ih, pre, c2);
+
+        // set the source of this element
+        source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
+
+        sets_1 = ConnectUtil.addEqu(sets, c1_1, c2_1, source);
+      then
+        (cache, env, ih, sets_1, DAEUtil.emptyDae, graph);
 
     /* Connection of arrays of complex types */
     case (cache,env,ih,sets,pre,c1,f1,(DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),vt1,
@@ -4859,7 +4873,6 @@ algorithm
     case ((DAE.T_REAL(_),_)) then Absyn.IDENT("Real");
     case ((DAE.T_STRING(_),_)) then Absyn.IDENT("String");
     case ((DAE.T_BOOL(_),_)) then Absyn.IDENT("Boolean");
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_)) then Absyn.IDENT("Enum");
 //    case ((DAE.T_ENUM(),_)) then Absyn.IDENT("Enum");
     /*
     case ((DAE.T_COMPLEX(ClassInf.MODEL(s),_,_),_)) then Absyn.IDENT(s);

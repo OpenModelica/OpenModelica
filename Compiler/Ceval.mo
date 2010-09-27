@@ -826,6 +826,18 @@ algorithm
       then
         (cache,Values.INTEGER(i),st_1);
         
+    // cast integer to enum
+    case (cache,env,DAE.CAST(ty = DAE.ET_ENUMERATION(path = p, names = n), exp = e), impl, st, dimOpt, msg)
+      local
+        Absyn.Path p;
+        list<String> n;
+      equation
+        (cache, Values.INTEGER(i), st_1) = ceval(cache, env, e, impl, st, dimOpt, msg);
+        str = listNth(n, i - 1);
+        p = Absyn.joinPaths(p, Absyn.IDENT(str));
+      then
+        (cache, Values.ENUM_LITERAL(p, i), st_1);
+
     // cast integer array to real array
     case (cache,env,DAE.CAST(ty = DAE.ET_ARRAY(ty = DAE.ET_REAL()),exp = e),impl,st,dim,msg)
       local Option<Integer> dim;

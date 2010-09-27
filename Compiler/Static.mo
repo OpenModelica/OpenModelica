@@ -1988,7 +1988,7 @@ algorithm
         p = Absyn.pathPrefix(p);
       then
         (cache,(
-          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE(),p,{},{}),NONE)),NONE));
+          DAE.T_ARRAY(DAE.DIM_INTEGER(n_1),(DAE.T_ENUMERATION(NONE, p,{},{},{}),NONE)),NONE));
     case (cache,env,start,NONE,stop,const,_,impl,_) /* as false */
       local Real startv,stopv,n,n_2;
       equation
@@ -2680,7 +2680,7 @@ algorithm
         //(cache,DAE.ARRAY(at,a,(el_2 :: els_1)),props,dim1,dim2_1,dae);
     case (_,_,_,_,_,_,_,_,_)
       equation
-        Debug.fprint("failtrace", "- elabMatrixComma failed\n");
+        Debug.fprint("failtrace", "- Static.elabMatrixComma failed\n");
       then
         fail();
   end matchcontinue;
@@ -8142,7 +8142,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("getStateSelect"),
           {DAE.CREF(cr_1,DAE.ET_OTHER()),DAE.CREF(cr2_1,DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(
           (
-          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE),DAE.C_VAR()),SOME(st));
+          DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE),DAE.C_VAR()),SOME(st));
 
     case (cache,env,Absyn.CREF_IDENT(name = "echo"),{bool_exp},{},impl,SOME(st),pre)
       equation
@@ -10541,12 +10541,14 @@ algorithm
     // a normal cref
     case (cache,env,c,impl,doVect,pre) /* impl */
       equation
-        (cache,c_1,_,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
+        (cache,c_1,const,dae) = elabCrefSubs(cache, env, c, Prefix.NOPRE(), impl);
         (cache,DAE.ATTR(_,_,acc,variability,_,io),t,binding,forIteratorConstOpt,splicedExpData,_,_,_) = Lookup.lookupVar(cache, env, c_1);
+        variability = applySubscriptsVariability(variability, const);
         (cache,exp,const,acc_1) = elabCref2(cache, env, c_1, acc, variability, forIteratorConstOpt,io, t, binding, doVect,splicedExpData,pre);
         exp = makeASUBArrayAdressing(c,cache,env,impl,exp,splicedExpData,doVect,pre);        
+        t = fixEnumerationType(t);
       then
-        (cache,exp,DAE.PROP(t,const),acc_1,dae);
+        (cache,exp,DAE.PROP(t, const),acc_1,dae);
         
     // An enumeration type => array of enumeration literals.
     case (cache, env, c, impl, doVect, pre)
@@ -10627,6 +10629,43 @@ algorithm
   end matchcontinue;
 end elabCref;
 
+public function fixEnumerationType
+  "Removes the index from an enumeration type."
+  input DAE.Type inType;
+  output DAE.Type outType;
+algorithm
+  outType := matchcontinue(inType)
+    case ((DAE.T_ENUMERATION(index = SOME(_), path = p, names = n, 
+        literalVarLst = v, attributeLst = al), op))
+      local
+        Absyn.Path p;
+        list<String> n;
+        list<DAE.Var> v, al;
+        Option<Absyn.Path> op;
+      then
+        ((DAE.T_ENUMERATION(NONE, p, n, v, al), op));
+    case _ then inType;
+  end matchcontinue;
+end fixEnumerationType;
+
+public function applySubscriptsVariability
+  "Takes the variability of a variable and the constness of it's subscripts and
+  determines if the varibility of the variable should be raised. I.e.:
+    parameter with variable subscripts => variable
+    constant with variable subscripts => variable
+    constant with parameter subscripts => parameter"
+  input SCode.Variability inVariability;
+  input DAE.Const inSubsConst;
+  output SCode.Variability outVariability;
+algorithm
+  outVariability := matchcontinue(inVariability, inSubsConst)
+    case (SCode.PARAM, DAE.C_VAR) then SCode.VAR;
+    case (SCode.CONST, DAE.C_VAR) then SCode.VAR;
+    case (SCode.CONST, DAE.C_PARAM) then SCode.PARAM;
+    case (_, _) then inVariability;
+  end matchcontinue;
+end applySubscriptsVariability;
+
 public function makeEnumerationArray
   "Expands an enumeration type to an array of it's enumeration literals."
   input Absyn.Path enumTypeName;
@@ -10643,10 +10682,10 @@ algorithm
   enum_lit_names := Util.listMap1r(enum_lit_names, Absyn.joinPaths, enumTypeName);
   enum_lit_expl := Util.listMapAndFold(enum_lit_names, makeEnumLiteral, 1);
   sz := listLength(enumLiterals);
-  ety := DAE.ET_ARRAY(DAE.ET_ENUMERATION(NONE, enumTypeName, enumLiterals, {}),
+  ety := DAE.ET_ARRAY(DAE.ET_ENUMERATION(enumTypeName, enumLiterals, {}),
     {DAE.DIM_ENUM(enumTypeName, enumLiterals, sz)});
   enumArray := DAE.ARRAY(ety, true, enum_lit_expl);
-  enumArrayType := (DAE.T_ENUMERATION(NONE, enumTypeName, enumLiterals, {}), NONE);
+  enumArrayType := (DAE.T_ENUMERATION(NONE, enumTypeName, enumLiterals, {}, {}), NONE);
   enumArrayType := (DAE.T_ARRAY(DAE.DIM_ENUM(enumTypeName, enumLiterals, sz), 
     enumArrayType), NONE);
 end makeEnumerationArray;
@@ -10938,7 +10977,7 @@ algorithm
       DAE.ExpType t_1, expTy;
       DAE.ComponentRef cr,cr_1,cref;
       SCode.Accessibility acc,acc_1;
-      tuple<DAE.TType, Option<Absyn.Path>> t,tt,et,tp,idTp;
+      DAE.Type t,tt,et,tp,idTp;
       DAE.Exp e,e_1,exp,exp1;
       Option<DAE.Exp> sexp;
       Values.Value v;
@@ -10960,7 +10999,7 @@ algorithm
       equation
         expTy = Types.elabType(t);
       then
-        (cache,DAE.CREF(cr,expTy),DAE.C_VAR(),acc);
+        (cache,DAE.CREF(cr,expTy),DAE.C_VAR,acc);
 
     // adrpo: report a warning if the binding came from a start value!
     case (cache,env,cr,acc,SCode.PARAM(),forIteratorConstOpt,io,tt,bind as DAE.EQBOUND(source = DAE.BINDING_FROM_START_VALUE()),doVect,splicedExpData,inPrefix)
@@ -11098,13 +11137,6 @@ algorithm
         e_1 = crefVectorize(doVect,DAE.CREF(cr_1,expTy), tt, NONE,expIdTy,true);
       then
         (cache,e_1,DAE.C_VAR(),acc);
-
-    // enum constants does not have a value expression
-    case (cache,env,cr,acc,_,_,io,(tt as (DAE.T_ENUMERATION(SOME(_),_,_,_),_)),_,doVect,_,_)
-      equation
-        expTy = Types.elabType(tt);
-      then
-        (cache,DAE.CREF(cr,expTy),DAE.C_CONST(),acc);
 
     // if value not constant, but references another parameter, which has a value perform value propagation.
     case (cache,env,cr,acc,variability,forIteratorConstOpt,io,tp,DAE.EQBOUND(exp = DAE.CREF(componentRef = cref,ty = _),constant_ = DAE.C_VAR()),doVect,splicedExpData,pre)
@@ -12214,7 +12246,7 @@ algorithm
       Prefix pre;
 
     case ((DAE.T_INTEGER(varLstInt = _),_),_,sub,_,_) then DAE.INDEX(sub); 
-    case ((DAE.T_ENUMERATION(_,_,_,_),_),_,sub,_,_) then DAE.INDEX(sub);
+    case ((DAE.T_ENUMERATION(path = _),_),_,sub,_,_) then DAE.INDEX(sub);
     case ((DAE.T_ARRAY(arrayType = (DAE.T_INTEGER(varLstInt = _),_)),_),_,sub,_,_) then DAE.SLICE(sub);
 
     // Modelica.Electrical.Analog.Lines.M_OLine.segment in MSL 3.1 uses a real
@@ -13229,9 +13261,10 @@ algorithm
   (outCache,outTplExpOperatorTypesTypeLstTypesTypeLst) :=
   matchcontinue (inCache,inOperator1,inEnv2,inType3,inType4)
     local
-      list<tuple<DAE.Operator, list<tuple<DAE.TType, Option<Absyn.Path>>>, tuple<DAE.TType, Option<Absyn.Path>>>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
+      list<tuple<DAE.Operator, list<DAE.Type>, DAE.Type>> intarrs,realarrs,stringarrs,scalars,userops,arrays,types,scalarprod,matrixprod,intscalararrs,realscalararrs,intarrsscalar,realarrsscalar,realarrscalar,arrscalar,stringscalararrs,stringarrsscalar;
+      tuple<DAE.Operator, list<DAE.Type>, DAE.Type> enum_op;
       list<Env.Frame> env;
-      tuple<DAE.TType, Option<Absyn.Path>> t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
+      DAE.Type t1,t2,int_scalar,int_vector,int_matrix,real_scalar,real_vector,real_matrix;
       DAE.Operator int_mul,real_mul,int_mul_sp,real_mul_sp,int_mul_mp,real_mul_mp,real_div,real_pow,int_pow;
       Ident s;
       Absyn.Operator op;
@@ -13510,87 +13543,100 @@ algorithm
           (DAE.NOT(),{DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT)});
     case (cache,Absyn.LESS(),env,t1,t2) /* Relational operators */
       equation
+        enum_op = makeEnumOperator(DAE.LESS(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
           (DAE.LESS(DAE.ET_INT()),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+          enum_op,
           (DAE.LESS(DAE.ET_REAL()),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.LESS(DAE.ET_BOOL()),
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.LESS(DAE.ET_STRING()),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.LESS(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
     case (cache,Absyn.LESSEQ(),env,t1,t2)
       equation
+        enum_op = makeEnumOperator(DAE.LESSEQ(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
           (DAE.LESSEQ(DAE.ET_INT()),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+          enum_op,
           (DAE.LESSEQ(DAE.ET_REAL()),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.LESSEQ(DAE.ET_BOOL()),
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.LESSEQ(DAE.ET_STRING()),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.LESSEQ(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
     case (cache,Absyn.GREATER(),env,t1,t2)
       equation
+        enum_op = makeEnumOperator(DAE.GREATER(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
           (DAE.GREATER(DAE.ET_INT()),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+          enum_op,
           (DAE.GREATER(DAE.ET_REAL()),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.GREATER(DAE.ET_BOOL()),
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.GREATER(DAE.ET_STRING()),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.GREATER(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
     case (cache,Absyn.GREATEREQ(),env,t1,t2)
       equation
+        enum_op = makeEnumOperator(DAE.GREATEREQ(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
         scalars = {
           (DAE.GREATEREQ(DAE.ET_INT()),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+          enum_op,
           (DAE.GREATEREQ(DAE.ET_REAL()),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+          (DAE.GREATEREQ(DAE.ET_BOOL()),
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.GREATEREQ(DAE.ET_STRING()),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.GREATEREQ(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT)};
-
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
     case (cache,Absyn.EQUAL(),env,t1,t2)
       equation
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
+        enum_op = makeEnumOperator(DAE.EQUAL(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
         scalars = {
           (DAE.EQUAL(DAE.ET_INT()),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+          enum_op,
           (DAE.EQUAL(DAE.ET_REAL()),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.EQUAL(DAE.ET_STRING()),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.EQUAL(DAE.ET_BOOL()),
-          {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.EQUAL(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT),
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.EQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
         (cache,types);
     case (cache,Absyn.NEQUAL(),env,t1,t2)
       equation
-        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{}));
+        enum_op = makeEnumOperator(DAE.NEQUAL(DAE.ET_ENUMERATION(Absyn.IDENT(""), {},{})), t1, t2);
+        defaultExpType = Util.if_(Types.isBoxedType(t1) and Types.isBoxedType(t2), DAE.ET_BOXED(DAE.ET_OTHER), DAE.ET_ENUMERATION(Absyn.IDENT(""),{},{}));
         scalars = {
           (DAE.NEQUAL(DAE.ET_INT()),
-          {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_INTEGER_DEFAULT,DAE.T_INTEGER_DEFAULT},DAE.T_BOOL_DEFAULT),
+          enum_op,
           (DAE.NEQUAL(DAE.ET_REAL()),
-          {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_REAL_DEFAULT,DAE.T_REAL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.NEQUAL(DAE.ET_STRING()),
-          {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
+            {DAE.T_STRING_DEFAULT,DAE.T_STRING_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.NEQUAL(DAE.ET_BOOL()),
-          {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
-          (DAE.NEQUAL(DAE.ET_ENUMERATION(SOME(0),Absyn.IDENT(""),{},{})),{t1,t2},DAE.T_BOOL_DEFAULT),
+            {DAE.T_BOOL_DEFAULT,DAE.T_BOOL_DEFAULT},DAE.T_BOOL_DEFAULT),
           (DAE.NEQUAL(defaultExpType),{t1,t2},DAE.T_BOOL_DEFAULT)};
         types = Util.listFlatten({scalars});
       then
@@ -13598,14 +13644,45 @@ algorithm
     case (cache,op,env,t1,t2)
       equation
 				true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace", "-operators failed, op: ");
-        s = Dump.opSymbol(op);
-        Debug.fprint("failtrace", s);
-        Debug.fprint("failtrace", "\n");
+        Debug.traceln("- Static.operators failed, op: " +& Dump.opSymbol(op));
       then
         fail();
   end matchcontinue;
 end operators;
+
+protected function makeEnumOperator
+  "Used by operators to create an operator with enumeration type. It sets the
+  correct expected type of the operator, so that for example integer=>enum type
+  casts work correctly without matching things that it shouldn't match."
+  input DAE.Operator inOp;
+  input DAE.Type inType1;
+  input DAE.Type inType2;
+  output tuple<DAE.Operator, list<DAE.Type>, DAE.Type> outOp;
+algorithm
+  outType := matchcontinue(inOp, inType1, inType2)
+    local
+      DAE.ExpType op_ty;
+    case (_, (DAE.T_ENUMERATION(path = _), _), (DAE.T_ENUMERATION(path = _), _))
+      equation
+        op_ty = Types.elabType(inType1);
+        inOp = Exp.setOpType(inOp, op_ty);
+      then ((inOp, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
+    case (_, (DAE.T_ENUMERATION(path = _), _), _)
+      equation
+        op_ty = Types.elabType(inType1);
+        inOp = Exp.setOpType(inOp, op_ty);
+      then
+        ((inOp, {inType1, inType1}, DAE.T_BOOL_DEFAULT));
+    case (_, _, (DAE.T_ENUMERATION(path = _), _))
+      equation
+        op_ty = Types.elabType(inType1);
+        inOp = Exp.setOpType(inOp, op_ty);
+      then
+        ((inOp, {inType1, inType2}, DAE.T_BOOL_DEFAULT));
+    case (_, _, _)
+      then ((inOp, {DAE.T_ENUMERATION_DEFAULT, DAE.T_ENUMERATION_DEFAULT}, DAE.T_BOOL_DEFAULT));
+  end matchcontinue;
+end makeEnumOperator;
 
 protected function buildOperatorTypes
 "function: buildOperatorTypes

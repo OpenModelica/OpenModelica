@@ -3965,8 +3965,6 @@ template daeExpCrefRhs2(Exp ecr, Context context, Text &preExp /*BUFP*/,
  "Generates code for a component reference."
 ::=
   match ecr
-  case CREF(ty=ET_ENUMERATION(__)) then
-    Exp.getEnumIndexfromCref(componentRef)
   case ecr as CREF(componentRef=cr, ty=ty) then
     let box = daeExpCrefRhsArrayBox(ecr, context, &preExp, &varDecls)
     if box then

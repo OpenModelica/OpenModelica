@@ -662,6 +662,8 @@ public constant Type T_REAL_DEFAULT    = (T_REAL({}),NONE());
 public constant Type T_INTEGER_DEFAULT = (T_INTEGER({}),NONE());
 public constant Type T_STRING_DEFAULT  = (T_STRING({}),NONE());
 public constant Type T_BOOL_DEFAULT    = (T_BOOL({}),NONE());
+public constant Type T_ENUMERATION_DEFAULT = 
+  (T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}), NONE);
 
 public uniontype TType "-TType contains the actual type"
   record T_INTEGER
@@ -684,7 +686,8 @@ public uniontype TType "-TType contains the actual type"
     Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
     Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
-    list<Var> varLst "varLst, empty for elements" ;
+    list<Var> literalVarLst;
+    list<Var> attributeLst;
   end T_ENUMERATION;
 
   record T_ARRAY
@@ -914,10 +917,9 @@ uniontype ExpType "- Basic types
   record ET_STRING end ET_STRING;
 
   record ET_ENUMERATION
-    Option<Integer> index "the enumeration value index, SOME for element, NONE for type" ;
     Absyn.Path path "enumeration path" ;
     list<String> names "names" ;
-    list<ExpVar> varLst "varLst, empty for elements" ;
+    list<ExpVar> varLst "varLst" ;
   end ET_ENUMERATION;
 
   record ET_COMPLEX "Complex types"

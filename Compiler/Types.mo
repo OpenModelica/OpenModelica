@@ -303,6 +303,7 @@ algorithm
     case ((DAE.T_INTEGER(varLstInt = _),_)) then ();
     case ((DAE.T_STRING(varLstString = _),_)) then ();
     case ((DAE.T_BOOL(varLstBool = _),_)) then ();
+    case ((DAE.T_ENUMERATION(path = _), _)) then ();
   end matchcontinue;
 end simpleType;
 
@@ -360,16 +361,15 @@ algorithm
       equation
         ty = DAE.T_STRING_DEFAULT;
         then ty;
-    case(DAE.ET_ENUMERATION(index,path,names,evars))
+    case(DAE.ET_ENUMERATION(path,names,evars))
       local
-        Option<Integer> index;
         Absyn.Path path;
         list<String> names;
         list<DAE.ExpVar> evars;
         list<Var> tvars;
       equation
         tvars = Util.listMap(evars, convertFromExpToTypesVar);
-        ty = (DAE.T_ENUMERATION(index,path,names,tvars),NONE());
+        ty = (DAE.T_ENUMERATION(NONE,path,names,tvars,{}),NONE());
         then ty;
     case(DAE.ET_ARRAY(at,dim::ad))
       local DAE.ExpType at;
@@ -683,7 +683,7 @@ public function isEnumeration "function: isEnumeration
 algorithm
   outBoolean:=
   matchcontinue (inType)
-    case ((DAE.T_ENUMERATION(_, _, _, _),_)) then true;
+    case ((DAE.T_ENUMERATION(index = _),_)) then true;
     case ((_,_)) then false;
   end matchcontinue;
 end isEnumeration;
@@ -1210,7 +1210,7 @@ algorithm
       equation
         path = Absyn.pathPrefix(path); 
       then
-        ((DAE.T_ENUMERATION(SOME(index), path, {}, {}), NONE));
+        ((DAE.T_ENUMERATION(SOME(index), path, {}, {}, {}), NONE));
     case ((w as Values.ARRAY(valueLst = (v :: vs))))
       equation
         tp = typeOfValue(v);
@@ -1291,10 +1291,9 @@ algorithm
     case ((DAE.T_REAL(varLstReal = _),_)) then true;
     case ((DAE.T_STRING(varLstString = _),_)) then true;
     case ((DAE.T_BOOL(varLstBool = _),_)) then true;
-    case ((DAE.T_ENUMERATION(index = SOME(_)),_)) then true;
+    case ((DAE.T_ENUMERATION(index = _),_)) then true;
     case ((DAE.T_ARRAY(arrayDim = _),_)) then false;
     case ((DAE.T_COMPLEX(complexClassType = _),_)) then false;
-    case ((DAE.T_ENUMERATION(names = _),_)) then false; // adrpo: TODO! Why is an enum type not a basic type???!!
     case ((DAE.T_LIST(_),_)) then false;  // MetaModelica list type
     case ((DAE.T_METAOPTION(_),_)) then false;  // MetaModelica option type
     case ((DAE.T_METATUPLE(_),_)) then false;  // MetaModelica tuple type
@@ -1416,7 +1415,6 @@ algorithm
     local
       Boolean res;
       Ident l1,l2;
-      list<Ident> rest1,rest2;
       list<Var> vl1,vl2,els1,els2;
       Option<Absyn.Path> p1,p2;
       Type t1,t2,tp,tp2,tp1;
@@ -1432,19 +1430,17 @@ algorithm
     case ((DAE.T_STRING(varLstString = _),_),(DAE.T_STRING(varLstString = _),_)) then true;
     case ((DAE.T_BOOL(varLstBool = _),_),(DAE.T_BOOL(varLstBool = _),_)) then true;
     
-    case ((DAE.T_ENUMERATION(index=oi,path=tp,names = (l1 :: rest1),varLst = vl1),p1),
-          (DAE.T_ENUMERATION(index=oi_1,path=tp_1,names = (l2 :: rest2),varLst = vl2),p2))
-      local
-        Option<Integer> oi,oi_1;
-        Absyn.Path tp,tp_1;
-      equation
-        true = stringEqual(l2, l1);
-        res = subtype((DAE.T_ENUMERATION(oi,tp,rest1,vl1),p1),(DAE.T_ENUMERATION(oi_1,tp_1,rest2,vl2),p2));
-      then
-        res;
-    
     case ((DAE.T_ENUMERATION(names = {}),_),(DAE.T_ENUMERATION(names = _),_)) then true;
     case ((DAE.T_ENUMERATION(names = _),_),(DAE.T_ENUMERATION(names = {}),_)) then true;
+      
+    case ((DAE.T_ENUMERATION(names = names1),_),
+          (DAE.T_ENUMERATION(names = names2),_))
+      local
+        list<String> names1, names2;
+      equation
+        res = Util.isPrefixListComp(names1, names2, stringEqual);
+      then
+        res;
     
     case ((DAE.T_ARRAY(arrayType = t1),_),(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = t2),_))
       equation
@@ -1738,31 +1734,31 @@ algorithm
       then
         v;
 
-   case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"quantity") 
+   case ((DAE.T_ENUMERATION(index = SOME(_)),_),"quantity") 
      then DAE.TYPES_VAR("quantity",
           DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,DAE.T_STRING_DEFAULT,DAE.VALBOUND(Values.STRING(""),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE());  
 
     // Should be bound to the first element of DAE.T_ENUMERATION list higher up in the call chain
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"min")       
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"min")       
       then DAE.TYPES_VAR("min",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{}),NONE),DAE.UNBOUND(),NONE());   
+          false,(DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"min,max"},{},{}),NONE),DAE.UNBOUND(),NONE());   
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"max") 
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"max") 
       then DAE.TYPES_VAR("max",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
-          false,(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{}),NONE),DAE.UNBOUND(),NONE());  
+          false,(DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"min,max"},{},{}),NONE),DAE.UNBOUND(),NONE());  
 
     // Should be bound to the last element of DAE.T_ENUMERATION list higher up in the call chain 
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"start") 
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"start") 
       then DAE.TYPES_VAR("start",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());   
 
     // Needs to be set to true/false higher up the call chain depending on variability of instance 
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"fixed") 
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"fixed") 
       then DAE.TYPES_VAR("fixed",DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,DAE.T_BOOL_DEFAULT,DAE.UNBOUND(),NONE());  
-    case ((DAE.T_ENUMERATION(SOME(_),_,_,_),_),"enable") then DAE.TYPES_VAR("enable",
+    case ((DAE.T_ENUMERATION(index = SOME(_)),_),"enable") then DAE.TYPES_VAR("enable",
           DAE.ATTR(false,false,SCode.RW(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
           false,DAE.T_BOOL_DEFAULT,DAE.VALBOUND(Values.BOOL(true),DAE.BINDING_FROM_DEFAULT_VALUE()),NONE()); 
         
@@ -2037,37 +2033,27 @@ algorithm
     case ((DAE.T_STRING(varLstString = {}),_)) then "String";
     case ((DAE.T_BOOL(varLstBool = {}),_)) then "Boolean";
 
-    case ((DAE.T_INTEGER(varLstInt = vs),_)) equation
-      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
-      s2 = "Integer(" +& s1 +& ")";
-    then s2;
-    case ((DAE.T_REAL(varLstReal = vs),_)) equation
-      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
-      s2 = "Real(" +& s1 +& ")";
-    then s2;
-      case ((DAE.T_STRING(varLstString = vs),_)) equation
-      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
-      s2 = "String(" +& s1 +& ")";
-      then s2;
-      case ((DAE.T_BOOL(varLstBool = vs),_)) equation
-      s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
-      s2 = "Boolean(" +& s1 +& ")";
-    then s2;
-    /* Enumeration Element */
-    case ((DAE.T_ENUMERATION(index = SOME(idx),path=p,names = l,varLst=vs),_))
-      local String s2;
-        Integer idx;
-        Absyn.Path p;
+    case ((DAE.T_INTEGER(varLstInt = vs),_)) 
       equation
-        /* path */
-        s1 = Absyn.pathString(p);
-        /* element */
-        s2 = listNth(l, idx-1); // listNth indexes from 0
-        str = Util.stringAppendList({s1,".",s2});
-      then
-        str;
-    /* Enumeration Type */
-    case ((DAE.T_ENUMERATION(names = l,varLst=vs),_))
+        s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+        s2 = "Integer(" +& s1 +& ")";
+      then s2;
+    case ((DAE.T_REAL(varLstReal = vs),_)) 
+      equation
+        s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+        s2 = "Real(" +& s1 +& ")";
+      then s2;
+    case ((DAE.T_STRING(varLstString = vs),_)) 
+      equation
+        s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+        s2 = "String(" +& s1 +& ")";
+      then s2;
+    case ((DAE.T_BOOL(varLstBool = vs),_)) 
+      equation
+        s1 = Util.stringDelimitList(Util.listMap(vs, unparseVarAttr),", ");
+        s2 = "Boolean(" +& s1 +& ")";
+      then s2;
+    case ((DAE.T_ENUMERATION(names = l, literalVarLst=vs),_))
       local String s2;
       equation
         s1 = Util.stringDelimitList(l, ", ");
@@ -2263,10 +2249,7 @@ algorithm
       Type t,restype;
       list<FuncArg> params;
       list<Type> tys;
-      String s1,s2,s3;
-      Integer i;
-      Absyn.Path p;
-      
+      String s1,s2;
     case ((DAE.T_INTEGER(varLstInt = vars),_))
       equation
         s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
@@ -2291,18 +2274,10 @@ algorithm
         str = Util.stringAppendList({"Boolean(",s1,")"});
       then
        str;
-    case ((DAE.T_ENUMERATION(index = SOME(i), path = p, names = l),_))
+    case ((DAE.T_ENUMERATION(names = l, literalVarLst = vars),_))
       equation
-        str = listNth(l, i-1);
-        str = Absyn.pathString(p) +& "." +& str;
-      then
-        str;
-    case ((DAE.T_ENUMERATION(names = l,path=p,varLst = vars),_))
-      equation
-       s1 = Absyn.pathString(p);
-       s2 = Util.stringDelimitList(l, ", ");       
-       s3 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
-       str = Util.stringAppendList({"Enumeration(", s1, ", names(", s3, ") vars: (", s2,")"});
+       s1 = Util.stringDelimitList(Util.listMap(vars, printVarStr),", ");
+       str = Util.stringAppendList({"Enumeration(",s1,")"});
       then
         str;
     case ((DAE.T_COMPLEX(complexClassType = st,complexVarLst = vars,complexTypeOption = bc),_))
@@ -2646,30 +2621,41 @@ algorithm
   outType := (DAE.T_FUNCTION(fargs,rettype,isInline),SOME(p));
 end makeFunctionType;
 
-public function makeEnumerationType "function: makeEnumerationType
-  Creates an enumeration type from a name and a list of variables."
+public function makeEnumerationType
+  "Creates an enumeration type from a name and an enumeration type containing
+  the literal variables."
   input Absyn.Path inPath;
-  input list<Var> inVarLst;
+  input Type inType;
   output Type outType;
 algorithm
-  outType := matchcontinue (inPath,inVarLst)
+  outType := matchcontinue(inPath, inType)
     local
-      list<Ident> names;
       Absyn.Path p;
-      list<Var> vars,vars_1;
-    case (p,{}) then ((DAE.T_ENUMERATION(NONE(),p,{},{}),SOME(p)));
-    case (p,vars)
+      list<Ident> names, attr_names;
+      list<Var> vars, attrs;
+      Type ty;
+    case (_, (DAE.T_ENUMERATION(index = NONE, path = p, names = names,
+            literalVarLst = vars, attributeLst = attrs), _))
       equation
-        // Var names
-        names = Util.listMap(vars,getVarName);
-        vars_1 = makeEnumerationType1(p,vars,names,1);
+        vars = makeEnumerationType1(p, vars, names, 1);
+        attr_names = Util.listMap(vars, getVarName);
+        attrs = makeEnumerationType1(p, attrs, attr_names, 1);
       then
-        ((DAE.T_ENUMERATION(NONE(),p,names,vars_1),SOME(p)));
+        ((DAE.T_ENUMERATION(NONE, p, names, vars, attrs), SOME(inPath)));
+    case (_, (DAE.T_ARRAY(arrayType = ty), _))
+      then makeEnumerationType(inPath, ty);
+    case (_, _)
+      equation
+        Debug.fprintln("failtrace", "- Types.makeEnumerationType failed on " +&
+            printTypeStr(inType));
+      then
+        fail();
   end matchcontinue;
 end makeEnumerationType;
 
-public function makeEnumerationType1 "function: makeEnumerationType1
-  Creates an enumeration type from a name and a list of variables."
+public function makeEnumerationType1
+  "Helper function to makeEnumerationType. Updates a list of enumeration
+  literals with the correct index and type."
   input Absyn.Path inPath;
   input list<Var> inVarLst;
   input list<Ident> inNames;
@@ -2694,7 +2680,7 @@ algorithm
     case (p,DAE.TYPES_VAR(name,attributes,protected_,_,binding,cnstForRange) :: xs,names,idx)
       equation
         vars = makeEnumerationType1(p, xs, names, idx+1);
-        t = (DAE.T_ENUMERATION(SOME(idx),p,names,{}),SOME(p));
+        t = (DAE.T_ENUMERATION(SOME(idx),p,names,{},{}),SOME(p));
         var = DAE.TYPES_VAR(name,attributes,protected_,t,binding,cnstForRange);
       then
         (var :: vars);
@@ -3525,9 +3511,8 @@ algorithm
     case ((DAE.T_REAL(varLstReal = _),_)) then DAE.ET_REAL();
     case ((DAE.T_BOOL(varLstBool = _),_)) then DAE.ET_BOOL();
     case ((DAE.T_STRING(varLstString = _),_)) then DAE.ET_STRING();
-    case ((DAE.T_ENUMERATION(index,path,names,varLst),_))
+    case ((DAE.T_ENUMERATION(path = path, names = names, literalVarLst = varLst),_))
       local
-        Option<Integer> index;
         Absyn.Path path;
         list<String> names;
         list<Var> varLst;
@@ -3535,7 +3520,7 @@ algorithm
       equation
         ecvl = Util.listMap(varLst,convertFromTypesToExpVar);
       then
-        DAE.ET_ENUMERATION(index,path,names,ecvl);
+        DAE.ET_ENUMERATION(path,names,ecvl);
     case ((t as (DAE.T_ARRAY(arrayDim = _),_)))
       equation
         et = arrayElementType(t);
@@ -3892,7 +3877,7 @@ algorithm
       list<list<tuple<DAE.Exp, Boolean>>> ell_1,ell;
       list<Type> tys_1,tys1,tys2;
       list<Ident> l;
-      list<Var> v;
+      list<Var> v, al;
       String str;
 
       /* Array expressions: expression dimension [dim1], expected dimension [dim2] */
@@ -4031,18 +4016,11 @@ algorithm
       then
         (DAE.TUPLE(elist_1),(DAE.T_TUPLE(tys_1),p2),polymorphicBindings);
 
-    // Enumeration value vs. enumeration type
-    case (exp,(DAE.T_ENUMERATION(index=SOME(_)),_),(DAE.T_ENUMERATION(index=oi,path=tp,names = l,varLst = v),p2),polymorphicBindings,matchFunc,printFailtrace)
-      local
-        Option<Integer> oi;
-        Absyn.Path tp;
-      then (exp,(DAE.T_ENUMERATION(oi,tp,l,v),p2),polymorphicBindings);
-        
     // Convert an integer literal to an enumeration
     // This is widely used in Modelica.Electrical.Digital
     case (exp as DAE.ICONST(oi),
               (DAE.T_INTEGER(_),_),
-              (DAE.T_ENUMERATION(index=_,path=tp,names = l,varLst = v),p2),
+              (DAE.T_ENUMERATION(index=_, path=tp, names = l),p2),
               polymorphicBindings,matchFunc,printFailtrace)
       local        
         Absyn.Path tp;
@@ -4054,11 +4032,21 @@ algorithm
         name = listNth(l, oi-1); // listNth indexes from 0
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then 
-        (DAE.ENUM_LITERAL(tp, oi),(DAE.T_ENUMERATION(SOME(oi),tp,l,v),p2),polymorphicBindings);        
+        (DAE.ENUM_LITERAL(tp, oi),inType3,polymorphicBindings);        
 
-        /* Implicit conversion from Integer to Real */
-    case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),p),polymorphicBindings,matchFunc,printFailtrace)
-      then (DAE.CAST(DAE.ET_REAL(),e),(DAE.T_REAL(v),p),polymorphicBindings);
+    /* Implicit conversion from Integer to Real */
+    case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),_),polymorphicBindings,matchFunc,printFailtrace)
+      then (DAE.CAST(DAE.ET_REAL(),e),inType3,polymorphicBindings);
+
+    /* Implicit conversion from Integer to enumeration. */
+    case (e,(DAE.T_INTEGER(varLstInt = _),_),(DAE.T_ENUMERATION(index = _), _),_,_,_)
+      equation
+        t = elabType(inType3);
+      then (DAE.CAST(t, e), inType3, polymorphicBindings);
+      
+    /* Implicit conversion from enumeration literal to Real */
+    case (e, (DAE.T_ENUMERATION(index = _), _), (DAE.T_REAL(varLstReal = _), p), _, _, _)
+      then (DAE.CAST(DAE.ET_REAL(),e),(DAE.T_REAL({}),p),polymorphicBindings);
 
     /* Complex type inheriting primitive type */
     case (e, (DAE.T_COMPLEX(complexTypeOption = SOME(t1)),_),t2,polymorphicBindings,matchFunc,printFailtrace) equation
@@ -4571,6 +4559,7 @@ algorithm
 end typeConvertMatrixRowToList;
 
 public function matchWithPromote "function: matchWithPromote
+
   This function is used for matching expressions in matrix construction,
   where automatic promotion is allowed. This means that array dimensions of
   size one (1) is added from the right to arrays of matrix construction until
@@ -4592,16 +4581,16 @@ algorithm
       Boolean havereal;
       list<Var> v;
       TType tt;
-    
+
     case (DAE.PROP((DAE.T_COMPLEX(_,_,SOME(t1),_),_),c1),DAE.PROP(t2,c2),havereal)
-    then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
-    
+      then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
+
     case (DAE.PROP(t1,c1),DAE.PROP((DAE.T_COMPLEX(_,_,SOME(t2),_),_),c2),havereal)
-    then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
-    
+      then matchWithPromote(DAE.PROP(t1,c1),DAE.PROP(t2,c2),havereal);
+
     case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim1,arrayType = t1),_),constFlag = c1),
           DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = dim2,arrayType = t2),p2),constFlag = c2),
-          havereal) // Allow Integer => Real 
+          havereal) // Allow Integer => Real
       equation
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
         dim = dim1;
@@ -4624,7 +4613,7 @@ algorithm
         false = isArray(t1);
         DAE.PROP(t,c) = matchWithPromote(DAE.PROP(t1,c1), DAE.PROP(t2,c2), havereal);
       then
-        DAE.PROP((DAE.T_ARRAY(dim,t),p2),c);    
+        DAE.PROP((DAE.T_ARRAY(dim,t),p2),c);
     // match integer, first
     case (DAE.PROP(type_ = (DAE.T_ARRAY(arrayDim = DAE.DIM_INTEGER(1),arrayType = t1),p),constFlag = c1),
           DAE.PROP(type_ = t2,constFlag = c2),havereal)
@@ -4648,13 +4637,12 @@ algorithm
         false = isArray(t1);
         false = isArray(t2);
         equality(t1 = t2);
-        t = t1;
         c = constAnd(c1, c2);
       then
-        DAE.PROP(t,c);
+        DAE.PROP(t1,c);
     // enums
-    case (DAE.PROP(type_ = (tt as DAE.T_ENUMERATION(_, _, _, v),_),constFlag = c1),
-          DAE.PROP(type_ = (DAE.T_ENUMERATION(_, _, _, _),p2),constFlag = c2),false)
+    case (DAE.PROP(type_ = (tt as DAE.T_ENUMERATION(literalVarLst = v),_),constFlag = c1),
+          DAE.PROP(type_ = (DAE.T_ENUMERATION(index = _),p2),constFlag = c2), false)
       equation
         c = constAnd(c1, c2) "Have enum and both Enum" ;
       then
@@ -4687,14 +4675,15 @@ algorithm
         c = constAnd(c1, c2) "Have real and both Integer" ;
       then
         DAE.PROP(DAE.T_REAL_DEFAULT,c);
-    
-    case(inProperties1,inProperties2,inBoolean3) equation
-      true = RTOpts.debugFlag("failtrace");
-      Debug.fprintln("failtrace","- Types.matchWithPromote failed on: " +& 
-         "\nprop1: " +& printPropStr(inProperties1) +&
-         "\nprop2: " +& printPropStr(inProperties2) +&
-         "\nhaveReal: " +& Util.if_(inBoolean3, "true", "false"));
-    then fail();
+  
+    case(inProperties1,inProperties2,inBoolean3) 
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace","- Types.matchWithPromote failed on: " +& 
+           "\nprop1: " +& printPropStr(inProperties1) +&
+           "\nprop2: " +& printPropStr(inProperties2) +&
+           "\nhaveReal: " +& Util.if_(inBoolean3, "true", "false"));
+      then fail();
   end matchcontinue;
 end matchWithPromote;
 
@@ -4929,7 +4918,7 @@ algorithm
   matchcontinue (inTType)
     local
       list<DAE.Exp> exps,tyexps;
-      list<Var> vars;
+      list<Var> vars, attrs;
       list<Ident> strs;
       DAE.Dimension dim;
       Type ty;
@@ -4958,9 +4947,11 @@ algorithm
         exps = getAllExpsVars(vars);
       then
         exps;
-    case DAE.T_ENUMERATION(names = strs,varLst = vars)
+    case DAE.T_ENUMERATION(names = strs, literalVarLst = vars, attributeLst = attrs)
       equation
         exps = getAllExpsVars(vars);
+        tyexps = getAllExpsVars(attrs);
+        exps = listAppend(exps, tyexps);
       then
         exps;
     case DAE.T_ARRAY(arrayDim = dim,arrayType = ty)

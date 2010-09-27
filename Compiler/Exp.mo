@@ -1004,7 +1004,6 @@ algorithm
         res = boolAnd(b1,b2);
       then
         res;
-    case (DAE.CREF(_,DAE.ET_ENUMERATION(index = SOME(_)))) then true;
     case (DAE.ARRAY(array = ae))  
       equation
         ab = Util.listMap(ae,isConst);  
@@ -1250,16 +1249,6 @@ algorithm
         true = stringEqual(s1,n2);
       then
         true;
-    // enumerations
-    case (cr1 as DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
-      local list<Subscript> idx1_1,idx2_1;
-      equation
-        true = stringEqual(n1, n2);
-        (DAE.CREF_IDENT(_,_,idx1_1)) = convertEnumCref(cr1);
-        (DAE.CREF_IDENT(_,_,idx2_1)) = convertEnumCref(cr2);
-        true = subscriptEqual(idx1_1, idx2_1);
-      then
-        true;
     // qualified crefs
     case (DAE.CREF_QUAL(ident = n1,subscriptLst = idx1,componentRef = cr1),DAE.CREF_QUAL(ident = n2,subscriptLst = idx2,componentRef = cr2))
       equation
@@ -1340,16 +1329,6 @@ algorithm
       equation
         true = stringEqual(n1, n2);
         true = subscriptEqual(idx1, idx2);
-      then
-        true;
-    // enumerations
-    case (cr1 as DAE.CREF_IDENT(ident = n1,subscriptLst = idx1),cr2 as DAE.CREF_IDENT(ident = n2,subscriptLst = idx2))
-      local list<Subscript> idx1_1,idx2_1;
-      equation
-        true = stringEqual(n1, n2);
-        (DAE.CREF_IDENT(_,_,idx1_1)) = convertEnumCref(cr1);
-        (DAE.CREF_IDENT(_,_,idx2_1)) = convertEnumCref(cr2);
-        true = subscriptEqual(idx1_1, idx2_1);
       then
         true;
     // qualified crefs
@@ -5376,14 +5355,12 @@ algorithm
       Exp e1,e2,e3,e;
       list<Exp> explist;
       list<Type> tylist;
-      Integer index;
-      Absyn.Path name;
-      
+      Absyn.Path p;
     case (DAE.ICONST(integer = _)) then DAE.ET_INT();
     case (DAE.RCONST(real = _)) then DAE.ET_REAL();
     case (DAE.SCONST(string = _)) then DAE.ET_STRING();
     case (DAE.BCONST(bool = _)) then DAE.ET_BOOL();
-    case (DAE.ENUM_LITERAL(name, index)) then DAE.ET_ENUMERATION(SOME(index), name, {}, {});
+    case (DAE.ENUM_LITERAL(name = p)) then DAE.ET_ENUMERATION(p, {}, {}); 
     case (DAE.CREF(ty = tp)) then tp;
     case (DAE.BINARY(operator = op)) then typeofOp(op);
     case (DAE.UNARY(operator = op)) then typeofOp(op);
@@ -7149,8 +7126,7 @@ algorithm
     case DAE.ET_REAL() then "REAL";
     case DAE.ET_BOOL() then "BOOL";
     case DAE.ET_STRING() then "STRING";
-    case DAE.ET_ENUMERATION(index=SOME(_)) then "ENUM";
-    case DAE.ET_ENUMERATION(index=NONE()) then "ENUM TYPE";
+    case DAE.ET_ENUMERATION(path = _) then "ENUM TYPE";
     case DAE.ET_OTHER() then "OTHER";
     case (DAE.ET_ARRAY(ty = t,arrayDimensions = dims))
       equation
@@ -12566,7 +12542,7 @@ algorithm otype := matchcontinue(inRef)
   local Type ty; ComponentRef cr;
   case(DAE.CREF_IDENT(_, ty,_)) then ty;
   case(DAE.CREF_QUAL(_,DAE.ET_COMPLEX(varLst=_),_,cr)) then elaborateCrefQualType(cr);
-  case(DAE.CREF_QUAL(_,DAE.ET_ENUMERATION(index=NONE()),_,cr)) then elaborateCrefQualType(cr);
+  case(DAE.CREF_QUAL(_,DAE.ET_ENUMERATION(path = _),_,cr)) then elaborateCrefQualType(cr);
   case(DAE.CREF_QUAL(id,DAE.ET_OTHER(),_,cr))
     local String id,s;
     equation
@@ -12982,105 +12958,6 @@ algorithm
     case DAE.WILD() then "_";
   end matchcontinue;
 end debugPrintComponentRefTypeStr;
-
-public function getEnumIndexfromCref "function: getEnumIndexfromCref
-  Evaluates ComponentRef, i.e. variables, by
-  looking up variables in the environment."
-  input ComponentRef inComponentRef;
-  output Integer outEnumIndex;
-algorithm
-  outEnumIndex :=
-  matchcontinue (inComponentRef)
-    local
-      ComponentRef c;
-      Integer idx;
-    case (DAE.CREF_IDENT(_,DAE.ET_ENUMERATION(SOME(idx),_,_,_),_))
-      local Integer index;
-      then
-        idx;
-    case (DAE.CREF_QUAL(_,_,_,c))
-      equation
-         idx = getEnumIndexfromCref(c);
-      then
-        idx;
-    case (_) then fail();
-    end matchcontinue;
-end getEnumIndexfromCref;
-
-public function printEnumLiteralArray "function: printEnumLiteralArray
-  Evaluates ComponentRef, i.e. variables, by
-  looking up variables in the environment."
-  input Type inType;
-  output String outString;
-  output Boolean outIsEnum;
-algorithm
-  (outString,outIsEnum) :=
-  matchcontinue (inType)
-    local
-      list<Ident> names;
-      String namestr,nn;
-    case DAE.ET_ENUMERATION(_,_,names,_)
-      local String index;
-      equation
-         nn = Util.stringDelimitList(names,"\",\"");
-         namestr = Util.stringAppendList({"{\"",nn,"\"}"});
-      then
-        (namestr,true);
-    case (_) then ("",false);
-    end matchcontinue;
-end printEnumLiteralArray;
-
-
-public function getEnumTypefromCref "function: getEnumIndexfromCref
-  Evaluates ComponentRef, i.e. variables, by
-  looking up variables in the environment."
-  input ComponentRef inComponentRef;
-  output Type outEnumType;
-algorithm
-  outEnumType :=
-  matchcontinue (inComponentRef)
-    local
-      ComponentRef c;
-      Type t;
-    case (DAE.CREF_IDENT(_,t,_)) then t;
-    case (DAE.CREF_QUAL(_,_,_,c))
-      equation
-         t = getEnumTypefromCref(c);
-      then
-        t;
-    case (_) then fail();
-    end matchcontinue;
-end getEnumTypefromCref;
-
-public function convertEnumCref "function: convertEnumCref
-
-  Converts an Enumeration Cref into a Normal Cref
-  Example x[Color.green] -> x[1].
-"
-  input ComponentRef inComponentRef;
-  output ComponentRef outComponentRef;
-algorithm
-  outComponentRef:=
-  matchcontinue (inComponentRef)
-      local
-        Integer idx;
-        Ident ident;
-        Type identType;
-        ComponentRef c;
-    /* enumeration */
-    case (DAE.CREF_IDENT(ident = ident, identType = identType, 
-        subscriptLst = {DAE.INDEX(exp = DAE.CREF(c,_))}))
-      equation
-        idx = getEnumIndexfromCref(c);
-      then
-        DAE.CREF_IDENT(ident, identType , {DAE.INDEX(DAE.ICONST(idx))});
-    case (DAE.CREF_IDENT(ident = ident, identType = identType, 
-        subscriptLst = {DAE.INDEX(exp = DAE.ENUM_LITERAL(index = idx))}))
-      then
-        DAE.CREF_IDENT(ident, identType, {DAE.INDEX(DAE.ICONST(idx))});
-    case (c) then c;
-  end matchcontinue;
-end convertEnumCref;
 
 public function isArrayType
 "Returns true if inType is an ET_ARRAY"

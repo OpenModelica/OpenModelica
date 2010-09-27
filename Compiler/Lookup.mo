@@ -209,7 +209,7 @@ algorithm
         // build names
         (_,names) = SCode.getClassComponents(c);
         // generate the enumeration type
-        t = (DAE.T_ENUMERATION(NONE(), path, names, types), SOME(path));
+        t = (DAE.T_ENUMERATION(NONE, path, names, types, {}), SOME(path));
         env_3 = Env.extendFrameT(env_3, id, t);
       then
         (cache,t,env_3);
@@ -2666,7 +2666,7 @@ algorithm
       equation
         expl = makeEnumLiteralIndices(enum_name, l, 1);
       then
-        DAE.SLICE(DAE.ARRAY(DAE.ET_ENUMERATION(NONE, enum_name, l, {}), true, expl));
+        DAE.SLICE(DAE.ARRAY(DAE.ET_ENUMERATION(enum_name, l, {}), true, expl));
   end matchcontinue;
 end makeDimensionSubscript;
           

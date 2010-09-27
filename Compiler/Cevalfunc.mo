@@ -1389,16 +1389,7 @@ algorithm oval := matchcontinue(inType)
   case((DAE.T_REAL(_),_)) then Values.REAL(0.0);
   case((DAE.T_STRING(_),_)) then Values.STRING("");
   case((DAE.T_BOOL(_),_)) then Values.BOOL(false);
-  case((DAE.T_ENUMERATION(SOME(idx),path,names,_),_))
-    local
-      Integer idx;
-      list<String> names;
-      String lit;
-    equation
-      lit = listNth(names, idx + 1);
-      path = Absyn.joinPaths(path, Absyn.IDENT(lit)); 
-    then
-      Values.ENUM_LITERAL(path, idx);
+  case((DAE.T_ENUMERATION(index = _),_)) then Values.ENUM_LITERAL(Absyn.IDENT(""), 0);
   case((DAE.T_METATUPLE(types = _), _)) then Values.META_TUPLE({});
   case((DAE.T_COMPLEX(ClassInf.RECORD(path), typesVar,_,_),_))
     local

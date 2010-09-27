@@ -387,7 +387,7 @@ protected constant tuple<DAE.TType, Option<Type_a>> int2int=(
           DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> enumeration2int=(
-          DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}),NONE))},
+          DAE.T_FUNCTION({("x",(DAE.T_ENUMERATION(NONE, Absyn.IDENT(""), {}, {}, {}),NONE))},
           DAE.T_INTEGER_DEFAULT,DAE.NO_INLINE),NONE);
 
 protected constant tuple<DAE.TType, Option<Type_a>> intInt2int=(

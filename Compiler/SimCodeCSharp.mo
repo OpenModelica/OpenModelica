@@ -7176,22 +7176,6 @@ algorithm
       SimCode.SimCode i_simCode;
 
     case ( txt,
-           DAE.CREF(ty = DAE.ET_ENUMERATION(index = _), componentRef = i_componentRef),
-           _,
-           i_preExp,
-           i_simCode )
-      local
-        DAE.ComponentRef i_componentRef;
-        Integer ret_0;
-      equation
-        ret_0 = Exp.getEnumIndexfromCref(i_componentRef);
-        txt = Tpl.writeStr(txt, intString(ret_0));
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("/*enum:"));
-        txt = crefStr(txt, i_componentRef, i_simCode);
-        txt = Tpl.writeTok(txt, Tpl.ST_STRING("*/"));
-      then (txt, i_preExp);
-
-    case ( txt,
            (i_ecr as DAE.CREF(componentRef = i_cr, ty = i_ecr_ty)),
            i_context,
            i_preExp,

@@ -11770,7 +11770,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_ENUMERATION(index = _) )
+           DAE.ET_ENUMERATION(path = _) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("int"));
       then txt;
@@ -21576,19 +21576,6 @@ algorithm
       Tpl.Text i_varDecls;
 
     case ( txt,
-           DAE.CREF(ty = DAE.ET_ENUMERATION(index = _), componentRef = i_componentRef),
-           _,
-           i_preExp,
-           i_varDecls )
-      local
-        DAE.ComponentRef i_componentRef;
-        Integer ret_0;
-      equation
-        ret_0 = Exp.getEnumIndexfromCref(i_componentRef);
-        txt = Tpl.writeStr(txt, intString(ret_0));
-      then (txt, i_preExp, i_varDecls);
-
-    case ( txt,
            (i_ecr as DAE.CREF(componentRef = i_cr, ty = i_ty)),
            i_context,
            i_preExp,
@@ -23272,7 +23259,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.EQUAL(ty = DAE.ET_ENUMERATION(index = _)),
+           DAE.EQUAL(ty = DAE.ET_ENUMERATION(path = _)),
            i_e2,
            i_e1 )
       equation
@@ -27304,7 +27291,7 @@ algorithm
       then txt;
 
     case ( txt,
-           DAE.ET_ENUMERATION(index = _) )
+           DAE.ET_ENUMERATION(path = _) )
       equation
         txt = Tpl.writeTok(txt, Tpl.ST_STRING("integer"));
       then txt;

@@ -116,7 +116,7 @@ algorithm
     case(Values.ENUM_LITERAL(name = path, index = indx)) 
       equation
         path = Absyn.pathPrefix(path);
-      then DAE.ET_ENUMERATION(SOME(indx),path,{},{});
+      then DAE.ET_ENUMERATION(path,{},{});
     case(Values.ARRAY(valLst,int_dims)) equation
       eltTp=valueExpType(Util.listFirst(valLst));
       dims = Util.listMap(int_dims, Exp.intDimension);

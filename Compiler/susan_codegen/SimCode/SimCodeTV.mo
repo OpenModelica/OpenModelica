@@ -478,7 +478,6 @@ package DAE
     record ET_BOOL end ET_BOOL;
     record ET_STRING end ET_STRING;
     record ET_ENUMERATION
-      Option<Integer> index;
       Absyn.Path path;
       list<String> names;
       list<ExpVar> varLst;

@@ -394,6 +394,36 @@ algorithm isequal := matchcontinue(input1,input2,cmpFunc)
   end matchcontinue;
 end isListEqualWithCompareFunc;
 
+public function isPrefixListComp
+  "Checks if the first list is a prefix of the second list, i.e. that all
+  elements in the first list is equal to the corresponding elements in the
+  second list."
+  input list<Type_a> input1;
+  input list<Type_a> input2;
+  input compareFunc cmpFunc;
+  output Boolean isequal;
+  partial function compareFunc
+    input Type_a inp1;
+    input Type_a inp2;
+    output Boolean resFunc;
+  end compareFunc;
+  replaceable type Type_a subtypeof Any;
+algorithm isequal := matchcontinue(input1,input2,cmpFunc)
+  local
+    Type_a a,b;
+    list<Type_a> al,bl;
+  case({},{},_) then true;
+  case({},_,_) then true;
+  case(_,{},_) then true;
+  case(a::al,b::bl,cmpFunc)
+    equation
+      true = cmpFunc(a,b);
+      true = isPrefixListComp(al,bl,cmpFunc);
+    then true;
+  case(_,_,_) then false;
+  end matchcontinue;
+end isPrefixListComp;
+
 public function listFill_tail
 "function: listFill_tail
  @author adrpo

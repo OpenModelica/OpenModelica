@@ -1292,7 +1292,7 @@ algorithm
     list<String> names;
     list<DAE.Var> vars;
     Absyn.Path p,pname;
-    case (cache,env,ty as ((DAE.T_ENUMERATION(NONE(),_,names,vars)),SOME(p)),c,ClassInf.ENUMERATION(pname))
+    case (cache,env,ty as ((DAE.T_ENUMERATION(names = names, literalVarLst = vars)),SOME(p)),c,ClassInf.ENUMERATION(pname))
       equation
         (cache,env_1) = updateEnumerationEnvironment1(cache,env,Absyn.pathString(pname),names,vars,p);
       then
@@ -1922,7 +1922,7 @@ algorithm
             list<tuple<SCode.Element, Mod>> comp;
             list<String> names;
             DAE.EqualityConstraint eqConstraint;
-            tuple<DAE.TType, Option<Absyn.Path>> ty;
+            DAE.Type ty, ty2;
             Absyn.Path fq_class;
             list<DAE.Var> tys1,tys2;
             DAE.DAElist fdae;
@@ -1947,7 +1947,9 @@ algorithm
         eqConstraint = equalityConstraint(cache, env_2, els);
         dae1_1 = DAEUtil.addComponentType(dae1, fq_class);
         names = SCode.componentNames(c);
-        bc = arrayBasictypeBaseclass(inst_dims, (DAE.T_ENUMERATION(NONE(),fq_class,names,tys1),NONE()));
+        ty2 = (DAE.T_ENUMERATION(NONE, fq_class, names, tys1, tys), NONE);
+        bc = arrayBasictypeBaseclass(inst_dims, ty2);
+        bc = Util.if_(Util.isSome(bc), bc, SOME(ty2));
         ty = mktype(fq_class, ci_state_1, tys1, bc, eqConstraint, c);
         // update Enumerationtypes in environment
         (cache,env_3) = updateEnumerationEnvironment(cache,env_2,ty,c,ci_state_1);
@@ -2011,16 +2013,16 @@ end isBuiltInClass;
 protected constant DAE.Type stateSelectType = (DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},
           {
           DAE.TYPES_VAR("never",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(1),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("avoid",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(2),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("default",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(3),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("prefer",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE()),
+             (DAE.T_ENUMERATION(SOME(4),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE()),
           DAE.TYPES_VAR("always",DAE.ATTR(false,false,SCode.RO(),SCode.PARAM(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),false,
-             (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{}),NONE()),DAE.UNBOUND(),NONE())
-          }),NONE());
+             (DAE.T_ENUMERATION(SOME(5),Absyn.IDENT(""),{"never","avoid","default","prefer","always"},{},{}),NONE()),DAE.UNBOUND(),NONE())
+          },{}),NONE());
 
 protected function instRealClass
 "function instRealClass
@@ -2249,17 +2251,17 @@ algorithm
    case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("min",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE()),p);
+        v = instBuiltinAttribute(cache,env,"min",optVal,exp,(DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),{},{},{}),NONE()),p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("max",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE()),p);
+        v = instBuiltinAttribute(cache,env,"max",optVal,exp,(DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),{},{},{}),NONE()),p);
         then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("start",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
         varLst = instEnumerationClass(cache,env,DAE.MOD(f,e,submods,eqmod),pre);
-        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE(),Absyn.IDENT(""),{},{}),NONE()),p);
+        v = instBuiltinAttribute(cache,env,"start",optVal,exp,(DAE.T_ENUMERATION(NONE,Absyn.IDENT(""),{},{},{}),NONE()),p);
       then v::varLst;
     case(cache,env,DAE.MOD(f,e,DAE.NAMEMOD("fixed",DAE.MOD(_,_,_,SOME(DAE.TYPED(exp,optVal,p,_))))::submods,eqmod),pre)
       equation
@@ -11040,7 +11042,7 @@ algorithm
         funcs = DAEUtil.avlTreeNew();
       then DAE.DAE({DAE.VAR(vn,kind,dir,prot,DAE.T_STRING_DEFAULT,e,finst_dims,fl,st,source,dae_var_attr,comment,io)},funcs);
          
-    case (vn,ty as(DAE.T_ENUMERATION(SOME(_),_,_,_),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
+    case (vn,ty as(DAE.T_ENUMERATION(index = SOME(_)),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) 
     then DAEUtil.emptyDae; 
 //    case (vn,ty as(DAE.T_ENUM(),_),fl,st,kind,dir,prot,e,inst_dims,start,dae_var_attr,comment,io,finalPrefix,source,declareComplexVars) then {}; 
 
@@ -11141,7 +11143,7 @@ algorithm
       Option<Absyn.Path> somep;
       Absyn.Path p;
       list<DAE.Var> v,vl,v1,l;
-      tuple<DAE.TType, Option<Absyn.Path>> functype,enumtype;
+      DAE.Type functype,enumtype;
       ClassInf.State st;
       String name;
       Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
@@ -11170,16 +11172,16 @@ algorithm
       equation
         somep = getOptPath(p);
       then
-        ((DAE.T_ENUMERATION(SOME(0),p,{},{}),somep));
+        ((DAE.T_ENUMERATION(NONE, p,{},{},{}),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,_,cl)
       equation
         functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
-    case (_,ClassInf.ENUMERATION(path = p),v1,_,_,_)
+    case (_, ClassInf.ENUMERATION(path = p), _, SOME(enumtype), _, _)
       equation
-        enumtype = Types.makeEnumerationType(p, v1);
+        enumtype = Types.makeEnumerationType(p, enumtype);
       then
         enumtype;
     /* Array of type extending from base type. */
@@ -11249,7 +11251,7 @@ algorithm
       Absyn.Path p;
       ClassInf.State ci,st;
       list<DAE.Var> vs,v,vl,v1,l;
-      tuple<DAE.TType, Option<Absyn.Path>> tp,functype,enumtype;
+      DAE.Type tp,functype,enumtype;
       Option<Absyn.Path> somep;
       String name;
       SCode.Class cl;
@@ -11284,7 +11286,7 @@ algorithm
       equation
         somep = getOptPath(p);
       then
-        ((DAE.T_ENUMERATION(SOME(0),p,{},{}),somep));
+        ((DAE.T_ENUMERATION(NONE, p,{},{},{}),somep));
 //        ((DAE.T_ENUM(),somep));
     /* Insert function type construction here after checking input/output arguments? see Types.mo T_FUNCTION */
     case (p,(st as ClassInf.FUNCTION(path = _)),vl,_,cl)
@@ -11292,9 +11294,9 @@ algorithm
         functype = Types.makeFunctionType(p, vl, isInlineFunc2(cl));
       then
         functype;
-    case (p,ClassInf.ENUMERATION(path = _),v1,_,_)
+    case (p, ClassInf.ENUMERATION(path = _), _, SOME(enumtype), _)
       equation
-        enumtype = Types.makeEnumerationType(p, v1);
+        enumtype = Types.makeEnumerationType(p, enumtype);
       then
         enumtype;
     case (p,st,l,bc,_)
@@ -11652,7 +11654,7 @@ algorithm
       then
         (cache,SOME(DAE.VAR_ATTR_STRING(quantity_str,start_val,NONE,NONE,NONE)));
     /* Enumeration */
-    case (cache,env,mod,(enumtype as (DAE.T_ENUMERATION(names = _,varLst=varLst),_)),index_list)
+    case (cache,env,mod,(enumtype as (DAE.T_ENUMERATION(attributeLst=varLst),_)),index_list)
       equation
         (quantity_str) = instBinding(mod, varLst, DAE.T_STRING_DEFAULT,index_list, "quantity",false);
         (exp_bind_min) = instBinding(mod, varLst, enumtype, index_list, "min",false);

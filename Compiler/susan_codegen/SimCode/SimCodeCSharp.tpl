@@ -1247,8 +1247,6 @@ end daeExpSize;
   
 template daeExpCrefRhs(Exp ecr, Context context, Text &preExp, SimCode simCode) ::=
   match ecr
-  case CREF(ty=ET_ENUMERATION(__)) then
-    '<%Exp.getEnumIndexfromCref(componentRef)%>/*enum:<%crefStr(componentRef,simCode)%>*/'
   case ecr as CREF(componentRef = cr) then
     let box = daeExpCrefRhsArrayBox(ecr, context, &preExp, simCode)
     if box then
