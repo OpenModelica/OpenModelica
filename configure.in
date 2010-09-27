@@ -109,30 +109,6 @@ else
   AC_MSG_RESULT([yes])
 fi
 
-if test ! -z "$ANTLRHOME" ; then
-  antlrhome=$ANTLRHOME
-  antlrmsg=""
-else
-  antlrhome=/usr/
-  antlrmsg=". \$ANTLRHOME was not set, looked in $antlrhome."
-fi
-
-AC_MSG_CHECKING([for antlr headers])
-antlrinc=`find $antlrhome/include/ -type f -name TreeParser.hpp -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF-1; i++) total= total $i "/"; print total}'`
-if test -z "$antlrinc" ; then
-  AC_MSG_ERROR([Could not find antlr include files$antlrmsg])
-else
-  AC_MSG_RESULT([yes])
-fi
-
-AC_MSG_CHECKING([for antlr libs])
-antlrlib=`find $antlrhome/lib/ -type f -name libantlr.a -print | head -1 | awk -F/ '{ total="";for (i = 1 ; i < NF; i++) total= total $i "/"; print total}'`
-if test -z "$antlrlib" ; then
-  AC_MSG_ERROR([Could not find antlr lib file$antlrmsg])
-else
-  AC_MSG_RESULT([yes])
-fi
-
 AC_MSG_CHECKING([for antlr.Tool support])
 omc_antlr_jar=build/share/omc/java/antlr-3.1.3.jar
 mkdir -p build/share/omc/java
