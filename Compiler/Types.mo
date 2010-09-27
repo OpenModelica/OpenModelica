@@ -1416,7 +1416,8 @@ algorithm
       Boolean res;
       Ident l1,l2;
       list<Var> vl1,vl2,els1,els2;
-      Option<Absyn.Path> p1,p2;
+      Option<Absyn.Path> op1,op2;
+      Absyn.Path p1,p2;
       Type t1,t2,tp,tp2,tp1;
       Integer i1,i2;
       ClassInf.State st1,st2;
@@ -1546,12 +1547,12 @@ algorithm
       then true;
     
     // <uniontype> = <uniontype>
-    case((DAE.T_UNIONTYPE(lst1),_),(DAE.T_UNIONTYPE(lst2),_))
-      local
-        list<Absyn.Path> lst1,lst2;
-      equation
-        equality(lst1 = lst2);
-      then true;
+    case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_UNIONTYPE(_),SOME(p2)))
+      then Absyn.pathEqual(p1,p2);
+    case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
+      then Absyn.pathEqual(p1,p2);
+    case((DAE.T_UNIONTYPE(_),SOME(p1)),(DAE.T_COMPLEX(complexClassType=ClassInf.UNIONTYPE(_)),SOME(p2)))
+      then Absyn.pathEqual(p1,p2);
 
     case (t1,t2)
       equation

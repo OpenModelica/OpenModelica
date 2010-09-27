@@ -2394,5 +2394,16 @@ algorithm
   end matchcontinue;
 end renameNamedSubMod;
 
+public function emptyModOrEquality
+  input DAE.Mod mod;
+  output Boolean b;
+algorithm
+  b := matchcontinue mod
+    case DAE.NOMOD() then true;
+    case DAE.MOD(subModLst={}) then true;
+    else false;
+  end matchcontinue;
+end emptyModOrEquality;
+
 end Mod;
 

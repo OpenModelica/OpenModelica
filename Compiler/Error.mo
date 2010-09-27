@@ -256,7 +256,8 @@ public constant ErrorID MATCH_SHADOWING=5001;
 public constant ErrorID META_POLYMORPHIC=5002;
 public constant ErrorID META_FUNCTION_TYPE_NO_PARTIAL_PREFIX=5003;
 public constant ErrorID META_MATCH_EQUATION_FORBIDDEN=5004;
-
+public constant ErrorID META_UNIONTYPE_ALIAS_MODS=5005;
+public constant ErrorID META_COMPLEX_TYPE_MOD=5006;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable={(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
           (GRAMMATIC_ERROR,GRAMMAR(),ERROR(),"%s"),
@@ -576,7 +577,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring%s"),
           (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s"),
           (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s . This is forbidden by Modelica specifications and may lead to lookup error"),
-          (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations.")
+          (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations."),
+          (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
+          (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers.")
           
           };
 

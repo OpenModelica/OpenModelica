@@ -1371,4 +1371,26 @@ algorithm
   end matchcontinue;
 end typeConvert;
 
+public function fixUniontype
+  input ClassInf.State st;
+  input Option<DAE.Type> t;
+  input SCode.ClassDef c;
+  output Option<DAE.Type> outType;
+algorithm
+  outType := matchcontinue (st,t,c)
+    local
+      list<SCode.Element> els;
+      list<String> slst;
+      list<Absyn.Path> paths;
+      Absyn.Path p;
+    case (ClassInf.UNIONTYPE(p),t,SCode.PARTS(elementLst = els))
+      equation
+        p = Absyn.FULLYQUALIFIED(p);
+        slst = getListOfStrings(els);
+        paths = Util.listMap1r(slst, Absyn.pathReplaceIdent, p);
+      then SOME((DAE.T_UNIONTYPE(paths),SOME(p)));
+    case (_,t,_) then t;
+  end matchcontinue;
+end fixUniontype;
+
 end MetaUtil;

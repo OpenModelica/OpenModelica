@@ -2740,5 +2740,17 @@ algorithm
   end matchcontinue;
 end equationFileInfo;
 
+public function emptyModOrEquality
+"Checks if a Mod is empty (or only an equality binding is present)"
+  input Mod mod;
+  output Boolean b;
+algorithm
+  b := matchcontinue mod
+    case NOMOD() then true;
+    case MOD(subModLst={}) then true;
+    else false;
+  end matchcontinue;
+end emptyModOrEquality;
+
 end SCode;
 
