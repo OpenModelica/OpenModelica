@@ -28,7 +28,7 @@ $(srcdir)/runtime/errorext.o $(srcdir)/runtime/ErrorMessage.o \
 $(srcdir)/runtime/daeext.o \
 $(srcdir)/runtime/unitparser.o \
 $(srcdir)/runtime/unitparserext.o \
-$(srcdir)/runtime/database.o \
+$(srcdir)/runtime/Database.o \
 $(srcdir)/runtime/sqlite/sqlite3.o \
 $(CORBAOBJ) \
 $(srcdir)/modpar/libmodpar.a \
