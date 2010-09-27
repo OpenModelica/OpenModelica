@@ -8812,7 +8812,7 @@ algorithm
         Absyn.Path fpath;
       equation
         (cache,(t as (DAE.T_FUNCTION(fargs,(outtype as (DAE.T_COMPLEX(complexClassType as ClassInf.RECORD(path=_),_,_,_),_)),DAE.NO_INLINE),_)),_)
-        	= Lookup.lookupType(cache,env, fn, true);
+        	= Lookup.lookupType(cache,env, fn, false);
 //        print(" inst record: " +& name +& " \n");
         (_,recordCl,recordEnv) = Lookup.lookupClass(cache,env,fn, false);
         true = MetaUtil.classHasRestriction(recordCl, SCode.R_RECORD());
