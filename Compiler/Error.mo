@@ -258,6 +258,7 @@ public constant ErrorID META_FUNCTION_TYPE_NO_PARTIAL_PREFIX=5003;
 public constant ErrorID META_MATCH_EQUATION_FORBIDDEN=5004;
 public constant ErrorID META_UNIONTYPE_ALIAS_MODS=5005;
 public constant ErrorID META_COMPLEX_TYPE_MOD=5006;
+public constant ErrorID META_MATCHEXP_RESULT_NUM_ARGS=5007;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -580,7 +581,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s . This is forbidden by Modelica specifications and may lead to lookup error"),
           (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations."),
           (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
-          (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers.")
+          (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers."),
+          (META_MATCHEXP_RESULT_NUM_ARGS,TRANSLATION(),ERROR(),"Match expression has %s results but %s is expected.")
           
           };
 

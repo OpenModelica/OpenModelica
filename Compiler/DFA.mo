@@ -728,6 +728,33 @@ protected function createLastAssignments "function: createLastAssignments
 "
   input list<Absyn.Exp> lhsList;
   input list<Absyn.Exp> rhsList;
+  output list<Absyn.AlgorithmItem> outList;
+algorithm
+  outList := matchcontinue (lhsList,rhsList)
+    local
+      String lhsLength, rhsLength;
+    case (lhsList,rhsList)
+      then listReverse(createLastAssignments2(lhsList,rhsList,{}));
+
+    case (lhsList,rhsList)
+      equation
+        lhsLength = intString(listLength(lhsList));
+        rhsLength = intString(listLength(rhsList));
+        Error.addMessage(Error.META_MATCHEXP_RESULT_NUM_ARGS, {rhsLength,lhsLength});
+      then fail();
+  end matchcontinue;
+end createLastAssignments;
+
+protected function createLastAssignments2 "function: createLastAssignments
+	author: KS
+	Creates the assignments that will assign the result variables
+	the final values.
+	(v1,v2...vN) := matchcontinue (x,y,...)
+                case (...) then (1,2,...,N);
+	Here v1,v2,...,vN should be assigned the values 1,2,...N.
+"
+  input list<Absyn.Exp> lhsList;
+  input list<Absyn.Exp> rhsList;
   input list<Absyn.AlgorithmItem> accList;
   output list<Absyn.AlgorithmItem> outList;
 algorithm
@@ -741,35 +768,26 @@ algorithm
       String str;
     case ({},{},localAccList) then localAccList;
 
-    /* The case: then fail(); */
+    /* then fail(); */
     case(_,Absyn.CALL(Absyn.CREF_IDENT("fail",_),_) :: {},_)
-      local
       equation
         localAccList = {Absyn.ALGORITHMITEM(Absyn.ALG_THROW(), NONE(), Absyn.dummyInfo)};
       then localAccList;
-    /*------------------------*/
-
-    /* The case: then (); */
-    case (_,Absyn.TUPLE({}) :: _,_) then {};
-
-    /* The case: then ();
-     * A tuple of 0 elements isn't a tuple according to the parser?
-     * Handle wild := matchcontinue ... then (); // sjoelund */
-    case ({Absyn.CREF(Absyn.WILD)},{},_) then {};
+    
+    /* then (); */
+    case ({},Absyn.TUPLE({}) :: _,_) then {};
+    /* _ := ... then ..., not fail() */
+    case ({Absyn.CREF(Absyn.WILD)},_,_) then {};
 
     case (firstLhs :: restLhs,firstRhs :: restRhs,localAccList)
       equation
         elem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(firstLhs,firstRhs), NONE(), Absyn.dummyInfo);
-        localAccList = listAppend(localAccList,{elem});
-        localAccList = createLastAssignments(restLhs,restRhs,localAccList);
+        localAccList = elem :: localAccList;
+        localAccList = createLastAssignments2(restLhs,restRhs,localAccList);
       then localAccList;
 
-    case (_,_,_)
-      equation
-        Debug.fprintln("matchcase", "- DFA.createLastAssignments failed");
-      then fail();
   end matchcontinue;
-end createLastAssignments;
+end createLastAssignments2;
 
 protected function generatePathVarDeclarations "function: generatePathVarDeclerations
 	author: KS
@@ -1322,17 +1340,14 @@ end createConstCompareExp;
 
 protected function createListFromExpression "function: createListFromExpression"
   input Absyn.Exp exp;
+  input list<Absyn.Exp> resVars;
   output list<Absyn.Exp> outList;
 algorithm
-  outList := matchcontinue (exp)
+  outList := matchcontinue (exp,resVars)
     local
       list<Absyn.Exp> l;
-      Absyn.Exp e;
-    case(Absyn.TUPLE(l)) then l;
-    case (e)
-      equation
-        l = {e};
-      then l;
+    case (Absyn.TUPLE(l),_::_::_) "only covert tuples if the number of inputs >=2" then l;
+    case (exp,_) then {exp};
   end matchcontinue;
 end createListFromExpression;
 
@@ -2186,8 +2201,8 @@ algorithm
     case ({}, {firstDecls}, _, _, {}, SOME(RIGHTHANDSIDE(_,body,result,_)), localCache, _, _, _)
       equation
         checkShadowing(firstDecls,invalidDecls);
-        exp2 = createListFromExpression(result);
-        algs3 = createLastAssignments(resVarList,exp2,{});
+        exp2 = createListFromExpression(result,resVarList);
+        algs3 = createLastAssignments(resVarList,exp2);
         algs = {};
         els = firstDecls;
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
@@ -2197,10 +2212,10 @@ algorithm
         dfaEnv = initialDfaEnv;
         checkShadowing(firstDecls,invalidDecls);
 
-        exp2 = createListFromExpression(result);
+        exp2 = createListFromExpression(result,resVarList);
 
         // Create the assignments that assign the return variables
-        algs3 = createLastAssignments(resVarList,exp2,{});
+        algs3 = createLastAssignments(resVarList,exp2);
         (localCache, dfaEnv, els, algs) = generatePathVarDeclarationsList(firstCase, inputVarList, localCache, localEnv, dfaEnv);
         els = listAppend(els, firstDecls);
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
