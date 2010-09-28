@@ -480,7 +480,7 @@ void array_alloc_integer_array(integer_array_t* dest,int n,
     int i,j,c,m;
     va_list ap;
 
-    integer_array_t **elts=malloc(sizeof(integer_array_t *) * n);
+    integer_array_t **elts=(integer_array_t**)malloc(sizeof(integer_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
@@ -589,7 +589,7 @@ void cat_alloc_integer_array(int k, integer_array_t* dest, int n,
     va_list ap;
     int i;
     int new_k_dim_size;
-    integer_array_t **elts = malloc(sizeof(integer_array_t *) * n);
+    integer_array_t **elts = (integer_array_t**)malloc(sizeof(integer_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);

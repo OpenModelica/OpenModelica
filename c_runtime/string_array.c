@@ -453,7 +453,7 @@ void array_alloc_string_array(string_array_t* dest, int n,
     int i,j,c,m;
     va_list ap;
 
-    string_array_t **elts = malloc(sizeof(string_array_t *) * n);
+    string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
@@ -566,7 +566,7 @@ void cat_alloc_string_array(int k, string_array_t* dest, int n,
     va_list ap;
     int i;
     int new_k_dim_size;
-    string_array_t **elts = malloc(sizeof(string_array_t *) * n);
+    string_array_t **elts = (string_array_t**)malloc(sizeof(string_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);

@@ -474,7 +474,7 @@ void array_alloc_boolean_array(boolean_array_t* dest, int n,
     int i,j,c,m;
     va_list ap;
 
-    boolean_array_t **elts = malloc(sizeof(boolean_array_t *) * n);
+    boolean_array_t **elts = (boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
@@ -586,7 +586,7 @@ void cat_alloc_boolean_array(int k, boolean_array_t* dest, int n,
     va_list ap;
     int i;
     int new_k_dim_size;
-    boolean_array_t **elts = malloc(sizeof(boolean_array_t *) * n);
+    boolean_array_t **elts = (boolean_array_t**)malloc(sizeof(boolean_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);

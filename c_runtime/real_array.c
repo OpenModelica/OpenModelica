@@ -534,7 +534,7 @@ void array_alloc_real_array(real_array_t* dest, int n, real_array_t* first,...)
     int i,j,c,m;
     va_list ap;
 
-    real_array_t **elts = malloc(sizeof(real_array_t *) * n);
+    real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap,first);
@@ -642,7 +642,7 @@ void cat_alloc_real_array(int k, real_array_t* dest, int n,
     va_list ap;
     int i;
     int new_k_dim_size;
-    real_array_t **elts = malloc(sizeof(real_array_t *) * n);
+    real_array_t **elts = (real_array_t**)malloc(sizeof(real_array_t *) * n);
     assert(elts);
     /* collect all array ptrs to simplify traversal.*/
     va_start(ap, first);
