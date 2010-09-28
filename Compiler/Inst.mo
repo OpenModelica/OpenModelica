@@ -8844,6 +8844,9 @@ algorithm
         (cache,dim3,dae);
     case (cache,env,cref,path,ad,SOME(DAE.TYPED(e,_,DAE.PROP(t,_),_)),impl,st,doVect, _,pre)
       equation
+        // adrpo: do not display error when running checkModel 
+        //        TODO! FIXME! check if this doesn't actually get rid of useful error messages
+        false = OptManager.getOption("checkModel");
         (cache,dim1,_) = elabArraydimDecl(cache,env, cref, ad, impl, st,doVect,pre);
         dim2 = elabArraydimType(t, ad, e, path, pre, cref);
         failure(dim3 = Util.listThreadMap(dim1, dim2, compatibleArraydim));

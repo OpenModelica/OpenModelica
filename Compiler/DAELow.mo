@@ -4702,7 +4702,9 @@ algorithm
       DAE.ElementSource source "the element source";
       DAE.FunctionTree funcs;
       list<DAE.Element> daeElts;
-
+      Absyn.Info info;
+    
+    // the empty case 
     case (DAE.DAE(elementLst = {}),states,v1,v2,v3,whenclauses)
       then
         (v1,v2,v3,{},{},{},{},{},{},whenclauses,{},states);
@@ -4715,8 +4717,8 @@ algorithm
     //    lower2(DAE.DAE(xs), states, vars, knvars, extVars, whenclauses);
     //  then
     //    (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,algs,whenclauses_1,extObjCls);
-
-    // External object variables
+    
+    // external object variables
     case (DAE.DAE((v as DAE.VAR(componentRef = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states) =
@@ -4727,7 +4729,7 @@ algorithm
       then
         (vars,knvars,extVars2,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
 
-    // class for External object
+    // class for external object
     case (DAE.DAE((v as DAE.EXTOBJECTCLASS(path,constr,destr,source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Absyn.Path path;
@@ -4739,8 +4741,8 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,
         extObjCl::extObjCls,states);
-
-    // variables: states and algebraic variables with binding equation!
+    
+    // variables: states and algebraic variables with binding equation
     case (DAE.DAE((v as DAE.VAR(componentRef = cr, source = source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states) =
@@ -4754,22 +4756,20 @@ algorithm
         vars_1 = addVar(v_2, vars);
       then
         (vars_1,knvars,extVars,EQUATION(DAE.CREF(cr, DAE.ET_OTHER()), e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    // variables: states and algebraic variables with NO binding equation!
+    
+    // variables: states and algebraic variables with NO binding equation
     case (DAE.DAE((v as DAE.VAR(componentRef = cr, source = source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states) =
         lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
-        // adrpo 2009-09-07 - according to MathCore
-        // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(v);
         (v_1,NONE(),states) = lowerVar(v, states);
         SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
         vars_1 = addVar(v_2, vars);
       then
         (vars_1,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    // Known variables: parameters and constants
+    
+    // known variables: parameters and constants
     case (DAE.DAE((v as DAE.VAR(componentRef = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4779,8 +4779,8 @@ algorithm
         knvars_1 = addVar(v_2, knvars);
       then
         (vars,knvars_1,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    /* tuple equations are rewritten to algorihm tuple assign. */
+    
+    // tuple equations are rewritten to algorihm tuple assign.
     case (DAE.DAE((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         a = lowerTupleEquation(e);
@@ -4790,9 +4790,9 @@ algorithm
         	= lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,a2::algs,whenclauses_1,extObjCls,states);
-
-		/* tuple-tuple assignments are split into one equation for each tuple
-		 * element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6; */
+    
+		// tuple-tuple assignments are split into one equation for each tuple
+		// element, i.e. (i1, i2) = (4, 6) => i1 = 4; i2 = 6; 
 		case (DAE.DAE(DAE.EQUATION(DAE.TUPLE(targets), DAE.TUPLE(sources), source = eq_source) :: xs, funcs),
 				states,vars,knvars,extVars,whenclauses)
 			local
@@ -4806,8 +4806,8 @@ algorithm
 				eqns = listAppend(eqns2, eqns);
 			then
 				(vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    /* scalar equations */
+    
+    // scalar equations
     case (DAE.DAE((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4816,8 +4816,8 @@ algorithm
         SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,(e_2 :: eqns),reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    /* effort variable equality equations */
+    
+    // effort variable equality equations
     case (DAE.DAE((e as DAE.EQUEQUATION(cr1 = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4826,8 +4826,8 @@ algorithm
         SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,(e_2 :: eqns),reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    /* a solved equation */
+    
+    // a solved equation 
     case (DAE.DAE((e as DAE.DEFINE(componentRef = _)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4836,8 +4836,8 @@ algorithm
         SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,e_2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    // complex equations!!
+    
+    // complex equations
     case (DAE.DAE((e as DAE.COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4847,8 +4847,8 @@ algorithm
         aeqns2 = listAppend(aeqns, aeqns1);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns2,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    // complex initial equations!!
+    
+    // complex initial equations
     case (DAE.DAE((e as DAE.INITIAL_COMPLEX_EQUATION(lhs = e1,rhs = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4858,8 +4858,8 @@ algorithm
         iaeqns2 = listAppend(iaeqns, iaeqns1);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns2,algs,whenclauses_1,extObjCls,states);
-
-    /* array equations */
+    
+    // array equations
     case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local 
         DAE.Exp e_11,e_21;
@@ -4876,6 +4876,8 @@ algorithm
         eqns = listAppend(re, eqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
+    
+    // array equations
     case (DAE.DAE((e as DAE.ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local 
         MultiDimEquation e_1;
@@ -4886,7 +4888,7 @@ algorithm
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,(e_1 :: aeqns),iaeqns,algs,whenclauses_1,extObjCls,states);
         
-		/* initial array equations */
+		// initial array equations 
     case (DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds,exp = e1,array = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local 
         DAE.Exp e_11,e_21;
@@ -4903,6 +4905,8 @@ algorithm
         ieqns = listAppend(re, ieqns);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);		
+		
+		// initial array equations
 		case (DAE.DAE((e as DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2)) :: xs, funcs), 
 				states, vars, knvars, extVars, whenclauses)
 			local 
@@ -4913,9 +4917,8 @@ algorithm
 				e_1 = lowerArrEqn(e,funcs);
 			then
 				(vars, knvars, extVars, eqns, reqns, ieqns, aeqns,(e_1 :: iaeqns), algs, whenclauses_1, extObjCls,states);
-
-    /* When equations */
-//    case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns,elsewhen_ = NONE)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+    
+    // when equations
     case (DAE.DAE((e as DAE.WHEN_EQUATION(condition = c,equations = eqns)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local list<Option<Equation>> opteqlst;
       equation
@@ -4930,8 +4933,8 @@ algorithm
         eqns = listAppend(eqns1, eqns2);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_2,extObjCls,states);
-
-    /* initial equations*/
+    
+    // initial equations
     case (DAE.DAE((e as DAE.INITIALEQUATION(exp1 = e1,exp2 = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4940,8 +4943,8 @@ algorithm
         SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,(e_2 :: ieqns),aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
-
-    /* Algorithm */
+    
+    // algorithm
     case (DAE.DAE(DAE.ALGORITHM(algorithm_ = a) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
@@ -4950,8 +4953,8 @@ algorithm
        a2 = extendAlgorithm(a1,SOME(funcs));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,(a2 :: algs),whenclauses_1,extObjCls,states);
-
-    /* flat class / COMP */
+    
+    // flat class / COMP
     case (DAE.DAE(DAE.COMP(dAElist = daeElts) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         (vars1,knvars1,extVars1,eqns1,reqns1,ieqns1,aeqns1,iaeqns1,algs1,whenclauses_1,extObjCls1,states) = lower2(DAE.DAE(daeElts,funcs), states, vars, knvars, extVars, whenclauses);
@@ -4968,42 +4971,22 @@ algorithm
         extObjCls = listAppend(extObjCls1,extObjCls2);
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_2,extObjCls,states);
-
-    /* If equation */
-    case (DAE.DAE(elementLst = ((e as DAE.IF_EQUATION(condition1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
-      local String str;
-      equation
-        str = DAEDump.dumpElementsStr({e});
-        str = stringAppend("rewrite equations using if-expressions: ",str);
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"if-equations",str});
-      then
-        fail();
-
-    /* Initial if equation */
-    case (DAE.DAE(elementLst = ((e as DAE.INITIAL_IF_EQUATION(condition1 = _)) :: xs)),states,vars,knvars,extVars,whenclauses)
-      local String str;
-      equation
-        str = DAEDump.dumpElementsStr({e});
-        str = stringAppend("rewrite equations using if-expressions: ",str);
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"if-equations",str});
-      then
-        fail();
-
-    /* assert in equation section is converted to ALGORITHM */
+    
+    // assert in equation section is converted to ALGORITHM
     case (DAE.DAE(DAE.ASSERT(cond,msg,source) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Variables v;
         list<Equation> e;
         DAE.Exp cond,msg;
-
+        DAE.Algorithm alg;
       equation
         checkAssertCondition(cond,msg);
         (v,kv,extVars,e,re,ie,ae,iae,al,whenclauses_1,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states,vars,knvars,extVars,whenclauses);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)}),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (v,kv,extVars,e,re,ie,ae,iae,a::al,whenclauses_1,extObjCls,states);
-
-    /* terminate in equation section is converted to ALGORITHM */
+    
+    // terminate in equation section is converted to ALGORITHM
     case (DAE.DAE(DAE.TERMINATE(message = msg, source = source) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Variables v;
@@ -5014,38 +4997,97 @@ algorithm
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (v,kv,extVars,e,re,ie,ae,iae,a::al,whenclauses_1,extObjCls,states);
-
-    case (DAE.DAE(DAE.INITIALALGORITHM(algorithm_ = _) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
-      local
-        Variables v;
-        list<Equation> e;
-      equation
-        Error.addMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"initial algorithm","rewrite initial algorithms to initial equations"});
-        (v,kv,extVars,e,re,ie,ae,iae,al,whenclauses_1,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
-      then
-        (v,kv,extVars,e,re,ie,ae,iae,al,whenclauses_1,extObjCls,states);
-   
-    // constrain is not a standard Modelica function, but used in old libraries such as the old Multibody library.
-    // The OpenModelica backend does not support constrain, but the frontend does (Mathcore needs it for their backend).
-    // To get a meaningful error message when constrain is used we catch it here, instead of silently failing. 
-    // User-defined functions should have fully qualified names here, so Absyn.IDENT should only match the builtin constrain function.        
-    case (DAE.DAE(DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain")) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
-      equation
-        Error.addMessage(Error.NO_MATCHING_FUNCTION_FOUND_NO_CANDIDATE, {"constrain"});
-      then
-        fail();
-        
+    
     case (DAE.DAE(DAE.NORETCALL(functionName = func_name, functionArgs = args, source = source) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Absyn.Path func_name;
         list<DAE.Exp> args;
         DAE.Statement s;
+        Boolean b1, b2, b;
       equation
+        // make sure is not constrain as we don't support it, see below.
+        b1 = boolNot(Util.isEqual(func_name, Absyn.IDENT("constrain")));
+        // constrain is fine when we do check model!
+        b2 = OptManager.getOption("checkModel");
+        true = boolOr(b1, b2);
+        
         (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses_1,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, false, false, DAE.ET_NORETCALL(), DAE.NORM_INLINE()),source);
         a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({s}),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,kv,extVars,eqns,re,ie,ae,iae,a :: al,whenclauses_1,extObjCls,states);
+
+    // when running checkModel ignore some of the unsupported features as we only want to see nr eqs/vars
+    // if equation that cannot be translated to if expression but have initial() as condition
+    case (DAE.DAE((e as DAE.IF_EQUATION(condition1 = {DAE.CALL(path=Absyn.IDENT("initial"))}, source = DAE.SOURCE(info = info))) :: xs, funcs),states,vars,knvars,extVars,whenclauses)
+      equation
+        true = OptManager.getOption("checkModel");
+        (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);        
+      then
+        (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses,extObjCls,states);
+    
+    // when running checkModel ignore some of the unsupported features as we only want to see nr eqs/vars
+    // initial if equation that cannot be translated to if expression 
+    case (DAE.DAE((e as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs, funcs),states,vars,knvars,extVars,whenclauses)
+      equation
+        true = OptManager.getOption("checkModel");
+        (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);        
+      then
+        (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses,extObjCls,states);
+    
+    // when running checkModel ignore some of the unsupported features as we only want to see nr eqs/vars
+    // initial algorithm
+    case (DAE.DAE((e as DAE.INITIALALGORITHM(algorithm_ = _, source = DAE.SOURCE(info=info))) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+      equation
+        true = OptManager.getOption("checkModel");
+        (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);        
+      then
+        (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses,extObjCls,states);
+
+    // error reporting from now on
+     
+    // if equation that cannot be translated to if expression
+    case (DAE.DAE(elementLst = ((e as DAE.IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs)),states,vars,knvars,extVars,whenclauses)
+      local String str;
+      equation
+        str = DAEDump.dumpElementsStr({e});
+        str = stringAppend("rewrite equations using if-expressions: ",str);
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"if-equations",str}, info);
+      then
+        fail();
+    
+    // initial if equation that cannot be translated to if expression 
+    case (DAE.DAE(elementLst = ((e as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs)),states,vars,knvars,extVars,whenclauses)
+      local String str;
+      equation
+        str = DAEDump.dumpElementsStr({e});
+        str = stringAppend("rewrite equations using if-expressions: ",str);
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE, {"if-equations",str}, info);
+      then
+        fail();
+    
+    // initial algorithm
+    case (DAE.DAE((e as DAE.INITIALALGORITHM(algorithm_ = _, source = DAE.SOURCE(info=info))) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+      local String str;
+      equation
+        str = DAEDump.dumpElementsStr({e});
+        str = stringAppend("rewrite initial algorithms to initial equations",str);        
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"initial algorithm",str}, info);
+      then
+        fail();
+      
+    // constrain is not a standard Modelica function, but used in old libraries such as the old Multibody library.
+    // The OpenModelica backend does not support constrain, but the frontend does (Mathcore needs it for their backend).
+    // To get a meaningful error message when constrain is used we catch it here, instead of silently failing. 
+    // User-defined functions should have fully qualified names here, so Absyn.IDENT should only match the builtin constrain function.        
+    case (DAE.DAE((e as DAE.NORETCALL(functionName = Absyn.IDENT(name = "constrain"), source = DAE.SOURCE(info=info))) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
+      local String str;
+      equation
+        str = DAEDump.dumpElementsStr({e});
+        str = stringAppend("rewrite code without using constrain",str);        
+        Error.addSourceMessage(Error.UNSUPPORTED_LANGUAGE_FEATURE,{"constrain function",str}, info);
+      then
+        fail();
         
     case (DAE.DAE(elementLst = (ddl :: xs)),_,vars,knvars,extVars,_)
       local DAE.Element ddl; String s3;

@@ -224,6 +224,7 @@ protected import System;
 protected import Types;
 protected import Util;
 protected import DAEDump;
+protected import OptManager;
 
 public function splitDAEIntoVarsAndEquations
 "Splits the DAE into one with vars and no equations and algorithms
@@ -2767,8 +2768,7 @@ protected function ifEqToExpr
   input Boolean onlyConstantEval;
   output list<DAE.Element> outElementLst;
 algorithm
-  outElementLst:=
-  matchcontinue (inElement,onlyConstantEval)
+  outElementLst := matchcontinue (inElement,onlyConstantEval)
     local
       Integer true_eq,false_eq;
       String elt_str;
@@ -2779,6 +2779,7 @@ algorithm
       list<list<DAE.Element>> true_branch;
       DAE.ElementSource source "the origin of the element";
       DAE.FunctionTree funcs;
+      Absyn.Path fpath;
 
     // adrpo: handle selection of branches if conditions are boolean literals
     //        this is needed as Connections.isRoot becomes true/false at the
@@ -2818,6 +2819,17 @@ algorithm
         equations = makeEquationsFromIf(cond, true_branch, false_branch, source);
       then
         equations;*/
+    
+    // adrpo: if we are running checkModel and condition is initial(), ignore error!
+    case (DAE.IF_EQUATION(condition1 = cond as {DAE.CALL(path = fpath)},equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
+      equation
+        true = OptManager.getOption("checkModel");
+        true = Util.isEqual(fpath, Absyn.IDENT("initial"));
+        // leave the if equation as it is!
+        equations = {inElement};
+      then
+        equations;
+
     // handle the default case.
     case (DAE.IF_EQUATION(condition1 = cond,equations2 = true_branch,equations3 = false_branch,source=source),onlyConstantEval as false)
       equation
@@ -2826,13 +2838,14 @@ algorithm
         tbsExp = Util.listMap(true_branch, makeEquationLstToResidualExpLst);
         equations = makeEquationsFromResiduals(cond, tbsExp, fbsExp, source);
       then
-        equations;        
+        equations;
     case (elt as DAE.IF_EQUATION(condition1=_),onlyConstantEval as true)
       then
         {elt};
     case (elt as DAE.IF_EQUATION(source=source),onlyConstantEval) // only display failure on if equation
       equation
         // TODO: Do errors in the other functions...
+        true = RTOpts.debugFlag("failtrace");
         elt_str = DAEDump.dumpElementsStr({elt});
         Debug.fprintln("failtrace", "- DAEUtil.ifEqToExpr failed " +& elt_str);
       then fail();
