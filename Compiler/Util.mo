@@ -3405,6 +3405,29 @@ algorithm
   end matchcontinue;
 end listUnionElt;
 
+public function listUnionEltComp
+  "Works as listUnionElt, but with a compare function."
+  input Type_a inElem;
+  input list<Type_a> inList;
+  input CompareFunc inCompFunc;
+  output list<Type_a> outList;
+  partial function CompareFunc
+    input Type_a inElem1;
+    input Type_a inElem2;
+    output Boolean res;
+  end CompareFunc;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outList := matchcontinue(inElem, inList, inCompFunc)
+    case (_, _, _)
+      equation
+        true = listContainsWithCompareFunc(inElem, inList, inCompFunc);
+      then
+        inList;
+    case (_, _, _) then inElem :: inList;
+  end matchcontinue;
+end listUnionEltComp;
+
 public function listUnion "function listUnion
   Takes two lists and returns the union of the two lists,
   i.e. a list of all elements combined without duplicates.
@@ -3429,6 +3452,36 @@ algorithm
         res;
   end matchcontinue;
 end listUnion;
+
+public function listUnionComp
+  "Works as listUnion, but with a compare function."
+  input list<Type_a> inList1;
+  input list<Type_a> inList2;
+  input CompareFunc inCompFunc;
+  output list<Type_a> outList;
+  partial function CompareFunc
+    input Type_a inElem1;
+    input Type_a inElem2;
+    output Boolean res;
+  end CompareFunc;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outList := matchcontinue(inList1, inList2, inCompFunc)
+    local
+      list<Type_a> res, xs;
+      Type_a x;
+    case ({}, {}, _) 
+      then {};
+    case ({}, x :: xs, _) 
+      then listUnionEltComp(x, listUnionComp({}, xs, inCompFunc), inCompFunc);
+    case ((x :: xs), _, _)
+      equation
+        res = listUnionComp(xs, inList2, inCompFunc);
+        res = listUnionEltComp(x, res, inCompFunc);
+      then
+        res;
+  end matchcontinue;
+end listUnionComp;
 
 public function listListUnion "function: listListUnion
   Takes a list of lists and returns the union of the sublists

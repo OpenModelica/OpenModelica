@@ -1871,7 +1871,7 @@ algorithm
    end matchcontinue;
  end algorithmEqual2;
 
-protected function equationEqual
+public function equationEqual
 "function equationEqual
   Returns true if two equations are equal."
   input Equation eqn1;

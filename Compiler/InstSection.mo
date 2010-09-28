@@ -34,7 +34,7 @@ package InstSection
   package:     InstSection
   description: Model instantiation
 
-  RCS: $Id: Inst.mo 6158 2010-09-21 10:13:14Z sjoelund.se $
+  RCS: $Id: InstSection.mo 6158 2010-09-21 10:13:14Z sjoelund.se $
 
   This module is responsible for instantiation of Modelica equation
   and algorithm sections (including connect equations)."

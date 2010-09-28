@@ -3232,8 +3232,11 @@ algorithm
         // Add components from base classes to be instantiated in 3 as well.
         compelts_1 = Util.listFlatten({extcomps,compelts_1,cdefelts_1});
                 
-        eqs_1 = listAppend(eqs, eqs2);
-        initeqs_1 = listAppend(initeqs, initeqs2);
+        // Take the union of the equations in the current scope and equations
+        // from extends, to filter out identical equations.
+        eqs_1 = Util.listUnionComp(eqs, eqs2, SCode.equationEqual);
+        initeqs_1 = Util.listUnionComp(initeqs, initeqs2, SCode.equationEqual);
+
         alg_1 = listAppend(alg, alg2);
         initalg_1 = listAppend(initalg, initalg2);
 
