@@ -553,62 +553,37 @@ algorithm
         tp_1 = Types.elabType(tp);
       then
         (cache,DAE.CODE(c,tp_1),DAE.PROP(tp,DAE.C_CONST()),st,DAEUtil.emptyDae);
-
+        
     case (cache,env,Absyn.VALUEBLOCK(ld,body,res),impl,st,doVect,pre)
       local
         Absyn.ValueblockBody body;
         list<Absyn.ElementItem> ld;
-        list<SCode.Element> ld2;
-        list<tuple<SCode.Element, Inst.Mod>> ld_mod;
-
         list<Absyn.AlgorithmItem> b,b2;
         list<DAE.Statement> b_alg;
         DAE.DAElist dae1,dae2;
         list<DAE.Element> dae1_2Elts;
         Absyn.Exp res;
         DAE.Exp res2;
-        Env.Env env2;
-
         DAE.Properties prop;
+        DAE.FunctionTree funcs;
       equation
         // debug_print("elabExp->VALUEBLOCKALGORITHMS", b);
-        env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName));
-
-        // Tranform declarations such as Real x,y; to Real x; Real y;
-        ld2 = SCodeUtil.translateEitemlist(ld,false);
-
-        // Filter out the components (just to be sure)
-        ld2 = Inst.componentElts(ld2);
-
-        // Transform the element list into a list of element,NOMOD
-        ld_mod = Inst.addNomod(ld2);
-
-        (cache,env2,_,_) = Inst.addComponentsToEnv(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
-          Connect.SETS({},{},{},{}), ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")), ld_mod, {}, {}, {}, impl);
-
-        (cache,env2,_,_,dae1,_,_,_,_) =
-          Inst.instElementList(cache,env2,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
-                               DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}),
-                               ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")),
-                               ld_mod,{},impl,ConnectionGraph.EMPTY);
-
-        (b,cache) = fromValueblockBodyToAlgs(body, cache, env2,pre);
-        //----------------------------------------------------------------------
-        // The instantiation of the components may have produced some equations
-        (b2,DAE.DAE(dae1_2Elts,_)) = Convert.fromDAEEqsToAbsynAlg(dae1);
+        (cache,env,DAE.DAE(dae1_2Elts,funcs),b2) = addLocalDecls(cache,env,ld,impl);
+        (b,cache) = fromValueblockBodyToAlgs(body,cache,env,pre);
         b = listAppend(b2,b);
         //----------------------------------------------------------------------
-        (cache,b_alg,_) = InstSection.instStatements(cache, env2, 
+        (cache,b_alg,dae1) = InstSection.instStatements(cache, env, 
             InnerOuter.emptyInstHierarchy, 
             Prefix.NOPRE(), SCodeUtil.translateClassdefAlgorithmitems(b), DAE.emptyElementSource, SCode.NON_INITIAL(), true, Inst.neverUnroll);
         // debug_print("before -> res",res);
-        (cache,res2,prop as DAE.PROP(tp,_),st,dae3) = elabExp(cache,env2,res,impl,st,doVect,pre);
+        (cache,res2,prop as DAE.PROP(tp,_),st,dae2) = elabExp(cache,env,res,impl,st,doVect,pre);
         // debug_print("after -> res",res2);
         tp_1 = Types.elabType(tp);
         // debug_print("end",tp_1);
         // TODO: PA: I do not know which dae:s to collect here. It should collect all dae:s that comes from
         // elaborating expressions (since they can contain function calls and that is what we want to collect)
-      then (cache,DAE.VALUEBLOCK(tp_1,dae1_2Elts,b_alg,res2),prop,st,dae3);
+        dae = DAEUtil.joinDaeLst({dae1,dae2,DAE.DAE({},funcs)});
+      then (cache,DAE.VALUEBLOCK(tp_1,dae1_2Elts,b_alg,res2),prop,st,dae);
 
        //-------------------------------------
        // Part of the MetaModelica extension. KS
@@ -863,7 +838,7 @@ algorithm
       Env.Env localEnv;
       Prefix pre;
       String str;
-      Absyn.Exp left,right,lhsExp,rhsExp,matchExp,e;
+      Absyn.Exp left,right,lhsExp,rhsExp,e;
       Absyn.AlgorithmItem algItem,algItem1,algItem2;
       Absyn.Equation eq2;
       Option<Absyn.Comment> comment2;
@@ -882,28 +857,6 @@ algorithm
       list<tuple<Absyn.Exp,list<Absyn.AlgorithmItem>>> algBranches;
       list<Absyn.EquationItem> eqTrueItems, eqElseItems;
       list<tuple<Absyn.Exp,list<Absyn.EquationItem>>> eqBranches;
-
-    case (Absyn.EQ_EQUALS(Absyn.BOOL(true),right),comment,info,localCache,_,_)
-      equation
-        /*
-        An equation such as ...
-
-        true = exp;
-
-        ... is transformed into ...
-
-        if (exp != true)
-        	throw();
-        	*/
-        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
-        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(Absyn.LUNARY(Absyn.NOT(),right),{algItem1},{},{}),comment,info);
-      then (localCache,algItem2);
-
-    case (Absyn.EQ_EQUALS(Absyn.BOOL(false),right),comment,info,localCache,_,_)
-      equation
-        algItem1 = Absyn.ALGORITHMITEM(Absyn.ALG_THROW(),comment,info);
-        algItem2 = Absyn.ALGORITHMITEM(Absyn.ALG_IF(right,{algItem1},{},{}),comment,info);
-      then (localCache,algItem2);
 
       // The syntax n>=0 = true; is also used
     case (Absyn.EQ_EQUALS(left,Absyn.BOOL(true)),comment,info,localCache,_,_)
@@ -928,52 +881,6 @@ algorithm
     case (Absyn.EQ_NORETCALL(cref,fargs),comment,info,localCache,_,_)
       equation
         algItem = Absyn.ALGORITHMITEM(Absyn.ALG_NORETCALL(cref,fargs),comment,info);
-      then (localCache,algItem);
-
-      /*
-      If we have an equation of the form (exp1,exp2,...,expN) = func(...),
-      we may have to transform it into a matchcontinue statement,
-      since the expressions should be "matched" against the return
-      values of the function */
-    case (Absyn.EQ_EQUALS(e,rhsExp),comment,info,localCache,localEnv,pre)
-      equation
-        // If we have a statement such as: ((a,b)) = func(...); this
-        // is not the same as (a,b) = func(...);
-        expL = extractListFromTuple(e,0);
-        false = onlyCrefExpressions(expL);
-
-      /*
-      _ :=
-      valueblock(
-      var1,...,varN;
-
-      (var1,...,varN) := func(...);
-      _ :=
-      valueblock(
-
-
-      )
-
-      */
-        // Builtin functions like listGet are polymorphic and need to be elaborated if we want
-        // to know what types the components should have.
-        // We also need to elaborate crefs in order to determine what type it has.
-        (localCache, _, prop, _,_) = elabExp(localCache, env, rhsExp, true, NONE, true,pre);
-        ty = Util.if_(isTupleExp(rhsExp),MetaUtil.fixMetaTuple(prop),Types.getPropType(prop));
-        (elemList,varList) = extractOutputVarsType({ty},1,{},{});
-
-        matchExp =
-        Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},
-          Absyn.CASE(e,{},{},Absyn.TUPLE({}),NONE()) :: {},NONE());
-
-        lhsExp = createLhsExp(varList);
-
-        algItem = Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),
-          Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(
-            {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,rhsExp),comment,info),
-            Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),comment,info)}
-          ),Absyn.BOOL(true))),comment,info);
-
       then (localCache,algItem);
 
     case (Absyn.EQ_EQUALS(left,right),comment,info,localCache,_,_)
@@ -1006,123 +913,6 @@ algorithm
       then fail();
   end matchcontinue;
 end fromEquationToAlgAssignment;
-
-protected function extractListFromTuple "function: extractListFromTuple
-	author: KS
- Given an Absyn.Exp, this function will extract the list of expressions if the
- expression is a tuple, otherwise a list of length one is created"
-  input Absyn.Exp inExp;
-  input Integer numOfExps;
-  output list<Absyn.Exp> outList;
-algorithm
-  outList :=
-  matchcontinue (inExp,numOfExps)
-    case(Absyn.TUPLE(l),1)
-      local
-        list<Absyn.Exp> l;
-      equation
-      then {Absyn.TUPLE(l)};
-    case(Absyn.TUPLE(l),_)
-      local
-        list<Absyn.Exp> l;
-      equation
-      then l;
-    case(exp,_)
-      local
-        Absyn.Exp exp;
-      equation
-      then {exp};
-  end matchcontinue;
-end extractListFromTuple;
-
-protected function isTupleExp
-  input Absyn.Exp inExp;
-  output Boolean b;
-algorithm
-  b := matchcontinue (inExp)
-    case Absyn.TUPLE(_) then true;
-    case _ then false;
-  end matchcontinue;
-end isTupleExp;
-
-protected function onlyCrefExpressions "function: onlyCrefExpressions"
-  input list<Absyn.Exp> expList;
-  output Boolean boolVal;
-algorithm
-  boolVal :=
-  matchcontinue (expList)
-    case ({})
-      then true;
-    case (Absyn.CREF(Absyn.WILD()) :: _) then false;
-    case (Absyn.CREF(_) :: restList)
-      local
-        list<Absyn.Exp> restList;
-        Boolean b;
-      equation
-        b = onlyCrefExpressions(restList);
-      then b;
-    case (_) then false;
-  end matchcontinue;
-end onlyCrefExpressions;
-
-protected function createLhsExp "function: createLhsExp"
-  input list<Absyn.Exp> inList;
-  output Absyn.Exp outExp;
-algorithm
-  outExp :=
-  matchcontinue (inList)
-    case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
-    case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
-  end matchcontinue;
-end createLhsExp;
-
-protected function extractOutputVarsType
-  input list<DAE.Type> inList;
-  input Integer cnt;
-  input list<Absyn.ElementItem> accList1;
-  input list<Absyn.Exp> accList2;
-  output list<Absyn.ElementItem> outList1;
-  output list<Absyn.Exp> outList2;
-algorithm
-  (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
-    local
-      list<Absyn.ElementItem> localAccList1;
-      list<DAE.Type> rest;
-      list<Absyn.Exp> localAccList2;
-      Integer localCnt;
-    case ({},localCnt,localAccList1,localAccList2)
-      then (localAccList1,localAccList2);
-    case ({(DAE.T_TUPLE(rest),_)},1,{},{})
-      equation
-        (localAccList1,localAccList2) = extractOutputVarsType(rest,1,{},{});
-      then (localAccList1,localAccList2);
-    case (ty :: rest, localCnt,localAccList1,localAccList2)
-      local
-        DAE.Type ty;
-        Absyn.TypeSpec tSpec;
-        Absyn.Ident n1,n2;
-        Absyn.ElementItem elem1;
-        Absyn.Exp elem2;
-      equation
-        tSpec = MetaUtil.typeConvert(ty);
-        n1 = "var";
-        n2 = stringAppend(n1,intString(localCnt));
-        elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
-          false,NONE(),Absyn.UNSPECIFIED(),"component",
-          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
-            tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
-            Absyn.INFO("f",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()));
-        elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
-        localAccList1 = listAppend(localAccList1,{elem1});
-        localAccList2 = listAppend(localAccList2,{elem2});
-        (localAccList1,localAccList2) = extractOutputVarsType(rest,localCnt+1,localAccList1,localAccList2);
-      then (localAccList1,localAccList2);
-    case (_,_,_,_)
-      equation
-        Debug.fprintln("failtrace", "- Patternm.extractOutputVarsType failed");
-      then fail();
-  end matchcontinue;
-end extractOutputVarsType;
 
 protected function elabMatrixGetDimensions "function: elabMatrixGetDimensions
 
@@ -13887,5 +13677,54 @@ algorithm
   call := DAE.CALL(Absyn.IDENT(name), args, false, true, result_type,
       DAE.NO_INLINE);
 end makeBuiltinCall;
+
+protected function addLocalDecls
+"Adds local declarations to the environment and returns the DAE"
+  input Env.Cache cache;
+  input Env.Env env;
+  input list<Absyn.ElementItem> els;
+  input Boolean impl;
+  output Env.Cache outCache;
+  output Env.Env outEnv;
+  output DAE.DAElist dae;
+  output list<Absyn.AlgorithmItem> algs;
+algorithm
+  (outCache,outEnv,dae) := matchcontinue (cache,env,els,impl)
+    local
+      list<Absyn.ElementItem> ld;
+      list<SCode.Element> ld2;
+      list<tuple<SCode.Element, Inst.Mod>> ld_mod;      
+      list<Absyn.AlgorithmItem> algs;
+      DAE.DAElist dae1;
+      list<DAE.Element> dae1_2Elts;
+      Env.Env env2;
+    case (cache,env,{},impl) then (cache,env,DAEUtil.emptyDae,{});
+    case (cache,env,ld,impl)
+      equation
+        env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName));
+
+        // Tranform declarations such as Real x,y; to Real x; Real y;
+        ld2 = SCodeUtil.translateEitemlist(ld,false);
+
+        // Filter out the components (just to be sure)
+        ld2 = Inst.componentElts(ld2);
+
+        // Transform the element list into a list of element,NOMOD
+        ld_mod = Inst.addNomod(ld2);
+
+        (cache,env2,_,_) = Inst.addComponentsToEnv(cache, env2, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(),
+          Connect.SETS({},{},{},{}), ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")), ld_mod, {}, {}, {}, impl);
+
+        (cache,env2,_,_,dae1,_,_,_,_) =
+          Inst.instElementList(cache,env2,InnerOuter.emptyInstHierarchy, UnitAbsyn.noStore,
+                               DAE.NOMOD(), Prefix.NOPRE(), Connect.SETS({},{},{},{}),
+                               ClassInf.FUNCTION(Absyn.IDENT("dummieFunc")),
+                               ld_mod,{},impl,ConnectionGraph.EMPTY);
+
+        // The instantiation of the components may have produced some equations
+        (algs,dae) = Convert.fromDAEEqsToAbsynAlg(dae1);
+      then (cache,env2,dae,algs);
+  end matchcontinue;
+end addLocalDecls;
 
 end Static;

@@ -1393,4 +1393,108 @@ algorithm
   end matchcontinue;
 end fixUniontype;
 
+public function extractOutputVarsType
+  input list<DAE.Type> inList;
+  input Integer cnt;
+  input list<Absyn.ElementItem> accList1;
+  input list<Absyn.Exp> accList2;
+  output list<Absyn.ElementItem> outList1;
+  output list<Absyn.Exp> outList2;
+algorithm
+  (outList1,outList2) := matchcontinue (inList,cnt,accList1,accList2)
+    local
+      list<Absyn.ElementItem> localAccList1;
+      list<DAE.Type> rest;
+      list<Absyn.Exp> localAccList2;
+      Integer localCnt;
+    case ({},localCnt,localAccList1,localAccList2)
+      then (localAccList1,localAccList2);
+    case ({(DAE.T_TUPLE(rest),_)},1,{},{})
+      equation
+        (localAccList1,localAccList2) = extractOutputVarsType(rest,1,{},{});
+      then (localAccList1,localAccList2);
+    case (ty :: rest, localCnt,localAccList1,localAccList2)
+      local
+        DAE.Type ty;
+        Absyn.TypeSpec tSpec;
+        Absyn.Ident n1,n2;
+        Absyn.ElementItem elem1;
+        Absyn.Exp elem2;
+      equation
+        tSpec = typeConvert(ty);
+        n1 = "var";
+        n2 = stringAppend(n1,intString(localCnt));
+        elem1 = Absyn.ELEMENTITEM(Absyn.ELEMENT(
+          false,NONE(),Absyn.UNSPECIFIED(),"component",
+          Absyn.COMPONENTS(Absyn.ATTR(false,false,Absyn.VAR(),Absyn.BIDIR(),{}),
+            tSpec,{Absyn.COMPONENTITEM(Absyn.COMPONENT(n2,{},NONE()),NONE(),NONE())}),
+            Absyn.INFO("f",false,0,0,0,0,Absyn.dummyTimeStamp),NONE()));
+        elem2 = Absyn.CREF(Absyn.CREF_IDENT(n2,{}));
+        localAccList1 = listAppend(localAccList1,{elem1});
+        localAccList2 = listAppend(localAccList2,{elem2});
+        (localAccList1,localAccList2) = extractOutputVarsType(rest,localCnt+1,localAccList1,localAccList2);
+      then (localAccList1,localAccList2);
+    case (_,_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- InstSection.extractOutputVarsType failed");
+      then fail();
+  end matchcontinue;
+end extractOutputVarsType;
+
+public function createLhsExp "function: createLhsExp"
+  input list<Absyn.Exp> inList;
+  output Absyn.Exp outExp;
+algorithm
+  outExp :=
+  matchcontinue (inList)
+    case (firstExp :: {}) local Absyn.Exp firstExp; equation then firstExp;
+    case (lst) local list<Absyn.Exp> lst; equation then Absyn.TUPLE(lst);
+  end matchcontinue;
+end createLhsExp;
+
+public function onlyCrefExpressions "function: onlyCrefExpressions"
+  input list<Absyn.Exp> expList;
+  output Boolean boolVal;
+algorithm
+  boolVal :=
+  matchcontinue (expList)
+    local
+      list<Absyn.Exp> restList;
+    case ({}) then false;
+    case (Absyn.CREF(Absyn.WILD()) :: _) then false;
+    case ({Absyn.CREF(_)}) then true;
+    case (Absyn.CREF(_) :: restList) then onlyCrefExpressions(restList);
+    case (_) then false;
+  end matchcontinue;
+end onlyCrefExpressions;
+
+public function isTupleExp
+  input Absyn.Exp inExp;
+  output Boolean b;
+algorithm
+  b := matchcontinue (inExp)
+    case Absyn.TUPLE(_) then true;
+    case _ then false;
+  end matchcontinue;
+end isTupleExp;
+
+public function extractListFromTuple "function: extractListFromTuple
+	author: KS
+ Given an Absyn.Exp, this function will extract the list of expressions if the
+ expression is a tuple, otherwise a list of length one is created"
+  input Absyn.Exp inExp;
+  input Integer numOfExps;
+  output list<Absyn.Exp> outList;
+algorithm
+  outList :=
+  matchcontinue (inExp,numOfExps)
+    local
+      list<Absyn.Exp> l;
+      Absyn.Exp exp;
+    case (Absyn.TUPLE(l),1) then {Absyn.TUPLE(l)};
+    case (Absyn.TUPLE(l),_) then l;
+    case (exp,_) then {exp};
+  end matchcontinue;
+end extractListFromTuple;
+
 end MetaUtil;

@@ -2397,8 +2397,8 @@ algorithm
       DAE.Statement stmt, stmt1;
       list<Env.Frame> env,env_1;
       Absyn.ComponentRef cr;
-      Absyn.Exp e,cond,msg, assignComp,var,value,elseWhenC;
-      Boolean impl;
+      Absyn.Exp e,cond,msg, assignComp,var,value,elseWhenC,vb,matchExp;
+      Boolean impl,onlyCref,tupleExp;
       list<DAE.Exp> expl_1,expl_2;
       list<DAE.Properties> cprops, eprops;
       list<Absyn.Exp> expl;
@@ -2415,6 +2415,7 @@ algorithm
       InstanceHierarchy ih;
       Option<SCode.Comment> comment;
       Absyn.Info info;
+      Absyn.Case case_;
 
     //------------------------------------------
     // Part of MetaModelica list extension. KS
@@ -2566,7 +2567,8 @@ algorithm
 
     // (v1,v2,..,vn) := func(...)
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info = info),source,initial_,impl,unrollForLoops)
-      equation 
+      equation
+        true = MetaUtil.onlyCrefExpressions(expl);
         (cache,e_1,eprop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
         (cache, e_1 as DAE.CALL(path=_), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -2579,17 +2581,59 @@ algorithm
         (cache,{stmt},dae);
 
       // MetaModelica Matchcontinue - should come before the error message about tuple assignment
-    case (cache,env,ih,pre,e as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(_,_,_,_,_)),source,initial_,impl,unrollForLoops)
-      local
-        SCode.Statement e;
+    case (cache,env,ih,pre,alg as SCode.ALG_ASSIGN(value = Absyn.MATCHEXP(matchTy=_)),source,initial_,impl,unrollForLoops)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (cache,stmt) = createMatchStatement(cache,env,ih,pre,e,impl);
-      then (cache,{stmt},DAEUtil.emptyDae);
+        (cache,stmt,dae) = createMatchStatement(cache,env,ih,pre,alg,impl);
+      then (cache,{stmt},dae);
+        
+    case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = left, value = right, comment = comment, info = info),source,initial_,impl,unrollForLoops)
+      local
+        list<Absyn.ElementItem> elemList;
+        list<Absyn.Exp> varList;
+        Absyn.Exp left,right,lhsExp;
+        DAE.Type ty;
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        // Prevent infinite recursion
+        failure(Absyn.MATCHEXP(matchTy=_) = right);
+        failure(Absyn.VALUEBLOCK(result=_) = right);
+        expl = MetaUtil.extractListFromTuple(left,0);
+        onlyCref = MetaUtil.onlyCrefExpressions(expl);
+        tupleExp = MetaUtil.isTupleExp(right);
+
+        (cache,e_1,prop,_,dae1) = Static.elabExp(cache,env,right,impl,NONE(),true,pre);
+        ty = Util.if_(tupleExp,MetaUtil.fixMetaTuple(prop),Types.getPropType(prop));
+        (elemList,varList) = MetaUtil.extractOutputVarsType({ty},1,{},{});
+
+        true = (not onlyCref) or (listLength(varList)<>listLength(expl));
+        /*
+          lhs := rhs; is translated into (vars=list of temporary variables with types of rhs):
+          _ := matchcontinue ()
+            local vars
+            case ()
+              equation
+                vars = rhs;
+                _ := matchcontinue vars
+                case lhs then ();
+              then ();
+        */
+        
+        lhsExp = MetaUtil.createLhsExp(varList);
+        matchExp = Absyn.MATCHEXP(Absyn.MATCH(),Absyn.TUPLE(varList),{},{Absyn.CASE(left,{},{},Absyn.TUPLE({}),NONE())},NONE());
+        vb = Absyn.VALUEBLOCK(elemList,Absyn.VALUEBLOCKALGORITHMS(
+          {Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(lhsExp,right),NONE(),info),Absyn.ALGORITHMITEM(Absyn.ALG_ASSIGN(Absyn.CREF(Absyn.WILD),matchExp),NONE(),info)}),
+          Absyn.BOOL(true));
+        // Debug.traceln("vb:" +& Dump.printExpStr(vb) +& "\n");
+        alg = SCode.ALG_ASSIGN(Absyn.CREF(Absyn.WILD()),vb,NONE(),info);
+        (cache,stmts,dae2) = instStatement(cache,env,ih,pre,alg,source,initial_,impl,unrollForLoops);
+        dae = DAEUtil.joinDaes(dae1,dae2);
+      then (cache,stmts,dae);
         
     /* Tuple with rhs constant */
     case (cache,env,ih,pre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = expl),value = e,info=info),source,initial_,impl,unrollForLoops)
-      local DAE.Exp unvectorisedExpl;
+      local
+        DAE.Exp unvectorisedExpl;
       equation 
         (cache,e_1,eprop,_,dae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
         (cache, e_1 as DAE.TUPLE(PR = expl_1), eprop) = Ceval.cevalIfConstant(cache, env, e_1, eprop, impl);
@@ -3048,8 +3092,9 @@ protected function createMatchStatement
   input Boolean inBoolean;
   output Env.Cache outCache;
   output DAE.Statement outStmt;
+  output DAE.DAElist dae;
 algorithm
-  (outCache,outStmt) := matchcontinue (cache,env,ih,pre,alg,inBoolean)
+  (outCache,outStmt,dae) := matchcontinue (cache,env,ih,pre,alg,inBoolean)
     local
       DAE.Properties cprop,eprop;
       DAE.Statement stmt;
@@ -3058,7 +3103,7 @@ algorithm
       Prefix localPre;
       Absyn.Exp exp,e;
       DAE.ComponentRef ce;
-      DAE.Exp cre;
+      DAE.Exp cre,e_1,e_2;
       Boolean impl;
       SCode.Accessibility acc;
       Absyn.ComponentRef cr;
@@ -3067,33 +3112,26 @@ algorithm
       Absyn.Info info;
       DAE.ElementSource source;
       
-      // TODO: Someone with MetaModelica interests needs to collect the dae:s from elabExp and propagate them upwards.
-
     // _ := matchcontinue(...) ...
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.WILD()), value = e as Absyn.MATCHEXP(_,_,_,_,_), info = info),impl)
-      local
-        Absyn.Exp exp;
-        DAE.Exp e_1,e_2;
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(Absyn.WILD()), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
       equation
         expl = {};
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
+        (localCache,e_1,eprop,_,dae) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
         stmt = DAE.STMT_ASSIGN(
                   DAE.ET_OTHER(),
                   DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                   e_2,source);
-      then (localCache,stmt);
+      then (localCache,stmt,dae);
 
     // v1 := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr), value = e as Absyn.MATCHEXP(_,_,_,_,_), info = info),impl)
-      local
-        DAE.Exp e_1,e_2;
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.CREF(cr), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
       equation
         expl = {Absyn.CREF(cr)};
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
+        (localCache,e_1,eprop,_,dae) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
         stmt = DAE.STMT_ASSIGN(
@@ -3101,18 +3139,16 @@ algorithm
                   DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                   e_2,source);
       then
-        (localCache,stmt);
+        (localCache,stmt,dae);
 
     // (v1,v2,..,vn) := matchcontinue(...). Part of MetaModelica extension. KS
-    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expl), value = e as Absyn.MATCHEXP(_,_,_,_,_), info = info),impl)
-      local
-        DAE.Exp e_1,e_2;
+    case (localCache,localEnv,ih,localPre,SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expl), value = e as Absyn.MATCHEXP(matchTy=_), info = info),impl)
       equation
         //Absyn.CREF(cr) = Util.listFirst(expl);
         //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
         //(localCache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(localCache, localEnv, ih, cre, localPre);
         (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
-        (localCache,e_1,eprop,_,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
+        (localCache,e_1,eprop,_,dae) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
         stmt = DAE.STMT_ASSIGN(
@@ -3120,7 +3156,7 @@ algorithm
                  DAE.CREF(DAE.WILD,DAE.ET_OTHER()),
                  e_2,source);
       then
-        (localCache,stmt);
+        (localCache,stmt,dae);
 
     case (_,_,_,_,_,_)
       equation
