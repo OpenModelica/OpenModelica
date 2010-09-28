@@ -728,19 +728,23 @@ protected function createLastAssignments "function: createLastAssignments
 "
   input list<Absyn.Exp> lhsList;
   input list<Absyn.Exp> rhsList;
+  input Absyn.Info info;
   output list<Absyn.AlgorithmItem> outList;
 algorithm
-  outList := matchcontinue (lhsList,rhsList)
+  outList := matchcontinue (lhsList,rhsList,info)
     local
-      String lhsLength, rhsLength;
-    case (lhsList,rhsList)
+      String lhsLength, rhsLength, lhs, rhs;
+    case (lhsList,rhsList,_)
       then listReverse(createLastAssignments2(lhsList,rhsList,{}));
 
-    case (lhsList,rhsList)
+    case (lhsList,rhsList,info)
       equation
         lhsLength = intString(listLength(lhsList));
         rhsLength = intString(listLength(rhsList));
-        Error.addMessage(Error.META_MATCHEXP_RESULT_NUM_ARGS, {rhsLength,lhsLength});
+        lhs = Dump.printExpStr(Absyn.TUPLE(lhsList));
+        rhs = Dump.printExpStr(Absyn.TUPLE(rhsList));
+        // TODO: All return expressions need Absyn.Info? This corresponds to the match statement including the assignment...
+        Error.addSourceMessage(Error.META_MATCHEXP_RESULT_NUM_ARGS, {lhsLength,rhsLength,lhs,rhs}, info);
       then fail();
   end matchcontinue;
 end createLastAssignments;
@@ -2149,6 +2153,7 @@ public function matchContinueToSwitch
   input Option<RightHandSide> elseRhSide;
   input Env.Cache cache;
   input Env.Env localEnv;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.Exp expr;
 protected
@@ -2160,7 +2165,7 @@ protected
 algorithm
   (dfaEnv, invalidDecls, cache) := getMatchContinueInvalidDeclsAndInitialEnv(inputVarList, resVarList, cache, localEnv);
   checkShadowing(declList,invalidDecls);
-  (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv);
+  (outCache, cases) := matchContinueToSwitch2(patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, dfaEnv, info);
   alg := Absyn.ALG_MATCHCASES(matchType,cases);
   algItem := Absyn.ALGORITHMITEM(alg, NONE(), Absyn.dummyInfo);
   expr := Absyn.VALUEBLOCK(declList,Absyn.VALUEBLOCKALGORITHMS({algItem}),Absyn.BOOL(true));
@@ -2177,10 +2182,11 @@ protected function matchContinueToSwitch2
   input Env.Env localEnv;
   input list<String> invalidDecls;
   input list<tuple<Absyn.Ident,Absyn.TypeSpec>> initialDfaEnv;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output list<Absyn.Exp> expr;
 algorithm
-  (outCache, expr) := matchcontinue (patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, initialDfaEnv)
+  (outCache, expr) := matchcontinue (patMat, caseLocalDecls, inputVarList, resVarList, rhlist, elseRhSide, cache, localEnv, invalidDecls, initialDfaEnv, info)
     local
       RenamedPatList firstCase;
       RenamedPatMatrix2 restCase;
@@ -2197,17 +2203,17 @@ algorithm
       tuple<Integer,list<Absyn.AlgorithmItem>> res;
       list<list<Absyn.AlgorithmItem>> caseAlgs;
       list<String> dfaEnvIdents;
-    case ({}, {}, _, _, {}, NONE(), localCache, _, _, _) then (localCache, {});
-    case ({}, {firstDecls}, _, _, {}, SOME(RIGHTHANDSIDE(_,body,result,_)), localCache, _, _, _)
+    case ({}, {}, _, _, {}, NONE(), localCache, _, _, _, _) then (localCache, {});
+    case ({}, {firstDecls}, _, _, {}, SOME(RIGHTHANDSIDE(_,body,result,_)), localCache, _, _, _, info)
       equation
         checkShadowing(firstDecls,invalidDecls);
         exp2 = createListFromExpression(result,resVarList);
-        algs3 = createLastAssignments(resVarList,exp2);
+        algs3 = createLastAssignments(resVarList,exp2,info);
         algs = {};
         els = firstDecls;
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
       then (localCache, {expr});
-    case (firstCase :: restCase, firstDecls :: restDecls,inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv)
+    case (firstCase :: restCase, firstDecls :: restDecls,inputVarList, resVarList, RIGHTHANDSIDE(localList,body,result,_) :: restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info)
       equation
         dfaEnv = initialDfaEnv;
         checkShadowing(firstDecls,invalidDecls);
@@ -2215,13 +2221,13 @@ algorithm
         exp2 = createListFromExpression(result,resVarList);
 
         // Create the assignments that assign the return variables
-        algs3 = createLastAssignments(resVarList,exp2);
+        algs3 = createLastAssignments(resVarList,exp2,info);
         (localCache, dfaEnv, els, algs) = generatePathVarDeclarationsList(firstCase, inputVarList, localCache, localEnv, dfaEnv);
         els = listAppend(els, firstDecls);
         expr = Absyn.VALUEBLOCK(els,Absyn.VALUEBLOCKMATCHCASE(algs,body,algs3),Absyn.BOOL(true));
-        (cache, exp2) = matchContinueToSwitch2(restCase, restDecls, inputVarList, resVarList, restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv);
+        (cache, exp2) = matchContinueToSwitch2(restCase, restDecls, inputVarList, resVarList, restRh, elseRhSide, localCache, localEnv, invalidDecls, initialDfaEnv, info);
       then (cache, expr :: exp2);
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_)
       equation
         Debug.fprintln("matchcase", "- DFA.matchContinueToSwitch2 failed");
       then fail();

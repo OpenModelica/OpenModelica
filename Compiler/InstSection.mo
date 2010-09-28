@@ -3076,7 +3076,7 @@ algorithm
         DAE.Exp e_1,e_2;
       equation
         expl = {};
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
+        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
         (localCache,e_1,eprop,_,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
@@ -3092,7 +3092,7 @@ algorithm
         DAE.Exp e_1,e_2;
       equation
         expl = {Absyn.CREF(cr)};
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
+        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
         (localCache,e_1,eprop,_,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());
@@ -3111,7 +3111,7 @@ algorithm
         //Absyn.CREF(cr) = Util.listFirst(expl);
         //(localCache,cre,cprop,acc) = Static.elabCref(localCache,localEnv, cr, impl,false);
         //(localCache,DAE.CREF(ce,t)) = PrefixUtil.prefixExp(localCache, localEnv, ih, cre, localPre);
-        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv);
+        (localCache,e) = Patternm.matchMain(e,expl,localCache,localEnv,info);
         (localCache,e_1,eprop,_,_) = Static.elabExp(localCache,localEnv, e, impl, NONE,true,pre);
         (localCache,e_2) = PrefixUtil.prefixExp(localCache, localEnv, ih, e_1, localPre);
         source = DAEUtil.createElementSource(info,NONE(),NONE(),NONE(),NONE());

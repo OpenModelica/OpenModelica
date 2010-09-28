@@ -776,30 +776,30 @@ public function matchMain "function: matchMain
   input list<Absyn.Exp> resultVarList; // This is a list of lhs component refs, (var1,var2,...) = matchcontinue (...) ...
   input Env.Cache cache;
   input Env.Env env;
+  input Absyn.Info info;
   output Env.Cache outCache;
   output Absyn.Exp outExpr; // The final valueblock with nested if-else-elseif statements
 algorithm
-  (outCache,outExpr) :=
-  matchcontinue (matchCont,resultVarList,cache,env)
-    case (localMatchCont,localResultVarList,localCache,localEnv)
-      local
-        RightHandList rhList,rhList2; // Light version and normal version
-        RenamedPatMatrix patMat;
-        list<Absyn.ElementItem> declList;
-        list<list<Absyn.ElementItem>> caseLocalDeclList;
-        list<Absyn.Exp> localResultVarList,inputVarList;
-        list<Absyn.Case> cases;
-        Option<RightHandSide> elseRhSide;
-        Integer stampTemp,context;
-        DFA.State dfaState;
-        DFA.Dfa dfaRec;
-        Absyn.Exp localMatchCont,expr;
-        RenamedPatMatrix2 patMat2;
-        Env.Cache localCache;
-        Env.Env localEnv;
-        Integer nCases;
-        Boolean lightVs;
-        Absyn.MatchType matchType;
+  (outCache,outExpr) := matchcontinue (matchCont,resultVarList,cache,env,info)
+    local
+      RightHandList rhList,rhList2; // Light version and normal version
+      RenamedPatMatrix patMat;
+      list<Absyn.ElementItem> declList;
+      list<list<Absyn.ElementItem>> caseLocalDeclList;
+      list<Absyn.Exp> localResultVarList,inputVarList;
+      list<Absyn.Case> cases;
+      Option<RightHandSide> elseRhSide;
+      Integer stampTemp,context;
+      DFA.State dfaState;
+      DFA.Dfa dfaRec;
+      Absyn.Exp localMatchCont,expr;
+      RenamedPatMatrix2 patMat2;
+      Env.Cache localCache;
+      Env.Env localEnv;
+      Integer nCases;
+      Boolean lightVs;
+      Absyn.MatchType matchType;
+    case (localMatchCont,localResultVarList,localCache,localEnv,info)
       equation
         // Get the pattern matrix, etc.
         (localCache,inputVarList,declList,rhList2,rhList,patMat,elseRhSide) = ASTtoMatrixForm(localMatchCont,localCache,localEnv);
@@ -829,7 +829,7 @@ algorithm
         // The rhList version is a "light" version of the rightHandSides so that
         // we do not have to carry around a lot of extra code in the pattern match algorithm
         patMat2 = Util.listlistTranspose(patMat2);
-        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,elseRhSide,localCache,localEnv);
+        (localCache, expr) = DFA.matchContinueToSwitch(matchType,patMat2,caseLocalDeclList,inputVarList,declList,localResultVarList,rhList2,elseRhSide,localCache,localEnv,info);
       then (localCache, expr);
     /*
 
@@ -894,7 +894,7 @@ algorithm
         DFA.fromDFAtoIfNodes(dfaRec,inputVarList,localResultVarList,localCache,localEnv,rhList2,lightVs);
       then (localCache,expr);
     */
-    case (exp,_,_,_)
+    case (exp,_,_,_,_)
       local
         Absyn.Exp exp;
         String str;
