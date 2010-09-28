@@ -106,20 +106,19 @@ void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_in
 
 void init_modelica_string(modelica_string_t* dest, const char* str)
 {
-    *dest = strdup(str);
-    /* This does not work at all for MetaModelica
     int i;
     int length = strlen(str);
     alloc_modelica_string(dest, length);
+    /* *dest = malloc(length+1); */
     for (i = 0; i<length; ++i) {
         (*dest)[i] = str[i];
     }
-    (*dest)[i]=0;*/
+    (*dest)[i]=0;
 }
 
 void alloc_modelica_string(modelica_string_t* dest, int n)
 {
-	/* Reserve place for null terminator too.*/
+    /* Reserve place for null terminator too.*/
     *dest = char_alloc(n+1);
 }
 
