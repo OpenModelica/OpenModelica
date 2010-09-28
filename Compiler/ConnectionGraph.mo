@@ -1002,6 +1002,8 @@ algorithm
         dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
         (table, dae, broken) = addConnections(table, connections, inDAE);
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
+        Debug.fprintln("cgraph", "Final roots: " +& 
+          Util.stringDelimitList(Util.listMap(finalRoots, Exp.printComponentRefStr), ", "));        
       then (finalRoots, dae, broken);
   end matchcontinue;
 end findResultGraph;

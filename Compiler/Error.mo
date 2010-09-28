@@ -221,6 +221,11 @@ public constant ErrorID EQUATION_GENERIC_FAILURE=133;
 public constant ErrorID INST_PARTIAL_CLASS_CHECK_MODEL_WARNING=134; // adrpo: legal to instantiate a partial class when we run checkModel
 public constant ErrorID VARIABLE_BINDING_TYPE_MISMATCH=135;
 public constant ErrorID COMPONENT_NAME_SAME_AS_TYPE_NAME=136;
+public constant ErrorID MODIFICATION_INDEX_OVERLAP=137;
+public constant ErrorID MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP=138;
+public constant ErrorID MODIFICATION_OVERLAP=139;
+public constant ErrorID MODIFICATION_INDEX_NOT_FOUND=140;
+public constant ErrorID DUPLICATE_MODIFICATIONS_WARNING=141;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -516,9 +521,18 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "Declared a variable with name %s while having a class named %s"),
 */
           (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
+          (DUPLICATE_MODIFICATIONS_WARNING,TRANSLATION(),WARNING(),
+          "Duplicate modifications for attribute: %s in modifier: %s. \n\tConsidering only the first modification: %s and ignoring the rest %s."),
+          (MODIFICATION_INDEX_OVERLAP,TRANSLATION(),WARNING(),
+          "Index modifications: %s for array component: %s are overlapping. \n\tThe final bindings will be set by the last modifications given for the same index."),
+          (MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP,TRANSLATION(),WARNING(),
+          "Index modifications: %s are overlapping with array binding modification %s for array component: %s. \n\tThe final bindings will be set by the last index modification given for the same index."),          
+          (MODIFICATION_OVERLAP,TRANSLATION(),WARNING(),
+          "Modifications: %s for component: %s are overlapping. \n\tThe final bindings will be set by the first modification."),
+          (MODIFICATION_INDEX_NOT_FOUND,TRANSLATION(),ERROR(),
+          "Instantiation of array component: %s failed because index modification: %s is invalid. \n\tArray component: %s has more dimensions than binding %s."),
           (COMPONENT_CONDITION_VARIABILITY,TRANSLATION(),ERROR(),
           "Component condition must be parameter or constant expression (in %s)."),
-          (DUPLICATE_MODIFICATIONS,TRANSLATION(),ERROR(),"Duplicate modifications in %s"),
           (ILLEGAL_SUBSCRIPT,TRANSLATION(),ERROR(),
           "Illegal subscript %s for dimensions %s in component %s"),
           (ASSERT_FAILED,TRANSLATION(),ERROR(),
@@ -547,7 +561,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (UNUSED_MODIFIER,TRANSLATION(),ERROR(),
           "In modifier %s"),
           (MISSING_INNER_PREFIX,TRANSLATION(),WARNING(),
-          "No corresponding 'inner' declaration found for component %s declared as '%s'.\n\tPlease declare an 'inner' component with the same name in the top scope.\n\tContinuing flattening by only considering the 'outer' component declaration."),
+          "No corresponding 'inner' declaration found for component %s declared as '%s'.\n  The existing 'inner' components are: \n    %s\n  Check if you have not misspelled the 'outer' component name.\n  Please declare an 'inner' component with the same name in the top scope.\n  Continuing flattening by only considering the 'outer' component declaration."),
           (DERIVATIVE_NON_REAL,TRANSLATION(),ERROR(),
           "Illegal derivative. der(%s) in component %s is of type %s, which is not a subtype of Real"),
           (IMPLICIT_ITERATOR_NOT_FOUND_IN_LOOP_BODY,TRANSLATION(),ERROR(),
@@ -613,15 +627,12 @@ end updateCurrentComponent;
 
 public function addMessage "Implementation of Relations
   function: addMessage
-
   Adds a message given ID and tokens. The rest of the info
-  is looked up in the message table.
-"
+  is looked up in the message table."
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
 algorithm
-  _:=
-  matchcontinue (inErrorID,inMessageTokens)
+  _ := matchcontinue (inErrorID,inMessageTokens)
     local
       MessageType msg_type;
       Severity severity;
@@ -652,14 +663,12 @@ end addMessage;
 
 public function addSourceMessage "
   Adds a message given ID, tokens and source file info.
-  The rest of the info is looked up in the message table.
-"
+  The rest of the info is looked up in the message table."
   input ErrorID inErrorID;
   input MessageTokens inMessageTokens;
   input Absyn.Info inInfo;
 algorithm
-  _:=
-  matchcontinue (inErrorID,inMessageTokens,inInfo)
+  _ := matchcontinue (inErrorID,inMessageTokens,inInfo)
     local
       MessageType msg_type;
       Severity severity;
@@ -690,11 +699,37 @@ algorithm
   end matchcontinue;
 end addSourceMessage;
 
+
+public function addMessageOrSourceMessage
+"@author:adrpo
+  Adds a message or a source message depending on the OPTIONAL source file info.
+  If the source file info is not present a normal message is added.
+  If the source file info is present a source message is added"
+  input ErrorID inErrorID;
+  input MessageTokens inMessageTokens;
+  input Option<Absyn.Info> inInfoOpt;
+algorithm
+  _ := matchcontinue (inErrorID,inMessageTokens,inInfoOpt)
+    local
+      Absyn.Info info;
+    
+    // we DON'T have an info, add message
+    case (inErrorID,inMessageTokens,NONE)
+      equation
+        addMessage(inErrorID, inMessageTokens);
+      then ();
+    
+    // we have an info, add source message
+    case (inErrorID,inMessageTokens,SOME(info))
+      equation
+        addSourceMessage(inErrorID, inMessageTokens, info);
+      then ();
+  end matchcontinue;
+end addMessageOrSourceMessage;
+
 public function printMessagesStr "Relations for pretty printing.
   function: printMessagesStr
-
-  Prints messages to a string.
-"
+  Prints messages to a string."
   output String res;
 algorithm
   res := ErrorExt.printMessagesStr();

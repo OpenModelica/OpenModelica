@@ -1322,8 +1322,7 @@ end unparseVariability;
 
 public function isElementExtends "
 Author BZ, 2009-01
-check if an element is of type EXTENDS or not.
-"
+check if an element is of type EXTENDS or not."
   input Element ele;
   output Boolean isExtend;
 algorithm isExtend := matchcontinue(ele)
@@ -1333,8 +1332,7 @@ end matchcontinue;
 end isElementExtends;
 
 public function isNotElementClassExtends "
-check if an element is not of type CLASS_EXTENDS.
-"
+check if an element is not of type CLASS_EXTENDS."
   input Element ele;
   output Boolean isExtend;
 algorithm
@@ -2748,7 +2746,7 @@ algorithm
   b := matchcontinue mod
     case NOMOD() then true;
     case MOD(subModLst={}) then true;
-    else false;
+    case _ then false;
   end matchcontinue;
 end emptyModOrEquality;
 

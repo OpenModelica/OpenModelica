@@ -131,6 +131,20 @@ algorithm
   end matchcontinue;
 end printPrefixStr3;
 
+public function printPrefixStrIgnoreNoPre "function: printPrefixStrIgnoreNoPre
+  Prints a Prefix to a string as a component name. Designed to be used in Error messages"
+  input Prefix inPrefix;
+  output String outString;
+algorithm
+  outString :=  matchcontinue (inPrefix)
+  local 
+    Prefix p;
+  case Prefix.NOPRE() then "";
+  case Prefix.PREFIX(Prefix.NOCOMPPRE(),_) then "";
+  case p then printPrefixStr(p);        
+  end matchcontinue;
+end printPrefixStrIgnoreNoPre;
+
 public function printPrefix "function: printPrefix
   Prints a prefix to the Print buffer."
   input Prefix p;

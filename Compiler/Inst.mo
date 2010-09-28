@@ -5734,7 +5734,7 @@ algorithm
         //print("Inst.instElement: before elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " component mod: " +& SCode.printModStr(m) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
         (cache,m_1,fdae6) = Mod.elabMod(cache, env2, ih, pre, m, impl);
         //print("Inst.instElement: after elabMod " +& PrefixUtil.printPrefixStr(pre) +& "." +& n +& " component mod: " +& Mod.printModStr(m_1) +& " in env: " +& Env.printEnvPathStr(env2) +& "\n");
-        mod = Mod.merge(mm_1,classmod_1,  env2, pre);
+        mod = Mod.merge(mm_1, classmod_1,  env2, pre);
 
         mod1 = Mod.merge(mod, m_1, env2, pre);
         mod1_1 = Mod.merge(cmod, mod1, env2, pre);
@@ -5768,21 +5768,26 @@ algorithm
         //Instantiate the component  
         inst_dims = listAppend(inst_dims,{{}}); // Start a new "set" of inst_dims for this component (in instance hierarchy), see InstDims
         (cache,mod_1,fdae2) = Mod.updateMod(cache, cenv, ih, pre, mod_1, impl);
-        (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
         
-        // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
+        // adrpo: 2010-09-28: check if the IDX mod doesn't overlap!
+        Mod.checkIdxModsForNoOverlap(mod_1, PrefixUtil.prefixAdd(n, {}, pre, param, ci_state), aInfo);
+        
+        (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
+          instVar(cache,cenv,ih,store, ci_state, mod_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph,env2_1);
+        
+        // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
         //The environment is extended (updated) with the new variable binding. 
         (cache,binding) = makeBinding(cache, env2_1, attr, mod_1, ty, pre, n);
         
-        /* uncomment this and see how checkAllModelsRecursive(Modelica.Electrical.Digital) looks like
-           especially MUX.Or1.auxiliary doesn't get its start/fixed bindings
+        /* uncomment this for debugging of bindings from mods 
         print("Created binding for var: " +& 
            PrefixUtil.printPrefixStr(pre) +& "." +& n +&
            " binding: " +& DAEUtil.printBindingExpStr(binding) +& 
            " mods: " +& Mod.printModStr(mod_1) +&
-           "\n");   
+           "\n");
         */
+        
         //true in update_frame means the variable is now instantiated.
         new_var = DAE.TYPES_VAR(n,DAE.ATTR(flowPrefix,streamPrefix,acc,param,dir,io),prot,ty,binding,NONE());
 
@@ -5891,7 +5896,8 @@ algorithm
         (cache,dims,fdae1) = elabArraydim(cache,env, owncref, Absyn.IDENT("Integer"),ad, NONE, impl, NONE,true, false,pre)  ;
 
         // Instantiate the component
-        (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph);
+        (cache,compenv,ih,store,dae,csets_1,ty,graphNew) = 
+          instVar(cache,env, ih, store,ci_state, m_1, pre, csets, n, cl, attr, prot, dims, {}, inst_dims, impl, comment,io,finalPrefix,aInfo,graph,env);
         
         // print("instElement -> component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         
@@ -5931,7 +5937,7 @@ algorithm
         s = Absyn.pathString(t);
         scope_str = Env.printEnvPathStr(env);
         pre_1 = PrefixUtil.prefixAdd(n, {}, pre,vt,ci_state);
-        ns = PrefixUtil.printPrefixStr(pre_1);
+        ns = PrefixUtil.printPrefixStrIgnoreNoPre(pre_1);
         // Debug.fcall (\"instdb\", Env.print_env, env)
         Error.addMessage(Error.LOOKUP_ERROR_COMPNAME, {s,scope_str,ns});
         true = RTOpts.debugFlag("failtrace");
@@ -6602,6 +6608,7 @@ protected function instVar
   input Boolean finalPrefix;
   input Option<Absyn.Info> info;
   input ConnectionGraph.ConnectionGraph inGraph;
+  input Env componentDefinitionParentEnv;
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
@@ -6611,7 +6618,8 @@ protected function instVar
   output DAE.Type outType;
   output ConnectionGraph.ConnectionGraph outGraph;
 algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
-  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph)
+  matchcontinue (inCache,inEnv,inIH,store,inState,inMod,inPrefix,inSets,inIdent,inClass,inAttributes,protection,inDimensionLst,inIntegerLst,
+                 inInstDims,inBoolean,inSCodeCommentOption,io,finalPrefix,info,inGraph,componentDefinitionParentEnv)
     local
       list<DAE.Dimension> dims_1,dims;
       list<Env.Frame> compenv,env,innerCompEnv,outerCompEnv;
@@ -6621,7 +6629,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       ClassInf.State ci_state;
       DAE.Mod mod;
       Prefix.Prefix pre, innerPrefix;
-      String n,id,s1,s2,s;
+      String n,id,s1,s2,s3,s;
       SCode.Class cl;
       SCode.Attributes attr;
       list<DAE.Subscript> idxs;
@@ -6639,11 +6647,14 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
       DAE.FunctionTree ftree;
       DAE.ComponentRef cref, crefOuter, crefInner;
       list<DAE.ComponentRef> outers;
-      String nInner;
+      String nInner, typeName, fullName;
+      Absyn.Path typePath;
+      String innerScope;
       Absyn.InnerOuter ioInner;
+      Option<InnerOuter.InstResult> instResult;
 
     // is ONLY inner
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl as SCode.CLASS(name=typeName),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only inner!
         false = Absyn.isOuter(io);
@@ -6656,6 +6667,9 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
            instVar_dispatch(cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);
         
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        fullName = Exp.printComponentRefStr(cref);
+        (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));
+        
         
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
@@ -6663,16 +6677,26 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
 
         // outer doesn't generate a visible DAE
         outerDAE = DAEUtil.emptyDae;
+       
+        innerScope = Env.printEnvPathStr(componentDefinitionParentEnv);
 
         // add to instance hierarchy
         ih = InnerOuter.updateInstHierarchy(ih, pre, io,
-               InnerOuter.INST_INNER(pre,
-                  n, io, SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,outerDAE,csets,ty,graph)), {}));
+               InnerOuter.INST_INNER(
+                  pre, // prefix
+                  n, // component name,
+                  io, // inner outer atttributes
+                  fullName, // full component name
+                  typePath, // fully qual type path
+                  innerScope, // the scope,                  
+                  SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,outerDAE,csets,ty,graph)), // instantiation result 
+                  {} // outers connected to this inner
+                  ));
       then
         (cache,innerCompEnv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer and it has modifications on it!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only outer!
         true = Absyn.isOuter(io);
@@ -6688,12 +6712,12 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
 
         // call myself without any modification!
         (cache,compenv,ih,store,dae,csets,ty,graph) = 
-           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph);        
+           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv);
      then
         (cache,compenv,ih,store,dae,csets,ty,graph);
         
     // is ONLY outer
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only outer!
         true = Absyn.isOuter(io);
@@ -6705,13 +6729,33 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // Debug.fprintln("innerouter", "- Inst.instVar outer: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
         // lookup in IH
-        InnerOuter.INST_INNER(innerPrefix, nInner, ioInner, SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),outers) =
+        InnerOuter.INST_INNER(
+           innerPrefix, 
+           nInner, 
+           ioInner, 
+           fullName, 
+           typePath, 
+           innerScope, 
+           instResult as SOME(InnerOuter.INST_RESULT(cache,compenv,store,outerDAE,_,ty,graph)),outers) =
           InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
 
         // add outer prefix + component name and its corresponding inner prefix to the IH
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         (cache,crefInner) = PrefixUtil.prefixCref(cache,env,ih,innerPrefix, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
-        ih = InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);   
+        ih = InnerOuter.addOuterPrefixToIH(ih, crefOuter, crefInner);
+        
+        // update the inner with the outer for easy reference
+        ih = InnerOuter.updateInstHierarchy(ih, innerPrefix, ioInner,
+               InnerOuter.INST_INNER(
+                  innerPrefix, // prefix
+                  nInner, // component name,
+                  ioInner, // inner outer atttributes
+                  fullName, // full component name
+                  typePath, // fully qual type path
+                  innerScope, // the scope,                  
+                  instResult, 
+                  crefOuter::outers // outers connected to this inner
+                  ));
 
         // outer dae has no meaning!
         outerDAE = DAEUtil.emptyDae;
@@ -6719,7 +6763,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,outerDAE,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation 
         // only outer!
         true = Absyn.isOuter(io);
@@ -6729,7 +6773,16 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         true = Mod.modEqual(mod, DAE.NOMOD());
         
         // lookup in IH, crap, we couldn't find it!
-        InnerOuter.INST_INNER(_, _, _, NONE(), _) = InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
+        // lookup in IH
+        InnerOuter.INST_INNER(
+           innerPrefix, 
+           nInner, 
+           ioInner, 
+           fullName, 
+           typePath, 
+           innerScope, 
+           instResult as NONE(),outers) =
+          InnerOuter.lookupInnerVar(cache, env, ih, pre, n, io);
         
         // Debug.fprintln("innerouter", "- Inst.instVar failed to lookup inner: " +& PrefixUtil.printPrefixStr(pre) +& "/" +& n +& " in env: " +& Env.printEnvPathStr(env));
         
@@ -6737,10 +6790,11 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
+        s3 = InnerOuter.getExistingInnerDeclarations(ih, componentDefinitionParentEnv);
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
-        Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2});
+        Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3});
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
         
         // call it normaly
@@ -6750,7 +6804,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is ONLY outer and the inner was not yet set in the IH or we have no inner declaration!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // only outer!
         true = Absyn.isOuter(io);
@@ -6768,10 +6822,11 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,crefOuter) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
         s1 = Exp.printComponentRefStr(crefOuter);
         s2 = Dump.unparseInnerouterStr(io);
+        s3 = InnerOuter.getExistingInnerDeclarations(ih,componentDefinitionParentEnv);        
         // print(Util.if_(impl, "impl crap\n", "no impl\n"));
         // adrpo: do NOT! display an error message if impl = true and prefix is Prefix.NOPRE
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.setCheckpoint, "innerouter-instVar-implicit");
-        Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2});
+        Error.addMessage(Error.MISSING_INNER_PREFIX,{s1, s2, s3});
         Debug.bcall(impl and listMember(pre, {Prefix.NOPRE()}), ErrorExt.rollBack, "innerouter-instVar-implicit");
         
         // call it normaly
@@ -6781,7 +6836,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // is inner outer!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl as SCode.CLASS(name=typeName),attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // both inner and outer
         true = Absyn.isOuter(io);
@@ -6794,6 +6849,8 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         
         // add it to the instance hierarchy
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
+        fullName = Exp.printComponentRefStr(cref);
+        (cache, typePath) = makeFullyQualified(cache, env, Absyn.IDENT(typeName));        
         
         // also all the components in the environment should be updated to be outer!
         // switch components from inner to outer in the component env.
@@ -6802,14 +6859,22 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         // keep the dae we get from the instantiation of the inner 
         innerDAE = dae;
         
+        innerScope = Env.printEnvPathStr(componentDefinitionParentEnv);
+        
         // add inner to the instance hierarchy
         ih = InnerOuter.updateInstHierarchy(ih, pre, io,
                InnerOuter.INST_INNER(
-                  pre, n, io, SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,innerDAE,csetsInner,ty,graph)), {}));
+                  pre, 
+                  n, 
+                  io,
+                  fullName,
+                  typePath,
+                  innerScope,
+                  SOME(InnerOuter.INST_RESULT(cache,outerCompEnv,store,innerDAE,csetsInner,ty,graph)), {}));
         
         // now instantiate it as an outer with no modifications
         (cache,compenv,ih,store,dae,csetsOuter,ty,graph) =
-           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,Absyn.OUTER(),finalPrefix,info,graph);
+           instVar(cache,env,ih,store,ci_state,DAE.NOMOD(),pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,Absyn.OUTER(),finalPrefix,info,graph,componentDefinitionParentEnv);
         
         // keep the dae we get from the instantiation of the outer
         outerDAE = dae;
@@ -6820,7 +6885,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,dae,csetsOuter,ty,graph);
 
     // is NO INNER NOR OUTER or it failed before!
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         // no inner no outer
         false = Absyn.isOuter(io);
@@ -6834,7 +6899,7 @@ algorithm (outCache,outEnv,outIH,outStore,outDae,outSets,outType,outGraph):=
         (cache,compenv,ih,store,dae,csets,ty,graph);
 
     // failtrace
-    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,cl,attr,prot,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph,componentDefinitionParentEnv)
       equation
         true = RTOpts.debugFlag("failtrace");
         (cache,cref) = PrefixUtil.prefixCref(cache,env,ih,pre, DAE.CREF_IDENT(n, DAE.ET_OTHER(), {}));
@@ -7972,7 +8037,8 @@ algorithm
         (cache,dims,dae3) = elabArraydim(cache,env,owncref,path,ad,eq,impl,NONE,true, false,pre)
         "The variable declaration and the (optional) equation modification are inspected for array dimensions." ;        
         /* Instantiate the component */
-        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE(), io, finalPrefix, info, ConnectionGraph.EMPTY);
+        (cache,compenv,ih,_,DAE.DAE(_,funcs),csets_1,ty,_) = 
+          instVar(cache, cenv, ih, UnitAbsyn.noStore, ci_state, mod_3, pre, csets, name, cl, attr, prot, dims, {}, {}, impl, NONE(), io, finalPrefix, info, ConnectionGraph.EMPTY, env);
         
         // print("updateComponentInEnv -> 1 component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");        
         
@@ -8459,7 +8525,7 @@ algorithm
       DAE.ExpType ty_1,arrty_1;      
       DAE.Mod mod,mod_1;
       Prefix.Prefix pre;
-      String n;
+      String n, str1, str2, str3, str4;
       SCode.Class cl;
       SCode.Attributes attr;
       Integer i,stop,i_1;
@@ -8504,6 +8570,20 @@ algorithm
       then
         (cache,compenv,ih,store,daeLst,csets,ty,graph);
 
+    /*
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      equation
+        false = Exp.dimensionKnown(inDimension);
+        s = DAE.INDEX(DAE.ICONST(i));
+        failure(_ = Mod.lookupIdxModification(mod, i));
+        str1 = PrefixUtil.printPrefixStr(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
+        str2 = "[" +& intString(i) +& "]";
+        str3 = Mod.prettyPrintMod(mod, 1);
+        Error.addSourceMessage(Error.MODIFICATION_INDEX_NOT_FOUND, {str1,str2,str3}, info);
+      then
+        fail();
+    */
+    
     /*case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,DAE.DIM_UNKNOWN,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
       equation
         s = DAE.INDEX(DAE.ICONST(i));
@@ -8612,6 +8692,18 @@ algorithm
       info,graph)
       then
         (cache,env,ih,store,DAEUtil.emptyDae,csets,(DAE.T_NOTYPE(),NONE),graph);
+
+    case (cache,env,ih,store,ci_state,mod,pre,csets,n,(cl,attr),prot,i,_,dims,idxs,inst_dims,impl,comment,io,finalPrefix,info,graph)
+      equation
+        failure(_ = Mod.lookupIdxModification(mod, i));
+        str1 = PrefixUtil.printPrefixStrIgnoreNoPre(PrefixUtil.prefixAdd(n, {}, pre, SCode.VAR(), ci_state));
+        str2 = "[" +& Util.stringDelimitList(Util.listMap(idxs, Exp.printSubscriptStr), ", ") +& "]";
+        str3 = Mod.prettyPrintMod(mod, 1);
+        str4 = PrefixUtil.printPrefixStrIgnoreNoPre(pre) +& "(" +& n +& str2 +& "=" +& str3 +& ")";
+        str2 = str1 +& str2;
+        Error.addSourceMessage(Error.MODIFICATION_INDEX_NOT_FOUND, {str1,str4,str2,str3}, info);
+      then
+        fail();
 
     case (_,_,ih,_,_,_,_,_,n,(_,_),_,_,_,_,_,_,_,_,_,_,_,_)
       equation
@@ -9182,7 +9274,7 @@ algorithm
         adStr = Absyn.pathString(path) +& Dump.printArraydimStr(ad);
         tpStr = Types.unparseType(t);
         expStr = Exp.printExpStr(exp);
-        str = PrefixUtil.printPrefixStr(inPrefix) +& Absyn.printComponentRefStr(componentRef);
+        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& Absyn.printComponentRefStr(componentRef);
         Error.addMessage(Error.MODIFIER_DECLARATION_TYPE_MISMATCH_ERROR,{str,adStr,expStr,tpStr});
       then fail();
     end matchcontinue;
@@ -12105,7 +12197,7 @@ algorithm
         tp_str = Types.unparseType(tp);
         e_str = Exp.printExpStr(e);
         e_str_1 = stringAppend("=", e_str);
-        str = PrefixUtil.printPrefixStr(inPrefix) +& "." +& componentName;
+        str = PrefixUtil.printPrefixStrIgnoreNoPre(inPrefix) +& "." +& componentName;
         Error.addMessage(Error.MODIFIER_TYPE_MISMATCH_ERROR, {str,tp_str,e_str_1,e_tp_str});
       then
         fail();
@@ -12183,7 +12275,7 @@ algorithm
         (cache,dimexp,_) = elabArraydim(cache,env, owncref,t, dim, NONE, false, NONE,true, false,Prefix.NOPRE());
         //Debug.fprint("recconst", "calling inst_var\n");
         (cache,_,ih,_,_,_,tp_1,_) = instVar(cache,cenv, ih, UnitAbsyn.noStore,ClassInf.FUNCTION(Absyn.IDENT("")), mod_1, Prefix.NOPRE(),
-          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY);
+          Connect.emptySet, id, cl, attr, prot,dimexp, {}, {}, impl, comment,io,finalPrefix,info,ConnectionGraph.EMPTY, env);
         //Debug.fprint("recconst", "Type of argument:");
         Debug.fprint("recconst", Types.printTypeStr(tp_1));
         //Debug.fprint("recconst", "\nMod=");
@@ -13111,7 +13203,8 @@ algorithm
         cl2 = removeCrefFromCrefs(cl1, c1);
         (cache,c,cenv) = Lookup.lookupClass(cache,env, sty, true);
         (cache,dims,_) = elabArraydim(cache,cenv, c1, sty, ad, NONE, impl, NONE,true, false,pre);
-        (cache,compenv,ih,store,dae,_,ty,_) = instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY);
+        (cache,compenv,ih,store,dae,_,ty,_) = 
+          instVar(cache,cenv,ih, store,state, DAE.NOMOD(), pre, csets, n, c, attr, prot, dims, {}, inst_dims, true, NONE ,io,finalPrefix,info,ConnectionGraph.EMPTY,env);
 
         // print("component: " +& n +& " ty: " +& Types.printTypeStr(ty) +& "\n");
 

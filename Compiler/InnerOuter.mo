@@ -91,6 +91,9 @@ uniontype InstInner
     Prefix innerPrefix "the prefix of the inner. we need it to prefix the outer variables with it!";    
     SCode.Ident name;
     Absyn.InnerOuter io;
+    String fullName "full inner component name";
+    Absyn.Path typePath "the type of the inner";
+    String scope "the scope of the inner";
     // add these if needed!
     // SCode.Mod scodeMod;
     // DAE.Mod mod;
@@ -1229,7 +1232,7 @@ algorithm
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,prefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
 
         // search in instance hierarchy
-        (instInner as INST_INNER(innerPrefix, _, io, _, _)) = get(cref, ht);
+        instInner = get(cref, ht);
 
         // isInner = Absyn.isInner(io);
         // instInner = Util.if_(isInner, instInner, emptyInstInner(inPrefix, name));
@@ -1608,7 +1611,7 @@ public function emptyInstInner
   input String name;
   output InstInner outInstInner;
 algorithm
-  outInstInner := INST_INNER(innerPrefix, name, Absyn.UNSPECIFIED(), NONE(), {});
+  outInstInner := INST_INNER(innerPrefix, name, Absyn.UNSPECIFIED(), "", Absyn.IDENT(""), "", NONE(), {});
 end emptyInstInner;
 
 public function lookupInnerVar
@@ -1703,7 +1706,7 @@ algorithm
     
     // add to the hierarchy
     case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH,inPrefix,inInnerOuter,
-         inInstInner as INST_INNER(_, name, io, _, _))
+         inInstInner as INST_INNER(name=name, io=io))
       equation
         // prefix the name!
         (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT(name, DAE.ET_OTHER(), {}));
@@ -1715,10 +1718,10 @@ algorithm
         TOP_INSTANCE(pathOpt, ht, outerPrefixes)::restIH;
     
     // failure
-    case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(_, name, io, _, _))
+    case(ih,inPrefix,inInnerOuter,inInstInner as INST_INNER(name=name, io=io))
       equation
         // prefix the name!
-        (_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT("UNKNOWN", DAE.ET_OTHER(), {}));
+        //(_,cref) = PrefixUtil.prefixCref(Env.emptyCache(),{},emptyInstHierarchy,inPrefix, DAE.CREF_IDENT("UNKNOWN", DAE.ET_OTHER(), {}));
         // Debug.fprintln("innerouter", "InnerOuter.updateInstHierarchy failure for: " +& 
         //   PrefixUtil.printPrefixStr(inPrefix) +& "/" +& name);
       then
@@ -1893,6 +1896,88 @@ algorithm
         (crOuter, crInner);
   end matchcontinue; 
 end searchForInnerPrefix;
+
+public function printInnerDefStr
+  input InstInner inInstInner;
+  output String outStr;
+algorithm
+  outStr := matchcontinue(inInstInner)
+    local 
+      Prefix innerPrefix;
+      SCode.Ident name;
+      Absyn.InnerOuter io;
+      Option<InstResult> instResult;
+      String fullName "full inner component name";
+      Absyn.Path typePath "the type of the inner";
+      String scope "the scope of the inner";      
+      list<DAE.ComponentRef> outers "which outers are referencing this inner";
+      DAE.ComponentRef cref;
+      String str, strOuters;
+
+    case(INST_INNER(innerPrefix, name, io, fullName, typePath, scope, instResult, outers))
+      equation
+        strOuters = Util.if_(listLength(outers) == 0, 
+                      "", 
+                      " Referenced by 'outer' components: {" +&
+                      Util.stringDelimitList(Util.listMap(outers, Exp.printComponentRefStr), ", ") +& "}");
+        str = Absyn.pathString(typePath) +& " " +& fullName +& "; defined in scope: " +& scope +& "." +& strOuters;   
+      then 
+        str;
+  end matchcontinue;
+end printInnerDefStr;
+
+public function getExistingInnerDeclarations
+"@author: adrpo
+ This function retrieves all the existing inner declarations as a string"
+  input InstHierarchy inIH;
+  input Env.Env inEnv;
+  output String innerDeclarations;
+algorithm
+  innerDeclarations := matchcontinue(inIH, inEnv)
+    local
+      TopInstance tih;
+      InstHierarchy restIH, ih;
+      InstHierarchyHashTable ht;
+      Option<Absyn.Path> pathOpt;
+      OuterPrefixes outerPrefixes;
+      list<InstInner> inners;
+      String str;
+      
+    // we have no inner components yet
+    case ({}, inEnv) 
+      then 
+        "There are no 'inner' components defined in the model in the any of the parent scopes of 'outer' component's scope: " +& Env.printEnvPathStr(inEnv) +& "." ;
+    
+    // get the list of components
+    case((tih as TOP_INSTANCE(pathOpt, ht, outerPrefixes))::restIH, inEnv)
+      equation
+        inners = getInnersFromInstHierarchyHashTable(ht);
+        str = Util.stringDelimitList(Util.listMap(inners, printInnerDefStr), "\n    ");
+      then
+        str;
+  end matchcontinue;
+end getExistingInnerDeclarations;
+
+public function getInnersFromInstHierarchyHashTable 
+"@author: adrpo
+  Returns all the inners defined in the hashtable."
+  input InstHierarchyHashTable t;
+  output list<InstInner> inners;
+algorithm
+  inners := Util.listMap(hashTableList(t),getValue);
+end getInnersFromInstHierarchyHashTable;
+
+public function getValue
+  input tuple<Key,Value> tpl;
+  output InstInner v;
+algorithm
+  v := matchcontinue(tpl)
+    local
+      Key k; Value v;
+    case((k,v)) then v;
+  end matchcontinue;
+end getValue;
+
 /////////////////////////////////////////////////////////////////
 // hash table implementation for InnerOuter instance hierarchy //
 /////////////////////////////////////////////////////////////////
@@ -1903,7 +1988,7 @@ public function hashFunc
   input Key k;
   output Integer res;
 algorithm
-  res := System.hash(Exp.crefStr(k));
+  res := System.hash(Exp.printComponentRefStr(k));
 end hashFunc;
 
 public function keyEqual
@@ -1911,7 +1996,7 @@ public function keyEqual
   input Key key2;
   output Boolean res;
 algorithm
-     res := stringEqual(Exp.crefStr(key1),Exp.crefStr(key2));
+     res := Exp.crefEqualNoStringCompare(key1,key2);
 end keyEqual;
 
 public function dumpInstHierarchyHashTable ""
@@ -2038,6 +2123,7 @@ algorithm
         indexes = hashvec[indx + 1];
         hashvec_1 = arrayUpdate(hashvec, indx + 1, ((key,newpos) :: indexes));
         n_1 = valueArrayLength(varr_1);
+        // print("Added NEW to IH: key:" +& Exp.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n"); 
       then HASHTABLE(hashvec_1,varr_1,bsize,n_1);
 
       /* adding when already present => Updating value */
@@ -2047,6 +2133,7 @@ algorithm
         //print("adding when present, indx =" );print(intString(indx));print("\n");
         indx_1 = indx - 1;
         varr_1 = valueArraySetnth(varr, indx, newv);
+        // print("Updated NEW to IH: key:" +& Exp.printComponentRefStr(key) +& " value: " +& printInnerDefStr(value) +& "\n");        
       then HASHTABLE(hashvec,varr_1,bsize,n);
     case (_,_)
       equation

@@ -870,14 +870,14 @@ end EqMod;
 
 public
 uniontype SubMod "-Sub Modification"
-  record NAMEMOD
-    Ident ident;
-    Mod mod;
+  record NAMEMOD "named modification, i.e. (a = 5)"
+    Ident ident "component name";
+    Mod mod "modification";
   end NAMEMOD;
 
-  record IDXMOD
-    list<Integer> integerLst;
-    Mod mod;
+  record IDXMOD "index modification, i.e. (x[2] = {1.0,3.0})"
+    list<Integer> integerLst "list of indexes";
+    Mod mod "modification";
   end IDXMOD;
 
 end SubMod;

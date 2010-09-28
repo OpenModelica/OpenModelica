@@ -6248,5 +6248,15 @@ algorithm
   b := if_(System.strcmp(s1,s2) > 0, true, false);
 end strcmpBool;
 
+public function stringAppendReverse
+"@author: adrpo
+ This function will append the first string to the second string"
+  input String str1;
+  input String str2;
+  output String str;
+algorithm
+  str := stringAppend(str2, str1);
+end stringAppendReverse;
+
 end Util;
 

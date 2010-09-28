@@ -11963,9 +11963,8 @@ algorithm
 end elabSubscriptsDims2;
 
 protected function elabSubscript "function: elabSubscript
-
-  This function converts an `Absyn.Subscript\' to an
-  `DAE.Subscript\'."
+  This function converts an Absyn.Subscript to an
+  DAE.Subscript."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input Absyn.Subscript inSubscript;
@@ -11976,8 +11975,7 @@ protected function elabSubscript "function: elabSubscript
   output DAE.Const outConst;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outSubscript,outConst,outDae):=
-  matchcontinue (inCache,inEnv,inSubscript,inBoolean,inPrefix)
+  (outCache,outSubscript,outConst,outDae) := matchcontinue (inCache,inEnv,inSubscript,inBoolean,inPrefix)
     local
       Boolean impl;
       DAE.Exp sub_1;
@@ -11999,10 +11997,11 @@ algorithm
       equation
         (cache,sub_1,prop as DAE.PROP(ty,const),_,dae) = elabExp(cache,env, sub, impl, NONE,true,pre); 
         (cache, sub_1, prop as DAE.PROP(ty, _)) = Ceval.cevalIfConstant(cache, env, sub_1, prop, impl);
-        sub_2 = elabSubscriptType(ty, sub, sub_1,pre,env);
+        sub_2 = elabSubscriptType(ty, sub, sub_1, pre, env);
+        // print("Prefix: " +& PrefixUtil.printPrefixStr(pre) +& " subs: " +& Exp.printSubscriptStr(sub_2) +& "\n");
       then
         (cache,sub_2,const,dae);
-    // some subscript, try to elaborate it
+    // failtrace
     case (cache,env,inSubscript,impl,_)
       equation
         true = RTOpts.debugFlag("failtrace");
