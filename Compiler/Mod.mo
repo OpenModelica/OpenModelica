@@ -2401,7 +2401,7 @@ algorithm
   b := matchcontinue mod
     case DAE.NOMOD() then true;
     case DAE.MOD(subModLst={}) then true;
-    else false;
+    case _ then false;
   end matchcontinue;
 end emptyModOrEquality;
 
