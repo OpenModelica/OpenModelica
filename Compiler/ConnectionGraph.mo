@@ -59,22 +59,30 @@ public import Absyn;
 public import DAE;
 public import DAEUtil;
 public import HashTableCG;
-public import Util;
 public import Connect;
 
-public type Edges = list<tuple<DAE.ComponentRef,DAE.ComponentRef>> "A list of edges";
+public type Edge  = tuple<DAE.ComponentRef,DAE.ComponentRef> "an edge is a tuple with two component references";
+public type Edges = list<Edge> "A list of edges";
 
-public type DaeEdges = list<tuple<DAE.ComponentRef,DAE.ComponentRef,list<DAE.Element>>> 
+public type DaeEdge  = tuple<DAE.ComponentRef,DAE.ComponentRef,list<DAE.Element>> 
+"a tuple with two crefs and dae elements for equatityConstraint function call";
+public type DaeEdges = list<DaeEdge> 
 "A list of edges, each edge associated with two lists of DAE elements
  (these elements represent equations to be added if the edge
- is preserved or broken)";
+ is broken)";
+
+public type DefiniteRoot  = DAE.ComponentRef "root defined with Connection.root";
+public type DefiniteRoots = list<DAE.ComponentRef> "roots defined with Connection.root";
+
+public type PotentialRoot = tuple<DAE.ComponentRef,Real> "potential root defined with Connections.potentialRoot";
+public type PotentialRoots = list<tuple<DAE.ComponentRef,Real>> "potential roots defined with Connections.potentialRoot";
 
 public 
 uniontype ConnectionGraph "Input structure for connection breaking algorithm. It is collected during instantiation phase."
     record GRAPH
       Boolean updateGraph;
-      list<DAE.ComponentRef> definiteRoots "Roots defined with Connection.root";
-      list<tuple<DAE.ComponentRef,Real>> potentialRoots "Roots defined with Connection.potentialRoot";
+      DefiniteRoots definiteRoots "Roots defined with Connection.root";
+      PotentialRoots potentialRoots "Roots defined with Connection.potentialRoot";
       Edges branches "Edges defined with Connection.branch";
       DaeEdges connections "Edges defined with connect statement";
     end GRAPH;
@@ -91,9 +99,10 @@ public function handleOverconstrainedConnections
  a new DAE"
  input ConnectionGraph inGraph;
  input DAE.DAElist inDAE;
+ input String modelNameQualified;
  output DAE.DAElist outDAE;
 algorithm
-  outDAE := matchcontinue(inGraph, inDAE)
+  outDAE := matchcontinue(inGraph, inDAE, modelNameQualified)
     local
       ConnectionGraph graph;
       list<DAE.Element> daeConnections;
@@ -104,13 +113,20 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
 
     // empty graph gives you the same dae
-    case (GRAPH(_, {}, {}, {}, {}), dae) then dae;
+    case (GRAPH(_, {}, {}, {}, {}), dae, modelNameQualified) then dae;
     // no dae
     // case (graph, DAE.DAE({},_)) then DAEUtil.emptyDae;
     // handle the connection braking
-    case (graph, DAE.DAE(elts,funcs))
+    case (graph, DAE.DAE(elts,funcs), modelNameQualified)
       equation
-        (roots, elts, broken) = findResultGraph(graph, elts);
+
+        Debug.fprintln("cgraph", "Summary: \n\t" +& 
+           "Nr Roots:           " +& intString(listLength(getDefiniteRoots(graph))) +& "\n\t" +&
+           "Nr Potential Roots: " +& intString(listLength(getPotentialRoots(graph))) +& "\n\t" +&
+           "Nr Branches:        " +& intString(listLength(getBranches(graph))) +& "\n\t" +&
+           "Nr Connections:     " +& intString(listLength(getConnections(graph))));
+
+        (roots, elts, broken) = findResultGraph(graph, elts, modelNameQualified);
 
         Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(Util.listMap(roots, Exp.printComponentRefStr), ", "));
         Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(Util.listMap(broken, printConnectionStr), ", "));
@@ -119,9 +135,9 @@ algorithm
       then
         DAE.DAE(elts,funcs);
     // handle the connection braking
-    case (graph, dae)
+    case (graph, dae, modelNameQualified)
       equation
-        Debug.fprintln("cgraph", "- ConnectionGraph.handleOverconstrainedConnections failed");
+        Debug.fprintln("cgraph", "- ConnectionGraph.handleOverconstrainedConnections failed for model: " +& modelNameQualified);
       then
         fail();
   end matchcontinue;
@@ -156,7 +172,7 @@ algorithm
     // handle the connection braking
     case (graph, sets, isTopScope)
       equation
-        (roots, elts, broken) = findResultGraph(graph, {});
+        (roots, elts, broken) = findResultGraph(graph, {}, "");
        
         Debug.fprintln("cgraph", "Roots: " +& Util.stringDelimitList(Util.listMap(roots, Exp.printComponentRefStr), ", "));
         Debug.fprintln("cgraph", "Broken connections: " +& Util.stringDelimitList(Util.listMap(broken, printConnectionStr), ", "));
@@ -395,6 +411,11 @@ end addConnection;
 protected import Exp;
 protected import Debug;
 protected import DAEDump;
+protected import Util;
+protected import System;
+protected import IOStream;
+protected import RTOpts;
+protected import Settings;
 
 protected function canonical
 "Returns the canonical element of the component where input element belongs to.
@@ -967,13 +988,14 @@ end addConnections;
 protected function findResultGraph
 "Given ConnectionGraph structure, breaks all connections, 
  determines roots and generates a list of dae elements."
-  input ConnectionGraph inGraph;
+  input  ConnectionGraph inGraph;
   input  list<DAE.Element> inDAE;
+  input  String modelNameQualified;
   output list<DAE.ComponentRef> outRoots;  
   output list<DAE.Element> outDAE;
   output list<tuple<DAE.ComponentRef, DAE.ComponentRef>> outBrokenConnections;
 algorithm
-  (outRoots, outDAE, outBorkenConnections) := matchcontinue(inGraph, inDAE)
+  (outRoots, outDAE, outBrokenConnections) := matchcontinue(inGraph, inDAE, modelNameQualified)
     local
       list<DAE.ComponentRef> definiteRoots, finalRoots;
       list<tuple<DAE.ComponentRef,Real>> potentialRoots;
@@ -987,24 +1009,43 @@ algorithm
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
 
     // deal with empty connection graph
-    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), inDAE) 
+    case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), inDAE, modelNameQualified) 
       then ({}, inDAE, {});
 
     // we have something in the connection graph
     case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
-                   branches = branches, connections = connections), inDAE)
+                   branches = branches, connections = connections), inDAE, modelNameQualified)
       equation
+        // reverse the conenction list to have them as in the model
+        connections = listReverse(connections);
+        // add definite roots to the table
         table = resultGraphWithRoots(definiteRoots);
+        // add branches to the table
         table = addBranchesToTable(table, branches);
+        // order potential roots in the order or priority
         orderedPotentialRoots = Util.sort(potentialRoots, ord);
+        
         Debug.fprintln("cgraph", "Ordered Potential Roots: " +& 
           Util.stringDelimitList(Util.listMap(orderedPotentialRoots, printPotentialRootTuple), ", "));
-        dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+        
+        // add connections to the table and return the broken connections
         (table, dae, broken) = addConnections(table, connections, inDAE);
+        // create a dummy root
+        dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+        // select final roots
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
-        Debug.fprintln("cgraph", "Final roots: " +& 
-          Util.stringDelimitList(Util.listMap(finalRoots, Exp.printComponentRefStr), ", "));        
-      then (finalRoots, dae, broken);
+        
+        // generate the graphviz representation
+        _ = generateGraphViz(
+              modelNameQualified, 
+              definiteRoots, 
+              potentialRoots,
+              branches,
+              connections,
+              finalRoots,
+              broken);
+      then 
+        (finalRoots, dae, broken);
   end matchcontinue;
 end findResultGraph;
 
@@ -1383,5 +1424,246 @@ algorithm
       then b;        
   end matchcontinue;
 end elementSourceInBrokenConnects;
+
+/***********************************************************************************************************************/
+/******************************************* GraphViz generation *******************************************************/
+/***********************************************************************************************************************/
+
+protected function graphVizEdge
+  input  Edge inEdge;
+  output String out; 
+algorithm
+  out := matchcontinue(inEdge)
+    local DAE.ComponentRef c1, c2; String strEdge;
+    case ((c1, c2))
+      equation
+        strEdge = "\"" +& Exp.printComponentRefStr(c1) +& "\" -- \"" +& Exp.printComponentRefStr(c2) +& "\"" +&
+        " [color = blue, dir = \"none\", fontcolor=blue, label = \"branch\"];\n\t";
+      then strEdge;
+  end matchcontinue;
+end graphVizEdge;
+
+protected function graphVizDaeEdge
+  input  DaeEdge inDaeEdge;
+  input  Edges inBrokenDaeEdges;
+  output String out; 
+algorithm
+  out := matchcontinue(inDaeEdge, inBrokenDaeEdges)
+    local DAE.ComponentRef c1, c2; String sc1, sc2, strDaeEdge, label, labelFontSize, decorate, color, style, fontColor; Boolean isBroken;
+    case ((c1, c2, _), inBrokenDaeEdges)
+      equation
+        isBroken = listMember((c1,c2), inBrokenDaeEdges);
+        label = Util.if_(isBroken, "[[broken connect]]", "connect");
+        color = Util.if_(isBroken, "red", "green");
+        style = Util.if_(isBroken, "\"bold, dashed\"", "solid");
+        decorate = Util.if_(isBroken, "true", "false");
+        fontColor = Util.if_(isBroken, "red", "green");
+        labelFontSize = Util.if_(isBroken, "labelfontsize = 20.0, ", "");
+        sc1 = Exp.printComponentRefStr(c1);
+        sc2 = Exp.printComponentRefStr(c2);
+        strDaeEdge = Util.stringAppendList({
+          "\"", sc1, "\" -- \"", sc2, "\" [",
+          "dir = \"none\", ",
+          "style = ", style,  ", ",
+          "decorate = ", decorate,  ", ",
+          "color = ", color ,  ", ",
+          labelFontSize, 
+          "fontcolor = ", fontColor ,  ", ",
+          "label = \"", label ,"\"",
+          "];\n\t"});
+      then strDaeEdge;
+  end matchcontinue;
+end graphVizDaeEdge;
+
+protected function graphVizDefiniteRoot
+  input  DefiniteRoot  inDefiniteRoot;
+  input  DefiniteRoots inFinalRoots;
+  output String out; 
+algorithm
+  out := matchcontinue(inDefiniteRoot, inFinalRoots)
+    local DAE.ComponentRef c; String strDefiniteRoot; Boolean isSelectedRoot;
+    case (c, inFinalRoots)
+      equation
+        isSelectedRoot = listMember(c, inFinalRoots);
+        strDefiniteRoot = "\"" +& Exp.printComponentRefStr(c) +& "\"" +& 
+           " [fillcolor = red, rank = \"source\", label = " +& "\"" +& Exp.printComponentRefStr(c) +& "\", " +&
+           Util.if_(isSelectedRoot, "shape=ploygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&           
+           "];\n\t";
+      then strDefiniteRoot;
+  end matchcontinue;
+end graphVizDefiniteRoot;
+
+protected function graphVizPotentialRoot
+  input  PotentialRoot inPotentialRoot;
+  input  DefiniteRoots inFinalRoots;
+  output String out; 
+algorithm
+  out := matchcontinue(inPotentialRoot, inFinalRoots)
+    local DAE.ComponentRef c; Real priority; String strPotentialRoot; Boolean isSelectedRoot;
+    case ((c, priority), inFinalRoots)
+      equation
+        isSelectedRoot = listMember(c, inFinalRoots);
+        strPotentialRoot = "\"" +& Exp.printComponentRefStr(c) +& "\"" +&  
+           " [fillcolor = orangered, rank = \"min\" label = " +& "\"" +& Exp.printComponentRefStr(c) +& "\\n" +& realString(priority) +& "\", " +&
+           Util.if_(isSelectedRoot, "shape=ploygon, sides=7, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&  
+           "];\n\t";
+      then strPotentialRoot;
+  end matchcontinue;
+end graphVizPotentialRoot;
+
+protected function generateGraphViz
+"@author: adrpo
+  Generate a graphviz file out of the connection graph"
+  input String modelNameQualified;
+  input list<DAE.ComponentRef> definiteRoots;
+  input list<tuple<DAE.ComponentRef,Real>> potentialRoots;
+  input Edges branches;
+  input DaeEdges connections;
+  input list<DAE.ComponentRef> finalRoots;
+  input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+  output String fileNameGraphViz;
+algorithm
+  fileNameGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+    local
+      String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr, leftyCMD, infoNodeStr;
+      Real tStart, tEnd, t;
+      IOStream.IOStream graphVizStream;
+      Integer leftyExitStatus;
+      list<String> infoNode; 
+    
+    // don't do anything if we don't have +d=cgraphGraphVizFile or +d=cgraphGraphVizShow
+    case(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+      equation
+        false = boolOr(RTOpts.debugFlag("cgraphGraphVizFile"), RTOpts.debugFlag("cgraphGraphVizShow"));
+      then
+        "";
+      
+    case(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+      equation
+        tStart = clock();
+        i = "\t"; 
+        fileName = stringAppend(modelNameQualified, ".gv");
+        // create a stream
+        graphVizStream = IOStream.create(fileName, IOStream.LIST());
+        nrDR = intString(listLength(definiteRoots));
+        nrPR = intString(listLength(potentialRoots));
+        nrBR = intString(listLength(branches));
+        nrCO = intString(listLength(connections));
+        nrFR = intString(listLength(finalRoots));
+        nrBC = intString(listLength(broken));
+        
+        infoNode = 
+        { 
+          "// Generated by OpenModelica. \n",
+          "// Overconstrained connection graph for model: \n//    ", modelNameQualified, "\n",
+          "// \n",
+          "// Summary: \n", 
+          "//   Roots:              ", nrDR, "\n",
+          "//   Potential Roots:    ", nrPR, "\n",
+          "//   Branches:           ", nrBR, "\n",
+          "//   Connections:        ", nrCO, "\n",
+          "//   Final Roots:        ", nrFR, "\n",
+          "//   Broken Connections: ", nrBC, "\n"
+        };
+        infoNodeStr = Util.stringAppendList(infoNode);
+        // replace \n with \\l (left align), replace \t with " "
+        infoNodeStr = System.stringReplace(infoNodeStr, "\n", "\\l"); infoNodeStr = System.stringReplace(infoNodeStr, "\t", " ");
+        // replace / with ""
+        infoNodeStr = System.stringReplace(infoNodeStr, "/", "");
+        
+        // output header
+        graphVizStream = IOStream.appendList(graphVizStream,infoNode);
+        // output command to be used        
+        // output graphviz header
+        graphVizStream = IOStream.appendList(graphVizStream,{"\n\n"});
+        graphVizStream = IOStream.appendList(graphVizStream, {"graph \"", modelNameQualified, "\"\n{\n\n"});
+         
+        // output global settings 
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "ovelap=false;\n"});
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "layout=dot;\n\n"});        
+         
+        // output settings for nodes
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "node [\n", i, 
+           "fillcolor = \"lightsteelblue1\"\n",i, 
+           "shape = box\n",i, 
+           "style = \"bold, filled\"\n",i,
+           "rank = \"max\"",
+           i, "]\n\n"});
+        // output settings for edges
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "edge [\n", i, 
+           "color = \"black\"\n", i, 
+           "style = bold\n", i,
+           "]\n\n"});
+        
+        // output summary node
+        graphVizStream = IOStream.appendList(graphVizStream, {i, "graph [fontsize=20, fontname = \"Courier Bold\" label= \"\\n\\n", infoNodeStr, "\", size=\"6,6\"];\n", i});        
+        
+        // output definite roots
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Definite Roots (Connections.root)", "\n", i});        
+        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(definiteRoots, graphVizDefiniteRoot, finalRoots));
+        // output potential roots
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Potential Roots (Connections.potentialRoot)", "\n", i});        
+        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(potentialRoots, graphVizPotentialRoot, finalRoots));        
+
+        // output branches        
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Branches (Connections.branch)", "\n", i});
+        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap(branches, graphVizEdge));
+        
+        // output connections
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n", i, "// Connections (connect)", "\n", i});
+        graphVizStream = IOStream.appendList(graphVizStream, Util.listMap1(connections, graphVizDaeEdge, broken));
+        
+        // output graphviz footer
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n}\n"});
+        tEnd = clock();
+        t = tEnd -. tStart;
+        timeStr = realString(t);
+        graphVizStream = IOStream.appendList(graphVizStream, {"\n\n\n// graph generation took: ", timeStr, " seconds\n"});
+        System.writeFile(fileName, IOStream.string(graphVizStream));
+        Debug.traceln("GraphViz with connection graph for model: " +& modelNameQualified +& " was writen to file: " +& fileName);
+        showGraphViz(fileName, modelNameQualified);
+      then
+        fileName;
+  end matchcontinue;
+end generateGraphViz;
+
+protected function showGraphViz
+  input String fileNameGraphViz;
+  input String modelNameQualified;
+algorithm
+  _ := matchcontinue(fileNameGraphViz, modelNameQualified)
+    local
+      String leftyCMD, fileNameTraceRemovedConnections, omhome;
+      Integer leftyExitStatus;
+      
+    // do not start graphviz if we don't have +d=cgraphGraphVizShow
+    case (fileNameGraphViz, modelNameQualified)
+      equation
+        false = RTOpts.debugFlag("cgraphGraphVizShow");
+      then
+        ();
+        
+    case (fileNameGraphViz, modelNameQualified)
+      equation
+        fileNameTraceRemovedConnections = modelNameQualified +& "_removed_connections.txt";  
+        Debug.traceln("Tyring to start GraphViz *lefty* to visualize the graph. You need to have lefty in your PATH variable");
+        Debug.traceln("Make sure you quit GraphViz *lefty* via Right Click->quit to be sure the process will be exited.");
+        Debug.traceln("If you quit the GraphViz *lefty* window via X, please kill the process in task manager to continue.");
+        omhome = Settings.getInstallationDirectoryPath();
+        omhome = System.stringReplace(omhome, "\"", "");
+        // omhome = System.stringReplace(omhome, "\\", "/");
+        
+        // create a lefty command and execute it
+        leftyCMD = "load('" +& omhome +& "/share/omc/scripts/openmodelica.lefty');" +& "openmodelica.init();openmodelica.createviewandgraph('" +& 
+            fileNameGraphViz +& "','file',null,null);txtview('off');";
+        Debug.traceln("Running command: " +& "lefty -e " +& leftyCMD +& " > " +& fileNameTraceRemovedConnections);
+        // execute lefty
+        leftyExitStatus = System.systemCall("lefty -e " +& leftyCMD +& " > " +& fileNameTraceRemovedConnections);
+        // show the exit status
+        Debug.traceln("GraphViz *lefty* exited with status:" +& intString(leftyExitStatus));
+      then 
+        ();
+  end matchcontinue;
+end showGraphViz;
   
 end ConnectionGraph;

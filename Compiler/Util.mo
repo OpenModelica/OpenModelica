@@ -6258,5 +6258,30 @@ algorithm
   str := stringAppend(str2, str1);
 end stringAppendReverse;
 
+// moved from Inst.
+public function selectList
+"function: select
+Author BZ, 2008-09
+  This utility function selects one of two objects depending on a list of boolean variables.
+  Used to constant evaluate if-equations."
+  input list<Boolean> inBools;
+  input list<Type_a> inList;
+  input Type_a inFalse;
+  output Type_a outTypeA;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  outTypeA:=
+  matchcontinue (inBools,inList,inFalse)
+    local
+      Type_a x,head;
+      case({},{},x) then x;
+    case (true::_,head::_,_) then head;
+    case (false::inBools,_::inList,x)
+      equation
+        head = selectList(inBools,inList,x);
+      then head;
+  end matchcontinue;
+end selectList;
+
 end Util;
 

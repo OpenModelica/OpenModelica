@@ -330,7 +330,7 @@ algorithm
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, true);
         (cache,env_2,ih,_,dae,_,_,_,_,graph) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl";
         // deal with Overconstrained connections
-        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, Absyn.pathString(path));
         //print(" ********************** backpatch 1 **********************\n");         
         dae = reEvaluateInitialIfEqns(cache,env_2,dae,true);
         // check the model for balancing
@@ -397,7 +397,7 @@ algorithm oelems := matchcontinue(cache,env,elems)
       //print(" Ceval res: ("+&Util.stringDelimitList(Util.listMap(valList,ValuesUtil.printValStr),",")+&")\n");
 
       blist = Util.listMap(valList,ValuesUtil.valueBool);
-      selectedBranch = selectList(blist, tbs, fb);
+      selectedBranch = Util.selectList(blist, tbs, fb);
       selectedBranch = makeDAEElementInitial(selectedBranch); 
       oelems = reEvaluateInitialIfEqns2(cache,env,elems);
       oelems = listAppend(selectedBranch,oelems);
@@ -702,7 +702,7 @@ algorithm
         true = stringEqual(name, name2);
         (cache,env_1,ih,_,dae,_,_,_,_,graph) = instClass(cache,env, ih, UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl" ;
         // deal with Overconstrained connections
-        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, name);
 
         //print(" ********************** backpatch 2 **********************\n");         
         dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
@@ -1006,7 +1006,7 @@ algorithm
         (cache,env_1,ih,store,dae,csets,_,_,_,graph) = instClass(cache,env,ih,UnitAbsynBuilder.emptyInstStore(), DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, c, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) ;
         Debug.fcall("execstat",print, "*** Inst -> instClass finished at time: " +& realString(clock()) +& "\n" );
         // deal with Overconstrained connections
-        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae);
+        dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, n);
         //print(" ********************** backpatch 3 **********************\n"); 
         dae = reEvaluateInitialIfEqns(cache,env_1,dae,true);
         
@@ -12419,30 +12419,6 @@ algorithm
       then fail();
   end matchcontinue;
 end instBoschClassInProgram;
-
-public function selectList
-"function: select
-Author BZ, 2008-09
-  This utility function selects one of two objects depending on a list of boolean variables.
-  Used to constant evaluate if-equations."
-  input list<Boolean> inBools;
-  input list<Type_a> inList;
-  input Type_a inFalse;
-  output Type_a outTypeA;
-  replaceable type Type_a subtypeof Any;
-algorithm
-  outTypeA:=
-  matchcontinue (inBools,inList,inFalse)
-    local
-      Type_a x,head;
-      case({},{},x) then x;
-    case (true::_,head::_,_) then head;
-    case (false::inBools,_::inList,x)
-      equation
-        head = selectList(inBools,inList,x);
-      then head;
-  end matchcontinue;
-end selectList;
 
 protected function extractCurrentName
 "function: extractCurrentName

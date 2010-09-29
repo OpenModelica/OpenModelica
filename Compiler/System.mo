@@ -266,8 +266,9 @@ public function sendData2
 end sendData2;
 
 public function writeFile
-  input String inString1;
-  input String inString2;
+"This function will write to the file given by first argument the given string"
+  input String fileNameToWrite "a filename where to write the data";
+  input String stringToBeWritten "the data";
 
   external "C" ;
 end writeFile;

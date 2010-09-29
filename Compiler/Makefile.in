@@ -33,7 +33,7 @@ PROG = omc
 PROGD = omcd
 PROGP = omcp
 
-SCRIPT_FILES = Compile doPlot
+SCRIPT_FILES = Compile doPlot openmodelica.lefty
 
 #SUBDIRS= ast runtime
 SUBDIRS	= runtime absyn_builder modpar

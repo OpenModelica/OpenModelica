@@ -551,7 +551,7 @@ algorithm
         true = Types.isParameterOrConstant(cnst);
         (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
         blist = Util.listMap(valList,ValuesUtil.valueBool);
-        b = Inst.selectList(blist, tb, fb);
+        b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
         dae = DAEUtil.joinDaes(dae,fdae1);
       then
@@ -567,7 +567,7 @@ algorithm
         true = OptManager.getOption("checkModel"); 
         (cache, _,props,_,fdae1) = Static.elabExpList(cache,env, conditions, impl, NONE,true,pre);
         (DAE.PROP((DAE.T_BOOL(_),_),DAE.C_PARAM)) = Types.propsAnd(props);
-        b = Inst.selectList({true}, tb, fb);
+        b = Util.selectList({true}, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEEquation, b, impl, Inst.alwaysUnroll, graph);
         dae = DAEUtil.joinDaes(dae,fdae1);
       then
@@ -581,7 +581,7 @@ algorithm
         (DAE.PROP((DAE.T_BOOL(_),_),_)) = Types.propsAnd(props);
         (cache,valList) = Ceval.cevalList(cache,env, expl1, impl, NONE, Ceval.NO_MSG());
         blist = Util.listMap(valList,ValuesUtil.valueBool);
-        b = Inst.selectList(blist, tb, fb);
+        b = Util.selectList(blist, tb, fb);
         (cache,env_1,ih,dae,csets_1,ci_state_1,graph) = Inst.instList(cache,env,ih, mod, pre, csets, ci_state, instEInitialEquation, b, impl, Inst.alwaysUnroll, graph);
         dae = DAEUtil.joinDaes(dae,fdae1);
       then

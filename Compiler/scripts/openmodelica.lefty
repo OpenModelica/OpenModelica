@@ -1,0 +1,2870 @@
+#
+# OpenModelica
+#
+openmodelica = [
+    'keys' = [
+        'nid'    = 'nid';
+        'eid'    = 'eid';
+        'gid'    = 'gid';
+        'name'   = 'name';
+        'attr'   = 'attr';
+        'gattr'  = 'graphattr';
+        'eattr'  = 'edgeattr';
+        'nattr'  = 'nodeattr';
+        'edges'  = 'edges';
+        'tail'   = 'tail';
+        'tport'  = 'tport';
+        'head'   = 'head';
+        'hport'  = 'hport';
+        'pos'    = 'pos';
+        'size'   = 'size';
+        'rect'   = 'rect';
+        'fname'  = 'fontname';
+        'fsize'  = 'fontsize';
+        'fcolor' = 'fontcolor';
+        'dcolor' = 'drawcolor';
+        'bcolor' = 'fillcolor';
+    ];
+    'maps' = [
+        'X11' = [
+            'fontmap' = [
+                'Times-Roman'    = '-*-times-medium-r-*--%d-*-*-*-*-*-*-1';
+                'Times-Italic'   = '-*-times-medium-i-*--%d-*-*-*-*-*-*-1';
+                'Times-Bold'     = '-*-times-bold-r-*--%d-*-*-*-*-*-*-1';
+                'Courier'        = '-*-courier-bold-r-*--%d-*-*-*-*-*-*-1';
+                'Courier-Bold'   = '-*-courier-bold-r-*--%d-*-*-*-*-*-*-1';
+                'Helvetica'      = (
+                     '-*-helvetica-medium-r-normal--%d-*-*-*-p-*-iso8859-1'
+                );
+                'Helvetica-Bold' = (
+                    '-*-helvetica-bold-r-normal--%d-*-*-*-p-*-iso8859-1'
+                );
+            ];
+            'psfontmap' = [
+                'Times-Roman'    = 'Times-Roman';
+                'Times-Italic'   = 'Times-Italic';
+                'Times-Bold'     = 'Times-Bold';
+                'Courier'        = 'Courier';
+                'Courier-Bold'   = 'Courier-Bold';
+                'Helvetica'      = 'Helvetica';
+                'Helvetica-Bold' = 'Helvetica-Bold';
+            ];
+        ];
+        'mswin' = [
+            'fontmap' = [
+                'Times-Roman'    = 'Times New Roman';
+                'Times-Italic'   = 'Times New Roman Italic';
+                'Times-Bold'     = 'Times New Roman Bold';
+                'Courier'        = 'Courier New';
+                'Courier-Bold'   = 'Courier New Bold';
+                'Helvetica'      = 'Arial';
+                'Helvetica-Bold' = 'Arial Bold';
+            ];
+            'psfontmap' = [
+                'Times-Roman'    = 'Times New Roman';
+                'Times-Italic'   = 'Times New Roman Italic';
+                'Times-Bold'     = 'Times New Roman Bold';
+                'Courier'        = 'Courier New';
+                'Courier-Bold'   = 'Courier New Bold';
+                'Helvetica'      = 'Arial';
+                'Helvetica-Bold' = 'Arial Bold';
+            ];
+        ];
+    ];
+    'protogt' = [
+        'graph' = [
+            'graphattr' = [
+                'fontsize' = '14';
+                'fontname' = 'Times-Roman';
+                'fontcolor' = 'black';
+            ];
+            'nodeattr' = [
+                'shape' = 'ellipse';
+                'fontsize' = '14';
+                'fontname' = 'Times-Roman';
+                'fontcolor' = 'black';
+                'style' = 'solid';
+            ];
+            'edgeattr' = [
+                'fontsize' = '14';
+                'fontname' = 'Times-Roman';
+                'fontcolor' = 'black';
+                'style' = 'solid';
+            ];
+            'graphdict' = [];
+            'nodedict' = [];
+            'graphs' = [];
+            'nodes' = [];
+            'edges' = [];
+            'maxgid' = 0;
+            'maxnid' = 0;
+            'maxeid' = 0;
+            'type' = 'digraph';
+        ];
+        'layoutmode' = 'sync';
+        'lserver' = 'dot';
+        'edgehandles' = 1;
+        'noundo' = 0;
+    ];
+    'lservers' = [];
+    'mlevel' = 0;
+    'graphs' = [];
+    'views' = [];
+    'protovt' = [
+        'normal' = [
+            'name' = 'OpenModelica';
+            'orig' = ['x' = 1; 'y' = 1;];
+            'size' = ['x' = 1044; 'y' = 788;];
+            'wrect' = [
+                0 = ['x' = 0; 'y' = 0;];
+                1 = ['x' = 1024; 'y' = 768;];
+            ];
+            'vsize' = ['x' = 1024; 'y' = 768;];
+            'w2v' = 1;
+        ];
+        'birdseye' = [
+            'type' = 'birdseye';
+            'name' = 'OpenModelica birdseye view';
+            'orig' = ['x' = 1; 'y' = 1;];
+            'size' = ['x' = 220; 'y' = 260;];
+            'wrect' = [
+                0 = ['x' = 0; 'y' = 0;];
+                1 = ['x' = 200; 'y' = 250;];
+            ];
+            'vsize' = ['x' = 200; 'y' = 250;];
+            'w2v' = 1;
+        ];
+    ];
+    'pagesizes' = [
+        '8.5x11' = ['x' =    8; 'y' = 10.5;];
+        '11x17'  = ['x' = 10.5; 'y' = 16.5;];
+        '36x50'  = ['x' = 35.5; 'y' = 49.5;];
+    ];
+];
+# load('openmodelica_draw.lefty')
+#
+# openmodelica_draw: drawing functions and data structures
+#
+openmodelica.protogt.drawgraph = function (gt, views) {
+    local gid, eid, nid, graph;
+
+    graph = gt.graph;
+    gt.drawsgraph (gt, views, graph);
+    for (gid in graph.graphs)
+        gt.drawsgraph (gt, views, graph.graphs[gid]);
+    for (eid in graph.edges)
+        gt.drawedge (gt, views, graph.edges[eid]);
+    for (nid in graph.nodes)
+        gt.drawnode (gt, views, graph.nodes[nid]);
+};
+openmodelica.protogt.redrawgraph = function (gt, views) {
+    local vid;
+
+    for (vid in views)
+        clear (views[vid].canvas);
+    gt.drawgraph (gt, views);
+};
+openmodelica.protogt.setviewsize = function (views, r) {
+    local vid, vt, w2v, scale, attr;
+
+    for (vid in views) {
+        vt = views[vid];
+        vt.wrect = copy (r);
+        if (r[1].x == 0 | r[1].y == 0) {
+            attr = getwidgetattr (vt.scroll, [0 = 'size';]);
+            vt.wrect[1] = copy (attr.size);
+        }
+        if (vt.type == 'birdseye') {
+            attr = getwidgetattr (vt.scroll, [0 = 'size';]);
+            scale.x = (vt.wrect[1].x - vt.wrect[0].x) / attr.size.x;
+            scale.y = (vt.wrect[1].y - vt.wrect[0].y) / attr.size.y;
+            if (scale.x > 1 & scale.x > scale.y)
+                vt.w2v = scale.x;
+            else if (scale.y > 1)
+                vt.w2v = scale.y;
+            else
+                vt.w2v = 1;
+        }
+        w2v = vt.w2v;
+        vt.vsize = [
+            'x' = toint ((vt.wrect[1].x - vt.wrect[0].x) / w2v);
+            'y' = toint ((vt.wrect[1].y - vt.wrect[0].y) / w2v);
+        ];
+        setwidgetattr (vt.canvas, [
+            'window' = vt.wrect;
+            'viewport' = vt.vsize;
+        ]);
+        attr = getwidgetattr (vt.canvas, [0 = 'viewport';]);
+        vt.vsize = copy (attr.viewport);
+    }
+};
+openmodelica.protogt.setviewscale = function (views, factor) {
+    local vid, vt, w2v, attr;
+
+    for (vid in views) {
+        vt = views[vid];
+        if ((w2v = vt.w2v * factor) < 0.01) {
+            openmodelica.message (0, 'cannot zoom any closer');
+            return;
+        }
+        vt.w2v = w2v;
+        vt.vsize = [
+            'x' = (vt.wrect[1].x - vt.wrect[0].x) / w2v;
+            'y' = (vt.wrect[1].y - vt.wrect[0].y) / w2v;
+        ];
+        setwidgetattr (vt.canvas, ['viewport' = vt.vsize;]);
+        attr = getwidgetattr (vt.canvas, [0 = 'viewport';]);
+        vt.vsize = copy (attr.viewport);
+    }
+};
+openmodelica.protogt.setviewcenter = function (views, center) {
+    local vid, vt, pos;
+
+    for (vid in views) {
+        vt = views[vid];
+        pos = [
+            'x' = center.x * vt.vsize.x / (vt.wrect[1].x - vt.wrect[0].x);
+            'y' = (
+                (vt.wrect[1].y - center.y) * vt.vsize.y /
+                (vt.wrect[1].y - vt.wrect[0].y)
+            );
+        ];
+        setwidgetattr (vt.scroll, ['childcenter' = pos;]);
+    }
+};
+#
+# draw graph components
+#
+openmodelica.protogt.drawsgraph = function (gt, views, sgraph) {
+    sgraph.draw = 1;
+    if (~sgraph.draws)
+        return;
+    gt.execalldraw (gt, views, null, sgraph.draws, [
+        'fontname' = sgraph.fontname;
+        'fontsize' = sgraph.fontsize;
+        'fontcolor' = sgraph.fontcolor;
+        'drawcolor' = sgraph.drawcolor;
+        'fillcolor' = sgraph.fillcolor;
+    ]);
+};
+openmodelica.protogt.undrawsgraph = function (gt, views, sgraph) {
+    sgraph.drawn = 0;
+    if (~sgraph.draws)
+        return;
+    gt.execalldraw (gt, views, null, sgraph.draws, [
+        'fontname' = sgraph.fontname;
+        'fontsize' = sgraph.fontsize;
+        'fontcolor' = sgraph.fontcolor;
+        'drawcolor' = 0;
+        'fillcolor' = 0;
+    ]);
+};
+openmodelica.protogt.drawnode = function (gt, views, node) {
+    local vid;
+
+    node.drawn = 1;
+    if (~node.draws)
+        return;
+    gt.execalldraw (gt, views, node, node.draws, [
+        'fontname' = node.fontname;
+        'fontsize' = node.fontsize;
+        'fontcolor' = node.fontcolor;
+        'drawcolor' = node.drawcolor;
+        'fillcolor' = node.fillcolor;
+    ]);
+    for (vid in views)
+        setpick (views[vid].canvas, node, node.rect);
+};
+openmodelica.protogt.undrawnode = function (gt, views, node) {
+    local vid;
+
+    if (~node.drawn)
+        return;
+    node.drawn = 0;
+    if (~node.pos)
+        return;
+    gt.execalldraw (gt, views, node, node.draws, [
+        'nooverride' = 1;
+        'fontname' = node.fontname;
+        'fontsize' = node.fontsize;
+        'fontcolor' = 0;
+        'drawcolor' = 0;
+        'fillcolor' = 0;
+    ]);
+    for (vid in views)
+        clearpick (views[vid].canvas, node);
+};
+openmodelica.protogt.movenode = function (gt, node, pos) {
+    local dp, eid, edge;
+
+    dp.x = pos.x - node.pos.x;
+    dp.y = pos.y - node.pos.y;
+    gt.undrawnode (gt, gt.views, node);
+    node.pos.x = pos.x;
+    node.pos.y = pos.y;
+    gt.movenodedraw (node.draws, dp);
+    for (eid in node.edges) {
+        edge = node.edges[eid];
+        gt.undrawedge (gt, gt.views, edge);
+        gt.moveedgedraw (edge.draws, edge.tail.pos, edge.head.pos);
+        gt.drawedge (gt, gt.views, edge);
+    }
+    gt.drawnode (gt, gt.views, node);
+};
+openmodelica.protogt.drawedge = function (gt, views, edge) {
+    local vid, canvas;
+
+    edge.drawn = 1;
+    if (~edge.draws)
+        return;
+    gt.execalldraw (gt, views, edge, edge.draws, [
+        'fontname' = edge.fontname;
+        'fontsize' = edge.fontsize;
+        'fontcolor' = edge.fontcolor;
+        'drawcolor' = edge.drawcolor;
+        'fillcolor' = edge.fillcolor;
+    ]);
+    for (vid in views) {
+        canvas = views[vid].canvas;
+        if (gt.edgehandles == 0 | ~edge.draws.ep)
+            continue;
+        arc (canvas, edge, edge.draws.ep, ['x' = 5; 'y' = 5;], ['color' = 1;]);
+    }
+};
+openmodelica.protogt.undrawedge = function (gt, views, edge) {
+    local vid, canvas;
+
+    if (~edge.drawn)
+        return;
+    edge.drawn = 0;
+    if (~edge.draws)
+        return;
+    gt.execalldraw (gt, views, edge, edge.draws, [
+        'nooverride' = 1;
+        'fontname' = edge.fontname;
+        'fontsize' = edge.fontsize;
+        'fontcolor' = 0;
+        'drawcolor' = 0;
+        'fillcolor' = 0;
+    ]);
+    for (vid in views) {
+        canvas = views[vid].canvas;
+        if (gt.edgehandles == 0 | ~edge.draws.ep)
+            continue;
+        arc (canvas, edge, edge.draws.ep, ['x' = 5; 'y' = 5;], ['color' = 0;]);
+        clearpick (canvas, edge);
+    }
+};
+#
+# draw directives
+#
+openmodelica.protogt.execalldraw = function (gt, views, obj, draws, gc) {
+    local vid, vt, did, draw, i, func;
+
+    for (vid in views) {
+        vt = views[vid];
+        for (did in draws) {
+            if (did == 'ep')
+                continue;
+            draw = draws[did];
+            for (i = 0; draw[i]; i = i + 1)
+                if ((func = gt.drawfunc[draw[i].type]))
+                    func (gt, vt.canvas, obj, draw[i], gc);
+        }
+    }
+};
+openmodelica.protogt.drawfunc.E = function (gt, canvas, obj, data, gc) {
+    arc (canvas, obj, data.c, data.s, [
+        'color' = gc.fillcolor; 'style' = gc.style; 'width' = gc.width;
+        'fill' = 'on';
+    ]);
+    arc (canvas, obj, data.c, data.s, [
+        'color' = gc.drawcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.e = function (gt, canvas, obj, data, gc) {
+    arc (canvas, obj, data.c, data.s, [
+        'color' = gc.drawcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.P = function (gt, canvas, obj, data, gc) {
+    polygon (canvas, obj, data.ps, [
+        'color' = gc.fillcolor; 'style' = gc.style; 'width' = gc.width;
+        'fill' = 'on';
+    ]);
+    polygon (canvas, obj, data.ps, [
+        'color' = gc.drawcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.p = function (gt, canvas, obj, data, gc) {
+    polygon (canvas, obj, data.ps, [
+        'color' = gc.drawcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.L = function (gt, canvas, obj, data, gc) {
+    polygon (canvas, obj, data.ps, [
+        'color' = gc.drawcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.b = function (gt, canvas, obj, data, gc) {
+    splinegon (canvas, obj, data.ps, [
+        'color' = gc.fillcolor; 'style' = gc.style; 'width' = gc.width;
+        'fill' = 'on';
+    ]);
+};
+openmodelica.protogt.drawfunc.B = function (gt, canvas, obj, data, gc) {
+    splinegon (canvas, obj, data.ps, [
+        'color' = gc.drawcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.T = function (gt, canvas, obj, data, gc) {
+    text (canvas, obj, data.p, data.s, gc.fontname, gc.fontsize, data.j, [
+        'color' = gc.fontcolor; 'style' = gc.style; 'width' = gc.width;
+    ]);
+};
+openmodelica.protogt.drawfunc.C = function (gt, canvas, obj, data, gc) {
+    if (gc.nooverride ~= 1)
+        gc.fillcolor = data.fillcolor;
+};
+openmodelica.protogt.drawfunc.c = function (gt, canvas, obj, data, gc) {
+    if (gc.nooverride ~= 1) {
+        gc.drawcolor = data.drawcolor;
+        gc.fontcolor = data.drawcolor;
+    }
+};
+openmodelica.protogt.drawfunc.F = function (gt, canvas, obj, data, gc) {
+    gc.fontname = data.fn;
+    gc.fontsize = data.fs;
+};
+openmodelica.protogt.drawfunc.S = function (gt, canvas, obj, data, gc) {
+    gc.style = data.style;
+    gc.width = data.width;
+};
+openmodelica.protogt.movenodedraw = function (draws, dp) {
+    local did, draw, i, j;
+
+    for (did in draws) {
+        if (did == 'ep')
+            continue;
+        draw = draws[did];
+        for (i = 0; draw[i]; i = i + 1) {
+            if (draw[i].type == 'E' | draw[i].type == 'e') {
+                draw[i].c.x = draw[i].c.x + dp.x;
+                draw[i].c.y = draw[i].c.y + dp.y;
+            } else if (draw[i].type == 'P' | draw[i].type == 'p') {
+                for (j = 1; draw[i].ps[j]; j = j + 1) {
+                    draw[i].ps[j].x = draw[i].ps[j].x + dp.x;
+                    draw[i].ps[j].y = draw[i].ps[j].y + dp.y;
+                }
+            } else if (draw[i].type == 'L' | draw[i].type == 'B') {
+                for (j = 0; draw[i].ps[j]; j = j + 1) {
+                    draw[i].ps[j].x = draw[i].ps[j].x + dp.x;
+                    draw[i].ps[j].y = draw[i].ps[j].y + dp.y;
+                }
+            } else if (draw[i].type == 'T') {
+                draw[i].p.x = draw[i].p.x + dp.x;
+                draw[i].p.y = draw[i].p.y + dp.y;
+            }
+        }
+    }
+};
+openmodelica.protogt.moveedgedraw = function (draws, tp, hp) {
+    local draws2, did;
+
+    for (did in draws)
+        draws2[did] = draws[did];
+    for (did in draws2)
+        remove (did, draws);
+    draws[0] = [
+        0 = [
+            'type' = 'L';
+            'n' = 2;
+            'ps' = [
+                0 = copy (tp);
+                1 = copy (hp);
+            ];
+        ];
+        'ep' = ['x' = (tp.x + hp.x) / 2; 'y' = (tp.y + hp.y) / 2;];
+    ];
+};
+openmodelica.protogt.simplenodedraw = function (node, c, s) {
+    local draws;
+
+    if (node.attr.shape == 'ellipse')
+        draws[0] = [
+            0 = [
+                'type' = 'e';
+                'c' = copy (c);
+                's' = ['x' = s.x / 2; 'y' = s.y / 2;];
+            ];
+        ];
+    else
+        draws[0] = [
+            0 = [
+                'type' = 'p';
+                'n' = 5;
+                'ps' = [
+                    0 = ['x' = c.x - s.x / 2; 'y' = c.y - s.y / 2;];
+                    1 = ['x' = c.x + s.x / 2; 'y' = c.y - s.y / 2;];
+                    2 = ['x' = c.x + s.x / 2; 'y' = c.y + s.y / 2;];
+                    3 = ['x' = c.x - s.x / 2; 'y' = c.y + s.y / 2;];
+                    4 = ['x' = c.x - s.x / 2; 'y' = c.y - s.y / 2;];
+                ];
+            ];
+        ];
+    return draws;
+};
+openmodelica.protogt.simpleedgedraw = function (edge, tp, hp) {
+    local draws;
+
+    draws[0] = [
+        0 = [
+            'type' = 'L';
+            'n' = 2;
+            'ps' = [
+                0 = copy (tp);
+                1 = copy (hp);
+            ];
+        ];
+        'ep' = ['x' = (tp.x + hp.x) / 2; 'y' = (tp.y + hp.y) / 2;];
+    ];
+    return draws;
+};
+#
+# utilities
+#
+openmodelica.protogt.getcolor = function (views, name) {
+    local vid, vt, color, t;
+
+    for (vid in views) {
+        vt = views[vid];
+        if (~(color >= 0)) {
+            if (~(vt.colors[name] >= 0))
+                color = (vt.colors[name] = vt.colorn);
+            else {
+                color = vt.colors[name];
+                break;
+            }
+        } else if (~(vt.colors[name] >= 0))
+            vt.colors[name] = color;
+        else if (vt.colors[name] ~= color)
+            openmodelica.message (0, concat ('inconsistent color ids for ', name));
+        if (setwidgetattr (vt.canvas, ['color' = [color = name;];]) ~= 1) {
+            t = split (name, ' ');
+            if (tablesize (t) ~= 3 |
+                    setwidgetattr (vt.canvas, ['color' = [color = [
+                        'h' = ston (t[0]); 's' = ston (t[1]); 'v' = ston (t[2]);
+                    ];];]) ~= 1) {
+                openmodelica.message (0, concat ('unknown color ', name, ' using #1'));
+                return 1;
+            }
+        }
+        vt.colorn = color + 1;
+    }
+    return color;
+};
+openmodelica.protogt.setbgcolor = function (views, name) {
+    local vid, vt, t;
+
+    for (vid in views) {
+        vt = views[vid];
+        if (setwidgetattr (vt.canvas, ['color' = [0 = name;];]) ~= 1) {
+            t = split (name, ' ');
+            if (tablesize (t) ~= 3 |
+                    setwidgetattr (vt.canvas, ['color' = [0 = [
+                        'h' = ston (t[0]); 's' = ston (t[1]); 'v' = ston (t[2]);
+                    ];];]) ~= 1) {
+                openmodelica.message (0, concat ('unknown bgcolor ', name));
+                return;
+            }
+        }
+        vt.colors['_bgcolor_'] = name;
+    }
+};
+openmodelica.protogt.unpacksgraphattr = function (gt, sgraph) {
+    local attr;
+
+    attr = sgraph.graphattr;
+    if (openmodelica.fontmap[attr.fontname])
+        sgraph[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+    else
+        sgraph[openmodelica.keys.fname] = attr.fontname;
+    sgraph[openmodelica.keys.fsize] = ston (attr.fontsize);
+    sgraph[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+    if (attr.color)
+        sgraph[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+    else
+        sgraph[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+    if (attr.style == 'filled') {
+        if (attr.fillcolor)
+            sgraph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.fillcolor);
+        else if (attr.color)
+            sgraph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            sgraph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, 'lightgrey');
+    }
+};
+openmodelica.protogt.unpacknodeattr = function (gt, node) {
+    local attr;
+
+    attr = node.attr;
+    if (openmodelica.fontmap[attr.fontname])
+        node[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+    else
+        node[openmodelica.keys.fname] = attr.fontname;
+    node[openmodelica.keys.fsize] = ston (attr.fontsize);
+    node[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+    if (attr.color)
+        node[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+    else
+        node[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+    if (attr.style == 'filled') {
+        if (attr.fillcolor)
+            node[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.fillcolor);
+        else if (attr.color)
+            node[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            node[openmodelica.keys.bcolor] = gt.getcolor (gt.views, 'lightgrey');
+    }
+};
+openmodelica.protogt.unpackedgeattr = function (gt, edge) {
+    local attr;
+
+    attr = edge.attr;
+    if (openmodelica.fontmap[attr.fontname])
+        edge[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+    else
+        edge[openmodelica.keys.fname] = attr.fontname;
+    edge[openmodelica.keys.fsize] = ston (attr.fontsize);
+    edge[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+    if (attr.color)
+        edge[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+    else
+        edge[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+    if (attr.style == 'filled') {
+        if (attr.fillcolor)
+            edge[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.fillcolor);
+        else if (attr.color)
+            edge[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            edge[openmodelica.keys.bcolor] = gt.getcolor (gt.views, 'lightgrey');
+    }
+};
+openmodelica.protogt.unpackattr = function (gt) {
+    local gid, sgraph, nid, node, eid, edge, graph, attr;
+
+    graph = gt.graph;
+    attr = graph.graphattr;
+    if (openmodelica.fontmap[attr.fontname])
+        graph[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+    else
+        graph[openmodelica.keys.fname] = attr.fontname;
+    graph[openmodelica.keys.fsize] = ston (attr.fontsize);
+    graph[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+    if (attr.color)
+        graph[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+    else
+        graph[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+    if (attr.style == 'filled') {
+        if (attr.fillcolor)
+            graph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.fillcolor);
+        else if (attr.color)
+            graph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            graph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, 'lightgrey');
+    }
+    if (attr.bgcolor & attr.bgcolor ~= '')
+        gt.setbgcolor (gt.views, attr.bgcolor);
+    for (gid in graph.graphdict) {
+        sgraph = graph.graphs[graph.graphdict[gid]];
+        attr = sgraph.graphattr;
+        if (openmodelica.fontmap[attr.fontname])
+            sgraph[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+        else
+            sgraph[openmodelica.keys.fname] = attr.fontname;
+        sgraph[openmodelica.keys.fsize] = ston (attr.fontsize);
+        sgraph[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+        if (attr.color)
+            sgraph[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            sgraph[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+        if (attr.style == 'filled') {
+            if (attr.fillcolor)
+                sgraph[openmodelica.keys.bcolor] = gt.getcolor (
+                    gt.views, attr.fillcolor
+                );
+            else if (attr.color)
+                sgraph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.color);
+            else
+                sgraph[openmodelica.keys.bcolor] = gt.getcolor (gt.views, 'lightgrey');
+        }
+    }
+    for (nid in graph.nodedict) {
+        node = graph.nodes[graph.nodedict[nid]];
+        attr = node.attr;
+        if (openmodelica.fontmap[attr.fontname])
+            node[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+        else
+            node[openmodelica.keys.fname] = attr.fontname;
+        node[openmodelica.keys.fsize] = ston (attr.fontsize);
+        node[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+        if (attr.color)
+            node[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            node[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+        if (attr.style == 'filled') {
+            if (attr.fillcolor)
+                node[openmodelica.keys.bcolor] = gt.getcolor (
+                    gt.views, attr.fillcolor
+                );
+            else if (attr.color)
+                node[openmodelica.keys.bcolor] = gt.getcolor (gt.views, attr.color);
+            else
+                node[openmodelica.keys.bcolor] = gt.getcolor (gt.views, 'lightgrey');
+        }
+    }
+    for (eid in graph.edges) {
+        edge = graph.edges[eid];
+        attr = edge.attr;
+        if (openmodelica.fontmap[attr.fontname])
+            edge[openmodelica.keys.fname] = openmodelica.fontmap[attr.fontname];
+        else
+            edge[openmodelica.keys.fname] = attr.fontname;
+        edge[openmodelica.keys.fsize] = ston (attr.fontsize);
+        edge[openmodelica.keys.fcolor] = gt.getcolor (gt.views, attr.fontcolor);
+        if (attr.color)
+            edge[openmodelica.keys.dcolor] = gt.getcolor (gt.views, attr.color);
+        else
+            edge[openmodelica.keys.dcolor] = gt.getcolor (gt.views, 'black');
+    }
+};
+
+# end openmodelica_draw
+
+# load ('openmodelica_edit.lefty');
+#
+# openmodelica_edit: editing functions and data structures
+#
+openmodelica.protogt.getnodesbyattr = function (gt, key, val) {
+    local nid, node, nlist;
+
+    nlist = [];
+    for (nid in gt.graph.nodes) {
+        node = gt.graph.nodes[nid];
+        if (node.attr[key] == val)
+            nlist[nid] = node;
+    }
+    return nlist;
+};
+openmodelica.protogt.reachablenodes = function (gt, node) {
+    local nlist, stack, eid, edge, i;
+
+    stack[0] = node;
+    i = 1;
+    while (i > 0) {
+        node = stack[i - 1];
+        i = i - 1;
+        nlist[node.nid] = node;
+        for (eid in node.edges) {
+            edge = node.edges[eid];
+            if (~nlist[edge.head.nid]) {
+                nlist[edge.head.nid] = edge.head;
+                stack[i] = edge.head;
+                i = i + 1;
+            }
+        }
+    }
+    return nlist;
+};
+openmodelica.protogt.mergegraph = function (gt, graph, show) {
+    local nameid, onode, pos, size, eid, eid2, tnode, hnode, oedge;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    for (nameid in graph.nodedict) {
+        pos = null;
+        size = null;
+        onode = graph.nodes[graph.nodedict[nameid]];
+        if (onode.pos)
+            pos = node.pos;
+        if (onode.size)
+            size = node.size;
+        if (~(gt.graph.nodedict[nameid] >= 0)) {
+            pos = null;
+            size = null;
+            if (onode.pos)
+                pos = node.pos;
+            if (onode.size)
+                size = node.size;
+            gt.insertnode (gt, pos, size, nameid, onode.attr, show);
+        }
+    }
+    for (eid in graph.edges) {
+        oedge = graph.edges[eid];
+        tnode = gt.graph.nodes[gt.graph.nodedict[oedge.tail.name]];
+        hnode = gt.graph.nodes[gt.graph.nodedict[oedge.head.name]];
+        for (eid2 in tnode.edges)
+            if (
+                tnode.edges[eid2].tail == tnode &
+                tnode.edges[eid2].head == hnode
+            ) {
+                oedge = null;
+                break;
+            }
+        if (oedge)
+            gt.insertedge (gt, tnode, null, hnode, null, oedge.attr, show);
+    }
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+};
+openmodelica.protogt.insertsgraph = function (gt, name, attr, show) {
+    local gid, sgraph, aid;
+
+    if (~gt)
+        return null;
+    gid = gt.graph.maxgid;
+    if (~name) {
+        while (gt.graph.graphdict[(name = concat ('g', gid))] >= 0)
+            gid = gid + 1;
+    } else if (gt.graph.graphdict[name]) {
+        openmodelica.message (0, concat ('graph: ', name, ' exists'));
+        return null;
+    }
+    gt.graph.graphdict[name] = gid;
+    gt.graph.maxgid = gid + 1;
+    gt.graph.graphs[gid] = [
+        openmodelica.keys.gid   = gid;
+        openmodelica.keys.name  = name;
+        openmodelica.keys.gattr = copy (gt.graph.graphattr);
+        openmodelica.keys.nattr = copy (gt.graph.nodeattr);
+        openmodelica.keys.eattr = copy (gt.graph.edgeattr);
+    ];
+    sgraph = gt.graph.graphs[gid];
+    if (~attr)
+        attr = [];
+    if (~attr.label)
+        attr.label = '\N';
+    for (aid in attr)
+        sgraph.graphattr[aid] = attr[aid];
+    gt.unpacksgraphattr (gt, sgraph);
+    if (show)
+        gt.drawsgraph (gt, gt.views, sgraph);
+    return sgraph;
+};
+openmodelica.protogt.removesgraph = function (gt, sgraph) {
+    gt.undrawsgraph (gt, gt.views, sgraph);
+    remove (sgraph.name, gt.graph.graphdict);
+    remove (sgraph.gid, gt.graph.graphs);
+};
+openmodelica.protogt.insertnode = function (gt, pos, size, name, attr, show) {
+    local nid, node, aid;
+
+    nid = gt.graph.maxnid;
+    if (~name) {
+        while (gt.graph.nodedict[(name = concat ('n', nid))] >= 0)
+            nid = nid + 1;
+    } else if (gt.graph.nodedict[name] >= 0) {
+        openmodelica.message (0, concat ('node: ', name, ' exists'));
+        return null;
+    }
+    gt.graph.nodedict[name] = nid;
+    gt.graph.maxnid = nid + 1;
+    gt.graph.nodes[nid] = [
+        openmodelica.keys.nid   = nid;
+        openmodelica.keys.name  = name;
+        openmodelica.keys.attr  = copy (gt.graph.nodeattr);
+        openmodelica.keys.edges = [];
+    ];
+    node = gt.graph.nodes[nid];
+    if (~attr)
+        attr = [];
+    if (~attr.label)
+        attr.label = '\N';
+    for (aid in attr)
+        node.attr[aid] = attr[aid];
+    gt.unpacknodeattr (gt, node);
+    if (~pos)
+        pos = ['x' = 10; 'y' = 10;];
+    node[openmodelica.keys.pos] = copy (pos);
+    if (~size)
+        size = ['x' = strlen (attr.label) * 30; 'y' = 30;];
+    if (size.x == 0)
+        size.x = 30;
+    node[openmodelica.keys.size] = copy (size);
+    node[openmodelica.keys.rect] = [
+        0 = ['x' = pos.x - size.x / 2; 'y' = pos.y - size.y / 2;];
+        1 = ['x' = pos.x + size.x / 2; 'y' = pos.y + size.y / 2;];
+    ];
+    node.draws = gt.simplenodedraw (node, pos, size);
+    if (show)
+        gt.drawnode (gt, gt.views, node);
+    if (~gt.noundo) {
+        gt.startadd2undo (gt);
+        gt.currundo.inserted.nodes[nid] = node;
+        gt.endadd2undo (gt);
+    }
+    return node;
+};
+openmodelica.protogt.removenode = function (gt, node) {
+    local eid, list, edge, gid;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    for (eid in node.edges)
+        list[eid] = node.edges[eid];
+    for (eid in list)
+        gt.removeedge (gt, list[eid]);
+    gt.undrawnode (gt, gt.views, node);
+    for (gid in gt.graph.graphs)
+        remove (node.nid, gt.graph.graphs[gid].nodes);
+    remove (node.name, gt.graph.nodedict);
+    remove (node.nid, gt.graph.nodes);
+    if (~gt.noundo) {
+        gt.currundo.deleted.nodes[node.nid] = node;
+        gt.endadd2undo (gt);
+    }
+};
+openmodelica.protogt.insertedge = function (
+    gt, nodea, porta, nodeb, portb, attr, show
+) {
+    local eid, edge, aid, tport, hport;
+
+    if (~nodea | ~nodeb)
+        return null;
+    if (porta)
+        tport = porta;
+    if (portb)
+        hport = portb;
+    eid = gt.graph.maxeid;
+    while (gt.graph.edges[eid])
+        eid = eid + 1;
+    gt.graph.maxeid = eid + 1;
+    gt.graph.edges[eid] = [
+        openmodelica.keys.eid   = eid;
+        openmodelica.keys.tail  = nodea;
+        openmodelica.keys.tport = porta;
+        openmodelica.keys.head  = nodeb;
+        openmodelica.keys.hport = portb;
+        openmodelica.keys.attr  = copy (gt.graph.edgeattr);
+    ];
+    edge = gt.graph.edges[eid];
+    if (~attr)
+        attr = [];
+    for (aid in attr)
+        edge.attr[aid] = attr[aid];
+    nodea.edges[eid] = edge;
+    nodeb.edges[eid] = edge;
+    gt.unpackedgeattr (gt, edge);
+    edge.draws = gt.simpleedgedraw (edge, nodea.pos, nodeb.pos);
+    if (show)
+        gt.drawedge (gt, gt.views, edge);
+    if (~gt.noundo) {
+        gt.startadd2undo (gt);
+        gt.currundo.inserted.edges[eid] = edge;
+        gt.endadd2undo (gt);
+    }
+    return edge;
+};
+openmodelica.protogt.removeedge = function (gt, edge) {
+    local head, tail;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    if (edge.head.attr.support == 1)
+        head = edge.head;
+    if (edge.tail.attr.support == 1)
+        if (head ~= edge.tail)
+            tail = edge.tail;
+    # adrpo: 2010-09-29
+    echo('Node1\n');
+    dump(edge.head);
+    echo('Node2\n');
+    dump(edge.tail);
+    echo('\n');
+    gt.undrawedge (gt, gt.views, edge);
+    remove (edge.eid, edge.head.edges);
+    remove (edge.eid, edge.tail.edges);
+    remove (edge.eid, gt.graph.edges);
+    if (head & tablesize (head.edges) == 0)
+        gt.removenode (gt, head);
+    if (tail & tablesize (tail.edges) == 0)
+        gt.removenode (gt, tail);
+    if (~gt.noundo) {
+        gt.currundo.deleted.edges[edge.eid] = edge;
+        gt.endadd2undo (gt);
+    }
+};
+openmodelica.protogt.swapedgeids = function (gt, edge1, edge2) {
+    local eid1, eid2;
+
+    if (edge1.eid == edge2.eid)
+        return;
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    eid1 = edge1.eid;
+    eid2 = edge2.eid;
+    gt.graph.edges[eid1] = edge2;
+    gt.graph.edges[eid2] = edge1;
+    remove (eid1, edge1.tail.edges);
+    remove (eid1, edge1.head.edges);
+    remove (eid2, edge2.tail.edges);
+    remove (eid2, edge2.head.edges);
+    edge1.tail.edges[eid2] = edge1;
+    edge1.head.edges[eid2] = edge1;
+    edge2.tail.edges[eid1] = edge2;
+    edge2.head.edges[eid1] = edge2;
+    edge1.eid = eid2;
+    edge2.eid = eid1;
+    if (~gt.noundo) {
+        gt.currundo.swapped.edges[eid1] = edge1;
+        gt.currundo.swapped.edges[eid2] = edge2;
+        gt.endadd2undo (gt);
+    }
+};
+openmodelica.protogt.removesubtree = function (gt, obj) {
+    local nlist, node, head, nid, edge, eid;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    if (obj.nid >= 0)
+        node = obj;
+    else if (obj.eid >= 0) {
+        node = obj.head;
+        gt.removeedge (gt, obj);
+        if (~gt.graph.nodes[node.nid]) {
+            if (~gt.noundo)
+                gt.endadd2undo (gt);
+            return;
+        }
+        for (eid in node.edges) {
+            edge = node.edges[eid];
+            if (edge.head == node & edge.tail ~= node) {
+                if (~gt.noundo)
+                    gt.endadd2undo (gt);
+                return;
+            }
+        }
+    } else {
+        openmodelica.message (0, 'bad object type in gt.removesubtree');
+        return;
+    }
+    nlist = [node.nid = node;];
+    while (node) {
+        for (eid in node.edges) {
+            head = node.edges[eid].head;
+            if (head ~= node)
+                nlist[head.nid] = head;
+        }
+        gt.removenode (gt, node);
+        remove (node.nid, nlist);
+        node = null;
+        for (nid in nlist) {
+            node = nlist[nid];
+            for (eid in node.edges) {
+                edge = node.edges[eid];
+                if (edge.head == node & edge.tail ~= node) {
+                    node = null;
+                    break;
+                }
+            }
+            if (node)
+                break;
+        }
+    }
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+};
+openmodelica.protogt.removenodesbyattr = function (gt, key, val) {
+    local nlist, nid;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    nlist = gt.getnodesbyattr (gt, key, val);
+    for (nid in nlist)
+        gt.removenode (gt, nlist[nid]);
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+};
+openmodelica.protogt.removesubtreesbyattr = function (gt, key, val) {
+    local nlist, nid;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    nlist = gt.getnodesbyattr (gt, key, val);
+    for (nid in nlist)
+        if (gt.graph.nodes[nid])
+            gt.removesubtree (gt, nlist[nid]);
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+};
+openmodelica.protogt.groupnodes = function (
+    gt, nlist, gnode, pos, size, attr, keepmulti, show
+) {
+    local nid, node, elist, eid, edge, nodea, nodeb, inlist, outlist;
+
+    if (~nlist | tablesize (nlist) == 0)
+        return;
+    if (gnode.attr.support) {
+        openmodelica.message (0, 'cannot group nodes in a support node');
+        return;
+    }
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    if (~gnode)
+        gnode = gt.insertnode (gt, pos, size, null, attr, show);
+    inlist = [];
+    outlist = [];
+    for (nid in nlist) {
+        if ((node = nlist[nid]) == gnode)
+            continue;
+        elist = [];
+        for (eid in node.edges)
+            elist[eid] = node.edges[eid];
+        for (eid in elist) {
+            edge = elist[eid];
+            if (edge.head == node) {
+                nodea = edge.tail;
+                nodeb = gnode;
+                if (~keepmulti) {
+                    if (inlist[nodea.nid])
+                        continue;
+                    inlist[nodea.nid] = nodea;
+                    if (nodea == gnode)
+                        outlist[nodea.nid] = nodea;
+                }
+            } else {
+                nodea = gnode;
+                nodeb = edge.head;
+                if (~keepmulti) {
+                    if (outlist[nodeb.nid])
+                        continue;
+                    outlist[nodeb.nid] = nodeb;
+                    if (nodeb == gnode)
+                        inlist[nodeb.nid] = nodeb;
+                }
+            }
+            gt.insertedge (gt, nodea, null, nodeb, null, edge.attr, show);
+        }
+        gt.removenode (gt, node);
+    }
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+    return gnode;
+};
+openmodelica.protogt.groupnodesbyattr = function (
+    gt, key, val, attr, keepmulti, show
+) {
+    local nlist, nid, pos, size;
+
+    pos = null;
+    size = null;
+    nlist = gt.getnodesbyattr (gt, key, val);
+    if (show)
+        for (nid in nlist) {
+            pos = nlist[nid].pos;
+            size = nlist[nid].size;
+            break;
+        }
+    return gt.groupnodes (gt, nlist, null, pos, size, attr, keepmulti, show);
+};
+openmodelica.protogt.cut = function (gt, obj, set, mode, op) {
+    local clipgt, list, node, nid, edge, eid, clipnode;
+
+    clipgt = openmodelica.clipgt;
+    clipgt.graph = copy (openmodelica.protogt.graph);
+    if (obj.eid >= 0) { # it's an edge
+        list.edges[obj.eid] = obj;
+        node = obj.head;
+    } else if (obj.nid >= 0) {
+        list.nodes[obj.nid] = obj;
+        node = obj;
+        for (eid in node.edges)
+            list.edges[eid] = node.edges[eid];
+    } else {
+        openmodelica.message (0, 'unknown object type in gt.cut');
+        return;
+    }
+    if (set == 'reachable') {
+        list.nodes = gt.reachablenodes (gt, node);
+        for (nid in list.nodes) {
+            node = list.nodes[nid];
+            for (eid in node.edges) {
+                edge = node.edges[eid];
+                list.edges[edge.eid] = edge;
+            }
+        }
+    }
+    if (mode == 'support') {
+        for (eid in list.edges) {
+            edge = list.edges[eid];
+            if (~list.nodes[edge.tail.nid]) {
+                list.support[edge.tail.nid] = edge.tail;
+                list.nodes[edge.tail.nid] = edge.tail;
+            }
+            if (~list.nodes[edge.head.nid]) {
+                list.support[edge.head.nid] = edge.head;
+                list.nodes[edge.head.nid] = edge.head;
+            }
+        }
+    }
+    for (nid = 0; nid < gt.graph.maxnid; nid = nid + 1) {
+        if (~list.nodes[nid])
+            continue;
+        node = list.nodes[nid];
+        clipnode = gt.insertnode (clipgt, null, null, node.name, node.attr, 0);
+        if (list.support[nid])
+            clipnode.support = 1;
+        list.clipnodes[nid] = clipnode;
+    }
+    for (eid = 0; eid < gt.graph.maxeid; eid = eid + 1) {
+        if (~list.edges[eid])
+            continue;
+        edge = list.edges[eid];
+        if (~list.nodes[edge.tail.nid] | ~list.nodes[edge.head.nid])
+            continue;
+        gt.insertedge (
+            clipgt, list.clipnodes[edge.tail.nid], null,
+            list.clipnodes[edge.head.nid], null, edge.attr, 0
+        );
+    }
+    if (op ~= 'cut')
+        return;
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    for (eid in list.edges)
+        gt.removeedge (gt, list.edges[eid]);
+    for (nid in list.nodes)
+        if (~list.support[nid] & gt.graph.nodes[nid])
+            gt.removenode (gt, list.nodes[nid]);
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+};
+openmodelica.protogt.paste = function (gt, pos, show) {
+    local clipgt, offset, center, nid, node, eid, edge, nodes;
+
+    if (~gt.noundo)
+        gt.startadd2undo (gt);
+    clipgt = openmodelica.clipgt;
+    if (clipgt.graph.rect)
+        center = [
+            'x' = (clipgt.graph.rect[1].x + clipgt.graph.rect[0].x) / 2;
+            'y' = (clipgt.graph.rect[1].y + clipgt.graph.rect[0].y) / 2;
+        ];
+    else
+        center = pos;
+    offset = [
+        'x' = center.x - pos.x;
+        'y' = center.y - pos.y;
+    ];
+    for (nid = 0; clipgt.graph.nodes[nid]; nid = nid + 1) {
+        node = clipgt.graph.nodes[nid];
+        if (node.attr.label == '\N' | ~node.attr.label)
+            node.attr.label = node.name;
+        if (node.support == 1)
+            nodes[nid] = gt.insertnode (gt, [
+                'x' = node.pos.x - offset.x;
+                'y' = node.pos.y - offset.y;
+            ], null, null, [
+                'support' = 1; 'shape' = 'circle';
+                'label' = ''; 'width' = 0.2;
+            ], show);
+        else
+            nodes[nid] = gt.insertnode (gt, [
+                'x' = node.pos.x - offset.x;
+                'y' = node.pos.y - offset.y;
+            ], node.size, null, node.attr, show);
+    }
+    for (eid = 0; clipgt.graph.edges[eid]; eid = eid + 1) {
+        edge = clipgt.graph.edges[eid];
+        gt.insertedge (
+            gt, nodes[edge.tail.nid], null,
+            nodes[edge.head.nid], null, edge.attr, show
+        );
+    }
+    if (~gt.noundo)
+        gt.endadd2undo (gt);
+};
+openmodelica.protogt.startadd2undo = function (gt) {
+    if (~gt.undoarray.level)
+        gt.currundo = (
+            gt.undoarray.entries[tablesize (gt.undoarray.entries)] = []
+        );
+    gt.undoarray.level = gt.undoarray.level + 1;
+};
+openmodelica.protogt.endadd2undo = function (gt) {
+    gt.undoarray.level = gt.undoarray.level - 1;
+};
+openmodelica.protogt.undo = function (gt, show) {
+    local entry, n, eid, edge, nid, node, edges;
+
+    if ((n = tablesize (gt.undoarray.entries)) < 1)
+        return;
+    entry = gt.undoarray.entries[n - 1];
+    remove (n - 1, gt.undoarray.entries);
+    remove ('currundo', gt);
+    gt.noundo = 1;
+    # hardwire nodes and edges back with the same id's as the originals
+    for (nid in entry.deleted.nodes) {
+        node = entry.deleted.nodes[nid];
+        gt.graph.nodedict[node.name] = node.nid;
+        gt.graph.nodes[node.nid] = node;
+        node.edges = [];
+        if (show)
+            gt.drawnode (gt, gt.views, node);
+    }
+    for (eid in entry.deleted.edges) {
+        edge = entry.deleted.edges[eid];
+        gt.graph.edges[edge.eid] = edge;
+        edge.head.edges[edge.eid] = edge;
+        edge.tail.edges[edge.eid] = edge;
+        if (show)
+            gt.drawedge (gt, gt.views, edge);
+    }
+    if (entry.swapped.edges) {
+        if (tablesize (entry.swapped.edges) == 2) {
+            n = 0;
+            for (eid in entry.swapped.edges) {
+                edges[n] = entry.swapped.edges[eid];
+                n = n + 1;
+            }
+            gt.swapedgeids (gt, edges[0], edges[1]);
+        } else
+            openmodelica.message (0, 'cannot handle undoing swap of > 2 edges');
+    }
+    for (eid in entry.inserted.edges) {
+        edge = entry.inserted.edges[eid];
+        gt.removeedge (gt, edge);
+    }
+    for (nid in entry.inserted.nodes) {
+        node = entry.inserted.nodes[nid];
+        gt.removenode (gt, node);
+    }
+    gt.noundo = 0;
+};
+# end openmodelica_edit
+
+# load ('openmodelica_layout.lefty');
+#
+# openmodelica_layout: layout functions and data structures
+#
+openmodelica.grablserver = function (lserver) {
+    local fd;
+
+    if (~openmodelica.lservers[lserver] | tablesize (openmodelica.lservers[lserver]) == 0) {
+        if (~((fd = openio ('pipe', lserver, 'r+', '%e -Txdot')) >= 0)) {
+            openmodelica.message (0, concat ('cannot start ', lserver));
+            return null;
+        }
+        openmodelica.lservers[lserver][fd] = [
+            'fd' = fd;
+            'count' = 0;
+        ];
+    }
+    for (fd in openmodelica.lservers[lserver]) {
+        openmodelica.lservers[lserver][fd].count = openmodelica.lservers[
+            lserver
+        ][fd].count + 1;
+        openmodelica.lservers.inuse[fd] = openmodelica.lservers[lserver][fd];
+        remove (fd, openmodelica.lservers[lserver]);
+        return fd;
+    }
+};
+openmodelica.releaselserver = function (lserver, fd, state) {
+    if (state == 'bad' | openmodelica.lservers.inuse[fd].count > 40) {
+        closeio (fd, 'kill');
+        remove (fd, openmodelica.lservers.inuse);
+        return;
+    }
+    openmodelica.lservers[lserver][fd] = openmodelica.lservers.inuse[fd];
+    remove (fd, openmodelica.lservers.inuse);
+};
+openmodelica.protogt.startlayout = function (gt) {
+    local lpt, fd;
+
+    if (gt.layoutpending >= 1) {
+        lpt = openmodelica.layoutpending[gt.gtid];
+        if (gt.layoutmode == 'async')
+            monitor ('off', lpt.fd);
+        openmodelica.releaselserver (gt.lserver, lpt.fd, 'bad');
+        remove (gt.gtid, openmodelica.layoutpending);
+        gt.layoutpending = 0;
+        gt.haveinput = 0;
+        openmodelica.popbusy (gt, gt.views);
+    }
+    if (~((fd = openmodelica.grablserver (gt.lserver)) >= 0))
+        return null;
+    openmodelica.pushbusy (gt, gt.views);
+    writegraph (fd, gt.graph, 1);
+    gt.layoutpending = 1;
+    openmodelica.layoutpending[gt.gtid] = [
+        'fd' = fd;
+        'gtid' = gt.gtid;
+    ];
+    if (gt.layoutmode == 'async')
+        monitor ('on', fd);
+    return 1;
+};
+openmodelica.protogt.finishlayout = function (gt) {
+    local graph, lpt, fd;
+
+    if (~(gt.layoutpending >= 1)) {
+        openmodelica.message (0, concat ('no layout pending for graph ', gt.gtid));
+        return null;
+    }
+    lpt = openmodelica.layoutpending[gt.gtid];
+    if (~(graph = readgraph (lpt.fd))) {
+        if (gt.layoutmode == 'async')
+            monitor ('off', lpt.fd);
+        openmodelica.releaselserver (gt.lserver, lpt.fd, 'bad');
+        if (gt.layoutpending == 2) {
+            openmodelica.message (0, concat ('giving up on ', gt.lserver));
+            if ((fd = openio ('file', 'openmodelicabug.dot', 'w+')) >= 0) {
+                writegraph (fd, gt.graph, 0);
+                closeio (fd);
+                openmodelica.message (
+                    0, concat ('graph that causes ', gt.lserver)
+                );
+                openmodelica.message (
+                    0, 'to fail has been saved in file openmodelicabug.dot'
+                );
+                openmodelica.message (
+                    0, 'please fill out a bug report at'
+                );
+                openmodelica.message (
+                    0, 'http://www.graphviz.org/bugs/bugform.html'
+                );
+            }
+            openmodelica.popbusy (gt, gt.views);
+            gt.layoutpending = 0;
+            gt.haveinput = 0;
+            return 1;
+        }
+        openmodelica.message (
+            1, concat ('lost connection to ', gt.lserver, ', restarting...')
+        );
+        lpt.fd = openmodelica.grablserver (gt.lserver);
+        writegraph (lpt.fd, gt.graph, 1);
+        if (gt.layoutmode == 'async')
+            monitor ('on', lpt.fd);
+        gt.layoutpending = 2;
+        gt.haveinput = 0;
+        return null;
+    }
+    if (gt.layoutmode == 'async')
+        monitor ('off', lpt.fd);
+    openmodelica.releaselserver (gt.lserver, lpt.fd, null);
+    remove (gt.gtid, openmodelica.layoutpending);
+    gt.layoutpending = 0;
+    gt.haveinput = 0;
+    gt.unpacklayout (gt, graph);
+    openmodelica.popbusy (gt, gt.views);
+    return 1;
+};
+openmodelica.protogt.cancellayout = function (gt) {
+    local lpt, vid;
+
+    if (gt.layoutpending >= 1) {
+        lpt = openmodelica.layoutpending[gt.gtid];
+        if (gt.layoutmode == 'async')
+            monitor ('off', lpt.fd);
+        openmodelica.releaselserver (gt.lserver, lpt.fd, 'bad');
+        remove (gt.gtid, openmodelica.layoutpending);
+        gt.layoutpending = 0;
+        gt.haveinput = 0;
+        openmodelica.popbusy (gt, gt.views);
+    }
+};
+openmodelica.protogt.unpacklayout = function (gt, graph2) {
+    local graph, gid, sgraph1, sgraph2, nid, node1, node2, eid, edge1, edge2;
+    local t1, pos, size;
+
+    graph = gt.graph;
+    for (gid in graph2.graphdict) {
+        if (~(sgraph1 = graph.graphs[graph.graphdict[gid]]))
+            continue;
+        sgraph2 = graph2.graphs[graph2.graphdict[gid]];
+        sgraph1.draws = gt.unpackalldraw (gt, sgraph2.graphattr);
+    }
+    for (nid in graph2.nodedict) {
+        if (~(node1 = graph.nodes[graph.nodedict[nid]]))
+            continue;
+        node2 = graph2.nodes[graph2.nodedict[nid]];
+        node1.draws = gt.unpackalldraw (gt, node2.attr);
+        t1 = split (node2.attr.pos, ',');
+        pos = ['x' = ston (t1[0]); 'y' = ston (t1[1]);];
+        size = [
+            'x' = ston (node2.attr.width) * 72;
+            'y' = ston (node2.attr.height) * 72;
+        ];
+        node1.pos = pos;
+        node1.size = size;
+        node1.rect = [
+            0 = ['x' = pos.x - size.x / 2; 'y' = pos.y - size.y / 2;];
+            1 = ['x' = pos.x + size.x / 2; 'y' = pos.y + size.y / 2;];
+        ];
+    }
+    for (eid in graph2.edges) {
+        edge2 = graph2.edges[eid];
+        if (edge2.attr.id) {
+            if (~(edge1 = graph.edges[ston (edge2.attr.id)]))
+                continue;
+        } else if (graph == graph2)
+            edge1 = edge2;
+        edge1.draws = gt.unpackalldraw (gt, edge2.attr);
+    }
+    graph.draws = gt.unpackalldraw (gt, graph2.graphattr);
+    t1 = split (graph2.graphattr.bb, ',');
+    graph.rect[0].x = ston (t1[0]);
+    graph.rect[0].y = ston (t1[1]);
+    graph.rect[1].x = ston (t1[2]);
+    graph.rect[1].y = ston (t1[3]);
+    if (gt.graph ~= graph2)
+        return;
+    # strip position and size info from the attributes
+    for (gid in graph2.graphdict) {
+        sgraph2 = graph2.graphs[graph2.graphdict[gid]];
+        gt.removealldraw (gt, sgraph2.graphattr);
+        if (sgraph2.graphattr.bb)
+            remove ('bb', sgraph2.graphattr);
+    }
+    for (nid in graph2.nodedict) {
+        node2 = graph2.nodes[graph2.nodedict[nid]];
+        gt.removealldraw (gt, node2.attr);
+        if (node2.attr.rects)
+            remove ('rects', node2.attr);
+        remove ('pos', node2.attr);
+        remove ('width', node2.attr);
+        remove ('height', node2.attr);
+    }
+    for (eid in graph2.edges) {
+        edge2 = graph2.edges[eid];
+        gt.removealldraw (gt, edge2.attr);
+        if (edge2.attr.pos)
+            remove ('pos', edge2.attr);
+        if (edge2.attr.lp)
+            remove ('lp', edge2.attr);
+    }
+    gt.removealldraw (gt, graph2.graphattr);
+    remove ('bb', graph2.graphattr);
+    if (graph2.graphattr.lp)
+        remove ('lp', graph2.graphattr);
+};
+#
+# draw directive parsing
+#
+openmodelica.protogt.unpackalldraw = function (gt, attr) {
+    local o, did;
+
+    o = [];
+    if (attr._draw_)
+        o._draw_ = gt.unpackdraw (gt, attr._draw_);
+    if (attr._ldraw_)
+        o._ldraw_ = gt.unpackdraw (gt, attr._ldraw_);
+    if (attr._hdraw_)
+        o._hdraw_ = gt.unpackdraw (gt, attr._hdraw_);
+    if (attr._tdraw_)
+        o._tdraw_ = gt.unpackdraw (gt, attr._tdraw_);
+    if (attr._hldraw_)
+        o._hldraw_ = gt.unpackdraw (gt, attr._hldraw_);
+    if (attr._tldraw_)
+        o._tldraw_ = gt.unpackdraw (gt, attr._tldraw_);
+    for (did in o)
+        if (o[did].ep) {
+            o.ep = o[did].ep;
+            break;
+        }
+    return o;
+};
+openmodelica.protogt.removealldraw = function (gt, attr) {
+    if (attr._draw_)
+        remove ('_draw_', attr);
+    if (attr._ldraw_)
+        remove ('_ldraw_', attr);
+    if (attr._hdraw_)
+        remove ('_hdraw_', attr);
+    if (attr._tdraw_)
+        remove ('_tdraw_', attr);
+    if (attr._hldraw_)
+        remove ('_hldraw_', attr);
+    if (attr._tldraw_)
+        remove ('_tldraw_', attr);
+};
+openmodelica.protogt.unpackdraw = function (gt, attr) {
+    local oo, o, tt, t, n, i, j, s, l, ep;
+
+    oo = [];
+    t = split (attr, ' ', 0);
+    n = tablesize (t);
+    if (t[n - 1] == '') {
+        remove (n - 1, t);
+        n = n - 1;
+    }
+    i = 0;
+    while (i < n) {
+        o = [];
+        if (t[i] == 'E') {
+            o.type = t[i];
+            o.c.x = ston (t[i + 1]);
+            o.c.y = ston (t[i + 2]);
+            o.s.x = ston (t[i + 3]);
+            o.s.y = ston (t[i + 4]);
+            i = i + 5;
+        } else if (t[i] == 'e') {
+            o.type = t[i];
+            o.c.x = ston (t[i + 1]);
+            o.c.y = ston (t[i + 2]);
+            o.s.x = ston (t[i + 3]);
+            o.s.y = ston (t[i + 4]);
+            i = i + 5;
+        } else if (t[i] == 'P') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            for (j = 0; j < o.n; j = j + 1) {
+                o.ps[j].x = ston (t[i + 2 + j * 2]);
+                o.ps[j].y = ston (t[i + 2 + j * 2 + 1]);
+            }
+            i = i + 2 + o.n * 2;
+            o.ps[o.n] = o.ps[0];
+            o.n = o.n + 1;
+        } else if (t[i] == 'p') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            for (j = 0; j < o.n; j = j + 1) {
+                o.ps[j].x = ston (t[i + 2 + j * 2]);
+                o.ps[j].y = ston (t[i + 2 + j * 2 + 1]);
+            }
+            i = i + 2 + o.n * 2;
+            o.ps[o.n] = o.ps[0];
+            o.n = o.n + 1;
+        } else if (t[i] == 'L') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            for (j = 0; j < o.n; j = j + 1) {
+                o.ps[j].x = ston (t[i + 2 + j * 2]);
+                o.ps[j].y = ston (t[i + 2 + j * 2 + 1]);
+            }
+            i = i + 2 + o.n * 2;
+            if (~ep)
+                ep = copy (o.ps[1]);
+        } else if (t[i] == 'B') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            for (j = 0; j < o.n; j = j + 1) {
+                o.ps[j].x = ston (t[i + 2 + j * 2]);
+                o.ps[j].y = ston (t[i + 2 + j * 2 + 1]);
+            }
+            i = i + 2 + o.n * 2;
+            if (~ep)
+                ep = copy (o.ps[1]);
+        } else if (t[i] == 'b') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            for (j = 0; j < o.n; j = j + 1) {
+                o.ps[j].x = ston (t[i + 2 + j * 2]);
+                o.ps[j].y = ston (t[i + 2 + j * 2 + 1]);
+            }
+            i = i + 2 + o.n * 2;
+            if (~ep)
+                ep = copy (o.ps[1]);
+        } else if (t[i] == 'T') {
+            o.type = t[i];
+            o.p.x = ston (t[i + 1]);
+            o.p.y = ston (t[i + 2]);
+            o.j = ston (t[i + 3]);
+            if (o.j == -1)
+                o.j = 'lb';
+            else if (o.j == 1)
+                o.j = 'rb';
+            else if (o.j == 0)
+                o.j = 'cb';
+            o.w = ston (t[i + 4]);
+            o.n = ston (t[i + 5]);
+            i = i + 6;
+            s = t[i];
+            i = i + 1;
+            l = strlen (s) - 1;
+            while (l < o.n) {
+                s = concat (s, ' ', t[i]);
+                l = l + 1 + strlen (t[i]);
+                i = i + 1;
+            }
+            tt = split (s, '');
+            l = tablesize (tt);
+            s = '';
+            for (j = 1; j < l; j = j + 1)
+                s = concat (s, tt[j]);
+            o.s = s;
+        } else if (t[i] == 'C') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            i = i + 2;
+            s = t[i];
+            i = i + 1;
+            l = strlen (s) - 1;
+            while (l < o.n) {
+                s = concat (s, ' ', t[i]);
+                l = l + 1 + strlen (t[i]);
+                i = i + 1;
+            }
+            tt = split (s, '');
+            l = tablesize (tt);
+            s = '';
+            for (j = 1; j < l; j = j + 1)
+                s = concat (s, tt[j]);
+            o.fillcolor = gt.getcolor (gt.views, s);
+        } else if (t[i] == 'c') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            i = i + 2;
+            s = t[i];
+            i = i + 1;
+            l = strlen (s) - 1;
+            while (l < o.n) {
+                s = concat (s, ' ', t[i]);
+                l = l + 1 + strlen (t[i]);
+                i = i + 1;
+            }
+            tt = split (s, '');
+            l = tablesize (tt);
+            s = '';
+            for (j = 1; j < l; j = j + 1)
+                s = concat (s, tt[j]);
+            o.drawcolor = gt.getcolor (gt.views, s);
+        } else if (t[i] == 'F') {
+            o.type = t[i];
+            o.fs = ston (t[i + 1]);
+            o.n = ston (t[i + 2]);
+            i = i + 3;
+            s = t[i];
+            i = i + 1;
+            l = strlen (s) - 1;
+            while (l < o.n) {
+                s = concat (s, ' ', t[i]);
+                l = l + 1 + strlen (t[i]);
+                i = i + 1;
+            }
+            tt = split (s, '');
+            l = tablesize (tt);
+            s = '';
+            for (j = 1; j < l; j = j + 1)
+                s = concat (s, tt[j]);
+            o.ofn = s;
+            o.fn = openmodelica.fontmap[s];
+        } else if (t[i] == 'S') {
+            o.type = t[i];
+            o.n = ston (t[i + 1]);
+            i = i + 2;
+            s = t[i];
+            i = i + 1;
+            l = strlen (s) - 1;
+            while (l < o.n) {
+                s = concat (s, ' ', t[i]);
+                l = l + 1 + strlen (t[i]);
+                i = i + 1;
+            }
+            tt = split (s, '');
+            l = tablesize (tt);
+            s = '';
+            for (j = 1; j < l; j = j + 1)
+                s = concat (s, tt[j]);
+            if (
+                s == 'solid' | s == 'dashed' | s == 'dotted' |
+                s == 'longdashed' | s == 'shortdashed'
+            )
+                o.style = s;
+            else if (s == 'bold')
+                o.width = 3;
+            else {
+                tt = split (s, '(');
+                if (tt[0] == 'setlinewidth') {
+                    tt = split (tt[1], ')');
+                    o.width = ston (tt[0]);
+                } else
+                    continue;
+            }
+        } else if (t[i] == 'I') {
+            i = i + 7;
+        } else {
+            openmodelica.message (0, concat ('draw language parser error: ', t[i]));
+            return null;
+        }
+        oo[tablesize (oo)] = o;
+    }
+    oo.ep = ep;
+    return oo;
+};
+# end openmodelica_layout
+
+# load ('openmodelica_ui.lefty');
+#
+# openmodelica_ui: user interface functions and data structures
+#
+openmodelica.protogt.doaction = function (data, s) {
+    local vt, gt;
+
+    vt = openmodelica.views[data.widget];
+    gt = openmodelica.graphs[vt.gtid];
+    data.menuitem = s;
+    if (data.obj.nid >= 0) {
+        if (gt.actions.node[s]) {
+            gt.actions.node[s] (gt, vt, data.obj, data);
+            return;
+        }
+    } else if (data.obj.eid >= 0) {
+        if (gt.actions.edge[s]) {
+            gt.actions.edge[s] (gt, vt, data.obj, data);
+            return;
+        }
+    }
+    if (gt.actions.general[s])
+        gt.actions.general[s] (gt, vt, data);
+};
+openmodelica.protogt.actions.general = [
+    "undo" = function (gt, vt, data) {
+        gt.undo (gt, 1);
+    };
+    "paste" = function (gt, vt, data) {
+        gt.paste (gt, data.pos, 1);
+    };
+    "do layout" = function (gt, vt, data) {
+        gt.layoutgraph (gt);
+    };
+    "cancel layout" = function (gt, vt, data) {
+        gt.cancellayout (gt);
+    };
+    "redraw" = function (gt, vt, data) {
+        gt.redrawgraph (gt, [vt.vtid = vt;]);
+    };
+    "new graph" = function (gt, vt, data) {
+        gt.erasegraph (gt, null, null);
+    };
+    "load graph" = function (gt, vt, data) {
+        gt.loadgraph (gt, null, 'file', openmodelica.protogt.graph, 1);
+    };
+    "reload graph" = function (gt, vt, data) {
+        gt.loadgraph (gt, gt.name, gt.type, gt.graph, 1);
+    };
+    "save graph" = function (gt, vt, data) {
+        gt.savegraph (gt, gt.name, gt.type);
+    };
+    "save graph as" = function (gt, vt, data) {
+        gt.savegraph (gt, null, 'file');
+    };
+    "open view" = function (gt, vt, data) {
+        gt = openmodelica.protogt.creategraph (null);
+        gt.createview (gt, null);
+    };
+    "copy view" = function (gt, vt, data) {
+        gt = gt.copygraph (gt);
+        gt.createview (gt, vt);
+    };
+    "birdseye view" = function (gt, vt, data) {
+        gt.createview (gt, openmodelica.protovt.birdseye);
+    };
+    "clone view" = function (gt, vt, data) {
+        gt.createview (gt, vt);
+    };
+    "close view" = function (gt, vt, data) {
+        gt.destroyview (gt, vt);
+        if (tablesize (gt.views) == 0)
+            gt.destroygraph (gt);
+    };
+    "set graph attr" = function (gt, vt, data) {
+        gt.setattr (gt, ['attr' = gt.graph.graphattr;]);
+    };
+    "set node attr" = function (gt, vt, data) {
+        gt.setattr (gt, ['attr' = gt.graph.nodeattr;]);
+    };
+    "set edge attr" = function (gt, vt, data) {
+        gt.setattr (gt, ['attr' = gt.graph.edgeattr;]);
+    };
+    "zoom in" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 0.5, data.pos);
+    };
+    "zoom out" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 2, data.pos);
+    };
+    "zoom in slowly" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 0.9, data.pos);
+    };
+    "zoom out slowly" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 1.1, data.pos);
+    };
+    "scroll horizontally" = function (gt, vt, data) {
+        vt.scrollmode = 'h';
+    };
+    "scroll vertically" = function (gt, vt, data) {
+        vt.scrollmode = 'v';
+    };
+    "find node" = function (gt, vt, data) {
+        gt.findnode (gt, vt);
+    };
+    "print graph" = function (gt, vt, data) {
+        gt.printorsave (gt, vt, null, null, null, null);
+    };
+    "text view" = function (gt, vt, data) {
+        if (openmodelica.txtview == 'on')
+            openmodelica.txtview = 'off';
+        else
+            openmodelica.txtview = 'on';
+        txtview (openmodelica.txtview);
+    };
+    "quit" = function (gt, vt, data) {
+        exit ();
+    };
+];
+openmodelica.protogt.actions.node = [
+    "cut" = function (gt, vt, obj, data) {
+        gt.cut (gt, obj, 'one', 'support', 'cut');
+        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
+    };
+    "Cut" = function (gt, vt, obj, data) {
+        gt.cut (gt, obj, 'reachable', 'support', 'cut');
+        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
+    };
+    "copy" = function (gt, vt, obj, data) {
+        gt.cut (gt, obj, 'one', 'support', 'copy');
+        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
+    };
+    "Copy" = function (gt, vt, obj, data) {
+        gt.cut (gt, obj, 'reachable', 'support', 'copy');
+        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
+    };
+    "group" = function (gt, vt, obj, data) {
+        local kv;
+
+        if ((kv = gt.getattr (gt, obj)))
+            gt.groupnodesbyattr (gt, kv.key, kv.val, [
+                'label' = kv.val; kv.key = kv.val;
+            ], 1, 1);
+    };
+    "Group" = function (gt, vt, obj, data) {
+        local kv;
+
+        if ((kv = gt.getattr (gt, obj)))
+            gt.groupnodesbyattr (gt, kv.key, kv.val, [
+                'label' = kv.val; kv.key = kv.val;
+            ], 0, 1);
+    };
+    "delete" = function (gt, vt, obj, data) {
+        if (obj.eid >= 0)
+            gt.removeedge (gt, obj);
+        else
+            gt.removenode (gt, obj);
+    };
+    "Delete" = function (gt, vt, obj, data) {
+        gt.removesubtree (gt, obj);
+    };
+    "remove" = function (gt, vt, obj, data) {
+        if (obj.nid >= 0)
+            if ((kv = gt.getattr (gt, obj)))
+                gt.removenodesbyattr (gt, kv.key, kv.val);
+    };
+    "Remove" = function (gt, vt, obj, data) {
+        if (obj.nid >= 0)
+            if ((kv = gt.getattr (gt, obj)))
+                gt.removesubtreesbyattr (gt, kv.key, kv.val);
+    };
+    "set attr" = function (gt, vt, obj, data) {
+        gt.setattr (gt, obj);
+    };
+    "print attr" = function (gt, vt, obj, data) {
+        if (obj.nid >= 0)
+            echo ('node: ', obj.name);
+        dump (obj.attr);
+    };
+];
+openmodelica.protogt.actions.edge = openmodelica.protogt.actions.node;
+openmodelica.protovt.normal.menus = [
+    'general' = [
+        0 = "undo";
+        1 = "paste";
+        2 = "do layout";
+        3 = "cancel layout";
+        4 = "redraw";
+        5 = "new graph";
+        6 = "load graph";
+        7 = "reload graph";
+        8 = "save graph";
+        9 = "save graph as";
+        10 = "open view";
+        11 = "copy view";
+        12 = "clone view";
+        13 = "birdseye view";
+        14 = "close view";
+        15 = "set graph attr";
+        16 = "set node attr";
+        17 = "set edge attr";
+        18 = "zoom in";
+        19 = "zoom out";
+        20 = "find node";
+        21 = "print graph";
+        22 = "text view";
+        23 = "quit";
+    ];
+    'node' = [
+        0 = "cut";
+        1 = "Cut";
+        2 = "copy";
+        3 = "Copy";
+        4 = "group";
+        5 = "Group";
+        6 = "delete";
+        7 = "Delete";
+        8 = "remove";
+        9 = "Remove";
+        10 = "set attr";
+        11 = "print attr";
+    ];
+    'edge' = [
+        0 = "cut";
+        1 = "Cut";
+        2 = "copy";
+        3 = "Copy";
+        4 = "delete";
+        5 = "Delete";
+        6 = "set attr";
+        7 = "print attr";
+    ];
+];
+openmodelica.protovt.normal.keys = [
+    'general' = [
+        'u' = "undo";
+        'p' = "paste";
+        'l' = "do layout";
+        'k' = "cancel layout";
+        ' ' = "redraw";
+        'L' = "reload graph";
+        's' = "save graph";
+        'Z' = "zoom in slowly";
+        'z' = "zoom out slowly";
+        'h' = "scroll horizontally";
+        'v' = "scroll vertically";
+    ];
+    'node' = [
+        'c' = "copy";
+        'C' = "Copy";
+        'g' = "group";
+        'G' = "Group";
+        'd' = "delete";
+        'D' = "Delete";
+        'r' = "remove";
+        'R' = "Remove";
+        'a' = "set attr";
+    ];
+    'edge' = [
+        'c' = "copy";
+        'C' = "Copy";
+        'd' = "delete";
+        'D' = "Delete";
+        'a' = "set attr";
+    ];
+];
+openmodelica.protovt.birdseye.menus = openmodelica.protovt.normal.menus;
+openmodelica.protovt.birdseye.keys = openmodelica.protovt.normal.keys;
+openmodelica.protovt.normal.uifuncs = [
+    'leftdown' = function (data) {
+        local gt;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        if (data.obj.nid >= 0) {
+            openmodelica.node2move = data.obj;
+            openmodelica.movewidget = data.widget;
+            openmodelica.rp2 = data.pos;
+        }
+    };
+    'leftmove' = function (data) {
+        local gt;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        if (openmodelica.node2move & (
+            openmodelica.rp2.x ~= data.pos.x | openmodelica.rp2.y ~= data.pos.y
+        )) {
+            gt.movenode (gt, openmodelica.node2move, data.pos);
+            openmodelica.rp2 = data.pos;
+        }
+    };
+    'leftup' = function (data) {
+        local gt;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        if (openmodelica.node2move) {
+            if (openmodelica.movewidget == data.widget)
+                gt.movenode (gt, openmodelica.node2move, data.pos);
+            openmodelica.node2move = 0;
+        } else if (~data.obj)
+            gt.insertnode (gt, data.pos, null, null, null, 1);
+    };
+    'middledown' = function (data) {
+        if (~(data.obj.nid >= 0))
+            return;
+        openmodelica.rubberband = 1;
+        openmodelica.movewidget = data.widget;
+        setgfxattr (data.widget, ['mode' = 'xor';]);
+        openmodelica.rp1 = data.pos;
+        openmodelica.rp2 = data.pos;
+        line (data.widget, null, openmodelica.rp1, openmodelica.rp2, ['color' = 1;]);
+    };
+    'middlemove' = function (data) {
+        if (openmodelica.rubberband ~= 1 | (
+            openmodelica.rp2.x == data.pos.x & openmodelica.rp2.y == data.pos.y
+        ))
+            return;
+        line (data.widget, null, openmodelica.rp1, openmodelica.rp2, ['color' = 1;]);
+        openmodelica.rp2 = data.pos;
+        line (data.widget, null, openmodelica.rp1, openmodelica.rp2, ['color' = 1;]);
+    };
+    'middleup' = function (data) {
+        local gt;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        if (openmodelica.rubberband ~= 1)
+            return;
+        openmodelica.rubberband = 0;
+        line (openmodelica.movewidget, null, openmodelica.rp1, openmodelica.rp2, ['color' = 1;]);
+        setgfxattr (openmodelica.movewidget, ['mode' = 'src';]);
+        if (openmodelica.movewidget ~= data.widget | ~(
+            data.pobj.nid >= 0) | ~(data.obj.nid >= 0
+        ))
+            return;
+        if (data.pobj.attr.support)
+            gt.groupnodes (gt, [
+                data.obj.nid = data.obj;
+                data.pobj.nid = data.pobj;
+            ], data.obj, null, null, null, 1, 1);
+        else if (data.obj.attr.support)
+            gt.groupnodes (gt, [
+                data.obj.nid = data.obj;
+                data.pobj.nid = data.pobj;
+            ], data.pobj, null, null, null, 1, 1);
+        else
+            gt.insertedge (gt, data.pobj, null, data.obj, null, null, 1);
+    };
+    'rightdown' = function (data) {
+        local vt, gt, menu, i;
+
+        vt = openmodelica.views[data.widget];
+        gt = openmodelica.graphs[vt.gtid];
+        if (~data.obj)
+            menu = vt.menus.general;
+        else if (data.obj.nid >= 0)
+            menu = vt.menus.node;
+        else if (data.obj.eid >= 0)
+            menu = vt.menus.edge;
+        if ((i = displaymenu (data.widget, menu)) >= 0)
+            gt.doaction (data, menu[i]);
+    };
+    'button3up' = function (data) {
+        local vt, attr;
+
+        vt = openmodelica.views[data.widget];
+        attr = getwidgetattr (vt.scroll, [0 = 'childcenter';]);
+        if (vt.scrollmode == 'h')
+            attr.childcenter.x = attr.childcenter.x - 40;
+        else
+            attr.childcenter.y = attr.childcenter.y - 40;
+        setwidgetattr (vt.scroll, ['childcenter' = attr.childcenter;]);
+    };
+    'button4up' = function (data) {
+        local vt, attr;
+
+        vt = openmodelica.views[data.widget];
+        attr = getwidgetattr (vt.scroll, [0 = 'childcenter';]);
+        if (vt.scrollmode == 'h')
+            attr.childcenter.x = attr.childcenter.x + 40;
+        else
+            attr.childcenter.y = attr.childcenter.y + 40;
+        setwidgetattr (vt.scroll, ['childcenter' = attr.childcenter;]);
+    };
+    'keyup' = function (data) {
+        local vt, gt, action;
+
+        vt = openmodelica.views[data.widget];
+        gt = openmodelica.graphs[vt.gtid];
+        if (data.obj.nid >= 0) {
+            if (vt.keys.node[data.key])
+                action = vt.keys.node[data.key];
+        } else if (data.obj.eid >= 0) {
+            if (vt.keys.edge[data.key])
+                action = vt.keys.edge[data.key];
+        }
+        if (~action)
+            if (vt.keys.general[data.key])
+                action = vt.keys.general[data.key];
+        if (action)
+            gt.doaction (data, action);
+    };
+    'redraw' = function (data) {
+        local vt, gt;
+
+        vt = openmodelica.views[data.widget];
+        gt = openmodelica.graphs[vt.gtid];
+        gt.drawgraph (gt, [vt.vtid = vt;]);
+    };
+    'closeview' = function (data) {
+        local vt, gt;
+
+        vt = openmodelica.views[data.widget];
+        gt = openmodelica.graphs[vt.gtid];
+        gt.destroyview (gt, vt);
+        if (tablesize (gt.views) == 0)
+            gt.destroygraph (gt);
+    };
+];
+openmodelica.protovt.birdseye.uifuncs = [
+    'leftdown' = function (data) {
+        local gt, vid;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        for (vid in gt.views) {
+            vt = gt.views[vid];
+            if (vt.type ~= 'birdseye')
+                gt.setviewcenter ([vid = vt;], data.pos);
+        }
+    };
+    'leftmove' = function (data) {
+        local gt, vid;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        for (vid in gt.views) {
+            vt = gt.views[vid];
+            if (vt.type ~= 'birdseye')
+                gt.setviewcenter ([vid = vt;], data.pos);
+        }
+    };
+    'leftup' = function (data) {
+        local gt, vid;
+
+        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        for (vid in gt.views) {
+            vt = gt.views[vid];
+            if (vt.type ~= 'birdseye')
+                gt.setviewcenter ([vid = vt;], data.pos);
+        }
+    };
+    'middledown' = openmodelica.protovt.normal.uifuncs.middledown;
+    'middlemove' = openmodelica.protovt.normal.uifuncs.middlemove;
+    'middleup' = openmodelica.protovt.normal.uifuncs.middleup;
+    'rightdown' = openmodelica.protovt.normal.uifuncs.rightdown;
+    'keyup' = openmodelica.protovt.normal.uifuncs.keyup;
+    'redraw' = openmodelica.protovt.normal.uifuncs.redraw;
+    'closeview' = openmodelica.protovt.normal.uifuncs.closeview;
+];
+openmodelica.monitorfile = function (data) {
+    local gtid, gt, lpt;
+
+    for (gtid in openmodelica.layoutpending) {
+        lpt = openmodelica.layoutpending[gtid];
+        if (lpt.fd == data.fd) {
+            gt = openmodelica.graphs[lpt.gtid];
+            gt.haveinput = 1;
+            gt.layoutgraph (gt);
+            return 1;
+        }
+    }
+    return 0;
+};
+# end openmodelica_ui
+
+
+#
+# initialization functions
+#
+openmodelica.init = function () {
+    openmodelica.fontmap = openmodelica.maps[getenv ('LEFTYWINSYS')].fontmap;
+    openmodelica.clipgt = openmodelica.protogt.creategraph (['noundo' = 1;]);
+    openmodelica.inited = 1;
+};
+openmodelica.simple = function (file) {
+    if (openmodelica.inited ~= 1)
+        openmodelica.init ();
+    openmodelica.createviewandgraph (file, 'file', null, null);
+    txtview ('off');
+};
+#
+# main operations
+#
+openmodelica.protogt.creategraph = function (protogt) {
+    local gt, id, gtid;
+
+    if (~protogt)
+        protogt = openmodelica.protogt;
+    for (gtid = 0; openmodelica.graphs[gtid]; gtid = gtid + 1)
+        ;
+    gt = (openmodelica.graphs[gtid] = []);
+    if (protogt.mode ~= 'replace') {
+        for (id in openmodelica.protogt)
+            gt[id] = copy (openmodelica.protogt[id]);
+    }
+    for (id in protogt)
+        gt[id] = copy (protogt[id]);
+    gt.gtid = gtid;
+    gt.views = [];
+    gt.undoarray = ['level' = 0; 'entries' = [];];
+    gt.busy = 0;
+    return gt;
+};
+openmodelica.protogt.copygraph = function (ogt) {
+    local gt, gtid, id;
+
+    for (gtid = 0; openmodelica.graphs[gtid]; gtid = gtid + 1)
+        ;
+    gt = (openmodelica.graphs[gtid] = []);
+    for (id in ogt)
+        gt[id] = copy (ogt[id]);
+    gt.gtid = gtid;
+    gt.views = [];
+    gt.undoarray = ['level' = 0; 'entries' = [];];
+    gt.busy = 0;
+    return gt;
+};
+openmodelica.protogt.destroygraph = function (gt) {
+    local vid, vlist;
+
+    if (gt.layoutpending > 0)
+        gt.cancellayout (gt);
+    for (vid in gt.views)
+        vlist[vid] = gt.views[vid];
+    for (vid in gt.views)
+        gt.destroyview (gt, vlist[vid]);
+    remove (gt.gtid, openmodelica.graphs);
+};
+openmodelica.protogt.loadgraph = function (gt, name, type, protograph, layoutflag) {
+    local fd, vid, vt, graph, nid, eid, gid;
+
+    if (gt.layoutpending > 0)
+        gt.cancellayout (gt);
+    if (~name)
+        if (~(name = ask ('file name:', 'file', '')))
+            return;
+    openmodelica.pushbusy (gt, gt.views);
+    openmodelica.message (1, 'loading');
+    if (~protograph)
+        protograph = openmodelica.protogt.graph;
+    if (
+        ~((fd = openmodelica.openio (name, type, 'r')) >= 0) |
+        ~(graph = readgraph (fd, protograph))
+    ) {
+        openmodelica.message (0, 'cannot load graph');
+        openmodelica.popbusy (gt, gt.views);
+        return;
+    }
+    for (vid in gt.views) {
+        vt = gt.views[vid];
+        vt.colors = [];
+        vt.colorn = 2;
+    }
+    gt.graph = graph;
+    gt.name = name;
+    gt.type = type;
+    gt.undoarray = ['level' = 0; 'entries' = [];];
+    if (~(type == 'file' & name == '-'))
+        closeio (fd);
+    graph.maxgid = tablesize (graph.graphs);
+    graph.maxnid = tablesize (graph.nodes);
+    graph.maxeid = tablesize (graph.edges);
+    for (nid in graph.nodes)
+        graph.nodes[nid][openmodelica.keys.nid] = nid;
+    for (eid in graph.edges)
+        graph.edges[eid][openmodelica.keys.eid] = eid;
+    for (gid in graph.graphs)
+        graph.graphs[gid][openmodelica.keys.gid] = gid;
+    gt.unpackattr (gt);
+    if (layoutflag) {
+        openmodelica.message (1, 'generating layout');
+        gt.layoutgraph (gt);
+    }
+    openmodelica.popbusy (gt, gt.views);
+    return gt.graph;
+};
+openmodelica.protogt.savegraph = function (gt, name, type) {
+    local fd;
+
+    if (~name)
+        if (~(name = ask ('file name:', 'file', '')))
+            return;
+    if (
+        ~((fd = openmodelica.openio (name, type, 'w')) >= 0) |
+        ~writegraph (fd, gt.graph, 0)
+    ) {
+        openmodelica.message (0, 'cannot save graph');
+        return;
+    }
+    if (~(type == 'file' & name == '-'))
+        closeio (fd);
+};
+openmodelica.protogt.setgraph = function (gt, graph) {
+    local vid, vt, nid, eid, gid;
+
+    if (gt.layoutpending > 0)
+        gt.cancellayout (gt);
+    for (vid in gt.views) {
+        vt = gt.views[vid];
+        vt.colors = [];
+        vt.colorn = 2;
+    }
+    gt.graph = copy (graph);
+    gt.undoarray = ['level' = 0; 'entries' = [];];
+    gt.unpackattr (gt);
+    gt.graph.maxgid = tablesize (graph.graphs);
+    gt.graph.maxnid = tablesize (graph.nodes);
+    gt.graph.maxeid = tablesize (graph.edges);
+    for (nid in gt.graph.nodes)
+        gt.graph.nodes[nid][openmodelica.keys.nid] = nid;
+    for (eid in gt.graph.edges)
+        gt.graph.edges[eid][openmodelica.keys.eid] = eid;
+    for (gid in gt.graph.graphs)
+        gt.graph.graphs[gid][openmodelica.keys.gid] = gid;
+    gt.unpackattr (gt);
+    openmodelica.message (1, 'generating layout');
+    gt.layoutgraph (gt);
+    return gt.graph;
+};
+openmodelica.protogt.erasegraph = function (gt, protogt, protovt) {
+    local vid, vt;
+
+    if (gt.layoutpending > 0)
+        gt.cancellayout (gt);
+    for (vid in gt.views) {
+        vt = gt.views[vid];
+        vt.colors = [];
+        vt.colorn = 2;
+        clear (vt.canvas);
+    }
+    if (~protogt)
+        protogt = openmodelica.protogt;
+    gt.graph = copy (protogt.graph);
+    gt.undoarray = ['level' = 0; 'entries' = [];];
+};
+openmodelica.protogt.layoutgraph = function (gt) {
+    if (gt.graph.graphattr.xdotversion) {
+        gt.unpacklayout (gt, gt.graph);
+        gt.setviewsize (gt.views, gt.graph.rect);
+        gt.redrawgraph (gt, gt.views);
+        return;
+    }
+    if (gt.layoutmode == 'async') {
+        if (~gt.haveinput) {
+            gt.startlayout (gt);
+            return;
+        }
+        if (~gt.finishlayout (gt))
+            return;
+        gt.setviewsize (gt.views, gt.graph.rect);
+        gt.redrawgraph (gt, gt.views);
+    } else {
+        if (~gt.startlayout (gt))
+            return;
+        else
+            while (~gt.finishlayout (gt))
+                ;
+        gt.setviewsize (gt.views, gt.graph.rect);
+        gt.redrawgraph (gt, gt.views);
+    }
+};
+openmodelica.protogt.createview = function (gt, protovt) {
+    local vt, ovt, id, t;
+
+    vt = [];
+    vt.colors = [];
+    vt.colorn = 2;
+    if (~protovt)
+        protovt = openmodelica.protovt.normal;
+    if (protovt.mode ~= 'replace') {
+        for (id in openmodelica.protovt[protovt.type])
+            vt[id] = copy (openmodelica.protovt[protovt.type][id]);
+    }
+    for (id in protovt)
+        vt[id] = copy (protovt[id]);
+    if (~(vt.parent >= 0)) {
+        vt.view = createwidget (-1, [
+            'type'   = 'view';
+            'name'   = vt.name;
+            'origin' = vt.orig;
+            'size'   = vt.size;
+        ]);
+        vt.scroll = createwidget (vt.view, ['type' = 'scroll';]);
+    } else {
+        vt.view = -1;
+        vt.scroll = createwidget (vt.parent, [
+            'type' = 'scroll';
+            'size' = vt.size;
+        ]);
+    }
+    vt.canvas = createwidget (vt.scroll, [
+        'type' = 'canvas';
+        'color' = [0 = protovt.bgcolor; 1 = protovt.fgcolor;];
+    ]);
+    setwidgetattr (vt.canvas, [
+        'window' = vt.wrect;
+        'viewport' = vt.vsize;
+    ]);
+    clear (vt.canvas);
+    openmodelica.views[vt.canvas] = vt;
+    vt.vtid = vt.canvas;
+    vt.gtid = gt.gtid;
+    gt.views[vt.vtid] = vt;
+    openmodelica.views[vt.scroll] = vt;
+    if (vt.view ~= -1)
+        openmodelica.views[vt.view] = vt;
+    if (protovt.colors & tablesize (protovt.colors) > 0) {
+        for (id in protovt.colors)
+            if (id == '_bgcolor_')
+                setwidgetattr (vt.canvas, [
+                    'color' = [0 = protovt.colors[id];];
+                ]);
+            else if (setwidgetattr (vt.canvas, ['color' = [
+                protovt.colors[id] = id;
+            ];]) ~= 1) {
+                t = split (id, ' ');
+                if (tablesize (t) ~= 3 | setwidgetattr (vt.canvas, [
+                    'color' = [protovt.colors[id] = [
+                        'h' = ston (t[0]); 's' = ston (t[1]); 'v' = ston (t[2]);
+                    ];];
+                ]) ~= 1) {
+                    openmodelica.message (
+                        0, concat ('unknown color ', id, ' using #1')
+                    );
+                }
+            }
+        vt.colors = copy (protovt.colors);
+        vt.colorn = protovt.colorn;
+    } else if (tablesize (gt.views) > 1) {
+        for (id in gt.views)
+            if (gt.views[id] ~= vt)
+                break;
+        ovt = gt.views[id];
+        for (id in ovt.colors)
+            if (id == '_bgcolor_')
+                setwidgetattr (vt.canvas, ['color' = [0 = ovt.colors[id];];]);
+            else if (setwidgetattr (vt.canvas, ['color' = [
+                ovt.colors[id] = id;
+            ];]) ~= 1) {
+                t = split (id, ' ');
+                if (tablesize (t) ~= 3 | setwidgetattr (vt.canvas, [
+                    'color' = [ovt.colors[id] = [
+                        'h' = ston (t[0]); 's' = ston (t[1]); 'v' = ston (t[2]);
+                    ];];
+                ]) ~= 1) {
+                    openmodelica.message (
+                        0, concat ('unknown color ', id, ' using #1')
+                    );
+                }
+            }
+        vt.colors = copy (ovt.colors);
+        vt.colorn = ovt.colorn;
+    }
+    if (gt.graph.rect)
+        gt.setviewsize ([vt.vtid = vt;], gt.graph.rect);
+    gt.drawgraph (gt, [vt.vtid = vt;]);
+    for (id in vt.uifuncs)
+        if (id == 'closeview')
+            widgets[vt.view][id] = vt.uifuncs[id];
+        else
+            widgets[vt.canvas][id] = vt.uifuncs[id];
+    return vt;
+};
+openmodelica.protogt.destroyview = function (gt, vt) {
+    destroywidget (vt.canvas);
+    destroywidget (vt.scroll);
+    if (vt.view ~= -1) {
+        destroywidget (vt.view);
+        remove (vt.view, openmodelica.views);
+    }
+    remove (vt.scroll, openmodelica.views);
+    remove (vt.canvas, openmodelica.views);
+    if (vt.gtid >= 0)
+        remove (vt.vtid, gt.views);
+    if (tablesize (openmodelica.views) == 0)
+        exit ();
+};
+openmodelica.protogt.zoom = function (gt, vt, factor, pos) {
+    gt.setviewscale ([vt.vtid = vt;], factor);
+    if (pos)
+        gt.setviewcenter ([vt.vtid = vt;], pos);
+    gt.redrawgraph (gt, [vt.vtid = vt;]);
+};
+openmodelica.protogt.findnode = function (gt, vt) {
+    local key, node, node1, nid;
+
+    if (~(key = ask ('give node name or label')))
+        return;
+    if (gt.graph.nodedict[key] >= 0)
+        node = gt.graph.nodes[gt.graph.nodedict[key]];
+    else if (gt.graph.nodedict[ston (key)] >= 0)
+        node = gt.graph.nodes[gt.graph.nodedict[ston (key)]];
+    else {
+        for (nid in gt.graph.nodes) {
+            node1 = gt.graph.nodes[nid];
+            if (node1.attr.label == key | node1.attr.label == ston (key)) {
+                node = node1;
+                break;
+            }
+        }
+    }
+    if (~node) {
+        openmodelica.message (0, concat ('cannot find node: ', key));
+        return;
+    }
+    gt.setviewcenter ([vt.vtid = vt;], node.pos);
+};
+openmodelica.protogt.setattr = function (gt, obj) {
+    local kv, t, attr, value, n, i, s;
+
+    if (~(kv = ask ('give attr/value, eg. color=blue')))
+        return;
+    t = split (kv, '=');
+    attr = t[0];
+    value = t[1];
+    if ((n = tablesize (t)) > 2)
+        for (i = 2; i < n; i = i + 1)
+            value = concat (value, '=', t[i]);
+    # Check for HTML string and convert using lefty convention
+    s = split (value, '');
+    n = tablesize (s);
+    if ((s[0] == '<') & (s[n-1] == '>')) {
+        s[0] = '>';
+        s[n-1] = '<';
+        value = s[0]; 
+        for (i = 1; i < n; i = i + 1)
+            value = concat (value, s[i]);
+    }
+    if (
+        obj.attr == gt.graph.graphattr |
+        obj.attr == gt.graph.edgeattr |
+        obj.attr == gt.graph.nodeattr
+    ) {
+        obj.attr[attr] = value;
+        return;
+    }
+    if (obj.nid >= 0) {
+        gt.undrawnode (gt, gt.views, obj);
+        obj.attr[attr] = value;
+        gt.unpacknodeattr (gt, obj);
+        gt.drawnode (gt, gt.views, obj);
+    } else if (obj.eid >= 0) {
+        gt.undrawedge (gt, gt.views, obj);
+        obj.attr[attr] = value;
+        gt.unpackedgeattr (gt, obj);
+        gt.drawedge (gt, gt.views, obj);
+    }
+};
+openmodelica.protogt.getattr = function (gt, node) {
+    local kv;
+
+    if (~(kv.key = ask ('give attr name')))
+        return null;
+    if ((kv.val = node.attr[kv.key]))
+        return kv;
+    return null;
+};
+#
+# utilities
+#
+openmodelica.createviewandgraph = function (name, type, protogt, protovt) {
+    local vt, gt;
+
+    if (~protogt)
+        protogt = openmodelica.protogt;
+    if (protogt.creategraph)
+        gt = protogt.creategraph (protogt);
+    else
+        gt = openmodelica.protogt.creategraph (protogt);
+    vt = gt.createview (gt, protovt);
+    if (~protogt.graph)
+        protogt.graph = copy (openmodelica.protogt.graph);
+    if (name)
+        gt.loadgraph (gt, name, type, protogt.graph, 1);
+    return ['gt' = gt; 'vt' = vt;];
+};
+openmodelica.openio = function (name, type, mode) {
+    local fd;
+
+    if (~name)
+        return null;
+    if (type == 'file') {
+        if (name == '-') {
+            if (mode == 'r' | mode == 'r+')
+                fd = 0;
+            else
+                fd = 1;
+        } else if (~((fd = openio ('file', name, mode)) >= 0)) {
+            openmodelica.message (0, concat ('cannot open file: ', name));
+            return null;
+        }
+    } else if (type == 'pipe') {
+        if (~((fd = openio (
+            'pipe', 'ksh', mode, concat ("%e ", name)
+        )) >= 0)) {
+            openmodelica.message (0, concat ('cannot run command: ', name));
+            return null;
+        }
+    } else
+        return null;
+    return fd;
+};
+openmodelica.pushbusy = function (gt, views) {
+    local vid;
+
+    if (gt.busy == 0)
+        for (vid in gt.views)
+            setwidgetattr (vid, ['cursor' = 'watch';]);
+    gt.busy = gt.busy + 1;
+};
+openmodelica.popbusy = function (gt, views) {
+    local vid;
+
+    gt.busy = gt.busy - 1;
+    if (gt.busy == 0)
+        for (vid in gt.views)
+            setwidgetattr (vid, ['cursor' = 'default';]);
+};
+openmodelica.message = function (level, text) {
+    if (level <= openmodelica.mlevel)
+        echo ('openmodelica.lefty: ', text);
+};
+#
+# printing or saving to file
+#
+openmodelica.protogt.printorsave = function (gt, vt, otype, name, mode, ptype) {
+    local pr, wrect, vsize, xy, psize, canvas, pscanvas, cid, cname, t;
+    local graph, edgehandles, fontmap, eid, edge, nid, node, gid, sgraph;
+    local did, draw, i;
+
+    if (~otype)
+        if (~(otype = ask ('print to', 'choice', 'file|printer')))
+            return;
+    if (otype == 'printer') {
+        if (~getenv ('TMPDIR'))
+            name = concat (getenv ('HOME'), '/.openmodelicaout.ps');
+        else
+            name = concat (getenv ('TMPDIR'), '/.openmodelicaout.ps', random (10000));
+        if (getenv ('LEFTYWINSYS') ~= 'mswin' & ~pr)
+            if (~(pr = ask ('printer command', 'string', 'lpr')))
+                return;
+    }
+    if (~name)
+        if (~(name = ask ('postscript file', 'file', 'out.ps')))
+            return;
+    if (~ptype)
+        if (~(ptype = ask ('page size', 'choice', '8.5x11|11x17|36x50')))
+            return;
+    if (~mode)
+        if (~(mode = ask ('mode', 'choice', 'portrait|landscape|best fit')))
+            return;
+    wrect = copy (vt.wrect);
+    wrect[0].x = wrect[0].x - 1;
+    wrect[1].x = wrect[1].x + 1;
+    wrect[0].y = wrect[0].y - 1;
+    wrect[1].y = wrect[1].y + 1;
+    vsize = copy (vt.vsize);
+    if (vsize.x == 0)
+        vsize.x = 1;
+    if (vsize.y == 0)
+        vsize.y = 1;
+    xy = vsize.x / vsize.y;
+    if (mode == 'best fit') {
+        if (xy < 1)
+            mode = 'portrait';
+        else
+            mode = 'landscape';
+    }
+    psize = openmodelica.pagesizes[ptype];
+    if (mode == 'portrait') {
+        if (xy < psize.x / psize.y) {
+            vsize.y = psize.y * 300;
+            vsize.x = vsize.y * xy;
+        } else {
+            vsize.x = psize.x * 300;
+            vsize.y = vsize.x / xy;
+        }
+    } else {
+        if (xy < psize.y / psize.x) {
+            vsize.y = psize.x * 300;
+            vsize.x = vsize.y * xy;
+        } else {
+            vsize.x = psize.y * 300;
+            vsize.y = vsize.x / xy;
+        }
+    }
+    if (~((pscanvas = createwidget (-1, [
+        'type'   = 'ps';
+        'origin' = ['x' = 0; 'y' = 0;];
+        'size'   = vsize;
+        'mode'   = mode;
+        'name'   = name;
+    ])) >= 0)) {
+        openmodelica.message (0, 'cannot open printer device');
+        return;
+    }
+    for (cname in vt.colors) {
+        cid = vt.colors[cname];
+        if (cname == '_bgcolor_')
+            setwidgetattr (pscanvas, ['color' = [0 = cid;];]);
+        else if (setwidgetattr (pscanvas, ['color' = [cid = cname;];]) ~= 1) {
+            t = split (cname, ' ');
+            if (tablesize (t) ~= 3 | setwidgetattr (pscanvas, [
+                'color' = [cid = [
+                    'h' = ston (t[0]); 's' = ston (t[1]); 'v' = ston (t[2]);
+                ];];
+            ]) ~= 1) {
+                openmodelica.message (
+                    0, concat ('unknown color ', cname, ' using #1')
+                );
+            }
+        }
+    }
+    setwidgetattr (pscanvas, ['window' = wrect;]);
+    graph = copy (gt.graph);
+    canvas = vt.canvas;
+    vt.canvas = pscanvas;
+    edgehandles = gt.edgehandles;
+    gt.edgehandles = 0;
+    fontmap = openmodelica.maps[getenv ('LEFTYWINSYS')].psfontmap;
+    for (eid in graph.edges) {
+        edge = graph.edges[eid];
+        edge.fontname = fontmap[edge.attr.fontname];
+        for (did in edge.draws) {
+            if (did == 'ep')
+                continue;
+            draw = edge.draws[did];
+            for (i = 0; draw[i]; i = i + 1)
+                if (draw[i].type == 'F')
+                    draw[i].fn = fontmap[draw[i].ofn];
+        }
+        gt.drawedge (gt, [0 = vt;], edge);
+    }
+    for (nid in graph.nodes) {
+        node = graph.nodes[nid];
+        node.fontname = fontmap[node.attr.fontname];
+        for (did in node.draws) {
+            if (did == 'ep')
+                continue;
+            draw = node.draws[did];
+            for (i = 0; draw[i]; i = i + 1)
+                if (draw[i].type == 'F')
+                    draw[i].fn = fontmap[draw[i].ofn];
+        }
+        gt.drawnode (gt, [0 = vt;], node);
+    }
+    for (gid in graph.graphs) {
+        sgraph = graph.graphs[gid];
+        sgraph.fontname = fontmap[sgraph.graphattr.fontname];
+        for (did in sgraph.draws) {
+            if (did == 'ep')
+                continue;
+            draw = sgraph.draws[did];
+            for (i = 0; draw[i]; i = i + 1)
+                if (draw[i].type == 'F')
+                    draw[i].fn = fontmap[draw[i].ofn];
+        }
+        gt.drawsgraph (gt, [0 = vt;], sgraph);
+    }
+    graph.fontname = fontmap[graph.graphattr.fontname];
+    gt.drawsgraph (gt, [0 = vt;], graph);
+    gt.edgehandles = edgehandles;
+    vt.canvas = canvas;
+    destroywidget (pscanvas);
+    if (otype == 'printer' & getenv ('LEFTYWINSYS') ~= 'mswin')
+        system (concat (pr, ' ', name, '; rm ',name));
+};
