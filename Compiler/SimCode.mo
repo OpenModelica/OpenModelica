@@ -102,6 +102,7 @@ uniontype SimCode
   record SIMCODE
     ModelInfo modelInfo;
     list<Function> functions;
+    list<String> externalFunctionIncludes;
     list<SimEqSystem> allEquations;
     list<SimEqSystem> allEquationsPlusWhen;
     list<SimEqSystem> stateContEquations;
@@ -142,7 +143,9 @@ end DelayedExpression;
 uniontype FunctionCode
   record FUNCTIONCODE
     String name;
+    Function mainFunction "This function is special; the 'in'-function should be generated for it";
     list<Function> functions;
+    list<String> externalFunctionIncludes;
     MakefileParams makefileParams;
     list<RecordDeclaration> extraRecordDecls;
   end FUNCTIONCODE;
@@ -240,8 +243,6 @@ uniontype Function
     list<Variable> inVars;
     list<Variable> outVars;
     list<Variable> biVars;
-    list<String> includes;
-    list<String> libs;
     String language "C or Fortran";
     list<RecordDeclaration> recordDecls;
   end EXTERNAL_FUNCTION;
@@ -660,6 +661,7 @@ public function generateModelCode
   output Real timeSimCode;
   output Real timeTemplates;
   
+  list<String> includes;
   list<Function> functions;
   DAE.DAElist dae2;
   String filename, funcfilename;
@@ -667,11 +669,11 @@ public function generateModelCode
   Real timeSimCode, timeTemplates;
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
-  (libs, functions, outIndexedDAELow, dae2) :=
+  (libs, includes, functions, outIndexedDAELow, dae2) :=
     createFunctions(program, dae, indexedDAELow, className);
   simCode := createSimCode(dae2, outIndexedDAELow, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
-    className, filenamePrefix, fileDir, functions, libs, simSettingsOpt); 
+    className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt); 
   timeSimCode := System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
   
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);     
@@ -776,18 +778,19 @@ algorithm
   _ :=
   matchcontinue (name, daeElements, metarecordTypes)
     local
+      Function mainFunction;
       list<Function> fns;
-      list<String> libs;
+      list<String> libs, includes;
       MakefileParams makefileParams;
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;
     case (name, daeElements, metarecordTypes)
       equation
         // Create FunctionCode
-        (fns, extraRecordDecls) = elaborateFunctions(daeElements, metarecordTypes);
-        libs = extractLibs(fns);
+        /* TODO: Check if this is actually 100% certain to be the function given by name? */ 
+        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes);
         makefileParams = createMakefileParams(libs);
-        fnCode = FUNCTIONCODE(name, fns, makefileParams, extraRecordDecls);
+        fnCode = FUNCTIONCODE(name, mainFunction, fns, includes, makefileParams, extraRecordDecls);
         // Generate code
         _ = Tpl.tplString(SimCodeC.translateFunctions, fnCode);
       then
@@ -804,15 +807,16 @@ protected function createFunctions
   input DAELow.DAELow inDAELow;
   input Absyn.Path inPath;
   output list<String> libs;
+  output list<String> includes;
   output list<Function> functions;
   output DAELow.DAELow outDAELow;
   output DAE.DAElist outDAE;
 algorithm
-  (libs, functions, outDAELow, outDAE) :=
+  (libs, includes, functions, outDAELow, outDAE) :=
   matchcontinue (inProgram,inDAElist,inDAELow,inPath)
     local
       list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;
-      list<String> debugpathstrs,libs1,libs2,includes;
+      list<String> debugpathstrs,libs1,libs2,includes1,includes2;
       String debugpathstr,debugstr,filenameprefix, str;
       list<DAE.Element> funcelems,part_func_elems, elements, funcRefElems, funcNormal;
       list<SCode.Class> p;
@@ -845,15 +849,13 @@ algorithm
         //debugstr = Print.getString();
         //Print.clearBuf();
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
-        (_, libs1) = generateExternalObjectIncludes(dlow);
+        (includes1, libs1) = generateExternalObjectIncludes(dlow);
         //libs1 = {};
         //usless filter, all are already functions from generateFunctions2
         //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
-        (fns, _) = elaborateFunctions(funcelems, {}); // Do we need metarecords here as well?
-        //TODO: libs ? see in Codegen.cPrintFunctionIncludes(cfns)
-        libs2 = extractLibs(fns);
+        (fns, _, includes2, libs2) = elaborateFunctions(funcelems, {}); // Do we need metarecords here as well?
       then
-        (Util.listUnion(libs1,libs2), fns, dlow, dae);
+        (Util.listUnion(libs1,libs2), Util.listUnion(includes1,includes2), fns, dlow, dae);
     case (_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
@@ -951,12 +953,13 @@ protected function elaborateFunctions
   input list<DAE.Type> metarecordTypes;
   output list<Function> functions;
   output list<RecordDeclaration> extraRecordDecls;
+  output list<String> includes;
+  output list<String> libs;
 protected
   list<Function> fns;
   list<String> outRecordTypes;
 algorithm
-  (fns, outRecordTypes) := elaborateFunctions2(daeElements, {},{});
-  functions := listReverse(fns); // Is there a reason why we reverse here?
+  (functions, outRecordTypes, includes, libs) := elaborateFunctions2(daeElements,{},{},{},{});
   (extraRecordDecls,_) := elaborateRecordDeclarationsFromTypes(metarecordTypes, {}, outRecordTypes);
 end elaborateFunctions;
 
@@ -964,31 +967,35 @@ protected function elaborateFunctions2
   input list<DAE.Element> daeElements;
   input list<Function> inFunctions;
   input list<String> inRecordTypes;
+  input list<String> inIncludes;
+  input list<String> inLibs;
   output list<Function> outFunctions;
   output list<String> outRecordTypes;
+  output list<String> outIncludes;
+  output list<String> outLibs;
 algorithm
-  (outFunctions, outRecordTypes) :=
-  matchcontinue (daeElements, inFunctions, inRecordTypes)
+  (outFunctions, outRecordTypes, outIncludes, outLibs) :=
+  matchcontinue (daeElements, inFunctions, inRecordTypes, inIncludes, inLibs)
     local
       list<Function> accfns, fns;
       Function fn;
-      list<String> rt, rt_1, rt_2;
+      list<String> rt, rt_1, rt_2, includes, libs;
       DAE.Element fel;
       list<DAE.Element> rest;
-    case ({}, accfns, rt)
-      then (accfns, rt);
-    case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt)
+    case ({}, accfns, rt, includes, libs)
+      then (listReverse(accfns), rt, listReverse(includes), listReverse(libs));
+    case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt, includes, libs)
       equation
         // skip over partial functions
-        (fns, rt_2) = elaborateFunctions2(rest, accfns, rt);
+        (fns, rt_2, includes, libs) = elaborateFunctions2(rest, accfns, rt, includes, libs);
       then
-        (fns, rt_2);
-    case ((fel :: rest), accfns, rt)
+        (fns, rt_2, includes, libs);
+    case ((fel :: rest), accfns, rt, includes, libs)
       equation
-        (fn, rt_1) = elaborateFunction(fel, rt);
-        (fns, rt_2) = elaborateFunctions2(rest, (fn :: accfns), rt_1);
+        (fn, rt_1, includes, libs) = elaborateFunction(fel, rt, includes, libs);
+        (fns, rt_2, includes, libs) = elaborateFunctions2(rest, (fn :: accfns), rt_1, includes, libs);
       then
-        (fns, rt_2);
+        (fns, rt_2, includes, libs);
   end matchcontinue;
 end elaborateFunctions2;
 
@@ -996,15 +1003,19 @@ end elaborateFunctions2;
 protected function elaborateFunction
   input DAE.Element inElement;
   input list<String> inRecordTypes;
+  input list<String> inIncludes;
+  input list<String> inLibs;
   output Function outFunction;
   output list<String> outRecordTypes;
+  output list<String> outIncludes;
+  output list<String> outLibs;
 algorithm
-  (outFunction,outRecordTypes):=
-  matchcontinue (inElement,inRecordTypes)
+  (outFunction,outRecordTypes,outIncludes,outLibs):=
+  matchcontinue (inElement,inRecordTypes,includes,libs)
     local
       String fn_name_str,fn_name_str_1,retstr,extfnname,lang,retstructtype,extfnname_1,n,str;
       list<DAE.Element> dae,bivars,orgdae,daelist,funrefs, algs, vars, invars, outvars;
-      list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs;
+      list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs,fn_libs,fn_includes;
       Absyn.Path fpath;
       list<tuple<String, Types.Type>> args;
       Types.Type restype,tp;
@@ -1015,7 +1026,7 @@ algorithm
       Option<Absyn.Annotation> ann;
       DAE.ExternalDecl extdecl;
       DAE.Element comp;
-      list<String> rt, rt_1, struct_funrefs, struct_funrefs_int;
+      list<String> rt, rt_1, struct_funrefs, struct_funrefs_int,includes,libs;
       list<Absyn.Path> funrefPaths;
       list<Variable> outVars, inVars, biVars, funArgs, varDecls;
       list<RecordDeclaration> recordDecls;
@@ -1027,7 +1038,7 @@ algorithm
     case (DAE.FUNCTION(path = fpath,
                        functions = DAE.FUNCTION_DEF(body = daeElts)::_, // might be followed by derivative maps
                        type_ = tp as (DAE.T_FUNCTION(funcArg=args, funcResultType=restype), _),
-                       partialPrefix=false), rt)
+                       partialPrefix=false), rt, includes, libs)
       equation
         outVars = Util.listMap(DAEUtil.getOutputVars(daeElts), daeInOutSimVar);
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
@@ -1038,12 +1049,11 @@ algorithm
         algs = Util.listFilter(daeElts, DAEUtil.isAlgorithm);
         body = Util.listMap(algs, elaborateStatement);
       then
-        (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body),
-         rt_1);
+        (FUNCTION(fpath,inVars,outVars,recordDecls,funArgs,varDecls,body),rt_1,includes,libs);
     /* External functions. */
     case (DAE.FUNCTION(path = fpath,
                        functions = DAE.FUNCTION_EXT(body =  daeElts, externalDecl = extdecl)::_, // might be followed by derivative maps
-                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt)
+                       type_ = (tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype),_))),rt,includes,libs)
       equation
         DAE.EXTERNALDECL(ident=extfnname, external_=extargs,
                          parameters=extretarg, returnType=lang, language=ann) = extdecl;
@@ -1055,17 +1065,18 @@ algorithm
         inVars = Util.listMap(DAEUtil.getInputVars(daeElts), daeInOutSimVar);
         biVars = Util.listMap(DAEUtil.getBidirVars(daeElts), daeInOutSimVar);
         (recordDecls,rt_1) = elaborateRecordDeclarations(daeElts, {}, rt);
-        (includes, libs) = generateExtFunctionIncludes(ann);
+        (fn_includes, fn_libs) = generateExtFunctionIncludes(ann);
+        includes = Util.listUnion(fn_includes, includes);
+        libs = Util.listUnion(fn_libs, libs);
         simextargs = Util.listMap(extargs, extArgsToSimExtArgs);
         extReturn = extArgsToSimExtArgs(extretarg);
         (simextargs, extReturn) = fixOutputIndex(outVars, simextargs, extReturn);
       then
         (EXTERNAL_FUNCTION(fpath, extfnname, funArgs, simextargs, extReturn,
-                           inVars, outVars, biVars, includes, libs, lang,
-                           recordDecls),
-         rt_1);
+                           inVars, outVars, biVars, lang, recordDecls),
+         rt_1,includes,libs);
     /* Record constructor. */
-    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt)
+    case (DAE.RECORD_CONSTRUCTOR(path = fpath, type_ = tp as (DAE.T_FUNCTION(funcArg = args,funcResultType = restype as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(name)),_)),_)), rt,includes,libs)
       local
         String  defhead, head, foot, body, decl1, decl2, assign_res, ret_var, record_var, record_var_dot, return_stmt;
         DAE.ExpType expType;
@@ -1076,9 +1087,8 @@ algorithm
         funArgs = Util.listMap(args, typesSimFunctionArg);
         (recordDecls,rt_1) = elaborateRecordDeclarationsForRecord(restype, {}, rt);
       then
-        (RECORD_CONSTRUCTOR(name, funArgs, recordDecls),
-         rt_1);
-    case (comp,rt)
+        (RECORD_CONSTRUCTOR(name, funArgs, recordDecls),rt_1,includes,libs);
+    case (comp,_,_,_)
       equation 
         str = "SimCode.elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(comp);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
@@ -1311,12 +1321,13 @@ protected function createSimCode
   input String filenamePrefix;
   input String inString11;
   input list<Function> functions;
+  input list<String> externalFunctionIncludes;
   input list<String> libs;
   input Option<SimulationSettings> simSettingsOpt;
   output SimCode simCode;
 algorithm
   simCode :=
-  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,libs,simSettingsOpt)
+  matchcontinue (inDAElist1,inDAELow2,inIntegerArray3,inIntegerArray4,inIncidenceMatrix5,inIncidenceMatrixT6,inIntegerLstLst7,inClassName,filenamePrefix,inString11,functions,externalFunctionIncludes,libs,simSettingsOpt)
     local
       String cname, filename, funcfilename, fileDir;
       list<list<Integer>> blt_states,blt_no_states,comps;
@@ -1353,7 +1364,7 @@ algorithm
       DAELow.Variables orderedVars,knownVars,vars;
       list<DAELow.Var> varlst,varlst1,varlst2;
                   
-    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,libs,simSettingsOpt)
+    case (dae,dlow,ass1,ass2,m,mt,comps,class_,filenamePrefix,fileDir,functions,externalFunctionIncludes,libs,simSettingsOpt)
       equation
         cname = Absyn.pathString(class_);
           
@@ -1410,19 +1421,33 @@ algorithm
         // Replace variables in nonlinear equation systems with xloc[index]
         // variables.
         allEquations = applyResidualReplacements(allEquations);
-        simCode = SIMCODE(modelInfo, functions, allEquations, allEquationsPlusWhen, stateContEquations,
-                          nonStateContEquations, nonStateDiscEquations,
-                          residualEquations, initialEquations,
-                          parameterEquations, removedEquations,
-                          algorithmAndEquationAsserts, zeroCrossings,
-                          zeroCrossingsNeedSave, helpVarInfo, whenClauses,
-                          discreteModelVars, extObjInfo, makefileParams,
-                          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
-                          simSettingsOpt, filenamePrefix,
-                          dlow);
+        simCode = SIMCODE(modelInfo,
+          functions,
+          externalFunctionIncludes,
+          allEquations,
+          allEquationsPlusWhen,
+          stateContEquations,
+          nonStateContEquations,
+          nonStateDiscEquations,
+          residualEquations,
+          initialEquations,
+          parameterEquations,
+          removedEquations,
+          algorithmAndEquationAsserts,
+          zeroCrossings,
+          zeroCrossingsNeedSave,
+          helpVarInfo,
+          whenClauses,
+          discreteModelVars,
+          extObjInfo,
+          makefileParams,
+          DELAYED_EXPRESSIONS(delayedExps, maxDelayedExpIndex),
+          simSettingsOpt,
+          filenamePrefix,
+          dlow);
       then
         simCode;
-    case (_,_,_,_,_,_,_,_,_,_,_,_,_)
+    case (_,_,_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Generation of simulation using code using templates failed"});
       then
@@ -1653,31 +1678,6 @@ algorithm
       then ();
   end matchcontinue;
 end callTargetTemplates;
-
-protected function extractLibs
-  input list<Function> fns;
-  output list<String> libs;
-algorithm
-  libs :=
-  matchcontinue (fns)
-    local
-      list<Function> restFns;
-      list<String> fnLibs;
-      list<String> libs;
-      list<String> restLibs;
-    case ({})
-      then {};
-    case (EXTERNAL_FUNCTION(libs=fnLibs) :: restFns)
-      equation
-        restLibs = extractLibs(restFns);
-        libs = Util.listUnion(fnLibs, restLibs);
-      then (libs);
-    case (_ :: restFns)
-      equation
-        libs = extractLibs(restFns);
-      then (libs);
-  end matchcontinue;
-end extractLibs;
 
 protected function elaborateRecordDeclarationsFromTypes
   input list<DAE.Type> inTypes;
@@ -7068,13 +7068,12 @@ protected function generateExtFunctionIncludes
   Collects the includes and libs for an external function
   by investigating the annotation of an external function."
   input Option<Absyn.Annotation> inAbsynAnnotationOption;
-  output list<String> outStringLst1;
-  output list<String> outStringLst2;
+  output list<String> includes;
+  output list<String> libs;
 algorithm
-  (outStringLst1,outStringLst2):=
+  (includes,libs):=
   matchcontinue (inAbsynAnnotationOption)
     local
-      list<String> libs,includes;
       list<Absyn.ElementArg> eltarg;
     case (SOME(Absyn.ANNOTATION(eltarg)))
       equation
@@ -7082,7 +7081,7 @@ algorithm
         includes = generateExtFunctionIncludesIncludestr(eltarg);
       then
         (includes,libs);
-    case (NONE) then ({},{});
+    case (NONE()) then ({},{});
   end matchcontinue;
 end generateExtFunctionIncludes;
 

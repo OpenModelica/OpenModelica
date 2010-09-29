@@ -120,7 +120,7 @@ typedef modelica_metatype mmc_mk_acon_rettype;
 
 mmc_mk_icon_rettype mmc_mk_icon(int);
 mmc_mk_rcon_rettype mmc_mk_rcon(double);
-mmc_mk_scon_rettype mmc_mk_scon(char*);
+mmc_mk_scon_rettype mmc_mk_scon(const char*);
 
 void *mmc_mk_nil(void);
 void *mmc_mk_cons(void*, void*);

@@ -96,7 +96,7 @@ mmc_mk_rcon_rettype mmc_mk_rcon(double d)
     return MMC_TAGPTR(p);
 }
 
-mmc_mk_scon_rettype mmc_mk_scon(char *s)
+mmc_mk_scon_rettype mmc_mk_scon(const char *s)
 {
     unsigned nbytes = strlen(s);
     unsigned header = MMC_STRINGHDR(nbytes);

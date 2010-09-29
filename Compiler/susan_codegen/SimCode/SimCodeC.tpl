@@ -54,7 +54,7 @@ template translateModel(SimCode simCode)
 match simCode
 case SIMCODE(__) then
   let()= textFile(simulationFile(simCode), '<%fileNamePrefix%>.cpp')
-  let()= textFile(simulationFunctionsFile(functions), '<%fileNamePrefix%>_functions.cpp')
+  let()= textFile(simulationFunctionsFile(functions, externalFunctionIncludes), '<%fileNamePrefix%>_functions.cpp')
   let()= textFile(simulationMakefile(simCode), '<%fileNamePrefix%>.makefile')
   if simulationSettingsOpt then //tests the Option<> for SOME()
      let()= textFile(simulationInitFile(simCode), '<%fileNamePrefix%>_init.txt')
@@ -72,7 +72,7 @@ template translateFunctions(FunctionCode functionCode)
 match functionCode
 case FUNCTIONCODE(__) then
   let filePrefix = name
-  let()= textFile(functionsFile(functions, extraRecordDecls), '<%filePrefix%>.c')
+  let()= textFile(functionsFile(mainFunction, functions, extraRecordDecls, externalFunctionIncludes), '<%filePrefix%>.c')
   let()= textFile(functionsMakefile(functionCode), '<%filePrefix%>.makefile')
   "" // Return empty result since result written to files directly
 end translateFunctions;
@@ -169,9 +169,6 @@ case SIMCODE(modelInfo=MODELINFO(__), extObjInfo=EXTOBJINFO(__)) then
   
   #include "<%fileNamePrefix%>_functions.cpp"
   
-  extern "C" {
-  <%extObjInfo.includes |> include => include ;separator="\n"%>
-  }
   >>
 end simulationFileHeader;
 
@@ -2010,7 +2007,7 @@ case SES_WHEN(__) then
 end equationWhen;
 
 
-template simulationFunctionsFile(list<Function> functions)
+template simulationFunctionsFile(list<Function> functions, list<String> includes)
  "Generates the content of the C file for functions in the simulation case."
 ::=
   <<
@@ -2019,7 +2016,7 @@ template simulationFunctionsFile(list<Function> functions)
   #endif
   
   /* Header */
-  <%externalFunctionIncludes(functions)%>
+  <%externalFunctionIncludes(includes)%>
   <%functionHeaders(functions)%>
   /* End Header */
   
@@ -2118,8 +2115,10 @@ template initVals(list<SimVar> varsLst) ::=
 end initVals;
 
 
-template functionsFile(list<Function> functions,
-                       list<RecordDeclaration> extraRecordDecls)
+template functionsFile(Function mainFunction,
+                       list<Function> functions,
+                       list<RecordDeclaration> extraRecordDecls,
+                       list<String> includes)
  "Generates the contents of the main C file for the function case."
 ::=
   <<
@@ -2147,12 +2146,14 @@ template functionsFile(list<Function> functions,
   #endif
   
   /* Header */
-  <%externalFunctionIncludes(functions)%>
+  <%externalFunctionIncludes(includes)%>
+  <%functionHeader(mainFunction,true)%>
   <%functionHeaders(functions)%>
   <%extraRecordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
   /* End Header */
   
   /* Body */
+  <%functionBody(mainFunction,true)%>
   <%functionBodies(functions)%>
   /* End Body */
   
@@ -2349,16 +2350,15 @@ template underscorePath(Path path)
 end underscorePath;
 
 
-template externalFunctionIncludes(list<Function> functions)
+template externalFunctionIncludes(list<String> includes)
  "Generates external includes part in function files."
 ::=
+  if includes then
   <<
   #ifdef __cplusplus
   extern "C" {
   #endif
-  <%functions |> EXTERNAL_FUNCTION(__) =>
-    (includes ;separator="\n")
-  ;separator="\n"%>
+  <% (includes ;separator="\n") %>
   #ifdef __cplusplus
   }
   #endif
@@ -2369,18 +2369,23 @@ end externalFunctionIncludes;
 template functionHeaders(list<Function> functions)
  "Generates function header part in function files."
 ::=
-  (functions |> fn =>
-    match fn
+  (functions |> fn => functionHeader(fn, false) ; separator="\n")
+end functionHeaders;
+
+template functionHeader(Function fn, Boolean inFunc)
+ "Generates function header part in function files."
+::=
+  match fn
     case FUNCTION(__) then
       <<
       <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
-      <%functionHeader(underscorePath(name), functionArguments, outVars)%>
+      <%functionHeaderNormal(underscorePath(name), functionArguments, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), functionArguments, outVars)%>
       >> 
     case EXTERNAL_FUNCTION(__) then
       <<
       <%recordDecls |> rd => recordDeclaration(rd) ;separator="\n"%>
-      <%functionHeader(underscorePath(name), funArgs, outVars)%>
+      <%functionHeaderNormal(underscorePath(name), funArgs, outVars, inFunc)%>
       <%functionHeaderBoxed(underscorePath(name), funArgs, outVars)%>
   
       <%extFunDef(fn)%>
@@ -2414,8 +2419,7 @@ template functionHeaders(list<Function> functions)
 
       <%boxedHeader%>
       >> 
-  ;separator="\n")
-end functionHeaders;
+end functionHeader;
 
 template recordDeclaration(RecordDeclaration recDecl)
  "Generates structs for a record declaration."
@@ -2452,15 +2456,15 @@ template recordDefinition(String origName, String encName, String fieldNames)
   >>
 end recordDefinition;
 
-template functionHeader(String fname, list<Variable> fargs, list<Variable> outVars)
-::= functionHeaderImpl(fname, fargs, outVars, false)
-end functionHeader;
+template functionHeaderNormal(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc)
+::= functionHeaderImpl(fname, fargs, outVars, inFunc, false)
+end functionHeaderNormal;
 
 template functionHeaderBoxed(String fname, list<Variable> fargs, list<Variable> outVars)
-::= if acceptMetaModelicaGrammar() then functionHeaderImpl(fname, fargs, outVars, true)
+::= if acceptMetaModelicaGrammar() then functionHeaderImpl(fname, fargs, outVars, false, true)
 end functionHeaderBoxed;
 
-template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean boxed)
+template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> outVars, Boolean inFunc, Boolean boxed)
  "Generates function header for a Modelica/MetaModelica function. Generates a
   boxed version of the header if boxed = true, otherwise a normal header"
 ::=
@@ -2470,7 +2474,7 @@ template functionHeaderImpl(String fname, list<Variable> fargs, list<Variable> o
       (fargs |> var => funArgDefinition(var) ;separator=", ")
   let boxStr = if boxed then "boxed"
   let boxPtrStr = if boxed then "boxptr"
-  let inFnStr = if boxed then "" else
+  let inFnStr = if boxed then "" else if inFunc then
     <<
 
     DLLExport 
@@ -2642,21 +2646,21 @@ end daeExpToString;
 template functionBodies(list<Function> functions)
  "Generates the body for a set of functions."
 ::=
-  (functions |> fn => functionBody(fn) ;separator="\n")
+  (functions |> fn => functionBody(fn, false) ;separator="\n")
 end functionBodies;
 
 
-template functionBody(Function fn)
+template functionBody(Function fn, Boolean inFunc)
  "Generates the body for a function."
 ::=
   match fn
-  case fn as FUNCTION(__)           then functionBodyRegularFunction(fn)
-  case fn as EXTERNAL_FUNCTION(__)  then functionBodyExternalFunction(fn)
+  case fn as FUNCTION(__)           then functionBodyRegularFunction(fn, inFunc)
+  case fn as EXTERNAL_FUNCTION(__)  then functionBodyExternalFunction(fn, inFunc)
   case fn as RECORD_CONSTRUCTOR(__) then functionBodyRecordConstructor(fn)
 end functionBody;
 
 
-template functionBodyRegularFunction(Function fn)
+template functionBodyRegularFunction(Function fn, Boolean inFunc)
  "Generates the body for a Modelica/MetaModelica function."
 ::=
 match fn
@@ -2696,7 +2700,9 @@ case FUNCTION(__) then
     restore_memory_state(<%stateVar%>);
     return <%if outVars then retVar%>;
   }
-
+  
+  <% if inFunc then
+  <<
   int in_<%fname%>(type_description * inArgs, type_description * outVar)
   {
     <%functionArguments |> var => '<%funArgDefinition(var)%>;' ;separator="\n"%>
@@ -2706,12 +2712,14 @@ case FUNCTION(__) then
     <%if outVars then (outVars |> var => writeOutVar(var, i1) ;separator="\n") else "write_noretcall(outVar);"%>
     return 0;
   }
-
+  >>
+  %>
+  
   <%boxedFn%>
   >>
 end functionBodyRegularFunction;
 
-template functionBodyExternalFunction(Function fn)
+template functionBodyExternalFunction(Function fn, Boolean inFunc)
  "Generates the body for an external function (just a wrapper)."
 ::=
 match fn
@@ -2729,17 +2737,7 @@ case EXTERNAL_FUNCTION(__) then
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-  int in_<%fname%>(type_description * inArgs, type_description * outVar)
-  {
-    <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>;' ;separator="\n"%>
-    <%retType%> out;
-    <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
-    out = _<%fname%>(<%funArgs |> VARIABLE(__) => crefStr(name) ;separator=", "%>);
-    <%outVars |> var as VARIABLE(__) => writeOutVar(var, i1) ;separator="\n"%>
-    return 0;
-  }
-
-  <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
+    <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
   {
     <%varDecls%>
     <%retType%> out;
@@ -2751,6 +2749,19 @@ case EXTERNAL_FUNCTION(__) then
     return out;
   }
 
+  <% if inFunc then
+  <<
+  int in_<%fname%>(type_description * inArgs, type_description * outVar)
+  {
+    <%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>;' ;separator="\n"%>
+    <%retType%> out;
+    <%funArgs |> arg as VARIABLE(__) => readInVar(arg) ;separator="\n"%>
+    out = _<%fname%>(<%funArgs |> VARIABLE(__) => crefStr(name) ;separator=", "%>);
+    <%outVars |> var as VARIABLE(__) => writeOutVar(var, i1) ;separator="\n"%>
+    return 0;
+  }
+  >> %>
+  
   <%boxedFn%>
   >>
 end functionBodyExternalFunction;

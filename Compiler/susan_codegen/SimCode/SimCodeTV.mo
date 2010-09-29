@@ -22,6 +22,7 @@ package SimCode
     record SIMCODE
       ModelInfo modelInfo;
       list<Function> functions;
+      list<String> externalFunctionIncludes;
       list<SimEqSystem> allEquations;
       list<SimEqSystem> allEquationsPlusWhen;
       list<SimEqSystem> stateContEquations;
@@ -55,7 +56,9 @@ package SimCode
   uniontype FunctionCode
     record FUNCTIONCODE
       String name;
+      Function mainFunction;
       list<Function> functions;
+      list<String> externalFunctionIncludes;
       MakefileParams makefileParams;
       list<RecordDeclaration> extraRecordDecls;
     end FUNCTIONCODE;
@@ -263,7 +266,6 @@ package SimCode
       list<Variable> inVars;
       list<Variable> outVars;
       list<Variable> biVars;
-      list<String> includes;
       Libs libs;
       String language;
       list<RecordDeclaration> recordDecls;
