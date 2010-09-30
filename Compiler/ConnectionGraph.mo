@@ -1487,7 +1487,7 @@ algorithm
         isSelectedRoot = listMember(c, inFinalRoots);
         strDefiniteRoot = "\"" +& Exp.printComponentRefStr(c) +& "\"" +& 
            " [fillcolor = red, rank = \"source\", label = " +& "\"" +& Exp.printComponentRefStr(c) +& "\", " +&
-           Util.if_(isSelectedRoot, "shape=ploygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&           
+           Util.if_(isSelectedRoot, "shape=polygon, sides=8, distortion=\"0.265084\", orientation=26, skew=\"0.403659\"", "shape=box") +&           
            "];\n\t";
       then strDefiniteRoot;
   end matchcontinue;
