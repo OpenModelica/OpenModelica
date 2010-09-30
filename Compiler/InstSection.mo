@@ -1874,20 +1874,6 @@ algorithm
 	    DAE.Const cnst;
 	    InstanceHierarchy ih;
 
-    // Frenkel TUD: handle the case where range is a enumeration!
-    case (cache,env,ih,pre,{(i,SOME(e as Absyn.CREF(cr)))},sl,info,source,initial_,impl,unrollForLoops)
-      equation 
-        typePath = Absyn.crefToPath(cr);
-        /* make sure is an enumeration! */
-       (_, SCode.CLASS(restriction=SCode.R_ENUMERATION(), classDef=SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) =
-             Lookup.lookupClass(cache, env, typePath, false);
-        len = listLength(elementLst);
-        // replace the enumeration with a range
-        // ToDo do not replace the enumeration use the enumeration literals
-        (cache,stmts,dae) = instForStatement(cache,env,ih,pre,{(i,SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),Absyn.INTEGER(len)) ))},sl,info,source,initial_,impl,unrollForLoops);
-      then
-        (cache,stmts,dae);
-
     // adrpo: unroll ALL for loops containing ALG_WHEN... done
     case (cache,env,ih,pre,inIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation
@@ -2045,20 +2031,6 @@ algorithm
 	    DAE.Const cnst;
 	    InstanceHierarchy ih;
 
-    // Frenkel TUD: handle the case where range is a enumeration!
-    case (cache,env,ih,pre,{(i,SOME(e as Absyn.CREF(cr)))},sl,info,source,initial_,impl,unrollForLoops)
-      equation 
-        typePath = Absyn.crefToPath(cr);
-        /* make sure is an enumeration! */
-       (_, SCode.CLASS(restriction=SCode.R_ENUMERATION(), classDef=SCode.PARTS(elementLst, {}, {}, {}, {}, _, _, _)), _) =
-             Lookup.lookupClass(cache, env, typePath, false);
-        len = listLength(elementLst);
-        // replace the enumeration with a range
-        // ToDo do not replace the enumeration use the enumeration literals
-        (cache,stmts,dae) = instForStatement_dispatch(cache,env,ih,pre,{(i,SOME(Absyn.RANGE(Absyn.INTEGER(1),NONE(),Absyn.INTEGER(len)) ))},sl,info,source,initial_,impl,unrollForLoops);
-      then
-        (cache,stmts,dae);
-
     // one iterator
     case (cache,env,ih,pre,{(i,SOME(e))},sl,info,source,initial_,impl,unrollForLoops)
       equation
@@ -2072,6 +2044,7 @@ algorithm
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,{stmt},dae);
+
     // multiple iterators
     case (cache,env,ih,pre,(i,SOME(e))::restIterators,sl,info,source,initial_,impl,unrollForLoops)
       equation        
