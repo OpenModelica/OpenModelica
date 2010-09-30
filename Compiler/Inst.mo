@@ -1730,8 +1730,9 @@ algorithm
         {SOME(FUNC_instClassIn(inputs, outputs)),_} = get(fullEnvPathPlusClass, instHash);
         (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7, aa_8, _, aa_9) = inputs;
         // are the important inputs the same??
-        bbx = (aa_2, aa_7,      aa_8, aa_1, aa_3,  aa_4,     aa_5, aa_9);
-        bby = (pre,  inst_dims, impl, mods, csets, ci_state, c,    instSingleCref);
+        prefixEqualUnlessEnum(aa_2, pre, c);
+        bbx = (aa_7,      aa_8, aa_1, aa_3,  aa_4,     aa_5, aa_9);
+        bby = (inst_dims, impl, mods, csets, ci_state, c,    instSingleCref);
         equality(bbx = bby);
         (cache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph) = outputs;
         /*
@@ -1789,6 +1790,23 @@ algorithm
         fail();
   end matchcontinue;
 end instClassIn;
+ 
+protected function prefixEqualUnlessEnum
+  "Checks if two prefixes are equal, unless the class is an enumeration 
+   (all enumerations with the same name are equal)."  
+  input Prefix pre1;
+  input Prefix pre2;
+  input SCode.Class cls;
+algorithm
+  _ := matchcontinue(pre1, pre2, cls)
+    case (_, _, SCode.CLASS(restriction = SCode.R_ENUMERATION))
+      then ();
+    case (_, _, _)
+      equation
+        equality(pre1 = pre2);
+      then ();
+  end matchcontinue;
+end prefixEqualUnlessEnum;
 
 public function instClassIn_dispatch
 "function: instClassIn
