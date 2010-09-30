@@ -1007,6 +1007,10 @@ algorithm
       Edges brokenConnections, normalConnections;
       list<DAE.Element> dae;
       list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
+      String brokenConnectsViaGraphViz;
+      list<String> userBrokenLst;
+      list<list<String>> userBrokenLstLst;
+      list<tuple<String,String>> userBrokenTplLst;
 
     // deal with empty connection graph
     case (GRAPH(_, definiteRoots = {}, potentialRoots = {}, branches = {}, connections = {}), inDAE, modelNameQualified) 
@@ -1035,8 +1039,9 @@ algorithm
         // select final roots
         (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
         
-        // generate the graphviz representation
-        _ = generateGraphViz(
+        // generate the graphviz representation and display
+        // if brokenConnectsViaGraphViz is empty, the user wants to use the current breaking!
+        (brokenConnectsViaGraphViz as "") = generateGraphViz(
               modelNameQualified, 
               definiteRoots, 
               potentialRoots,
@@ -1046,8 +1051,163 @@ algorithm
               broken);
       then 
         (finalRoots, dae, broken);
+        
+    // we have something in the connection graph
+    case (GRAPH(_, definiteRoots = definiteRoots, potentialRoots = potentialRoots,
+                   branches = branches, connections = connections), inDAE, modelNameQualified)
+      equation
+        // reverse the conenction list to have them as in the model
+        connections = listReverse(connections);
+        // add definite roots to the table
+        table = resultGraphWithRoots(definiteRoots);
+        // add branches to the table
+        table = addBranchesToTable(table, branches);
+        // order potential roots in the order or priority
+        orderedPotentialRoots = Util.sort(potentialRoots, ord);
+        
+        Debug.fprintln("cgraph", "Ordered Potential Roots: " +& 
+          Util.stringDelimitList(Util.listMap(orderedPotentialRoots, printPotentialRootTuple), ", "));
+        
+        // add connections to the table and return the broken connections
+        (table, dae, broken) = addConnections(table, connections, inDAE);
+        // create a dummy root
+        dummyRoot = DAE.CREF_IDENT("__DUMMY_ROOT", DAE.ET_INT, {});
+        // select final roots
+        (table, finalRoots) = addPotentialRootsToTable(table, orderedPotentialRoots, definiteRoots, dummyRoot);
+        
+        // generate the graphviz representation and display
+        // interpret brokenConnectsViaGraphViz and pass it to the breaking algorithm again
+        brokenConnectsViaGraphViz = generateGraphViz(
+              modelNameQualified, 
+              definiteRoots, 
+              potentialRoots,
+              branches,
+              connections,
+              finalRoots,
+              broken);
+        // graphviz returns the broken connects as: cr1|cr2#cr3|cr4#
+        userBrokenLst = Util.stringSplitAtChar(brokenConnectsViaGraphViz, "#");
+        userBrokenLstLst = Util.listMap1(userBrokenLst, Util.stringSplitAtChar, "|");
+        userBrokenTplLst = makeTuple(userBrokenLstLst);
+        Debug.traceln("User selected the following connect edges for breaking:\n\t" +& 
+           Util.stringDelimitList(Util.listMap(userBrokenTplLst, printTupleStr), "\n\t"));
+        // print("\nBefore ordering:\n");
+        printDaeEdges(connections);
+        // order the connects with the input given by the user!
+        connections = orderConnectsGuidedByUser(connections, userBrokenTplLst);
+        // reverse the reverse! uh oh!
+        connections = listReverse(connections);
+        print("\nAfer ordering:\n");
+        // printDaeEdges(connections);
+        // call findResultGraph again with ordered connects!
+        (finalRoots, dae, broken) = 
+           findResultGraph(GRAPH(false, definiteRoots, potentialRoots, branches, connections), 
+                           inDAE, modelNameQualified);
+      then 
+        (finalRoots, dae, broken);
   end matchcontinue;
 end findResultGraph;
+
+protected function orderConnectsGuidedByUser
+  input DaeEdges inConnections; 
+  input list<tuple<String,String>> inUserSelectedBreaking;
+  output DaeEdges outOrderedConnections;
+algorithm
+  outOrderedConnections := matchcontinue(inConnections, inUserSelectedBreaking)
+    local 
+      String sc1,sc2;
+      Exp.ComponentRef c1, c2;
+      DaeEdge e;
+      list<DAE.Element> els;
+      DaeEdges rest, ordered;
+      Boolean isUserBroken, b1, b2;
+    
+    // handle empty case
+    case ({}, _) then {};
+    // handle match
+    case ((e as (c1, c2, els))::rest, inUserSelectedBreaking) 
+      equation
+        sc1 = Exp.printComponentRefStr(c1);
+        sc2 = Exp.printComponentRefStr(c2);
+        ordered = orderConnectsGuidedByUser(rest, inUserSelectedBreaking);
+        // see both ways!
+        b1 = listMember((sc1, sc2), inUserSelectedBreaking);
+        b2 = listMember((sc2, sc1), inUserSelectedBreaking);
+        true = boolOr(b1, b2);
+        // put them at the end to be tried last (more chance to be broken) 
+        ordered = listAppend(ordered, {e});
+      then
+        ordered;
+    // handle miss
+    case ((e as (c1, c2, els))::rest, inUserSelectedBreaking) 
+      equation
+        sc1 = Exp.printComponentRefStr(c1);
+        sc2 = Exp.printComponentRefStr(c2);
+        ordered = orderConnectsGuidedByUser(rest, inUserSelectedBreaking);
+        // see both ways        
+        b1 = listMember((sc1, sc2), inUserSelectedBreaking);
+        b2 = listMember((sc2, sc1), inUserSelectedBreaking);
+        false = boolOr(b1, b2);
+        // put them at the front to be tried first (less chance to be broken)
+        ordered = e::ordered;
+      then
+        ordered;
+  end matchcontinue;
+end orderConnectsGuidedByUser;
+
+protected function printTupleStr
+  input tuple<String,String> inTpl;
+  output String out;
+algorithm
+  out := matchcontinue(inTpl)
+    local 
+      String c1,c2;
+    case ((c1,c2)) then c1 +& " -- " +& c2;
+  end matchcontinue;
+end printTupleStr;
+
+protected function makeTuple
+  input list<list<String>> inLstLst;
+  output list<tuple<String,String>> outLst;
+algorithm
+  outLst := matchcontinue(inLstLst)
+    local 
+      String c1,c2;
+      list<list<String>> rest;
+      list<tuple<String,String>> lst;
+      list<String> bad;
+    
+    // empty case
+    case ({}) then {};
+    // somthing case
+    case ({c1,c2}::rest)
+      equation
+        lst = makeTuple(rest);
+      then
+        (c1,c2)::lst;
+    // ignore empty strings
+    case ({""}::rest)
+      equation
+        lst = makeTuple(rest);
+      then
+        lst;
+    // ignore empty list
+    case ({}::rest)
+      equation
+        lst = makeTuple(rest);
+      then
+        lst;        
+    // somthing case
+    case (bad::rest)
+      equation
+        Debug.traceln("The following output from GraphViz OpenModelica assistant cannot be parsed:" +&
+            Util.stringDelimitList(bad, ", ") +& 
+            "\nExpected format from GrapViz: cref1|cref2#cref3|cref4#. Ignoring malformed input.");
+        lst = makeTuple(rest);
+      then
+        lst;
+  end matchcontinue;
+end makeTuple;
 
 protected function printPotentialRootTuple
   input tuple<DAE.ComponentRef,Real> potentialRoot;
@@ -1521,11 +1681,11 @@ protected function generateGraphViz
   input DaeEdges connections;
   input list<DAE.ComponentRef> finalRoots;
   input list<tuple<DAE.ComponentRef, DAE.ComponentRef>> broken;
-  output String fileNameGraphViz;
+  output String brokenConnectsViaGraphViz;
 algorithm
-  fileNameGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
+  brokenConnectsViaGraphViz := matchcontinue(modelNameQualified, definiteRoots, potentialRoots, branches, connections, finalRoots, broken)
     local
-      String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr, leftyCMD, infoNodeStr;
+      String fileName, i, nrDR, nrPR, nrBR, nrCO, nrFR, nrBC, timeStr, leftyCMD, infoNodeStr, brokenConnects;
       Real tStart, tEnd, t;
       IOStream.IOStream graphVizStream;
       Integer leftyExitStatus;
@@ -1621,19 +1781,20 @@ algorithm
         graphVizStream = IOStream.appendList(graphVizStream, {"\n\n\n// graph generation took: ", timeStr, " seconds\n"});
         System.writeFile(fileName, IOStream.string(graphVizStream));
         Debug.traceln("GraphViz with connection graph for model: " +& modelNameQualified +& " was writen to file: " +& fileName);
-        showGraphViz(fileName, modelNameQualified);
+        brokenConnects = showGraphViz(fileName, modelNameQualified);
       then
-        fileName;
+        brokenConnects;
   end matchcontinue;
 end generateGraphViz;
 
 protected function showGraphViz
   input String fileNameGraphViz;
   input String modelNameQualified;
+  output String brokenConnectsViaGraphViz;
 algorithm
-  _ := matchcontinue(fileNameGraphViz, modelNameQualified)
+  brokenConnectsViaGraphViz := matchcontinue(fileNameGraphViz, modelNameQualified)
     local
-      String leftyCMD, fileNameTraceRemovedConnections, omhome;
+      String leftyCMD, fileNameTraceRemovedConnections, omhome, brokenConnects;
       Integer leftyExitStatus;
       
     // do not start graphviz if we don't have +d=cgraphGraphVizShow
@@ -1641,7 +1802,7 @@ algorithm
       equation
         false = RTOpts.debugFlag("cgraphGraphVizShow");
       then
-        ();
+        "";
         
     case (fileNameGraphViz, modelNameQualified)
       equation
@@ -1661,8 +1822,10 @@ algorithm
         leftyExitStatus = System.systemCall("lefty -e " +& leftyCMD +& " > " +& fileNameTraceRemovedConnections);
         // show the exit status
         Debug.traceln("GraphViz *lefty* exited with status:" +& intString(leftyExitStatus));
+        brokenConnects = System.readFile(fileNameTraceRemovedConnections);
+        Debug.traceln("GraphViz OpenModelica assistant returned the following broken connects: " +& brokenConnects);
       then 
-        ();
+        brokenConnects;
   end matchcontinue;
 end showGraphViz;
   

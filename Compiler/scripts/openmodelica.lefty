@@ -966,32 +966,50 @@ openmodelica.protogt.insertedge = function (
     return edge;
 };
 openmodelica.protogt.removeedge = function (gt, edge) {
-    local head, tail;
+    local head, tail, tnode, hnode, s, enode;
 
-    if (~gt.noundo)
-        gt.startadd2undo (gt);
     if (edge.head.attr.support == 1)
         head = edge.head;
     if (edge.tail.attr.support == 1)
         if (head ~= edge.tail)
             tail = edge.tail;
-    # adrpo: 2010-09-29
-    echo('Node1\n');
-    dump(edge.head);
-    echo('Node2\n');
-    dump(edge.tail);
-    echo('\n');
-    gt.undrawedge (gt, gt.views, edge);
-    remove (edge.eid, edge.head.edges);
-    remove (edge.eid, edge.tail.edges);
-    remove (edge.eid, gt.graph.edges);
-    if (head & tablesize (head.edges) == 0)
-        gt.removenode (gt, head);
-    if (tail & tablesize (tail.edges) == 0)
-        gt.removenode (gt, tail);
-    if (~gt.noundo) {
-        gt.currundo.deleted.edges[edge.eid] = edge;
-        gt.endadd2undo (gt);
+
+    hnode = gt.graph.nodes[gt.graph.nodedict[edge.head.name]];
+    tnode = gt.graph.nodes[gt.graph.nodedict[edge.tail.name]];
+    # echo(edge.attr.label);
+    if (edge.attr.label == 'branch')
+    {
+      s = concat('You are not allowed to break a branch edge: ', 
+          hnode.name, '--', tnode.name,' (the blue ones)!',
+          'You can only break a connect edge (the green ones)');
+      echo(s);
+    }
+    else
+    {
+      if (~gt.noundo)
+          gt.startadd2undo (gt);
+      # adrpo: 2010-09-29, deleting edges to break them
+      s = concat('Breaking connect edge connecting nodes: ', 
+            hnode.name, '--', tnode.name,' from the overconstrained graph.',
+           'RightClick and Quit to return to OpenModelica and pass the ',
+           'broken edge to guide the breaking algorithm.');
+      echo(s);
+      s = concat (hnode.name, '|', tnode.name, '#');
+      # write to stdout
+      writeline (1, s);
+    
+      gt.undrawedge (gt, gt.views, edge);
+      remove (edge.eid, edge.head.edges);
+      remove (edge.eid, edge.tail.edges);
+      remove (edge.eid, gt.graph.edges);
+      if (head & tablesize (head.edges) == 0)
+          gt.removenode (gt, head);
+      if (tail & tablesize (tail.edges) == 0)
+          gt.removenode (gt, tail);
+      if (~gt.noundo) {
+          gt.currundo.deleted.edges[edge.eid] = edge;
+          gt.endadd2undo (gt);
+      }
     }
 };
 openmodelica.protogt.swapedgeids = function (gt, edge1, edge2) {
@@ -1820,257 +1838,155 @@ openmodelica.protogt.doaction = function (data, s) {
         gt.actions.general[s] (gt, vt, data);
 };
 openmodelica.protogt.actions.general = [
-    "undo" = function (gt, vt, data) {
-        gt.undo (gt, 1);
+    "Quit" = function (gt, vt, data) {
+        exit ();
     };
-    "paste" = function (gt, vt, data) {
-        gt.paste (gt, data.pos, 1);
+    "Print Graph" = function (gt, vt, data) {
+        gt.printorsave (gt, vt, null, null, null, null);
     };
-    "do layout" = function (gt, vt, data) {
+    "Zoom In" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 0.5, data.pos);
+    };
+    "Zoom Out" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 2, data.pos);
+    };
+    "Zoom In Slowly" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 0.9, data.pos);
+    };
+    "Zoom Out Slowly" = function (gt, vt, data) {
+        gt.zoom (gt, vt, 1.1, data.pos);
+    };
+    "Find Node" = function (gt, vt, data) {
+        gt.findnode (gt, vt);
+    };
+    "Birdseye View" = function (gt, vt, data) {
+        gt.createview (gt, openmodelica.protovt.birdseye);
+    };
+    "Do Layout" = function (gt, vt, data) {
         gt.layoutgraph (gt);
     };
-    "cancel layout" = function (gt, vt, data) {
-        gt.cancellayout (gt);
-    };
-    "redraw" = function (gt, vt, data) {
+    "Redraw" = function (gt, vt, data) {
         gt.redrawgraph (gt, [vt.vtid = vt;]);
     };
-    "new graph" = function (gt, vt, data) {
-        gt.erasegraph (gt, null, null);
-    };
-    "load graph" = function (gt, vt, data) {
-        gt.loadgraph (gt, null, 'file', openmodelica.protogt.graph, 1);
-    };
-    "reload graph" = function (gt, vt, data) {
+    "Reload Graph" = function (gt, vt, data) {
         gt.loadgraph (gt, gt.name, gt.type, gt.graph, 1);
     };
-    "save graph" = function (gt, vt, data) {
+    "Save Graph" = function (gt, vt, data) {
         gt.savegraph (gt, gt.name, gt.type);
     };
-    "save graph as" = function (gt, vt, data) {
+    "Save Graph As" = function (gt, vt, data) {
         gt.savegraph (gt, null, 'file');
     };
-    "open view" = function (gt, vt, data) {
-        gt = openmodelica.protogt.creategraph (null);
-        gt.createview (gt, null);
+    "Undo" = function (gt, vt, data) {
+        gt.undo (gt, 1);
     };
-    "copy view" = function (gt, vt, data) {
+    "Paste" = function (gt, vt, data) {
+        gt.paste (gt, data.pos, 1);
+    };
+    "Copy View" = function (gt, vt, data) {
         gt = gt.copygraph (gt);
         gt.createview (gt, vt);
     };
-    "birdseye view" = function (gt, vt, data) {
-        gt.createview (gt, openmodelica.protovt.birdseye);
-    };
-    "clone view" = function (gt, vt, data) {
-        gt.createview (gt, vt);
-    };
-    "close view" = function (gt, vt, data) {
-        gt.destroyview (gt, vt);
-        if (tablesize (gt.views) == 0)
-            gt.destroygraph (gt);
-    };
-    "set graph attr" = function (gt, vt, data) {
+    "Set Graph Attr" = function (gt, vt, data) {
         gt.setattr (gt, ['attr' = gt.graph.graphattr;]);
     };
-    "set node attr" = function (gt, vt, data) {
+    "Set Node Attr" = function (gt, vt, data) {
         gt.setattr (gt, ['attr' = gt.graph.nodeattr;]);
     };
-    "set edge attr" = function (gt, vt, data) {
+    "Set Edge Attr" = function (gt, vt, data) {
         gt.setattr (gt, ['attr' = gt.graph.edgeattr;]);
     };
-    "zoom in" = function (gt, vt, data) {
-        gt.zoom (gt, vt, 0.5, data.pos);
-    };
-    "zoom out" = function (gt, vt, data) {
-        gt.zoom (gt, vt, 2, data.pos);
-    };
-    "zoom in slowly" = function (gt, vt, data) {
-        gt.zoom (gt, vt, 0.9, data.pos);
-    };
-    "zoom out slowly" = function (gt, vt, data) {
-        gt.zoom (gt, vt, 1.1, data.pos);
-    };
-    "scroll horizontally" = function (gt, vt, data) {
+    "Scroll Horizontally" = function (gt, vt, data) {
         vt.scrollmode = 'h';
     };
-    "scroll vertically" = function (gt, vt, data) {
+    "Scroll Vertically" = function (gt, vt, data) {
         vt.scrollmode = 'v';
     };
-    "find node" = function (gt, vt, data) {
-        gt.findnode (gt, vt);
-    };
-    "print graph" = function (gt, vt, data) {
-        gt.printorsave (gt, vt, null, null, null, null);
-    };
-    "text view" = function (gt, vt, data) {
+    "Text View" = function (gt, vt, data) {
         if (openmodelica.txtview == 'on')
             openmodelica.txtview = 'off';
         else
             openmodelica.txtview = 'on';
         txtview (openmodelica.txtview);
     };
-    "quit" = function (gt, vt, data) {
-        exit ();
-    };
 ];
 openmodelica.protogt.actions.node = [
-    "cut" = function (gt, vt, obj, data) {
-        gt.cut (gt, obj, 'one', 'support', 'cut');
-        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
-    };
-    "Cut" = function (gt, vt, obj, data) {
-        gt.cut (gt, obj, 'reachable', 'support', 'cut');
-        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
-    };
-    "copy" = function (gt, vt, obj, data) {
-        gt.cut (gt, obj, 'one', 'support', 'copy');
-        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
-    };
-    "Copy" = function (gt, vt, obj, data) {
-        gt.cut (gt, obj, 'reachable', 'support', 'copy');
-        openmodelica.clipgt.layoutgraph (openmodelica.clipgt);
-    };
-    "group" = function (gt, vt, obj, data) {
-        local kv;
-
-        if ((kv = gt.getattr (gt, obj)))
-            gt.groupnodesbyattr (gt, kv.key, kv.val, [
-                'label' = kv.val; kv.key = kv.val;
-            ], 1, 1);
-    };
-    "Group" = function (gt, vt, obj, data) {
-        local kv;
-
-        if ((kv = gt.getattr (gt, obj)))
-            gt.groupnodesbyattr (gt, kv.key, kv.val, [
-                'label' = kv.val; kv.key = kv.val;
-            ], 0, 1);
-    };
-    "delete" = function (gt, vt, obj, data) {
+    "Break Connect Edge" = function (gt, vt, obj, data) {
         if (obj.eid >= 0)
             gt.removeedge (gt, obj);
-        else
-            gt.removenode (gt, obj);
-    };
-    "Delete" = function (gt, vt, obj, data) {
-        gt.removesubtree (gt, obj);
-    };
-    "remove" = function (gt, vt, obj, data) {
-        if (obj.nid >= 0)
-            if ((kv = gt.getattr (gt, obj)))
-                gt.removenodesbyattr (gt, kv.key, kv.val);
-    };
-    "Remove" = function (gt, vt, obj, data) {
-        if (obj.nid >= 0)
-            if ((kv = gt.getattr (gt, obj)))
-                gt.removesubtreesbyattr (gt, kv.key, kv.val);
-    };
-    "set attr" = function (gt, vt, obj, data) {
-        gt.setattr (gt, obj);
-    };
-    "print attr" = function (gt, vt, obj, data) {
-        if (obj.nid >= 0)
-            echo ('node: ', obj.name);
-        dump (obj.attr);
     };
 ];
 openmodelica.protogt.actions.edge = openmodelica.protogt.actions.node;
 openmodelica.protovt.normal.menus = [
     'general' = [
-        0 = "undo";
-        1 = "paste";
-        2 = "do layout";
-        3 = "cancel layout";
-        4 = "redraw";
-        5 = "new graph";
-        6 = "load graph";
-        7 = "reload graph";
-        8 = "save graph";
-        9 = "save graph as";
-        10 = "open view";
-        11 = "copy view";
-        12 = "clone view";
-        13 = "birdseye view";
-        14 = "close view";
-        15 = "set graph attr";
-        16 = "set node attr";
-        17 = "set edge attr";
-        18 = "zoom in";
-        19 = "zoom out";
-        20 = "find node";
-        21 = "print graph";
-        22 = "text view";
-        23 = "quit";
-    ];
-    'node' = [
-        0 = "cut";
-        1 = "Cut";
-        2 = "copy";
-        3 = "Copy";
-        4 = "group";
-        5 = "Group";
-        6 = "delete";
-        7 = "Delete";
-        8 = "remove";
-        9 = "Remove";
-        10 = "set attr";
-        11 = "print attr";
+        0 = "Quit";
+        1 = "Print Graph";
+        2 = "Zoom In";
+        3 = "Zoom Out";
+        4 = "Zoom In Slowly";
+        5 = "Zoom Out Slowly";
+        6 = "Find Node";
+        7 = "Birdseye View";
+        8 = "Do Layout";
+        9 = "Redraw";
+        10 = "Reload Graph";
+        11 = "Save Graph";
+        12 = "Save Graph As";
+        13 = "Undo";
+        14 = "Paste";
+        15 = "Copy View";
+        16 = "Set Graph Attr";
+        17 = "Set Node Attr";
+        18 = "Set Edge Attr";
+        19 = "Scroll Horizontally";
+        20 = "Scroll Vertically";
+        21 = "Text View";
     ];
     'edge' = [
-        0 = "cut";
-        1 = "Cut";
-        2 = "copy";
-        3 = "Copy";
-        4 = "delete";
-        5 = "Delete";
-        6 = "set attr";
-        7 = "print attr";
+        0 = "Break Connect Edge";
     ];
 ];
 openmodelica.protovt.normal.keys = [
     'general' = [
-        'u' = "undo";
-        'p' = "paste";
-        'l' = "do layout";
-        'k' = "cancel layout";
-        ' ' = "redraw";
-        'L' = "reload graph";
-        's' = "save graph";
-        'Z' = "zoom in slowly";
-        'z' = "zoom out slowly";
-        'h' = "scroll horizontally";
-        'v' = "scroll vertically";
-    ];
-    'node' = [
-        'c' = "copy";
-        'C' = "Copy";
-        'g' = "group";
-        'G' = "Group";
-        'd' = "delete";
-        'D' = "Delete";
-        'r' = "remove";
-        'R' = "Remove";
-        'a' = "set attr";
+        'u' = "Undo";
+        'p' = "Paste";
+        'l' = "Do Layout";
+        'k' = "Cancel Layout";
+        ' ' = "Redraw";
+        'L' = "Reload Graph";
+        's' = "Save Graph";
+        'Z' = "Zoom In Slowly";
+        'z' = "Zoom Out Slowly";
+        'h' = "Scroll Horizontally";
+        'v' = "Scroll Vertically";
     ];
     'edge' = [
-        'c' = "copy";
-        'C' = "Copy";
-        'd' = "delete";
-        'D' = "Delete";
-        'a' = "set attr";
+        'b' = "Break Connect Edge";
     ];
 ];
 openmodelica.protovt.birdseye.menus = openmodelica.protovt.normal.menus;
 openmodelica.protovt.birdseye.keys = openmodelica.protovt.normal.keys;
 openmodelica.protovt.normal.uifuncs = [
     'leftdown' = function (data) {
-        local gt;
+        local vt, gt, menu, i;
 
-        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        vt = openmodelica.views[data.widget];
+        gt = openmodelica.graphs[vt.gtid];
         if (data.obj.nid >= 0) {
             openmodelica.node2move = data.obj;
             openmodelica.movewidget = data.widget;
             openmodelica.rp2 = data.pos;
+        }
+        else if (data.obj.eid >= 0) {
+            openmodelica.edge2break = data.obj;
+            if (data.obj.eid >= 0)
+                menu = vt.menus.edge;
+            if ((i = displaymenu (data.widget, menu)) >= 0)
+                gt.doaction (data, menu[i]);
+        }
+        else
+        {
+            openmodelica.showhelp(); 
         }
     };
     'leftmove' = function (data) {
@@ -2085,15 +2001,26 @@ openmodelica.protovt.normal.uifuncs = [
         }
     };
     'leftup' = function (data) {
-        local gt;
+        local vt, gt, menu, i;
 
-        gt = openmodelica.graphs[openmodelica.views[data.widget].gtid];
+        vt = openmodelica.views[data.widget];
+        gt = openmodelica.graphs[vt.gtid];
         if (openmodelica.node2move) {
             if (openmodelica.movewidget == data.widget)
                 gt.movenode (gt, openmodelica.node2move, data.pos);
             openmodelica.node2move = 0;
-        } else if (~data.obj)
-            gt.insertnode (gt, data.pos, null, null, null, 1);
+        }
+        else if (openmodelica.edge2break) {
+            if (data.obj.eid >= 0)
+                menu = vt.menus.edge;
+            if ((i = displaymenu (data.widget, menu)) >= 0)
+                gt.doaction (data, menu[i]);
+            openmodelica.edge2break = 0;
+        }
+        else 
+        {
+            
+        }
     };
     'middledown' = function (data) {
         if (~(data.obj.nid >= 0))
@@ -2147,8 +2074,6 @@ openmodelica.protovt.normal.uifuncs = [
         gt = openmodelica.graphs[vt.gtid];
         if (~data.obj)
             menu = vt.menus.general;
-        else if (data.obj.nid >= 0)
-            menu = vt.menus.node;
         else if (data.obj.eid >= 0)
             menu = vt.menus.edge;
         if ((i = displaymenu (data.widget, menu)) >= 0)
@@ -2202,13 +2127,17 @@ openmodelica.protovt.normal.uifuncs = [
         gt.drawgraph (gt, [vt.vtid = vt;]);
     };
     'closeview' = function (data) {
-        local vt, gt;
-
+        local vt, gt, menu;
         vt = openmodelica.views[data.widget];
         gt = openmodelica.graphs[vt.gtid];
+        # exit the damn thing!
+        menu = vt.menus.general;
+        gt.doaction (data, menu[0]); # exit
+
         gt.destroyview (gt, vt);
         if (tablesize (gt.views) == 0)
             gt.destroygraph (gt);
+        exit ();
     };
 ];
 openmodelica.protovt.birdseye.uifuncs = [
@@ -2565,6 +2494,12 @@ openmodelica.protogt.createview = function (gt, protovt) {
     return vt;
 };
 openmodelica.protogt.destroyview = function (gt, vt) {
+    local menu;
+     
+    # exit the damn thing!
+    menu = vt.menus.general;
+    gt.doaction (data, menu[0]); # exit
+
     destroywidget (vt.canvas);
     destroywidget (vt.scroll);
     if (vt.view ~= -1) {
@@ -2575,8 +2510,7 @@ openmodelica.protogt.destroyview = function (gt, vt) {
     remove (vt.canvas, openmodelica.views);
     if (vt.gtid >= 0)
         remove (vt.vtid, gt.views);
-    if (tablesize (openmodelica.views) == 0)
-        exit ();
+     exit ();
 };
 openmodelica.protogt.zoom = function (gt, vt, factor, pos) {
     gt.setviewscale ([vt.vtid = vt;], factor);
@@ -2662,7 +2596,7 @@ openmodelica.protogt.getattr = function (gt, node) {
 # utilities
 #
 openmodelica.createviewandgraph = function (name, type, protogt, protovt) {
-    local vt, gt;
+    local vt, gt, s;
 
     if (~protogt)
         protogt = openmodelica.protogt;
@@ -2675,6 +2609,9 @@ openmodelica.createviewandgraph = function (name, type, protogt, protovt) {
         protogt.graph = copy (openmodelica.protogt.graph);
     if (name)
         gt.loadgraph (gt, name, type, protogt.graph, 1);
+
+    openmodelica.showhelp();
+
     return ['gt' = gt; 'vt' = vt;];
 };
 openmodelica.openio = function (name, type, mode) {
@@ -2867,4 +2804,19 @@ openmodelica.protogt.printorsave = function (gt, vt, otype, name, mode, ptype) {
     destroywidget (pscanvas);
     if (otype == 'printer' & getenv ('LEFTYWINSYS') ~= 'mswin')
         system (concat (pr, ' ', name, '; rm ',name));
+};
+openmodelica.showhelp = function () {
+    local s;
+    s = concat('Welcome to OpenModelica interactive-user-assisted breaking of the overconstrained connection graph.',
+               'The rectable red nodes are definite roots (defined using Connection.root).',
+               'The rectangle orange nodes are potential roots (defined using Connection.potentialRoot).',
+               'The blue edges are branches (defined using Connection.branch).',
+               'The green edges are connects (defined using connect).',
+               'The funny shaped nodes are the final roots selected by OpenModelica overconstrained connection breaking algorithm.',
+               'The red edges are the broken connects selected by OpenModelica overconstrained connection breaking algorithm.',
+               'To break an edge (green/red ones) click on it and select "Break Connect Edge".',
+               'When you Quit (RightClick+Quit or X) the broken edge is passed to OpenModelica to guide the overconstrained breaking algorithm.',
+               'OpenModelica will run the overconstrained connection breaking algorithm again and display the result graph again.',
+               'To quit this interactive loop, do not delete any connct edges, just Quit the graph viewer.');   
+    echo(s);
 };
