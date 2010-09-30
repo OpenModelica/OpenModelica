@@ -265,6 +265,7 @@ public constant ErrorID META_MATCH_EQUATION_FORBIDDEN=5004;
 public constant ErrorID META_UNIONTYPE_ALIAS_MODS=5005;
 public constant ErrorID META_COMPLEX_TYPE_MOD=5006;
 public constant ErrorID META_MATCHEXP_RESULT_NUM_ARGS=5007;
+public constant ErrorID META_CEVAL_FUNCTION_REFERENCE=5008;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -598,7 +599,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
           (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers."),
           (META_MATCHEXP_RESULT_NUM_ARGS,TRANSLATION(),ERROR(),"Match expression has mismatched number of expected (%s) and actual (%s) outputs. The expressions were %s and %s."),
-          (GENERATECODE_INVARS_HAS_FUNCTION_PTR,SYMBOLIC(),ERROR(),"%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead.")
+          (GENERATECODE_INVARS_HAS_FUNCTION_PTR,SYMBOLIC(),ERROR(),"%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead."),
+          (META_CEVAL_FUNCTION_REFERENCE,TRANSLATION(),ERROR(),"Cannot evaluate function pointers (got %s).") 
           
           };
 
