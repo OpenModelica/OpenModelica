@@ -226,6 +226,7 @@ public constant ErrorID MODIFICATION_AND_MODIFICATION_INDEX_OVERLAP=138;
 public constant ErrorID MODIFICATION_OVERLAP=139;
 public constant ErrorID MODIFICATION_INDEX_NOT_FOUND=140;
 public constant ErrorID DUPLICATE_MODIFICATIONS_WARNING=141;
+public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -596,7 +597,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations."),
           (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
           (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers."),
-          (META_MATCHEXP_RESULT_NUM_ARGS,TRANSLATION(),ERROR(),"Match expression has mismatched number of expected (%s) and actual (%s) outputs. The expressions were %s and %s.")
+          (META_MATCHEXP_RESULT_NUM_ARGS,TRANSLATION(),ERROR(),"Match expression has mismatched number of expected (%s) and actual (%s) outputs. The expressions were %s and %s."),
+          (GENERATECODE_INVARS_HAS_FUNCTION_PTR,SYMBOLIC(),ERROR(),"%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead.")
           
           };
 

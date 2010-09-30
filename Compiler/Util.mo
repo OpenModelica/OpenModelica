@@ -2951,6 +2951,33 @@ algorithm
   end matchcontinue;
 end selectFirstNonEmptyString;
 
+public function listSelectFirst "function: listSelectFirst
+  This function retrieves the first element of a list for which
+  the passed function evaluates to true."
+  input list<Type_a> inTypeALst;
+  input FuncTypeType_aToBoolean inFuncTypeTypeAToBoolean;
+  output Type_a outTypeALst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToBoolean
+    input Type_a inTypeA;
+    output Boolean outBoolean;
+  end FuncTypeType_aToBoolean;
+algorithm
+  outTypeALst:=
+  matchcontinue (inTypeALst,inFuncTypeTypeAToBoolean)
+    local
+      list<Type_a> xs;
+      Type_a x;
+      FuncTypeType_aToBoolean cond;
+    case ((x :: xs),cond)
+      equation
+        true = cond(x);
+      then
+        x;
+    case ((x :: xs),cond) then listSelectFirst(xs, cond);
+  end matchcontinue;
+end listSelectFirst;
+
 public function listSelect "function: listSelect
   This function retrieves all elements of a list for which
   the passed function evaluates to true. The elements that
@@ -2970,19 +2997,14 @@ algorithm
       list<Type_a> xs_1,xs;
       Type_a x;
       FuncTypeType_aToBoolean cond;
+      Boolean res;
     case ({},_) then {};
     case ((x :: xs),cond)
       equation
-        true = cond(x);
+        res = cond(x);
         xs_1 = listSelect(xs, cond);
       then
-        (x :: xs_1);
-    case ((x :: xs),cond)
-      equation
-        false = cond(x);
-        xs_1 = listSelect(xs, cond);
-      then
-        xs_1;
+        if_(res, x::xs_1, xs_1);
   end matchcontinue;
 end listSelect;
 
@@ -3010,19 +3032,14 @@ algorithm
       list<Type_a> xs_1,xs;
       Type_a x;
       FuncTypeType_aType_bToBoolean cond;
+      Boolean res;
     case ({},arg,_) then {};
     case ((x :: xs),arg,cond)
       equation
-        true = cond(x, arg);
+        res = cond(x, arg);
         xs_1 = listSelect1(xs, arg, cond);
       then
-        (x :: xs_1);
-    case ((x :: xs),arg,cond)
-      equation
-        false = cond(x, arg);
-        xs_1 = listSelect1(xs, arg, cond);
-      then
-        xs_1;
+        if_(res, x::xs_1, xs_1);
   end matchcontinue;
 end listSelect1;
 
@@ -3050,19 +3067,14 @@ algorithm
       list<Type_a> xs_1,xs;
       Type_a x;
       FuncTypeType_aType_bToBoolean cond;
+      Boolean res;
     case ({},arg1,arg2,_) then {};
     case ((x :: xs),arg1,arg2,cond)
       equation
-        true = cond(x, arg1,arg2);
+        res = cond(x, arg1,arg2);
         xs_1 = listSelect2(xs, arg1,arg2, cond);
       then
-        (x :: xs_1);
-    case ((x :: xs),arg1,arg2,cond)
-      equation
-        false = cond(x, arg1,arg2);
-        xs_1 = listSelect2(xs, arg1,arg2, cond);
-      then
-        xs_1;
+        if_(res, x::xs_1, xs_1);
   end matchcontinue;
 end listSelect2;
 
@@ -3086,14 +3098,15 @@ algorithm
       Type_b arg;
       list<Type_a> xs_1,xs;
       Type_a x;
+      Boolean res;
       FuncTypeType_bType_aToBoolean cond;
     case ({},arg,_) then {};
     case ((x :: xs),arg,cond)
       equation
-        true = cond(arg, x);
+        res = cond(arg, x);
         xs_1 = listSelect1R(xs, arg, cond);
       then
-        (x :: xs_1);
+        if_(res, x::xs_1, xs_1);
     case ((x :: xs),arg,cond)
       equation
         false = cond(arg, x);

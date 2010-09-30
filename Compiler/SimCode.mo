@@ -789,6 +789,7 @@ algorithm
         // Create FunctionCode
         /* TODO: Check if this is actually 100% certain to be the function given by name? */ 
         (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes);
+        checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(libs);
         fnCode = FUNCTIONCODE(name, mainFunction, fns, includes, makefileParams, extraRecordDecls);
         // Generate code
@@ -798,6 +799,44 @@ algorithm
   end matchcontinue;
 end translateFunctions;
 
+protected function checkValidMainFunction
+"Verifies that an in-function can be generated.
+This is not the case if the input involves function-pointers."
+  input String name;
+  input Function fn;
+algorithm
+  _ := matchcontinue (name,fn)
+    local
+      list<Variable> inVars;
+    case (_,FUNCTION(inVars = inVars))
+      equation
+        failure(_ = Util.listSelectFirst(inVars, isFunctionPtr));
+      then ();
+    case (_,EXTERNAL_FUNCTION(inVars = inVars))
+      equation
+        failure(_ = Util.listSelectFirst(inVars, isFunctionPtr));
+      then ();
+    case (name,_)
+      equation
+        Error.addMessage(Error.GENERATECODE_INVARS_HAS_FUNCTION_PTR,{name});
+      then fail();
+  end matchcontinue;
+end checkValidMainFunction;
+
+protected function isFunctionPtr
+"Checks if an input variable is a function pointer"
+  input Variable var;
+  output Boolean b;
+algorithm
+  b := matchcontinue var
+    local
+      String name;
+    /* Yes, they are VARIABLE, not FUNCTION_PTR. */
+    case FUNCTION_PTR(ty = _)
+      then true;
+    case _ then false;
+  end matchcontinue;
+end isFunctionPtr;
 
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */
