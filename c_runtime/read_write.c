@@ -528,7 +528,7 @@ void write_string_array(type_description *desc, boolean_array_t *arr)
     dst = desc->data.string_array.data;
     src = arr->data;
     for (i = 0; i < nr_elements; ++i) {
-      size_t len = modelica_string_length(src);
+      size_t len = modelica_string_length(*src);
       *dst = malloc(len + 1);
       memcpy(*dst, *src, len + 1);
       ++src;
@@ -562,11 +562,11 @@ void write_modelica_string(type_description *desc, modelica_string_t *str)
   desc->type = TYPE_DESC_STRING;
   if (desc->retval) {
     /* Can't use memory pool */
-    len = modelica_string_length(str);
+    len = modelica_string_length(*str);
     desc->data.string = malloc(len + 1);
     memcpy(desc->data.string, *str, len + 1);
   } else {
-    copy_modelica_string(str, &(desc->data.string));
+    copy_modelica_string(*str, &desc->data.string);
   }
 }
 

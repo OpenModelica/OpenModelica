@@ -42,9 +42,9 @@ int modelica_string_ok(modelica_string_t* a)
     return (a != NULL ? 1 : 0);
 }
 
-int modelica_string_length(modelica_string_t* a)
+int modelica_string_length(modelica_string_const a)
 {
-    return strlen(*a);
+    return strlen(a);
 }
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
@@ -104,7 +104,7 @@ void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_in
 }
 
 
-void init_modelica_string(modelica_string_t* dest, const char* str)
+void init_modelica_string(modelica_string_t* dest, modelica_string_const str)
 {
     int i;
     int length = strlen(str);
@@ -129,23 +129,23 @@ void free_modelica_string(modelica_string_t* a)
 
     assert(modelica_string_ok(a));
 
-    length = modelica_string_length(a);
+    length = modelica_string_length(*a);
     /* Free also null terminator.*/
     char_free(length+1);
 }
 
-void copy_modelica_string(modelica_string_t* source, modelica_string_t* dest)
+void copy_modelica_string(modelica_string_const source, modelica_string_t* dest)
 {
 	alloc_modelica_string(dest,modelica_string_length(source));
-    memcpy(*dest, *source, modelica_string_length(source)+1);
+  memcpy(*dest, source, modelica_string_length(source)+1);
 }
 
-void cat_modelica_string(modelica_string_t* dest, modelica_string_t *s1, modelica_string_t *s2)
+void cat_modelica_string(modelica_string_t* dest, modelica_string_const s1, modelica_string_const s2)
 {
     int len1 = modelica_string_length(s1);
     int len2 = modelica_string_length(s2);
-	alloc_modelica_string(dest,len1+len2);
-    memcpy(*dest, *s1, len1);
-    memcpy((*dest) + len1, *s2, len2 + 1);
+    alloc_modelica_string(dest,len1+len2);
+    memcpy(*dest, s1, len1);
+    memcpy((*dest) + len1, s2, len2 + 1);
 }
 

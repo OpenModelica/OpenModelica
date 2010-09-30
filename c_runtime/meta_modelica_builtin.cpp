@@ -441,7 +441,7 @@ stringAppendList_rettype stringAppendList(modelica_metatype lst)
 stringAppend_rettype stringAppend(modelica_string_t str1, modelica_string_t str2)
 {
   modelica_string_t tmp;
-  cat_modelica_string(&tmp,&str1,&str2);
+  cat_modelica_string(&tmp,str1,str2);
   return tmp;
 }
 
@@ -490,7 +490,7 @@ stringUpdateStringChar_rettype stringUpdateStringChar(modelica_string_t str, mod
   length = strlen(str);
   if (ix > length)
     throw 1;
-  copy_modelica_string(&str, &res);
+  copy_modelica_string(str, &res);
   res[ix-1] = c[0];
   return res;
 }

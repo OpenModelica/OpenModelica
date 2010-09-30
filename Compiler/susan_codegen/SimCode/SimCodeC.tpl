@@ -3915,7 +3915,7 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/,
   match exp
   case e as ICONST(__)         then integer
   case e as RCONST(__)         then real
-  case e as SCONST(__)         then daeExpSconst(string, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+  case e as SCONST(__)         then daeExpSconst(string, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   case e as BCONST(__)         then if bool then "(1)" else "(0)"
   case e as ENUM_LITERAL(__)   then index
   case e as CREF(__)           then daeExpCrefRhs(e, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
@@ -3942,13 +3942,13 @@ template daeExp(Exp exp, Context context, Text &preExp /*BUFP*/,
 end daeExp;
 
 
-template daeExpSconst(String string, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
+template daeExpSconst(String string, Context context, Text &preExp /*BUFP*/, Text &varDecls /*BUFP*/)
  "Generates code for a string constant."
 ::=
+  let escapedStr = '"<%Util.escapeModelicaStringToCString(string)%>"'
   let strVar = tempDecl("modelica_string", &varDecls /*BUFC*/)
-  let escapedStr = Util.escapeModelicaStringToCString(string)
-  let &preExp += 'init_modelica_string(&<%strVar%>,"<%escapedStr%>");<%\n%>'
-  strVar  
+  let &preExp += 'init_modelica_string(&<%strVar%>,<%escapedStr%>);<%\n%>'
+  strVar
 end daeExpSconst;
 
 template daeExpCrefRhs(Exp exp, Context context, Text &preExp /*BUFP*/,
@@ -4080,7 +4080,7 @@ case BINARY(__) then
   match operator
   case ADD(ty = ET_STRING(__)) then
     let tmpStr = tempDecl("modelica_string", &varDecls /*BUFC*/)
-    let &preExp += 'cat_modelica_string(&<%tmpStr%>,&<%e1%>,&<%e2%>);<%\n%>'
+    let &preExp += 'cat_modelica_string(&<%tmpStr%>,<%e1%>,<%e2%>);<%\n%>'
     tmpStr
   case ADD(__) then '(<%e1%> + <%e2%>)'
   case SUB(__) then '(<%e1%> - <%e2%>)'
@@ -4890,6 +4890,13 @@ template tempDecl(String ty, Text &varDecls /*BUFP*/)
   newVar
 end tempDecl;
 
+template tempDeclConst(String ty, String val, Text &varDecls /*BUFP*/)
+ "Declares a temporary variable in varDecls and returns the name."
+::=
+  let newVar = 'tmp<%System.tmpTick()%>'
+  let &varDecls += '<%ty%> <%newVar%> = <%val%>;<%\n%>'
+  newVar
+end tempDeclConst;
 
 template varType(Variable var)
  "Generates type for a variable."
