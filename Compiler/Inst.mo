@@ -7263,7 +7263,7 @@ algorithm
 
         dae2 = instModEquation(cr, ty, mod, source, impl);
         start = instStartBindingExp(mod, ty);
-        eOpt = makeVariableBinding(ty,mod,DAE.C_VAR,pre,n,source);
+        eOpt = makeVariableBinding(ty,mod,toConst(vt),pre,n,source);
         (cache,dae_var_attr) = instDaeVariableAttributes(cache,env, mod, ty, {}) "idxs\'" ;
         dir = propagateAbSCDirection(dir,oDA);
         // adrpo: we cannot check this here as:
@@ -14499,5 +14499,17 @@ algorithm
     case SCode.PDER(comment = c) then c;
   end matchcontinue;
 end extractClassDefComment;
+
+protected function toConst
+"Translates SCode.Variability to DAE.Const"
+input SCode.Variability inVar;
+output DAE.Const outConst;
+algorithm
+  outConst := matchcontinue (inVar)
+    case(SCode.CONST()) then DAE.C_CONST();
+    case(SCode.PARAM()) then DAE.C_PARAM();
+    case _ then DAE.C_VAR();  
+  end matchcontinue;
+end toConst;
 
 end Inst;
