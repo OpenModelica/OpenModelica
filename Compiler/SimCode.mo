@@ -7139,7 +7139,7 @@ algorithm
     case Absyn.STRING("Lapack")
       equation
         true = "Windows_NT" ==& System.os();
-      then {"-lf2c","-lblas-mingw","-ltmglib-mingw","-llapack-mingw"};
+      then {"-llapack-mingw", "-ltmglib-mingw", "-lblas-mingw", "-lf2c"};
     
     // The library is not actually named libLapack.so.
     // Which is a problem, since MSL says it does.
