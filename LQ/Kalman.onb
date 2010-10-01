@@ -1,0 +1,790 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Quadratic Optimization&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">A reasonable compromise to find suitable poles in a control structure&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/119.png" width="88" height="53" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/119.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABYAAAANQgDAAAA8iHcggAAAANzQklUCAgI2+FP4AAAAHVQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjoAOjqQOmZmOpC2OpDbZgAAZgA6ZjqQZma2ZpDbZrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmY6tmZmtv//25A625Bm29uQ2/+22////7Zm/9uQ//+2///bk9up3wAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABx0lEQVRYhe1WXXeCMAwtKrov0A3mtM66Udr//xOXtDDa0sCOysPO4b7oselNmuQmMvYvofJsEt56XeCHLtNRGxI8Qfg2uszYKDFP+sRqe+y+53AulmcvmM2xdyeEfCn72XKJ6wfglD6x9VOvV5XKiZj1/syznpFLLFM8zeDZC/jRGDOxquDqx/f2sLcOdZlYLNqLojC2rlFAjDkGHv1+KAubl4aYNb6iULuK8dQzCpxroGMcidCbyUuXckHWzpQ87Rk5EZs6mRRLYJc2VGmdYv5YNBX1U9W+qzPyiQ2ViRA8t+1lW1TtvjbHT6+qrPVTtAnzjRxifIhMsGSQstNjJs056o4vzxBoTAQqx6rIBK4FRh2x7OQh4FMkTUEGhHET+ETEOiKquyAQ4t0gnAa6LySpuBsxWY6v6gqjzpF71/Qxzs7Rl16x8XRpZsPwtiLXGW4jlUcr+1vvwfVA9LEocL7KRvX+vONNiwaTP2SgBIIeL7GAnewOrAdaITC91WvsoFk99jZdeTJiGMSX6CJyiL3JH4BWHn9+IzymzcKn1wMbajcySTD8jTzo9WBDJo40We+/Av9pRHCaZDgNPXHGjBkzZsyY0eEHTl4odSzUAN0AAAAASUVORK5CYII=</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">is to minimize the &amp;quot;energy levels&amp;quot; of the involved quantities, in another words decide a feedback loop L that minimize &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/120.png" width="199" height="54" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/120.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAADHAAAANggDAAAARBV9SAAAAANzQklUCAgI2+FP4AAAAHhQTFRFAAAAAAAAAAA6AABmADqQAGZmAGaQAGa2OgAAOgA6OgBmOjpmOjqQOpDbZgAAZgA6ZgBmZjo6ZjqQZmY6Zma2ZpCQZrb/kDoAkDo6kDpmkGYAkJBmkNv/tmYAtmY6trZmtv//25A629uQ2////7Zm/9uQ//+2///bYN8CWgAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAADeUlEQVRoge1Zi3bbIAw1WbZkW+12L3uP0IUF2///hwMJxMNge2nOUvtYJ6dJHHHRlZAQtCg22eR/SFexN+f2qP7c25KXCa+L7tOxLtqHy71NuU5UIHanov9xLgpxKPDDAqV9f1Kvong+FXL38bzYePAS3yEskCR3NedaaVVKrEGkyo01CF/oOoqkb/bLTOtIumodPNrj4d4m3ETWwkOy8t4m3ETEVTzUdsluFcfbYOV5dFWWYfd48vYdpyiuqOEhVsrCWaCcZbbzqX0FerJYcYQ7imQp5xOWD0D2x6CCJWjneEx6QZQpxQkiXFnQHgcqFit0HmENiCRsy/CY7LrkIVTkZhsKl4gINyepJ+ubOCAWiww0YGR/tO7wZ+5j902aB5/YHcUhVCQnh76LeIDyIGSEZX1CYNb+cEjflL6SeZZMsa5y2Ewx1fGWsCyl/goelDUpKm8oQaTAAyEPNEdoPQ7HAxhNWGaoB0b2E6g255ui6884wsN5RJWz9uGPGikPaLOmpEsl8CFFt2SFDxjyAH/rFOmbGpaYfuCwyHkOzNpvQbU5XQVf4rxM8pDMRvigK+MXhANUXqYUXRRknoeaWthlDGoBZ+c8B0b24zuYYzpbHoV6lAfgkI52Qfd0Tii6deiYMRI7o57aakJlCmu7HemDURxqMgfrhKeEY5L11YxD6kHZkGVK0Stv+XggDo4AY6LK5RZBHT9CUDQHf44KantM8jAhRtIUfTU2vkwxip7x+fzAqaXLq6i3C40OPgqT9s6cqBRneJiowZtTUQ6VdVLRS7p8vcKpOZkR1/xhzSCnIKhvTrQXtsf0RmFL4P7SPf1W6Qkz9M3br2lFPR83mZLdP2DLFdiWKN/333/tTtJbWXbJO7BoQwRzPv/cX9SvntIYD7P84JpUVUZbSIbBs6uVDRdFxKNv3jWMUS7jJVOQILSnOq0yAAVzcAdzSqjB0jzS/RWvh89m91ddNXXBNGiGjP2T3afmkWv9E76XSbi5/e6MC6bIeQZtBo0RHnFf+hys5bTiaJM85xyR6ndnnT9mHwdVcXnhoW2q9QTxnPdPhzKRO0YtTNbCg2+3u69J1nO7u45bONhB9Rlx4XSkTg91zncXSMsUfUjVfQ9eQSxTusdT++GMF5MFX+6tu/3X7NJ5WFn6uiLhy89zEH0Tto4ua5NNNlml/AWaCVtlFf5SqAAAAABJRU5ErkJggg==</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">which can be realized by a linear state feedback as optimal control law.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/121.png" width="263" height="22" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/121.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAEHAAAAFggDAAAA+oipHwAAAANzQklUCAgI2+FP4AAAAGlQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjoAOjo6OjqQOpDbZgAAZgA6ZjqQZrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmY6tmZmtv//25A629uQ2/+22////7Zm/9uQ//+2///bEAmv0wAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACLUlEQVRYhe1W3XqDIAy1a23303ayrdrJVpT3f8gREhQLSKnzYvvMzWbMyYmHJCXLFlssaHxz0X+rfHb8nVRiBbb/1ZzXJlmXX6zrWfF3U/Gieax5MTnnmGTckllQ3JhVq4fyTnwqleICg+8XueWxoQk5RyVrj2WfQjKv5kPAYdCfQTy9mEKluFQQh5qrovfYFYRyuuxGMgx1JCNHhamrwAxa1uwGDEG8W0kyVaamAc+uS6Y9VluHcnp0IBfGkGSSQXODS+dstqrb4B8e71ZibrabS3vIw/i+EiATqpmTqfQ0NFtVZfNCwYCCfojRu+xYeBeKcrydWIFdh88GRh8p2Qrtwe0uPAz58X08vdcB/KASqciec/VJ/tBRLloGKoZOWh/duo7Su+xUuHlBksEj9hgODe0N/6axS+1mEFvKj7/6NhroW6hcrsqOaw/qjU4wQu9n99ML0yioEqeJizdrvx4QE8RbE6oFT6dCrsFqt5bTOL3LTjqYUNJBPUqWm+fuF4U20Eiv6vhziQsihL+qhPfau6ExLm7r0H9ohN5lx5ddKHmV8/y0FwUCVANKmLYbfsxAT1C4ff3alZ91GG9VQms8lUpzCfsaiUenc0XoXXYjGYYaybi6nnDcsRBGl6P45QZvuLneVUzfcEL4vhK9j7NkKuKy5eLmch2l97Cji0LdY7A8ZpKSLAE/lWpiztjV02zkKn5EXkvAT6WalHOOY/ibNscxLLbYYov9Y/sBB6RHuWcWuWMAAAAASUVORK5CYII=</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The solution of the algebraic Riccati equation gives the feedback L,&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/122.png" width="183" height="22" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/122.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAC3AAAAFggDAAAAtfD95gAAAANzQklUCAgI2+FP4AAAAFRQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjqQOpC2OpDbZgAAZgA6ZjqQZrb/kDoAkDpmkNv/tmYAtmZmtv//25A62////7Zm/9uQ//+2///bAJ7nSgAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABvElEQVRIie1VYXODIAwVO+02u+nKpKj//3+OBEgCQr+sd+vufHfVlCS8ZwjQNAcOPA5WAYZ/x2DG5XU244Nn/SXDNil1mmvepcfJbIf/NFTl5VaIk56QU49BQ42NtALDHQoHw1KX3iVoDlw/rikXatBeyXoZ3W8ohEpPyNmBYsBoDChgKzBkFCnsad4m/33+bVtSkOq279MgBt1iOoauECo8IWcPikHDglqyaK6UIgUMB6n+VdO9fc0aNCxvfj2MW5dyvdkTc/agGOiJpYcgsiJDRpEAh0MT+g6x3OCJbrdTQIPbAqED3EtTrAxlT8gplSvGaGrhaBFDQgFbD+HLik2FD+cZWH0e16yft2TJ1ouKG2M3ZfSInFrMNo2Bkq0CRaHepDs+uUBJEYFU6F7OyZ4VoezJcwrZaPj2JqtCkemmPvG6jciUYqDnjKiGSc8nEUqeXQ6DRi0YyMlWkSJbMDxDwlfCIplWfCOLwUWUE8UzqBTaVXKkiJhtgB77ma0KRfbl7ZXPweyUJzGu05zDitvXZDcx646efY4gjaOW7xqyahQZtBB7r6OeGVD57+o9/8SwqnIvHzhw4A/wA6nQJWO9o3ZVAAAAAElFTkSuQmCC</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">where the cost function Q is αC&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:super;">T&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">C. The Riccati algebraic equation can be solved using the eigenvectors of the below matrix, i.e. Schur's decomposition of the eigenspace of&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/123.png" width="91" height="39" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+          <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/123.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABbAAAAJwgDAAAAVwjEEQAAAANzQklUCAgI2+FP4AAAAFdQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjqQOpC2OpDbZgAAZgA6ZgBmZjqQZrb/kDoAkDpmkNv/tmYAtmZmtv//25A62////7Zm/9uQ//+2///bisD2XAAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABtElEQVRIie1W23aDIBDEtKYXbUuqFZH8/3fWZUF2uTTk1Dz0NPOSFWEyu4sMQvxpmPfp9yS6AXRCdbtTCyWX50lJIUZJRtmDWI5SXMZoVUoW6TaRurzMfFUNt+nXWephopHXqNqCbP16YgUrYM1/nQuMW2TeBve/PsB3G86f01jDDfkvx45GIf/RCycZwJMUVdxQ5ceZRudT4xfafEAoK4H5mMO/RlgXIw7DGsOGQEofEZYey7w8DWTUNr3ATWFXYbm3iKromH5cAiVTXEQWGubYzREiKhHl0WGbXxU3NEnb+oaIvnatCEymh6boJp6ZkR2+ly1i71HwWKHyauiDbWJpV9y5b8S9Ry+9L9yCe/MFz417MP6kAHByZIazcFai+YmHgnVKshzb+nyclXATcE3kZxWqhjeuZJfgrCTYATJ07JdMt6x13N5KuC/6MzbyBuGrkalVBs5KiC8IutZ6Gjn3XSKlelOHKFlJGOJtcAmZvtbZUishxY/uEMid25oJClZC92MkHKqhajpZsBJ2TYvubFDRms1dshIuNb4Qpnv+CqifGwVfz9ce988cdGqBd/xjfANOdB9OVkYfZQAAAABJRU5ErkJggg==</Image>
+        </TextCell>
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">P= W&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">(W&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:super;">-1&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          <Rule name="TextAlignment">Center</Rule>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Subsection (no numbers)">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Example&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Consider a pendulum modelled in state space form as&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/124.png" width="137" height="53" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/124.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAACJAAAANQgDAAAAQvI49QAAAANzQklUCAgI2+FP4AAAAHhQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjoAOjqQOmZmOpDbZgAAZgA6ZjqQZma2ZpDbZrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmY6tmZmtra2tv//25A625Bm29uQ2/+22////7Zm/7a2/9uQ//+2///bwN+XrgAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACvElEQVRYhe1Y23bcIAyEJJv0sknbddqs04akcW3//x8WEGAuwkg+25cez8ues0bjQYAYWYgdG6GkvH4p/54ezlymDSEBv4QYrl/m7lA8UVbeH0RilYkbEmG6PwnRaxXDVT6Z/jgYWjuCyMQMiTE/nk3gUYjxtoy2tDCGxsQLSaDMmtgpYPMAWjF+eicy8UJiwP5qKdFJJzKxQhLARBqro39vmjN0KeGExJi7E/wcFgpMSftoOqZWCHZCLcY7GK6uzugYf57mrpVrz9QIqSoJeeilLLM5SA0g7lGCaN6OqRlSg6IuJj4wUlIOQELG25v36R5V2FOV+LOZUkVKSiZXWDqTIThI84/fD0/fYRXmTgLcYpIz6GgjqlxJwWRD5scnvZVDgQBdGJhKYqpsUhUloHb84NWr2gvZSlKqdk6groTaYlYXnQhfyUJFVaKlh6M7fXm7O/9E72nu2cmoKGdHS3z+eBzMRumN95D4Lb3UVbQkLv4JaHOqsp4UIeaPk5LN3IfKqDDLFvmn5n3mmDghCfzxcgYnw+Kf2s7HjeCElC+zQJREN/RyDNeZeCEJggBUSXAt1TKQMfFCEhSXOaqE4tctEy8khU/i6uqQNp9hYoakGBL7GSP4p4GW6OHADskI7Lkve4zgn8grrpm4ISVHdANEQP3TOjaE7NhxKTRNA8+/b0a7ycHbtctDgRC8bnsfwmw6N8EpQJ3L4kPCxfUPAbPFnUvkQzZcMCh6aboRtAnxuxFTEvkQs6tXejsq1Mn0bnBdFb7/uKYk+BCdurwh2wbznlfUStCVrPV2dGgnPH1FnzBWh+/QEOi9/+o/eKSr488npiT69GMFpw3ZRvSfv+EPwoczLPHh0w+Yxnpvx0C9otvKVnEuwYeYzK31dnTM9T1PKVrcXmIFz2t7vvmhh/wlqIUL5HTHjv8VfwFi/U/X2sOI1AAAAABJRU5ErkJggg==</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Assuming a cost-function Q as ( 1,0 ; 0,0)&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GroupCell closed="true">
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>model riccatiEq
+   parameter Real A[2,2]=[0,1; 1,0];
+   parameter Real B[2,1]=[0; 1];
+   parameter Real C[1,2]=[1,0];
+   Real P[2,2](start = Pinit);  // the starting point is good if the solver has difficulty 
+   parameter Real Pinit[2,2] = [1,1.5;1.5,1];
+   parameter Real Q[2,2] = [1, 0; 0,  0];
+   Real L[1,2]; 
+   Real L1 = L[1,1];
+   Real L2 = L[1,2];    
+equation 
+   Q + P*A + transpose(A)*P - P*B*transpose(B)*P = [0,0;0,0];
+   L = transpose(B)*P;
+end riccatiEq;</Input>
+              <Output>{riccatiEq}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(riccatiEq,stopTime=0.0001,numberOfIntervals=1)</Input>
+              <Output>record SimulationResult
+    resultFile = "riccatiEq_res.plt"
+end SimulationResult;</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>val(L1,0)</Input>
+              <Output>2.41421356237309</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>val(L2,0)</Input>
+              <Output>2.19736822693562</Output>
+            </GraphCell>
+          </GroupCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now apply the feedback link to the pendulum example from above&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <GroupCell closed="false">
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>loadModel(Modelica);</Input>
+              <Output>[done]</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>model Feedback
+  riccatiEq riccatiEqA;
+  parameter Real[2,2] AFeedback = riccatiEqA.A-riccatiEqA.B*[2.4142135,2.197368]; // Anew = A -BL
+  Modelica.Blocks.Continuous.StateSpace stateSpace(A = AFeedback,  
+    B = [1; 0],C = [1,0],D = [0]); 
+   Modelica.Blocks.Sources.Exponentials ref(
+    outMax=4,
+    riseTime=1,
+    riseTimeConst=1,
+    fallTimeConst=0.2,
+    offset=0,
+    startTime=-1);
+initial equation
+  //stateSpace.y[1]=1; // instead of X[1], but No effect ?
+  stateSpace.x[1]=1;
+equation
+  connect(ref.y, stateSpace.u[1]);
+end Feedback;</Input>
+              <Output>{Feedback}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(Feedback,stopTime=5)</Input>
+              <Output>record SimulationResult
+    resultFile = "Feedback_res.plt"
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Using overdeterimed solver for initialization. Setting fixed=false to the following variables: stateSpace.x[1]
+"</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.5" Antialiasing="false" MinorY="0.25" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="1" MajorY="0.5" closed="false" YLabel="" Area="AAAAAAAAAAC/5MZcwSskCUAfuUFMnqAbQAqawomo4RY=" ShowGraph="true" Grid="true" XLabel="time" Legend="false">
+              <Data Id="0" Label="ref.y">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</Data>
+              <Data Id="0" Label="stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="time">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</Data>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="ref.y" Color="#0000ff"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="stateSpace.y[1]" Color="#ff0000"/>
+              <Input>plot({stateSpace.y[1],ref.y})</Input>
+              <Output>true</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>model comapreFeedback
+  Feedback noFeedback(stateSpace.A = [0,1; 1,0]);
+  Feedback withFeedback;
+end comapreFeedback;</Input>
+              <Output>{comapreFeedback}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(comapreFeedback,stopTime=2)</Input>
+              <Output>record SimulationResult
+    resultFile = "comapreFeedback_res.plt"
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Using overdeterimed solver for initialization. Setting fixed=false to the following variables: noFeedback.stateSpace.x[1]
+Warning: Using overdeterimed solver for initialization. Setting fixed=false to the following variables: withFeedback.stateSpace.x[1]
+"</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.25" Antialiasing="false" MinorY="0.5" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.5" MajorY="1" closed="false" YLabel="" Area="AAAAAAAAAAC/6JlEUCyXcEAKJg5oh1I+QBm55D6D9/o=" ShowGraph="true" Grid="true" XLabel="time" Legend="false">
+              <Data Id="0" Label="noFeedback.stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="time">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</Data>
+              <Data Id="0" Label="withFeedback.stateSpace.y[1]">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</Data>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="noFeedback.stateSpace.y[1]" Color="#ff0000"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="withFeedback.stateSpace.y[1]" Color="#0000ff"/>
+              <Input>plot({noFeedback.stateSpace.y[1],withFeedback.stateSpace.y[1]})</Input>
+              <Output>true</Output>
+            </GraphCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Kalman Filter&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Often we don't have access to the internal states of a system and can only measure the outputs of the system and have to reconstruct the state of the system based on these measurements. This is normally done with an &lt;/span>&lt;a href="../Observer/Observer.onb">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; text-decoration: underline; color:#0000ff;">observer&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The idea with an observer is that we feedback the difference of the measured output with the estimated output. If the estiamtion is correct then the difference should be zero. &lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Another difficulty is that the measured quantities often contain disturbance, i.e. noise. &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/125.png" width="144" height="51" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/125.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAACQAAAAMwgDAAAATxBxygAAAANzQklUCAgI2+FP4AAAAG9QTFRFAAAAAAAAAAA6AABmADqQAGZmAGa2OgAAOgA6OgBmOjqQOmZmOma2OpDbZgAAZgBmZjqQZma2ZpDbZrbbZrb/kDoAkDo6kDpmkJBmkNv/tmYAtmY6ttuQtv+2tv//25A62////7Zm/9uQ//+2///bx/RsUQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAC1klEQVRYhe1Y25KbMAyNSQq9QS8LTfFu1xHw/99YW7bBBiORTJvwkPOQGYaDdayLZeVweOIaKFE/WkKM3QgamtPl0RpCdEX+aAkR+srpAZG1PH2MK0PvCmGwZcm5BfeNPL53Rcmx+8oJYukgSpMNVytyCdRXaEdy0ZNfinqFruJMBFQOK4WiVtN2jNgmdJ/eVt0ys2E9f70g73cpNAUEo07WfVWu0Gc2JD7qyBqy+Y22PiMPjUDOJEjWkLXdV1rOAU4XKyhFj21Y81K7aWhq9FNX1Gtkk2/eM2PR99XL+X3anxgxfaqXHvcZ05c2bJW58IIJnwrzOyLjJp3rJ0Haa9xBrfLJ8RE9IR+d4sk2cC4mS7LSb/rKve4rv4Tkzmtd8sEqC3rsIWveemVocveTJJsEEuP2hmZMpmMQglTIsMh9n4npC0GOJlEQpgeIcoU8K3RptQ3nt4IOWfexnSwl6Mu08HEATO0oI2JBhtv9dI9OuSnovP8223WA8QRFGwl6JAhTyIvQD8Ov31kLeZpsog/Zi9+48Sd2KCXmUQhgEii38T5dkvTQBkTR1t9mrf5ZO4fM2tPzhgZ2X3RM6twd6oYbwv/E3iK21o0fB99C9gPYWQ7tLon2JyhueonXG0KKB7NtW7fMGTHoeXXLLIKjhW1120YXGpLY0rZZxK6gb28bZhEe433oZtAxv1rQdGNM2jKbB0FFNdwRN4votl461iqoyR5yNztQTgwW4GYROP7R62kWvR6Zg3hzlp6SuthGzYebRWxfANpDpCAcCIh75KwouFnE3nUkVdfMKG0aC9A+jPzPzCLYp/rvM04E5t8qvaXhHCRtYhYJBTGzCDr88EofnYosex10oC8obtL5bOxyswiqV8zBScdsaD78oL/HKnOlxs0iRpBkD3I6rcmSd9+7KZ6dRczbLRdCMo3IingA6Aq7N17DWXMH0KfcrvQ88cQT/wB/ARKHRDhDFnfAAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Here are e denoting a disturbance in the input signal and v is a measurement error. The quality of the estimate can be evaluated by the difference &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/126.png" width="160" height="22" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/126.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAACgAAAAFggDAAAAcIJndwAAAANzQklUCAgI2+FP4AAAAHVQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjoAOmZmOpDbZgAAZgA6ZgBmZjqQZma2ZpDbZrbbZrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmY6tmZmtv//25A625Bm29uQ2/+22////7Zm/9uQ//+2///bArAqqQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACB0lEQVRIie2VDW+DIBCGpa3tNu2+tFulk21F+f8/cdwHCB1r1WTJlvSSRo/eA3cvB2bZfzO1OiY8mc+ZYxp1YmnY1EXa08v20oympphp1GBeGk5tgKVYNKYWorJBRYQEno6UjfISQuTwrLqbdhwlBTHRNAPGqXm4L21qetHYt20TMOxRnF0/mV9f5ji52QF/346iYMW+jJupCHI6gaFwnX8vmD1JpclI3KFwCFLVNKrb2CK6dUBxWRzOqTlY5aYmvWn3pYD6Fg163Zp3QyV3C4XHNderI6iZjaJg1MpoasAhDxzxFKfmD5sQ7g3GVSWtayWlKLft6XaSPGpeP7f7l9bPfYGCLPryebevK+owksa3GKXGsA1wOrCm0KTvDXvuMHE0ngkwRILWJjWyJBVDvIOwKGSERyumGOMlbUPEWwwj/aPzVB4WdWJYPZsK5zhLYQui+Jp/bk/dyabUGIZHfLBthVZA8rxGyYszSBCa0M9xnsIQjdcaXAG5ixv2g1IjGAN4IdcD8u7JeTZZA72VvjAQxj3qHz42zVs7igKhtCgohcNtoStXFlE+X4QV3NAar2l/yTptcQ5qnB+u3L6kgyeXrW20ahSlh26ExRXwJI2MmzQB0z9cRlg/fSRG2Twq+obRpZOGoXUPTeiFz3E2hwqbgc71mW9r+qP22+YzmqbG1a52tT9uX798OqZWTmRRAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">By using this quantity as feedback we obtain the observer &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/127.png" width="295" height="23" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/127.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAEnAAAAFwgDAAAAfol5agAAAANzQklUCAgI2+FP4AAAAHtQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjoAOjqQOmZmOpC2OpDbZgAAZgA6ZgBmZjqQZma2ZpDbZrbbZrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmY6tmZmtv//25A625Bm29uQ2/+22////7Zm/9uQ//+2///bayY8SgAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAC7klEQVRYhe2WDXPbIAyG3bRO95V03Wa3K+7ibsHm///CIQmBcCDByV3W3Vl3uSS2HqQXJKCqFis209b/OoX/wpZ5ekfW3+3xuytaE/Y+h72MmpiETXu7Owl4p7PCm3bDP/XpYML7DJZ85lHCJvoCbNpm+JAdaVg30qkkfHcD1kTBhXAd1YqgVsq0yEnvIhbysiFrIaaEwkTj5T7Ux7B5UlU1fs1NVIeCvROFJ1aGHx9U+L0FrXIW3VsCrJQspVcqfppnIxu3NUr0eRZSjf3ELX6gLwfHpr9EPeDCd/hMjiC14YJG1eZmlDD+SlC6Ft4nWGmmBae+mUdVw73yDZPX5+BhfbeH5Uiaed6hGzth+GHtylWEl4pB7bC2i9tCdYAT9rrHwiYtqb7mc5d2BijkcbtSOVYalmEkpoQiNbaoQqIpfQSbn38eXp5p7bHJwTgsLBE4eyeSwPJEeKkY2t6+MU8vbUPtRAHZRyfnqUOo4vT6prN/7ZTnWGkd7yFeTAlFasbtD5FoQp/foNqVSo0CwOPeoc6JwnNPuREm04vliplDPGzCFDahbJpcFa5Mwf1NlYQUmy+LKYjo+gqiHk3UT3KfPeHFgUBOrhIdoJP1hF2PoeA9+tBcM5bsO0vFfQdPxm95VhiWQhWJKaAoUVzRkGhCH8PQ0/R8OuHDpz27OScM75cv3Xc4Oh53fe3u+vjIY+HmJSgYKz6J7XK/qTybnicWU0CRj8aLCCea0ufg8fH3vfqVuhZQXaIzO7nwjaFNIISXimuIvqH3rx83uqG3jCXvBZim08tPu8/f+V+CjRKt3SnrxRRQqUQT+vjUu93ZMkqNM25hY9U3diTvRBI63hZS9wIdbpm9/e7pwNkELNmt4AoocbSerlwz7CRV3B+EmNOUDp3jE03oy15tj1rR5fjQxJQeufvH3safwnPY8yJ6O9A3B748fDi6u6LJBa9XJf+VsxdRU33zQl4cfrZl9oIr2HX0LbbYYostdlX7C0wLb5pOUDaMAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Now form the error as&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/128.png" width="63" height="22" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/128.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAA/AAAAFggDAAAAQCK0EwAAAANzQklUCAgI2+FP4AAAAGBQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmZgAAZgA6ZgBmZjqQZma2Zrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmZmtv//25A629uQ2/+22////7Zm/9uQ//+2///beVI0ewAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAAjUlEQVQ4je2RyQ6DMAxEDZSlZQmFsJP4//+SthGERmbJGeYU6XnGYwXgqkLmNeolApfL1NqeiegXgMUwOnPWaXvOAWRsuZSUCB6DfPp2SBMs+lf5VvWROUouBwMZ9dcEmRqn5hZkRP+ZWrL8AdLkewu9ZIVMaSKTLuQ1+X/bSJPKaz5rM8q+jXZMt66kCQbhCr3llKaMAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The differential error is &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/129.png" width="200" height="28" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/129.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAADIAAAAHAgDAAAAEykAlQAAAANzQklUCAgI2+FP4AAAAGZQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjqQOmZmOma2OpDbZgAAZgBmZjqQZpDbZrbbZrb/kDoAkDpmkGaQkNv/tmYAtmY6ttuQtv+2tv//25A62////7Zm/9uQ//+2///bX1xSYgAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACO0lEQVRYhe1X2XbCIBANatLNtDVaqS2B5P9/sswAAQIZ9WiXY3MfPJrA3LmzgUUxY8Z3QrDmt124Dm5GyH9CV68v2C2Wn1fzhABn2klBVhf3npB1qCrGyqLfMmY2SMbwaxCHE9gIjAlCiEbT9G8tsT2IaFeTDSU1DdDhhn672OuPVRtk9AQ2EhFBhO6l1c814zRU5X3njxUtBN7yFTrK0aoo8YVhSNnE6ixREcG5CLap+0NFdYsAH61vkgUrJ5vsTCEhwchLpp+ahE2gq/1L3pBtj3XES/s9Sr+JRso2cipf/lkCXeVraxE900lXT9O+QWUNrstVSwrRmvtt6bZFwcFQZthiIZBFReQ8IJDLDx1hbdHp7urNzoeAswGOQQ7t3W+bKD8JYKi41TKeCq5JIraxEIwSFaqQwC6UzoBOJj0MvUfQt15IRrOezV1tf/B4gFgrIVtqQOCodiE+QmCHEPf2jrTbIEQXZWg0AzhvhBXA41KX7vFoe5gRaBBGhjUkMCZhDhrEMzkThaFmscnMuZAHBsv1xkiIpU9OgFAIWbYJgTne3l3e+92BPBm8eXW3PyLESLYKTGmpB7vaZCJli4XAfvU66UpEYNLjrwy66MrumboMWR+MAl/CKQSeHPb8wMAN0bMdnLJFzQ5McrGZ9CQiACF8Pbxp4IO+1GFTQYOUpoynUiKwwGFFabZBgVomrOcc22hqkS04IhB0P+UMXHx7vez2fD3wC5X8FR0Fedoexw/9H5kxY8bN4wtori/1fqaBJgAAAABJRU5ErkJggg==</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The choice of K has two impacts on the system behavior. The first one is the obvious desire to put the eigenvalues of A-KC in the stability area which is an indicator of how fast the errors will die out. The second one is the impact on the error v which will multiplied with K. So the choice of K should be a trade-off between how fast the state reconstruction should occur and how sensitive system we want towards the measurement noise. &lt;/span>&lt;/p>
+&lt;p style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-family:'Times New Roman'; font-size:12pt; color:#000000;">&lt;/p>
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">By assuming that the disturbances, e and v are white niose signals with the covariances R&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">e &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">and R&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">v &lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">then the differential error is minimized with the following choice of K, &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/130.png" width="106" height="30" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/130.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABqAAAAHggDAAAA80x7cgAAAANzQklUCAgI2+FP4AAAAF1QTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjqQOpDbZgAAZgA6ZgBmZrb/kDoAkDpmkNu2kNv/tmYAtv+2tv//25A625Bm25CQ29vb2////7Zm/9uQ//+2///bp7oYWAAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABcklEQVRIie1V0XKDIBAEU22LqbaQ0DaA//+Z4Q41gHK+OOlMx52ME2S5vTsWZOzAn8I2HFA/QcrUTPufoDhqr0SGXjDTled1XDM0ofZLOD9dy0vGVr3cwtDAAPj2VRYoAb9Q9gyDurahlIAlJqrPq5L+AUFNFBkptkm1MilogMoYS6kONDAfVckphloG8hTXYoE4jqU0LNQbSkyDyFgJn30w9F1GQalCVbh80yZBxDb1XBpC8UqmFNdmoaLQfm7oNw3pWjHtJ+qVKK5Ni9LQx6kJaJzErorPmNsa7IUahq+bO1AI43vdzrVbOxU2dMzk8XdBMYW5caWvWJMMZD2Syfc9fr/YqRhYUdr+lQbGIQpSSAnWKMA2gsg0ZY1S2AL7flujUIE0+iM6KgRrilmv2TBQdDjplcytGMzY4Q1I+V0n1gpWE6sUPyfY99dZ/lw+6EbtBPt2ZYbu017wl/Dw+ZSi/L3nzlvHZycY8tt34MD/xh2QNBW9+X4nlQAAAABJRU5ErkJggg==</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The observer matrix K is called the Kalman filter. The matrix P is given by&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/131.png" width="269" height="30" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/131.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAENAAAAHggDAAAAAfm7uwAAAANzQklUCAgI2+FP4AAAAGNQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjqQOmZmOpDbZgAAZgA6ZgBmZrb/kDoAkDpmkNu2kNv/tmYAttuQtv+2tv//25A625Bm25CQ29vb2////7Zm/9uQ//+2///b2yqY9QAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACoklEQVRYhe1Yi3LTMBC0AzEFuzhgQQXUj///yupkydmTTrYYEsIw2ukkk+T2HnvSSW5VFRQU/E+YmppwfnQeObh/ruO50uav3bNR/4hWObn+KZZLW419+nd9u27o2sZxPX7/mjSMLBzzINdjxynTkT68ezHffxh2vf2ihnh4VlZco2ONqc+d+zjWLb3siBxYeCbkmqZNTY4cGGG5nAbzQrQRuLK3TQ1kHRZUKaOaQjnUp8ar0ZMz6sUWg8cMLDxzDOuUaDbwITCCOg2+TJwKV2+mGxZ9BWoASygowNS01NRrutPTt2bd85poq6qJsrjFxowmmETLUwMi2M6uWC59YBJ582oASyooDEfSoV6qn7t2DUm0qcHSeFmBhWeyXJO0ucuYcxCB5VifBm4SeXMdQZZUUAAFi5BgVrlTw75NDdOcl8UtNibmmqTNXc7SgAipKkRvNAvtokCWVBCH0077wUF9dTqvI5inwMtiFsCMINF2zkcxwphg7HtDVliQqje4/EI1aLu5mjTvcMzlFsDMoI3h8jmMoATGnreYpZNWHoEabirbZJQwbXiT0QKZRzQ7/rNuRxAhNXT3vSFLKkg097LZ2bMz5VhZzAKYObTdyS5GSKhx4A1Y8aBNrUVHWq9NfvYKd2tWFlogM4uWdb5ihHXNTx9fJZOkN2CJBQWw57GTzRWzDmhdH6mh8QIAzCza9fq/s5sxB3s6xAcLeKNbZ5gBsMSCAtiLq9sonZ24y4VWTnhfj8sCixmZUlUxzchA12QTWCWT5DmsR0IrmlhvP74+Dz+/f+b92FhyQSGohJxVew/Q493RQ81vYHp6qca7PjvfFdS4w2MvH+b+t3x5UGNvANvMnMMlD/o8P99O278PddP/kY0P2/IFBQUFBQUFeXgDQks8yMbqPowAAAAASUVORK5CYII=</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">It should be perhaps noted that the covariance matrix R&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">ev&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> is assumed to be zero. The Schur decomposition is given by&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/132.png" width="122" height="44" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/132.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAB6AAAALAgDAAAAnVBcPAAAAANzQklUCAgI2+FP4AAAAGlQTFRFAAAAAAAAAAA6AABmADo6ADqQAGa2OgAAOgA6OgBmOjqQOpC2OpDbZgAAZgA6ZgBmZjqQZrb/kDoAkDo6kDpmkNv/tmYAtmY6trZmttu2tv//25A625CQ2////7Zm/9uQ/9u2//+2///bqG5leQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACQ0lEQVRYhe1YW1vCMAwdQ0CUKUOpSqVz+/8/0qa3pVcCH5cHOA98rDtL0iRrT1dVt8fX9lqe+Mq/Zu21PIe++Dy8LyaAVTicRYEvpjvvun9DGe7fdwG94m233HF6LrL8vnlaBtbFbO/+My/abqEsiCgTSQwbOds54jOYPjJedca1Yw6bNrxnA5moO7Ty981cmlohft+0MNotIIR668yPTDRtv9LiVd33KlKYM1iBRDt+9yz/MGRSux6ZiIvmD1efO5X/7gXlLAtR2wAdn0sXwyZyPTKrMTK/A2Vc4FoWhtLezKZu5INZjkwy3fkMl9+65HiwX++9bCWg2kUX0tQOo29MM4UPYaYqSjio+pPW25VuqQBgNRG7zzQ+vUFVMS8Nx7qGXIeLSMzUwZnJm2iAQHet2sl7N/WINCnfJd3USSafwS8KUdZJksURC2hUWQ4PD5t6+/s9//tZ7zNMMVXkODtngdyhRHZVEjX8MnJ6jwNr403JoVtc1HWpbJd1XcQNXffNPbq+z1pr15daUorQS0pirb+Ca7WQ4u3DIpJ2R8CoyjL09pHY+Ky0O8m1UZUHSMp2QmnE0o4OoyrLsD4T23Mk7ciwqrIMW+QuPB3E0o4OoyoPwLa2liZI7OWkXRr4QYqqBDhKtK9mpB0BNFU5Hi+ijGek3WEQVSU67wXVcdKuUtOgHzeJqhIfd4JDrpN2ikQ/9VNVpfAOIpnywHHxtIWlgOHDWz4zU5MhyRf1zK5DX+nPODKF9bm/74SfcR544IL4Bw3JLd9lN3BsAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">which leads to P= W&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">2&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">(W&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:sub;">1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">)&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000; vertical-align:super;">-1&lt;/span>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">. The feedback link is defiend by&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/133.png" width="291" height="22" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/133.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAEjAAAAFggDAAAAvD4KtQAAAANzQklUCAgI2+FP4AAAAHtQTFRFAAAAAAAAAAA6AABmADo6ADqQAGa2OgAAOgA6OgBmOjoAOjo6OjqQOpDbZgAAZgA6ZgBmZjqQZrb/kDoAkDo6kDpmkGaQkNvbkNv/tmYAtmY6tmZmtrZmttu2tv//25A625CQ29uQ2/+22////7Zm/9uQ/9u2//+2///bzOxMTAAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACWElEQVRYhe1XC1PCMAzeQAaooGwoFHVV6Vz//y+0SbqtHSusUNQ7lzturyTf17xaomiQQYILn+zxypIf8XEpnBjn1mMMsrgqLZnV/lvoPURmaOLh4yI4JeXyZm6Z8bSY5zy9Ki1upEDoWJ4QFo+22jMQ9PLhC8egSiy9gmKEH2KIjUhaqqFplQ/b5r1yfpI02CzJo1wr2/Ixd/nQ7y+CK5ep+iVRMYUIQG50jOBDxCHnLDVVF+Fp6aAxWjVz9LUtxcwGcfnoIOMNh1jWjNAxwgv0RY2CbwzVC2nJDDIC9+gTkwQ3vFezVcVYTCd7yLHLh0EGAIVqBG84UJFZR4ygw4qpWkFxv29UoY4C0VpvspSqlWJWmenVyywmGR1EHETnSj5/PmyecocPi4xUgHeJWpY3HGBxc4oyvYuxevhUmxqmfJwHowWPVJv4tZrlzslmLqPpVyrHTh/tdesZ1gfONC2XOreHSpBg0x5V9X4WhBZc8JZqgmsavXrNGEdk5/JhNn61G3nCAVbn4QZJWNt0cFrqkbpcUL1W5aq76GivockOvkDnu3y0yPAmNz5w0GadZxt0ZDVhE4RAtNRld7sQKRmowpXQwf32fgg3xr9cfcy2L7nTh0lGbxmecJhHLBA1hGVmlB2QEObxuhnsoWhxdfziNMRpAGIKe50h6fCf0HzM8BTn8GGQwf0h8objMJ9xvLy/Jl9vq1pf1CdISxWXHZ6WEeBifvzA7hQPH2fDqVWIXifcq9CqdgfWp4oc4uHjTDiW8q7Z/du0/pQw13/7QQYZZJBB/rt8A26QXdO60O9hAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In another words the feedback system can be illustrated by a new &lt;/span>&lt;a href="../Observer/Observer.onb">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; text-decoration: underline; color:#0000ff;">state space&lt;/span>&lt;/a>&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;"> model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style="-qt-paragraph-type:empty; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;/p>
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/162.png" width="292" height="63" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/162.png">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</Image>
+          </TextCell>
+          <GroupCell closed="false">
+            <TextCell style="Subsection (no numbers)">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Example&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="2.78138476304982e-308" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>loadModel(Modelica);</Input>
+              <Output>[done]</Output>
+            </GraphCell>
+            <GroupCell closed="false">
+              <TextCell style="Subsection (no numbers)">
+                <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Random generator modeled in Modelica &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              </TextCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>type Seed = Real[3];</Input>
+                <Output>{Seed}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>function Mathrandom
+  input Real si1;  // {si1,si2,si3} and {so1,so2,so3} should be replaced by si and so with the
+  input Real si2;  // type Seed once OMC can handle a function call with an array vector 
+  input Real si3;
+  input Real tim;
+  output Real x;
+  output Real so1;
+  output Real so2;
+  output Real so3;
+  Seed so;
+  Seed si;
+  algorithm
+  si := {si1,si2,si3};
+  so[1] := abs(rem((171*si[1]*exp(mod(tim-11,tim+13))),30269));   
+  so[2] := abs(rem((172*si[2]*exp(mod(tim-5,tim+7))),30307)); 
+  so[3] := abs(rem((170*si[3]*exp(mod(tim-23,tim+76))),30323)); 
+  if so[1] &lt; 1e-4 then
+     so[1] := 1;
+   end if;
+  if so[2] &lt; 1e-4 then
+     so[2] := 1;
+  end if;
+  if so[3] &lt; 1e-4 then
+    so[3] := 1;
+   end if;
+  x := rem((so[1]/30269.0 +so[2]/30307.0 + so[3]/30323.0),1.0);
+  so1 :=so[1];
+  so2:= so[2];
+  so3 := so[3];
+  end Mathrandom;</Input>
+                <Output>{Mathrandom}</Output>
+              </GraphCell>
+            </GroupCell>
+            <GroupCell closed="false">
+              <TextCell style="Subsection (no numbers)">
+                <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Kalman Observer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              </TextCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>model kalmanRiccati
+  parameter Real A[2,2]=[0,1; 1,0];
+  parameter Real B[2,1]=[0; 1];
+  parameter Real C[1,2]=[1,0];
+  parameter Real Pinit[2,2]=[1,1.5;1.5,1];
+  Real P[2,2](start=Pinit);
+  parameter Real Re = 0.01;
+  Real K[2,1];
+  Real K1 = K[1,1], K2 = K[2,1];
+  Real L[:,:] = 100*transpose(B)*P;    
+  Real L1 = L[1,1], L2 = L[1,2];
+  parameter Real Rv[2,2] = [0.01, 0; 0,  0.01];
+ equation
+   A*P+P*transpose(A)+[1, 0; 0,  1]*Re*[1, 0; 0,1]-P*transpose(C)*100*C*P=[0,0;0,0];  
+   K=P*transpose(C)*100;
+end kalmanRiccati;</Input>
+                <Output>{kalmanRiccati}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>simulate(kalmanRiccati,numberOfIntervals=1)</Input>
+                <Output>record SimulationResult
+    resultFile = "kalmanRiccati_res.plt",
+    messages = "",
+    totalTime = 4.4001699238311,
+    timeFrontend = 0.0804057498927936,
+    timeBackend = 0.118799526196765,
+    timeCodegen = 0.0827676422562085,
+    timeCompile = 3.8081145788082,
+    timeSimulation = 0.309991633014811
+end SimulationResult;</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>{val(K1,0),val(K2,0)}</Input>
+                <Output>{2.41421356237309,2.41421356237309}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>{val(L1,0),val(L2,0)}</Input>
+                <Output>{2.41421356237309,3.41421356237309}</Output>
+              </GraphCell>
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>{val(P[1,1],0),val(P[1,2],0),val(P[2,1],0),val(P[2,2],0)}</Input>
+                <Output>{0.024142135623731,0.024142135623731,0.024142135623731,0.034142135623731}</Output>
+              </GraphCell>
+            </GroupCell>
+          </GroupCell>
+          <GroupCell closed="false">
+            <TextCell style="Subsection (no numbers)">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Input and Measurement Noise in State Space Form&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="1.37350249543867e-321" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="-4.95648474563581e-315" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>block StateSpaceWithNoise "Linear state space system with noise"
+  parameter Real A[:,size(A, 1)] = {{0,1},{1,0}} ;
+  parameter Real B[size(A, 1),:] = {{0},{1}};
+  parameter Real C[:,size(A, 1)] = {{1,0}};
+  parameter Real F[size(A, 1),:] = {{1},{0}};
+  parameter Real D[size(C, 1),size(B, 2)] = zeros(size(C, 1), size(B, 2));
+  extends Modelica.Blocks.Interfaces.MIMO(final nin = size(B, 2), final nout = size(C, 1));
+  output Real x[size(A, 1)] "State vector"; 
+  Real si1(start= 1),si2(start=2),si3(start=3);
+  Real si4(start=1+10),si5(start=27),si6(start=127);
+  Real randomE "input noise";
+  Real randomV "measurement noise";
+algorithm
+  (randomE,si1,si2,si3) := Mathrandom(si1,si2,si3,time/10);
+  (randomV,si4,si5,si6) := Mathrandom(si4,si5,si6,time/10);
+equation
+  der(x) = A * x + B * u + F*{randomE};
+  y = C * x + D * u + {randomV};
+end StateSpaceWithNoise;</Input>
+              <Output>{StateSpaceWithNoise}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>model stateSpaceNoise
+  StateSpaceWithNoise stateSpace; 
+   Modelica.Blocks.Sources.Exponentials ref(
+    outMax=4,riseTime=1,riseTimeConst=1,
+    fallTimeConst=0.2,offset=0,startTime=-1);
+initial equation
+  stateSpace.x[1]=1;
+equation
+  connect(ref.y, stateSpace.u[1]);
+end stateSpaceNoise;</Input>
+              <Output>{stateSpaceNoise}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(stateSpaceNoise,stopTime=3)</Input>
+              <Output>record SimulationResult
+    resultFile = "stateSpaceNoise_res.plt",
+    messages = "",
+    totalTime = 13.6442882405445,
+    timeFrontend = 0.128689260785938,
+    timeBackend = 0.0271130129667318,
+    timeCodegen = 0.0324269564986611,
+    timeCompile = 3.83509175048784,
+    timeSimulation = 9.62087311376166
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Using overdeterimed solver for initialization. Setting fixed=false to the following variables: stateSpace.x[1]
+"</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.25" Antialiasing="false" MinorY="2.5" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.5" MajorY="5" closed="false" YLabel="" Area="v3D35SSQOxy/1NuCrCbvn0AIW91x/QzbQDRzOR7KLPA=" ShowGraph="true" Grid="true" XLabel="time" Legend="true">
+              <Data Id="0" Label="stateSpace.randomE">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</Data>
+              <Data Id="0" Label="stateSpace.randomV">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</Data>
+              <Data Id="0" Label="stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="time">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</Data>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="stateSpace.randomE" Color="#0000ff"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="stateSpace.randomV" Color="#00ff00"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="stateSpace.y[1]" Color="#ff0000"/>
+              <Input>plot({stateSpace.y[1],stateSpace.randomE,stateSpace.randomV})</Input>
+              <Output>true</Output>
+            </GraphCell>
+          </GroupCell>
+          <GroupCell closed="false">
+            <TextCell style="Subsection (no numbers)">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Kalman Observer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>model KalmanFeedback
+  parameter Real A[:,size(A, 1)] = {{0,1},{1,0}} ;
+  parameter Real B[size(A, 1),:] = {{0},{1}};
+  parameter Real C[:,size(A, 1)] = {{1,0}};
+  parameter Real[2,1] K = [2.4;3.4];
+  parameter Real[1,2] L = [2.4,3.4];
+  parameter Real[:,:] ABL = A-B*L;
+  parameter Real[:,:] BL = B*L;
+  parameter Real[:,:] Z = zeros(size(ABL,2),size(AKC,1));
+  parameter Real[:,:] AKC = A-K*C;
+  parameter Real[:,:] Anew = [0,1,0,0 ; -1.4, -3.4, 2.4,3.4; 0,0,-2.4,1;0,0,-2.4,0]; 
+  // = [A-B*L,B*L;zeros(size(ABL,1),size(AKC,2)),AKC];
+  parameter Real[:,:] Bnew = [0;1;0;0];
+  parameter Real[:,:] Fnew = [1;0;0;0];
+  stateSpaceNoise Kalman(stateSpace.A=Anew,stateSpace.B=Bnew,  stateSpace.C=[1,0,0,0], stateSpace.F = Fnew); 
+  stateSpaceNoise noKalman;
+end KalmanFeedback;</Input>
+              <Output>{KalmanFeedback}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(KalmanFeedback,stopTime=3)</Input>
+              <Output>record SimulationResult
+    resultFile = "KalmanFeedback_res.plt",
+    messages = "",
+    totalTime = 32.428911286211,
+    timeFrontend = 0.160827563279691,
+    timeBackend = 0.120321437501135,
+    timeCodegen = 0.0828476105203315,
+    timeCompile = 4.23559796007593,
+    timeSimulation = 27.8292290640291
+end SimulationResult;
+OMC-ERROR: 
+"Warning: Using overdeterimed solver for initialization. Setting fixed=false to the following variables: Kalman.stateSpace.x[1]
+Warning: Using overdeterimed solver for initialization. Setting fixed=false to the following variables: noKalman.stateSpace.x[1]
+"</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0.25" Antialiasing="false" MinorY="1" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="0.5" MajorY="2" closed="false" YLabel="" Area="v4qe/eYsGp4/5BhR27DzxUAIgbJmOUSCQDOz2EJmfwI=" ShowGraph="true" Grid="true" XLabel="time" Legend="true">
+              <Data Id="0" Label="Kalman.stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="noKalman.stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="time">AAAB9wAAAAAAAAAAPK////////Q/eJN0vGp++j+Ik3S8an76P5Jul41P3zs/mJN0vGp++j+euFHrhR64P6Jul41P3zs/pYEGJN0vGz+ok3S8an76P6ul41P3ztk/rrhR64UeuD+w5WBBiTdMP7Jul41P3zs/s/fO2RaHKz+1gQYk3S8bP7cKPXCj1wo/uJN0vGp++j+6HKwIMSbpP7ul41P3ztk/vS8an752yT++uFHrhR64P8AgxJul41Q/wOVgQYk3TD/BqfvnbItEP8Jul41P3zs/wzMzMzMzMz/D987ZFocrP8S8an752yM/xYEGJN0vGz/GRaHKwIMSP8cKPXCj1wo/x87ZFocrAj/Ik3S8an76P8lYEGJN0vI/yhysCDEm6T/K4UeuFHrhP8ul41P3ztk/zGp++dsi0T/NLxqfvnbJP83ztkWhysE/zrhR64UeuD/PfO2RaHKwP9AgxJul41Q/0IMSbpeNUD/Q5WBBiTdMP9FHrhR64Ug/0an752yLRD/SDEm6XjU/P9Jul41P3zs/0tDlYEGJNz/TMzMzMzMzP9OVgQYk3S8/0/fO2RaHKz/UWhysCDEnP9S8an752yM/1R64UeuFHz/VgQYk3S8bP9XjU/fO2Rc/1kWhysCDEj/Wp++dsi0OP9cKPXCj1wo/12yLQ5WBBj/XztkWhysCP9gxJul41P4/2JN0vGp++j/Y9cKPXCj2P9lYEGJN0vI/2bpeNT987j/aHKwIMSbpP9p++dsi0OU/2uFHrhR64T/bQ5WBBiTdP9ul41P3ztk/3AgxJul41T/can752yLRP9zMzMzMzM0/3S8an752yT/dkWhysCDFP93ztkWhysE/3lYEGJN0vD/euFHrhR64P98an752yLQ/33ztkWhysD/f3ztkWhysP+AgxJul41Q/4FHrhR64Uj/ggxJul41QP+C0OVgQYk4/4OVgQYk3TD/hFocrAgxKP+FHrhR64Ug/4XjU/fO2Rj/hqfvnbItEP+HbItDlYEI/4gxJul41Pz/iPXCj1wo9P+Jul41P3zs/4p++dsi0OT/i0OVgQYk3P+MCDEm6XjU/4zMzMzMzMz/jZFocrAgxP+OVgQYk3S8/48an752yLT/j987ZFocrP+Qo9cKPXCk/5FocrAgxJz/ki0OVgQYlP+S8an752yM/5O2RaHKwIT/lHrhR64UfP+VP3ztkWh0/5YEGJN0vGz/lsi0OVgQZP+XjU/fO2SA/5hR64UeuHT/mRaHKwIMbP+Z2yLQ5WBk/5qfvnbItFz/m2RaHKwIVP+cKPXCj1xM/5ztkWhysET/nbItDlYEPP+edsi0OVg0/587ZFocrCz/oAAAAAAAJP+gxJul41Qc/6GJN0vGqBT/ok3S8an8DP+jEm6XjVAE/6PXCj1wo/z/pJul41P39P+lYEGJN0vs/6Yk3S8an+T/pul41P3z3P+nrhR64UfU/6hysCDEm8j/qTdLxqfvwP+p++dsi0O4/6rAgxJul7D/q4UeuFHrqP+sSbpeNT+g/60OVgQYk5j/rdLxqfvnkP+ul41P3zuI/69cKPXCj4D/sCDEm6XjeP+w5WBBiTdw/7Gp++dsi2j/sm6XjU/fYP+zMzMzMzNY/7P3ztkWh1D/tLxqfvnbSP+1gQYk3S9A/7ZFocrAgzj/two9cKPXMP+3ztkWhyso/7iTdLxqfxz/uVgQYk3TFP+6HKwIMScM/7rhR64UewT/u6XjU/fO/P+8an752yL0/70vGp++duz/vfO2RaHK5P++uFHrhR7c/7987ZFoctT/wCDEm6XjVP/AgxJul41Q/8DlYEGJN0z/wUeuFHrhSP/BqfvnbItE/8IMSbpeNUD/wm6XjU/fPP/C0OVgQYk4/8MzMzMzMzT/w5WBBiTdMP/D987ZFocs/8RaHKwIMSj/xLxqfvnbJP/FHrhR64Ug/8WBBiTdLxz/xeNT987ZGP/GRaHKwIMU/8an752yLRD/xwo9cKPXDP/HbItDlYEI/8fO2RaHKwT/yDEm6XjU/P/Ik3S8an74/8j1wo9cKPT/yVgQYk3S8P/Jul41P3zs/8ocrAgxJuj/yn752yLQ5P/K4UeuFHrg/8tDlYEGJNz/y6XjU/fO2P/MCDEm6XjU/8xqfvnbItD/zMzMzMzMzP/NLxqfvnbI/82RaHKwIMT/zfO2RaHKwP/OVgQYk3S8/864UeuFHrj/zxqfvnbItP/PfO2RaHKw/8/fO2RaHKz/0EGJN0vGqP/Qo9cKPXCk/9EGJN0vGqD/0WhysCDEnP/RysCDEm6Y/9ItDlYEGJT/0o9cKPXCkP/S8an752yM/9NT987ZFoj/07ZFocrAhP/UGJN0vGqA/9R64UeuFHz/1N0vGp++eP/VP3ztkWh0/9WhysCDEnD/1gQYk3S8bP/WZmZmZmZo/9bItDlYEGT/1ysCDEm6YP/XjU/fO2Rc/9fvnbItDlj/2FHrhR64UP/YtDlYEGJM/9kWhysCDEj/2XjU/fO2RP/Z2yLQ5WBA/9o9cKPXCjz/2p++dsi0OP/bAgxJul40/9tkWhysCDD/28an752yLP/cKPXCj1wo/9yLQ5WBBiT/3O2RaHKwIP/dT987ZFoc/92yLQ5WBBj/3hR64UeuFP/edsi0OVgQ/97ZFocrAgz/3ztkWhysCP/fnbItDlYE/+AAAAAAAAD/4GJN0vGp/P/gxJul41P4/+Em6XjU/fT/4Yk3S8an8P/h64UeuFHs/+JN0vGp++j/4rAgxJul5P/jEm6XjU/g/+N0vGp++dz/49cKPXCj2P/kOVgQYk3U/+SbpeNT99D/5P3ztkWhzP/lYEGJN0vI/+XCj1wo9cT/5iTdLxqfwP/mhysCDEm8/+bpeNT987j/50vGp++dtP/nrhR64Uew/+gQYk3S8aj/6HKwIMSbpP/o1P3ztkWg/+k3S8an75z/6ZmZmZmZmP/p++dsi0OU/+peNT987ZD/6sCDEm6XjP/rItDlYEGI/+uFHrhR64T/6+dsi0OVgP/sSbpeNT98/+ysCDEm6Xj/7Q5WBBiTdP/tcKPXCj1w/+3S8an752z/7jU/fO2RaP/ul41P3ztk/+752yLQ5WD/71wo9cKPXP/vvnbItDlY//AgxJul41T/8IMSbpeNUP/w5WBBiTdM//FHrhR64Uj/8an752yLRP/yDEm6XjVA//Jul41P3zz/8tDlYEGJOP/zMzMzMzM0//OVgQYk3TD/8/fO2RaHLP/0WhysCDEo//S8an752yT/9R64UeuFIP/1gQYk3S8c//XjU/fO2Rj/9kWhysCDFP/2p++dsi0Q//cKPXCj1wz/92yLQ5WBCP/3ztkWhysE//gxJul41Pz/+JN0vGp++P/49cKPXCj0//lYEGJN0vD/+bpeNT987P/6HKwIMSbo//p++dsi0OT/+uFHrhR64P/7Q5WBBiTc//ul41P3ztj//AgxJul41P/8an752yLQ//zMzMzMzMz//S8an752yP/9kWhysCDE//3ztkWhysD//lYEGJN0vP/+uFHrhR64//8an752yLT//3ztkWhysP//3ztkWhytAAAgxJul41UAAFHrhR64UQAAgxJul41RAAC0OVgQYk0AAOVgQYk3TQABFocrAgxJAAFHrhR64UkAAXjU/fO2RQABqfvnbItFAAHbItDlYEEAAgxJul41QQACPXCj1wo9AAJul41P3z0AAp++dsi0OQAC0OVgQYk5AAMCDEm6XjUAAzMzMzMzNQADZFocrAgxAAOVgQYk3TEAA8an752yLQAD987ZFoctAAQo9cKPXCkABFocrAgxKQAEi0OVgQYlAAS8an752yUABO2RaHKwIQAFHrhR64UhAAVP3ztkWh0ABYEGJN0uwQAFsi0OVgQZAAXjU/fO2L0ABhR64UeuFQAGRaHKwIK5AAZ2yLQ5V7kABqfvnbIstQAG2RaHKwG1AAcKPXCj1rEABztkWhyrsQAHbItDlYCtAAedsi0OVa0AB87ZFocqqQAH//////+lAAgxJul41KUACGJN0vGpoQAIk3S8an6hAAjEm6XjU50ACPXCj1wonQAJJul41P2ZAAlYEGJN0pkACYk3S8anlQAJul41P3yVAAnrhR64UZEAChysCDEmkQAKTdLxqfuNAAp++dsi0I0ACrAgxJuliQAK4UeuFHqJAAsSbpeNT4UAC0OVgQYkhQALdLxqfvmBAAul41P3zoEAC9cKPXCjfQAMCDEm6Xh9AAw5WBBiTXkADGp++dsieQAMm6XjU/d1AAzMzMzMzHUADP3ztkWhcQANLxqfvnZxAA1gQYk3S20ADZFocrAgbQANwo9cKPVpAA3ztkWhymkADiTdLxqfZQAOVgQYk3QJAA6HKwIMSWEADrhR64UeBQAO6XjU/fNdAA8an752yAEAD0vGp++dAQAPfO2RaHH9AA+uFHrhRvkAD987ZFob+QAQEGJN0vD1ABBBiTdLxfUAEHKwIMSa8QAQo9cKPW/xABDU/fO2RO0AEQYk3S8Z7QARN0vGp+7pABFocrAgw+kAEZmZmZmY5QARysCDEm3lABH752yLQuEAEi0OVgQX4QASXjU/fOzdABKPXCj1wd0AEsCDEm6W2QAS8an752vZABMi0OVgQNUAE1P3ztkV1QAThR64UerRABO2RaHKv9EAE+dsi0OUzQAUGJN0vGnNABRJul41PskAFHrhR64TyQAUrAgxJujFABTdLxqfvcUAFQ5WBBiSwQAVP3ztkWfBABVwo9cKPL0AFaHKwIMRvQAV0vGp++a5ABYEGJN0u7kAFjU/fO2QtQAWZmZmZmW1ABaXjU/fOrEAFsi0OVgPsQAW+dsi0OStABcrAgxJuVEAF1wo9cKOqQAXjU/fO2NNABe+dsi0OKUAF++dsi0NSQAYIMSbpeJFABhR64Uet0UAGIMSbpeMQQAYtDlYEGFBABjlYEGJNj0AGRaHKwILPQAZR64UeuA5ABl41P3ztTkAGan752yKNQAZ2yLQ5V81ABoMSbpeNDEAGj1wo9cJMQAabpeNT94tABqfvnbIsy0AGtDlYEGIKQAbAgxJul0pABszMzMzMiUAG2RaHKwHJQAblYEGJNwhABvGp++dsSEAG/fO2RaGHQAcKPXCj1sdABxaHKwIMBkAHItDlYEFGQAcvGp++doVABztkWhyrxUAHR64UeuEEQAdT987ZFkRAB2BBiTdLg0AHbItDlYDDQAd41P3ztgJAB4UeuFHrQkAHkWhysCCBQAedsi0OVcFAB6n752yLAEAHtkWhysBAQAfCj1wo9X9AB87ZFocqvkAH2yLQ5V/+QAfnbItDlT1AB/O2RaHKfUAH//////+mQAgAAAAAAAA=</Data>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="Kalman.stateSpace.y[1]" Color="#ff0000"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="noKalman.stateSpace.y[1]" Color="#0000ff"/>
+              <Input>plot({Kalman.stateSpace.y[1],noKalman.stateSpace.y[1]})</Input>
+              <Output>true</Output>
+            </GraphCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>

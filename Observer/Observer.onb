@@ -1,0 +1,304 @@
+<!DOCTYPE OMNotebook>
+<Notebook>
+  <GroupCell closed="false">
+    <GroupCell closed="false">
+      <TextCell style="Title">
+        <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:10px; margin-bottom:10px; margin-left:10px; margin-right:10px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Arial'; font-size:38pt; font-weight:600; color:#000000;">Observer&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+      </TextCell>
+      <GroupCell closed="false">
+        <TextCell style="Text">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">In many situations the internal states of a system are not accessible, rather only input and output are known. In these systems then a feedback from these measured values is desired.  &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Section">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:18pt; font-weight:600; color:#000000;">Reconstruction of the States&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Consider a system defined by&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/16.png" width="112" height="47" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/16.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABwAAAALwgDAAAADOa+WwAAAANzQklUCAgI2+FP4AAAAGZQTFRFAAAAAAAAAAA6AABmADqQAGZmAGa2OgAAOgA6OgBmOjqQOmZmOma2OpDbZgAAZgBmZma2ZrbbZrb/kDoAkDo6kDpmkJBmkNv/tmYAtmY6ttuQtv//25A62////7Zm/9uQ//+2///b5ulvtgAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACOUlEQVRYhe1X7XaDIAxV2+G+6jZdJ2styvu/5CAEFfnspv2x0/sDT+s1NySRxCy7YxPwZn+R1y6v4+QkkkBf5hJF67pF0m0NVaJgxvKD3IutOFQkzQKAvpQ+wU7FaRKsx9XkuXbtQ/90Kg9pgsquLagTSHNxZXlkt7QeqoOHvhCk8JPuzpIsVwwlXmjNirZ/DctlbH9Rgi66KajsUrFN3tSwz14lo9chGqqP43nyLx8x2RGPjik36bagqlK0zWR4MXejIG+i9deRqcYMusM92JQmq8DuzkpQ54GaObAhXomZSYtu7lCZV7viDcFlLtiXu1mIXCGlJJuKzKRbgkijIAhRZBjfoVI8fjx53zD06LGdLDnohqCqraECrxiUDqaAN8pTWfBkeFt4PQMqoQ0H3RCEFGoR8YN/fhUtg1tU/tmpZRmlGWQCIRMyxk76XJAZ2RDPFq1YCN7zHR0bofeeVf9HMLHfrIWrusUKuHVEHQ1yY2B/uyHYjXO4ShLhYAkcUysLwmimu0gcfz/aVA/qUoe/1MnWi2s9pqGiYTA6ixT5ndL9DWwljH5zvq1HcPgKcKYZJW300x3fBxhdqA6ab1qarC1nuZCDTnRic6FBwExJwugXeyvkucBCFDPc0dEvKii6Fz/OqsIKqSFoz3IWYh9P4qxlwSjhJPjsmeUsxE4I3jy8Bw1AEWAlREc/iS4ShNArgYr4FREf/QCxmNLVG2a4bIIV+kv40/jdsmu+x1fwJPZFfMcdm+MH4oAubfhk9fkAAAAASUVORK5CYII=</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Assume that A,B,C, are known and also that the quantities u and y can be measured. Introduce now an estimation of the state varaible x, based on the measured quantities.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/17.png" width="105" height="29" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/17.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABpAAAAHQgDAAAAnu+y3wAAAANzQklUCAgI2+FP4AAAAFpQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOmZmOma2OpDbZgAAZgBmZrbbZrb/kDoAkDo6kDpmkJBmkNv/tmYAttuQtv//25A62////7Zm/9uQ//+2///bHwPU8AAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABRElEQVRIie1U21LDIBQMSaFqUbBCS7n8/28KB0jDpTL6Zif7wAzDcvbscpJp2vGPoBB7OqUnhEazGLPWiAd0Q1BAjyOXqyGnkZClSWlI18ifOt5IWQoFJB4oyVfC+nR1uFVKbF3/APNyeWSkVlLgpqMkkWdqNPAkmaWnPr1WkrD3IQdyWC3FsYSehXkbWNKHW1Tq0CulWFd6Y44zcGYIy0cf5+vG4op7BX8nd1bRW6U4eylpHZJUeTgcHz6ewmsGBb3XFtjI5JjhkjuTVdAN/IRvitX0ylOsG304jtOS7C6bNHptwkw7HvclvVFKNAlK8OHpHKU7X8jP6ZmjuJdo6aVSHBxLoR0Nc5HTDvOL7XvZ5xZJIl1u6aUSPFOu7jfu82sWekp/M4WWx0LhkSDtEGePXijpInh/dxZ+Gf2AduzY8Rt8A1H+F+OqtF1fAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The difference &lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/18.png" width="57" height="27" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/18.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAA5AAAAGwgDAAAA8aLXigAAAANzQklUCAgI2+FP4AAAAFdQTFRFAAAAAAAAAAA6AABmADqQAGZmAGa2OgAAOjqQOma2OpDbZgAAZgBmZma2ZrbbZrb/kDoAkDpmkNv/tmYAtmY6ttuQtv//25A62////7Zm/9uQ//+2///bl1VOMQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAA2ElEQVQ4je1SSRLCIBAEo6BBhQQNsvz/nQ6QQEwJRXnxoH0CappeAKE/vg2NAd0Ul7uxmecEDDuxf8BadpOhfStTBhVFELKMhwPSavW9RvQNQXjRawwY5TF41thramIZif4LTEOzN8n1bjSntPXRZTG1fnFj2XVIGgrk7Hla7CSELpd+svfVRWAA6XLRmxxyvjAG4W4opdwyDV1tLet1qdjk1hyDlBvuNM86cbiUibHbpWDJ4SlSKZUXmam+L1+E8u0onMdlxWsVlV5ruI268ftuIfCHxB/BE7dKCtCY8HE9AAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">can be used as a measure of the estiamtion error. Now introduce a feedback based on the output estimation error.&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/19.png" width="212" height="29" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/19.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAADUAAAAHQgDAAAA5eeyVgAAAANzQklUCAgI2+FP4AAAAGlQTFRFAAAAAAAAAAA6AABmADqQAGZmAGa2OgAAOgA6OgBmOjqQOmZmOma2OpC8OpDbZgAAZgBmZma2ZrbbZrb/kDoAkDo6kDpmkJBmkNv/tmYAtmY6ttuQtv//25A62////7Zm/9uQ//+2///beDS+eAAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACfElEQVRYhe1X7XLcIAw0lxS36YeT2r0cTThs3v8hAwIBAmOTTidJO9YPT+ys5V20ElzXHXHEe4dk43tT+PvxX4o64h8JxU6XfVTw6A587pmNlpQOzDs9MXbzDA+W4UfLe5YFw5c8IelTQIib57nfTbUMXtQuXDHzXz21qVJGk9XmCYmU2EZAej3dXlNCcUGWAbgKvpNGfO3HdbiE1CnPMVzLyNAOJvxD2aipE642nBJqLrOP+ctTrTy5KAkfbBQFYHw2941TGMyw9hztIZhJ6VywEWL0y1DCc1ECTWHB9roMVTQ4KJTdF8z1iGmamkQ9JRVNCWGpxGjkzd+2JXXq9upeWIFnopwEAZ4foV6kABRtwHri5M1OcZ+i6sW5j6tECaGPTa6f51R4iPh5Qy+sN4WXotz08/YAP8h0ZlA0gMdwg6YCbqLaINTaKaHwKTNQ96zsOpIX8LUVgC8i2JkQR1uJNvvEMuBN5GoHxnJffUuQyZoSCk0Va1YLM86TnDk8q5ST4JYMrBX9VaItOKxuFGW5qfoky4yZEAopwibhECuLD53sd4UMXtDEzQOYgqHoqCJoqFLoEJUYcdTn+nSnolJCWCl9ftqZpPPnS2RbwvPWd/sgfEjBuCDuJmjXRcgx9pRJojY4+RW7uxb8sep2WHM08Fp4NZ5nCaeiYLlRiLnRvx5PF8XX0RKKiKWMo19Pnx7qmlxtscCEkHMinOgk29jJbUNBZ1g/rsEJTUWca949Xcylsk9JGH02M08owV/bR4s4YSmh1x4p3iLihib+7Aeeajtwvm3g2W9j8m3FRyxU52z3O23B18QH1WQd+H3aO4dWovmIf8QRRxzxAmUyOheRLqWdAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">The vector K is called the observer for the system. The error in the differential equation is&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/20.png" width="347" height="29" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/20.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAFbAAAAHQgDAAAAM2c/GgAAAANzQklUCAgI2+FP4AAAAF1QTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjqQOmZmOma2OpDbZgAAZgBmZjqQZrbbZrb/kDoAkDpmkGaQkNv/tmYAttuQtv//25A62////7Zm/9uQ//+2///b5bB+hwAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAACkElEQVRoge2Y21asMAyGpzqMR1RQq50C7/+Y9gQ9WJJ2zN6u5ep/5UiafA1pCBwOTU1NTU3/UYINBCZNObXcNjXtae4ff7BaXH9e7CpauyNCulCcKbcCPPOSXb0j3rGmwX140HY6MdYdlpExu0AyZv4MNr+6wqmc8MRR0pl0Ol+DurC8neHI0wnGw3Ib3Nm5B22lgtebMAuWUaVvGY/nIEGrqwIqHxKhJ6Sz6bS+ns/KFCqAuTfBeFe0jbymkwfm9yeYXl/lR3OzuQETJrS0kM5VHZUEK5yQDk8nuRyM1nT7AVab0GDC2ksWWLrSCFyVCy5cQrrYL1OGttJ3Q2MmqMHc+2t8ADdqjpirxmWMnhHcHr7uEirojhDSRUH5oIp5etj3VmCC+wj6ojyeQXq10WXs1mVR5kzNrK4qqQRwTAnpEqq5f3n1+edsk7/TsUk2ZGCQcSG358MyDlGdZDaq1g3pMvtT0/v/VVFtDfff0iVUaqDA3rlCk2zyMR8eQzd+T59xpgaOuXc/eFxsxkuYiCBoDis0kAAgIV2aioKHA2qCGGz0asKJ78p3T6qJrQeYxyN5UrdVVNCgQEiXULlZbV2cK8vYJKPIIONi62jmMWAnwrxMVaydLKGP+m0llQB6AiFdHHR5/QAHuhIT1GA9Z9PNO0Jv9+mw7amb7px1PCfUUZXMCQR0SVDVQLr5CaoA1AT34QJb7LnfLzhhZkY3OZoK2R7HyXxbRVUy39LQ+aDmVVUw6HChJgU+7JuPbmed6fa7LU2Yx7C26OwyfXZdWqL3skqqgvcyCrqSVNCr5FsUrG/fEy5ZuyNCut8Q/yF+5jvYJWt3REj3Gyr9ZpVXVFmVrkqqkpCuqampqanpb+gLCGxJwKWCl0wAAAAASUVORK5CYII=</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">By recalling that&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/21.png" width="104" height="27" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/21.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAABoAAAAGwgDAAAAp3Q6/AAAAANzQklUCAgI2+FP4AAAAFdQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgBmOma2OpDbZgAAZgBmZrbbZrb/kDoAkDo6kDpmkJBmkNv/tmYAttuQtv/btv//25A62////7Zm/9uQ//+2///bFNyGMQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAABDklEQVRIie2U2xKCIBCGA9PKQg1K4vD+zxkHlV1Gy4u6aPK/cGB2ln/3Y3G327TpJ6QrQspxowjlX3NSyUcUva5O3zNicWHqsBBlisn943NG8gWtZSNBit7XVi7E51J8xpDszgUkMyN/tqljuGEBhK7Yap9UlGCKcn2EQWBk3dn0Wtyb4WjlQSQagkxaoABv39SXrodBjA41G0AkGjPKvKdZCFWnzUyJ8DZtUw6ftUJFiaxt1JFtwC6AUGSi8RZdzLYtj9kZCmRkavDE/BVBAG8Vs/XBG9julk0RMoKQ/ca2V8rVWnghe5g8wdzCnEFTyAg9ODfnlI/DvsonyrUlvaUkCB5+R5/8TWza9Pd6ArV9DwwKcJUvAAAAAElFTkSuQmCC</Image>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">then we can re-write the observed system as&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+          </TextCell>
+          <TextCell style="Text">
+            <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/22.png" width="306" height="80" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            <Rule name="TextAlignment">Center</Rule>
+            <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/22.png">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</Image>
+          </TextCell>
+        </GroupCell>
+      </GroupCell>
+      <GroupCell closed="false">
+        <TextCell style="Subsection">
+          <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times'; font-size:14pt; font-weight:600; color:#000000;">Example&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+        </TextCell>
+        <GroupCell closed="false">
+          <GroupCell closed="false">
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">Consider the following model&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p align="center" style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;img src="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/23.png" width="287" height="83" />&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+              <Rule name="TextAlignment">Center</Rule>
+              <Image name="file:///C:/Users/mohto/Develop/OpenModelica/OMNotebook/DrControl/LQ/OMNotebook_tempfiles/23.png">AAAAAYlQTkcNChoKAAAADUlIRFIAAAEfAAAAUwgDAAAAkWTz3AAAAANzQklUCAgI2+FP4AAAAFpQTFRFAAAAAAAAAAA6AABmADqQAGa2OgAAOgA6OgBmOjo6OjqQOmZmOma2OpDbZgAAZrb/kDoAkDo6kDpmkNvbkNv/tmYAttuQtv//25A62////7Zm/9uQ//+2///bPjVtGQAAAAF0Uk5TAEDm2GYAAAAJcEhZcwAADsQAAA7EAZUrDhsAAAAZdEVYdFNvZnR3YXJlAE1pY3Jvc29mdCBPZmZpY2V/7TVxAAAFqUlEQVR4nO1c63rbIAy1uybrLmmzrWyu3bz/a85cDOIiAb4Umo/zY2saLOGDkASIdl1DQ0NFeH++wA9931/S2m7CMOt52UnWkbhdIR8D7zPDCLLbbgL78m/WUzlB7NSND68j5Oc0/zOdH99CzU3bcX67TWqn84Ub46xnm6gjcbuexP+jaxOi32EsbWeqNqkd+PO3K+dmg6hjwSQ9Pj/T+YQ9o9sOq4ddqGXicSaoWS/qUGjD9vgZ8BE1bRnKYYJaaTnS260XdShMJHL5mc642zRtqVZRtTY/K0UdC2PVDj9kCDdtb1fUScXV2vysFHUoFufcufyALwIAbVf51UW69D/LRK7QRQObtvlh5FiCtqtSxUWtZIYpG16bdWY85wWBgU6+gA+2+JHu8zcWUUBbd1ZM556DNgVtMb3If05hUbLFDDqysZzA53A5rxMofpQDMH3lT8y/en/mT01PCfx43RPf3a4UQVqtaGbGyHtT8X3EL2mToMzILGPsVuwHGRR0CsiXDHKgBD+D+NSH+2XaKtW2hlF8HqlxMZknl2VI8YxdZUaUK1ymKrnogcsY6OWmp79nam4SKWAy3LxAmgPJD6bWFeWlZAEoR+kskFx9FzMo0IDYC+27JpK9NLgyZIdJp4CpdX4PZz8G7bwoNsEypoOhZ3x8o/lJGaAYHGOQHWakf8bUOqJSrBtQir8MXMaAmHS7vkB+Wa+xMHgAPzJ+AbEZah1R3hwNikISFAA7DTUOiPs1wE8ApJdIROilaK2oWkcUbYSeqGR+dCQjghDd0Ry4L2WlxHlqg6JobLAfsR4GycOHzC+lDwz9+vnl8RMQleF/Btv/TF9fu9iib//4JeOBSKLy1Tq/lyRP36nsMD1+abpl/FLE0D3dMf9R2oW9z7kaOW9j+Y+SJZrFugiiNcqPtYxREX12PieZVRIGRPjRtGy9M7tb4p1GKvEOqoV6Fg+xjLQXCwMwK2ycH2sZk7NLgM6+5Gxduxp6wY+ptfUsXitHlt5KshY9nkL9Vd4mARJn0rN1M49zIiEYy8BWQJ6sTev3GPA9zdRsXSlkWa8U3nZa+p4nKyvK5B4C4NuEqdn6pv1DW0+F+4c4oanZVpavCKgFetaJOhbofEzkZ9P5ha2nyvOLZSS91DSRn7Vjrg0IHKVVaD64B0rL1le7DK1W66nR+3AgMywpW5drmE1qFz0bRB2MsAWlZOubii6U2l1KQQogMVs/UE/FSM7WD9XT0NDQ0NBwNPariL5H7FgRfW/gp0h7VUTfH7xlZq2rzELQNbk7VETfIcbANmCVZcxlAIJW7duARQDm0uaK6DsE3Diq/BiiCOBM2loRnfFUBRGAH3yfovs8cI8sUhEd9dmJh6DTz66KXH3s5Q05qtdW+SRdER2lR9vETGbYvatqr5P8uTRBsiyLPnGxq5ijFdEUTBEz6rssToq7ODF1BjoQoZU54YpoCmogqEsxzvXhsgYkXEgs0UPLAryK6JhvWeqBqIbOvYCyOcTcYfqCEwd68hCsiKagCCXrMGx+djs+WQdRuGU5jZziTq8i2q4qRIuYh4c/V/Tmz/vzN1BLVtgBzR6WuL2sgLrdWJk3JolxbrCCSXnfWR9Gl70zzx1B1IRT+YmnNlKSyheoA0OdUpS1H2E79luun18yXbz90pe8sCJm9fKkF/LuUBSB7GJs3BPjl3Ss+F27TntwlsCPdwenBOQ0j52Mx/IfWBEdiWHydWVeidwIZbLu3L/D9fGQ5c08KSZfynrnQBmzVRFNcy3zZ+Gasb/6IWZW6A5gtQDr0GAZc84cAEXMyJiI9ZeipXT6nAjtJINlzHlVzDlFzJ+Ensj+T2YVc3oRcwX7P2lo+4cRBPefS68dK0I7v4ggVAbfzMfAeKDqy5jLQM+w+suYy8D5626tfgPBpyxj/ii0MuaGhoaGhn3wH+QBdMpub9c6AAAAAElFTkSuQmCC</Image>
+            </TextCell>
+            <TextCell style="Text">
+              <Text>&lt;!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0//EN" "http://www.w3.org/TR/REC-html40/strict.dtd">
+&lt;html>&lt;head>&lt;meta name="qrichtext" content="1" />&lt;style type="text/css">
+p, li { white-space: pre-wrap; }
+&lt;/style>&lt;/head>&lt;body style=" font-family:'MS Shell Dlg 2'; font-size:8.25pt; font-weight:400; font-style:normal;">
+&lt;table border="0" style="-qt-table-type: root; margin-top:5px; margin-bottom:5px; margin-left:5px; margin-right:5px;">
+&lt;tr>
+&lt;td style="border: none;">
+&lt;p style=" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;">&lt;span style=" font-family:'Times New Roman'; font-size:12pt; color:#000000;">How is the output signal behavior? What happens to the output if the values of K is increased?&lt;/span>&lt;/p>&lt;/td>&lt;/tr>&lt;/table>&lt;/body>&lt;/html></Text>
+            </TextCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>loadModel(Modelica);</Input>
+              <Output>[done]</Output>
+            </GraphCell>
+            <GroupCell closed="false">
+              <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+                <Input>model observer
+  /* Real[:,:] A1=[0,1;-1,0]-[0;1]*[6,5];
+  Real[:,:] BL=[0;1]*[6,5];
+  Real[:,:] KC=[0;1]*[6,5];
+  Real[:,:] Z=[0,0;0,0];
+  Real[4,4] Ap; //=[A1,BL;Z,KC];*/
+  Modelica.Blocks.Continuous.StateSpace stateSpace(A=[1.2,1,0,0;-7,-5,6,5;0,0,0.2,1;0,0,-2,0],B=[0;1;0;0],C=[1,0,0,0],D=[0]);             
+  Modelica.Blocks.Sources.Step step(height=0.5);
+equation
+/*Ap[1,1:2]=A1[1,1:2];
+  Ap[1,3:4]=BL[1,1:2];
+  Ap[2,1:2]=A1[2,1:2];
+  Ap[2,3:4]=BL[2,1:2];
+  Ap[3,1:2]=Z[1,1:2];
+  Ap[4,1:2]=Z[2,1:2];
+  Ap[3,3:4]=KC[1,1:2];
+  Ap[4,3:4]=KC[2,1:2];*/
+  connect(step.y, stateSpace.u[1]);
+end observer;</Input>
+                <Output>{observer}</Output>
+              </GraphCell>
+            </GroupCell>
+            <GroupCell closed="false"/>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(observer,numberOfIntervals=1000,stopTime=10)</Input>
+              <Output>record SimulationResult
+    resultFile = "observer_res.plt"
+end SimulationResult;</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>model  comapreObserver
+   observer  o1;
+ observer   o2(stateSpace.A=[1.2,1,0,0;-7,-5,6,5;0,0,-0.8,1;0,0,-5,0]);
+end comapreObserver;</Input>
+              <Output>{comapreObserver}</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="0" Antialiasing="false" MinorY="0" Title="Plot title" LogX="false" LogY="false" MajorX="0" MajorY="0" closed="false" YLabel="y" Area="wEgAAAAAAADAMAAAAAAAAEBZAAAAAAAAQD4AAAAAAAA=" ShowGraph="false" Grid="false" XLabel="x" Legend="false">
+              <Input>simulate(comapreObserver,stopTime=30)</Input>
+              <Output>record SimulationResult
+    resultFile = "comapreObserver_res.plt"
+end SimulationResult;</Output>
+            </GraphCell>
+            <GraphCell AutoX="true" AutoY="true" style="Graph" MinorX="2.5" Antialiasing="false" MinorY="0.05" Title="Plot by OpenModelica" LogX="false" LogY="false" MajorX="5" MajorY="0.1" closed="false" YLabel="" Area="AAAAAAAAAAC/n++dudem4kA+cSdlxK7mP+HkiPCxZO4=" ShowGraph="true" Grid="true" XLabel="time" Legend="true">
+              <Data Id="0" Label="o1.stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="o2.stateSpace.y[1]">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</Data>
+              <Data Id="0" Label="o2.step.y">AAAB9z/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA/4AAAAAAAAD/gAAAAAAAAP+AAAAAAAAA=</Data>
+              <Data Id="0" Label="time">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</Data>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="o1.stateSpace.y[1]" Color="#ff0000"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="o2.stateSpace.y[1]" Color="#0000ff"/>
+              <Graph Points="false" Line="true" X="time" Interpolation="Linear" Y="o2.step.y" Color="#00ff00"/>
+              <Input>plot({o1.stateSpace.y[1],o2.stateSpace.y[1],o2.step.y})</Input>
+              <Output>true</Output>
+            </GraphCell>
+          </GroupCell>
+        </GroupCell>
+      </GroupCell>
+    </GroupCell>
+  </GroupCell>
+</Notebook>
