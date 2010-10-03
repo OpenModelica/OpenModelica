@@ -39,3 +39,5 @@ QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
 QString Helper::omcServerName = "OMEditor";
 QString Helper::omFileTypes = "*.mo";
 QString Helper::omFileOpenText = "Modelica Files (*.mo)";
+qreal Helper::globalXScale = 0.08;
+qreal Helper::globalYScale = 0.17;

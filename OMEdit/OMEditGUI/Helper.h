@@ -45,6 +45,8 @@ public:
     static QString omcServerName;
     static QString omFileTypes;
     static QString omFileOpenText;
+    static qreal globalXScale;
+    static qreal globalYScale;
 };
 
 #endif // HELPER_H

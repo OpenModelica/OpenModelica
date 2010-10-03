@@ -36,7 +36,7 @@
 
 // Shape Annotation Class
 ShapeAnnotation::ShapeAnnotation(QGraphicsItem *parent)
-    : QGraphicsItem(parent), mScaleX(0.08), mScaleY(0.17)
+    : QGraphicsItem(parent)
 {
 
 }
@@ -810,11 +810,111 @@ void TextAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *op
     painter->drawText(rect, Qt::AlignCenter | Qt::AlignVCenter, this->mTextString, &rect);
 }
 
-//Component Annotation Class
-ComponentAnnotation::ComponentAnnotation(QString value, QString className, QString transformationStr, OMCProxy *omc, GraphicsScene *graphicsScene, GraphicsView *graphicsView, QGraphicsItem *parent)
-    : ShapeAnnotation(parent), className(className), mpOMCProxy(omc),
-      mpGraphicsScene(graphicsScene), mpGraphicsView(graphicsView)
+//Inheritance Annotation Class
+InheritanceAnnotation::InheritanceAnnotation(QString value, QString className, OMCProxy *omc,
+                                             GraphicsScene *graphicsScene, GraphicsView *graphicsView,
+                                             IconAnnotation *pIcon, QGraphicsItem *parent)
+    : ShapeAnnotation(parent), mClassName(className), mpOMCProxy(omc), mpGraphicsScene(graphicsScene),
+      mpGraphicsView(graphicsView)
 {
+    setFlag(QGraphicsItem::ItemStacksBehindParent);
+    mpParentIcon = pIcon;
+    parseIconAnnotationString(value);
+}
+
+void InheritanceAnnotation::parseIconAnnotationString(QString value)
+{
+    value = StringHandler::removeFirstLastCurlBrackets(value);
+    if (value.isEmpty())
+    {
+        return;
+    }
+    QStringList list = StringHandler::getStrings(value);
+    if (list.size() < 4)
+    {
+        return;
+    }
+    qreal x1, x2, y1, y2, width, height;
+    x1 = static_cast<QString>(list.at(0)).toFloat();
+    y1 = static_cast<QString>(list.at(1)).toFloat();
+    x2 = static_cast<QString>(list.at(2)).toFloat();
+    y2 = static_cast<QString>(list.at(3)).toFloat();
+    width = fabs(x1 - x2);
+    height = fabs(y1 - y2);
+    this->mRectangle = QRectF (x1, y1, width, height);
+
+    if (list.size() < 5)
+    {
+        return;
+    }
+
+    // Check with Mohsen about the new IconAnnotation Standard Problem of SimForge
+
+    QStringList shapesList = StringHandler::getStrings(StringHandler::removeFirstLastCurlBrackets(list.at(4)), '(', ')');
+
+    // Now parse the shapes available in list
+
+    foreach (QString shape, shapesList)
+    {
+        shape = StringHandler::removeFirstLastCurlBrackets(shape);
+        if (shape.startsWith("Line"))
+        {
+            shape = shape.mid(QString("Line").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            LineAnnotation *lineAnnotation = new LineAnnotation(shape, this);
+            Q_UNUSED(lineAnnotation);
+        }
+        if (shape.startsWith("Polygon"))
+        {
+            shape = shape.mid(QString("Polygon").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            PolygonAnnotation *polygonAnnotation = new PolygonAnnotation(shape, this);
+            Q_UNUSED(polygonAnnotation);
+        }
+        if (shape.startsWith("Rectangle"))
+        {
+            shape = shape.mid(QString("Rectangle").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            RectangleAnnotation *rectangleAnnotation = new RectangleAnnotation(shape, this);
+            Q_UNUSED(rectangleAnnotation);
+        }
+        if (shape.startsWith("Ellipse"))
+        {
+            shape = shape.mid(QString("Ellipse").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            EllipseAnnotation *ellipseAnnotation = new EllipseAnnotation(shape, this);
+            Q_UNUSED(ellipseAnnotation);
+        }
+        if (shape.startsWith("Text"))
+        {
+            shape = shape.mid(QString("Text").length());
+            shape = StringHandler::removeFirstLastBrackets(shape);
+            TextAnnotation *textAnnotation = new TextAnnotation(shape, this);
+            Q_UNUSED(textAnnotation);
+        }
+    }
+}
+
+QRectF InheritanceAnnotation::boundingRect() const
+{
+    return this->mRectangle;
+}
+
+void InheritanceAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(painter);
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+}
+
+//Component Annotation Class
+ComponentAnnotation::ComponentAnnotation(QString value, QString className, QString transformationStr, OMCProxy *omc,
+                                         GraphicsScene *graphicsScene, GraphicsView *graphicsView,
+                                         IconAnnotation *pIcon, QGraphicsItem *parent)
+    : ShapeAnnotation(parent), mClassName(className), mpOMCProxy(omc), mpGraphicsScene(graphicsScene),
+      mpGraphicsView(graphicsView)
+{
+    mpParentIcon = pIcon;
     parseIconAnnotationString(value);
     parseTransformationString(transformationStr);
     connect(this, SIGNAL(componentClicked(ComponentAnnotation*)), mpGraphicsView, SLOT(addConnector(ComponentAnnotation*)));
@@ -1036,6 +1136,11 @@ qreal ComponentAnnotation::getRotateAngle()
     return mRotateAngle;
 }
 
+IconAnnotation* ComponentAnnotation::getParentIcon()
+{
+    return mpParentIcon;
+}
+
 void ComponentAnnotation::mousePressEvent(QGraphicsSceneMouseEvent *event)
 {
     if (event->button() == Qt::LeftButton)
@@ -1053,7 +1158,7 @@ void ComponentAnnotation::mouseReleaseEvent(QGraphicsSceneMouseEvent *event)
 IconAnnotation::IconAnnotation(QString value, QString className, QPointF position, OMCProxy *omc, GraphicsScene *graphicsScene, GraphicsView *graphicsView)
     : mClassName(className), mpOMCProxy(omc), mpGraphicsScene(graphicsScene), mpGraphicsView(graphicsView)
 {
-    this->scale(ShapeAnnotation::mScaleX, ShapeAnnotation::mScaleY);
+    this->scale(Helper::globalXScale, Helper::globalYScale);
     mpGraphicsScene->addItem(this);
     setPos(position);
     setFlags(QGraphicsItem::ItemIsMovable | QGraphicsItem::ItemIsSelectable | QGraphicsItem::ItemSendsGeometryChanges);
@@ -1224,6 +1329,7 @@ QVariant IconAnnotation::itemChange(GraphicsItemChange change, const QVariant &v
     }
     else if (change == QGraphicsItem::ItemPositionHasChanged)
     {
+        emit componentMoved();
         updateSelectionBox();
     }
     return QGraphicsItem::itemChange(change, value);
@@ -1266,6 +1372,11 @@ void IconAnnotation::updateSelectionBox()
     this->mpTopRightCornerItem->updateCornerItem(pointsList.at(1).x(), pointsList.at(1).y(), Qt::TopRightCorner);
     this->mpBottomLeftCornerItem->updateCornerItem(pointsList.at(0).x(), pointsList.at(0).y(), Qt::BottomLeftCorner);
     this->mpBottomRightCornerItem->updateCornerItem(pointsList.at(1).x(), pointsList.at(0).y(), Qt::BottomRightCorner);
+}
+
+void IconAnnotation::addConnector(Connector *item)
+{
+    connect(this, SIGNAL(componentMoved()), item, SLOT(drawConnector()));
 }
 
 void IconAnnotation::resizeIcon(qreal resizeFactorX, qreal resizeFactorY)
@@ -1345,11 +1456,9 @@ void IconAnnotation::getClassComponents(QString className)
     for(int i = 1 ; i <= inheritanceCount ; i++)
     {
         QString result = this->mpOMCProxy->getNthInheritedClass(className, i);
-        QString result = this->mpOMCProxy->getIconAnnotation(component->getClassName());
-        ComponentAnnotation *componentAnnotation = new ComponentAnnotation(result, component->getClassName(),
-                                                                           componentsAnnotationsList.at(i),
-                                                                           mpOMCProxy, mpGraphicsScene,
-                                                                           mpGraphicsView, this);
+        QString annotationString = this->mpOMCProxy->getIconAnnotation(result);
+        InheritanceAnnotation *inheritanceAnnotation = new InheritanceAnnotation(annotationString, result, mpOMCProxy,
+                                                                                 mpGraphicsScene, mpGraphicsView, this, this);
         getClassComponents(result);
     }
 
@@ -1366,7 +1475,7 @@ void IconAnnotation::getClassComponents(QString className)
                 ComponentAnnotation *componentAnnotation = new ComponentAnnotation(result, component->getClassName(),
                                                                                    componentsAnnotationsList.at(i),
                                                                                    mpOMCProxy, mpGraphicsScene,
-                                                                                   mpGraphicsView, this);
+                                                                                   mpGraphicsView, this, this);
                 Q_UNUSED(componentAnnotation);
             }
         }

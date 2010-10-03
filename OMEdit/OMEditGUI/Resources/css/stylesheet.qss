@@ -1,3 +1,24 @@
+/* Library Widget Styles */
+QTreeWidget::branch {
+    border-image: url(../icons/vline.png) 0;
+}
+QTreeWidget::branch:has-siblings:adjoins-item {
+    border-image: url(../icons/branch-more.png) 0;
+}
+QTreeWidget::branch:!has-children:!has-siblings:adjoins-item {
+    border-image: url(../icons/branch-end.png) 0;
+}
+QTreeWidget::branch:has-children:!has-siblings:closed, QTreeWidget::branch:closed:has-children:has-siblings {
+    border-image: none;
+    image: url(../icons/branch-closed.png);
+}
+QTreeWidget::branch:open:has-children:!has-siblings, QTreeWidget::branch:open:has-children:has-siblings  {
+    border-image: none;
+    image: url(../icons/branch-open.png);
+}
+/* End of Library Widget Styles */
+
+/* Modelica Model and Text Buttons Styles */
 QPushButton#ModelicaModelButton, QPushButton#ModelicaTextButton {
     font-size: 13px;
     border: 1px solid #71737B;
@@ -13,6 +34,8 @@ QPushButton#ModelicaTextButton {
 QPushButton#ModelicaModelButton:checked, QPushButton#ModelicaTextButton:checked {
     background-color: #ffffff;
 }
+/* End of Modelica Model and Text Buttons Styles */
+
 QTextEdit, QLineEdit {
     border: 1px solid gray;
 }

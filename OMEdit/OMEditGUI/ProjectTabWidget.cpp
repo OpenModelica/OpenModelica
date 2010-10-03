@@ -178,10 +178,12 @@ void GraphicsView::addConnector(ComponentAnnotation *pComponent)
 
         this->scene()->addItem(mpConnector);
         this->mIsCreatingConnector = true;
+        pComponent->getParentIcon()->addConnector(this->mpConnector);
 
-        mpConnector->addPoint(startPos);
-        mpConnector->addPoint(startPos);
-        mpConnector->drawConnector();
+        this->mpConnector->setStartComponent(pComponent);
+        this->mpConnector->addPoint(startPos);
+        this->mpConnector->addPoint(startPos);
+        this->mpConnector->drawConnector();
     }
     else
     {
@@ -191,6 +193,7 @@ void GraphicsView::addConnector(ComponentAnnotation *pComponent)
         this->mIsCreatingConnector = false;
         QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
         this->mpConnector->updateEndPoint(newPos);
+        pComponent->getParentIcon()->addConnector(this->mpConnector);
         this->mpConnector->setEndComponent(pComponent);
     }
 }
@@ -248,6 +251,9 @@ ProjectTab::ProjectTab(ProjectTabWidget *parent)
     : QWidget(parent)
 {
     mpParentProjectTabWidget = parent;
+    if (!mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction->isEnabled())
+        mpParentProjectTabWidget->mpParentMainWindow->gridLinesAction->setEnabled(true);
+
     mpGraphicsScene = new GraphicsScene(this);
     mpGraphicsView  = new GraphicsView(this);
     mpGraphicsView->setScene(mpGraphicsScene);
@@ -314,6 +320,8 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
     setTabsClosable(true);
     setContentsMargins(0, 0, 0, 0);
     this->mShowLines = false;
+    if (this->count() == 0)
+        mpParentMainWindow->gridLinesAction->setEnabled(false);
     connect(this,SIGNAL(tabCloseRequested(int)),SLOT(closeProjectTab(int)));
     connect(mpParentMainWindow->resetZoomAction, SIGNAL(triggered()),this,SLOT(resetZoom()));
     connect(mpParentMainWindow->zoomInAction, SIGNAL(triggered()),this,SLOT(zoomIn()));
@@ -352,7 +360,9 @@ void ProjectTabWidget::addNewProjectTab(QString modelName, QString modelStructur
 //! @see closeAllProjectTabs()
 bool ProjectTabWidget::closeProjectTab(int index)
 {
-        removeTab(index);
+    removeTab(index);
+    if (this->count() == 0)
+        mpParentMainWindow->gridLinesAction->setEnabled(false);
     return true;
 }
 

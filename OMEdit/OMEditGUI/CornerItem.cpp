@@ -40,8 +40,8 @@ CornerItem::CornerItem(qreal x, qreal y, Qt::Corner corner, GraphicsScene *graph
     setFlags(QGraphicsItem::ItemIgnoresTransformations);
     this->scale(1.0, -1.0);
     this->mpGraphicsScene->addItem(this);
-    this->mActivePen = QPen(QColor("red"), 3);
-    this->mHoverPen = QPen(QColor("darkRed"), 3);
+    this->mActivePen = QPen(Qt::red, 3);
+    this->mHoverPen = QPen(Qt::darkRed, 3);
     updateCornerItem(x, y, corner);
     setHovered();
 }

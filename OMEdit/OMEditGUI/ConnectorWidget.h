@@ -47,15 +47,19 @@ class Connector : public QGraphicsWidget
     Q_OBJECT
 public:
     Connector(ComponentAnnotation *pComponent, GraphicsView *parentView, QGraphicsItem *parent = 0);
+
+    enum geometryType {VERTICAL, HORIZONTAL, DIAGONAL};
+    GraphicsView *mpParentGraphicsView;
+
     void addPoint(QPointF point);
     void setStartComponent(ComponentAnnotation *pComponent);
     void setEndComponent(ComponentAnnotation *pCompoent);
     int getNumberOfLines();
-    ComponentAnnotation *getStartComponent();
-    ComponentAnnotation *getEndComponent();
-
-    GraphicsView *mpParentGraphicsView;
-    enum geometryType {VERTICAL, HORIZONTAL, DIAGONAL};
+    Connector::geometryType getGeometry(int lineNumber);
+    ComponentAnnotation* getStartComponent();
+    ComponentAnnotation* getEndComponent();
+    ConnectorLine* getLine(int line);
+    bool isActive();
 private:
     ConnectorLine *mpConnectorLine;
     ComponentAnnotation *mpStartComponent;
@@ -63,10 +67,21 @@ private:
     QVector<ConnectorLine*> mpLines;
     QVector<QPointF> mPoints;
     QVector<geometryType> mGeometries;
+    bool mEndComponentConnected;
+    bool mIsActive;
+signals:
+    void endComponentConnected();
 public slots:
     void drawConnector();
     void updateStartPoint(QPointF point);
     void updateEndPoint(QPointF point);
+    void moveAllPoints(qreal offsetX, qreal offsetY);
+    void updateLine(int);
+    void doSelect(bool lineSelected, int lineNumber);
+    void setActive();
+    void setPassive();
+    void setHovered();
+    void setUnHovered();
 };
 
 class ConnectorLine : public QObject, public QGraphicsLineItem
@@ -76,9 +91,39 @@ private:
 
 public:
     ConnectorLine(qreal x1, qreal y1, qreal x2, qreal y2, int lineNumber, Connector *parent = 0);
+
     Connector *mpParentConnector;
     QPointF startPos;
     QPointF endPos;
+
+    void paint(QPainter *p, const QStyleOptionGraphicsItem *o, QWidget *w);
+    void setActive();
+    void setPassive();
+    void setHovered();
+    void setLine(QPointF pos1, QPointF pos2);
+    int getLineNumber();
+public slots:
+    void setConnected();
+signals:
+    void lineClicked();
+    void lineMoved(int);
+    void lineHoverEnter();
+    void lineHoverLeave();
+    void lineSelected(bool isSelected, int lineNumber);
+protected:
+    virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
+    virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
+    virtual void hoverEnterEvent(QGraphicsSceneHoverEvent *event);
+    virtual void hoverLeaveEvent(QGraphicsSceneHoverEvent *event);
+    virtual QVariant itemChange(GraphicsItemChange change, const QVariant &value);
+private:
+    bool mIsActive;
+    bool mParentConnectorEndComponentConnected;
+    int mLineNumber;
+    QPointF mOldPos;
+    QPen mActivePen;
+    QPen mPassivePen;
+    QPen mHoverPen;
 };
 
 #endif // CONNECTORWIDGET_H

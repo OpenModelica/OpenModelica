@@ -39,20 +39,19 @@
 
 #include "OMCProxy.h"
 #include "CornerItem.h"
+#include "Helper.h"
 
 class OMCProxy;
 class GraphicsScene;
 class GraphicsView;
 class CornerItem;
+class Connector;
 
 // Base class for all shapes annotations
 class ShapeAnnotation : public QObject, public QGraphicsItem
 {
 public:
     ShapeAnnotation(QGraphicsItem *parent = 0);
-protected:
-    qreal mScaleX;
-    qreal mScaleY;
 };
 
 // Class for Line Annotation
@@ -162,13 +161,33 @@ public:
 };
 
 //class for Components Annotation
+class IconAnnotation;
+class InheritanceAnnotation : public ShapeAnnotation
+{
+    Q_OBJECT
+private:
+    QString mClassName;
+    QRectF mRectangle;
+    IconAnnotation *mpParentIcon;
+    OMCProxy *mpOMCProxy;
+    GraphicsScene *mpGraphicsScene;
+    GraphicsView *mpGraphicsView;
+public:
+    InheritanceAnnotation(QString value, QString className, OMCProxy *omc, GraphicsScene *graphicsScene,
+                          GraphicsView *graphicsView, IconAnnotation *pIcon, QGraphicsItem *parent = 0);
+    void parseIconAnnotationString(QString value);
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+};
+
 class ComponentAnnotation : public ShapeAnnotation
 {
     Q_OBJECT
 private:
     QLineF line;
-    QString className;
+    QString mClassName;
     QRectF mRectangle;
+    IconAnnotation *mpParentIcon;
     OMCProxy *mpOMCProxy;
     GraphicsScene *mpGraphicsScene;
     GraphicsView *mpGraphicsView;
@@ -181,12 +200,15 @@ private:
     bool mFlipVertical;
     qreal mRotateAngle;
 public:
-    ComponentAnnotation(QString value, QString className, QString transformationStr, OMCProxy *omc, GraphicsScene *graphicsScene, GraphicsView *graphicsView, QGraphicsItem *parent = 0);
+    ComponentAnnotation(QString value, QString className, QString transformationStr, OMCProxy *omc,
+                        GraphicsScene *graphicsScene, GraphicsView *graphicsView, IconAnnotation *pIcon,
+                        QGraphicsItem *parent = 0);
     void parseTransformationString(QString value);
     void parseIconAnnotationString(QString value);
     QRectF boundingRect() const;
     void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
     qreal getRotateAngle();
+    IconAnnotation* getParentIcon();
 protected:
     virtual void mousePressEvent(QGraphicsSceneMouseEvent *event);
     virtual void mouseReleaseEvent(QGraphicsSceneMouseEvent *event);
@@ -224,6 +246,11 @@ public:
     void setSelectionBoxPassive();
     void setSelectionBoxHover();
     void updateSelectionBox();
+    void addConnector(Connector *item);
+signals:
+    void componentMoved();
+    void componentDeleted();
+    void componentSelected();
 private slots:
     void showSelectionBox();
     void resizeIcon(qreal resizeFactorX, qreal resizeFactorY);
