@@ -913,7 +913,7 @@ algorithm
         ReductionOperator op;
       equation
         (cache, Values.ARRAY(valueLst = vals), st_1) = ceval(cache, env, iterexp, impl, st, dimOpt, msg);
-        env = Env.openScope(env, false, SOME(Env.forScopeName));
+        env = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
         op = lookupReductionOp(reductionName);
         (cache, value, st_1) = cevalReduction(cache, env, reductionName, op, exp, iter, vals, impl, st, dimOpt, msg);
       then (cache, value, st_1);

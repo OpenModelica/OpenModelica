@@ -199,7 +199,7 @@ algorithm
         ClassInf.State ci_state;
         Boolean encflag;
       equation
-        env_2 = Env.openScope(env_1, encflag, SOME(id));
+        env_2 = Env.openScope(env_1, encflag, SOME(id), SOME(Env.CLASS_SCOPE));
         ci_state = ClassInf.start(r, Env.getEnvName(env_2));
         (cache,env_3,_,_,_,_,_,types,_,_,_,_) =
         Inst.instClassIn(
@@ -520,7 +520,7 @@ algorithm
       then (cache,c,env,prevFrames);
     case (cache,env,path,SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr),NONE(),_,inState,msg)
       equation 
-        env = Env.openScope(env, encflag, SOME(id));
+        env = Env.openScope(env, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env));
         (cache,env,_,_) =
         Inst.partialInstClassIn(
@@ -832,7 +832,7 @@ algorithm
       equation
         fr = Env.topFrame(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,{fr}, path, false);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
+        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
        (cache,(f :: _),_,_) =
        Inst.partialInstClassIn(
@@ -895,7 +895,7 @@ algorithm
       equation
         fr::prevFrames = listReverse(env);
         (cache,(c as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1,prevFrames) = lookupClass2(cache,{fr},path,prevFrames,Util.makeStatefulBoolean(false),false);
-        env2 = Env.openScope(env_1, encflag, SOME(id));
+        env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
         (cache,env2,_,cistate1) =
         Inst.partialInstClassIn(
@@ -1251,7 +1251,7 @@ algorithm
         (NONE(),prevFrames) = lookupPrevFrames(id,prevFrames);
         (cache,(c as SCode.CLASS(name=n,encapsulatedPrefix=encflag,restriction=r)),env2,prevFrames) = lookupClass2(cache,env,Absyn.IDENT(id),prevFrames,Util.makeStatefulBoolean(true) /* In order to use the prevFrames, we need to make sure we can't instantiate one of the classes too soon! */,false);
         Util.setStatefulBoolean(inState,true);
-        env3 = Env.openScope(env2, encflag, SOME(n));
+        env3 = Env.openScope(env2, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env3));
         filterCref = makeOptIdentOrNone(cref);
         (cache,env5,_,_,_,_,_,_,_,_,_,_) =
@@ -1473,7 +1473,7 @@ algorithm
       equation
         // Debug.traceln("lookupAndInstantiate " +& Absyn.pathString(path) +& ", s:" +& Env.printEnvPathStr(env) +& "m:" +& SCode.printModStr(mod));
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = lookupClass(cache, env, path, msg);
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
+        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         dmod = Mod.elabUntypedMod(mod,env,Prefix.NOPRE());
         //(cache,dmod,_ /* Return fn's here */) = Mod.elabMod(cache,env,Prefix.NOPRE(),mod,true); - breaks things but is needed for other things... bleh
@@ -1641,7 +1641,7 @@ algorithm
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path))
       equation
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache, env, Absyn.IDENT(pack), false) ;
-        env2 = Env.openScope(env_1, encflag, SOME(str));
+        env2 = Env.openScope(env_1, encflag, SOME(str), Env.restrictionToScopeType(restr));
         ci_state = ClassInf.start(restr, Env.getEnvName(env2));
 
         //(cache,_,env_2,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
@@ -1985,7 +1985,7 @@ algorithm
     case (cache,env,cl as SCode.CLASS(name = name),mods)
       equation
         (cache,env,_,elts,_,_,_,_) = InstExtends.instDerivedClasses(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),cl,true);
-        env = Env.openScope(env, false, SOME(name));
+        env = Env.openScope(env, false, SOME(name), SOME(Env.CLASS_SCOPE));
         fpath = Env.getEnvName(env);
         (cdefelts,classExtendsElts,extendsElts,compElts) = Inst.splitElts(elts);
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);

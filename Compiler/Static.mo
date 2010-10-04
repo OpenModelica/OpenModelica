@@ -365,7 +365,7 @@ algorithm
         exp_1 = replaceOperatorWithFcall(DAE.RELATION(e1_2,op_1,e2_2), c);
         exp_1 = Exp.simplify(exp_1);
         prop = DAE.PROP(rtype,c);
-        warnUnsafeRelations(c,t1,t2,e1_2,e2_2,op_1,pre);
+        warnUnsafeRelations(env,c,t1,t2,e1_2,e2_2,op_1,pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
       then
         (cache,exp_1,prop,st_2,dae);
@@ -1134,7 +1134,7 @@ algorithm
 			equation
         (cache,iterexp_1,DAE.PROP((DAE.T_ARRAY(arrayType = iterty),_),iterconst),_,dae1)
           = elabExp(cache, env, iterexp, impl, st, doVect,pre);
-				env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName));
+				env_1 = Env.openScope(env, false, SOME(Env.forIterScopeName), NONE);
 				env_1 = Env.extendFrameForIterator(env_1, iter, iterty, DAE.UNBOUND(), 
           SCode.CONST(), SOME(iterconst));
         (cache,exp_1,DAE.PROP(expty, expconst),st,dae2) = 
@@ -1266,7 +1266,7 @@ algorithm
 			
 		case (_, _, {}, _, _, _,_)
 			equation
-				new_env = Env.openScope(env, false, SOME(Env.forIterScopeName));
+				new_env = Env.openScope(env, false, SOME(Env.forIterScopeName), NONE);
 				// Return the type T_NOTYPE as a placeholder. constructArrayType is
 				// later used by cevalCallReduction to replace it with the correct type.
 			then (cache, new_env, {}, {}, {}, (DAE.T_NOTYPE(), NONE),DAEUtil.emptyDae);
@@ -13634,32 +13634,41 @@ algorithm
 end arrayTypeList;
 
 protected function warnUnsafeRelations "
-Author: BZ, 2008-08
-Check if we have real == real, if so give a warning.
-"
-input DAE.Const variability;
-input DAE.Type t1,t2;
-input DAE.Exp e1,e2;
-input DAE.Operator op;
-input Prefix inPrefix;
-algorithm _ := matchcontinue(variability,t1,t2,e1,e2,op,inPrefix)
-  case(DAE.C_VAR(),t1,t2,e1,e2,op,pre)
-    local Boolean b1,b2;
-      String stmtString,opString,pre_str;
-      Prefix pre;
-  equation
-    b1 = Types.isReal(t1);
-    b2 = Types.isReal(t1);
-    true = boolOr(b1,b2);
-    verifyOp(op);
-    opString = Exp.relopSymbol(op);
-    stmtString = Exp.printExpStr(e1) +& opString +& Exp.printExpStr(e2);
-    pre_str = PrefixUtil.printPrefixStr3(pre);
-    Error.addMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString});
-    then
-      ();
-  case(_,_,_,_,_,_,_) then ();
-end matchcontinue;
+  Author: BZ, 2008-08
+  Check if we have Real == Real or Real != Real, if so give a warning."
+  input Env.Env inEnv;
+  input DAE.Const variability;
+  input DAE.Type t1,t2;
+  input DAE.Exp e1,e2;
+  input DAE.Operator op;
+  input Prefix inPrefix;
+algorithm 
+  _ := matchcontinue(inEnv,variability,t1,t2,e1,e2,op,inPrefix)
+    // == or != on Real is permitted in functions, so don't print an error if
+    // we're in a function.
+    case (_, _, _, _, _, _, _, _)
+      equation
+        true = Env.inFunctionScope(inEnv);
+      then ();
+
+    case(_,DAE.C_VAR(),t1,t2,e1,e2,op,pre)
+      local 
+        Boolean b1,b2;
+        String stmtString,opString,pre_str;
+        Prefix pre;
+      equation
+        b1 = Types.isReal(t1);
+        b2 = Types.isReal(t1);
+        true = boolOr(b1,b2);
+        verifyOp(op);
+        opString = Exp.relopSymbol(op);
+        stmtString = Exp.printExpStr(e1) +& opString +& Exp.printExpStr(e2);
+        pre_str = PrefixUtil.printPrefixStr3(pre);
+        Error.addMessage(Error.WARNING_RELATION_ON_REAL, {pre_str,stmtString,opString});
+      then
+        ();
+    case(_,_,_,_,_,_,_,_) then ();
+  end matchcontinue;
 end warnUnsafeRelations;
 
 protected function verifyOp "
@@ -13674,6 +13683,7 @@ algorithm _ := matchcontinue(op)
 end verifyOp;
 
 protected function makeBuiltinCall
+  "Create a DAE.CALL with the given data for a call to a builtin function."
   input String name;
   input list<DAE.Exp> args;
   input DAE.ExpType result_type;
@@ -13706,7 +13716,7 @@ algorithm
     case (cache,env,{},impl) then (cache,env,DAEUtil.emptyDae,{});
     case (cache,env,ld,impl)
       equation
-        env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName));
+        env2 = Env.openScope(env, false, SOME(Env.valueBlockScopeName), NONE);
 
         // Tranform declarations such as Real x,y; to Real x; Real y;
         ld2 = SCodeUtil.translateEitemlist(ld,false);

@@ -1206,7 +1206,7 @@ algorithm
 /* First try partial instantiation */
     case(p,p_class,env) equation
       (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
-      env2 = Env.openScope(env_1, encflag, SOME(id));
+      env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
       ci_state = ClassInf.start(restr, Env.getEnvName(env2));
       (cache,env_2,_,_) = Inst.partialInstClassIn(cache, env2, InnerOuter.emptyInstHierarchy,
                                                   DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
@@ -1214,7 +1214,7 @@ algorithm
     then env_2;
     case(p,p_class,env) equation
       (cache,(cl as SCode.CLASS(name=id,encapsulatedPrefix=encflag,restriction=restr)),env_1) = Lookup.lookupClass(Env.emptyCache(),env, p_class, false);
-      env2 = Env.openScope(env_1, encflag, SOME(id));
+      env2 = Env.openScope(env_1, encflag, SOME(id), Env.restrictionToScopeType(restr));
       ci_state = ClassInf.start(restr, Env.getEnvName(env2));
       (cache,env_2,_,_,_,_,_,_,_,_,_,_) = Inst.instClassIn(cache,env2, InnerOuter.emptyInstHierarchy,
                                                        UnitAbsyn.noStore,DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,

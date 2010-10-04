@@ -1190,7 +1190,7 @@ algorithm
         isPartialFn = isFn and partialPrefix;
         true = notIsPartial or isPartialFn;
 
-        env_1 = Env.openScope(env, encflag, SOME(n));
+        env_1 = Env.openScope(env, encflag, SOME(n), Env.restrictionToScopeType(r));
 
         ci_state = ClassInf.start(r,Env.getEnvName(env_1));
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,oDA,equalityConstraint, graph)
@@ -1596,7 +1596,7 @@ algorithm
       InstanceHierarchy ih;
     case (cache,env,ih,store,mod,pre,csets,(c as SCode.CLASS(name = n,encapsulatedPrefix = encflag,restriction = r)),inst_dims,impl,callscope) /* impl */
       equation
-        env_1 = Env.openScope(env, encflag, SOME(n));
+        env_1 = Env.openScope(env, encflag, SOME(n), Env.restrictionToScopeType(r));
         ci_state = ClassInf.start(r, Env.getEnvName(env_1));
         c_1 = SCode.classSetPartial(c, false);
         (cache,env_3,ih,store,dae1,(csets_1 as Connect.SETS(_,crs,dc,oc)),ci_state_1,tys,bc_ty,_,_,_)
@@ -3373,7 +3373,7 @@ algorithm
           Lookup.lookupClass(cache,env, cn, true);
 
 
-        env3 = Env.openScope(cenv, enc2, SOME(cn2));
+        env3 = Env.openScope(cenv, enc2, SOME(cn2), SOME(Env.CLASS_SCOPE));
         ci_state2 = ClassInf.start(r, Env.getEnvName(env3));
         (cache,cenv_2,_,_,_,_,_,_,_,_,_,_) =
         instClassIn(
@@ -3417,7 +3417,7 @@ algorithm
 
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r,classDef=classDef)),cenv) = Lookup.lookupClass(cache,env, cn, true);
 
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
+        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.classInfToScopeType(ci_state));
         (cache,mod_1,fdae) = Mod.elabMod(cache, env, ih, pre, mod, impl);
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);
@@ -4301,6 +4301,7 @@ algorithm
     local
       list<DAE.ComponentRef> crs;
       Option<String> n;
+      Option<Env.ScopeType> st;
       Env.AvlTree bt2;
       Env.AvlTree bt1;
       list<Env.Item> imp;
@@ -4311,14 +4312,14 @@ algorithm
       list<SCode.Element> defineUnits;
 
     case (Connect.SETS(connection = crs),prefix,
-      (Env.FRAME( n,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
+      (Env.FRAME( n,st,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
       equation
         prefix_cr = PrefixUtil.prefixToCref(prefix);
-      then (Env.FRAME(n,bt1,bt2,imp,(crs,prefix_cr),enc,defineUnits) :: fs,ih);
+      then (Env.FRAME(n,st,bt1,bt2,imp,(crs,prefix_cr),enc,defineUnits) :: fs,ih);
     case (Connect.SETS(connection = crs),prefix,
-        (Env.FRAME(n,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
+        (Env.FRAME(n,st,bt1,bt2,imp,_,enc,defineUnits) :: fs),ih)
       equation
-      then (Env.FRAME(n,bt1,bt2,imp,(crs,DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,defineUnits) :: fs,ih);
+      then (Env.FRAME(n,st,bt1,bt2,imp,(crs,DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,defineUnits) :: fs,ih);
 
   end matchcontinue;
 end addConnectionSetToEnv;
@@ -4513,7 +4514,7 @@ algorithm
           re,partialPrefix,prot,inst_dims,className,info)
       equation
         (cache,(c as SCode.CLASS(name=cn2,encapsulatedPrefix=enc2,restriction=r)),cenv) = Lookup.lookupClass(cache, env, cn, true);
-        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2));
+        cenv_2 = Env.openScope(cenv, enc2, SOME(cn2), Env.restrictionToScopeType(r));
         (cache,mod_1,_) = Mod.elabMod(cache, env, ih, pre, mod, false);
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv_2));
         mods_1 = Mod.merge(mods, mod_1, cenv_2, pre);

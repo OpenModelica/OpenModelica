@@ -1125,7 +1125,7 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
@@ -1141,7 +1141,7 @@ algorithm
       equation 
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, ty, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* Use instEInitialEquation*/
@@ -1172,7 +1172,7 @@ protected function addForLoopScope
   input Option<DAE.Const> constOfForIteratorRange; 
   output Env newEnv;
 algorithm
-  newEnv := Env.openScope(env, false, SOME(Env.forScopeName));
+  newEnv := Env.openScope(env, false, SOME(Env.forScopeName), NONE);
   newEnv := Env.extendFrameForIterator(newEnv, iterName, iterType, DAE.UNBOUND(), iterVariability, constOfForIteratorRange); 
 end addForLoopScope;
 
@@ -3012,7 +3012,7 @@ algorithm
       equation
         dim = dim-1;
         dims = dim::dims;
-        env_1 = Env.openScope(env, false, SOME(Env.forScopeName));
+        env_1 = Env.openScope(env, false, SOME(Env.forScopeName), NONE);
         // the iterator is not constant but the range is constant
         env_2 = Env.extendFrameForIterator(env_1, i, DAE.T_INTEGER_DEFAULT, DAE.VALBOUND(fst,DAE.BINDING_FROM_DEFAULT_VALUE()), SCode.CONST(), SOME(DAE.C_CONST()));
         /* use instEEquation*/ 
@@ -4786,7 +4786,7 @@ algorithm
 
         // Temporarily add the loop variables to the environment so that we can later
         // elaborate the main for-iterator construct expression, in order to get the array type
-        env2 = Env.openScope(localEnv, false, NONE());
+        env2 = Env.openScope(localEnv, false, NONE(), NONE);
         ld2 = SCodeUtil.translateEitemlist(ld,false);
         ld2 = Inst.componentElts(ld2);
         ld_mod = Inst.addNomod(ld2);

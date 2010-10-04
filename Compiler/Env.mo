@@ -85,6 +85,7 @@ public import Absyn;
 public import DAE;
 public import SCode;
 public import HashTable5;
+public import ClassInf;
 
 public type Ident = String " An identifier is just a string " ;
 public type Env = list<Frame> "an environment is a list of frames";
@@ -115,10 +116,16 @@ end CacheTree;
 
 type CSetsType = tuple<list<DAE.ComponentRef>,DAE.ComponentRef>;
 
+public uniontype ScopeType
+  record FUNCTION_SCOPE end FUNCTION_SCOPE;
+  record CLASS_SCOPE end CLASS_SCOPE;
+end ScopeType;
+
 public
 uniontype Frame
   record FRAME
     Option<Ident>       optName           "Optional class name";
+    Option<ScopeType>   optType           "Optional scope type"; 
     AvlTree             clsAndVars        "List of uniquely named classes and variables";
     AvlTree             types             "List of types, which DOES NOT need to be uniquely named, eg. size may have several types";
     list<Item>          imports           "list of unnamed items (imports)";
@@ -198,17 +205,26 @@ public constant String valueBlockScopeName="$valueblock scope$" "a unique scope 
 
 // functions for dealing with the environment
 
-public function newFrame "function: newFrame
+public function newEnvironment
+  "Creates a new empty environment."
+  output Env newEnv;
+algorithm
+  newEnv := Util.listCreate(newFrame(false, NONE, NONE));
+end newEnvironment;
+
+protected function newFrame "function: newFrame
   This function creates a new frame, which includes setting up the
   hashtable for the frame."
   input Boolean enc;
+  input Option<Ident> inName;
+  input Option<ScopeType> inType;
   output Frame outFrame;
   AvlTree httypes;
   AvlTree ht;
 algorithm
   ht := avlTreeNew();
   httypes := avlTreeNew();
-  outFrame := FRAME(NONE,ht,httypes,{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
+  outFrame := FRAME(inName,inType,ht,httypes,{},({},DAE.CREF_IDENT("",DAE.ET_OTHER(),{})),enc,{});
 end newFrame;
 
 public function isTyped "
@@ -232,59 +248,14 @@ public function openScope "function: openScope
   input Env inEnv;
   input Boolean inBoolean;
   input Option<Ident> inIdentOption;
+  input Option<ScopeType> inTypeOption;
   output Env outEnv;
+
+  Frame f;
 algorithm
-  outEnv := matchcontinue (inEnv,inBoolean,inIdentOption)
-    local
-      Frame frame;
-      Env env_1,env;
-      Boolean encflag;
-      Ident id;
-    case (env,encflag,SOME(id)) /* encapsulated classname */
-      equation
-        frame = newFrame(encflag);
-        env_1 = nameScope((frame :: env), id);
-      then
-        env_1;
-    case (env,encflag,NONE)
-      equation
-        frame = newFrame(encflag);
-      then
-        frame :: env;
-  end matchcontinue;
+  f := newFrame(inBoolean, inIdentOption, inTypeOption);
+  outEnv := f :: inEnv;
 end openScope;
-
-protected function nameScope
-"function: nameScope
-  This function names the current scope, giving it an identifier.
-  Scopes needs to be named for several reasons. First, it is needed for
-  debugging purposes, since it is easier to follow the environment if we
-  know what the current class being instantiated is.
-
-  Secondly, it is needed when expanding type names in the context of
-  flattening of the inheritance hiergearchy. The reason for this is that types
-  of inherited components needs to be expanded such that the types can be
-  looked up from the environment of the base class.
-  See also openScope, getScopeName."
-  input Env inEnv;
-  input Ident inIdent;
-  output Env outEnv;
-algorithm
-  outEnv := matchcontinue (inEnv,inIdent)
-    local
-      AvlTree httypes;
-      AvlTree ht;
-      list<AvlValue> imps;
-      Env res;
-      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
-      Boolean encflag;
-      Ident id;
-      list<SCode.Element> defineUnits;
-
-    case ((FRAME(_,ht,httypes,imps,crs,encflag,defineUnits) :: res),id)
-    then (FRAME(SOME(id),ht,httypes,imps,crs,encflag,defineUnits) :: res);
-  end matchcontinue;
-end nameScope;
 
 public function inForLoopScope "returns true if environment has a frame that is a for loop"
   input Env env;
@@ -373,6 +344,7 @@ algorithm
   outEnv := matchcontinue(env,classEnv)
     local 
       Option<Ident> optName;
+      Option<ScopeType> st;
       AvlTree clsAndVars, types ;
       list<Item> imports;
       list<Frame> fs;
@@ -380,11 +352,11 @@ algorithm
       Boolean enc;
       list<SCode.Element> defineUnits;
 
-    case(FRAME(optName,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,classEnv)
+    case(FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs,classEnv)
       equation
         clsAndVars = updateEnvClassesInTree(clsAndVars,classEnv);
       then 
-        FRAME(optName,clsAndVars,types,imports,crefs,enc,defineUnits)::fs;
+        FRAME(optName,st,clsAndVars,types,imports,crefs,enc,defineUnits)::fs;
   end matchcontinue;
 end updateEnvClasses;
 
@@ -447,6 +419,7 @@ algorithm
       AvlTree ht,ht_1;
       Env env,fs;
       Option<Ident> id;
+      Option<ScopeType> st;
       list<AvlValue> imps;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
       Boolean encflag;
@@ -454,11 +427,11 @@ algorithm
       Ident n;
       list<SCode.Element> defineUnits;
 
-    case ((env as (FRAME(id,ht,httypes,imps,crs,encflag,defineUnits) :: fs)),(c as SCode.CLASS(name = n)))
+    case ((env as (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs)),(c as SCode.CLASS(name = n)))
       equation
         (ht_1) = avlTreeAdd(ht, n, CLASS(c,env));
       then
-        (FRAME(id,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+        (FRAME(id,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
 
     case (_,_)
       equation
@@ -503,6 +476,7 @@ algorithm
       AvlTree httypes;
       AvlTree ht,ht_1;
       Option<Ident> id;
+      Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs,env,remember;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
@@ -513,15 +487,15 @@ algorithm
       Option<tuple<SCode.Element, DAE.Mod>> c;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(id,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
+    case ((FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
       equation
         //failure((_)= avlTreeGet(ht, n));
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
-        (FRAME(id,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+        (FRAME(id,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
 
     // Variable already added, perhaps from baseclass
-    case (remember as (FRAME(id,ht,httypes,imps,crs,encflag,defineUnits) :: fs),
+    case (remember as (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),
           (v as DAE.TYPES_VAR(name = n)),c,i,env) /* environment of component */
       equation
         (_)= avlTreeGet(ht, n);
@@ -548,6 +522,7 @@ algorithm
       AvlTree httypes;
       AvlTree ht,ht_1;
       Option<Ident> sid;
+      Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs,env,frames;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
@@ -556,18 +531,18 @@ algorithm
       list<SCode.Element> defineUnits;
 
     case ({},_,i,_) then {};  /* fully instantiated env of component */
-    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env)
       equation
         VAR(_,c,_,_) = avlTreeGet(ht, n);
         (ht_1) = avlTreeAdd(ht, n, VAR(v,c,i,env));
       then
-        (FRAME(sid,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
-    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */
+        (FRAME(sid,st,ht_1,httypes,imps,crs,encflag,defineUnits) :: fs);
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),(v as DAE.TYPES_VAR(name = n)),i,env) /* Also check frames above, e.g. when variable is in base class */
       equation
         frames = updateFrameV(fs, v, i, env);
       then
-        (FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
-    case ((FRAME(sid,ht, httypes,imps,crs,encflag,defineUnits) :: fs),DAE.TYPES_VAR(name = n),_,_)
+        (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: frames);
+    case ((FRAME(sid,st,ht, httypes,imps,crs,encflag,defineUnits) :: fs),DAE.TYPES_VAR(name = n),_,_)
       equation
         /*Print.printBuf("- update_frame_v, variable ");
         Print.printBuf(n);
@@ -575,7 +550,7 @@ algorithm
         printEnv(fs);
         Print.printBuf("\n");*/
       then
-        (FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
+        (FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
     case (_,(v as DAE.TYPES_VAR(name = id)),_,_)
       equation
         print("- update_frame_v failed\n");
@@ -604,6 +579,7 @@ algorithm
       AvlTree httypes_1,httypes;
       AvlTree ht;
       Option<Ident> sid;
+      Option<ScopeType> st;
       list<AvlValue> imps;
       Env fs;
       tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
@@ -612,18 +588,18 @@ algorithm
       tuple<DAE.TType, Option<Absyn.Path>> t;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
       equation
         TYPE(tps) = avlTreeGet(httypes, n) "Other types with that name allready exist, add this type as well" ;
         (httypes_1) = avlTreeAdd(httypes, n, TYPE((t :: tps)));
       then
-        (FRAME(sid,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
-    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
+        (FRAME(sid,st,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),n,t)
       equation
         failure(TYPE(_) = avlTreeGet(httypes, n)) "No other types exists" ;
         (httypes_1) = avlTreeAdd(httypes, n, TYPE({t}));
       then
-        (FRAME(sid,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
+        (FRAME(sid,st,ht,httypes_1,imps,crs,encflag,defineUnits) :: fs);
   end matchcontinue;
 end extendFrameT;
 
@@ -636,6 +612,7 @@ algorithm
   outEnv := matchcontinue (inEnv,inImport)
     local
       Option<Ident> sid;
+      Option<ScopeType> st;
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
@@ -645,10 +622,10 @@ algorithm
       Env fs,env;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),imp)
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),imp)
       equation
         false = memberImportList(imps,imp);
-    then (FRAME(sid,ht,httypes,(IMPORT(imp) :: imps),crs,encflag,defineUnits) :: fs);
+    then (FRAME(sid,st,ht,httypes,(IMPORT(imp) :: imps),crs,encflag,defineUnits) :: fs);
 
     case (env,imp) then env;
   end matchcontinue;
@@ -663,6 +640,7 @@ algorithm
   outEnv := matchcontinue (inEnv,defunit)
     local
       Option<Ident> sid;
+      Option<ScopeType> st;
       AvlTree httypes;
       AvlTree ht;
       list<AvlValue> imps;
@@ -671,8 +649,8 @@ algorithm
       Env fs;
       list<SCode.Element> defineUnits;
 
-    case ((FRAME(sid,ht,httypes,imps,crs,encflag,defineUnits) :: fs),defunit)
-    then (FRAME(sid,ht,httypes,imps,crs,encflag,defunit::defineUnits) :: fs);
+    case ((FRAME(sid,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs),defunit)
+    then (FRAME(sid,st,ht,httypes,imps,crs,encflag,defunit::defineUnits) :: fs);
   end matchcontinue;
 end extendFrameDefunit;
 
@@ -2209,6 +2187,41 @@ algorithm
     case(_) then {};
   end matchcontinue;
 end getVariablesFromAvlValue;
+
+public function inFunctionScope
+  input Env inEnv;
+  output Boolean inFunction;
+algorithm
+  inFunction := matchcontinue(inEnv)
+    local
+      DAE.ComponentRef cr;
+      list<Frame> fl;
+    case ({}) then false;
+    case (FRAME(optType = SOME(FUNCTION_SCOPE)) :: _) then true;
+    case (FRAME(optType = SOME(CLASS_SCOPE)) :: _) then false;
+    case (_ :: fl) then inFunctionScope(fl);
+  end matchcontinue;
+end inFunctionScope;
+
+public function classInfToScopeType
+  input ClassInf.State inState;
+  output Option<ScopeType> outType;
+algorithm
+  outType := matchcontinue(inState)
+    case ClassInf.FUNCTION(path = _) then SOME(FUNCTION_SCOPE);
+    case _ then SOME(CLASS_SCOPE);
+  end matchcontinue;
+end classInfToScopeType;
+
+public function restrictionToScopeType
+  input SCode.Restriction inRestriction;
+  output Option<ScopeType> outType;
+algorithm
+  outType := matchcontinue(inRestriction)
+    case SCode.R_FUNCTION then SOME(FUNCTION_SCOPE);
+    case _ then SOME(CLASS_SCOPE);
+  end matchcontinue;
+end restrictionToScopeType;
 
 end Env;
 

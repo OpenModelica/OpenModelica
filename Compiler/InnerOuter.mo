@@ -1487,6 +1487,7 @@ algorithm
       DAE.ComponentRef cr;
       Frame f;
       Option<Ident> optName "Optional class name" ;
+      Option<Env.ScopeType> st;
       AvlTree clsAndVars "List of uniquely named classes and variables" ;
       AvlTree types "List of types, which DOES NOT need to be uniquely named, eg. size may have several types" ;
       list<Item> imports "list of unnamed items (imports)" ;
@@ -1494,17 +1495,17 @@ algorithm
       Boolean isEncapsulated "encapsulated bool=true means that FRAME is created due to encapsulated class" ;
       list<SCode.Element> defineUnits "list of units defined in the frame" ;
 
-    case (f as Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
+    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
       equation
         SOME(clsAndVars) = switchInnerToOuterInAvlTree(SOME(clsAndVars), cr);
       then
-        Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
+        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
 
-    case (f as Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
+    case (f as Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits), cr)
       equation
         // when above fails leave unchanged
       then
-        Env.FRAME(optName, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
+        Env.FRAME(optName, st, clsAndVars, types, imports, connectionSet, isEncapsulated, defineUnits);
 
   end matchcontinue;
 end switchInnerToOuterInFrame;

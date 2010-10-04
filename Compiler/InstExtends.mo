@@ -142,7 +142,7 @@ algorithm
         alg1_1 = Util.if_(isPartialInst, {}, alg1);
         ialg1_1 = Util.if_(isPartialInst, {}, ialg1);
 
-        cenv3 = Env.openScope(cenv1, encf, SOME(cn));
+        cenv3 = Env.openScope(cenv1, encf, SOME(cn), Env.classInfToScopeType(ci_state));
         new_ci_state = ClassInf.start(r, Env.getEnvName(cenv3));
         /* Add classdefs and imports to env, so e.g. imports from baseclasses found, see Extends5.mo */
         (importelts,cdefelts,classextendselts,els_1) = Inst.splitEltsNoComponents(els);
@@ -1175,7 +1175,7 @@ algorithm
         //Debug.fprintln("debug","Try lookupV " +& id);
         (_,_,_,_,_,_,env,_,id) = Lookup.lookupVar(cache,env,DAE.CREF_IDENT(id,DAE.ET_OTHER(),{}));
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,true,SOME(id));
+        env = Env.openScope(env,true,SOME(id),NONE);
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,ht)
       equation
@@ -1183,7 +1183,7 @@ algorithm
         //Debug.fprintln("debug","Try lookupC " +& id);
         (_,_,env) = Lookup.lookupClass(cache,env,Absyn.IDENT(id),false);
         //Debug.fprintln("debug","Got env " +& intString(listLength(env)));
-        env = Env.openScope(env,true,SOME(id));
+        env = Env.openScope(env,true,SOME(id),NONE);
       then (cache,Absyn.crefReplaceFirstIdent(cref,Env.getEnvName(env)));
     case (cache,env,cref,_) then (cache,cref);
   end matchcontinue;

@@ -86,7 +86,7 @@ algorithm
         replacements = createReplacementRules(inArgs,elementList);
         ht2 = generateHashMap(replacements,HashTable2.emptyHashTable());
         str = Util.stringAppendList({"cevalfunc_",str});
-        env3 = Env.openScope(env, false, SOME(str));
+        env3 = Env.openScope(env, false, SOME(str), SOME(Env.FUNCTION_SCOPE));
         env1 = extendEnvWithInputArgs(env3,elementList,inArgs,crefArgs, ht2) "also output arguments";
         // print("evalfunc env: " +& Env.printEnvStr(env) +& "\n");
         // print("evalfunc env1: " +& Env.printEnvStr(env1) +& "\n");     
@@ -154,7 +154,6 @@ algorithm
       Values.Value val1,vv;
       list<Values.Value> vals1;
       Env.Env env1,env2,complexEnv;
-      Env.Frame compFrame;
       String varName, str;
       DAE.Var tvar;
       DAE.Attributes tattr;
@@ -220,8 +219,7 @@ algorithm
                (val1 as Values.RECORD(record_ = _)) :: vals1, e1 :: restExps, ht2)
       equation
         (tty as (DAE.T_COMPLEX(recordconst,typeslst,cto,_),_)) = makeComplexForEnv(e1, val1); 
-        compFrame = Env.newFrame(false);
-        complexEnv = makeComplexEnv({compFrame},typeslst);
+        complexEnv = makeComplexEnv(Env.newEnvironment(),typeslst);
         env1 = Env.extendFrameV(env,
           DAE.TYPES_VAR(
             varName,
@@ -462,9 +460,8 @@ algorithm oenv := matchcontinue(env, tvars)
       //print(" array :: fail " +& name +& ", " +& Types.printTypeStr(ty) +& "\n");
       ((ty_flat as (DAE.T_COMPLEX(_,typeslst,_,_),_)),_)=Types.flattenArrayType(ty);
       //print(" is complex tough\n");
-      complexEnv = Env.newFrame(false);
       //typeslst = Util.listMap1(typeslst,addbindingtodaevar,bind); 
-      complexEnv = makeComplexEnv({complexEnv},typeslst);
+      complexEnv = makeComplexEnv(Env.newEnvironment(),typeslst);
       // print("makeComplexEnv -> 2 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
       env1 = Env.extendFrameV(env,
         DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -484,8 +481,7 @@ algorithm oenv := matchcontinue(env, tvars)
   // no base type
   case(env, (tv as DAE.TYPES_VAR(name,attr,prot,ty as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,constOfForIteratorRange))::vars)
     equation
-      complexEnv = Env.newFrame(false); 
-      complexEnv = makeComplexEnv({complexEnv},typeslst);
+      complexEnv = makeComplexEnv(Env.newEnvironment(),typeslst);
       // print("makeComplexEnv -> 3 component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
       env1 = Env.extendFrameV(env,
         DAE.TYPES_VAR(name,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -1053,7 +1049,6 @@ This function updates a generic-variable in the enviroment."
 algorithm outVal := matchcontinue(inVal,env,toAssign)
     local
       DAE.Type t;
-      Env.Frame fr;      
       Env.Env env1,complexEnv;
       String str,str2,dbgString; 
       Values.Value value,value2;
@@ -1070,8 +1065,7 @@ algorithm outVal := matchcontinue(inVal,env,toAssign)
     equation
       (_,_,t as (DAE.T_COMPLEX(_,typeslst,_,_),_),_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(),env, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       nlist = setValuesInRecord(typeslst,names,vals);
-      fr = Env.newFrame(false);
-      complexEnv = makeComplexEnv({fr},nlist);
+      complexEnv = makeComplexEnv(Env.newEnvironment(),nlist);
       // print("setValue -> component: " +& str +& " ty: " +& Types.printTypeStr(t) +& "\n");
       env1 = Env.updateFrameV(env,
           DAE.TYPES_VAR(str,DAE.ATTR(false,false,SCode.RW(),SCode.VAR(),Absyn.BIDIR(),Absyn.UNSPECIFIED()),
@@ -1121,7 +1115,7 @@ protected function addForLoopScope
 algorithm
   baseType := Types.typeOfValue(startValue);
   baseValue := typeOfValue(baseType);
-  newEnv := Env.openScope(env, false, SOME(Env.forScopeName));
+  newEnv := Env.openScope(env, false, SOME(Env.forScopeName), NONE);
   newEnv := Env.extendFrameForIterator(newEnv, iterName, baseType, DAE.VALBOUND(baseValue,DAE.BINDING_FROM_DEFAULT_VALUE()), iterVariability, constOfForIteratorRange); 
 end addForLoopScope;
 
@@ -1136,6 +1130,7 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     Env.Frame frame;
     list<Env.Frame> frames,newFrames;
     Option<String> farg1;
+    Option<Env.ScopeType> st;
     Env.AvlTree farg2,farg22;
     Env.AvlTree farg3;
     list<Env.Item> farg4;
@@ -1147,13 +1142,13 @@ algorithm oenv := matchcontinue(env,inVal,inCr)
     Integer hash;
 
   // try the first frame
-  case( ( (frame as Env.FRAME(farg1, farg2, farg3, farg4, farg6, farg7,defineUnits) ) :: frames),inVal,inCr)    
+  case( ( (frame as Env.FRAME(farg1, st, farg2, farg3, farg4, farg6, farg7,defineUnits) ) :: frames),inVal,inCr)    
     equation
       str = Absyn.crefFirstIdent(inCr);
       (_,_,_,_,_,_,_,_,_) = Lookup.lookupVar(Env.emptyCache(), {frame}, DAE.CREF_IDENT(str,DAE.ET_OTHER(),{}));
       farg22 = setQualValue2(farg2, inVal,inCr,0);
       then
-        Env.FRAME(farg1,farg22,farg3,farg4,farg6,farg7,defineUnits) :: frames;    
+        Env.FRAME(farg1,st,farg22,farg3,farg4,farg6,farg7,defineUnits) :: frames;    
   // try next frame
   case( frame :: frames, inVal,inCr ) // didn't find in this frame. 
     equation 

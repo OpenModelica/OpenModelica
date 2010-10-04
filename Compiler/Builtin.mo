@@ -2347,7 +2347,7 @@ val array_array2int
 "
   output list<Env.Frame> env;
 algorithm
-  env := Env.openScope(Env.emptyEnv, false, NONE) "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
+  env := Env.newEnvironment() "Debug.fprint (\"insttr\",\"Creating initial env.\\n\") &" ;
   env := Env.extendFrameC(env, rlType);
   env := Env.extendFrameC(env, intType);
   env := Env.extendFrameC(env, strType);
@@ -2388,7 +2388,7 @@ algorithm
     then (cache,env);
     // if no cached version found create initial env.
     case (cache) equation
-      env = Env.openScope(Env.emptyEnv, false, NONE);
+      env = Env.openScope(Env.emptyEnv, false, NONE, NONE);
       env = Env.extendFrameC(env, rlType);
       env = Env.extendFrameC(env, intType);
       env = Env.extendFrameC(env, strType);
