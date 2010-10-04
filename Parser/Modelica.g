@@ -1145,8 +1145,9 @@ annotation returns [void* ast] :
 code_expression returns [void* ast] :
   ( CODE LPAR
     ( (initial=INITIAL)? ((EQUATION eq=code_equation_clause)|(T_ALGORITHM alg=code_algorithm_clause))
+    | (LPAR expression RPAR) => e=expression   /* Allow Code((<expr>)) */
     | m=modification
-    | (expression RPAR)=> e=expression
+    | (expression RPAR) => e=expression
     | el=element (SEMICOLON)?
     )  RPAR
       {
