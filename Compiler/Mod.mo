@@ -333,11 +333,13 @@ algorithm
         Values.Value v;
         Ceval.Msg msg;
         Env.Cache cache;
+        DAE.Const c;
       equation
+        c = Types.propAllConst(inProp);
         // Don't ceval variables.
-        failure(DAE.C_VAR() = Types.propAllConst(inProp));
-        // Show error messages from ceval only if the expression is not a parameter.
-        msg = Util.if_(Util.equal(DAE.C_PARAM(), Types.propAllConst(inProp)), Ceval.NO_MSG(), Ceval.MSG());
+        false = Types.constIsVariable(c);
+        // Show error messages from ceval only if the expression is a constant.
+        msg = Util.if_(Types.constIsConst(c), Ceval.MSG, Ceval.NO_MSG);
         (cache,v,_) = Ceval.ceval(inCache, inEnv, inExp, false, NONE, NONE, msg);
       then
         (cache,SOME(v));

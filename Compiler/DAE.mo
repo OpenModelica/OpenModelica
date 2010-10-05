@@ -806,6 +806,7 @@ uniontype Const "The degree of constantness of an expression is determined by th
 
   record C_VAR "\'parameter\'s, evaluated if structural not constants, never evaluated" end C_VAR;
 
+  record C_UNKNOWN end C_UNKNOWN;
 end Const;
 
 public

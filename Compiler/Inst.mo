@@ -7450,7 +7450,7 @@ algorithm
   // When doing checkModel we might have parameters with variable bindings, 
   // for example when the binding depends on the dimensions on an array with
   // unknown dimensions. 
-  case (DAE.C_PARAM,DAE.C_VAR,_,_,_)
+  case (DAE.C_PARAM,DAE.C_UNKNOWN,_,_,_)
     equation
       true = OptManager.getOption("checkModel");
     then ();

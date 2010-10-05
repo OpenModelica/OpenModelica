@@ -1297,6 +1297,11 @@ algorithm
     case(DAE.C_VAR())  then SCode.VAR();
     case(DAE.C_PARAM()) then SCode.PARAM();
     case(DAE.C_CONST()) then SCode.CONST();
+    case(DAE.C_UNKNOWN())
+      equation
+        Debug.fprintln("failtrace", "- Static.constToVariability failed on DAE.C_UNKNOWN");
+      then
+        fail();
   end matchcontinue;
 end constToVariability;
   
@@ -3206,20 +3211,21 @@ algorithm
       list<Env.Frame> env;
       Absyn.Exp s;
       list<Absyn.Exp> dims;
-      Boolean impl;
+      Boolean impl, show_msg;
       Ident implstr,expstr,str,sp;
       list<Ident> expstrs;
       Env.Cache cache;
       DAE.Const c1;
       DAE.DAElist dae,dae1,dae2;
       Prefix pre;
+      Ceval.Msg msg;
 
     case (cache,env,(s :: dims),_,impl,pre) /* impl */
       equation
         (cache,s_1,prop,_,dae1) = elabExp(cache, env, s, impl, NONE,true,pre);
         (cache,dims_1,dimprops,_,dae2) = elabExpList(cache,env, dims, impl, NONE,true,pre);
         sty = Types.getPropType(prop);
-        (cache,dimvals) = Ceval.cevalList(cache,env, dims_1, impl, NONE, Ceval.NO_MSG());
+        (cache,dimvals) = Ceval.cevalList(cache,env, dims_1, impl, NONE, Ceval.NO_MSG);
         c1 = Types.elabTypePropToConst(prop::dimprops);
         (cache,exp,prop) = elabBuiltinFill2(cache,env, s_1, sty, dimvals,c1,pre);
         dae = DAEUtil.joinDaes(dae1,dae2);
@@ -3233,13 +3239,14 @@ algorithm
 			local
 				DAE.ExpType exp_type;
       equation
+        c1 = unevaluatedFunctionVariability(env);
         (cache, s_1, prop, _, dae1) = elabExp(cache, env, s, impl, NONE, true,pre);
         (cache, dims_1, dimprops, _, dae2) = elabExpList(cache, env, dims, impl, NONE, true,pre);
         sty = Types.getPropType(prop);
         sty = makeFillArgListType(sty, dimprops);
 				exp_type = Types.elabType(sty);
         dae = DAEUtil.joinDaes(dae1, dae2);
-        prop = DAE.PROP(sty, DAE.C_VAR());
+        prop = DAE.PROP(sty, c1);
         exp = makeBuiltinCall("fill", s_1 :: dims_1, exp_type);
      then
        (cache, exp, prop, dae);
@@ -3248,7 +3255,7 @@ algorithm
       equation
 				true = RTOpts.debugFlag("failtrace");
         Debug.fprint("failtrace",
-          "- elab_builtin_fill: Couldn't elaborate fill(): ");
+          "- Static.elabBuiltinFill: Couldn't elaborate fill(): ");
         implstr = Util.boolString(impl);
         expstrs = Util.listMap(dims, Dump.printExpStr);
         expstr = Util.stringDelimitList(expstrs, ", ");
@@ -13741,5 +13748,26 @@ algorithm
       then (cache,env2,dae,algs);
   end matchcontinue;
 end addLocalDecls;
+
+protected function unevaluatedFunctionVariability
+  "In a function we might have input arguments with unknown dimensions, and in
+  that case we can't expand calls such as fill. A function call is therefore
+  created with variable variability. This function checks that we're inside a
+  function and returns DAE.C_VAR, or fails if we're not inside a function. 
+  
+  The exception is if checkModel is used, in which case we don't know what the
+  variability would have been had all parameters received a binding. We can't
+  set the variability to variable or parameter because then we might get
+  bindings with higher variability than the component, and we can't set it to
+  constant because that would cause the compiler to try and constant evaluate
+  the call. So we set it to DAE.C_UNKNOWN instead."
+  input Env.Env inEnv;
+  output DAE.Const outConst;
+algorithm
+  outConst := matchcontinue(inEnv)
+    case _ equation true = Env.inFunctionScope(inEnv); then DAE.C_VAR;
+    case _ equation true = OptManager.getOption("checkModel"); then DAE.C_UNKNOWN;
+  end matchcontinue;
+end unevaluatedFunctionVariability;
 
 end Static;

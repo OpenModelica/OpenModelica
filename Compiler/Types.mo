@@ -4704,6 +4704,8 @@ algorithm
     case (DAE.C_CONST(),DAE.C_PARAM()) then DAE.C_PARAM();
     case (DAE.C_PARAM(),DAE.C_CONST()) then DAE.C_PARAM();
     case (DAE.C_PARAM(),DAE.C_PARAM()) then DAE.C_PARAM();
+    case (DAE.C_UNKNOWN(), _) then DAE.C_UNKNOWN();
+    case (_, DAE.C_UNKNOWN()) then DAE.C_UNKNOWN();
     case (_,_) then DAE.C_VAR();
   end matchcontinue;
 end constAnd;
@@ -4740,6 +4742,8 @@ algorithm
     case (_,DAE.C_CONST()) then DAE.C_CONST();
     case (DAE.C_PARAM(),_) then DAE.C_PARAM();
     case (_,DAE.C_PARAM()) then DAE.C_PARAM();
+    case (DAE.C_UNKNOWN(),_) then DAE.C_UNKNOWN();
+    case (_, DAE.C_UNKNOWN()) then DAE.C_UNKNOWN();
     case (_,_) then DAE.C_VAR();
   end matchcontinue;
 end constOr;
@@ -4775,6 +4779,45 @@ algorithm
     case (true) then DAE.C_CONST();
   end matchcontinue;
 end boolConstSize;
+
+public function constEqual
+  input Const c1;
+  input Const c2;
+  output Boolean b;
+algorithm
+  b := matchcontinue(c1, c2)
+    case (_, _)
+      equation
+        equality(c1 = c2);
+      then
+        true;
+    case (_, _) then false;
+  end matchcontinue;
+end constEqual;
+
+public function constIsVariable
+  "Returns true if Const is C_VAR."
+  input Const c;
+  output Boolean b;
+algorithm
+  b := constEqual(c, DAE.C_VAR);
+end constIsVariable;
+
+public function constIsParameter
+  "Returns true if Const is C_PARAM."
+  input Const c;
+  output Boolean b;
+algorithm
+  b := constEqual(c, DAE.C_PARAM);
+end constIsParameter;
+
+public function constIsConst
+  "Returns true if Const is C_CONST."
+  input Const c;
+  output Boolean b;
+algorithm
+  b := constEqual(c, DAE.C_CONST);
+end constIsConst;
 
 public function printPropStr "function: printPropStr
   Print the properties to a string."
