@@ -2718,11 +2718,11 @@ algorithm
         extra_command = setCompileCommandEnvironmentFromSolverMethod(solverMethod);
         // We only need to set OPENMODELICAHOME on Windows, and set doesn't work in bash shells anyway
         // adrpo: 2010-10-05: 
-        //        whatever you do, DO NOT delete \\\n before the && otherwise
+        //        whatever you do, DO NOT add a space before the && otherwise
         //        OPENMODELICAHOME that we set will contain a SPACE at the end!
-        //        set OPENMODELICAHOME="...." && actually adds the space between " and &&
+        //        set OPENMODELICAHOME=DIR && actually adds the space between the DIR and &&
         //        to the environment variable! Don't ask me why, ask Microsoft.
-        omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"\\\n && ", "OPENMODELICAHOME=\"$OPENMODELICAHOME\" ");
+        omhome = Util.if_(System.os() ==& "Windows_NT", "set OPENMODELICAHOME=\"" +& omhome_1 +& "\"&& ", "OPENMODELICAHOME=\"$OPENMODELICAHOME\" ");
         s_call =
         Util.stringAppendList({omhome,extra_command,
           omhome_1,pd,"share",pd,"omc",pd,"scripts",pd,"Compile"," ",fileprefix," ",noClean});
