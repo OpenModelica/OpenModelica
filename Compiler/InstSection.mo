@@ -625,9 +625,10 @@ algorithm
          When statements are instantiated by evaluating the
          conditional expression.
          */ 
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph) 
+    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = ((ee,eel) :: eex),info=info),(initial_ as SCode.NON_INITIAL()),impl,graph) 
       local DAE.Element daeElt2; list<DAE.ComponentRef> lhsCrefs,lhsCrefsRec; Integer i1; list<DAE.Element> daeElts3;
       equation 
+        checkForNestedWhen(eq);
         (cache,e_1,prop1,_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
         (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -650,9 +651,10 @@ algorithm
       then
         (cache,env_2,ih,dae,csets,ci_state_2,graph);
                         
-    case (cache,env,ih,mod,pre,csets,ci_state,SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
+    case (cache,env,ih,mod,pre,csets,ci_state, eq as SCode.EQ_WHEN(condition = e,eEquationLst = el,tplAbsynExpEEquationLstLst = {}, info = info),(initial_ as SCode.NON_INITIAL()),impl,graph)
       local list<DAE.ComponentRef> lhsCrefs; 
       equation 
+        checkForNestedWhen(eq);
         (cache,e_1,prop1,_,fdae1) = Static.elabExp(cache,env, e, impl, NONE,true,pre);
         (cache, e_1, prop1) = Ceval.cevalIfConstant(cache, env, e_1, prop1, impl);
         (cache,e_2) = PrefixUtil.prefixExp(cache, env, ih, e_1, pre);
@@ -668,6 +670,18 @@ algorithm
       then
         (cache,env_1,ih,dae,csets,ci_state_1,graph);
     
+    // Print error if when equations are nested.
+    case (_, env, _, _, _, _, _, eq as SCode.EQ_WHEN(info = info), _, _, _)
+      local
+        String scope_str, eq_str;
+      equation
+        failure(checkForNestedWhen(eq));
+        scope_str = Env.printEnvPathStr(env);
+        eq_str = SCode.equationStr(eq);
+        Error.addSourceMessage(Error.NESTED_WHEN, {scope_str, eq_str}, info);
+      then
+        fail();
+        
     // seems unnecessary to handle when equations that are initial `for\' loops
     // The loop expression is evaluated to a constant array of integers, and then the loop is unrolled.   
 
@@ -5122,5 +5136,73 @@ algorithm
        then DAE.CREF(cr,t);
    end matchcontinue;
 end getVectorizedCref;
+
+protected function checkForNestedWhen
+  "Fails if a when equation contains nested when equations, which are not
+  allowed in Modelica."
+  input SCode.EEquation inWhenEq;
+algorithm
+  _ := matchcontinue(inWhenEq)
+    case SCode.EQ_WHEN(eEquationLst = el, tplAbsynExpEEquationLstLst = tpl_el)
+      local
+        list<SCode.EEquation> el;
+        list<list<SCode.EEquation>> el2;
+        list<tuple<Absyn.Exp, list<SCode.EEquation>>> tpl_el;
+      equation
+        checkForNestedWhenInEqList(el);
+        el2 = Util.listMap(tpl_el, Util.tuple22);
+        Util.listMap0(el2, checkForNestedWhenInEqList);
+      then
+        ();
+    case _
+      equation
+        Debug.fprintln("failtrace", "- InstSection.checkForNestedWhen failed.");
+      then
+        fail();
+  end matchcontinue;
+end checkForNestedWhen;
+
+protected function checkForNestedWhenInEqList
+  "Helper function to checkForNestedWhen. Searches for nested when equations in
+  a list of equations."
+  input list<SCode.EEquation> inEqs;
+algorithm
+  Util.listMap0(inEqs, checkForNestedWhenInEq);
+end checkForNestedWhenInEqList;
+
+protected function checkForNestedWhenInEq
+  "Helper function to checkForNestedWhen. Searches for nested when equations in
+  an equation."
+  input SCode.EEquation inEq;
+algorithm
+  _ := matchcontinue(inEq)
+    local
+      list<SCode.EEquation> eqs;
+      list<list<SCode.EEquation>> eqs_lst;
+    case SCode.EQ_WHEN(info = _) then fail();
+    case SCode.EQ_IF(thenBranch = eqs_lst, elseBranch = eqs)
+      equation
+        Util.listMap0(eqs_lst, checkForNestedWhenInEqList);
+        checkForNestedWhenInEqList(eqs);
+      then
+        ();
+    case SCode.EQ_FOR(eEquationLst = eqs)
+      equation
+        checkForNestedWhenInEqList(eqs);
+      then
+        ();
+    case SCode.EQ_EQUALS(info = _) then ();
+    case SCode.EQ_CONNECT(info = _) then ();
+    case SCode.EQ_ASSERT(info = _) then ();
+    case SCode.EQ_TERMINATE(info = _) then ();
+    case SCode.EQ_REINIT(info = _) then ();
+    case SCode.EQ_NORETCALL(info = _) then ();
+    case _
+      equation
+        Debug.fprintln("failtrace", "- InstSection.checkForNestedWhenInEq failed.");
+      then
+        fail();
+  end matchcontinue;
+end checkForNestedWhenInEq;
 
 end InstSection;
