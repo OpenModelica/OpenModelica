@@ -24396,6 +24396,40 @@ algorithm
       then (txt, i_preExp, i_varDecls);
 
     case ( txt,
+           DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "String"), expLst = {i_s, i_minlen, i_leftjust}),
+           i_context,
+           i_preExp,
+           i_varDecls )
+      local
+        DAE.Exp i_leftjust;
+        DAE.Exp i_minlen;
+        DAE.Exp i_s;
+        Tpl.Text i_typeStr;
+        Tpl.Text i_leftjustExp;
+        Tpl.Text i_minlenExp;
+        Tpl.Text i_sExp;
+        Tpl.Text i_tvar;
+      equation
+        (i_tvar, i_varDecls) = tempDecl(emptyTxt, "modelica_string", i_varDecls);
+        (i_sExp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_s, i_context, i_preExp, i_varDecls);
+        (i_minlenExp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_minlen, i_context, i_preExp, i_varDecls);
+        (i_leftjustExp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_leftjust, i_context, i_preExp, i_varDecls);
+        i_typeStr = expTypeFromExpModelica(emptyTxt, i_s);
+        i_preExp = Tpl.writeText(i_preExp, i_typeStr);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_to_modelica_string(&"));
+        i_preExp = Tpl.writeText(i_preExp, i_tvar);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
+        i_preExp = Tpl.writeText(i_preExp, i_sExp);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
+        i_preExp = Tpl.writeText(i_preExp, i_minlenExp);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
+        i_preExp = Tpl.writeText(i_preExp, i_leftjustExp);
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(");"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_NEW_LINE());
+        txt = Tpl.writeText(txt, i_tvar);
+      then (txt, i_preExp, i_varDecls);
+
+    case ( txt,
            DAE.CALL(tuple_ = false, builtin = true, path = Absyn.IDENT(name = "String"), expLst = {i_s, i_minlen, i_leftjust, i_signdig}),
            i_context,
            i_preExp,
@@ -24405,7 +24439,6 @@ algorithm
         DAE.Exp i_leftjust;
         DAE.Exp i_minlen;
         DAE.Exp i_s;
-        Tpl.Text i_typeStr;
         Tpl.Text i_signdigExp;
         Tpl.Text i_leftjustExp;
         Tpl.Text i_minlenExp;
@@ -24417,9 +24450,7 @@ algorithm
         (i_minlenExp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_minlen, i_context, i_preExp, i_varDecls);
         (i_leftjustExp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_leftjust, i_context, i_preExp, i_varDecls);
         (i_signdigExp, i_preExp, i_varDecls) = daeExp(emptyTxt, i_signdig, i_context, i_preExp, i_varDecls);
-        i_typeStr = expTypeFromExpModelica(emptyTxt, i_s);
-        i_preExp = Tpl.writeText(i_preExp, i_typeStr);
-        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("_to_modelica_string(&"));
+        i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING("modelica_real_to_modelica_string(&"));
         i_preExp = Tpl.writeText(i_preExp, i_tvar);
         i_preExp = Tpl.writeTok(i_preExp, Tpl.ST_STRING(", "));
         i_preExp = Tpl.writeText(i_preExp, i_sExp);

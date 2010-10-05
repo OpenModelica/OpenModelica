@@ -6406,11 +6406,14 @@ algorithm
     case (cache,env,args as e::_,nargs,impl,pre)
       equation
         (cache,exp,DAE.PROP(tp,c),_,dae1) = elabExp(cache,env, e, impl, NONE,true,pre);
-				/* Create argument slots for String function */
+				// Create argument slots for String function.
         slots = {SLOT(("x",tp),false,NONE,{}),
         				 SLOT(("minimumLength",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(0)),{}),
-        				 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT),false,SOME(DAE.BCONST(true)),{}),
-        				 SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})};
+        				 SLOT(("leftJustified",DAE.T_BOOL_DEFAULT),false,SOME(DAE.BCONST(true)),{})};
+        // Only String(Real) has the significantDigits option.
+        slots = Util.if_(Types.isRealOrSubTypeReal(tp),
+          listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})}),
+          slots);
         (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre);
         c = Util.listReduce(constlist, Types.constAnd);
         dae = DAEUtil.joinDaes(dae1,dae2);

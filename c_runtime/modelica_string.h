@@ -51,13 +51,13 @@ void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,mo
 modelica_boolean leftJustified,modelica_integer signDigits);
 
 void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i,
-	modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits);
+	modelica_integer minLen,modelica_boolean leftJustified);
 
 void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b,
-modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits);
+modelica_integer minLen, modelica_boolean leftJustified);
 
 void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_integer nr, modelica_string_t e[],
-modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits);
+modelica_integer minLen, modelica_boolean leftJustified);
 
 
 /* Frees memory*/

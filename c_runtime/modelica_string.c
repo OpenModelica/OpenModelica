@@ -49,7 +49,7 @@ int modelica_string_length(modelica_string_const a)
 
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
-void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified,modelica_integer signDigits)
+void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified)
 {
 	char formatStr[40];
 	char buf[400];
@@ -81,7 +81,7 @@ void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,mo
 
 /* Convert a modelica_boolean to a modelica_string, used in String(b) */
 
-void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits)
+void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolean b, modelica_integer minLen, modelica_boolean leftJustified)
 {
 	if (b) {
 		init_modelica_string(dest,"true");
@@ -92,7 +92,7 @@ void modelica_boolean_to_modelica_string(modelica_string_t* dest,modelica_boolea
 
 /* Convert a modelica_enumeration to a modelica_string, used in String(b) */
 
-void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_integer nr,modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified, modelica_integer signDigits)
+void modelica_enumeration_to_modelica_string(modelica_string_t* dest,modelica_integer nr,modelica_string_t e[],modelica_integer minLen, modelica_boolean leftJustified)
 {
 	int i;
     int length = strlen(e[nr-1]);

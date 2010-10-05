@@ -2359,7 +2359,9 @@ end cevalBuiltinPromote2;
 
 protected function cevalBuiltinString "
   author: PA
-  Evaluates the String operator String(r), String(i), String(b), String(e)"
+  Evaluates the String operator String(r), String(i), String(b), String(e).
+  
+  TODO: Also evaluate String(r, significantDigits=d), and String(r, format=s)."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<DAE.Exp> inExpExpLst;
@@ -2376,36 +2378,117 @@ algorithm
       Values.Value arr_val,res;
       Integer dim_val;
       list<Env.Frame> env;
-      DAE.Exp exp;
+      DAE.Exp exp, len_exp, justified_exp;
       Boolean impl;
       Option<Interactive.InteractiveSymbolTable> st;
       Msg msg;
       Env.Cache cache;
       String str;
       Integer i; Real r; Boolean b;
-    case (cache,env,{exp,_,_,_},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.INTEGER(i),_) = ceval(cache,env, exp, impl, st, NONE, msg);
 				str = intString(i);
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,{exp,_,_,_},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp, _},impl,st,msg)
       equation
         (cache,Values.REAL(r),_) = ceval(cache,env, exp, impl, st, NONE, msg);
 				str = realString(r);
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
 
-    case (cache,env,{exp,_,_,_},impl,st,msg)
+    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
       equation
         (cache,Values.BOOL(b),_) = ceval(cache,env, exp, impl, st, NONE, msg);
 				str = Util.boolString(b);
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
+      then
+        (cache,Values.STRING(str),st);
+
+    case (cache,env,{exp, len_exp, justified_exp},impl,st,msg)
+      local
+        Absyn.Path p;
+      equation
+        (cache,Values.ENUM_LITERAL(name = p),_) = ceval(cache,env, exp, impl, st, NONE, msg);
+        str = Absyn.pathLastIdent(p); 
+        (cache, str) = cevalBuiltinStringFormat(cache, env, str, len_exp, justified_exp, impl, st, msg);
       then
         (cache,Values.STRING(str),st);
 
   end matchcontinue;
 end cevalBuiltinString;
+
+protected function cevalBuiltinStringFormat
+  "This function formats a string by using the minimumLength and leftJustified
+  arguments to the String function."  
+	input Env.Cache inCache;
+  input Env.Env inEnv;
+  input String inString;
+  input DAE.Exp lengthExp;
+  input DAE.Exp justifiedExp;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inST;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output String outString;
+algorithm
+  (outCache, outString) := matchcontinue(inCache, inEnv, inString, lengthExp,
+      justifiedExp, inBoolean, inST, inMsg)
+    local
+      Env.Cache cache;
+      Integer min_length;
+      Boolean left_justified;
+      String str;
+    case (cache, _, _, _, _, _, _, _)
+      equation
+        (cache, Values.INTEGER(integer = min_length), _) = 
+          ceval(cache, inEnv, lengthExp, inBoolean, inST, NONE, inMsg);
+        (cache, Values.BOOL(boolean = left_justified), _) = 
+          ceval(cache, inEnv, justifiedExp, inBoolean, inST, NONE, inMsg);
+        str = cevalBuiltinStringFormat2(inString, stringLength(inString), min_length, left_justified);
+      then
+        (cache, str);
+  end matchcontinue;
+end cevalBuiltinStringFormat;
+
+protected function cevalBuiltinStringFormat2
+  "Helper function to cevalBuiltinStringFormat, does the actual formatting."  
+  input String inString;
+  input Integer stringLength;
+  input Integer minLength;
+  input Boolean leftJustified;
+  output String outString;
+algorithm
+  outString := matchcontinue(inString, stringLength, minLength, leftJustified)
+    local
+      String str;
+      Integer fill_size;
+    // The string is longer than the minimum length, do nothing.
+    case (_, _, _, _)
+      equation
+        true = stringLength >= minLength;
+      then
+        inString;
+    // leftJustified is false, append spaces at the beginning of the string.
+    case (_, _, _, false)
+      equation
+        fill_size = minLength - stringLength;
+        str = Util.stringAppendList(Util.listFill(" ", fill_size)) +& inString;
+      then
+        str;
+    // leftJustified is true, append spaces at the end of the string.
+    case (_, _, _, true)
+      equation
+        fill_size = minLength - stringLength;
+        str = inString +& Util.stringAppendList(Util.listFill(" ", fill_size));
+      then
+        str;
+  end matchcontinue;
+end cevalBuiltinStringFormat2;
 
 protected function cevalBuiltinLinspace "
   author: PA

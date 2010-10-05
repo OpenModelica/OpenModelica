@@ -4383,14 +4383,23 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
+            expLst={s, minlen, leftjust}) then
+    let tvar = tempDecl("modelica_string", &varDecls /*BUFC*/)
+    let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let typeStr = expTypeFromExpModelica(s)
+    let &preExp += '<%typeStr%>_to_modelica_string(&<%tvar%>, <%sExp%>, <%minlenExp%>, <%leftjustExp%>);<%\n%>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="String"),
             expLst={s, minlen, leftjust, signdig}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFC*/)
     let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let minlenExp = daeExp(minlen, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let leftjustExp = daeExp(leftjust, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
     let signdigExp = daeExp(signdig, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
-    let typeStr = expTypeFromExpModelica(s)
-    let &preExp += '<%typeStr%>_to_modelica_string(&<%tvar%>, <%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
+    let &preExp += 'modelica_real_to_modelica_string(&<%tvar%>, <%sExp%>, <%minlenExp%>, <%leftjustExp%>, <%signdigExp%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
             path=IDENT(name="delay"),
