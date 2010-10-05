@@ -35,9 +35,6 @@
 #include <QtGui>
 
 #include "mainwindow.h"
-#include "ProjectTabWidget.h"
-#include "StringHandler.h"
-#include "Helper.h"
 
 //! Constructor
 MainWindow::MainWindow(QWidget *parent)

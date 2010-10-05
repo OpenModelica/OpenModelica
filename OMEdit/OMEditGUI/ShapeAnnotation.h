@@ -31,13 +31,20 @@
  *
  */
 
+#ifndef SHAPEANNOTATION_H
+#define SHAPEANNOTATION_H
+
+#include <QtCore>
+#include <QtGui>
+
+#include "StringHandler.h"
 #include "Helper.h"
 
-QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
-QString Helper::omcServerName = "OMEditor";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+// Base class for all shapes annotations
+class ShapeAnnotation : public QObject, public QGraphicsItem
+{
+public:
+    ShapeAnnotation(QGraphicsItem *parent = 0);
+};
+
+#endif // SHAPEANNOTATION_H

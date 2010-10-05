@@ -43,6 +43,7 @@ public:
     ComponentsProperties(QString value);
     void parseString(QString value);
     QString getClassName();
+    QString getName();
 private:
     QString mClassName;
     QString mName;

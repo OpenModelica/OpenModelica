@@ -31,13 +31,10 @@
  *
  */
 
-#include "Helper.h"
+#include "ShapeAnnotation.h"
 
-QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
-QString Helper::omcServerName = "OMEditor";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+ShapeAnnotation::ShapeAnnotation(QGraphicsItem *parent)
+    : QGraphicsItem(parent)
+{
+
+}

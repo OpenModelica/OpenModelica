@@ -92,6 +92,10 @@ public:
     bool existClass(QString className);
     QString getSourceFile(QString modelName);
     QString list(QString className);
+    bool addComponent(QString name, QString className, QString modelName);
+    bool deleteComponent(QString name, QString modelName);
+    void renameComponent(QString oldName, QString className, QString newName);
+    bool addConnection(QString from, QString to, QString className);
 public slots:
     void openOMCLogger();
     void catchException();

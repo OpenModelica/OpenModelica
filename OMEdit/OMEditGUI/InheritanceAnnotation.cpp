@@ -31,13 +31,29 @@
  *
  */
 
-#include "Helper.h"
+#include "InheritanceAnnotation.h"
 
-QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
-QString Helper::omcServerName = "OMEditor";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+InheritanceAnnotation::InheritanceAnnotation(QString value, QString className, IconAnnotation *pParent)
+    : ShapeAnnotation(pParent), mClassName(className)
+{
+    setFlag(QGraphicsItem::ItemStacksBehindParent);
+    mpParentIcon = pParent;
+    mpParentIcon->parseIconAnnotationString(this, value);
+}
+
+QRectF InheritanceAnnotation::boundingRect() const
+{
+    return this->mRectangle;
+}
+
+void InheritanceAnnotation::paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget)
+{
+    Q_UNUSED(painter);
+    Q_UNUSED(option);
+    Q_UNUSED(widget);
+}
+
+IconAnnotation* InheritanceAnnotation::getParentIcon()
+{
+    return mpParentIcon;
+}

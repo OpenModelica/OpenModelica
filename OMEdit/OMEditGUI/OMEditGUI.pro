@@ -18,10 +18,18 @@ SOURCES += main.cpp\
     OMCThread.cpp \
     OMCProxy.cpp \
     StringHandler.cpp \
-    Annotations.cpp \
     ModelWidget.cpp \
     Helper.cpp \
     SplashScreen.cpp \
+    ShapeAnnotation.cpp \
+    LineAnnotation.cpp \
+    PolygonAnnotation.cpp \
+    RectangleAnnotation.cpp \
+    EllipseAnnotation.cpp \
+    TextAnnotation.cpp \
+    IconAnnotation.cpp \
+    InheritanceAnnotation.cpp \
+    ComponentAnnotation.cpp \
     ComponentsProperties.cpp \
     CornerItem.cpp \
     ConnectorWidget.cpp
@@ -34,13 +42,21 @@ HEADERS  += mainwindow.h \
     OMCThread.h \
     OMCProxy.h \
     StringHandler.h \
-    Annotations.h \
     ModelWidget.h \
     Helper.h \
     SplashScreen.h \
+    ShapeAnnotation.h \
+    LineAnnotation.h \
+    PolygonAnnotation.h \
+    RectangleAnnotation.h \
+    EllipseAnnotation.h \
+    TextAnnotation.h \
+    IconAnnotation.h \
+    InheritanceAnnotation.h \
+    ComponentAnnotation.h \
     ComponentsProperties.h \
     CornerItem.h \
-    ConnectorWidget.h
+    ConnectorWidget.h \
 
 # -------For OMNIorb
 win32 {

@@ -31,13 +31,35 @@
  *
  */
 
-#include "Helper.h"
+#ifndef TEXTANNOTATION_H
+#define TEXTANNOTATION_H
 
-QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
-QString Helper::omcServerName = "OMEditor";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+#include "ShapeAnnotation.h"
+#include "InheritanceAnnotation.h"
+#include "ComponentAnnotation.h"
+
+class TextAnnotation : public ShapeAnnotation
+{
+private:
+    bool mVisible;
+    QColor mLineColor;
+    QColor mFillColor;
+    QMap<QString, Qt::PenStyle> mLinePatternsMap;
+    Qt::PenStyle mLinePattern;
+    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
+    Qt::BrushStyle mFillPattern;
+    qreal mThickness;
+    QList<QPointF> mExtent;
+    QString mTextString;
+    int mFontSize;
+    QString mFontName;
+    int mFontWeight;
+    bool mFontItalic;
+    int mDefaultFontSize;
+public:
+    TextAnnotation(QString shape, QGraphicsItem *parent = 0);
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+};
+
+#endif // TEXTANNOTATION_H

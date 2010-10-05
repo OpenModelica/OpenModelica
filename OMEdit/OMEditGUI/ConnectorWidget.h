@@ -36,7 +36,7 @@
 
 #include <QtCore>
 #include <QtGui>
-#include "Annotations.h"
+#include "ComponentAnnotation.h"
 
 class ConnectorLine;
 class GraphicsView;

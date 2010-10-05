@@ -31,13 +31,26 @@
  *
  */
 
-#include "Helper.h"
+#ifndef LINEANNOTATION_H
+#define LINEANNOTATION_H
 
-QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
-QString Helper::omcServerName = "OMEditor";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+#include "ShapeAnnotation.h"
+
+class LineAnnotation : public ShapeAnnotation
+{
+private:
+    QColor mLineColor;
+    qreal mThickness;
+    bool mSmooth;
+    bool mVisible;
+    QList<QPointF> mPoints;
+    QMap<QString, Qt::PenStyle> mLinePatternsMap;
+    Qt::PenStyle mLinePattern;
+public:
+    LineAnnotation(QString shape, QGraphicsItem *parent = 0);
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+    void drawLineAnnotaion(QPainter *painter);
+};
+
+#endif // LINEANNOTATION_H

@@ -39,12 +39,13 @@
 #include <QTabWidget>
 #include <map>
 
-#include "MessageWidget.h"
-#include "Annotations.h"
+#include "IconAnnotation.h"
+#include "ComponentAnnotation.h"
 #include "ConnectorWidget.h"
 #include "StringHandler.h"
 
 class ProjectTab;
+class IconAnnotation;
 class ComponentAnnotation;
 class Connector;
 
@@ -61,26 +62,39 @@ class GraphicsView : public QGraphicsView
     Q_OBJECT
 private:
     Connector *mpConnector;
+    QList<IconAnnotation*> mIconsList;
 public:
     GraphicsView(ProjectTab *parent = 0);
     Connector *getConnector();
+    void addIconObject(IconAnnotation* icon);
+    void deleteIconObject(IconAnnotation* icon);
+    QString checkIconName(QString iconName, int number = 0);
 
     bool mIsCreatingConnector;
     QVector<Connector *> mConnectorVector;
     ProjectTab *mpParentProjectTab;
     QColor mBackgroundColor;
+signals:
+    void keyPressDelete();
+    void keyPressUp();
+    void keyPressDown();
+    void keyPressLeft();
+    void keyPressRight();
 public slots:
     void addConnector(ComponentAnnotation *pComponent);
     void resetZoom();
     void zoomIn();
     void zoomOut();
     void showGridLines(bool showLines);
+    void selectAll();
 protected:
     virtual void dragMoveEvent(QDragMoveEvent *event);
     virtual void dropEvent(QDropEvent *event);
+    virtual void drawBackground(QPainter *painter, const QRectF &rect);
     virtual void mouseMoveEvent(QMouseEvent *event);
     virtual void mousePressEvent(QMouseEvent *event);
-    virtual void drawBackground(QPainter *painter, const QRectF &rect);
+    virtual void keyPressEvent(QKeyEvent *event);
+    virtual void keyReleaseEvent(QKeyEvent *event);
 };
 
 class ProjectTabWidget; //Forward declaration
@@ -107,9 +121,14 @@ class MainWindow;
 class ProjectTabWidget : public QTabWidget
 {
     Q_OBJECT
+private:
+    QList<IconAnnotation*> mGlobalIconsList;
 public:
     ProjectTabWidget(MainWindow *parent = 0);
     ProjectTab *getCurrentTab();
+    void addGlobalIconObject(IconAnnotation* icon);
+    IconAnnotation* getGlobalIconObject(QString className);
+
     MainWindow *mpParentMainWindow;
     bool mShowLines;
 public slots:

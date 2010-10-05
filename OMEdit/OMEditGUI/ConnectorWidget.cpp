@@ -364,9 +364,9 @@ ConnectorLine::ConnectorLine(qreal x1, qreal y1, qreal x2, qreal y2, int lineNum
     this->endPos = QPointF(x2,y2);
     this->mLineNumber = lineNumber;
     this->mParentConnectorEndComponentConnected = false;
-    this->mActivePen = QPen(Qt::red, 5.7);
-    this->mPassivePen = QPen(Qt::black, 5.7);
-    this->mHoverPen = QPen(Qt::darkRed, 6.0);
+    this->mActivePen = QPen(Qt::red, 1.0);
+    this->mPassivePen = QPen(Qt::black, 1.0);
+    this->mHoverPen = QPen(Qt::darkRed, 6.8);
 }
 
 //! Reimplementation of paint function. Removes the ugly dotted selection box.

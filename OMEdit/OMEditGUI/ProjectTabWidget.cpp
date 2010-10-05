@@ -66,7 +66,7 @@ GraphicsView::GraphicsView(ProjectTab *parent)
     this->setTransformationAnchor(QGraphicsView::AnchorUnderMouse);
     this->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Preferred);
     this->setSceneRect(-100.0, -100.0, 200.0, 200.0);
-    this->scale(4.3, -2.0);
+    this->scale(2.0, -2.0);
     this->centerOn(this->sceneRect().center());
     this->mBackgroundColor = QColor(Qt::white);
 
@@ -76,6 +76,7 @@ GraphicsView::GraphicsView(ProjectTab *parent)
 void GraphicsView::drawBackground(QPainter *painter, const QRectF &rect)
 {
     //! @todo Grid Lines changes when resize the window. Update it.
+    painter->drawRect(this->sceneRect());
     if (this->mpParentProjectTab->mpParentProjectTabWidget->mShowLines)
     {
         painter->scale(1.0, -1.0);
@@ -113,21 +114,36 @@ void GraphicsView::dragMoveEvent(QDragMoveEvent *event)
 void GraphicsView::dropEvent(QDropEvent *event)
 {
     QTreeWidget *tree = dynamic_cast<QTreeWidget *>(event->source());
-
     QTreeWidgetItem *item = tree->currentItem();
 
     if (item->text(0).isEmpty())
         event->ignore();
 
     MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
-    if (pMainWindow->mpOMCProxy->isWhat(StringHandler::MODEL, item->toolTip(0)))
+    if (!pMainWindow->mpOMCProxy->isWhat(StringHandler::PACKAGE, item->toolTip(0)))
     {
+        // Check if the icon is already loaded.
+        IconAnnotation *oldIcon = mpParentProjectTab->mpParentProjectTabWidget->getGlobalIconObject(item->toolTip(0));
+        IconAnnotation *newIcon;
+        QString iconName = checkIconName(item->text(0).toLower());
+
+        if (oldIcon == NULL)
+        {
+            QString result = pMainWindow->mpOMCProxy->getIconAnnotation(item->toolTip(0));
+            newIcon = new IconAnnotation(result, iconName, item->toolTip(0), mapToScene(event->pos()),
+                                         pMainWindow->mpOMCProxy, this->mpParentProjectTab->mpGraphicsScene, this);
+            mpParentProjectTab->mpParentProjectTabWidget->addGlobalIconObject(newIcon);
+            addIconObject(newIcon);
+        }
+        else
+        {
+            newIcon = new IconAnnotation(oldIcon, iconName, mapToScene(event->pos()),
+                                         this->mpParentProjectTab->mpGraphicsScene, this);
+            addIconObject(newIcon);
+        }
+        // Add the component to model in OMC Global Scope.
+        pMainWindow->mpOMCProxy->addComponent(iconName, item->toolTip(0), mpParentProjectTab->mModelFileStrucrure);
         event->accept();
-        //pMainWindow->mpOMCProxy->sendCommand("setAnnotationVersion(\"3.x\")");
-        QString result = pMainWindow->mpOMCProxy->getIconAnnotation(item->toolTip(0));
-        IconAnnotation *icon = new IconAnnotation(result, item->toolTip(0), mapToScene(event->pos()),
-                                                  pMainWindow->mpOMCProxy, this->mpParentProjectTab->mpGraphicsScene, this);
-        Q_UNUSED(icon);
     }
     else
         event->ignore();
@@ -136,6 +152,35 @@ void GraphicsView::dropEvent(QDropEvent *event)
 Connector* GraphicsView::getConnector()
 {
     return this->mpConnector;
+}
+
+void GraphicsView::addIconObject(IconAnnotation *icon)
+{
+    mIconsList.append(icon);
+}
+
+void GraphicsView::deleteIconObject(IconAnnotation *icon)
+{
+    mIconsList.removeOne(icon);
+    mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow->mpOMCProxy->deleteComponent(icon->getName(), mpParentProjectTab->mModelFileStrucrure);
+}
+
+QString GraphicsView::checkIconName(QString iconName, int number)
+{
+    QString name;
+    if (number > 0)
+        name = iconName + QString::number(number);
+    else
+        name = iconName;
+    foreach (IconAnnotation *icon, mIconsList)
+    {
+        if (icon->getName() == name)
+        {
+            name = checkIconName(iconName, ++number);
+            break;
+        }
+    }
+    return name;
 }
 
 //! Defines what happens when the mouse is moving in a GraphicsView.
@@ -164,6 +209,41 @@ void GraphicsView::mousePressEvent(QMouseEvent *event)
     QGraphicsView::mousePressEvent(event);
 }
 
+void GraphicsView::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Delete)
+    {
+        emit keyPressDelete();
+    }
+    else if(event->key() == Qt::Key_Up)
+    {
+        emit keyPressUp();
+    }
+    else if(event->key() == Qt::Key_Down)
+    {
+        emit keyPressDown();
+    }
+    else if(event->key() == Qt::Key_Left)
+    {
+        emit keyPressLeft();
+    }
+    else if(event->key() == Qt::Key_Right)
+    {
+        emit keyPressRight();
+    }
+    else if (event->modifiers() and Qt::ControlModifier and event->key() == Qt::Key_A)
+        this->selectAll();
+    else
+        QGraphicsView::keyPressEvent (event);
+}
+
+//! Defines what shall happen when a key is released.
+//! @param event contains information about the keypress operation.
+void GraphicsView::keyReleaseEvent(QKeyEvent *event)
+{
+    QGraphicsView::keyReleaseEvent(event);
+}
+
 //! Begins creation of connector or complete creation of connector depending on the mIsCreatingConnector flag.
 //! @param pPort is a pointer to the clicked port, either start or end depending on the mIsCreatingConnector flag.
 //! @param doNotRegisterUndo is true if the added connector shall not be registered in the undo stack, for example if this function is called by a redo function.
@@ -189,12 +269,24 @@ void GraphicsView::addConnector(ComponentAnnotation *pComponent)
     {
         ComponentAnnotation *pStartComponent = this->mpConnector->getStartComponent();
         // add the code to check of we can connect to component or not.
-
-        this->mIsCreatingConnector = false;
-        QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
-        this->mpConnector->updateEndPoint(newPos);
-        pComponent->getParentIcon()->addConnector(this->mpConnector);
-        this->mpConnector->setEndComponent(pComponent);
+        MainWindow *pMainWindow = mpParentProjectTab->mpParentProjectTabWidget->mpParentMainWindow;
+        if (pMainWindow->mpOMCProxy->addConnection(pStartComponent->getParentIcon()->getName() + "." +
+                                                   pStartComponent->mpComponentProperties->getName(),
+                                                   pComponent->getParentIcon()->getName() + "." +
+                                                   pComponent->mpComponentProperties->getName(),
+                                                   mpParentProjectTab->mModelFileStrucrure))
+        {
+            this->mIsCreatingConnector = false;
+            QPointF newPos = pComponent->mapToScene(pComponent->boundingRect().center());
+            this->mpConnector->updateEndPoint(newPos);
+            pComponent->getParentIcon()->addConnector(this->mpConnector);
+            this->mpConnector->setEndComponent(pComponent);
+        }
+        else
+        {
+            //! @todo Make the addconnection feature better. OMC doesn't handle the wrong connections.
+            pMainWindow->mpMessageWidget->printGUIErrorMessage(pMainWindow->mpOMCProxy->getErrorString());
+        }
     }
 }
 
@@ -227,6 +319,16 @@ void GraphicsView::showGridLines(bool showLines)
 {
     this->mpParentProjectTab->mpParentProjectTabWidget->mShowLines = showLines;
     this->scene()->update();
+}
+
+//! Selects all objects and connectors.
+void GraphicsView::selectAll()
+{
+    //Select all components
+    foreach (IconAnnotation *icon, mIconsList)
+    {
+        icon->setSelected(true);
+    }
 }
 
 //! @class GraphicsScene
@@ -332,6 +434,21 @@ ProjectTabWidget::ProjectTabWidget(MainWindow *parent)
 ProjectTab *ProjectTabWidget::getCurrentTab()
 {
     return qobject_cast<ProjectTab *>(currentWidget());
+}
+
+void ProjectTabWidget::addGlobalIconObject(IconAnnotation *icon)
+{
+    mGlobalIconsList.append(icon);
+}
+
+IconAnnotation* ProjectTabWidget::getGlobalIconObject(QString className)
+{
+    foreach (IconAnnotation* icon, mGlobalIconsList)
+    {
+        if (icon->getClassName() == className)
+            return icon;
+    }
+    return NULL;
 }
 
 //! Adds an existing ProjectTab object to itself.

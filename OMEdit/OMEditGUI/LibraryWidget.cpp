@@ -35,9 +35,7 @@
 #include <map>
 #include <iostream>
 
-#include "mainwindow.h"
-#include "StringHandler.h"
-#include "Annotations.h"
+#include "LibraryWidget.h"
 
 //! Constructor.
 //! @param parent defines a parent to the new instanced object.
@@ -63,7 +61,8 @@ LibraryWidget::LibraryWidget(MainWindow *parent)
     mpGrid->addWidget(mpProjectsTree);
 
     setLayout(mpGrid);
-    connect(mpTree, SIGNAL(itemClicked (QTreeWidgetItem*, int)), SLOT(showLib(QTreeWidgetItem*, int)));
+    connect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), SLOT(showLib(QTreeWidgetItem*)));
+    connect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), SLOT(showLib(QTreeWidgetItem*)));
 }
 
 //! Let the user add the OM Standard Library to library widget.
@@ -77,6 +76,8 @@ void LibraryWidget::addModelicaStandardLibrary()
         newTreePost->setText(0, QString("Modelica"));
         newTreePost->setToolTip(0, QString("Modelica"));
         this->mpTree->insertTopLevelItem(0, newTreePost);
+        // add temporary item to show open icon of tree.
+        addClass("Temp", "Modelica.", "Modelica.", false);
         addClass("Ground", "", "Modelica.Electrical.Analog.Basic.", true);
         addClass("Resistor", "", "Modelica.Electrical.Analog.Basic.", true);
     }
@@ -89,7 +90,7 @@ void LibraryWidget::loadModelicaLibraryHierarchy(QString value, QString prefixSt
 {
     if (this->mpParentMainWindow->mpOMCProxy->isPackage(prefixStr + value))
     {
-        // if value is Modelica then dont send it to addClass. Because we already added it statically.
+        //if value is Modelica then dont send it to addClass. Because we already added it statically.
         if (value != tr("Modelica"))
         {
             this->mpParentMainWindow->statusBar->showMessage(QString("Loading: ").append(prefixStr + value));
@@ -221,18 +222,19 @@ void LibraryWidget::removeProject()
 //! @param item is the library to show.
 //! @param column is the position of the library name in the tree.
 //! @see hideAllLib()
-void LibraryWidget::showLib(QTreeWidgetItem *item, int column)
+void LibraryWidget::showLib(QTreeWidgetItem *item)
 {
-    static bool isModelicaLibraryLoaded = false;
-    if (item->toolTip(column) == tr("Modelica") && !isModelicaLibraryLoaded)
-    {
-        // Set the cursor to wait.
-        setCursor(Qt::WaitCursor);
-        isModelicaLibraryLoaded = true;
-        /*loadModelicaLibraryHierarchy(tr("Modelica"));
-        this->mpParentMainWindow->statusBar->clearMessage();
-        mpTree->sortItems(0, Qt::AscendingOrder);*/
-        // Remove the wait cursor
-        unsetCursor();
-    }
+    // disconnect the mpTree itemClicked and itemExpanded signals
+    disconnect(mpTree, SIGNAL(itemClicked(QTreeWidgetItem*,int)), this, SLOT(showLib(QTreeWidgetItem*)));
+    disconnect(mpTree, SIGNAL(itemExpanded(QTreeWidgetItem*)), this, SLOT(showLib(QTreeWidgetItem*)));
+
+    // Set the cursor to wait.
+    setCursor(Qt::WaitCursor);
+    // Delete the temp entry now
+    item->removeChild(item->child(0));
+//    loadModelicaLibraryHierarchy(tr("Modelica"));
+//    this->mpParentMainWindow->statusBar->clearMessage();
+    //mpTree->sortItems(0, Qt::AscendingOrder);
+    // Remove the wait cursor
+    unsetCursor();
 }

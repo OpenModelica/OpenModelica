@@ -43,6 +43,9 @@
 #include <QListWidgetItem>
 #include <QStringList>
 
+#include "mainwindow.h"
+#include "StringHandler.h"
+
 class MainWindow;
 class OMCProxy;
 
@@ -62,7 +65,7 @@ public:
     void addModelFiles(QString fileName, QString parentFileName=QString(), QString parentStructure=QString());
     void removeProject();
 private slots:
-    void showLib(QTreeWidgetItem * item, int column);
+    void showLib(QTreeWidgetItem *item);
 private:
     //Member variables
     MainWindow *mpParentMainWindow;

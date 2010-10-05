@@ -517,3 +517,35 @@ QString OMCProxy::list(QString className)
     sendCommand("list(" + className + ")");
     return StringHandler::removeFirstLastQuotes(getResult()).trimmed();
 }
+
+bool OMCProxy::addComponent(QString name, QString className, QString modelName)
+{
+    sendCommand("addComponent(" + name + ", " + className + "," + modelName + ")");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+bool OMCProxy::deleteComponent(QString name, QString modelName)
+{
+    sendCommand("deleteComponent(" + name + "," + modelName + ")");
+    if (getResult().contains("true"))
+        return true;
+    else
+        return false;
+}
+
+void OMCProxy::renameComponent(QString oldName, QString className, QString newName)
+{
+    sendCommand("renameComponent(" + oldName + "," + className + "," + newName + ")");
+}
+
+bool OMCProxy::addConnection(QString from, QString to, QString className)
+{
+    sendCommand("addConnection(" + from + "," + to + "," + className + ")");
+    if (getResult().contains("Ok"))
+        return true;
+    else
+        return false;
+}

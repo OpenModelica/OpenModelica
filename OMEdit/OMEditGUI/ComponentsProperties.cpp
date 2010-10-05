@@ -148,5 +148,10 @@ void ComponentsProperties::parseString(QString value)
 
 QString ComponentsProperties::getClassName()
 {
-    return this->mClassName;
+    return mClassName;
+}
+
+QString ComponentsProperties::getName()
+{
+    return mName;
 }

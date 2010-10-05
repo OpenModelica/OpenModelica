@@ -31,13 +31,30 @@
  *
  */
 
-#include "Helper.h"
+#ifndef RECTANGLEANNOTATION_H
+#define RECTANGLEANNOTATION_H
 
-QString Helper::applicationName = "OMEdit";
-QString Helper::applicationVersion = "0.0.1";
-QString Helper::applicationIntroText = "Open Modelica Graphical Editor";
-QString Helper::omcServerName = "OMEditor";
-QString Helper::omFileTypes = "*.mo";
-QString Helper::omFileOpenText = "Modelica Files (*.mo)";
-qreal Helper::globalXScale = 0.15;
-qreal Helper::globalYScale = 0.15;
+#include "ShapeAnnotation.h"
+
+class RectangleAnnotation : public ShapeAnnotation
+{
+private:
+    bool mVisible;
+    QColor mLineColor;
+    QColor mFillColor;
+    QMap<QString, Qt::PenStyle> mLinePatternsMap;
+    Qt::PenStyle mLinePattern;
+    QMap<QString, Qt::BrushStyle> mFillPatternsMap;
+    Qt::BrushStyle mFillPattern;
+    qreal mThickness;
+    QMap<QString, Qt::BrushStyle> mBorderPatternsMap;
+    Qt::BrushStyle mBorderPattern;
+    QList<QPointF> mExtent;
+    qreal mCornerRadius;
+public:
+    RectangleAnnotation(QString shape, QGraphicsItem *parent = 0);
+    QRectF boundingRect() const;
+    void paint(QPainter *painter, const QStyleOptionGraphicsItem *option, QWidget *widget = 0);
+};
+
+#endif // RECTANGLEANNOTATION_H

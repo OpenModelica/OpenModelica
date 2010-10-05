@@ -43,6 +43,9 @@
 #include "ModelWidget.h"
 #include "MessageWidget.h"
 #include "LibraryWidget.h"
+#include "ProjectTabWidget.h"
+#include "StringHandler.h"
+#include "Helper.h"
 
 class QGridLayout;
 class QHBoxLayout;
