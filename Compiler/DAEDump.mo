@@ -114,33 +114,35 @@ end dumpFunctionNamesStr;
 
 public function functionNameStr
 "return the name of a function, if element is not function return  empty string"
-  input DAE.Element inElement;
+  input DAE.Function inElement;
   output String res;
 algorithm
   res := matchcontinue (inElement)
     local
       Absyn.Path fpath;
       
-     case DAE.FUNCTION(path = fpath) equation
-       res = Absyn.pathString(fpath);
-     then res;
-     case DAE.RECORD_CONSTRUCTOR(path = fpath) equation
-       res = Absyn.pathString(fpath);
-     then res;
+     case DAE.FUNCTION(path = fpath)
+       equation
+         res = Absyn.pathString(fpath);
+       then res;
+     case DAE.RECORD_CONSTRUCTOR(path = fpath)
+       equation
+         res = Absyn.pathString(fpath);
+       then res;
      case _ then "";
   end matchcontinue;
 end functionNameStr;
 
 protected function sortFunctions "sorts the functions and record constructors in alphabetical order"
-  input list<DAE.Element> funcs;
-  output list<DAE.Element> sortedFuncs; 
+  input list<DAE.Function> funcs;
+  output list<DAE.Function> sortedFuncs; 
 algorithm
   sortedFuncs := Util.sort(funcs,funcGreaterThan);
 end sortFunctions;
 
 protected function funcGreaterThan "sorting function for two DAE.Element that are functions or record constuctors"
-  input DAE.Element func1;
-  input DAE.Element func2;
+  input DAE.Function func1;
+  input DAE.Function func2;
   output Boolean res;
 algorithm
   res := matchcontinue(func1,func2)
@@ -364,35 +366,7 @@ algorithm
         dump2(DAE.DAE(xs,funcs));
       then
         ();
-    case (DAE.DAE( DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_EXT(body = elts,externalDecl=extdecl))::_ ,type_ = tp) :: xs,funcs))
-        equation
-        Print.printBuf("EXTFUNCTION(\n");
-        str = Absyn.pathString(path);
-        Print.printBuf(str);
-        Print.printBuf(", ");
-        dump2(DAE.DAE(elts,funcs));
-        Print.printBuf(", ");
-        Print.printBuf(Types.printTypeStr(tp));
-        Print.printBuf(", ");
-        extdeclstr = dumpExtDeclStr(extdecl);
-        Print.printBuf(extdeclstr);
-        Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
-      then
-        ();
 
-    case (DAE.DAE((DAE.FUNCTION(path = _) :: xs),funcs))
-      equation
-        Print.printBuf("FUNCTION(...)\n");
-        dump2(DAE.DAE(xs,funcs));
-      then
-        ();
-    case (DAE.DAE((DAE.RECORD_CONSTRUCTOR(path = _) :: xs),funcs))
-      equation
-        Print.printBuf("RECORD_CONSTRUCTOR(...)\n");
-        dump2(DAE.DAE(xs,funcs));
-      then
-        ();
     case (DAE.DAE((DAE.ASSERT(condition=e1,message=e2) :: xs),funcs))
       equation
         Print.printBuf("ASSERT(\n");
@@ -1213,7 +1187,7 @@ end dumpInitialAlgorithm;
 public function dumpFunctionNames "
   Author BZ
   print function names"
-  input list<DAE.Element> fs;
+  input list<DAE.Function> fs;
   output list<String> names;
 algorithm 
   names := matchcontinue(fs)
@@ -1250,7 +1224,7 @@ algorithm
     local
       String fstr;
       Absyn.Path fpath;
-      DAE.Element constr,destr;
+      DAE.Function constr,destr;
       list<DAE.Element> dae;
       tuple<DAE.TType, Option<Absyn.Path>> t;
     case DAE.EXTOBJECTCLASS(path = fpath,constructor=constr,destructor=destr)
@@ -1321,7 +1295,7 @@ end dumpDerivativeCond;
 protected function dumpFunction
 "function: dumpFunction
   Dump function"
-  input DAE.Element inElement;
+  input DAE.Function inElement;
 algorithm
   _ := matchcontinue (inElement)
     local
@@ -2184,28 +2158,6 @@ algorithm
         Print.printBuf(")");
       then
         ();
-     case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(body = l)::_),type_ = t)
-      equation
-        Print.printBuf("FUNCTION(");
-        fstr = Absyn.pathString(fpath);
-        Print.printBuf(fstr);
-        Print.printBuf(",");
-        Print.printBuf(Types.printTypeStr(t));
-        Print.printBuf(",");
-        dumpDebugElist(l);
-        Print.printBuf(")");
-      then
-        ();
-    case DAE.RECORD_CONSTRUCTOR(path = fpath,type_ = t)
-      equation
-        Print.printBuf("RECORD_CONSTRUCTOR(");
-        fstr = Absyn.pathString(fpath);
-        Print.printBuf(fstr);
-        Print.printBuf(",");
-        Print.printBuf(Types.printTypeStr(t));
-        Print.printBuf(")");
-      then
-        ();
     case DAE.ARRAY_EQUATION(exp = e1,array = e2)
       equation
         Print.printBuf("ARRAY_EQUATION(");
@@ -2555,17 +2507,6 @@ algorithm
         nodes = buildGrList(elts);
       then
         Graphviz.LNODE("COMP",{n},{},nodes);
-    case DAE.FUNCTION(path = fpath,functions = (DAE.FUNCTION_DEF(body = elts)::_),type_ = ty)
-      equation
-        nodes = buildGrList(elts);
-        fstr = Absyn.pathString(fpath);
-      then
-        Graphviz.LNODE("FUNCTION",{fstr},{},nodes);
-    case DAE.RECORD_CONSTRUCTOR(path = fpath)
-      equation
-        fstr = Absyn.pathString(fpath);
-      then
-        Graphviz.LNODE("RECORD_CONSTRUCTOR",{fstr},{},{});
   end matchcontinue;
 end buildGrElement;
 
@@ -3291,7 +3232,7 @@ end ppStatementStream;
 
 public function dumpFunctionStr "function: dumpFunctionStr
   Dump function to a string."
-  input DAE.Element inElement;
+  input DAE.Function inElement;
   output String outString;
 algorithm
   outString := matchcontinue (inElement)
@@ -3328,7 +3269,7 @@ algorithm
       String fstr,daestr,str,c_str,d_str;
       Absyn.Path fpath;
       list<DAE.Element> dae;
-      DAE.Element constr,destr;
+      DAE.Function constr,destr;
       DAE.Type t;
     case DAE.EXTOBJECTCLASS(path = fpath,constructor = constr, destructor = destr)
       equation
@@ -3346,7 +3287,7 @@ end dumpExtObjClassStr;
 protected function dumpFunctionStream
 "function: dumpFunctionStream
   Dump function to a stream"
-  input DAE.Element inElement;
+  input DAE.Function inElement;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm

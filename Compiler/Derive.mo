@@ -143,7 +143,7 @@ algorithm
         // get Allgorithm
         DAE.ALGORITHM_STMTS(statementLst= {DAE.STMT_TUPLE_ASSIGN(type_=exptyp,expExpLst=expExpLst,exp = e1,source=sourceStmt)}) = al[index+1];
         e1_1 = differentiateFunctionTime(e1,(timevars,inFunctions));
-        e1_2 = Inline.inlineExp(e1_1,(NONE(),SOME(inFunctions),{DAE.NORM_INLINE()}));
+        e1_2 = Inline.inlineExp(e1_1,(SOME(inFunctions),{DAE.NORM_INLINE()}));
         e2 = Exp.simplify(e1_2);
         // outputs
         (expExpLst1,out1) = differentiateFunctionTimeOutputs(e1,e2,expExpLst,out,(timevars,inFunctions));
@@ -530,7 +530,7 @@ algorithm
       equation
         // get Derivative function
         e1 = differentiateFunctionTime(e,(timevars,functions));
-        e2 = Inline.inlineExp(e1,(NONE(),SOME(functions),{DAE.NORM_INLINE()}));
+        e2 = Inline.inlineExp(e1,(SOME(functions),{DAE.NORM_INLINE()}));
       then
         e2;        
     case (e as DAE.CALL(path = a,expLst = expl,tuple_ = b,builtin = c),(timevars,functions))

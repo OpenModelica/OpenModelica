@@ -358,6 +358,7 @@ algorithm
       then
         DAE.COMP(n,daeLst,source,comment);
 
+/* TODO: FIXME: adrpo: Are these needed?
     case (str,dae1,
       DAE.FUNCTION(path = n,
       functions = (DAE.FUNCTION_DEF(body = daeLst)::funcDer),
@@ -382,6 +383,7 @@ algorithm
         daeLst = stringPrefixElements(str, daeLst, daeLst);
       then
          DAE.FUNCTION(n,DAE.FUNCTION_EXT(daeLst,decl)::funcDer,ty,partialPrefix,DAE.NO_INLINE(),source);
+*/
 
     case (str,dae,e) then e;
   end matchcontinue;

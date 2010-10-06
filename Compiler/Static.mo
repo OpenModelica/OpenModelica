@@ -8827,7 +8827,6 @@ algorithm
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         cache = Env.addCachedInstFunc(cache,name);
         (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
-        dae = DAEUtil.addDaeFunction(dae);
       then (cache,dae);
 
     /* class already available*/
@@ -8835,7 +8834,6 @@ algorithm
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         (cache,env,_,dae) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
-        dae = DAEUtil.addDaeFunction(dae);
       then (cache,dae);
 
     /* Call to function reference variable */

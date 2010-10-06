@@ -235,8 +235,8 @@ type ExternalObjectClasses = list<ExternalObjectClass> "classes of external obje
 uniontype ExternalObjectClass "class of external objects"
   record EXTOBJCLASS
     Absyn.Path path "className of external object";
-    DAE.Element constructor "constructor is an EXTFUNCTION";
-    DAE.Element destructor "destructor is an EXTFUNCTION";
+    DAE.Function constructor "constructor is an EXTFUNCTION";
+    DAE.Function destructor "destructor is an EXTFUNCTION";
     DAE.ElementSource source "origin of equation";
   end EXTOBJCLASS;
 end ExternalObjectClass;
@@ -648,7 +648,7 @@ algorithm
         arr_md_eqns = listArray(aeqns1);
         algarr = listArray(algs);
         funcs = DAEUtil.daeFunctionTree(lst);
-        einfo = Inline.inlineEventInfo(EVENT_INFO(whenclauses_1,zero_crossings),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        einfo = Inline.inlineEventInfo(EVENT_INFO(whenclauses_1,zero_crossings),(SOME(funcs),{DAE.NORM_INLINE()}));
       then DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
 
     case(lst, addDummyDerivativeIfNeeded, false) // do not simplify
@@ -684,7 +684,7 @@ algorithm
         arr_md_eqns = listArray(aeqns);
         algarr = listArray(algs);
         funcs = DAEUtil.daeFunctionTree(lst);
-        einfo = Inline.inlineEventInfo(EVENT_INFO(whenclauses_1,zero_crossings),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));        
+        einfo = Inline.inlineEventInfo(EVENT_INFO(whenclauses_1,zero_crossings),(SOME(funcs),{DAE.NORM_INLINE()}));        
       then DAELOW(vars_1,knvars,extVars,aliasVars,eqnarr,reqnarr,ieqnarr,arr_md_eqns,algarr,einfo,extObjCls);
   end matchcontinue;
 end lower;
@@ -3911,7 +3911,7 @@ algorithm
   _ := matchcontinue(cls)
     local
       ExternalObjectClasses xs;
-      DAE.Element constr,destr;
+      DAE.Function constr,destr;
       Absyn.Path path;
       list<Absyn.Path> paths;
       list<String> paths_lst;
@@ -4724,7 +4724,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states) =
         lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         v_1 = lowerExtObjVar(v);
-        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(funcs),{DAE.NORM_INLINE()}));
         extVars2 = addVar(v_2, extVars);
       then
         (vars,knvars,extVars2,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
@@ -4733,11 +4733,11 @@ algorithm
     case (DAE.DAE((v as DAE.EXTOBJECTCLASS(path,constr,destr,source)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       local
         Absyn.Path path;
-        DAE.Element constr,destr;
+        DAE.Function constr,destr;
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
-        {extObjCl} = Inline.inlineExtObjClasses({EXTOBJCLASS(path,constr,destr,source)},(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        {extObjCl} = Inline.inlineExtObjClasses({EXTOBJCLASS(path,constr,destr,source)},(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,
         extObjCl::extObjCls,states);
@@ -4751,8 +4751,8 @@ algorithm
         // add the binding as an equation and remove the binding from variable!
         true = isStateOrAlgvar(v);
         (v_1,SOME(e1),states) = lowerVar(v, states);
-        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e2 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
         vars_1 = addVar(v_2, vars);
       then
         (vars_1,knvars,extVars,EQUATION(DAE.CREF(cr, DAE.ET_OTHER()), e2, source)::eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
@@ -4764,7 +4764,7 @@ algorithm
         lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         true = isStateOrAlgvar(v);
         (v_1,NONE(),states) = lowerVar(v, states);
-        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(funcs),{DAE.NORM_INLINE()}));
         vars_1 = addVar(v_2, vars);
       then
         (vars_1,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
@@ -4775,7 +4775,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         v_1 = lowerKnownVar(v) "in previous rule, lower_var failed." ;
-        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(v_2) = Inline.inlineVarOpt(SOME(v_1),(SOME(funcs),{DAE.NORM_INLINE()}));
         knvars_1 = addVar(v_2, knvars);
       then
         (vars,knvars_1,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
@@ -4784,7 +4784,7 @@ algorithm
     case (DAE.DAE((e as DAE.EQUATION(exp = e1,scalar = e2)) :: xs,funcs),states,vars,knvars,extVars,whenclauses)
       equation
         a = lowerTupleEquation(e);
-        a1 = Inline.inlineAlgorithm(a,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        a1 = Inline.inlineAlgorithm(a,(SOME(funcs),{DAE.NORM_INLINE()}));
         a2 = extendAlgorithm(a1,SOME(funcs));
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         	= lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
@@ -4813,7 +4813,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
-        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,(e_2 :: eqns),reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -4823,7 +4823,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
-        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,(e_2 :: eqns),reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -4833,7 +4833,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
-        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,e_2 :: eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -4928,7 +4928,7 @@ algorithm
         (eqns2,vars2,count_1,whenclauses_2) = lowerWhenEqn(e, count, whenclauses_1);
         vars = mergeVars(vars1, vars2);
         opteqlst = Util.listMap(eqns2,Util.makeOption);
-        opteqlst = Util.listMap1(opteqlst,Inline.inlineEqOpt,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        opteqlst = Util.listMap1(opteqlst,Inline.inlineEqOpt,(SOME(funcs),{DAE.NORM_INLINE()}));
         eqns2 = Util.listMap(opteqlst,Util.getOption);
         eqns = listAppend(eqns1, eqns2);
       then
@@ -4940,7 +4940,7 @@ algorithm
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         e_1 = lowerEqn(e);
-        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        SOME(e_2) = Inline.inlineEqOpt(SOME(e_1),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,knvars,extVars,eqns,reqns,(e_2 :: ieqns),aeqns,iaeqns,algs,whenclauses_1,extObjCls,states);
     
@@ -4949,7 +4949,7 @@ algorithm
       equation
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,algs,whenclauses_1,extObjCls,states)
         = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
-       a1 = Inline.inlineAlgorithm(a,(NONE(),SOME(funcs),{DAE.NORM_INLINE()})); 
+       a1 = Inline.inlineAlgorithm(a,(SOME(funcs),{DAE.NORM_INLINE()})); 
        a2 = extendAlgorithm(a1,SOME(funcs));
       then
         (vars,knvars,extVars,eqns,reqns,ieqns,aeqns,iaeqns,(a2 :: algs),whenclauses_1,extObjCls,states);
@@ -4982,7 +4982,7 @@ algorithm
       equation
         checkAssertCondition(cond,msg);
         (v,kv,extVars,e,re,ie,ae,iae,al,whenclauses_1,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states,vars,knvars,extVars,whenclauses);
-        a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)}),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_ASSERT(cond,msg,source)}),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (v,kv,extVars,e,re,ie,ae,iae,a::al,whenclauses_1,extObjCls,states);
     
@@ -4994,7 +4994,7 @@ algorithm
         DAE.Exp cond,msg;
       equation
         (v,kv,extVars,e,re,ie,ae,iae,al,whenclauses_1,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars,knvars,extVars, whenclauses) ;
-        a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({DAE.STMT_TERMINATE(msg,source)}),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (v,kv,extVars,e,re,ie,ae,iae,a::al,whenclauses_1,extObjCls,states);
     
@@ -5013,7 +5013,7 @@ algorithm
         
         (vars,kv,extVars,eqns,re,ie,ae,iae,al,whenclauses_1,extObjCls,states) = lower2(DAE.DAE(xs,funcs), states, vars, knvars, extVars, whenclauses);
         s = DAE.STMT_NORETCALL(DAE.CALL(func_name, args, false, false, DAE.ET_NORETCALL(), DAE.NORM_INLINE()),source);
-        a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({s}),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        a = Inline.inlineAlgorithm(DAE.ALGORITHM_STMTS({s}),(SOME(funcs),{DAE.NORM_INLINE()}));
       then
         (vars,kv,extVars,eqns,re,ie,ae,iae,a :: al,whenclauses_1,extObjCls,states);
 
@@ -5145,7 +5145,7 @@ algorithm
 				new_eqns = lowerTupleAssignment(rest_targets, rest_sources, eq_source, funcs);
 				e = DAE.EQUATION(target, source, eq_source);
 				eq = lowerEqn(e);
-				SOME(eq1) = Inline.inlineEqOpt(SOME(eq),(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+				SOME(eq1) = Inline.inlineEqOpt(SOME(eq),(SOME(funcs),{DAE.NORM_INLINE()}));
 			then eq :: new_eqns;
 	end matchcontinue;
 end lowerTupleAssignment;
@@ -6142,8 +6142,8 @@ algorithm
 
     case (DAE.ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source),funcs)
       equation
-        e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         (e1_2,_) = extendArrExp(e1_1,SOME(funcs));
         (e2_2,_) = extendArrExp(e2_1,SOME(funcs));
         e1_3 = Exp.simplify(e1_2);
@@ -6153,8 +6153,8 @@ algorithm
 
 		case (DAE.INITIAL_ARRAY_EQUATION(dimension = ds, exp = e1, array = e2, source = source),funcs)
 			equation
-        e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         (e1_2,_) = extendArrExp(e1_1,SOME(funcs));
         (e2_2,_) = extendArrExp(e2_1,SOME(funcs));
         e1_3 = Exp.simplify(e1_2);
@@ -6434,8 +6434,8 @@ algorithm
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
         // inline 
-        e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then
@@ -6458,8 +6458,8 @@ algorithm
         ty = Exp.typeof(e1);
         i = Exp.sizeOf(ty);
         // inline 
-        e1_1 = Inline.inlineExp(e1,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
-        e2_1 = Inline.inlineExp(e2,(NONE(),SOME(funcs),{DAE.NORM_INLINE()}));
+        e1_1 = Inline.inlineExp(e1,(SOME(funcs),{DAE.NORM_INLINE()}));
+        e2_1 = Inline.inlineExp(e2,(SOME(funcs),{DAE.NORM_INLINE()}));
         // extend      
         ((complexEqs,arreqns)) = extendRecordEqns(COMPLEX_EQUATION(-1,e1_1,e2_1,source),funcs);
       then

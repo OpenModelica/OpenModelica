@@ -152,10 +152,10 @@ algorithm
   outFuncLst := matchcontinue(funcLst,repl,condExpFunc)
    local
      Absyn.Path p;
-     DAE.Element elt;
+     DAE.Function elt;
     case({},repl,condExpFunc) then {};
     case((p,elt)::funcLst,repl,condExpFunc) equation
-      {elt} = applyReplacementsDAEElts({elt},repl,condExpFunc);
+      {elt} = applyReplacementsFunctions({elt},repl,condExpFunc);
       funcLst = applyReplacementsDAEFuncLst(funcLst,repl,condExpFunc);
     then ((p,elt)::funcLst);
   end matchcontinue;
@@ -196,6 +196,7 @@ algorithm
       DAE.Stream st;
       Boolean partialPrefix;
       DAE.ExternalDecl extdecl;
+      DAE.Function f1,f2;
 
       // if no replacements, return dae, no need to traverse.
     case(dae,REPLACEMENTS(HashTable2.HASHTABLE(numberOfEntries=0),_),condExpFunc) then dae;
@@ -319,29 +320,11 @@ algorithm
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
       then DAE.COMP(id,elist,source,cmt)::dae2;
 
-     case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,inlineType,source)::dae,repl,condExpFunc)
-       local list<DAE.FunctionDefinition> derFuncs;
-         DAE.InlineType inlineType;
+    case(DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae,repl,condExpFunc)
       equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+        {f1,f2} = applyReplacementsFunctions({f1,f2},repl,condExpFunc);
         dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        then
-          DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2;
-     // adrpo 2010-02-16: apply also replacements to the external function DAE.
-     case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source)::dae,repl,condExpFunc)
-       local list<DAE.FunctionDefinition> derFuncs;
-         DAE.InlineType inlineType;
-      equation
-        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-        then
-          DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2;
-
-    case(DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae,repl,condExpFunc)
-      equation
-        {elt11,elt22} =  applyReplacementsDAEElts({elt1,elt2},repl,condExpFunc);
-        dae2 = applyReplacementsDAEElts(dae,repl,condExpFunc);
-      then DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae2;
+      then DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae2;
 
     case(DAE.ASSERT(e1,e2,source)::dae,repl,condExpFunc)
       equation
@@ -386,6 +369,43 @@ algorithm
       then elt::dae;
   end matchcontinue;
 end applyReplacementsDAEElts;
+
+protected function applyReplacementsFunctions
+  input list<DAE.Function> fns;
+  input VariableReplacements repl;
+  input Option<FuncTypeExp_ExpToBoolean> condExpFunc;
+  output list<DAE.Function> outFns;
+	partial function FuncTypeExp_ExpToBoolean
+    input DAE.Exp inExp;
+    output Boolean outBoolean;
+  end FuncTypeExp_ExpToBoolean;
+algorithm
+  outFns := matchcontinue (fns,repl,condExpFunc)
+    local
+       list<DAE.Function> dae,dae2;
+       list<DAE.Element> elist,elist2;
+       list<DAE.FunctionDefinition> derFuncs;
+       DAE.InlineType inlineType;
+       DAE.Type ftp;
+       Boolean partialPrefix;
+       DAE.ElementSource source;
+       Absyn.Path path;
+       DAE.ExternalDecl extdecl;
+    case(DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist)::derFuncs,ftp,partialPrefix,inlineType,source)::dae,repl,condExpFunc)
+      equation
+        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+        dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
+      then
+        DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2;
+    
+    case(DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source)::dae,repl,condExpFunc)
+      equation
+        elist2 = applyReplacementsDAEElts(elist,repl,condExpFunc);
+        dae2 = applyReplacementsFunctions(dae,repl,condExpFunc);
+      then
+        DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extdecl)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2;
+  end matchcontinue;
+end applyReplacementsFunctions;
 
 protected function applyReplacementsVarAttr "Help function to applyReplacementsDAEElts"
   input Option<DAE.VariableAttributes> attr;

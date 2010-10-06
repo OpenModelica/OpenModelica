@@ -3778,6 +3778,7 @@ algorithm
       Interactive.InteractiveSymbolTable st,st_1;
       Ceval.Msg msg;
       Values.Value ret_val;
+      list<DAE.Function> funcelems;
       
     case (cache,env,(exp as DAE.CALL(path = Absyn.IDENT(name = _),
       expLst = {DAE.CODE(Absyn.C_TYPENAME(classname),_),DAE.SCONST(string=translationLevel),addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals,fileprefix,storeInTemp})),
@@ -3793,7 +3794,6 @@ algorithm
         list<SCode.Class> p_1,sp;
         list<list<Integer>> comps;
         list<Absyn.Path> funcpaths;
-        list<DAE.Element> funcelems;
       equation
         //translationLevel=DAE.SCONST(string="flat")
         true=stringEqual(translationLevel,"flat");
@@ -3809,10 +3809,9 @@ algorithm
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
         dlow = DAELow.lower(dae, true, true);//Verificare cosa fa
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcpaths = SimCode.getCalledFunctions(dae, dlow);
-        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
+        funcelems = DAEUtil.getFunctionList(dae);
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpDAELow(dlow,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -3832,7 +3831,6 @@ algorithm
         list<Interactive.InstantiatedClass> ic_1,ic;
         list<SCode.Class> p_1,sp;
         list<Absyn.Path> funcpaths;
-        list<DAE.Element> funcelems;
       equation
         //translationLevel=DAE.SCONST(string="optimiser")
         //asInSimulationCode==false => it's NOT necessary to do all the translation's steps before dumping with xml
@@ -3852,10 +3850,9 @@ algorithm
         mT = DAELow.transposeMatrix(m);
         (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcpaths = SimCode.getCalledFunctions(dae, dlow_1);
-        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
+        funcelems = DAEUtil.getFunctionList(dae);
         Print.clearBuf();
-        XMLDump.dumpDAELow(dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpDAELow(dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -3876,7 +3873,6 @@ algorithm
         list<SCode.Class> p_1,sp;
         list<list<Integer>> comps;
         list<Absyn.Path> funcpaths;
-        list<DAE.Element> funcelems;
       equation
         //translationLevel=DAE.SCONST(string="backEnd")
         //asInSimulationCode==true => it's necessary to do all the translation's steps before dumping with xml
@@ -3899,10 +3895,9 @@ algorithm
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcpaths = SimCode.getCalledFunctions(dae, indexed_dlow_1);
-        funcelems = SimCode.generateFunctions2(p_1, funcpaths);
+        funcelems = DAEUtil.getFunctionList(dae);
         Print.clearBuf();
-        XMLDump.dumpDAELow(indexed_dlow_1,funcpaths,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
+        XMLDump.dumpDAELow(indexed_dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
         Print.clearBuf();
         System.writeFile(xml_filename,xml_contents);
@@ -4347,24 +4342,33 @@ algorithm
       String MakefileHeader;
       list<String> libs;
       DAE.DAElist dae;
-      list<DAE.Element> d;
+      DAE.Function mainFunction;
+      list<DAE.Function> d;
+      list<DAE.Element> els;
       list<Absyn.Path> uniontypePaths;
       list<DAE.Type> metarecordTypes;
-    /* template based translation */
+      DAE.FunctionTree funcs;
+  /* TODO: This would be faster if we simply used the cache... */
+    // template based translation
     case (cache, env, path)
       equation
         false = RTOpts.debugFlag("nogen");
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path);
-        (cache,dae as DAE.DAE(d,_),_) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        (cache,dae as DAE.DAE(elementLst = els),_) = cevalGenerateFunctionDAEs(cache, path, env, {});
 
-        uniontypePaths = DAEUtil.getUniontypePaths(d);
+        // The list of functions is not ordered, so we need to filter out the main function...
+        mainFunction = DAEUtil.getNamedFunction(path, dae);
+        d = DAEUtil.getFunctionList(dae);
+        d = Util.listSetDifference(d, {mainFunction});
+        uniontypePaths = DAEUtil.getUniontypePaths(d, els);
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
 
-        SimCode.translateFunctions(pathstr, d, metarecordTypes);
+        SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
         compileModel(pathstr, {}, "", "", "");
       then
         (cache, pathstr);
+
     case (cache, env, path)
       equation
         false = RTOpts.debugFlag("nogen");
@@ -4387,7 +4391,7 @@ protected function cevalGenerateFunctionDAEs "function: cevalGenerateFunctionStr
   input Env.Env inEnv;
   input list<Absyn.Path> inAbsynPathLst;
   output Env.Cache outCache;
-  output DAE.DAElist outDAE;
+  output DAE.DAElist outFns;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
   (outCache,outDAE,outAbsynPathLst):=

@@ -225,25 +225,10 @@ public uniontype Element
     Option<SCode.Comment> comment;
   end COMP;
 
-  record FUNCTION " A Modelica function"
-    Absyn.Path path;
-    list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
-    Type type_;
-    Boolean partialPrefix "MetaModelica extension";
-    InlineType inlineType;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end FUNCTION;
-
-  record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
-    Absyn.Path path;
-    Type type_;
-    ElementSource source "the origin of the component/equation/algorithm";
-  end RECORD_CONSTRUCTOR;
-
   record EXTOBJECTCLASS "The 'class' of an external object"
     Absyn.Path path "className of external object";
-    Element constructor "constructor is an EXTFUNCTION";
-    Element destructor "destructor is an EXTFUNCTION";
+    Function constructor "constructor is an EXTFUNCTION";
+    Function destructor "destructor is an EXTFUNCTION";
     ElementSource source "the origin of the component/equation/algorithm";
   end EXTOBJECTCLASS;
 
@@ -272,6 +257,23 @@ public uniontype Element
     ElementSource source "the origin of the component/equation/algorithm";
   end NORETCALL;
 end Element;
+
+public uniontype Function
+  record FUNCTION " A Modelica function"
+    Absyn.Path path;
+    list<FunctionDefinition> functions "contains the body and an optional function derivative mapping";
+    Type type_;
+    Boolean partialPrefix "MetaModelica extension";
+    InlineType inlineType;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end FUNCTION;
+
+  record RECORD_CONSTRUCTOR "A Modelica record constructor. The function can be generated from the Path and Type alone."
+    Absyn.Path path;
+    Type type_;
+    ElementSource source "the origin of the component/equation/algorithm";
+  end RECORD_CONSTRUCTOR;
+end Function;
 
 public uniontype InlineType
   record NORM_INLINE "Normal inline, inline as soon as possible"
@@ -422,7 +424,7 @@ end DAElist;
 /* AVLTree for functions */
 public type AvlKey = Absyn.Path;
 
-public type AvlValue = Element;
+public type AvlValue = Function;
 
 public type FunctionTree = AvlTree;
 

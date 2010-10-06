@@ -1627,7 +1627,7 @@ algorithm
   end matchcontinue;
 end classEqual;
 
-protected function restrictionEqual "Returns true if two Restriction's are equal."
+public function restrictionEqual "Returns true if two Restriction's are equal."
   input Restriction restr1;
   input Restriction restr2;
   output Boolean equal;

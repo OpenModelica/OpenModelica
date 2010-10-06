@@ -52,7 +52,7 @@ public import Algorithm;
 
 type Ident = String;
   
-public type Functiontuple = tuple<Option<list<DAE.Element>>,Option<DAE.FunctionTree>,list<DAE.InlineType>>;  
+public type Functiontuple = tuple<Option<DAE.FunctionTree>,list<DAE.InlineType>>;
 
 protected import Debug;
 protected import DAEUtil;
@@ -61,13 +61,12 @@ protected import Exp;
 public function inlineCalls
 "function: inlineCalls
 	searches for calls where the inline flag is true, and inlines them"
-	input Option<list<DAE.Element>> inElementList "functions";
 	input Option<DAE.FunctionTree> inFTree "functions";
 	input list<DAE.InlineType> inITLst;
 	input DAELow.DAELow inDAELow;
   output DAELow.DAELow outDAELow;
 algorithm
-  outDAELow := matchcontinue(inElementList,inFTree,inITLst,inDAELow)
+  outDAELow := matchcontinue(inFTree,inITLst,inDAELow)
     local
       Option<list<DAE.Element>> fns;
       Option<DAE.FunctionTree> ftree;
@@ -85,23 +84,23 @@ algorithm
       list<Algorithm.Algorithm> alglst;
       DAELow.EventInfo eventInfo;
       DAELow.ExternalObjectClasses extObjClasses;
-    case(fns,ftree,itlst,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
+    case(ftree,itlst,DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses))
       equation
-        orderedVars = inlineVariables(orderedVars,(fns,ftree,itlst));
-        knownVars = inlineVariables(knownVars,(fns,ftree,itlst));
-        externalObjects = inlineVariables(externalObjects,(fns,ftree,itlst));
-        orderedEqs = inlineEquationArray(orderedEqs,(fns,ftree,itlst));
-        removedEqs = inlineEquationArray(removedEqs,(fns,ftree,itlst));
-        initialEqs = inlineEquationArray(initialEqs,(fns,ftree,itlst));
-        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,(fns,ftree,itlst));
+        orderedVars = inlineVariables(orderedVars,(ftree,itlst));
+        knownVars = inlineVariables(knownVars,(ftree,itlst));
+        externalObjects = inlineVariables(externalObjects,(ftree,itlst));
+        orderedEqs = inlineEquationArray(orderedEqs,(ftree,itlst));
+        removedEqs = inlineEquationArray(removedEqs,(ftree,itlst));
+        initialEqs = inlineEquationArray(initialEqs,(ftree,itlst));
+        mdelst = Util.listMap1(arrayList(arrayEqs),inlineMultiDimEqs,(ftree,itlst));
         arrayEqs = listArray(mdelst);
-        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,(fns,ftree,itlst));
+        alglst = Util.listMap1(arrayList(algorithms),inlineAlgorithm,(ftree,itlst));
         algorithms = listArray(alglst);
-        eventInfo = inlineEventInfo(eventInfo,(fns,ftree,itlst));
-        extObjClasses = inlineExtObjClasses(extObjClasses,(fns,ftree,itlst));
+        eventInfo = inlineEventInfo(eventInfo,(ftree,itlst));
+        extObjClasses = inlineExtObjClasses(extObjClasses,(ftree,itlst));
       then
         DAELow.DAELOW(orderedVars,knownVars,externalObjects,aliasVars,orderedEqs,removedEqs,initialEqs,arrayEqs,algorithms,eventInfo,extObjClasses);
-    case(_,_,_,_)
+    case(_,_,_)
       equation
         Debug.fprintln("failtrace","Inline.inlineCalls failed");
       then
@@ -466,14 +465,14 @@ algorithm
       DAELow.ExternalObjectClasses cdr,cdr_1;
       DAELow.ExternalObjectClass res;
       Absyn.Path p;
-      DAE.Element e1,e1_1,e2,e2_1;
+      DAE.Function f1,f2;
       DAE.ElementSource source "the origin of the element";
 
     case({},_) then {};
-    case(DAELow.EXTOBJCLASS(p,e1,e2,source) :: cdr,fns)
+    case(DAELow.EXTOBJCLASS(p,f1,f2,source) :: cdr,fns)
       equation
-        {e1_1,e2_1} = inlineDAEElements({e1,e2},fns);
-        res = DAELow.EXTOBJCLASS(p,e1_1,e2_1,source);
+        {f1,f2} = inlineCallsInFunctions({f1,f2},fns);
+        res = DAELow.EXTOBJCLASS(p,f1,f2,source);
         cdr_1 = inlineExtObjClasses(cdr,fns);
       then
         res :: cdr_1;
@@ -485,14 +484,56 @@ algorithm
   end matchcontinue;
 end inlineExtObjClasses;
 
-public function inlineCallsInFunctions "
-function: inlineCallsInFunctions
-	inlines function calls within functions"
-	input list<DAE.Element> inElementList;
-	input list<DAE.InlineType> inITList;
-	output list<DAE.Element> outElementList;
+public function inlineCallsInFunctions
+"function: inlineDAEElements
+	inlines calls in DAEElements"
+	input list<DAE.Function> inElementList;
+	input Functiontuple inFunctions;
+	output list<DAE.Function> outElementList;
 algorithm
-  outElementList := inlineDAEElements(inElementList,(SOME(inElementList),NONE(),inITList));
+  outDAElist := matchcontinue(inElementList,inFunctions)
+    local
+      Functiontuple fns;
+      list<DAE.Function> cdr,cdr_1;
+      list<DAE.Element> elist,elist_1;
+      list<list<DAE.Element>> dlist,dlist_1;
+      DAE.Function el,res;
+      DAE.Type ty,t;
+      Boolean partialPrefix;
+      list<Absyn.Path> pathLst;
+      Absyn.InnerOuter innerOuter;
+      Ident i;
+      Absyn.Path p;
+      DAE.ExternalDecl ext;
+      list<DAE.Exp> explst,explst_1;
+      DAE.InlineType inlineType;
+      list<DAE.FunctionDefinition> funcDefs;
+      DAE.ElementSource source "the origin of the element";
+
+    case({},_) then {};
+    
+    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+      equation
+        elist_1 = inlineDAEElements(elist,fns);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,inlineType,source);
+        cdr_1 = inlineCallsInFunctions(cdr,fns);
+      then
+         res :: cdr_1;
+    // external functions
+    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+      equation
+        elist_1 = inlineDAEElements(elist,fns);
+        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,inlineType,source);
+        cdr_1 = inlineCallsInFunctions(cdr,fns);
+      then
+        res :: cdr_1;
+
+    case(el :: cdr,fns)
+      equation
+        cdr_1 = inlineCallsInFunctions(cdr,fns);
+      then
+        el :: cdr_1;
+  end matchcontinue;
 end inlineCallsInFunctions;
 
 protected function inlineDAEElements
@@ -531,6 +572,7 @@ algorithm
       DAE.InlineType inlineType;
       list<DAE.FunctionDefinition> funcDefs;
       DAE.ElementSource source "the origin of the element";
+      DAE.Function f1,f2;
 
     case({},_) then {};
     case(DAE.VAR(componentRef,kind,direction,protection,ty,SOME(binding),dims,flowPrefix,streamPrefix,
@@ -676,26 +718,10 @@ algorithm
       then
         res :: cdr_1;
 
-    case(DAE.FUNCTION(p,DAE.FUNCTION_DEF(body = elist)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
+    case(DAE.EXTOBJECTCLASS(p,f1,f2,source) :: cdr,fns)
       equation
-        elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_DEF(elist_1)::funcDefs,t,partialPrefix,inlineType,source);
-        cdr_1 = inlineDAEElements(cdr,fns);
-      then
-        res :: cdr_1;
-    // external functions
-    case(DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist,ext)::funcDefs,t,partialPrefix,inlineType,source) :: cdr,fns)
-      equation
-        elist_1 = inlineDAEElements(elist,fns);
-        res = DAE.FUNCTION(p,DAE.FUNCTION_EXT(elist_1,ext)::funcDefs,t,partialPrefix,inlineType,source);
-        cdr_1 = inlineDAEElements(cdr,fns);
-      then
-        res :: cdr_1;
-    case(DAE.EXTOBJECTCLASS(p,el1,el2,source) :: cdr,fns)
-      equation
-        {el1_1} = inlineDAEElements({el1},fns);
-        {el2_1} = inlineDAEElements({el2},fns);
-        res = DAE.EXTOBJECTCLASS(p,el1_1,el2_1,source);
+        {f1,f2} = inlineCallsInFunctions({f1,f2},fns);
+        res = DAE.EXTOBJECTCLASS(p,f1,f2,source);
         cdr_1 = inlineDAEElements(cdr,fns);
       then
         res :: cdr_1;
@@ -975,7 +1001,7 @@ algorithm
       DAE.InlineType it;
       list<DAE.InlineType> itlst;
       Boolean b;
-    case (it,(_,_,itlst))
+    case (it,(_,itlst))
       equation
        b = Util.listContains(it,itlst);
       then b; 
@@ -1085,16 +1111,13 @@ protected function getFunctionBody
 algorithm
   outfn := matchcontinue(p,fns)
     local
-      list<DAE.Element> flst,fn;
+      list<DAE.Function> flst;
+      list<DAE.Element> body;
       DAE.FunctionTree ftree;
-    case(p,(_,SOME(ftree),_))
+    case(p,(SOME(ftree),_))
       equation
-        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) = DAEUtil.avlTreeGet(ftree,p); 
-      then fn;   
-    case(p,(SOME(flst),_,_))
-      equation
-        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = fn)::_) = DAEUtil.getNamedFunctionFromElementList(p,flst);  
-      then fn;
+        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_) = DAEUtil.avlTreeGet(ftree,p); 
+      then body;
     case(_,_)
       equation
         Debug.fprintln("failtrace","Inline.getFunctionBody failed");

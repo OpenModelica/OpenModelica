@@ -739,7 +739,7 @@ algorithm
         funcs = DAEUtil.daeFunctionTree(dae);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
-        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
+        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE);
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
@@ -772,11 +772,12 @@ public function translateFunctions
     
  Called from other places in the compiler."
   input String name;
-  input list<DAE.Element> daeElements;
+  input DAE.Function daeMainFunction;
+  input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
 algorithm
   _ :=
-  matchcontinue (name, daeElements, metarecordTypes)
+  matchcontinue (name, daeMainFunction, daeElements, metarecordTypes)
     local
       Function mainFunction;
       list<Function> fns;
@@ -784,11 +785,11 @@ algorithm
       MakefileParams makefileParams;
       FunctionCode fnCode;
       list<RecordDeclaration> extraRecordDecls;
-    case (name, daeElements, metarecordTypes)
+    case (name, daeMainFunction, daeElements, metarecordTypes)
       equation
         // Create FunctionCode
         /* TODO: Check if this is actually 100% certain to be the function given by name? */ 
-        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeElements, metarecordTypes);
+        (mainFunction::fns, extraRecordDecls, includes, libs) = elaborateFunctions(daeMainFunction::daeElements, metarecordTypes);
         checkValidMainFunction(name, mainFunction);
         makefileParams = createMakefileParams(libs);
         fnCode = FUNCTIONCODE(name, mainFunction, fns, includes, makefileParams, extraRecordDecls);
@@ -840,7 +841,7 @@ end isFunctionPtr;
 
 /* Finds the called functions in DAELow and transforms them to a list of
    libraries and a list of Function uniontypes. */
-protected function createFunctions
+public function createFunctions
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input DAELow.DAELow inDAELow;
@@ -857,7 +858,7 @@ algorithm
       list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;
       list<String> debugpathstrs,libs1,libs2,includes1,includes2;
       String debugpathstr,debugstr,filenameprefix, str;
-      list<DAE.Element> funcelems,part_func_elems, elements, funcRefElems, funcNormal;
+      list<DAE.Function> funcelems,part_func_elems, funcRefElems, funcNormal;
       list<SCode.Class> p;
       DAE.DAElist dae;
       DAELow.DAELow dlow;
@@ -866,32 +867,19 @@ algorithm
       SimCode sc;
       DAE.FunctionTree funcs;
       
-    case (p,(dae as DAE.DAE(elementLst = elements, functions = funcs)),dlow,path)
+    case (p,(dae as DAE.DAE(functions = funcs)),dlow,path)
       equation
         // get all the used functions from the function tree
         funcelems = Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22);
         
-        // print ("Detected DAE functions: "+& intString(listLength(funcelems)) +& "\n");
-        
-        // Debug.fprint("info", "Found called functions: ") "debug" ;
-        // debugpathstrs = Util.listMap(funcpaths, Absyn.pathString) "debug" ;
-        // debugpathstr = Util.stringDelimitList(debugpathstrs, ", ") "debug" ;
-        // Debug.fprintln("info", debugpathstr) "debug" ;
-
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
         (part_func_elems, dlow) = PartFn.partEvalDAELow(part_func_elems, dlow);
         funcelems = Util.listUnion(part_func_elems, part_func_elems);
         //funcelems = Util.listUnion(funcelems, part_func_elems);
-        funcelems = Inline.inlineCallsInFunctions(funcelems, 
-            {DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()});
-        //debugstr = Print.getString();
-        //Print.clearBuf();
+        funcelems = Inline.inlineCallsInFunctions(funcelems,(NONE(),{DAE.NORM_INLINE(), DAE.AFTER_INDEX_RED_INLINE()}));
         //Debug.fprintln("info", "Generating functions, call Codegen.\n") "debug" ;
         (includes1, libs1) = generateExternalObjectIncludes(dlow);
-        //libs1 = {};
-        //usless filter, all are already functions from generateFunctions2
-        //funcelems := Util.listFilter(funcelems, DAEUtil.isFunction);
         (fns, _, includes2, libs2) = elaborateFunctions(funcelems, {}); // Do we need metarecords here as well?
       then
         (Util.listUnion(libs1,libs2), Util.listUnion(includes1,includes2), fns, dlow, dae);
@@ -988,7 +976,7 @@ algorithm
 end generateExternalObjectInclude;
 
 protected function elaborateFunctions
-  input list<DAE.Element> daeElements;
+  input list<DAE.Function> daeElements;
   input list<DAE.Type> metarecordTypes;
   output list<Function> functions;
   output list<RecordDeclaration> extraRecordDecls;
@@ -1003,7 +991,7 @@ algorithm
 end elaborateFunctions;
 
 protected function elaborateFunctions2
-  input list<DAE.Element> daeElements;
+  input list<DAE.Function> daeElements;
   input list<Function> inFunctions;
   input list<String> inRecordTypes;
   input list<String> inIncludes;
@@ -1019,8 +1007,8 @@ algorithm
       list<Function> accfns, fns;
       Function fn;
       list<String> rt, rt_1, rt_2, includes, libs;
-      DAE.Element fel;
-      list<DAE.Element> rest;
+      DAE.Function fel;
+      list<DAE.Function> rest;
     case ({}, accfns, rt, includes, libs)
       then (listReverse(accfns), rt, listReverse(includes), listReverse(libs));
     case ((DAE.FUNCTION(partialPrefix = true) :: rest), accfns, rt, includes, libs)
@@ -1040,7 +1028,7 @@ end elaborateFunctions2;
 
 /* Does the actual work of transforming a DAE.FUNCTION to a Function. */
 protected function elaborateFunction
-  input DAE.Element inElement;
+  input DAE.Function inElement;
   input list<String> inRecordTypes;
   input list<String> inIncludes;
   input list<String> inLibs;
@@ -1052,6 +1040,7 @@ algorithm
   (outFunction,outRecordTypes,outIncludes,outLibs):=
   matchcontinue (inElement,inRecordTypes,includes,libs)
     local
+      DAE.Function fn;
       String fn_name_str,fn_name_str_1,retstr,extfnname,lang,retstructtype,extfnname_1,n,str;
       list<DAE.Element> dae,bivars,orgdae,daelist,funrefs, algs, vars, invars, outvars;
       list<String> struct_strs,arg_strs,includes,libs,struct_strs_1,funrefStrs,fn_libs,fn_includes;
@@ -1127,9 +1116,9 @@ algorithm
         (recordDecls,rt_1) = elaborateRecordDeclarationsForRecord(restype, {}, rt);
       then
         (RECORD_CONSTRUCTOR(name, funArgs, recordDecls),rt_1,includes,libs);
-    case (comp,_,_,_)
+    case (fn,_,_,_)
       equation 
-        str = "SimCode.elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(comp);
+        str = "SimCode.elaborateFunction failed for function: \n" +& DAEDump.dumpFunctionStr(fn);
         Error.addMessage(Error.INTERNAL_ERROR, {str});
       then
         fail();
@@ -1774,6 +1763,7 @@ algorithm
         Algorithm.Algorithm algorithm_;
         list<Exp.Exp> expl;
       equation
+        true = RTOpts.acceptMetaModelicaGrammar();
         expl = Algorithm.getAllExps(algorithm_);
         expl = getMatchingExpsList(expl, matchMetarecordCalls);
         (accRecDecls,rt_2) = elaborateRecordDeclarationsForMetarecords(expl, accRecDecls, rt);
@@ -6088,8 +6078,9 @@ algorithm
     local
       String pathstr,debugpathstr;
       Absyn.Path path;
-      DAE.Element funcelem;
-      list<DAE.Element> elements,funcelems;
+      DAE.Function funcelem;
+      list<DAE.Function> funcelems;
+      list<DAE.Function> elements;
       list<Exp.Exp> explist,fcallexps,fcallexps_1, fnrefs;
       list<Absyn.ComponentRef> crefs;
       list<Absyn.Path> calledfuncs,res1,res2,res,acc;
@@ -6105,7 +6096,7 @@ algorithm
         false = listMember(path,acc);
         funcelem = DAEUtil.getNamedFunction(path, dae);
         funcelems = {funcelem};
-        explist = DAEUtil.getAllExps(funcelems);
+        explist = DAEUtil.getAllExpsFunctions(funcelems);
         fcallexps = getMatchingExpsList(explist, matchCalls);
         fcallexps_1 = Util.listSelect(fcallexps, isNotBuiltinCall);
         calledfuncs = Util.listMap(fcallexps_1, getCallPath);
@@ -6186,7 +6177,7 @@ end getCallPath;
 protected function getFunctionElementsList
 "function: getFunctionElementsList
   Retrives the dAEList of function (or external function)"
-  input DAE.Element inElem;
+  input DAE.Function inElem;
   output list<DAE.Element> out;
 algorithm
   outPath:=
@@ -6747,91 +6738,6 @@ algorithm
   end matchcontinue;
 end subsToScalar;
 
-public function generateFunctions2
-"function: generateFunctions2
-  author: PA
-  Helper function to generateFunctions."
-  input SCode.Program p;
-  input list<Absyn.Path> paths;
-  output list<DAE.Element> dae;
-algorithm
-  dae := generateFunctions3(p, paths, paths);
-end generateFunctions2;
-
-protected function generateFunctions3
-"function: generateFunctions3
-  Helper function to generateFunctions2"
-  input SCode.Program inProgram1;
-  input list<Absyn.Path> inAbsynPathLst2;
-  input list<Absyn.Path> inAbsynPathLst3;
-  output list<DAE.Element> outDAEElementLst;
-algorithm
-  outDAEElementLst := matchcontinue (inProgram1,inAbsynPathLst2,inAbsynPathLst3)
-    local
-      list<Absyn.Path> allpaths,subfuncs,allpaths_1,paths_1,paths;
-      DAE.DAElist fdae,dae,patched_dae;
-      tuple<DAE.TType, Option<Absyn.Path>> t;
-      list<DAE.Element> elts,res;
-      list<SCode.Class> p;
-      Absyn.Path path;
-      DAE.ExternalDecl extdecl;
-      DAE.InlineType inl;
-      Boolean partialPrefix;
-      String s;
-      DAE.ElementSource source "the origin of the element";
-      DAE.FunctionTree funcs;
-      list<DAE.Element> daeElts;
-
-    case (_,{},allpaths) then {};  /* iterated over complete list */
-
-    case (p,(path :: paths),allpaths)
-      equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
-        DAE.DAE({DAE.FUNCTION(functions =
-          DAE.FUNCTION_DEF(daeElts)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)},funcs);
-        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
-        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
-        elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_DEF(daeElts)},t,partialPrefix,inl,source)});
-      then
-        res;
-
-    case (p,(path :: paths),allpaths)
-      equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
-        DAE.DAE({DAE.FUNCTION(functions=
-          DAE.FUNCTION_EXT(daeElts,extdecl)::_,type_ = t,partialPrefix = partialPrefix,inlineType=inl,source = source)},funcs) = fdae;
-        patched_dae = DAE.DAE({DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)},funcs);
-        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
-        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
-        elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.FUNCTION(path,{DAE.FUNCTION_EXT(daeElts,extdecl)},t,partialPrefix,inl,source)});
-      then
-        res;
-
-    case (p,(path :: paths),allpaths)
-      equation
-        (_,_,_,fdae) = Inst.instantiateFunctionImplicit(Env.emptyCache(), InnerOuter.emptyInstHierarchy, p, path);
-        DAE.DAE({DAE.RECORD_CONSTRUCTOR(type_ = t,source = source)},funcs) = fdae;
-        patched_dae = DAE.DAE({DAE.RECORD_CONSTRUCTOR(path,t,source)},funcs);
-        subfuncs = getCalledFunctionsInFunction(path, {}, patched_dae);
-        (allpaths_1,paths_1) = appendNonpresentPaths(subfuncs, allpaths, paths);
-        elts = generateFunctions3(p, paths_1, allpaths_1);
-        res = listAppend(elts, {DAE.RECORD_CONSTRUCTOR(path,t,source)});
-      then
-        res;
-
-    case (_,(path :: paths),_)
-      equation
-        s = Absyn.pathString(path);
-        s = "SimCode.generateFunctions3 failed: " +& s +& "\n";
-        print(s);
-      then
-        fail();
-  end matchcontinue;
-end generateFunctions3;
-
 protected function appendNonpresentPaths
 "function: appendNonpresentPaths
   Appends the paths in first argument to the two path lists given as second
@@ -7183,18 +7089,18 @@ algorithm
       Absyn.Exp exp;
     case (eltarg)
       equation
-        Absyn.CLASSMOD(_,SOME(exp)) =
-        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
-        libs = getLibraryStringInGccFormat(exp);
-      then
-        libs;
-    case (eltarg)
-      equation
         Absyn.CLASSMOD(_,SOME(Absyn.ARRAY(arr))) =
         Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
         libsList = Util.listMap(arr, getLibraryStringInGccFormat); 
       then
         Util.listFlatten(libsList);
+    case (eltarg)
+      equation
+        Absyn.CLASSMOD(_,SOME(exp)) =
+        Interactive.getModificationValue(eltarg, Absyn.CREF_IDENT("Library",{}));
+        libs = getLibraryStringInGccFormat(exp);
+      then
+        libs;
     case (_) then {};
   end matchcontinue;
 end generateExtFunctionIncludesLibstr;

@@ -4443,7 +4443,6 @@ algorithm
         cache = Env.addCachedInstFunc(cache,fpath1);
         (cache,env,ih,equalityConstraintDAE) = 
             Inst.implicitFunctionInstantiation(cache,env,ih,DAE.NOMOD(),pre,sets_1,equalityConstraintFunction,{});
-        equalityConstraintDAE = DAEUtil.addDaeFunction(equalityConstraintDAE);        
         dae = DAEUtil.joinDaes(dae, equalityConstraintDAE); 
       then
         (cache,env,ih,sets_1,dae,graph);

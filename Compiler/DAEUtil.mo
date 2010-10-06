@@ -328,19 +328,6 @@ algorithm
 	    equation
 	      (DAE.DAE(elts2,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts,funcs));
 	    then (DAE.DAE(elts2,funcs),DAE.DAE(e::elts3,funcs));
-	  // adrpo: TODO! FIXME! why are function calls added to the non-equations DAE??
-	  // PA: are these function CALLS? Do not think so. But they should anyway be in funcs..
-	  case(DAE.DAE((e as DAE.FUNCTION(path=_))::elts,funcs))
-	    equation
-	      (DAE.DAE(elts2,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts,funcs));
-	    then (DAE.DAE(e::elts2,funcs),DAE.DAE(elts3,funcs));
-
-	  // adrpo: TODO! FIXME! why are record constructor calls added to the non-equations DAE??
-	  // PA: are these record constructo CALLS? Do not think so. But they should anyway be in funcs..
-	  case(DAE.DAE((e as DAE.RECORD_CONSTRUCTOR(path=_))::elts,funcs))
-	    equation
-	      (DAE.DAE(elts2,_),DAE.DAE(elts3,_)) = splitDAEIntoVarsAndEquations(DAE.DAE(elts,funcs));
-	    then (DAE.DAE(e::elts2,funcs),DAE.DAE(elts3,funcs));
 
 	  // adrpo: TODO! FIXME! why are external object constructor calls added to the non-equations DAE??
 	  // PA: are these external object constructor CALLS? Do not think so. But they should anyway be in funcs..
@@ -1064,7 +1051,7 @@ end getAllMatchingElements;
 public function isNormalInlineFunc "
 Author BZ
 "
-input DAE.Element inElem;
+input DAE.Function inElem;
 output Boolean b;
 algorithm
   b := matchcontinue(inElem)
@@ -1131,7 +1118,7 @@ end findAllMatchingElements;
 public function isAfterIndexInlineFunc "
 Author BZ
 "
-input DAE.Element inElem;
+input DAE.Function inElem;
 output Boolean b;
 algorithm
   b := matchcontinue(inElem)
@@ -1363,24 +1350,11 @@ algorithm
   end matchcontinue;
 end isAlgorithm;
 
-public function isFunction "function: isFunction
-  author: LS
-
-  Succeeds if Element is not a function."
-  input DAE.Element inElement;
-algorithm
-  _:=
-  matchcontinue (inElement)
-    case DAE.FUNCTION(path = _) then ();
-    case DAE.RECORD_CONSTRUCTOR(path = _) then ();
-  end matchcontinue;
-end isFunction;
-
 public function isFunctionInlineFalse "function: isFunctionInlineFalse
   author: PA
 
-  Succeeds if Element is a function with Inline=false"
-  input DAE.Element inElement;
+  Succeeds if is a function with Inline=false"
+  input DAE.Function inElement;
   output Boolean res;
 algorithm
   res := matchcontinue (inElement)
@@ -1944,29 +1918,6 @@ algorithm
       then
         (DAE.COMP(id,elts2,source,comment) :: elts_1);
 
-    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_DEF(elts2)::derFuncs),
-           type_ = t,partialPrefix=partialPrefix,inlineType = inlineType,source = source) :: elts))
-      equation
-        elts2 = toModelicaFormElts(elts2);
-        elts_1 = toModelicaFormElts(elts);
-      then
-        (DAE.FUNCTION(p,(DAE.FUNCTION_DEF(elts2)::derFuncs),t,partialPrefix,inlineType,source) :: elts_1);
-
-    case ((DAE.FUNCTION(path = p,functions = (DAE.FUNCTION_EXT(elts2, d)::derFuncs),
-           type_ = t,partialPrefix=partialPrefix,inlineType = inlineType,source = source) :: elts))
-      local DAE.ExternalDecl d;
-      equation
-        elts_1 = toModelicaFormElts(elts);
-        elts2 = toModelicaFormElts(elts2);
-      then
-        (DAE.FUNCTION(p,(DAE.FUNCTION_EXT(elts2, d)::derFuncs),t,partialPrefix,inlineType,source) :: elts_1);
-
-    case ((DAE.RECORD_CONSTRUCTOR(path = p,type_ = t,source = source) :: elts))
-      equation
-        elts_1 = toModelicaFormElts(elts);
-      then
-        (DAE.RECORD_CONSTRUCTOR(p,t,source) :: elts_1);
-
     case ((DAE.ASSERT(condition = e1,message=e2,source = source) :: elts))
       local
         DAE.Exp e1,e2,e_1,e_2;
@@ -2126,19 +2077,16 @@ algorithm
   end matchcontinue;
 end toModelicaFormExp;
 
-public function getNamedFunction "Return the FUNCTION with the given name. Fails if not found.
-First tries to use the DAE.FunctionTree; if that fails, fall back to the old method of checking
-top-level functions."
+public function getNamedFunction "Return the FUNCTION with the given name. Fails if not found."
   input Absyn.Path path;
   input DAE.DAElist dae;
-  output DAE.Element outElement;
+  output DAE.Function outElement;
 algorithm
   outElement := matchcontinue (path,dae)
     local
       list<DAE.Element> elements;
       DAE.FunctionTree functions;
     case (path,DAE.DAE(functions = functions)) then avlTreeGet(functions, path);
-    case (path,DAE.DAE(elementLst = elements)) then getNamedFunctionFromElementList(path,elements);
     case (path,_)
       equation
         Debug.fprintln("failtrace", "- DAEUtil.getNamedFunction failed " +& Absyn.pathString(path));
@@ -2147,31 +2095,27 @@ algorithm
   end matchcontinue;
 end getNamedFunction;
 
-public function getNamedFunctionFromElementList "
-  TODO: Only top level functions are checked. Add recursing into the DAE
-  and path name checking.
-  TODO: External functions?
-"
-  input Absyn.Path inPath;
-  input list<DAE.Element> inElementLst;
-  output DAE.Element outElement;
+public function getNamedFunctionFromList "Is slow; PartFn.mo should be rewritten using the FunctionTree"
+  input Absyn.Path path;
+  input list<DAE.Function> fns;
+  output DAE.Function fn;
 algorithm
-  outElement := matchcontinue (inPath,inElementLst)
+  fn := matchcontinue (path,fns)
     local
-      Absyn.Path path,elpath;
-      DAE.Element el;
-      list<DAE.Element> rest,res;
-    case (path,((el as DAE.FUNCTION(path = elpath)) :: rest))
+      list<DAE.Element> elements;
+      DAE.FunctionTree functions;
+    case (path,fn::fns)
       equation
-        true = ModUtil.pathEqual(path, elpath);
-      then el;
-    case (path,((el as DAE.RECORD_CONSTRUCTOR(path = elpath)) :: rest))
+        true = Absyn.pathEqual(functionName(fn),path);
+      then fn;
+    case (path,fn::fns) then getNamedFunctionFromList(path, fns);
+    case (path,{})
       equation
-        true = ModUtil.pathEqual(path, elpath);
-      then el;
-    case (path,(el :: rest)) then getNamedFunctionFromElementList(path, rest);
+        Debug.fprintln("failtrace", "- DAEUtil.getNamedFunctionFromList failed " +& Absyn.pathString(path));
+      then
+        fail();
   end matchcontinue;
-end getNamedFunctionFromElementList;
+end getNamedFunctionFromList;
 
 public function getAllExps "function: getAllExps
 
@@ -2185,6 +2129,71 @@ algorithm
   expslist := Util.listMap(elements, getAllExpsElement);
   exps := Util.listFlatten(expslist);
 end getAllExps;
+
+public function getAllExpsFunctions
+  input list<DAE.Function> elements;
+  output list<DAE.Exp> exps;
+  list<list<DAE.Exp>> expslist;
+algorithm
+  expslist := Util.listMap(elements, getAllExpsFunction);
+  exps := Util.listFlatten(expslist);
+end getAllExpsFunctions;
+
+protected function getAllExpsFunction
+  input DAE.Function fn;
+  output list<DAE.Exp> exps;
+algorithm
+  exps := matchcontinue fn
+    local
+      list<DAE.Element> elements;
+      list<DAE.Exp> exps1,exps2,exps3;
+      list<list<DAE.Exp>> expslist,argexps;
+      DAE.ExtArg retarg;
+      list<DAE.ExtArg> args;
+      DAE.Type ty;
+      Absyn.Path name;
+    case DAE.FUNCTION(path = name, functions = (DAE.FUNCTION_DEF(body = elements)::_),type_ = ty)
+      equation
+        exps1 = getAllExps(elements);
+        exps2 = Types.getAllExps(ty);
+        exps = listAppend(exps1, exps2);
+      then
+        exps;
+    case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(body = elements,externalDecl = DAE.EXTERNALDECL(external_ = args,parameters = retarg))::_),type_ = ty)
+      equation
+        exps1 = getAllExps(elements);
+        exps2 = Types.getAllExps(ty);
+        exps3 = getAllExpsExtarg(retarg);
+        argexps = Util.listMap(args, getAllExpsExtarg);
+        expslist = exps1::exps2::exps3::argexps;
+        exps = Util.listFlatten(expslist);
+      then
+        exps;
+    case DAE.RECORD_CONSTRUCTOR(path = _) then {};
+  end matchcontinue;
+end getAllExpsFunction;
+
+protected function getFunctionsElements
+  input list<DAE.Function> elements;
+  output list<DAE.Element> els;
+  list<list<DAE.Element>> elsList;
+algorithm
+  elsList := Util.listMap(elements, getFunctionElements);
+  els := Util.listFlatten(elsList);
+end getFunctionsElements;
+
+protected function getFunctionElements
+  input DAE.Function fn;
+  output list<DAE.Element> els;
+algorithm
+  exps := matchcontinue fn
+    local
+      list<DAE.Element> elements;
+    case DAE.FUNCTION(functions = (DAE.FUNCTION_DEF(body = elements)::_)) then elements;
+    case DAE.FUNCTION(functions = (DAE.FUNCTION_EXT(body = elements)::_)) then elements;
+    case DAE.RECORD_CONSTRUCTOR(path = _) then {};
+  end matchcontinue;
+end getFunctionElements;
 
 protected function crefToExp "function: crefToExp
 
@@ -2382,18 +2391,6 @@ algorithm
       then
         /*cref::*/lhsCrefs;
 
-    case(DAE.FUNCTION(path = path)::rest)
-      equation
-        print("FUNCTION not allowed inside when equation\n");
-      then
-        fail();
-    
-    case(DAE.RECORD_CONSTRUCTOR(path = path)::rest)
-      equation
-        print("RECORD_CONSTRUCTOR not allowed inside when equation\n");
-      then
-        fail();
-    
     case(DAE.INITIAL_IF_EQUATION(condition1 = _)::rest)
       equation print("INITIAL_IF_EQUATION not allowed inside when equation\n");
       then
@@ -2570,26 +2567,6 @@ algorithm
         exps = getAllExps(elements);
       then
         exps;
-    case DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_DEF(body = elements)::_),type_ = ty)
-     local tuple<DAE.TType, Option<Absyn.Path>> ty;
-      equation
-        exps1 = getAllExps(elements);
-        exps2 = Types.getAllExps(ty);
-        exps = listAppend(exps1, exps2);
-      then
-        exps;
-    case DAE.FUNCTION(path = path,functions = (DAE.FUNCTION_EXT(body = elements,externalDecl = DAE.EXTERNALDECL(ident = fname,external_ = args,parameters = retarg,returnType = lang,language = ann))::_),type_ = ty)
-      local tuple<DAE.TType, Option<Absyn.Path>> ty;
-      equation
-        exps1 = getAllExps(elements);
-        exps2 = Types.getAllExps(ty);
-        exps3 = getAllExpsExtarg(retarg);
-        argexps = Util.listMap(args, getAllExpsExtarg);
-        expslist = listAppend({exps1,exps2,exps3}, argexps);
-        exps = Util.listFlatten(expslist);
-      then
-        exps;
-    case DAE.RECORD_CONSTRUCTOR(path = path) then {};
     case DAE.ASSERT(condition=e1,message=e2) local DAE.Exp e1,e2; then {e1,e2};
     case DAE.NORETCALL(functionName=fname,functionArgs=fargs)
       local
@@ -3405,6 +3382,17 @@ algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
 end matchcontinue;
 end traverseDAEList;
 
+public function getFunctionList
+  input DAE.DAElist dae;
+  output list<DAE.Function> fns;
+algorithm
+  fns := matchcontinue dae
+    local
+      DAE.FunctionTree funcs;
+    case DAE.DAE(functions = funcs) then Util.listMap(avlTreeToList(funcs), Util.tuple22);
+  end matchcontinue;
+end getFunctionList;
+
 public function traverseDAE " This function traverses all dae exps.
 NOTE, it also traverses DAE.VAR(componenname) as an expression."
   input DAE.DAElist dae;
@@ -3439,17 +3427,66 @@ protected function traverseDAEFuncLst "help function to traverseDae. Traverses t
 
 algorithm
   (outFuncLst,oextraArg) := matchcontinue(funcLst,func,extraArg)
-  local
-    Absyn.Path p;
-    DAE.Element elt;
+    local
+      Absyn.Path p;
+      DAE.Function daeFunc;
 
     case({},func,extraArg) then ({},extraArg);
-    case((p,elt)::funcLst,func,extraArg) equation
-      ({elt},extraArg) = traverseDAE2({elt},func,extraArg);
-      (funcLst,extraArg) = traverseDAEFuncLst(funcLst,func,extraArg);
-    then ((p,elt)::funcLst,extraArg);
+    case((p,daeFunc)::funcLst,func,extraArg)
+      equation
+        (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
+        (funcLst,extraArg) = traverseDAEFuncLst(funcLst,func,extraArg);
+      then ((p,daeFunc)::funcLst,extraArg);
   end matchcontinue;
 end traverseDAEFuncLst;
+
+protected function traverseDAEFunc
+  input DAE.Function daeFn;
+  input FuncExpType func;
+  input Type_a extraArg;
+  output DAE.Function traversedFn;
+  output Type_a oextraArg;
+  partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
+  replaceable type Type_a subtypeof Any;
+algorithm
+  (traversedFn,oextraArg) := matchcontinue (daeFn,func,extraArg)
+    local
+      DAE.ComponentRef cr,cr2,cr1,cr1_2;
+      list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
+      DAE.Element elt,elt2,elt22,elt1,elt11;
+      list<Absyn.Path> clsLst;
+      Option<DAE.VariableAttributes> attr;
+      DAE.Type ftp,tp;
+      Option<SCode.Comment> cmt;
+      Option<DAE.Exp> optExp;
+      Absyn.InnerOuter io;
+      list<Integer> idims;
+      String id,str;
+      Absyn.Path path;
+      list<DAE.Statement> stmts,stmts2;
+      list<list<DAE.Element>> tbs,tbs_1;
+      list<DAE.Exp> conds,conds_1, args;
+      Boolean partialPrefix;
+      Absyn.Path path;
+      list<DAE.Exp> expl;
+      DAE.ExternalDecl extDecl;
+      list<DAE.FunctionDefinition> derFuncs;
+      DAE.InlineType inlineType;
+      DAE.ElementSource source "the origin of the element";
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source),func,extraArg)
+      equation
+        (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source),extraArg);
+
+    case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source),func,extraArg)
+      equation
+        (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
+      then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE,source),extraArg);
+
+    case(DAE.RECORD_CONSTRUCTOR(path,tp,source),func,extraArg)
+      then (DAE.RECORD_CONSTRUCTOR(path,tp,source),extraArg);
+  end matchcontinue;
+end traverseDAEFunc;
 
 public function traverseDAE2 "
 Author: BZ, 2008-12
@@ -3462,11 +3499,13 @@ NOTE, it also traverses DAE.VAR(componenname) as an expression."
   output Type_a oextraArg;
   partial function FuncExpType input DAE.Exp exp; input Type_a arg; output DAE.Exp oexp; output Type_a oarg; end FuncExpType;
   replaceable type Type_a subtypeof Any;
-algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
+algorithm
+  (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
   local
     DAE.ComponentRef cr,cr2,cr1,cr1_2;
     list<DAE.Element> dae,dae2,elist,elist2,elist22,elist1,elist11;
     DAE.Element elt,elt2,elt22,elt1,elt11;
+    DAE.Function f1,f2;
     DAE.VarKind kind;
     DAE.VarDirection dir;
     DAE.Type tp,ftp;
@@ -3588,28 +3627,12 @@ algorithm (traversedDaeList,oextraArg) := matchcontinue(daeList,func,extraArg)
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
     then (DAE.COMP(id,elist2,source,cmt)::dae2,extraArg);
 
-  case(DAE.FUNCTION(path,(DAE.FUNCTION_DEF(body = elist)::derFuncs),ftp,partialPrefix,inlineType,source)::dae,func,extraArg)
+  case(DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae,func,extraArg)
     equation
-      (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
+      (f1,extraArg) =  traverseDAEFunc(f1,func,extraArg);
+      (f2,extraArg) =  traverseDAEFunc(f2,func,extraArg);
       (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.FUNCTION(path,DAE.FUNCTION_DEF(elist2)::derFuncs,ftp,partialPrefix,inlineType,source)::dae2,extraArg);
-
-  case(DAE.FUNCTION(path,(DAE.FUNCTION_EXT(body = elist,externalDecl=extDecl)::derFuncs),ftp,partialPrefix,inlineType,source)::dae,func,extraArg)
-    equation
-      (elist2,extraArg) = traverseDAE2(elist,func,extraArg);
-      (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-     then (DAE.FUNCTION(path,DAE.FUNCTION_EXT(elist2,extDecl)::derFuncs,ftp,partialPrefix,DAE.NO_INLINE,source)::dae2,extraArg);
-
-  case(DAE.RECORD_CONSTRUCTOR(path,tp,source)::dae,func,extraArg)
-    equation
-      (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.RECORD_CONSTRUCTOR(path,tp,source)::dae2,extraArg);
-
-  case(DAE.EXTOBJECTCLASS(path,elt1,elt2,source)::dae,func,extraArg)
-    equation
-      ({elt11,elt22},extraArg) =  traverseDAE2({elt1,elt2},func,extraArg);
-      (dae2,extraArg) = traverseDAE2(dae,func,extraArg);
-    then (DAE.EXTOBJECTCLASS(path,elt11,elt22,source)::dae2,extraArg);
+    then (DAE.EXTOBJECTCLASS(path,f1,f2,source)::dae2,extraArg);
 
   case(DAE.ASSERT(e1,e2,source)::dae,func,extraArg)
     equation
@@ -4165,30 +4188,19 @@ algorithm
   end matchcontinue;
 end addElementSourceConnectOpt;
 
-public function elementIsFunction "returns true if element matches any kind of function"
-  input DAE.Element elt;
-  output Boolean res;
-algorithm
-  res := matchcontinue(elt)
-    case(DAE.FUNCTION(path=_)) then true;
-    case(DAE.RECORD_CONSTRUCTOR(path=_)) then true;
-    case(_) then false;
-  end matchcontinue;
-end elementIsFunction;
-
-public function elementIsExtFunction "returns true if element matches an external function"
-  input DAE.Element elt;
+public function isExtFunction "returns true if element matches an external function"
+  input DAE.Function elt;
   output Boolean res;
 algorithm
   res := matchcontinue(elt)
     case(DAE.FUNCTION(functions=DAE.FUNCTION_EXT(body=_)::_)) then true;
     case(_) then false;
   end matchcontinue;
-end elementIsExtFunction;
+end isExtFunction;
 
 
-protected function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
-  input DAE.Element elt;
+public function functionName "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
+  input DAE.Function elt;
   output Absyn.Path name;
 algorithm
   name:= matchcontinue(elt)
@@ -4196,95 +4208,6 @@ algorithm
     case(DAE.RECORD_CONSTRUCTOR(path=name)) then name;
   end matchcontinue;
 end functionName;
-
-public function getFunctionNames "returns the name of a FUNCTION or RECORD_CONSTRUCTOR"
-  input list<DAE.Element> elts;
-  output list<Absyn.Path> name;
-algorithm
-  name:= matchcontinue(elts)
-    local
-      list<Absyn.Path> functionPaths;
-      Absyn.Path name;
-      list<DAE.Element> rest;
-    // empty case
-    case({}) then {};
-    // function
-    case(DAE.FUNCTION(path=name)::rest)
-      equation
-        Debug.traceln("adding func " +& Absyn.pathString(name));
-        functionPaths = getFunctionNames(rest); 
-      then name::functionPaths;
-    // record constructors
-    case(DAE.RECORD_CONSTRUCTOR(path=name)::rest) 
-      equation
-        functionPaths = getFunctionNames(rest); 
-      then name::functionPaths;
-    // anything else
-    case(_::rest) 
-      equation
-        functionPaths = getFunctionNames(rest); 
-      then functionPaths;        
-  end matchcontinue;
-end getFunctionNames;
-
-public function addDaeFunction "add functions present in the element list to the function tree"
-  input DAE.DAElist dae;
-  output DAE.DAElist outDae;
-algorithm
-  outDae := matchcontinue(dae)
-  local DAE.FunctionTree funcs;
-    list<DAE.Element> elts;
-    DAE.Element elt;
-
-    case(DAE.DAE({},funcs)) then DAE.DAE({},funcs);
-      /* is function */
-    case(DAE.DAE(elt::elts,funcs)) equation
-        true = elementIsFunction(elt);
-        funcs = avlTreeAdd(funcs,functionName(elt),elt);
-        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
-    then DAE.DAE(elts,funcs);
-
-      /* Not function */
-    case(DAE.DAE(elt::elts,funcs)) equation
-        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
-    then DAE.DAE(elt::elts,funcs);
-  end matchcontinue;
-end addDaeFunction;
-
-public function addDaeExtFunction "add extermaö functions present in the element list to the function tree
-Note: normal functions are skipped.
-See also addDaeFunction
-"
-  input DAE.DAElist dae;
-  output DAE.DAElist outDae;
-algorithm
-  outDae := matchcontinue(dae)
-  local DAE.FunctionTree funcs;
-    list<DAE.Element> elts;
-    DAE.Element elt;
-
-    case(DAE.DAE({},funcs)) then DAE.DAE({},funcs);
-
-      /* is external function */
-    case(DAE.DAE(elt::elts,funcs)) equation
-        true = elementIsExtFunction(elt);
-        //print("adding external function "+&Absyn.pathString(functionName(elt))+&"\n");
-        funcs = avlTreeAdd(funcs,functionName(elt),elt);
-        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
-    then DAE.DAE(elts,funcs);
-      
-      /* Other functions removed*/
-    case(DAE.DAE(elt::elts,funcs)) equation
-      true = elementIsFunction(elt);     
-      DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
-    then DAE.DAE(elts,funcs);
-        
-      /* Not external or normal function, keep */
-    case(DAE.DAE(elt::elts,funcs)) equation
-        DAE.DAE(elts,funcs) = addDaeFunction(DAE.DAE(elts,funcs));
-    then DAE.DAE(elt::elts,funcs);
-  end matchcontinue;
-end addDaeExtFunction;
 
 public function mergeSources
   input DAE.ElementSource src1;
@@ -4469,7 +4392,7 @@ public function valueStr "prints a Value to a string"
 input DAE.AvlValue v;
 output String str;
 algorithm
-  str := DAEDump.dumpElementsStr({v});
+  str := DAEDump.dumpFunctionStr(v);
 end valueStr;
 
 public function avlTreeNew "Return an empty tree"
@@ -5115,8 +5038,30 @@ end matchValueblock;
 
 public function getUniontypePaths
 "Traverses DAE elements to find all Uniontypes, and return the paths
-of all of their records"
-  input list<DAE.Element> elements;
+of all of their records."
+  input list<DAE.Function> funcs;
+  input list<DAE.Element> els;
+  output list<Absyn.Path> outPaths;
+  list<Absyn.Path> paths1,paths2;
+algorithm
+  outPaths := matchcontinue (funcs, els)
+    case (_,_)
+      equation
+        false = RTOpts.acceptMetaModelicaGrammar();
+      then {};
+    case (funcs, els)
+      equation
+        paths1 = getUniontypePathsFunctions(funcs);
+        paths2 = getUniontypePathsElements(els);
+        outPaths = listAppend(paths1, paths2);
+        outPaths = Util.listUnion(outPaths, outPaths); // Remove duplicates
+      then outPaths;
+  end matchcontinue;
+end getUniontypePaths;
+
+protected function getUniontypePathsFunctions
+"May contain duplicates."
+  input list<DAE.Function> elements;
   output list<Absyn.Path> outPaths;
 algorithm
   outPaths := matchcontinue elements
@@ -5124,30 +5069,25 @@ algorithm
       list<Absyn.Path> paths1;
       list<Absyn.Path> paths2;
       list<DAE.Exp> exps;
-      list<DAE.Element> els;
+      list<DAE.Element> els,els1,els2;
     case elements
       equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        paths1 = getUniontypePaths2(elements);
-        exps = getAllExps(elements);
+        exps = getAllExpsFunctions(elements);
         exps = Exp.getMatchingExpsList(exps, matchValueblock);
-        els = getDAEDeclsFromValueblocks(exps);
-        paths2 = getUniontypePaths2(els);
-        outPaths = listAppend(paths1, paths2);
-        outPaths = Util.listUnion(outPaths, outPaths); // Remove duplicates
+        els1 = getDAEDeclsFromValueblocks(exps);
+        els2 = getFunctionsElements(elements);
+        els = listAppend(els1, els2);
+        outPaths = getUniontypePathsElements(els);
       then outPaths;
     case _
       equation
         false = RTOpts.acceptMetaModelicaGrammar();
       then {};
-    case _
-      equation
-        Debug.fprintln("failtrace", "- DAEUtil.getUniontypePaths failed");
-      then fail();
   end matchcontinue;
-end getUniontypePaths;
+end getUniontypePathsFunctions;
 
-protected function getUniontypePaths2
+protected function getUniontypePathsElements
+"May contain duplicates."
   input list<DAE.Element> elements;
   output list<Absyn.Path> outPaths;
 algorithm
@@ -5159,23 +5099,17 @@ algorithm
       list<DAE.Type> tys;
       DAE.Type ft;
     case {} then {};
-    case DAE.FUNCTION(functions = {DAE.FUNCTION_DEF(body = els)})::rest
-      equation
-        paths1 = getUniontypePaths2(els);
-        paths2 = getUniontypePaths2(rest);
-        paths = listAppend(paths1,paths2);
-      then paths;
     case DAE.VAR(ty = ft)::rest
       equation
         tys = Types.getAllInnerTypesOfType(ft, Types.uniontypeFilter);
         listPaths = Util.listMap(tys, Types.getUniontypePaths);
-        paths1 = getUniontypePaths2(rest);
+        paths1 = getUniontypePathsElements(rest);
         listPaths = paths1::listPaths;
         paths = Util.listFlatten(listPaths);
       then paths;
-    case _::rest then getUniontypePaths2(rest);
+    case _::rest then getUniontypePathsElements(rest);
   end matchcontinue;
-end getUniontypePaths2;
+end getUniontypePathsElements;
 
 protected function getDAEDeclsFromValueblocks
   input list<DAE.Exp> exps;
@@ -5329,5 +5263,47 @@ algorithm
     case (_,acc) then acc;
   end matchcontinue;
 end collectFunctionRefVarPaths;
+
+public function addDaeFunction "add functions present in the element list to the function tree"
+  input list<DAE.Function> funcs;
+  input DAE.FunctionTree tree;
+  output DAE.FunctionTree outTree;
+algorithm
+  outTree := matchcontinue(funcs,tree)
+    local
+      DAE.Function func;
+
+    case ({},tree) then tree;
+    case (func::funcs,tree)
+      equation
+        tree = avlTreeAdd(tree,functionName(func),func);
+      then addDaeFunction(funcs,tree);
+
+  end matchcontinue;
+end addDaeFunction;
+
+public function addDaeExtFunction "add extermal functions present in the element list to the function tree
+Note: normal functions are skipped.
+See also addDaeFunction
+"
+  input list<DAE.Function> funcs;
+  input DAE.FunctionTree tree;
+  output DAE.FunctionTree outTree;
+algorithm
+  outTree := matchcontinue(funcs,tree)
+    local
+      DAE.Function func;
+
+    case ({},tree) then tree;
+    case (func::funcs,tree)
+      equation
+        true = isExtFunction(func);
+        tree = avlTreeAdd(tree,functionName(func),func);
+      then addDaeFunction(funcs,tree);
+
+    case (func::funcs,tree) then addDaeExtFunction(funcs,tree);
+
+  end matchcontinue;
+end addDaeExtFunction;
 
 end DAEUtil;

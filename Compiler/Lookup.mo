@@ -1630,8 +1630,6 @@ algorithm
         // get function dae from instantiation
         (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_,dae)
            = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
-           // Only add external functions, since normal functions must have complete body 
-         dae = DAEUtil.addDaeExtFunction(dae);
          
         (cache,res as _::_,_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str);
       then
@@ -1877,8 +1875,6 @@ algorithm
         //function dae collected from instantiation
         (cache,env_1,_,dae) =
         Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
-        // Only add external functions, since normal functions must have complete body
-        dae = DAEUtil.addDaeExtFunction(dae);
         
         (cache,tps,_) = lookupFunctionsInEnv2(cache,env_1, Absyn.IDENT(id));
       then

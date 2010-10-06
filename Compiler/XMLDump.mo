@@ -1001,15 +1001,13 @@ particular all the elements are optional, it means that if no element is present
 the relative tag is not printed.
 "
   input DAELow.DAELow inDAELow;
-  input list<Absyn.Path> functionNames;
-  input list<DAE.Element> functions;
+  input list<DAE.Function> functions;
   input DAE.Exp addOriginalIncidenceMatrix;
   input DAE.Exp addSolvingInfo;
   input DAE.Exp addMathMLCode;
   input DAE.Exp dumpResiduals;
 algorithm
-  _:=
-  matchcontinue (inDAELow,functionNames,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
+  _ := matchcontinue (inDAELow,functions,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals)
     local
       list<DAELow.Var> vars,knvars,extvars;
 
@@ -1053,8 +1051,7 @@ algorithm
       DAE.Algorithm[:] algs;
       list<DAELow.ZeroCrossing> zc;
 
-      list<Absyn.Path> inFunctionNames;
-      list<DAE.Element> inFunctions;
+      list<DAE.Function> inFunctions;
 
       DAE.Exp addOrInMatrix,addSolInfo,addMML,dumpRes;
 
@@ -1062,7 +1059,7 @@ algorithm
     case (DAELow.DAELOW(vars_orderedVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_orderedVars,strIdxLstArr=strIdxLstArr_orderedVars,varArr=varArr_orderedVars,bucketSize=bucketSize_orderedVars,numberOfVars=numberOfVars_orderedVars),
                  vars_knownVars as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_knownVars,strIdxLstArr=strIdxLstArr_knownVars,varArr=varArr_knownVars,bucketSize=bucketSize_knownVars,numberOfVars=numberOfVars_knownVars),
                  vars_externalObject as DAELow.VARIABLES(crefIdxLstArr=crefIdxLstArr_externalObject,strIdxLstArr=strIdxLstArr_externalObject,varArr=varArr_externalObject,bucketSize=bucketSize_externalObject,numberOfVars=numberOfVars_externalObject),
-                 _,eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctionNames,inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
+                 _,eqns,reqns,ieqns,ae,algs,DAELow.EVENT_INFO(zeroCrossingLst = zc),extObjCls),inFunctions,addOrInMatrix,addSolInfo,addMML,dumpRes)
       equation
 
         vars    = DAELow.varList(vars_orderedVars);
@@ -1092,7 +1089,7 @@ algorithm
         ae_lst = arrayList(ae);
         dumpArrayEqns(ae_lst,ARRAY_OF_EQUATIONS,addMML,dumpRes);
         dumpAlgorithms(arrayList(algs));
-        dumpFunctions(inFunctionNames,inFunctions);
+        dumpFunctions(inFunctions);
         dumpSolvingInfo(addOrInMatrix,addSolInfo,inDAELow);
         dumpStrCloseTag(DAE_CLOSE);
       then ();
@@ -1932,7 +1929,7 @@ algorithm
   _ := matchcontinue(cls,Content)
    local
      DAELow.ExternalObjectClasses xs;
-     DAE.Element constr,destr;
+     DAE.Function constr,destr;
      Absyn.Path path;
      String c;
      DAE.ElementSource source "the origin of the element";
@@ -1975,21 +1972,18 @@ end dumpFlowStr;
 public function dumpFunctions "
 This function dumps a list of functions
 "
-  input list<Absyn.Path> inFunctionNames;
-  input list<DAE.Element> funcelems;
+  input list<DAE.Function> funcelems;
 algorithm
-  _:=
-  matchcontinue (inFunctionNames,funcelems)
-      local
-        String s;
-        list<Absyn.Path> names;
-    case ({},_) then();
-    case (names,funcelems)
+  _ := matchcontinue (funcelems)
+    local
+      String s;
+    case ({}) then();
+    case (funcelems)
       equation
         dumpStrOpenTag(FUNCTIONS);
-        dumpFunctions2(inFunctionNames,funcelems);
+        dumpFunctions2(funcelems);
         dumpStrCloseTag(FUNCTIONS);
-  then();
+      then();
   end matchcontinue;
 end dumpFunctions;
 
@@ -1997,23 +1991,18 @@ end dumpFunctions;
 public function dumpFunctions2 "
 Help function for dumpFunctions
 "
-  input list<Absyn.Path> inFunctionNames;
-  input list<DAE.Element> funcelems;
+  input list<DAE.Function> funcelems;
 algorithm
-  _:=
-  matchcontinue (inFunctionNames,funcelems)
-      local
-        Absyn.Path name;
-        DAE.Element fun;
-        list<Absyn.Path> rem_names;
-        list<DAE.Element> rem_fun;
-    case ({},_) then();
-    case (_,{}) then();
-    case (name::rem_names, fun :: rem_fun)
+  _ := matchcontinue (funcelems)
+    local
+      DAE.Function fun;
+      list<DAE.Function> rem_fun;
+    case {} then();
+    case (fun :: rem_fun)
       equation
-        dumpFunctions3(name,fun);
-        dumpFunctions2(rem_names,rem_fun);
-  then();
+        dumpFunctions3(fun);
+        dumpFunctions2(rem_fun);
+      then();
   end matchcontinue;
 end dumpFunctions2;
 
@@ -2021,19 +2010,20 @@ end dumpFunctions2;
 protected function dumpFunctions3 "
 Help function to dumpFunctions2
 "
-  input Absyn.Path name;
-  input DAE.Element fun;
+  input DAE.Function fun;
 algorithm
-  _:=
-  matchcontinue (name,fun)
-    case(name,fun)
+  _:= matchcontinue (fun)
+    local
+      Absyn.Path name;
+    case(fun)
       equation
-      Print.printBuf("\n<");Print.printBuf(FUNCTION);
-      Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathString(name));Print.printBuf("\"");
-      Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEDump.dumpFunctionStr(fun));
-      Print.printBuf("\"/>");
-    then();
-    case (_,_) then();
+        name = DAEUtil.functionName(fun);
+        Print.printBuf("\n<");Print.printBuf(FUNCTION);
+        Print.printBuf(" ");Print.printBuf(FUNCTION_NAME);Print.printBuf("=\"");Print.printBuf(Absyn.pathString(name));Print.printBuf("\"");
+        Print.printBuf(" ");Print.printBuf(MODELICA_IMPLEMENTATION);Print.printBuf("=\"");Print.printBuf(DAEDump.dumpFunctionStr(fun));
+        Print.printBuf("\"/>");
+      then();
+    case (_) then();
 /*
         dumpStrOpenTag(Function)
         dumpAttribute(name= Absyn.pathString(name));
@@ -2100,14 +2090,14 @@ This function returns the code of all the functions
 that are used in the DAELow model.
 The functions are printed as Modelica code.
 "
-  input list<DAE.Element> inL;
+  input list<DAE.Function> inL;
   output String FuncsString;
 algorithm
   FuncsString :=
   matchcontinue(inL)
     local
-      DAE.Element el;
-      list<DAE.Element> rem;
+      DAE.Function el;
+      list<DAE.Function> rem;
       //case (_) then ();
       case {}  then "";
       case (el::rem)  then stringAppend(DAEDump.dumpFunctionStr(el),dumpFunctionsStr(rem));

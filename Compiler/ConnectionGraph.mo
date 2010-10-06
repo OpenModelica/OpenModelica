@@ -725,18 +725,6 @@ algorithm
         b = isInConnectionList(connectOptLst, left, right);
       then
         b;
-    // function
-    case (DAE.FUNCTION(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
-    // record constructor
-    case (DAE.RECORD_CONSTRUCTOR(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
-      equation
-        b = isInConnectionList(connectOptLst, left, right);
-      then
-        b;
     // external object
     case (DAE.EXTOBJECTCLASS(source = DAE.SOURCE(connectEquationOptLst = connectOptLst)), left, right)
       equation

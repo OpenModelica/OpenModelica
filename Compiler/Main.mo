@@ -778,7 +778,7 @@ algorithm
         funcs = DAEUtil.daeFunctionTree(dae);
         (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
-        dlow_1 = Inline.inlineCalls(NONE(),SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
+        dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("bltdump", DAELow.dump, dlow_1);

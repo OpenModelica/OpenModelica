@@ -3904,7 +3904,7 @@ algorithm
   (outCache,outEnv,outIH,dae,ciState) := matchcontinue(inCache,env,inIH,els,impl)
  	 local
  	   SCode.Class destr,constr;
- 	   DAE.Element destr_dae,constr_dae;
+ 	   DAE.Function destr_dae,constr_dae;
  	   Env.Env env1;
  	   Env.Cache cache;
  	   Ident className;
@@ -3960,9 +3960,9 @@ protected function instantiateExternalObjectDestructor
   input SCode.Class cl;
   output Env.Cache outCache;
   output InstanceHierarchy outIH;
-  output DAE.Element dae;
+  output DAE.Function fn;
 algorithm  
-  (outCache,outIH,dae) := matchcontinue (inCache,env,inIH,cl)
+  (outCache,outIH,fn) := matchcontinue (inCache,env,inIH,cl)
   local
         Env.Cache cache;
   	    Env.Env env1;
@@ -3972,9 +3972,9 @@ algorithm
 
   	case (cache,env,ih,cl)
   		equation
-  		  (cache,env1,ih,DAE.DAE({daeElt},_)) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
+  		  (cache,env1,ih,{fn},_) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {});
   	then
-  	  (cache,ih,daeElt);
+  	  (cache,ih,fn);
   	// failure
   	case (cache,env,ih,cl)
   	  equation
@@ -3991,24 +3991,24 @@ protected function instantiateExternalObjectConstructor
 	input SCode.Class cl;
 	output Env.Cache outCache;
 	output InstanceHierarchy outIH;
-	output DAE.Element dae;
+	output DAE.Function fn;
 	output DAE.Type tp;
 algorithm
-	(outCaceh,inIH,dae) := matchcontinue (inCache,env,outIH,cl)
+	(outCaceh,inIH,fn,tp) := matchcontinue (inCache,env,outIH,cl)
 	local
       Env.Cache cache;
       Env.Env env1;
-      DAE.Element daeElt;
+      DAE.Function fn;
       DAE.Type funcTp;
       String s;
       InstanceHierarchy ih;
 
   	case (cache,env,ih,cl)
   		equation
-  		  (cache,env1,ih,DAE.DAE({daeElt as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))},_))
-  		     	= implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
+  		  (cache,env1,ih,{fn as DAE.FUNCTION(type_ = funcTp, functions=(DAE.FUNCTION_EXT(body=_)::_))},_)
+  		     	= implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cl, {}) ;
   	then
-  	  (cache,ih,daeElt,funcTp);
+  	  (cache,ih,fn,funcTp);
 	  case (cache,env,ih,cl)
   	  equation
         print("Inst.instantiateExternalObjectConstructor failed\n");
@@ -9575,13 +9575,82 @@ algorithm
       list<DAE.Element> daeElts;
       list<DAE.FunctionDefinition> derFuncs;
       Absyn.Info info;
+      list<DAE.Function> funs;
+      DAE.Function fun;
+      SCode.Restriction r;
     
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = SCode.R_RECORD())),inst_dims)
       equation
         (cache,c,cenv) = Lookup.lookupRecordConstructorClass(cache,env,Absyn.IDENT(n));
-        (cache,env,ih,DAE.DAE({DAE.FUNCTION(fpath,_,ty1,false,_,source)},funcs)) = implicitFunctionInstantiation(cache,cenv,ih,mod,pre,csets,c,inst_dims);
-      then (cache,env,ih,DAE.DAE({DAE.RECORD_CONSTRUCTOR(fpath,ty1,source)},funcs));
+        (cache,env,ih,{DAE.FUNCTION(fpath,_,ty1,false,_,source)},DAE.DAE(daeElts,funcs)) = implicitFunctionInstantiation2(cache,cenv,ih,mod,pre,csets,c,inst_dims);
+        fun = DAE.RECORD_CONSTRUCTOR(fpath,ty1,source);
+        funcs = DAEUtil.addDaeFunction({fun}, funcs);
+      then (cache,env,ih,DAE.DAE(daeElts,funcs));
 
+    case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = r)),inst_dims)
+      equation
+        failure(SCode.R_RECORD() = r);
+        (cache,env,ih,funs,DAE.DAE(daeElts,funcs)) = implicitFunctionInstantiation2(cache,env,ih,mod,pre,csets,c,inst_dims);
+        funcs = DAEUtil.addDaeFunction(funs, funcs);
+      then (cache,env,ih,DAE.DAE(daeElts,funcs));
+
+    // handle failure
+    case (_,env,_,_,_,_,SCode.CLASS(name=n),_)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
+        Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
+      then fail();
+  end matchcontinue;
+end implicitFunctionInstantiation;
+
+protected function implicitFunctionInstantiation2
+"function: implicitFunctionInstantiation2
+  This function instantiates a function, which is performed *implicitly*
+  since the variables of a function should not be instantiated as for an
+  ordinary class."
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input SCode.Class inClass;
+  input InstDims inInstDims;
+  output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output list<DAE.Function> funcs;
+  output DAE.DAElist outDae;
+algorithm
+  (outCache,outEnv,outIH,funcs,outDae):= matchcontinue (inCache,inEnv,inIH,inMod,inPrefix,inSets,inClass,inInstDims)
+    local
+      DAE.DAElist dae,daefuncs,dae1;
+      Connect.Sets csets_1,csets;
+      tuple<DAE.TType, Option<Absyn.Path>> ty,ty1;
+      ClassInf.State st;
+      list<Env.Frame> env_1,env,tempenv,cenv,env_11;
+      Absyn.Path fpath;
+      DAE.Mod mod;
+      Prefix.Prefix pre;
+      SCode.Class c;
+      String n, s;
+      InstDims inst_dims;
+      Boolean prot,partialPrefix,ep;
+      DAE.ExternalDecl extdecl;
+      SCode.Restriction restr;
+      SCode.ClassDef parts;
+      list<SCode.Element> els;
+      list<Absyn.Path> funcnames;
+      Env.Cache cache;
+      InstanceHierarchy ih;
+      DAE.ElementSource source "the origin of the element";
+      DAE.FunctionTree funcs;
+      list<DAE.Element> daeElts;
+      list<DAE.Function> resfns;
+      list<DAE.FunctionDefinition> derFuncs;
+      Absyn.Info info;
+    
     /* normal functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(classDef=cd,partialPrefix = partialPrefix, name = n,restriction = SCode.R_FUNCTION(),info = info)),inst_dims)
       local
@@ -9607,10 +9676,10 @@ algorithm
 
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefix,inlineType,source)},funcs),dae1);
+        dae = DAEUtil.joinDaes(DAE.DAE({},funcs),dae1);
         
       then
-        (cache,env_1,ih,dae);
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,DAE.FUNCTION_DEF(daeElts)::derFuncs,ty1,partialPrefix,inlineType,source)},dae);
 
     /* External functions should also have their type in env, but no dae. */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(partialPrefix=partialPrefix,name = n,restriction = (restr as SCode.R_EXT_FUNCTION()),
@@ -9635,26 +9704,26 @@ algorithm
         // set the source of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), NONE(), NONE());
 
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(daeElts,extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)},funcs),dae1);
+        dae = DAEUtil.joinDaes(DAE.DAE({},funcs),dae1);
       then
-        (cache,env_1,ih,dae);
+        (cache,env_1,ih,{DAE.FUNCTION(fpath,{DAE.FUNCTION_EXT(daeElts,extdecl)},ty1,partialPrefix,DAE.NO_INLINE,source)},dae);
 
     /* Instantiate overloaded functions */
     case (cache,env,ih,mod,pre,csets,(c as SCode.CLASS(name = n,restriction = (restr as SCode.R_FUNCTION()),
           classDef = SCode.OVERLOAD(pathLst = funcnames))),inst_dims)
       equation
-        (cache,env_1,ih,daefuncs) = instOverloadedFunctions(cache,env,ih, n, funcnames) "Overloaded functions" ;
+        (cache,env_1,ih,resfns,daefuncs) = instOverloadedFunctions(cache,env,ih, n, funcnames) "Overloaded functions" ;
       then
-        (cache,env_1,ih,daefuncs);
+        (cache,env_1,ih,resfns,daefuncs);
     // handle failure
     case (_,env,_,_,_,_,SCode.CLASS(name=n),_)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.traceln("- Inst.implicitFunctionInstantiation failed " +& n);
+        Debug.traceln("- Inst.implicitFunctionInstantiation2 failed " +& n);
         Debug.traceln("  Scope: " +& Env.printEnvPathStr(env));
       then fail();
   end matchcontinue;
-end implicitFunctionInstantiation;
+end implicitFunctionInstantiation2;
 
 protected function instantiateDerivativeFuncs "instantiates all functions found in derivative annotations so they are also added to the
 dae and can be generated code for in case they are required"
@@ -9694,7 +9763,8 @@ algorithm
     then (cache,dae);
 
 
-    case(cache,env,ih,p::paths,path) equation
+    case(cache,env,ih,p::paths,path)
+      equation
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = makeFullyQualified(cache,cenv,p);
         // add to cache before instantiating, to break recursion for recursive definitions.
@@ -9702,11 +9772,11 @@ algorithm
         cache = Env.addCachedInstFunc(cache,p);
         (cache,_,ih,dae1) = implicitFunctionInstantiation(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
 
-        dae1 = addNameToDerivativeMapping(dae1,path);
-        dae1 = DAEUtil.addDaeFunction(dae1);
+        // TODO: FIXME: WARNING: ERROR: CRAP: adrpo: dae1 = addNameToDerivativeMapping(dae1,path);
+        // TODO: FIXME: WARNING: ERROR: CRAP: adrpo: dae1 = DAEUtil.addDaeFunction(dae1);
         (cache,dae2) = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
         dae = DAEUtil.joinDaes(dae1,dae2);
-    then (cache,dae);
+      then (cache,dae);
   end matchcontinue;
 end instantiateDerivativeFuncs2;
 
@@ -9715,25 +9785,27 @@ protected function addNameToDerivativeMapping "adds the function name to the low
   input Absyn.Path name;
   output DAE.DAElist outDae;
 algorithm
-  outDae := matchcontinue(dae,name)
+  outDae := dae; /* matchcontinue(dae,name)
   local
     DAE.FunctionTree funcs;
     list<DAE.Element> elts;
 
-    case(DAE.DAE(elts,funcs),name) equation
-      elts = addNameToDerivativeMappingElts(elts,name);
-    then DAE.DAE(elts,funcs);
-  end matchcontinue;
+    case(DAE.DAE(elts,funcs),name)
+      equation
+        elts = addNameToDerivativeMappingElts(elts,name);
+      then DAE.DAE(elts,funcs);
+  end matchcontinue; */
 end addNameToDerivativeMapping;
 
+/*
 protected function addNameToDerivativeMappingElts "help function to addNameToDerivativeMapping "
-  input list<DAE.Element> elts;
+  input list<DAE.Function> elts;
   input Absyn.Path path;
-  output list<DAE.Element> outElts;
+  output list<DAE.Function> outElts;
 algorithm
   outElts := matchcontinue(elts,path)
   local
-    DAE.Element elt;
+    DAE.Function elt;
     list<DAE.FunctionDefinition> funcs;
     DAE.Type tp;
     Absyn.Path p;
@@ -9743,14 +9815,16 @@ algorithm
 
     case({},path) then {};
 
-    case(DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts,path) equation
-      elts = addNameToDerivativeMappingElts(elts,path);
-      funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-    then DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts;
-
-    case(elt::elts,path) equation
+    case(DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts,path)
+      equation
         elts = addNameToDerivativeMappingElts(elts,path);
-    then elt::elts;
+        funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
+      then DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts;
+
+    case(elt::elts,path)
+      equation
+        elts = addNameToDerivativeMappingElts(elts,path);
+      then elt::elts;
   end matchcontinue;
 end addNameToDerivativeMappingElts;
 
@@ -9769,16 +9843,19 @@ algorithm
 
     case({},_) then {};
 
-    case(DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,lowerOrderDerivatives)::funcs,path) equation
-      funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-    then DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,path::lowerOrderDerivatives)::funcs;
+    case(DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,lowerOrderDerivatives)::funcs,path)
+      equation
+        funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
+      then DAE.FUNCTION_DER_MAPPER(p1,p2,do,conds,dd,path::lowerOrderDerivatives)::funcs;
 
-    case(func::funcs,path) equation
-      funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
-    then func::funcs;
+    case(func::funcs,path)
+      equation
+        funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
+      then func::funcs;
 
   end matchcontinue;
 end addNameToDerivativeMappingFunctionDefs;
+*/
 
 protected function getDeriveAnnotation "
 Authot BZ
@@ -10228,16 +10305,23 @@ algorithm
       Absyn.Info info;
       Env.Cache garbageCache;
       DAE.DAElist dae;
+      list<DAE.Element> daeElts;
+      list<DAE.Function> funs;
+      DAE.FunctionTree funTree;
 
     /* The function type can be determined without the body. Annotations need to be preserved though. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
                                    classDef = SCode.PARTS(elementLst = elts,annotationLst=annotationLst,externalDecl=extDecl),info = info)) 
-      equation 
+      equation
         stripped_elts = Util.listMap(elts,stripFuncOutputsMod); 
         stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
-        (garbageCache,env_1,ih,dae) = implicitFunctionInstantiation(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
+        (garbageCache,env_1,ih,funs,DAE.DAE(daeElts,funTree)) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
+        /* Only external functions are valid without an algorithm section... */
+        p = SCode.restrictionEqual(r,SCode.R_EXT_FUNCTION());
+        funs = Util.if_(p, funs, {});
+        funTree = DAEUtil.addDaeFunction(funs, funTree);
       then
-        (cache,env_1,ih,dae);
+        (cache,env_1,ih,DAE.DAE(daeElts,funTree));
 
     /* Short class definitions. */
     case (cache,env,ih,SCode.CLASS(name = id,partialPrefix = p,encapsulatedPrefix = e,restriction = r,
@@ -10284,9 +10368,10 @@ protected function instOverloadedFunctions
   output Env.Cache outCache;
   output Env outEnv;
   output InstanceHierarchy outIH;
+  output list<DAE.Function> outFns;
   output DAE.DAElist outDae;
 algorithm 
-  (outCache,outEnv,outIH,outDae) := matchcontinue (inCache,inEnv,inIH,inIdent,inAbsynPathLst)
+  (outCache,outEnv,outIH,outFns,outDae) := matchcontinue (inCache,inEnv,inIH,inIdent,inAbsynPathLst)
     local
       list<Env.Frame> env,cenv,env_1,env_2;
       SCode.Class c;
@@ -10306,8 +10391,10 @@ algorithm
       DAE.FunctionTree funcs;
       DAE.DAElist dae,dae2;     
       Absyn.Info info;
+      list<DAE.Function> resfns;
+      DAE.Function resfn;
       
-    case (cache,env,ih,_,{}) then (cache,env,ih,DAEUtil.emptyDae);
+    case (cache,env,ih,_,{}) then (cache,env,ih,{},DAEUtil.emptyDae);
 
     // Instantiate each function, add its FQ name to the type, needed when deoverloading  
     case (cache,env,ih,overloadname,(fn :: fns))
@@ -10319,14 +10406,15 @@ algorithm
         (cache,ovlfpath) = makeFullyQualified(cache,cenv, Absyn.IDENT(id));
         ty = (DAE.T_FUNCTION(args,tp,isInline),SOME(ovlfpath));
         env_1 = Env.extendFrameT(env, overloadname, ty);
-        (cache,env_2,ih,dae2) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
+        (cache,env_2,ih,resfns,dae2) = instOverloadedFunctions(cache,env_1,ih, overloadname, fns);
         // TODO: Fix inline here 
         print(" DAE.InlineType FIX HERE \n");
         // set the  of this element
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), NONE(), NONE(), NONE());
-        dae = DAEUtil.joinDaes(DAE.DAE({DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefix,DAE.NO_INLINE(),source)},funcs),dae2);        
+        dae = DAEUtil.joinDaes(DAE.DAE({},funcs),dae2);
+        resfn = DAE.FUNCTION(fpath,{DAE.FUNCTION_DEF(daeElts)},ty,partialPrefix,DAE.NO_INLINE(),source);
       then
-        (cache,env_2,ih,dae);
+        (cache,env_2,ih,resfn::resfns,dae);
     // failure
     case (_,env,ih,_,_)
       equation 
