@@ -3051,13 +3051,19 @@ case var as VARIABLE(__) then
   let varName = if outStruct then '<%outStruct%>.targ<%i%>' else '<%crefStr(var.name)%>'
   let instDimsInit = (instDims |> exp =>
       daeExp(exp, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFC*/)
-    ;separator=", ")
+    ;separator=", ") 
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
     let &varInits += varDefaultValue(var, outStruct, i)
     " "
   else
-    " "
+    match var.value
+    case SOME(exp) then
+      let defaultValue = '<%crefStr(var.name)%> = <%daeExp(exp, contextFunction, &varInits, &varDecls)%>;<%\n%>'
+      let &varInits += defaultValue
+      " "
+    else
+      ""
 end varInit;
 
 template varDefaultValue(Variable var, String outStruct, Integer i)
