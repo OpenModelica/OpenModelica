@@ -676,6 +676,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r))),_) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r))),_) then r;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r))),_) then r;
     case(_,optExp) then optExp;
   end matchcontinue;
 end getStartAttrEmpty;
@@ -715,7 +716,7 @@ algorithm
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r)))) then r;
-    //ppriv- ??? should be here: case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
     case (_) then DAE.RCONST(0.0);
   end matchcontinue;
 end getStartAttr;
@@ -731,7 +732,7 @@ algorithm start:= matchcontinue (inVariableAttributesOption)
     case (SOME(DAE.VAR_ATTR_INT(initial_ = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_BOOL(initial_ = SOME(r)))) then r;
     case (SOME(DAE.VAR_ATTR_STRING(initial_ = SOME(r)))) then r;
-    //ppriv- ??? should be here: case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
+    case (SOME(DAE.VAR_ATTR_ENUMERATION(start = SOME(r)))) then r;
   end matchcontinue;
 end getStartAttrFail;
 
