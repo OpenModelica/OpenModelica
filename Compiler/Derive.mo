@@ -725,7 +725,7 @@ algorithm
         // remove all outputs not subtyp of real
         blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
         blst1 = listReverse(blst);      
-        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
@@ -745,7 +745,7 @@ algorithm
         // remove all outputs not subtyp of real
         blst = Util.listMap(tlst,Types.isRealOrSubTypeReal);
         blst1 = listReverse(blst);
-        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         (tlst1,_) = DAELow.listSplitOnTrue(tlst,blst);
@@ -764,7 +764,7 @@ algorithm
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
         tlst = getFunctionResultTypes(tp);        
         true = (derivativeOrder > 1);       
-        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         true = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes); 
@@ -779,7 +779,7 @@ algorithm
         (DAE.FUNCTION_DER_MAPPER(derivativeOrder=derivativeOrder),tp) = getFunctionMapper(a,functions);
         tlst = getFunctionResultTypes(tp);        
         true = (derivativeOrder > 1);       
-        DAE.FUNCTION(type_=dtp) = DAEUtil.avlTreeGet(functions,da);    
+        SOME(DAE.FUNCTION(type_=dtp)) = DAEUtil.avlTreeGet(functions,da);    
         // check if derivativ function has all expected outputs
         tlst2 = getFunctionResultTypes(dtp);
         false = Util.isListEqualWithCompareFunc(tlst,tlst2,Types.equivtypes);     
@@ -835,7 +835,7 @@ algorithm
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
-         DAE.FUNCTION(type_=dtp,inlineType=dinl) = DAEUtil.avlTreeGet(functions,da);
+        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (true,_) = checkDerivativeFunctionInputs(blst,tp,dtp);
         (expl1,_) = DAELow.listSplitOnTrue(expl,blst);
@@ -848,7 +848,7 @@ algorithm
         // get function mapper
         (mapper,tp) = getFunctionMapper(a,functions);
         (da,blst) = differentiateFunctionTime1(a,mapper,tp,expl,(timevars,functions));
-        DAE.FUNCTION(type_=dtp,inlineType=dinl) = DAEUtil.avlTreeGet(functions,da);
+        SOME(DAE.FUNCTION(type_=dtp,inlineType=dinl)) = DAEUtil.avlTreeGet(functions,da);
         // check if derivativ function has all expected inputs 
         (false,tlst) = checkDerivativeFunctionInputs(blst,tp,dtp);
         // add Warning
@@ -1035,16 +1035,16 @@ Author: Frenkel TUD"
   output Absyn.Path outFName;
 algorithm
   outFName := matchcontinue(fname,functions)
-  local 
-    list<DAE.FunctionDefinition> flst;
-    list<Absyn.Path> lowerOrderDerivatives;
-    Absyn.Path name;
+    local 
+      list<DAE.FunctionDefinition> flst;
+      list<Absyn.Path> lowerOrderDerivatives;
+      Absyn.Path name;
     case(fname,functions)
-    equation
-        DAE.FUNCTION(functions=flst) = DAEUtil.avlTreeGet(functions,fname);
-        DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
-        name = Util.listLast(lowerOrderDerivatives);
-    then name;
+      equation
+          SOME(DAE.FUNCTION(functions=flst)) = DAEUtil.avlTreeGet(functions,fname);
+          DAE.FUNCTION_DER_MAPPER(lowerOrderDerivatives=lowerOrderDerivatives) = getFunctionMapper1(flst);
+          name = Util.listLast(lowerOrderDerivatives);
+      then name;
   end matchcontinue;
 end getlowerOrderDerivative;
 
@@ -1056,24 +1056,24 @@ Author: Frenkel TUD"
   output DAE.Type tp;
 algorithm
   (mapper,tp) := matchcontinue(fname,functions)
-  local 
-    list<DAE.FunctionDefinition> flst;
-    DAE.Type t;
-    DAE.FunctionDefinition m;
+    local 
+      list<DAE.FunctionDefinition> flst;
+      DAE.Type t;
+      DAE.FunctionDefinition m;
+      String s,s1,s2;
     case(fname,functions)
-    equation
-        DAE.FUNCTION(functions=flst,type_=t) = DAEUtil.avlTreeGet(functions,fname);
+      equation
+        SOME(DAE.FUNCTION(functions=flst,type_=t)) = DAEUtil.avlTreeGet(functions,fname);
         m = getFunctionMapper1(flst);
-    then (m,t);
+      then (m,t);
     case (fname,functions)
-      local String s,s1,s2;
       equation
         s = Absyn.pathString(fname);
         s1 = stringAppend("-Derive.getFunctionMapper failed for function ",s);
         s2 = stringAppend(s1,"\n");
         Debug.fprintln("failtrace", s1 );
       then
-        fail();    
+        fail();
   end matchcontinue;
 end getFunctionMapper;
 

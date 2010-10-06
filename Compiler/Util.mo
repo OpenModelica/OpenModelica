@@ -4402,6 +4402,17 @@ algorithm
   end matchcontinue;
 end tuple22;
 
+public function optTuple22 "function: optTuple22
+  Takes an option tuple of two values and returns the second value.
+  Example: optTuple22(SOME(\"a\",1)) => 1"
+  input Option<tuple<Type_a, Type_b>> inTplTypeATypeB;
+  output Type_b outTypeB;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  SOME((_,outTypeB)) := inTplTypeATypeB;
+end optTuple22;
+
 public function tuple312 "
   Takes a tuple of three values and returns the tuple of the two first values.
   Example: tuple312((\"a\",1,2)) => (\"a\",1)"
@@ -5357,11 +5368,7 @@ public function getOption "
   output Type_a unOption;
   replaceable type Type_a subtypeof Any;
 algorithm
-  unOption:=
-  matchcontinue (inOption)
-    local Type_a item;
-    case (SOME(item)) then item;
-  end matchcontinue;
+  SOME(unOption) := inOption;
 end getOption;
 
 public function getOptionOrDefault
@@ -6295,6 +6302,109 @@ algorithm
       then head;
   end matchcontinue;
 end selectList;
+
+public function listMapOption
+"More efficient than: listMap(listMap(lst, getOption), fn)
+Also, does not fail if an element is NONE()
+"
+  input list<Option<Type_a>> lst;
+  input FuncTypeType_aToType_b fn;
+  output list<Type_b> outTypeBLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeBLst := listMapOption_tail(lst, {}, fn);
+end listMapOption;
+
+protected function listMapOption_tail
+"More efficient than: listMap(listMap(listSetDifferenceselectList(lst,{NONE()}), getOption), fn)"
+  input list<Option<Type_a>> lst;
+  input list<Type_b> acc;
+  input FuncTypeType_aToType_b fn;
+  output list<Type_b> outTypeBLst;
+  replaceable type Type_a subtypeof Any;
+  partial function FuncTypeType_aToType_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+    replaceable type Type_b subtypeof Any;
+  end FuncTypeType_aToType_b;
+  replaceable type Type_b subtypeof Any;
+algorithm
+  outTypeBLst := matchcontinue (lst, acc, fn)
+    local
+      Type_a x;
+      Type_b b;
+      list<Option<Type_a>> xs;
+    case ({}, acc, fn) then listReverse(acc);
+    case (SOME(x)::xs, acc, fn)
+      equation
+        b = fn(x);
+      then listMapOption_tail(xs, b::acc, fn);
+    case (NONE()::xs, acc, fn) then listMapOption_tail(xs, acc, fn);
+  end matchcontinue;
+end listMapOption_tail;
+
+public function listMapMap
+"More efficient than: listMap(listMap(lst, fn1), fn2)
+"
+  input list<Type_a> lst;
+  input F_a_b fn1;
+  input F_b_c fn2;
+  output list<Type_c> outLst;
+  partial function F_a_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end F_a_b;
+  partial function F_b_c
+    input Type_b inTypeA;
+    output Type_c outTypeC;
+  end F_b_c;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outLst := listMapMap_tail(lst, {}, fn1, fn2);
+end listMapMap;
+
+protected function listMapMap_tail
+"More efficient than: listMap(listMap(lst, fn1), fn2)
+"
+  input list<Type_a> lst;
+  input list<Type_c> acc;
+  input F_a_b fn1;
+  input F_b_c fn2;
+  output list<Type_c> outLst;
+  partial function F_a_b
+    input Type_a inTypeA;
+    output Type_b outTypeB;
+  end F_a_b;
+  partial function F_b_c
+    input Type_b inTypeA;
+    output Type_c outTypeC;
+  end F_b_c;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  outTypeBLst := matchcontinue (lst, acc, fn1, fn2)
+    local
+      Type_a a;
+      Type_b b;
+      Type_c c;
+      list<Type_a> xs;
+    case ({}, acc, fn1, fn2) then listReverse(acc);
+    case (a::xs, acc, fn1, fn2)
+      equation
+        b = fn1(a);
+        c = fn2(b);
+      then listMapMap_tail(xs, c::acc, fn1, fn2);
+  end matchcontinue;
+end listMapMap_tail;
 
 end Util;
 

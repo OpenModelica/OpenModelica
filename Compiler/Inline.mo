@@ -1116,7 +1116,7 @@ algorithm
       DAE.FunctionTree ftree;
     case(p,(SOME(ftree),_))
       equation
-        DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_) = DAEUtil.avlTreeGet(ftree,p); 
+        SOME(DAE.FUNCTION( functions = DAE.FUNCTION_DEF(body = body)::_)) = DAEUtil.avlTreeGet(ftree,p); 
       then body;
     case(_,_)
       equation

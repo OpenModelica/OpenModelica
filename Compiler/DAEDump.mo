@@ -80,16 +80,16 @@ end printDAE;
 public function dump "function: dump
   This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."
-  input DAE.DAElist inDAElist;
+  input DAE.DAElist dae;
 algorithm
-  _ := matchcontinue (inDAElist)
+  _ := matchcontinue (dae)
     local
       list<DAE.Element> daelist;
       DAE.FunctionTree funcs;
     case DAE.DAE(daelist,funcs)
       equation
         //print("dumping DAE, avltree list length:"+&intString(listLength(avlTreeToList(funcs)))+&"\n");
-        Util.listMap0(sortFunctions(Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22)),dumpFunction);
+        Util.listMap0(sortFunctions(DAEUtil.getFunctionList(dae)),dumpFunction);
         Util.listMap0(daelist, dumpExtObjectClass);
         Util.listMap0(daelist, dumpCompElement);
       then
@@ -105,9 +105,9 @@ algorithm
     local
       list<DAE.Element> daelist;
       DAE.FunctionTree funcs;
-    case DAE.DAE(_,funcs) equation
-        //print("dumping DAE, avltree list length:"+&intString(listLength(DAEUtil.avlTreeToList(funcs)))+&"\n");
-      str = Util.stringDelimitList(Util.listMap(sortFunctions(Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22)),functionNameStr),",");
+    case dae equation
+        //print("dumping DAE, avltree list length:"+&intString(listLength(DAEUtil.getFunctionList(dae))+&"\n");
+      str = Util.stringDelimitList(Util.listMap(sortFunctions(DAEUtil.getFunctionList(dae)),functionNameStr),",");
     then str;
   end matchcontinue;
 end dumpFunctionNamesStr;
@@ -2623,11 +2623,11 @@ end dumpAlgorithmsStr;
 
 public function dumpStream "function: dumpStream
   This function prints the DAE to a stream."
-  input DAE.DAElist inDAElist;
+  input DAE.DAElist dae;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue (inDAElist,inStream)
+  outStream := matchcontinue (dae,inStream)
     local      
       list<DAE.Element> daelist;
       DAE.FunctionTree funcs;
@@ -2635,7 +2635,7 @@ algorithm
 
     case (DAE.DAE(daelist,funcs), str)
       equation
-        str = Util.listFold(sortFunctions(Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22)), dumpFunctionStream, str);
+        str = Util.listFold(sortFunctions(DAEUtil.getFunctionList(dae)), dumpFunctionStream, str);
         str = IOStream.appendList(str, Util.listMap(daelist, dumpExtObjClassStr));
         str = Util.listFold(daelist, dumpCompElementStream, str);
       then

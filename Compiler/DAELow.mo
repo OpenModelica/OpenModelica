@@ -17037,7 +17037,7 @@ algorithm
   // a=Record()
   case (COMPLEX_EQUATION(index=i,lhs = e1 as DAE.CREF(componentRef=cr1), rhs = e2  as DAE.CALL(path=path,expLst=expLst),source = source),funcs)
     equation
-      DAE.RECORD_CONSTRUCTOR(path=fname) = DAEUtil.avlTreeGet(funcs,path);
+      SOME(DAE.RECORD_CONSTRUCTOR(path=fname)) = DAEUtil.avlTreeGet(funcs,path);
       // create as many equations as the dimension of the record
       DAE.ET_COMPLEX(varLst=varLst) = Exp.crefLastType(cr1);
       e1lst = Util.listMap1(varLst,generateCrefsExpFromType,e1);

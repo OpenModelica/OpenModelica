@@ -867,10 +867,10 @@ algorithm
       SimCode sc;
       DAE.FunctionTree funcs;
       
-    case (p,(dae as DAE.DAE(functions = funcs)),dlow,path)
+    case (p,dae,dlow,path)
       equation
         // get all the used functions from the function tree
-        funcelems = Util.listMap(DAEUtil.avlTreeToList(funcs),Util.tuple22);
+        funcelems = DAEUtil.getFunctionList(dae);
         
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);

@@ -2086,7 +2086,7 @@ algorithm
     local
       list<DAE.Element> elements;
       DAE.FunctionTree functions;
-    case (path,DAE.DAE(functions = functions)) then avlTreeGet(functions, path);
+    case (path,DAE.DAE(functions = functions)) then Util.getOption(avlTreeGet(functions, path));
     case (path,_)
       equation
         Debug.fprintln("failtrace", "- DAEUtil.getNamedFunction failed " +& Absyn.pathString(path));
@@ -3389,7 +3389,11 @@ algorithm
   fns := matchcontinue dae
     local
       DAE.FunctionTree funcs;
-    case DAE.DAE(functions = funcs) then Util.listMap(avlTreeToList(funcs), Util.tuple22);
+      list<tuple<DAE.AvlKey,DAE.AvlValue>> lst;
+    case DAE.DAE(functions = funcs)
+      equation
+        lst = avlTreeToList(funcs);
+      then Util.listMapMap(lst, Util.tuple22, Util.getOption);
   end matchcontinue;
 end getFunctionList;
 
@@ -3432,11 +3436,15 @@ algorithm
       DAE.Function daeFunc;
 
     case({},func,extraArg) then ({},extraArg);
-    case((p,daeFunc)::funcLst,func,extraArg)
+    case((p,SOME(daeFunc))::funcLst,func,extraArg)
       equation
         (daeFunc,extraArg) = traverseDAEFunc(daeFunc,func,extraArg);
         (funcLst,extraArg) = traverseDAEFuncLst(funcLst,func,extraArg);
-      then ((p,daeFunc)::funcLst,extraArg);
+      then ((p,SOME(daeFunc))::funcLst,extraArg);
+    case((p,NONE())::_,_,_)
+      equation
+        Debug.fprintln("failtrace", "- DAEUtil.traverseDAEFuncLst failed: " +& Absyn.pathString(p));
+      then fail();
   end matchcontinue;
 end traverseDAEFuncLst;
 
@@ -4392,7 +4400,7 @@ public function valueStr "prints a Value to a string"
 input DAE.AvlValue v;
 output String str;
 algorithm
-  str := DAEDump.dumpFunctionStr(v);
+  str := DAEDump.dumpFunctionStr(Util.getOption(v));
 end valueStr;
 
 public function avlTreeNew "Return an empty tree"
@@ -5276,7 +5284,7 @@ algorithm
     case ({},tree) then tree;
     case (func::funcs,tree)
       equation
-        tree = avlTreeAdd(tree,functionName(func),func);
+        tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 
   end matchcontinue;
@@ -5298,7 +5306,7 @@ algorithm
     case (func::funcs,tree)
       equation
         true = isExtFunction(func);
-        tree = avlTreeAdd(tree,functionName(func),func);
+        tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 
     case (func::funcs,tree) then addDaeExtFunction(funcs,tree);

@@ -424,7 +424,7 @@ end DAElist;
 /* AVLTree for functions */
 public type AvlKey = Absyn.Path;
 
-public type AvlValue = Function;
+public type AvlValue = Option<Function>;
 
 public type FunctionTree = AvlTree;
 

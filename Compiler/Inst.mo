@@ -10317,9 +10317,7 @@ algorithm
         stripped_class = SCode.CLASS(id,p,e,r,SCode.PARTS(elts,{},{},{},{},extDecl,annotationLst,NONE()),info);
         (garbageCache,env_1,ih,funs,DAE.DAE(daeElts,funTree)) = implicitFunctionInstantiation2(cache,env,ih, DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, stripped_class, {});
         /* Only external functions are valid without an algorithm section... */
-        p = SCode.restrictionEqual(r,SCode.R_EXT_FUNCTION());
-        funs = Util.if_(p, funs, {});
-        funTree = DAEUtil.addDaeFunction(funs, funTree);
+        funTree = DAEUtil.addDaeExtFunction(funs, funTree);
       then
         (cache,env_1,ih,DAE.DAE(daeElts,funTree));
 

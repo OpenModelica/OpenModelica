@@ -130,12 +130,13 @@ algorithm
   local list<DAE.Element> elts;
     DAE.FunctionTree funcs;
     list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
-    case(DAE.DAE(elts,funcs),repl,condExpFunc) equation
-      elts = applyReplacementsDAEElts(elts,repl,condExpFunc);
-      funcLst = DAEUtil.avlTreeToList(funcs);
-      funcLst = applyReplacementsDAEFuncLst(funcLst,repl,condExpFunc);
-      funcs = DAEUtil.avlTreeAddLst(funcLst,DAEUtil.avlTreeNew());
-    then (DAE.DAE(elts,funcs));
+    case(DAE.DAE(elts,funcs),repl,condExpFunc)
+      equation
+        elts = applyReplacementsDAEElts(elts,repl,condExpFunc);
+        funcLst = DAEUtil.avlTreeToList(funcs);
+        funcLst = applyReplacementsDAEFuncLst(funcLst,repl,condExpFunc);
+        funcs = DAEUtil.avlTreeAddLst(funcLst,DAEUtil.avlTreeNew());
+      then (DAE.DAE(elts,funcs));
   end matchcontinue;
 end applyReplacementsDAE;
 
@@ -154,10 +155,10 @@ algorithm
      Absyn.Path p;
      DAE.Function elt;
     case({},repl,condExpFunc) then {};
-    case((p,elt)::funcLst,repl,condExpFunc) equation
+    case((p,SOME(elt))::funcLst,repl,condExpFunc) equation
       {elt} = applyReplacementsFunctions({elt},repl,condExpFunc);
       funcLst = applyReplacementsDAEFuncLst(funcLst,repl,condExpFunc);
-    then ((p,elt)::funcLst);
+    then ((p,SOME(elt))::funcLst);
   end matchcontinue;
 end applyReplacementsDAEFuncLst;
 
