@@ -789,7 +789,9 @@ public function crefPrefixOf
 "function: crefPrefixOf
   author: PA
   Returns true if prefixCref is a prefix of fullCref
-  For example, a.b is a prefix of a.b.c"
+  For example, a.b is a prefix of a.b.c.
+  adrpo 2010-10-07, 
+    added also that a.b.c is a prefix of a.b.c[1].*!"
   input ComponentRef prefixCref;
   input ComponentRef fullCref;
   output Boolean outBoolean;
@@ -815,6 +817,15 @@ algorithm
       then
         res;
     
+    // adrpo: 2010-10-07: first is an ID, second is qualified, see if one is prefix of the other
+    //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
+    case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
+          DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        true;
+    
     // first is an ID, second is qualified, see if one is prefix of the other
     case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
           DAE.CREF_QUAL(ident = id2,subscriptLst = ss2))
@@ -823,13 +834,31 @@ algorithm
         res = subscriptEqual(ss1, ss2);
       then
         res;
+        
+    // adrpo: 2010-10-07: first is an ID, second is an ID, see if one is prefix of the other
+    //                    even if the first one DOESN'T HAVE SUBSCRIPTS!
+    case (DAE.CREF_IDENT(ident = id1,subscriptLst = {}),
+          DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
+      equation
+        true = stringEqual(id1, id2);
+      then
+        true;
     
-    // they might be equal, a.b.c is a prefix of a.b.c
+    case (DAE.CREF_IDENT(ident = id1,subscriptLst = ss1),
+          DAE.CREF_IDENT(ident = id2,subscriptLst = ss2))
+      equation
+        true = stringEqual(id1, id2);
+        res = subscriptEqual(ss1, ss2);
+      then
+        res;    
+    
+    /* adrpo: 2010-10-07. already handled by the cases above!
+                          they might be equal, a.b.c is a prefix of a.b.c
     case (cr1,cr2) 
       equation
         true = crefEqualNoStringCompare(cr1, cr2);
       then
-        true;        
+        true;*/
     
     // they are not a prefix of one-another
     case (cr1,cr2)
