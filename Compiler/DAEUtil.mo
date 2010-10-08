@@ -5227,7 +5227,7 @@ algorithm
       equation
         true = isExtFunction(func);
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
-      then addDaeFunction(funcs,tree);
+      then addDaeExtFunction(funcs,tree);
 
     case (func::funcs,tree) then addDaeExtFunction(funcs,tree);
 

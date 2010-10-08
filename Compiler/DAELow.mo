@@ -5090,7 +5090,7 @@ algorithm
       then
         fail();
         
-    case ((elementLst = (ddl :: xs)),functionTree,_,vars,knvars,extVars,_)
+    case (ddl::xs,functionTree,_,vars,knvars,extVars,_)
       local DAE.Element ddl; String s3;
       equation
         // show only on failtrace!

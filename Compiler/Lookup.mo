@@ -1909,9 +1909,8 @@ protected
   Env.Env env_1;
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,cdef);
-  (outCache,outEnv,_) := Inst.implicitFunctionInstantiation(
-     outCache,env,InnerOuter.emptyInstHierarchy,
-     DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
+  (outCache,outEnv,_) := Inst.implicitFunctionTypeInstantiation(
+     outCache,env,InnerOuter.emptyInstHierarchy, cdef);
   name := SCode.className(cdef);
   (outCache,ftype,_) := lookupTypeInEnv(outCache,outEnv,Absyn.IDENT(name));
 end buildRecordType;
