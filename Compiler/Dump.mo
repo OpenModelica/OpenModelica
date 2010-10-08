@@ -205,7 +205,7 @@ algorithm
   outString := matchcontinue (indent,ourClass,finalStr,redeclareKeywords,innerouterStr)
     local
       Ident is,s1,s2,s2_1,s3,s4,s5,str,n,fi,io,s6,s7,s8,s9,name,baseClassName;
-      Integer i_1,i,indent;
+      Integer i_1,i;
       Boolean p,f,e;
       Absyn.Restriction r;
       list<Absyn.ClassPart> parts;
@@ -219,7 +219,7 @@ algorithm
       Absyn.Path fname;
       list<Ident> vars;
       tuple<String,String> re;
-      String redeclareStr, replaceableStr, partialStr, finalStr, encapsulatedStr, restrictionStr, prefixKeywords;
+      String redeclareStr, replaceableStr, partialStr, encapsulatedStr, restrictionStr, prefixKeywords;
     // adrpo: BEWARE! the prefix keywords HAVE TO BE IN A SPECIFIC ORDER:
     //  ([final] | [redeclare] [final] [inner] [outer]) [replaceable] [encapsulated] [partial] [restriction] name
     // if the order is not the one above the parser will give errors!
@@ -1750,7 +1750,7 @@ algorithm
     local
       Ident str,f,io,s1,s2,is,s3,ad,s4;
       tuple<String,String> r;
-      Integer i,indent;
+      Integer i;
       Boolean repl;
       Absyn.Class cl;
       Absyn.Path p;
@@ -3116,7 +3116,7 @@ algorithm
           {is,"try\n",is,s2,is,"end try",s3,";"});
       then
         str;
-    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_THROW,comment = optcmt)) /* ALG_THROW */
+    case (i,Absyn.ALGORITHMITEM(algorithm_ = Absyn.ALG_THROW(),comment = optcmt)) /* ALG_THROW */
       equation
         is = indentStr(i);
         str = is +& "throw;";
