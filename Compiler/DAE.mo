@@ -417,7 +417,6 @@ public uniontype DAElist "A DAElist is a list of Elements. Variables, equations,
 "
   record DAE
     list<Element> elementLst;
-    FunctionTree functions "set of functions";
   end DAE;
 end DAElist;
 

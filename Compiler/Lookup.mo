@@ -251,7 +251,7 @@ algorithm
     case (cache,env_1,path,c as SCode.CLASS(name = id,restriction=restr))
       equation
         true = SCode.isFunctionOrExtFunction(restr);
-        (cache,env_2,_,_) =
+        (cache,env_2,_) =
         Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy,c);
         (cache,t,env_3) = lookupTypeInEnv(cache,env_2,Absyn.IDENT(id));
       then
@@ -1537,9 +1537,8 @@ public function lookupFunctionsInEnv
   input Absyn.Path id;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outTypesTypeLst,outDae) := matchcontinue (cache,env,id)
+  (outCache,outTypesTypeLst) := matchcontinue (cache,env,id)
     local
       Env.Frame f;
       list<DAE.Type> res;
@@ -1548,14 +1547,14 @@ algorithm
     case (cache,env,Absyn.FULLYQUALIFIED(id))
       equation
         f = Env.topFrame(env);
-        (cache,res,dae) = lookupFunctionsInEnv2(cache, {f}, id);
-      then (cache,res,dae);
+        (cache,res) = lookupFunctionsInEnv2(cache, {f}, id);
+      then (cache,res);
 
     case (cache,env,id)
       equation
         failure(Absyn.FULLYQUALIFIED(_) = id);
-        (cache,res,dae) = lookupFunctionsInEnv2(cache,env,id);
-      then (cache,res,dae);
+        (cache,res) = lookupFunctionsInEnv2(cache,env,id);
+      then (cache,res);
 
     case (_,_,id)
       equation
@@ -1574,9 +1573,8 @@ protected function lookupFunctionsInEnv2
   input Absyn.Path inPath;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outTypesTypeLst,outDae) := matchcontinue (inCache,inEnv,inPath)
+  (outCache,outTypesTypeLst) := matchcontinue (inCache,inEnv,inPath)
     local
       Absyn.Path id,iid,path;
       Option<String> sid;
@@ -1592,16 +1590,16 @@ algorithm
       Env.Frame f;
       Env.Cache cache;
       DAE.DAElist dae;
-    case (cache,{},id) then (cache,{},DAEUtil.emptyDae);
+    case (cache,{},id) then (cache,{});
       
     /* Builtin operators are looked up in top frame directly */
     case (cache,env,(id as Absyn.IDENT(name = str)))
       equation
         _ = Static.elabBuiltinHandler(str) "Check for builtin operators" ;
         Env.FRAME(clsAndVars = ht,types = httypes) = Env.topFrame(env);
-        (cache,res,dae) = lookupFunctionsInFrame(cache, ht, httypes, env, str);
+        (cache,res) = lookupFunctionsInFrame(cache, ht, httypes, env, str);
       then
-        (cache,res,dae);
+        (cache,res);
 
     /* Check for special builtin operators that can not be represented in environment like for instance cardinality.*/
     case (cache,env,id as Absyn.IDENT(name = str))
@@ -1609,14 +1607,14 @@ algorithm
         _ = Static.elabBuiltinHandlerGeneric(str);
         res = createGenericBuiltinFunctions(env, str);
       then
-        (cache,res,DAEUtil.emptyDae);
+        (cache,res);
 
     /* Simple name, search frame */
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.IDENT(name = str))
       equation
-        (cache,res as _::_,dae)= lookupFunctionsInFrame(cache, ht, httypes, env, str);
+        (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env, str);
       then
-        (cache,res,dae);
+        (cache,res);
 
     /* Simple name, if class with restriction function found in frame instantiate to get type. */
     case (cache, f::fs, id as Absyn.IDENT(name = str))
@@ -1628,12 +1626,12 @@ algorithm
         (cache,(c as SCode.CLASS(name=str,encapsulatedPrefix=encflag,restriction=restr)),env_1) = lookupClass(cache,f::fs, id, false);
         true = SCode.isFunctionOrExtFunction(restr);
         // get function dae from instantiation
-        (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_,dae)
+        (cache,(env_2 as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes)::_)),_)
            = Inst.implicitFunctionTypeInstantiation(cache,env_1,InnerOuter.emptyInstHierarchy, c);
          
-        (cache,res as _::_,_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str);
+        (cache,res as _::_)= lookupFunctionsInFrame(cache, ht, httypes, env_2, str);
       then
-        (cache,res,dae);
+        (cache,res);
 
     /* For qualified function names, e.g. Modelica.Math.sin */
     case (cache,(env as (Env.FRAME(optName = sid,clsAndVars = ht,types = httypes) :: fs)),id as Absyn.QUALIFIED(name = pack,path = path))
@@ -1649,16 +1647,16 @@ algorithm
           cache, env2, InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet,
           ci_state, c, false, {});
-        (cache,res,dae) = lookupFunctionsInEnv2(cache, env_2, path);
+        (cache,res) = lookupFunctionsInEnv2(cache, env_2, path);
       then
-        (cache,res,dae);
+        (cache,res);
 
     /* Did not match. Search next frame. */
     case (cache,f::fs,id)
       equation
-        (cache,res,dae) = lookupFunctionsInEnv2(cache, fs, id);
+        (cache,res) = lookupFunctionsInEnv2(cache, fs, id);
       then
-        (cache,res,dae);
+        (cache,res);
 
   end matchcontinue;
 end lookupFunctionsInEnv2;
@@ -1801,7 +1799,7 @@ algorithm
         true = SCode.isFunctionOrExtFunction(restr);
 
         /* Since function is added to cache, but dae here is not propagated, throw away cache from this call */
-        (garbageCache ,env_1,_,_) =
+        (garbageCache ,env_1,_) =
         Inst.implicitFunctionInstantiation(
           cache,cenv,InnerOuter.emptyInstHierarchy,
           DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
@@ -1822,9 +1820,8 @@ protected function lookupFunctionsInFrame
   input SCode.Ident inIdent4;
   output Env.Cache outCache;
   output list<DAE.Type> outTypesTypeLst;
-  output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outTypesTypeLst,outDae):=
+  (outCache,outTypesTypeLst):=
   matchcontinue (inCache,inBinTree1,inBinTree2,inEnv3,inIdent4)
     local
       list<tuple<DAE.TType, Option<Absyn.Path>>> tps;
@@ -1844,13 +1841,13 @@ algorithm
       equation
         Env.TYPE(tps) = Env.avlTreeGet(httypes, id);
       then
-        (cache,tps,DAEUtil.emptyDae);
+        (cache,tps);
 
     case (cache,ht,httypes,env,id) /* MetaModelica Partial Function. sjoelund */
       equation
         Env.VAR(instantiated = DAE.TYPES_VAR(type_ = (tty as DAE.T_FUNCTION(_,_,_),_))) = Env.avlTreeGet(ht, id);
       then
-        (cache,{(tty, SOME(Absyn.IDENT(id)))},DAEUtil.emptyDae);
+        (cache,{(tty, SOME(Absyn.IDENT(id)))});
 
     case (cache,ht,httypes,env,id)
       equation
@@ -1865,7 +1862,7 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(name=n,restriction=SCode.R_RECORD())),cenv) = Env.avlTreeGet(ht, id);
         (cache,_,ftype) = buildRecordType(cache,env,cdef);
       then
-        (cache,{ftype},DAEUtil.emptyDae);
+        (cache,{ftype});
 
     /* Found class that is function, instantiate to get type*/
     case (cache,ht,httypes,env,id) local SCode.Restriction restr;
@@ -1873,12 +1870,12 @@ algorithm
         Env.CLASS((cdef as SCode.CLASS(restriction=restr)),cenv) = Env.avlTreeGet(ht, id);
         true = SCode.isFunctionOrExtFunction(restr) "If found class that is function.";
         //function dae collected from instantiation
-        (cache,env_1,_,dae) =
+        (cache,env_1,_) =
         Inst.implicitFunctionTypeInstantiation(cache,cenv,InnerOuter.emptyInstHierarchy,cdef) ;
         
-        (cache,tps,_) = lookupFunctionsInEnv2(cache,env_1, Absyn.IDENT(id));
+        (cache,tps) = lookupFunctionsInEnv2(cache,env_1, Absyn.IDENT(id));
       then
-        (cache,tps,dae);
+        (cache,tps);
 
      /* Found class that is is external object*/
      case (cache,ht,httypes,env,id)
@@ -1895,7 +1892,7 @@ algorithm
            //s = Types.unparseType(t);
             //print("type :");print(s);print("\n");
        then
-        (cache,{t},DAEUtil.emptyDae);
+        (cache,{t});
   end matchcontinue;
 end lookupFunctionsInFrame;
 
@@ -1911,7 +1908,7 @@ protected
   Env.Env env_1;
 algorithm
   (outCache,_,cdef) := buildRecordConstructorClass(cache,env,cdef);
-  (outCache,outEnv,_,_) := Inst.implicitFunctionInstantiation(
+  (outCache,outEnv,_) := Inst.implicitFunctionInstantiation(
      outCache,env,InnerOuter.emptyInstHierarchy,
      DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {});
   name := SCode.className(cdef);
@@ -1987,7 +1984,7 @@ algorithm
         (_,env,_,_,eltsMods,_,_,_,_) = InstExtends.instExtendsAndClassExtendsList(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), extendsElts, classExtendsElts, ClassInf.RECORD(fpath), name, true, false);
         eltsMods = listAppend(eltsMods,Inst.addNomod(compElts));
         (env1,_) = Inst.addClassdefsToEnv(env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cdefelts,false,NONE);
-        (_,env1,_,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
+        (_,env1,_) = Inst.addComponentsToEnv(Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,mods,Prefix.NOPRE(),Connect.emptySet,ClassInf.RECORD(fpath),eltsMods,eltsMods,{},{},true);
         funcelts = buildRecordConstructorElts(eltsMods,mods,env1);
       then (cache,env1,funcelts,elts);
     
@@ -2053,7 +2050,7 @@ algorithm
 
     case ((((comp as SCode.COMPONENT( id,io,fl,repl,prot,SCode.ATTR(d,f,st,ac,var,dir),tp,mod,comment,cond,nfo,cc)),cmod) :: rest),mods,env)
       equation
-        (_,mod_1,_) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false);
+        (_,mod_1) = Mod.elabMod(Env.emptyCache(), env, InnerOuter.emptyInstHierarchy, Prefix.NOPRE(), mod, false);
         mod_1 = Mod.merge(mods,mod_1,env,Prefix.NOPRE());
         // adrpo: this was wrong, you won't find any id modification there!!!
         // bjozac: This was right, you will find id modification unless modifers does not belong to component!
@@ -2061,7 +2058,7 @@ algorithm
         compMod = Mod.lookupModificationP(mod_1,Absyn.IDENT(id));
         fullMod = mod_1;
         selectedMod = selectModifier(compMod, fullMod); // if the first one is empty use the other one.
-        (_,cmod,_) = Mod.updateMod(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true);
+        (_,cmod) = Mod.updateMod(Env.emptyCache(),env,InnerOuter.emptyInstHierarchy,Prefix.NOPRE(),cmod,true);
         selectedMod = Mod.merge(cmod,selectedMod,env,Prefix.NOPRE());
         umod = Mod.unelabMod(selectedMod);
         res = buildRecordConstructorElts(rest, mods, env);
@@ -2117,13 +2114,13 @@ algorithm
     case (cache,path)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,{},_) = lookupFunctionsInEnv2(cache,i_env, path);
+        (cache,{}) = lookupFunctionsInEnv2(cache,i_env, path);
       then
         (cache,false);
     case (cache,path)
       equation
         (cache,i_env) = Builtin.initialEnv(cache);
-        (cache,_,_) = lookupFunctionsInEnv2(cache,i_env, path);
+        (cache,_) = lookupFunctionsInEnv2(cache,i_env, path);
       then
         (cache,true);
     case (cache,path)

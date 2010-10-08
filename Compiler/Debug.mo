@@ -274,6 +274,37 @@ algorithm
   end matchcontinue;
 end fcallret1;
 
+public function fcallret2
+"function: fcallret2
+  Flag controlled calling of given function (2nd arg).
+  The passed function gets 2 arguments.
+  The last parameter is returned if the given flag is not set."
+  input String flag;
+  input FuncAB_C func;
+  input Type_a arg1;
+  input Type_b arg2;
+  input Type_c default;
+  output Type_c res;
+  partial function FuncAB_C
+    input Type_a inTypeA;
+    input Type_b inTypeB;
+    output Type_c outTypeC;
+  end FuncAB_C;
+  replaceable type Type_a subtypeof Any;
+  replaceable type Type_b subtypeof Any;
+  replaceable type Type_c subtypeof Any;
+algorithm
+  res := matchcontinue (flag,func,arg1,arg2,default)
+    case (flag,func,arg1,arg2,_)
+      equation
+        true = RTOpts.debugFlag(flag);
+        res = func(arg1,arg2);
+      then
+        res;
+    case (_,_,_,_,default) then default;
+  end matchcontinue;
+end fcallret2;
+
 public function bcallret1
 "function: bcallret1
   Boolean-controlled calling of given function (2nd arg).

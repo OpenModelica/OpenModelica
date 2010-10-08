@@ -70,6 +70,9 @@ install: install_scripts $(PROG)
 
 dinstall: install_scripts $(PROGD)
 
+nodepend:
+	(cd omc_release && $(MAKE))
+
 omc_release: .depend
 	(cd omc_release && $(MAKE))
 

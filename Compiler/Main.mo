@@ -523,6 +523,7 @@ algorithm
       Interactive.InteractiveSymbolTable newst, st;
       Env.Cache cache;
       Env.Env env;
+      DAE.FunctionTree funcs;
 
       /* Version requested using --version*/
     case (_) // try first to see if we had a version request among flags.
@@ -578,17 +579,19 @@ algorithm
 
         d = Debug.bcallret1(RTOpts.debugFlag("transformsbeforedump"),DAEUtil.transformationsBeforeBackend,d,d);
 
+        funcs = Env.getFunctionTree(cache);
+
         Print.clearBuf();
         Debug.fprint("info", "---dumping\n");
         Debug.fcall("execstat",print, "*** Main -> dumping dae: " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret1("flatmodelica", DAEDump.dumpStr, d, "");
+        s = Debug.fcallret2("flatmodelica", DAEDump.dumpStr, d, funcs, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae: " +& realString(clock()) +& "\n" );
         Debug.fcall("flatmodelica", Print.printBuf, s);
         Debug.fcall("execstat",print, "*** Main -> dumping dae2 : " +& realString(clock()) +& "\n" );
-        s = Debug.fcallret1("none", DAEDump.dumpStr, d, "");
+        s = Debug.fcallret2("none", DAEDump.dumpStr, d, funcs, "");
         Debug.fcall("execstat",print, "*** Main -> done dumping dae2 : " +& realString(clock()) +& "\n" );
         Debug.fcall("none", Print.printBuf, s);
-        Debug.fcall("daedump", DAEDump.dump, d);
+        Debug.fcall2("daedump", DAEDump.dump, d, funcs);
         Debug.fcall("daedump2", DAEDump.dump2, d);
         Debug.fcall("daedumpdebug", DAEDump.dumpDebug, d);
         Debug.fcall("daedumpgraphv", DAEDump.dumpGraphviz, d);
@@ -768,14 +771,14 @@ algorithm
       equation
         true = runBackendQ();
         Debug.fcall("execstat",print, "*** Main -> To lower dae at time: " +& realString(clock()) +& "\n" );
-        dlow = DAELow.lower(dae, /* add dummy state if needed */ true, /* simplify */ true);
+        funcs = Env.getFunctionTree(cache);
+        dlow = DAELow.lower(dae, funcs, /* add dummy state if needed */ true, /* simplify */ true);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrix, m);
         Debug.fcall("bltdump", DAELow.dumpIncidenceMatrixT, mT);
         Debug.fcall("execstat",print, "*** Main -> To run matching at time: " +& realString(clock()) +& "\n" );
-        funcs = DAEUtil.daeFunctionTree(dae);
         (v1,v2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(), DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
@@ -926,15 +929,11 @@ algorithm
         file_dir = CevalScript.getFileDir(a_cref, ap);
         Debug.fcall("execstat",print, "*** Main -> simcodgen -> generateFunctions: " +& realString(clock()) +& "\n" );
         simSettings = SimCode.createSimulationSettings(0.0, 1.0, 500, 1e-6,"dassl","","plt");        
-        (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
+        (_,_,_,_) = SimCode.generateModelCode(p, dae, indexed_dlow_1, Env.getFunctionTree(cache), classname, cname_str, file_dir, ass1, ass2, m, mt, comps, SOME(simSettings));
       then
         ();
-    case (_,_,_,_,_,_,_,_,_,_,_,_) /* If something above failed. fail so Main can print errors */
-      equation
-        true = RTOpts.simulationCg();
-      then
-        fail();
-    case (_,_,_,_,_,_,_,_,_,_,_,_) /* If not generating simulation code */
+    /* If not generating simulation code: Succeed so no error messages are printed */
+    case (_,_,_,_,_,_,_,_,_,_,_,_)
       equation
         false = RTOpts.simulationCg();
       then

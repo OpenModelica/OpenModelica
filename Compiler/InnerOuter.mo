@@ -226,28 +226,28 @@ algorithm
       then (inDae,csets,ih,graph);
 
     // adrpo: specific faster case when there are *no inner* elements!
-    case(inDae as DAE.DAE(allDAEelts,_),csets,ih,graph,true)
+    case(inDae as DAE.DAE(allDAEelts),csets,ih,graph,true)
       equation
         // when we have no inner elements we can return the same!
-        (DAE.DAE({},_),DAE.DAE(_,_)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
+        (DAE.DAE({}),_) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
       then (inDae,csets,ih,graph);
 
     // adrpo: specific faster case when there are *no outer* elements!
-    case(inDae as DAE.DAE(allDAEelts,_),csets,ih,graph,true)
+    case(inDae as DAE.DAE(allDAEelts),csets,ih,graph,true)
       equation
         // when we have no outer elements we can return the same!
-        (DAE.DAE(_,_),DAE.DAE({},_)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
+        (_,DAE.DAE({})) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
       then (inDae,csets,ih,graph);
 
     // general case
-    case(inDae as DAE.DAE(allDAEelts,_),csets,ih,
+    case(inDae as DAE.DAE(allDAEelts),csets,ih,
          graph as ConnectionGraph.GRAPH(updateGraph,
                                         definiteRoots,
                                         potentialRoots,
                                         branches,
                                         connections),true)
       equation
-        (DAE.DAE(innerVars,_),DAE.DAE(outerVars,_)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
+        (DAE.DAE(innerVars),DAE.DAE(outerVars)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
         repl = buildInnerOuterRepl(innerVars,outerVars,VarTransform.emptyReplacements());
         // Debug.fprintln("innerouter", "Number of elts/inner vars/outer vars: " +&
         //        intString(listLength(allDAEelts)) +&
@@ -1022,7 +1022,6 @@ protected
   list<DAE.Element> innerVars,outerVars,allVars;
   VarTransform.VariableReplacements repl;
   list<DAE.ComponentRef> srcs,targets;
-  DAE.FunctionTree funcs1,funcs2;
 algorithm
   _ := matchcontinue(inDae,callScope)
     // adrpo, do nothing if we have no inner/outer components
@@ -1034,8 +1033,8 @@ algorithm
     case(inDae,true)
       equation
         //print("DAE has :" +& intString(listLength(inDae)) +& " elements\n");
-        (DAE.DAE(innerVars,funcs1),DAE.DAE(outerVars,funcs2)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
-        checkMissingInnerDecl1(DAE.DAE(innerVars,funcs1),DAE.DAE(outerVars,funcs2));
+        (DAE.DAE(innerVars),DAE.DAE(outerVars)) = DAEUtil.findAllMatchingElements(inDae,DAEUtil.isInnerVar,DAEUtil.isOuterVar);
+        checkMissingInnerDecl1(DAE.DAE(innerVars),DAE.DAE(outerVars));
       then ();
     // if call scope is NOT TOP level (false) do nothing
     case(inDae,false)

@@ -1309,7 +1309,7 @@ algorithm
         // make sure is NOT used for records !
         (cache,sc as SCode.CLASS(_,false,_,SCode.R_FUNCTION(),cdef,_),env1) =
         Lookup.lookupClass(cache,env,funcpath,true);
-        (garbageCache,env1,_,daeList) =
+        (garbageCache,env1,_) =
         Inst.implicitFunctionInstantiation(
           cache,
           env1,
@@ -1319,7 +1319,7 @@ algorithm
           Connect.emptySet,
           sc,
           {}) ;
-        newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc,daeList);
+        newval = Cevalfunc.cevalUserFunc(env1,e,vallst,sc);
         //print("ret value(/s): "); print(ValuesUtil.printValStr(newval));print("\n");
       then
         (cache,newval,st);
@@ -1799,7 +1799,7 @@ algorithm
         DAE.ExpType tp;
         DAE.Exp dim;
       equation
-        (cache,dims,_) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
+        (cache,dims) = Inst.elabComponentArraydimFromEnv(cache,env, cr) "If component not instantiated yet, recursive definition.
 	 For example,
 	 Real x[:](min=fill(1.0,size(x,1))) = {1.0}
 

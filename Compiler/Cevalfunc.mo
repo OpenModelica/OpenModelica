@@ -50,11 +50,10 @@ NOTE: this function operates on Absyn and not DAE therefore static elaboration o
   input DAE.Exp callExp "DAE.CALL(userFunc)";
   input list<Values.Value> inArgs "arguments evaluated so no envirnoment is needed";
   input SCode.Class sc "function body";
-  input DAE.DAElist daeList;
   output Values.Value outVal "The output value";
 
 algorithm
-  outVal := matchcontinue(env,callExp,inArgs,sc,daeList)
+  outVal := matchcontinue(env,callExp,inArgs,sc)
       local
         list<SCode.Element> elementList;
         Env.Env env1,env2,env3;
@@ -70,15 +69,15 @@ algorithm
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
          sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
                            classDef=SCode.DERIVED(typeSpec=Absyn.TPATH(path=basefuncpath), 
-                             modifications=SCode.MOD(subModLst={}))),daeList)
+                             modifications=SCode.MOD(subModLst={}))))
       equation
         (_,c,env2)=Lookup.lookupClass(Env.emptyCache(),env,basefuncpath,true);
-        retVal = cevalUserFunc(env2,callExp,inArgs,c,daeList);
+        retVal = cevalUserFunc(env2,callExp,inArgs,c);
       then
         retVal;      
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
          sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
-                           classDef=SCode.PARTS(elementLst=elementList) ),daeList)
+                           classDef=SCode.PARTS(elementLst=elementList) ))
       equation
         ErrorExt.setCheckpoint("cevalUserFunc");
         true = OptManager.setOption("envCache",false);
@@ -101,7 +100,7 @@ algorithm
     /* Reset sideeffects */
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
         sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
-          classDef=SCode.PARTS(elementLst=elementList) ),daeList)
+          classDef=SCode.PARTS(elementLst=elementList) ))
       equation
           ErrorExt.rollBack("cevalUserFunc");
           _ = OptManager.setOption("envCache",true);
@@ -109,7 +108,7 @@ algorithm
 
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
          sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
-                           classDef=SCode.PARTS(elementLst=elementList) ),daeList)
+                           classDef=SCode.PARTS(elementLst=elementList) ))
       equation
         true = RTOpts.debugFlag("failtrace");
         _ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable());
@@ -120,7 +119,7 @@ algorithm
           fail();
     case(env,(callExp as DAE.CALL(path = funcpath,expLst = crefArgs)),inArgs,
               sc as SCode.CLASS(partialPrefix=false,restriction=SCode.R_FUNCTION(),
-                                classDef=SCode.PARTS(elementLst=elementList) ),daeList)
+                                classDef=SCode.PARTS(elementLst=elementList) ))
       equation
         true = RTOpts.debugFlag("failtrace");
         failure(_ = extendEnvWithInputArgs(env,elementList,inArgs,crefArgs,HashTable2.emptyHashTable()));
@@ -687,7 +686,7 @@ algorithm
     // algorithm assign      
     case(env, SCode.ALG_ASSIGN(assignComponent = ae1 as Absyn.CREF(_), value = ae2),ht2)
       equation
-        (_,e1,DAE.PROP(t,_),_,_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false,Prefix.NOPRE());
+        (_,e1,DAE.PROP(t,_),_) = Static.elabExp(Env.emptyCache(),env,ae2,true,NONE,false,Prefix.NOPRE());
         e1 = replaceComplex(e1,ht2); 
         (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         env1 = setValue(value, env, ae1);
@@ -696,7 +695,7 @@ algorithm
     // assign, tuple assign
     case(env, SCode.ALG_ASSIGN(assignComponent = Absyn.TUPLE(expressions = crefexps),value = ae1),ht2)
       equation
-        (_,resExp,prop,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE());
+        (_,resExp,prop,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE());
         resExp = replaceComplex(resExp,ht2);
         ((DAE.T_TUPLE(types),_)) = Types.getPropType(prop);
         (_,Values.TUPLE(values),_) = Ceval.ceval(Env.emptyCache(),env, resExp, true, NONE, NONE, Ceval.MSG());
@@ -745,7 +744,7 @@ algorithm
     // error for unknown range
     case(env,SCode.ALG_FOR(iterators = {(_,SOME(ae1))}),ht2) 
       equation
-        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE());
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env, ae1, true, NONE,true,Prefix.NOPRE());
         estr = Exp.printExpStr(e1);
         Error.addMessage(Error.NOT_ARRAY_TYPE_IN_FOR_STATEMENT, {estr});
       then
@@ -763,7 +762,7 @@ algorithm
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
-        (_,econd,_,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE());
         (_,Values.BOOL(true),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
       then
         env;
@@ -771,9 +770,9 @@ algorithm
     case(env, SCode.ALG_NORETCALL(functionCall = Absyn.CREF_IDENT(name = "assert"),
                                   functionArgs = Absyn.FUNCTIONARGS(args = {cond,msg})),ht2)
       equation
-        (_,econd,_,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE());
+        (_,econd,_,_) = Static.elabExp(Env.emptyCache(), env, cond, true, NONE,true,Prefix.NOPRE());
         (_,Values.BOOL(false),_) = Ceval.ceval(Env.emptyCache(),env, econd, true, NONE, NONE, Ceval.MSG());
-        (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true, NONE,true,Prefix.NOPRE());
+        (_,e1,_,_) = Static.elabExp(Env.emptyCache(), env, msg, true, NONE,true,Prefix.NOPRE());
         (_,Values.STRING(varName),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
         Error.addMessage(Error.ASSERT_FAILED, {varName});
       then
@@ -845,7 +844,7 @@ algorithm
     // handle failure, report type error
     case (value,exp,algitemlst,algrest,env, ht2)  
       equation 
-        (_,daeExp,_,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE()); 
+        (_,daeExp,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE()); 
         estr = Exp.printExpStr(daeExp);
         vtype = Types.typeOfValue(value);
         tstr = Types.unparseType(vtype);
@@ -873,7 +872,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
   // no type to convert into
   case(inExp,env,NONE,ht2)
     equation
-      (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE());
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE());
       e1 = replaceComplex(e1,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
     then
@@ -881,7 +880,7 @@ algorithm oval := matchcontinue(inExp,env,expectedType,ht2)
   // some type we need to convert into
   case(inExp,env,SOME(ty),ht2)
     equation
-      (_,e1,DAE.PROP(ty2,_),_,_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE());
+      (_,e1,DAE.PROP(ty2,_),_) = Static.elabExp(Env.emptyCache(),env,inExp,true,NONE,false,Prefix.NOPRE());
       (e2,_) = Types.matchType(e1,ty2,ty,true);
       e2 = replaceComplex(e2,ht2);
       (_,value,_) = Ceval.ceval(Env.emptyCache(),env, e2, true, NONE, NONE, Ceval.MSG());
@@ -1442,7 +1441,7 @@ algorithm
     case(p ,env)
       equation        
         (_,typeClass as SCode.CLASS(name=className),env1) = Lookup.lookupClass(Env.emptyCache(), env, p, false);
-        (_,dims,typeClass,_,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);
+        (_,dims,typeClass,_) = Inst.getUsertypeDimensions(Env.emptyCache(), env1, InnerOuter.emptyInstHierarchy, DAE.NOMOD(), Prefix.NOPRE(), typeClass, {}, true);
         (_,env2,_,_,_,_,ty,_,_,_) = Inst.instClass(
           Env.emptyCache(),env1,InnerOuter.emptyInstHierarchy,UnitAbsyn.noStore,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,typeClass,{}, true, Inst.INNER_CALL, ConnectionGraph.EMPTY);
         ty = Inst.makeArrayType(dims, ty);
@@ -1549,7 +1548,7 @@ algorithm oval := matchcontinue(oldVal,newVal,insubs,env,ty)
 
   case((oldVal as Values.ARRAY(valueLst = values1, dimLst = dims)),newVal,((sub as Absyn.SUBSCRIPT(exp))::subs),env,ty)
     equation
-      (_,e1,_,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false,Prefix.NOPRE());
+      (_,e1,_,_) = Static.elabExp(Env.emptyCache(),env,exp,true,NONE,false,Prefix.NOPRE());
       (_,value as Values.INTEGER(x),_) = Ceval.ceval(Env.emptyCache(),env, e1, true, NONE, NONE, Ceval.MSG());
       val1 = listNth(values1 ,(x-1)); // to be replaced
       val2 = mergeValues(val1,newVal,subs,env,ty);

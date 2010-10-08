@@ -901,12 +901,12 @@ algorithm
     case {_} then DAEUtil.emptyDae;
     case ((x,src1) :: ((y,src2) :: cs))
       equation
-        DAE.DAE(eq,funcs) = equEquations(((y,src2) :: cs));
+        DAE.DAE(eq) = equEquations(((y,src2) :: cs));
         DAE.SOURCE(info, partOfLst, instanceOptLst, connectEquationOptLst, typeLst) = DAEUtil.mergeSources(src1,src2);
         // do not propagate connects from different sources! use the crefs directly!
         src = DAE.SOURCE(info, partOfLst, instanceOptLst, {SOME((x,y))}, typeLst);
       then
-        (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq,funcs));
+        (DAE.DAE(DAE.EQUEQUATION(x,y,src) :: eq));
     case(_) equation print(" FAILURE IN CONNECT \n"); then fail();
   end matchcontinue;
 end equEquations;
@@ -930,8 +930,7 @@ algorithm
   sum := flowSum(cs);
   (ed::lde) := Util.listMap(cs, Util.tuple33);
   source := Util.listFold(lde, DAEUtil.mergeSources, ed);
-  funcs := DAEUtil.avlTreeNew();
-  outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), source)},funcs);
+  outDae := DAE.DAE({DAE.EQUATION(sum, DAE.RCONST(0.0), source)});
 end flowEquations;
 
 protected function flowSum "function: flowSum
@@ -1006,14 +1005,12 @@ algorithm
       equation
         // faces are not equal! one inside, one outside
         false = faceEqual(f1, f2); 
-        funcs = DAEUtil.avlTreeNew();
         src = DAEUtil.mergeSources(src1, src2);
         // add the stream equation cr1 = cr2 for one inside, one outside
         dae = DAE.DAE({
                 DAE.EQUATION(DAE.CREF(cr1,DAE.ET_OTHER()), 
                              DAE.CREF(cr2,DAE.ET_OTHER()), 
-                             src)},
-                funcs);
+                             src)});
       then dae;
 
     // anything else, ERROR!
@@ -1789,11 +1786,11 @@ algorithm
       equation
         (cache,_,tp,_,_,_,_,_,_) = Lookup.lookupVar(cache,env,cr);
         false = Types.isArray(tp); // scalar
-        (cache,DAE.DAE(elts,funcs)) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
+        (cache,DAE.DAE(elts)) = generateZeroflowEquations(cache,xs,env,prefix,deletedComponents);
         (cache,cr2) = PrefixUtil.prefixCref(cache,env,InnerOuter.emptyInstHierarchy,prefix,cr);
         //print(" Generated flow equation for: " +& Exp.printComponentRefStr(cr2) +& "\n");
       then
-        (cache,DAE.DAE(DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.emptyElementSource) :: elts,funcs));
+        (cache,DAE.DAE(DAE.EQUATION(DAE.CREF(cr2,DAE.ET_REAL()),DAE.RCONST(0.0), DAE.emptyElementSource) :: elts));
   end matchcontinue;
 end generateZeroflowEquations;
 
@@ -1831,9 +1828,8 @@ algorithm
         // which will generate indexes like [1, 1, 1], [1, 1, 2], [1, 2, 3] ... [2, 5, 3]
         indexSubscriptLists = generateAllIndexes(indexSubscriptLists, {});
         out = Util.listMap1(indexSubscriptLists, genZeroEquation, (cr, initExp));
-        funcs = DAEUtil.avlTreeNew();
       then
-        DAE.DAE(out,funcs);
+        DAE.DAE(out);
   end matchcontinue;
 end generateZeroflowArrayEquations;
 

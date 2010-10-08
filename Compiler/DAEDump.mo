@@ -81,15 +81,14 @@ public function dump "function: dump
   This function prints the DAE in the standard output format to the Print buffer.
   For printing to the stdout use print(dumpStr(dae)) instead."
   input DAE.DAElist dae;
+  input DAE.FunctionTree functionTree;
 algorithm
-  _ := matchcontinue (dae)
+  _ := matchcontinue (dae,functionTree)
     local
       list<DAE.Element> daelist;
-      DAE.FunctionTree funcs;
-    case DAE.DAE(daelist,funcs)
+    case (DAE.DAE(daelist),functionTree)
       equation
-        //print("dumping DAE, avltree list length:"+&intString(listLength(avlTreeToList(funcs)))+&"\n");
-        Util.listMap0(sortFunctions(DAEUtil.getFunctionList(dae)),dumpFunction);
+        Util.listMap0(sortFunctions(DAEUtil.getFunctionList(functionTree)),dumpFunction);
         Util.listMap0(daelist, dumpExtObjectClass);
         Util.listMap0(daelist, dumpCompElement);
       then
@@ -98,16 +97,13 @@ algorithm
 end dump;
 
 public function dumpFunctionNamesStr "return all function names in a string  (comma separated)"
-  input DAE.DAElist dae;
+  input DAE.FunctionTree funcs;
   output String str;
 algorithm
-  str := matchcontinue(dae)
-    local
-      list<DAE.Element> daelist;
-      DAE.FunctionTree funcs;
-    case dae equation
-        //print("dumping DAE, avltree list length:"+&intString(listLength(DAEUtil.getFunctionList(dae))+&"\n");
-      str = Util.stringDelimitList(Util.listMap(sortFunctions(DAEUtil.getFunctionList(dae)),functionNameStr),",");
+  str := matchcontinue(funcs)
+    case funcs
+      equation
+        str = Util.stringDelimitList(Util.listMap(sortFunctions(DAEUtil.getFunctionList(funcs)),functionNameStr),",");
     then str;
   end matchcontinue;
 end dumpFunctionNamesStr;
@@ -239,7 +235,7 @@ algorithm
                                binding = SOME(e),
                                dims = dims,
                                variableAttributesOption = dae_var_attr,
-                               absynCommentOption = comment) :: xs),funcs)
+                               absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -261,10 +257,10 @@ algorithm
         Print.printBuf(", ");
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.VAR(componentRef = cr,binding = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs),funcs)
+    case DAE.DAE((DAE.VAR(componentRef = cr,binding = NONE,variableAttributesOption = dae_var_attr,absynCommentOption = comment) :: xs))
       equation
         Print.printBuf("VAR(");
         Exp.printComponentRef(cr);
@@ -280,46 +276,46 @@ algorithm
         Print.printBuf(", ");
         dumpVariableAttributes(dae_var_attr);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.DEFINE(componentRef = cr) :: xs),funcs)
+    case DAE.DAE((DAE.DEFINE(componentRef = cr) :: xs))
       equation
         Print.printBuf("DEFINE(");
         Exp.printComponentRef(cr);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.INITIALDEFINE(componentRef = cr) :: xs),funcs)
+    case DAE.DAE((DAE.INITIALDEFINE(componentRef = cr) :: xs))
       equation
         Print.printBuf("INITIALDEFINE(");
         Exp.printComponentRef(cr);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.EQUATION(exp = e1,scalar = e2) :: xs),funcs)
+    case DAE.DAE((DAE.EQUATION(exp = e1,scalar = e2) :: xs))
       equation
         Print.printBuf("EQUATION(");
         Exp.printExp(e1);
         Print.printBuf(" = ");
         Exp.printExp(e2);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs),funcs)
+    case DAE.DAE((DAE.INITIALEQUATION(exp1 = e1,exp2 = e2) :: xs))
       equation
         Print.printBuf("INITIALEQUATION(");
         Exp.printExp(e1);
         Print.printBuf(" = ");
         Exp.printExp(e2);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs),funcs)
+    case DAE.DAE((DAE.ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs))
       equation
         Print.printBuf("ARRAY_EQUATION(");
         Print.printBuf("dims = [");
@@ -329,10 +325,10 @@ algorithm
         Print.printBuf(" = ");
         Exp.printExp(e2);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case DAE.DAE((DAE.INITIAL_ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs),funcs)
+    case DAE.DAE((DAE.INITIAL_ARRAY_EQUATION(dimension=dl,exp = e1,array = e2) :: xs))
       equation
         Print.printBuf("INITIAL_ARRAY_EQUATION(");
         Print.printBuf("dims = [");
@@ -342,58 +338,58 @@ algorithm
         Print.printBuf(" = ");
         Exp.printExp(e2);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case (DAE.DAE((DAE.ALGORITHM(algorithm_ = _) :: xs),funcs))
+    case (DAE.DAE((DAE.ALGORITHM(algorithm_ = _) :: xs)))
       equation
         Print.printBuf("ALGORITHM(...)");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case (DAE.DAE((DAE.INITIALALGORITHM(algorithm_ = _) :: xs),funcs))
+    case (DAE.DAE((DAE.INITIALALGORITHM(algorithm_ = _) :: xs)))
       equation
         Print.printBuf("INITIALALGORITHM(...)");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case (DAE.DAE((DAE.COMP(ident = ident,dAElist = elts) :: xs),funcs))
+    case (DAE.DAE((DAE.COMP(ident = ident,dAElist = elts) :: xs)))
       equation
         Print.printBuf("COMP(");
         Print.printBuf(ident);
-        dump2(DAE.DAE(elts,funcs));
+        dump2(DAE.DAE(elts));
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
 
-    case (DAE.DAE((DAE.ASSERT(condition=e1,message=e2) :: xs),funcs))
+    case (DAE.DAE((DAE.ASSERT(condition=e1,message=e2) :: xs)))
       equation
         Print.printBuf("ASSERT(\n");
         Exp.printExp(e1);
         Print.printBuf(",");
         Exp.printExp(e2);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
-    case(DAE.DAE((DAE.EQUEQUATION(cr1 = cr, cr2 = cr2) :: xs),funcs))
+    case(DAE.DAE((DAE.EQUEQUATION(cr1 = cr, cr2 = cr2) :: xs)))
       equation
         Print.printBuf("EQUEQUATION(");
         Exp.printComponentRef(cr);
         Print.printBuf(" = ");
         Exp.printComponentRef(cr2);
         Print.printBuf(")\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();
     case (DAE.DAE(elementLst = {})) then ();
     
     //BZ Could be nice to know when this failes (when new elements are introduced) 
-    case(DAE.DAE((_ :: xs),funcs))
+    case(DAE.DAE((_ :: xs)))
       equation
         Print.printBuf("\n\ndump2 failed to print element\n");
-        dump2(DAE.DAE(xs,funcs));
+        dump2(DAE.DAE(xs));
       then
         ();  
     case (_)
@@ -2558,17 +2554,18 @@ end unparseDimensions;
 public function dumpStr "function: dumpStr
   This function prints the DAE to a string."
   input DAE.DAElist inDAElist;
+  input DAE.FunctionTree functionTree;
   output String outString;
 algorithm
-  outString := matchcontinue (inDAElist)
+  outString := matchcontinue (inDAElist,functionTree)
     local      
       IOStream.IOStream myStream;
       String str;
 
-    case (inDAElist)
+    case (inDAElist,functionTree)
       equation
         myStream = IOStream.create("dae", IOStream.LIST());
-        myStream = dumpStream(inDAElist, myStream);
+        myStream = dumpStream(inDAElist, functionTree, myStream);
         str = IOStream.string(myStream);
       then
         str;
@@ -2624,18 +2621,19 @@ end dumpAlgorithmsStr;
 public function dumpStream "function: dumpStream
   This function prints the DAE to a stream."
   input DAE.DAElist dae;
+  input DAE.FunctionTree functionTree;
   input IOStream.IOStream inStream;
   output IOStream.IOStream outStream;
 algorithm
-  outStream := matchcontinue (dae,inStream)
+  outStream := matchcontinue (dae,functionTree,inStream)
     local      
       list<DAE.Element> daelist;
       DAE.FunctionTree funcs;
       IOStream.IOStream str;
 
-    case (DAE.DAE(daelist,funcs), str)
+    case (DAE.DAE(daelist), functionTree, str)
       equation
-        str = Util.listFold(sortFunctions(DAEUtil.getFunctionList(dae)), dumpFunctionStream, str);
+        str = Util.listFold(sortFunctions(DAEUtil.getFunctionList(functionTree)), dumpFunctionStream, str);
         str = IOStream.appendList(str, Util.listMap(daelist, dumpExtObjClassStr));
         str = Util.listFold(daelist, dumpCompElementStream, str);
       then

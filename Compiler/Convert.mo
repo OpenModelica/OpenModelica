@@ -48,11 +48,13 @@ public function fromDAEEqsToAbsynAlg "function: fromDAEEqsToAbsynAlgElts"
   output DAE.DAElist outLd;
 algorithm
   (outList,outLd) := matchcontinue (ld)
-  local list<DAE.Element> elts; DAE.FunctionTree funcs;
-    case(DAE.DAE(elts,funcs)) equation
-      (outList, elts) = fromDAEEqsToAbsynAlgElts(elts,{},{});
-
-    then (outList,DAE.DAE(elts,funcs));
+    local
+      list<DAE.Element> elts;
+      DAE.FunctionTree funcs;
+    case(DAE.DAE(elts))
+      equation
+        (outList, elts) = fromDAEEqsToAbsynAlgElts(elts,{},{});
+      then (outList,DAE.DAE(elts));
  end matchcontinue;
 end fromDAEEqsToAbsynAlg;
 

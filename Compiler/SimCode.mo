@@ -647,6 +647,7 @@ public function generateModelCode
   input SCode.Program program;
   input DAE.DAElist dae;
   input DAELow.DAELow indexedDAELow;
+  input DAE.FunctionTree functionTree;
   input Absyn.Path className;
   input String filenamePrefix;
   input String fileDir;
@@ -670,7 +671,7 @@ public function generateModelCode
 algorithm
   System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
   (libs, includes, functions, outIndexedDAELow, dae2) :=
-    createFunctions(program, dae, indexedDAELow, className);
+    createFunctions(program, dae, indexedDAELow, functionTree, className);
   simCode := createSimCode(dae2, outIndexedDAELow, equationIndices, 
     variableIndices, incidenceMatrix, incidenceMatrixT, strongComponents, 
     className, filenamePrefix, fileDir, functions, includes, libs, simSettingsOpt); 
@@ -731,12 +732,12 @@ algorithm
         timeFrontend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
         System.realtimeTick(CevalScript.RT_CLOCK_BUILD_MODEL);
         dae = DAEUtil.transformationsBeforeBackend(dae);
-        dlow = DAELow.lower(dae, addDummy, true);
+        funcs = Env.getFunctionTree(cache);
+        dlow = DAELow.lower(dae, funcs, addDummy, true);
         Debug.fprint("bltdump", "Lowered DAE:\n");
         Debug.fcall("bltdump", DAELow.dump, dlow);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        funcs = DAEUtil.daeFunctionTree(dae);
         (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(),DAELow.REMOVE_SIMPLE_EQN()),funcs);
         // late Inline
         dlow_1 = Inline.inlineCalls(SOME(funcs),{DAE.NORM_INLINE(),DAE.AFTER_INDEX_RED_INLINE()},dlow_1);
@@ -754,7 +755,7 @@ algorithm
         file_dir = CevalScript.getFileDir(a_cref, p);
         timeBackend = System.realtimeTock(CevalScript.RT_CLOCK_BUILD_MODEL);
         (indexed_dlow_1, libs, timeSimCode, timeTemplates) 
-         = generateModelCode(p_1, dae, indexed_dlow_1, className, filenameprefix,
+         = generateModelCode(p_1, dae, indexed_dlow_1, funcs, className, filenameprefix,
           file_dir, ass1, ass2, m, mT, comps,inSimSettingsOpt);
         resultValues = 
           {("timeTemplates",Values.REAL(timeTemplates)),
@@ -845,6 +846,7 @@ public function createFunctions
   input SCode.Program inProgram;
   input DAE.DAElist inDAElist;
   input DAELow.DAELow inDAELow;
+  input DAE.FunctionTree functionTree;
   input Absyn.Path inPath;
   output list<String> libs;
   output list<String> includes;
@@ -853,7 +855,7 @@ public function createFunctions
   output DAE.DAElist outDAE;
 algorithm
   (libs, includes, functions, outDAELow, outDAE) :=
-  matchcontinue (inProgram,inDAElist,inDAELow,inPath)
+  matchcontinue (inProgram,inDAElist,inDAELow,functionTree,inPath)
     local
       list<Absyn.Path> funcPaths, funcRefPaths, funcNormalPaths;
       list<String> debugpathstrs,libs1,libs2,includes1,includes2;
@@ -867,10 +869,10 @@ algorithm
       SimCode sc;
       DAE.FunctionTree funcs;
       
-    case (p,dae,dlow,path)
+    case (p,dae,dlow,functionTree,path)
       equation
         // get all the used functions from the function tree
-        funcelems = DAEUtil.getFunctionList(dae);
+        funcelems = DAEUtil.getFunctionList(functionTree);
         
         part_func_elems = PartFn.createPartEvalFunctions(funcelems);
         (dae, part_func_elems) = PartFn.partEvalDAE(dae, part_func_elems);
@@ -883,7 +885,7 @@ algorithm
         (fns, _, includes2, libs2) = elaborateFunctions(funcelems, {}); // Do we need metarecords here as well?
       then
         (Util.listUnion(libs1,libs2), Util.listUnion(includes1,includes2), fns, dlow, dae);
-    case (_,_,_,_)
+    case (_,_,_,_,_)
       equation
         Error.addMessage(Error.INTERNAL_ERROR, {"Creation of Modelica functions failed. "});
       then
@@ -6047,19 +6049,19 @@ protected function getCalledFunctionsInFunctions
   the names of the functions called from within those functions"
   input list<Absyn.Path> paths;
   input list<Absyn.Path> accumulated;
-  input DAE.DAElist dae;
+  input DAE.FunctionTree funcs;
   output list<Absyn.Path> res;
   list<list<Absyn.Path>> pathslist;
 algorithm
-  res := matchcontinue(paths,accumulated,dae)
+  res := matchcontinue(paths,accumulated,funcs)
     local
       list<Absyn.Path> res,acc,rest;
       Absyn.Path path;
-    case ({},accumulated,dae) then accumulated;
-    case (path::rest,accumulated,dae)
+    case ({},accumulated,funcs) then accumulated;
+    case (path::rest,accumulated,funcs)
       equation
-        acc = getCalledFunctionsInFunction(path, accumulated, dae);
-        res = getCalledFunctionsInFunctions(rest, acc, dae);
+        acc = getCalledFunctionsInFunction(path, accumulated, funcs);
+        res = getCalledFunctionsInFunctions(rest, acc, funcs);
       then res;
   end matchcontinue;
 end getCalledFunctionsInFunctions;
@@ -6070,11 +6072,11 @@ public function getCalledFunctionsInFunction
   the names of the functions called from within those functions"
   input Absyn.Path inPath;
   input list<Absyn.Path> accumulated;
-  input DAE.DAElist inDAElist;
+  input DAE.FunctionTree funcs;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
   outAbsynPathLst:=
-  matchcontinue (inPath,accumulated,inDAElist)
+  matchcontinue (inPath,accumulated,funcs)
     local
       String pathstr,debugpathstr;
       Absyn.Path path;
@@ -6087,14 +6089,14 @@ algorithm
       list<String> debugpathstrs;
       DAE.DAElist dae;
       
-    case (path,acc,dae)
+    case (path,acc,funcs)
       local
         list<DAE.Element> varlist;
         list<list<DAE.Element>> varlistlist;
         list<Absyn.Path> varfuncs, fnpaths, fns, referencedFuncs, reffuncs;
       equation
         false = listMember(path,acc);
-        funcelem = DAEUtil.getNamedFunction(path, dae);
+        funcelem = DAEUtil.getNamedFunction(path, funcs);
         funcelems = {funcelem};
         explist = DAEUtil.getAllExpsFunctions(funcelems);
         fcallexps = getMatchingExpsList(explist, matchCalls);
@@ -6118,7 +6120,7 @@ algorithm
         varfuncs = Util.listFold(Util.if_(RTOpts.acceptMetaModelicaGrammar(), explist, {}), DAEUtil.collectValueblockFunctionRefVars, varfuncs);
         calledfuncs = Util.listSetDifference(calledfuncs, varfuncs) "Filter out function reference calls";
         /*--                                           --*/
-        res = getCalledFunctionsInFunctions(calledfuncs, path::acc, dae);
+        res = getCalledFunctionsInFunctions(calledfuncs, path::acc, funcs);
 
         Debug.fprintln("info", "getCalledFunctionsInFunction: " +& Absyn.pathString(path)) "debug" ;
         Debug.fprint("info", "Found variable function refs to ignore: ") "debug" ;
@@ -6132,10 +6134,10 @@ algorithm
       then
         res;
 
-    case (path,acc,dae) /* Don\'t fail here, ceval will generate the function later */
+    case (path,acc,funcs) /* Don\'t fail here, ceval will generate the function later */
       equation
         false = listMember(path,acc);
-        failure(_ = DAEUtil.getNamedFunction(path, dae));
+        failure(_ = DAEUtil.getNamedFunction(path, funcs));
         pathstr = Absyn.pathString(path);
         Debug.fprintln("failtrace", "SimCode.getCalledFunctionsInFunction: Class " 
           +& pathstr +& " not found in global scope.");

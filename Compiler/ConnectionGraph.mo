@@ -117,7 +117,7 @@ algorithm
     // no dae
     // case (graph, DAE.DAE({},_)) then DAEUtil.emptyDae;
     // handle the connection braking
-    case (graph, DAE.DAE(elts,funcs), modelNameQualified)
+    case (graph, DAE.DAE(elts), modelNameQualified)
       equation
 
         Debug.fprintln("cgraph", "Summary: \n\t" +& 
@@ -133,7 +133,7 @@ algorithm
 
         elts = evalIsRoot(roots, elts);
       then
-        DAE.DAE(elts,funcs);
+        DAE.DAE(elts);
     // handle the connection braking
     case (graph, dae, modelNameQualified)
       equation
@@ -595,7 +595,7 @@ algorithm
       equation
         true = originInConnect(el, cr1, cr2);
         Debug.fprintln("cgraph", "- ConnectionGraph.removeEquationsWithOrigin: removed " +&
-          DAEDump.dumpDAEElementsStr(DAE.DAE({el}, DAE.AVLTREENODE(NONE,0,NONE,NONE))) +& 
+          DAEDump.dumpDAEElementsStr(DAE.DAE({el})) +& 
           "\t generated from: connect(" +& 
           Exp.printComponentRefStr(cr1) +& ", " +& 
           Exp.printComponentRefStr(cr2) +& ")");

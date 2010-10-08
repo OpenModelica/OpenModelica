@@ -491,11 +491,11 @@ algorithm
   matchcontinue (inDAElist)
     local list<DAE.Element> daeLst_1,daeLst;
       DAE.FunctionTree funcs;
-    case DAE.DAE(daeLst,funcs)
+    case DAE.DAE(daeLst)
       equation
         daeLst_1 = stringPrefixElements("params->", daeLst, daeLst);
       then
-        DAE.DAE(daeLst_1,funcs);
+        DAE.DAE(daeLst_1);
   end matchcontinue;
 end stringPrefixParams;
 

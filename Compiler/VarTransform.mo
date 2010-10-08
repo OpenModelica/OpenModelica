@@ -130,13 +130,10 @@ algorithm
   local list<DAE.Element> elts;
     DAE.FunctionTree funcs;
     list<tuple<DAE.AvlKey,DAE.AvlValue>> funcLst;
-    case(DAE.DAE(elts,funcs),repl,condExpFunc)
+    case(DAE.DAE(elementLst=elts),repl,condExpFunc)
       equation
         elts = applyReplacementsDAEElts(elts,repl,condExpFunc);
-        funcLst = DAEUtil.avlTreeToList(funcs);
-        funcLst = applyReplacementsDAEFuncLst(funcLst,repl,condExpFunc);
-        funcs = DAEUtil.avlTreeAddLst(funcLst,DAEUtil.avlTreeNew());
-      then (DAE.DAE(elts,funcs));
+      then (DAE.DAE(elts));
   end matchcontinue;
 end applyReplacementsDAE;
 

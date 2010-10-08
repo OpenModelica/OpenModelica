@@ -435,10 +435,10 @@ algorithm
         false = RTOpts.debugFlag("fnptr") or RTOpts.acceptMetaModelicaGrammar();
       then
         (dlst,dae);*/
-    case(DAE.DAE(elts,funcs),dae)
+    case(DAE.DAE(elts),dae)
       equation
         (elts_1,dae) = elabElements(elts,dae);
-        dlst = DAE.DAE(elts_1,funcs);
+        dlst = DAE.DAE(elts_1);
       then
         (dlst,dae);
     case(_,_)

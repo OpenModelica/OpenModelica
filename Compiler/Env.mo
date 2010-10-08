@@ -84,7 +84,6 @@ package Env
 public import Absyn;
 public import DAE;
 public import SCode;
-public import HashTable5;
 public import ClassInf;
 
 public type Ident = String " An identifier is just a string " ;
@@ -94,7 +93,7 @@ public uniontype Cache
   record CACHE
     Option<EnvCache>[:] envCache "The cache contains of environments from which classes can be found";
     Option<Env> initialEnv "and the initial environment";
-    HashTable5.HashTable instantiatedFuncs "and a hashtable to indicated already instantiated functions (to break inst. of recursive function calls)";
+    DAE.FunctionTree[:] functions "set of Option<DAE.Function>; NONE() means instantiation started; SOME() means it's finished";
   end CACHE;
 end Cache;
 
@@ -175,6 +174,8 @@ uniontype Item
 
 end Item;
 
+protected import DAEDump;
+protected import DAEUtil;
 protected import Dump;
 protected import Exp;
 protected import Print;
@@ -191,11 +192,12 @@ public function emptyCache
 "returns an empty cache"
   output Cache cache;
  protected
-  Option<EnvCache>[:] arr; HashTable5.HashTable instFuncs;
+  Option<EnvCache>[:] arr;
+  DAE.FunctionTree[:] instFuncs;
 algorithm
   //print("EMPTYCACHE\n");
   arr := listArray({NONE});
-  instFuncs := HashTable5.emptyHashTable();
+  instFuncs := arrayCreate(1, DAEUtil.emptyFuncTree);
   cache := CACHE(arr,NONE,instFuncs);
 end emptyCache;
 
@@ -1163,47 +1165,13 @@ algorithm
   outCache := matchcontinue(inCache,env)
   local
     	Option<EnvCache>[:] envCache;
-    	HashTable5.HashTable ef;
+    	DAE.FunctionTree[:] ef;
 
     case (CACHE(envCache,_,ef),env) equation
  //    	print("setCachedInitialEnv\n");
       then CACHE(envCache,SOME(env),ef);
   end matchcontinue;
 end setCachedInitialEnv;
-
-public function addCachedInstFunc "adds the FQ path to the set of instantiated functions"
-  input Cache inCache;
-  input Absyn.Path func "fully qualified function name";
-  output Cache outCache;
-algorithm
-  outCache := matchcontinue(inCache,func)
-  local
-    	Option<EnvCache>[:] envCache;
-    	HashTable5.HashTable ef;
-    	Absyn.ComponentRef cr;
-    	Option<Env> ienv;
-
-    case (CACHE(envCache,ienv,ef),func) equation
-      cr = Absyn.pathToCref(func);
-      ef = HashTable5.add((cr,0),ef);
-      then CACHE(envCache,ienv,ef);
-  end matchcontinue;
-end addCachedInstFunc;
-
-function getCachedInstFunc "returns the integer value 0 if the FQ function is in the set of already instantiated functions. If not, this function fails"
-  input Cache inCache;
-  input Absyn.Path path;
-  output Integer res;
-algorithm
-  res := matchcontinue(inCache,path)
-  local HashTable5.HashTable ef; Absyn.ComponentRef cr;
-    Integer v;
-    case(CACHE(instantiatedFuncs=ef),path) equation
-      cr = Absyn.pathToCref(path);
-      v = HashTable5.get(cr,ef);
-    then v;
-  end matchcontinue;
-end getCachedInstFunc;
 
 public function cacheGet "Get an environment from the cache."
   input Absyn.Path scope;
@@ -1213,7 +1181,7 @@ public function cacheGet "Get an environment from the cache."
 algorithm
   env:= matchcontinue(scope,path,cache)
   local CacheTree tree;  Option<EnvCache>[:] arr;
-    HashTable5.HashTable ef;
+    DAE.FunctionTree[:] ef;
    case (scope,path,CACHE(arr ,_,ef))
       equation
         true = OptManager.getOption("envCache");
@@ -1235,7 +1203,7 @@ algorithm
   local CacheTree tree;
     Option<Env> ie;
     Option<EnvCache>[:] arr;
-    HashTable5.HashTable ef;
+    DAE.FunctionTree[:] ef;
     case(_,inCache,env) equation
       false = OptManager.getOption("envCache");
     then inCache;
@@ -1511,7 +1479,7 @@ algorithm
     local 
       CacheTree tree;
       Option<EnvCache>[:] arr;
-      HashTable5.HashTable ef;
+      DAE.FunctionTree[:] ef;
       String s,s2;
     
     // some cache present
@@ -1520,7 +1488,7 @@ algorithm
         SOME(ENVCACHE(tree)) = arr[1];
         s = printCacheTreeStr(tree,1);
         str = Util.stringAppendList({"Cache:\n",s,"\n"});
-        s2 = HashTable5.dumpHashTableStr(ef);
+        s2 = DAEDump.dumpFunctionNamesStr(arrayGet(ef,1));
         str = str +& "\nInstantiated funcs: " +& s2 +&"\n";
       then str;
     // empty cache
@@ -2222,6 +2190,109 @@ algorithm
     case _ then SOME(CLASS_SCOPE);
   end matchcontinue;
 end restrictionToScopeType;
+
+public function getFunctionTree
+"Selector function"
+  input Cache cache;
+  output DAE.FunctionTree ft;
+  DAE.FunctionTree[:] ef;
+algorithm
+  CACHE(functions = ef) := cache;
+  ft := arrayGet(ef, 1);
+end getFunctionTree;
+
+public function addCachedInstFuncGuard
+"adds the FQ path to the set of instantiated functions as NONE().
+This guards against recursive functions."
+  input Cache inCache;
+  input Absyn.Path func "fully qualified function name";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache,func)
+    local
+    	Option<EnvCache>[:] envCache;
+    	DAE.FunctionTree[:] ef;
+    	Absyn.ComponentRef cr;
+    	Option<Env> ienv;
+
+      /* Don't overwrite SOME() with NONE() */
+    case (inCache, func)
+      equation
+        checkCachedInstFuncGuard(inCache, func);
+      then inCache;
+
+    case (CACHE(envCache,ienv,ef),func)
+      equation
+        ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
+      then CACHE(envCache,ienv,ef);
+  end matchcontinue;
+end addCachedInstFuncGuard;
+
+public function addDaeFunction
+"adds the list<DAE.Function> to the set of instantiated functions"
+  input Cache inCache;
+  input list<DAE.Function> funcs "fully qualified function name";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache,funcs)
+    local
+    	Option<EnvCache>[:] envCache;
+    	DAE.FunctionTree[:] ef;
+    	Option<Env> ienv;
+    case (CACHE(envCache,ienv,ef),funcs)
+      equation
+        ef = arrayUpdate(ef,1,DAEUtil.addDaeFunction(funcs, arrayGet(ef, 1)));
+      then CACHE(envCache,ienv,ef);
+  end matchcontinue;
+end addDaeFunction;
+
+public function addDaeExtFunction
+"adds the external functions in list<DAE.Function> to the set of instantiated functions"
+  input Cache inCache;
+  input list<DAE.Function> funcs "fully qualified function name";
+  output Cache outCache;
+algorithm
+  outCache := matchcontinue(inCache,funcs)
+    local
+    	Option<EnvCache>[:] envCache;
+    	DAE.FunctionTree[:] ef;
+    	Option<Env> ienv;
+    case (CACHE(envCache,ienv,ef),funcs)
+      equation
+        ef = arrayUpdate(ef,1,DAEUtil.addDaeExtFunction(funcs, arrayGet(ef,1)));
+      then CACHE(envCache,ienv,ef);
+  end matchcontinue;
+end addDaeExtFunction;
+
+public function getCachedInstFunc
+"returns the function in the set"
+  input Cache inCache;
+  input Absyn.Path path;
+  output DAE.Function func;
+algorithm
+  func := matchcontinue(inCache,path)
+    local
+      DAE.FunctionTree[:] ef;
+    case(CACHE(functions=ef),path)
+      equation
+        SOME(func) = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+      then func;
+  end matchcontinue;
+end getCachedInstFunc;
+
+public function checkCachedInstFuncGuard
+"succeeds if the FQ function is in the set of functions"
+  input Cache inCache;
+  input Absyn.Path path;
+algorithm
+  _ := matchcontinue(inCache,path)
+    local
+      DAE.FunctionTree[:] ef;
+    case(CACHE(functions=ef),path) equation
+      _ = DAEUtil.avlTreeGet(arrayGet(ef,1),path);
+    then ();
+  end matchcontinue;
+end checkCachedInstFuncGuard;
 
 end Env;
 

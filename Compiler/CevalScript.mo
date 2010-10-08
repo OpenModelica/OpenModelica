@@ -329,7 +329,7 @@ algorithm
         dae  = DAEUtil.transformationsBeforeBackend(dae);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(path,dae,env));
         /*((daelow as DAELow.DAELOW(orderedVars=vars,orderedEqs=eqnarr,complexEqns = DAELow.COMPLEX_EQUATIONS(arrayEqs=ae,ifEqns=ifeqns)))) = DAELow.lower(dae, false, true) "no dummy state" ;*/
-        ((daelow as DAELow.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, false, true) "no dummy state" ;
+        ((daelow as DAELow.DAELOW(vars,_,_,_,eqnarr,_,_,ae,_,_,_))) = DAELow.lower(dae, Env.getFunctionTree(cache), false, true) "no dummy state" ;
         m = DAELow.incidenceMatrix(daelow);
         mt = DAELow.transposeMatrix(m);
         /* jac = DAELow.calculateJacobian(vars, eqnarr, ae,ifeqns, m, mt,false); */
@@ -683,7 +683,7 @@ algorithm
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
         // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
         ic_1 = ic;
-        str = DAEDump.dumpStr(dae);
+        str = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
       then
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
 
@@ -2333,9 +2333,9 @@ algorithm
         file_dir = getFileDir(a_cref, p);
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable eliminiation
-        dlow = DAELow.lower(dae, false, false);
+        dlow = DAELow.lower(dae, Env.getFunctionTree(cache), false, false);
         RTOpts.setEliminationLevel(elimLevel); // Reset elimination level
-        flatModelicaStr = DAEDump.dumpStr(dae);
+        flatModelicaStr = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
         flatModelicaStr = stringAppend("OldEqStr={'", flatModelicaStr);
         flatModelicaStr = System.stringReplace(flatModelicaStr, "\n", "%##%");
         flatModelicaStr = System.stringReplace(flatModelicaStr, "%##%", "','");
@@ -2963,7 +2963,7 @@ algorithm
     case (cache,env,Absyn.CALL(function_ = Absyn.CREF_IDENT(name = "Eval",subscripts = {}),functionArgs = Absyn.FUNCTIONARGS(args = {e},argNames = {})),impl,st,msg)
       local DAE.Exp e_1;
       equation
-        (cache,e_1,_,_,_) = Static.elabExp(cache,env, e, impl, st,true,Prefix.NOPRE());
+        (cache,e_1,_,_) = Static.elabExp(cache,env, e, impl, st,true,Prefix.NOPRE());
         (cache,Values.CODE(Absyn.C_EXPRESSION(exp)),_) = Ceval.ceval(cache,env, e_1, impl, st, NONE, msg);
       then
         (cache,exp);
@@ -3420,7 +3420,7 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
-        = DAELow.lower(dae, false/* no dummy variable*/, true);
+        = DAELow.lower(dae, Env.getFunctionTree(cache), false/* no dummy variable*/, true);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
@@ -3460,7 +3460,7 @@ algorithm
         elimLevel = RTOpts.eliminationLevel();
         RTOpts.setEliminationLevel(0); // No variable elimination
         (dlow as DAELow.DAELOW(orderedVars = DAELow.VARIABLES(numberOfVars = varSize),orderedEqs = eqns))
-        = DAELow.lower(dae, false/* no dummy variable*/, true);
+        = DAELow.lower(dae, Env.getFunctionTree(cache), false/* no dummy variable*/, true);
         Debug.fcall("dumpdaelow", DAELow.dump, dlow);
         RTOpts.setEliminationLevel(elimLevel); // reset elimination level.
         eqnSize = DAELow.equationSize(eqns);
@@ -3490,7 +3490,7 @@ algorithm
         //UnitAbsynBuilder.registerUnits(ptot);
         //UnitParserExt.commit();
 
-        (cache, env, _, dae) =
+        (cache, env, _) =
         Inst.instantiateFunctionImplicit(inCache, InnerOuter.emptyInstHierarchy, p_1, className);
 
         // adrpo: do not store instantiated class as we don't use it later!
@@ -3807,9 +3807,9 @@ algorithm
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
-        dlow = DAELow.lower(dae, true, true);//Verificare cosa fa
+        dlow = DAELow.lower(dae, Env.getFunctionTree(cache), true, true);//Verificare cosa fa
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(dae);
+        funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
         XMLDump.dumpDAELow(dlow,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
@@ -3845,12 +3845,12 @@ algorithm
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
-        dlow = DAELow.lower(dae, true, true);
+        dlow = DAELow.lower(dae, Env.getFunctionTree(cache), true, true);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        (_,_,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()), Env.getFunctionTree(cache));
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(dae);
+        funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
         XMLDump.dumpDAELow(dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
@@ -3887,15 +3887,15 @@ algorithm
         (cache,env,_,dae_1) = Inst.instantiateClass(cache, InnerOuter.emptyInstHierarchy, p_1, classname);
         dae = DAEUtil.transformationsBeforeBackend(dae_1);
         ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(classname,dae,env));
-        dlow = DAELow.lower(dae, true, true);
+        dlow = DAELow.lower(dae, Env.getFunctionTree(cache), true, true);
         m = DAELow.incidenceMatrix(dlow);
         mT = DAELow.transposeMatrix(m);
-        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),DAEUtil.daeFunctionTree(dae));
+        (ass1,ass2,dlow_1,m,mT) = DAELow.matchingAlgorithm(dlow, m, mT, (DAELow.INDEX_REDUCTION(),DAELow.EXACT(), DAELow.REMOVE_SIMPLE_EQN()),Env.getFunctionTree(cache));
         (comps) = DAELow.strongComponents(m, mT, ass1, ass2);
         indexed_dlow = DAELow.translateDae(dlow_1,NONE());
         indexed_dlow_1 = DAELow.calculateValues(indexed_dlow);
         xml_filename = Util.stringAppendList({filenameprefix,".xml"});
-        funcelems = DAEUtil.getFunctionList(dae);
+        funcelems = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         Print.clearBuf();
         XMLDump.dumpDAELow(indexed_dlow_1,funcelems,addOriginalIncidenceMatrix,addSolvingInfo,addMathMLCode,dumpResiduals);
         xml_contents = Print.getString();
@@ -4355,13 +4355,13 @@ algorithm
         false = RTOpts.debugFlag("nogen");
         (cache,false) = Static.isExternalObjectFunction(cache,env,path); //ext objs functions not possible to Ceval.ceval.
         pathstr = generateFunctionName(path);
-        (cache,dae as DAE.DAE(elementLst = els),_) = cevalGenerateFunctionDAEs(cache, path, env, {});
+        (cache,_) = cevalGenerateFunctionDAEs(cache, path, env, {});
 
         // The list of functions is not ordered, so we need to filter out the main function...
-        mainFunction = DAEUtil.getNamedFunction(path, dae);
-        d = DAEUtil.getFunctionList(dae);
+        mainFunction = DAEUtil.getNamedFunction(path, Env.getFunctionTree(cache));
+        d = DAEUtil.getFunctionList(Env.getFunctionTree(cache));
         d = Util.listSetDifference(d, {mainFunction});
-        uniontypePaths = DAEUtil.getUniontypePaths(d, els);
+        uniontypePaths = DAEUtil.getUniontypePaths(d, {});
         (cache,metarecordTypes) = Lookup.lookupMetarecordsRecursive(cache, env, uniontypePaths, {});
 
         SimCode.translateFunctions(pathstr, mainFunction, d, metarecordTypes);
@@ -4391,10 +4391,9 @@ protected function cevalGenerateFunctionDAEs "function: cevalGenerateFunctionStr
   input Env.Env inEnv;
   input list<Absyn.Path> inAbsynPathLst;
   output Env.Cache outCache;
-  output DAE.DAElist outFns;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
-  (outCache,outDAE,outAbsynPathLst):=
+  (outCache,outAbsynPathLst):=
   matchcontinue (inCache,inPath,inEnv,inAbsynPathLst)
     local
       Absyn.Path gfmember,path;
@@ -4409,7 +4408,7 @@ algorithm
       equation
         gfmember = Util.listGetMemberOnTrue(path, gflist, ModUtil.pathEqual);
       then
-        (cache,DAEUtil.emptyDae,gflist);
+        (cache,gflist);
     case (cache,path,env,gflist) /* If getmember fails, path is not in generated functions list, hence generate it */
       equation
         false = RTOpts.debugFlag("nogen");
@@ -4417,24 +4416,22 @@ algorithm
         Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs starting*/");
         (cache,cls,env_1) = Lookup.lookupClass(cache,env, path, false);
         Debug.fprintln("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs instantiating*/");
-        (cache,env_2,_,d1) =
+        (cache,env_2,_) =
         Inst.implicitFunctionInstantiation(
            cache, env_1, InnerOuter.emptyInstHierarchy,
            DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cls, {});
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs getting functions: ");
-        calledfuncs = SimCode.getCalledFunctionsInFunction(path, gflist, d1);
+        calledfuncs = SimCode.getCalledFunctionsInFunction(path, gflist, Env.getFunctionTree(cache));
         gflist = path :: gflist; // In case the function is recursive
         calledfuncs = Util.listSetDifference(calledfuncs, gflist); // Filter out things we already know will be ignored...
         debugfuncs = Util.listMap(calledfuncs, Absyn.pathString);
         debugfuncsstr = Util.stringDelimitList(debugfuncs, ", ");
         Debug.fprint("ceval", debugfuncsstr);
         Debug.fprintln("ceval", "*/");
-        (cache,d2,gflist) = cevalGenerateFunctionDAEsList(cache,calledfuncs,env,gflist);
+        (cache,gflist) = cevalGenerateFunctionDAEsList(cache,calledfuncs,env,gflist);
         Debug.fprint("ceval", "/*- CevalScript.cevalGenerateFunctionDAEs prefixing dae */");
-        d_1 = ModUtil.stringPrefixParams(d1);
-        d = DAEUtil.joinDaes(d_1,d2);
       then
-        (cache,d,(path :: gflist));
+        (cache,(path :: gflist));
     case (_,path,env,_)
       local String ss1;
       equation
@@ -4464,10 +4461,9 @@ protected function cevalGenerateFunctionDAEsList "function: cevalGenerateFunctio
   input Env.Env inEnv2;
   input list<Absyn.Path> inAbsynPathLst3;
   output Env.Cache outCache;
-  output DAE.DAElist outDAE;
   output list<Absyn.Path> outAbsynPathLst;
 algorithm
-  (outCache,outDAE,outAbsynPathLst):=
+  (outCache,outAbsynPathLst):=
   matchcontinue (inCache,inAbsynPathLst1,inEnv2,inAbsynPathLst3)
     local
       list<Env.Frame> env;
@@ -4478,14 +4474,13 @@ algorithm
       Env.Cache cache;
       list<String> libs_1,libs_2;
       DAE.DAElist d,d1,d2;
-    case (cache,{},env,gflist) then (cache,DAEUtil.emptyDae,gflist);
+    case (cache,{},env,gflist) then (cache,gflist);
     case (cache,(first :: rest),env,gflist)
       equation
-        (cache,d1,gflist_1) = cevalGenerateFunctionDAEs(cache,first,env,gflist);
-        (cache,d2,gflist_2) = cevalGenerateFunctionDAEsList(cache,rest,env,gflist_1);
-        d = DAEUtil.joinDaes(d1,d2);
+        (cache,gflist_1) = cevalGenerateFunctionDAEs(cache,first,env,gflist);
+        (cache,gflist_2) = cevalGenerateFunctionDAEsList(cache,rest,env,gflist_1);
       then
-        (cache,d,gflist_2);
+        (cache,gflist_2);
   end matchcontinue;
 end cevalGenerateFunctionDAEsList;
 
