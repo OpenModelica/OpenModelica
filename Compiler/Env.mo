@@ -2297,11 +2297,11 @@ end getFunctionTree;
 public function addCachedInstFuncGuard
 "adds the FQ path to the set of instantiated functions as NONE().
 This guards against recursive functions."
-  input Cache inCache;
+  input Cache cache;
   input Absyn.Path func "fully qualified function name";
   output Cache outCache;
 algorithm
-  outCache := matchcontinue(inCache,func)
+  outCache := matchcontinue(cache,func)
     local
     	Option<EnvCache>[:] envCache;
     	DAE.FunctionTree[:] ef;
@@ -2309,15 +2309,17 @@ algorithm
     	Option<Env> ienv;
 
       /* Don't overwrite SOME() with NONE() */
-    case (inCache, func)
+    case (cache, func)
       equation
-        checkCachedInstFuncGuard(inCache, func);
-      then inCache;
+        checkCachedInstFuncGuard(cache, func);
+      then cache;
 
-    case (CACHE(envCache,ienv,ef),func)
+    case (CACHE(envCache,ienv,ef),func as Absyn.FULLYQUALIFIED(_))
       equation
         ef = arrayUpdate(ef,1,DAEUtil.avlTreeAdd(arrayGet(ef, 1),func,NONE()));
       then CACHE(envCache,ienv,ef);
+    // Non-FQ paths mean aliased functions; do not add these to the cache
+    case (cache,_) then (cache);
   end matchcontinue;
 end addCachedInstFuncGuard;
 
