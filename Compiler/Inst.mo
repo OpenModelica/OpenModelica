@@ -6148,7 +6148,7 @@ algorithm
           (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation
         (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache, env, n);
-        checkMultipleElementsIdentical((oldElt,oldMod),newComp);
+        checkMultipleElementsIdentical(cache,env,(oldElt,oldMod),newComp);
         alreadyDeclared = instStatusToBool(instStatus);
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then alreadyDeclared;
@@ -6229,10 +6229,12 @@ end instStatusToBool;
 protected function checkMultipleElementsIdentical
 "Checks that the old declaration is identical
  to the new one. If not, give error message"
+  input Env.Cache inCache; 
+  input Env.Env inEnv;
   input tuple<SCode.Element,DAE.Mod> oldComponent;
   input tuple<SCode.Element,DAE.Mod> newComponent;
 algorithm
-  _ := matchcontinue(oldComponent,newComponent)
+  _ := matchcontinue(inCache,inEnv,oldComponent,newComponent)
     local
       SCode.Element oldElt,newElt;
       DAE.Mod oldMod,newMod;
@@ -6247,22 +6249,69 @@ algorithm
       Option<Absyn.Exp> condition;
       Option<Absyn.Info> info;
       Option<Absyn.ConstrainClass> cc;
+      SCode.Mod smod1, smod2;
+      Env.Env env, env1, env2;
+      Env.Cache cache;
+      SCode.Class c1, c2;
+      Absyn.Path tpath1, tpath2;
+      Option<Absyn.Info> aInfo;
 
     // try equality first!
-    case((oldElt,oldMod),(newElt,newMod))
+    case(cache,env,(oldElt,oldMod),(newElt,newMod))
       equation
         // NOTE: Should be type identical instead? see spec.
         // p.23, check of flattening. "Check that duplicate elements are identical".
         true = SCode.elementEqual(oldElt,newElt);
       then ();
-
-    case ((oldElt,oldMod),(newElt,newMod))
+    
+    // adrpo: see if they are not syntactically equivalent, but semantically equivalent!
+    //        see Modelica Spec. 3.1, page 66.
+    // COMPONENT
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, io1, fp1, rp1, pp1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo, cc1),oldMod),
+                    (newElt as SCode.COMPONENT(n2, io2, fp2, rp2, pp2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _, cc2),newMod))
+      local
+        Boolean fp1,fp2,rp1,rp2,pp1,pp2;
+        Absyn.InnerOuter io1,io2;
+        SCode.Attributes attr1,attr2;
+        Absyn.TypeSpec tp1,tp2;
+        String n1, n2;
+        Absyn.Path tpath1, tpath2;
+        Option<Absyn.ArrayDim> ad1, ad2;
+        Option<Absyn.ConstrainClass> cc1, cc2;
+        Option<Absyn.Exp> cond1, cond2;
       equation
-      s1 = SCode.unparseElementStr(oldElt);
-      s2 = SCode.unparseElementStr(newElt);
-      Error.addMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL(),{s1,s2});
-      //print(" *** error message added *** \n");
-      then fail();
+        // see if the most stuff is the same!
+        true = stringEqual(n1, n2);
+        true = ModUtil.innerOuterEqual(io1, io2);        
+        true = Util.boolEqual(fp1, fp2);
+        true = Util.boolEqual(rp1, rp2);
+        true = Util.boolEqual(pp1, pp2);
+        true = SCode.attributesEqual(attr1, attr2);
+        true = SCode.modEqual(smod1, smod2);
+        equality(ad1 = ad2);
+        equality(cond1 = cond2);
+        equality(cc1 = cc2); // TODO! FIXME! this might fail because of different comments??!!
+        // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
+        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
+        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
+        // the class has the same environment
+        true = stringEqual(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
+        // the classes are the same!
+        true = SCode.classEqual(c1, c2);
+        // add a warning and let it continue!
+        s1 = SCode.unparseElementStr(oldElt);
+        s2 = SCode.unparseElementStr(newElt);
+        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL(),{s1,s2}, aInfo);
+      then ();    
+    
+    // fail baby and add a source message!
+    case (cache, env, (oldElt as SCode.COMPONENT(info=aInfo),oldMod),(newElt,newMod))
+      equation
+        s1 = SCode.unparseElementStr(oldElt);
+        s2 = SCode.unparseElementStr(newElt);
+        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL(),{s1,s2}, aInfo);
+        //print(" *** error message added *** \n");
+      then fail();        
   end matchcontinue;
 end checkMultipleElementsIdentical;
 

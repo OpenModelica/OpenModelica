@@ -228,6 +228,7 @@ public constant ErrorID MODIFICATION_INDEX_NOT_FOUND=140;
 public constant ErrorID DUPLICATE_MODIFICATIONS_WARNING=141;
 public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
 public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
+public constant ErrorID DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL=144;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -487,7 +488,9 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
 		      (BREAK_OUT_OF_LOOP, GRAMMAR(), WARNING(),
 		      "Break statement found inside a loop"),
           (DUPLICATE_ELEMENTS_NOT_IDENTICAL,TRANSLATION(),ERROR(),
-          "Duplicate elements (due to inherited elements) not identical, first element is: %s, second element is: %s"),
+          "Duplicate elements (due to inherited elements) not identical:\n\tfirst element is:  %s\tsecond element is: %s"),
+          (DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL,TRANSLATION(),WARNING(),
+          "Duplicate elements (due to inherited elements) not syntactically identical but semantically identical:\n\tfirst element is:  %s\tsecond element is: %s\tModelica specification requires that elements are exactly identical."),          
           (DUPLICATE_CLASSES_NOT_EQUIVALENT,TRANSLATION(),ERROR(),
           "Duplicate class definitions (due to inheritance) not equivalent, first definiton is: %s, second definition is: %s"),
           (PACKAGE_VARIABLE_NOT_CONSTANT, TRANSLATION(),ERROR(),"Variable %s in package %s is not constant"),
