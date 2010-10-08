@@ -5140,10 +5140,8 @@ algorithm
   end matchcontinue;
 end elabBuiltinMod;
 
-protected function elabBuiltinRem "function: elab_builtin_sqrt
-
-  This function elaborates on the builtin operator rem.
-"
+protected function elabBuiltinRem "function: elabBuiltinRem
+  This function elaborates on the builtin operator rem."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -5155,7 +5153,7 @@ protected function elabBuiltinRem "function: elab_builtin_sqrt
   output DAE.Properties outProperties;
   output DAE.DAElist outDae "contain functions";
 algorithm
-  (outCache,outExp,outProperties,outDae):=
+  (outCache,outExp,outProperties,outDae) :=
   matchcontinue (inCache,inEnv,inAbsynExpLst,inNamedArg,inBoolean,inPrefix)
     local
       DAE.Exp s1_1,s2_1;
@@ -5177,7 +5175,7 @@ algorithm
         Types.integerOrReal(cty1);
         cty2 = Types.arrayElementType(cty2);
         Types.integerOrReal(cty2);
-        (cache,s1_1,prop,dae) = elabCallArgs(cache,env, Absyn.IDENT("rem"), {s1,s2}, {}, impl, NONE,pre);
+        (cache,s1_1,prop,dae) = elabCallArgs(cache, env, Absyn.IDENT("rem"), {s1,s2}, {}, impl, NONE, pre);
       then
         (cache,s1_1,prop,dae);
   end matchcontinue;
@@ -6369,9 +6367,7 @@ end elabBuiltinCross2;
 
 protected function elabBuiltinString "
   author: PA
-
-  This function handles the built-in String operator.
-"
+  This function handles the built-in String operator."
 	input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -6403,6 +6399,8 @@ algorithm
       list<Slot> slots,newslots;
       DAE.DAElist dae,dae1,dae2;
       Prefix pre;
+    
+    // handle most of the stuff
     case (cache,env,args as e::_,nargs,impl,pre)
       equation
         (cache,exp,DAE.PROP(tp,c),_,dae1) = elabExp(cache,env, e, impl, NONE,true,pre);
@@ -6414,7 +6412,30 @@ algorithm
         slots = Util.if_(Types.isRealOrSubTypeReal(tp),
           listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})}),
           slots);
-        (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre);
+        (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache, env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre);
+        c = Util.listReduce(constlist, Types.constAnd);
+        dae = DAEUtil.joinDaes(dae1,dae2);
+        exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
+      then
+				(cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c),dae);
+    
+    // handle format
+    case (cache,env,args as e::_,nargs,impl,pre)
+      equation
+        (cache,exp,DAE.PROP(tp,c),_,dae1) = elabExp(cache,env, e, impl, NONE,true,pre);
+        
+        slots = {SLOT(("x",tp),false,NONE,{})};
+        
+        slots = Util.if_(Types.isRealOrSubTypeReal(tp),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("f")),{})}),
+          slots);
+        slots = Util.if_(Types.isIntegerOrSubTypeInteger(tp),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("d")),{})}),
+          slots);
+        slots = Util.if_(Types.isString(tp),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("s")),{})}),
+          slots);
+        (cache,args_1,newslots,constlist,_,dae2) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre);
         c = Util.listReduce(constlist, Types.constAnd);
         dae = DAEUtil.joinDaes(dae1,dae2);
         exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);

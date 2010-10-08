@@ -47,6 +47,11 @@ void init_modelica_string(modelica_string_t* dest, const char* str);
 
 void alloc_modelica_string(modelica_string_t* dest,int length);
 
+/* formatting String functions */
+void modelica_real_to_modelica_string_format(modelica_string_t* dest,modelica_real r, modelica_string_const format);
+void modelica_integer_to_modelica_string_format(modelica_string_t* dest,modelica_integer i, modelica_string_const format);
+void modelica_string_to_modelica_string_format(modelica_string_t* dest,modelica_string_const s, modelica_string_const format);
+
 void modelica_real_to_modelica_string(modelica_string_t* dest,modelica_real r,modelica_integer minLen,
 modelica_boolean leftJustified,modelica_integer signDigits);
 

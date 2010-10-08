@@ -1535,6 +1535,14 @@ algorithm
         Print.printBuf("end while;\n");
       then
         ();
+    case (DAE.STMT_NORETCALL(exp = e1),i)
+           local DAE.Exp e1;
+      equation
+        indent(i);
+        Exp.printExp(e1);
+        Print.printBuf(";\n");
+      then
+        ();        
     case (stmt as DAE.STMT_WHEN(exp = _),i)
       equation
         indent(i);

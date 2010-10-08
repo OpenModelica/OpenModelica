@@ -47,6 +47,37 @@ int modelica_string_length(modelica_string_const a)
     return strlen(a);
 }
 
+/* Convert a modelica_real to a modelica_string, used in String(real, format="xxx") */
+void modelica_real_to_modelica_string_format(modelica_string_t* dest,modelica_real r,modelica_string_const format)
+{
+  char formatStr[40];
+  char buf[400];
+  formatStr[0]='%';
+  sprintf(&formatStr[1], "%s", format);
+  sprintf(buf,formatStr,r);
+  init_modelica_string(dest,buf);
+}
+/* Convert a modelica_integer to a modelica_string, used in String(integer, format="xxx") */
+void modelica_integer_to_modelica_string_format(modelica_string_t* dest,modelica_integer i,modelica_string_const format)
+{
+  char formatStr[40];
+  char buf[400];
+  formatStr[0]='%';
+  sprintf(&formatStr[1], "%s", format);
+  sprintf(buf,formatStr,i);
+  init_modelica_string(dest,buf);
+}
+/* Convert a modelica_integer to a modelica_string, used in String(string, format="xxx") */
+void modelica_string_to_modelica_string_format(modelica_string_t* dest,modelica_string_const s,modelica_string_const format)
+{
+  char formatStr[40];
+  char buf[4000];
+  formatStr[0]='%';
+  sprintf(&formatStr[1], "%s", format);
+  sprintf(buf,formatStr,s);
+  init_modelica_string(dest,buf);
+}
+
 /* Convert a modelica_integer to a modelica_string, used in String(i) */
 
 void modelica_integer_to_modelica_string(modelica_string_t* dest,modelica_integer i, modelica_integer minLen,modelica_boolean leftJustified)

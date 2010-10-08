@@ -2726,27 +2726,28 @@ match fn
 case EXTERNAL_FUNCTION(__) then
   let()= System.tmpTickReset(1)
   let fname = underscorePath(name)
-  let retType = '<%fname%>_rettype'
+  let retType = if outVars then '<%fname%>_rettype' else "void"
   let &preExp = buffer "" /*BUFD*/
   let &varDecls = buffer "" /*BUFD*/
+  // make sure the variable is named "out", doh!
+  let retVar = if outVars then outDecl(retType, &varDecls /*BUFC*/)  
   let &outputAlloc = buffer "" /*BUFD*/
   let stateVar = tempDecl("state", &varDecls /*BUFC*/)
   let callPart = extFunCall(fn, &preExp /*BUFC*/, &varDecls /*BUFC*/)
   let _ = (outVars |> var =>
-      varInit(var, "out", i1, &varDecls /*BUFC*/, &outputAlloc /*BUFC*/)
+      varInit(var, retVar, i1, &varDecls /*BUFC*/, &outputAlloc /*BUFC*/)
     )
   let boxedFn = if acceptMetaModelicaGrammar() then functionBodyBoxed(fn)
   <<
-    <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
+  <%retType%> _<%fname%>(<%funArgs |> VARIABLE(__) => '<%expTypeArrayIf(ty)%> <%crefStr(name)%>' ;separator=", "%>)
   {
     <%varDecls%>
-    <%retType%> out;
     <%stateVar%> = get_memory_state();
     <%outputAlloc%>
     <%preExp%>
     <%callPart%>
     restore_memory_state(<%stateVar%>);
-    return out;
+    return <%if outVars then retVar%>;
   }
 
   <% if inFunc then
@@ -3040,8 +3041,7 @@ case ET_COMPLEX(varLst=vl, name=n) then
 end writeOutVarRecordMembers;
 
 
-template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/,
-        Text &varInits /*BUFP*/)
+template varInit(Variable var, String outStruct, Integer i, Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
  "Generates code to initialize variables.
   Does not return anything: just appends declarations to buffers."
 ::=
@@ -3054,7 +3054,8 @@ case var as VARIABLE(__) then
     ;separator=", ") 
   if instDims then
     let &varInits += 'alloc_<%expTypeShort(var.ty)%>_array(&<%varName%>, <%listLength(instDims)%>, <%instDimsInit%>);<%\n%>'
-    let &varInits += varDefaultValue(var, outStruct, i)
+    let defaultValue = varDefaultValue(var, outStruct, i, varName, &varDecls, &varInits)
+    let &varInits += defaultValue
     " "
   else
     match var.value
@@ -3066,13 +3067,18 @@ case var as VARIABLE(__) then
       ""
 end varInit;
 
-template varDefaultValue(Variable var, String outStruct, Integer i)
+template varDefaultValue(Variable var, String outStruct, Integer i, String lhsVarName,  Text &varDecls /*BUFP*/, Text &varInits /*BUFP*/)
 ::=
 match var
 case var as VARIABLE(__) then
   match value
   case SOME(CREF(componentRef = cr)) then
     'copy_<%expTypeShort(var.ty)%>_array_data(&<%crefStr(cr)%>, &<%outStruct%>.targ<%i%>);<%\n%>'
+  case SOME(arr as ARRAY(__)) then
+    let arrayExp = '<%daeExp(arr, contextFunction, &varInits /*BUFC*/, &varDecls /*BUFC*/)%>'
+    <<
+    copy_<%expTypeShort(var.ty)%>_array_data(&<%arrayExp%>, &<%lhsVarName%>);<%\n%>
+    >>
 end varDefaultValue;
 
 template functionArg(Variable var, Text &varInit)
@@ -4388,6 +4394,22 @@ template daeExpCall(Exp call, Context context, Text &preExp /*BUFP*/,
     let &preExp += 'identity_alloc_<%arr_tp_str%>(<%var1%>, &<%tvar%>);<%\n%>'
     tvar
   case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="rem"),
+            expLst={e1, e2}) then
+    let var1 = daeExp(e1, context, &preExp, &varDecls)
+    let var2 = daeExp(e2, context, &preExp, &varDecls)
+    let typeStr = expTypeFromExpShort(e1)
+    'mod_<%typeStr%>(<%var1%>,<%var2%>)'
+  case CALL(tuple_=false, builtin=true,
+            path=IDENT(name="String"),
+            expLst={s, format}) then
+    let tvar = tempDecl("modelica_string", &varDecls /*BUFC*/)
+    let sExp = daeExp(s, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let formatExp = daeExp(format, context, &preExp /*BUFC*/, &varDecls /*BUFC*/)
+    let typeStr = expTypeFromExpModelica(s)
+    let &preExp += '<%typeStr%>_to_modelica_string_format(&<%tvar%>, <%sExp%>, <%formatExp%>);<%\n%>'
+    tvar
+  case CALL(tuple_=false, builtin=true,
             path=IDENT(name="String"),
             expLst={s, minlen, leftjust}) then
     let tvar = tempDecl("modelica_string", &varDecls /*BUFC*/)
@@ -4896,6 +4918,13 @@ template daeExpMetaHelperBoxStart(Integer numVariables)
   else '(<%numVariables%>, '
 end daeExpMetaHelperBoxStart;
 
+template outDecl(String ty, Text &varDecls /*BUFP*/)
+ "Declares a temporary variable in varDecls and returns the name."
+::=
+  let newVar = 'out'
+  let &varDecls += '<%ty%> <%newVar%>;<%\n%>'
+  newVar
+end outDecl;
 
 template tempDecl(String ty, Text &varDecls /*BUFP*/)
  "Declares a temporary variable in varDecls and returns the name."
