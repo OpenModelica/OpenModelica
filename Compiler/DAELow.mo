@@ -5048,7 +5048,7 @@ algorithm
     // error reporting from now on
      
     // if equation that cannot be translated to if expression
-    case ((e as DAE.IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
+    case ((e as DAE.IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs,functionTree,states,vars,knvars,extVars,whenclauses)
       local String str;
       equation
         str = DAEDump.dumpElementsStr({e});
@@ -5058,7 +5058,7 @@ algorithm
         fail();
     
     // initial if equation that cannot be translated to if expression 
-    case ((e as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs),functionTree,states,vars,knvars,extVars,whenclauses)
+    case ((e as DAE.INITIAL_IF_EQUATION(condition1 = _, source = DAE.SOURCE(info = info))) :: xs,functionTree,states,vars,knvars,extVars,whenclauses)
       local String str;
       equation
         str = DAEDump.dumpElementsStr({e});

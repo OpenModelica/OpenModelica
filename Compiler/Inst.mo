@@ -1315,7 +1315,7 @@ algorithm
     case (cache,env,name,nn::names,(var as DAE.TYPES_VAR(_,_,_,ty,_,_))::vars,p) 
       equation
         // get Var
-        (cache,DAE.TYPES_VAR(name,attributes,protected_,_,binding,cnstOpt),outTplSCodeElementTypesModOption,instStatus,compenv)  = Lookup.lookupIdentLocal(cache, env, nn); 
+        (cache,DAE.TYPES_VAR(name,attributes,protected_,_,binding,cnstOpt),outTplSCodeElementTypesModOption,instStatus,compenv) = Lookup.lookupIdentLocal(cache, env, nn); 
         // print("updateEnumerationEnvironment1 -> component: " +& name +& " ty: " +& Types.printTypeStr(ty) +& "\n");
         // change type
         new_var = DAE.TYPES_VAR(name,attributes,protected_,ty,binding,cnstOpt);
@@ -5247,7 +5247,7 @@ algorithm
       Connect.Sets csets;
       ClassInf.State cistate;
       SCode.Element comp;
-      String n;
+      String n, ns;
       Boolean finalPrefix,repl,prot,flowPrefix,streamPrefix,impl;
       Absyn.InnerOuter io;
       SCode.Attributes attr;
@@ -5267,9 +5267,25 @@ algorithm
       InstanceHierarchy ih;
       Env.Cache cache;
       DAE.DAElist dae,dae1,dae2,dae3;
+      Absyn.TypeSpec tss;
+      Absyn.Path tpp;
+      SCode.Element selem;
+      DAE.Mod smod,compModLocal;
+      
 
     /* no more components. */
     case (cache,env,ih,_,_,_,_,{},_,_,_,_) then (cache,env,ih);
+
+    // adrpo: moved this check from instElement here as we should check this as early as possible!
+    // Check if component's name is the same as its type's name
+    case (cache,env,ih,mod,pre,csets,cistate,
+          ((comp as SCode.COMPONENT(component = n,typeSpec = (tss as Absyn.TPATH(tpp, _)), info = aInfo)),cmod)::xs, _, _, instdims,impl)
+      equation
+        true = stringEqual(n, Absyn.pathLastIdent(tpp));
+        ns = Env.printEnvPathStr(env) +& "." +& Absyn.pathString(tpp);
+        Error.addMessageOrSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns}, aInfo);
+      then
+        fail();
 
     /* A TPATH component */
     case (cache,env,ih,mod,pre,csets,cistate,
@@ -5287,11 +5303,6 @@ algorithm
                                    condition = aExp,
                                    info = aInfo,cc=cc)),cmod) :: xs),
         allcomps,eqns,instdims,impl)
-        local
-          Absyn.TypeSpec tss;
-          Absyn.Path tpp;
-          SCode.Element selem;
-          DAE.Mod smod,compModLocal;
       equation
         compModLocal = Mod.lookupModificationP(mod, tpp);
         m = traverseModAddFinal(m, finalPrefix);
@@ -5595,7 +5606,7 @@ algorithm
     // Illegal redeclarations
     case (cache,env,ih,store,mods,pre,csets,ci_state,(SCode.CLASSDEF(name = n),_),_,_,_)
       equation
-        (_,_,_,_,_) = Lookup.lookupIdentLocal(cache,env, n);
+        (_,_,_,_,_) = Lookup.lookupIdentLocal(cache, env, n);
         Error.addMessage(Error.REDECLARE_CLASS_AS_VAR, {n});
       then
         fail();
@@ -5639,17 +5650,6 @@ algorithm
         instClassDecl(cache,env,ih, classmod, pre, csets, c, inst_dims);
       then
         (cache,env_1,ih,store,dae,csets,ci_state,{},graph);
-
-    // Check if component's name is the same as its type's name
-    case (cache,env,ih,store,mods,pre,csets,ci_state,
-          ((comp as SCode.COMPONENT(component = n,typeSpec = ( ts as Absyn.TPATH(t, _)))),cmod),  inst_dims,impl,graph)
-      equation
-        true = stringEqual(n, Absyn.pathLastIdent(t));
-        ns = Absyn.pathString(t);
-        Error.addMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n,ns});
-      then
-        fail();
-
 
     // A component
     // This is the rule for instantiating a model component.  A component can be 
@@ -5716,7 +5716,7 @@ algorithm
         // TODO: Verfiy
         // The line below is commented out due to that it does not seem to have any effect on the system.
         // It will stay here until this can be confirmed.
-        //(cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
+        //(cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache, env2, n);
         //classmod_1 = Mod.lookupModificationP(mods_1, t);
         //mm_1 = Mod.lookupCompModification(mods_1, n);
         (cache,classmod_1) = Mod.updateMod(cache, env2, ih, pre, classmod, impl);
@@ -5861,7 +5861,7 @@ algorithm
 
         // Refetch the component from environment, since attributes, etc.
         // might have changed.. comp used in redeclare_type below...
-        // (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache,env2, n);
+        // (cache,_,SOME((comp,_)),_,_) = Lookup.lookupIdentLocal(cache, env2, n);
         // classmod_1 = Mod.lookupModificationP(mods_1, t);
         // mm_1 = Mod.lookupCompModification(mods_1, n);
         // (cache,m) = removeSelfModReference(cache,n,m); // Remove self-reference i.e. A a(x=a.y);
@@ -6125,7 +6125,7 @@ algorithm
           (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation
         (_,_,SOME((oldElt,oldMod)),instStatus,_) = Lookup.lookupIdentLocal(cache, env, n);
-        checkMultipleElementsIdentical((oldElt,oldMod),newComp);
+        checkMultipleElementsIdentical(cache,env,(oldElt,oldMod),newComp);
         alreadyDeclared = instStatusToBool(instStatus);
         ErrorExt.delCheckpoint("checkMultiplyDeclared");
       then alreadyDeclared;
@@ -6134,7 +6134,7 @@ algorithm
     case (cache,env,mod,prefix,csets,ciState,
           (newComp as (SCode.COMPONENT(component = n,finalPrefix = finalPrefix,replaceablePrefix = repl,protectedPrefix = prot),_)),_,_)
       equation
-        failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache,env, n));
+        failure((_,_,SOME((oldElt,oldMod)),_,_) = Lookup.lookupIdentLocal(cache, env, n));
         ErrorExt.rollBack("checkMultiplyDeclared");
       then false;
 
@@ -6206,10 +6206,12 @@ end instStatusToBool;
 protected function checkMultipleElementsIdentical
 "Checks that the old declaration is identical
  to the new one. If not, give error message"
+  input Env.Cache inCache; 
+  input Env.Env inEnv;
   input tuple<SCode.Element,DAE.Mod> oldComponent;
   input tuple<SCode.Element,DAE.Mod> newComponent;
 algorithm
-  _ := matchcontinue(oldComponent,newComponent)
+  _ := matchcontinue(inCache,inEnv,oldComponent,newComponent)
     local
       SCode.Element oldElt,newElt;
       DAE.Mod oldMod,newMod;
@@ -6224,22 +6226,69 @@ algorithm
       Option<Absyn.Exp> condition;
       Option<Absyn.Info> info;
       Option<Absyn.ConstrainClass> cc;
+      SCode.Mod smod1, smod2;
+      Env.Env env, env1, env2;
+      Env.Cache cache;
+      SCode.Class c1, c2;
+      Absyn.Path tpath1, tpath2;
+      Option<Absyn.Info> aInfo;
 
     // try equality first!
-    case((oldElt,oldMod),(newElt,newMod))
+    case(cache,env,(oldElt,oldMod),(newElt,newMod))
       equation
         // NOTE: Should be type identical instead? see spec.
         // p.23, check of flattening. "Check that duplicate elements are identical".
         true = SCode.elementEqual(oldElt,newElt);
       then ();
-
-    case ((oldElt,oldMod),(newElt,newMod))
+    
+    // adrpo: see if they are not syntactically equivalent, but semantically equivalent!
+    //        see Modelica Spec. 3.1, page 66.
+    // COMPONENT
+    case (cache,env,(oldElt as SCode.COMPONENT(n1, io1, fp1, rp1, pp1, attr1, tp1 as Absyn.TPATH(tpath1, ad1), smod1, _, cond1, aInfo, cc1),oldMod),
+                    (newElt as SCode.COMPONENT(n2, io2, fp2, rp2, pp2, attr2, tp2 as Absyn.TPATH(tpath2, ad2), smod2, _, cond2, _, cc2),newMod))
+      local
+        Boolean fp1,fp2,rp1,rp2,pp1,pp2;
+        Absyn.InnerOuter io1,io2;
+        SCode.Attributes attr1,attr2;
+        Absyn.TypeSpec tp1,tp2;
+        String n1, n2;
+        Absyn.Path tpath1, tpath2;
+        Option<Absyn.ArrayDim> ad1, ad2;
+        Option<Absyn.ConstrainClass> cc1, cc2;
+        Option<Absyn.Exp> cond1, cond2;
       equation
-      s1 = SCode.unparseElementStr(oldElt);
-      s2 = SCode.unparseElementStr(newElt);
-      Error.addMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL(),{s1,s2});
-      //print(" *** error message added *** \n");
-      then fail();
+        // see if the most stuff is the same!
+        true = stringEqual(n1, n2);
+        true = ModUtil.innerOuterEqual(io1, io2);        
+        true = Util.boolEqual(fp1, fp2);
+        true = Util.boolEqual(rp1, rp2);
+        true = Util.boolEqual(pp1, pp2);
+        true = SCode.attributesEqual(attr1, attr2);
+        true = SCode.modEqual(smod1, smod2);
+        equality(ad1 = ad2);
+        equality(cond1 = cond2);
+        equality(cc1 = cc2); // TODO! FIXME! this might fail because of different comments??!!
+        // if we lookup tpath1 and tpath2 and reach the same class, we're fine!
+        (_, c1, env1) = Lookup.lookupClass(cache, env, tpath1, false);
+        (_, c2, env2) = Lookup.lookupClass(cache, env, tpath2, false);
+        // the class has the same environment
+        true = stringEqual(Env.printEnvPathStr(env1), Env.printEnvPathStr(env2));
+        // the classes are the same!
+        true = SCode.classEqual(c1, c2);
+        // add a warning and let it continue!
+        s1 = SCode.unparseElementStr(oldElt);
+        s2 = SCode.unparseElementStr(newElt);
+        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_SYNTACTICALLY_IDENTICAL(),{s1,s2}, aInfo);
+      then ();    
+    
+    // fail baby and add a source message!
+    case (cache, env, (oldElt as SCode.COMPONENT(info=aInfo),oldMod),(newElt,newMod))
+      equation
+        s1 = SCode.unparseElementStr(oldElt);
+        s2 = SCode.unparseElementStr(newElt);
+        Error.addMessageOrSourceMessage(Error.DUPLICATE_ELEMENTS_NOT_IDENTICAL(),{s1,s2}, aInfo);
+        //print(" *** error message added *** \n");
+      then fail();        
   end matchcontinue;
 end checkMultipleElementsIdentical;
 
@@ -13565,7 +13614,7 @@ algorithm
     case (cache,env,ih,pre,mods,(cr :: rest),ci_state,csets,impl,updatedComps)
       equation
         n = Absyn.printComponentRefStr(cr);
-        (_,DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache,env, n);
+        (_,DAE.TYPES_VAR(binding = DAE.VALBOUND(valBound=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
         (cache,env_2,ih,csets,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, rest, ci_state, csets, impl, updatedComps);
       then
         (cache,env_2,ih,csets,updatedComps);
@@ -13573,7 +13622,7 @@ algorithm
     case (cache,env,ih,pre,mods,(cr :: rest),ci_state,csets,impl,updatedComps)
       equation
         n = Absyn.printComponentRefStr(cr);
-        (_,DAE.TYPES_VAR(binding = DAE.EQBOUND(exp=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache,env, n);
+        (_,DAE.TYPES_VAR(binding = DAE.EQBOUND(exp=_)),SOME((_,_)),_,_) = Lookup.lookupIdentLocal(cache, env, n);
         (cache,env_2,ih,csets,updatedComps) = updateComponentsInEnv2(cache, env, ih, pre, mods, rest, ci_state, csets, impl, updatedComps);
       then
         (cache,env_2,ih,csets,updatedComps);

@@ -185,6 +185,7 @@ protected import Types;
 protected import Debug;
 protected import OptManager;
 protected import RTOpts;
+protected import Error;
 
 public constant Env emptyEnv={} "- Values" ;
 
@@ -605,7 +606,7 @@ algorithm
   end matchcontinue;
 end extendFrameT;
 
-public function extendFrameI "function: extendsFrameI
+public function extendFrameI "function: extendFrameI
   Adds an import statement to the environment."
   input Env inEnv;
   input Absyn.Import inImport;
@@ -1560,23 +1561,37 @@ input AvlValue v;
 output String str;
 algorithm
   str := matchcontinue(v)
-  local String name; DAE.Type tp; Absyn.Import imp;
-    case(VAR(instantiated=DAE.TYPES_VAR(name=name,type_=tp))) equation
-      str = "v: " +& name +& " " +& Types.unparseType(tp) +& "("
-      +& Types.printTypeStr(tp) +& ")";
-    then str;
-    case(CLASS(class_=SCode.CLASS(name=name))) equation
-      str = "c: " +& name;
-    then str;
-    case(TYPE(tp::_)) equation
-      str = "t: " +& Types.unparseType(tp);
-    then str;
-    case(IMPORT(imp)) equation
-      str = "imp: " +& Dump.unparseImportStr(imp);
-    then str;
+    local 
+      String name; DAE.Type tp; Absyn.Import imp;
+      Absyn.TypeSpec tsp;
+      
+    case(VAR(instantiated=DAE.TYPES_VAR(name=name,type_=tp))) 
+      equation
+        str = "var:    " +& name +& " " +& Types.unparseType(tp) +& "("
+        +& Types.printTypeStr(tp) +& ")";
+      then str;
+    
+    case(VAR(declaration = SOME((SCode.COMPONENT(component=name,typeSpec=tsp), _)))) 
+      equation
+        str = "var:    " +& name +& " " +& Dump.unparseTypeSpec(tsp);    
+      then str;
+    
+    case(CLASS(class_=SCode.CLASS(name=name))) 
+      equation
+        str = "class:  " +& name;
+      then str;
+    
+    case(TYPE(tp::_)) 
+      equation
+        str = "type:   " +& Types.unparseType(tp);
+      then str;
+    
+    case(IMPORT(imp)) 
+      equation
+        str = "import: " +& Dump.unparseImportStr(imp);
+      then str;
   end matchcontinue;
 end valueStr;
-
 
 /* Generic Code below */
 public
@@ -1630,6 +1645,7 @@ algorithm
       Integer rhval,h;
       AvlTree t_1,t,right_1,left_1,bt;
     
+    /* adrpo 2010-10-07: what is this??? WHAT is "lskf" KEY??
     // empty tree
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key as "lskf",value)
       then AVLTREENODE(SOME(AVLTREEVALUE(key,value)),1,NONE,NONE);
@@ -1640,7 +1656,7 @@ algorithm
         true = stringEqual(rkey, key);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
       then
-        bt;
+        bt;*/
         
     // empty tree
     case (AVLTREENODE(value = NONE,height=h,left = NONE,right = NONE),key,value)
@@ -1649,7 +1665,9 @@ algorithm
 		// replace this node
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = right),key,value)
       equation
-        true = stringEqual(rkey, key);
+        0 = System.strcmp(key,rkey); // equal
+        // inactive for now, but we should check if we don't replace a class with a var or vice-versa!
+        // checkValueReplacementCompatible(rval, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,value)),h,left,right));
       then
         bt;
@@ -1657,7 +1675,7 @@ algorithm
     // insert to right
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left,right = (right)),key,value)
       equation
-        true = System.strcmp(key,rkey) > 0;
+        1 = System.strcmp(key,rkey); // bigger
         t = createEmptyAvlIfNone(right);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,left,SOME(t_1)));
@@ -1667,7 +1685,7 @@ algorithm
     // insert to left subtree
     case (AVLTREENODE(value = SOME(AVLTREEVALUE(rkey,rval)),height=h,left = left ,right = right),key,value)
       equation
-        /* true = System.strcmp(key,rkey) < 0; */
+        -1 = System.strcmp(key,rkey); // smaller
         t = createEmptyAvlIfNone(left);
         t_1 = avlTreeAdd(t, key, value);
         bt = balance(AVLTREENODE(SOME(AVLTREEVALUE(rkey,rval)),h,SOME(t_1),right));
@@ -1681,6 +1699,81 @@ algorithm
         fail();
   end matchcontinue;
 end avlTreeAdd;
+
+protected function checkValueReplacementCompatible
+"@author: adrpo 2010-10-07
+  This function checks if what we replace in the environment 
+  is compatible with the value we want to replace with.
+  VAR<->VAR OK
+  CLASS<->CLASS OK
+  TYPE<->TYPE OK
+  IMPORT<->IMPORT OK
+  All the other replacements will output a warning!"
+  input AvlValue val1;
+  input AvlValue val2;
+algorithm
+  _ := matchcontinue(val1, val2)
+    local
+      Option<Absyn.Info> aInfo;
+      String n1, n2;
+
+    // var can replace var
+    case (VAR(instantiated = _), VAR(instantiated = _)) then ();
+    // class can replace class
+    case (CLASS(class_ = _),     CLASS(class_ = _)) then ();
+    // type can replace type
+    case (TYPE(list_ = _),       TYPE(list_ = _)) then ();
+    // import can replace import
+    case (IMPORT(import_ = _),   IMPORT(import_ = _)) then ();
+    // anything else is an error!
+    case (val1, val2)
+      equation
+        (n1, n2, aInfo) = getNamesAndInfoFromVal(val1, val2); 
+        Error.addMessageOrSourceMessage(Error.COMPONENT_NAME_SAME_AS_TYPE_NAME, {n1,n2}, aInfo);
+      then 
+        ();
+  end matchcontinue;
+end checkValueReplacementCompatible;
+
+protected function getNamesAndInfoFromVal
+  input AvlValue val1;
+  input AvlValue val2;
+  output String name1;
+  output String name2;
+  output Option<Absyn.Info> info;
+algorithm
+  (name1, name2, info) := matchcontinue(val1, val2)
+    local
+      Option<Absyn.Info> aInfo;
+      String n1, n2, n;
+      Env env;
+    
+    // var should not be replaced by class!
+    case (VAR(declaration = SOME((SCode.COMPONENT(component = n1, info = aInfo), _))), 
+          CLASS(class_ = SCode.CLASS(name = n2, info = _), env = env))
+      equation
+         n = printEnvPathStr(env);
+         n2 = n +& "." +& n2;
+      then 
+        (n1, n2, aInfo);
+    
+    // class should not be replaced by var!
+    case (CLASS(class_ = _), VAR(instantiated = _))
+      equation
+        // call ourselfs reversed
+        (n1, n2, aInfo) = getNamesAndInfoFromVal(val2, val1); 
+      then 
+        (n1, n2, aInfo);
+    
+    // anything else that might happen??
+    case (val1, val2)
+      equation
+        n1 = valueStr(val1);
+        n2 = valueStr(val2);
+      then 
+        (n1, n2, NONE());
+  end matchcontinue;
+end getNamesAndInfoFromVal;
 
 protected function createEmptyAvlIfNone "Help function to AvlTreeAdd2"
   input Option<AvlTree> t;

@@ -1520,6 +1520,7 @@ algorithm
         (cache,fv,c,i,_) = lookupVar2(cache, ht, id);
       then
         (cache,fv,c,i);
+    
     case (cache,(_ :: rest),id)
       equation
         (cache,fv,c,i) = lookupIdent(cache, rest, id);
@@ -2306,21 +2307,44 @@ algorithm
       Env.InstStatus i;
       list<Env.Frame> env;
       Env.AvlTree ht;
-      String id;
+      String id, name;
       Env.Cache cache;
+      SCode.Restriction r;
+
     case (cache,ht,id)
       equation
         Env.VAR(fv,c,i,env) = Env.avlTreeGet(ht, id);
       then
         (cache,fv,c,i,env);
+    
+    /* TODO! FIXME!
+    // adrpo: we should check if we get a class when searching for a var!
+    //        unfortunately this does not work as in Inst.instElement we
+    //        do Lookup.lookupIdentLocal(A_CLASS_NAME) to check if a class
+    //        is redeclared as variable.
+    case (cache,ht,id)
+      equation
+        Env.CLASS(SCode.CLASS(name = name, restriction = r), env) = Env.avlTreeGet(ht, id);
+        failure(equality(r = SCode.R_ENUMERATION())); // filter out enumerations as StateSelect is both a type and a component!
+        failure(equality(r = SCode.R_PACKAGE())); // filter out packages!        
+        name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;
+        Error.addMessage(Error.LOOKUP_COMP_FOUND_TYPE, {name});
+      then
+        fail();*/
+    case (cache,ht,id)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Env.CLASS(SCode.CLASS(name = name, restriction = r), env) = Env.avlTreeGet(ht, id);
+        name = id +& " = " +& Env.printEnvPathStr(env) +& "." +& name;        
+        Debug.traceln("- Lookup.lookupVar2 failed because we find a class instead of a variable: " +& name);
+      then
+        fail();        
   end matchcontinue;
 end lookupVar2;
 
 protected function checkSubscripts "function: checkSubscripts
-
   This function checks a list of subscripts agains type, and removes
-  dimensions from the type according to the subscripting.
-"
+  dimensions from the type according to the subscripting."
   input DAE.Type inType;
   input list<DAE.Subscript> inExpSubscriptLst;
   output DAE.Type outType;

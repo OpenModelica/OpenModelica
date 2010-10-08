@@ -1134,7 +1134,8 @@ algorithm
         mod_str = printModStr(mod);
         s = Dump.unparseTypeSpec(typath);
         vs = unparseVariability(var);
-        res = Util.stringAppendList({ioStr,vs," ",s," ",n,mod_str,";\n"});
+        vs = Util.if_(stringEqual(vs, ""), "", vs +& " ");
+        res = Util.stringAppendList({ioStr,vs,s," ",n," ",mod_str,";\n"});
       then
         res;
 
@@ -1540,6 +1541,9 @@ public function elementEqual
       Absyn.Path path1, path2;
       Option<String> os1,os2;
       Option<Real> or1,or2;
+      Option<Absyn.Exp> cond1, cond2;
+      Option<Absyn.ConstrainClass> cc1, cc2;
+      
      case (CLASSDEF(name1,f1,r1,cl1,_),CLASSDEF(name2,f2,r2,cl2,_))
        equation
          b1 = stringEqual(name1,name2);
@@ -1548,8 +1552,10 @@ public function elementEqual
          b3 = classEqual(cl1,cl2);
          equal = Util.boolAndList({b1,b2,b3});
        then equal;
-     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,_,_,_), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,_,_,_))
+     case (COMPONENT(name1,io,f1,r1,p1,attr1,tp1,mod1,_,cond1,_,cc1), COMPONENT(name2,io2,f2,r2,p2,attr2,tp2,mod2,_,cond2,_,cc2))
        equation
+         equality(cond1 = cond2);
+         equality(cc1 = cc2); // TODO! FIXME! this might fail for different comments!
          b1 = stringEqual(name1,name2);
          b1a = ModUtil.innerOuterEqual(io,io2);
          b2 = Util.boolEqual(f1,f2);
@@ -2076,7 +2082,7 @@ algorithm
   end matchcontinue;
 end subscriptsEqual;
 
-protected function attributesEqual
+public function attributesEqual
 "function attributesEqual
 	Returns true if two Atributes are equal"
    input Attributes attr1;
@@ -2096,7 +2102,7 @@ algorithm
         	b3 = accessibilityEqual(acc1,acc2);
         	b4 = variabilityEqual(var1,var2);
         	b5 = directionEqual(dir1,dir2);
-            b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors
+          b6 = Util.boolEqual(st1,st2);  // added Modelica 3.1 stream connectors
         	equal = Util.boolAndList({b1,b2,b3,b4,b5,b6});
         then equal;
   end matchcontinue;
