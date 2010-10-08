@@ -63,6 +63,14 @@ public function trimChar
 end trimChar;
 
 public function strcmp
+"This function returns:
+  0 if inString1 == inString2
+  1 if inString1 >  inString2
+ -1 if inString1 <  inString2
+ This is different from what C strcmp
+ returns (negative values if <, positive values if >).
+ We fix negative values to -1 and positive to +1 so
+ we can pattern match on them directly in MetaModelica!"
   input String inString1;
   input String inString2;
   output Integer outInteger;

@@ -117,6 +117,9 @@ algorithm
       Prefix.Prefix pre;
       SCode.Mod scodeMod;
       Boolean finalPrefix;
+
+    /* no further elements to instantiate */
+    case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
       
     /* instantiate a base class */
     case (cache,env,ih,mod,pre,(SCode.EXTENDS(baseClassPath = tp,modifications = emod) :: rest),ci_state,className,impl,isPartialInst)
@@ -135,6 +138,7 @@ algorithm
         outermod = Mod.lookupModificationP(mod, Absyn.IDENT(cn));
         
         (cache,cenv1,ih,els,eq1,ieq1,alg1,ialg1) = instDerivedClasses(cache,cenv,ih, outermod, c, impl);
+        
         (cache,tp_1) = Inst.makeFullyQualified(cache,/* adrpo: cenv1?? FIXME */env, tp);
         
         eq1_1 = Util.if_(isPartialInst, {}, eq1);
@@ -241,13 +245,16 @@ algorithm
       then
         (cache,env_1,ih,mods,((elt,DAE.NOMOD(),false) :: compelts2),eq2,initeq2,alg2,ialg2);
 
-    /* no further elements to instantiate */
-    case (cache,env,ih,mod,pre,{},ci_state,className,impl,_) then (cache,env,ih,mod,{},{},{},{},{});
-
     /* instantiation failed */
-    case (_,_,_,_,_,_,_,_,_,_)
+    case (cache,env,ih,mod,pre,rest,ci_state,className,_,_)
       equation
-        Debug.fprint("failtrace", "- Inst.instExtendsList failed\n");
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- Inst.instExtendsList failed on:\n\t" +&
+          "className: " +&  className +& "\n\t" +&
+          "env:       " +&  Env.printEnvPathStr(env) +& "\n\t" +&
+          "mods:      " +&  Mod.printModStr(mod) +& "\n\t" +&
+          "elems:     " +&  Util.stringDelimitList(Util.listMap(rest, SCode.printElementStr), ", ")
+          );
       then
         fail();
   end matchcontinue;
@@ -678,6 +685,14 @@ algorithm
         failure(_ = HashTableStringToPath.get(id, ht));
         ht = HashTableStringToPath.add((id,p), ht);
       then ht;
+    // adrpo: 2010-10-07 handle unqualified imports!!! TODO! FIXME! should we just ignore them??
+    //                   this fixes bug: #1234 https://openmodelica.org:8443/cb/issue/1234
+    case (SCode.IMPORT(imp = Absyn.UNQUAL_IMPORT(path = p)),ht)
+      equation
+        id = Absyn.pathLastIdent(p);
+        failure(_ = HashTableStringToPath.get(id, ht));
+        ht = HashTableStringToPath.add((id,p), ht);
+      then ht;        
   end matchcontinue;
 end getLocalIdentElement;
 

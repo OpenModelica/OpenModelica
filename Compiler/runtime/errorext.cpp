@@ -77,7 +77,7 @@ bool error_on=true;
       ErrorMessage *msg = new ErrorMessage((long)errorID, std::string(type ), std::string(severity), /*std::string(message),*/ tmp, tokens);
       if (errorMessageQueue.empty() ||
       (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-           //std::cout << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
+           // std::cerr << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl; fflush(stderr);
            errorMessageQueue.push(msg);
         }
     }
@@ -87,8 +87,8 @@ bool error_on=true;
 
       if (errorMessageQueue.empty() ||
       (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-           //std::cout << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
-           //std::cout << "values: " << finfo.rs << " " << finfo.ce << std::endl;
+           // std::cerr << "inserting error message "<< msg->getFullMessage() << " on variable "<< currVariable << std::endl;
+           // std::cerr << "values: " << finfo.rs << " " << finfo.ce << std::endl; fflush(stderr);
            errorMessageQueue.push(msg);
         }
     }
@@ -136,7 +136,7 @@ bool error_on=true;
          std::string(filename));
     if (errorMessageQueue.empty() ||
   (!errorMessageQueue.empty() && errorMessageQueue.top()->getFullMessage() != msg->getFullMessage())) {
-      /*std::cerr << "inserting error message "<< msg.getFullMessage() << std::endl;*/
+      // std::cerr << "inserting error message "<< msg->getFullMessage() << std::endl; fflush(stderr);
       errorMessageQueue.push(msg);
     }
 }
@@ -169,14 +169,14 @@ extern "C"
   void setCheckpoint(const char* id)
   {
     checkPoints.push_back(make_pair(errorMessageQueue.size(),string(id)));
-    //printf("checkPoint(%s)\n",id);
+    // fprintf(stderr, "setCheckpoint(%s)\n",id); fflush(stderr);
     //printf(" ERROREXT: setting checkpoint: (%d,%s)\n",(int)errorMessageQueue.size(),id);
   }
   
   void delCheckpoint(const char* id)
   {
     pair<int,string> cp;
-    //printf("delCheckpoint(%s)\n",id);
+    // fprintf(stderr, "delCheckpoint(%s)\n",id); fflush(stderr);
     if(checkPoints.size() > 0){
       //printf(" ERROREXT: deleting checkpoint: %d\n", checkPoints[checkPoints.size()-1]);
 
@@ -201,7 +201,7 @@ extern "C"
 
   void rollBack(const char* id)
   {
-    //printf("rollBack(%s)\n",id);
+    // fprintf(stderr, "rollBack(%s)\n",id); fflush(stderr);
     if(checkPoints.size() > 0){
       //printf(" ERROREXT: rollback to: %d from %d\n",checkPoints.back(),errorMessageQueue.size());
       std::string res("");
@@ -238,6 +238,7 @@ extern "C"
   void* rollBackAndPrint(const char* id)
   {
     std::string res("");
+    // fprintf(stderr, "rollBackAndPrint(%s)\n",id); fflush(stderr);
     if(checkPoints.size() > 0){
       while(errorMessageQueue.size() > checkPoints.back().first && errorMessageQueue.size() > 0){
         res = errorMessageQueue.top()->getMessage()+string("\n")+res;

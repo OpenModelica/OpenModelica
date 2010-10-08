@@ -227,6 +227,7 @@ public constant ErrorID MODIFICATION_OVERLAP=139;
 public constant ErrorID MODIFICATION_INDEX_NOT_FOUND=140;
 public constant ErrorID DUPLICATE_MODIFICATIONS_WARNING=141;
 public constant ErrorID GENERATECODE_INVARS_HAS_FUNCTION_PTR=142;
+public constant ErrorID LOOKUP_COMP_FOUND_TYPE=143;
 
 
 public constant ErrorID UNBOUND_PARAMETER_WITH_START_VALUE_WARNING=499;
@@ -417,6 +418,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           "%s found in several unqualified import statements."),
           (LOOKUP_TYPE_FOUND_COMP,TRANSLATION(),ERROR(),
           "Found a component with same name when looking for type %s"),
+          (LOOKUP_COMP_FOUND_TYPE,TRANSLATION(),WARNING(),
+          "Found a type with same name when looking for component %s"),          
           (LOOKUP_ENCAPSULATED_RESTRICTION_VIOLATION,TRANSLATION(),
           ERROR(),"Lookup is restricted to encapsulated elements only, violated in %s"),
           (REFERENCE_PROTECTED,TRANSLATION(),ERROR(),
@@ -594,7 +597,7 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (META_FUNCTION_TYPE_NO_PARTIAL_PREFIX, TRANSLATION(),ERROR(), "%s is used as a function reference, but doesn't specify the partial prefix."),
           (IF_EQUATION_WARNING,SYMBOLIC(),WARNING(), "If-equations are only partially supported. Ignoring %s"),
           (EQUATION_GENERIC_FAILURE,TRANSLATION(),ERROR(),"Failed to instantiate equation %s"),
-          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s . This is forbidden by Modelica specifications and may lead to lookup error"),
+          (COMPONENT_NAME_SAME_AS_TYPE_NAME,GRAMMAR(),WARNING(),"Component %s has the same name as its type %s.\n\tThis is forbidden by Modelica specifications and may lead to lookup errors."),
           (META_MATCH_EQUATION_FORBIDDEN,TRANSLATION(),ERROR(),"Match expression equation sections forbid the use of %s-equations."),
           (META_UNIONTYPE_ALIAS_MODS,TRANSLATION(),ERROR(),"Uniontype was not generated correctly. One possible cause is modifications, which are not allowed."),
           (META_COMPLEX_TYPE_MOD,TRANSLATION(),ERROR(),"MetaModelica complex types may not have modifiers."),
