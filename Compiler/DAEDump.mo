@@ -2628,12 +2628,14 @@ algorithm
   outStream := matchcontinue (dae,functionTree,inStream)
     local      
       list<DAE.Element> daelist;
-      DAE.FunctionTree funcs;
+      list<DAE.Function> funcs;
       IOStream.IOStream str;
 
     case (DAE.DAE(daelist), functionTree, str)
       equation
-        str = Util.listFold(sortFunctions(DAEUtil.getFunctionList(functionTree)), dumpFunctionStream, str);
+        funcs = DAEUtil.getFunctionList(functionTree);
+        funcs = sortFunctions(funcs);
+        str = Util.listFold(funcs, dumpFunctionStream, str);
         str = IOStream.appendList(str, Util.listMap(daelist, dumpExtObjClassStr));
         str = Util.listFold(daelist, dumpCompElementStream, str);
       then

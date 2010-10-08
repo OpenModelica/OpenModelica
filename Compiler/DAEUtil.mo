@@ -3375,12 +3375,31 @@ algorithm
   fns := matchcontinue ft
     local
       list<tuple<DAE.AvlKey,DAE.AvlValue>> lst;
+      Absyn.Path path;
+      String str;
     case ft
       equation
         lst = avlTreeToList(ft);
       then Util.listMapMap(lst, Util.tuple22, Util.getOption);
+    case ft
+      equation
+        lst = avlTreeToList(ft);
+        ((path,_)) = Util.listSelectFirst(lst, isInvalidFunctionEntry);
+        str = Absyn.pathString(path);
+        Error.addMessage(Error.NON_INSTANTIATED_FUNCTION, {str});
+      then fail();
   end matchcontinue;
 end getFunctionList;
+
+protected function isInvalidFunctionEntry
+  input tuple<DAE.AvlKey,DAE.AvlValue> tpl;
+  output Boolean b;
+algorithm
+  b := matchcontinue tpl
+    case ((_,NONE())) then true;
+    case ((_,_)) then false;
+  end matchcontinue;
+end isInvalidFunctionEntry;
 
 public function traverseDAE " This function traverses all dae exps.
 NOTE, it also traverses DAE.VAR(componenname) as an expression."
@@ -5204,6 +5223,7 @@ algorithm
     case ({},tree) then tree;
     case (func::funcs,tree)
       equation
+        // print("Add to cache: " +& Absyn.pathString(functionName(func)) +& "\n");
         tree = avlTreeAdd(tree,functionName(func),SOME(func));
       then addDaeFunction(funcs,tree);
 

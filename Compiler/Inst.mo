@@ -9731,9 +9731,9 @@ dae and can be generated code for in case they are required"
   input Absyn.Path path "the function name itself, must be added to derivative functions mapping to be able to search upwards";
   output Env.Cache outCache;
 algorithm
-  //print("instantiate deriative functions for "+&Absyn.pathString(path)+&"\n");
+ // print("instantiate deriative functions for "+&Absyn.pathString(path)+&"\n");
  (outCache) := instantiateDerivativeFuncs2(cache,env,ih,DAEUtil.getDerivativePaths(funcs),path);
- //print("instantiated derivative functions"+&DAEDump.dumpStr(dae)+&"\n");
+ // print("instantiated derivative functions for "+&Absyn.pathString(path)+&"\n");
 end instantiateDerivativeFuncs;
 
 protected function instantiateDerivativeFuncs2 "help function"
@@ -9745,9 +9745,12 @@ protected function instantiateDerivativeFuncs2 "help function"
   output Env.Cache outCache;
 algorithm
   (outCache) := matchcontinue(cache,env,ih,paths,path)
-    local Absyn.Path p; Env.Env cenv;
+    local
+      list<DAE.Function> funcs;
+      Absyn.Path p;
+      DAE.DAElist dae1,dae2;
+      Env.Env cenv;
       SCode.Class cdef;
-    DAE.DAElist dae1,dae2;
     case(cache,env,ih,{},path) then (cache);
     /* Skipped recursive calls (by looking in cache) */
     case(cache,env,ih,p::paths,path)
@@ -9755,7 +9758,7 @@ algorithm
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = makeFullyQualified(cache,cenv,p);
         Env.checkCachedInstFuncGuard(cache,p);
-        (cache) = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
+        cache = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
       then (cache);
 
 
@@ -9764,35 +9767,17 @@ algorithm
         (cache,cdef,cenv) = Lookup.lookupClass(cache,env,p,true);
         (cache,p) = makeFullyQualified(cache,cenv,p);
         // add to cache before instantiating, to break recursion for recursive definitions.
-        cache = Env.addCachedInstFuncGuard(cache,path);
         cache = Env.addCachedInstFuncGuard(cache,p);
-        (cache,_,ih) = implicitFunctionInstantiation(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
-
-        cache = addNameToDerivativeMapping(cache,path);
+        (cache,_,ih,funcs) = implicitFunctionInstantiation2(cache,cenv,ih,DAE.NOMOD(),Prefix.NOPRE(), Connect.emptySet,cdef,{});
+        
+        funcs = addNameToDerivativeMapping(funcs,path);
+        cache = Env.addDaeFunction(cache, funcs);
         cache = instantiateDerivativeFuncs2(cache,env,ih,paths,path);
       then (cache);
   end matchcontinue;
 end instantiateDerivativeFuncs2;
 
-protected function addNameToDerivativeMapping "adds the function name to the lowerOrderDerivatives list of the function mapping "
-  input Env.Cache cache;
-  input Absyn.Path name;
-  output Env.Cache outCache;
-algorithm
-  outCache := cache; /* matchcontinue(dae,name)
-  local
-    DAE.FunctionTree funcs;
-    list<DAE.Element> elts;
-
-    case(DAE.DAE(elts,funcs),name)
-      equation
-        elts = addNameToDerivativeMappingElts(elts,name);
-      then DAE.DAE(elts,funcs);
-  end matchcontinue; */
-end addNameToDerivativeMapping;
-
-/*
-protected function addNameToDerivativeMappingElts "help function to addNameToDerivativeMapping "
+protected function addNameToDerivativeMapping
   input list<DAE.Function> elts;
   input Absyn.Path path;
   output list<DAE.Function> outElts;
@@ -9811,16 +9796,16 @@ algorithm
 
     case(DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts,path)
       equation
-        elts = addNameToDerivativeMappingElts(elts,path);
+        elts = addNameToDerivativeMapping(elts,path);
         funcs = addNameToDerivativeMappingFunctionDefs(funcs,path);
       then DAE.FUNCTION(p,funcs,tp,part,inline,source)::elts;
 
     case(elt::elts,path)
       equation
-        elts = addNameToDerivativeMappingElts(elts,path);
+        elts = addNameToDerivativeMapping(elts,path);
       then elt::elts;
   end matchcontinue;
-end addNameToDerivativeMappingElts;
+end addNameToDerivativeMapping;
 
 protected function addNameToDerivativeMappingFunctionDefs " help function to addNameToDerivativeMappingElts"
   input list<DAE.FunctionDefinition> funcs;
@@ -9849,7 +9834,6 @@ algorithm
 
   end matchcontinue;
 end addNameToDerivativeMappingFunctionDefs;
-*/
 
 protected function getDeriveAnnotation "
 Authot BZ

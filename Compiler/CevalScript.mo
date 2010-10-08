@@ -1820,7 +1820,7 @@ algorithm
         str_1 = stringAppend("+d=", str);
         args = RTOpts.args({str_1});
       then
-        (cache,Values.BOOL(true),st);
+        (Env.emptyCache(),Values.BOOL(true),st);
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setDebugFlags"),expLst = {DAE.SCONST(string = str)}),
          (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -1838,7 +1838,7 @@ algorithm
         strings = Util.listMap(options, sconstToString);
         args = RTOpts.args(strings);
       then
-        (cache,Values.BOOL(true),st);
+        (Env.emptyCache(),Values.BOOL(true),st);
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "setCommandLineOptions"),expLst = {DAE.ARRAY(array = options)}),(st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
       local
@@ -1978,7 +1978,7 @@ algorithm
         str = Print.getString();
         newst = Interactive.SYMBOLTABLE(p_1,aDep,sp,{},iv,cf,lf);
       then
-        (cache,Values.BOOL(true),newst);
+        (Env.emptyCache(),Values.BOOL(true),newst);
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "loadModel"),expLst = {DAE.CODE(Absyn.C_TYPENAME(path),_)}),
          (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg)
@@ -2005,7 +2005,7 @@ algorithm
         p1 = ClassLoader.loadFile(name) "System.regularFileExists(name) => 0 & Parser.parse(name) => p1 &" ;
         newp = Interactive.updateProgram(p1, p);
       then
-        (cache,Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
+        (Env.emptyCache(),Values.BOOL(true),Interactive.SYMBOLTABLE(newp,aDep,sp,ic,iv,cf,lf));
 
     case (cache,env,DAE.CALL(path = Absyn.IDENT(name = "loadFile"),expLst = {DAE.SCONST(string = name)}),
          (st as Interactive.SYMBOLTABLE(ast = p,explodedAst = sp,instClsLst = ic,lstVarVal = iv,compiledFunctions = cf)),msg) /* (Values.BOOL(true),Interactive.SYMBOLTABLE(newp,sp,{},iv,cf)) it the rule above have failed then check if file exists without this omc crashes */
