@@ -380,31 +380,30 @@ RML_BEGIN_LABEL(System__trim)
   int start_pos = 0;
   int end_pos = length - 1;
   if(length > 1)
-    {
-      strncpy(res,str,length);
-      for(i=0; i < length; i++ )
-        {
-
-          if(str_contain_char(chars_to_be_removed,res[start_pos]))
-            start_pos++;
-          if(str_contain_char(chars_to_be_removed,res[end_pos]))
-            end_pos--;
-          if (start_pos == end_pos) break;
-        }
-
-
-      res[length] = '\0';
+  {
+    strncpy(res,str,length);
+    for(i=0; i < length; i++ ) {
+      if(str_contain_char(chars_to_be_removed,res[start_pos]))
+        start_pos++;
+      if(str_contain_char(chars_to_be_removed,res[end_pos]))
+        end_pos--;
+      if (start_pos == end_pos) break;
     }
-  if(start_pos <= end_pos)
-    {
+    res[length] = '\0';
+    if(start_pos <= end_pos) {
       res[end_pos+1] = '\0';
       rmlA0 = (void*) mk_scon(&res[start_pos]);
     } else {
       rmlA0 = (void*) mk_scon("");
     }
+  } else {
+    if (length == 0 || str_contain_char(chars_to_be_removed,str[0]))
+      rmlA0 = (void*) mk_scon("");
+    else
+      rmlA0 = (void*) mk_scon(str);
+  }
 
   free(res);
-
 
   RML_TAILCALLK(rmlSC);
 }

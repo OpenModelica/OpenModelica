@@ -7847,24 +7847,46 @@ protected function elabCallInteractive "function: elabCallInteractive
     case (cache,env,Absyn.CREF_IDENT(name = "getClassesInModelicaPath"),{},{},impl,SOME(st),_)
       then (cache,DAE.CALL(Absyn.IDENT("getClassesInModelicaPath"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},{},impl,SOME(st),_)
-    then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{},args,impl,SOME(st),pre)
+      local
+        list<DAE.Exp> excludeList;
+        Integer excludeListSize;
+      equation
+        excludeList = getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
+      then
+        (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},{},impl,SOME(st),_)
-    then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.STRING(value = str)},args,impl,SOME(st),pre)
+      local
+        list<DAE.Exp> excludeList;
+        Integer excludeListSize;
+      equation
+        excludeList = getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
+      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},{},impl,SOME(st),_)
-      local Absyn.Path className;
+    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre)
+      local
+        Absyn.Path className;
+        list<DAE.Exp> excludeList;
+        Integer excludeListSize;
       equation
         className = Absyn.crefToPath(cr);
-      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
+        excludeList = getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
+      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER())},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},{},impl,SOME(st),_)
-      local Absyn.Path className;
+    case (cache,env,Absyn.CREF_IDENT(name = "checkExamplePackages"),{Absyn.CREF(componentRef = cr), Absyn.STRING(value = str)},args,impl,SOME(st),pre)
+      local
+        Absyn.Path className;
+        list<DAE.Exp> excludeList;
+        Integer excludeListSize;
       equation
         className = Absyn.crefToPath(cr);
-      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()), DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
-
+        excludeList = getOptionalNamedArgExpList("exclude", args);
+        excludeListSize = listLength(excludeList);
+      then (cache,DAE.CALL(Absyn.IDENT("checkExamplePackages"),{DAE.ARRAY(DAE.ET_ARRAY(DAE.ET_OTHER,{DAE.DIM_INTEGER(excludeListSize)}),false,excludeList),DAE.CODE(Absyn.C_TYPENAME(className),DAE.ET_OTHER()),DAE.SCONST(str)},false,true,DAE.ET_STRING(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_CONST()),SOME(st));
 
      case (cache,env,Absyn.CREF_IDENT(name = "dumpXMLDAE"),{Absyn.CREF(componentRef = cr)},args,impl,SOME(st),pre)
       local 
@@ -7937,6 +7959,54 @@ algorithm
 */
   end matchcontinue;
 end elabVariablenames;
+
+protected function getOptionalNamedArgExpList
+  input Ident name;
+  input list<Absyn.NamedArg> nargs;
+  output list<DAE.Exp> out;
+algorithm
+  out := matchcontinue (name, nargs)
+    local
+      list<Absyn.Exp> absynExpList;
+      list<DAE.Exp> daeExpList;
+      Ident argName;
+      list<Absyn.NamedArg> rest;
+    case (_, {})
+      then {};
+    case (name, (Absyn.NAMEDARG(argName = argName, argValue = Absyn.ARRAY(arrayExp = absynExpList)) :: _))
+      equation
+        true = stringEqual(name, argName);
+        daeExpList = absynExpListToDaeExpList(absynExpList);
+      then daeExpList;
+    case (name, _::rest)
+      then getOptionalNamedArgExpList(name, rest);
+  end matchcontinue;
+end getOptionalNamedArgExpList;
+
+protected function absynExpListToDaeExpList
+  input list<Absyn.Exp> absynExpList;
+  output list<DAE.Exp> out;
+algorithm
+  out := matchcontinue (absynExpList)
+    local
+      list<DAE.Exp> daeExpList;
+      Ident argName;
+      list<Absyn.Exp> absynRest;
+      Absyn.ComponentRef absynCr;
+      Absyn.Path absynPath;
+      DAE.ComponentRef daeCr;
+    case ({})
+      then {};
+    case (Absyn.CREF(componentRef = absynCr) :: absynRest)
+      equation
+        absynPath = Absyn.crefToPath(absynCr);
+        daeCr = pathToComponentRef(absynPath);
+        daeExpList = absynExpListToDaeExpList(absynRest);
+      then DAE.CREF(daeCr,DAE.ET_OTHER) :: daeExpList;
+    case (_ :: absynRest)
+      then absynExpListToDaeExpList(absynRest);
+  end matchcontinue;
+end absynExpListToDaeExpList;
 
 protected function getOptionalNamedArg "function: getOptionalNamedArg
    This function is used to \"elaborate\" interactive functions optional parameters,
@@ -8026,7 +8096,7 @@ algorithm
 end elabUntypedCref;
 
 protected function pathToComponentRef "function: pathToComponentRef
-  This function tranlates a typename to a variable name.
+  This function translates a typename to a variable name.
 "
   input Absyn.Path inPath;
   output DAE.ComponentRef outComponentRef;
