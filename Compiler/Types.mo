@@ -2146,8 +2146,7 @@ algorithm
     case ((DAE.T_UNIONTYPE(_),SOME(p)))
       local Absyn.Path p;
       equation
-        str = Absyn.pathString(p);
-        res = Util.stringAppendList({"#uniontype ",str,"#"});
+        res = Absyn.pathString(p);
       then
         res;
 
@@ -2181,7 +2180,6 @@ algorithm
     case ((DAE.T_NORETCALL(),_)) then "#NORETCALL#";
     case ((DAE.T_NOTYPE(),_)) then "#NOTYPE#";
     case ((DAE.T_ANYTYPE(anyClassType = _),_)) then "#ANYTYPE#";
-//    case ((DAE.T_ENUM(),_)) then "#DAE.T_ENUM#";
     case (ty) then "Internal error Types.unparseType: not implemented yet\n";
   end matchcontinue;
 end unparseType;

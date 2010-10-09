@@ -9346,7 +9346,7 @@ algorithm
       String name;
       Absyn.Restriction restr;
       Boolean p,e;
-      Absyn.Path w,path,modelwithin;
+      Absyn.Path path,modelwithin;
       list<Absyn.Class> c2,c3;
       Absyn.Within w2;
       Absyn.ElementSpec elt;
