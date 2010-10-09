@@ -5772,7 +5772,7 @@ algorithm
         env_1 = env;
         (cache,cl,cenv) = Lookup.lookupClass(cache, env_1, t, true);
 
-        checkRecursiveDefinition(env,t,ci_state,cl);
+        checkRecursiveDefinition(env,cenv,ci_state,cl);
 
         //If the element is `protected\', and an external modification 
         //is applied, it is an error. 
@@ -6076,36 +6076,43 @@ protected function checkRecursiveDefinition
 "Checks that a class does not have a recursive definition,
  i.e. an instance of itself. This is not allowed in Modelica."
   input Env.Env env;
-  input Absyn.Path tp;
+  input Env.Env cenv;
   input ClassInf.State ci_state;
   input SCode.Class cl;
 algorithm
-  _ := matchcontinue(env,tp,ci_state,cl)
-    local Absyn.Path envPath;
+  _ := matchcontinue(env,cenv,ci_state,cl)
+    local
+      Absyn.Path envPath,cenvPath;
+      String name,s;
     // No envpath, nothing to check.
-    case(env,tp,ci_state,cl)
+    case(env,cenv,ci_state,cl)
       equation
         NONE = Env.getEnvPath(env);
       then ();
-    // No recursive definition, succed.
-    case(env,tp,ci_state,cl)
+    // No recursive definition, succeed.
+    case(env,cenv,ci_state,SCode.CLASS(name=name))
       equation
-        SOME(envPath) = Env.getEnvPath(env);
-        false = Absyn.pathSuffixOf(tp,envPath) and checkRecursiveDefinitionRecConst(ci_state,cl);
+        envPath = Env.getEnvName(env);
+        cenvPath = Env.getEnvName(Env.openScope(cenv,false,SOME(name),NONE()));
+        false = Absyn.pathEqual(envPath,cenvPath);
+      then ();
+    // No recursive definition, succeed.
+    case(env,cenv,ci_state,cl)
+      equation
+        false = checkRecursiveDefinitionRecConst(ci_state,cl);
       then ();
     // report error: recursive definition
-    case(env,tp,ci_state,cl) local String s;
+    case(env,cenv,ci_state,SCode.CLASS(name=name))
       equation
-        SOME(envPath) = Env.getEnvPath(env);
-        true= Absyn.pathSuffixOf(tp,envPath);
-        s = Absyn.pathString(tp);
+        cenvPath = Env.getEnvName(Env.openScope(cenv,false,SOME(name),NONE()));
+        s = Absyn.pathString(cenvPath);
         Error.addMessage(Error.RECURSIVE_DEFINITION,{s});
       then fail();
     // failure
-    case(env,tp,ci_state,cl)
+    case(env,_,ci_state,cl)
       equation
         true = RTOpts.debugFlag("failtrace");
-        Debug.fprint("failtrace","-Inst.checkRecursiveDefinition failed, envpath="+&Env.printEnvPathStr(env)+&" tp :"+&Absyn.pathString(tp)+&"\n");
+        Debug.fprint("failtrace","-Inst.checkRecursiveDefinition failed, envpath="+&Env.printEnvPathStr(env)+&"\n");
       then fail();
   end matchcontinue;
 end checkRecursiveDefinition;
