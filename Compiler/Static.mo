@@ -5062,10 +5062,8 @@ algorithm
   end matchcontinue;
 end elabBuiltinMod;
 
-protected function elabBuiltinRem "function: elab_builtin_sqrt
-
-  This function elaborates on the builtin operator rem.
-"
+protected function elabBuiltinRem "function: elabBuiltinRem
+  This function elaborates on the builtin operator rem."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -6269,9 +6267,7 @@ end elabBuiltinCross2;
 
 protected function elabBuiltinString "
   author: PA
-
-  This function handles the built-in String operator.
-"
+  This function handles the built-in String operator."
   input Env.Cache inCache;
   input Env.Env inEnv;
   input list<Absyn.Exp> inAbsynExpLst;
@@ -6302,6 +6298,8 @@ algorithm
       list<Slot> slots,newslots;
       DAE.DAElist dae,dae1,dae2;
       Prefix pre;
+    
+    // handle most of the stuff
     case (cache,env,args as e::_,nargs,impl,pre)
       equation
         (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true,pre);
@@ -6314,6 +6312,28 @@ algorithm
           listAppend(slots, {SLOT(("significantDigits",DAE.T_INTEGER_DEFAULT),false,SOME(DAE.ICONST(6)),{})}),
           slots);
         (cache,args_1,newslots,constlist,_) = elabInputArgs(cache,env, args, nargs, slots, true/*checkTypes*/ ,impl, {}, pre);
+        c = Util.listReduce(constlist, Types.constAnd);
+        exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
+      then
+        (cache, exp, DAE.PROP(DAE.T_STRING_DEFAULT,c));
+    
+    // handle format
+    case (cache,env,args as e::_,nargs,impl,pre)
+      equation
+        (cache,exp,DAE.PROP(tp,c),_) = elabExp(cache,env, e, impl, NONE,true,pre);
+        
+        slots = {SLOT(("x",tp),false,NONE,{})};
+        
+        slots = Util.if_(Types.isRealOrSubTypeReal(tp),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("f")),{})}),
+          slots);
+        slots = Util.if_(Types.isIntegerOrSubTypeInteger(tp),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("d")),{})}),
+          slots);
+        slots = Util.if_(Types.isString(tp),
+          listAppend(slots, {SLOT(("format",DAE.T_STRING_DEFAULT),false,SOME(DAE.SCONST("s")),{})}),
+          slots);
+        (cache,args_1,newslots,constlist,_) = elabInputArgs(cache, env, args, nargs, slots, true /*checkTypes*/, impl, {}, pre);
         c = Util.listReduce(constlist, Types.constAnd);
         exp = makeBuiltinCall("String", args_1, DAE.ET_STRING);
       then

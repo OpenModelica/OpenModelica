@@ -60,7 +60,12 @@ modelica_real modelica_mod(modelica_real x, modelica_real y)
 	return (x - floor(x/y) * y);
 }
 
-modelica_real rem(modelica_real x, modelica_real y)
+modelica_real mod_real(modelica_real x, modelica_real y)
 {
-	return fmod(x, y);
+	return modelica_mod(x, y);
+}
+
+modelica_integer mod_integer(modelica_integer x, modelica_integer y)
+{
+  return x % y;
 }
