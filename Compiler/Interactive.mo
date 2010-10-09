@@ -16788,7 +16788,7 @@ protected function transformFlatClassDef
   input Absyn.ClassDef cdef;
   output Absyn.ClassDef outCdef;
 algorithm
-  outCddef := matchcontinue(cdef)
+  outCdef := matchcontinue(cdef)
     local
       list<Absyn.ClassPart> parts,partsTransformed;
       String baseClassName;
