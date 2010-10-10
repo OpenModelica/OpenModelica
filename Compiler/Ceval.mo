@@ -1191,6 +1191,7 @@ algorithm
     case "stringInt" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringInt;
     case "stringListStringChar" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalStringListStringChar;
     case "listStringCharString" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListStringCharString;
+    case "listLength" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalListLength;
     // Box/Unbox
     case "mmc_mk_icon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
     case "mmc_mk_rcon" equation true = RTOpts.acceptMetaModelicaGrammar(); then cevalNoBoxUnbox;
@@ -2890,6 +2891,40 @@ algorithm
         (cache,Values.STRING(str),st);
   end matchcontinue;
 end cevalListStringCharString;
+
+protected function cevalListLength
+  input Env.Cache inCache;
+  input Env.Env inEnv;
+  input list<DAE.Exp> inExpExpLst;
+  input Boolean inBoolean;
+  input Option<Interactive.InteractiveSymbolTable> inInteractiveInteractiveSymbolTableOption;
+  input Msg inMsg;
+  output Env.Cache outCache;
+  output Values.Value outValue;
+  output Option<Interactive.InteractiveSymbolTable> outInteractiveInteractiveSymbolTableOption;
+algorithm
+  (outCache,outValue,outInteractiveInteractiveSymbolTableOption):=
+  matchcontinue (inCache,inEnv,inExpExpLst,inBoolean,inInteractiveInteractiveSymbolTableOption,inMsg)
+    local
+      list<Env.Frame> env;
+      DAE.Exp exp;
+      Boolean impl;
+      Option<Interactive.InteractiveSymbolTable> st;
+      Msg msg;
+      Env.Cache cache;
+      String str;
+      Integer i;
+      Real r;
+      list<String> chList;
+      list<Values.Value> valList;
+    case (cache,env,{exp},impl,st,msg)
+      equation
+        (cache,Values.LIST(valList),st) = ceval(cache,env, exp, impl, st, NONE, msg);
+        i = listLength(valList);
+      then
+        (cache,Values.INTEGER(i),st);
+  end matchcontinue;
+end cevalListLength;
 
 protected function extractValueStringChar
   input Values.Value val;

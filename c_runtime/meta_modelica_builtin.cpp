@@ -445,6 +445,23 @@ stringAppend_rettype stringAppend(modelica_string_t str1, modelica_string_t str2
   return tmp;
 }
 
+modelica_metatype boxptr_stringAppend(modelica_metatype str1, modelica_metatype str2)
+{
+  const char* s1 = MMC_STRINGDATA(str1);
+  const char* s2 = MMC_STRINGDATA(str2);
+  int len1 = strlen(s1);
+  int len2 = strlen(s2);
+  char* str = (char*) malloc(len1+len2+1);
+  modelica_metatype res;
+
+  memcpy(str, s1, len1);
+  memcpy(str + len1, s2, len2 + 1);
+  str[len1+len2] = '\0';
+  res = mmc_mk_scon(str);
+  free(str);
+  return res;
+}
+
 stringLength_rettype stringLength(modelica_string_t str)
 {
   return strlen(str);

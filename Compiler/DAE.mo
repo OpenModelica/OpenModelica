@@ -751,6 +751,11 @@ public uniontype TType "-TType contains the actual type"
     String name;
   end T_POLYMORPHIC;
 
+  record T_POLYMORPHIC_SOLVED
+    "Used as the type of an already bound polymorphic type. When solving the type of a polymorphic function, it counts as a solved type."
+    String name;
+  end T_POLYMORPHIC_SOLVED;
+
   record T_META_ARRAY
     Type ty;
   end T_META_ARRAY;
