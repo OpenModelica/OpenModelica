@@ -69,6 +69,11 @@ public uniontype ReplacePattern
   end REPLACEPATTERN;
 end ReplacePattern;
 
+public uniontype Status "Used to signal success or failure of a function call"
+  record SUCCESS end SUCCESS;
+  record FAILURE end FAILURE;
+end Status;
+
 
 protected import System;
 protected import Print;

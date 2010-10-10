@@ -1516,10 +1516,7 @@ algorithm
       equation
         ret = subtypeTypelist(tList1,tList2);
       then ret;
-    case ((DAE.T_METAOPTION((DAE.T_NOTYPE(),_)),_),(DAE.T_METAOPTION(_),_)) then true;
     case ((DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),_))
-      equation
-        failure((DAE.T_NOTYPE(),_) = t2);
       then subtype(t1,t2);
     
     case ((DAE.T_BOXED(t1),_),(DAE.T_BOXED(t2),_)) then subtype(t1,t2);

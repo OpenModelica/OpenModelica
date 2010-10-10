@@ -8430,7 +8430,7 @@ function: elabCallArgs
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
 algorithm
-  (outCache,outExp,outProperties) :=
+  (outCache,outExp,outProperties,Util.SUCCESS()) :=
   elabCallArgs2(inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,Util.makeStatefulBoolean(false),inInteractiveInteractiveSymbolTableOption,inPrefix);
 end elabCallArgs;
       
@@ -8453,8 +8453,9 @@ function: elabCallArgs
   output Env.Cache outCache;
   output DAE.Exp outExp;
   output DAE.Properties outProperties;
+  output Util.Status status;
 algorithm
-  (outCache,outExp,outProperties) :=
+  (outCache,outExp,outProperties,status) :=
   matchcontinue (inCache,inEnv,inPath,inAbsynExpLst,inAbsynNamedArgLst,inBoolean,stopElab,inInteractiveInteractiveSymbolTableOption,inPrefix)
     local
       DAE.Type t,outtype,restype,functype,tp1;
@@ -8522,7 +8523,7 @@ algorithm
         //tyconst = elabConsts(outtype, const);
         //prop = getProperties(outtype, tyconst);
       then
-        (cache,DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()));
+        (cache,DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE),DAE.PROP((DAE.T_NOTYPE(),NONE()),DAE.C_CONST()),Util.SUCCESS());
 
     // adrpo: deal with function call via an instance: MultiBody world.gravityAcceleration
     case (cache, env, fn, args, nargs, impl, stopElab, st,pre)
@@ -8584,7 +8585,7 @@ algorithm
         // call the class normally
         (cache,call_exp,prop_1) = elabCallArgs(cache, env, correctFunctionPath, args, nargs, impl, st,pre);
       then
-        (cache,call_exp,prop_1);
+        (cache,call_exp,prop_1,Util.SUCCESS());
 
     /* Record constructors, user defined or implicit */ // try the hard stuff first
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre)
@@ -8617,9 +8618,9 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(DAE.CALL(fn,args_2,false,false,tp,DAE.NO_INLINE), vect_dims, newslots2, prop);
         //print(" RECORD CONSTRUCT("+&Absyn.pathString(fn)+&")= "+&Exp.printExpStr(call_exp)+&"\n");
        /* Instantiate the function and add to dae function tree*/
-        cache = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
+        (cache,status) = instantiateDaeFunction(cache,recordEnv,fn,false/*record constructor never builtin*/,SOME(recordCl),true);
       then
-        (cache,call_exp,prop_1);
+        (cache,call_exp,prop_1,status);
 
     /* ------ */
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre) /* Metamodelica extension, added by simbj */
@@ -8642,7 +8643,7 @@ algorithm
         args_2 = expListFromSlots(newslots2);
         (cache, fqPath) = Inst.makeFullyQualified(cache, env_1, fn);
       then
-        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop);
+        (cache,DAE.METARECORDCALL(fqPath,args_2,fieldNames,index),prop,Util.SUCCESS());
         /* ------ */
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre) /* ..Other functions */
@@ -8682,11 +8683,11 @@ algorithm
         (call_exp,prop_1) = vectorizeCall(callExp, vect_dims, slots2, prop);
 
         /* Instantiate the function and add to dae function tree*/
-        cache = instantiateDaeFunction(cache,env,fn,builtin,NONE,true);
+        (cache,status) = instantiateDaeFunction(cache,env,fn,builtin,NONE,true);
         /* Instantiate any implicit record constructors needed and add them to the dae function tree */
         cache = instantiateImplicitRecordConstructors(cache, env, args_1, st);
       then
-        (cache,call_exp,prop_1);
+        (cache,call_exp,prop_1,status);
 
     case (cache,env,fn,args,nargs,impl,stopElab,st,pre) /* no matching type found, no candidates. */
       equation
@@ -8764,66 +8765,89 @@ functiontree of a newly created dae"
   input option<SCode.Class> clOpt "if not present, looked up by name in environment";
   input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
   output Env.Cache outCache;
+  output Util.Status status;
 algorithm
-  (outCache) := matchcontinue(inCache,env,name,builtin,clOpt,printErrorMsg)
-  local Env.Cache cache;
-    SCode.Class cl; DAE.DAElist dae;
-    String id,id2;
+  (outCache,status) := instantiateDaeFunction2(inCache, env, name, builtin, clOpt, Error.getNumErrorMessages(), printErrorMsg);
+end instantiateDaeFunction;
+
+protected function instantiateDaeFunction2 "help function to elabCallArgs. Instantiates the function as a dae and adds it to the
+functiontree of a newly created dae"
+  input Env.Cache inCache;
+  input Env.Env env;
+  input Absyn.Path name;
+  input Boolean builtin "builtin functions create empty dae";
+  input option<SCode.Class> clOpt "if not present, looked up by name in environment";
+  input Integer numError "if errors were added, do not add a generic error message";
+  input Boolean printErrorMsg "if true, prints an error message if the function could not be instantiated";
+  output Env.Cache outCache;
+  output Util.Status status;
+algorithm
+  (outCache,status) := matchcontinue(inCache,env,name,builtin,clOpt,numError,printErrorMsg)
+    local
+      Env.Cache cache;
+      SCode.Class cl;
+      DAE.DAElist dae;
+      String id,id2,pathStr,envStr;
     /* Builtin functions skipped*/
-    case(cache,env,name,true,_,_) then (cache);
+    case(cache,env,name,true,_,_,_) then (cache,Util.SUCCESS());
 
     /* External object functions skipped*/
-    case(cache,env,name,_,_,_)
+    case(cache,env,name,_,_,_,_)
       equation
         (_,true) = isExternalObjectFunction(cache,env,name);
-      then (cache);
+      then (cache,Util.SUCCESS());
 
       /* Recursive calls (by looking at envinronment) skipped */
-    case(cache,env,name,false,NONE,_)
+    case(cache,env,name,false,NONE,_,_)
       equation
         false = Env.isTopScope(env);
         true = Absyn.pathSuffixOf(name,Env.getEnvName(env));            
-      then (cache);
+      then (cache,Util.SUCCESS());
 
     /* Recursive calls (by looking in cache) skipped */
-    case(cache,env,name,false,_,_)
+    case(cache,env,name,false,_,_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         Env.checkCachedInstFuncGuard(cache,name);
-      then (cache);
+      then (cache,Util.SUCCESS());
 
     /* Class must be looked up*/
-    case(cache,env,name,false,NONE,_)
+    case(cache,env,name,false,NONE,_,_)
       equation
         (cache,cl,env) = Lookup.lookupClass(cache,env,name,false);
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         cache = Env.addCachedInstFuncGuard(cache,name);
         (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
-      then (cache);
+      then (cache,Util.SUCCESS());
 
     /* class already available*/
-    case(cache,env,name,false,SOME(cl),_)
+    case(cache,env,name,false,SOME(cl),_,_)
       equation
         (cache,name) = Inst.makeFullyQualified(cache,env,name);
         (cache,env,_) = Inst.implicitFunctionInstantiation(cache,env,InnerOuter.emptyInstHierarchy,DAE.NOMOD(),Prefix.NOPRE(),Connect.emptySet,cl,{});
-      then (cache);
+      then (cache,Util.SUCCESS());
 
     /* Call to function reference variable */
-    case(cache,env,name,false,NONE,_)
+    case (cache,env,name,false,NONE,_,_)
       local
         DAE.ComponentRef cref;
       equation
         cref = pathToComponentRef(name);
         (cache,_,(DAE.T_FUNCTION(funcArg = _),_),_,_,_,env,_,_) = Lookup.lookupVar(cache,env,cref);
-      then (cache);
+      then (cache,Util.SUCCESS());
 
-    case(cache,env,name,_,_,true)
+    case(cache,env,name,_,_,numError,true)
       equation
-        print("instantiateDaeFunction failed for "+&Absyn.pathString(name)+&" in scope: " +& Env.printEnvPathStr(env) +& "\n");
+        true = Error.getNumErrorMessages() == numError;
+        envStr = Env.printEnvPathStr(env);
+        pathStr = Absyn.pathString(name);
+        Error.addMessage(Error.GENERIC_INST_FUNCTION, {pathStr, envStr});
       then fail();
+
+    case (cache,env,name,_,_,_,_) then (cache,Util.FAILURE());
   end matchcontinue;
-end instantiateDaeFunction;
+end instantiateDaeFunction2;
 
 protected function instantiateImplicitRecordConstructors
   "Given a list of arguments to a function, this function checks if any of the
@@ -8847,7 +8871,7 @@ algorithm
     case (_, _, {}, _) then inCache;
     case (_, _, DAE.CREF(ty = DAE.ET_COMPLEX(complexClassType = ClassInf.RECORD(path = record_name))) :: rest_args, _)
       equation
-        cache = instantiateDaeFunction(inCache, inEnv, record_name, false, NONE, false);
+        (cache,Util.SUCCESS()) = instantiateDaeFunction(inCache, inEnv, record_name, false, NONE, false);
         cache = instantiateImplicitRecordConstructors(cache, inEnv, rest_args, NONE);
       then cache;
     case (_, _, _ :: rest_args, _)
@@ -10343,7 +10367,7 @@ algorithm
         expCref = Exp.toExpCref(c);
         exp = DAE.CREF(expCref,DAE.ET_FUNCTION_REFERENCE_FUNC(isBuiltinFunc));
         // This is not done by lookup - only elabCall. So we should do it here.
-        cache = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE,true);
+        (cache,Util.SUCCESS()) = instantiateDaeFunction(cache,env,path,isBuiltinFunc,NONE,true);
       then
         (cache,exp,DAE.PROP(t,DAE.C_CONST()),SCode.RO());
 
