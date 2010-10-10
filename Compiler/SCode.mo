@@ -72,11 +72,11 @@ uniontype Restriction
   record R_ENUMERATION end R_ENUMERATION;
 
   // predefined internal types
-  record R_PREDEFINED_INT end R_PREDEFINED_INT;
-  record R_PREDEFINED_REAL end R_PREDEFINED_REAL;
-  record R_PREDEFINED_STRING end R_PREDEFINED_STRING;
-  record R_PREDEFINED_BOOL end R_PREDEFINED_BOOL;
-  record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
+  record R_PREDEFINED_INTEGER     "predefined IntegerType" end R_PREDEFINED_INTEGER;
+  record R_PREDEFINED_REAL        "predefined RealType"    end R_PREDEFINED_REAL;
+  record R_PREDEFINED_STRING      "predefined StringType"  end R_PREDEFINED_STRING;
+  record R_PREDEFINED_BOOLEAN     "predefined BooleanType" end R_PREDEFINED_BOOLEAN;
+  record R_PREDEFINED_ENUMERATION "predefined EnumType"    end R_PREDEFINED_ENUMERATION;
 
   // MetaModelica extensions
   record R_METARECORD "Metamodelica extension"
@@ -893,11 +893,11 @@ algorithm
     case R_METARECORD(_,_) then "METARECORD";
     case R_UNIONTYPE() then "UNIONTYPE";
     // predefined types
-    case R_PREDEFINED_INT() then "PREDEFINED_INT";
+    case R_PREDEFINED_INTEGER() then "PREDEFINED_INT";
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
-    case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL";
-    case R_PREDEFINED_ENUM() then "PREDEFINED_ENUM";
+    case R_PREDEFINED_BOOLEAN() then "PREDEFINED_BOOL";
+    case R_PREDEFINED_ENUMERATION() then "PREDEFINED_ENUM";
   end matchcontinue;
 end restrString;
 
@@ -1652,11 +1652,11 @@ algorithm
      case (R_FUNCTION(),R_FUNCTION()) then true;
      case (R_EXT_FUNCTION(),R_EXT_FUNCTION()) then true;
      case (R_ENUMERATION(),R_ENUMERATION()) then true;
-     case (R_PREDEFINED_INT(),R_PREDEFINED_INT()) then true;
+     case (R_PREDEFINED_INTEGER(),R_PREDEFINED_INTEGER()) then true;
      case (R_PREDEFINED_REAL(),R_PREDEFINED_REAL()) then true;
      case (R_PREDEFINED_STRING(),R_PREDEFINED_STRING()) then true;
-     case (R_PREDEFINED_BOOL(),R_PREDEFINED_BOOL()) then true;
-     case (R_PREDEFINED_ENUM(),R_PREDEFINED_ENUM()) then true;
+     case (R_PREDEFINED_BOOLEAN(),R_PREDEFINED_BOOLEAN()) then true;
+     case (R_PREDEFINED_ENUMERATION(),R_PREDEFINED_ENUMERATION()) then true;
      case (_,_) then false;
    end matchcontinue;
 end restrictionEqual;

@@ -381,11 +381,11 @@ algorithm
     case (SCode.R_FUNCTION(),p) then FUNCTION(p);
     case (SCode.R_EXT_FUNCTION(),p) then FUNCTION(p);
     case (SCode.R_ENUMERATION(),p) then ENUMERATION(p);
-    case (SCode.R_PREDEFINED_INT(),p) then TYPE_INTEGER(p);
+    case (SCode.R_PREDEFINED_INTEGER(),p) then TYPE_INTEGER(p);
     case (SCode.R_PREDEFINED_REAL(),p) then TYPE_REAL(p);
     case (SCode.R_PREDEFINED_STRING(),p) then TYPE_STRING(p);
-    case (SCode.R_PREDEFINED_BOOL(),p) then TYPE_BOOL(p);
-    case (SCode.R_PREDEFINED_ENUM(),p) then TYPE_ENUM(p);
+    case (SCode.R_PREDEFINED_BOOLEAN(),p) then TYPE_BOOL(p);
+    case (SCode.R_PREDEFINED_ENUMERATION(),p) then TYPE_ENUM(p);
      /* Meta Modelica extensions */
     case (SCode.R_UNIONTYPE(),p) then UNIONTYPE(p);
     case (SCode.R_METARECORD(_, _),p) then META_RECORD(p);

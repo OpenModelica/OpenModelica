@@ -200,11 +200,11 @@ algorithm
     case (_,Absyn.R_TYPE()) then SCode.R_TYPE();
     case (_,Absyn.R_PACKAGE()) then SCode.R_PACKAGE();
     case (_,Absyn.R_ENUMERATION()) then SCode.R_ENUMERATION();
-    case (_,Absyn.R_PREDEFINED_INT()) then SCode.R_PREDEFINED_INT();
+    case (_,Absyn.R_PREDEFINED_INTEGER()) then SCode.R_PREDEFINED_INTEGER();
     case (_,Absyn.R_PREDEFINED_REAL()) then SCode.R_PREDEFINED_REAL();
     case (_,Absyn.R_PREDEFINED_STRING()) then SCode.R_PREDEFINED_STRING();
-    case (_,Absyn.R_PREDEFINED_BOOL()) then SCode.R_PREDEFINED_BOOL();
-    case (_,Absyn.R_PREDEFINED_ENUM()) then SCode.R_PREDEFINED_ENUM();
+    case (_,Absyn.R_PREDEFINED_BOOLEAN()) then SCode.R_PREDEFINED_BOOLEAN();
+    case (_,Absyn.R_PREDEFINED_ENUMERATION()) then SCode.R_PREDEFINED_ENUMERATION();
 
     case (_,Absyn.R_METARECORD(name,index)) //MetaModelica extension, added by x07simbj
       local

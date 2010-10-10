@@ -1733,7 +1733,7 @@ algorithm
         (cache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph) = outputs;
         /*
         Debug.fprintln("cache", "IIII->got from instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
-          "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& 
+          "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
           "\n\tsingle cref: " +& Exp.printComponentRefOptStr(instSingleCref) +&
@@ -1742,7 +1742,7 @@ algorithm
         */
       then
         (inCache,env,ih,store,dae,csets_1,ci_state,tys,bc,oDA,equalityConstraint,graph);
-
+    
     /* call the function and then add it in the cache */
     case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(restriction=r, name=className),prot,inst_dims,impl,graph,instSingleCref)
       equation
@@ -1751,7 +1751,7 @@ algorithm
         
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
-
+        
         inputs = (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref);
         outputs = (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
 
@@ -1763,15 +1763,15 @@ algorithm
            SOME(FUNC_partialInstClassIn( // result for partial instantiation
              (inCache,inEnv,inIH,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims),
              (cache,env,ih,ci_state)))*/ NONE());
-      /*       
+        /*
         Debug.fprintln("cache", "IIII->added to instCache: " +& Absyn.pathString(fullEnvPathPlusClass) +&
-          "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& "." +&  className +& 
+          "\n\tpre: " +& PrefixUtil.printPrefixStr(pre) +& " class: " +&  className +& 
           "\n\tmods: " +& Mod.printModStr(mods) +& 
           "\n\tenv: " +& Env.printEnvPathStr(inEnv) +&
           "\n\tsingle cref: " +& Exp.printComponentRefOptStr(instSingleCref) +&
           "\n\tdims: [" +& Util.stringDelimitList(Util.listMap1(inst_dims, DAEDump.unparseDimensions, true), ", ") +& "]" +& 
           "\n\tdae:\n" +& DAEDump.dump2str(dae));
-      */
+        */
         //checkModelBalancingFilterByRestriction(r, envPathOpt, dae);
       then
         (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
@@ -1795,7 +1795,9 @@ protected function prefixEqualUnlessEnum
   input SCode.Class cls;
 algorithm
   _ := matchcontinue(pre1, pre2, cls)
-    case (_, _, SCode.CLASS(restriction = SCode.R_ENUMERATION))
+    case (_, _, SCode.CLASS(restriction = SCode.R_ENUMERATION()))
+      then ();
+    case (_, _, SCode.CLASS(restriction = SCode.R_PREDEFINED_ENUMERATION()))
       then ();
     case (_, _, _)
       equation
@@ -14497,8 +14499,8 @@ algorithm
     case (SCode.R_RECORD(), _, _) then ();
     case (SCode.R_PACKAGE(), _, _) then ();
     case (SCode.R_ENUMERATION(), _, _) then ();
-    case (SCode.R_PREDEFINED_BOOL(), _, _) then ();
-    case (SCode.R_PREDEFINED_INT(), _, _) then ();
+    case (SCode.R_PREDEFINED_BOOLEAN(), _, _) then ();
+    case (SCode.R_PREDEFINED_INTEGER(), _, _) then ();
     case (SCode.R_PREDEFINED_REAL(), _, _) then ();
     case (SCode.R_PREDEFINED_STRING(), _, _) then ();
     // check anything else

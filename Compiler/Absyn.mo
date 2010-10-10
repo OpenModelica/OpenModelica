@@ -1031,11 +1031,11 @@ uniontype Restriction "These constructors each correspond to a different kind of
   record R_OPERATOR_FUNCTION "an operator function" end R_OPERATOR_FUNCTION;
   record R_OPERATOR_RECORD   "an operator record"   end R_OPERATOR_RECORD;
   record R_ENUMERATION end R_ENUMERATION;
-  record R_PREDEFINED_INT end R_PREDEFINED_INT;
+  record R_PREDEFINED_INTEGER end R_PREDEFINED_INTEGER;
   record R_PREDEFINED_REAL end R_PREDEFINED_REAL;
   record R_PREDEFINED_STRING end R_PREDEFINED_STRING;
-  record R_PREDEFINED_BOOL end R_PREDEFINED_BOOL;
-  record R_PREDEFINED_ENUM end R_PREDEFINED_ENUM;
+  record R_PREDEFINED_BOOLEAN end R_PREDEFINED_BOOLEAN;
+  record R_PREDEFINED_ENUMERATION end R_PREDEFINED_ENUMERATION;
 
   // MetaModelica
   record R_UNIONTYPE "MetaModelica uniontype" end R_UNIONTYPE;
@@ -3442,10 +3442,10 @@ algorithm
     case R_TYPE() then "TYPE";
     case R_PACKAGE() then "PACKAGE";
     case R_FUNCTION() then "FUNCTION";
-    case R_PREDEFINED_INT() then "PREDEFINED_INT";
+    case R_PREDEFINED_INTEGER() then "PREDEFINED_INT";
     case R_PREDEFINED_REAL() then "PREDEFINED_REAL";
     case R_PREDEFINED_STRING() then "PREDEFINED_STRING";
-    case R_PREDEFINED_BOOL() then "PREDEFINED_BOOL";
+    case R_PREDEFINED_BOOLEAN() then "PREDEFINED_BOOL";
 
     /* MetaModelica restriction */
     case R_UNIONTYPE() then "UNIONTYPE";

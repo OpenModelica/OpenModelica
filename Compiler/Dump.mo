@@ -547,10 +547,10 @@ algorithm
     case Absyn.R_UNIONTYPE() then "uniontype";
     case Absyn.R_PACKAGE() then "package";
     case Absyn.R_FUNCTION() then "function";
-    case Absyn.R_PREDEFINED_INT() then "Integer";
+    case Absyn.R_PREDEFINED_INTEGER() then "Integer";
     case Absyn.R_PREDEFINED_REAL() then "Real";
     case Absyn.R_PREDEFINED_STRING() then "String";
-    case Absyn.R_PREDEFINED_BOOL() then "Boolean";
+    case Absyn.R_PREDEFINED_BOOLEAN() then "Boolean";
   end matchcontinue;
 end unparseRestrictionStr;
 
@@ -788,11 +788,11 @@ algorithm
     case Absyn.R_PACKAGE() equation Print.printBuf("Absyn.R_PACKAGE"); then ();
     case Absyn.R_FUNCTION() equation Print.printBuf("Absyn.R_FUNCTION"); then ();
     case Absyn.R_ENUMERATION() equation Print.printBuf("Absyn.R_ENUMERATION"); then ();
-    case Absyn.R_PREDEFINED_INT() equation Print.printBuf("Absyn.R_PREDEFINED_INT"); then ();
+    case Absyn.R_PREDEFINED_INTEGER() equation Print.printBuf("Absyn.R_PREDEFINED_INTEGER"); then ();
     case Absyn.R_PREDEFINED_REAL() equation Print.printBuf("Absyn.R_PREDEFINED_REAL"); then ();
     case Absyn.R_PREDEFINED_STRING() equation Print.printBuf("Absyn.R_PREDEFINED_STRING"); then ();
-    case Absyn.R_PREDEFINED_BOOL() equation Print.printBuf("Absyn.R_PREDEFINED_BOOL"); then ();
-    case Absyn.R_PREDEFINED_ENUM() equation Print.printBuf("Absyn.R_PREDEFINED_ENUM"); then ();
+    case Absyn.R_PREDEFINED_BOOLEAN() equation Print.printBuf("Absyn.R_PREDEFINED_BOOLEAN"); then ();
+    case Absyn.R_PREDEFINED_ENUMERATION() equation Print.printBuf("Absyn.R_PREDEFINED_ENUMERATION"); then ();
     case _ then ();
   end matchcontinue;
 end printClassRestriction;
@@ -5448,9 +5448,9 @@ algorithm
       equation
         Print.printBuf("record Absyn.R_ENUMERATION end Absyn.R_ENUMERATION;");
       then ();
-    case Absyn.R_PREDEFINED_INT()
+    case Absyn.R_PREDEFINED_INTEGER()
       equation
-        Print.printBuf("record Absyn.R_PREDEFINED_INT end Absyn.R_PREDEFINED_INT;");
+        Print.printBuf("record Absyn.R_PREDEFINED_INTEGER end Absyn.R_PREDEFINED_INTEGER;");
       then ();
     case Absyn.R_PREDEFINED_REAL()
       equation
@@ -5460,13 +5460,13 @@ algorithm
       equation
         Print.printBuf("record Absyn.R_PREDEFINED_STRING end Absyn.R_PREDEFINED_STRING;");
       then ();
-    case Absyn.R_PREDEFINED_BOOL()
+    case Absyn.R_PREDEFINED_BOOLEAN()
       equation
-        Print.printBuf("record Absyn.R_PREDEFINED_BOOL end Absyn.R_PREDEFINED_BOOL;");
+        Print.printBuf("record Absyn.R_PREDEFINED_BOOLEAN end Absyn.R_PREDEFINED_BOOLEAN;");
       then ();
-    case Absyn.R_PREDEFINED_ENUM()
+    case Absyn.R_PREDEFINED_ENUMERATION()
       equation
-        Print.printBuf("record Absyn.R_PREDEFINED_ENUM end Absyn.R_PREDEFINED_ENUM;");
+        Print.printBuf("record Absyn.R_PREDEFINED_ENUMERATION end Absyn.R_PREDEFINED_ENUMERATION;");
       then ();
     case Absyn.R_UNIONTYPE()
       equation

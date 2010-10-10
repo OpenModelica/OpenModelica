@@ -9144,10 +9144,10 @@ algorithm
       Boolean res;
       String cname;
       Absyn.Program p;
-    case (Absyn.CLASS(restriction = Absyn.R_PREDEFINED_INT()),_) then true;
+    case (Absyn.CLASS(restriction = Absyn.R_PREDEFINED_INTEGER()),_) then true;
     case (Absyn.CLASS(restriction = Absyn.R_PREDEFINED_REAL()),_) then true;
     case (Absyn.CLASS(restriction = Absyn.R_PREDEFINED_STRING()),_) then true;
-    case (Absyn.CLASS(restriction = Absyn.R_PREDEFINED_BOOL()),_) then true;
+    case (Absyn.CLASS(restriction = Absyn.R_PREDEFINED_BOOLEAN()),_) then true;
     case (Absyn.CLASS(restriction = Absyn.R_TYPE()),_) then true;
     case (Absyn.CLASS(name = cname,restriction = Absyn.R_CLASS(),body = Absyn.DERIVED(typeSpec = Absyn.TPATH(path,_))),p)
       equation
@@ -9650,13 +9650,13 @@ algorithm
     case (Absyn.IDENT(name = "Real"),_,_) then (Absyn.CLASS("Real",false,false,false,Absyn.R_PREDEFINED_REAL(),
           Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Real"));
     
-    case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INT(),
+    case (Absyn.IDENT(name = "Integer"),_,_) then (Absyn.CLASS("Integer",false,false,false,Absyn.R_PREDEFINED_INTEGER(),
           Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Integer"));
     
     case (Absyn.IDENT(name = "String"),_,_) then (Absyn.CLASS("String",false,false,false,Absyn.R_PREDEFINED_STRING(),
           Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("String"));
     
-    case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOL(),
+    case (Absyn.IDENT(name = "Boolean"),_,_) then (Absyn.CLASS("Boolean",false,false,false,Absyn.R_PREDEFINED_BOOLEAN(),
           Absyn.PARTS({},NONE),Absyn.dummyInfo),Absyn.IDENT("Boolean"));
     
     case (path,inmodel,_)
