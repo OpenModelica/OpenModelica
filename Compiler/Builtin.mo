@@ -149,16 +149,16 @@ protected constant DAE.Type T_NOTYPE_ARRAY_1_DEFAULT =
 public constant SCode.Class rlType=SCode.CLASS("RealType",false,false,SCode.R_PREDEFINED_REAL(),
           SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) " real type ";
 
-public constant SCode.Class intType=SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INT(),
+public constant SCode.Class intType=SCode.CLASS("IntegerType",false,false,SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
 public constant SCode.Class strType=SCode.CLASS("StringType",false,false,SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
-public constant SCode.Class boolType=SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOL(),
+public constant SCode.Class boolType=SCode.CLASS("BooleanType",false,false,SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
-protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUM(),
+protected constant SCode.Class enumType=SCode.CLASS("EnumType",false,false,SCode.R_PREDEFINED_ENUMERATION(),
           SCode.PARTS({},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo);
 
 protected constant SCode.Element unit=SCode.COMPONENT("unit",Absyn.UNSPECIFIED(),true,false,false,
@@ -235,13 +235,13 @@ public constant SCode.Class realType=SCode.CLASS("Real",false,false,SCode.R_PRED
           SCode.PARTS({unit,quantity,displayUnit,min,max,realStart,fixed,nominal,
           stateSelect},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Real\' type" ;
 
-protected constant SCode.Class integerType=SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INT(),
+protected constant SCode.Class integerType=SCode.CLASS("Integer",false,false,SCode.R_PREDEFINED_INTEGER(),
           SCode.PARTS({quantity,min,max,integerStart,fixed},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Integer\' type" ;
 
 protected constant SCode.Class stringType=SCode.CLASS("String",false,false,SCode.R_PREDEFINED_STRING(),
           SCode.PARTS({quantity,stringStart},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `String\' type" ;
 
-protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOL(),
+protected constant SCode.Class booleanType=SCode.CLASS("Boolean",false,false,SCode.R_PREDEFINED_BOOLEAN(),
           SCode.PARTS({quantity,booleanStart,fixed},{},{},{},{},NONE,{},NONE),Absyn.dummyInfo) "- The `Boolean\' type" ;
 
 /* The builtin variable time. See also variableIsBuiltin */
