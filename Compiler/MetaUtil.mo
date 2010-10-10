@@ -1497,4 +1497,35 @@ algorithm
   end matchcontinue;
 end extractListFromTuple;
 
+public function tryToConvertArrayToList
+"Convert an array, T[:], of a MetaModelica type into list. MetaModelica types
+can only be of array<T> type, not T[:].
+This is mainly to produce better error messages."
+  input DAE.Exp exp;
+  input DAE.Type ty;
+  output DAE.Exp outExp;
+  output DAE.Type outTy;
+algorithm
+  (outExp,outTy) := matchcontinue (exp,ty)
+    local
+      DAE.Type flatType;
+    case (exp,ty)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        (flatType,_) = Types.flattenArrayType(ty);
+        true = Types.isBoxedType(flatType) or RTOpts.debugFlag("rml") "debug flag to produce better error messages by converting all arrays into lists; the compiler does not use Modelica-style arrays anyway";
+        (exp,ty) = Types.matchType(exp, ty, (DAE.T_LIST((DAE.T_NOTYPE(),NONE())),NONE()), false);
+      then (exp,ty);
+    case (exp,ty)
+      equation
+        false = Types.isBoxedType(ty);
+      then (exp,ty);
+
+    case (exp,ty)
+      equation
+        Debug.fprintln("failtrace", "- Static.tryToConvertArrayToList failed");
+      then fail();
+  end matchcontinue;
+end tryToConvertArrayToList;
+
 end MetaUtil;

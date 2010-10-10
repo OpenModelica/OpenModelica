@@ -523,6 +523,7 @@ algorithm
         a = Types.isArray(t);
         a = boolNot(a); // scalar = !array
         arrexp =  DAE.ARRAY(at,a,es_1);
+        (arrexp,arrtp) = MetaUtil.tryToConvertArrayToList(arrexp,arrtp) "converts types that cannot be arrays into lists";
         arrexp = tryToConvertArrayToMatrix(arrexp);
       then
         (cache,arrexp,DAE.PROP(arrtp,const),st,dae);

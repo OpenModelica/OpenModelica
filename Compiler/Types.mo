@@ -5134,6 +5134,7 @@ algorithm
     case ((DAE.T_LIST(_),_)) then true;
     case ((DAE.T_METATUPLE(_),_)) then true;
     case ((DAE.T_UNIONTYPE(_),_)) then true;
+    case ((DAE.T_METARECORD(_,_),_)) then true;
     case ((DAE.T_POLYMORPHIC(_),_)) then true;
     case ((DAE.T_META_ARRAY(_),_)) then true;
     case ((DAE.T_FUNCTION(_,_,_),_)) then true;
