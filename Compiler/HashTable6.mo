@@ -9,7 +9,12 @@ package HashTable6 "
   This package contains implementation of hashtables, instead of the binary trees used in OpenModelica.
   It is a generic implementation that can be used for any Key, Value datatypes. But the code must be copied
   since MetaModelica is not powerful enough to handle general generics.
-
+  
+  
+  Not used by OpenModelica!
+  
+  RCS: $Id: HashTableStringToPath.mo 6234 2010-09-27 15:28:38Z adrpo $
+  
   "
 
 

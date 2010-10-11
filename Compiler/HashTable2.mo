@@ -1,20 +1,21 @@
 package HashTable2 "
-	  This file is an extension to OpenModelica.
+	This file is an extension to OpenModelica.
 
   Copyright (c) 2007 MathCore Engineering AB
 
   All rights reserved.
 
 
- Based on HashTable.mo but
- Key 		= DAE.ComponentRef
- Value 	= DAE.Exp
+  Based on HashTable.mo but
+  Key 		= DAE.ComponentRef
+  Value 	= DAE.Exp
 
-  Used by VarTransform.mo
+  Not used by OpenModelica!
+
+  RCS: $Id$
 
   "
-
-
+  
 /* Below is the instance specific code. For each hashtable the user must define:
 
 Key 			- The key used to uniquely define elements in a hashtable

@@ -1,18 +1,20 @@
 package HashTable "
-	  This file is an extension to OpenModelica.
+	This file is an extension to OpenModelica.
 
   Copyright (c) 2007 MathCore Engineering AB
 
   All rights reserved.
 
-
   This package contains implementation of hashtables, instead of the binary trees used in OpenModelica.
   It is a generic implementation that can be used for any Key, Value datatypes. But the code must be copied
   since MetaModelica is not powerful enough to handle general generics.
-
-  "
-
-
+  
+  This HashTable is used in UnitChecking: UnitAbsyn.mo, UnitAbsynBuilder.mo, UnitChecker.mo, UnitParerExt.mo 
+  
+  RCS: $Id$
+  
+"
+  
 /* Below is the instance specific code. For each hashtable the user must define:
 
 Key 			- The key used to uniquely define elements in a hashtable

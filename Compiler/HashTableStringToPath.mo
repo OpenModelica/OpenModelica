@@ -1,15 +1,19 @@
 package HashTableStringToPath "
-	  This file is an extension to OpenModelica.
-
+	This file is an extension to OpenModelica.
+  
   Copyright (c) 2007 MathCore Engineering AB
-
+  
   All rights reserved.
-
-
+  
+  
   This package contains implementation of hashtables, instead of the binary trees used in OpenModelica.
   It is a generic implementation that can be used for any Key, Value datatypes. But the code must be copied
   since MetaModelica is not powerful enough to handle general generics.
-
+  
+  Used by InstExtends.mo
+  
+  RCS: $Id: HashTableStringToPath.mo 6234 2010-09-27 15:28:38Z adrpo $
+  
   "
 
 

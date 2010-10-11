@@ -6,11 +6,14 @@ package HashTable3 "
   All rights reserved.
 
 
- Based on HashTable.mo but
- Key 		= DAE.ComponentRef
- Value 	= list<DAE.ComponentRef>
+  Based on HashTable.mo but
+  Key 		= DAE.ComponentRef
+  Value 	= list<DAE.ComponentRef>
 
   Used by VarTransform.mo
+  
+  RCS: $Id$
+  
   "
 
 

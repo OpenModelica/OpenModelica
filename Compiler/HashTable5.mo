@@ -10,8 +10,11 @@ package HashTable5 "
   It is a generic implementation that can be used for any Key, Value datatypes. But the code must be copied
   since MetaModelica is not powerful enough to handle general generics.
 
+  Used by Inst.mo and Env.mo.
+  
+  RCS: $Id$
+  
   "
-
 
 /* Below is the instance specific code. For each hashtable the user must define:
 
