@@ -768,6 +768,15 @@ algorithm_list returns [void* ast] :
   ;
 
 connect_clause returns [void* ast] :
+  CONNECT LPAR cr1=component_reference COMMA cr2=component_reference RPAR 
+  {
+    ast = Absyn__EQ_5fCONNECT(cr1,cr2);
+  }
+  ;
+
+/* adrpo: 2010-10-11, replaced commented-out part with the rule above
+                      which is conform to the grammar in the Modelica specification! 
+connect_clause returns [void* ast] :
   CONNECT LPAR cr1=connector_ref COMMA cr2=connector_ref RPAR {ast = Absyn__EQ_5fCONNECT(cr1,cr2);}
   ;
 
@@ -784,6 +793,7 @@ connector_ref returns [void* ast] :
 connector_ref_2 returns [void* ast] :
   id=IDENT ( as=array_subscripts )? {ast = Absyn__CREF_5fIDENT(token_to_scon(id),or_nil(as));}
   ;
+*/
 
 /*
  * 2.2.7 Expressions
