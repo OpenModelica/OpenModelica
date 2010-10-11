@@ -463,6 +463,36 @@ algorithm
   end matchcontinue;
 end extendFrameClasses;
 
+public function removeComponentsFromFrameV "function: removeComponentsFromFrameV
+  This function removes all components from frame."
+  input Env inEnv;
+  output Env outEnv;
+algorithm
+  outEnv := matchcontinue (inEnv)
+    local
+      AvlTree httypes;
+      AvlTree ht,ht_1;
+      Option<Ident> id;
+      Option<ScopeType> st;
+      list<AvlValue> imps;
+      Env fs,env,remember;
+      tuple<list<DAE.ComponentRef>,DAE.ComponentRef> crs;
+      Boolean encflag;
+      InstStatus i;
+      DAE.Var v;
+      Ident n;
+      Option<tuple<SCode.Element, DAE.Mod>> c;
+      list<SCode.Element> defineUnits;
+
+    case ((FRAME(id,st,_,httypes,imps,crs,encflag,defineUnits) :: fs))
+      equation
+        // make an empty component env!
+        ht = avlTreeNew();
+      then
+        (FRAME(id,st,ht,httypes,imps,crs,encflag,defineUnits) :: fs);
+  end matchcontinue;
+end removeComponentsFromFrameV;
+
 public function extendFrameV "function: extendFrameV
   This function adds a component to the environment."
   input Env inEnv1;

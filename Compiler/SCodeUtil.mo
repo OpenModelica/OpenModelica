@@ -80,7 +80,7 @@ algorithm
       equation
         System.addToRoots(0, Inst.emptyInstHashTable());
         // adrpo: TODO! FIXME! disable function caching for now as some tests fail.
-        // System.addToRoots(1, Ceval.emptyCevalHashTable());
+        // System.addToRoots(2, Ceval.emptyCevalHashTable());
         inProgram = MetaUtil.createMetaClassesInProgram(inProgram);
 
         // set the external flag that signals the presence of inner/outer components in the model

@@ -469,7 +469,7 @@ algorithm
 
     case(var,DAE.DAE((v as DAE.VAR(componentRef = cr))::elist,funcs))
       equation
-        true = Exp.crefEqual(var,cr);
+        true = Exp.crefEqualNoStringCompare(var,cr);
       then DAE.DAE(elist,funcs);
 
     case(var,DAE.DAE(DAE.COMP(id,elist,source,cmt)::elist2,funcs))
@@ -531,7 +531,7 @@ algorithm
 
     case(var,DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io)::elist,funcs))
       equation
-        true = Exp.crefEqual(var,cr);
+        true = Exp.crefEqualNoStringCompare(var,cr);
         io2 = removeInnerAttribute(io);
       then
         DAE.DAE(DAE.VAR(cr,kind,dir,prot,tp,bind,dim,flow_,st,source,attr,cmt,io2)::elist,funcs);
@@ -625,8 +625,7 @@ end unNameInnerouterUniqueCref;
 
 protected function getOuterBinding "
 Author: BZ, 2008-11
-Aquire the binding on the outer/innerouter variable, to transfer to inner variable.
-"
+Aquire the binding on the outer/innerouter variable, to transfer to inner variable."
 input DAE.ComponentRef currVar;
 input list<tuple<DAE.ComponentRef, DAE.Exp>> inlst;
 output Option<DAE.Exp> binding;
@@ -635,7 +634,7 @@ algorithm binding := matchcontinue(currVar,inlst)
   case(_,{}) then NONE;
   case(cr1,(cr2,e)::inlst)
     equation
-      true = Exp.crefEqual(cr1,cr2);
+      true = Exp.crefEqualNoStringCompare(cr1,cr2);
       then
         SOME(e);
   case(cr1,(_,_)::inlst) then getOuterBinding(cr1,inlst);
@@ -943,22 +942,8 @@ algorithm
   end matchcontinue;
 end boolVarProtection;
 
-public function varHasName "returns true if variable equals name passed as argument"
-  input DAE.Element var;
-  input DAE.ComponentRef cr;
-  output Boolean res;
-algorithm
-  res := matchcontinue(var,cr)
-  local DAE.ComponentRef cr2;
-    case(DAE.VAR(componentRef=cr2),cr) equation
-      res = Exp.crefEqual(cr2,cr);
-    then res;
-  end matchcontinue;
-end varHasName;
-
 public function hasStartAttr "
-  Returns true if variable attributes defines a start value.
-"
+  Returns true if variable attributes defines a start value."
   input Option<DAE.VariableAttributes> inVariableAttributesOption;
   output Boolean hasStart;
 algorithm
@@ -5332,3 +5317,18 @@ algorithm
 end collectFunctionRefVarPaths;
 
 end DAEUtil;
+
+/* adrpo: 2010-10-04 never used by OpenModelica!
+public function varHasName "returns true if variable equals name passed as argument"
+  input DAE.Element var;
+  input DAE.ComponentRef cr;
+  output Boolean res;
+algorithm
+  res := matchcontinue(var,cr)
+  local DAE.ComponentRef cr2;
+    case(DAE.VAR(componentRef=cr2),cr) equation
+      res = Exp.crefEqualNoStringCompare(cr2,cr);
+    then res;
+  end matchcontinue;
+end varHasName;
+*/

@@ -294,15 +294,24 @@ public function evaluateToStdOut
 algorithm
   outInteractiveSymbolTable := matchcontinue (inInteractiveStmts,inInteractiveSymbolTable,inBoolean)
     local
-      String res,res_1,res2,res_2;
+      String res,res_1,res2,res_2,str;
       InteractiveSymbolTable newst,st,newst_1;
       Boolean echo,semicolon,verbose;
       InteractiveStmt x;
-      list<InteractiveStmt> xs;
+      InteractiveStmts new; 
+      list<InteractiveStmt> xs;      
 
     case (ISTMTS(interactiveStmtLst = {x},semicolon = semicolon),st,verbose)
-      equation
-        (res,newst) = evaluate2(ISTMTS({x},verbose), st);
+      equation 
+        new = ISTMTS({x},verbose);
+        
+        //System.startTimer();
+        //str = Dump.printIstmtStr(new);        
+        //print("\nEvaluate: " +& str);
+        (res,newst) = evaluate2(new, st);
+        //System.stopTimer();
+        //print("\nEvaluate: " +& str +& ": " +&  realString(System.getTimerIntervalTime()));
+        
         echo = getEcho();
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
@@ -311,8 +320,16 @@ algorithm
 
     case (ISTMTS(interactiveStmtLst = (x :: xs),semicolon = semicolon),st,verbose)
       equation
-        (res,newst) = evaluate2(ISTMTS({x},semicolon), st);
-        echo = getEcho();
+        new = ISTMTS({x},semicolon);
+                
+        //System.startTimer();
+        //str = Dump.printIstmtStr(new);
+        //print("\nEvaluate: " +& str);
+        (res,newst) = evaluate2(new, st);
+        //System.stopTimer();
+        //print("\nEvaluate: " +& str +& ": " +&  realString(System.getTimerIntervalTime()));
+
+        echo = getEcho();        
         res_1 = selectResultstr(res, semicolon, verbose, echo);
         print(res_1);
         newst_1 = evaluateToStdOut(ISTMTS(xs,semicolon), newst, verbose);

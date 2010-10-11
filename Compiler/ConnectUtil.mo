@@ -66,6 +66,7 @@ protected import Error;
 protected import Dump;
 protected import PrefixUtil;
 protected import RTOpts;
+protected import System;
 
 public
 type Env     = Env.Env;
@@ -1276,6 +1277,12 @@ algorithm
       list<tuple<DAE.ComponentRef, Option<DAE.ComponentRef>, Connect.Face, DAE.ElementSource>> streamRest1,streamRest2;
       Connect.Face face1,face2;
 
+    // pointer equality testing first.
+    case (inSet1, inSet2)
+      equation
+        true = System.refEqual(inSet1, inSet2);         
+      then true;
+
     // deal with empty case
     case (Connect.EQU({}), Connect.EQU({})) then true;
     case (Connect.FLOW({}), Connect.FLOW({})) then true;
@@ -1666,9 +1673,12 @@ algorithm
 
     case(vars,Connect.SETS(s,crs,deletedComp::deletedComps,outerConn),prefix)
       equation
+        //print("\n\nvars:" +& Util.stringDelimitList(Util.listMap(vars, Exp.printComponentRefStr), ", ") +& "\n\n");
+        //print("\n\ndeleted:" +& Util.stringDelimitList(Util.listMap(deletedComp::deletedComps, Exp.printComponentRefStr), ", ") +& "\n\n");
+        //print("\n\nprefix:" +& PrefixUtil.printPrefixStr(prefix) +& "\n\n"); 
         vars = Util.listSelect2(vars, deletedComp, prefix, crefNotPrefixOf);
-        // print("Deleting: " +& Exp.printComponentRefStr(deletedComp) +& "\n");
-        // print("Result unconnected vars after remove -> prefix: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& Util.stringDelimitList(Util.listMap(vars, Exp.printComponentRefStr), ", ") +& "\n");
+        //print("Deleting: " +& Exp.printComponentRefStr(deletedComp) +& "\n");
+        //print("Result unconnected vars after remove -> prefix: " +& PrefixUtil.printPrefixStr(prefix) +& "/" +& Util.stringDelimitList(Util.listMap(vars, Exp.printComponentRefStr), ", ") +& "\n");
         vars = removeUnconnectedDeletedComponents(vars,Connect.SETS(s,crs,deletedComps,outerConn),prefix);
       then vars;
   end matchcontinue;

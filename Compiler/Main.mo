@@ -614,8 +614,14 @@ algorithm
         isModelicaScriptFile(f);
         // loading possible libraries given at the command line
         st = loadLibs(libs, Interactive.emptySymboltable);
-        // parse our algorithm given in the script
+        
+        //System.startTimer();
+        //print("\nParseExp");
+        // parse our algorithm given in the script        
         stmts = Parser.parseexp(f);
+        //System.stopTimer();
+        //print("\nParseExp: " +& realString(System.getTimerIntervalTime()));        
+        
         // are there any errors?
         // show errors if there are any
         showErrors(Print.getErrorString(), ErrorExt.printMessagesStr());
@@ -1203,6 +1209,7 @@ algorithm
     case _
       equation
         omhome = System.readEnv("OPENMODELICAHOME");
+        // print("OMHOME:" +& omhome +& "|"); 
         true = "Windows_NT" ==& System.os();
         oldpath = System.readEnv("PATH");
         newpath = Util.stringAppendList({omhome,"\\mingw\\bin;",omhome,"\\lib;",oldpath});
@@ -1223,7 +1230,7 @@ algorithm
         
         // reset the timer used to calculate 
         // cummulative time of some functions
-        // search for System.startTimer/System.stopTimer/System.getTimerTimer
+        // search for System.startTimer/System.stopTimer/System.getTimerIntervalTimer
         // System.resetTimer();
 
         //Env.globalCache = fill(Env.emptyCache,1);
@@ -1242,7 +1249,7 @@ algorithm
         errstr = Print.getErrorString();
         Debug.fcall("errorbuf", print, errstr);
         */
-        // print("Total time for timer: " +& realString(System.getTimerTime()) +& "\n");
+        // print("Total time for timer: " +& realString(System.getTimerCummulatedTime()) +& "\n");
       then
         ();
     case _
