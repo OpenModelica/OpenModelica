@@ -554,6 +554,49 @@ algorithm
   end matchcontinue;
 end unparseRestrictionStr;
 
+public function printIstmtStr
+"function: printIstmtStr
+  Prints an interactive statement to a string."
+  input Interactive.InteractiveStmts inInteractiveStmts;
+  output String strIstmt;
+algorithm
+  strIstmt := matchcontinue (inInteractiveStmts)
+    local
+      Absyn.AlgorithmItem alg;
+      Absyn.Exp expr;
+      list<Interactive.InteractiveStmt> l;
+      Boolean sc;
+      String str;
+      
+    case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IALG(algItem = alg)}))
+      equation
+        str = unparseAlgorithmStr(0, alg);
+      then
+        str;
+
+    case (Interactive.ISTMTS(interactiveStmtLst = {Interactive.IEXP(exp = expr)}))
+      equation
+        str = printExpStr(expr);
+      then
+        str;
+    
+    case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IALG(algItem = alg) :: l),semicolon = sc))
+      equation
+        str = unparseAlgorithmStr(0, alg);
+        str = str +& "; " +& printIstmtStr(Interactive.ISTMTS(l,sc));
+      then
+        str;
+        
+    case (Interactive.ISTMTS(interactiveStmtLst = (Interactive.IEXP(exp = expr) :: l),semicolon = sc))
+      equation
+        str = printExpStr(expr);
+        str = str +& "; " +& printIstmtStr(Interactive.ISTMTS(l,sc));
+      then
+        str;
+    case (_) then "unknown";
+  end matchcontinue;
+end printIstmtStr;
+
 public function dumpIstmt
 "function: dumpIstmt
   Dumps an interactive statement to the Print buffer."

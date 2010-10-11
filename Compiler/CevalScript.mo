@@ -670,20 +670,41 @@ algorithm
         Absyn.ComponentRef crefCName;
         Real t1, t2, t;
       equation
+        //System.startTimer();
+        //print("\nExists+Dependency");        
+        
         crefCName = Absyn.pathToCref(className);
         true = Interactive.existClass(crefCName, p);
         ptot = Dependency.getTotalProgram(className,p);
-        // t1 = clock();
+        
+        //System.stopTimer();
+        //print("\nExists+Dependency: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nAbsyn->SCode");
+        
         p_1 = SCodeUtil.translateAbsyn2SCode(ptot);
-        // t2 = clock();
-        // t = t2 -. t1;
-        // print("SCodeUtil.translateAbsyn2SCode: " +& Absyn.pathString(className) +& " time: " +& realString(t) +& "\n");        
-        (cache,env,_,dae) =
-          Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        
+        //System.stopTimer();
+        //print("\nAbsyn->SCode: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nInst.instantiateClass");
+        
+        (cache,env,_,dae) = Inst.instantiateClass(cache,InnerOuter.emptyInstHierarchy,p_1,className);
+        
+        //System.stopTimer();
+        //print("\nInst.instantiateClass: " +& realString(System.getTimerIntervalTime()));
+        
         // adrpo: do not add it to the instantiated classes, it just consumes memory for nothing.
-        // ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
-        ic_1 = ic;
+        // ic_1 = ic;
+        ic_1 = Interactive.addInstantiatedClass(ic, Interactive.INSTCLASS(className,dae,env));
+        
+        // System.startTimer();
+        // print("\nFlatModelica");        
         str = DAEDump.dumpStr(dae,Env.getFunctionTree(cache));
+        // System.stopTimer();
+        // print("\nFlatModelica: " +& realString(System.getTimerIntervalTime()));
       then
         (cache,Values.STRING(str),Interactive.SYMBOLTABLE(p,aDep,sp,ic_1,iv,cf,lf));
 

@@ -660,19 +660,20 @@ public function expStripLastSubs
   input Exp inExp;
   output Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp)
+  outExp := matchcontinue (inExp)
     local
       ComponentRef cr,cr_1;
       Type ty;
       Operator op,op1;
       Exp e,e_1;
       Boolean b;
+
     case (DAE.CREF(componentRef=cr))
       equation
         ty = crefLastType(cr);
         cr_1 = crefStripLastSubs(cr);
       then DAE.CREF(cr_1,ty);
+
     case (DAE.UNARY(operator=op,exp=e))
       equation
         e_1 = expStripLastSubs(e);
@@ -733,26 +734,36 @@ end crefStripLastSubsStringified;
 public function crefContainedIn
 "function: crefContainedIn
   author: PA
-  Returns true if y is a sub component ref of x.
+  Returns true if second arg is a sub component ref of first arg.
   For instance, b.c. is a sub_component of a.b.c."
-  input ComponentRef inComponentRef1;
-  input ComponentRef inComponentRef2;
+  input ComponentRef containerCref "the cref that might contain";
+  input ComponentRef containedCref "cref that might be contained";  
   output Boolean outBoolean;
 algorithm
-  outBoolean := matchcontinue (inComponentRef1,inComponentRef2)
+  outBoolean := matchcontinue (containerCref, containedCref)
     local
-      ComponentRef x,y,cr2;
+      ComponentRef full,partOf,cr2;
       Boolean res;
-    case (x,y) /* x y */
+
+    // a qualified cref cannot be contained in an ident cref.
+    case (DAE.CREF_IDENT(ident = _), DAE.CREF_QUAL(componentRef = _)) then false;
+      
+    // see if they are equal
+    case (full, partOf)
       equation
-        true = crefEqualNoStringCompare(x, y);
+        true = crefEqualNoStringCompare(full, partOf);
       then
         true;
-    case (DAE.CREF_QUAL(componentRef = cr2),y)
+
+    // dive into 
+    case (full as DAE.CREF_QUAL(componentRef = cr2), partOf)
       equation
-        res = crefContainedIn(cr2,y);
+        false = crefEqualNoStringCompare(full, partOf);        
+        res = crefContainedIn(cr2,partOf);
       then
         res;
+    
+    // anything else is false
     case (_,_) then false;
   end matchcontinue;
 end crefContainedIn;
@@ -1524,8 +1535,7 @@ Takes an arbitrary expression and applies subscripts to it. This is done by crea
 expressions given the original expression and then simplify them.
 Note: The subscripts must be INDEX
 
-alternative names: subsriptExp (but already taken), subscriptToAsub
-"
+alternative names: subsriptExp (but already taken), subscriptToAsub"
   input Exp e;
   input list<DAE.Subscript> subs; 
   output Exp res;
@@ -11258,10 +11268,17 @@ public function CodeVarToCref
   output Exp outExp;
 algorithm
   outExp:=matchcontinue(inExp)
-  local ComponentRef e_cref; Absyn.ComponentRef cref;
-    case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_)) equation
-      (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE);
+    local
+      ComponentRef e_cref;
+      Absyn.ComponentRef cref;
+    case(DAE.CODE(Absyn.C_VARIABLENAME(cref),_))
+      equation
+        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE);
       then DAE.CREF(e_cref,DAE.ET_OTHER());
+    case(DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cref)},{}))),_))
+      equation
+        (_,e_cref) = Static.elabUntypedCref(Env.emptyCache(),Env.emptyEnv,cref,false,Prefix.NOPRE);
+      then DAE.CALL(Absyn.IDENT("der"),{DAE.CREF(e_cref,DAE.ET_OTHER())},false,false,DAE.ET_OTHER(),DAE.NO_INLINE());
   end matchcontinue;
 end CodeVarToCref;
 

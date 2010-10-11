@@ -1107,20 +1107,16 @@ algorithm
   outExp := differentiateExp(inExp,inComponentRef,false);
 end differentiateExpCont;
 
-public function differentiateExp "function: differenatiate_exp
-
-  This function differentiates expressions with respect to a given variable,
-  given as second argument.
-  For example.
-  differentiateExp(\'2xy+2x+y\',x) => 2x+2
-"
+public function differentiateExp "function: differentiateExp
+  This function differentiates expressions with respect 
+  to a given variable,given as second argument.
+  For example: differentiateExp(2xy+2x+y,x) => 2x+2"
   input DAE.Exp inExp;
   input DAE.ComponentRef inComponentRef;
   input Boolean differentiateIfExp "If true, allow differentiation of if-expressions";
   output DAE.Exp outExp;
 algorithm
-  outExp:=
-  matchcontinue (inExp,inComponentRef,differentiateIfExp)
+  outExp := matchcontinue (inExp,inComponentRef,differentiateIfExp)
     local
       Real rval;
       DAE.ComponentRef cr,crx,tv;
@@ -1133,6 +1129,7 @@ algorithm
       String e_str,s,s2,str;
       list<DAE.Exp> expl_1,expl,sub;
       Integer i;
+    
     case (DAE.ICONST(integer = _),_,_) then DAE.RCONST(0.0);
 
     case (DAE.RCONST(real = _),_,_) then DAE.RCONST(0.0);

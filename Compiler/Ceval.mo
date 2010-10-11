@@ -1428,7 +1428,7 @@ algorithm
         false = RTOpts.debugFlag("nogen");
         failure(cevalIsExternalObjectConstructor(cache,funcpath,env));
         // we might actually have a function loaded here already!
-        cevalHashTable = System.getFromRoots(1);
+        cevalHashTable = System.getFromRoots(2);
         // see if we have it in the ceval cache
         Interactive.CFunction(funcHandle=funcHandle, buildTime=buildTime, loadedFromFile=fOld) = get(funcpath, cevalHashTable);
         funcstr = ModUtil.pathStringReplaceDot(funcpath, "_");
@@ -1452,10 +1452,10 @@ algorithm
         System.freeFunction(funcHandle);
         System.freeLibrary(libHandle);
         // add to cache!
-        //cevalHashTable = System.getFromRoots(1);
+        //cevalHashTable = System.getFromRoots(2);
         //buildTime = System.getCurrentTime();
         //cevalHashTable = add((funcpath,Interactive.CFunction(funcpath,(DAE.T_NOTYPE(),SOME(funcpath)),funcHandle,buildTime,"")), cevalHashTable);
-        //System.addToRoots(1, cevalHashTable);
+        //System.addToRoots(2, cevalHashTable);
       then
         (cache,newval,NONE());
 

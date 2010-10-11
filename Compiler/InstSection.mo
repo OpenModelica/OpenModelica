@@ -53,6 +53,7 @@ public import SCode;
 protected import Algorithm;
 protected import Ceval;
 protected import ConnectUtil;
+protected import DAEDump;
 protected import DAEUtil;
 protected import Debug;
 protected import Dump;
@@ -74,6 +75,7 @@ protected import UnitAbsyn;
 protected import Values;
 protected import ValuesUtil;
 protected import System;
+protected import ErrorExt;
 
 public
 type Prefix = Prefix.Prefix "a prefix";
@@ -3264,14 +3266,17 @@ algorithm
     // adrpo: handle expandable connectors!
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
+        ErrorExt.setCheckpoint("expandableConnectors");        
         true = System.getHasExpandableConnectors();
         (cache,env,ih,sets,dae,graph) = connectExpandableConnectors(cache, env, ih, sets, pre, c1, c2, impl, graph, info);
+        ErrorExt.rollBack("expandableConnectors");
       then
         (cache,env,ih,sets,dae,graph);
     
     // handle normal connectors!
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
       equation
+        ErrorExt.rollBack("expandableConnectors");        
         // Skip collection of dae functions here they can not be present in connector references
         (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl, false,pre);
         (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl, false,pre);
@@ -3400,7 +3405,7 @@ algorithm
       Connect.Face f1,f2;
       Connect.Sets sets_1,sets,sets_2,sets_3;
       DAE.DAElist dae, daeExpandable;
-      list<Env.Frame> env, envExpandable, envComponent, env1, env2;
+      list<Env.Frame> env, envExpandable, envComponent, env1, env2, envComponentEmpty;
       Prefix.Prefix pre;
       Absyn.ComponentRef c1,c2,c1_prefix,c2_prefix;
       Env.Cache cache;
@@ -3422,7 +3427,6 @@ algorithm
       equation
         (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache, env, c1, impl, false,pre);
         (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache, env, c2, impl, false,pre);
-        
         (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
         (cache,c2_2) = Static.canonCref(cache, env, c2_1, impl);
         (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
@@ -3496,12 +3500,24 @@ algorithm
       then
         (cache,env,ih,sets,dae,graph);
 
-    // c1 is expandable 
-    case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
+    // c1 is expandable, catch error that c1 is an IDENT! it should be at least a.x 
+    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_IDENT(name=_),c2,impl,graph,info)
       equation
         // c1 is expandable        
-        failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false,pre));
-        (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false,pre);        
+        failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre));
+        print("Error: The marked virtual expandable component reference in connect([" +& 
+          Absyn.printComponentRefStr(c1) +& "], " +&
+          Absyn.printComponentRefStr(c2) +& "); should be qualified, i.e. expandableConnectorName.virtualName!\n"); 
+      then
+        fail();
+
+    // c1 is expandable and c2 is existing BUT contains MORE THAN 1 component
+    // c1 is expandable and SHOULD be qualified!
+    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,info)
+      equation
+        // c1 is expandable        
+        failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre));
+        (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false, pre);        
 
         Debug.fprintln("expandable", 
           ">>>> connect(expandable, existing)(" +& 
@@ -3526,51 +3542,147 @@ algorithm
         // elab expandable connector
         (cache,DAE.CREF(c1_1,t1),prop1,_) = Static.elabCref(cache, env, c1_prefix, impl, false,pre);
         // lookup the expandable connector
-        (cache,c1_2) = Static.canonCref(cache,env, c1_1, impl);
-        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache,env,c1_2);
+        (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
+        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
         // make sure is expandable!
         true = isExpandableConnectorType(ty1);
         (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
         (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
         
+        // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
+        // and dive into!
+        variablesUnion = Env.getVariablesFromEnv(envComponent);
+        // print("VARS MULTIPLE:" +& Util.stringDelimitList(variablesUnion, ", ") +& "\n");        
+        // more than 1 variables
+        true = listLength(variablesUnion) > 1;
+        
         Debug.fprintln("expandable", 
-          "2 connect(expandable, existing)(" +& 
+          "2 connect(expandable, existing[MULTIPLE])(" +& 
              Dump.printComponentRefStr(c1) +& ", " +&
              Dump.printComponentRefStr(c2) +& ")"
              );        
+
+        // get the virtual component name
+        Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
+        // add the component c2 to the environment and IH as c1 with reversed input/output
+        // flip direction
+        dirFlipped = flipDirection(dir2);
         
+        envComponentEmpty = Env.removeComponentsFromFrameV(envComponent);
+        
+        // add to the environment of the expandable 
+        // connector the new virtual variable.
+        envExpandable = Env.extendFrameV(envExpandable,
+          DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dirFlipped,io2),false,
+          ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), 
+          // add empty here to connect individual components!
+          envComponentEmpty);
+        // ******************************************************************************
+        // here we need to update the correct environment.
+        // walk the cref: c1_2 and update all the corresponding environments on the path:
+        // Example: c1_2 = a.b.c -> update env c, update env b with c, update env a with b!
+        env = updateEnvComponentsOnQualPath(
+                    cache,
+                    env, 
+                    c1_2,
+                    attr, 
+                    ty, 
+                    binding, 
+                    cnstForRange, 
+                    envExpandable);
+        // ******************************************************************************
+
+        // then connect each of the components normally.
+        (cache,env,ih,sets,dae,graph) = connectExpandableVariables(cache,env,ih,sets,pre,c1,c2,variablesUnion,impl,graph,info);
+      then
+        (cache,env,ih,sets,dae,graph);     
+
+    // c1 is expandable and SHOULD be qualified!
+    case (cache,env,ih,sets,pre,c1 as Absyn.CREF_QUAL(name=_),c2,impl,graph,info)
+      equation
+        // c1 is expandable        
+        failure((_,_,_,_) = Static.elabCref(cache, env, c1, impl, false, pre));
+        (cache,DAE.CREF(c2_1,t2),prop2,acc2) = Static.elabCref(cache, env, c2, impl, false, pre);        
+
+        Debug.fprintln("expandable", 
+          ">>>> connect(expandable, existing)(" +& 
+             Dump.printComponentRefStr(c1) +& ", " +&
+             Dump.printComponentRefStr(c2) +& ")"
+             );
+
+        // lookup the existing connector
+        (cache,c2_2) = Static.canonCref(cache,env, c2_1, impl);
+        (cache,attr2,ty2) = Lookup.lookupConnectorVar(cache,env,c2_2);
+        // bind the attributes
+        DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dir2,io2) = attr2;
+
+        Debug.fprintln("expandable", 
+          "1 connect(expandable, existing)(" +& 
+             Dump.printComponentRefStr(c1) +& ", " +&
+             Dump.printComponentRefStr(c2) +& ")"
+             );
+
+        // strip the last prefix!
+        c1_prefix = Absyn.crefStripLast(c1);
+        // elab expandable connector
+        (cache,DAE.CREF(c1_1,t1),prop1,_) = Static.elabCref(cache, env, c1_prefix, impl, false, pre);
+        // lookup the expandable connector
+        (cache,c1_2) = Static.canonCref(cache, env, c1_1, impl);
+        (cache,attr1,ty1) = Lookup.lookupConnectorVar(cache, env, c1_2);
+        // make sure is expandable!
+        true = isExpandableConnectorType(ty1);
+        (_,attr,ty,binding,cnstForRange,splicedExpData,_,envExpandable,_) = Lookup.lookupVar(cache, env, c1_2);
+        (_,_,_,_,_,_,_,envComponent,_) = Lookup.lookupVar(cache, env, c2_2);
+        
+        // we have more than 1 variables in the envComponent, we need to add an empty environment for c1
+        // and dive into!
+        variablesUnion = Env.getVariablesFromEnv(envComponent);
+        // print("VARS SINGLE:" +& Util.stringDelimitList(variablesUnion, ", ") +& "\n");
+        // max 1 variable, should check for empty!
+        false = listLength(variablesUnion) > 1;        
+        
+        Debug.fprintln("expandable", 
+          "2 connect(expandable, existing[SINGLE])(" +& 
+             Dump.printComponentRefStr(c1) +& ", " +&
+             Dump.printComponentRefStr(c2) +& ")"
+             );
         
         // get the virtual component name
         Absyn.CREF_IDENT(componentName, _) = Absyn.crefGetLastIdent(c1);
         // add the component c2 to the environment and IH as c1 with reversed input/output
-        
         // flip direction
         dirFlipped = flipDirection(dir2);
         
+        // add to the environment of the expandable 
+        // connector the new virtual variable.
         envExpandable = Env.extendFrameV(envExpandable,
           DAE.TYPES_VAR(componentName,DAE.ATTR(flowPrefix2,streamPrefix2,acc2,vt2,dirFlipped,io2),false,
-          ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(), envComponent);
-        
-        // fetch the connector name
-        expandableConnectorName = Exp.crefLastIdent(c1_2);
-        
-        // update the expandable connector in environment
-        env = Env.updateFrameV(
-                 env, 
-                 DAE.TYPES_VAR(expandableConnectorName, attr, false, ty, binding, cnstForRange), 
-                 Env.VAR_TYPED(), 
-                 envExpandable);
-        
+          ty2,DAE.UNBOUND(),NONE()), NONE(), Env.VAR_TYPED(),
+          envComponent);
+        // ******************************************************************************
+        // here we need to update the correct environment.
+        // walk the cref: c1_2 and update all the corresponding environments on the path:
+        // Example: c1_2 = a.b.c -> update env c, update env b with c, update env a with b!
+        env = updateEnvComponentsOnQualPath(
+                    cache,
+                    env, 
+                    c1_2,
+                    attr, 
+                    ty, 
+                    binding, 
+                    cnstForRange, 
+                    envExpandable);
+        // ******************************************************************************
+
         Debug.fprintln("expandable", 
-          "3 connect(expandable, existing)(" +& 
+          "3 connect(expandable, existing[SINGLE])(" +& 
              Dump.printComponentRefStr(c1) +& ", " +&
              Dump.printComponentRefStr(c2) +& ")" 
              );        
-        
+
         //Debug.fprintln("expandable", "env expandable: " +& Env.printEnvStr(envExpandable));
         //Debug.fprintln("expandable", "env component: " +& Env.printEnvStr(envComponent));
         //Debug.fprintln("expandable", "env: " +& Env.printEnvStr(env));
-        
         
         // now it should be in the Env, fetch the info!
         (cache,DAE.CREF(c1_1,t1),prop1,_) = Static.elabCref(cache, env, c1, impl, false,pre);
@@ -3583,28 +3695,30 @@ algorithm
         (cache,env,ih,sets,dae,graph) = instConnect(cache,env,ih,sets,pre,c1,c2,impl,graph,info);
 
         // adrpo: TODO! FIXME! check if is OK
-        state = ClassInf.UNKNOWN(Absyn.IDENT("expandable connector")); // getStateFromType(ty1);
-        
+        state = ClassInf.UNKNOWN(Absyn.IDENT("expandable connector"));
         source = DAEUtil.createElementSource(info, Env.getEnvPath(env), PrefixUtil.prefixToCrefOpt(pre), SOME((c1_1,c2_1)), NONE());
         // declare the added component in the DAE!
-        (cache,c1_2) = PrefixUtil.prefixCref(cache,env,ih,pre, c1_2);
+        (cache,c1_2) = PrefixUtil.prefixCref(cache, env, ih, pre, c1_2);
         daeExpandable = Inst.daeDeclare(c1_2, state, ty1, 
            SCode.ATTR({}, flowPrefix1, streamPrefix1, acc1, vt1, dir1), 
-           false, NONE, {}, NONE, NONE(), NONE(), io1, false, source, true);
+           false, NONE, {}, NONE, NONE(), 
+           SOME(SCode.COMMENT(NONE(), SOME("virtual variable in expandable connector"))), 
+           io1, false, source, true);
         
         dae = DAEUtil.joinDaes(dae, daeExpandable);
         
         Debug.fprintln("expandable", 
           "<<<< connect(expandable, existing)(" +& 
              Dump.printComponentRefStr(c1) +& ", " +&
-             Dump.printComponentRefStr(c2) +& ")"
+             Dump.printComponentRefStr(c2) +& ")\nDAE:\n" +&
+             DAEDump.dump2str(daeExpandable)
              );
       then
         (cache,env,ih,sets,dae,graph);
     
     // both c1 and c2 are non expandable! 
     case (cache,env,ih,sets,pre,c1,c2,impl,graph,info)
-      equation
+      equation        
         // both of these are OK
         (cache,DAE.CREF(c1_1,t1),prop1,acc) = Static.elabCref(cache,env, c1, impl, false,pre);
         (cache,DAE.CREF(c2_1,t2),prop2,acc) = Static.elabCref(cache,env, c2, impl, false,pre);
@@ -3625,11 +3739,91 @@ algorithm
              );
         
         // then connect the components normally.
-        // ErrorExt.rollBack("connectExpandableConnectors");
       then
-        fail();
+        fail(); // fail to enter connect normally
   end matchcontinue;
 end connectExpandableConnectors;
+
+protected function updateEnvComponentsOnQualPath
+"@author: adrpo 2010-10-05
+  This function will fetch the environments on the 
+  cref path and update the last one with the given input,
+  then update all the environment back to the root.
+  Example:
+    input: env[a], a.b.c.d, env[d]
+    update env[c] with env[d]
+    update env[b] with env[c]
+    update env[a] with env[b]"
+  input Env.Cache inCache "cache";    
+  input Env.Env inEnv "the environment we should update!";
+  input DAE.ComponentRef virtualExpandableCref;
+  input DAE.Attributes virtualExpandableAttr;
+  input tuple<DAE.TType, Option<Absyn.Path>> virtualExpandableTy;
+  input DAE.Binding virtualExpandableBinding; 
+  input Option<DAE.Const> virtualExpandableCnstForRange;
+  input Env.Env virtualExpandableEnv "the virtual component environment!";
+  output Env.Env outEnv "the returned updated environment";  
+algorithm
+  outEnv := 
+  matchcontinue(inCache, inEnv, virtualExpandableCref, virtualExpandableAttr, virtualExpandableTy, 
+                virtualExpandableBinding, virtualExpandableCnstForRange, virtualExpandableEnv)
+    local
+      Env.Cache cache;
+      Env.Env topEnv "the environment we should update!";
+      DAE.ComponentRef veCref, qualCref;
+      DAE.Attributes veAttr,currentAttr;
+      tuple<DAE.TType, Option<Absyn.Path>> veTy,currentTy;
+      DAE.Binding veBinding,currentBinding; 
+      Option<DAE.Const> veCnstForRange,currentCnstForRange;
+      Env.Env veEnv "the virtual component environment!";
+      Env.Env updatedEnv "the returned updated environment";
+      Env.Env currentEnv;
+      String currentName;
+
+    // we have reached the top, update and return! 
+    case (cache, topEnv, veCref as DAE.CREF_IDENT(ident = currentName), veAttr, veTy, veBinding, veCnstForRange, veEnv)
+      equation
+        // update the topEnv
+        updatedEnv = Env.updateFrameV(
+                       topEnv, 
+                       DAE.TYPES_VAR(currentName, veAttr, false, veTy, veBinding, veCnstForRange), 
+                       Env.VAR_TYPED(),
+                       veEnv);
+      then
+        updatedEnv;
+    
+    // if we have a.b.x, update b with x and call us recursively with a.b
+    case (cache, topEnv, veCref as DAE.CREF_QUAL(componentRef = _), veAttr, veTy, veBinding, veCnstForRange, veEnv)
+      equation
+        // get the last one 
+        currentName = Exp.crefLastIdent(veCref);
+        // strip the last one
+        qualCref = Exp.crefStripLastIdent(veCref);
+        // strip the last subs
+        qualCref = Exp.crefStripLastSubs(qualCref);
+        // find the correct environment to update
+        (_,currentAttr,currentTy,currentBinding,currentCnstForRange,_,_,currentEnv,_) = Lookup.lookupVar(cache, topEnv, qualCref);        
+        
+        // update the current environment!
+        currentEnv = Env.updateFrameV(
+                       currentEnv, 
+                       DAE.TYPES_VAR(currentName, veAttr, false, veTy, veBinding, veCnstForRange), 
+                       Env.VAR_TYPED(),
+                       veEnv);
+                 
+        // call us recursively to reach the top!
+        updatedEnv = updateEnvComponentsOnQualPath(
+                      cache, 
+                      topEnv, 
+                      qualCref, 
+                      currentAttr, 
+                      currentTy, 
+                      currentBinding, 
+                      currentCnstForRange, 
+                      currentEnv);
+      then updatedEnv;
+  end matchcontinue;
+end updateEnvComponentsOnQualPath; 
 
 protected function connectExpandableVariables
 "@author: adrpo

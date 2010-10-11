@@ -313,7 +313,6 @@ algorithm
         // check the models for balancing
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae1);
         //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae2);
-
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae2);
@@ -323,22 +322,57 @@ algorithm
 
     case (cache,ih,(cdecls as (_ :: _)),(path as Absyn.QUALIFIED(name = name))) /* class in package */
       equation
-        (cache,env) = Builtin.initialEnv(cache);
         pathstr = Absyn.pathString(path);
+                
+        //System.startTimer();
+        //print("\nBuiltinMaking");
+        (cache,env) = Builtin.initialEnv(cache);
+        //System.stopTimer();
+        //print("\nBuiltinMaking: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nInstClassDecls");        
         (cache,env_1,ih,_) = instClassDecls(cache, env, ih, cdecls, path);
+        //System.stopTimer();
+        //print("\nInstClassDecls: " +& realString(System.getTimerIntervalTime()));
+
+        //System.startTimer();
+        //print("\nLookupClass");
         (cache,(cdef as SCode.CLASS(name = n)),env_2) = Lookup.lookupClass(cache, env_1, path, true);
+        //System.stopTimer();
+        //print("\nLookupClass: " +& realString(System.getTimerIntervalTime()));        
+        
+        //System.startTimer();
+        //print("\nInstClass");
         (cache,env_2,ih,_,dae,_,_,_,_,graph) = instClass(cache,env_2,ih, UnitAbsynBuilder.emptyInstStore(),DAE.NOMOD(), Prefix.NOPRE(), Connect.emptySet, cdef, {}, false, TOP_CALL(), ConnectionGraph.EMPTY) "impl";
+        //System.stopTimer();
+        //print("\nInstClass: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nOverConstrained");
         // deal with Overconstrained connections
         dae = ConnectionGraph.handleOverconstrainedConnections(graph, dae, Absyn.pathString(path));
+        //System.stopTimer();
+        //print("\nOverconstrained: " +& realString(System.getTimerIntervalTime()));
+        
+        //System.startTimer();
+        //print("\nReEvaluateIf");
         //print(" ********************** backpatch 1 **********************\n");         
         dae = reEvaluateInitialIfEqns(cache,env_2,dae,true);
-        // check the model for balancing
-        //Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
+        //System.stopTimer();
+        //print("\nReEvaluateIf: " +& realString(System.getTimerIntervalTime()));
 
+        // check the model for balancing
+        // Debug.fcall2("checkModel", checkModelBalancing, SOME(path), dae);
+
+        //System.startTimer();
+        //print("\nSetSource+DAE");
         // set the source of this element
         source = DAEUtil.addElementSourcePartOfOpt(DAE.emptyElementSource, Env.getEnvPath(env));
         daeElts = DAEUtil.daeElements(dae);
         dae = DAE.DAE({DAE.COMP(pathstr,daeElts,source,NONE)});
+        //System.stopTimer();
+        //print("\nSetSource+DAE: " +& realString(System.getTimerIntervalTime()));
       then
         (cache, env_2, ih, dae);
 
@@ -1620,6 +1654,7 @@ algorithm
   end matchcontinue;
 end instClassBasictype;
 
+/*
 public function instClassIn "
   This rule instantiates the contents of a class definition, with a new
   environment already setup.
@@ -1673,7 +1708,7 @@ algorithm
       DAE.DAElist dae;
       Connect.Sets csets_1,csets;
       list<DAE.Var> tys;
-      SCode.Restriction r;
+      SCode.Restriction r,rCached;
       SCode.ClassDef d;
       Env.Cache cache;
       list<DAE.ComponentRef> dc;
@@ -1705,6 +1740,120 @@ algorithm
       replaceable type Type_a subtypeof Any;
       Type_a bbx, bby;
       CachedInstItem partialFunc;
+      Real t1, t2, t;
+
+    //case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),prot,inst_dims,impl,graph,instSingleCref)
+    //  equation
+    //    print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& "(" +& className);
+    //    System.startTimer();
+    //  then
+    //  fail();
+
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),prot,inst_dims,impl,graph,instSingleCref)
+      equation        
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph) = instClassIn2(cache,env,ih,store,mods,pre,csets,ci_state,c,prot,inst_dims,impl,graph,instSingleCref);
+        //System.stopTimer();
+        //print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& " " +& className +& ": " +& realString(System.getTimerIntervalTime()) +& ")"); 
+      then 
+        (cache,env,ih,store,dae,csets,ci_state,tys,bc,oDA,equalityConstraint,graph);
+    
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name=className),prot,inst_dims,impl,graph,instSingleCref)
+      equation
+        //System.stopTimer();
+        //print("\n" +& Dump.indentStr(System.getTimerStackIndex()) +& " FAILED: " +& className +& ": " +& realString(System.getTimerIntervalTime()) +& ")");
+      then
+        fail();
+ end matchcontinue;
+end instClassIn;
+*/
+
+public function instClassIn "
+  This rule instantiates the contents of a class definition, with a new
+  environment already setup.
+  The *implicitInstantiation* boolean indicates if the class should be
+  instantiated implicit, i.e. without generating DAE.
+  The last option is a even stronger indication of implicit instantiation,
+  used when looking up variables in packages. This must be used because
+  generation of functions in implicit instanitation (according to
+  *implicitInstantiation* boolean) can cause circular dependencies
+  (e.g. if a function uses a constant in its body)"
+  input Env.Cache inCache;
+  input Env inEnv;
+  input InstanceHierarchy inIH;
+  input UnitAbsyn.InstStore store;
+  input Mod inMod;
+  input Prefix inPrefix;
+  input Connect.Sets inSets;
+  input ClassInf.State inState;
+  input SCode.Class inClass;
+  input Boolean isProtected;
+  input InstDims inInstDims;
+  input Boolean implicitInstantiation;
+  input ConnectionGraph.ConnectionGraph inGraph;
+  input Option<DAE.ComponentRef> instSingleCref;
+  output Env.Cache outCache;
+  output Env outEnv;
+  output InstanceHierarchy outIH;
+  output UnitAbsyn.InstStore outStore;
+  output DAE.DAElist outDae;
+  output Connect.Sets outSets;
+  output ClassInf.State outState;
+  output list<DAE.Var> outTypesVarLst;
+  output Option<DAE.Type> outTypesTypeOption;
+  output Option<Absyn.ElementAttributes> optDerAttr;
+  output DAE.EqualityConstraint outEqualityConstraint;
+  output ConnectionGraph.ConnectionGraph outGraph;
+algorithm
+  (outCache,outEnv,outIH,outStore,outDae,outSets,outState,outTypesVarLst,outTypesTypeOption,optDerAttr,outEqualityConstraint,outGraph):=
+  matchcontinue (inCache,inEnv,inIH,store,inMod,inPrefix,inSets,inState,inClass,isProtected,inInstDims,implicitInstantiation,inGraph,instSingleCref)
+    local
+      Option<tuple<DAE.TType, Option<Absyn.Path>>> bc;
+      list<Env.Frame> env,env_1;
+      DAE.Mod mods;
+      Prefix.Prefix pre;
+      list<DAE.ComponentRef> crs;
+      ClassInf.State ci_state,ci_state_1;
+      SCode.Class c,cls;
+      InstDims inst_dims;
+      Boolean impl,prot;
+      String clsname,implstr,n;
+      DAE.DAElist dae;
+      Connect.Sets csets_1,csets;
+      list<DAE.Var> tys;
+      SCode.Restriction r,rCached;
+      SCode.ClassDef d;
+      Env.Cache cache;
+      list<DAE.ComponentRef> dc;
+      Real t1,t2,time; Boolean b;
+      list<Connect.OuterConnect> oc;
+      Option<Absyn.ElementAttributes> oDA;
+      DAE.EqualityConstraint equalityConstraint;
+      ConnectionGraph.ConnectionGraph graph;
+      InstanceHierarchy ih;
+      InstHashTable instHash;
+      tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix,
+            Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
+            ConnectionGraph.ConnectionGraph, Option<DAE.ComponentRef>> inputs;
+      tuple<Env, DAE.DAElist,
+            Connect.Sets, ClassInf.State, list<DAE.Var>, Option<DAE.Type>,
+            Option<Absyn.ElementAttributes>, DAE.EqualityConstraint
+            > outputs;
+      Absyn.Path fullEnvPathPlusClass;
+      Option<Absyn.Path> envPathOpt;
+      String className, str1, str2;
+
+      Mod aa_1;
+      Prefix aa_2;
+      Connect.Sets aa_3;
+      ClassInf.State aa_4;
+      SCode.Class aa_5;
+      Boolean aa_6;
+      InstDims aa_7;
+      Boolean aa_8;
+      Option<DAE.ComponentRef> aa_9;
+      replaceable type Type_a subtypeof Any;
+      Type_a bbx, bby;
+      CachedInstItem partialFunc;
 
     /* Partial packages can sometimes be instantiated here, but should really be done in partialInstClass, since
      * it filters out a lot of things. */
@@ -1715,14 +1864,14 @@ algorithm
         (cache,env,ih,store,DAEUtil.emptyDae,csets,ci_state,{},NONE,NONE,NONE,graph);
 
     /*  see if we have it in the cache */
-    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name = className),prot,inst_dims,impl,graph,instSingleCref)
+    case (cache,env,ih,store,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims,impl,graph,instSingleCref)
       equation
         false = RTOpts.debugFlag("noCache");
         instHash = System.getFromRoots(0);
         envPathOpt = Env.getEnvPath(inEnv);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         {SOME(FUNC_instClassIn(inputs, outputs)),_} = get(fullEnvPathPlusClass, instHash);
-        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7, aa_8, _, aa_9) = inputs;
+        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5 as SCode.CLASS(restriction=rCached), _, aa_7, aa_8, _, aa_9) = inputs;
         // are the important inputs the same??
         prefixEqualUnlessBasicType(aa_2, pre, c);
         bbx = (aa_7,      aa_8, aa_1, aa_3,  aa_4,     aa_5, aa_9);
@@ -1777,16 +1926,74 @@ algorithm
     case (cache,env,ih,store,mods,pre,csets,ci_state,(c as SCode.CLASS(name = n,restriction = r,classDef = d)),prot,inst_dims,impl,graph,_)
       equation
         //print("instClassIn(");print(n);print(") failed\n");
-        Debug.fprintln("insttr", "- Inst.instClassIn failed on class:" +&
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprintln("failtrace", "- Inst.instClassIn failed on class:" +&
            n +& " in environment: " +& Env.printEnvPathStr(env));
       then
         fail();
   end matchcontinue;
 end instClassIn;
- 
+
+protected function checkClassEqual
+  input SCode.Class c1;
+  input SCode.Class c2;
+  output Boolean areEqual;  
+algorithm
+  areEqual := matchcontinue(c1, c2)
+    local
+      SCode.Restriction r;
+      list<SCode.AlgorithmSection> normalAlgorithmLst1,normalAlgorithmLst2;
+      list<SCode.AlgorithmSection> initialAlgorithmLst1,initialAlgorithmLst2;
+      SCode.ClassDef cd1, cd2;      
+      
+    // when +g=MetaModelica, check class equality!
+    case (c1,c2)
+      equation
+        true = RTOpts.acceptMetaModelicaGrammar();
+        failure(equality(c1 = c2));
+      then
+        false;
+
+    // check the types for equality!
+    case (SCode.CLASS(restriction = SCode.R_TYPE()),_)
+      equation
+        failure(equality(c1 = c2));
+      then
+        false;
+
+    // anything else but functions, do not check equality
+    case (SCode.CLASS(restriction = r),_)
+      equation
+        failure(equality(r = SCode.R_FUNCTION()));        
+      then
+        true;
+
+    // check the class equality only for functions, made of parts
+    case (SCode.CLASS(classDef=SCode.PARTS(normalAlgorithmLst=normalAlgorithmLst1, initialAlgorithmLst=initialAlgorithmLst1)),
+          SCode.CLASS(classDef=SCode.PARTS(normalAlgorithmLst=normalAlgorithmLst2, initialAlgorithmLst=initialAlgorithmLst2)))
+      equation
+        // only check if algorithm list lengths are the same!
+        true = intEq(listLength(normalAlgorithmLst1), listLength(normalAlgorithmLst2));
+        true = intEq(listLength(initialAlgorithmLst1), listLength(initialAlgorithmLst2));
+      then
+        true;
+    // check the class equality only for functions, made of derived
+    case (SCode.CLASS(classDef=cd1 as SCode.DERIVED(typeSpec=_)),
+          SCode.CLASS(classDef=cd2 as SCode.DERIVED(typeSpec=_)))
+      equation
+        // only check class definitions are the same!
+        equality(cd1 = cd2);
+      then
+        true;   
+    // anything else, false!
+    case (c1,c2) then false;
+  end matchcontinue;
+end checkClassEqual;
+
 protected function prefixEqualUnlessBasicType
-  "Checks if two prefixes are equal, unless the class is an enumeration 
-   (all enumerations with the same name are equal)."  
+"Checks if two prefixes are equal, unless the class is a
+ basic type, i.e. all reals, integers, enumerations with 
+ the same name, etc. are equal."  
   input Prefix pre1;
   input Prefix pre2;
   input SCode.Class cls;
@@ -2364,7 +2571,7 @@ algorithm
         equality(c=DAE.C_VAR);
         s = Exp.printExpStr(bind);
         Error.addMessage(Error.HIGHER_VARIABILITY_BINDING,{id,"PARAM",s,"VAR"});
-      then fail();  
+      then fail();
       
     case(cache,env,id,_,bind,expectedTp,DAE.PROP(bindTp,_)) local String s1,s2;
       equation
@@ -2498,7 +2705,7 @@ algorithm
       ClassInf.State ci_state,ci_state_1;
       SCode.Class c;
       String n;
-      SCode.Restriction r;
+      SCode.Restriction r, rCached;
       SCode.ClassDef d;
       Boolean prot;
       InstDims inst_dims;
@@ -2527,7 +2734,7 @@ algorithm
       Absyn.Info info;
 
     // see if we find a partial class inst
-    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className),prot,inst_dims)
+    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
       equation
         false = RTOpts.debugFlag("noCache");
         instHash = System.getFromRoots(0);
@@ -2535,7 +2742,7 @@ algorithm
         className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
         {_,SOME(FUNC_partialInstClassIn(inputs, outputs))} = get(fullEnvPathPlusClass, instHash);
-        (_, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7) = inputs;
+        (_, _, _, aa_1, aa_2, aa_3, aa_4, aa_5 as SCode.CLASS(restriction=rCached), _, aa_7) = inputs;
         // are the important inputs the same??
         prefixEqualUnlessBasicType(aa_2, pre, c);
         bbx = (aa_7,      aa_1, aa_3,  aa_4,     aa_5);
@@ -2547,8 +2754,8 @@ algorithm
         (inCache,env,ih,ci_state_1);
 
     /*/ adrpo: TODO! FIXME! see if we find a full instantiation!
-      // this fails for 2-3 examples, so disable it for now and check it later
-    case (cache,env,ih,mods,pre,csets,ci_state,c,prot,inst_dims)
+    // this fails for 2-3 examples, so disable it for now and check it later
+    case (cache,env,ih,mods,pre,csets,ci_state,c as SCode.CLASS(name = className, restriction=r),prot,inst_dims)
       local
       tuple<Env.Cache, Env, InstanceHierarchy, UnitAbsyn.InstStore, Mod, Prefix,
             Connect.Sets, ClassInf.State, SCode.Class, Boolean, InstDims, Boolean,
@@ -2561,15 +2768,17 @@ algorithm
         false = RTOpts.debugFlag("noCache");
         instHash = System.getFromRoots(0);
         envPathOpt = Env.getEnvPath(inEnv);
-        className = SCode.className(c);
         fullEnvPathPlusClass = Absyn.selectPathsOpt(envPathOpt, Absyn.IDENT(className));
-        {FUNC_instClassIn(inputs, outputs)} = get(fullEnvPathPlusClass, instHash);
-        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5, _, aa_7, _, _, _) = inputs;
+        {SOME(FUNC_instClassIn(inputs, outputs)), _} = get(fullEnvPathPlusClass, instHash);
+        (_, _, _, _, aa_1, aa_2, aa_3, aa_4, aa_5  as SCode.CLASS(restriction=rCached), _, aa_7, _, _, _) = inputs;
         // are the important inputs the same??
-        bbx = (aa_1, aa_2, aa_3, aa_4, aa_5, aa_7);
-        bby = (mods,pre,csets,ci_state,c,inst_dims);
+        equality(rCached = r); // restrictions should be the same
+        prefixEqualUnlessBasicType(aa_2, pre, c); // check if class is enum as then prefix doesn't matter!        
+        bbx = (aa_7,      aa_1, aa_4,     a5);
+        bby = (inst_dims, mods, ci_state, c);
         equality(bbx = bby);
-        (cache,env,ih,_,_,_,ci_state_1,_,_,_,_,_) = outputs;
+        // true = checkClassEqual(aa_5, c);        
+        (cache,env,_,_,_,_,ci_state_1,_,_,_,_,_) = outputs;
         //Debug.fprintln("cache", "IIIIPARTIAL->got FULL from instCache: " +& Absyn.pathString(fullEnvPathPlusClass));
       then
         (inCache,env,ih,ci_state_1);*/
@@ -3320,11 +3529,13 @@ algorithm
         //   connect(non_expandable, expandable);
         //   connect(expandable, non_expandable);
         //   connect(expandable, expandable);
-        eqs_1 = orderConnectEquationsPutNonExpandableFirst(cache, env5, ih, pre, eqs_1); 
+        ErrorExt.setCheckpoint("expandableConnectorsOrder");
+        (cache, eqs_1) = orderConnectEquationsPutNonExpandableFirst(cache, env5, ih, pre, eqs_1, impl); 
+        ErrorExt.rollBack("expandableConnectorsOrder");
         
         //Instantiate equations (see function "instEquation")
         (cache,env5,ih,dae2,csets2,ci_state3,graph) =
-        instList(cache, env5, ih, mods, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, alwaysUnroll, graph) ;
+          instList(cache, env5, ih, mods, pre, csets1, ci_state2, InstSection.instEquation, eqs_1, impl, alwaysUnroll, graph) ;
 
         //Instantiate inital equations (see function "instInitialEquation")
         (cache,env5,ih,dae3,csets3,ci_state4,graph) =
@@ -3335,7 +3546,7 @@ algorithm
         
         //Instantiate algorithms  (see function "instAlgorithm")
         (cache,env5,ih,dae4,csets4,ci_state5,graph) = 
-        instList(cache,env5,ih, mods, pre, csets3, ci_state4, InstSection.instAlgorithm, alg_1, impl, unrollForLoops, graph);
+          instList(cache,env5,ih, mods, pre, csets3, ci_state4, InstSection.instAlgorithm, alg_1, impl, unrollForLoops, graph);
 
         //Instantiate algorithms  (see function "instInitialAlgorithm")
         (cache,env5,ih,dae5,csets5,ci_state6,graph) =
@@ -3643,34 +3854,45 @@ if it is found return that component and any dependant components(modifiers), th
 
 If the component specified in argument 2 is not found, we return all extend and import statements.
 TODO: search import and extends statements for specified variable.
-       this includes to check class definitions to so that we do not need to instantiate local class definitions while looking for a constant.
-"
+      this includes to check class definitions to so that we do not need to instantiate local class definitions while looking for a constant."
   input list<SCode.Element> inComps;
   input Option<DAE.ComponentRef> ocr;
   input list<SCode.Element> allComps;
   input String className;
   output list<SCode.Element> outComps;
-algorithm outComps := matchcontinue(inComps, ocr,allComps,className)
-  local DAE.ComponentRef cr;
-  case(inComps, NONE,allComps,className) then inComps;
-  case(inComps, SOME(cr), allComps,className)
-    local
+algorithm 
+  outComps := matchcontinue(inComps, ocr, allComps, className)
+    local 
+      DAE.ComponentRef cr;    
       list<String> elemStrings;
       list<SCode.Element> elems;
-    equation
-      outComps = extractConstantPlusDeps2(inComps, ocr,allComps,className,{});
-      true = listLength(outComps) >= 1;
-      outComps = listReverse(outComps);
-    then
-      outComps;
-  case(inComps, SOME(cr), allComps,className)
-    equation
-      true = RTOpts.debugFlag("failtrace");
-      Debug.fprint("failtrace", "ExtractConstantPlusDeps::Failure to find " +& Exp.printComponentRefStr(cr) +& ", returning \n");
-      Debug.fprint("failtrace", "Elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
-    then
-      inComps;
-end matchcontinue;
+    
+    // handle empty!
+    // case({}, _, allComps, className) then {};    
+    
+    // handle none
+    case(inComps, NONE, allComps, className) then inComps;
+
+    // handle StateSelect as we will NEVER find it! 
+    // case(inComps, SOME(DAE.CREF_QUAL(ident="StateSelect")), allComps, className) then inComps;
+
+    // handle some
+    case(inComps, ocr as SOME(cr), allComps, className)
+      equation
+        outComps = extractConstantPlusDeps2(inComps, ocr, allComps, className,{});
+        true = listLength(outComps) >= 1;
+        outComps = listReverse(outComps);
+      then
+        outComps;
+  
+    case(inComps, SOME(cr), allComps, className)
+      equation
+        true = RTOpts.debugFlag("failtrace");
+        Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps failure to find " +& Exp.printComponentRefStr(cr) +& ", returning \n");
+        Debug.fprint("failtrace", "- Inst.extractConstantPlusDeps elements to instantiate:" +& intString(listLength(inComps)) +& "\n");
+      then
+        inComps;
+  end matchcontinue;
 end extractConstantPlusDeps;
 
 protected function extractConstantPlusDeps2 "
@@ -12557,26 +12779,49 @@ protected function orderConnectEquationsPutNonExpandableFirst
   input InstanceHierarchy inIH; 
   input Prefix.Prefix inPre;
   input list<SCode.Equation> inEquations;
+  input Boolean impl;
+  output Env.Cache inCache;
   output list<SCode.Equation> outEquations;
 algorithm
-  outEquations := matchcontinue(inCache, inEnv, inIH, inPre, inEquations)
+  outEquations := matchcontinue(inCache, inEnv, inIH, inPre, inEquations, impl)
     local 
       list<SCode.Equation> equations, rest;
       SCode.Equation eq;
+      DAE.ComponentRef c1, c2;
+      Absyn.ComponentRef crefLeft, crefRight;
+      Env.Cache cache;
+    
     // if we have no expandable connectors, return the same   
-    case (inCache, inEnv, inIH, inPre, eq::rest)
+    case (cache, inEnv, inIH, inPre, eq::rest, _)
       equation
         false = System.getHasExpandableConnectors();
         equations = inEquations;
       then 
-        equations;
+        (cache, equations);
     
-    // 
-    case (inCache, inEnv, inIH, inPre, /*SCode.EQ_CONNECT(crefLeft, crefRight, comment)::rest*/inEquations)
+    // handle empty case
+    case (cache, inEnv, inIH, inPre, {}, _) then (cache, {});
+    
+    // connect, both expandable
+    case (cache, inEnv, inIH, inPre, (eq as SCode.EQUATION(SCode.EQ_CONNECT(crefLeft, crefRight, _, _)))::rest, impl)
       equation
-        equations = inEquations;
-      then 
-        equations;          
+        // type of left var is an expandable connector!
+        (cache,DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_) = 
+            Static.elabCref(cache, inEnv, crefLeft, impl, false, inPre);
+        // type of right left var is an expandable connector!
+        (cache,DAE.CREF(ty=DAE.ET_COMPLEX(complexClassType=ClassInf.CONNECTOR(_, true))),_,_) = 
+            Static.elabCref(cache, inEnv, crefRight, impl, false, inPre);
+        (cache, equations) = orderConnectEquationsPutNonExpandableFirst(cache, inEnv, inIH, inPre, rest, impl);            
+        equations = listAppend(equations, {eq});
+      then
+        (cache, equations);
+    
+    // anything else, put at the begining (keep the order)
+    case (cache, inEnv, inIH, inPre, eq::rest, impl)
+      equation
+        (cache, equations) = orderConnectEquationsPutNonExpandableFirst(cache, inEnv, inIH, inPre, rest, impl);
+      then
+        (cache, eq::equations);
   end matchcontinue;
 end orderConnectEquationsPutNonExpandableFirst;
 
