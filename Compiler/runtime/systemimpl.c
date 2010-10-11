@@ -1430,7 +1430,6 @@ RML_BEGIN_LABEL(System__listAppendUnsafe)
 }
 RML_END_LABEL
 
-char          rml_external_roots_trail_names[1024][200];
 void         *rml_external_roots_trail[1024] = {0};
 rml_uint_t    rml_external_roots_trail_size = 1024;
 
@@ -3022,40 +3021,104 @@ RML_BEGIN_LABEL(System__realtimeTock)
 }
 RML_END_LABEL
 
+#define TIMER_MAX_STACK  1000
+double timerIntervalTime = 0;
+double timerCummulatedTime = 0;
 double timerTime = 0;
+long int timerStackIdx = 0;
+double timerStack[TIMER_MAX_STACK] = {0};
 
 RML_BEGIN_LABEL(System__resetTimer)
 {
   /* reset the timer */
+  timerIntervalTime = 0;
+  timerCummulatedTime = 0;
   timerTime = 0;
+  timerStackIdx = 0;
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+void pushTimerStack()
+{
+  if (timerStackIdx < TIMER_MAX_STACK)
+  {
+    timerStack[timerStackIdx] = rt_tock(RT_CLOCK_SPECIAL_STOPWATCH);
+    /* increase the stack */
+    timerStackIdx++;
+  }
+  else
+  {
+    fprintf(stderr, "System.pushStartTime -> timerStack overflow %ld\n", timerStackIdx);
+  }
+}
+
+double popTimerStack()
+{
+  if (timerStackIdx >= 1)
+  {
+    /* how much time passed since we last called startTime? */
+    timerIntervalTime = rt_tock(RT_CLOCK_SPECIAL_STOPWATCH) - timerStack[timerStackIdx-1];
+    timerCummulatedTime += timerIntervalTime;
+    /* decrease the stack */
+    timerStackIdx--;
+  }
+  else
+  {
+    fprintf(stderr, "System.popStartTime -> timerStack underflow %ld\n", timerStackIdx);
+  }
+}
+
 RML_BEGIN_LABEL(System__startTimer)
 {
-  /* start the timer */
-  rt_tick(RT_CLOCK_SPECIAL_STOPWATCH);
+  /* start the timer if not already started */
+  if (!timerStackIdx)
+  {
+    rt_tick(RT_CLOCK_SPECIAL_STOPWATCH);
+  }
+  pushTimerStack();
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
 RML_BEGIN_LABEL(System__stopTimer)
 {
-  /* cummulate the timer time */
-  timerTime += rt_tock(RT_CLOCK_SPECIAL_STOPWATCH);
+  popTimerStack();
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
-RML_BEGIN_LABEL(System__getTimerTime)
+RML_BEGIN_LABEL(System__getTimerIntervalTime)
 {
   /* get the cummulated timer time */
-  rmlA0 = mk_rcon(timerTime);
+  rmlA0 = mk_rcon(timerIntervalTime);
   RML_TAILCALLK(rmlSC);
 }
 RML_END_LABEL
 
+RML_BEGIN_LABEL(System__getTimerCummulatedTime)
+{
+  /* get the cummulated timer time */
+  rmlA0 = mk_rcon(timerCummulatedTime);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getTimerElapsedTime)
+{
+  /* get the cummulated timer time */
+  rmlA0 = mk_rcon(rt_tock(RT_CLOCK_SPECIAL_STOPWATCH) - timerStack[0]);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
+
+RML_BEGIN_LABEL(System__getTimerStackIndex)
+{
+  /* get the cummulated timer time */
+  rmlA0 = mk_icon(timerStackIdx);
+  RML_TAILCALLK(rmlSC);
+}
+RML_END_LABEL
 
 /*
  * adrpo: an implementation of stringAppendList in low level C

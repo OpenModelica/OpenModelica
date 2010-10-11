@@ -10,6 +10,10 @@ package HashTable4 "
   It is a generic implementation that can be used for any Key, Value datatypes. But the code must be copied
   since MetaModelica is not powerful enough to handle general generics.
 
+  Not used by OpenModelica!
+
+  RCS: $Id$
+
   "
 
 

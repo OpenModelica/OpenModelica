@@ -6,13 +6,15 @@ package HashTableCG "
   All rights reserved.
 
 
- Based on HashTable.mo but
- Key 		= DAE.ComponentRef
- Value 	= DAE.ComponentRef
+  Based on HashTable.mo but
+  Key 		= DAE.ComponentRef
+  Value 	= DAE.ComponentRef
 
-  Used by VarTransform.mo
+  Used by ConnectionGraph.mo
+  
+  RCS: $Id$
 
-  "
+"
 
 
 /* Below is the instance specific code. For each hashtable the user must define:

@@ -732,13 +732,69 @@ function stopTimer
   external "C";
 end stopTimer;
 
-function getTimerTime
+function getTimerIntervalTime
+"@autor: adrpo
+  this function will return the time that
+  passed between the last [startTimer,stopTimer] interval.
+  Notice that if start/stop are called recursively this
+  function will return the time passed between the 
+  corresponding intervals.
+  Example:
+  (start1, 
+    (start2, 
+      (start3, stop3) call getTimerIntervalTime -> (stop3-start3)
+     stop2) call getTimerIntervalTime -> (stop2-start2)
+   stop1)  call getTimerIntervalTime -> (stop1-start1)"
+  output Real timerIntervalTime;
+  external "C";
+end getTimerIntervalTime;
+
+function getTimerCummulatedTime
 "@autor: adrpo
   this function will return the cummulated time 
-  between all calls to startTimer and stopTimer."
-  output Real timerTime;
+  by adding all the interval times [startTimer,stopTimer].
+  Note that if you have recursive calls to start/stop
+  this function will not return the *correct* time.
+  Example:
+   Recursive: 
+     (start1, (start2, (start3, stop3) stop2) stop1)
+     getTimerCummulatedTime = 
+       stop3-start3 + stop2-start2 + stop1-start1.
+   Serial: 
+     (start1, stop1) (start2, stop2) (start3, stop3)
+     getTimerCummulatedTime = 
+       stop3-start3 + stop2-start2 + stop1-start1."
+  output Real timerCummulatedTime;
   external "C";
-end getTimerTime;
+end getTimerCummulatedTime;
+
+function getTimerElapsedTime
+"@autor: adrpo
+  this function will return the time 
+  passed since the first call to startTimeer
+  Example:
+    (start1, (start2, (start3, stop3), stop2) ...
+    getTimerSinceFirstStartTime = timeNow-start1."
+  output Real timerElapsedTime;
+  external "C";
+end getTimerElapsedTime;
+
+function getTimerStackIndex
+"@autor: adrpo
+  this function will return number of 
+  times start/stop was called recursively.
+  You can use this function for pretty printing. 
+  Example:
+     index 0
+    (start1, index 1 
+       (start2, index 2
+          (start3, index 3
+           stop3), index 2
+        stop2) index 1
+     stop1) index 0"
+  output Integer stackIndex;
+  external "C";
+end getTimerStackIndex;
 
 function stringAppendList
 "@autor: adrpo
