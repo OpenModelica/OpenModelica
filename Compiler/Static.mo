@@ -7362,7 +7362,7 @@ protected function elabCallInteractive "function: elabCallInteractive
     then (cache, DAE.CALL(Absyn.IDENT("readSimulationResultSize"),
           {DAE.SCONST(filename)},false,true,DAE.ET_OTHER(),DAE.NO_INLINE),DAE.PROP(DAE.T_INTEGER_DEFAULT,DAE.C_VAR()),SOME(st));
 
-    case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{(cr as Absyn.CREF(componentRef = _))},{},impl,SOME(st),_)
+    case (cache,env,Absyn.CREF_IDENT(name = "plot2"),{cr},{},impl,SOME(st),_)
       local Absyn.Exp cr;
       equation
         vars_1 = elabVariablenames({cr});
@@ -7465,7 +7465,7 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 
 //plot2(model, x)
-  case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), cr2 as Absyn.CREF(componentRef = _)},args,impl,SOME(st),pre) /* Fill in rest of defaults here */
+  case (cache,env,Absyn.CREF_IDENT(name = "plot"),{Absyn.CREF(componentRef = cr), cr2},args,impl,SOME(st),pre) /* Fill in rest of defaults here */
     local Absyn.Path className; DAE.Exp storeInTemp; Absyn.Exp cr2;
       		DAE.Exp interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange;
 
@@ -7542,7 +7542,7 @@ protected function elabCallInteractive "function: elabCallInteractive
 
 
 //plot2(x)
-    case (cache,env,Absyn.CREF_IDENT(name = "plot"),{(cr as Absyn.CREF(componentRef = _))},args,impl,SOME(st),pre)
+    case (cache,env,Absyn.CREF_IDENT(name = "plot"),{cr},args,impl,SOME(st),pre)
       local Absyn.Exp cr;
         DAE.Exp grid, legend, title, interpolation, logX, logY, xLabel, yLabel, points, xRange, yRange;
       equation
@@ -7611,7 +7611,7 @@ protected function elabCallInteractive "function: elabCallInteractive
         (cache,DAE.CALL(Absyn.IDENT("plot"),{DAE.ARRAY(DAE.ET_OTHER(),false,vars_1), interpolation, title, legend, grid, logX, logY, xLabel, yLabel, points, xRange, yRange},
           false,true,DAE.ET_BOOL(),DAE.NO_INLINE),DAE.PROP(DAE.T_BOOL_DEFAULT,DAE.C_VAR()),SOME(st));
 
-   case (cache,env,Absyn.CREF_IDENT(name = "val"),{(cr as Absyn.CREF(componentRef = _)),cd},{},impl,SOME(st),pre)
+   case (cache,env,Absyn.CREF_IDENT(name = "val"),{cr,cd},{},impl,SOME(st),pre)
       local
         Absyn.Exp cr,cd;
         DAE.Exp cd1,cr2;
@@ -8075,15 +8075,13 @@ algorithm
         xs_1 = elabVariablenames(xs);
       then
         (DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER()) :: xs_1);
-/*
-    case ((Absyn.CALL(Absyn.CREF_IDENT(name="der"), Absyn.FUNCTIONARGS({Absyn.CREF(Absyn.CREF_IDENT(name = str))}, {})) :: xs))
+    case ((Absyn.CALL(Absyn.CREF_IDENT(name="der"), Absyn.FUNCTIONARGS({Absyn.CREF(componentRef = cr)}, {})) :: xs))
       equation
-        str2 = "der(" +& str +& ")";
-        cr = Absyn.CREF_IDENT(str2,{});
         xs_1 = elabVariablenames(xs);
       then
-        (DAE.CODE(Absyn.C_VARIABLENAME(cr),DAE.ET_OTHER()) :: xs_1);
+        DAE.CODE(Absyn.C_EXPRESSION(Absyn.CALL(Absyn.CREF_IDENT("der",{}),Absyn.FUNCTIONARGS({Absyn.CREF(cr)},{}))),DAE.ET_OTHER())::xs_1;
 
+/*
     case ((Absyn.STRING(value = str) :: xs))
       equation
 
