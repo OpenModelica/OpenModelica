@@ -310,8 +310,7 @@ algorithm
         false = listMember(first, acc);
         acc = first::acc;
         (cache, ty, _) = lookupType(cache, env, first, true);
-        innerTypes = Types.getAllInnerTypes(ty);
-        uniontypeTypes = Util.listFilter(innerTypes, Types.uniontypeFilter);
+        uniontypeTypes = Types.getAllInnerTypesOfType(ty, Types.uniontypeFilter);
         uniontypePaths =  Util.listMap(uniontypeTypes, Types.getUniontypePaths);
         rest = Util.listFlatten(rest :: uniontypePaths);
         (cache, metarecordTypes2) = lookupMetarecordsRecursive(cache, env, rest, acc);

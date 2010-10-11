@@ -638,6 +638,26 @@ algorithm
   outTypeALst:= (inTypeA::inTypeALst);
 end listCons;
 
+public function listConsOnSuccess
+"Performs the cons operation if the predicate succeeds."
+  input Type_a x;
+  input list<Type_a> xs;
+  input Predicate fn;
+  output list<Type_a> oxs;
+  replaceable type Type_a subtypeof Any;
+  partial function Predicate
+    input Type_a x;
+  end Predicate;
+algorithm
+  oxs := matchcontinue (x,xs,fn)
+    case (x,xs,fn)
+      equation
+        fn(x);
+      then x::xs;
+    case (_,xs,_) then xs;
+  end matchcontinue;
+end listConsOnSuccess;
+
 public function listCreate "function: listCreate
   Create a list from an element."
   input Type_a inTypeA;

@@ -1249,7 +1249,7 @@ algorithm
       equation
         explist = Util.listMap(vl, ValuesUtil.valueExp);
         ts = Util.listMap(vl, typeOfValue);
-        (_,tp,_) = listMatchSuperType(explist, ts, {}, matchTypeRegular, true);
+        (_,tp) = listMatchSuperType(explist, ts, true);
       then
         ((DAE.T_LIST(tp),NONE));
 
@@ -3658,58 +3658,29 @@ algorithm
   end matchcontinue;
 end matchProp;
 
-public function matchType "function: matchType
-  This function matches an expression with an expected type, and
-  converts the expression to the expected type if necessary.
-  inputs : (exp: DAE.Exp, exp_type: Type, expected: Type)
-  outputs: (DAE.Exp, Type)"
-  input DAE.Exp exp;
-  input Type expType;
-  input Type expectedType;
-  input Boolean printFailtrace;
-  output DAE.Exp outExp;
-  output Type outType;
-algorithm
-  (outExp,outType,_) := matchTypeRegular(exp, expType, expectedType, {}, printFailtrace);
-end matchType;
-
 protected function matchTypeList
   input list<DAE.Exp> exps;
   input Type expType;
   input Type expectedType;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExp;
   output list<Type> outTypeLst;
-  output PolymorphicBindings outBindings;
-
-	partial function MatchTypeFunc
-	  input DAE.Exp inExp1;
-	  input Type inType2;
-	  input Type inType3;
-	  input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (outExp,outTypeLst,outBindings):=
-  matchcontinue (exps,expType,expectedType,polymorphicBindings,matchFunc,printFailtrace)
+  (outExp,outTypeLst):=
+  matchcontinue (exps,expType,expectedType,printFailtrace)
     local
       DAE.Exp e,e_1,e_2;
       list<DAE.Exp> e_2, rest;
       Type tp,t1,t2;
       list<Type> res;
-    case ({},_,_,polymorphicBindings,_,_) then ({},{},polymorphicBindings);
-    case (e::rest,t1,t2,polymorphicBindings,matchFunc,printFailtrace)
+    case ({},_,_,_) then ({},{});
+    case (e::rest,t1,t2,printFailtrace)
       equation
-        (e_1,tp,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
-        (e_2,res,polymorphicBindings) = matchTypeList(rest,t1,t2,polymorphicBindings,matchFunc,printFailtrace);
+        (e_1,tp) = matchType(e,t1,t2,printFailtrace);
+        (e_2,res) = matchTypeList(rest,t1,t2,printFailtrace);
       then
-        (e_1::e_2,(tp :: res),polymorphicBindings);
-    case (_,_,_,_,_,true)
+        (e_1::e_2,(tp :: res));
+    case (_,_,_,true)
       equation
         Debug.fprint("types", "- matchTypeList failed\n");
       then
@@ -3723,39 +3694,25 @@ of the expected types."
   input list<DAE.Exp> inExp1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExp;
   output list<Type> outTypeLst;
-  output PolymorphicBindings outBindings;
-
-	partial function MatchTypeFunc
-	  input DAE.Exp inExp1;
-	  input Type inType2;
-	  input Type inType3;
-	  input PolymorphicBindings polymorphicBindings;
-	  input Boolean printFailtrace;
-	  output DAE.Exp outExp;
-	  output Type outType;
-	  output PolymorphicBindings outBindings;
-	end MatchTypeFunc;
 algorithm
-  (outExp,outTypeLst,outBindings):=
-  matchcontinue (inExp1,inTypeLst2,inTypeLst3,polymorphicBindings,matchFunc,printFailtrace)
+  (outExp,outTypeLst):=
+  matchcontinue (inExp1,inTypeLst2,inTypeLst3,printFailtrace)
     local
       DAE.Exp e,e_1;
       list<DAE.Exp> rest, e_2;
       Type tp,t1,t2;
       list<Type> res,ts1,ts2;
-    case ({},{},{},polymorphicBindings,_,_) then ({},{},polymorphicBindings);
-    case (e::rest,(t1 :: ts1),(t2 :: ts2),polymorphicBindings,matchFunc,printFailtrace)
+    case ({},{},{},_) then ({},{});
+    case (e::rest,(t1 :: ts1),(t2 :: ts2),printFailtrace)
       equation
-        (e_1,tp,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
-        (e_2,res,polymorphicBindings) = matchTypeTuple(rest,ts1,ts2,polymorphicBindings,matchFunc,printFailtrace);
+        (e_1,tp) = matchType(e,t1,t2,printFailtrace);
+        (e_2,res) = matchTypeTuple(rest,ts1,ts2,printFailtrace);
       then
-        (e_1::e_2,(tp :: res),polymorphicBindings);
-    case (_,(t1 :: ts1),(t2 :: ts2),_,_,true)
+        (e_1::e_2,(tp :: res));
+    case (_,(t1 :: ts1),(t2 :: ts2),true)
       equation
         Debug.fprint("failtrace", "- Types.matchTypeTuple failed\n");
       then
@@ -3852,26 +3809,12 @@ protected function typeConvert "function: typeConvert
   input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output Type outType;
-  output PolymorphicBindings outBindings;
-
-  partial function MatchTypeFunc
-    input DAE.Exp inExp1;
-    input Type inType2;
-    input Type inType3;
-    input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (outExp,outType,outBindings):=
-  matchcontinue (inExp1,inType2,inType3,polymorphicBindings,matchFunc,printFailtrace)
+  (outExp,outType):=
+  matchcontinue (inExp1,inType2,inType3,printFailtrace)
     local
       list<DAE.Exp> elist_1,elist;
       DAE.ExpType at,t;
@@ -3893,144 +3836,142 @@ algorithm
     case (DAE.ARRAY(array = elist),
           (DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),
-          polymorphicBindings,matchFunc,printFailtrace)
+          printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,dim1,polymorphicBindings,matchFunc,printFailtrace);
+        elist_1 = typeConvertArray(elist, ty1, ty2,dim1,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p),polymorphicBindings);
+        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p));
 
      /* Array expressions: expression dimension [:], expected dimension [dim2] */
     case (DAE.ARRAY(array = elist),
           (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
           ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),
-          polymorphicBindings,matchFunc,printFailtrace)
+          printFailtrace)
       equation
         true = Exp.dimensionKnown(dim2);
-        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2,dim2,polymorphicBindings,matchFunc,printFailtrace);
+        elist_1 = typeConvertArray(elist, ty1, ty2,dim2,printFailtrace);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
       then
-        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN,ty2),p2),polymorphicBindings);
+        (DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM_UNKNOWN,ty2),p2));
 
         /* Array expressions: expression dimension [dim1], expected dimension [:] */
     case (DAE.ARRAY(array = elist),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),printFailtrace)
         local
           DAE.ExpType ety1;
       equation
         true = Exp.dimensionKnown(dim1);
-        (elist_1,polymorphicBindings) = typeConvertArray(elist, ty1, ty2, dim1,polymorphicBindings,matchFunc,printFailtrace);
+        elist_1 = typeConvertArray(elist, ty1, ty2, dim1,printFailtrace);
         ety1 = elabType(ty2);
         at = elabType(ty0);
         a = isArray(ty2);
         sc = boolNot(a);
         //TODO: Verify correctness of return value.
       then
-        (DAE.ARRAY(DAE.ET_ARRAY(ety1,{dim1}),sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p2),polymorphicBindings);
+        (DAE.ARRAY(DAE.ET_ARRAY(ety1,{dim1}),sc,elist_1),(DAE.T_ARRAY(dim1,ty2),p2));
         //(DAE.ARRAY(at,sc,elist_1),(DAE.T_ARRAY(DAE.DIM(SOME(dim1)),ty2),p2));
 
         /* Range expressions, e.g. 1:2:10 */
     case (DAE.RANGE(ty = t,exp = begin,expOption = SOME(step),range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
+      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        (step_1,_,polymorphicBindings) = typeConvert(step, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
+        (step_1,_) = typeConvert(step, ty1, ty2, printFailtrace);
+        (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(dim1,ty2),p),polymorphicBindings);
+        (DAE.RANGE(at,begin_1,SOME(step_1),stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
         /* Range expressions, e.g. 1:10 */
     case (DAE.RANGE(ty = t,exp = begin,expOption = NONE,range = stop),(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),polymorphicBindings,matchFunc,printFailtrace)
+      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        (begin_1,_,polymorphicBindings) = typeConvert(begin, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
-        (stop_1,_,polymorphicBindings) = typeConvert(stop, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (begin_1,_) = typeConvert(begin, ty1, ty2, printFailtrace);
+        (stop_1,_) = typeConvert(stop, ty1, ty2, printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.RANGE(at,begin_1,NONE,stop_1),(DAE.T_ARRAY(dim1,ty2),p),polymorphicBindings);
+        (DAE.RANGE(at,begin_1,NONE,stop_1),(DAE.T_ARRAY(dim1,ty2),p));
 
         /* Matrix expressions: expression dimension [dim1,dim11], expected dimension [dim2,dim22] */
     case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
+      ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim1, dim2);
         true = Exp.dimensionsKnownAndEqual(dim11, dim22);
-        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace);
+        ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim2,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),
-          p2),polymorphicBindings);
+        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
 
         /* Matrix expressions: expression dimension [dim1,dim11] expected dimension [:,dim22] */
     case (DAE.MATRIX(integer = nmax,scalar = ell),(DAE.T_ARRAY(arrayDim = dim1,arrayType = (DAE.T_ARRAY(arrayDim = dim11,arrayType = t1),_)),_),
-      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),polymorphicBindings,matchFunc,printFailtrace)
+      ty0 as (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = (DAE.T_ARRAY(arrayDim = dim22,arrayType = t2),p1)),p2),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim11, dim22);
-        (ell_1,polymorphicBindings) = typeConvertMatrix(ell, t1, t2,dim1,dim11,polymorphicBindings,matchFunc,printFailtrace);
+        ell_1 = typeConvertMatrix(ell, t1, t2,dim1,dim11,printFailtrace);
         at = elabType(ty0);
       then
-        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),
-          p2),polymorphicBindings);
+        (DAE.MATRIX(at,nmax,ell_1),(DAE.T_ARRAY(dim1,(DAE.T_ARRAY(dim11,t2),p1)),p2));
 
         /* Arbitrary expressions, expression dimension [dim1], expected dimension [dim2] */
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        ty0 as (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),printFailtrace)
       equation
         true = Exp.dimensionsKnownAndEqual(dim1, dim2);
-        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,dim1);
         t_2 = (DAE.T_ARRAY(dim2,t_1),p2);
       then
-        (e_1,t_2,polymorphicBindings);
+        (e_1,t_2);
 
         /* Arbitrary expressions,  expression dimension [:],  expected dimension [dim2]*/
     case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
-        (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.T_ARRAY(arrayDim = dim2,arrayType = ty2),p2),printFailtrace)
       equation
-        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2));
 
         /* Arbitrary expressions, expression dimension [:] expected dimension [:] */
     case (e,(DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty1),_),
-      (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+      (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),printFailtrace)
       equation
-        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,DAE.DIM_UNKNOWN);
       then
-        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(DAE.DIM_UNKNOWN,t_1),p2));
 
         /* Arbitrary expression, expression dimension [dim1] expected dimension [:]*/
     case (e,(DAE.T_ARRAY(arrayDim = dim1,arrayType = ty1),_),
-        (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.T_ARRAY(arrayDim = DAE.DIM_UNKNOWN,arrayType = ty2),p2),printFailtrace)
       equation
-        (e_1,t_1,polymorphicBindings) = typeConvert(e, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (e_1,t_1) = typeConvert(e, ty1, ty2, printFailtrace);
         e_1 = liftExpType(e_1,dim1);
       then
-        (e_1,(DAE.T_ARRAY(dim1,t_1),p2),polymorphicBindings);
+        (e_1,(DAE.T_ARRAY(dim1,t_1),p2));
 
         /* Tuple */
-    case (DAE.TUPLE(PR = elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_TUPLE(tupleType = tys2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.TUPLE(PR = elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_TUPLE(tupleType = tys2),p2),printFailtrace)
       equation
-        (elist_1,tys_1,polymorphicBindings) = typeConvertList(elist, tys1, tys2, polymorphicBindings,matchFunc,printFailtrace);
+        (elist_1,tys_1) = typeConvertList(elist, tys1, tys2, printFailtrace);
       then
-        (DAE.TUPLE(elist_1),(DAE.T_TUPLE(tys_1),p2),polymorphicBindings);
+        (DAE.TUPLE(elist_1),(DAE.T_TUPLE(tys_1),p2));
 
     // Convert an integer literal to an enumeration
     // This is widely used in Modelica.Electrical.Digital
     case (exp as DAE.ICONST(oi),
               (DAE.T_INTEGER(_),_),
               (DAE.T_ENUMERATION(index=_, path=tp, names = l),p2),
-              polymorphicBindings,matchFunc,printFailtrace)
+              printFailtrace)
       local        
         Absyn.Path tp;
         String name;
@@ -4041,65 +3982,65 @@ algorithm
         name = listNth(l, oi-1); // listNth indexes from 0
         tp = Absyn.joinPaths(tp, Absyn.IDENT(name));
       then 
-        (DAE.ENUM_LITERAL(tp, oi),inType3,polymorphicBindings);        
+        (DAE.ENUM_LITERAL(tp, oi),inType3);        
 
     /* Implicit conversion from Integer to Real */
-    case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),_),polymorphicBindings,matchFunc,printFailtrace)
-      then (DAE.CAST(DAE.ET_REAL(),e),inType3,polymorphicBindings);
+    case (e,(DAE.T_INTEGER(varLstInt = v),_),(DAE.T_REAL(varLstReal = _),_),printFailtrace)
+      then (DAE.CAST(DAE.ET_REAL(),e),inType3);
 
     /* Implicit conversion from Integer to enumeration. */
-    case (e,(DAE.T_INTEGER(varLstInt = _),_),(DAE.T_ENUMERATION(index = _), _),_,_,_)
+    case (e,(DAE.T_INTEGER(varLstInt = _),_),(DAE.T_ENUMERATION(index = _), _),_)
       equation
         t = elabType(inType3);
-      then (DAE.CAST(t, e), inType3, polymorphicBindings);
+      then (DAE.CAST(t, e), inType3);
       
     /* Implicit conversion from enumeration literal to Real */
-    case (e, (DAE.T_ENUMERATION(index = _), _), (DAE.T_REAL(varLstReal = _), p), _, _, _)
-      then (DAE.CAST(DAE.ET_REAL(),e),(DAE.T_REAL({}),p),polymorphicBindings);
+    case (e,(DAE.T_ENUMERATION(index = _),_),(DAE.T_REAL(varLstReal = _),p),_)
+      then (DAE.CAST(DAE.ET_REAL(),e),(DAE.T_REAL({}),p));
 
     /* Complex type inheriting primitive type */
-    case (e, (DAE.T_COMPLEX(complexTypeOption = SOME(t1)),_),t2,polymorphicBindings,matchFunc,printFailtrace) equation
-      (e_1,t_1,polymorphicBindings) = typeConvert(e,t1,t2,polymorphicBindings,matchFunc,printFailtrace);
-    then (e_1,t_1,polymorphicBindings);
-    case (e, t1,(DAE.T_COMPLEX(complexTypeOption = SOME(t2)),_),polymorphicBindings,matchFunc,printFailtrace) equation
-      (e_1,t_1,polymorphicBindings) = typeConvert(e,t1,t2,polymorphicBindings,matchFunc,printFailtrace);
-    then (e_1,t_1,polymorphicBindings);
+    case (e, (DAE.T_COMPLEX(complexTypeOption = SOME(t1)),_),t2,printFailtrace) equation
+      (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
+    then (e_1,t_1);
+    case (e, t1,(DAE.T_COMPLEX(complexTypeOption = SOME(t2)),_),printFailtrace) equation
+      (e_1,t_1) = typeConvert(e,t1,t2,printFailtrace);
+    then (e_1,t_1);
 
         /* MetaModelica Option */
-    case (DAE.META_OPTION(SOME(e)),(DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.META_OPTION(SOME(e)),(DAE.T_METAOPTION(t1),_),(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (e_1, t_1, polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+        (e_1, t_1) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.META_OPTION(SOME(e_1)),(DAE.T_METAOPTION(t_1),p2),polymorphicBindings);
-    case (DAE.META_OPTION(NONE),_,(DAE.T_METAOPTION(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.META_OPTION(SOME(e_1)),(DAE.T_METAOPTION(t_1),p2));
+    case (DAE.META_OPTION(NONE),_,(DAE.T_METAOPTION(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
       then
-        (DAE.META_OPTION(NONE),(DAE.T_METAOPTION(t2),p2),polymorphicBindings);
+        (DAE.META_OPTION(NONE),(DAE.T_METAOPTION(t2),p2));
 
         //Part of metamodelica extension, added by, simbj
         // <uniontype> = <metarecord>
-    case(e,(DAE.T_METARECORD(_,_),SOME(path)),t2 as (DAE.T_UNIONTYPE(lst),_),polymorphicBindings,matchFunc,printFailtrace)
+    case(e,(DAE.T_METARECORD(_,_),SOME(path)),t2 as (DAE.T_UNIONTYPE(lst),_),printFailtrace)
       local
         list<Absyn.Path> lst;
         Absyn.Path path;
       equation
         true = listMember(path, lst);
-      then (e,t2,polymorphicBindings);
+      then (e,t2);
 
         /* MetaModelica Tuple */
-    case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (DAE.TUPLE(elist),(DAE.T_TUPLE(tupleType = tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (elist_1,tys_1,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings,matchFunc,printFailtrace);
+        (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
-        (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2),polymorphicBindings);
-    case (DAE.META_TUPLE(elist),(DAE.T_METATUPLE(tys1),_),(DAE.T_METATUPLE(tys2),p2),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
+    case (DAE.META_TUPLE(elist),(DAE.T_METATUPLE(tys1),_),(DAE.T_METATUPLE(tys2),p2),printFailtrace)
       equation
-        (elist_1,tys_1,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings,matchFunc,printFailtrace);
+        (elist_1,tys_1) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
       then
-        (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2),polymorphicBindings);
+        (DAE.META_TUPLE(elist_1),(DAE.T_METATUPLE(tys_1),p2));
       /*
          The automatic type conversion will convert any array that can be
          const-eval'ed to an DAE.ARRAY or DAE.MATRIX into a list of the same
@@ -4111,86 +4052,74 @@ algorithm
            someListFunction({a[1],a[2],a[3]});
          / sjoelund 2009-08-13
        */
-    case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_LIST(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings,matchFunc,printFailtrace);
-        (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings,matchFunc,printFailtrace);
+        (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
+        (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
         t = elabType(t2);
         e_1 = DAE.LIST(t,elist_1);
         t2 = (DAE.T_LIST(t2),NONE);
-      then (e_1, t2, polymorphicBindings);
-    case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_BOXED(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
+      then (e_1, t2);
+    case (e as DAE.ARRAY(DAE.ET_ARRAY(ty = t),_,elist),(DAE.T_ARRAY(arrayType=t1),_),(DAE.T_BOXED(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings,matchFunc,printFailtrace);
-        (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings,matchFunc,printFailtrace);
+        (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
+        (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
         t = elabType(t2);
         e_1 = DAE.LIST(t,elist_1);
         t2 = (DAE.T_LIST(t2),NONE);
-      then (e_1, t2, polymorphicBindings);
-    case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,melist),t1,t2,polymorphicBindings,matchFunc,printFailtrace)
+      then (e_1, t2);
+    case (e as DAE.MATRIX(DAE.ET_ARRAY(ty = t),_,melist),t1,t2,printFailtrace)
       local
         list<list<tuple<DAE.Exp,Boolean>>> melist;
         list<list<DAE.Exp>> elist_big, elist_big_1;
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
         elist_big = Util.listListMap(melist, Util.tuple21);
-        (elist,ty2,polymorphicBindings) = typeConvertMatrixToList(elist_big,t1,t2,polymorphicBindings,matchFunc,printFailtrace);
+        (elist,ty2) = typeConvertMatrixToList(elist_big,t1,t2,printFailtrace);
         t = elabType(ty2);
         e_1 = DAE.LIST(t,elist);
-      then (e_1,ty2,polymorphicBindings);
-    case (e as DAE.LIST(_,elist as _::_),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
+      then (e_1,ty2);
+    case (e as DAE.LIST(_,elist),(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),printFailtrace)
       equation
         true = RTOpts.acceptMetaModelicaGrammar();
-        (elist_1, tys1, polymorphicBindings) = matchTypeList(elist, t1, t2, polymorphicBindings,matchFunc,printFailtrace);
-        (elist_1, t2, polymorphicBindings) = listMatchSuperType(elist_1, tys1, polymorphicBindings,matchFunc,printFailtrace);
+        (elist_1, tys1) = matchTypeList(elist, t1, t2, printFailtrace);
+        (elist_1, t2) = listMatchSuperType(elist_1, tys1, printFailtrace);
         t = elabType(t2);
         e_1 = DAE.LIST(t,elist_1);
         t2 = (DAE.T_LIST(t2),NONE);
-      then (e_1, t2, polymorphicBindings);
+      then (e_1, t2);
 
-    case (e,(DAE.T_LIST(t1),_),(DAE.T_LIST(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (_, ty2, polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
-      then (e, (DAE.T_LIST(ty2),p2), polymorphicBindings);
-
-    case (e,(DAE.T_META_ARRAY(t1),_),(DAE.T_META_ARRAY(t2),p2),polymorphicBindings,matchFunc,printFailtrace)
-      equation
-        true = RTOpts.acceptMetaModelicaGrammar();
-        (_, ty2, polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
-      then (e, (DAE.T_META_ARRAY(ty2),p2), polymorphicBindings);
-    
-    case (e, t1 as (DAE.T_INTEGER(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_INTEGER(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
-    case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_BOOL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_icon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
-    case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_REAL(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_rcon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
-    case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e, t1 as (DAE.T_STRING(_),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         true = subtype(t1,t2);
         t2 = (DAE.T_BOXED(t1),NONE);
         t = elabType(t2);
-      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
+      then (DAE.CALL(Absyn.IDENT("mmc_mk_scon"),{e},false,true,t,DAE.NO_INLINE),t2);
 
-    case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e as DAE.CALL(path = path1, expLst = elist), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path2)), (DAE.T_BOXED(t2),_),printFailtrace)
       local Absyn.Path path1,path2;
       equation
         true = subtype(t1,t2);
@@ -4199,16 +4128,16 @@ algorithm
         l = Util.listMap(v, getVarName);
         tys1 = Util.listMap(v, getVarType);
         tys2 = Util.listMap(tys1, boxIfUnboxedType);
-        (elist,_,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings,matchFunc,printFailtrace);
+        (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
         e_1 = DAE.METARECORDCALL(path1, elist, l, 0);
-      then (e_1,t2,polymorphicBindings);
+      then (e_1,t2);
 
-    case (e as DAE.CALL(path = _), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e as DAE.CALL(path = _), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_), (DAE.T_BOXED(t2),_),printFailtrace)
       equation
         Debug.fprintln("failtrace", "- Not yet implemented: Converting record calls (not constructor) into boxed records");
       then fail();
 
-    case (e as DAE.CREF(cref,_), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (DAE.T_BOXED(t2),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e as DAE.CREF(cref,_), t1 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),SOME(path)), (DAE.T_BOXED(t2),_),printFailtrace)
       local
         Absyn.Path path;
         list<Absyn.Path> pathList;
@@ -4226,65 +4155,44 @@ algorithm
         crefList = Util.listMap(pathList, Exp.pathToCref);
         crefList = Util.listMap1r(crefList, Exp.joinCrefs, cref);
         elist = Util.listThreadMap(crefList, expTypes, Exp.makeCrefExp);
-        (elist,_,polymorphicBindings) = matchTypeTuple(elist, tys1, tys2, polymorphicBindings,matchFunc,printFailtrace);
+        (elist,_) = matchTypeTuple(elist, tys1, tys2, printFailtrace);
         e_1 = DAE.METARECORDCALL(path, elist, l, 0);
-      then (e_1,t2,polymorphicBindings);
+      then (e_1,t2);
 
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_INTEGER(_),_),polymorphicBindings,matchFunc,printFailtrace)
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_INTEGER(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT,DAE.NO_INLINE),t2,polymorphicBindings);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_REAL(_),_),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_INT,DAE.NO_INLINE),t2);
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_REAL(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL,DAE.NO_INLINE),t2,polymorphicBindings);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_real"),{e_1},false,true,DAE.ET_REAL,DAE.NO_INLINE),t2);
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_BOOL(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL,DAE.NO_INLINE),t2,polymorphicBindings);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_integer"),{e_1},false,true,DAE.ET_BOOL,DAE.NO_INLINE),t2);
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_STRING(_),_),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,_,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+        (e_1,_) = matchType(e,t1,t2,printFailtrace);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING,DAE.NO_INLINE),t2,polymorphicBindings);
-    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),polymorphicBindings,matchFunc,printFailtrace)
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_string"),{e_1},false,true,DAE.ET_STRING,DAE.NO_INLINE),t2);
+    case (e,(DAE.T_BOXED(t1),_),t2 as (DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_), complexVarLst = v),_),printFailtrace)
       equation
         true = subtype(t1,t2);
-        (e_1,t2,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
+        (e_1,t2) = matchType(e,t1,t2,printFailtrace);
         t = elabType(t2);
       then
-        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,DAE.NO_INLINE),t2,polymorphicBindings);
-
-    // MM Function Reference. sjoelund
-    case (e as DAE.CREF(_,_),(DAE.T_FUNCTION(farg1,t1,_),SOME(path)),(DAE.T_FUNCTION(farg2,t2,_),_),polymorphicBindings,matchFunc,printFailtrace)
-      local
-        list<FuncArg> farg,farg1,farg2;
-        list<Type> tList1,tList2;
-        list<Ident> fargId1;
-        list<DAE.Exp> exps;
-      equation
-        str = polymorphicBindingsStr(polymorphicBindings);
-        tList1 = Util.listMap(farg1, Util.tuple22);
-        tList1 = Util.listMap1(tList1, renamePolymorphicType, Absyn.pathString(path));
-        t1 = renamePolymorphicType(t1, Absyn.pathString(path));
-        tList2 = Util.listMap(farg2, Util.tuple22);
-        fargId1 = Util.listMap(farg1, Util.tuple21);
-        exps = Util.listFill(e, listLength(farg1));
-        (_,tys1,polymorphicBindings) = matchTypeTuple(exps,tList1,tList2,polymorphicBindings,matchFunc,printFailtrace);
-        (_,ty1,polymorphicBindings) = matchFunc(e,t1,t2,polymorphicBindings,printFailtrace);
-        farg = Util.listThreadMap(fargId1,tys1,Util.makeTuple2);
-        ty2 = (DAE.T_FUNCTION(farg,ty1,DAE.NO_INLINE),SOME(path));
-      then (e,ty2,polymorphicBindings);
+        (DAE.CALL(Absyn.IDENT("mmc_unbox_record"),{e_1},false,true,t,DAE.NO_INLINE),t2);
 
       /* See printFailure()
-    case (exp,t1,t2,polymorphicBindings,matchFunc,printFailtrace)
+    case (exp,t1,t2,printFailtrace)
       equation
         Debug.fprint("tcvt", "- type conversion failed: ");
         str = Exp.printExpStr(exp);
@@ -4329,37 +4237,22 @@ public function typeConvertArray "function: typeConvertArray
   input Type inType2;
   input Type inType3;
   input DAE.Dimension dim;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExpExpLst;
-  output PolymorphicBindings outBindings;
-
-  partial function MatchTypeFunc
-    input DAE.Exp inExp1;
-    input Type inType2;
-    input Type inType3;
-    input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (outExpExpLst,outBindings) :=
-  matchcontinue (inExpExpLst1,inType2,inType3,dim,polymorphicBindings,matchFunc,printFailtrace)
+  (outExpExpLst) :=
+  matchcontinue (inExpExpLst1,inType2,inType3,dim,printFailtrace)
     local
       list<DAE.Exp> rest_1,rest;
       DAE.Exp first_1,first;
       Type ty1,ty2;
-    case ({},_,_,_,polymorphicBindings,_,_) then ({},polymorphicBindings);
-    case ((first :: rest),ty1,ty2,dim,polymorphicBindings,matchFunc,printFailtrace)
+    case ({},_,_,_,_) then {};
+    case ((first :: rest),ty1,ty2,dim,printFailtrace)
       equation
-        (rest_1,polymorphicBindings) = typeConvertArray(rest,ty1,ty2,dim,polymorphicBindings,matchFunc,printFailtrace);
-        (first_1,_,polymorphicBindings) = typeConvert(first,ty1,ty2,polymorphicBindings,matchFunc,printFailtrace);
-         //first_1 = liftExpType(first_1,dim);
+        rest_1 = typeConvertArray(rest,ty1,ty2,dim,printFailtrace);
+        (first_1,_) = typeConvert(first,ty1,ty2,printFailtrace);
       then
-        ((first_1 :: rest_1),polymorphicBindings);
+        ((first_1 :: rest_1));
   end matchcontinue;
 end typeConvertArray;
 
@@ -4372,36 +4265,22 @@ protected function typeConvertMatrix "function: typeConvertMatrix
   input Type inType3;
   input DAE.Dimension dim1;
   input DAE.Dimension dim2;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<list<tuple<DAE.Exp, Boolean>>> outTplExpExpBooleanLstLst;
-  output PolymorphicBindings outBindings;
-
-	partial function MatchTypeFunc
-	  input DAE.Exp inExp1;
-	  input Type inType2;
-	  input Type inType3;
-	  input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (outTplExpExpBooleanLstLst,outBindings) :=
-  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace)
+  outTplExpExpBooleanLstLst :=
+  matchcontinue (inTplExpExpBooleanLstLst1,inType2,inType3,dim1,dim2,printFailtrace)
     local
       list<list<tuple<DAE.Exp, Boolean>>> rest_1,rest;
       list<tuple<DAE.Exp, Boolean>> first_1,first;
       Type ty1,ty2;
-    case ({},_,_,_,_,polymorphicBindings,_,_) then ({},polymorphicBindings);
-    case ((first :: rest),ty1,ty2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace)
+    case ({},_,_,_,_,_) then {};
+    case ((first :: rest),ty1,ty2,dim1,dim2,printFailtrace)
       equation
-        (rest_1,polymorphicBindings) = typeConvertMatrix(rest, ty1, ty2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace);
-        (first_1,polymorphicBindings) = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace);
+        rest_1 = typeConvertMatrix(rest, ty1, ty2,dim1,dim2,printFailtrace);
+        first_1 = typeConvertMatrixRow(first, ty1, ty2,dim1,dim2,printFailtrace);
       then
-        ((first_1 :: rest_1),polymorphicBindings);
+        (first_1 :: rest_1);
   end matchcontinue;
 end typeConvertMatrix;
 
@@ -4414,41 +4293,25 @@ protected function typeConvertMatrixRow "function: typeConvertMatrixRow
   input Type inType3;
   input DAE.Dimension dim1;
   input DAE.Dimension dim2;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<tuple<DAE.Exp, Boolean>> outTplExpExpBooleanLst;
-  output PolymorphicBindings outBindings;
-
-	partial function MatchTypeFunc
-	  input DAE.Exp inExp1;
-	  input Type inType2;
-	  input Type inType3;
-	  input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (outTplExpExpBooleanLst,outBindings) :=
-  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace)
+  outTplExpExpBooleanLst :=
+  matchcontinue (inTplExpExpBooleanLst1,inType2,inType3,dim1,dim2,printFailtrace)
     local
       list<tuple<DAE.Exp, Boolean>> rest;
       DAE.Exp exp_1,exp;
       Type newt,t1,t2;
       Boolean a,sc;
-    case ({},_,_,_,_,polymorphicBindings,_,_) then ({},polymorphicBindings);
-    case (((exp,_) :: rest),t1,t2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace)
+    case ({},_,_,_,_,_) then {};
+    case (((exp,_) :: rest),t1,t2,dim1,dim2,printFailtrace)
       equation
-        (rest,polymorphicBindings) = typeConvertMatrixRow(rest, t1, t2,dim1,dim2,polymorphicBindings,matchFunc,printFailtrace);
-        (exp_1,newt,polymorphicBindings) = typeConvert(exp, t1, t2,polymorphicBindings,matchFunc,printFailtrace);
-        //exp_1 = liftExpType(exp_1,dim1);
-        //exp_1 = liftExpType(exp_1,dim2);
+        rest = typeConvertMatrixRow(rest, t1, t2,dim1,dim2,printFailtrace);
+        (exp_1,newt) = typeConvert(exp, t1, t2,printFailtrace);
         a = isArray(t2);
         sc = boolNot(a);
       then
-        (((exp_1,sc) :: rest),polymorphicBindings);
+        (((exp_1,sc) :: rest));
   end matchcontinue;
 end typeConvertMatrixRow;
 
@@ -4459,38 +4322,24 @@ protected function typeConvertList "function: typeConvertList
   input list<DAE.Exp> inExpExpLst1;
   input list<Type> inTypeLst2;
   input list<Type> inTypeLst3;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExpExpLst;
   output list<Type> outTypeLst;
-  output PolymorphicBindings outBindings;
-
-	partial function MatchTypeFunc
-	  input DAE.Exp inExp1;
-	  input Type inType2;
-	  input Type inType3;
-	  input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (outExpExpLst,outTypeLst,outBindings):=
-  matchcontinue (inExpExpLst1,inTypeLst2,inTypeLst3,polymorphicBindings,matchFunc,printFailtrace)
+  (outExpExpLst,outTypeLst):=
+  matchcontinue (inExpExpLst1,inTypeLst2,inTypeLst3,printFailtrace)
     local
       list<DAE.Exp> rest_1,rest;
       list<Type> tyrest_1,ty1rest,ty2rest;
       DAE.Exp first_1,first;
       Type ty_1,ty1,ty2;
-    case ({},_,_,polymorphicBindings,_,_) then ({},{},polymorphicBindings);
-    case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest),polymorphicBindings,matchFunc,printFailtrace)
+    case ({},_,_,_) then ({},{});
+    case ((first :: rest),(ty1 :: ty1rest),(ty2 :: ty2rest),printFailtrace)
       equation
-        (rest_1,tyrest_1,polymorphicBindings) = typeConvertList(rest, ty1rest, ty2rest,polymorphicBindings,matchFunc,printFailtrace);
-        (first_1,ty_1,polymorphicBindings) = typeConvert(first, ty1, ty2, polymorphicBindings,matchFunc,printFailtrace);
+        (rest_1,tyrest_1) = typeConvertList(rest, ty1rest, ty2rest,printFailtrace);
+        (first_1,ty_1) = typeConvert(first, ty1, ty2, printFailtrace);
       then
-        ((first_1 :: rest_1),(ty_1 :: tyrest_1),polymorphicBindings);
+        ((first_1 :: rest_1),(ty_1 :: tyrest_1));
   end matchcontinue;
 end typeConvertList;
 
@@ -4498,25 +4347,11 @@ protected function typeConvertMatrixToList
   input list<list<DAE.Exp>> melist;
   input Type inType;
   input Type outType;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> outExp;
   output Type outType;
-  output PolymorphicBindings outBindings;
-
-	partial function MatchTypeFunc
-	  input DAE.Exp inExp1;
-	  input Type inType2;
-	  input Type inType3;
-	  input PolymorphicBindings polymorphicBindings;
-	  input Boolean printFailtrace;
-	  output DAE.Exp outExp;
-	  output Type outType;
-	  output PolymorphicBindings outBindings;
-	end MatchTypeFunc;
 algorithm
-  (outExp,outType,outBindings) := matchcontinue (melist,inType,outType,polymorphicBindings,matchFunc,printFailtrace)
+  (outExp,outType) := matchcontinue (melist,inType,outType,printFailtrace)
     local
       list<DAE.Exp> expl;
       list<list<DAE.Exp>> rest, elist, elist_1;
@@ -4526,14 +4361,14 @@ algorithm
       list<Type> tys1;
       Option<Absyn.Path> p2;
       DAE.Exp e,e_1;
-    case ({},_,_,polymorphicBindings,_,_) then ({},(DAE.T_NOTYPE,NONE),polymorphicBindings);
-    case (expl::rest, (DAE.T_ARRAY(arrayType=(DAE.T_ARRAY(arrayType=t1),_)),_), (DAE.T_LIST((DAE.T_LIST(t2),_)),p2),polymorphicBindings,matchFunc,printFailtrace)
+    case ({},_,_,_) then ({},(DAE.T_NOTYPE,NONE));
+    case (expl::rest, (DAE.T_ARRAY(arrayType=(DAE.T_ARRAY(arrayType=t1),_)),_), (DAE.T_LIST((DAE.T_LIST(t2),_)),p2),printFailtrace)
       equation
-        (e,t1,polymorphicBindings) = typeConvertMatrixRowToList(expl, t1, t2, polymorphicBindings,matchFunc,printFailtrace);
+        (e,t1) = typeConvertMatrixRowToList(expl, t1, t2, printFailtrace);
         t = elabType(t1);
-        (expl,_,polymorphicBindings) = typeConvertMatrixToList(rest, inType, outType, polymorphicBindings,matchFunc,printFailtrace);
-      then (e::expl,(DAE.T_LIST(t1),NONE),polymorphicBindings);
-    case (_, _, _, _, _, _)
+        (expl,_) = typeConvertMatrixToList(rest, inType, outType, printFailtrace);
+      then (e::expl,(DAE.T_LIST(t1),NONE));
+    case (_,_,_,_)
       equation
         Debug.fprintln("types", "- typeConvertMatrixToList failed");
       then fail();
@@ -4544,27 +4379,14 @@ protected function typeConvertMatrixRowToList
   input list<DAE.Exp> elist;
   input Type inType;
   input Type outType;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output DAE.Exp out;
   output Type t1;
-  output PolymorphicBindings outBindings;
-  partial function MatchTypeFunc
-    input DAE.Exp inExp1;
-    input Type inType2;
-    input Type inType3;
-    input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
   DAE.Exp exp;
   list<DAE.Exp> elist_1;
   DAE.ExpType t;
 algorithm
-  (elist_1,t1::_,outBindings) := matchTypeList(elist, inType, outType, polymorphicBindings,matchFunc,printFailtrace);
+  (elist_1,t1::_) := matchTypeList(elist, inType, outType, printFailtrace);
   t := elabType(t1);
   out := DAE.LIST(t, elist_1);
   t1 := (DAE.T_LIST(t1),NONE);
@@ -5169,50 +4991,37 @@ public function unboxedType
   output Type out;
 algorithm
   out := matchcontinue (ty)
+    case ((DAE.T_BOXED(ty),_)) then unboxedType(ty);
+    case ty then ty;
     case ((DAE.T_METAOPTION(_),_)) then ty;
     case ((DAE.T_LIST(_),_)) then ty;
     case ((DAE.T_METATUPLE(_),_)) then ty;
     case ((DAE.T_UNIONTYPE(_),_)) then ty;
     case ((DAE.T_POLYMORPHIC(_),_)) then ty;
     case ((DAE.T_META_ARRAY(_),_)) then ty;
-    case ((DAE.T_BOXED(ty),_)) then ty;
-    case ty then ty;
   end matchcontinue;
 end unboxedType;
 
 public function listMatchSuperType "Takes lists of Exp,Type and calculates the
-supertype of the list, then converts the expressions to this type. /sjoelund
+supertype of the list, then converts the expressions to this type.
 "
   input list<DAE.Exp> elist;
   input list<Type> typeList;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> out;
   output Type t;
-  output PolymorphicBindings outBindings;
-  partial function MatchTypeFunc
-    input DAE.Exp inExp1;
-    input Type inType2;
-    input Type inType3;
-    input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (out,t,outBindings) := matchcontinue (elist,typeList,polymorphicBindings,matchFunc,printFailtrace)
+  (out,t) := matchcontinue (elist,typeList,printFailtrace)
     local
       DAE.Exp e;
       Type ty, superType;
-    case ({},{},polymorphicBindings,_,_) then ({}, (DAE.T_NOTYPE,NONE),polymorphicBindings);
-    case (e :: _, ty :: _,polymorphicBindings,matchFunc,printFailtrace)
+    case ({},{},_) then ({}, (DAE.T_NOTYPE,NONE));
+    case (e :: _, ty :: _,printFailtrace)
       equation
         superType = Util.listReduce(typeList, superType);
-        (elist,polymorphicBindings) = listMatchSuperType2(elist,typeList,superType,polymorphicBindings,matchFunc,printFailtrace);
-      then (elist, superType, polymorphicBindings);
-    case (_, _, _, _, _)
+        elist = listMatchSuperType2(elist,typeList,superType,printFailtrace);
+      then (elist, superType);
+    case (_,_,_)
       equation
         Debug.fprintln("failtrace", "- Types.listMatchSuperType failed");
       then fail();
@@ -5223,35 +5032,22 @@ protected function listMatchSuperType2
   input list<DAE.Exp> elist;
   input list<Type> typeList;
   input Type superType;
-  input PolymorphicBindings polymorphicBindings;
-  input MatchTypeFunc matchFunc;
   input Boolean printFailtrace;
   output list<DAE.Exp> out;
-  output PolymorphicBindings outBindings;
-  partial function MatchTypeFunc
-    input DAE.Exp inExp1;
-    input Type inType2;
-    input Type inType3;
-    input PolymorphicBindings polymorphicBindings;
-    input Boolean printFailtrace;
-    output DAE.Exp outExp;
-    output Type outType;
-    output PolymorphicBindings outBindings;
-  end MatchTypeFunc;
 algorithm
-  (out,outBindings) := matchcontinue (elist, typeList, superType, polymorphicBindings, matchFunc, printFailtrace)
+  out := matchcontinue (elist, typeList, superType, printFailtrace)
     local
       DAE.Exp e;
       list<DAE.Exp> erest;
       Type t;
       list<Type> trest;
-    case ({},{},_,polymorphicBindings,_,_) then ({},polymorphicBindings);
-    case (e::erest, t::trest, superType, polymorphicBindings, matchFunc, printFailtrace)
+    case ({},{},_,_) then {};
+    case (e::erest, t::trest, superType, printFailtrace)
       equation
-        (e,t,polymorphicBindings) = matchFunc(e,t,superType,polymorphicBindings,printFailtrace);
-        (erest,polymorphicBindings) = listMatchSuperType2(erest,trest,superType,polymorphicBindings,matchFunc,printFailtrace);
-      then (e::erest,polymorphicBindings);
-    case (e::_, _, _, _, _, _)
+        (e,t) = matchType(e,t,superType,printFailtrace);
+        erest = listMatchSuperType2(erest,trest,superType,printFailtrace);
+      then (e::erest);
+    case (e::_,_,_,_)
       local String str;
       equation
         true = RTOpts.debugFlag("failtrace");
@@ -5329,12 +5125,10 @@ algorithm
 end superType;
 
 public function matchTypePolymorphic "Like matchType, except we also
-bind polymorphic variabled. Used when elaborating calls.
-TODO: We should probably just match types and then walk the type to
-detect and verify any polymorphism."
-  input DAE.Exp inExp1;
-  input Type inType2;
-  input Type inType3;
+bind polymorphic variabled. Used when elaborating calls."
+  input DAE.Exp exp;
+  input Type actual;
+  input Type expected;
   input PolymorphicBindings polymorphicBindings;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
@@ -5342,32 +5136,26 @@ detect and verify any polymorphism."
   output PolymorphicBindings outBindings;
 algorithm
   (outExp,outType,outBindings):=
-  matchcontinue (inExp1,inType2,inType3,polymorphicBindings,printFailtrace)
+  matchcontinue (exp,actual,expected,polymorphicBindings,printFailtrace)
     local
       DAE.Exp e,e_1;
       DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
       String id,id1,id2;
 
-    case (e,e_type,(DAE.T_POLYMORPHIC(id),_),polymorphicBindings,printFailtrace)
+    case (exp,actual,expected,polymorphicBindings,printFailtrace)
       equation
-        (e_1,e_type_1) = matchType(e,e_type,(DAE.T_BOXED((DAE.T_NOTYPE,NONE)),NONE),printFailtrace);
-        polymorphicBindings = addPolymorphicBinding(id,e_type_1,polymorphicBindings);
-      then (e_1,e_type_1,polymorphicBindings);
-    case (e,e_type,expected_type,polymorphicBindings,_)
-      equation
-        failure(isPolymorphic(expected_type));
-        // If the expected type is polymorphic, we must not use subtype; we badly need this bindings
-        {} = getAllInnerTypesOfType(expected_type, isPolymorphic);
-        true = subtype(e_type, expected_type);
-      then
-        (e,e_type,polymorphicBindings);
-    case (e,e_type,expected_type,polymorphicBindings,printFailtrace)
-      equation
-        failure(isPolymorphic(expected_type));
-        (e_1,e_type_1,polymorphicBindings) = typeConvert(e, e_type, expected_type, polymorphicBindings, matchTypePolymorphic, printFailtrace);
-      then
+        {} = getAllInnerTypesOfType(expected, isPolymorphic);
+        (e_1,e_type_1) = matchType(exp,actual,expected,printFailtrace);
+      then 
         (e_1,e_type_1,polymorphicBindings);
+    case (exp,actual,expected,polymorphicBindings,_)
+      equation
+        _::_ = getAllInnerTypesOfType(expected, isPolymorphic);
+        (exp,actual) = matchType(exp,actual,(DAE.T_BOXED((DAE.T_NOTYPE(),NONE())),NONE()),printFailtrace);
+        polymorphicBindings = subtypePolymorphic(actual,expected,polymorphicBindings);
+      then
+        (exp,actual,polymorphicBindings);
     case (e,e_type,expected_type,_,true)
       equation
         printFailure("types", "matchTypePolymorphic", e, e_type, expected_type);
@@ -5375,44 +5163,39 @@ algorithm
   end matchcontinue;
 end matchTypePolymorphic;
 
-public function matchTypeRegular "function: matchType
+public function matchType "function: matchType
 
   This function matches an expression with an expected type, and
-  converts the expression to the expected type if necessary.
-  inputs : (exp: DAE.Exp, exp_type: Type, expected: Type)
-  outputs: (DAE.Exp, Type)"
+  converts the expression to the expected type if necessary."
   input DAE.Exp inExp1;
   input Type inType2;
   input Type inType3;
-  input PolymorphicBindings polymorphicBindings;
   input Boolean printFailtrace;
   output DAE.Exp outExp;
   output Type outType;
-  output PolymorphicBindings outBindings;
 algorithm
-  (outExp,outType,polymorphicBindings):=
-  matchcontinue (inExp1,inType2,inType3,polymorphicBindings,printFailtrace)
+  (outExp,outType) := matchcontinue (inExp1,inType2,inType3,printFailtrace)
     local
       DAE.Exp e,e_1;
       DAE.ExpType et;
       Type e_type,expected_type,e_type_1;
-    case (e,e_type,expected_type,polymorphicBindings,printFailtrace)
+    case (e,e_type,expected_type,printFailtrace)
       equation
         true = subtype(e_type, expected_type);
       then
-        (e,e_type,polymorphicBindings);
-    case (e,e_type,expected_type,polymorphicBindings,printFailtrace)
+        (e,e_type);
+    case (e,e_type,expected_type,printFailtrace)
       equation
         false = subtype(e_type, expected_type);
-        (e_1,e_type_1,polymorphicBindings) = typeConvert(e,e_type,expected_type,polymorphicBindings,matchTypeRegular,printFailtrace);
+        (e_1,e_type_1) = typeConvert(e,e_type,expected_type,printFailtrace);
       then
-        (e_1,e_type_1,polymorphicBindings);
-    case (e,e_type,expected_type,_,true)
+        (e_1,e_type_1);
+    case (e,e_type,expected_type,true)
       equation
-        printFailure("types", "matchTypeRegular", e, e_type, expected_type);
+        printFailure("types", "matchType", e, e_type, expected_type);
       then fail();
   end matchcontinue;
-end matchTypeRegular;
+end matchType;
 
 protected function printFailure
 "@author adrpo
@@ -5445,7 +5228,7 @@ protected function polymorphicBindingStr
   list<Type> tys;
 algorithm
   (str,tys) := binding;
-  str := "(" +& str +& ": " +& Util.stringDelimitList(Util.listMap(tys, unparseType), ", ") +& ")";
+  str := "(" +& str +& ": " +& Util.stringDelimitList(Util.listMapMap(tys, unboxedType, unparseType), ", ") +& ")";
 end polymorphicBindingStr;
 
 public function polymorphicBindingsStr
@@ -5537,67 +5320,66 @@ a list of all those types."
     input Type fnInType;
   end TypeFn;
 algorithm
-  outTypes := getAllInnerTypes(inType);
-  outTypes := inType :: outTypes;
-  outTypes := Util.listFilter(outTypes, inFn);
+  outTypes := getAllInnerTypes({inType},{},inFn);
 end getAllInnerTypesOfType;
 
-public function getAllInnerTypes
+protected function getAllInnerTypes
 "Traverses all the types the input Type contains."
-  input Type inType;
+  input list<Type> inTypes;
+  input list<Type> acc;
+  input TypeFn fn;
   output list<Type> outTypes;
+  partial function TypeFn
+    input Type fnInType;
+  end TypeFn;
 algorithm
-  outTypes := matchcontinue inType
+  outTypes := matchcontinue (inTypes,acc,fn)
     local
-      Type ty;
-      list<Type> tys,res,res1,res2;
+      Type ty,first;
+      list<Type> tys,rest,res,res1,res2;
       list<list<Type>> resMap;
       list<Var> fields;
       list<FuncArg> funcArgs;
-    case ((DAE.T_ARRAY(arrayType = ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
-    case ((DAE.T_LIST(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
-    case ((DAE.T_BOXED(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
-    case ((DAE.T_METAOPTION(ty),_)) equation res = getAllInnerTypes(ty); then inType::res;
+    case ({},_,_) then acc;
+    case ((first as (DAE.T_ARRAY(arrayType = ty),_))::rest,acc,fn)
+      then getAllInnerTypes(ty::rest,Util.listConsOnSuccess(first,acc,fn),fn);
+    case ((first as (DAE.T_LIST(ty),_))::rest,acc,fn)
+      then getAllInnerTypes(ty::rest,Util.listConsOnSuccess(first,acc,fn),fn);
+    case ((first as (DAE.T_META_ARRAY(ty),_))::rest,acc,fn)
+      then getAllInnerTypes(ty::rest,Util.listConsOnSuccess(first,acc,fn),fn);
+    case ((first as (DAE.T_BOXED(ty),_))::rest,acc,fn)
+      then getAllInnerTypes(ty::rest,Util.listConsOnSuccess(first,acc,fn),fn);
+    case ((first as (DAE.T_METAOPTION(ty),_))::rest,acc,fn)
+      then getAllInnerTypes(ty::rest,Util.listConsOnSuccess(first,acc,fn),fn);
 
-    case ((DAE.T_TUPLE(tys),_))
+    case ((first as (DAE.T_TUPLE(tys),_))::rest,acc,fn)
       equation
-        resMap = Util.listMap(tys, getAllInnerTypes);
-        res = Util.listFlatten(resMap);
-        res = inType::res;
-      then res;
-    case ((DAE.T_METATUPLE(tys),_))
+        acc = getAllInnerTypes(tys,Util.listConsOnSuccess(first,acc,fn),fn);
+      then getAllInnerTypes(rest,acc,fn);
+    case ((first as (DAE.T_METATUPLE(tys),_))::rest,acc,fn)
       equation
-        resMap = Util.listMap(tys, getAllInnerTypes);
-        res = Util.listFlatten(resMap);
-        res = inType::res;
-      then res;
+        acc = getAllInnerTypes(tys,Util.listConsOnSuccess(first,acc,fn),fn);
+      then getAllInnerTypes(rest,acc,fn);
 
-    case ((DAE.T_METARECORD(fields = fields),_))
+    case ((first as (DAE.T_METARECORD(fields = fields),_))::rest,acc,fn)
       equation
         tys = Util.listMap(fields, getVarType);
-        resMap = Util.listMap(tys, getAllInnerTypes);
-        res = Util.listFlatten(resMap);
-        res = inType::res;
-      then res;
-    case ((DAE.T_COMPLEX(complexClassType = ClassInf.RECORD(_),complexVarLst = fields),_))
-     equation
+        acc = getAllInnerTypes(tys,Util.listConsOnSuccess(first,acc,fn),fn);
+      then getAllInnerTypes(rest,acc,fn);
+    case ((first as (DAE.T_COMPLEX(complexVarLst = fields),_))::rest,acc,fn)
+      equation
         tys = Util.listMap(fields, getVarType);
-        resMap = Util.listMap(tys, getAllInnerTypes);
-        res = Util.listFlatten(resMap);
-        res = inType::res;
-      then res;
+        acc = getAllInnerTypes(tys,Util.listConsOnSuccess(first,acc,fn),fn);
+      then getAllInnerTypes(rest,acc,fn);
 
-    case ((DAE.T_FUNCTION(funcArgs,ty,_),_))
+    case ((first as (DAE.T_FUNCTION(funcArgs,ty,_),_))::rest,acc,fn)
       equation
         tys = Util.listMap(funcArgs, Util.tuple22);
-        resMap = Util.listMap(tys, getAllInnerTypes);
-        res1 = Util.listFlatten(resMap);
-        res1 = inType::res1;
-        res2 = getAllInnerTypes(ty);
-        res = listAppend(res1, ty::res2);
-      then res;
+        acc = getAllInnerTypes(tys,Util.listConsOnSuccess(first,acc,fn),fn);
+      then getAllInnerTypes(ty::rest,acc,fn);
 
-    case ty then {ty};
+    case (first::rest,acc,fn)
+      then getAllInnerTypes(rest,Util.listConsOnSuccess(first,acc,fn),fn);
   end matchcontinue;
 end getAllInnerTypes;
 
@@ -5649,7 +5431,7 @@ algorithm
         funcArgNames = Util.listMap(funcArgs1, Util.tuple21);
         funcArgTypes1 = Util.listMap(funcArgs1, Util.tuple22);
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(funcArgTypes1);
-        (_,funcArgTypes2,_) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, {}, matchTypeRegular, false);
+        (_,funcArgTypes2) = matchTypeTuple(dummyExpList, funcArgTypes1, dummyBoxedTypeList, false);
         funcArgs2 = Util.listThreadTuple(funcArgNames,funcArgTypes2);
         resType2 = makeFunctionPolymorphicReferenceResType(resType1);
         tty2 = DAE.T_FUNCTION(funcArgs2,resType2,DAE.NO_INLINE);
@@ -5685,7 +5467,7 @@ algorithm
     case ((DAE.T_TUPLE(tys),optPath))
       equation
         (dummyExpList,dummyBoxedTypeList) = makeDummyExpAndTypeLists(tys);
-        (_,tys,_) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, {}, matchTypeRegular, false);
+        (_,tys) = matchTypeTuple(dummyExpList, tys, dummyBoxedTypeList, false);
       then ((DAE.T_TUPLE(tys),optPath));
     case (ty as (DAE.T_NORETCALL,_)) then ty;
     case ty1
@@ -5825,7 +5607,7 @@ algorithm
         bindingsStr = polymorphicBindingsStr(bindings);
         solvedBindingsStr = polymorphicBindingsStr(solvedBindings);
         unsolvedBindingsStr = polymorphicBindingsStr(unsolvedBindings);
-        print("fail checkValidBindings: " +& bindingsStr +& " # " +& solvedBindingsStr +& " # " +& unsolvedBindingsStr +& "\n");
+        Error.addMessage(Error.META_UNSOLVED_POLYMORPHIC_BINDINGS, {bindingsStr,solvedBindingsStr,unsolvedBindingsStr});
       then fail();
   end matchcontinue;
 end checkValidBindings;
@@ -6029,5 +5811,91 @@ algorithm
     case (ty,_) then ty;
   end matchcontinue;
 end renamePolymorphicType;
+
+protected function subtypePolymorphic
+"A simple subtype() that also binds polymorphic variables.
+Only works on the MetaModelica datatypes; the input is assumed to be boxed.
+"
+  input Type actual;
+  input Type expected;
+  input PolymorphicBindings bindings;
+  output PolymorphicBindings outBindings;
+algorithm
+  outBindings := matchcontinue (actual,expected,bindings)
+    local
+      String id;
+      Type ty,ty1,ty2;
+      list<FuncArg> farg1,farg2;
+      list<Type> tList1,tList2;
+      Absyn.Path path;
+    case (actual,(DAE.T_POLYMORPHIC(id),_),bindings)
+      then addPolymorphicBinding(id,boxIfUnboxedType(actual),bindings);
+    case ((DAE.T_BOXED(ty1),_),(DAE.T_BOXED(ty2),_),bindings)
+      equation
+        ty1 = unboxedType(ty1);
+        ty2 = unboxedType(ty2);
+      then subtypePolymorphic(ty1,ty2,bindings);
+    case ((DAE.T_NORETCALL(),_),(DAE.T_NORETCALL(),_),bindings) then bindings;
+    case ((DAE.T_INTEGER(_),_),(DAE.T_INTEGER(_),_),bindings) then bindings;
+    case ((DAE.T_REAL(_),_),(DAE.T_INTEGER(_),_),bindings) then bindings;
+    case ((DAE.T_STRING(_),_),(DAE.T_STRING(_),_),bindings) then bindings;
+    case ((DAE.T_BOOL(_),_),(DAE.T_BOOL(_),_),bindings) then bindings;
+    case ((DAE.T_META_ARRAY(ty1),_),(DAE.T_META_ARRAY(ty2),_),bindings)
+      equation
+        ty1 = boxIfUnboxedType(ty1);
+        ty2 = boxIfUnboxedType(ty2);
+      then subtypePolymorphic(ty1,ty2,bindings);
+    case ((DAE.T_LIST(ty1),_),(DAE.T_LIST(ty2),_),bindings)
+      equation
+        ty1 = boxIfUnboxedType(ty1);
+        ty2 = boxIfUnboxedType(ty2);
+      then subtypePolymorphic(ty1,ty2,bindings);
+    case ((DAE.T_METAOPTION(ty1),_),(DAE.T_METAOPTION(ty2),_),bindings)
+      equation
+        ty1 = boxIfUnboxedType(ty1);
+        ty2 = boxIfUnboxedType(ty2);
+      then subtypePolymorphic(ty1,ty2,bindings);
+    case ((DAE.T_METATUPLE(tList1),_),(DAE.T_METATUPLE(tList2),_),bindings)
+      equation
+        tList1 = Util.listMap(tList1, boxIfUnboxedType);
+        tList2 = Util.listMap(tList2, boxIfUnboxedType);
+        bindings = subtypePolymorphicList(tList1,tList2,bindings);
+      then bindings;
+    // MM Function Reference. sjoelund
+    case ((DAE.T_FUNCTION(farg1,ty1,_),SOME(path)),(DAE.T_FUNCTION(farg2,ty2,_),_),bindings)
+      equation
+        tList1 = Util.listMap(farg1, Util.tuple22);
+        tList1 = Util.listMap1(tList1, renamePolymorphicType, Absyn.pathString(path));
+        ty1 = renamePolymorphicType(ty1, Absyn.pathString(path));
+        tList2 = Util.listMap(farg2, Util.tuple22);
+        tList1 = Util.listMap(tList1, boxIfUnboxedType);
+        tList2 = Util.listMap(tList2, boxIfUnboxedType);
+        bindings = subtypePolymorphicList(tList1,tList2,bindings);
+        bindings = subtypePolymorphic(ty1,ty2,bindings);
+      then bindings;
+  end matchcontinue;
+end subtypePolymorphic;
+
+protected function subtypePolymorphicList
+"A simple subtype() that also binds polymorphic variables.
+Only works on the MetaModelica datatypes; the input is assumed to be boxed.
+"
+  input list<Type> actual;
+  input list<Type> expected;
+  input PolymorphicBindings bindings;
+  output PolymorphicBindings outBindings;
+algorithm
+  outBindings := matchcontinue (actual,expected,bindings)
+    local
+      Type ty1,ty2;
+      list<Type> tList1,tList2;
+    case ({},{},bindings) then bindings;
+    case (ty1::tList1,ty2::tList2,bindings)
+      equation
+        bindings = subtypePolymorphic(ty1,ty2,bindings);
+        bindings = subtypePolymorphicList(tList1,tList2,bindings);
+      then bindings;
+  end matchcontinue;
+end subtypePolymorphicList;
 
 end Types;

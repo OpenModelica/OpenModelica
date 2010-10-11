@@ -1003,7 +1003,7 @@ algorithm
       equation
         explist = Util.listMap(vallist, valueExp);
         typelist = Util.listMap(vallist, Types.typeOfValue);
-        (explist,vt,_) = Types.listMatchSuperType(explist, typelist, {}, Types.matchTypeRegular, true);
+        (explist,vt) = Types.listMatchSuperType(explist, typelist, true);
         t = Types.elabType(vt);
       then DAE.LIST(t, explist);
 

@@ -269,6 +269,7 @@ public constant ErrorID META_COMPLEX_TYPE_MOD=5006;
 public constant ErrorID META_MATCHEXP_RESULT_NUM_ARGS=5007;
 public constant ErrorID META_CEVAL_FUNCTION_REFERENCE=5008;
 public constant ErrorID NON_INSTANTIATED_FUNCTION=5009;
+public constant ErrorID META_UNSOLVED_POLYMORPHIC_BINDINGS=5010;
 
 protected constant list<tuple<Integer, MessageType, Severity, String>> errorTable=
          {(SYNTAX_ERROR,SYNTAX(),ERROR(),"Syntax error near: %s"),
@@ -609,7 +610,8 @@ protected constant list<tuple<Integer, MessageType, Severity, String>> errorTabl
           (GENERATECODE_INVARS_HAS_FUNCTION_PTR,SYMBOLIC(),ERROR(),"%s has a function pointer as input. OpenModelica does not support this feature in the interactive environment. Suggested workaround: Call this function with the arguments you want from another function (that does not have function pointer input). Then call that function from the interactive environment instead."),
           (META_CEVAL_FUNCTION_REFERENCE,TRANSLATION(),ERROR(),"Cannot evaluate function pointers (got %s)."),
           (NON_INSTANTIATED_FUNCTION,SYMBOLIC(),ERROR(),"Tried to use function %s, but it was not instantiated."),
-          (GENERIC_INST_FUNCTION,TRANSLATION(),ERROR(),"Failed to instantiate function %s in scope %s")
+          (GENERIC_INST_FUNCTION,TRANSLATION(),ERROR(),"Failed to instantiate function %s in scope %s"),
+          (META_UNSOLVED_POLYMORPHIC_BINDINGS,TRANSLATION(),ERROR(),"Could not solve the polymorphism in the function call\n    Input bindings: %s\n    Solved bindings: %s\n    Unsolved bindings: %s")
           
           };
 

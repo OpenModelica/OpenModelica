@@ -632,7 +632,7 @@ algorithm
       typeList = Util.listMap(propList, Types.getPropType);
       constList = Types.getConstList(propList);
       c = Util.listReduce(constList, Types.constAnd) "The case empty list is handled above";
-      (es_1, t, _) = Types.listMatchSuperType(es_1, typeList, {}, Types.matchTypeRegular, true);
+      (es_1, t) = Types.listMatchSuperType(es_1, typeList, true);
       prop = DAE.PROP((DAE.T_LIST(t),NONE()),c);
       tp_1 = Types.elabType(t);
     then (cache,DAE.LIST(tp_1,es_1),prop,st_2);
@@ -701,7 +701,7 @@ algorithm
       equation
         (cache,expExpList,propList,st) = elabExpList(cache,env,expList,impl,st,doVect,pre);
         typeList = Util.listMap(propList, Types.getPropType);
-        (expExpList, t, _) = Types.listMatchSuperType(expExpList, typeList, {}, Types.matchTypeRegular, true);
+        (expExpList, t) = Types.listMatchSuperType(expExpList, typeList, true);
         t2 = Types.elabType(t);
       then
         (cache,DAE.LIST(t2,expExpList),DAE.PROP((DAE.T_LIST(t),NONE),c),st);
